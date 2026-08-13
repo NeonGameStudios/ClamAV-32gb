@@ -24,7 +24,7 @@ dedicated 64 GiB Ubuntu x86-64 host.
   source entries (the earlier 49,184 count included duplicate directory
   scans). A source line may appear in more than one classification. The
   normalized snapshot has SHA-256
-  `f2b47c0ce6cef165d24c70fb70c31e83dcc9f339bba3d04666fd5d6bc12c9581`.
+  `e4e4df3e3ec5153c8e29afb458c6878318cb6f168b149d9a9322ef94f1f69f21`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.
