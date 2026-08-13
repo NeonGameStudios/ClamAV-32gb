@@ -1,0 +1,5 @@
+[toolchain]
+# Cargo is shipped with the Rust toolchain. Keep this fork on the Cargo 1.97
+# release line so Cargo.lock (format v4) and the Rust tests are reproducible.
+channel = "1.97"
+profile = "minimal"
