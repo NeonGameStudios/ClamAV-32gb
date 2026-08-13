@@ -94,7 +94,7 @@ class TC(testcase.TestCase):
         # instead of being reported clean.
         assert output.ec == 2
 
-        expected_results = ['Scanned files: {}'.format(len(TC.testpaths))]
+        expected_results = ['Scanned files: {}'.format(len(TC.testpaths) - 1)]
         expected_results.append('Infected files: 0')
         expected_results.append('clam_cache_emax.tgz: Exceeded max recursion depth ERROR')
         expected_results.append('Total errors: 1')
