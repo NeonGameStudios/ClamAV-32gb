@@ -890,8 +890,19 @@ START_TEST(test_maxrecursion_exact_and_crossing_are_fail_visible)
     ck_assert(root_map.dont_cache_flag);
     ck_assert(child_map.dont_cache_flag);
 
+    /* A blocked nested child must not prevent this container layer from
+     * scanning an independent sibling that may contain a detection. */
+    result = CL_EMAXREC;
+    ck_assert(!cli_scan_result_should_halt(&ctx, CL_EMAXREC, &result));
+    ck_assert_int_eq(result, CL_SUCCESS);
+
+    /* If no later sibling produces a stronger verdict, the root scan still
+     * exposes the exact configured-limit result and remains non-cacheable. */
+    ck_assert(cli_recursion_stack_pop(&ctx) == &child_map);
+    ck_assert_uint_eq(ctx.recursion_level, 0);
+    ck_assert(ctx.fmap == &root_map);
     result = CL_SUCCESS;
-    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMAXREC, &result));
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_SUCCESS, &result));
     ck_assert_int_eq(result, CL_EMAXREC);
 }
 END_TEST

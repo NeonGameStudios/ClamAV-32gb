@@ -4619,6 +4619,20 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         goto done;
     }
 
+    /* A recursion-limit skip applies only to the child that could not be
+     * entered. While unwinding a nested layer, normalize that one result so
+     * the parent container can continue scanning independent siblings. The
+     * sticky incomplete state and exact limit cause remain attached to the
+     * root scan, where they become CL_EMAXREC if no later detection wins. */
+    if (ctx->scan_incomplete &&
+        ctx->recursion_level > 0 &&
+        ctx->limit_exceeded_result == CL_EMAXREC &&
+        (result_in == CL_SUCCESS || result_in == CL_EMAXREC)) {
+        cli_dbgmsg("Descriptor[%d]: continuing parent scan after nested recursion-limit skip\n", fmap_fd(ctx->fmap));
+        *result_out = CL_SUCCESS;
+        goto done;
+    }
+
     /* AlertExceedsMax represents the incomplete scan as a detection. Preserve
      * that API contract only when the indicator actually remains visible; an
      * ignored/filtered alert still falls through to a fail-visible error. */
