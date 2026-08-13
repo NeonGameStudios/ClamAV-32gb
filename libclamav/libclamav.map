@@ -110,6 +110,9 @@ CLAMAV_PRIVATE {
     cli_lsig_bytecode_compatible;
     cli_bytecode_file_size_compatible;
     cli_bytecode_runhook;
+    cli_updatelimits;
+    cli_recursion_stack_push;
+    cli_magic_scan;
     cli_magic_scan_nested_fmap_type;
     cli_scanishield_msi;
     cli_scandmg;
