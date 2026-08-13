@@ -1,6 +1,6 @@
 # ClamAV Large-File Support
 
-Status: Phase 3 — source-hardening/build candidate; production acceptance pending
+Status: Phase 3 — Linux x86-64 one-worker validated; production acceptance pending
 
 ## Target
 
@@ -41,8 +41,8 @@ The repository pins the Rust toolchain to the Cargo 1.97 release line in
 `rust-toolchain.toml`. CMake also enforces Cargo 1.97 or newer so builds that
 use a system Cargo fail during configuration with an actionable message.
 Cargo 1.65 cannot read the repository's version-4 `Cargo.lock`; Cargo 1.97
-compiled and ran the existing Rust suite successfully (60 tests passed in the
-native-library test environment).
+compiled and ran the existing Rust suite successfully (62 tests passed in an
+isolated writable exact source clone on the Linux x86-64 validation host).
 
 ## Initial baseline findings
 
@@ -108,12 +108,15 @@ positive harness controls, stale Rust layouts, append-state limitation, CAB
 cleanup, centralized settings validation, and explicit supported-architecture
 policy are now covered by source guards, focused unit-test additions, or both.
 
-The source now produces a complete scanner build in the existing 900 MiB
-Linux ARM64 Docker environment. That is build evidence, not 32 GiB runtime
-certification. Linux x86-64 release scans, ASan/UBSan, broader adversarial
-container fixtures, concurrency/resource measurements, daemon/milter
-integration, and exact-boundary end-to-end evidence still must be produced on
-the dedicated 64 GiB host before this fork can be called production-ready.
+The source continues to build in the constrained Linux ARM64 development
+environment. In addition, exact commit
+`bba68110e04f78504d2af389050c349e01861315` has now completed a full Release
+build, normal/focused tests, and a one-worker exact-boundary runtime gate on
+the `sonic1` Ubuntu Linux x86-64 host. This is meaningful target-platform
+evidence, but it is not production certification. ASan/UBSan, worker counts 2
+and 4, broader adversarial containers, production-database/deep-parser and
+cold-cache measurements, clamd/milter large transfers, and known false-clean
+and ZIP strong-encryption gaps remain open.
 
 The reproducible runtime gate runner is now `tools/largefile_runtime_gate.sh`.
 It refuses non-Linux and non-x86-64 hosts, verifies the scanner ELF
@@ -143,10 +146,46 @@ smaller boundary sample. Use the lower-level POC harness for staged lower-size
 tests; the release runner and evidence verifier reject those results as the
 32 GiB worker budget.
 
+## Sonic1 Linux x86-64 validation
+
+The following results are bound to exact code commit
+`bba68110e04f78504d2af389050c349e01861315` and were produced in Docker on the
+real `sonic1` Ubuntu Linux x86-64 host:
+
+- the full Release configuration, with `ENABLE_STATIC_LIB`,
+  `ENABLE_EXAMPLES`, and `ENABLE_MILTER` enabled, built to 100%;
+- focused `libclamav`, `clamscan`, and examples tests passed 3 of 3;
+- focused Valgrind tests passed 2 of 2;
+- the complete non-Rust CTest selection passed 16 of 16 in 1106.34 seconds;
+- an isolated writable exact source clone passed all 62 Rust tests; and
+- the non-sanitized one-worker runtime gate exited 0 with
+  `runtime_gate=pass`.
+
+The runtime gate detected all 11 sparse boundary rows at their exact engine
+offsets. The exact 32 GiB edge signature was reported at `34359738304`; the
+32 GiB+1 policy check passed; the cancellation test returned the expected
+status 124; and the one-worker concurrency measurement passed at 100792 KiB
+aggregate RSS.
+
+A separate warm-cache exact-edge scan ran with four CPUs inside a hard 8 GiB
+memory limit and an equal 8 GiB memory-plus-swap limit, so no additional swap
+was available. It reported `FOUND` in 1:49.95 with 100944 KiB peak RSS and
+zero swap use. This demonstrates bounded process residency for the tested
+sparse raw-file/signature workload. It is not a minimum-RAM guarantee: it did
+not exercise cold-cache reads, materialized 32 GiB data, production signature
+databases, deep parsers, archive expansion, or multiple workers.
+
+This validation closes the earlier Linux x86-64 exact-edge and one-worker raw
+scan gaps. It does **not** make the fork production-ready. Sanitizer testing,
+2/4-worker gates, clamd/milter large transfers, production-database and
+deep-parser resource certification, cold-cache measurement, and the known
+false-clean and ZIP strong-encryption issues remain release blockers.
+
 ## Runtime-gate execution handoff
 
 The release workflow is intentionally manual because the exact 32 GiB edge
-case can consume several GiB of resident memory and substantial scan time.
+case requires substantial I/O and scan time, while production database,
+parser, cache, and concurrency memory costs have not yet been established.
 After this source tree is published to the private fork, run the ordinary and
 sanitizer jobs from an x86-64 Linux runner with an explicit measured budget:
 
@@ -208,6 +247,13 @@ file-backed map reserves virtual address space; resident memory depends on
 pages touched, page tables, parser scratch buffers, decompression, extraction,
 the loaded signature database, and the number of concurrent scans.
 
+For commit `bba68110e04f78504d2af389050c349e01861315`, the one-worker sparse
+exact-edge gate measured 100792 KiB aggregate RSS. The separate warm-cache
+hard-8-GiB-container run measured 100944 KiB peak RSS and zero swap use. Those
+measurements characterize the purpose-built raw boundary workload only; they
+must not be extrapolated to production database loading, deep parsing,
+materialized input, cold-cache I/O, or concurrent workers.
+
 The implementation and deployment tests must measure:
 
 - process RSS and virtual address space;
@@ -228,14 +274,14 @@ the 64 GiB deployment host. The release workflow defaults to a 48 GiB
 effective-headroom floor (`50331648` KiB); a lower exploratory value must not
 be promoted as production evidence.
 
-Initial testing on the 64 GiB Ubuntu host should use one worker. Worker
+One-worker testing on the 64 GiB Ubuntu host is complete for the sparse raw
+boundary workload. Worker counts 2 and 4 are still required. Deployment
 concurrency must be chosen from measured peak resource use, not from the
 32 GiB file limit. Keep PCRE and other contiguous-buffer consumers separately
-capped until their
-large-input behavior is designed and tested. An operating-system or
-container-level memory ceiling should be part of the deployment test, with a
-limit breach producing a visible non-clean/indeterminate result rather than a
-clean verdict.
+capped until their large-input behavior is designed and tested. An
+operating-system or container-level memory ceiling should be part of the
+deployment test, with a limit breach producing a visible
+non-clean/indeterminate result rather than a clean verdict.
 
 Sparse boundary files are appropriate for offset correctness. Materialized
 files and adversarial containers are required for realistic I/O, cache,
@@ -261,24 +307,33 @@ decompression, and memory testing.
 8. Add boundary, differential, parser-adversarial, sanitizer, and workload
    tests before enabling 32 GiB defaults.
 
-## Proof-of-concept results
+## Validation results and historical POC context
 
-The POC was built from ClamAV 1.5.3 in a 64-bit Linux ARM64 container. The
-host is macOS ARM64, so this validates Linux/64-bit behavior but is not an
-x86-64 deployment certification run.
+The current authoritative raw-boundary result is the `sonic1` Linux x86-64
+validation for commit `bba68110e04f78504d2af389050c349e01861315` documented
+above: all 11 rows reported exact engine offsets, including `34359738304` for
+the 32 GiB edge, and both one-worker resource checks stayed near 100 MiB RSS.
 
-The focused run detected and independently verified the marker position in
-all of these sparse cases: 2 GiB−1, 2 GiB, 2 GiB+1, 4 GiB−1, 4 GiB, 4 GiB+1,
-8 GiB, and 16 GiB. Peak RSS was approximately 452 MiB at 2 GiB, 876 MiB at
-4 GiB, 1.72 GiB at 8 GiB, and 2.84 GiB at 16 GiB. Temporary storage remained
-4 KiB per case.
+An earlier ClamAV 1.5.3 POC in a Linux ARM64 development container detected
+through 16 GiB but was killed during its 32 GiB edge run after reaching about
+3.56 GiB RSS. That historical result predates the bounded fmap-aging and
+subsequent hardening work. It remains useful as evidence that environment and
+implementation details matter, but it is superseded for the current
+single-worker sparse raw path by the successful x86-64 exact-edge runs. It
+does not provide sanitizer, production-parser, or concurrency evidence.
 
-The exact 32 GiB edge case reached approximately 3.56 GiB RSS and was killed
-by the Linux/Docker memory environment with signal 9 after about 1:22; it did
-not produce a clean verdict. This is a valid POC finding: increasing the file
-limit does not imply that one worker can safely scan a 32 GiB sparse file in a
-small-memory container. The 64 GiB Ubuntu x86-64 host must measure the same
-workload with its actual kernel/container limits before enabling this mode.
+## Known open correctness gaps
+
+- Generic `MaxScanSize`, `MaxFiles`, and `MaxRecursion` exits still need
+  consistent sticky-incomplete propagation. Paths that normalize these limit
+  results to success can otherwise produce a false-clean result after partial
+  inspection.
+- ZIP strong-encryption and related masked/encrypted fallback handling still
+  need an explicit incomplete/non-clean disposition. Local-only data
+  descriptors and ZIP file-count accounting also require closure tests.
+
+These are release blockers. The successful raw-boundary gate does not cover
+or waive them.
 
 ## Remaining bounded paths
 
@@ -341,8 +396,11 @@ workload with its actual kernel/container limits before enabling this mode.
 LargeFile 1.0 is complete only when a 64-bit build can scan the complete
 0–32 GiB range, detect signatures across the 2 GiB and 4 GiB boundaries,
 report exact positions and sizes, preserve bounded memory behavior, and pass
-the normal test suite plus the large-file suite under sanitizers. Unsupported
-deep-parser paths must be explicit and observable.
+the normal test suite plus the large-file suite under sanitizers. Worker
+counts 2 and 4, clamd/milter large transfers, production-database/deep-parser
+and cold-cache resource tests must pass, and the known false-clean and ZIP
+strong-encryption gaps must be closed. Unsupported deep-parser paths must be
+explicit and observable.
 
 ## Proof-of-concept scope
 
@@ -358,9 +416,10 @@ legacy bytecode or file-format ABIs. BM offset mode is no longer rejected
 solely because its file position is above 4 GiB, but remains a separate
 fixture-driven audit item because the scan-window API is bounded. The guarded
 frozen-bytecode and fixed-format boundaries are deliberately fail-visible.
-Exact 32 GiB, x86-64, and sanitizer release gates remain open until the
-required build environment and fixtures are available. Run the
-harness as follows inside a Linux build environment:
+The exact 32 GiB x86-64 one-worker gate is complete for the validated commit;
+sanitizer, 2/4-worker, daemon/milter, production-workload, cold-cache, and
+open-correctness release gates remain. Run the harness as follows inside a
+Linux build environment:
 
 ```sh
 CLAMAV_CVD_CERTS_DIR=/path/to/test-or-production-certs \

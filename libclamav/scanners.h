@@ -68,7 +68,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type);
 
 /**
  * Apply the central scan-result policy. Sticky timeout or incomplete state
- * must remain non-clean, while CL_VIRUS retains precedence.
+ * must remain non-clean, while detections and critical failures retain
+ * precedence. A visible AlertExceedsMax indicator represents a configured
+ * limit as a detection instead of an error.
  */
 bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t *result_out);
 

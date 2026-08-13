@@ -1068,9 +1068,11 @@ static inline void zinitkey(uint32_t key[3], struct cli_pwdb *password)
 /* zip decrypt byte */
 static inline unsigned char zdecryptbyte(uint32_t key[3])
 {
-    unsigned short temp;
-    temp = key[2] | 2;
-    return ((temp * (temp ^ 1)) >> 8);
+    /* Preserve the specified 16-bit ZipCrypto arithmetic without relying on
+     * signed-int promotion for the multiplication.  The maximum product is
+     * larger than INT_MAX and was undefined under UBSan on LP64 targets. */
+    uint32_t temp = (key[2] & 0xffffU) | 2U;
+    return (unsigned char)((temp * (temp ^ 1U)) >> 8);
 }
 
 static cl_error_t unz_from_fmap(
@@ -1524,8 +1526,18 @@ static cl_error_t parse_local_file_header(
 
     if (LOCAL_HEADER_flags & F_MSKED) {
         cli_dbgmsg("cli_unzip: local header - header has got unusable masked data\n");
-        /* FIXME: need to find/craft a sample */
+        cli_mark_scan_incomplete(ctx, "ZIP masked local-header values are unsupported");
         status = CL_EPARSE;
+        goto done;
+    }
+
+    /* General-purpose bit 6 selects strong encryption.  Do not infer the
+     * encryption scheme solely from F_ENCR: hostile archives can set the bits
+     * inconsistently, and feeding opaque ciphertext to a normal decoder can
+     * otherwise produce an apparent clean scan. */
+    if (LOCAL_HEADER_flags & F_STRNG) {
+        cli_mark_scan_incomplete(ctx, "ZIP strong encryption is unsupported");
+        status = CL_EUNPACK;
         goto done;
     }
 
@@ -1541,6 +1553,10 @@ static cl_error_t parse_local_file_header(
     if (LOCAL_HEADER_flags & F_USEDD) {
         cli_dbgmsg("cli_unzip: local header - has data desc\n");
         if (!central_header) {
+            /* Without an authoritative central-directory size there is no
+             * bounded way to distinguish compressed bytes from the optional
+             * descriptor signature.  Fail visibly instead of guessing. */
+            cli_mark_scan_incomplete(ctx, "ZIP local-only data descriptors are unsupported");
             status = CL_EPARSE;
             goto done;
         }
@@ -1742,9 +1758,11 @@ static cl_error_t parse_central_directory_file_header(
     char name[256] = {0};
 
     const uint8_t *central_header = NULL;
+    const uint8_t *central_magic  = NULL;
     const uint8_t *central_extra  = NULL;
     struct zip_central_values central_values;
     size_t index;
+    uint32_t magic;
 
     *file_record_size = 0;
 
@@ -1754,18 +1772,36 @@ static cl_error_t parse_central_directory_file_header(
         goto done;
     }
 
-    central_header = fmap_need_off(ctx->fmap, central_file_header_offset, SIZEOF_CENTRAL_HEADER);
-    if (NULL == central_header) {
+    central_magic = fmap_need_off_once(ctx->fmap, central_file_header_offset, sizeof(uint32_t));
+    if (NULL == central_magic) {
+        cli_mark_scan_incomplete(ctx, "ZIP central-directory record signature is truncated");
+        status = CL_EPARSE;
+        goto done;
+    }
+    magic = cli_readint32(central_magic);
+
+    if (magic == ZIP_MAGIC_CENTRAL_DIRECTORY_RECORD_END || magic == ZIP_MAGIC_ZIP64_END) {
         cli_dbgmsg("cli_unzip: central header - reached end of central directory.\n");
-        status = CL_BREAK;
+        /* A zero-sized successful record is the iterator sentinel.  Reserve
+         * CL_BREAK for an application callback so cancellation cannot be
+         * mistaken for an ordinary end-of-directory condition. */
+        status = CL_SUCCESS;
         goto done;
     }
 
-    if (CENTRAL_HEADER_magic != ZIP_MAGIC_CENTRAL_DIRECTORY_RECORD_BEGIN) {
+    if (magic != ZIP_MAGIC_CENTRAL_DIRECTORY_RECORD_BEGIN) {
         cli_dbgmsg("cli_unzip: central header - file header offset has wrong magic\n");
         status = CL_EPARSE;
         goto done;
     }
+
+    central_header = fmap_need_off(ctx->fmap, central_file_header_offset, SIZEOF_CENTRAL_HEADER);
+    if (NULL == central_header) {
+        cli_mark_scan_incomplete(ctx, "ZIP central-directory record is truncated");
+        status = CL_EPARSE;
+        goto done;
+    }
+
     if (central_file_header_offset > ctx->fmap->len ||
         SIZEOF_CENTRAL_HEADER > ctx->fmap->len - central_file_header_offset) {
         cli_dbgmsg("cli_unzip: central header - fixed header out of file\n");
@@ -1823,9 +1859,11 @@ static cl_error_t parse_central_directory_file_header(
                         (CENTRAL_HEADER_flags & F_ENCR) != 0,
                         file_count,
                         CENTRAL_HEADER_crc32);
-    if (CL_VIRUS == ret) {
-        // Set file record size to 0 to indicate this is the last file record
-        status = CL_VIRUS;
+    if (CL_SUCCESS != ret) {
+        /* Metadata and application callbacks may return cancellation, trust,
+         * detection, or a critical error.  None may be discarded merely
+         * because this is the catalogue pass. */
+        status = ret;
         goto done;
     }
 
@@ -1943,7 +1981,8 @@ cl_error_t index_the_central_directory(
     struct zip_record *curr_record   = NULL;
     struct zip_record *prev_record   = NULL;
     uint32_t num_overlapping_files   = 0;
-    bool exceeded_max_files          = false;
+    bool keep_catalogue_on_limit     = false;
+    bool maxfiles_exceeded           = false;
 
     size_t record_size   = 0;
     size_t record_offset = coff;
@@ -1977,14 +2016,10 @@ cl_error_t index_the_central_directory(
             &(zip_catalogue[records_count]),
             &record_size);
 
-        if (ctx->scan_incomplete) {
-            status = CL_EPARSE;
-            goto done;
-        }
-
-        if (ret == CL_VIRUS) {
-            // Aborting scan due to a detection (not in all match mode).
-            status = CL_VIRUS;
+        if (ret != CL_SUCCESS) {
+            /* Every callback/error result is terminal.  Ordinary iteration
+             * completion is CL_SUCCESS with a zero-sized record. */
+            status = ret;
             goto done;
         }
 
@@ -2011,12 +2046,20 @@ cl_error_t index_the_central_directory(
             goto done;
         }
 
-        /* stop checking file entries if we'll exceed maxfiles */
-        if (ctx->engine->maxfiles && records_count >= ctx->engine->maxfiles) {
+        /* The configured count is inclusive: scan exactly MaxFiles records,
+         * and fail visibly only after discovering one additional record. */
+        if (ctx->engine->maxfiles && records_count > ctx->engine->maxfiles) {
             cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
-            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles");
-            exceeded_max_files = true; // Set a bool so we can return the correct status code later.
-                                       // We still need to scan the files we found while reviewing the file records up to this limit.
+            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
+            if (ctx->abort_scan) {
+                status = ctx->scan_timed_out ? CL_ETIMEOUT : CL_BREAK;
+                goto done;
+            }
+            /* Keep the permitted prefix so the caller can still scan it. */
+            records_count--;
+            free(zip_catalogue[records_count].original_filename);
+            memset(&zip_catalogue[records_count], 0, sizeof(zip_catalogue[records_count]));
+            maxfiles_exceeded = true;
             break;
         }
 
@@ -2102,11 +2145,16 @@ cl_error_t index_the_central_directory(
 
     *catalogue   = zip_catalogue;
     *num_records = records_count;
-    status       = CL_SUCCESS;
+    if (maxfiles_exceeded) {
+        keep_catalogue_on_limit = true;
+        status                  = CL_EMAXFILES;
+    } else {
+        status = CL_SUCCESS;
+    }
 
 done:
 
-    if (CL_SUCCESS != status) {
+    if (CL_SUCCESS != status && !keep_catalogue_on_limit) {
         if (NULL != zip_catalogue) {
             size_t i;
             for (i = 0; i < records_count; i++) {
@@ -2119,9 +2167,6 @@ done:
             zip_catalogue = NULL;
         }
 
-        if (exceeded_max_files) {
-            status = CL_EMAXFILES;
-        }
     }
 
     return status;
@@ -2172,7 +2217,7 @@ cl_error_t index_local_file_headers_within_bounds(
     size_t search_offset             = 0;
     size_t total_file_count          = file_count;
     struct zip_record *zip_catalogue = NULL;
-    bool exceeded_max_files          = false;
+    bool keep_catalogue_on_limit     = false;
 
     if (NULL == temp_catalogue || NULL == num_records) {
         cli_errmsg("index_local_file_headers_within_bounds: Invalid NULL arguments\n");
@@ -2259,6 +2304,26 @@ cl_error_t index_local_file_headers_within_bounds(
              * complete records are scanned. */
 
             if (file_record_size != 0 && CL_EPARSE != ret) {
+                /* The configured count is inclusive.  This parsed candidate
+                 * is the first disallowed record when the permitted prefix is
+                 * already full.  Discard only the candidate and return the
+                 * prefix to the caller for scanning. */
+                if (ctx->engine->maxfiles && total_file_count >= ctx->engine->maxfiles) {
+                    cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
+                    free(zip_catalogue[index].original_filename);
+                    memset(&zip_catalogue[index], 0, sizeof(zip_catalogue[index]));
+                    cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
+                    if (ctx->abort_scan) {
+                        status = ctx->scan_timed_out ? CL_ETIMEOUT : CL_BREAK;
+                        goto done;
+                    }
+                    *temp_catalogue         = zip_catalogue;
+                    *num_records            = index;
+                    keep_catalogue_on_limit = true;
+                    status                  = CL_EMAXFILES;
+                    goto done;
+                }
+
                 // Found a record.
                 cli_dbgmsg("cli_unzip: Found a record\n");
                 index++;
@@ -2277,15 +2342,6 @@ cl_error_t index_local_file_headers_within_bounds(
                 cli_dbgmsg("cli_unzip: Time limit reached (max: %u)\n", ctx->engine->maxscantime);
                 status = CL_ETIMEOUT;
                 goto done;
-            }
-
-            /* stop checking file entries if we'll exceed maxfiles */
-            if (ctx->engine->maxfiles && total_file_count >= ctx->engine->maxfiles) {
-                cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
-                cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles");
-                exceeded_max_files = true; // Set a bool so we can return the correct status code later.
-                                           // We still need to scan the files we found while reviewing the file records up to this limit.
-                break;
             }
 
             if (num_record_blocks * ZIP_RECORDS_CHECK_BLOCKSIZE == index + 1) {
@@ -2310,7 +2366,7 @@ cl_error_t index_local_file_headers_within_bounds(
     status          = CL_SUCCESS;
 
 done:
-    if (CL_SUCCESS != status) {
+    if (CL_SUCCESS != status && !keep_catalogue_on_limit) {
         if (NULL != zip_catalogue) {
             size_t i;
             for (i = 0; i < index; i++) {
@@ -2324,9 +2380,6 @@ done:
             *temp_catalogue = NULL; // zip_catalogue and *temp_catalogue have the same value. Set temp_catalogue to NULL to ensure no use after free
         }
 
-        if (exceeded_max_files) {
-            status = CL_EMAXFILES;
-        }
     }
 
     return status;
@@ -2375,6 +2428,8 @@ cl_error_t index_local_file_headers(
     struct zip_record *prev_record        = NULL;
     size_t local_file_headers_count       = 0;
     uint32_t num_overlapping_files        = 0;
+    bool limit_crossed                    = false;
+    bool keep_catalogue_on_limit          = false;
 
     if (NULL == catalogue || NULL == num_records || NULL == *catalogue) {
         cli_dbgmsg("index_local_file_headers: Invalid NULL arguments\n");
@@ -2402,26 +2457,21 @@ cl_error_t index_local_file_headers(
         total_files_found,
         &temp_catalogue,
         &local_file_headers_count);
-    if (CL_SUCCESS != ret) {
+    if (CL_EMAXFILES == ret) {
+        limit_crossed = true;
+    } else if (CL_SUCCESS != ret) {
         /* Preserve fallback failures such as timeout and allocation errors. */
         status = ret;
         goto done;
     }
 
-    total_files_found += local_file_headers_count;
+    total_files_found = *num_records + local_file_headers_count;
 
     /*
      * Search for zip records between the zip records already in the catalogue
      */
-    for (i = 0; i < *num_records; i++) {
+    for (i = 0; !limit_crossed && i < *num_records; i++) {
         size_t current_record_end;
-
-        // Before searching for more files, check if number of found files exceeds maxfiles
-        if (ctx->engine->maxfiles && total_files_found >= ctx->engine->maxfiles) {
-            cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
-            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles");
-            break;
-        }
 
         curr_record = &((*catalogue)[i]);
         if (!zip_record_end_checked(curr_record, &current_record_end) || current_record_end > fsize) {
@@ -2446,7 +2496,9 @@ cl_error_t index_local_file_headers(
             total_files_found,
             &temp_catalogue,
             &local_file_headers_count);
-        if (CL_SUCCESS != ret) {
+        if (CL_EMAXFILES == ret) {
+            limit_crossed = true;
+        } else if (CL_SUCCESS != ret) {
             status = ret;
             goto done;
         }
@@ -2465,10 +2517,10 @@ cl_error_t index_local_file_headers(
      * Only do this if new zip records were found
      */
     if (local_file_headers_count > 0) {
-        CLI_CALLOC_OR_GOTO_DONE(
+        CLI_MAX_CALLOC_OR_GOTO_DONE(
             combined_catalogue,
-            1,
-            sizeof(struct zip_record) * ZIP_RECORDS_CHECK_BLOCKSIZE * (total_files_found + 1),
+            total_files_found,
+            sizeof(struct zip_record),
             status = CL_EMEM);
 
         // *num_records is the number of already found files
@@ -2561,13 +2613,21 @@ cl_error_t index_local_file_headers(
         temp_catalogue = NULL;
     }
 
-    status = CL_SUCCESS;
+    if (limit_crossed) {
+        /* The bounded search retained only the inclusive permitted prefix.
+         * Return it to cli_unzip() so those members can still be scanned before
+         * the configured-limit result is restored. */
+        keep_catalogue_on_limit = true;
+        status                  = CL_EMAXFILES;
+    } else {
+        status = CL_SUCCESS;
+    }
 
 done:
-    if (CL_SUCCESS != status) {
+    if (CL_SUCCESS != status && !keep_catalogue_on_limit) {
         if (NULL != *catalogue) {
             size_t i;
-            for (i = 0; i < (total_files_found - local_file_headers_count); i++) {
+            for (i = 0; i < *num_records; i++) {
                 if (NULL != (*catalogue)[i].original_filename) {
                     free((*catalogue)[i].original_filename);
                     (*catalogue)[i].original_filename = NULL;
@@ -2591,13 +2651,8 @@ done:
     }
 
     if (NULL != combined_catalogue) {
-        size_t i;
-        for (i = 0; i < total_files_found; i++) {
-            if (NULL != combined_catalogue[i].original_filename) {
-                free(combined_catalogue[i].original_filename);
-                combined_catalogue[i].original_filename = NULL;
-            }
-        }
+        /* Until the successful ownership hand-off above, these are shallow
+         * copies whose filename pointers remain owned by the source arrays. */
         free(combined_catalogue);
         combined_catalogue = NULL;
     }
@@ -2754,6 +2809,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     size_t i;
     bool scan_incomplete_before_index = false;
     bool deferred_index_incomplete    = false;
+    cl_error_t deferred_index_result  = CL_SUCCESS;
 
     cli_dbgmsg("in cli_unzip\n");
     fsize = map->len;
@@ -2777,12 +2833,34 @@ cl_error_t cli_unzip(cli_ctx *ctx)
         /*
          * Index the central directory.
          */
+        scan_incomplete_before_index = ctx->scan_incomplete;
         ret = index_the_central_directory(
             ctx,
             coff,
             &zip_catalogue,
             &records_count);
         if (CL_SUCCESS != ret) {
+            if (CL_EMAXFILES == ret && NULL != zip_catalogue) {
+                /* The indexer retained the inclusive permitted prefix.  Scan
+                 * it before restoring the limit as the archive result. */
+                deferred_index_result = CL_EMAXFILES;
+                if (!scan_incomplete_before_index && ctx->scan_incomplete) {
+                    deferred_index_incomplete = true;
+                    ctx->scan_incomplete      = false;
+                }
+                status = CL_SUCCESS;
+                goto scan_catalogue;
+            }
+
+            /* Fall back only when the catalogue itself is malformed.  A
+             * detection, callback decision, deadline, limit, or critical
+             * resource failure is authoritative and must not be replayed by
+             * local-header discovery. */
+            if (ret != CL_EPARSE && ret != CL_EFORMAT) {
+                status = ret;
+                goto done;
+            }
+
             if (ctx->scan_incomplete) {
                 status = CL_EPARSE;
                 goto done;
@@ -2833,11 +2911,23 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     if (!scan_incomplete_before_index && ctx->scan_incomplete) {
         deferred_index_incomplete = true;
         ctx->scan_incomplete      = false;
+        deferred_index_result     = (CL_EMAXFILES == ret) ? CL_EMAXFILES : CL_EPARSE;
     }
 
-    if (CL_SUCCESS != ret) {
+    if (CL_EMAXFILES == ret && NULL != zip_catalogue) {
+        deferred_index_result = CL_EMAXFILES;
+    } else if (CL_SUCCESS != ret) {
         cli_dbgmsg("index_local_file_headers_failed\n");
         status = ret;
+        goto done;
+    }
+
+scan_catalogue:
+    status = CL_SUCCESS;
+    if (ctx->abort_scan) {
+        /* An indexing-time alert callback may have requested cancellation.
+         * Do not start member extraction after that decision. */
+        status = ctx->scan_timed_out ? CL_ETIMEOUT : CL_BREAK;
         goto done;
     }
 
@@ -2916,22 +3006,43 @@ cl_error_t cli_unzip(cli_ctx *ctx)
                 false);
         }
 
-        if (status != CL_SUCCESS && status != CL_VIRUS && !ctx->abort_scan) {
-            cli_mark_scan_incomplete(ctx, "ZIP member extraction or scanning failed");
-            status = CL_EPARSE;
-            goto done;
-        }
+        if (status == CL_VERIFIED) {
+            /* A child layer trusted by its own callback is clean for this
+             * member only; it must not trust or stop the containing ZIP. */
+            status = CL_SUCCESS;
+        } else if (status != CL_SUCCESS && status != CL_VIRUS) {
+            /* Do not replace terminal application, resource, I/O, timeout, or
+             * configured-limit results with a generic parse error. */
+            switch (status) {
+                case CL_BREAK:
+                case CL_EUNLINK:
+                case CL_ESTAT:
+                case CL_ESEEK:
+                case CL_EWRITE:
+                case CL_EDUP:
+                case CL_ETMPFILE:
+                case CL_ETMPDIR:
+                case CL_EMEM:
+                case CL_ETIMEOUT:
+                case CL_EMAXREC:
+                case CL_EMAXSIZE:
+                case CL_EMAXFILES:
+                    goto done;
+                case CL_EUNPACK:
+                case CL_EREAD:
+                case CL_EFORMAT:
+                case CL_EPARSE:
+                    break;
+                default:
+                    cli_mark_scan_incomplete(ctx, "ZIP member scanning returned an operational error");
+                    goto done;
+            }
 
-        if (ctx->engine->maxfiles && num_files_unzipped >= ctx->engine->maxfiles) {
-            // Note: this check piggybacks on the MaxFiles setting, but is not actually
-            //   scanning these files or incrementing the ctx->scannedfiles count
-            // This check is also redundant. zip_scan_cb == cli_magic_scan_desc,
-            //   so we will also check and update the limits for the actual number of scanned
-            //   files inside cli_magic_scan()
-            cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
-            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles");
-            status = CL_EMAXFILES;
-            goto done;
+            if (!ctx->abort_scan) {
+                cli_mark_scan_incomplete(ctx, "ZIP member extraction or scanning failed");
+                status = CL_EPARSE;
+                goto done;
+            }
         }
 
         if (cli_checktimelimit(ctx) != CL_SUCCESS) {
@@ -2961,9 +3072,9 @@ done:
          * all-match mode a detection is carried by evidence and remains the
          * public verdict even though the underlying scan was incomplete. */
         ctx->scan_incomplete = true;
-        if (CL_SUCCESS == status)
-            status = CL_EPARSE;
     }
+    if (CL_SUCCESS == status && CL_SUCCESS != deferred_index_result)
+        status = deferred_index_result;
 
     if (NULL != zip_catalogue) {
         /* Clean up zip record resources */
@@ -3089,6 +3200,16 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
                 NULL, /* record */
                 &file_record_size);
 
+            if (CL_SUCCESS != ret) {
+                status = ret;
+                goto done;
+            }
+
+            if (0 == file_record_size) {
+                status = CL_SUCCESS;
+                break;
+            }
+
             if (ctx->scan_incomplete) {
                 status = CL_EPARSE;
                 goto done;
@@ -3100,15 +3221,21 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
                 goto done;
             }
 
-            file_count++;
-            if (ctx && ctx->engine->maxfiles && file_count >= ctx->engine->maxfiles) {
+            /* MaxFiles is inclusive.  Parsing this record proves there is one
+             * more entry only when the permitted count was already full. */
+            if (ctx->engine->maxfiles && file_count >= ctx->engine->maxfiles) {
                 // Note: this check piggybacks on the MaxFiles setting, but is not actually
                 //   scanning these files or incrementing the ctx->scannedfiles count
                 cli_dbgmsg("cli_unzip: Files limit reached (max: %u)\n", ctx->engine->maxfiles);
-                cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles");
+                cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
+                if (ctx->abort_scan) {
+                    status = ctx->scan_timed_out ? CL_ETIMEOUT : CL_BREAK;
+                    goto done;
+                }
                 status = CL_EMAXFILES;
                 goto done;
             }
+            file_count++;
 
             if (ctx && cli_json_timeout_cycle_check(ctx, (int *)(&toval)) != CL_SUCCESS) {
                 status = CL_ETIMEOUT;
@@ -3123,7 +3250,7 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
                 goto done;
             }
             central_file_header_offset += file_record_size;
-        } while ((ret == CL_SUCCESS) && (file_record_size > 0));
+        } while (1);
     } else if (CL_ETIMEOUT == ret || CL_BREAK == ret) {
         status = ret;
         goto done;

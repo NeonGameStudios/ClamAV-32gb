@@ -134,13 +134,15 @@ pub const HEURISTICS_LIMITS_EXCEEDED_MAX_FILES: &[u8] = b"Heuristics.Limits.Exce
 pub unsafe fn append_potentially_unwanted_if_heur_exceedsmax(
     ctx: *mut sys::cli_ctx,
     virname: &'static [u8],
+    limit_result: sys::cl_error_t,
 ) {
     debug_assert_eq!(virname.last(), Some(&0));
 
     unsafe {
         sys::cli_append_potentially_unwanted_if_heur_exceedsmax(
             ctx,
-            virname.as_ptr().cast_mut().cast(),
+            virname.as_ptr().cast(),
+            limit_result,
         );
     }
 }

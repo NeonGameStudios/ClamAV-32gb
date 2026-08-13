@@ -31,6 +31,7 @@
 
 // libclamav
 #include "clamav.h"
+#include "default.h"
 #include "others.h"
 #include "matcher.h"
 #include "version.h"
@@ -63,6 +64,9 @@ static int fpu_words = FPU_ENDIAN_INITME;
 #define ZIP_TEST_METHOD_IMPLODE 6U
 #define ZIP_TEST_METHOD_BZIP2 12U
 #define ZIP_TEST_FLAG_ENCRYPTED 1U
+#define ZIP_TEST_FLAG_DATA_DESCRIPTOR (1U << 3)
+#define ZIP_TEST_FLAG_STRONG_ENCRYPTION (1U << 6)
+#define ZIP_TEST_FLAG_MASKED_HEADER (1U << 13)
 
 // Define SRCDIR and OBJDIR when not defined, for the sake of the IDE.
 #ifndef SRCDIR
@@ -580,47 +584,87 @@ START_TEST(test_cl_strerror)
 }
 END_TEST
 
+struct limit_alert_callback_state {
+    unsigned int calls;
+    cl_error_t result;
+};
+
+static cl_error_t limit_alert_callback(cl_scan_layer_t *layer, void *context)
+{
+    struct limit_alert_callback_state *state = context;
+
+    if ((NULL == layer) || (NULL == state))
+        return CL_ERROR;
+
+    state->calls++;
+    return state->result;
+}
+
 START_TEST(test_top_level_maxfilesize_is_fail_visible)
 {
-    struct cl_engine engine;
+    static const unsigned char data[11] = "0123456789";
+    struct cl_engine *engine;
     struct cl_scan_options options;
-    fmap_t map;
+    cl_fmap_t *map;
+    struct limit_alert_callback_state callback_state;
     cl_verdict_t verdict;
     const char *last_alert;
     uint64_t scanned;
     unsigned long legacy_scanned;
     cl_error_t ret;
 
-    memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
-    memset(&map, 0, sizeof(map));
-    engine.maxfilesize = 10;
-    map.len            = 11;
+    memset(&callback_state, 0, sizeof(callback_state));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    engine->maxfilesize = 10;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
 
     verdict    = CL_VERDICT_STRONG_INDICATOR;
     last_alert = "stale";
     scanned    = UINT64_MAX;
-    ret = cl_scanmap_ex(&map, NULL, &verdict, &last_alert, &scanned,
-                        &engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
     ck_assert_int_eq(ret, CL_EMAXSIZE);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert_uint_eq(scanned, 0);
 
     legacy_scanned = ULONG_MAX;
-    ret = cl_scanmap_callback(&map, NULL, &last_alert, &legacy_scanned, &engine, &options, NULL);
+    ret = cl_scanmap_callback(map, NULL, &last_alert, &legacy_scanned, engine, &options, NULL);
     ck_assert_int_eq(ret, CL_EMAXSIZE);
     ck_assert_uint_eq(legacy_scanned, 0);
 
     options.heuristic = CL_SCAN_HEURISTIC_EXCEEDS_MAX;
-    ret = cl_scanmap_ex(&map, NULL, &verdict, &last_alert, &scanned,
-                        &engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
     ck_assert_int_eq(ret, CL_SUCCESS);
     ck_assert_int_eq(verdict, CL_VERDICT_POTENTIALLY_UNWANTED);
     ck_assert_str_eq(last_alert, "Heuristics.Limits.Exceeded.MaxFileSize");
 
-    ret = cl_scanmap_callback(&map, NULL, &last_alert, &legacy_scanned, &engine, &options, NULL);
+    ret = cl_scanmap_callback(map, NULL, &last_alert, &legacy_scanned, engine, &options, NULL);
     ck_assert_int_eq(ret, CL_VIRUS);
+
+    /* A modern alert callback may filter the heuristic indicator, but doing
+     * so must expose the original configured-limit failure rather than turn
+     * content that was never scanned into a clean result. */
+    callback_state.result = CL_SUCCESS;
+    cl_engine_set_scan_callback(engine, limit_alert_callback, CL_SCAN_CALLBACK_ALERT);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, &callback_state, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert_uint_eq(callback_state.calls, 1);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
 }
 END_TEST
 
@@ -628,7 +672,7 @@ END_TEST
 START_TEST(test_top_level_maxfilesize_descriptor_is_fail_visible)
 {
     static const char data[11] = "0123456789";
-    struct cl_engine engine;
+    struct cl_engine *engine;
     struct cl_scan_options options;
     cl_verdict_t verdict;
     const char *last_alert;
@@ -637,16 +681,19 @@ START_TEST(test_top_level_maxfilesize_descriptor_is_fail_visible)
     int fd     = -1;
     cl_error_t ret;
 
-    memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
-    engine.maxfilesize = 10;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    engine->maxfilesize = 10;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
 
     ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
     ck_assert_ptr_nonnull(path);
     ck_assert_int_eq(write(fd, data, sizeof(data)), (ssize_t)sizeof(data));
 
     ret = cl_scandesc_ex(fd, path, &verdict, &last_alert, &scanned,
-                         &engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+                         engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
     ck_assert_int_eq(ret, CL_EMAXSIZE);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
@@ -654,16 +701,249 @@ START_TEST(test_top_level_maxfilesize_descriptor_is_fail_visible)
 
     options.heuristic = CL_SCAN_HEURISTIC_EXCEEDS_MAX;
     ret = cl_scandesc_ex(fd, path, &verdict, &last_alert, &scanned,
-                         &engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+                         engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
     ck_assert_int_eq(ret, CL_SUCCESS);
     ck_assert_int_eq(verdict, CL_VERDICT_POTENTIALLY_UNWANTED);
     ck_assert_str_eq(last_alert, "Heuristics.Limits.Exceeded.MaxFileSize");
 
     close(fd);
     free(path);
+    cl_engine_free(engine);
 }
 END_TEST
 #endif
+
+static void init_synthetic_limit_ctx(
+    struct cl_engine *engine,
+    struct cl_scan_options *options,
+    cli_ctx *ctx,
+    cli_scan_layer_t *layers,
+    uint32_t layer_count,
+    fmap_t *root_map)
+{
+    memset(engine, 0, sizeof(*engine));
+    memset(options, 0, sizeof(*options));
+    memset(ctx, 0, sizeof(*ctx));
+    memset(layers, 0, sizeof(*layers) * layer_count);
+    memset(root_map, 0, sizeof(*root_map));
+
+    layers[0].fmap            = root_map;
+    ctx->engine               = engine;
+    ctx->options              = options;
+    ctx->fmap                 = root_map;
+    ctx->recursion_stack      = layers;
+    ctx->recursion_stack_size = layer_count;
+}
+
+START_TEST(test_maxscansize_exact_and_crossing_are_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[1];
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t result;
+
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    engine.maxscansize = CLI_MAX_LARGE_FILESIZE;
+    ctx.scansize       = CLI_MAX_LARGE_FILESIZE - 10;
+
+    /* Consuming the last permitted byte is allowed and remains cacheable. */
+    ck_assert_int_eq(cli_updatelimits(&ctx, 10), CL_SUCCESS);
+    ck_assert_msg(ctx.scansize == CLI_MAX_LARGE_FILESIZE,
+                  "exact MaxScanSize accounting narrowed at 32 GiB");
+    ck_assert_uint_eq(ctx.scannedfiles, 1);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!ctx.limit_exceeded);
+    ck_assert(!map.dont_cache_flag);
+
+    /* The first byte beyond MaxScanSize is skipped and is never clean. */
+    ck_assert_int_eq(cli_updatelimits(&ctx, 1), CL_EMAXSIZE);
+    ck_assert_msg(ctx.scansize == CLI_MAX_LARGE_FILESIZE,
+                  "crossing MaxScanSize changed the consumed byte count");
+    ck_assert_uint_eq(ctx.scannedfiles, 1);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(ctx.limit_exceeded);
+    ck_assert(map.dont_cache_flag);
+
+    result = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMAXSIZE, &result));
+    ck_assert_int_eq(result, CL_EMAXSIZE);
+
+    /* If a parser loses the immediate MAX code, the sticky configured-limit
+     * cause still preserves the exact public result. */
+    result = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_SUCCESS, &result));
+    ck_assert_int_eq(result, CL_EMAXSIZE);
+
+    /* A zero MaxScanSize means unlimited: accounting must continue instead
+     * of being clamped back to zero, and impossible native accumulation must
+     * saturate rather than wrap. */
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    engine.maxscansize = 0;
+    ctx.scansize       = 40;
+    ck_assert_int_eq(cli_updatelimits(&ctx, 2), CL_SUCCESS);
+    ck_assert_uint_eq(ctx.scansize, 42);
+    ctx.scansize = UINT64_MAX - 2;
+    ck_assert_int_eq(cli_updatelimits(&ctx, 7), CL_SUCCESS);
+    ck_assert_uint_eq(ctx.scansize, UINT64_MAX);
+
+    /* The remaining-space calculation must not wrap if a defensive caller
+     * presents an already-over-limit accumulated count. */
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    engine.maxscansize = CLI_MAX_LARGE_FILESIZE;
+    ctx.scansize       = CLI_MAX_LARGE_FILESIZE + 1;
+    ck_assert_int_eq(cli_updatelimits(&ctx, 1), CL_EMAXSIZE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map.dont_cache_flag);
+
+    /* Exercise cli_magic_scan's former early clean-return path without a
+     * matcher, parser, allocation, or backing file. */
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    engine.dboptions   = CL_DB_COMPILED;
+    engine.maxscansize = 10;
+    map.len            = 11;
+    ck_assert_int_eq(cli_magic_scan(&ctx, CL_TYPE_ANY), CL_EMAXSIZE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map.dont_cache_flag);
+}
+END_TEST
+
+START_TEST(test_maxfiles_exact_and_crossing_are_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[1];
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t result;
+
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    engine.maxfiles  = 2;
+    ctx.scannedfiles = 1;
+
+    /* The file that reaches MaxFiles is allowed. */
+    ck_assert_int_eq(cli_updatelimits(&ctx, 7), CL_SUCCESS);
+    ck_assert_uint_eq(ctx.scannedfiles, 2);
+    ck_assert_uint_eq(ctx.scansize, 7);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map.dont_cache_flag);
+
+    /* A subsequent file would cross the boundary and must be skipped visibly. */
+    ck_assert_int_eq(cli_updatelimits(&ctx, 7), CL_EMAXFILES);
+    ck_assert_uint_eq(ctx.scannedfiles, 2);
+    ck_assert_uint_eq(ctx.scansize, 7);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(ctx.limit_exceeded);
+    ck_assert(map.dont_cache_flag);
+
+    result = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMAXFILES, &result));
+    ck_assert_int_eq(result, CL_EMAXFILES);
+
+    /* The same boundary must remain visible through cli_magic_scan rather
+     * than its historical status = CL_SUCCESS early return. */
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    engine.dboptions = CL_DB_COMPILED;
+    engine.maxfiles  = 1;
+    ctx.scannedfiles = 1;
+    map.len          = 7;
+    ck_assert_int_eq(cli_magic_scan(&ctx, CL_TYPE_ANY), CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map.dont_cache_flag);
+}
+END_TEST
+
+START_TEST(test_maxrecursion_exact_and_crossing_are_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t root_map;
+    fmap_t child_map;
+    fmap_t grandchild_map;
+    cl_error_t result;
+
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 2, &root_map);
+    memset(&child_map, 0, sizeof(child_map));
+    memset(&grandchild_map, 0, sizeof(grandchild_map));
+    engine.max_recursion_level = 2;
+    child_map.len               = 7;
+    grandchild_map.len          = 7;
+
+    /* The final configured stack slot is usable. */
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, &child_map, CL_TYPE_ANY, true, LAYER_ATTRIBUTES_NONE), CL_SUCCESS);
+    ck_assert_uint_eq(ctx.recursion_level, 1);
+    ck_assert(ctx.fmap == &child_map);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!root_map.dont_cache_flag);
+    ck_assert(!child_map.dont_cache_flag);
+
+    /* One more nested layer crosses MaxRecursion and taints every parent. */
+    grandchild_map.len = 7;
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, &grandchild_map, CL_TYPE_ANY, true, LAYER_ATTRIBUTES_NONE), CL_EMAXREC);
+    ck_assert_uint_eq(ctx.recursion_level, 1);
+    ck_assert(ctx.fmap == &child_map);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(ctx.limit_exceeded);
+    ck_assert(root_map.dont_cache_flag);
+    ck_assert(child_map.dont_cache_flag);
+
+    result = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMAXREC, &result));
+    ck_assert_int_eq(result, CL_EMAXREC);
+}
+END_TEST
+
+START_TEST(test_configured_limit_result_precedence_and_alert_compatibility)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[1];
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t result;
+
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    ctx.scan_incomplete = true;
+    ctx.limit_exceeded  = true;
+    map.dont_cache_flag = true;
+
+    /* AlertExceedsMax keeps the established extended-API representation:
+     * success plus a detection verdict. Legacy wrappers translate that
+     * verdict to CL_VIRUS. The map remains explicitly non-cacheable. */
+    options.heuristic = CL_SCAN_HEURISTIC_EXCEEDS_MAX;
+    layers[0].verdict = CL_VERDICT_POTENTIALLY_UNWANTED;
+    result            = CL_EMAXFILES;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMAXFILES, &result));
+    ck_assert_int_eq(result, CL_SUCCESS);
+    ck_assert(map.dont_cache_flag);
+
+    /* An option bit alone is insufficient: a filtered/ignored indicator must
+     * fall back to the configured-limit error. */
+    layers[0].verdict = CL_VERDICT_NOTHING_FOUND;
+    result            = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMAXFILES, &result));
+    ck_assert_int_eq(result, CL_EMAXFILES);
+
+    /* Detection, critical-resource, and timeout results remain stronger than
+     * either the configured-limit error or its heuristic representation. */
+    layers[0].verdict = CL_VERDICT_POTENTIALLY_UNWANTED;
+    result            = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_VIRUS, &result));
+    ck_assert_int_eq(result, CL_VIRUS);
+
+    result = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMEM, &result));
+    ck_assert_int_eq(result, CL_EMEM);
+
+    ctx.scan_timed_out = true;
+    result             = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_EMAXSIZE, &result));
+    ck_assert_int_eq(result, CL_ETIMEOUT);
+}
+END_TEST
 
 START_TEST(test_callback_abort_is_not_reported_as_timeout)
 {
@@ -812,14 +1092,18 @@ END_TEST
 
 START_TEST(test_action_source_open_relative_path_stores_absolute_action_path)
 {
-    char *parent_dir = NULL;
-    char *file_path  = NULL;
-    int fd           = -1;
+    const char *relative_path = "payload";
+    char *parent_dir          = NULL;
+    char *file_path           = NULL;
+    int cwd_fd                = -1;
+    int fd                    = -1;
     action_source_t source;
 
     action_source_init(&source);
 
-    parent_dir = cli_gentemp(".");
+    /* Keep the source argument relative without writing under CTest's source
+     * working directory, which may intentionally be mounted read-only. */
+    parent_dir = cli_gentemp(NULL);
     ck_assert_msg(NULL != parent_dir, "cli_gentemp failed");
     ck_assert_msg(0 == mkdir(parent_dir, 0700), "mkdir(%s) failed: %s", parent_dir, strerror(errno));
 
@@ -832,8 +1116,14 @@ START_TEST(test_action_source_open_relative_path_stores_absolute_action_path)
     close(fd);
     fd = -1;
 
-    ck_assert_msg(CL_SUCCESS == action_source_open(file_path, &source),
-                  "action_source_open(%s) failed", file_path);
+    cwd_fd = open(".", O_RDONLY | O_BINARY);
+    ck_assert_msg(-1 != cwd_fd, "open current working directory failed: %s", strerror(errno));
+    ck_assert_msg(0 == chdir(parent_dir), "chdir(%s) failed: %s", parent_dir, strerror(errno));
+    ck_assert_msg(CL_SUCCESS == action_source_open(relative_path, &source),
+                  "action_source_open(%s) failed", relative_path);
+    ck_assert_msg(0 == fchdir(cwd_fd), "fchdir failed: %s", strerror(errno));
+    close(cwd_fd);
+    cwd_fd = -1;
     ck_assert_msg(NULL != source.action_path, "action_source_open did not populate action_path");
     ck_assert_msg('/' == source.action_path[0],
                   "Expected absolute action_path for relative source path, got '%s'", source.action_path);
@@ -1483,13 +1773,18 @@ static cl_error_t zip_index_meta_alert_cb(
     return CL_VIRUS;
 }
 
-static cl_error_t zip_index_alert_abort_cb(cl_scan_layer_t *layer, void *context)
+struct zip_index_alert_state {
+    unsigned int calls;
+    cl_error_t result;
+};
+
+static cl_error_t zip_index_alert_result_cb(cl_scan_layer_t *layer, void *context)
 {
-    unsigned int *calls = context;
+    struct zip_index_alert_state *state = context;
 
     UNUSEDPARAM(layer);
-    (*calls)++;
-    return CL_BREAK;
+    state->calls++;
+    return state->result;
 }
 
 static uint8_t *zip_stream_raw_deflate(const uint8_t *input, size_t input_length, size_t *output_length)
@@ -1615,7 +1910,7 @@ static void zip_stream_crypto_update(uint32_t key[3], uint8_t input)
 
 static uint8_t zip_stream_crypto_byte(const uint32_t key[3])
 {
-    uint16_t temp = (uint16_t)(key[2] | 2U);
+    uint32_t temp = (key[2] & 0xffffU) | 2U;
     return (uint8_t)((temp * (temp ^ 1U)) >> 8);
 }
 
@@ -1782,6 +2077,171 @@ static uint8_t *zip_stream_central_archive(
     zip_stream_write_u32(end + 12, (uint32_t)central_length);
     zip_stream_write_u32(end + 16, (uint32_t)local_length);
     return archive;
+}
+
+static uint8_t *zip_stream_empty_central_archive(size_t entry_count, size_t *archive_length)
+{
+    const size_t local_record_length   = 31U;
+    const size_t central_record_length = 47U;
+    const size_t end_length            = 22U;
+    size_t central_offset;
+    size_t central_length;
+    size_t i;
+    uint8_t *archive;
+    uint8_t *record;
+    uint8_t *end;
+
+    ck_assert_msg(entry_count > 0 && entry_count <= UINT16_MAX,
+                  "invalid tiny ZIP entry count");
+    ck_assert_msg(entry_count <= (SIZE_MAX - end_length) /
+                                     (local_record_length + central_record_length),
+                  "tiny ZIP fixture length overflow");
+
+    central_offset  = entry_count * local_record_length;
+    central_length  = entry_count * central_record_length;
+    *archive_length = central_offset + central_length + end_length;
+    archive         = calloc(1, *archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    for (i = 0; i < entry_count; i++) {
+        record = archive + i * local_record_length;
+        zip_stream_write_u32(record, 0x04034b50U);
+        zip_stream_write_u16(record + 4, 20U);
+        zip_stream_write_u16(record + 26, 1U);
+        record[30] = (uint8_t)('a' + (i % 26U));
+    }
+
+    for (i = 0; i < entry_count; i++) {
+        record = archive + central_offset + i * central_record_length;
+        zip_stream_write_u32(record, 0x02014b50U);
+        zip_stream_write_u16(record + 4, 20U);
+        zip_stream_write_u16(record + 6, 20U);
+        zip_stream_write_u16(record + 28, 1U);
+        zip_stream_write_u32(record + 42, (uint32_t)(i * local_record_length));
+        record[46] = (uint8_t)('a' + (i % 26U));
+    }
+
+    end = archive + central_offset + central_length;
+    zip_stream_write_u32(end, 0x06054b50U);
+    zip_stream_write_u16(end + 8, (uint16_t)entry_count);
+    zip_stream_write_u16(end + 10, (uint16_t)entry_count);
+    zip_stream_write_u32(end + 12, (uint32_t)central_length);
+    zip_stream_write_u32(end + 16, (uint32_t)central_offset);
+    return archive;
+}
+
+static cl_error_t zip_index_run_maxfiles(
+    size_t entry_count,
+    uint32_t maxfiles,
+    const char *search_name,
+    size_t *matched_offset,
+    bool *scan_incomplete,
+    bool *dont_cache)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    cl_error_t ret;
+
+    archive = zip_stream_empty_central_archive(entry_count, &archive_length);
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    engine.maxfiles          = maxfiles;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    if (search_name) {
+        ret = unzip_search_single(&ctx, search_name, strlen(search_name), matched_offset);
+    } else {
+        ret = cli_unzip(&ctx);
+    }
+    *scan_incomplete = ctx.scan_incomplete;
+    *dont_cache      = map->dont_cache_flag;
+
+    cl_fmap_close(map);
+    free(archive);
+    return ret;
+}
+
+static cl_error_t zip_index_run_central_alert(
+    cl_error_t callback_result,
+    unsigned int *callback_calls,
+    bool *abort_scan,
+    bool *scan_incomplete,
+    cl_verdict_t *verdict)
+{
+    static const uint8_t input[] = "central-callback";
+    struct zip_stream_pread_state state;
+    struct zip_index_alert_state alert_state = {0, callback_result};
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    cl_error_t ret;
+
+    archive = zip_stream_central_archive(input, sizeof(input), sizeof(input),
+                                         ZIP_TEST_METHOD_STORED,
+                                         (uint32_t)crc32(0L, input, (uInt)sizeof(input)),
+                                         &archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    memset(&state, 0, sizeof(state));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    state.data   = archive;
+    state.length = archive_length;
+    map = cl_fmap_open_handle(&state, 0, archive_length, zip_stream_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    cl_engine_set_clcb_meta(engine, zip_index_meta_alert_cb);
+    cl_engine_set_scan_callback(engine, zip_index_alert_result_cb, CL_SCAN_CALLBACK_ALERT);
+
+    ctx.engine               = engine;
+    ctx.options              = &options;
+    ctx.dconf                = engine->dconf;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.cb_ctx               = &alert_state;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret              = cli_unzip(&ctx);
+    *callback_calls  = alert_state.calls;
+    *abort_scan      = ctx.abort_scan;
+    *scan_incomplete = ctx.scan_incomplete;
+    *verdict         = layer.verdict;
+
+    if (layer.evidence)
+        evidence_free(layer.evidence);
+    cl_engine_free(engine);
+    cl_fmap_close(map);
+    free(archive);
+    return ret;
 }
 
 static cl_error_t zip_stream_run(
@@ -2255,6 +2715,76 @@ START_TEST(test_zip_stream_truncated_deflate_and_callback_status)
 }
 END_TEST
 
+static cl_error_t zip_stream_run_local_flags(
+    const uint8_t *input,
+    size_t input_length,
+    uint16_t method,
+    uint16_t flags,
+    size_t *max_read,
+    bool *scan_incomplete,
+    size_t *callback_calls)
+{
+    uint8_t *archive;
+    size_t archive_length;
+    uint32_t crc = (uint32_t)crc32(0L, input, (uInt)input_length);
+    cl_error_t ret;
+
+    archive = zip_stream_local_archive_flags(input, input_length,
+                                             (uint32_t)input_length,
+                                             method, flags, crc,
+                                             &archive_length);
+    ret = zip_stream_run_archive(archive, archive_length, input_length,
+                                 NULL, input, input_length, max_read,
+                                 scan_incomplete, callback_calls);
+    return ret;
+}
+
+START_TEST(test_zip_unsupported_flags_and_method_are_fail_visible)
+{
+    const uint8_t input[] = "bounded-zip-policy";
+    size_t max_read;
+    size_t callback_calls;
+    bool incomplete;
+    cl_error_t ret;
+
+    ret = zip_stream_run_local_flags(input, sizeof(input), ZIP_TEST_METHOD_STORED,
+                                     ZIP_TEST_FLAG_STRONG_ENCRYPTION,
+                                     &max_read, &incomplete, &callback_calls);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_uint_eq(callback_calls, 0);
+    ck_assert(incomplete);
+
+    ret = zip_stream_run_local_flags(input, sizeof(input), ZIP_TEST_METHOD_STORED,
+                                     ZIP_TEST_FLAG_ENCRYPTED | ZIP_TEST_FLAG_STRONG_ENCRYPTION,
+                                     &max_read, &incomplete, &callback_calls);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_uint_eq(callback_calls, 0);
+    ck_assert(incomplete);
+
+    ret = zip_stream_run_local_flags(input, sizeof(input), ZIP_TEST_METHOD_STORED,
+                                     ZIP_TEST_FLAG_MASKED_HEADER,
+                                     &max_read, &incomplete, &callback_calls);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_uint_eq(callback_calls, 0);
+    ck_assert(incomplete);
+
+    ret = zip_stream_run_local_flags(input, sizeof(input), ZIP_TEST_METHOD_STORED,
+                                     ZIP_TEST_FLAG_DATA_DESCRIPTOR,
+                                     &max_read, &incomplete, &callback_calls);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_uint_eq(callback_calls, 0);
+    ck_assert(incomplete);
+
+    ret = zip_stream_run_local_flags(input, sizeof(input), 99U, 0,
+                                     &max_read, &incomplete, &callback_calls);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert_uint_eq(callback_calls, 0);
+    ck_assert(incomplete);
+    ck_assert_msg(max_read <= CLI_ZIP_INPUT_CHUNK_SIZE + (size_t)cli_getpagesize(),
+                  "unsupported ZIP method requested %zu bytes in one fmap read", max_read);
+}
+END_TEST
+
 START_TEST(test_zip_local_index_propagates_callback_abort)
 {
     const uint8_t input[] = "callback-abort";
@@ -2266,7 +2796,7 @@ START_TEST(test_zip_local_index_propagates_callback_abort)
     cl_fmap_t *map;
     uint8_t *archive;
     size_t archive_length;
-    unsigned int alert_calls = 0;
+    struct zip_index_alert_state alert_state = {0, CL_BREAK};
     cl_error_t ret;
 
     archive = zip_stream_local_archive(input, sizeof(input), sizeof(input),
@@ -2287,7 +2817,7 @@ START_TEST(test_zip_local_index_propagates_callback_abort)
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
     cl_engine_set_clcb_meta(engine, zip_index_meta_alert_cb);
-    cl_engine_set_scan_callback(engine, zip_index_alert_abort_cb, CL_SCAN_CALLBACK_ALERT);
+    cl_engine_set_scan_callback(engine, zip_index_alert_result_cb, CL_SCAN_CALLBACK_ALERT);
 
     ctx.engine               = engine;
     ctx.options              = &options;
@@ -2296,14 +2826,14 @@ START_TEST(test_zip_local_index_propagates_callback_abort)
     ctx.this_layer_tmpdir    = tmpdir;
     ctx.recursion_stack      = &layer;
     ctx.recursion_stack_size = 1;
-    ctx.cb_ctx               = &alert_calls;
+    ctx.cb_ctx               = &alert_state;
     layer.type               = CL_TYPE_ZIP;
     layer.size               = archive_length;
     layer.fmap               = map;
 
     ret = cli_unzip(&ctx);
     ck_assert_int_eq(ret, CL_BREAK);
-    ck_assert_uint_eq(alert_calls, 1);
+    ck_assert_uint_eq(alert_state.calls, 1);
     ck_assert(ctx.abort_scan);
     ck_assert(!ctx.scan_timed_out);
 
@@ -2312,6 +2842,83 @@ START_TEST(test_zip_local_index_propagates_callback_abort)
     cl_engine_free(engine);
     cl_fmap_close(map);
     free(archive);
+}
+END_TEST
+
+START_TEST(test_zip_central_index_propagates_callback_status)
+{
+    unsigned int callback_calls;
+    bool abort_scan;
+    bool incomplete;
+    cl_verdict_t verdict;
+    cl_error_t ret;
+
+    ret = zip_index_run_central_alert(CL_BREAK, &callback_calls, &abort_scan,
+                                      &incomplete, &verdict);
+    ck_assert_int_eq(ret, CL_BREAK);
+    ck_assert_uint_eq(callback_calls, 1);
+    ck_assert(abort_scan);
+    ck_assert(!incomplete);
+
+    ret = zip_index_run_central_alert(CL_VERIFIED, &callback_calls, &abort_scan,
+                                      &incomplete, &verdict);
+    ck_assert_int_eq(ret, CL_VERIFIED);
+    ck_assert_uint_eq(callback_calls, 1);
+    ck_assert(!abort_scan);
+    ck_assert(!incomplete);
+    ck_assert_int_eq(verdict, CL_VERDICT_TRUSTED);
+
+    ret = zip_index_run_central_alert(CL_VIRUS, &callback_calls, &abort_scan,
+                                      &incomplete, &verdict);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_uint_eq(callback_calls, 1);
+    ck_assert(abort_scan);
+    ck_assert(!incomplete);
+}
+END_TEST
+
+START_TEST(test_zip_maxfiles_is_inclusive_and_detection_precedes_limit)
+{
+    size_t matched_offset = SIZE_MAX;
+    bool incomplete;
+    bool dont_cache;
+    cl_error_t ret;
+
+    ret = zip_index_run_maxfiles(1U, 1U, NULL, &matched_offset,
+                                 &incomplete, &dont_cache);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!incomplete);
+    ck_assert(!dont_cache);
+
+    ret = zip_index_run_maxfiles(2U, 2U, NULL, &matched_offset,
+                                 &incomplete, &dont_cache);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!incomplete);
+    ck_assert(!dont_cache);
+
+    ret = zip_index_run_maxfiles(2U, 1U, NULL, &matched_offset,
+                                 &incomplete, &dont_cache);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(incomplete);
+    ck_assert(dont_cache);
+
+    ret = zip_index_run_maxfiles(1U, 1U, "missing", &matched_offset,
+                                 &incomplete, &dont_cache);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!incomplete);
+
+    ret = zip_index_run_maxfiles(2U, 1U, "missing", &matched_offset,
+                                 &incomplete, &dont_cache);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(incomplete);
+    ck_assert(dont_cache);
+
+    matched_offset = SIZE_MAX;
+    ret = zip_index_run_maxfiles(2U, 1U, "b", &matched_offset,
+                                 &incomplete, &dont_cache);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_uint_eq(matched_offset, 31U);
+    ck_assert(!incomplete);
 }
 END_TEST
 
@@ -3742,6 +4349,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_settempdir);
     tcase_add_test(tc_cl, test_cl_strerror);
     tcase_add_test(tc_cl, test_top_level_maxfilesize_is_fail_visible);
+    tcase_add_test(tc_cl, test_maxscansize_exact_and_crossing_are_fail_visible);
+    tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
+    tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
+    tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
@@ -3763,7 +4374,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_stream_implode_refill_bound_and_terminal);
     tcase_add_test(tc_cl, test_zip_stream_exact_limit_and_n_plus_one);
     tcase_add_test(tc_cl, test_zip_stream_truncated_deflate_and_callback_status);
+    tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
+    tcase_add_test(tc_cl, test_zip_central_index_propagates_callback_status);
+    tcase_add_test(tc_cl, test_zip_maxfiles_is_inclusive_and_detection_precedes_limit);
 #endif
 
     suite_add_tcase(s, tc_cl_scan);

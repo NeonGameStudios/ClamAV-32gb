@@ -705,6 +705,9 @@ pub struct cli_ctx_tag {
     pub time_limit: timeval,
     pub limit_exceeded: bool,
     pub abort_scan: bool,
+    pub scan_timed_out: bool,
+    pub scan_incomplete: bool,
+    pub limit_exceeded_result: cl_error_t,
 }
 pub type cli_ctx = cli_ctx_tag;
 #[repr(C)]
@@ -864,7 +867,8 @@ extern "C" {
 extern "C" {
     pub fn cli_append_potentially_unwanted_if_heur_exceedsmax(
         ctx: *mut cli_ctx,
-        vname: *mut ::std::os::raw::c_char,
+        vname: *const ::std::os::raw::c_char,
+        limit_result: cl_error_t,
     );
 }
 extern "C" {

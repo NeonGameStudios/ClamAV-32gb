@@ -4277,14 +4277,18 @@ void emax_reached(cli_ctx *ctx)
 
 void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason)
 {
-    if (NULL == ctx || ctx->scan_incomplete)
+    if (NULL == ctx)
+        return;
+
+    /* A missed detector in a child also makes every containing layer unsafe
+     * to cache as clean. Repeat this even when another skip already set the
+     * sticky state, because additional layers may since have been entered. */
+    emax_reached(ctx);
+
+    if (ctx->scan_incomplete)
         return;
 
     ctx->scan_incomplete = true;
-    /* A missed detector in a child also makes every containing layer unsafe
-     * to cache as clean. */
-    emax_reached(ctx);
-
     cli_warnmsg("Scan incomplete: %s\n", reason ? reason : "required inspection path was unavailable");
 }
 
@@ -4524,6 +4528,58 @@ done:
  * @return true      We found a reason to goto done.
  * @return false     The scan must go on.
  */
+static bool configured_limit_alert_is_visible(const cli_ctx *ctx)
+{
+    static const char prefix[] = "Heuristics.Limits.Exceeded.";
+    static const IndicatorType types[] = {
+        IndicatorType_Strong,
+        IndicatorType_PotentiallyUnwanted,
+    };
+    cl_verdict_t verdict;
+    size_t type_index;
+
+    if ((NULL == ctx) ||
+        !ctx->limit_exceeded ||
+        (NULL == ctx->options) ||
+        !(ctx->options->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX) ||
+        (NULL == ctx->recursion_stack) ||
+        (ctx->recursion_level >= ctx->recursion_stack_size)) {
+        return false;
+    }
+
+    /* A child limit indicator may already have been copied into the parent's
+     * evidence before the parent verdict is refreshed. Match the actual limit
+     * name so an unrelated PUA cannot hide an incomplete scan whose limit
+     * alert was filtered by an application callback. */
+    if (NULL != ctx->this_layer_evidence) {
+        for (type_index = 0; type_index < sizeof(types) / sizeof(types[0]); type_index++) {
+            size_t indicator_index;
+            size_t count = evidence_num_indicators_type(ctx->this_layer_evidence, types[type_index]);
+
+            for (indicator_index = 0; indicator_index < count; indicator_index++) {
+                const char *name = evidence_get_indicator(
+                    ctx->this_layer_evidence,
+                    types[type_index],
+                    indicator_index,
+                    NULL,
+                    NULL);
+
+                if ((NULL != name) && (0 == strncmp(name, prefix, sizeof(prefix) - 1))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /* Focused policy users may provide a finalized verdict without retaining
+     * an evidence object. Real scans take the evidence path above. */
+    verdict = ctx->recursion_stack[ctx->recursion_level].verdict;
+    return (CL_VERDICT_STRONG_INDICATOR == verdict) ||
+           (CL_VERDICT_POTENTIALLY_UNWANTED == verdict);
+}
+
 bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t *result_out)
 {
     bool halt_scan = false;
@@ -4563,13 +4619,43 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         goto done;
     }
 
+    /* AlertExceedsMax represents the incomplete scan as a detection. Preserve
+     * that API contract only when the indicator actually remains visible; an
+     * ignored/filtered alert still falls through to a fail-visible error. */
+    if (ctx->scan_incomplete && configured_limit_alert_is_visible(ctx)) {
+        cli_dbgmsg("Descriptor[%d]: halting after a detection-visible configured limit\n", fmap_fd(ctx->fmap));
+        halt_scan   = true;
+        *result_out = CL_SUCCESS;
+        goto done;
+    }
+
     /* A skipped required subsystem is not equivalent to a malformed optional
      * container. Preserve an observable non-clean result all the way to the
-     * public scan API, unless a detection is already being reported. */
+     * public scan API, unless a detection is already being reported. Retain a
+     * specific configured-limit result while it is still available; use the
+     * generic incomplete-scan error only after a parser has discarded it. */
     if (ctx->scan_incomplete && result_in != CL_VIRUS) {
         cli_dbgmsg("Descriptor[%d]: halting incomplete scan\n", fmap_fd(ctx->fmap));
         halt_scan   = true;
-        *result_out = CL_EPARSE;
+        switch (result_in) {
+            case CL_EMAXREC:
+            case CL_EMAXSIZE:
+            case CL_EMAXFILES:
+                *result_out = result_in;
+                break;
+            default:
+                switch (ctx->limit_exceeded_result) {
+                    case CL_EMAXREC:
+                    case CL_EMAXSIZE:
+                    case CL_EMAXFILES:
+                        *result_out = ctx->limit_exceeded_result;
+                        break;
+                    default:
+                        *result_out = CL_EPARSE;
+                        break;
+                }
+                break;
+        }
         goto done;
     }
 
@@ -4611,8 +4697,9 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         // Nothing to do.
         case CL_SUCCESS:
 
-        // Unless ctx->abort_scan was set, all these "MAX" conditions should finish scanning as much as is allowed.
-        // That is, the can may still be blocked from recursing into the next layer, or scanning new files or large files.
+        // A configured-limit skip is sticky scan_incomplete and was handled
+        // above. These remain non-halting only for callers that use a MAX code
+        // as an advisory result without having skipped required content.
         case CL_EMAXREC:
         case CL_EMAXSIZE:
         case CL_EMAXFILES:
@@ -4887,9 +4974,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
-    if (cli_updatelimits(ctx, ctx->fmap->len) != CL_SUCCESS) {
-        emax_reached(ctx);
-        status = CL_SUCCESS;
+    status = cli_updatelimits(ctx, ctx->fmap->len);
+    if (status != CL_SUCCESS) {
+        /* cli_updatelimits() marks configured-limit skips incomplete. Keep
+         * its specific error (or the detection-visible AlertExceedsMax
+         * compatibility result) instead of returning an uncacheable clean. */
+        (void)cli_scan_result_should_halt(ctx, status, &status);
         cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
         goto early_ret;
     }
@@ -6367,13 +6457,6 @@ static cl_error_t scan_common(
         }
     }
 
-    // If any alerts occurred, set the output pointer to the "latest" alert signature name.
-    if (0 < evidence_num_alerts(ctx.this_layer_evidence)) {
-        *last_alert_out = cli_get_last_virus_str(&ctx);
-    }
-
-    *verdict_out = ctx.recursion_stack[ctx.recursion_level].verdict;
-
     /*
      * Report PUA alerts here.
      */
@@ -6429,9 +6512,36 @@ static cl_error_t scan_common(
                     // If the callback returned CL_SUCCESS then it will have also removed the indicator from evidence
                     // And we must loop around and report the next one.
                 }
+
+                /* Do not lose an operational failure encountered while the
+                 * deferred callback removes or annotates an ignored PUA. */
+                if ((CL_EMEM == callback_ret) || (CL_ERROR == callback_ret)) {
+                    status = callback_ret;
+                }
             }
         }
     }
+
+    /* Deferred PUA callbacks may remove a configured-limit indicator after
+     * cli_magic_scan() represented it as a successful PUA verdict. Rebuild the
+     * verdict from the remaining evidence, then reapply the incomplete-scan
+     * policy so an ignored limit alert cannot turn skipped content into clean. */
+    update_layer_verdict_from_evidence(&ctx);
+    if (ctx.scan_incomplete && (CL_EMEM != status) && (CL_ERROR != status)) {
+        cl_error_t reconciled_status = status;
+
+        (void)cli_scan_result_should_halt(&ctx, status, &reconciled_status);
+        status = reconciled_status;
+    }
+
+    /* PUA callbacks can also remove the alert that was current before they
+     * ran, so publish outputs only after the deferred callback phase. */
+    if (0 < evidence_num_alerts(ctx.this_layer_evidence)) {
+        *last_alert_out = cli_get_last_virus_str(&ctx);
+    } else {
+        *last_alert_out = NULL;
+    }
+    *verdict_out = ctx.recursion_stack[ctx.recursion_level].verdict;
 
     /*
      * If the caller requested a hash, we need to get it from the fmap.
@@ -6669,23 +6779,6 @@ cl_error_t cl_scandesc_ex(
         status = CL_SUCCESS;
         goto done;
     }
-    if ((engine->maxfilesize > 0) && ((uint64_t)sb.st_size > engine->maxfilesize)) {
-        cli_dbgmsg("cl_scandesc_ex: File too large (" STDu64 " bytes), refusing an incomplete scan\n", (uint64_t)sb.st_size);
-        if (scanoptions->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX) {
-            if (engine->cb_virus_found) {
-                engine->cb_virus_found(desc, "Heuristics.Limits.Exceeded.MaxFileSize", context);
-            }
-            *last_alert_out = "Heuristics.Limits.Exceeded.MaxFileSize";
-            *verdict_out    = CL_VERDICT_POTENTIALLY_UNWANTED;
-            /* Extended APIs report detections through verdict_out. Legacy
-             * wrappers below convert this verdict back to CL_VIRUS. */
-            status = CL_SUCCESS;
-        } else {
-            status = CL_EMAXSIZE;
-        }
-        goto done;
-    }
-
     if (NULL != filename) {
         (void)cli_basename(filename, strlen(filename), &filename_base, true /* posix_support_backslash_pathsep */);
     }
@@ -6796,20 +6889,6 @@ cl_error_t cl_scanmap_ex(
         *hash_out = NULL;
     if (NULL != file_type_out)
         *file_type_out = NULL;
-
-    if ((engine->maxfilesize > 0) && (map->len > engine->maxfilesize)) {
-        cli_dbgmsg("cl_scanmap_ex: File too large (%zu bytes), refusing an incomplete scan\n", map->len);
-        if (scanoptions->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX) {
-            if (engine->cb_virus_found) {
-                engine->cb_virus_found(fmap_fd(map), "Heuristics.Limits.Exceeded.MaxFileSize", context);
-            }
-            *last_alert_out = "Heuristics.Limits.Exceeded.MaxFileSize";
-            *verdict_out    = CL_VERDICT_POTENTIALLY_UNWANTED;
-            /* Extended APIs report detections through verdict_out. */
-            return CL_SUCCESS;
-        }
-        return CL_EMAXSIZE;
-    }
 
     if (NULL != filename && map->name == NULL) {
         // Use the provided name for the fmap name if one wasn't already set.

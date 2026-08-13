@@ -250,8 +250,10 @@ static always_inline struct stack_entry *allocate_stack(struct stack *stack,
     entry->bb_inst = bb_inst;
     /* we allocated room for values right after stack_entry! */
     entry->values = values = (char *)&entry[1];
-    memcpy(&values[func->numBytes - func->numConstants * 8], func->constants,
-           sizeof(*values) * func->numConstants * 8);
+    if (func->numConstants != 0) {
+        memcpy(&values[func->numBytes - func->numConstants * 8], func->constants,
+               sizeof(*values) * func->numConstants * 8);
+    }
     return entry;
 }
 
@@ -1147,7 +1149,7 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
                 uint16_t v;
                 READP(ptr, BINOP(1), 2);
                 READ16(v, BINOP(0));
-                ptr->una_s16 = v;
+                ptr->una_u16 = v;
                 break;
             }
             case OP_BC_STORE * 5 + 3: {

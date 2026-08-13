@@ -519,11 +519,16 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
         append_potentially_unwanted_if_heur_exceedsmax(
             ctx,
             HEURISTICS_LIMITS_EXCEEDED_MAX_SCAN_SIZE,
+            cl_error_t_CL_EMAXSIZE,
         );
     }
 
     if alz.file_count_limit_exceeded {
-        append_potentially_unwanted_if_heur_exceedsmax(ctx, HEURISTICS_LIMITS_EXCEEDED_MAX_FILES);
+        append_potentially_unwanted_if_heur_exceedsmax(
+            ctx,
+            HEURISTICS_LIMITS_EXCEEDED_MAX_FILES,
+            cl_error_t_CL_EMAXFILES,
+        );
     }
 
     for i in 0..alz.embedded_files.len() {

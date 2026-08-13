@@ -269,9 +269,10 @@
   #endif
 #endif
 
-#if !defined(BIG_ENDIAN) && defined(_WIN_ALL) || defined(__i386__) || defined(__x86_64__)
-// Allow not aligned integer access, increases speed in some operations.
-#define ALLOW_MISALIGNED
-#endif
+/*
+ * Do not enable the legacy unaligned integer fast paths. Although x86 permits
+ * the hardware access, dereferencing an unaligned typed pointer is undefined
+ * in C++ and is rejected by UBSan. The byte-wise fallbacks are portable.
+ */
 
 #endif // _RAR_OS_

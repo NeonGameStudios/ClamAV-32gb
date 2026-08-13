@@ -562,13 +562,13 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                     break;
                 case MAXREC:
                     retcode = CL_EMAXREC;
-                    cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxRecursion"); // Doing this now because it's actually tracking email recursion,-
+                    cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxRecursion", CL_EMAXREC); // Doing this now because it's actually tracking email recursion,-
                                                                                                                         // not fmap recursion, but it still is aborting with stuff not scanned.
                                                                                                                         // Also, we didn't have access to the ctx when this happened earlier.
                     break;
                 case MAXFILES:
                     retcode = CL_EMAXFILES;
-                    cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles"); // Doing this now because it's actually tracking email parts,-
+                    cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES); // Doing this now because it's actually tracking email parts,-
                                                                                                                     // not actual files, but it still is aborting with stuff not scanned.
                                                                                                                     // Also, we didn't have access to the ctx when this happened earlier.
                     break;

@@ -1238,9 +1238,20 @@ cl_error_t cl_engine_settings_free(struct cl_settings *settings)
     return CL_SUCCESS;
 }
 
-void cli_append_potentially_unwanted_if_heur_exceedsmax(cli_ctx *ctx, char *vname)
+void cli_append_potentially_unwanted_if_heur_exceedsmax(cli_ctx *ctx, const char *vname, cl_error_t limit_result)
 {
+    if (NULL == ctx) {
+        return;
+    }
+
+    /* Reaching a configured limit means required content was not inspected.
+     * The heuristic remains an optional, detection-visible representation of
+     * that condition; it must not be the only thing preventing a clean result
+     * because it may be disabled or rejected by an application callback. */
+    cli_mark_scan_incomplete(ctx, vname);
+
     if (!ctx->limit_exceeded) {
+        ctx->limit_exceeded_result = limit_result;
         ctx->limit_exceeded = true; // guard against adding an alert (or metadata) a million times for non-fatal exceeds-max conditions
                                     // TODO: consider changing this from a bool to a threshold so we could at least see more than 1 limits exceeded
 
@@ -1278,11 +1289,14 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
     }
 
     /* Enforce global scan-size limit, if limit enabled */
-    if (needed && (ctx->engine->maxscansize != 0) && (ctx->engine->maxscansize - ctx->scansize < needed)) {
+    if (needed &&
+        (ctx->engine->maxscansize != 0) &&
+        ((ctx->scansize > ctx->engine->maxscansize) ||
+         (ctx->engine->maxscansize - ctx->scansize < needed))) {
         /* The size needed is greater than the remaining scansize ... Skip this file. */
         cli_dbgmsg("%s: scansize exceeded (initial: " STDu64 ", consumed: " STDu64 ", needed: " STDu64 ")\n", who, ctx->engine->maxscansize, ctx->scansize, needed);
         ret = CL_EMAXSIZE;
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize");
+        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
         goto done;
     }
 
@@ -1291,7 +1305,7 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
         /* The size needed is greater than that limit ... Skip this file. */
         cli_dbgmsg("%s: filesize exceeded (allowed: " STDu64 ", needed: " STDu64 ")\n", who, ctx->engine->maxfilesize, needed);
         ret = CL_EMAXSIZE;
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize");
+        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
         goto done;
     }
 
@@ -1300,7 +1314,7 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
         /* This file would exceed the max # of files ... Skip this file. */
         cli_dbgmsg("%s: files limit reached (max: %u)\n", who, ctx->engine->maxfiles);
         ret = CL_EMAXFILES;
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles");
+        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
 
         // We don't need to set the `ctx->abort_scan` flag here.
         // We want `cli_magic_scan()` to finish scanning the current file, but not any future files.
@@ -1323,8 +1337,13 @@ cl_error_t cli_updatelimits(cli_ctx *ctx, size_t needed)
     }
 
     ctx->scannedfiles++;
-    ctx->scansize += needed;
-    if (ctx->scansize > ctx->engine->maxscansize)
+    if (UINT64_MAX - ctx->scansize < (uint64_t)needed) {
+        ctx->scansize = UINT64_MAX;
+    } else {
+        ctx->scansize += (uint64_t)needed;
+    }
+    if ((ctx->engine->maxscansize != 0) &&
+        (ctx->scansize > ctx->engine->maxscansize))
         ctx->scansize = ctx->engine->maxscansize;
 
     return CL_SUCCESS;
@@ -1360,7 +1379,7 @@ cl_error_t cli_checktimelimit(cli_ctx *ctx)
         ctx->abort_scan     = true;
         ctx->scan_timed_out = true;
 
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanTime");
+        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanTime", CL_ETIMEOUT);
     }
 
 done:
@@ -1833,7 +1852,7 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
         cli_dbgmsg("cli_recursion_stack_push: Archive recursion limit exceeded (%u, max: %u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);
         cli_dbgmsg("cli_recursion_stack_push: Some content was skipped. The scan result will not be cached.\n");
         emax_reached(ctx); // Disable caching for all recursion layers.
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxRecursion");
+        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxRecursion", CL_EMAXREC);
         status = CL_EMAXREC;
         goto done;
     }

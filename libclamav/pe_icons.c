@@ -179,16 +179,6 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
         if (gsz > 6) {
             uint32_t icnt, raddr;
             unsigned int piconcnt;
-            struct icondir {
-                uint8_t w;
-                uint8_t h;
-                uint8_t palcnt;
-                uint8_t rsvd;
-                uint16_t planes;
-                uint16_t depth;
-                uint32_t sz;
-                uint16_t id;
-            } *dir;
 
             raddr = cli_rawaddr(cli_readint32(grp), peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size);
             cli_dbgmsg("cli_scanicon: icon group @%x\n", raddr);
@@ -200,18 +190,23 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
                 gsz -= 6;
 
                 while (icnt && gsz >= 14 /* && (remaining amount of icons) */) {
+                    uint16_t planes, depth, id;
+                    uint32_t icon_size;
                     piconcnt = icon_env->hcnt;
 
-                    dir = (struct icondir *)grp;
-                    cli_dbgmsg("cli_scanicon: Icongrp @%x - %ux%ux%u - (id=%x, rsvd=%u, planes=%u, palcnt=%u, sz=%x)\n", rva, dir->w, dir->h, cli_readint16(&dir->depth), cli_readint16(&dir->id), cli_readint16(&dir->planes), dir->palcnt, dir->rsvd, cli_readint32(&dir->sz));
+                    planes    = cli_readint16(grp + 4);
+                    depth     = cli_readint16(grp + 6);
+                    icon_size = cli_readint32(grp + 8);
+                    id        = cli_readint16(grp + 12);
+                    cli_dbgmsg("cli_scanicon: Icongrp @%x - %ux%ux%u - (id=%x, rsvd=%u, planes=%u, palcnt=%u, sz=%x)\n", rva, grp[0], grp[1], depth, id, planes, grp[2], grp[3], icon_size);
 
                     /* icon scan callback --> icon_scan_cb() */
-                    findres(3, cli_readint16(&dir->id), map, peinfo, icon_scan_cb, icon_env);
+                    findres(3, id, map, peinfo, icon_scan_cb, icon_env);
                     if (icon_env->result != CL_CLEAN)
                         return icon_env->result;
 
                     if (piconcnt == icon_env->hcnt)
-                        cli_dbgmsg("cli_scanicon: invalid icon entry %u in group @%x\n", dir->id, rva);
+                        cli_dbgmsg("cli_scanicon: invalid icon entry %u in group @%x\n", id, rva);
 
                     icon_env->icnt++;
                     icnt--;

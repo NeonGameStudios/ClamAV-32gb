@@ -68,4 +68,33 @@ mod ffi_layout_tests {
         assert_eq!(offset_of!(sys::cl_fmap, offset), 96);
         assert_eq!(offset_of!(sys::cl_fmap, bitmap), 288);
     }
+
+    #[test]
+    fn scan_context_ffi_layout_matches_c() {
+        assert_eq!(offset_of!(sys::cl_engine, maxscantime), 68);
+        assert_eq!(offset_of!(sys::cl_engine, maxscansize), 72);
+        assert_eq!(offset_of!(sys::cl_engine, maxfilesize), 80);
+        assert_eq!(offset_of!(sys::cl_engine, max_recursion_level), 88);
+        assert_eq!(offset_of!(sys::cl_engine, maxfiles), 92);
+
+        assert_eq!(size_of::<sys::cli_scan_layer>(), 104);
+        assert_eq!(align_of::<sys::cli_scan_layer>(), 8);
+        assert_eq!(offset_of!(sys::cli_scan_layer, object_id), 56);
+        assert_eq!(offset_of!(sys::cli_scan_layer, verdict), 80);
+        assert_eq!(offset_of!(sys::cli_scan_layer, parent), 96);
+
+        assert_eq!(size_of::<sys::cli_ctx>(), 176);
+        assert_eq!(align_of::<sys::cli_ctx>(), 8);
+        assert_eq!(offset_of!(sys::cli_ctx, engine), 32);
+        assert_eq!(offset_of!(sys::cli_ctx, scansize), 40);
+        assert_eq!(offset_of!(sys::cli_ctx, scannedfiles), 56);
+        assert_eq!(offset_of!(sys::cli_ctx, recursion_stack), 64);
+        assert_eq!(offset_of!(sys::cli_ctx, object_count), 96);
+        assert_eq!(offset_of!(sys::cli_ctx, time_limit), 152);
+        assert_eq!(offset_of!(sys::cli_ctx, limit_exceeded), 168);
+        assert_eq!(offset_of!(sys::cli_ctx, abort_scan), 169);
+        assert_eq!(offset_of!(sys::cli_ctx, scan_timed_out), 170);
+        assert_eq!(offset_of!(sys::cli_ctx, scan_incomplete), 171);
+        assert_eq!(offset_of!(sys::cli_ctx, limit_exceeded_result), 172);
+    }
 }

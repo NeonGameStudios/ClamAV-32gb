@@ -201,6 +201,7 @@ typedef struct cli_ctx_tag {
     bool abort_scan;      /* Stop the scan even if the initiating status is lost while unwinding recursion. */
     bool scan_timed_out;  /* The sticky abort was caused by MaxScanTime, so the public API must return CL_ETIMEOUT. */
     bool scan_incomplete; /* A required parser/matcher path was skipped; never report this scan as clean. */
+    cl_error_t limit_exceeded_result; /* First configured-limit result, retained if an AlertExceedsMax callback filters its indicator. */
 } cli_ctx;
 
 #define STATS_ANON_UUID "5b585e8f-3be5-11e3-bf0b-18037319526c"
@@ -724,16 +725,18 @@ cl_error_t cli_append_virus(cli_ctx *ctx, const char *virname);
 cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname);
 
 /**
- * @brief If the SCAN_HEURISTIC_EXCEEDS_MAX option is enabled, append a "potentially unwanted" indicator.
+ * @brief Mark a configured-limit skip incomplete and, when enabled, append a
+ *        "potentially unwanted" indicator.
  *
- * There is no return value because the caller should select the appropriate "CL_EMAX*" error code regardless
- * of whether or not an FP sig is found, or allmatch is enabled, or whatever.
- * That is, the scan must not continue because of an FP sig.
+ * This always makes the scan non-cacheable and non-clean when no alert remains
+ * visible. There is no return value because the caller should select the
+ * appropriate "CL_EMAX*" error code regardless of whether an FP signature is
+ * found, all-match is enabled, or an application callback rejects the alert.
  *
  * @param ctx       The scan context.
  * @param virname   The name of the potentially unwanted indicator.
  */
-void cli_append_potentially_unwanted_if_heur_exceedsmax(cli_ctx *ctx, char *virname);
+void cli_append_potentially_unwanted_if_heur_exceedsmax(cli_ctx *ctx, const char *virname, cl_error_t limit_result);
 
 const char *cli_get_last_virus(const cli_ctx *ctx);
 const char *cli_get_last_virus_str(const cli_ctx *ctx);
