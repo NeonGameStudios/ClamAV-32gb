@@ -20,11 +20,11 @@ dedicated 64 GiB Ubuntu x86-64 host.
 
 - `docs/large-file-support.md`: specification, memory budget, workstreams, and
   acceptance criteria.
-- `docs/largefile-inventory.tsv`: generated inventory of 28,424 classified
+- `docs/largefile-inventory.tsv`: generated inventory of 28,426 classified
   source entries (the earlier 49,184 count included duplicate directory
   scans). A source line may appear in more than one classification. The
   normalized snapshot has SHA-256
-  `e4e4df3e3ec5153c8e29afb458c6878318cb6f168b149d9a9322ef94f1f69f21`.
+  `b65ab90166dcfb3cdd681cd99a80121936d8e9d92625c7a1c474f07ee5c8cfe7`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.
@@ -49,7 +49,7 @@ The inventory currently reports:
 | Boundary constant | 192 |
 | Quantity parser | 98 |
 | Narrowing cast | 57 |
-| Large-file option | 71 |
+| Large-file option | 73 |
 
 These are review candidates, not automatic conversions. The classification
 is intentionally over-inclusive so format-defined fields can be separated

@@ -272,6 +272,32 @@ class TC(testcase.TestCase):
         ]
         self.verify_output(output.out, expected=expected_results)
 
+        # Detection precedence must not turn the same bounded-prefix scan
+        # clean when no signature matches. The uninspected tail remains a
+        # visible configured-limit error.
+        path_db.write_text(
+            '{}:{}:ALZ_DEFLATE_LIMIT_MISS\n'.format(
+                hashlib.sha1(b'not-present').hexdigest(),
+                len(b'not-present'),
+            )
+        )
+        output = self.execute_command(command)
+
+        assert output.ec == 2
+        expected_results = [
+            'deflate-limit.alz: Exceeded max scan size ERROR',
+            'Infected files: 0',
+            'Total errors: 1',
+        ]
+        unexpected_results = [
+            'ALZ_DEFLATE_LIMIT_MISS.UNOFFICIAL FOUND',
+        ]
+        self.verify_output(
+            output.out,
+            expected=expected_results,
+            unexpected=unexpected_results,
+        )
+
     def test_inflated_header_size_does_not_skip_extraction(self):
         self.step_name('Test alz scan ignores inflated header size for extraction gating')
 

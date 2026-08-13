@@ -508,6 +508,22 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
         return alz_metadata_ret;
     }
 
+    // The ALZ parser retains only the bounded prefix permitted by the file,
+    // total-size, and file-count budgets. Scan those already-bounded buffers
+    // before making the configured-limit state sticky so a prefix detection
+    // can retain precedence. If no detection wins, the limit is recorded
+    // below and the public scan remains explicitly non-clean.
+    for i in 0..alz.embedded_files.len() {
+        let ret = magic_scan(
+            ctx,
+            &alz.embedded_files[i].data,
+            alz.embedded_files[i].name.clone(),
+        );
+        if ret != cl_error_t_CL_SUCCESS {
+            return ret;
+        }
+    }
+
     if let Some(needed) = alz.file_limit_exceeded_size {
         let ret = check_scan_limits("ALZ", ctx, needed, 0, 0);
         if ret != cl_error_t_CL_SUCCESS && ret != cl_error_t_CL_EMAXSIZE {
@@ -529,17 +545,6 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             HEURISTICS_LIMITS_EXCEEDED_MAX_FILES,
             cl_error_t_CL_EMAXFILES,
         );
-    }
-
-    for i in 0..alz.embedded_files.len() {
-        let ret = magic_scan(
-            ctx,
-            &alz.embedded_files[i].data,
-            alz.embedded_files[i].name.clone(),
-        );
-        if ret != cl_error_t_CL_SUCCESS {
-            return ret;
-        }
     }
 
     if alz.has_parse_error() {

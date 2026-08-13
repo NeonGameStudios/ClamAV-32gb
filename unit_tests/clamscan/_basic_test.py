@@ -88,9 +88,15 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # virus found
+        # clam_cache_emax.tgz deliberately reaches MaxRecursion before a
+        # shallower sibling supplies the ignored test detection. Once that
+        # detection is filtered, the skipped deep branch must remain an error
+        # instead of being reported clean.
+        assert output.ec == 2
 
         expected_results = ['Scanned files: {}'.format(len(TC.testpaths))]
         expected_results.append('Infected files: 0')
+        expected_results.append('clam_cache_emax.tgz: Exceeded max recursion depth ERROR')
+        expected_results.append('Total errors: 1')
         unexpected_results = ['{}: ClamAV-Test-File.UNOFFICIAL FOUND'.format(testpath.name) for testpath in TC.testpaths]
         self.verify_output(output.out, expected=expected_results, unexpected=unexpected_results)

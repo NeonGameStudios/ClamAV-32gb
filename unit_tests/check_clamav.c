@@ -619,6 +619,7 @@ START_TEST(test_top_level_maxfilesize_is_fail_visible)
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
     engine->maxfilesize = 10;
+    engine->maxscansize = 10;
     ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
@@ -686,6 +687,7 @@ START_TEST(test_top_level_maxfilesize_descriptor_is_fail_visible)
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
     engine->maxfilesize = 10;
+    engine->maxscansize = 10;
     ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
 
     ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);

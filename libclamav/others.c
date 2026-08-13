@@ -1288,6 +1288,18 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
         goto done;
     }
 
+    /* Enforce the more specific per-file limit before the cumulative scan
+     * limit. If one object exceeds both, report MaxFileSize; callers and
+     * AlertExceedsMax have historically distinguished that condition from a
+     * container whose individually allowed members exhaust MaxScanSize. */
+    if (needed && (ctx->engine->maxfilesize != 0) && (ctx->engine->maxfilesize < needed)) {
+        /* The size needed is greater than that limit ... Skip this file. */
+        cli_dbgmsg("%s: filesize exceeded (allowed: " STDu64 ", needed: " STDu64 ")\n", who, ctx->engine->maxfilesize, needed);
+        ret = CL_EMAXSIZE;
+        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
+        goto done;
+    }
+
     /* Enforce global scan-size limit, if limit enabled */
     if (needed &&
         (ctx->engine->maxscansize != 0) &&
@@ -1297,15 +1309,6 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
         cli_dbgmsg("%s: scansize exceeded (initial: " STDu64 ", consumed: " STDu64 ", needed: " STDu64 ")\n", who, ctx->engine->maxscansize, ctx->scansize, needed);
         ret = CL_EMAXSIZE;
         cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
-        goto done;
-    }
-
-    /* Enforce per-file file-size limit, if limit enabled */
-    if (needed && (ctx->engine->maxfilesize != 0) && (ctx->engine->maxfilesize < needed)) {
-        /* The size needed is greater than that limit ... Skip this file. */
-        cli_dbgmsg("%s: filesize exceeded (allowed: " STDu64 ", needed: " STDu64 ")\n", who, ctx->engine->maxfilesize, needed);
-        ret = CL_EMAXSIZE;
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
         goto done;
     }
 
