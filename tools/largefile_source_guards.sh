@@ -82,6 +82,8 @@ contains unit_tests/check_clamav.c 'test_callback_abort_is_not_reported_as_timeo
 contains unit_tests/check_clamav.c 'test_timeout_policy_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_zip_abort_reason_is_preserved'
 contains unit_tests/check_clamav.c 'test_zip_local_index_propagates_callback_abort'
+contains libclamav/libclamav.map 'cli_unzip;'
+contains libclamav/libclamav.map 'unzip_search_single;'
 contains unit_tests/check_matchers.c 'test_pcre_subject_limit_is_fail_visible'
 contains libclamav/bytecode.c 'no applicable bytecode registered for hook'
 contains unit_tests/check_bytecode.c 'test_bytecode_large_map_hook_gates_only_applicable_bytecode'

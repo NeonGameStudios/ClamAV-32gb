@@ -125,7 +125,9 @@ CLAMAV_PRIVATE {
     clamav_stats_add_sample;
     clamav_stats_flush;
     export_stats_to_json;
+    cli_unzip;
     unzip_single_internal;
+    unzip_search_single;
 
     cli_gettmpdir;
     cli_strtok;
