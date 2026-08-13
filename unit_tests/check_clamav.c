@@ -665,6 +665,40 @@ START_TEST(test_top_level_maxfilesize_descriptor_is_fail_visible)
 END_TEST
 #endif
 
+START_TEST(test_callback_abort_is_not_reported_as_timeout)
+{
+    cli_scan_layer_t layers[1];
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t result;
+
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&map, 0, sizeof(map));
+    layers[0].fmap           = &map;
+    ctx.fmap                 = &map;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 1;
+    ctx.abort_scan           = true;
+
+    result = CL_BREAK;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_BREAK, &result));
+    ck_assert_int_eq(result, CL_SUCCESS);
+
+    /* Some archive parsers normalize CL_BREAK while unwinding. The sticky
+     * abort must still stop outer layers without inventing a timeout. */
+    result = CL_BREAK;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_SUCCESS, &result));
+    ck_assert_int_eq(result, CL_SUCCESS);
+
+    /* An explicit timeout still takes precedence if it follows a callback
+     * abort before the scan finishes unwinding. */
+    result = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_ETIMEOUT, &result));
+    ck_assert_int_eq(result, CL_ETIMEOUT);
+}
+END_TEST
+
 START_TEST(test_timeout_policy_is_fail_visible)
 {
     struct cl_engine engine;
@@ -691,6 +725,7 @@ START_TEST(test_timeout_policy_is_fail_visible)
     ctx.time_limit.tv_sec--;
     ck_assert_int_eq(cli_checktimelimit(&ctx), CL_ETIMEOUT);
     ck_assert(ctx.abort_scan);
+    ck_assert(ctx.scan_timed_out);
 
     result = CL_SUCCESS;
     ck_assert(cli_scan_result_should_halt(&ctx, CL_SUCCESS, &result));
@@ -707,6 +742,13 @@ START_TEST(test_timeout_policy_is_fail_visible)
     result = CL_SUCCESS;
     ck_assert(cli_scan_result_should_halt(&ctx, CL_EMEM, &result));
     ck_assert_int_eq(result, CL_EMEM);
+
+    /* A parser may mark the scan incomplete before the deadline expires.
+     * Preserve the more specific terminal timeout during finalization. */
+    ctx.scan_incomplete = true;
+    result              = CL_SUCCESS;
+    ck_assert(cli_scan_result_should_halt(&ctx, CL_SUCCESS, &result));
+    ck_assert_int_eq(result, CL_ETIMEOUT);
 }
 END_TEST
 
@@ -1420,6 +1462,34 @@ static cl_error_t zip_stream_test_cb(int fd, const char *filepath, cli_ctx *ctx,
     }
 
     return zip_stream_callback_result;
+}
+
+static cl_error_t zip_index_meta_alert_cb(
+    const char *container_type,
+    unsigned long fsize_container,
+    const char *filename,
+    unsigned long fsize_real,
+    int is_encrypted,
+    unsigned int filepos_container,
+    void *context)
+{
+    UNUSEDPARAM(container_type);
+    UNUSEDPARAM(fsize_container);
+    UNUSEDPARAM(filename);
+    UNUSEDPARAM(fsize_real);
+    UNUSEDPARAM(is_encrypted);
+    UNUSEDPARAM(filepos_container);
+    UNUSEDPARAM(context);
+    return CL_VIRUS;
+}
+
+static cl_error_t zip_index_alert_abort_cb(cl_scan_layer_t *layer, void *context)
+{
+    unsigned int *calls = context;
+
+    UNUSEDPARAM(layer);
+    (*calls)++;
+    return CL_BREAK;
 }
 
 static uint8_t *zip_stream_raw_deflate(const uint8_t *input, size_t input_length, size_t *output_length)
@@ -2185,6 +2255,66 @@ START_TEST(test_zip_stream_truncated_deflate_and_callback_status)
 }
 END_TEST
 
+START_TEST(test_zip_local_index_propagates_callback_abort)
+{
+    const uint8_t input[] = "callback-abort";
+    struct zip_stream_pread_state state;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    unsigned int alert_calls = 0;
+    cl_error_t ret;
+
+    archive = zip_stream_local_archive(input, sizeof(input), sizeof(input),
+                                       ZIP_TEST_METHOD_STORED,
+                                       (uint32_t)crc32(0L, input, (uInt)sizeof(input)),
+                                       &archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    memset(&state, 0, sizeof(state));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    state.data   = archive;
+    state.length = archive_length;
+    map = cl_fmap_open_handle(&state, 0, archive_length, zip_stream_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    cl_engine_set_clcb_meta(engine, zip_index_meta_alert_cb);
+    cl_engine_set_scan_callback(engine, zip_index_alert_abort_cb, CL_SCAN_CALLBACK_ALERT);
+
+    ctx.engine               = engine;
+    ctx.options              = &options;
+    ctx.dconf                = engine->dconf;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.cb_ctx               = &alert_calls;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_BREAK);
+    ck_assert_uint_eq(alert_calls, 1);
+    ck_assert(ctx.abort_scan);
+    ck_assert(!ctx.scan_timed_out);
+
+    if (layer.evidence)
+        evidence_free(layer.evidence);
+    cl_engine_free(engine);
+    cl_fmap_close(map);
+    free(archive);
+}
+END_TEST
+
 START_TEST(test_zip_stream_central_catalogue_path)
 {
     const char *virname       = NULL;
@@ -2237,6 +2367,56 @@ START_TEST(test_zip_stream_central_catalogue_path)
     free(archive);
     free(compressed);
     free(input);
+}
+END_TEST
+
+START_TEST(test_zip_abort_reason_is_preserved)
+{
+    uint8_t archive[128] = {0};
+    struct zip_stream_pread_state state;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    size_t local_header_offset = 0;
+    cl_error_t ret;
+
+    memset(&state, 0, sizeof(state));
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+
+    state.data   = archive;
+    state.length = sizeof(archive);
+    map = cl_fmap_open_handle(&state, 0, sizeof(archive), zip_stream_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.abort_scan           = true;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = sizeof(archive);
+    layer.fmap               = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_BREAK);
+
+    ret = unzip_search_single(&ctx, "member", strlen("member"), &local_header_offset);
+    ck_assert_int_eq(ret, CL_BREAK);
+
+    ctx.scan_timed_out = true;
+    ret                = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+
+    ret = unzip_search_single(&ctx, "member", strlen("member"), &local_header_offset);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -3562,6 +3742,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_settempdir);
     tcase_add_test(tc_cl, test_cl_strerror);
     tcase_add_test(tc_cl, test_top_level_maxfilesize_is_fail_visible);
+    tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
     tcase_add_test(tc_cl, test_large_document_parser_caps_are_fail_visible);
@@ -3582,6 +3763,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_stream_implode_refill_bound_and_terminal);
     tcase_add_test(tc_cl, test_zip_stream_exact_limit_and_n_plus_one);
     tcase_add_test(tc_cl, test_zip_stream_truncated_deflate_and_callback_status);
+    tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
 #endif
 
     suite_add_tcase(s, tc_cl_scan);
@@ -3601,6 +3783,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_nsis_crc_trailer_is_not_a_member_header);
 #ifndef _WIN32
     tcase_add_test(tc_cl_scan, test_zip_stream_central_catalogue_path);
+    tcase_add_test(tc_cl_scan, test_zip_abort_reason_is_preserved);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanmap_callback_handle, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanmap_callback_handle_allscan, 0, expect);
 #endif

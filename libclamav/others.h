@@ -197,8 +197,9 @@ typedef struct cli_ctx_tag {
     struct json_object *metadata_json;            /* Top level metadata JSON object for the whole scan. */
     struct json_object *this_layer_metadata_json; /* Pointer to current metadata JSON object in recursion_stack, varies with recursion depth. For convenience. */
     struct timeval time_limit;
-    bool limit_exceeded; /* To guard against alerting on limits exceeded more than once, or storing that in the JSON metadata more than once. */
-    bool abort_scan;     /* So we can guarantee a scan is aborted, even if CL_ETIMEOUT/etc. status is lost in the scan recursion stack. */
+    bool limit_exceeded;  /* To guard against alerting on limits exceeded more than once, or storing that in the JSON metadata more than once. */
+    bool abort_scan;      /* Stop the scan even if the initiating status is lost while unwinding recursion. */
+    bool scan_timed_out;  /* The sticky abort was caused by MaxScanTime, so the public API must return CL_ETIMEOUT. */
     bool scan_incomplete; /* A required parser/matcher path was skipped; never report this scan as clean. */
 } cli_ctx;
 

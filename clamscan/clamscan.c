@@ -346,7 +346,7 @@ void help(void)
     mprintf(LOGG_INFO, "    --nocerts                            Disable authenticode certificate chain verification in PE files.\n");
     mprintf(LOGG_INFO, "    --dumpcerts                          Dump authenticode certificate chain in PE files.\n");
     mprintf(LOGG_INFO, "\n");
-    mprintf(LOGG_INFO, "    --max-scantime=#n                    Scan time longer than this will be skipped and assumed clean (milliseconds).\n");
+    mprintf(LOGG_INFO, "    --max-scantime=#n                    Scan time longer than this is reported as a timeout error (milliseconds).\n");
     mprintf(LOGG_INFO, "    --max-filesize=#n                    Files larger than this will be skipped and assumed clean.\n");
     mprintf(LOGG_INFO, "    --max-scansize=#n                    The maximum amount of data to scan for each container file (**).\n");
     mprintf(LOGG_INFO, "    --max-files=#n                       The maximum number of files to scan for each container file (**).\n");

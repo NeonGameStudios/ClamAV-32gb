@@ -42,4 +42,27 @@ if [ ! -s "$negative_log" ]; then
     exit 1
 fi
 
+for invalid_deadline in 0001 4294967296 999999999999999999999999; do
+    invalid_log=$tmp/invalid-deadline-$invalid_deadline.invoked
+    if CLAMAV_MAX_SCAN_TIME_MS=$invalid_deadline \
+        CLAMAV_LARGEFILE_STUB_MODE=positive \
+        CLAMAV_LARGEFILE_STUB_LOG="$invalid_log" \
+        "$root/tools/largefile_poc.sh" "$root/tools/largefile_poc_test_scanner.sh" \
+        "$corpus" "$tmp/invalid-deadline-$invalid_deadline" >/dev/null 2>&1; then
+        echo "largefile_poc.sh accepted invalid scan deadline $invalid_deadline" >&2
+        exit 1
+    fi
+    if [ -e "$invalid_log" ]; then
+        echo "largefile_poc.sh invoked the scanner before rejecting deadline $invalid_deadline" >&2
+        exit 1
+    fi
+
+    if CLAMAV_MAX_SCAN_TIME_MS=$invalid_deadline \
+        "$root/tools/largefile_runtime_gate.sh" "$root/tools/largefile_poc_test_scanner.sh" \
+        "$tmp/invalid-gate-$invalid_deadline" 1234 >/dev/null 2>&1; then
+        echo "largefile_runtime_gate.sh accepted invalid scan deadline $invalid_deadline" >&2
+        exit 1
+    fi
+done
+
 echo "largefile_poc.sh positive/fail-closed regression passed"

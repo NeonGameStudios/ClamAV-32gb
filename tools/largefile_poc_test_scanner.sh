@@ -25,8 +25,8 @@ fi
 
 if [ "${CLAMAV_LARGEFILE_STUB_MODE:-negative}" = positive ]; then
     signature="LargeFile.POC.$(basename "$input" .bin)"
-    printf '%s: %s: FOUND\n' "$signature" "$input"
-    printf 'cli_bm_scanbuff: signature %s matched at 0\n' "$signature"
+    printf '%s.UNOFFICIAL: %s: FOUND\n' "$signature" "$input"
+    printf 'cli_bm_scanbuff: signature %s.UNOFFICIAL matched at 0\n' "$signature"
     exit 1
 fi
 

@@ -4554,6 +4554,15 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
             break;
     }
 
+    /* A timeout is terminal even if an earlier parser also marked the scan
+     * incomplete. Keep the more specific timeout result while unwinding. */
+    if (ctx->scan_timed_out || result_in == CL_ETIMEOUT) {
+        cli_dbgmsg("Descriptor[%d]: halting timed-out scan\n", fmap_fd(ctx->fmap));
+        halt_scan   = true;
+        *result_out = CL_ETIMEOUT;
+        goto done;
+    }
+
     /* A skipped required subsystem is not equivalent to a malformed optional
      * container. Preserve an observable non-clean result all the way to the
      * public scan API, unless a detection is already being reported. */
@@ -4564,13 +4573,14 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         goto done;
     }
 
-    /* A parser may lose CL_ETIMEOUT while unwinding, which is why abort_scan
-     * is sticky. Never let that sticky state be translated back to a clean
-     * result. A detection remains more important and is preserved below. */
+    /* abort_scan is sticky because parsers may lose a terminal status while
+     * unwinding. It is also used for an application-requested CL_BREAK and for
+     * a non-allmatch detection. A timeout was handled above; other sticky
+     * aborts stop this layer without being exposed as an error. */
     if (ctx->abort_scan && result_in != CL_VIRUS) {
-        cli_dbgmsg("Descriptor[%d]: halting timed-out scan\n", fmap_fd(ctx->fmap));
+        cli_dbgmsg("Descriptor[%d]: halting application-requested or completed scan\n", fmap_fd(ctx->fmap));
         halt_scan   = true;
-        *result_out = CL_ETIMEOUT;
+        *result_out = CL_SUCCESS;
         goto done;
     }
 

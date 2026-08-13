@@ -1350,17 +1350,17 @@ cl_error_t cli_checktimelimit(cli_ctx *ctx)
         if (gettimeofday(&now, NULL) == 0) {
             if ((now.tv_sec > ctx->time_limit.tv_sec) ||
                 (now.tv_sec == ctx->time_limit.tv_sec && now.tv_usec > ctx->time_limit.tv_usec)) {
-                ctx->abort_scan = true;
-                ret             = CL_ETIMEOUT;
+                ret = CL_ETIMEOUT;
             }
         }
     }
 
     if (CL_ETIMEOUT == ret) {
-        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanTime");
+        /* Record the terminal cause before dispatching any heuristic callback. */
+        ctx->abort_scan     = true;
+        ctx->scan_timed_out = true;
 
-        // abort_scan flag is set so that in cli_magic_scan() we *will* stop scanning, even if we lose the status code.
-        ctx->abort_scan = true;
+        cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanTime");
     }
 
 done:

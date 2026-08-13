@@ -367,6 +367,15 @@ CLAMAV_CVD_CERTS_DIR=/path/to/test-or-production-certs \
   tools/largefile_poc.sh /path/to/clamscan /path/to/boundary-corpus /path/to/results
 ```
 
+The same variable must be supplied to `largefile_runtime_gate.sh` when the
+scanner is run from a build tree whose compiled-in certificate directory has
+not been installed. The gate validates the directory and applies it to the
+POC, cancellation, policy, concurrency, and sanitizer scanner invocations.
+The gate also sets a bounded per-file deadline of 900,000 milliseconds by
+default because a full hash plus an EOF marker scan at 32 GiB can exceed the
+stock 120-second limit. Override it with a positive
+`CLAMAV_MAX_SCAN_TIME_MS`; the selected value is recorded in the evidence.
+
 The harness reports non-clean resource termination separately from successful
 detection and records the expected/actual fixture size, marker-at-offset
 check, any offset emitted by the engine, RSS, page faults, CPU time, and

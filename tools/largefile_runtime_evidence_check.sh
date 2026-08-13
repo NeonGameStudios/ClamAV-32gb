@@ -227,6 +227,10 @@ grep -F "rss_budget_kb=$rss_budget_kb" "$metadata" >/dev/null 2>&1 || {
     echo 'evidence RSS budget does not match the verifier budget' >&2
     exit 1
 }
+grep -E '^max_scan_time_ms=[1-9][0-9]*$' "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not record a positive per-file scan deadline' >&2
+    exit 1
+}
 grep -Fx 'concurrency_file=32g-edge.bin' "$metadata" >/dev/null 2>&1 || {
     echo 'release evidence did not use 32g-edge.bin for concurrency' >&2
     exit 1

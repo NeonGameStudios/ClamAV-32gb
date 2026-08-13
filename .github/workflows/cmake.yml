@@ -201,6 +201,7 @@ jobs:
           CLAMAV_CONCURRENCY_LEVELS: ${{ inputs.concurrency_levels }}
           CLAMAV_RUN_CANCELLATION: '1'
           CLAMAV_MIN_AVAILABLE_KB: ${{ inputs.min_available_kb }}
+          CLAMAV_CVD_CERTS_DIR: ${{runner.workspace}}/clamav/unit_tests/input/signing/verify
           ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
@@ -368,6 +369,7 @@ jobs:
           CLAMAV_CONCURRENCY_LEVELS: ${{ inputs.concurrency_levels }}
           CLAMAV_RUN_CANCELLATION: '1'
           CLAMAV_MIN_AVAILABLE_KB: ${{ inputs.min_available_kb }}
+          CLAMAV_CVD_CERTS_DIR: ${{runner.workspace}}/clamav/unit_tests/input/signing/verify
         run: |
           ./tools/largefile_runtime_gate.sh \
             "${{runner.workspace}}/build-largefile/clamscan/clamscan" \

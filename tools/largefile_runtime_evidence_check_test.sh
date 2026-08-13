@@ -37,6 +37,7 @@ cmake_hash=$(sha256sum "$out/provenance/CMakeCache.txt" | awk '{ print $1 }')
     printf 'ELF 64-bit LSB pie executable, x86-64\n'
     printf 'rss_budget_kb=1234\n'
     printf 'min_available_kb=0\n'
+    printf 'max_scan_time_ms=900000\n'
     printf 'concurrency_file=32g-edge.bin\n'
     printf 'source_commit=%s\n' "$source_commit"
     printf 'source_tree_clean=yes\n'
@@ -159,6 +160,15 @@ sed 's/^concurrency_1=pass rss_sum_kb=1234$/concurrency_1=pass rss_sum_kb=1233/'
 refresh_manifest
 if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1' 1234 >/dev/null 2>&1; then
     echo 'evidence checker accepted a false concurrency RSS total' >&2
+    exit 1
+fi
+cp "$out/build-identity.good" "$out/build-identity.txt"
+
+sed 's/^max_scan_time_ms=900000$/max_scan_time_ms=0/' \
+    "$out/build-identity.good" > "$out/build-identity.txt"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1' 1234 >/dev/null 2>&1; then
+    echo 'evidence checker accepted an unbounded or invalid per-file scan deadline' >&2
     exit 1
 fi
 cp "$out/build-identity.good" "$out/build-identity.txt"

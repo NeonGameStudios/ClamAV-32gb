@@ -158,7 +158,7 @@ struct IS_OBJECTS {
 } __attribute__((packed));
 
 struct IS_FILEITEM {
-    uint16_t flags; /* 0 = EXTERNAL | 4 = INTERNAL | 8 = NAME_fuckup_rare | c = name_fuckup_common */
+    uint16_t flags; /* bit 2 = INTERNAL, bit 3 = alternate filename layout; valid values are 0, 4, 8, 0xc */
     uint64_t size;
     uint64_t csize;
     uint64_t stream_off;
@@ -760,6 +760,7 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
 
             switch (le16_to_host(file->flags)) {
                 case 0:
+                case 8:
                     /* FIXMEISHIELD: for FS scan ? */
                     cli_dbgmsg("is_parse_hdr: skipped external file:%s\\%s (size: %llu csize: %llu md5:%s)\n",
                                dir_name,
@@ -767,6 +768,7 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                (long long)file_size, (long long)file_csize, hash);
                     break;
                 case 4:
+                case 0xc:
                     cli_dbgmsg("is_parse_hdr: file %s\\%s (size: %llu csize: %llu md5:%s offset:%llx (data%u.cab) 13:%x 14:%x 15:%x)\n",
                                dir_name,
                                file_name,

@@ -20,10 +20,10 @@ dedicated 64 GiB Ubuntu x86-64 host.
 
 - `docs/large-file-support.md`: specification, memory budget, workstreams, and
   acceptance criteria.
-- `docs/largefile-inventory.tsv`: generated inventory of 28,336 unique source
+- `docs/largefile-inventory.tsv`: generated inventory of 28,348 unique source
   sites (the earlier 49,184 count included duplicate directory scans). The
   normalized snapshot has SHA-256
-  `af67a14387632517979c38b99edf6780a6a8acf3247e09df4da4904cc90b6b66`.
+  `04555d8fe2c3bf99f3b564e0d71bccf8a1ca9e7ea7a04039398d1d95cf149b04`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.
@@ -41,10 +41,10 @@ The inventory currently reports:
 
 | Classification | Sites |
 |---|---:|
-| Native-width integer | 9,812 |
-| Offset/size arithmetic | 10,921 |
-| Fixed-width integer | 4,785 |
-| Format-width specifier | 2,404 |
+| Native-width integer | 9,820 |
+| Offset/size arithmetic | 10,923 |
+| Fixed-width integer | 4,786 |
+| Format-width specifier | 2,405 |
 | Boundary constant | 188 |
 | Quantity parser | 98 |
 | Narrowing cast | 57 |

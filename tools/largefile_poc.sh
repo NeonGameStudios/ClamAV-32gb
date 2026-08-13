@@ -19,6 +19,7 @@ sigdb=$sigdir/largefile-poc.ndb
 logs=$out/logs
 tmp=$out/tmp
 results=$out/results.tsv
+max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-900000}
 cert_arg=
 if [ -n "${CLAMAV_CVD_CERTS_DIR:-}" ]; then
     cert_arg="--cvdcertsdir=$CLAMAV_CVD_CERTS_DIR"
@@ -26,6 +27,18 @@ fi
 verbose_time=no
 if /usr/bin/time -v true >/dev/null 2>&1; then
     verbose_time=yes
+fi
+
+case "$max_scan_time_ms" in
+    ''|*[!0-9]*|0*)
+        echo "CLAMAV_MAX_SCAN_TIME_MS must be a canonical integer from 1 through 4294967295" >&2
+        exit 2
+        ;;
+esac
+if [ "${#max_scan_time_ms}" -gt 10 ] ||
+    { [ "${#max_scan_time_ms}" -eq 10 ] && [ "$max_scan_time_ms" -gt 4294967295 ]; }; then
+    echo "CLAMAV_MAX_SCAN_TIME_MS must be a canonical integer from 1 through 4294967295" >&2
+    exit 2
 fi
 
 if [ ! -x "$clamscan" ]; then
@@ -97,6 +110,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --database="$sigdir" \
                 --max-filesize=32G \
                 --max-scansize=32G \
+                --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
                 --tempdir="$work" \
@@ -106,6 +120,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --database="$sigdir" \
                 --max-filesize=32G \
                 --max-scansize=32G \
+                --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
                 --tempdir="$work" \
@@ -117,6 +132,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --database="$sigdir" \
                 --max-filesize=32G \
                 --max-scansize=32G \
+                --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
                 --tempdir="$work" \
@@ -126,6 +142,7 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
                 --database="$sigdir" \
                 --max-filesize=32G \
                 --max-scansize=32G \
+                --max-scantime="$max_scan_time_ms" \
                 --debug \
                 --no-summary \
                 --tempdir="$work" \
@@ -155,7 +172,17 @@ while IFS="$(printf '\t')" read -r file marker expected_offset expected_size kin
     # Only report an offset printed by the engine. The marker check above is
     # independent fixture validation and must not be relabeled as an engine
     # match offset when debug logging does not emit one.
-    actual_offset=$(grep -F "signature $row_signature matched at " "$log" | sed -n 's/.* matched at \([0-9][0-9]*\).*/\1/p' | head -1)
+    # ClamAV appends .UNOFFICIAL to names loaded from an unsigned local
+    # database. Accept that display-only suffix while still binding the
+    # offset to this row's exact signature name.
+    actual_offset=$(awk \
+        -v signed="signature $row_signature matched at " \
+        -v unsigned="signature $row_signature.UNOFFICIAL matched at " '
+        (index($0, signed) || index($0, unsigned)) && match($0, /matched at [0-9][0-9]*/) {
+            print substr($0, RSTART + 11, RLENGTH - 11)
+            exit
+        }
+    ' "$log")
     if [ -z "$actual_offset" ]; then
         actual_offset=missing
     fi

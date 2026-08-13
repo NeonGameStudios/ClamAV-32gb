@@ -2150,6 +2150,7 @@ done:
  * @return cl_error_t  CL_VIRUS if overlapping files and heuristic alerts are enabled
  * @return cl_error_t  CL_EFORMAT if overlapping files and heuristic alerts are disabled
  * @return cl_error_t  CL_ETIMEOUT if the scan time limit is exceeded.
+ * @return cl_error_t  CL_BREAK if the application requested scan cancellation.
  * @return cl_error_t  CL_EMEM for memory allocation errors.
  */
 cl_error_t index_local_file_headers_within_bounds(
@@ -2216,7 +2217,7 @@ cl_error_t index_local_file_headers_within_bounds(
                 goto done;
             }
             if (ctx && ctx->abort_scan) {
-                status = CL_ETIMEOUT;
+                status = ctx->scan_timed_out ? CL_ETIMEOUT : CL_BREAK;
                 goto done;
             }
         }
@@ -2243,10 +2244,19 @@ cl_error_t index_local_file_headers_within_bounds(
                 &(zip_catalogue[index]), /* record */
                 &file_record_size);      /* file_record_size */
 
-            if (ctx && ctx->scan_incomplete) {
-                status = CL_EPARSE;
+            /* Only malformed candidate headers are recoverable while probing
+             * byte-by-byte. Cancellation, timeout, detections, and resource or
+             * I/O failures must escape before this candidate is counted. */
+            if (ret != CL_SUCCESS && ret != CL_EPARSE && ret != CL_EFORMAT) {
+                status = ret;
                 goto done;
             }
+
+            /* A malformed or truncated candidate may follow complete local
+             * records.  Preserve those records so cli_unzip() can still scan
+             * their independently validated contents.  The sticky incomplete
+             * result remains set and is deferred there only while those
+             * complete records are scanned. */
 
             if (file_record_size != 0 && CL_EPARSE != ret) {
                 // Found a record.
@@ -2261,11 +2271,6 @@ cl_error_t index_local_file_headers_within_bounds(
                 } else {
                     search_offset += file_record_size - 1;
                 }
-            }
-
-            if (ret == CL_VIRUS) {
-                status = CL_VIRUS;
-                goto done;
             }
 
             if (cli_checktimelimit(ctx) != CL_SUCCESS) {
@@ -2613,7 +2618,9 @@ done:
  * @param map          The file map
  * @param fsize        The file size
  * @param[out] coff    The central directory offset
- * @return cl_error_t
+ * @return cl_error_t CL_SUCCESS if found, CL_EPARSE if absent or malformed,
+ *                    CL_ETIMEOUT on deadline expiry, or CL_BREAK when the
+ *                    application requested scan cancellation.
  */
 static cl_error_t find_central_directory_header(
     cli_ctx *ctx,
@@ -2642,7 +2649,7 @@ static cl_error_t find_central_directory_header(
                 return CL_ETIMEOUT;
             }
             if (ctx && ctx->abort_scan)
-                return CL_ETIMEOUT;
+                return ctx->scan_timed_out ? CL_ETIMEOUT : CL_BREAK;
         }
 
         const char *eocptr = fmap_need_off_once(
@@ -2745,6 +2752,8 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     struct zip_record *zip_catalogue = NULL;
     size_t records_count             = 0;
     size_t i;
+    bool scan_incomplete_before_index = false;
+    bool deferred_index_incomplete    = false;
 
     cli_dbgmsg("in cli_unzip\n");
     fsize = map->len;
@@ -2789,7 +2798,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
 
             records_count = 0;
         }
-    } else if (CL_ETIMEOUT == ret) {
+    } else if (CL_ETIMEOUT == ret || CL_BREAK == ret) {
         status = ret;
         goto done;
     } else {
@@ -2807,12 +2816,25 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     /*
      * Add local file headers not referenced by the central directory.
      */
+    scan_incomplete_before_index = ctx->scan_incomplete;
     ret = index_local_file_headers(
         ctx,
         map,
         fsize,
         &zip_catalogue,
         &records_count);
+
+    /* A split archive segment can contain complete, independently decodable
+     * members followed by a member that continues in the next segment.  The
+     * incomplete marker has already made the parent non-cacheable.  Defer only
+     * a marker newly raised by this indexing pass so the complete records can
+     * still reach their scan callbacks.  Pre-existing incomplete state is
+     * never cleared. */
+    if (!scan_incomplete_before_index && ctx->scan_incomplete) {
+        deferred_index_incomplete = true;
+        ctx->scan_incomplete      = false;
+    }
+
     if (CL_SUCCESS != ret) {
         cli_dbgmsg("index_local_file_headers_failed\n");
         status = ret;
@@ -2933,6 +2955,15 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     }
 
 done:
+
+    if (deferred_index_incomplete) {
+        /* Restore fail-visible state after scanning the valid prefix.  In
+         * all-match mode a detection is carried by evidence and remains the
+         * public verdict even though the underlying scan was incomplete. */
+        ctx->scan_incomplete = true;
+        if (CL_SUCCESS == status)
+            status = CL_EPARSE;
+    }
 
     if (NULL != zip_catalogue) {
         /* Clean up zip record resources */
@@ -3093,7 +3124,7 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
             }
             central_file_header_offset += file_record_size;
         } while ((ret == CL_SUCCESS) && (file_record_size > 0));
-    } else if (CL_ETIMEOUT == ret) {
+    } else if (CL_ETIMEOUT == ret || CL_BREAK == ret) {
         status = ret;
         goto done;
     } else {

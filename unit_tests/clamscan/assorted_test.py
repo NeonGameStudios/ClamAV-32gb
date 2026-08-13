@@ -328,11 +328,27 @@ class TC(testcase.TestCase):
         ]
         # The "logo.4.png" file is split between this segment and the next, so it can't be extracted.
         # The "logo.3.png" file is not in this segment, so it won't be reported either.
-        unexpected_stdout = [
+        unexpected_stderr = [
             '"FileName":"logo.3.png",',
             '"FileName":"logo.4.png",',
         ]
-        self.verify_output(output.err, expected=expected_stderr)
+        self.verify_output(output.err, expected=expected_stderr, unexpected=unexpected_stderr)
+
+        # The valid prefix must still be fail-visible when there is no
+        # detection to take precedence over the truncated member.
+        command = '{valgrind} {valgrind_args} {clamscan} -d {path_db} {testfiles} --allmatch --scan-image=no'.format(
+            valgrind=TC.valgrind, valgrind_args=TC.valgrind_args, clamscan=TC.clamscan,
+            path_db=TC.path_tmp / 'logo.png.ldb',
+            testfiles=first_file,
+        )
+        output = self.execute_command(command)
+
+        assert output.ec == 2  # incomplete scan, with no detection
+        self.verify_output(
+            output.out,
+            expected=["logos.z01: Can't parse data ERROR"],
+            unexpected=['logos.z01: OK', 'FOUND'],
+        )
 
         # Scan the second segment of the split zip archive.
         command = '{valgrind} {valgrind_args} {clamscan} -d {path_db} {testfiles} --allmatch --gen-json --debug'.format(
@@ -354,12 +370,12 @@ class TC(testcase.TestCase):
         ]
         # The "logo.4.png" file is split between this segment and the first, so it can't be extracted.
         # The "logo.2.png" and "logo.1.png" files are not in this segment, so they won't be reported either.
-        unexpected_stdout = [
+        unexpected_stderr = [
             '"FileName":"logo.4.png",',
             '"FileName":"logo.2.png",',
             '"FileName":"logo.1.png",',
         ]
-        self.verify_output(output.err, expected=expected_stderr)
+        self.verify_output(output.err, expected=expected_stderr, unexpected=unexpected_stderr)
 
     def test_cvdload_no_sign_fips_limits(self):
         self.step_name('Test that clamscan --fips-limits fails to load a CVD if .cvd.sign file is not present')

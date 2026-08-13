@@ -14,7 +14,9 @@
 #   CLAMAV_MAX_TEMP_BYTES      fail if a POC case exceeds this temp footprint
 #   CLAMAV_RUN_CANCELLATION    run the one-second TERM cancellation gate (default 1)
 #   CLAMAV_MIN_AVAILABLE_KB    require this much effective host/cgroup headroom
+#   CLAMAV_MAX_SCAN_TIME_MS    uint32 per-file deadline in milliseconds (default 900000)
 #   CLAMAV_SOURCE_REPOSITORY   immutable source repository identifier for non-GitHub runs
+#   CLAMAV_CVD_CERTS_DIR       CA directory for a build-tree scanner
 
 set -eu
 
@@ -33,6 +35,8 @@ concurrency_levels=${CLAMAV_CONCURRENCY_LEVELS:-"1 2 4"}
 concurrency_file=${CLAMAV_CONCURRENCY_FILE:-32g-edge.bin}
 run_cancellation=${CLAMAV_RUN_CANCELLATION:-1}
 min_available_kb=${CLAMAV_MIN_AVAILABLE_KB:-0}
+max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-900000}
+cvd_certs_dir=${CLAMAV_CVD_CERTS_DIR:-${CVD_CERTS_DIR:-}}
 
 case "$rss_budget_kb" in
     ''|*[!0-9]*)
@@ -60,10 +64,35 @@ case "$min_available_kb" in
         exit 2
         ;;
 esac
+case "$max_scan_time_ms" in
+    ''|*[!0-9]*|0*)
+        echo "CLAMAV_MAX_SCAN_TIME_MS must be a canonical integer from 1 through 4294967295" >&2
+        exit 2
+        ;;
+esac
+if [ "${#max_scan_time_ms}" -gt 10 ] ||
+    { [ "${#max_scan_time_ms}" -eq 10 ] && [ "$max_scan_time_ms" -gt 4294967295 ]; }; then
+    echo "CLAMAV_MAX_SCAN_TIME_MS must be a canonical integer from 1 through 4294967295" >&2
+    exit 2
+fi
 if [ "$concurrency_file" != 32g-edge.bin ]; then
     echo "release concurrency evidence must use 32g-edge.bin (requested $concurrency_file)" >&2
     exit 2
 fi
+if [ -n "$cvd_certs_dir" ]; then
+    if [ ! -d "$cvd_certs_dir" ]; then
+        echo "CLAMAV_CVD_CERTS_DIR is not a directory: $cvd_certs_dir" >&2
+        exit 2
+    fi
+    # The POC consumes CLAMAV_CVD_CERTS_DIR and direct scanner invocations
+    # consume CVD_CERTS_DIR. Keep every gate invocation on the same trust
+    # configuration.
+    CLAMAV_CVD_CERTS_DIR=$cvd_certs_dir
+    CVD_CERTS_DIR=$cvd_certs_dir
+    export CLAMAV_CVD_CERTS_DIR CVD_CERTS_DIR
+fi
+CLAMAV_MAX_SCAN_TIME_MS=$max_scan_time_ms
+export CLAMAV_MAX_SCAN_TIME_MS
 
 if [ ! -x "$clamscan" ]; then
     echo "CLAMSCAN is not executable: $clamscan" >&2
@@ -162,11 +191,13 @@ metadata=$out/build-identity.txt
     printf 'arch='; uname -m
     printf 'rss_budget_kb=%s\n' "$rss_budget_kb"
     printf 'min_available_kb=%s\n' "$min_available_kb"
+    printf 'max_scan_time_ms=%s\n' "$max_scan_time_ms"
     printf 'concurrency_levels=%s\n' "$concurrency_levels"
     printf 'concurrency_file=%s\n' "$concurrency_file"
     printf 'source_commit=%s\n' "$source_commit"
     printf 'source_tree_clean=yes\n'
     printf 'source_repository=%s\n' "$source_repository"
+    printf 'cvd_certs_dir=%s\n' "${cvd_certs_dir:-default}"
     printf 'github_sha=%s\n' "${GITHUB_SHA:-unavailable}"
     printf 'github_ref=%s\n' "${GITHUB_REF:-unavailable}"
     printf 'github_run_id=%s\n' "${GITHUB_RUN_ID:-unavailable}"
@@ -238,6 +269,7 @@ if [ "$run_cancellation" -eq 1 ]; then
             --database="$poc_out/db" \
             --max-filesize=32G \
             --max-scansize=32G \
+            --max-scantime="$max_scan_time_ms" \
             --debug \
             --no-summary \
             "$corpus/32g-edge.bin" > "$cancellation_log" 2>&1 || cancellation_status=$?
@@ -267,6 +299,7 @@ policy_status=0
     --database="$poc_out/db" \
     --max-filesize=32G \
     --max-scansize=32G \
+    --max-scantime="$max_scan_time_ms" \
     --alert-exceeds-max \
     --debug \
     --no-summary \
@@ -314,6 +347,7 @@ for level in $concurrency_levels; do
                 --database="$concurrency_db" \
                 --max-filesize=32G \
                 --max-scansize=32G \
+                --max-scantime="$max_scan_time_ms" \
                 --no-summary \
                 "$concurrency_input" > "$log" 2>&1 || status=$?
             rss=$(sed -n 's/^[[:space:]]*Maximum resident set size (kbytes): \([0-9][0-9]*\)$/\1/p' "$log" | tail -1)
