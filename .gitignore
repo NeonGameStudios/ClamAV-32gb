@@ -1,0 +1,11 @@
+# Local build products and generated test state.
+/build*/
+/libnull.a
+/target/
+**/__pycache__/
+*.py[cod]
+.DS_Store
+
+# Large-file runtime evidence and sparse corpora must live outside the tree.
+/largefile-evidence*/
+/largefile-corpus*/

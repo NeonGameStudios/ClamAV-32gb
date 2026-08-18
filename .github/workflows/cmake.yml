@@ -1,0 +1,489 @@
+name: CMake Build
+
+# Normal compile/test jobs run on pushes and pull requests. Exact 32 GiB and
+# sanitizer evidence gates are manual and require the dedicated 64 GiB runner.
+on:
+  workflow_dispatch:
+    inputs:
+      run_largefile_runtime:
+        description: Run the Linux x86-64 large-file runtime gate
+        required: true
+        default: false
+        type: boolean
+      run_largefile_sanitizer:
+        description: Build and run the ASan/UBSan large-file gate
+        required: true
+        default: false
+        type: boolean
+      production_database:
+        description: Absolute path to the production CVD database directory on the dedicated runner
+        required: true
+        type: string
+      production_file:
+        description: Absolute path to a production-CVD detection fixture on the dedicated runner
+        required: true
+        type: string
+      materialized_file:
+        description: Absolute path to the materialized deep-parser fixture on the dedicated runner
+        required: true
+        type: string
+      expansion_fixture:
+        description: Absolute path to the parser-expansion fixture on the dedicated runner
+        required: true
+        type: string
+  push:
+    branches:
+      - codex/*
+      - rel/*
+      - dev/*
+      - main
+  pull_request:
+    branches:
+      - codex/*
+      - rel/*
+      - dev/*
+      - feature/*
+      - main
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  windows-platform-contract:
+    runs-on: windows-2019
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Verify native Windows is rejected explicitly
+        shell: pwsh
+        run: |
+          $output = cmake -S . -B build 2>&1 | Out-String
+          if ($LASTEXITCODE -eq 0) {
+            throw "Native Windows unexpectedly configured as a 32 GiB-supported target"
+          }
+          if ($output -notmatch "does not support native Windows") {
+            Write-Host $output
+            throw "CMake did not emit the expected large-file platform contract"
+          }
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Build Tools
+        run: brew install bison flex pipx
+
+      - name: Install Dependencies
+        run: brew install bzip2 check curl json-c libxml2 ncurses openssl@3 pcre2 zlib
+
+      - name: Install pytest for easier to read test results
+        run: pipx install pytest
+
+      - uses: lukka/get-cmake@983956e4a5edce90f0dfcc38c1543077e668402b # v3.30.0
+
+      - name: Create Build Directory
+        shell: bash
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: cmake -E make_directory ${{runner.workspace}}/build
+
+      - name: Configure CMake
+        # Use a bash shell so we can use the same syntax for environment variable
+        # access regardless of the host operating system
+        working-directory: ${{runner.workspace}}/build
+        # Note the current convention is to use the -S and -B options here to specify source
+        # and build directories, but this is only available with CMake 3.13 and higher.
+        # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+        run: >-
+          cmake ${{runner.workspace}}/clamav
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DOPENSSL_ROOT_DIR=/opt/homebrew/include/
+          -DOPENSSL_CRYPTO_LIBRARY=/opt/homebrew/lib/libcrypto.3.dylib
+          -DOPENSSL_SSL_LIBRARY=/opt/homebrew/lib/libssl.3.dylib
+          -DENABLE_STATIC_LIB=ON
+          -DENABLE_EXAMPLES=ON
+
+      - name: Build
+        shell: bash
+        working-directory: ${{runner.workspace}}/build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: cmake --build . --config ${{ env.BUILD_TYPE }}
+
+      - name: Test
+        shell: bash
+        working-directory: ${{runner.workspace}}/build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest -C ${{ env.BUILD_TYPE }} -V
+
+      - name: Large-file source guards and harness controls
+        working-directory: ${{runner.workspace}}/clamav
+        run: |
+          ./tools/largefile_source_guards.sh
+          ./tools/largefile_poc_fail_closed_test.sh
+          ./tools/largefile_runtime_evidence_check_test.sh
+
+  build-ubuntu-sanitizer:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_largefile_sanitizer
+    needs: build-ubuntu
+    runs-on: [self-hosted, Linux, X64, clamav-largefile-64gb]
+    concurrency:
+      group: clamav-largefile-64gb
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    env:
+      RUSTUP_TOOLCHAIN: nightly
+      RUSTFLAGS: -Zsanitizer=address
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Verify Linux x86-64 runner
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+
+      - name: Update package listings
+        run: sudo apt-get update
+
+      - name: Install Build Tools
+        run: sudo apt-get install -y bison flex valgrind pipx time
+
+      - name: Install Dependencies
+        run: sudo apt-get install -y check libbz2-dev libcurl4-openssl-dev libjson-c-dev libmilter-dev libncurses5-dev libpcre2-dev libssl-dev libxml2-dev zlib1g-dev
+
+      - name: Install Rust sanitizer toolchain
+        run: rustup toolchain install nightly --profile minimal --no-self-update
+
+      - name: Install pytest for easier to read test results
+        run: pipx install pytest
+
+      - uses: lukka/get-cmake@983956e4a5edce90f0dfcc38c1543077e668402b # v3.30.0
+
+      - name: Create Build Directory
+        run: cmake -E make_directory "${{runner.workspace}}/build-sanitizer"
+
+      - name: Configure sanitizer build
+        working-directory: ${{runner.workspace}}/build-sanitizer
+        run: |
+          cmake ${{runner.workspace}}/clamav \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DENABLE_STATIC_LIB=ON \
+            -DENABLE_EXAMPLES=ON \
+            -DENABLE_MILTER=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_C_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            -DCMAKE_EXE_LINKER_FLAGS='-fsanitize=address,undefined' \
+            -DCMAKE_SHARED_LINKER_FLAGS='-fsanitize=address,undefined'
+
+      - name: Build sanitizer targets
+        working-directory: ${{runner.workspace}}/build-sanitizer
+        run: cmake --build . --config RelWithDebInfo
+
+      - name: Run sanitizer CTest suite
+        working-directory: ${{runner.workspace}}/build-sanitizer
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        # Valgrind must run against the Release build, not ASan/UBSan binaries.
+        # The Rust CTest target is deliberately included and built with
+        # -Zsanitizer=address so the evidence covers the Rust parser archive,
+        # not merely a separate uninstrumented Rust test run.
+        run: ctest -C RelWithDebInfo -V -E '_valgrind$'
+
+      - name: Run source controls
+        working-directory: ${{runner.workspace}}/clamav
+        run: |
+          ./tools/largefile_source_guards.sh
+          ./tools/largefile_poc_fail_closed_test.sh
+          ./tools/largefile_runtime_evidence_check_test.sh
+
+      - name: Large-file sanitizer release gate
+        working-directory: ${{runner.workspace}}/clamav
+        env:
+          CLAMAV_REQUIRE_SANITIZER: '1'
+          CLAMAV_SANITIZER_CLAMSCAN: ${{runner.workspace}}/build-sanitizer/clamscan/clamscan
+          CLAMAV_MAX_SCAN_TIME_MS: '900000'
+          CLAMAV_CONCURRENCY_LEVELS: '1 2 4'
+          CLAMAV_MAX_TEMP_BYTES: '67108864'
+          CLAMAV_RUN_CANCELLATION: '1'
+          CLAMAV_MIN_AVAILABLE_KB: '50331648'
+          CLAMAV_SANITIZER_MAX_SCAN_TIME_MS: '3600000'
+          CLAMAV_SANITIZER_RUST_SUITE: 'pass'
+          CLAMAV_SANITIZER_TOOLCHAIN: nightly
+          CLAMAV_SANITIZER_RUSTFLAGS: '-Zsanitizer=address'
+          CLAMAV_CVD_CERTS_DIR: ${{runner.workspace}}/clamav/unit_tests/input/signing/verify
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          ./tools/largefile_runtime_gate.sh \
+            "${{runner.workspace}}/build-sanitizer/clamscan/clamscan" \
+            "${RUNNER_TEMP}/clamav-largefile-sanitizer" \
+            "33554432"
+          ./tools/largefile_runtime_evidence_check.sh \
+            "${RUNNER_TEMP}/clamav-largefile-sanitizer" \
+            yes \
+            "1 2 4" \
+            "33554432"
+
+      - name: Attest sanitizer runtime evidence manifest
+        if: success()
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: ${{ runner.temp }}/clamav-largefile-sanitizer/SHA256SUMS
+
+      - name: Upload verified sanitizer runtime evidence
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: clamav-largefile-sanitizer-verified
+          path: |
+            ${{runner.temp}}/clamav-largefile-sanitizer/**
+            !${{runner.temp}}/clamav-largefile-sanitizer/corpus/**
+          if-no-files-found: error
+
+      - name: Upload failed sanitizer diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: clamav-largefile-sanitizer-diagnostics-${{ github.run_id }}
+          path: |
+            ${{runner.temp}}/clamav-largefile-sanitizer/**
+            !${{runner.temp}}/clamav-largefile-sanitizer/corpus/**
+          if-no-files-found: warn
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Update package listings
+        run: sudo apt-get update
+
+      - name: Install Build Tools
+        run: sudo apt-get install -y bison flex valgrind pipx time
+
+      - name: Install Dependencies
+        run: sudo apt-get install -y check libbz2-dev libcurl4-openssl-dev libjson-c-dev libmilter-dev libncurses5-dev libpcre2-dev libssl-dev libxml2-dev zlib1g-dev
+
+      - name: Install pytest for easier to read test results
+        run: pipx install pytest
+
+      - uses: lukka/get-cmake@983956e4a5edce90f0dfcc38c1543077e668402b # v3.30.0
+
+      - name: Create Build Directory
+        shell: bash
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: cmake -E make_directory ${{runner.workspace}}/build
+
+      - name: Configure CMake
+        # Use a bash shell so we can use the same syntax for environment variable
+        # access regardless of the host operating system
+        working-directory: ${{runner.workspace}}/build
+        # Note the current convention is to use the -S and -B options here to specify source
+        # and build directories, but this is only available with CMake 3.13 and higher.
+        # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+        run: >-
+          cmake ${{runner.workspace}}/clamav
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DENABLE_STATIC_LIB=ON
+          -DENABLE_EXAMPLES=ON
+
+      - name: Build
+        shell: bash
+        working-directory: ${{runner.workspace}}/build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: cmake --build . --config ${{ env.BUILD_TYPE }}
+
+      - name: Test
+        shell: bash
+        working-directory: ${{runner.workspace}}/build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest -C ${{ env.BUILD_TYPE }} -V
+
+      - name: Large-file source guards and harness controls
+        working-directory: ${{runner.workspace}}/clamav
+        run: |
+          ./tools/largefile_source_guards.sh
+          ./tools/largefile_poc_fail_closed_test.sh
+          ./tools/largefile_runtime_evidence_check_test.sh
+
+
+  build-ubuntu-largefile:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_largefile_runtime
+    needs: build-ubuntu
+    runs-on: [self-hosted, Linux, X64, clamav-largefile-64gb]
+    concurrency:
+      group: clamav-largefile-64gb
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Verify dedicated Linux x86-64 runner
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+
+      - name: Update package listings
+        run: sudo apt-get update
+
+      - name: Install Build Tools
+        run: sudo apt-get install -y bison flex valgrind pipx time
+
+      - name: Install Dependencies
+        run: sudo apt-get install -y check libbz2-dev libcurl4-openssl-dev libjson-c-dev libmilter-dev libncurses5-dev libpcre2-dev libssl-dev libxml2-dev zlib1g-dev
+
+      - name: Install pytest for easier to read test results
+        run: pipx install pytest
+
+      - uses: lukka/get-cmake@983956e4a5edce90f0dfcc38c1543077e668402b # v3.30.0
+
+      - name: Create Build Directory
+        run: cmake -E make_directory "${{runner.workspace}}/build-largefile"
+
+      - name: Configure release build
+        working-directory: ${{runner.workspace}}/build-largefile
+        run: |
+          cmake ${{runner.workspace}}/clamav \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_STATIC_LIB=ON \
+            -DENABLE_EXAMPLES=ON \
+            -DENABLE_MILTER=ON \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build release targets
+        working-directory: ${{runner.workspace}}/build-largefile
+        run: cmake --build . --config Release
+
+      - name: Run release CTest suite
+        working-directory: ${{runner.workspace}}/build-largefile
+        run: ctest -C Release -V
+
+      - name: Run source controls
+        working-directory: ${{runner.workspace}}/clamav
+        run: |
+          ./tools/largefile_source_guards.sh
+          ./tools/largefile_poc_fail_closed_test.sh
+          ./tools/largefile_runtime_evidence_check_test.sh
+
+      - name: Large-file runtime release gate
+        working-directory: ${{runner.workspace}}/clamav
+        env:
+          CLAMAV_REQUIRE_SANITIZER: '0'
+          CLAMAV_CONCURRENCY_LEVELS: '1 2 4'
+          CLAMAV_MAX_TEMP_BYTES: '67108864'
+          CLAMAV_MAX_SCAN_TIME_MS: '900000'
+          CLAMAV_RUN_CANCELLATION: '1'
+          CLAMAV_MIN_AVAILABLE_KB: '50331648'
+          CLAMAV_CVD_CERTS_DIR: ${{runner.workspace}}/clamav/unit_tests/input/signing/verify
+        run: |
+          ./tools/largefile_runtime_gate.sh \
+            "${{runner.workspace}}/build-largefile/clamscan/clamscan" \
+            "${RUNNER_TEMP}/clamav-largefile-runtime" \
+            "33554432"
+          ./tools/largefile_runtime_evidence_check.sh \
+            "${RUNNER_TEMP}/clamav-largefile-runtime" \
+            no \
+            "1 2 4" \
+            "33554432"
+
+      - name: Mandatory service and workload qualification
+        working-directory: ${{runner.workspace}}/clamav
+        env:
+          CLAMAV_CVD_CERTS_DIR: ${{runner.workspace}}/clamav/unit_tests/input/signing/verify
+          CLAMAV_PRODUCTION_DB: ${{ inputs.production_database }}
+          CLAMAV_PRODUCTION_FILE: ${{ inputs.production_file }}
+          CLAMAV_MATERIALIZED_FILE: ${{ inputs.materialized_file }}
+          CLAMAV_EXPANSION_FIXTURE: ${{ inputs.expansion_fixture }}
+        run: |
+          test -n "$CLAMAV_PRODUCTION_DB"
+          test -n "$CLAMAV_PRODUCTION_FILE"
+          test -n "$CLAMAV_MATERIALIZED_FILE"
+          test -n "$CLAMAV_EXPANSION_FIXTURE"
+          sh ./tools/largefile_service_qualification.sh \
+            "${{runner.workspace}}/build-largefile" \
+            "${RUNNER_TEMP}/clamav-largefile-service" \
+            "$CLAMAV_PRODUCTION_DB" \
+            "$CLAMAV_PRODUCTION_FILE" \
+            "$CLAMAV_MATERIALIZED_FILE" \
+            "$CLAMAV_EXPANSION_FIXTURE" \
+            "${RUNNER_TEMP}/clamav-largefile-runtime/corpus/32g-edge.bin" \
+            "${RUNNER_TEMP}/clamav-largefile-runtime/poc/db"
+          grep -Fx 'production_cvd_clamscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'production_cvd_clamdscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'cold_cache_control=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'clamd_multiworker_count=4' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'clamd_multiworker=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'milter_exact_edge=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'service_qualification=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          (
+            cd "${RUNNER_TEMP}/clamav-largefile-service"
+            find . -type f ! -name SHA256SUMS -print | LC_ALL=C sort |
+              while IFS= read -r evidence_file; do
+                sha256sum "$evidence_file"
+              done
+          ) > "${RUNNER_TEMP}/clamav-largefile-service/SHA256SUMS"
+          (
+            cd "${RUNNER_TEMP}/clamav-largefile-service"
+            sha256sum -c SHA256SUMS
+          )
+
+      - name: Attest large-file runtime evidence manifest
+        if: success()
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: |
+            ${{ runner.temp }}/clamav-largefile-runtime/SHA256SUMS
+            ${{ runner.temp }}/clamav-largefile-service/SHA256SUMS
+
+      - name: Upload verified large-file runtime evidence
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: clamav-largefile-runtime-verified
+          path: |
+            ${{runner.temp}}/clamav-largefile-runtime/**
+            ${{runner.temp}}/clamav-largefile-service/**
+            !${{runner.temp}}/clamav-largefile-runtime/corpus/**
+          if-no-files-found: error
+
+      - name: Upload failed large-file runtime diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: clamav-largefile-runtime-diagnostics-${{ github.run_id }}
+          path: |
+            ${{runner.temp}}/clamav-largefile-runtime/**
+            ${{runner.temp}}/clamav-largefile-service/**
+            !${{runner.temp}}/clamav-largefile-runtime/corpus/**
+          if-no-files-found: warn
+
+  largefile-acceptance:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_largefile_runtime && inputs.run_largefile_sanitizer
+    needs: [build-ubuntu-largefile, build-ubuntu-sanitizer]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require both attested runtime gates
+        env:
+          RELEASE_RESULT: ${{ needs.build-ubuntu-largefile.result }}
+          SANITIZER_RESULT: ${{ needs.build-ubuntu-sanitizer.result }}
+        run: |
+          test "$RELEASE_RESULT" = success
+          test "$SANITIZER_RESULT" = success
