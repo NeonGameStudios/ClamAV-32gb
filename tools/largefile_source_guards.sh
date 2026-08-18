@@ -490,6 +490,10 @@ contains tools/largefile_runtime_gate.sh 'runtime_gate=pass'
 contains tools/largefile_host_preflight.sh 'memory_total_kb='
 contains tools/largefile_host_preflight.sh 'cgroup_memory_limit_bytes='
 contains tools/largefile_host_preflight.sh 'effective_memory_available_kb='
+contains tools/largefile_macos_host_preflight.sh 'macOS host preflight requires Darwin'
+contains tools/largefile_macos_host_preflight.sh 'memory_available_kb='
+contains tools/largefile_macos_runtime_gate.sh 'policy_32g_plus_one=pass'
+contains tools/largefile_macos_runtime_gate.sh 'peak_rss_kb'
 contains .github/workflows/cmake.yml "CLAMAV_MIN_AVAILABLE_KB: '50331648'"
 contains .github/workflows/cmake.yml "CLAMAV_MAX_TEMP_BYTES: '67108864'"
 contains .github/workflows/cmake.yml 'CLAMAV_MAX_SCAN_TIME_MS'

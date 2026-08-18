@@ -19,6 +19,13 @@ fail-visible parser error. The 50 GiB input remained fail-visible as
 not deep-parser qualification; the detailed timings and diagnostics are in
 the Sonic1 report.
 
+Local macOS validation has begun with a native host-preflight and runtime gate;
+its first result is documented in
+[`largefile-macos-20260818.md`](largefile-macos-20260818.md). The current
+execution context exposes 16 GiB rather than the expected 64 GiB and lacks
+CMake/Ninja, so the gate correctly stopped before starting a 32 GiB scan.
+Sonic1 Linux evidence must not be substituted for this macOS qualification.
+
 ## Target
 
 LargeFile 1.0 targets direct raw scanning of inputs from 0 through 32 GiB and

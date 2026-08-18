@@ -3,6 +3,8 @@
 ## Large-file validation and expansion progression
 
 1. **Validate the current 32 GiB raw path on the local macOS host**
+   - **In progress:** native macOS host-preflight capture added; local build
+     tool availability and memory telemetry are being qualified.
    - Use the bare-metal 64 GB machine with one worker first.
    - Exercise sparse boundary fixtures and materialized inputs where practical.
    - Verify exact tail-marker detection, 32 GiB + 1 rejection, and the absence of
@@ -34,4 +36,3 @@
    - Test authorized real clean/infected files, materialized workloads,
      parser-expansion inputs, cold-cache behavior, daemon paths, and resource
      budgets.
-
