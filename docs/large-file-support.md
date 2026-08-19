@@ -2290,6 +2290,9 @@ object-stream pair cursor and parsed object start no longer narrow to
 32-bit values before containment checks, extraction, or diagnostics; a focused
 unit regression preserves an offset above 4 GiB. PDF decoder qualification
 still remains separately bounded by the explicit legacy filter-input boundary.
+Object-stream containment now uses subtraction-based checked bounds for both
+the current and next object offsets, so malformed large values cannot wrap the
+first-plus-offset calculation before the parser rejects them.
 
 ## NSIS non-solid bounded input — 2026-08-19
 

@@ -370,6 +370,8 @@ contains libclamav/pdfdecode.c "PDF stream exceeds the decoder's 32-bit input bo
 contains libclamav/pdfdecode.h 'const char *stream, size_t streamlen'
 contains libclamav/pdf.h 'size_t start;'
 not_contains libclamav/pdf.c 'objstm->current_pair = (uint32_t)'
+contains libclamav/pdf.c 'objstm->first > objstm->streambuf_len'
+not_contains libclamav/pdf.c 'objstm->first + next_objoff'
 contains unit_tests/check_clamav.c 'test_pdf_object_coordinates_are_native_width'
 contains libclamav/pdf.c 'PDF extracted object exceeded configured scan limits'
 contains libclamav/pdf.c 'PDF extracted object could not be written completely'

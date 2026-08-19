@@ -403,7 +403,8 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
     }
     objoff = (unsigned long)temp_long;
 
-    if ((size_t)objstm->first + (size_t)objoff > objstm->streambuf_len) {
+    if (objstm->first > objstm->streambuf_len ||
+        (size_t)objoff > objstm->streambuf_len - objstm->first) {
         /* Alleged obj location is further than the length of the stream */
         cli_dbgmsg("pdf_findobj_in_objstm: obj offset found is greater than the length of the stream.\n");
         status = CL_EPARSE;
@@ -478,7 +479,8 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
             cli_dbgmsg("pdf_findobj_in_objstm: Found next obj offset for obj in object stream but it's less than or equal to the current one!\n");
             status = CL_EPARSE;
             goto done;
-        } else if (objstm->first + next_objoff > objstm->streambuf_len) {
+        } else if (objstm->first > objstm->streambuf_len ||
+                   (size_t)next_objoff > objstm->streambuf_len - objstm->first) {
             /* Failed to find obj offset for next obj */
             cli_dbgmsg("pdf_findobj_in_objstm: Found next obj offset for obj in object stream but it's further out than the size of the stream!\n");
             status = CL_EPARSE;

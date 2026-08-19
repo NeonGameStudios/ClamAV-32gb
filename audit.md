@@ -1630,6 +1630,9 @@ PDF object-stream cursors and parsed object starts are now native-width as
 well. The previous 32-bit object-start field and object-stream pair assignment
 could wrap coordinates above 4 GiB before containment or extraction; the
 focused unit regression now preserves a native-width object coordinate.
+Object-stream containment now uses subtraction-based checked bounds for both
+the current and next offsets, avoiding a wrapped base-plus-offset comparison
+before malformed content is rejected.
 
 Ordinary and multipart mail bodies now switch to quota-accounted disk-backed
 `fileblob` spools at the header/body separator in both direct-message and UNIX
