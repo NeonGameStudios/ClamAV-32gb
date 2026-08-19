@@ -935,6 +935,18 @@ status. A Linux static-wrapper regression covers write and close faults;
 compiled Linux/Sonic1, sanitizer, and real CryptFF corpus qualification remain
 open.
 
+## Compressed temporary-output completion — 2026-08-19
+
+The main GZip decoder previously accepted a short `cli_writen()` result when
+the call did not return `(size_t)-1`, and its GZip/BZip2/XZ/SZDD temporary
+staging paths ignored close failures or could overwrite an earlier decoder,
+limit, or detection result with unlink failure. The shared compressed cleanup
+helper now requires the exact write count at GZip, marks source/staging and
+cleanup failures as incomplete/non-cacheable, and preserves the first
+meaningful result. The focused GZip write/close wrapper regression is
+registered; Linux/Sonic1, sanitizer, and broad compressed-family corpus
+qualification remain open.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the

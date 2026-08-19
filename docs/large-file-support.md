@@ -2728,6 +2728,17 @@ The Linux static-library wrapper adds focused write- and close-fault coverage.
 Compiled execution, sanitizer coverage, and real CryptFF/parser-family
 qualification remain release gates.
 
+## Compressed temporary-output completion — 2026-08-19
+
+The GZip main and legacy fallback paths now require complete writes, mark
+source-read and temporary-resource failures, and use one cleanup contract that
+checks descriptor close and temporary removal without replacing a prior
+detection, decoder, or configured-limit result. BZip2, XZ, and SZDD staging
+paths use the same close/removal and result-preservation rules. A Linux
+static-library wrapper regression covers GZip write and close faults. Compiled
+execution, sanitizer coverage, and broad compressed-container qualification
+remain release gates.
+
 ## Mail parser limit admission and ABI status reconciliation — 2026-08-19
 
 MIME recursion and file-count admission now set the shared sticky incomplete

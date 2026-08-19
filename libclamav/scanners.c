@@ -1147,9 +1147,31 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
     return ret;
 }
 
+static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempfile, cl_error_t status,
+                                              const char *close_reason, const char *remove_reason)
+{
+    if (fd && *fd >= 0) {
+        if (close(*fd) != 0) {
+            cli_mark_scan_incomplete(ctx, close_reason);
+            if (status == CL_SUCCESS || status == CL_VERIFIED)
+                status = CL_EWRITE;
+        }
+        *fd = -1;
+    }
+
+    if (tempfile && !ctx->engine->keeptmp && cli_unlink(tempfile) != 0) {
+        cli_mark_scan_incomplete(ctx, remove_reason);
+        if (status == CL_SUCCESS || status == CL_VERIFIED)
+            status = CL_EUNLINK;
+    }
+
+    return status;
+}
+
 static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char *buff)
 {
-    int fd;
+    int fd = -1;
+    int sourcefd;
     int gzclose_ret;
     int gzerr = Z_OK;
     cl_error_t ret;
@@ -1162,21 +1184,27 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     gzFile gz;
 
     ret = fmap_fd(map);
-    if (ret < 0)
+    if (ret < 0) {
+        cli_mark_scan_incomplete(ctx, "GZip legacy source descriptor could not be duplicated");
         return CL_EDUP;
-    fd = dup(ret);
-    if (fd < 0)
+    }
+    sourcefd = dup(ret);
+    if (sourcefd < 0) {
+        cli_mark_scan_incomplete(ctx, "GZip legacy source descriptor could not be duplicated");
         return CL_EDUP;
+    }
 
-    if (!(gz = gzdopen(fd, "rb"))) {
-        close(fd);
+    if (!(gz = gzdopen(sourcefd, "rb"))) {
+        close(sourcefd);
+        cli_mark_scan_incomplete(ctx, "GZip legacy decoder could not be opened");
         return CL_EOPEN;
     }
 
+    fd = -1;
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_dbgmsg("GZip: Can't generate temporary file.\n");
+        cli_mark_scan_incomplete(ctx, "GZip legacy temporary output could not be created");
         gzclose(gz);
-        close(fd);
         return ret;
     }
 
@@ -1202,10 +1230,11 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     }
 
     gzclose_ret = gzclose(gz);
-    if (gzclose_ret != Z_OK && decode_status == CL_SUCCESS) {
+    if (gzclose_ret != Z_OK) {
         cli_dbgmsg("GZip: legacy decoder close failed: %d; refusing to scan partial output\n", gzclose_ret);
         cli_mark_scan_incomplete(ctx, "GZip legacy decoder did not close cleanly");
-        decode_status = CL_EUNPACK;
+        if (decode_status == CL_SUCCESS)
+            decode_status = CL_EUNPACK;
         stream_complete = false;
     }
 
@@ -1214,38 +1243,24 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
             cli_mark_scan_incomplete(ctx, "GZip legacy stream ended before decompression completed");
             decode_status = CL_EUNPACK;
         }
-        close(fd);
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tmpname)) {
-                free(tmpname);
-                return CL_EUNLINK;
-            }
-        }
+        decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                    "GZip legacy temporary output could not be closed",
+                                                    "GZip legacy temporary output could not be removed");
         free(tmpname);
         return decode_status;
     }
 
-    if (CL_SUCCESS != (ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE))) {
-        close(fd);
-        if (!ctx->engine->keeptmp) {
-            (void)cli_unlink(tmpname);
-        }
-        free(tmpname);
-        return ret;
-    }
-    close(fd);
-    if (!ctx->engine->keeptmp) {
-        if (cli_unlink(tmpname)) {
-            ret = CL_EUNLINK;
-        }
-    }
+    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      "GZip legacy temporary output could not be closed",
+                                      "GZip legacy temporary output could not be removed");
     free(tmpname);
     return ret;
 }
 
 static cl_error_t cli_scangzip(cli_ctx *ctx)
 {
-    int fd;
+    int fd = -1;
     cl_error_t ret = CL_SUCCESS;
     cl_error_t decode_status = CL_SUCCESS;
     unsigned char buff[FILEBUFF];
@@ -1265,6 +1280,7 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_dbgmsg("GZip: Can't generate temporary file.\n");
+        cli_mark_scan_incomplete(ctx, "GZip temporary output could not be created");
         inflateEnd(&z);
         return ret;
     }
@@ -1274,14 +1290,13 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
         unsigned int bytes = MIN(map->len - at, map->pgsz);
         if (!(z.next_in = (void *)fmap_need_off_once(map, at, bytes))) {
             cli_dbgmsg("GZip: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
+            cli_mark_scan_incomplete(ctx, "GZip compressed input could not be read completely");
             inflateEnd(&z);
-            close(fd);
-            if (cli_unlink(tmpname)) {
-                free(tmpname);
-                return CL_EUNLINK;
-            }
+            ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, CL_EREAD,
+                                              "GZip temporary output could not be closed",
+                                              "GZip temporary output could not be removed");
             free(tmpname);
-            return CL_EREAD;
+            return ret;
         }
         at += bytes;
         z.avail_in = bytes;
@@ -1297,16 +1312,14 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
                 at            = map->len;
                 break;
             }
-            if (cli_writen(fd, buff, sizeof(buff) - z.avail_out) == (size_t)-1) {
+            if (cli_writen(fd, buff, sizeof(buff) - z.avail_out) != sizeof(buff) - z.avail_out) {
                 cli_mark_scan_incomplete(ctx, "GZip output could not be written completely");
                 inflateEnd(&z);
-                close(fd);
-                if (cli_unlink(tmpname)) {
-                    free(tmpname);
-                    return CL_EUNLINK;
-                }
+                ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, CL_EWRITE,
+                                                  "GZip temporary output could not be closed",
+                                                  "GZip temporary output could not be removed");
                 free(tmpname);
-                return CL_EWRITE;
+                return ret;
             }
             outsize += sizeof(buff) - z.avail_out;
             if ((decode_status = cli_checklimits("GZip", ctx, outsize, 0, 0)) != CL_SUCCESS) {
@@ -1338,32 +1351,17 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "GZip stream ended before decompression completed");
             decode_status = CL_EUNPACK;
         }
-        close(fd);
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tmpname)) {
-                free(tmpname);
-                return CL_EUNLINK;
-            }
-        }
+        decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                    "GZip temporary output could not be closed",
+                                                    "GZip temporary output could not be removed");
         free(tmpname);
         return decode_status;
     }
 
-    if (CL_SUCCESS != (ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE))) {
-        close(fd);
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tmpname)) {
-                free(tmpname);
-                return CL_EUNLINK;
-            }
-        }
-        free(tmpname);
-        return ret;
-    }
-    close(fd);
-    if (!ctx->engine->keeptmp)
-        if (cli_unlink(tmpname))
-            ret = CL_EUNLINK;
+    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      "GZip temporary output could not be closed",
+                                      "GZip temporary output could not be removed");
     free(tmpname);
 
     return ret;
@@ -1394,11 +1392,13 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
     rc             = BZ2_bzDecompressInit(&strm, 0, 0);
     if (BZ_OK != rc) {
         cli_dbgmsg("Bzip: DecompressInit failed: %d\n", rc);
+        cli_mark_scan_incomplete(ctx, "Bzip decoder could not be initialized");
         return CL_EOPEN;
     }
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd))) {
         cli_dbgmsg("Bzip: Can't generate temporary file.\n");
+        cli_mark_scan_incomplete(ctx, "Bzip temporary output could not be created");
         BZ2_bzDecompressEnd(&strm);
         return ret;
     }
@@ -1434,13 +1434,9 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
                 cli_mark_scan_incomplete(ctx, "Bzip output could not be written completely");
                 decode_status = CL_EWRITE;
                 BZ2_bzDecompressEnd(&strm);
-                close(fd);
-                if (!ctx->engine->keeptmp) {
-                    if (cli_unlink(tmpname)) {
-                        free(tmpname);
-                        return CL_EUNLINK;
-                    }
-                }
+                decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                            "Bzip temporary output could not be closed",
+                                                            "Bzip temporary output could not be removed");
                 free(tmpname);
                 return decode_status;
             }
@@ -1464,32 +1460,17 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "Bzip stream ended before decompression completed");
             decode_status = CL_EUNPACK;
         }
-        close(fd);
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tmpname)) {
-                free(tmpname);
-                return CL_EUNLINK;
-            }
-        }
+        decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                    "Bzip temporary output could not be closed",
+                                                    "Bzip temporary output could not be removed");
         free(tmpname);
         return decode_status;
     }
 
-    if (CL_SUCCESS != (ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE))) {
-        close(fd);
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tmpname)) {
-                free(tmpname);
-                return CL_EUNLINK;
-            }
-        }
-        free(tmpname);
-        return ret;
-    }
-    close(fd);
-    if (!ctx->engine->keeptmp)
-        if (cli_unlink(tmpname))
-            ret = CL_EUNLINK;
+    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      "Bzip temporary output could not be closed",
+                                      "Bzip temporary output could not be removed");
     free(tmpname);
 
     return ret;
@@ -1509,6 +1490,7 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
     buf = malloc(CLI_XZ_OBUF_SIZE);
     if (buf == NULL) {
         cli_errmsg("cli_scanxz: nomemory for decompress buffer.\n");
+        cli_mark_scan_incomplete(ctx, "XZ decompression buffer could not be allocated");
         return CL_EMEM;
     }
     memset(&strm, 0x00, sizeof(struct CLI_XZ));
@@ -1593,12 +1575,9 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
 
 xz_exit:
     cli_XzShutdown(&strm);
-    close(fd);
-    if (!ctx->engine->keeptmp) {
-        if (cli_unlink(tmpname) && ret == CL_SUCCESS) {
-            ret = CL_EUNLINK;
-        }
-    }
+    ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      "XZ temporary output could not be closed",
+                                      "XZ temporary output could not be removed");
     free(tmpname);
     free(buf);
     return ret;
@@ -1614,26 +1593,27 @@ static cl_error_t cli_scanszdd(cli_ctx *ctx)
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &ofd))) {
         cli_dbgmsg("MSEXPAND: Can't generate temporary file/descriptor\n");
+        cli_mark_scan_incomplete(ctx, "SZDD temporary output could not be created");
         return ret;
     }
 
     ret = cli_msexpand(ctx, ofd);
 
     if (ret != CL_SUCCESS) { /* CL_VIRUS or some error */
-        close(ofd);
-        if (!ctx->engine->keeptmp)
-            if (cli_unlink(tmpname))
-                ret = CL_EUNLINK;
+        if (ret != CL_VIRUS && ret != CL_BREAK && !ctx->scan_incomplete)
+            cli_mark_scan_incomplete(ctx, "SZDD decompression did not complete");
+        ret = cli_cleanup_compressed_temp(ctx, &ofd, tmpname, ret,
+                                          "SZDD temporary output could not be closed",
+                                          "SZDD temporary output could not be removed");
         free(tmpname);
         return ret;
     }
 
     cli_dbgmsg("MSEXPAND: Decompressed into %s\n", tmpname);
     ret = cli_magic_scan_desc(ofd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
-    close(ofd);
-    if (!ctx->engine->keeptmp)
-        if (cli_unlink(tmpname))
-            ret = CL_EUNLINK;
+    ret = cli_cleanup_compressed_temp(ctx, &ofd, tmpname, ret,
+                                      "SZDD temporary output could not be closed",
+                                      "SZDD temporary output could not be removed");
     free(tmpname);
 
     return ret;

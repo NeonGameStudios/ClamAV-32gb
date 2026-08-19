@@ -3891,6 +3891,72 @@ START_TEST(test_cryptff_staging_failures_are_fail_visible)
     cl_engine_free(scan_engine);
 }
 END_TEST
+
+START_TEST(test_gzip_staging_failures_are_fail_visible)
+{
+    static const uint8_t input[] = "GZip staging fault injection";
+    uint8_t *gzip;
+    size_t gzip_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    gzip = gzip_stream(input, sizeof(input) - 1U, &gzip_length);
+    ck_assert_ptr_nonnull(gzip);
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(gzip, gzip_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    clamav_test_fail_write = 1;
+    ret                    = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                                            "CL_TYPE_GZ", NULL);
+    clamav_test_fail_write = 0;
+    ck_assert_int_eq(ret, CL_EWRITE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(gzip, gzip_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    clamav_test_fail_close = 1;
+    ret                    = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                                            "CL_TYPE_GZ", NULL);
+    clamav_test_fail_close = 0;
+    ck_assert_int_eq(ret, CL_EWRITE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(gzip);
+}
+END_TEST
 #endif
 
 START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
@@ -9496,6 +9562,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_output_write_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_output_close_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_cryptff_staging_failures_are_fail_visible);
+    tcase_add_test(tc_cl, test_gzip_staging_failures_are_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_zip_truncated_entry_paths_are_fail_visible);
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
