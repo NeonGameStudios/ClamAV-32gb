@@ -2086,7 +2086,9 @@ Structured reports now preserve detection precedence over sticky incomplete
 parser state. A detection that terminates the scan is reported as
 `DETECTION_TERMINATED`, even when cleanup or an earlier optional parser left an
 incomplete marker; incomplete states still prevent clean completion and remain
-visible for non-detecting scans.
+visible for non-detecting scans. Operational I/O, temporary-file, lock, and
+allocation failures are reported as `RESOURCE_FAILURE` instead of being
+classified from parser wording.
 
 ## Parser-gate ceiling enforcement — 2026-08-19
 

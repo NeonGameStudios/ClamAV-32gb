@@ -89,6 +89,32 @@ static bool report_reason_contains(const char *reason, const char *needle)
     return (NULL != reason) && (NULL != needle) && (NULL != strstr(reason, needle));
 }
 
+static bool report_status_is_operational_failure(cl_error_t status)
+{
+    switch (status) {
+        case CL_EOPEN:
+        case CL_ECREAT:
+        case CL_EUNLINK:
+        case CL_ESTAT:
+        case CL_EREAD:
+        case CL_ESEEK:
+        case CL_EWRITE:
+        case CL_EDUP:
+        case CL_EACCES:
+        case CL_ETMPFILE:
+        case CL_ETMPDIR:
+        case CL_EMAP:
+        case CL_EMEM:
+        case CL_ELOCK:
+        case CL_EBUSY:
+        case CL_ESTATE:
+        case CL_ERROR:
+            return true;
+        default:
+            return false;
+    }
+}
+
 cl_error_t cli_scan_report_create(
     cl_scan_report_t **report_out,
     const struct cl_engine *engine)
@@ -270,12 +296,16 @@ void cli_scan_report_finish(
         report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
     } else if (status == CL_ERESOURCE) {
         report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
+    } else if ((status == CL_BREAK) || ((NULL != ctx) && ctx->abort_scan)) {
+        report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
     } else if ((NULL != ctx) && ctx->scan_incomplete) {
         if ((status == CL_EMAXSIZE) ||
             (status == CL_EMAXFILES) ||
             (status == CL_EMAXREC) ||
             (ctx->limit_exceeded)) {
             report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
+        } else if (report_status_is_operational_failure(status)) {
+            report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
         } else if (report_reason_contains(reason, "unsupported") ||
                    report_reason_contains(reason, "not implemented") ||
                    report_reason_contains(reason, "requires")) {
@@ -289,8 +319,6 @@ void cli_scan_report_finish(
         } else {
             report->completion = CL_SCAN_COMPLETION_UNSUPPORTED;
         }
-    } else if ((status == CL_BREAK) || ((NULL != ctx) && ctx->abort_scan)) {
-        report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
     } else if ((status == CL_EPARSE) || (status == CL_EFORMAT)) {
         report->completion = CL_SCAN_COMPLETION_MALFORMED_CONFIRMED;
     } else if (status != CL_SUCCESS) {
