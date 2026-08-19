@@ -90,11 +90,21 @@ static size_t messageLineMaterializedBytes(const line_t *line)
     return data ? strlen(data) + 1 : 1;
 }
 
+static void messageMarkMaterializationFailure(message *m, const char *reason)
+{
+    if (m == NULL)
+        return;
+
+    m->isTruncated = 1;
+    cli_mark_scan_incomplete(m->ctx, reason);
+}
+
 static int messageReserveMaterializedBytes(message *m, size_t bytes, const char *caller)
 {
     if ((bytes > MESSAGE_MAX_MATERIALIZED_BYTES) ||
         (m->materialized_bytes > MESSAGE_MAX_MATERIALIZED_BYTES - bytes)) {
-        m->isTruncated = 1;
+        messageMarkMaterializationFailure(m,
+                                           "MIME message materialization exceeded its bounded memory limit");
         m->materialized_bytes = MESSAGE_MAX_MATERIALIZED_BYTES;
         cli_warnmsg("%s: mail materialization exceeds the 64 MiB deep-parser limit\n", caller);
         return 0;
@@ -1069,6 +1079,7 @@ int messageAddLine(message *m, line_t *line)
 
     if (m->body_last == NULL) {
         cli_errmsg("messageAddLine: out of memory for m->body_last\n");
+        messageMarkMaterializationFailure(m, "MIME message line could not be materialized completely");
         return -1;
     }
 
@@ -1152,6 +1163,7 @@ int messageAddStr(message *m, const char *data)
                 m->body_last->t_next = (text *)malloc(sizeof(text));
                 if (m->body_last->t_next == NULL) {
                     cli_errmsg("messageAddStr: out of memory\n");
+                    messageMarkMaterializationFailure(m, "MIME message string could not be materialized completely");
                     return -1;
                 }
             }
@@ -1165,6 +1177,7 @@ int messageAddStr(message *m, const char *data)
 
     if (m->body_last == NULL) {
         cli_errmsg("messageAddStr: out of memory\n");
+        messageMarkMaterializationFailure(m, "MIME message string could not be materialized completely");
         return -1;
     }
 
@@ -1182,6 +1195,7 @@ int messageAddStr(message *m, const char *data)
 
                 if (m->body_last->t_line == NULL) {
                     cli_errmsg("messageAddStr: out of memory\n");
+                    messageMarkMaterializationFailure(m, "MIME message string could not be materialized completely");
                     return -1;
                 }
             }

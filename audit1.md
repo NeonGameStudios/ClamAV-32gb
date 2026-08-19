@@ -901,6 +901,16 @@ scan/cache a partial reconstruction as complete. A focused unit fixture covers
 the missing-fragment case; compiled Linux, sanitizer, and broader partial-mail
 qualification remain open.
 
+## MIME line materialization allocation failures — 2026-08-19
+
+`messageAddLine()` and `messageAddStr()` previously marked the message
+truncated for the bounded 64 MiB reservation failure, but allocation failures
+after that reservation could return `-1` without setting the scan's sticky
+incomplete state. A shared helper now marks both conditions fail-visible and
+records a reason before the parser unwinds. Existing materialization-limit
+unit tests assert the sticky state as well as the legacy message flag; actual
+fault-injected allocation and supported-build mail qualification remain open.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the

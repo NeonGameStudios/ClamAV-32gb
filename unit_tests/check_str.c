@@ -215,14 +215,18 @@ END_TEST
 
 START_TEST(test_message_addline_materialization_limit_is_fail_visible)
 {
+    cli_ctx ctx;
     message *m = messageCreate();
     line_t *line = lineCreate("x");
 
+    memset(&ctx, 0, sizeof(ctx));
     ck_assert_ptr_nonnull(m);
     ck_assert_ptr_nonnull(line);
+    m->ctx = &ctx;
     m->materialized_bytes = MESSAGE_MAX_MATERIALIZED_BYTES;
     ck_assert_int_eq(messageAddLine(m, line), -1);
     ck_assert_int_eq(m->isTruncated, 1);
+    ck_assert(ctx.scan_incomplete);
     ck_assert_uint_eq(m->materialized_bytes, MESSAGE_MAX_MATERIALIZED_BYTES);
     lineUnlink(line);
     messageDestroy(m);
@@ -231,12 +235,16 @@ END_TEST
 
 START_TEST(test_message_addstr_materialization_limit_is_fail_visible)
 {
+    cli_ctx ctx;
     message *m = messageCreate();
 
+    memset(&ctx, 0, sizeof(ctx));
     ck_assert_ptr_nonnull(m);
+    m->ctx = &ctx;
     m->materialized_bytes = MESSAGE_MAX_MATERIALIZED_BYTES;
     ck_assert_int_eq(messageAddStr(m, "x"), -1);
     ck_assert_int_eq(m->isTruncated, 1);
+    ck_assert(ctx.scan_incomplete);
     ck_assert_uint_eq(m->materialized_bytes, MESSAGE_MAX_MATERIALIZED_BYTES);
     messageDestroy(m);
 }

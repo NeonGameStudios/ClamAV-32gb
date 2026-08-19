@@ -2691,3 +2691,14 @@ the scan incomplete and keeps the partial output out of the scan/cache path.
 The focused unit fixture supplies only fragment two and asserts a non-clean
 result. Compiled Linux execution, sanitizer coverage, and broader partial-mail
 corpus qualification remain release gates.
+
+## MIME line materialization allocation failures — 2026-08-19
+
+MIME line/string materialization now uses one failure helper for quota
+exhaustion and post-reservation allocation failures. It marks the message
+truncated and sets the scan's sticky incomplete state before returning an
+error, including when a text-node allocation fails after the bounded-memory
+reservation has already been charged. The existing limit regressions now
+assert both the message truncation and scan-incomplete state. Fault-injected
+allocation execution, sanitizer coverage, and broad mail-corpus qualification
+remain release gates.
