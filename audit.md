@@ -1770,3 +1770,14 @@ also rejects an empty terminator-only response, closing a false-success path
 where no scan report had been received. The focused FILDES unit regression is
 registered, but compiled Linux execution, Sonic1 service qualification,
 sanitizer coverage, and 4-GiB/32-GiB socket integration remain open.
+
+## IDSESSION structured-report terminator — 2026-08-19
+
+The clamdscan IDSESSION structured-report path now consumes the zero-length
+terminator belonging to each report object before the next request is read.
+Without this, the next `dspreport()` invocation could consume the previous
+request's terminator and classify a valid multi-request session as a transport
+failure. The focused socketpair regression exercises a fragmented report
+header/payload followed by the terminator and reads both frames in order.
+Compiled Linux execution, Sonic1 service qualification, sanitizer coverage,
+and 4-GiB/32-GiB multi-request integration remain open.

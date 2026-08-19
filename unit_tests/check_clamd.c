@@ -216,12 +216,22 @@ START_TEST(test_scan_report_frames_are_bounded_and_fragment_safe)
     ck_assert_int_eq(send(pair[0], ((const char *)&network_length) + 1, sizeof(network_length) - 1, 0),
                      (ssize_t)(sizeof(network_length) - 1));
     ck_assert_int_eq(send(pair[0], payload, strlen(payload)), (ssize_t)strlen(payload));
+    network_length = 0;
+    ck_assert_int_eq(send(pair[0], &network_length, sizeof(network_length), 0),
+                     (ssize_t)sizeof(network_length));
     frame = recv_scan_report_frame(pair[1], &json, &json_length, &terminator);
     ck_assert_int_eq(frame, 1);
     ck_assert_int_eq(terminator, 0);
     ck_assert_int_eq(json_length, (uint32_t)strlen(payload));
     ck_assert_str_eq(json, payload);
     free(json);
+    json = NULL;
+    json_length = 0;
+    terminator = 0;
+    frame = recv_scan_report_frame(pair[1], &json, &json_length, &terminator);
+    ck_assert_int_eq(frame, 0);
+    ck_assert_int_eq(terminator, 1);
+    ck_assert_ptr_null(json);
     close(pair[0]);
     close(pair[1]);
 

@@ -2638,3 +2638,14 @@ instead of treating it as a clean, successful scan. A focused Linux unit test
 covers exact-limit and over-limit FILDES behavior; supported-Linux execution,
 Sonic1 service qualification, sanitizer coverage, and 4-GiB/32-GiB socket
 tests remain release gates.
+
+## IDSESSION structured-report terminator — 2026-08-19
+
+The clamdscan IDSESSION consumer now consumes the required zero-length frame
+after each JSON report before returning to the request loop. Previously the
+report object was parsed correctly but its terminator remained buffered, so a
+subsequent request could see the prior terminator as an empty response. The
+focused socketpair regression now delivers a fragmented JSON frame followed by
+its terminator and verifies both frames are consumed in order. Supported-Linux
+IDSESSION execution, Sonic1 service qualification, sanitizer coverage, and
+4-GiB/32-GiB integration remain release gates.

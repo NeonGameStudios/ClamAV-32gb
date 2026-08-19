@@ -403,7 +403,9 @@ static int report_json_id(const char *json, uint32_t length, unsigned int *id)
 static int dspreport(struct client_parallel_data *c)
 {
     char *json = NULL;
+    char *terminator_json = NULL;
     uint32_t json_length = 0;
+    uint32_t terminator_length = 0;
     int terminator = 0;
     int frame_infected = 0;
     int frame_incomplete = 0;
@@ -414,6 +416,17 @@ static int dspreport(struct client_parallel_data *c)
 
     if (recv_scan_report_frame(c->sockd, &json, &json_length, &terminator) < 0 || terminator)
         return 1;
+    /* Each IDSESSION structured response is a complete framed response:
+     * exactly one report object followed by the zero-length terminator.  Do
+     * not leave that terminator in the socket, where the next request would
+     * mistake it for its own empty response. */
+    terminator = 0;
+    if (recv_scan_report_frame(c->sockd, &terminator_json, &terminator_length, &terminator) < 0 || !terminator) {
+        free(json);
+        free(terminator_json);
+        return 1;
+    }
+    free(terminator_json);
     if (report_json_id(json, json_length, &rid) < 0 ||
         scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete) < 0) {
         free(json);
