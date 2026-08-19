@@ -173,7 +173,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
     CSzArEx db;
     SRes res;
     UInt16 utf16buf[UTFBUFSZ], *utf16name = utf16buf;
-    int namelen            = UTFBUFSZ;
+    size_t namelen         = UTFBUFSZ;
     cl_error_t found       = CL_CLEAN;
     Int64 begin_of_archive = offset;
 
@@ -211,7 +211,8 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             char *name;
             char *tmp_name;
             size_t j;
-            int newnamelen, fd;
+            size_t newnamelen;
+            int fd;
             cl_error_t limitret;
             cl_error_t metadata_status;
             CClamFileOutStream output;
@@ -240,7 +241,12 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 if (newnamelen > namelen) {
                     if (namelen > UTFBUFSZ)
                         free(utf16name);
-                    utf16name = cli_max_malloc(newnamelen * 2);
+                    if (newnamelen > SIZE_MAX / sizeof(*utf16name)) {
+                        cli_mark_scan_incomplete(ctx, "7-Zip member name length could not be represented");
+                        found = CL_ERESOURCE;
+                        break;
+                    }
+                    utf16name = cli_max_malloc(newnamelen * sizeof(*utf16name));
                     if (!utf16name) {
                         cli_mark_scan_incomplete(ctx, "7-Zip member name could not be allocated");
                         found = CL_EMEM;

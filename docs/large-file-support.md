@@ -2524,6 +2524,11 @@ as though the member completed. Detection and application-abort precedence is
 retained; source guards cover the paths, while compiled Linux and broader
 encrypted/malformed 7-Zip corpus execution remain release gates.
 
+7-Zip member-name lengths now retain the SDK's native `size_t` type and are
+checked before conversion to an allocation size. A malformed or unrepresentable
+name length returns an explicit resource/incomplete result instead of wrapping
+through an `int` or byte-count multiplication.
+
 ## XAR temporary failure propagation — 2026-08-19
 
 XAR TOC temporary-space reservation and creation failures now mark the scan
