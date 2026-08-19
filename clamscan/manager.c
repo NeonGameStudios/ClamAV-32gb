@@ -332,6 +332,29 @@ static int write_structured_scan_report(const struct optstruct *opts, const cl_s
     return 0;
 }
 
+/* A clean/trusted verdict is only publishable when every required operation
+ * completed. The library keeps legacy return-code behavior for callers, so
+ * the CLI must explicitly enforce the structured completion contract before
+ * printing or counting an OK result. */
+static void enforce_structured_completion(const cl_scan_report_t *report, cl_error_t *status)
+{
+    cl_scan_completion_t completion;
+    cl_error_t report_status;
+
+    if ((NULL == report) || (NULL == status))
+        return;
+    if (cl_scan_report_get_completion(report, &completion) != CL_SUCCESS ||
+        completion == CL_SCAN_COMPLETION_COMPLETE ||
+        completion == CL_SCAN_COMPLETION_DETECTION_TERMINATED)
+        return;
+
+    if (cl_scan_report_get_status(report, &report_status) == CL_SUCCESS) {
+        *status = (report_status == CL_SUCCESS) ? CL_ERROR : report_status;
+    } else if (*status == CL_SUCCESS) {
+        *status = CL_ERROR;
+    }
+}
+
 static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
 {
     cl_error_t ret = CL_SUCCESS;
@@ -531,6 +554,8 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
     if (write_structured_scan_report(opts, report) != 0)
         info.errors++;
 
+    enforce_structured_completion(report, &ret);
+
     switch (verdict) {
         case CL_VERDICT_NOTHING_FOUND: {
             if (CL_SUCCESS == ret) {
@@ -548,10 +573,16 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
 
         case CL_VERDICT_TRUSTED: {
             // TODO: Option to print "TRUSTED" verdict instead of "OK"?
-            if (!printinfected && printclean) {
-                mprintf(LOGG_INFO, "%s: OK\n", filename);
+            if (CL_SUCCESS == ret) {
+                if (!printinfected && printclean) {
+                    mprintf(LOGG_INFO, "%s: OK\n", filename);
+                }
+                info.files++;
+            } else {
+                if (!printinfected)
+                    logg(LOGG_INFO, "%s: %s ERROR\n", filename, cl_strerror(ret));
+                info.errors++;
             }
-            info.files++;
         } break;
 
         case CL_VERDICT_STRONG_INDICATOR:
@@ -973,6 +1004,8 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
     if (write_structured_scan_report(opts, report) != 0)
         info.errors++;
 
+    enforce_structured_completion(report, &ret);
+
     switch (verdict) {
         case CL_VERDICT_NOTHING_FOUND: {
             if (CL_SUCCESS == ret) {
@@ -990,8 +1023,14 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
         case CL_VERDICT_TRUSTED: {
             // TODO: Option to print "TRUSTED" verdict instead of "OK"?
-            if (!printinfected) {
-                mprintf(LOGG_INFO, "stdin: OK\n");
+            if (CL_SUCCESS == ret) {
+                if (!printinfected) {
+                    mprintf(LOGG_INFO, "stdin: OK\n");
+                }
+            } else {
+                if (!printinfected)
+                    logg(LOGG_INFO, "stdin: %s ERROR\n", cl_strerror(ret));
+                info.errors++;
             }
         } break;
 

@@ -60,6 +60,10 @@ code and two strings. The transport parser accepts both the numeric library
 verdict representation and the compact legacy fallback frame. Runtime daemon
 qualification remains an open release gate.
 
+The `clamscan` file and stdin front ends now enforce report completion before
+publishing a clean or trusted `OK`; a non-detection incomplete report is
+converted to an error instead of being counted as clean.
+
 ## Executive summary
 
 The fork now has a coherent 64-bit raw-scan path and materially stronger

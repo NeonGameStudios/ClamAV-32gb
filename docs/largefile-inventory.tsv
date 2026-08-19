@@ -202,22 +202,22 @@ fixed-width-integer	clamonacc/scan/thread.h	65	    int64_t timeout;
 fixed-width-integer	clamscan/clamscan.c	63	static void loggBytes(uint64_t bytes)
 fixed-width-integer	clamscan/global.h	31	    uint64_t bytes_scanned; /* number of *scanned* bytes */
 fixed-width-integer	clamscan/global.h	32	    uint64_t bytes_read;    /* number of *read* bytes */
-fixed-width-integer	clamscan/manager.c	1094	    uint32_t i             = 0;
-fixed-width-integer	clamscan/manager.c	1095	    uint32_t totalNumDots  = 25;
-fixed-width-integer	clamscan/manager.c	1096	    uint32_t numDots       = 0;
-fixed-width-integer	clamscan/manager.c	1178	    uint32_t i               = 0;
-fixed-width-integer	clamscan/manager.c	1179	    uint32_t totalNumDots    = 25;
-fixed-width-integer	clamscan/manager.c	1180	    uint32_t numDots         = 0;
-fixed-width-integer	clamscan/manager.c	1262	    uint32_t i            = 0;
-fixed-width-integer	clamscan/manager.c	1263	    uint32_t totalNumDots = 10;
-fixed-width-integer	clamscan/manager.c	1264	    uint32_t numDots      = 0;
-fixed-width-integer	clamscan/manager.c	1857	        uint32_t opt_value = opt->numarg;
-fixed-width-integer	clamscan/manager.c	837	    uint64_t fsize         = 0;
-fixed-width-integer	clamscan/manager.c	838	    uint64_t maxfilesize   = 0;
-fixed-width-integer	clamscan/manager.c	871	    maxfilesize = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
-fixed-width-integer	clamscan/manager.c	885	        if ((UINT64_MAX - fsize < (uint64_t)bread) ||
-fixed-width-integer	clamscan/manager.c	886	            (maxfilesize != 0 && (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize))) {
-fixed-width-integer	clamscan/manager.c	888	            if (maxfilesize != 0 && maxfilesize < (uint64_t)INT64_MAX) {
+fixed-width-integer	clamscan/manager.c	1133	    uint32_t i             = 0;
+fixed-width-integer	clamscan/manager.c	1134	    uint32_t totalNumDots  = 25;
+fixed-width-integer	clamscan/manager.c	1135	    uint32_t numDots       = 0;
+fixed-width-integer	clamscan/manager.c	1217	    uint32_t i               = 0;
+fixed-width-integer	clamscan/manager.c	1218	    uint32_t totalNumDots    = 25;
+fixed-width-integer	clamscan/manager.c	1219	    uint32_t numDots         = 0;
+fixed-width-integer	clamscan/manager.c	1301	    uint32_t i            = 0;
+fixed-width-integer	clamscan/manager.c	1302	    uint32_t totalNumDots = 10;
+fixed-width-integer	clamscan/manager.c	1303	    uint32_t numDots      = 0;
+fixed-width-integer	clamscan/manager.c	1896	        uint32_t opt_value = opt->numarg;
+fixed-width-integer	clamscan/manager.c	868	    uint64_t fsize         = 0;
+fixed-width-integer	clamscan/manager.c	869	    uint64_t maxfilesize   = 0;
+fixed-width-integer	clamscan/manager.c	902	    maxfilesize = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
+fixed-width-integer	clamscan/manager.c	916	        if ((UINT64_MAX - fsize < (uint64_t)bread) ||
+fixed-width-integer	clamscan/manager.c	917	            (maxfilesize != 0 && (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize))) {
+fixed-width-integer	clamscan/manager.c	919	            if (maxfilesize != 0 && maxfilesize < (uint64_t)INT64_MAX) {
 fixed-width-integer	common/cert_util.c	316	    const uint32_t STARTING_RAW_PEM_LENGTH = 350 * 1024;
 fixed-width-integer	common/cert_util.c	317	    uint32_t i;
 fixed-width-integer	common/clamdcom.c	272	    uint32_t buf[BUFSIZ / sizeof(uint32_t)];
@@ -6176,30 +6176,30 @@ native-width-integer	clamscan/global.h	28	    unsigned int files;     /* number 
 native-width-integer	clamscan/global.h	29	    unsigned int ifiles;    /* number of infected files */
 native-width-integer	clamscan/global.h	30	    unsigned int errors;    /* number of errors */
 native-width-integer	clamscan/manager.c	101	                    fprintf(stderr, "ERROR: setgid(%d) failed.\n", (int)user->pw_gid);
-native-width-integer	clamscan/manager.c	1056	        fprintf(stdout, "%2lldh %02lldm", (long long)seconds / 3600, ((long long)seconds % 3600) / 60);
-native-width-integer	clamscan/manager.c	1058	        fprintf(stdout, "%2lldm %02llds", (long long)seconds / 60, (long long)seconds % 60);
 native-width-integer	clamscan/manager.c	106	                    fprintf(stderr, "ERROR: setuid(%d) failed.\n", (int)user->pw_uid);
-native-width-integer	clamscan/manager.c	1060	        fprintf(stdout, "%3llds", (long long)seconds);
-native-width-integer	clamscan/manager.c	1064	static void print_num_sigs(size_t sigs, int bPad)
-native-width-integer	clamscan/manager.c	1087	static cl_error_t sigload_callback(size_t total_items, size_t now_completed, void *context)
-native-width-integer	clamscan/manager.c	1171	static cl_error_t engine_compile_callback(size_t total_items, size_t now_completed, void *context)
-native-width-integer	clamscan/manager.c	1256	static cl_error_t engine_free_callback(size_t total_items, size_t now_completed, void *context)
+native-width-integer	clamscan/manager.c	1095	        fprintf(stdout, "%2lldh %02lldm", (long long)seconds / 3600, ((long long)seconds % 3600) / 60);
+native-width-integer	clamscan/manager.c	1097	        fprintf(stdout, "%2lldm %02llds", (long long)seconds / 60, (long long)seconds % 60);
+native-width-integer	clamscan/manager.c	1099	        fprintf(stdout, "%3llds", (long long)seconds);
+native-width-integer	clamscan/manager.c	1103	static void print_num_sigs(size_t sigs, int bPad)
+native-width-integer	clamscan/manager.c	1126	static cl_error_t sigload_callback(size_t total_items, size_t now_completed, void *context)
+native-width-integer	clamscan/manager.c	1210	static cl_error_t engine_compile_callback(size_t total_items, size_t now_completed, void *context)
+native-width-integer	clamscan/manager.c	1295	static cl_error_t engine_free_callback(size_t total_items, size_t now_completed, void *context)
 native-width-integer	clamscan/manager.c	130	    size_t lastadd;
 native-width-integer	clamscan/manager.c	131	    size_t lastvir;
 native-width-integer	clamscan/manager.c	132	    size_t level;
-native-width-integer	clamscan/manager.c	1321	static int scan_memory(struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
-native-width-integer	clamscan/manager.c	1323	    int ret = 0;
 native-width-integer	clamscan/manager.c	133	    size_t nchains;
-native-width-integer	clamscan/manager.c	1351	 * @return int
-native-width-integer	clamscan/manager.c	1353	static int scan_files(struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options,
-native-width-integer	clamscan/manager.c	1354	                      unsigned int dirlnk, unsigned int filelnk)
-native-width-integer	clamscan/manager.c	1356	    int ret = 0;
-native-width-integer	clamscan/manager.c	1383	            int i;
+native-width-integer	clamscan/manager.c	1360	static int scan_memory(struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
+native-width-integer	clamscan/manager.c	1362	    int ret = 0;
+native-width-integer	clamscan/manager.c	1390	 * @return int
+native-width-integer	clamscan/manager.c	1392	static int scan_files(struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options,
+native-width-integer	clamscan/manager.c	1393	                      unsigned int dirlnk, unsigned int filelnk)
+native-width-integer	clamscan/manager.c	1395	    int ret = 0;
 native-width-integer	clamscan/manager.c	141	static cl_error_t pre(int fd, const char *type, void *context)
-native-width-integer	clamscan/manager.c	1431	int scanmanager(const struct optstruct *opts)
-native-width-integer	clamscan/manager.c	1433	    int ret = 0;
-native-width-integer	clamscan/manager.c	1434	    int i;
-native-width-integer	clamscan/manager.c	1436	    unsigned int dboptions = 0, dirlnk = 1, filelnk = 1;
+native-width-integer	clamscan/manager.c	1422	            int i;
+native-width-integer	clamscan/manager.c	1470	int scanmanager(const struct optstruct *opts)
+native-width-integer	clamscan/manager.c	1472	    int ret = 0;
+native-width-integer	clamscan/manager.c	1473	    int i;
+native-width-integer	clamscan/manager.c	1475	    unsigned int dboptions = 0, dirlnk = 1, filelnk = 1;
 native-width-integer	clamscan/manager.c	161	static int print_chain(struct metachain *c, char *str, size_t len)
 native-width-integer	clamscan/manager.c	163	    size_t i;
 native-width-integer	clamscan/manager.c	164	    size_t na = 0;
@@ -6212,25 +6212,25 @@ native-width-integer	clamscan/manager.c	223	    int toolong;
 native-width-integer	clamscan/manager.c	279	static void clamscan_virus_found_cb(int fd, const char *alert_name, void *context)
 native-width-integer	clamscan/manager.c	296	static int write_structured_scan_report(const struct optstruct *opts, const cl_scan_report_t *report)
 native-width-integer	clamscan/manager.c	301	    int status;
-native-width-integer	clamscan/manager.c	338	    int fd         = -1;
-native-width-integer	clamscan/manager.c	339	    int included   = 0;
-native-width-integer	clamscan/manager.c	562	                    int toolong = print_chain(&chain, str, sizeof(str));
-native-width-integer	clamscan/manager.c	564	                    logg(LOGG_INFO, "%s%s!(%llu)%s: %s FOUND\n", str, toolong ? "..." : "", (long long unsigned)(chain.lastvir - 1), chain.chains[chain.nchains - 1], alert_name);
-native-width-integer	clamscan/manager.c	566	                    logg(LOGG_INFO, "%s!(%llu): %s FOUND\n", filename, (long long unsigned)(chain.lastvir - 1), alert_name);
-native-width-integer	clamscan/manager.c	626	static void scandirs(const char *dirname, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options, unsigned int depth, dev_t dev)
-native-width-integer	clamscan/manager.c	634	    size_t entries_count         = 0;
-native-width-integer	clamscan/manager.c	635	    size_t entries_capacity      = 0;
-native-width-integer	clamscan/manager.c	636	    size_t entry_index;
-native-width-integer	clamscan/manager.c	638	    int included;
-native-width-integer	clamscan/manager.c	640	    unsigned int dirlnk, filelnk;
-native-width-integer	clamscan/manager.c	674	    if (depth > (unsigned int)optget(opts, "max-dir-recursion")->numarg)
-native-width-integer	clamscan/manager.c	702	                size_t new_capacity = (0 == entries_capacity) ? 32 : (entries_capacity * 2);
+native-width-integer	clamscan/manager.c	361	    int fd         = -1;
+native-width-integer	clamscan/manager.c	362	    int included   = 0;
+native-width-integer	clamscan/manager.c	593	                    int toolong = print_chain(&chain, str, sizeof(str));
+native-width-integer	clamscan/manager.c	595	                    logg(LOGG_INFO, "%s%s!(%llu)%s: %s FOUND\n", str, toolong ? "..." : "", (long long unsigned)(chain.lastvir - 1), chain.chains[chain.nchains - 1], alert_name);
+native-width-integer	clamscan/manager.c	597	                    logg(LOGG_INFO, "%s!(%llu): %s FOUND\n", filename, (long long unsigned)(chain.lastvir - 1), alert_name);
+native-width-integer	clamscan/manager.c	657	static void scandirs(const char *dirname, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options, unsigned int depth, dev_t dev)
+native-width-integer	clamscan/manager.c	665	    size_t entries_count         = 0;
+native-width-integer	clamscan/manager.c	666	    size_t entries_capacity      = 0;
+native-width-integer	clamscan/manager.c	667	    size_t entry_index;
+native-width-integer	clamscan/manager.c	669	    int included;
+native-width-integer	clamscan/manager.c	671	    unsigned int dirlnk, filelnk;
+native-width-integer	clamscan/manager.c	705	    if (depth > (unsigned int)optget(opts, "max-dir-recursion")->numarg)
+native-width-integer	clamscan/manager.c	733	                size_t new_capacity = (0 == entries_capacity) ? 32 : (entries_capacity * 2);
 native-width-integer	clamscan/manager.c	81	static int checkaccess(const char *path, const char *username, int mode)
-native-width-integer	clamscan/manager.c	833	static int scanstdin(const struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
-native-width-integer	clamscan/manager.c	843	    size_t bread;
 native-width-integer	clamscan/manager.c	86	static int checkaccess(const char *path, const char *username, int mode)
-native-width-integer	clamscan/manager.c	889	                if (ftruncate(fileno(fs), (off_t)(maxfilesize + 1)) == -1)
+native-width-integer	clamscan/manager.c	864	static int scanstdin(const struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
+native-width-integer	clamscan/manager.c	874	    size_t bread;
 native-width-integer	clamscan/manager.c	89	    int ret = 0, status;
+native-width-integer	clamscan/manager.c	920	                if (ftruncate(fileno(fs), (off_t)(maxfilesize + 1)) == -1)
 native-width-integer	clamscan/manager.h	27	int scanmanager(const struct optstruct *opts);
 native-width-integer	clamsubmit/clamsubmit.c	101	size_t header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 native-width-integer	clamsubmit/clamsubmit.c	103	    int len = size * nmemb;
@@ -16211,10 +16211,10 @@ format-width	clamscan/clamscan.c	228	        strftime(buffer, sizeof(buffer), "%
 format-width	clamscan/clamscan.c	238	        strftime(buffer, sizeof(buffer), "%Y:%m:%d %H:%M:%S", &tmp);
 format-width	clamscan/manager.c	101	                    fprintf(stderr, "ERROR: setgid(%d) failed.\n", (int)user->pw_gid);
 format-width	clamscan/manager.c	106	                    fprintf(stderr, "ERROR: setuid(%d) failed.\n", (int)user->pw_uid);
-format-width	clamscan/manager.c	1075	        const char *format = bPad ? "%8zu" : "%zu";
-format-width	clamscan/manager.c	1859	            logg(LOGG_ERROR, "max-recursion set to %u, but  cannot be larger than %u, and cannot be 0.\n",
-format-width	clamscan/manager.c	564	                    logg(LOGG_INFO, "%s%s!(%llu)%s: %s FOUND\n", str, toolong ? "..." : "", (long long unsigned)(chain.lastvir - 1), chain.chains[chain.nchains - 1], alert_name);
-format-width	clamscan/manager.c	566	                    logg(LOGG_INFO, "%s!(%llu): %s FOUND\n", filename, (long long unsigned)(chain.lastvir - 1), alert_name);
+format-width	clamscan/manager.c	1114	        const char *format = bPad ? "%8zu" : "%zu";
+format-width	clamscan/manager.c	1898	            logg(LOGG_ERROR, "max-recursion set to %u, but  cannot be larger than %u, and cannot be 0.\n",
+format-width	clamscan/manager.c	595	                    logg(LOGG_INFO, "%s%s!(%llu)%s: %s FOUND\n", str, toolong ? "..." : "", (long long unsigned)(chain.lastvir - 1), chain.chains[chain.nchains - 1], alert_name);
+format-width	clamscan/manager.c	597	                    logg(LOGG_INFO, "%s!(%llu): %s FOUND\n", filename, (long long unsigned)(chain.lastvir - 1), alert_name);
 format-width	common/actions.c	1010	        logg(LOGG_INFO, "win32_copy_handle_data: SetFilePointerEx failed for source handle. Error: %lu\n", GetLastError());
 format-width	common/actions.c	1014	        logg(LOGG_INFO, "win32_copy_handle_data: SetFilePointerEx failed for destination handle. Error: %lu\n", GetLastError());
 format-width	common/actions.c	1020	            logg(LOGG_INFO, "win32_copy_handle_data: ReadFile failed. Error: %lu\n", GetLastError());
@@ -18989,43 +18989,43 @@ offset-size-arithmetic	clamscan/clamscan.c	382	    mprintf(LOGG_INFO, "         
 offset-size-arithmetic	clamscan/global.h	27	    unsigned int dirs;      /* number of scanned directories */
 offset-size-arithmetic	clamscan/global.h	28	    unsigned int files;     /* number of scanned files */
 offset-size-arithmetic	clamscan/global.h	31	    uint64_t bytes_scanned; /* number of *scanned* bytes */
-offset-size-arithmetic	clamscan/manager.c	1087	static cl_error_t sigload_callback(size_t total_items, size_t now_completed, void *context)
-offset-size-arithmetic	clamscan/manager.c	1171	static cl_error_t engine_compile_callback(size_t total_items, size_t now_completed, void *context)
-offset-size-arithmetic	clamscan/manager.c	1256	static cl_error_t engine_free_callback(size_t total_items, size_t now_completed, void *context)
-offset-size-arithmetic	clamscan/manager.c	1384	            for (i = strlen(file) - 1; i > 0; i--) {
-offset-size-arithmetic	clamscan/manager.c	1483	    if (optget(opts, "official-db-only")->enabled)
-offset-size-arithmetic	clamscan/manager.c	1519	    if ((opt = optget(opts, "cache-size"))->enabled)
-offset-size-arithmetic	clamscan/manager.c	1530	                if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
-offset-size-arithmetic	clamscan/manager.c	1538	                i += strlen(opt->strarg) + 1;
-offset-size-arithmetic	clamscan/manager.c	1559	                if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
-offset-size-arithmetic	clamscan/manager.c	1566	                i += strlen(opt->strarg) + 1;
+offset-size-arithmetic	clamscan/manager.c	1126	static cl_error_t sigload_callback(size_t total_items, size_t now_completed, void *context)
+offset-size-arithmetic	clamscan/manager.c	1210	static cl_error_t engine_compile_callback(size_t total_items, size_t now_completed, void *context)
+offset-size-arithmetic	clamscan/manager.c	1295	static cl_error_t engine_free_callback(size_t total_items, size_t now_completed, void *context)
+offset-size-arithmetic	clamscan/manager.c	1423	            for (i = strlen(file) - 1; i > 0; i--) {
+offset-size-arithmetic	clamscan/manager.c	1522	    if (optget(opts, "official-db-only")->enabled)
+offset-size-arithmetic	clamscan/manager.c	1558	    if ((opt = optget(opts, "cache-size"))->enabled)
+offset-size-arithmetic	clamscan/manager.c	1569	                if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
+offset-size-arithmetic	clamscan/manager.c	1577	                i += strlen(opt->strarg) + 1;
+offset-size-arithmetic	clamscan/manager.c	1598	                if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
+offset-size-arithmetic	clamscan/manager.c	1605	                i += strlen(opt->strarg) + 1;
 offset-size-arithmetic	clamscan/manager.c	167	        size_t n = strlen(c->chains[i]);
-offset-size-arithmetic	clamscan/manager.c	1797	    if ((opt = optget(opts, "max-scansize"))->active) {
 offset-size-arithmetic	clamscan/manager.c	180	    str[len - 1] = '\0';
-offset-size-arithmetic	clamscan/manager.c	1813	    if ((opt = optget(opts, "max-temporary-size"))->active) {
-offset-size-arithmetic	clamscan/manager.c	1821	    if ((opt = optget(opts, "max-contiguous-size"))->active) {
-offset-size-arithmetic	clamscan/manager.c	1829	    if ((opt = optget(opts, "max-filesize"))->active) {
-offset-size-arithmetic	clamscan/manager.c	1840	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxfilesize\n");
-offset-size-arithmetic	clamscan/manager.c	1842	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxscansize\n");
+offset-size-arithmetic	clamscan/manager.c	1836	    if ((opt = optget(opts, "max-scansize"))->active) {
 offset-size-arithmetic	clamscan/manager.c	185	static cl_error_t post(int fd, int result, const char *alert_name, void *context)
-offset-size-arithmetic	clamscan/manager.c	1871	    /* Engine max sizes */
-offset-size-arithmetic	clamscan/manager.c	1937	    if ((opt = optget(opts, "pcre-max-filesize"))->active) {
+offset-size-arithmetic	clamscan/manager.c	1852	    if ((opt = optget(opts, "max-temporary-size"))->active) {
+offset-size-arithmetic	clamscan/manager.c	1860	    if ((opt = optget(opts, "max-contiguous-size"))->active) {
+offset-size-arithmetic	clamscan/manager.c	1868	    if ((opt = optget(opts, "max-filesize"))->active) {
+offset-size-arithmetic	clamscan/manager.c	1879	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxfilesize\n");
+offset-size-arithmetic	clamscan/manager.c	1881	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxscansize\n");
+offset-size-arithmetic	clamscan/manager.c	1910	    /* Engine max sizes */
+offset-size-arithmetic	clamscan/manager.c	1976	    if ((opt = optget(opts, "pcre-max-filesize"))->active) {
 offset-size-arithmetic	clamscan/manager.c	213	static cl_error_t meta(const char *container_type, unsigned long fsize_container, const char *filename,
 offset-size-arithmetic	clamscan/manager.c	214	                       unsigned long fsize_real, int is_encrypted, unsigned int filepos_container, void *context)
 offset-size-arithmetic	clamscan/manager.c	236	    n    = strlen(type) + strlen(filename) + 2;
 offset-size-arithmetic	clamscan/manager.c	254	        chains = realloc(c->chains, n * sizeof(*chains));
 offset-size-arithmetic	clamscan/manager.c	289	        filename = data->filename;
-offset-size-arithmetic	clamscan/manager.c	335	static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
-offset-size-arithmetic	clamscan/manager.c	477	        chain.chains = malloc(sizeof(char **));
-offset-size-arithmetic	clamscan/manager.c	566	                    logg(LOGG_INFO, "%s!(%llu): %s FOUND\n", filename, (long long unsigned)(chain.lastvir - 1), alert_name);
-offset-size-arithmetic	clamscan/manager.c	702	                size_t new_capacity = (0 == entries_capacity) ? 32 : (entries_capacity * 2);
-offset-size-arithmetic	clamscan/manager.c	703	                new_entries         = realloc(entries, new_capacity * sizeof(*entries));
-offset-size-arithmetic	clamscan/manager.c	720	            fname = malloc(strlen(dirname) + strlen(entries[entry_index]) + 2);
-offset-size-arithmetic	clamscan/manager.c	775	                    fname = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
+offset-size-arithmetic	clamscan/manager.c	358	static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
+offset-size-arithmetic	clamscan/manager.c	500	        chain.chains = malloc(sizeof(char **));
+offset-size-arithmetic	clamscan/manager.c	597	                    logg(LOGG_INFO, "%s!(%llu): %s FOUND\n", filename, (long long unsigned)(chain.lastvir - 1), alert_name);
+offset-size-arithmetic	clamscan/manager.c	733	                size_t new_capacity = (0 == entries_capacity) ? 32 : (entries_capacity * 2);
+offset-size-arithmetic	clamscan/manager.c	734	                new_entries         = realloc(entries, new_capacity * sizeof(*entries));
+offset-size-arithmetic	clamscan/manager.c	751	            fname = malloc(strlen(dirname) + strlen(entries[entry_index]) + 2);
 offset-size-arithmetic	clamscan/manager.c	80	/* FIXME: If possible, handle users correctly */
-offset-size-arithmetic	clamscan/manager.c	886	            (maxfilesize != 0 && (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize))) {
-offset-size-arithmetic	clamscan/manager.c	889	                if (ftruncate(fileno(fs), (off_t)(maxfilesize + 1)) == -1)
-offset-size-arithmetic	clamscan/manager.c	918	        fsize += bread;
+offset-size-arithmetic	clamscan/manager.c	806	                    fname = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
+offset-size-arithmetic	clamscan/manager.c	917	            (maxfilesize != 0 && (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize))) {
+offset-size-arithmetic	clamscan/manager.c	920	                if (ftruncate(fileno(fs), (off_t)(maxfilesize + 1)) == -1)
+offset-size-arithmetic	clamscan/manager.c	949	        fsize += bread;
 offset-size-arithmetic	clamsubmit/clamsubmit.c	101	size_t header_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 offset-size-arithmetic	clamsubmit/clamsubmit.c	103	    int len = size * nmemb;
 offset-size-arithmetic	clamsubmit/clamsubmit.c	112	        sp = ptr + clen + 1;
@@ -29792,14 +29792,14 @@ large-file-option	clamd/server-th.c	986	            logg(LOGG_ERROR, "cl_engine_
 large-file-option	clamd/server-th.c	991	    val = cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL);
 large-file-option	clamonacc/fanotif/fanotif.c	142	    (*ctx)->sizelimit = optget((*ctx)->clamdopts, "OnAccessMaxFileSize")->numarg;
 large-file-option	clamonacc/scan/thread.c	294	                logg(LOGG_DEBUG, "ClamWorker: '%s' exceeds OnAccessMaxFileSize; treating the permission event as incomplete\n", pathname);
-large-file-option	clamscan/manager.c	1798	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, opt->numarg))) {
-large-file-option	clamscan/manager.c	1799	            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
-large-file-option	clamscan/manager.c	1830	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, opt->numarg))) {
-large-file-option	clamscan/manager.c	1831	            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_FILESIZE) failed: %s\n", cl_strerror(ret));
-large-file-option	clamscan/manager.c	1839	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
-large-file-option	clamscan/manager.c	1841	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
-large-file-option	clamscan/manager.c	871	    maxfilesize = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
-large-file-option	clamscan/manager.c	887	            logg(LOGG_ERROR, "stdin exceeds MaxFileSize; refusing to scan a partial prefix\n");
+large-file-option	clamscan/manager.c	1837	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, opt->numarg))) {
+large-file-option	clamscan/manager.c	1838	            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
+large-file-option	clamscan/manager.c	1869	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, opt->numarg))) {
+large-file-option	clamscan/manager.c	1870	            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_FILESIZE) failed: %s\n", cl_strerror(ret));
+large-file-option	clamscan/manager.c	1878	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
+large-file-option	clamscan/manager.c	1880	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
+large-file-option	clamscan/manager.c	902	    maxfilesize = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
+large-file-option	clamscan/manager.c	918	            logg(LOGG_ERROR, "stdin exceeds MaxFileSize; refusing to scan a partial prefix\n");
 large-file-option	common/optparser.c	1406	                if (!strcmp(optentry->name, "MaxFileSize") ||
 large-file-option	common/optparser.c	1408	                    !strcmp(optentry->name, "OnAccessMaxFileSize")) {
 large-file-option	common/optparser.c	1643	                if (!strcmp(optentry->name, "MaxFileSize") ||

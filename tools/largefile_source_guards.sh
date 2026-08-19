@@ -70,6 +70,8 @@ contains unit_tests/check_clamav.c 'test_scan_report_merge_preserves_detection_a
 contains clamd/server-th.c 'cmd + strlen(cmd) + 1'
 contains clamdscan/client.c 'report_stream = fopen(optget(opts, "report-json")->strarg, "ab")'
 contains clamdscan/proto.c 'dspreport'
+contains clamscan/manager.c 'enforce_structured_completion'
+contains clamscan/manager.c 'CL_SCAN_COMPLETION_DETECTION_TERMINATED'
 contains libclamav/scan_report.c 'A detection is still the authoritative terminal outcome'
 contains unit_tests/check_clamav.c 'test_scan_report_detection_precedes_incomplete_state'
 contains libclamav/scan_report.c 'status == CL_BREAK'

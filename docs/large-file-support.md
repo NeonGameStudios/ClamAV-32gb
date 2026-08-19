@@ -2099,6 +2099,12 @@ status parser accepts both this library schema and the compact legacy fallback
 frame, so a numeric library verdict cannot be mistaken for a clean result
 merely because it lacks the legacy text label.
 
+`clamscan` now applies the same completion rule before printing or counting an
+`OK` result. Non-detection reports in `UNSUPPORTED`, `MALFORMED_CONFIRMED`,
+`RESOURCE_FAILURE`, `LIMIT_INCOMPLETE`, or `APPLICATION_ABORT` states are
+returned and logged as errors for both file and stdin scans, including trusted
+verdicts.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`
