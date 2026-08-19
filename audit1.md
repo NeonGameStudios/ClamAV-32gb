@@ -765,6 +765,15 @@ hashed component set first; the trace and version output are included in the
 manifest-bound evidence artifact. It remains evidence for the Linux gate only,
 not a substitute for service or parser-family qualification.
 
+## Public limit-setter boundary coverage — 2026-08-19
+
+The public `cl_engine_set_num()` implementation already rejects negative and
+out-of-range `MaxScanSize` and `MaxScanTime` values before converting them to
+the unsigned engine fields. The focused `check_clamav` regression now exercises
+both exact failure classes: negative values and one-past-`64 GiB`/`UINT32_MAX`
+values. This closes the missing trigger coverage for the corrected F-12 setter
+path; the broader compiled parser and service qualification gates remain open.
+
 ## Rust large-input staging — 2026-08-19
 
 ALZ now parses directly through the bounded `FMapReader` `Read + Seek` adapter

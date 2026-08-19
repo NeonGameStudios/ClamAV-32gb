@@ -1030,6 +1030,12 @@ START_TEST(test_engine_set_num_rejects_narrowing_and_negative_values)
     struct cl_settings *settings;
 
     ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE,
+                                       (long long)CLI_MAX_LOGICAL_SCAN_SIZE + 1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANTIME, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANTIME,
+                                       (long long)UINT32_MAX + 1), CL_EARG);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILES, -1), CL_EARG);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILES, (long long)UINT32_MAX + 1), CL_EARG);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_RECURSION, (long long)UINT32_MAX + 1), CL_EARG);
