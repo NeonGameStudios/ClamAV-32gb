@@ -688,6 +688,21 @@ static void *acceptloop_th(void *arg)
     return NULL;
 }
 
+static int is_structured_report_command(enum commands cmdtype)
+{
+    switch (cmdtype) {
+        case COMMAND_SCANREPORT:
+        case COMMAND_CONTSCANREPORT:
+        case COMMAND_MULTISCANREPORT:
+        case COMMAND_ALLMATCHSCANREPORT:
+        case COMMAND_FILDESREPORT:
+        case COMMAND_INSTREAMREPORT:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout)
 {
     const char *cmd = NULL;
@@ -731,6 +746,15 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
         }
         conn->term = term;
         buf->term  = term;
+
+        /* The receive loop copies the per-request connection state into the
+         * worker. Clear stale report state before dispatching a legacy command
+         * so a prior IDSESSION report request cannot change its response format.
+         * INSTREAMSCAN is the one internal command that deliberately
+         * inherits the flag from the preceding INSTREAMREPORT request. */
+        if (!is_structured_report_command(cmdtype) &&
+            (cmdtype != COMMAND_INSTREAMSCAN))
+            conn->structured_report = 0;
 
         if ((rc = execute_or_dispatch_command(conn, cmdtype, argument)) < 0) {
             logg(LOGG_ERROR, "Command dispatch failed\n");
@@ -799,6 +823,12 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
             logg(LOGG_DEBUG_NV, "Breaking command loop, mode is no longer MODE_COMMAND\n");
             break;
         }
+
+        /* Path/FILDES report requests are complete protocol units once their
+         * worker has been queued. Keep the worker's copy set, but prevent the
+         * receive loop's next IDSESSION command from inheriting the flag. */
+        if (is_structured_report_command(cmdtype))
+            conn->structured_report = 0;
         conn->id++;
     }
     *ppos      = pos;

@@ -65,6 +65,11 @@ required parser/matcher skips with saturating arithmetic and is summed across
 directory children; the old sticky-flag-only context shape remains compatible
 through a one-skip fallback.
 
+The clamd receive loop now scopes structured-report mode to the individual
+request. Path/FILDES report commands clear the receive-loop flag after their
+worker copy is queued, and legacy commands explicitly clear stale state; the
+internal `INSTREAMSCAN` transition remains the deliberate inheritance point.
+
 The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.
