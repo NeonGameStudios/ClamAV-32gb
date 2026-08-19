@@ -1739,3 +1739,12 @@ now propagate into the sticky incomplete state. A focused Linux close-wrapper
 regression confirms that cleanup failures add failure evidence beyond a
 pre-existing truncated-input error; compiled execution, sanitizer coverage,
 and broader legacy-mail corpus qualification remain open.
+
+## SWF temporary-stream cleanup — 2026-08-19
+
+The CWS and ZWS temporary-output paths now centralize descriptor close and
+temporary removal handling across decoder errors, limits, output-length
+mismatches, nested scans, and normal completion. Cleanup failures mark the
+layer incomplete and cannot be normalized to clean. A Linux static-library
+close-wrapper CWS regression is registered; compiled execution, sanitizer
+coverage, and broader SWF corpus qualification remain open.

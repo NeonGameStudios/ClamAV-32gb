@@ -2606,3 +2606,12 @@ remain authoritative, while an otherwise clean or `CL_BREAK` result cannot
 survive failed cleanup. The Linux static-library close wrapper adds focused
 coverage for the cleanup path; compiled execution, sanitizer coverage, and
 broader legacy-mail corpus qualification remain release gates.
+
+## SWF temporary-stream cleanup — 2026-08-19
+
+The CWS and ZWS decompression paths now route decoder-error, limit, output-
+length, nested-scan, and successful completion exits through one temporary
+cleanup helper. Descriptor close and temporary removal failures mark the SWF
+layer incomplete and cannot be hidden by an otherwise clean result. The Linux
+static-library close wrapper adds a focused CWS regression; compiled execution,
+sanitizer coverage, and broader SWF corpus qualification remain release gates.
