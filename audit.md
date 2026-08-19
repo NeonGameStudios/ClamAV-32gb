@@ -1563,3 +1563,11 @@ resource, I/O, and parser errors, allowing callers that only checked for
 `CL_VIRUS` to continue as if the required attachment scan had completed. A
 focused incomplete-fileblob regression and source guard are registered;
 compiled execution remains a Linux/Sonic1 qualification gate.
+
+Nested MIME handling now marks unsupported transfer encodings, disabled or
+failed partial-message handling, external-body references, unsupported
+`message/*` formats, and failed encapsulated-header parsing incomplete. This
+closes the mailbox-loop case where an internal `FAIL` was discarded while the
+overall mailbox return remained clean. The intentionally supported
+disposition-notification branch is unchanged; compiled mail-corpus execution
+remains a Linux/Sonic1 qualification gate.

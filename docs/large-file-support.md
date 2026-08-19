@@ -2347,3 +2347,12 @@ matching continued.
 It also marks the owning scan incomplete for an otherwise-unclassified scan
 failure. This closes a generic false-clean path for disk-backed MIME
 attachments and other parser-generated temporary files.
+
+## Unsupported nested MIME results — 2026-08-19
+
+Unsupported transfer encodings and `message/*` formats, disabled partial
+message reassembly, external-body references, and failed nested-message
+parsing now set the sticky incomplete result. The supported
+`disposition-notification` path remains unchanged. This prevents a required
+MIME branch from being skipped while a mailbox-level scan is still reported as
+clean.

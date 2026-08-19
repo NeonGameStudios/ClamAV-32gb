@@ -2468,6 +2468,8 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                         break;
                     default:
                         cli_dbgmsg("MIME type 'message' cannot be decoded\n");
+                        cli_mark_scan_incomplete(mctx->ctx,
+                                                 "MIME message uses an unsupported transfer encoding");
                         break;
                 }
                 rc = FAIL;
@@ -2486,10 +2488,16 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                             messageReset(mainMessage);
                         if (messageGetBody(m))
                             rc = parseEmailBody(m, NULL, mctx, recursion_level + 1);
+                        else
+                            cli_mark_scan_incomplete(mctx->ctx,
+                                                     "Encapsulated MIME message has no body to inspect");
 
                         messageDestroy(m);
                     } else if (heuristicFound) {
                         rc = VIRUS;
+                    } else {
+                        cli_mark_scan_incomplete(mctx->ctx,
+                                                 "Encapsulated MIME message headers could not be parsed completely");
                     }
                     break;
                 } else if (strcasecmp(mimeSubtype, "disposition-notification") == 0) {
@@ -2501,14 +2509,24 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                         /* RFC1341 message split over many emails */
                         if (rfc1341(mctx, mainMessage) >= 0)
                             rc = OK;
+                        else
+                            cli_mark_scan_incomplete(mctx->ctx,
+                                                     "Partial MIME message could not be reassembled completely");
                     } else {
                         cli_warnmsg("Partial message received from MUA/MTA - message cannot be scanned\n");
+                        cli_mark_scan_incomplete(mctx->ctx,
+                                                 "Partial MIME message support is disabled");
                     }
-                } else if (strcasecmp(mimeSubtype, "external-body") == 0)
+                } else if (strcasecmp(mimeSubtype, "external-body") == 0) {
                     /* TODO */
                     cli_warnmsg("Attempt to send Content-type message/external-body trapped\n");
-                else
+                    cli_mark_scan_incomplete(mctx->ctx,
+                                             "External-body MIME content cannot be inspected locally");
+                } else {
                     cli_warnmsg("Unsupported message format `%s' - if you believe this file contains a virus, submit it to www.clamav.net\n", mimeSubtype);
+                    cli_mark_scan_incomplete(mctx->ctx,
+                                             "Unsupported MIME message format could not be inspected");
+                }
 
                 if (mainMessage && (mainMessage != messageIn))
                     messageDestroy(mainMessage);
