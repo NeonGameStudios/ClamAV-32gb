@@ -4296,7 +4296,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 size_t zip_size = 0;
 
                                 ret = cli_unzip_single_header_check(ctx, fpt->offset, &zip_size);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("ZIP SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
                                 if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "ZIP SFX header is malformed or could not be read completely");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
                                     cli_dbgmsg("ZIP single header check failed: %s (%d)\n", cl_strerror(ret), ret);
                                     break;
                                 }
@@ -4321,7 +4328,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Header validity check to prevent false positives from being scanned.
                                 size_t cab_size = 0;
                                 ret             = cli_mscab_header_check(ctx, fpt->offset, &cab_size);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("CAB SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
                                 if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "CAB SFX header is malformed or could not be read completely");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
                                     cli_dbgmsg("CAB header check failed: %s (%d)\n", cl_strerror(ret), ret);
                                     break;
                                 }
@@ -4347,7 +4361,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 size_t arj_size = 0;
 
                                 ret = cli_unarj_header_check(ctx, fpt->offset, &arj_size);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("ARJ SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
                                 if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "ARJ SFX header is malformed or could not be read completely");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
                                     cli_dbgmsg("ARJ header check failed: %s (%d)\n", cl_strerror(ret), ret);
                                     break;
                                 }

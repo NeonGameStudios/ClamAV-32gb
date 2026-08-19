@@ -1586,3 +1586,10 @@ The shared mail spool wrapper now restores `mctx->ctx` after the legacy
 `textToFileblob()` conversion clears it, ensuring every parser-generated mail
 spool reaches the authoritative descriptor scanner with resource accounting
 and fail-visible result policy enabled.
+
+Embedded ZIP SFX, CAB SFX, and ARJ SFX admission now preserves non-format
+header-check failures as incomplete results. Only `CL_EFORMAT` remains a
+disproven weak candidate; `CL_EPARSE`, resource, and I/O failures mark the
+parent and are retained as non-clean status. This closes the remaining
+candidate-state gap in `scanraw()`; supported-build embedded-corpus execution
+remains open.

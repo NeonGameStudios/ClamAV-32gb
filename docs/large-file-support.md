@@ -2371,3 +2371,11 @@ The mail spool wrapper also restores the active scan context after
 `textToFileblob()` clears it for legacy conversion callers. This ensures the
 authoritative descriptor scan is actually performed rather than being treated
 as a no-context clean result.
+
+## SFX candidate error classification — 2026-08-19
+
+ZIP, CAB, and ARJ embedded candidates now distinguish a disproven signature
+(`CL_EFORMAT`, rejected without tainting the parent) from a recognized but
+truncated, unreadable, or resource-failed header. The latter marks the parent
+scan incomplete and preserves the non-clean result instead of silently
+discarding the header-check failure.
