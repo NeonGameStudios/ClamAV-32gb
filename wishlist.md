@@ -1,5 +1,20 @@
 # Wishlist
 
+## Current state — 2026-08-19
+
+- The 32 GiB ingress policy, shared accounting/fail-closed controls, and
+  capability manifest are implemented and source-guarded; release defaults
+  remain gated on qualification.
+- Large-mail phishing URL inspection now uses quota-accounted file-backed
+  input, fmap HTML normalization, and 64 KiB chunked text-URL extraction; the
+  former 100 KiB whole-message helper boundary is removed.
+- Parser-specific limitations remain explicit unsupported results where a
+  legacy ABI still requires a contiguous member or has an inherent format
+  width. These are tracked in `docs/largefile-capabilities.tsv`.
+- The remaining milestone is a current-head Linux x86-64 build and the full
+  Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
+  qualification on Sonic1.
+
 ## Large-file validation and expansion progression
 
 1. **Validate the current 32 GiB raw path on the local macOS host**
