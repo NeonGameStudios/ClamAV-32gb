@@ -64,6 +64,10 @@ The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.
 
+On-access prevention now denies permission events after stat or size-limit
+preflight failures even when the worker correctly avoids submitting a partial
+object; monitoring-only events continue to allow and log.
+
 ## Executive summary
 
 The fork now has a coherent 64-bit raw-scan path and materially stronger

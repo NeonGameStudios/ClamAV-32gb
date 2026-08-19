@@ -2105,6 +2105,11 @@ merely because it lacks the legacy text label.
 returned and logged as errors for both file and stdin scans, including trusted
 verdicts.
 
+On-access prevention now applies its deny-on-error decision after preflight as
+well as after a submitted scan. A stat failure or `OnAccessMaxFileSize`
+rejection cannot become an allow merely because the worker skipped submission;
+monitoring-only events retain their allow-and-log behavior.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

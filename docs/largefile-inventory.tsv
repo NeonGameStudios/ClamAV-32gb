@@ -183,17 +183,17 @@ fixed-width-integer	clamonacc/misc/utils.c	157	    uint64_t len    = 0;
 fixed-width-integer	clamonacc/misc/utils.c	158	    int32_t ret     = 0;
 fixed-width-integer	clamonacc/scan/onas_queue.c	249	    int32_t thread_started = 1;
 fixed-width-integer	clamonacc/scan/onas_queue.h	28	    uint64_t size;
-fixed-width-integer	clamonacc/scan/thread.c	217	    int32_t ftspopts = FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV;
-fixed-width-integer	clamonacc/scan/thread.c	220	    int32_t infected    = 0;
-fixed-width-integer	clamonacc/scan/thread.c	221	    int32_t err         = 0;
-fixed-width-integer	clamonacc/scan/thread.c	225	    int32_t fres = 0;
-fixed-width-integer	clamonacc/scan/thread.c	241	                if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
-fixed-width-integer	clamonacc/scan/thread.c	244	                    event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
-fixed-width-integer	clamonacc/scan/thread.c	265	    int32_t infected    = 0;
-fixed-width-integer	clamonacc/scan/thread.c	266	    int32_t err         = 0;
-fixed-width-integer	clamonacc/scan/thread.c	282	        event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
-fixed-width-integer	clamonacc/scan/thread.c	286	        if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
-fixed-width-integer	clamonacc/scan/thread.c	290	            event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
+fixed-width-integer	clamonacc/scan/thread.c	221	    int32_t ftspopts = FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV;
+fixed-width-integer	clamonacc/scan/thread.c	224	    int32_t infected    = 0;
+fixed-width-integer	clamonacc/scan/thread.c	225	    int32_t err         = 0;
+fixed-width-integer	clamonacc/scan/thread.c	229	    int32_t fres = 0;
+fixed-width-integer	clamonacc/scan/thread.c	245	                if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
+fixed-width-integer	clamonacc/scan/thread.c	248	                    event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
+fixed-width-integer	clamonacc/scan/thread.c	269	    int32_t infected    = 0;
+fixed-width-integer	clamonacc/scan/thread.c	270	    int32_t err         = 0;
+fixed-width-integer	clamonacc/scan/thread.c	286	        event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
+fixed-width-integer	clamonacc/scan/thread.c	290	        if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
+fixed-width-integer	clamonacc/scan/thread.c	294	            event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
 fixed-width-integer	clamonacc/scan/thread.h	55	    int64_t portnum;
 fixed-width-integer	clamonacc/scan/thread.h	62	    uint64_t sizelimit;
 fixed-width-integer	clamonacc/scan/thread.h	63	    int32_t scantype;
@@ -6160,7 +6160,7 @@ native-width-integer	clamonacc/scan/thread.c	112	    int ret = 0;
 native-width-integer	clamonacc/scan/thread.c	113	    int fd  = -1;
 native-width-integer	clamonacc/scan/thread.c	135	static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
 native-width-integer	clamonacc/scan/thread.c	143	    int ret = 0;
-native-width-integer	clamonacc/scan/thread.c	268	    int fres            = 0;
+native-width-integer	clamonacc/scan/thread.c	272	    int fres            = 0;
 native-width-integer	clamonacc/scan/thread.c	51	static int onas_scan(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 native-width-integer	clamonacc/scan/thread.c	52	static cl_error_t onas_scan_safe(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 native-width-integer	clamonacc/scan/thread.c	53	static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, const char *fname, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
@@ -16195,10 +16195,10 @@ format-width	clamonacc/misc/utils.c	142	        logg(LOGG_DEBUG, "ClamMisc: $/pr
 format-width	clamonacc/misc/utils.c	78	    snprintf(path, sizeof(path), "/proc/%u", pid);
 format-width	clamonacc/scan/onas_queue.c	177	    logg(LOGG_DEBUG, "ClamScanQueue: initializing event queue consumer ... (%d) threads in thread pool\n", ctx->maxthreads);
 format-width	clamonacc/scan/thread.c	168	            logg(LOGG_DEBUG, "ClamWorker: scan failed with error code %d\n", *ret_code);
-format-width	clamonacc/scan/thread.c	198	        logg(LOGG_DEBUG, "ClamWorker: closing fd, %d)\n", event_data->fmd->fd);
-format-width	clamonacc/scan/thread.c	202	            logg(LOGG_ERROR, "ClamWorker: internal error (can't close fanotify meta fd, %d)\n", event_data->fmd->fd);
-format-width	clamonacc/scan/thread.c	304	        logg(LOGG_DEBUG, "ClamWorker: Inotify Scan Results ...\n\tret = %d ...\n\tinfected = %d ...\n\terr = %d ...\n\tret_code = %d\n",
-format-width	clamonacc/scan/thread.c	307	        logg(LOGG_DEBUG, "ClamWorker: Fanotify Scan Results ...\n\tret = %d ...\n\tinfected = %d ...\n\terr = %d ...\n\tret_code = %d\n\tfd = %d\n",
+format-width	clamonacc/scan/thread.c	202	        logg(LOGG_DEBUG, "ClamWorker: closing fd, %d)\n", event_data->fmd->fd);
+format-width	clamonacc/scan/thread.c	206	            logg(LOGG_ERROR, "ClamWorker: internal error (can't close fanotify meta fd, %d)\n", event_data->fmd->fd);
+format-width	clamonacc/scan/thread.c	308	        logg(LOGG_DEBUG, "ClamWorker: Inotify Scan Results ...\n\tret = %d ...\n\tinfected = %d ...\n\terr = %d ...\n\tret_code = %d\n",
+format-width	clamonacc/scan/thread.c	311	        logg(LOGG_DEBUG, "ClamWorker: Fanotify Scan Results ...\n\tret = %d ...\n\tinfected = %d ...\n\terr = %d ...\n\tret_code = %d\n\tfd = %d\n",
 format-width	clamscan/clamscan.c	197	        logg(LOGG_INFO, "Known viruses: %u\n", info.sigs);
 format-width	clamscan/clamscan.c	199	        logg(LOGG_INFO, "Scanned directories: %u\n", info.dirs);
 format-width	clamscan/clamscan.c	200	        logg(LOGG_INFO, "Scanned files: %u\n", info.files);
@@ -18977,9 +18977,10 @@ offset-size-arithmetic	clamonacc/scan/onas_queue.c	237	    g_onas_event_queue.si
 offset-size-arithmetic	clamonacc/scan/onas_queue.c	245	cl_error_t onas_scan_queue_start(struct onas_context **ctx)
 offset-size-arithmetic	clamonacc/scan/onas_queue.c	260	    thread_started = pthread_create(&scan_queue_pid, &scan_queue_attr, onas_scan_queue_th, *ctx);
 offset-size-arithmetic	clamonacc/scan/onas_queue.h	41	cl_error_t onas_scan_queue_start(struct onas_context **ctx);
-offset-size-arithmetic	clamonacc/scan/thread.c	241	                if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
-offset-size-arithmetic	clamonacc/scan/thread.c	286	        if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
-offset-size-arithmetic	clamonacc/scan/thread.c	417	    (*event_data)->sizelimit      = ctx->sizelimit;
+offset-size-arithmetic	clamonacc/scan/thread.c	177	     * an incomplete scan would silently become an allow.  Monitoring-only
+offset-size-arithmetic	clamonacc/scan/thread.c	245	                if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
+offset-size-arithmetic	clamonacc/scan/thread.c	290	        if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
+offset-size-arithmetic	clamonacc/scan/thread.c	421	    (*event_data)->sizelimit      = ctx->sizelimit;
 offset-size-arithmetic	clamscan/clamscan.c	102	#endif /* !C_BEOS */
 offset-size-arithmetic	clamscan/clamscan.c	103	#endif /* !_WIN32 */
 offset-size-arithmetic	clamscan/clamscan.c	217	        logg(LOGG_INFO, " (ratio %.2f:1)\n", info.bytes_read ? (double)info.bytes_scanned / (double)info.bytes_read : 0);
@@ -29791,7 +29792,7 @@ large-file-option	clamd/server-th.c	985	        if ((ret = cl_engine_set_num(eng
 large-file-option	clamd/server-th.c	986	            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
 large-file-option	clamd/server-th.c	991	    val = cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL);
 large-file-option	clamonacc/fanotif/fanotif.c	142	    (*ctx)->sizelimit = optget((*ctx)->clamdopts, "OnAccessMaxFileSize")->numarg;
-large-file-option	clamonacc/scan/thread.c	294	                logg(LOGG_DEBUG, "ClamWorker: '%s' exceeds OnAccessMaxFileSize; treating the permission event as incomplete\n", pathname);
+large-file-option	clamonacc/scan/thread.c	298	                logg(LOGG_DEBUG, "ClamWorker: '%s' exceeds OnAccessMaxFileSize; treating the permission event as incomplete\n", pathname);
 large-file-option	clamscan/manager.c	1837	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, opt->numarg))) {
 large-file-option	clamscan/manager.c	1838	            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
 large-file-option	clamscan/manager.c	1869	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, opt->numarg))) {

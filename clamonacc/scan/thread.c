@@ -168,14 +168,18 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
             logg(LOGG_DEBUG, "ClamWorker: scan failed with error code %d\n", *ret_code);
         }
 
-#if defined(HAVE_SYS_FANOTIFY_H)
-        if (b_fanotify) {
-            if ((*err && b_deny_on_error) || *infected) {
-                res.response = FAN_DENY;
-            }
-        }
-#endif
     }
+
+#if defined(HAVE_SYS_FANOTIFY_H)
+    /* Preflight failures (stat/size limits) deliberately clear b_scan so the
+     * worker does not submit an invalid or partial object.  They still must
+     * deny a permission event when prevention mode is configured; otherwise
+     * an incomplete scan would silently become an allow.  Monitoring-only
+     * events leave the default allow response and merely log the failure. */
+    if (b_fanotify && ((*err && b_deny_on_error) || *infected)) {
+        res.response = FAN_DENY;
+    }
+#endif
 
 #if defined(HAVE_SYS_FANOTIFY_H)
     if (b_fanotify) {
