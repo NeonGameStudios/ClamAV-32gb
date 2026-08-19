@@ -250,6 +250,10 @@ write_config()
         printf 'MaxQueue %s\n' "$max_queue"
         printf 'MaxFileSize 32G\n'
         printf 'MaxScanSize 64G\n'
+        printf 'MaxMatcherWork 256G\n'
+        printf 'MaxTemporarySize 64G\n'
+        printf 'MaxContiguousSize 32G\n'
+        printf 'PCREMaxFileSize 32G\n'
         printf 'StreamMaxLength 32G\n'
         printf 'MaxScanTime 900000\n'
         printf 'MaxRecursion 17\n'

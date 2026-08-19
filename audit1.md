@@ -748,8 +748,11 @@ oracle-bound structured reports plus a `THRMGR: contended, sleeping` daemon-log
 record. This prevents a fast fixture or two independent clients from silently
 being reported as proof of queue behavior. The harness then restarts clamd
 explicitly with `MaxThreads 4` / `MaxQueue 8` for the four-client worker
-qualification. The real production oracle, Linux/Sonic1 execution, sanitizer,
-RSS, latency, temporary-space, and parser-family evidence remain open.
+qualification. Both profiles now explicitly set the 32-GiB file, contiguous,
+PCRE, 64-GiB logical, 256-GiB matcher-work, and 64-GiB temporary budgets rather
+than inheriting build defaults. The real production oracle, Linux/Sonic1
+execution, sanitizer, RSS, latency, temporary-space, and parser-family
+evidence remain open.
 
 ## Rust large-input staging — 2026-08-19
 
