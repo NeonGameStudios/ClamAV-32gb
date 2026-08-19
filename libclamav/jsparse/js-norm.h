@@ -24,11 +24,13 @@
 #define JS_NORM_H
 struct parser_state;
 struct text_buffer;
+struct cli_ctx;
 
 struct parser_state *cli_js_init(void);
 void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n);
 void cli_js_parse_done(struct parser_state *state);
 cl_error_t cli_js_output(struct parser_state *state, const char *tempdir);
+cl_error_t cli_js_output_ctx(struct parser_state *state, const char *tempdir, struct cli_ctx *ctx);
 void cli_js_destroy(struct parser_state *state);
 
 char *cli_unescape(const char *str);

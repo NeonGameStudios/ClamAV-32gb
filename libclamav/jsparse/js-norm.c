@@ -308,16 +308,37 @@ struct buf {
     size_t pos;
     int outfd;
     cl_error_t error;
+    cli_ctx *scan_ctx;
+    uint64_t total;
     char buf[65536];
 };
+
+static inline cl_error_t buf_flush(struct buf *buf, size_t length)
+{
+    if (buf->error != CL_SUCCESS)
+        return buf->error;
+    if (buf->scan_ctx && cli_scan_account_matcher_work(buf->scan_ctx, (uint64_t)length) != CL_SUCCESS) {
+        buf->error = CL_ERESOURCE;
+        return buf->error;
+    }
+    if (cli_writen(buf->outfd, buf->buf, length) != length) {
+        buf->error = CL_EWRITE;
+        return buf->error;
+    }
+    if (UINT64_MAX - buf->total < (uint64_t)length) {
+        buf->error = CL_ERESOURCE;
+        return buf->error;
+    }
+    buf->total += (uint64_t)length;
+    return CL_SUCCESS;
+}
 
 static inline cl_error_t buf_outc(char c, struct buf *buf)
 {
     if (buf->error != CL_SUCCESS)
         return buf->error;
     if (buf->pos >= sizeof(buf->buf)) {
-        if (cli_writen(buf->outfd, buf->buf, sizeof(buf->buf)) != sizeof(buf->buf)) {
-            buf->error = CL_EWRITE;
+        if (buf_flush(buf, sizeof(buf->buf)) != CL_SUCCESS) {
             return buf->error;
         }
         buf->pos = 0;
@@ -343,8 +364,8 @@ static inline cl_error_t buf_outs(const char *s, struct buf *buf)
             ++s;
         }
         if (i == buf_len) {
-            if (cli_writen(buf->outfd, buf->buf, buf_len) != buf_len) {
-                buf->error = CL_EWRITE;
+            buf->pos = i;
+            if (buf_flush(buf, buf_len) != CL_SUCCESS) {
                 return buf->error;
             }
             i = 0;
@@ -960,7 +981,7 @@ void cli_js_parse_done(struct parser_state *state)
     state->scanner = NULL;
 }
 
-cl_error_t cli_js_output(struct parser_state *state, const char *tempdir)
+cl_error_t cli_js_output_ctx(struct parser_state *state, const char *tempdir, cli_ctx *ctx)
 {
     unsigned i;
     struct buf buf;
@@ -971,6 +992,8 @@ cl_error_t cli_js_output(struct parser_state *state, const char *tempdir)
 
     buf.pos   = 0;
     buf.error = CL_SUCCESS;
+    buf.scan_ctx = ctx;
+    buf.total = 0;
     buf.outfd = open(filename, O_CREAT | O_WRONLY | O_BINARY, 0600);
     if (buf.outfd < 0) {
         cli_errmsg(MODULE "cannot open output file for writing: %s\n", filename);
@@ -995,8 +1018,8 @@ cl_error_t cli_js_output(struct parser_state *state, const char *tempdir)
     /* add /script if not already there */
     if (buf.pos < 9 || memcmp(buf.buf + buf.pos - 9, "</script>", 9))
         buf_outs("</script>", &buf);
-    if (buf.error == CL_SUCCESS && buf.pos > 0 && cli_writen(buf.outfd, buf.buf, buf.pos) != buf.pos)
-        buf.error = CL_EWRITE;
+    if (buf.error == CL_SUCCESS && buf.pos > 0)
+        (void)buf_flush(&buf, buf.pos);
     if (close(buf.outfd) != 0 && buf.error == CL_SUCCESS)
         buf.error = CL_EWRITE;
     if (buf.error != CL_SUCCESS)
@@ -1005,6 +1028,11 @@ cl_error_t cli_js_output(struct parser_state *state, const char *tempdir)
         return buf.error;
     cli_dbgmsg(MODULE "dumped/appended normalized script to: %s\n", filename);
     return CL_SUCCESS;
+}
+
+cl_error_t cli_js_output(struct parser_state *state, const char *tempdir)
+{
+    return cli_js_output_ctx(state, tempdir, NULL);
 }
 
 void cli_js_destroy(struct parser_state *state)

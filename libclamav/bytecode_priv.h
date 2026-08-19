@@ -221,7 +221,7 @@ struct cli_bc_ctx {
     unsigned nbuffers;
     unsigned nhashsets;
     unsigned njsnorms;
-    unsigned jsnormwritten;
+    uint64_t jsnormwritten;
     struct cli_hashset *hashsets;
     struct bc_jsnorm *jsnorms;
     char *jsnormdir;

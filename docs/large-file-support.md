@@ -2145,3 +2145,12 @@ are fail-visible. Solid NSIS archives retain an explicit 1 GiB contiguous-
 decoder boundary, and their extracted output is quota-accounted, until the
 stateful decoder is converted to the same reader model; NSIS corpus,
 sanitizer, and RSS qualification remain open.
+
+## Normalized JavaScript matcher-work accounting — 2026-08-19
+
+JavaScript normalization output is now admitted against the shared
+`MaxMatcherWork` budget at each bounded 64 KiB output flush before the bytes
+are written to the temporary normalized-script file. The bytecode normalization
+path also tracks consumed input with checked arithmetic, and HTML normalization
+uses the same context-aware output path. A matcher-work admission failure is
+fail-visible and prevents the normalized view from being scanned as complete.

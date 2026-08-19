@@ -665,7 +665,7 @@ static void screnc_decode(unsigned char *ptr, struct screnc_state *s)
     }
 }
 
-static cl_error_t js_process(struct parser_state *js_state, const unsigned char *js_begin, const unsigned char *js_end,
+static cl_error_t js_process(cli_ctx *ctx, struct parser_state *js_state, const unsigned char *js_begin, const unsigned char *js_end,
                              const unsigned char *line, const unsigned char *ptr, tag_type in_tag, const char *dirname)
 {
     if (!js_begin)
@@ -680,7 +680,7 @@ static cl_error_t js_process(struct parser_state *js_state, const unsigned char 
     if (in_tag == TAG_DONT_EXTRACT) {
         /*  we found a /script, normalize script now */
         cli_js_parse_done(js_state);
-        cl_error_t ret = cli_js_output(js_state, dirname);
+        cl_error_t ret = cli_js_output_ctx(js_state, dirname, ctx);
         cli_js_destroy(js_state);
         return ret;
     }
@@ -1263,7 +1263,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                             in_tag = TAG_DONT_EXTRACT;
                             if (js_state) {
                                 js_end = ptr;
-                                cl_error_t js_ret = js_process(js_state, js_begin, js_end, line, ptr, in_tag, dirname);
+                                cl_error_t js_ret = js_process(ctx, js_state, js_begin, js_end, line, ptr, in_tag, dirname);
                                 js_state = NULL;
                                 js_begin = js_end = NULL;
                                 if (js_ret != CL_SUCCESS) {
@@ -1917,7 +1917,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
         ptrend = NULL;
 
         if (js_state) {
-            cl_error_t js_ret = js_process(js_state, js_begin, js_end, line, ptr, in_tag, dirname);
+            cl_error_t js_ret = js_process(ctx, js_state, js_begin, js_end, line, ptr, in_tag, dirname);
             if (in_tag == TAG_DONT_EXTRACT)
                 js_state = NULL;
             if (js_ret != CL_SUCCESS) {
@@ -2030,7 +2030,7 @@ done:
     if (js_state) {
         /*  output script so far */
         cli_js_parse_done(js_state);
-        if (cli_js_output(js_state, dirname) != CL_SUCCESS) {
+        if (cli_js_output_ctx(js_state, dirname, ctx) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "JavaScript normalization output could not be completed");
             retval = false;
         }

@@ -1363,10 +1363,15 @@ int32_t cli_bcapi_jsnorm_process(struct cli_bc_ctx *ctx, int32_t id)
     in    = cli_bcapi_buffer_pipe_read_get(ctx, b->from, avail);
     if (!avail || !in)
         return -1;
+    if (cctx && UINT64_MAX - ctx->jsnormwritten < (uint64_t)avail) {
+        cli_bcapi_mark_map_read_error(ctx, "JavaScript normalization input accounting overflowed");
+        return -1;
+    }
     if (cctx && cli_checklimits("bytecode js api", cctx, ctx->jsnormwritten + avail, 0, 0))
         return -1;
     cli_bcapi_buffer_pipe_read_stopped(ctx, b->from, avail);
     cli_js_process_buffer(b->state, (char *)in, avail);
+    ctx->jsnormwritten += avail;
     return 0;
 }
 
@@ -1377,11 +1382,9 @@ int32_t cli_bcapi_jsnorm_done(struct cli_bc_ctx *ctx, int32_t id)
 
     if (!b || b->from == -1)
         return -1;
-    if (ctx->ctx && cli_updatelimits(ctx->ctx, ctx->jsnormwritten))
-        return -1;
     ctx->jsnormwritten = 0;
     cli_js_parse_done(b->state);
-    output_status = cli_js_output(b->state, ctx->jsnormdir);
+    output_status = cli_js_output_ctx(b->state, ctx->jsnormdir, (cli_ctx *)ctx->ctx);
     if (output_status != CL_SUCCESS) {
         cli_bcapi_mark_map_read_error(ctx, "JavaScript normalization output could not be completed");
         cli_js_destroy(b->state);

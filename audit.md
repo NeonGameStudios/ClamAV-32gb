@@ -40,9 +40,10 @@ including all parser dispatch branches, matcher families, large-file-relevant
 build switches, and explicit first-release unsupported boundaries. Public
 engine numeric setters reject negative or narrowing values before assignment,
 HTML no-tags normalization over its cap now returns an incomplete result
-instead of silently omitting a required normalized view, and scanner-facing
-OneNote attachment extraction no longer creates an intermediate whole-member
-buffer. Focused unit tests and shell source guards are registered, but the current macOS checkout has not
+instead of silently omitting a required normalized view, JavaScript normalized
+output is admitted against shared matcher-work at bounded flushes, and
+scanner-facing OneNote attachment extraction no longer creates an intermediate
+whole-member buffer. Focused unit tests and shell source guards are registered, but the current macOS checkout has not
 produced a supported Linux compile, sanitizer run, or new Sonic1 qualification
 for this follow-up.
 

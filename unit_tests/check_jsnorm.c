@@ -291,6 +291,25 @@ START_TEST(test_js_output_open_failure_is_visible)
 }
 END_TEST
 
+START_TEST(test_js_output_matcher_work_limit_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx scan_ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&scan_ctx, 0, sizeof(scan_ctx));
+    engine.maxmatcherwork = 1;
+    scan_ctx.engine = &engine;
+
+    cli_js_process_buffer(state, "alert(1);", strlen("alert(1);"));
+    cli_js_parse_done(state);
+    ck_assert_int_eq(cli_js_output_ctx(state, tmpdir, &scan_ctx), CL_ERESOURCE);
+    ck_assert(scan_ctx.scan_incomplete);
+    ck_assert(scan_ctx.limit_exceeded);
+    ck_assert_int_eq(scan_ctx.limit_exceeded_result, CL_ERESOURCE);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_js_output_write_and_close_failures_are_visible)
 {
@@ -547,6 +566,7 @@ Suite *test_jsnorm_suite(void)
 
     tcase_add_test(tc_jsnorm_tokenizer, js_buffer);
     tcase_add_test(tc_jsnorm_tokenizer, test_js_output_open_failure_is_visible);
+    tcase_add_test(tc_jsnorm_tokenizer, test_js_output_matcher_work_limit_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_jsnorm_tokenizer, test_js_output_write_and_close_failures_are_visible);
 #endif

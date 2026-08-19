@@ -569,101 +569,102 @@ fixed-width-integer	libclamav/bytecode_api.c	1310	int32_t cli_bcapi_jsnorm_init(
 fixed-width-integer	libclamav/bytecode_api.c	132	    if (!ctx->fmap || ctx->off < 0 || (uint64_t)ctx->off > (uint64_t)SIZE_MAX) {
 fixed-width-integer	libclamav/bytecode_api.c	1346	static struct bc_jsnorm *get_jsnorm(struct cli_bc_ctx *ctx, int32_t id)
 fixed-width-integer	libclamav/bytecode_api.c	1353	int32_t cli_bcapi_jsnorm_process(struct cli_bc_ctx *ctx, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1373	int32_t cli_bcapi_jsnorm_done(struct cli_bc_ctx *ctx, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1405	int32_t cli_bcapi_ilog2(struct cli_bc_ctx *ctx, uint32_t a, uint32_t b)
-fixed-width-integer	libclamav/bytecode_api.c	1413	    return (int32_t)myround(f);
-fixed-width-integer	libclamav/bytecode_api.c	1416	int32_t cli_bcapi_ipow(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
+fixed-width-integer	libclamav/bytecode_api.c	1366	    if (cctx && UINT64_MAX - ctx->jsnormwritten < (uint64_t)avail) {
+fixed-width-integer	libclamav/bytecode_api.c	1378	int32_t cli_bcapi_jsnorm_done(struct cli_bc_ctx *ctx, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1408	int32_t cli_bcapi_ilog2(struct cli_bc_ctx *ctx, uint32_t a, uint32_t b)
+fixed-width-integer	libclamav/bytecode_api.c	1416	    return (int32_t)myround(f);
+fixed-width-integer	libclamav/bytecode_api.c	1419	int32_t cli_bcapi_ipow(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
 fixed-width-integer	libclamav/bytecode_api.c	142	        if (n == (size_t)-1 && (uint64_t)ctx->off < (uint64_t)ctx->fmap->len)
-fixed-width-integer	libclamav/bytecode_api.c	1421	    return (int32_t)myround(c * pow(a, b));
-fixed-width-integer	libclamav/bytecode_api.c	1424	uint32_t cli_bcapi_iexp(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
-fixed-width-integer	libclamav/bytecode_api.c	1431	    return (uint32_t)myround(f);
-fixed-width-integer	libclamav/bytecode_api.c	1434	int32_t cli_bcapi_isin(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
-fixed-width-integer	libclamav/bytecode_api.c	1441	    return (int32_t)myround(f);
-fixed-width-integer	libclamav/bytecode_api.c	1444	int32_t cli_bcapi_icos(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
-fixed-width-integer	libclamav/bytecode_api.c	1451	    return (int32_t)myround(f);
-fixed-width-integer	libclamav/bytecode_api.c	1454	int32_t cli_bcapi_memstr(struct cli_bc_ctx *ctx, const uint8_t *h, int32_t hs,
-fixed-width-integer	libclamav/bytecode_api.c	1455	                         const uint8_t *n, int32_t ns)
+fixed-width-integer	libclamav/bytecode_api.c	1424	    return (int32_t)myround(c * pow(a, b));
+fixed-width-integer	libclamav/bytecode_api.c	1427	uint32_t cli_bcapi_iexp(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
+fixed-width-integer	libclamav/bytecode_api.c	1434	    return (uint32_t)myround(f);
+fixed-width-integer	libclamav/bytecode_api.c	1437	int32_t cli_bcapi_isin(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
+fixed-width-integer	libclamav/bytecode_api.c	1444	    return (int32_t)myround(f);
+fixed-width-integer	libclamav/bytecode_api.c	1447	int32_t cli_bcapi_icos(struct cli_bc_ctx *ctx, int32_t a, int32_t b, int32_t c)
+fixed-width-integer	libclamav/bytecode_api.c	1454	    return (int32_t)myround(f);
+fixed-width-integer	libclamav/bytecode_api.c	1457	int32_t cli_bcapi_memstr(struct cli_bc_ctx *ctx, const uint8_t *h, int32_t hs,
+fixed-width-integer	libclamav/bytecode_api.c	1458	                         const uint8_t *n, int32_t ns)
 fixed-width-integer	libclamav/bytecode_api.c	147	    cli_event_fastdata(EV, BCEV_READ, data, (uint32_t)n);
-fixed-width-integer	libclamav/bytecode_api.c	1470	int32_t cli_bcapi_hex2ui(struct cli_bc_ctx *ctx, uint32_t ah, uint32_t bh)
+fixed-width-integer	libclamav/bytecode_api.c	1473	int32_t cli_bcapi_hex2ui(struct cli_bc_ctx *ctx, uint32_t ah, uint32_t bh)
 fixed-width-integer	libclamav/bytecode_api.c	148	    if ((uint64_t)n > (uint64_t)INT64_MAX - (uint64_t)ctx->off) {
-fixed-width-integer	libclamav/bytecode_api.c	1484	int32_t cli_bcapi_atoi(struct cli_bc_ctx *ctx, const uint8_t *str, int32_t len)
-fixed-width-integer	libclamav/bytecode_api.c	1486	    int32_t number     = 0;
-fixed-width-integer	libclamav/bytecode_api.c	1506	uint32_t cli_bcapi_debug_print_str_start(struct cli_bc_ctx *ctx, const uint8_t *s, uint32_t len)
-fixed-width-integer	libclamav/bytecode_api.c	1517	uint32_t cli_bcapi_debug_print_str_nonl(struct cli_bc_ctx *ctx, const uint8_t *s, uint32_t len)
-fixed-width-integer	libclamav/bytecode_api.c	1528	uint32_t cli_bcapi_entropy_buffer(struct cli_bc_ctx *ctx, uint8_t *s, int32_t len)
+fixed-width-integer	libclamav/bytecode_api.c	1487	int32_t cli_bcapi_atoi(struct cli_bc_ctx *ctx, const uint8_t *str, int32_t len)
+fixed-width-integer	libclamav/bytecode_api.c	1489	    int32_t number     = 0;
+fixed-width-integer	libclamav/bytecode_api.c	1509	uint32_t cli_bcapi_debug_print_str_start(struct cli_bc_ctx *ctx, const uint8_t *s, uint32_t len)
+fixed-width-integer	libclamav/bytecode_api.c	1520	uint32_t cli_bcapi_debug_print_str_nonl(struct cli_bc_ctx *ctx, const uint8_t *s, uint32_t len)
 fixed-width-integer	libclamav/bytecode_api.c	153	    return (int64_t)n;
-fixed-width-integer	libclamav/bytecode_api.c	1530	    uint32_t probTable[256];
-fixed-width-integer	libclamav/bytecode_api.c	1551	    return (uint32_t)entropy;
-fixed-width-integer	libclamav/bytecode_api.c	1554	int32_t cli_bcapi_map_new(struct cli_bc_ctx *ctx, int32_t keysize, int32_t valuesize)
+fixed-width-integer	libclamav/bytecode_api.c	1531	uint32_t cli_bcapi_entropy_buffer(struct cli_bc_ctx *ctx, uint8_t *s, int32_t len)
+fixed-width-integer	libclamav/bytecode_api.c	1533	    uint32_t probTable[256];
+fixed-width-integer	libclamav/bytecode_api.c	1554	    return (uint32_t)entropy;
+fixed-width-integer	libclamav/bytecode_api.c	1557	int32_t cli_bcapi_map_new(struct cli_bc_ctx *ctx, int32_t keysize, int32_t valuesize)
 fixed-width-integer	libclamav/bytecode_api.c	156	int32_t cli_bcapi_seek(struct cli_bc_ctx *ctx, int32_t pos, uint32_t whence)
-fixed-width-integer	libclamav/bytecode_api.c	1570	static struct cli_map *get_hashtab(struct cli_bc_ctx *ctx, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1577	int32_t cli_bcapi_map_addkey(struct cli_bc_ctx *ctx, const uint8_t *key, int32_t keysize, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1601	int32_t cli_bcapi_map_setvalue(struct cli_bc_ctx *ctx, const uint8_t *value, int32_t valuesize, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1609	int32_t cli_bcapi_map_remove(struct cli_bc_ctx *ctx, const uint8_t *key, int32_t keysize, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1633	int32_t cli_bcapi_map_find(struct cli_bc_ctx *ctx, const uint8_t *key, int32_t keysize, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1657	int32_t cli_bcapi_map_getvaluesize(struct cli_bc_ctx *ctx, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1665	uint8_t *cli_bcapi_map_getvalue(struct cli_bc_ctx *ctx, int32_t id, int32_t valuesize)
-fixed-width-integer	libclamav/bytecode_api.c	1675	int32_t cli_bcapi_map_done(struct cli_bc_ctx *ctx, int32_t id)
-fixed-width-integer	libclamav/bytecode_api.c	1695	uint32_t cli_bcapi_engine_functionality_level(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	1701	uint32_t cli_bcapi_engine_dconf_level(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	1707	uint32_t cli_bcapi_engine_scan_options(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	1710	    uint32_t options = CL_SCAN_RAW;
-fixed-width-integer	libclamav/bytecode_api.c	1777	uint32_t cli_bcapi_engine_scan_options_ex(struct cli_bc_ctx *ctx, const uint8_t *option_name, uint32_t name_len)
-fixed-width-integer	libclamav/bytecode_api.c	1779	    uint32_t i          = 0;
-fixed-width-integer	libclamav/bytecode_api.c	1780	    uint32_t result     = 0;
-fixed-width-integer	libclamav/bytecode_api.c	1887	uint32_t cli_bcapi_engine_db_options(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	1573	static struct cli_map *get_hashtab(struct cli_bc_ctx *ctx, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1580	int32_t cli_bcapi_map_addkey(struct cli_bc_ctx *ctx, const uint8_t *key, int32_t keysize, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1604	int32_t cli_bcapi_map_setvalue(struct cli_bc_ctx *ctx, const uint8_t *value, int32_t valuesize, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1612	int32_t cli_bcapi_map_remove(struct cli_bc_ctx *ctx, const uint8_t *key, int32_t keysize, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1636	int32_t cli_bcapi_map_find(struct cli_bc_ctx *ctx, const uint8_t *key, int32_t keysize, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1660	int32_t cli_bcapi_map_getvaluesize(struct cli_bc_ctx *ctx, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1668	uint8_t *cli_bcapi_map_getvalue(struct cli_bc_ctx *ctx, int32_t id, int32_t valuesize)
+fixed-width-integer	libclamav/bytecode_api.c	1678	int32_t cli_bcapi_map_done(struct cli_bc_ctx *ctx, int32_t id)
+fixed-width-integer	libclamav/bytecode_api.c	1698	uint32_t cli_bcapi_engine_functionality_level(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	1704	uint32_t cli_bcapi_engine_dconf_level(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	1710	uint32_t cli_bcapi_engine_scan_options(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	1713	    uint32_t options = CL_SCAN_RAW;
+fixed-width-integer	libclamav/bytecode_api.c	1780	uint32_t cli_bcapi_engine_scan_options_ex(struct cli_bc_ctx *ctx, const uint8_t *option_name, uint32_t name_len)
+fixed-width-integer	libclamav/bytecode_api.c	1782	    uint32_t i          = 0;
+fixed-width-integer	libclamav/bytecode_api.c	1783	    uint32_t result     = 0;
 fixed-width-integer	libclamav/bytecode_api.c	189	int64_t cli_bcapi_seek64(struct cli_bc_ctx *ctx, int64_t pos, uint32_t whence)
-fixed-width-integer	libclamav/bytecode_api.c	1893	int32_t cli_bcapi_extract_set_container(struct cli_bc_ctx *ctx, uint32_t ftype)
-fixed-width-integer	libclamav/bytecode_api.c	1901	int32_t cli_bcapi_input_switch(struct cli_bc_ctx *ctx, int32_t extracted_file)
+fixed-width-integer	libclamav/bytecode_api.c	1890	uint32_t cli_bcapi_engine_db_options(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	1896	int32_t cli_bcapi_extract_set_container(struct cli_bc_ctx *ctx, uint32_t ftype)
+fixed-width-integer	libclamav/bytecode_api.c	1904	int32_t cli_bcapi_input_switch(struct cli_bc_ctx *ctx, int32_t extracted_file)
 fixed-width-integer	libclamav/bytecode_api.c	191	    uint64_t base, target;
-fixed-width-integer	libclamav/bytecode_api.c	1954	uint32_t cli_bcapi_get_environment(struct cli_bc_ctx *ctx, struct cli_environment *env, uint32_t len)
-fixed-width-integer	libclamav/bytecode_api.c	1964	uint32_t cli_bcapi_disable_bytecode_if(struct cli_bc_ctx *ctx, const int8_t *reason, uint32_t len, uint32_t cond)
-fixed-width-integer	libclamav/bytecode_api.c	1981	uint32_t cli_bcapi_disable_jit_if(struct cli_bc_ctx *ctx, const int8_t *reason, uint32_t len, uint32_t cond)
-fixed-width-integer	libclamav/bytecode_api.c	1999	int32_t cli_bcapi_version_compare(struct cli_bc_ctx *ctx, const uint8_t *lhs, uint32_t lhs_len,
-fixed-width-integer	libclamav/bytecode_api.c	2000	                                  const uint8_t *rhs, uint32_t rhs_len)
+fixed-width-integer	libclamav/bytecode_api.c	1957	uint32_t cli_bcapi_get_environment(struct cli_bc_ctx *ctx, struct cli_environment *env, uint32_t len)
+fixed-width-integer	libclamav/bytecode_api.c	1967	uint32_t cli_bcapi_disable_bytecode_if(struct cli_bc_ctx *ctx, const int8_t *reason, uint32_t len, uint32_t cond)
+fixed-width-integer	libclamav/bytecode_api.c	1984	uint32_t cli_bcapi_disable_jit_if(struct cli_bc_ctx *ctx, const int8_t *reason, uint32_t len, uint32_t cond)
+fixed-width-integer	libclamav/bytecode_api.c	2002	int32_t cli_bcapi_version_compare(struct cli_bc_ctx *ctx, const uint8_t *lhs, uint32_t lhs_len,
+fixed-width-integer	libclamav/bytecode_api.c	2003	                                  const uint8_t *rhs, uint32_t rhs_len)
 fixed-width-integer	libclamav/bytecode_api.c	202	            base = (uint64_t)ctx->off;
-fixed-width-integer	libclamav/bytecode_api.c	2030	static int check_bits(uint32_t query, uint32_t value, uint8_t shift, uint8_t mask)
-fixed-width-integer	libclamav/bytecode_api.c	2040	uint32_t cli_bcapi_check_platform(struct cli_bc_ctx *ctx, uint32_t a, uint32_t b, uint32_t c)
-fixed-width-integer	libclamav/bytecode_api.c	2063	int32_t cli_bcapi_pdf_get_obj_num(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	2070	int32_t cli_bcapi_pdf_get_flags(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	2077	int32_t cli_bcapi_pdf_set_flags(struct cli_bc_ctx *ctx, int32_t flags)
-fixed-width-integer	libclamav/bytecode_api.c	2088	int32_t cli_bcapi_pdf_lookupobj(struct cli_bc_ctx *ctx, uint32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2100	uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx, int32_t objidx)
-fixed-width-integer	libclamav/bytecode_api.c	2103	        (uint32_t)objidx >= ctx->pdf_nobjs ||
-fixed-width-integer	libclamav/bytecode_api.c	2107	    if ((uint32_t)(objidx + 1) == ctx->pdf_nobjs)
-fixed-width-integer	libclamav/bytecode_api.c	2112	const uint8_t *cli_bcapi_pdf_getobj(struct cli_bc_ctx *ctx, int32_t objidx, uint32_t amount)
-fixed-width-integer	libclamav/bytecode_api.c	2114	    uint32_t size = cli_bcapi_pdf_getobjsize(ctx, objidx);
-fixed-width-integer	libclamav/bytecode_api.c	2120	int32_t cli_bcapi_pdf_getobjid(struct cli_bc_ctx *ctx, int32_t objidx)
-fixed-width-integer	libclamav/bytecode_api.c	2123	        (uint32_t)objidx >= ctx->pdf_nobjs)
-fixed-width-integer	libclamav/bytecode_api.c	2128	int32_t cli_bcapi_pdf_getobjflags(struct cli_bc_ctx *ctx, int32_t objidx)
+fixed-width-integer	libclamav/bytecode_api.c	2033	static int check_bits(uint32_t query, uint32_t value, uint8_t shift, uint8_t mask)
+fixed-width-integer	libclamav/bytecode_api.c	2043	uint32_t cli_bcapi_check_platform(struct cli_bc_ctx *ctx, uint32_t a, uint32_t b, uint32_t c)
+fixed-width-integer	libclamav/bytecode_api.c	2066	int32_t cli_bcapi_pdf_get_obj_num(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2073	int32_t cli_bcapi_pdf_get_flags(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2080	int32_t cli_bcapi_pdf_set_flags(struct cli_bc_ctx *ctx, int32_t flags)
+fixed-width-integer	libclamav/bytecode_api.c	2091	int32_t cli_bcapi_pdf_lookupobj(struct cli_bc_ctx *ctx, uint32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2103	uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx, int32_t objidx)
+fixed-width-integer	libclamav/bytecode_api.c	2106	        (uint32_t)objidx >= ctx->pdf_nobjs ||
+fixed-width-integer	libclamav/bytecode_api.c	2110	    if ((uint32_t)(objidx + 1) == ctx->pdf_nobjs)
+fixed-width-integer	libclamav/bytecode_api.c	2115	const uint8_t *cli_bcapi_pdf_getobj(struct cli_bc_ctx *ctx, int32_t objidx, uint32_t amount)
+fixed-width-integer	libclamav/bytecode_api.c	2117	    uint32_t size = cli_bcapi_pdf_getobjsize(ctx, objidx);
+fixed-width-integer	libclamav/bytecode_api.c	2123	int32_t cli_bcapi_pdf_getobjid(struct cli_bc_ctx *ctx, int32_t objidx)
+fixed-width-integer	libclamav/bytecode_api.c	2126	        (uint32_t)objidx >= ctx->pdf_nobjs)
 fixed-width-integer	libclamav/bytecode_api.c	213	        uint64_t magnitude = (uint64_t)(-(pos + 1)) + 1;
-fixed-width-integer	libclamav/bytecode_api.c	2131	        (uint32_t)objidx >= ctx->pdf_nobjs)
-fixed-width-integer	libclamav/bytecode_api.c	2136	int32_t cli_bcapi_pdf_setobjflags(struct cli_bc_ctx *ctx, int32_t objidx, int32_t flags)
-fixed-width-integer	libclamav/bytecode_api.c	2139	        (uint32_t)objidx >= ctx->pdf_nobjs)
-fixed-width-integer	libclamav/bytecode_api.c	2148	int32_t cli_bcapi_pdf_get_offset(struct cli_bc_ctx *ctx, int32_t objidx)
-fixed-width-integer	libclamav/bytecode_api.c	2151	        (uint32_t)objidx >= ctx->pdf_nobjs)
-fixed-width-integer	libclamav/bytecode_api.c	2156	int32_t cli_bcapi_pdf_get_phase(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	2161	int32_t cli_bcapi_pdf_get_dumpedobjid(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	2168	int32_t cli_bcapi_running_on_jit(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	2174	int32_t cli_bcapi_get_file_reliability(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2131	int32_t cli_bcapi_pdf_getobjflags(struct cli_bc_ctx *ctx, int32_t objidx)
+fixed-width-integer	libclamav/bytecode_api.c	2134	        (uint32_t)objidx >= ctx->pdf_nobjs)
+fixed-width-integer	libclamav/bytecode_api.c	2139	int32_t cli_bcapi_pdf_setobjflags(struct cli_bc_ctx *ctx, int32_t objidx, int32_t flags)
+fixed-width-integer	libclamav/bytecode_api.c	2142	        (uint32_t)objidx >= ctx->pdf_nobjs)
+fixed-width-integer	libclamav/bytecode_api.c	2151	int32_t cli_bcapi_pdf_get_offset(struct cli_bc_ctx *ctx, int32_t objidx)
+fixed-width-integer	libclamav/bytecode_api.c	2154	        (uint32_t)objidx >= ctx->pdf_nobjs)
+fixed-width-integer	libclamav/bytecode_api.c	2159	int32_t cli_bcapi_pdf_get_phase(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2164	int32_t cli_bcapi_pdf_get_dumpedobjid(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2171	int32_t cli_bcapi_running_on_jit(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2177	int32_t cli_bcapi_get_file_reliability(struct cli_bc_ctx *ctx)
 fixed-width-integer	libclamav/bytecode_api.c	218	        if (base > UINT64_MAX - (uint64_t)pos)
-fixed-width-integer	libclamav/bytecode_api.c	2180	int32_t cli_bcapi_json_is_active(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode_api.c	2189	static int32_t cli_bcapi_json_objs_init(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2183	int32_t cli_bcapi_json_is_active(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode_api.c	2192	static int32_t cli_bcapi_json_objs_init(struct cli_bc_ctx *ctx)
 fixed-width-integer	libclamav/bytecode_api.c	220	        target = base + (uint64_t)pos;
-fixed-width-integer	libclamav/bytecode_api.c	2216	int32_t cli_bcapi_json_get_object(struct cli_bc_ctx *ctx, const int8_t *name, int32_t name_len, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2219	int32_t cli_bcapi_json_get_object(struct cli_bc_ctx *ctx, const int8_t *name, int32_t name_len, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	222	    if (target > ctx->file_size64 || target > (uint64_t)INT64_MAX || target > (uint64_t)SIZE_MAX) {
-fixed-width-integer	libclamav/bytecode_api.c	2264	int32_t cli_bcapi_json_get_type(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2267	int32_t cli_bcapi_json_get_type(struct cli_bc_ctx *ctx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	229	    return (int64_t)target;
-fixed-width-integer	libclamav/bytecode_api.c	2299	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2319	int32_t cli_bcapi_json_get_array_idx(struct cli_bc_ctx *ctx, int32_t idx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2302	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	232	uint32_t cli_bcapi_debug_print_str(struct cli_bc_ctx *ctx, const uint8_t *str, uint32_t len)
-fixed-width-integer	libclamav/bytecode_api.c	2367	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2371	    int32_t len;
-fixed-width-integer	libclamav/bytecode_api.c	2397	int32_t cli_bcapi_json_get_string(struct cli_bc_ctx *ctx, int8_t *str, int32_t str_len, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2322	int32_t cli_bcapi_json_get_array_idx(struct cli_bc_ctx *ctx, int32_t idx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2370	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2374	    int32_t len;
 fixed-width-integer	libclamav/bytecode_api.c	240	uint32_t cli_bcapi_debug_print_uint(struct cli_bc_ctx *ctx, uint32_t a)
-fixed-width-integer	libclamav/bytecode_api.c	2401	    int32_t len;
-fixed-width-integer	libclamav/bytecode_api.c	2437	int32_t cli_bcapi_json_get_boolean(struct cli_bc_ctx *ctx, int32_t objid)
-fixed-width-integer	libclamav/bytecode_api.c	2452	int32_t cli_bcapi_json_get_int(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2400	int32_t cli_bcapi_json_get_string(struct cli_bc_ctx *ctx, int8_t *str, int32_t str_len, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2404	    int32_t len;
+fixed-width-integer	libclamav/bytecode_api.c	2440	int32_t cli_bcapi_json_get_boolean(struct cli_bc_ctx *ctx, int32_t objid)
+fixed-width-integer	libclamav/bytecode_api.c	2455	int32_t cli_bcapi_json_get_int(struct cli_bc_ctx *ctx, int32_t objid)
 fixed-width-integer	libclamav/bytecode_api.c	254	uint32_t cli_bcapi_setvirusname(struct cli_bc_ctx *ctx, const uint8_t *name, uint32_t len)
 fixed-width-integer	libclamav/bytecode_api.c	261	uint32_t cli_bcapi_disasm_x86(struct cli_bc_ctx *ctx, struct DISASM_RESULT *res, uint32_t len)
 fixed-width-integer	libclamav/bytecode_api.c	293	int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
@@ -1173,6 +1174,7 @@ fixed-width-integer	libclamav/bytecode_priv.h	192	    uint32_t pdf_startoff;
 fixed-width-integer	libclamav/bytecode_priv.h	194	    int32_t pdf_dumpedid;
 fixed-width-integer	libclamav/bytecode_priv.h	196	    uint32_t resaddr;
 fixed-width-integer	libclamav/bytecode_priv.h	213	    uint32_t scopeid;
+fixed-width-integer	libclamav/bytecode_priv.h	224	    uint64_t jsnormwritten;
 fixed-width-integer	libclamav/bytecode_priv.h	37	typedef uint32_t operand_t;
 fixed-width-integer	libclamav/bytecode_priv.h	38	typedef uint16_t bbid_t;
 fixed-width-integer	libclamav/bytecode_priv.h	39	typedef uint16_t funcid_t;
@@ -2359,6 +2361,10 @@ fixed-width-integer	libclamav/json_api.h	42	cl_error_t cli_jsonint(json_object *
 fixed-width-integer	libclamav/json_api.h	43	cl_error_t cli_jsonint64(json_object *obj, const char *key, int64_t i);
 fixed-width-integer	libclamav/json_api.h	44	cl_error_t cli_jsonuint64(json_object *obj, const char *key, uint64_t i);
 fixed-width-integer	libclamav/json_api.h	49	cl_error_t cli_jsonint_array(json_object *obj, int32_t val);
+fixed-width-integer	libclamav/jsparse/js-norm.c	312	    uint64_t total;
+fixed-width-integer	libclamav/jsparse/js-norm.c	320	    if (buf->scan_ctx && cli_scan_account_matcher_work(buf->scan_ctx, (uint64_t)length) != CL_SUCCESS) {
+fixed-width-integer	libclamav/jsparse/js-norm.c	328	    if (UINT64_MAX - buf->total < (uint64_t)length) {
+fixed-width-integer	libclamav/jsparse/js-norm.c	332	    buf->total += (uint64_t)length;
 fixed-width-integer	libclamav/libmspack.c	183	    uint64_t max_size;
 fixed-width-integer	libclamav/libmspack.c	201	        max_size = (uint64_t)bytes;
 fixed-width-integer	libclamav/libmspack.c	209	        if (max_size < (uint64_t)bytes)
@@ -7505,25 +7511,25 @@ native-width-integer	libclamav/bytecode_api.c	138	    if ((n == 0) || (n == (siz
 native-width-integer	libclamav/bytecode_api.c	142	        if (n == (size_t)-1 && (uint64_t)ctx->off < (uint64_t)ctx->fmap->len)
 native-width-integer	libclamav/bytecode_api.c	144	        return (n == (size_t)-1) ? -1 : 0;
 native-width-integer	libclamav/bytecode_api.c	152	    ctx->off += (off_t)n;
-native-width-integer	libclamav/bytecode_api.c	1531	    unsigned int i;
-native-width-integer	libclamav/bytecode_api.c	1540	    for (i = 0; i < (unsigned int)len; i++) {
-native-width-integer	libclamav/bytecode_api.c	1572	    if (id < 0 || (unsigned int)id >= ctx->nmaps || !ctx->maps)
+native-width-integer	libclamav/bytecode_api.c	1534	    unsigned int i;
+native-width-integer	libclamav/bytecode_api.c	1543	    for (i = 0; i < (unsigned int)len; i++) {
+native-width-integer	libclamav/bytecode_api.c	1575	    if (id < 0 || (unsigned int)id >= ctx->nmaps || !ctx->maps)
 native-width-integer	libclamav/bytecode_api.c	158	    off_t off;
-native-width-integer	libclamav/bytecode_api.c	1681	    if ((unsigned int)id == ctx->nmaps - 1) {
+native-width-integer	libclamav/bytecode_api.c	1684	    if ((unsigned int)id == ctx->nmaps - 1) {
 native-width-integer	libclamav/bytecode_api.c	181	                   (long long)off, ctx->file_size);
-native-width-integer	libclamav/bytecode_api.c	1957	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
-native-width-integer	libclamav/bytecode_api.c	2003	    unsigned long li = 0, ri = 0;
-native-width-integer	libclamav/bytecode_api.c	2030	static int check_bits(uint32_t query, uint32_t value, uint8_t shift, uint8_t mask)
-native-width-integer	libclamav/bytecode_api.c	2224	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2271	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	1960	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
+native-width-integer	libclamav/bytecode_api.c	2006	    unsigned long li = 0, ri = 0;
+native-width-integer	libclamav/bytecode_api.c	2033	static int check_bits(uint32_t query, uint32_t value, uint8_t shift, uint8_t mask)
+native-width-integer	libclamav/bytecode_api.c	2227	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2274	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
 native-width-integer	libclamav/bytecode_api.c	228	    ctx->off = (off_t)target;
-native-width-integer	libclamav/bytecode_api.c	2306	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2323	    int length;
-native-width-integer	libclamav/bytecode_api.c	2328	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2376	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2406	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2443	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
-native-width-integer	libclamav/bytecode_api.c	2458	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2309	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2326	    int length;
+native-width-integer	libclamav/bytecode_api.c	2331	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2379	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2409	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2446	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
+native-width-integer	libclamav/bytecode_api.c	2461	    if (objid < 0 || (unsigned int)objid >= ctx->njsonobjs) {
 native-width-integer	libclamav/bytecode_api.c	263	    int n;
 native-width-integer	libclamav/bytecode_api.c	267	    if (!res || !ctx->fmap || (size_t)(ctx->off) >= ctx->fmap->len) {
 native-width-integer	libclamav/bytecode_api.c	296	    size_t res;
@@ -8810,32 +8816,34 @@ native-width-integer	libclamav/jsparse/generated/operators.h	34		int val;
 native-width-integer	libclamav/jsparse/generated/operators.h	45	static unsigned int
 native-width-integer	libclamav/jsparse/generated/operators.h	46	op_hash (const char *str, unsigned int len)
 native-width-integer	libclamav/jsparse/generated/operators.h	87	in_op_set (const char *str, unsigned int len)
+native-width-integer	libclamav/jsparse/js-norm.c	1004	        off_t end = lseek(buf.outfd, 0, SEEK_END);
+native-width-integer	libclamav/jsparse/js-norm.c	1005	        if (end == (off_t)-1) {
 native-width-integer	libclamav/jsparse/js-norm.c	101	    size_t cnt;
-native-width-integer	libclamav/jsparse/js-norm.c	1012	    size_t i;
 native-width-integer	libclamav/jsparse/js-norm.c	102	    size_t capacity;
-native-width-integer	libclamav/jsparse/js-norm.c	1034	void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n)
-native-width-integer	libclamav/jsparse/js-norm.c	1038	    int yv;
-native-width-integer	libclamav/jsparse/js-norm.c	1054	        size_t leng;
+native-width-integer	libclamav/jsparse/js-norm.c	1040	    size_t i;
+native-width-integer	libclamav/jsparse/js-norm.c	1062	void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n)
+native-width-integer	libclamav/jsparse/js-norm.c	1066	    int yv;
 native-width-integer	libclamav/jsparse/js-norm.c	107	    unsigned long var_uniq;
 native-width-integer	libclamav/jsparse/js-norm.c	108	    unsigned long syntax_errors;
+native-width-integer	libclamav/jsparse/js-norm.c	1082	        size_t leng;
 native-width-integer	libclamav/jsparse/js-norm.c	114	    unsigned int rec;
-native-width-integer	libclamav/jsparse/js-norm.c	1196	                        size_t str_len = strlen(str);
-native-width-integer	libclamav/jsparse/js-norm.c	1584	static inline int parseString(YYSTYPE *lvalp, yyscan_t scanner, const char q,
-native-width-integer	libclamav/jsparse/js-norm.c	1587	    size_t len;
-native-width-integer	libclamav/jsparse/js-norm.c	1591	        const size_t siz = &scanner->in[scanner->insize] - end;
-native-width-integer	libclamav/jsparse/js-norm.c	1626	static inline int parseDQString(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1631	static inline int parseSQString(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1636	static inline int parseNumber(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1639	    int is_float            = 0;
-native-width-integer	libclamav/jsparse/js-norm.c	1678	static inline int parseId(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1722	static int parseOperator(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1724	    size_t len = MIN(5, scanner->insize - scanner->pos);
-native-width-integer	libclamav/jsparse/js-norm.c	1741	static int yylex_init(yyscan_t *scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1747	static int yylex_destroy(yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1754	static void yy_scan_bytes(const char *p, size_t len, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1769	static int yyget_leng(yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1775	static int yylex(YYSTYPE *lvalp, yyscan_t scanner)
-native-width-integer	libclamav/jsparse/js-norm.c	1777	    const size_t len        = scanner->insize;
+native-width-integer	libclamav/jsparse/js-norm.c	1224	                        size_t str_len = strlen(str);
+native-width-integer	libclamav/jsparse/js-norm.c	1612	static inline int parseString(YYSTYPE *lvalp, yyscan_t scanner, const char q,
+native-width-integer	libclamav/jsparse/js-norm.c	1615	    size_t len;
+native-width-integer	libclamav/jsparse/js-norm.c	1619	        const size_t siz = &scanner->in[scanner->insize] - end;
+native-width-integer	libclamav/jsparse/js-norm.c	1654	static inline int parseDQString(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1659	static inline int parseSQString(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1664	static inline int parseNumber(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1667	    int is_float            = 0;
+native-width-integer	libclamav/jsparse/js-norm.c	1706	static inline int parseId(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1750	static int parseOperator(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1752	    size_t len = MIN(5, scanner->insize - scanner->pos);
+native-width-integer	libclamav/jsparse/js-norm.c	1769	static int yylex_init(yyscan_t *scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1775	static int yylex_destroy(yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1782	static void yy_scan_bytes(const char *p, size_t len, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1797	static int yyget_leng(yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1803	static int yylex(YYSTYPE *lvalp, yyscan_t scanner)
+native-width-integer	libclamav/jsparse/js-norm.c	1805	    const size_t len        = scanner->insize;
 native-width-integer	libclamav/jsparse/js-norm.c	247	static const char *scope_declare(struct scope *s, const char *token, const size_t len, struct parser_state *state)
 native-width-integer	libclamav/jsparse/js-norm.c	255	static const char *scope_use(struct scope *s, const char *token, const size_t len)
 native-width-integer	libclamav/jsparse/js-norm.c	271	static size_t scope_lookup(struct scope *s, const char *token, const size_t len)
@@ -8846,52 +8854,51 @@ native-width-integer	libclamav/jsparse/js-norm.c	284	static cl_error_t tokens_en
 native-width-integer	libclamav/jsparse/js-norm.c	299	static int add_token(struct parser_state *state, const yystype *token)
 native-width-integer	libclamav/jsparse/js-norm.c	308	    size_t pos;
 native-width-integer	libclamav/jsparse/js-norm.c	309	    int outfd;
-native-width-integer	libclamav/jsparse/js-norm.c	331	    const size_t buf_len = sizeof(buf->buf);
-native-width-integer	libclamav/jsparse/js-norm.c	332	    size_t i;
-native-width-integer	libclamav/jsparse/js-norm.c	391	                size_t id = scope_lookup(scope, s, strlen(s));
-native-width-integer	libclamav/jsparse/js-norm.c	392	                if (id == (size_t)-1) {
-native-width-integer	libclamav/jsparse/js-norm.c	407	                const size_t len = strlen(s);
-native-width-integer	libclamav/jsparse/js-norm.c	480	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count, const char **tokens);
-native-width-integer	libclamav/jsparse/js-norm.c	482	static int match_parameters(const yystype *tokens, size_t num_tokens, const char **param_names, size_t num_param_names)
-native-width-integer	libclamav/jsparse/js-norm.c	484	    size_t token_idx = 1;
-native-width-integer	libclamav/jsparse/js-norm.c	485	    size_t names_idx = 0;
-native-width-integer	libclamav/jsparse/js-norm.c	550	static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t end, const struct tokens *with)
-native-width-integer	libclamav/jsparse/js-norm.c	552	    const size_t len = with ? with->cnt : 0;
-native-width-integer	libclamav/jsparse/js-norm.c	553	    size_t i;
-native-width-integer	libclamav/jsparse/js-norm.c	554	    cli_dbgmsg(MODULE "Replacing tokens %lu - %lu with %lu tokens\n", (unsigned long)start,
-native-width-integer	libclamav/jsparse/js-norm.c	555	               (unsigned long)end, (unsigned long)len);
-native-width-integer	libclamav/jsparse/js-norm.c	577	    cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
-native-width-integer	libclamav/jsparse/js-norm.c	586	    const long a  = TOKEN_GET(params[1], ival);
+native-width-integer	libclamav/jsparse/js-norm.c	316	static inline cl_error_t buf_flush(struct buf *buf, size_t length)
+native-width-integer	libclamav/jsparse/js-norm.c	352	    const size_t buf_len = sizeof(buf->buf);
+native-width-integer	libclamav/jsparse/js-norm.c	353	    size_t i;
+native-width-integer	libclamav/jsparse/js-norm.c	412	                size_t id = scope_lookup(scope, s, strlen(s));
+native-width-integer	libclamav/jsparse/js-norm.c	413	                if (id == (size_t)-1) {
+native-width-integer	libclamav/jsparse/js-norm.c	428	                const size_t len = strlen(s);
+native-width-integer	libclamav/jsparse/js-norm.c	501	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count, const char **tokens);
+native-width-integer	libclamav/jsparse/js-norm.c	503	static int match_parameters(const yystype *tokens, size_t num_tokens, const char **param_names, size_t num_param_names)
+native-width-integer	libclamav/jsparse/js-norm.c	505	    size_t token_idx = 1;
+native-width-integer	libclamav/jsparse/js-norm.c	506	    size_t names_idx = 0;
+native-width-integer	libclamav/jsparse/js-norm.c	571	static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t end, const struct tokens *with)
+native-width-integer	libclamav/jsparse/js-norm.c	573	    const size_t len = with ? with->cnt : 0;
+native-width-integer	libclamav/jsparse/js-norm.c	574	    size_t i;
+native-width-integer	libclamav/jsparse/js-norm.c	575	    cli_dbgmsg(MODULE "Replacing tokens %lu - %lu with %lu tokens\n", (unsigned long)start,
+native-width-integer	libclamav/jsparse/js-norm.c	576	               (unsigned long)end, (unsigned long)len);
+native-width-integer	libclamav/jsparse/js-norm.c	598	    cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
+native-width-integer	libclamav/jsparse/js-norm.c	607	    const long a  = TOKEN_GET(params[1], ival);
 native-width-integer	libclamav/jsparse/js-norm.c	63	    size_t yylen;
-native-width-integer	libclamav/jsparse/js-norm.c	641	    size_t pos_begin;
-native-width-integer	libclamav/jsparse/js-norm.c	642	    size_t pos_end;
-native-width-integer	libclamav/jsparse/js-norm.c	647	static void handle_de(yystype *tokens, size_t start, const size_t cnt, const char *name, struct decode_result *res)
 native-width-integer	libclamav/jsparse/js-norm.c	65	    size_t insize;
-native-width-integer	libclamav/jsparse/js-norm.c	650	    size_t i, nesting = 1, j;
-native-width-integer	libclamav/jsparse/js-norm.c	652	    const size_t parameters_cnt = 6;
 native-width-integer	libclamav/jsparse/js-norm.c	66	    size_t pos;
+native-width-integer	libclamav/jsparse/js-norm.c	662	    size_t pos_begin;
+native-width-integer	libclamav/jsparse/js-norm.c	663	    size_t pos_end;
+native-width-integer	libclamav/jsparse/js-norm.c	668	static void handle_de(yystype *tokens, size_t start, const size_t cnt, const char *name, struct decode_result *res)
 native-width-integer	libclamav/jsparse/js-norm.c	67	    size_t lastpos;
+native-width-integer	libclamav/jsparse/js-norm.c	671	    size_t i, nesting = 1, j;
+native-width-integer	libclamav/jsparse/js-norm.c	673	    const size_t parameters_cnt = 6;
 native-width-integer	libclamav/jsparse/js-norm.c	72	static int yylex(YYSTYPE *lvalp, yyscan_t);
 native-width-integer	libclamav/jsparse/js-norm.c	73	static void yy_scan_bytes(const char *, size_t, yyscan_t scanner);
-native-width-integer	libclamav/jsparse/js-norm.c	734	static cl_error_t handle_unescape(struct tokens *tokens, size_t start)
 native-width-integer	libclamav/jsparse/js-norm.c	75	static int yyget_leng(yyscan_t scanner);
-native-width-integer	libclamav/jsparse/js-norm.c	750	                size_t i;
+native-width-integer	libclamav/jsparse/js-norm.c	755	static cl_error_t handle_unescape(struct tokens *tokens, size_t start)
 native-width-integer	libclamav/jsparse/js-norm.c	76	static int yylex_init(yyscan_t *ptr_yy_globals);
-native-width-integer	libclamav/jsparse/js-norm.c	764	static void handle_df(const yystype *tokens, size_t start, struct decode_result *res)
-native-width-integer	libclamav/jsparse/js-norm.c	767	    size_t len, s1_len, i;
 native-width-integer	libclamav/jsparse/js-norm.c	77	static int yylex_destroy(yyscan_t yyscanner);
-native-width-integer	libclamav/jsparse/js-norm.c	796	static void handle_eval(struct tokens *tokens, size_t start, struct decode_result *res)
-native-width-integer	libclamav/jsparse/js-norm.c	813	    size_t i;
-native-width-integer	libclamav/jsparse/js-norm.c	826	static inline int state_update_scope(struct parser_state *state, const yystype *token)
-native-width-integer	libclamav/jsparse/js-norm.c	845	    size_t i;
-native-width-integer	libclamav/jsparse/js-norm.c	897	                    size_t j;
-native-width-integer	libclamav/jsparse/js-norm.c	920	    size_t par_balance    = 0, i;
+native-width-integer	libclamav/jsparse/js-norm.c	771	                size_t i;
+native-width-integer	libclamav/jsparse/js-norm.c	785	static void handle_df(const yystype *tokens, size_t start, struct decode_result *res)
+native-width-integer	libclamav/jsparse/js-norm.c	788	    size_t len, s1_len, i;
+native-width-integer	libclamav/jsparse/js-norm.c	817	static void handle_eval(struct tokens *tokens, size_t start, struct decode_result *res)
+native-width-integer	libclamav/jsparse/js-norm.c	834	    size_t i;
+native-width-integer	libclamav/jsparse/js-norm.c	847	static inline int state_update_scope(struct parser_state *state, const yystype *token)
+native-width-integer	libclamav/jsparse/js-norm.c	866	    size_t i;
+native-width-integer	libclamav/jsparse/js-norm.c	918	                    size_t j;
 native-width-integer	libclamav/jsparse/js-norm.c	94	    int last_token;
+native-width-integer	libclamav/jsparse/js-norm.c	941	    size_t par_balance    = 0, i;
 native-width-integer	libclamav/jsparse/js-norm.c	95	    unsigned int brackets;
 native-width-integer	libclamav/jsparse/js-norm.c	96	    unsigned int blocks;
-native-width-integer	libclamav/jsparse/js-norm.c	981	        off_t end = lseek(buf.outfd, 0, SEEK_END);
-native-width-integer	libclamav/jsparse/js-norm.c	982	        if (end == (off_t)-1) {
-native-width-integer	libclamav/jsparse/js-norm.h	29	void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n);
+native-width-integer	libclamav/jsparse/js-norm.h	30	void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n);
 native-width-integer	libclamav/jsparse/lexglobal.h	116	        long ival;
 native-width-integer	libclamav/jsparse/lexglobal.h	133	/* there isn't really an invalid double, or long value, but we don't care
 native-width-integer	libclamav/jsparse/lexglobal.h	140	static int vtype_compatible(enum val_type orig, enum val_type req)
@@ -15240,9 +15247,9 @@ native-width-integer	unit_tests/check_jsnorm.c	256	static void tokenizer_test(co
 native-width-integer	unit_tests/check_jsnorm.c	259	    int fd;
 native-width-integer	unit_tests/check_jsnorm.c	260	    ssize_t len  = strlen(expected);
 native-width-integer	unit_tests/check_jsnorm.c	261	    size_t inlen = strlen(in);
-native-width-integer	unit_tests/check_jsnorm.c	450	    const size_t len   = 512 * 1024;
-native-width-integer	unit_tests/check_jsnorm.c	457	    const size_t explen = len + sizeof(s_exp) + sizeof(e_exp) - 2;
-native-width-integer	unit_tests/check_jsnorm.c	482	    size_t p;
+native-width-integer	unit_tests/check_jsnorm.c	469	    const size_t len   = 512 * 1024;
+native-width-integer	unit_tests/check_jsnorm.c	476	    const size_t explen = len + sizeof(s_exp) + sizeof(e_exp) - 2;
+native-width-integer	unit_tests/check_jsnorm.c	501	    size_t p;
 native-width-integer	unit_tests/check_jsnorm.c	55	    int is;
 native-width-integer	unit_tests/check_matchers.c	208	    unsigned int i;
 native-width-integer	unit_tests/check_matchers.c	209	    int ret;
@@ -15692,7 +15699,7 @@ quantity-parser	libclamav/dconf.c	350	            if ((unsigned int)atoi(pt) < C
 quantity-parser	libclamav/dlp.c	159	    uint32_t iin = atoi(digits);
 quantity-parser	libclamav/ishield.c	519	        fsize = strtol(strsz, &eostr, 10);
 quantity-parser	libclamav/ishield.c	549	            cabno = strtol(fname + 4, &eostr, 10);
-quantity-parser	libclamav/jsparse/js-norm.c	1670	            TOKEN_SET(lvalp, ival, atoi(scanner->buf.data));
+quantity-parser	libclamav/jsparse/js-norm.c	1698	            TOKEN_SET(lvalp, ival, atoi(scanner->buf.data));
 quantity-parser	libclamav/matcher-byte-comp.c	110	    ref_subsigid = strtol(buf_start, (char **)&buf_end, 10);
 quantity-parser	libclamav/matcher-byte-comp.c	161	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
 quantity-parser	libclamav/matcher-byte-comp.c	181	                offset_param = strtol(++buf_start, (char **)&buf_end, 0);
@@ -15772,10 +15779,10 @@ narrowing-cast	libclamav/blob.c	775	                       (unsigned long)len, f
 narrowing-cast	libclamav/bytecode.c	123	            legacy_offsets[i] = (uint32_t)offsets[i];
 narrowing-cast	libclamav/bytecode.c	1513	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
 narrowing-cast	libclamav/bytecode.c	2868	    ctx->file_size      = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
-narrowing-cast	libclamav/bytecode_api.c	1540	    for (i = 0; i < (unsigned int)len; i++) {
-narrowing-cast	libclamav/bytecode_api.c	1957	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
+narrowing-cast	libclamav/bytecode_api.c	1543	    for (i = 0; i < (unsigned int)len; i++) {
+narrowing-cast	libclamav/bytecode_api.c	1960	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
 narrowing-cast	libclamav/entconv.c	1167	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
-narrowing-cast	libclamav/jsparse/js-norm.c	555	               (unsigned long)end, (unsigned long)len);
+narrowing-cast	libclamav/jsparse/js-norm.c	576	               (unsigned long)end, (unsigned long)len);
 narrowing-cast	libclamav/matcher-ac.c	2105	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
 narrowing-cast	libclamav/matcher-ac.c	2212	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
 narrowing-cast	libclamav/matcher-hash.c	239	        item = cli_htu32_find(ht, (uint32_t)size);
@@ -16446,10 +16453,10 @@ format-width	libclamav/bytecode_api.c	1241	            cli_dbgmsg("bytecode api:
 format-width	libclamav/bytecode_api.c	1306	    cli_warnmsg("Bytecode runtime error at line %u, col %u\n", line, col);
 format-width	libclamav/bytecode_api.c	139	        cli_dbgmsg("bcapi_read64: fmap_readn returned %s (requested %u)\n",
 format-width	libclamav/bytecode_api.c	180	        cli_dbgmsg("bcapi_seek: out of file: %lld (max %d)\n",
-format-width	libclamav/bytecode_api.c	1957	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
-format-width	libclamav/bytecode_api.c	2259	    cli_dbgmsg("bytecode api[json_get_object]: assigned %s => ID %d\n", namep, n - 1);
-format-width	libclamav/bytecode_api.c	2293	            cli_dbgmsg("bytecode api[json_get_type]: unrecognized json type %d\n", type);
-format-width	libclamav/bytecode_api.c	2360	        cli_dbgmsg("bytecode api[json_array_get_idx]: assigned array @ %d => ID %d\n", idx, n - 1);
+format-width	libclamav/bytecode_api.c	1960	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
+format-width	libclamav/bytecode_api.c	2262	    cli_dbgmsg("bytecode api[json_get_object]: assigned %s => ID %d\n", namep, n - 1);
+format-width	libclamav/bytecode_api.c	2296	            cli_dbgmsg("bytecode api[json_get_type]: unrecognized json type %d\n", type);
+format-width	libclamav/bytecode_api.c	2363	        cli_dbgmsg("bytecode api[json_array_get_idx]: assigned array @ %d => ID %d\n", idx, n - 1);
 format-width	libclamav/bytecode_api.c	243	    // cli_dbgmsg("bytecode debug: %d\n", a);
 format-width	libclamav/bytecode_api.c	248	    return cli_eprintf("%d", a);
 format-width	libclamav/bytecode_api.c	445	        cli_dbgmsg("bcapi_pe_rawaddr invalid rva: %u\n", rva);
@@ -16865,9 +16872,9 @@ format-width	libclamav/jpeg.c	526	                    cli_dbgmsg(" ICC Profile, 
 format-width	libclamav/jpeg.c	544	                            cli_warnmsg("JPEG: Already observed JFIF: %d, Exif: %d, SPIFF: %d\n", num_JFIF, num_Exif, num_SPIFF);
 format-width	libclamav/json_api.c	422	            cli_dbgmsg("json: owner array does not have content at idx %d\n", idx);
 format-width	libclamav/json_api.c	433	            cli_dbgmsg("json: cannot delete idx %d of owner array\n", idx);
-format-width	libclamav/jsparse/js-norm.c	380	            snprintf(sbuf, sizeof(sbuf), "%ld", TOKEN_GET(token, ival));
-format-width	libclamav/jsparse/js-norm.c	554	    cli_dbgmsg(MODULE "Replacing tokens %lu - %lu with %lu tokens\n", (unsigned long)start,
-format-width	libclamav/jsparse/js-norm.c	577	    cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
+format-width	libclamav/jsparse/js-norm.c	401	            snprintf(sbuf, sizeof(sbuf), "%ld", TOKEN_GET(token, ival));
+format-width	libclamav/jsparse/js-norm.c	575	    cli_dbgmsg(MODULE "Replacing tokens %lu - %lu with %lu tokens\n", (unsigned long)start,
+format-width	libclamav/jsparse/js-norm.c	598	    cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
 format-width	libclamav/libmspack.c	102	        cli_dbgmsg("%s() failed %d\n", __func__, __LINE__);
 format-width	libclamav/libmspack.c	142	        cli_dbgmsg("%s() %d\n", __func__, __LINE__);
 format-width	libclamav/libmspack.c	146	        cli_dbgmsg("%s() %d\n", __func__, __LINE__);
@@ -20068,49 +20075,49 @@ offset-size-arithmetic	libclamav/bytecode_api.c	137	    n = fmap_readn(ctx->fmap
 offset-size-arithmetic	libclamav/bytecode_api.c	138	    if ((n == 0) || (n == (size_t)-1)) {
 offset-size-arithmetic	libclamav/bytecode_api.c	142	        if (n == (size_t)-1 && (uint64_t)ctx->off < (uint64_t)ctx->fmap->len)
 offset-size-arithmetic	libclamav/bytecode_api.c	144	        return (n == (size_t)-1) ? -1 : 0;
-offset-size-arithmetic	libclamav/bytecode_api.c	1487	    const uint8_t *end = str + len;
-offset-size-arithmetic	libclamav/bytecode_api.c	1490	    while (isspace(*str) && str < end) str++;
-offset-size-arithmetic	libclamav/bytecode_api.c	1497	        return -1; /* only positive numbers */
-offset-size-arithmetic	libclamav/bytecode_api.c	1506	uint32_t cli_bcapi_debug_print_str_start(struct cli_bc_ctx *ctx, const uint8_t *s, uint32_t len)
+offset-size-arithmetic	libclamav/bytecode_api.c	1490	    const uint8_t *end = str + len;
+offset-size-arithmetic	libclamav/bytecode_api.c	1493	    while (isspace(*str) && str < end) str++;
+offset-size-arithmetic	libclamav/bytecode_api.c	1500	        return -1; /* only positive numbers */
+offset-size-arithmetic	libclamav/bytecode_api.c	1509	uint32_t cli_bcapi_debug_print_str_start(struct cli_bc_ctx *ctx, const uint8_t *s, uint32_t len)
 offset-size-arithmetic	libclamav/bytecode_api.c	152	    ctx->off += (off_t)n;
 offset-size-arithmetic	libclamav/bytecode_api.c	156	int32_t cli_bcapi_seek(struct cli_bc_ctx *ctx, int32_t pos, uint32_t whence)
-offset-size-arithmetic	libclamav/bytecode_api.c	1560	    s = cli_max_realloc(ctx->maps, sizeof(*ctx->maps) * n);
-offset-size-arithmetic	libclamav/bytecode_api.c	1606	    return cli_map_setvalue(s, value, valuesize) == CL_SUCCESS ? 0 : -1;
-offset-size-arithmetic	libclamav/bytecode_api.c	1657	int32_t cli_bcapi_map_getvaluesize(struct cli_bc_ctx *ctx, int32_t id)
-offset-size-arithmetic	libclamav/bytecode_api.c	1687	            s = cli_max_realloc(ctx->maps, ctx->nmaps * (sizeof(*s)));
+offset-size-arithmetic	libclamav/bytecode_api.c	1563	    s = cli_max_realloc(ctx->maps, sizeof(*ctx->maps) * n);
+offset-size-arithmetic	libclamav/bytecode_api.c	1609	    return cli_map_setvalue(s, value, valuesize) == CL_SUCCESS ? 0 : -1;
+offset-size-arithmetic	libclamav/bytecode_api.c	1660	int32_t cli_bcapi_map_getvaluesize(struct cli_bc_ctx *ctx, int32_t id)
 offset-size-arithmetic	libclamav/bytecode_api.c	169	            off = ctx->off + pos;
+offset-size-arithmetic	libclamav/bytecode_api.c	1690	            s = cli_max_realloc(ctx->maps, ctx->nmaps * (sizeof(*s)));
 offset-size-arithmetic	libclamav/bytecode_api.c	172	            off = ctx->file_size + pos;
 offset-size-arithmetic	libclamav/bytecode_api.c	179	    if (off < 0 || off > ctx->file_size) {
-offset-size-arithmetic	libclamav/bytecode_api.c	1794	    option_name_l = malloc(name_len + 1);
+offset-size-arithmetic	libclamav/bytecode_api.c	1797	    option_name_l = malloc(name_len + 1);
 offset-size-arithmetic	libclamav/bytecode_api.c	181	                   (long long)off, ctx->file_size);
 offset-size-arithmetic	libclamav/bytecode_api.c	189	int64_t cli_bcapi_seek64(struct cli_bc_ctx *ctx, int64_t pos, uint32_t whence)
-offset-size-arithmetic	libclamav/bytecode_api.c	1944	        /* Save off pointer to original fmap */
-offset-size-arithmetic	libclamav/bytecode_api.c	1956	    if (len > sizeof(*env)) {
-offset-size-arithmetic	libclamav/bytecode_api.c	1957	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
-offset-size-arithmetic	libclamav/bytecode_api.c	2100	uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx, int32_t objidx)
-offset-size-arithmetic	libclamav/bytecode_api.c	2108	        return ctx->pdf_size - ctx->pdf_objs[objidx]->start;
-offset-size-arithmetic	libclamav/bytecode_api.c	2109	    return ctx->pdf_objs[objidx + 1]->start - ctx->pdf_objs[objidx]->start - 4;
-offset-size-arithmetic	libclamav/bytecode_api.c	2117	    return fmap_need_off(ctx->fmap, ctx->pdf_objs[objidx]->start, amount);
+offset-size-arithmetic	libclamav/bytecode_api.c	1947	        /* Save off pointer to original fmap */
+offset-size-arithmetic	libclamav/bytecode_api.c	1959	    if (len > sizeof(*env)) {
+offset-size-arithmetic	libclamav/bytecode_api.c	1960	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
+offset-size-arithmetic	libclamav/bytecode_api.c	2103	uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx, int32_t objidx)
+offset-size-arithmetic	libclamav/bytecode_api.c	2111	        return ctx->pdf_size - ctx->pdf_objs[objidx]->start;
+offset-size-arithmetic	libclamav/bytecode_api.c	2112	    return ctx->pdf_objs[objidx + 1]->start - ctx->pdf_objs[objidx]->start - 4;
+offset-size-arithmetic	libclamav/bytecode_api.c	2120	    return fmap_need_off(ctx->fmap, ctx->pdf_objs[objidx]->start, amount);
 offset-size-arithmetic	libclamav/bytecode_api.c	213	        uint64_t magnitude = (uint64_t)(-(pos + 1)) + 1;
-offset-size-arithmetic	libclamav/bytecode_api.c	2148	int32_t cli_bcapi_pdf_get_offset(struct cli_bc_ctx *ctx, int32_t objidx)
-offset-size-arithmetic	libclamav/bytecode_api.c	2153	    return ctx->pdf_startoff + ctx->pdf_objs[objidx]->start;
-offset-size-arithmetic	libclamav/bytecode_api.c	2195	    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
-offset-size-arithmetic	libclamav/bytecode_api.c	2236	    if (!jobj) /* shouldn't be possible */
-offset-size-arithmetic	libclamav/bytecode_api.c	2238	    namep = (char *)cli_max_malloc(sizeof(char) * (name_len + 1));
-offset-size-arithmetic	libclamav/bytecode_api.c	2249	    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
-offset-size-arithmetic	libclamav/bytecode_api.c	2299	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
-offset-size-arithmetic	libclamav/bytecode_api.c	2334	    if (!jarr) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2151	int32_t cli_bcapi_pdf_get_offset(struct cli_bc_ctx *ctx, int32_t objidx)
+offset-size-arithmetic	libclamav/bytecode_api.c	2156	    return ctx->pdf_startoff + ctx->pdf_objs[objidx]->start;
+offset-size-arithmetic	libclamav/bytecode_api.c	2198	    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
+offset-size-arithmetic	libclamav/bytecode_api.c	2239	    if (!jobj) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2241	    namep = (char *)cli_max_malloc(sizeof(char) * (name_len + 1));
+offset-size-arithmetic	libclamav/bytecode_api.c	2252	    j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
+offset-size-arithmetic	libclamav/bytecode_api.c	2302	int32_t cli_bcapi_json_get_array_length(struct cli_bc_ctx *ctx, int32_t objid)
+offset-size-arithmetic	libclamav/bytecode_api.c	2337	    if (!jarr) /* shouldn't be possible */
 offset-size-arithmetic	libclamav/bytecode_api.c	235	    cli_event_fastdata(EV, BCEV_DBG_STR, str, strlen((const char *)str));
-offset-size-arithmetic	libclamav/bytecode_api.c	2351	        j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
-offset-size-arithmetic	libclamav/bytecode_api.c	2367	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
-offset-size-arithmetic	libclamav/bytecode_api.c	2382	    if (!jobj) /* shouldn't be possible */
-offset-size-arithmetic	libclamav/bytecode_api.c	2412	    if (!jobj) /* shouldn't be possible */
-offset-size-arithmetic	libclamav/bytecode_api.c	2424	    if (len + 1 > str_len) {
-offset-size-arithmetic	libclamav/bytecode_api.c	2425	        /* limit on str-len */
-offset-size-arithmetic	libclamav/bytecode_api.c	2426	        strncpy((char *)str, jstr, str_len - 1);
-offset-size-arithmetic	libclamav/bytecode_api.c	2427	        str[str_len - 1] = '\0';
-offset-size-arithmetic	libclamav/bytecode_api.c	2430	        /* limit on len+1 */
-offset-size-arithmetic	libclamav/bytecode_api.c	2433	        return len + 1;
+offset-size-arithmetic	libclamav/bytecode_api.c	2354	        j = cli_max_realloc(jobjs, sizeof(json_object *) * n);
+offset-size-arithmetic	libclamav/bytecode_api.c	2370	int32_t cli_bcapi_json_get_string_length(struct cli_bc_ctx *ctx, int32_t objid)
+offset-size-arithmetic	libclamav/bytecode_api.c	2385	    if (!jobj) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2415	    if (!jobj) /* shouldn't be possible */
+offset-size-arithmetic	libclamav/bytecode_api.c	2427	    if (len + 1 > str_len) {
+offset-size-arithmetic	libclamav/bytecode_api.c	2428	        /* limit on str-len */
+offset-size-arithmetic	libclamav/bytecode_api.c	2429	        strncpy((char *)str, jstr, str_len - 1);
+offset-size-arithmetic	libclamav/bytecode_api.c	2430	        str[str_len - 1] = '\0';
+offset-size-arithmetic	libclamav/bytecode_api.c	2433	        /* limit on len+1 */
+offset-size-arithmetic	libclamav/bytecode_api.c	2436	        return len + 1;
 offset-size-arithmetic	libclamav/bytecode_api.c	267	    if (!res || !ctx->fmap || (size_t)(ctx->off) >= ctx->fmap->len) {
 offset-size-arithmetic	libclamav/bytecode_api.c	273	    n   = MIN(32, ctx->fmap->len - ctx->off);
 offset-size-arithmetic	libclamav/bytecode_api.c	274	    buf = fmap_need_off_once(ctx->fmap, ctx->off, n);
@@ -22152,60 +22159,63 @@ offset-size-arithmetic	libclamav/jsparse/generated/keywords.h	74	  return len + 
 offset-size-arithmetic	libclamav/jsparse/generated/operators.h	181	          if (*str == *s && !strncmp (str + 1, s + 1, len - 1) && s[len] == '\0')
 offset-size-arithmetic	libclamav/jsparse/generated/operators.h	3	/* Computed positions: -k'1,$' */
 offset-size-arithmetic	libclamav/jsparse/generated/operators.h	77	  return len + asso_values[(unsigned char)str[len - 1]] + asso_values[(unsigned char)str[0]];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1023	    memset(state, 0x55, sizeof(*state));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1030	 * the end of a buffer. All tokens except string-literals of course.
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1063	                leng = yyget_leng(state->scanner);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1146	                         * mark function end */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1199	                        leng = yyget_leng(state->scanner);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1002	    /* append to file */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1005	        if (end == (off_t)-1) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1019	    if (buf.pos < 9 || memcmp(buf.buf + buf.pos - 9, "</script>", 9))
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1051	    memset(state, 0x55, sizeof(*state));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1058	 * the end of a buffer. All tokens except string-literals of course.
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1091	                leng = yyget_leng(state->scanner);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1174	                         * mark function end */
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	120	    struct scope *s      = calloc(1, sizeof(*s));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1204	                        str = cli_max_realloc(str, str_len + leng + 1);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1208	                        str[str_len + leng] = '\0';
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1232	    struct parser_state *state = calloc(1, sizeof(*state));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1589	    const char *start = &scanner->in[scanner->pos], *end = start;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1591	        const size_t siz = &scanner->in[scanner->insize] - end;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1593	        if (end && end > start && end[-1] == '\\') {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1600	        len = end - start;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1602	        len = scanner->insize - scanner->pos;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1603	    cli_textbuffer_append_normalize(&scanner->buf, start, len);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1606	        /* skip over end quote */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1607	        scanner->pos += len + 1;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1619	        scanner->pos += len;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1640	    while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1641	        unsigned char c = in[scanner->pos++];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1653	            if (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1654	                c = in[scanner->pos++];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1661	        scanner->pos--;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1683	    while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1684	        unsigned char c        = in[scanner->pos++];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1693	                if (scanner->pos < scanner->insize &&
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1694	                    in[scanner->pos++] == 'u') {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1698	                if (scanner->pos == scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1699	                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1706	                scanner->pos--;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1707	                kw = in_word_set(scanner->buf.data, scanner->buf.pos - 1);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1724	    size_t len = MIN(5, scanner->insize - scanner->pos);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1729	            scanner->pos += len;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1732	        len--;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1736	    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1743	    *scanner = calloc(1, sizeof(**scanner));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1759	    scanner->lastpos    = -1;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1772	    return scanner->yylen ? scanner->yylen : (scanner->buf.pos > 0 ? scanner->buf.pos - 1 : 0);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1777	    const size_t len        = scanner->insize;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1784	    if (scanner->pos == scanner->lastpos) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1787	            scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1792	    scanner->lastpos    = scanner->pos;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1794	    while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1798	                cClass = ctype[in[scanner->pos++]];
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1809	                                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1813	                                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1852	                while (scanner->pos + 1 < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1853	                    if (in[scanner->pos] == '*' && in[scanner->pos + 1] == '/') {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1855	                        scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1858	                    scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1860	                scanner->pos++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1865	                while (scanner->pos < scanner->insize) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1868	                    if (in[scanner->pos] == '\n' || in[scanner->pos] == ' ')
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	1870	                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1227	                        leng = yyget_leng(state->scanner);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1232	                        str = cli_max_realloc(str, str_len + leng + 1);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1236	                        str[str_len + leng] = '\0';
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1260	    struct parser_state *state = calloc(1, sizeof(*state));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1617	    const char *start = &scanner->in[scanner->pos], *end = start;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1619	        const size_t siz = &scanner->in[scanner->insize] - end;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1621	        if (end && end > start && end[-1] == '\\') {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1628	        len = end - start;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1630	        len = scanner->insize - scanner->pos;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1631	    cli_textbuffer_append_normalize(&scanner->buf, start, len);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1634	        /* skip over end quote */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1635	        scanner->pos += len + 1;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1647	        scanner->pos += len;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1668	    while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1669	        unsigned char c = in[scanner->pos++];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1681	            if (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1682	                c = in[scanner->pos++];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1689	        scanner->pos--;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1711	    while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1712	        unsigned char c        = in[scanner->pos++];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1721	                if (scanner->pos < scanner->insize &&
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1722	                    in[scanner->pos++] == 'u') {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1726	                if (scanner->pos == scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1727	                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1734	                scanner->pos--;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1735	                kw = in_word_set(scanner->buf.data, scanner->buf.pos - 1);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1752	    size_t len = MIN(5, scanner->insize - scanner->pos);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1757	            scanner->pos += len;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1760	        len--;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1764	    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1771	    *scanner = calloc(1, sizeof(**scanner));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1787	    scanner->lastpos    = -1;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1800	    return scanner->yylen ? scanner->yylen : (scanner->buf.pos > 0 ? scanner->buf.pos - 1 : 0);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1805	    const size_t len        = scanner->insize;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1812	    if (scanner->pos == scanner->lastpos) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1815	            scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1820	    scanner->lastpos    = scanner->pos;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1822	    while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1826	                cClass = ctype[in[scanner->pos++]];
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1837	                                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1841	                                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1880	                while (scanner->pos + 1 < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1881	                    if (in[scanner->pos] == '*' && in[scanner->pos + 1] == '/') {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1883	                        scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1886	                    scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1888	                scanner->pos++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1893	                while (scanner->pos < scanner->insize) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1896	                    if (in[scanner->pos] == '\n' || in[scanner->pos] == ' ')
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	1898	                    scanner->pos++;
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	247	static const char *scope_declare(struct scope *s, const char *token, const size_t len, struct parser_state *state)
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	249	    const struct cli_element *el = cli_hashtab_insert(&s->id_map, token, len, (const cli_element_data)(state->var_uniq++));
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	267	    el = cli_hashtab_insert(&s->id_map, token, len, (const cli_element_data)-1);
@@ -22214,64 +22224,61 @@ offset-size-arithmetic	libclamav/jsparse/js-norm.c	275	        if (el && (size_t
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	276	            return (size_t)el->data;
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	281	    return (size_t)-1;
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	290	        data = cli_max_realloc(tokens->data, cap * sizeof(*tokens->data));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	318	    if (buf->pos >= sizeof(buf->buf)) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	319	        if (cli_writen(buf->outfd, buf->buf, sizeof(buf->buf)) != sizeof(buf->buf)) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	325	    buf->buf[buf->pos++] = c;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	331	    const size_t buf_len = sizeof(buf->buf);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	338	        while (i < buf_len && *s) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	392	                if (id == (size_t)-1) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	410	                return len ? s[len - 1] : '\0';
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	480	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count, const char **tokens);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	482	static int match_parameters(const yystype *tokens, size_t num_tokens, const char **param_names, size_t num_param_names)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	533	    scanner->yylen  = scanner->buf.pos - 1;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	534	    memset(&scanner->buf, 0, sizeof(scanner->buf));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	550	static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t end, const struct tokens *with)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	552	    const size_t len = with ? with->cnt : 0;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	556	    if (start >= dst->cnt || end > dst->cnt)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	561	    if (tokens_ensure_capacity(dst, dst->cnt - (end - start) + len))
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	563	    memmove(&dst->data[start + len], &dst->data[end], (dst->cnt - end) * sizeof(dst->data[0]));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	565	        memcpy(&dst->data[start], with->data, len * sizeof(dst->data[0]));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	567	    dst->cnt = dst->cnt - (end - start) + len;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	571	static cl_error_t append_tokens(struct tokens *dst, const struct tokens *src)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	577	    cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	578	    memcpy(&dst->data[dst->cnt], src->data, src->cnt * sizeof(dst->data[0]));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	601	    tokens = malloc(sizeof(char *) * nsplit);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	644	                            1: old tokens are deleted, new ones appended at the end */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	647	static void handle_de(yystype *tokens, size_t start, const size_t cnt, const char *name, struct decode_result *res)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	649	    /* find function decl. end */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	720	        res->pos_begin = first - tokens;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	721	        res->pos_end   = last - tokens + 1;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	722	        if (res->pos_end + 2 < cnt &&
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	724	            tokens[res->pos_end + 1].type == TOK_BRACKET_CLOSE &&
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	725	            tokens[res->pos_end + 2].type == TOK_PAR_CLOSE) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	726	            res->pos_end += 3; /* {}) */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	729	            res->pos_end++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	748	        if (CL_SUCCESS != (retval = replace_token_range(tokens, start - 2, start + 2, &new_tokens))) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	764	static void handle_df(const yystype *tokens, size_t start, struct decode_result *res)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	779	    clast = str[len - 1] - '0';
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	340	    if (buf->pos >= sizeof(buf->buf)) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	341	        if (buf_flush(buf, sizeof(buf->buf)) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	346	    buf->buf[buf->pos++] = c;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	352	    const size_t buf_len = sizeof(buf->buf);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	359	        while (i < buf_len && *s) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	413	                if (id == (size_t)-1) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	431	                return len ? s[len - 1] : '\0';
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	501	size_t cli_strtokenize(char *buffer, const char delim, const size_t token_count, const char **tokens);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	503	static int match_parameters(const yystype *tokens, size_t num_tokens, const char **param_names, size_t num_param_names)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	554	    scanner->yylen  = scanner->buf.pos - 1;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	555	    memset(&scanner->buf, 0, sizeof(scanner->buf));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	571	static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t end, const struct tokens *with)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	573	    const size_t len = with ? with->cnt : 0;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	577	    if (start >= dst->cnt || end > dst->cnt)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	582	    if (tokens_ensure_capacity(dst, dst->cnt - (end - start) + len))
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	584	    memmove(&dst->data[start + len], &dst->data[end], (dst->cnt - end) * sizeof(dst->data[0]));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	586	        memcpy(&dst->data[start], with->data, len * sizeof(dst->data[0]));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	588	    dst->cnt = dst->cnt - (end - start) + len;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	592	static cl_error_t append_tokens(struct tokens *dst, const struct tokens *src)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	598	    cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	599	    memcpy(&dst->data[dst->cnt], src->data, src->cnt * sizeof(dst->data[0]));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	622	    tokens = malloc(sizeof(char *) * nsplit);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	665	                            1: old tokens are deleted, new ones appended at the end */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	668	static void handle_de(yystype *tokens, size_t start, const size_t cnt, const char *name, struct decode_result *res)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	670	    /* find function decl. end */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	741	        res->pos_begin = first - tokens;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	742	        res->pos_end   = last - tokens + 1;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	743	        if (res->pos_end + 2 < cnt &&
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	745	            tokens[res->pos_end + 1].type == TOK_BRACKET_CLOSE &&
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	746	            tokens[res->pos_end + 2].type == TOK_PAR_CLOSE) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	747	            res->pos_end += 3; /* {}) */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	750	            res->pos_end++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	769	        if (CL_SUCCESS != (retval = replace_token_range(tokens, start - 2, start + 2, &new_tokens))) {
 offset-size-arithmetic	libclamav/jsparse/js-norm.c	78	/* ----------- tokenizer end ---------------- */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	781	    str[len - 1] = '\0';
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	789	    res->pos_begin   = start - 2;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	790	    res->pos_end     = start + 2;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	796	static void handle_eval(struct tokens *tokens, size_t start, struct decode_result *res)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	800	    if (start + 1 >= tokens->cnt)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	803	    if (res->txtbuf.data && tokens->data[start + 1].type == TOK_PAR_CLOSE) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	805	        res->txtbuf.pos = strlen(res->txtbuf.data);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	806	        res->pos_begin  = start - 2;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	807	        res->pos_end    = start + 2;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	833	            /* dummy token marking function end */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	863	            if (-1 != match_parameters(&tokens->data[i], tokens->cnt, de_packer_3, sizeof(de_packer_3) / sizeof(de_packer_3[0])) ||
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	864	                -1 != match_parameters(&tokens->data[i], tokens->cnt, de_packer_2, sizeof(de_packer_2) / sizeof(de_packer_2[0]))) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	865	                /* find function decl. end */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	882	            if (res.pos_end < tokens->cnt && tokens->data[res.pos_end].type == TOK_SEMICOLON)
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	883	                res.pos_end++;
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	886	            memset(&state->tokens, 0, sizeof(state->tokens));
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	896	                if (CL_EARG == replace_token_range(&parent_tokens, res.pos_begin, res.pos_end, &state->tokens)) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	907	                append_tokens(&parent_tokens, &state->tokens);
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	909	            /* end of embedded context, restore tokens state */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	979	    /* append to file */
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	982	        if (end == (off_t)-1) {
-offset-size-arithmetic	libclamav/jsparse/js-norm.c	996	    if (buf.pos < 9 || memcmp(buf.buf + buf.pos - 9, "</script>", 9))
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	785	static void handle_df(const yystype *tokens, size_t start, struct decode_result *res)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	800	    clast = str[len - 1] - '0';
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	802	    str[len - 1] = '\0';
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	810	    res->pos_begin   = start - 2;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	811	    res->pos_end     = start + 2;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	817	static void handle_eval(struct tokens *tokens, size_t start, struct decode_result *res)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	821	    if (start + 1 >= tokens->cnt)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	824	    if (res->txtbuf.data && tokens->data[start + 1].type == TOK_PAR_CLOSE) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	826	        res->txtbuf.pos = strlen(res->txtbuf.data);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	827	        res->pos_begin  = start - 2;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	828	        res->pos_end    = start + 2;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	854	            /* dummy token marking function end */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	884	            if (-1 != match_parameters(&tokens->data[i], tokens->cnt, de_packer_3, sizeof(de_packer_3) / sizeof(de_packer_3[0])) ||
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	885	                -1 != match_parameters(&tokens->data[i], tokens->cnt, de_packer_2, sizeof(de_packer_2) / sizeof(de_packer_2[0]))) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	886	                /* find function decl. end */
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	903	            if (res.pos_end < tokens->cnt && tokens->data[res.pos_end].type == TOK_SEMICOLON)
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	904	                res.pos_end++;
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	907	            memset(&state->tokens, 0, sizeof(state->tokens));
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	917	                if (CL_EARG == replace_token_range(&parent_tokens, res.pos_begin, res.pos_end, &state->tokens)) {
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	928	                append_tokens(&parent_tokens, &state->tokens);
+offset-size-arithmetic	libclamav/jsparse/js-norm.c	930	            /* end of embedded context, restore tokens state */
 offset-size-arithmetic	libclamav/jsparse/textbuf.h	44	    if (txtbuf->pos + len > txtbuf->capacity) {
 offset-size-arithmetic	libclamav/jsparse/textbuf.h	46	        unsigned capacity = MAX(txtbuf->pos + len, txtbuf->capacity + 4096);
 offset-size-arithmetic	libclamav/jsparse/textbuf.h	66	static inline int textbuffer_append_len(struct text_buffer *txtbuf, const char *s, size_t len)
@@ -29278,19 +29285,19 @@ offset-size-arithmetic	unit_tests/check_jsnorm.c	264	        cli_js_process_buff
 offset-size-arithmetic	unit_tests/check_jsnorm.c	265	        cli_js_process_buffer(state, in + inlen / 2, inlen - inlen / 2);
 offset-size-arithmetic	unit_tests/check_jsnorm.c	272	    snprintf(filename, 1023, "%s/javascript", tmpdir);
 offset-size-arithmetic	unit_tests/check_jsnorm.c	289	    snprintf(missing_dir, sizeof(missing_dir), "%s/missing-output-parent", tmpdir);
-offset-size-arithmetic	unit_tests/check_jsnorm.c	450	    const size_t len   = 512 * 1024;
-offset-size-arithmetic	unit_tests/check_jsnorm.c	457	    const size_t explen = len + sizeof(s_exp) + sizeof(e_exp) - 2;
-offset-size-arithmetic	unit_tests/check_jsnorm.c	458	    char *exp           = malloc(len + sizeof(s_exp) + sizeof(e_exp) - 2);
-offset-size-arithmetic	unit_tests/check_jsnorm.c	463	    memset(tst, 'a', len - 1);
-offset-size-arithmetic	unit_tests/check_jsnorm.c	465	    strncpy(tst + len - sizeof(e), e, sizeof(e));
-offset-size-arithmetic	unit_tests/check_jsnorm.c	466	    tst[len - 1] = '\0';
-offset-size-arithmetic	unit_tests/check_jsnorm.c	469	    strncpy(exp + sizeof(s_exp) - 1, tst, len - 1);
-offset-size-arithmetic	unit_tests/check_jsnorm.c	470	    strncpy(exp + sizeof(s_exp) + len - 2, e_exp, sizeof(e_exp));
-offset-size-arithmetic	unit_tests/check_jsnorm.c	471	    exp[explen - 1] = '\0';
-offset-size-arithmetic	unit_tests/check_jsnorm.c	525	    tcase_add_loop_test(tc_jsnorm_gperf, test_keywords, 0, sizeof(kw_test) / sizeof(kw_test[0]));
-offset-size-arithmetic	unit_tests/check_jsnorm.c	526	    tcase_add_loop_test(tc_jsnorm_gperf, test_operators, 0, sizeof(op_test) / sizeof(op_test[0]));
-offset-size-arithmetic	unit_tests/check_jsnorm.c	545	    tcase_add_loop_test(tc_jsnorm_tokenizer, tokenizer_basic, 0, sizeof(js_tests) / sizeof(js_tests[0]));
-offset-size-arithmetic	unit_tests/check_jsnorm.c	546	    tcase_add_loop_test(tc_jsnorm_tokenizer, tokenizer_split, 0, sizeof(js_tests) / sizeof(js_tests[0]));
+offset-size-arithmetic	unit_tests/check_jsnorm.c	469	    const size_t len   = 512 * 1024;
+offset-size-arithmetic	unit_tests/check_jsnorm.c	476	    const size_t explen = len + sizeof(s_exp) + sizeof(e_exp) - 2;
+offset-size-arithmetic	unit_tests/check_jsnorm.c	477	    char *exp           = malloc(len + sizeof(s_exp) + sizeof(e_exp) - 2);
+offset-size-arithmetic	unit_tests/check_jsnorm.c	482	    memset(tst, 'a', len - 1);
+offset-size-arithmetic	unit_tests/check_jsnorm.c	484	    strncpy(tst + len - sizeof(e), e, sizeof(e));
+offset-size-arithmetic	unit_tests/check_jsnorm.c	485	    tst[len - 1] = '\0';
+offset-size-arithmetic	unit_tests/check_jsnorm.c	488	    strncpy(exp + sizeof(s_exp) - 1, tst, len - 1);
+offset-size-arithmetic	unit_tests/check_jsnorm.c	489	    strncpy(exp + sizeof(s_exp) + len - 2, e_exp, sizeof(e_exp));
+offset-size-arithmetic	unit_tests/check_jsnorm.c	490	    exp[explen - 1] = '\0';
+offset-size-arithmetic	unit_tests/check_jsnorm.c	544	    tcase_add_loop_test(tc_jsnorm_gperf, test_keywords, 0, sizeof(kw_test) / sizeof(kw_test[0]));
+offset-size-arithmetic	unit_tests/check_jsnorm.c	545	    tcase_add_loop_test(tc_jsnorm_gperf, test_operators, 0, sizeof(op_test) / sizeof(op_test[0]));
+offset-size-arithmetic	unit_tests/check_jsnorm.c	564	    tcase_add_loop_test(tc_jsnorm_tokenizer, tokenizer_basic, 0, sizeof(js_tests) / sizeof(js_tests[0]));
+offset-size-arithmetic	unit_tests/check_jsnorm.c	565	    tcase_add_loop_test(tc_jsnorm_tokenizer, tokenizer_split, 0, sizeof(js_tests) / sizeof(js_tests[0]));
 offset-size-arithmetic	unit_tests/check_matchers.c	100	    {"ddddd&e", 7, "6464646464", "*", ACPATT_OPTION_FULLWORD, "AC_Sigopts_Test_4", CL_VIRUS},   /* fullword start */
 offset-size-arithmetic	unit_tests/check_matchers.c	102	    {"s&fffff", 7, "6666666666", "*", ACPATT_OPTION_FULLWORD, "AC_Sigopts_Test_6", CL_VIRUS},   /* fullword end */
 offset-size-arithmetic	unit_tests/check_matchers.c	103	    {"sggggg", 6, "6767676767", "*", ACPATT_OPTION_FULLWORD, "AC_Sigopts_Test_7", CL_CLEAN},    /* fullword fail start */
