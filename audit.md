@@ -1781,3 +1781,14 @@ failure. The focused socketpair regression exercises a fragmented report
 header/payload followed by the terminator and reads both frames in order.
 Compiled Linux execution, Sonic1 service qualification, sanitizer coverage,
 and 4-GiB/32-GiB multi-request integration remain open.
+
+## Service protocol qualification coverage — 2026-08-19
+
+The service qualification harness now runs the production oracle through
+clamdscan FILDES (`--fdpass`) and length-framed INSTREAM (`--stream`) paths,
+and repeats both protocols for the exact boundary fixture after switching to
+the edge signature database. These cases validate the same structured report
+completion, type, signature, and status oracle as the path scan. The harness
+change closes a coverage omission in the acceptance workflow; no actual
+supported-Linux/Sonic1 run, sanitizer result, or 4-GiB/32-GiB service
+qualification is claimed by this source change.

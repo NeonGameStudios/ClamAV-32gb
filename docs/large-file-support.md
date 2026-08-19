@@ -2649,3 +2649,14 @@ focused socketpair regression now delivers a fragmented JSON frame followed by
 its terminator and verifies both frames are consumed in order. Supported-Linux
 IDSESSION execution, Sonic1 service qualification, sanitizer coverage, and
 4-GiB/32-GiB integration remain release gates.
+
+## Service protocol qualification coverage — 2026-08-19
+
+The Linux service qualification harness now exercises real clamdscan
+`--fdpass`/FILDES and `--stream`/INSTREAM transfers in addition to path scans.
+Production fixtures are run through both protocols, and the exact-edge
+fixture is run through both after switching to the boundary database. Each
+case remains bound to the existing size/hash/status/completion/signature/type
+oracle and structured JSON report checks. This improves protocol coverage but
+does not itself constitute a completed run; the dedicated 64-GiB Linux runner,
+sanitizer, RSS, latency, and Sonic1 evidence gates remain required.

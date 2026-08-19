@@ -351,13 +351,14 @@ run_service_scan()
     oracle_role=$1
     scan_label=$2
     scan_file=$3
+    shift 3
     oracle_load "$oracle_role" "$scan_file"
     scan_log=$out/logs/$scan_label.log
     scan_report=$out/reports/$scan_label.jsonl
     scan_status=0
     "/usr/bin/time" -f '%e' -o "$out/logs/$scan_label.elapsed" \
         timeout --signal=TERM --kill-after=5 900 \
-        "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$scan_report" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
+        "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$scan_report" "$@" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
     scan_pid=$!
     while kill -0 "$scan_pid" 2>/dev/null; do
         rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
@@ -401,6 +402,10 @@ run_direct_production()
 run_direct_production
 run_service_scan production production_cvd "$production_file"
 printf 'production_cvd_clamdscan=pass\n' >> "$out/service-summary.txt"
+run_service_scan production production_cvd_fildes "$production_file" --fdpass
+printf 'production_cvd_clamdscan_fildes=pass\n' >> "$out/service-summary.txt"
+run_service_scan production production_cvd_instream "$production_file" --stream
+printf 'production_cvd_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
 run_service_scan materialized materialized_warm "$materialized_file"
 
 if [ ! -w /proc/sys/vm/drop_caches ]; then
@@ -430,6 +435,10 @@ fi
 stop_service
 start_service "$edge_db"
 run_service_scan edge edge_service "$edge_file"
+run_service_scan edge edge_fildes "$edge_file" --fdpass
+printf 'edge_clamdscan_fildes=pass\n' >> "$out/service-summary.txt"
+run_service_scan edge edge_instream "$edge_file" --stream
+printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
 
 # Exercise MaxThreads=4 with four simultaneous clamdscan clients. These are
 # independent requests to the same daemon, not four standalone clamscan
