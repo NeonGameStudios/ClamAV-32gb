@@ -22,6 +22,7 @@ struct cl_scan_report {
     char *reason;
     char *last_alert;
     char *target;
+    char *file_type;
 
     cl_scan_report_metrics_t metrics;
     cl_scan_report_limits_t limits;

@@ -607,6 +607,7 @@ START_TEST(test_scan_report_complete_and_json)
     cl_error_t status;
     cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
     const char *last_alert = NULL;
+    const char *file_type = NULL;
     char *json = NULL;
     char *path = NULL;
     int fd = -1;
@@ -625,6 +626,9 @@ START_TEST(test_scan_report_complete_and_json)
     ck_assert_int_eq(status, CL_SUCCESS);
     ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
     ck_assert_int_eq(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_file_type(report, &file_type), CL_SUCCESS);
+    ck_assert_ptr_nonnull(file_type);
+    ck_assert_str_eq(file_type, "CL_TYPE_TEXT_ASCII");
     ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
     ck_assert_int_eq(cl_scan_report_get_limits(report, &limits), CL_SUCCESS);
     ck_assert_uint_eq(limits.max_matcher_work, CLI_MAX_MATCHER_WORK);
@@ -636,6 +640,7 @@ START_TEST(test_scan_report_complete_and_json)
     ck_assert_int_eq(cl_scan_report_to_json(report, &json), CL_SUCCESS);
     ck_assert_ptr_nonnull(json);
     ck_assert_ptr_nonnull(strstr(json, "\"completion\":\"COMPLETE\""));
+    ck_assert_ptr_nonnull(strstr(json, "\"file_type\":\"CL_TYPE_TEXT_ASCII\""));
 
     free(json);
     cl_scan_report_free(report);

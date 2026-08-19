@@ -31,6 +31,10 @@ on:
         description: Absolute path to the parser-expansion fixture on the dedicated runner
         required: true
         type: string
+      qualification_oracle:
+        description: Absolute path to the hash-bound exact-outcome TSV for all qualification fixtures
+        required: true
+        type: string
   push:
     branches:
       - codex/*
@@ -411,11 +415,13 @@ jobs:
           CLAMAV_PRODUCTION_FILE: ${{ inputs.production_file }}
           CLAMAV_MATERIALIZED_FILE: ${{ inputs.materialized_file }}
           CLAMAV_EXPANSION_FIXTURE: ${{ inputs.expansion_fixture }}
+          CLAMAV_QUALIFICATION_ORACLE: ${{ inputs.qualification_oracle }}
         run: |
           test -n "$CLAMAV_PRODUCTION_DB"
           test -n "$CLAMAV_PRODUCTION_FILE"
           test -n "$CLAMAV_MATERIALIZED_FILE"
           test -n "$CLAMAV_EXPANSION_FIXTURE"
+          test -n "$CLAMAV_QUALIFICATION_ORACLE"
           sh ./tools/largefile_service_qualification.sh \
             "${{runner.workspace}}/build-largefile" \
             "${RUNNER_TEMP}/clamav-largefile-service" \
@@ -424,7 +430,8 @@ jobs:
             "$CLAMAV_MATERIALIZED_FILE" \
             "$CLAMAV_EXPANSION_FIXTURE" \
             "${RUNNER_TEMP}/clamav-largefile-runtime/corpus/32g-edge.bin" \
-            "${RUNNER_TEMP}/clamav-largefile-runtime/poc/db"
+            "${RUNNER_TEMP}/clamav-largefile-runtime/poc/db" \
+            "$CLAMAV_QUALIFICATION_ORACLE"
           grep -Fx 'production_cvd_clamscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'production_cvd_clamdscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'cold_cache_control=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"

@@ -3,6 +3,26 @@
 Status: Review-ready 32 GiB raw-scan release candidate; production acceptance
 pending
 
+## Current qualification contract
+
+The service/release gate now requires an external eight-column TSV oracle in
+addition to the four fixture paths. The file must contain this header and one
+row for each role: `production`, `materialized`, `expansion`, and `edge`:
+
+```text
+role\texpected_size\texpected_sha256\texpected_exit\texpected_completion\texpected_signature\texpected_offset\texpected_type
+```
+
+The oracle binds each materialized input by exact byte count, SHA-256, and
+top-level `CL_TYPE_*` value. It also requires the expected exit status and
+structured-report completion state; detection rows must provide the exact
+signature token and engine offset, while non-detection rows use `-` for the
+signature and offset. The workflow input is `qualification_oracle`. A gate run
+without this manifest is rejected, so a bare `FOUND` line or arbitrary exit
+code cannot be presented as production evidence. The gate's
+`oracle-binding.txt` records the expected status, completion, signature,
+offset, and type alongside each verified size and hash.
+
 The first authorized real-file Sonic1 run is documented in
 [`largefile-realfile-sonic1-20260818.md`](largefile-realfile-sonic1-20260818.md).
 It confirms that the fork's 32 GiB ceiling is an explicit configuration

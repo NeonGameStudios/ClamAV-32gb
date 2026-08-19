@@ -735,3 +735,21 @@ Synthetic runtime acceptance is also verified from the independently checked
 `runtime-v5-final6` evidence directory. Service-level qualification remains
 blocked because the required production inputs are absent, so the production
 block remains in force.
+
+## Qualification-oracle hardening — 2026-08-18
+
+The service qualification gate now requires a caller-supplied eight-column TSV
+oracle for the production, materialized, parser-expansion, and exact-edge
+inputs. Before any daemon is started, the gate verifies each fixture's exact
+size, SHA-256, and expected top-level `CL_TYPE_*` value contract. Each direct
+`clamscan` and `clamdscan --report-json` result must then match the oracle's
+exit status, structured-report completion state, file type, and exact alert
+token; direct detection runs also require the expected engine offset. The
+workflow exposes this as the required `qualification_oracle` input and
+records all bound status, completion, signature, offset, type, size, and hash
+values in `oracle-binding.txt`.
+
+This closes the prior “FOUND/arbitrary exit code” acceptance weakness, but it
+does not provide the missing authorized production database or workload. The
+service qualification therefore remains intentionally blocked until the user
+supplies those inputs and their expected outcomes.

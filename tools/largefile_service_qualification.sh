@@ -8,14 +8,14 @@
 # Usage:
 #   tools/largefile_service_qualification.sh BUILD_DIR OUTPUT_DIR \
 #       PRODUCTION_DB PRODUCTION_FILE MATERIALIZED_FILE EXPANSION_FILE \
-#       EDGE_FILE EDGE_DB
+#       EDGE_FILE EDGE_DB ORACLE_MANIFEST
 
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 
-if [ "$#" -ne 8 ]; then
-    echo "usage: $0 BUILD_DIR OUTPUT_DIR PRODUCTION_DB PRODUCTION_FILE MATERIALIZED_FILE EXPANSION_FILE EDGE_FILE EDGE_DB" >&2
+if [ "$#" -ne 9 ]; then
+    echo "usage: $0 BUILD_DIR OUTPUT_DIR PRODUCTION_DB PRODUCTION_FILE MATERIALIZED_FILE EXPANSION_FILE EDGE_FILE EDGE_DB ORACLE_MANIFEST" >&2
     exit 2
 fi
 
@@ -27,6 +27,7 @@ materialized_file=$5
 expansion_file=$6
 edge_file=$7
 edge_db=$8
+oracle_manifest=$9
 
 for required in \
     "$build_dir/clamscan/clamscan" \
@@ -52,12 +53,154 @@ for required in "$production_db" "$edge_db"; do
         exit 2
     fi
 done
-if ! command -v timeout >/dev/null 2>&1 || ! command -v awk >/dev/null 2>&1 ||
-    ! command -v python3 >/dev/null 2>&1 ||
-    [ ! -x /usr/bin/time ]; then
-    echo 'timeout, awk, python3, and GNU /usr/bin/time are required' >&2
+if [ ! -f "$oracle_manifest" ]; then
+    echo "missing qualification oracle manifest: $oracle_manifest" >&2
     exit 2
 fi
+if ! command -v timeout >/dev/null 2>&1 || ! command -v awk >/dev/null 2>&1 ||
+    ! command -v python3 >/dev/null 2>&1 ||
+    ! command -v sha256sum >/dev/null 2>&1 ||
+    [ ! -x /usr/bin/time ]; then
+    echo 'timeout, awk, python3, sha256sum, and GNU /usr/bin/time are required' >&2
+    exit 2
+fi
+
+# The oracle is deliberately separate from the source tree. It binds every
+# materialized input to its expected size/hash/status/completion/type and, for
+# detections, the exact signature token and engine offset. A bare FOUND check
+# is not sufficient evidence for a release decision.
+if ! awk -F '\t' '
+    NR == 1 {
+        if (NF != 8 || $1 != "role" || $2 != "expected_size" ||
+            $3 != "expected_sha256" || $4 != "expected_exit" ||
+            $5 != "expected_completion" || $6 != "expected_signature" ||
+            $7 != "expected_offset" || $8 != "expected_type") {
+            print "invalid qualification oracle header" > "/dev/stderr"
+            bad = 1
+        }
+        next
+    }
+    {
+        if (NF != 8 || ($1 != "production" && $1 != "materialized" &&
+            $1 != "expansion" && $1 != "edge")) {
+            print "invalid qualification oracle row at line " NR > "/dev/stderr"
+            bad = 1
+        }
+        if ($2 !~ /^[0-9]+$/ || $3 !~ /^[0-9a-fA-F]{64}$/ ||
+            $4 !~ /^[012]$/ ||
+            $5 !~ /^(COMPLETE|DETECTION_TERMINATED|LIMIT_INCOMPLETE|UNSUPPORTED|MALFORMED_CONFIRMED|RESOURCE_FAILURE|APPLICATION_ABORT)$/ ||
+            $6 == "" || $7 !~ /^([0-9]+|-)$/ ||
+            ($6 == "-" && $7 != "-") || ($6 != "-" && $7 == "-") ||
+            $8 !~ /^CL_TYPE_[A-Z0-9_]+$/) {
+            print "invalid qualification oracle value at line " NR > "/dev/stderr"
+            bad = 1
+        }
+        seen[$1]++
+    }
+    END {
+        for (role in seen)
+            if (seen[role] != 1) bad = 1
+        if (seen["production"] != 1 || seen["materialized"] != 1 ||
+            seen["expansion"] != 1 || seen["edge"] != 1) bad = 1
+        exit bad
+    }
+' "$oracle_manifest"; then
+    echo "qualification oracle manifest is invalid: $oracle_manifest" >&2
+    exit 2
+fi
+
+file_size()
+{
+    stat -c '%s' "$1" 2>/dev/null || stat -f '%z' "$1"
+}
+
+oracle_load()
+{
+    oracle_role=$1
+    oracle_file=$2
+    oracle_row=$(awk -F '\t' -v role="$oracle_role" '$1 == role { print; exit }' "$oracle_manifest")
+    IFS="$(printf '\t')" read -r expected_role expected_size expected_sha256 expected_exit expected_completion expected_signature expected_offset expected_type <<EOF
+$oracle_row
+EOF
+    actual_size=$(file_size "$oracle_file")
+    actual_sha256=$(sha256sum "$oracle_file" | awk '{ print $1 }')
+    if [ "$actual_size" != "$expected_size" ] ||
+        [ "$(printf '%s' "$actual_sha256" | tr '[:upper:]' '[:lower:]')" != "$(printf '%s' "$expected_sha256" | tr '[:upper:]' '[:lower:]')" ]; then
+        echo "$oracle_role input does not match its size/hash oracle" >&2
+        return 1
+    fi
+}
+
+check_oracle_output()
+{
+    oracle_label=$1
+    oracle_log=$2
+    oracle_report=${3:-}
+    oracle_check_report=${4:-no}
+    oracle_check_offset=${5:-no}
+
+    if [ "$oracle_status" -ne "$expected_exit" ]; then
+        echo "$oracle_label returned $oracle_status; expected $expected_exit" >&2
+        return 1
+    fi
+
+    if [ "$expected_signature" = "-" ]; then
+        if grep -F 'FOUND' "$oracle_log" >/dev/null 2>&1; then
+            echo "$oracle_label produced an unexpected detection" >&2
+            return 1
+        fi
+    else
+        if ! grep -F "$expected_signature" "$oracle_log" >/dev/null 2>&1 ||
+            ! grep -F 'FOUND' "$oracle_log" >/dev/null 2>&1; then
+            echo "$oracle_label did not produce the expected signature oracle" >&2
+            return 1
+        fi
+        if [ "$oracle_check_offset" = yes ] && [ "$expected_offset" != "-" ]; then
+            oracle_actual_offset=$(awk \
+                -v signed="signature $expected_signature matched at " \
+                -v unsigned="signature $expected_signature.UNOFFICIAL matched at " '
+                (index($0, signed) || index($0, unsigned)) && match($0, /matched at [0-9][0-9]*/) {
+                    print substr($0, RSTART + 11, RLENGTH - 11)
+                    exit
+                }
+            ' "$oracle_log")
+            if [ "$oracle_actual_offset" != "$expected_offset" ]; then
+                echo "$oracle_label matched at ${oracle_actual_offset:-missing}; expected $expected_offset" >&2
+                return 1
+            fi
+        fi
+    fi
+
+    if [ "$oracle_check_report" = yes ]; then
+        if [ ! -s "$oracle_report" ]; then
+            echo "$oracle_label did not produce a structured report" >&2
+            return 1
+        fi
+        if ! python3 - "$oracle_report" "$expected_completion" "$expected_signature" "$expected_type" <<'PY'
+import json
+import sys
+
+report_path, expected_completion, expected_signature, expected_type = sys.argv[1:]
+with open(report_path, "r", encoding="utf-8") as stream:
+    rows = [json.loads(line) for line in stream if line.strip()]
+if len(rows) != 1:
+    raise SystemExit("structured report must contain exactly one JSON object")
+report = rows[0]
+if report.get("completion") != expected_completion:
+    raise SystemExit("structured report completion does not match oracle")
+if report.get("file_type") != expected_type:
+    raise SystemExit("structured report file type does not match oracle")
+if expected_signature != "-" and expected_signature not in (report.get("last_alert") or ""):
+    raise SystemExit("structured report alert does not match oracle")
+if expected_signature == "-" and report.get("verdict") not in (0, None):
+    raise SystemExit("structured report contains an unexpected verdict")
+PY
+        then
+            echo "$oracle_label structured report did not match its oracle" >&2
+            return 1
+        fi
+    fi
+}
 
 rss_budget_kb=${CLAMAV_SERVICE_MAX_RSS_KB:-33554432}
 case "$rss_budget_kb" in
@@ -133,19 +276,88 @@ start_service()
     done
 }
 
+mkdir -p "$out" "$out/logs" "$out/reports" "$out/tmp"
+oracle_load production "$production_file"
+oracle_production_size=$expected_size
+oracle_production_sha256=$expected_sha256
+oracle_production_exit=$expected_exit
+oracle_production_completion=$expected_completion
+oracle_production_signature=$expected_signature
+oracle_production_offset=$expected_offset
+oracle_production_type=$expected_type
+oracle_load materialized "$materialized_file"
+oracle_materialized_size=$expected_size
+oracle_materialized_sha256=$expected_sha256
+oracle_materialized_exit=$expected_exit
+oracle_materialized_completion=$expected_completion
+oracle_materialized_signature=$expected_signature
+oracle_materialized_offset=$expected_offset
+oracle_materialized_type=$expected_type
+oracle_load expansion "$expansion_file"
+oracle_expansion_size=$expected_size
+oracle_expansion_sha256=$expected_sha256
+oracle_expansion_exit=$expected_exit
+oracle_expansion_completion=$expected_completion
+oracle_expansion_signature=$expected_signature
+oracle_expansion_offset=$expected_offset
+oracle_expansion_type=$expected_type
+oracle_load edge "$edge_file"
+oracle_edge_size=$expected_size
+oracle_edge_sha256=$expected_sha256
+oracle_edge_exit=$expected_exit
+oracle_edge_completion=$expected_completion
+oracle_edge_signature=$expected_signature
+oracle_edge_offset=$expected_offset
+oracle_edge_type=$expected_type
+
+{
+    printf 'oracle_manifest=%s\n' "$oracle_manifest"
+    printf 'oracle_production_size=%s\n' "$oracle_production_size"
+    printf 'oracle_production_sha256=%s\n' "$oracle_production_sha256"
+    printf 'oracle_production_exit=%s\n' "$oracle_production_exit"
+    printf 'oracle_production_completion=%s\n' "$oracle_production_completion"
+    printf 'oracle_production_signature=%s\n' "$oracle_production_signature"
+    printf 'oracle_production_offset=%s\n' "$oracle_production_offset"
+    printf 'oracle_production_type=%s\n' "$oracle_production_type"
+    printf 'oracle_materialized_size=%s\n' "$oracle_materialized_size"
+    printf 'oracle_materialized_sha256=%s\n' "$oracle_materialized_sha256"
+    printf 'oracle_materialized_exit=%s\n' "$oracle_materialized_exit"
+    printf 'oracle_materialized_completion=%s\n' "$oracle_materialized_completion"
+    printf 'oracle_materialized_signature=%s\n' "$oracle_materialized_signature"
+    printf 'oracle_materialized_offset=%s\n' "$oracle_materialized_offset"
+    printf 'oracle_materialized_type=%s\n' "$oracle_materialized_type"
+    printf 'oracle_expansion_size=%s\n' "$oracle_expansion_size"
+    printf 'oracle_expansion_sha256=%s\n' "$oracle_expansion_sha256"
+    printf 'oracle_expansion_exit=%s\n' "$oracle_expansion_exit"
+    printf 'oracle_expansion_completion=%s\n' "$oracle_expansion_completion"
+    printf 'oracle_expansion_signature=%s\n' "$oracle_expansion_signature"
+    printf 'oracle_expansion_offset=%s\n' "$oracle_expansion_offset"
+    printf 'oracle_expansion_type=%s\n' "$oracle_expansion_type"
+    printf 'oracle_edge_size=%s\n' "$oracle_edge_size"
+    printf 'oracle_edge_sha256=%s\n' "$oracle_edge_sha256"
+    printf 'oracle_edge_exit=%s\n' "$oracle_edge_exit"
+    printf 'oracle_edge_completion=%s\n' "$oracle_edge_completion"
+    printf 'oracle_edge_signature=%s\n' "$oracle_edge_signature"
+    printf 'oracle_edge_offset=%s\n' "$oracle_edge_offset"
+    printf 'oracle_edge_type=%s\n' "$oracle_edge_type"
+} > "$out/oracle-binding.txt"
+
 {
     start_service "$production_db"
 }
 
 run_service_scan()
 {
-    scan_label=$1
-    scan_file=$2
+    oracle_role=$1
+    scan_label=$2
+    scan_file=$3
+    oracle_load "$oracle_role" "$scan_file"
     scan_log=$out/logs/$scan_label.log
+    scan_report=$out/reports/$scan_label.jsonl
     scan_status=0
     "/usr/bin/time" -f '%e' -o "$out/logs/$scan_label.elapsed" \
         timeout --signal=TERM --kill-after=5 900 \
-        "$build_dir/clamdscan/clamdscan" --no-summary -c "$config" "$scan_file" > "$scan_log" 2>&1 &
+        "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$scan_report" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
     scan_pid=$!
     while kill -0 "$scan_pid" 2>/dev/null; do
         rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
@@ -164,18 +376,22 @@ run_service_scan()
         echo "$scan_label emitted a crash/sanitizer diagnostic" >&2
         return 1
     fi
+    oracle_status=$scan_status
+    check_oracle_output "$scan_label" "$scan_log" "$scan_report" yes no
     printf '%s_status=%s\n' "$scan_label" "$scan_status" >> "$out/service-summary.txt"
     return 0
 }
 
 run_direct_production()
 {
+    oracle_load production "$production_file"
     direct_status=0
+    report="$out/reports/production-clamscan.jsonl"
     timeout --signal=TERM --kill-after=5 900 \
-        "$build_dir/clamscan/clamscan" --database="$production_db" --no-summary "$production_file" \
+        "$build_dir/clamscan/clamscan" --database="$production_db" --no-summary --debug --report-json="$report" "$production_file" \
         > "$out/logs/production-clamscan.log" 2>&1 || direct_status=$?
-    if [ "$direct_status" -ne 1 ] || ! grep -F 'FOUND' "$out/logs/production-clamscan.log" >/dev/null 2>&1; then
-        echo 'production CVD detection gate failed' >&2
+    oracle_status=$direct_status
+    if ! check_oracle_output production-clamscan "$out/logs/production-clamscan.log" "$report" yes yes; then
         return 1
     fi
     printf 'production_cvd_clamscan=pass\n' >> "$out/service-summary.txt"
@@ -183,13 +399,9 @@ run_direct_production()
 
 : > "$out/service-summary.txt"
 run_direct_production
-run_service_scan production_cvd "$production_file"
-if ! grep -F 'FOUND' "$out/logs/production_cvd.log" >/dev/null 2>&1; then
-    echo 'production CVD clamdscan detection gate failed' >&2
-    exit 1
-fi
+run_service_scan production production_cvd "$production_file"
 printf 'production_cvd_clamdscan=pass\n' >> "$out/service-summary.txt"
-run_service_scan materialized_warm "$materialized_file"
+run_service_scan materialized materialized_warm "$materialized_file"
 
 if [ ! -w /proc/sys/vm/drop_caches ]; then
     echo 'cold-cache gate requires writable /proc/sys/vm/drop_caches' >&2
@@ -198,27 +410,26 @@ fi
 sync
 printf '3\n' > /proc/sys/vm/drop_caches
 printf 'cold_cache_control=pass\n' >> "$out/service-summary.txt"
-run_service_scan materialized_cold "$materialized_file"
-run_service_scan parser_expansion "$expansion_file"
+run_service_scan materialized materialized_cold "$materialized_file"
+run_service_scan expansion parser_expansion "$expansion_file"
 
 # The edge database is intentionally separate from the production CVDs: this
 # proves the service path detects the exact 32-GiB marker without conflating
 # production-database compatibility with boundary-signature coverage.
 edge_status=0
+oracle_load edge "$edge_file"
+edge_report="$out/reports/edge-clamscan.jsonl"
 timeout --signal=TERM --kill-after=5 900 \
-    "$build_dir/clamscan/clamscan" --database="$edge_db" --no-summary "$edge_file" \
+    "$build_dir/clamscan/clamscan" --database="$edge_db" --no-summary --debug --report-json="$edge_report" "$edge_file" \
     > "$out/logs/edge-clamscan.log" 2>&1 || edge_status=$?
-if [ "$edge_status" -ne 1 ] || ! grep -F 'FOUND' "$out/logs/edge-clamscan.log" >/dev/null 2>&1; then
-    echo 'edge clamscan gate failed' >&2
+oracle_status=$edge_status
+if ! check_oracle_output edge-clamscan "$out/logs/edge-clamscan.log" "$edge_report" yes yes; then
+    echo 'edge clamscan oracle failed' >&2
     exit 1
 fi
 stop_service
 start_service "$edge_db"
-run_service_scan edge_service "$edge_file"
-if ! grep -F 'FOUND' "$out/logs/edge_service.log" >/dev/null 2>&1; then
-    echo 'edge clamdscan gate failed to detect the exact edge marker' >&2
-    exit 1
-fi
+run_service_scan edge edge_service "$edge_file"
 
 # Exercise MaxThreads=4 with four simultaneous clamdscan clients. These are
 # independent requests to the same daemon, not four standalone clamscan
@@ -228,15 +439,16 @@ mkdir -p "$multi_dir"
 multi_pids=
 worker=1
 while [ "$worker" -le 4 ]; do
-    multi_log="$multi_dir/worker-$worker.log"
-    multi_time="$multi_dir/worker-$worker.time"
-    multi_status_file="$multi_dir/worker-$worker.status"
-    (
-        status=0
-        "/usr/bin/time" -f '%e %M' -o "$multi_time" \
-            timeout --signal=TERM --kill-after=5 900 \
-            "$build_dir/clamdscan/clamdscan" --no-summary -c "$config" "$edge_file" \
-            > "$multi_log" 2>&1 || status=$?
+        multi_log="$multi_dir/worker-$worker.log"
+        multi_time="$multi_dir/worker-$worker.time"
+        multi_status_file="$multi_dir/worker-$worker.status"
+        multi_report="$out/reports/clamd-multiworker-$worker.jsonl"
+        (
+            status=0
+            "/usr/bin/time" -f '%e %M' -o "$multi_time" \
+                timeout --signal=TERM --kill-after=5 900 \
+            "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$multi_report" -c "$config" "$edge_file" \
+                > "$multi_log" 2>&1 || status=$?
         printf '%s\n' "$status" > "$multi_status_file"
     ) &
     multi_pids="$multi_pids $!"
@@ -269,8 +481,11 @@ while [ "$worker" -le 4 ]; do
     multi_log="$multi_dir/worker-$worker.log"
     multi_time="$multi_dir/worker-$worker.time"
     multi_status_file="$multi_dir/worker-$worker.status"
+    multi_report="$out/reports/clamd-multiworker-$worker.jsonl"
     multi_status=$(sed -n '1p' "$multi_status_file" 2>/dev/null || true)
-    if [ "$multi_status" != 1 ] || ! grep -F 'FOUND' "$multi_log" >/dev/null 2>&1; then
+    oracle_load edge "$edge_file"
+    oracle_status=$multi_status
+    if ! check_oracle_output "clamd multi-worker request $worker" "$multi_log" "$multi_report" yes no; then
         echo "clamd multi-worker request $worker failed" >&2
         exit 1
     fi

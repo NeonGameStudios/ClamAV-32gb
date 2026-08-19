@@ -1779,6 +1779,17 @@ extern cl_error_t cl_scan_report_get_target(
     const char **target_out);
 
 /**
+ * @brief Return the detected top-level file type.
+ *
+ * The returned string is owned by the report and remains valid until the
+ * report is released. Unknown top-level types are reported as
+ * "CL_TYPE_BINARY_DATA", matching the *_ex2 file_type_out contract.
+ */
+extern cl_error_t cl_scan_report_get_file_type(
+    const cl_scan_report_t *report,
+    const char **file_type_out);
+
+/**
  * @brief Serialize a report as a JSON object.
  *
  * The caller owns the returned string and must release it with free().

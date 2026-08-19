@@ -83,6 +83,7 @@ CLAMAV_PUBLIC {
     cl_scan_report_get_reason;
     cl_scan_report_get_last_alert;
     cl_scan_report_get_target;
+    cl_scan_report_get_file_type;
     cl_scan_report_to_json;
     cl_fmap_set_name;
     cl_fmap_get_name;

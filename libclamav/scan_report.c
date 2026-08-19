@@ -235,6 +235,16 @@ void cli_scan_report_finish(
         report->metrics.matcher_bytes = ctx->matcher_work;
         report->metrics.contiguous_bytes = ctx->contiguous_peak;
         report->metrics.temporary_bytes = ctx->temporary_peak;
+
+        if ((NULL != ctx->recursion_stack) &&
+            (ctx->recursion_level < ctx->recursion_stack_size)) {
+            const char *file_type = cli_ftname(ctx->recursion_stack[ctx->recursion_level].type);
+
+            /* Match the public *_ex2 file_type_out contract for an unknown root. */
+            if ((NULL == file_type) || (strcmp(file_type, "CL_TYPE_ANY") == 0))
+                file_type = "CL_TYPE_BINARY_DATA";
+            report_replace_string(&report->file_type, file_type);
+        }
     }
 
     report_replace_string(&report->reason, reason);
@@ -295,6 +305,7 @@ void cl_scan_report_free(cl_scan_report_t *report)
     free(report->reason);
     free(report->last_alert);
     free(report->target);
+    free(report->file_type);
     free(report);
 }
 
@@ -386,6 +397,17 @@ cl_error_t cl_scan_report_get_target(
     return CL_SUCCESS;
 }
 
+cl_error_t cl_scan_report_get_file_type(
+    const cl_scan_report_t *report,
+    const char **file_type_out)
+{
+    if ((NULL == report) || (NULL == file_type_out))
+        return CL_ENULLARG;
+
+    *file_type_out = report->file_type;
+    return CL_SUCCESS;
+}
+
 cl_error_t cl_scan_report_to_json(
     const cl_scan_report_t *report,
     char **json_out)
@@ -408,6 +430,8 @@ cl_error_t cl_scan_report_to_json(
     json_object_object_add(object, "completion", json_object_new_string(report_completion_name(report->completion)));
     if (NULL != report->target)
         json_object_object_add(object, "target", json_object_new_string(report->target));
+    if (NULL != report->file_type)
+        json_object_object_add(object, "file_type", json_object_new_string(report->file_type));
     json_object_object_add(object, "root_size", json_object_new_int64((int64_t)report->metrics.root_size));
     json_object_object_add(object, "logical_bytes", json_object_new_int64((int64_t)report->metrics.logical_bytes));
     json_object_object_add(object, "matcher_bytes", json_object_new_int64((int64_t)report->metrics.matcher_bytes));
