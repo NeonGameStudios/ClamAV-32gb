@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -70,6 +71,28 @@ dev_t procdev; /* /proc device */
 extern int progexit;
 extern time_t reloaded_time;
 extern pthread_mutex_t reload_mutex;
+
+static void replace_structured_scan_report(client_conn_t *conn, cl_scan_report_t *report)
+{
+    if (NULL == conn) {
+        cl_scan_report_free(report);
+        return;
+    }
+
+    if (NULL != conn->structured_scan_report)
+        cl_scan_report_free(conn->structured_scan_report);
+    conn->structured_scan_report = report;
+}
+
+static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
+{
+    uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
+
+    if (NULL == destination)
+        return;
+
+    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
+}
 
 void msg_callback(enum cl_msg severity, const char *fullmsg, const char *msg, void *ctx)
 {
@@ -284,7 +307,39 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
     context.filename = filename;
     context.virsize  = 0;
     context.scandata = scandata;
-    ret              = cl_scanfile_callback(scan_path, &virname, &scandata->scanned, scandata->engine, scandata->options, &context);
+    if (scandata->conn->structured_report) {
+        cl_error_t report_status;
+        cl_scan_report_t *report = NULL;
+        cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+        uint64_t scanned_bytes = 0;
+
+        report_status = cl_scanfile_ex2(
+            scan_path,
+            &verdict,
+            &virname,
+            &scanned_bytes,
+            scandata->engine,
+            scandata->options,
+            &context,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            &report);
+        replace_structured_scan_report(scandata->conn, report);
+        publish_scanned_bytes(&scandata->scanned, scanned_bytes);
+        ret = report_status;
+        if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
+            (verdict == CL_VERDICT_POTENTIALLY_UNWANTED)) {
+            ret = CL_VIRUS;
+            scandata->conn->structured_status = CL_VIRUS;
+        } else if (ret != CL_SUCCESS && scandata->conn->structured_status == CL_SUCCESS) {
+            scandata->conn->structured_status = ret;
+        }
+    } else {
+        ret = cl_scanfile_callback(scan_path, &virname, &scandata->scanned, scandata->engine, scandata->options, &context);
+    }
     if (ret == CL_VIRUS)
         scandata->conn->structured_status = CL_VIRUS;
     else if (ret != CL_SUCCESS && scandata->conn->structured_status == CL_SUCCESS)
@@ -456,7 +511,43 @@ cl_error_t scanfd(
     context.filename = fdstr;
     context.virsize  = 0;
     context.scandata = NULL;
-    ret              = cl_scandesc_callback(fd, log_filename, &virname, scanned, engine, options, &context);
+    if (conn->structured_report) {
+        cl_error_t report_status;
+        cl_scan_report_t *report = NULL;
+        cl_scan_report_t *old_report;
+        cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+        uint64_t scanned_bytes = 0;
+
+        report_status = cl_scandesc_ex2(
+            fd,
+            log_filename,
+            &verdict,
+            &virname,
+            &scanned_bytes,
+            engine,
+            options,
+            &context,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            &report);
+        old_report = conn->structured_scan_report;
+        conn->structured_scan_report = report;
+        cl_scan_report_free(old_report);
+        publish_scanned_bytes(scanned, scanned_bytes);
+        ret = report_status;
+        if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
+            (verdict == CL_VERDICT_POTENTIALLY_UNWANTED)) {
+            ret = CL_VIRUS;
+            conn->structured_status = CL_VIRUS;
+        } else if (ret != CL_SUCCESS && conn->structured_status == CL_SUCCESS) {
+            conn->structured_status = ret;
+        }
+    } else {
+        ret = cl_scandesc_callback(fd, log_filename, &virname, scanned, engine, options, &context);
+    }
     if (ret == CL_VIRUS)
         conn->structured_status = CL_VIRUS;
     else if (ret != CL_SUCCESS && conn->structured_status == CL_SUCCESS)

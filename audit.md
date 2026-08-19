@@ -53,6 +53,12 @@ sticky incomplete parser state. Focused unit tests and shell source guards are r
 produced a supported Linux compile, sanitizer run, or new Sonic1 qualification
 for this follow-up.
 
+The opt-in clamd report commands now serialize the public `_ex2` report for
+descriptor and staged-stream scans, rather than reducing those results to a
+status code and two strings. The transport parser accepts both the numeric
+library verdict representation and the compact legacy fallback frame. Runtime
+daemon qualification and multi-file aggregation remain open release gates.
+
 ## Executive summary
 
 The fork now has a coherent 64-bit raw-scan path and materially stronger

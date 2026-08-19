@@ -230,31 +230,67 @@ static const char *scan_report_completion(cl_error_t status, int infected)
  * one JSON object, then a zero-length terminator frame. */
 int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int infected)
 {
-    char json[320];
+    char fallback[320];
+    char id_prefix[64];
+    char *serialized = NULL;
+    char *json = NULL;
+    const char *payload;
     uint32_t length;
     uint32_t network_length;
     uint32_t terminator = 0;
     int json_length;
+    int use_fallback = 1;
     const char *verdict = (infected || status == CL_VIRUS) ? "infected" :
                           (status == CL_SUCCESS ? "clean" : "incomplete");
 
     if (!conn)
         return -1;
 
-    json_length = snprintf(json, sizeof(json),
-                           "{\"version\":1,\"id\":%u,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
-                           conn->id, (int)status, verdict, scan_report_completion(status, infected));
-    if (json_length < 0 || (size_t)json_length >= sizeof(json))
-        return -1;
+    /* Prefer the same versioned report emitted by the public *_ex2 API.  The
+     * clamd protocol adds the request id at the front because the library
+     * report deliberately has no transport-specific fields. */
+    if (conn->structured_scan_report &&
+        cl_scan_report_to_json(conn->structured_scan_report, &serialized) == CL_SUCCESS &&
+        serialized && serialized[0] == '{') {
+        int prefix_length = snprintf(id_prefix, sizeof(id_prefix), "{\"id\":%u,", conn->id);
+        size_t serialized_length = strlen(serialized);
+
+        if (prefix_length >= 0 && (size_t)prefix_length < sizeof(id_prefix) && serialized_length >= 2) {
+            json = (char *)malloc((size_t)prefix_length + serialized_length);
+            if (json) {
+                memcpy(json, id_prefix, (size_t)prefix_length);
+                memcpy(json + prefix_length, serialized + 1, serialized_length);
+                json_length = (int)((size_t)prefix_length + serialized_length - 1);
+                payload = json;
+                use_fallback = 0;
+            }
+        }
+    }
+
+    if (use_fallback) {
+        free(json);
+        json = NULL;
+        json_length = snprintf(fallback, sizeof(fallback),
+                               "{\"version\":1,\"id\":%u,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
+                               conn->id, (int)status, verdict, scan_report_completion(status, infected));
+        if (json_length < 0 || (size_t)json_length >= sizeof(fallback))
+            goto done;
+        payload = fallback;
+    }
 
     length         = (uint32_t)json_length;
     network_length = htonl(length);
     if (cli_writen(conn->sd, &network_length, sizeof(network_length)) != sizeof(network_length) ||
-        cli_writen(conn->sd, json, length) != length ||
+        cli_writen(conn->sd, payload, length) != length ||
         cli_writen(conn->sd, &terminator, sizeof(terminator)) != sizeof(terminator))
-        return -1;
+        goto done;
 
-    return 0;
+    json_length = 0;
+
+done:
+    free(serialized);
+    free(json);
+    return json_length == 0 ? 0 : -1;
 }
 
 /* returns

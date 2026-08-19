@@ -158,6 +158,29 @@ START_TEST(test_maxscantime_parser_rejects_narrowing)
 }
 END_TEST
 
+START_TEST(test_scan_report_json_status_accepts_library_reports)
+{
+    static const char complete[] =
+        "{\"version\":1,\"status\":0,\"verdict\":0,\"completion\":\"COMPLETE\"}";
+    static const char detection[] =
+        "{\"version\":1,\"status\":0,\"verdict\":2,\"completion\":\"DETECTION_TERMINATED\"}";
+    static const char incomplete[] =
+        "{\"version\":1,\"status\":35,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\"}";
+    const char *reports[] = {complete, detection, incomplete};
+    int expected_infected[] = {0, 1, 0};
+    int expected_incomplete[] = {0, 0, 1};
+    size_t i;
+
+    for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
+        int infected = -1;
+        int partial = -1;
+        ck_assert_int_eq(scan_report_json_status(reports[i], (uint32_t)strlen(reports[i]), &infected, &partial), 0);
+        ck_assert_int_eq(infected, expected_infected[i]);
+        ck_assert_int_eq(partial, expected_incomplete[i]);
+    }
+}
+END_TEST
+
 START_TEST(test_large_file_size_parser_ceiling)
 {
     static const char *const names[] = {"MaxFileSize", "StreamMaxLength", "OnAccessMaxFileSize"};
@@ -1043,6 +1066,7 @@ static Suite *test_clamd_suite(void)
     tc_parser = tcase_create("option parser");
     suite_add_tcase(s, tc_parser);
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
+    tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
 #ifndef _WIN32

@@ -114,6 +114,7 @@ typedef struct client_conn_tag {
     int quota_source;
     int structured_report;
     cl_error_t structured_status;
+    cl_scan_report_t *structured_scan_report;
     jobgroup_t *group;
     enum mode mode;
 } client_conn_t;

@@ -695,6 +695,38 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
         *incomplete = 0;
         return 0;
     }
+
+    /* libclamav's versioned report uses the public numeric cl_verdict_t
+     * field.  Transport clients must accept that representation as well as
+     * the compact legacy clamd wrapper above.  A detection-terminated
+     * completion is unambiguous; every other recognized non-complete state is
+     * an incomplete result and must not be treated as clean. */
+    if (report_json_contains(json, "\"completion\":\"DETECTION_TERMINATED\"",
+                             "\"completion\": \"DETECTION_TERMINATED\"")) {
+        *infected = 1;
+        *incomplete = 0;
+        return 0;
+    }
+    if (report_json_contains(json, "\"completion\":\"COMPLETE\"",
+                             "\"completion\": \"COMPLETE\"")) {
+        *infected = 0;
+        *incomplete = 0;
+        return 0;
+    }
+    if (report_json_contains(json, "\"completion\":\"LIMIT_INCOMPLETE\"",
+                             "\"completion\": \"LIMIT_INCOMPLETE\"") ||
+        report_json_contains(json, "\"completion\":\"UNSUPPORTED\"",
+                             "\"completion\": \"UNSUPPORTED\"") ||
+        report_json_contains(json, "\"completion\":\"MALFORMED_CONFIRMED\"",
+                             "\"completion\": \"MALFORMED_CONFIRMED\"") ||
+        report_json_contains(json, "\"completion\":\"RESOURCE_FAILURE\"",
+                             "\"completion\": \"RESOURCE_FAILURE\"") ||
+        report_json_contains(json, "\"completion\":\"APPLICATION_ABORT\"",
+                             "\"completion\": \"APPLICATION_ABORT\"")) {
+        *infected = 0;
+        *incomplete = 1;
+        return 0;
+    }
     return -1;
 }
 

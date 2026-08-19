@@ -142,6 +142,11 @@ static void scanner_thread(void *arg)
         (void)conn_reply_scan_report(conn, report_status, virus);
     }
 
+    if (conn->structured_scan_report) {
+        cl_scan_report_free(conn->structured_scan_report);
+        conn->structured_scan_report = NULL;
+    }
+
     thrmgr_setactiveengine(NULL);
 
     if (conn->filename)

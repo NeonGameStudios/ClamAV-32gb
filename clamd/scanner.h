@@ -47,7 +47,7 @@ struct scan_cb_data {
     int errors;
     int total;
     int id;
-    const client_conn_t *conn;
+    client_conn_t *conn;
     const char *toplevel_path;
     unsigned long scanned;
     struct cl_scan_options *options;
