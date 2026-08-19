@@ -36,6 +36,11 @@ ceiling. If report serialization would exceed that bound, clamd sends its
 small bounded status fallback instead of allocating and narrowing an
 oversized JSON frame; clients reject any larger received frame.
 
+The clamd INSTREAM receiver also fails closed on staging writes: a failed
+temporary-file write stops the stream immediately, emits one protocol-matched
+error, and removes the partial descriptor without dispatching it to the
+scanner. Quota failures use the same single-response rule.
+
 The first authorized real-file Sonic1 run is documented in
 [`largefile-realfile-sonic1-20260818.md`](largefile-realfile-sonic1-20260818.md).
 It confirms that the fork's 32 GiB ceiling is an explicit configuration

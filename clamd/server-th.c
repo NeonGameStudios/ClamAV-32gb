@@ -872,6 +872,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
     size_t cmdlen;
 
     logg(LOGG_DEBUG_NV, "mode == MODE_STREAM\n");
+    buf->response_sent = 0;
     /* we received some data, set readtimeout */
     time(&buf->timeout_at);
     buf->timeout_at += readtimeout;
@@ -918,12 +919,13 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                     logg(LOGG_WARNING, "INSTREAM: Size limit reached, (requested: %u, max: " STDu64 ")\n",
                          buf->chunksize, buf->quota);
                     if (buf->structured_report) {
-                        conn_reply_scan_report(conn, CL_EMAXSIZE, 0);
+                        (void)conn_reply_scan_report(conn, CL_EMAXSIZE, 0);
                     } else if (buf->quota_source == CLAMD_QUOTA_SOURCE_TEMPORARY) {
                         conn_reply_error(conn, "INSTREAM temporary staging limit exceeded.");
                     } else {
                         conn_reply_error(conn, "INSTREAM size limit exceeded.");
                     }
+                    buf->response_sent = 1;
                     *error = 1;
                     *ppos  = pos;
                     return -1;
@@ -945,9 +947,17 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
             cmdlen = buf->off - pos;
         buf->chunksize -= cmdlen;
         if (cli_writen(buf->dumpfd, buf->buffer + pos, cmdlen) == (size_t)-1) {
-            conn_reply_error(conn, "Error writing to temporary file");
+            if (buf->structured_report)
+                (void)conn_reply_scan_report(conn, CL_EWRITE, 0);
+            else
+                conn_reply_error(conn, "Error writing to temporary file");
             logg(LOGG_ERROR, "INSTREAM: Can't write to temporary file.\n");
+            /* Never dispatch the partially staged descriptor. The receive
+             * loop will close the socket and remove dumpname below. */
+            buf->response_sent = 1;
             *error = 1;
+            *ppos  = pos;
+            return -1;
         }
         logg(LOGG_DEBUG_NV, "Processed %llu bytes of chunkdata, pos %llu\n", (long long unsigned)cmdlen, (long long unsigned)pos);
         pos += cmdlen;
@@ -1782,7 +1792,7 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                             continue;
                     }
                 }
-                if (error && error != CL_ETIMEOUT) {
+                if (error && error != CL_ETIMEOUT && !buf->response_sent) {
                     conn_reply_error(&conn, "Error processing command.");
                 }
             }

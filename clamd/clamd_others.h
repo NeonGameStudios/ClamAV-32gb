@@ -62,6 +62,7 @@ struct fd_buf {
     uint64_t quota;
     int quota_source;
     int structured_report;
+    int response_sent;
     char *dumpname;
     time_t timeout_at; /* 0 - no timeout */
     jobgroup_t *group;

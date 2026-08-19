@@ -76,6 +76,13 @@ report falls back to the bounded status object before allocation and 32-bit
 wire-length conversion, so report growth cannot become a transport truncation
 or allocation hazard.
 
+The clamd INSTREAM receive loop now treats a temporary-file write failure as
+terminal. It does not dispatch the partial staged descriptor, emits one
+legacy or structured response according to the request, and lets connection
+cleanup remove the partial file. The same response-suppression state prevents
+the outer receive loop from appending a second legacy error after a structured
+quota or write report.
+
 Mail message export now refuses already-truncated materializations and
 propagates decoder, output-allocation, and trailing-buffer write failures
 instead of returning a partial attachment blob. This closes a concrete
