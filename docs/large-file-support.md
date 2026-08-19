@@ -2074,6 +2074,14 @@ failures, and temporary cleanup failures as incomplete. Its decoded output is
 reserved against `MaxTemporarySize` before staging, so a partial normalized
 HTML file cannot be admitted as a clean child.
 
+OOXML metadata inspection now treats libxml2 reader-initialization failures,
+truncated `[Content_Types].xml` and HWP metadata documents, and missing
+required OOXML metadata parts as incomplete rather than clean. The OOXML
+metadata callers opt into `MSXML_FLAG_FAIL_INCOMPLETE`, so XML parse errors are
+not silently suppressed while the ZIP content scan continues. This closes a
+false-clean metadata path; OOXML deep-parser corpus and supported-Linux
+qualification remain open.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

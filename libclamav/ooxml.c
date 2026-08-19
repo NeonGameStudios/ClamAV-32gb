@@ -127,10 +127,12 @@ static cl_error_t ooxml_parse_document(int fd, cli_ctx *ctx)
     reader = xmlReaderForFd(fd, "properties.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
     if (reader == NULL) {
         cli_dbgmsg("ooxml_parse_document: xmlReaderForFd error\n");
-        return CL_SUCCESS; // internal error from libxml2
+        cli_mark_scan_incomplete(ctx, "OOXML properties XML reader could not be initialized");
+        return CL_EPARSE;
     }
 
-    ret = cli_msxml_parse_document(ctx, reader, ooxml_keys, num_ooxml_keys, MSXML_FLAG_JSON, NULL);
+    ret = cli_msxml_parse_document(ctx, reader, ooxml_keys, num_ooxml_keys,
+                                   MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, NULL);
 
     if (ret != CL_SUCCESS && ret != CL_ETIMEOUT && ret != CL_BREAK)
         cli_warnmsg("ooxml_parse_document: encountered issue in parsing properties document\n");
@@ -207,10 +209,11 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
                    "[Content_Types].xml"
                    "\n");
         cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_XML_READER_FD");
+        cli_mark_scan_incomplete(ctx, "OOXML content-types XML reader could not be initialized");
 
         ctx->scansize     = sav_scansize;
         ctx->scannedfiles = sav_scannedfiles;
-        return CL_SUCCESS; // libxml2 failed!
+        return CL_EPARSE;
     }
 
     /* locate core-properties, extended-properties, and custom-properties (optional) */
@@ -301,6 +304,11 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
             goto ooxml_content_exit;
     }
 
+    if (state == -1) {
+        cli_mark_scan_incomplete(ctx, "OOXML content-types XML document was not complete");
+        ret = CL_EPARSE;
+    }
+
 ooxml_content_exit:
     if (core) {
         cli_jsonint(ctx->this_layer_metadata_json, "CorePropertiesFileCount", core);
@@ -367,10 +375,12 @@ static cl_error_t ooxml_hwp_cb(int fd, const char *filepath, cli_ctx *ctx, const
     reader = xmlReaderForFd(fd, "ooxml_hwp.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
     if (reader == NULL) {
         cli_dbgmsg("ooxml_hwp_cb: xmlReaderForFd error\n");
-        return CL_SUCCESS; // internal error from libxml2
+        cli_mark_scan_incomplete(ctx, "OOXML HWP XML reader could not be initialized");
+        return CL_EPARSE;
     }
 
-    ret = cli_msxml_parse_document(ctx, reader, ooxml_hwp_keys, num_ooxml_hwp_keys, MSXML_FLAG_JSON, NULL);
+    ret = cli_msxml_parse_document(ctx, reader, ooxml_hwp_keys, num_ooxml_hwp_keys,
+                                   MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, NULL);
 
     if (ret != CL_SUCCESS && ret != CL_ETIMEOUT && ret != CL_BREAK)
         cli_warnmsg("ooxml_hwp_cb: encountered issue in parsing properties document\n");
@@ -438,6 +448,7 @@ cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
                        "version.xml"
                        "!\n");
             cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_NO_HWP_VERSION");
+            cli_mark_scan_incomplete(ctx, "OOXML HWP version XML part is missing");
             return CL_EFORMAT;
         }
         ret = unzip_single_internal(ctx, loff, ooxml_hwp_cb);
@@ -451,6 +462,7 @@ cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
                            "Contents/content.hpf"
                            "!\n");
                 cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_NO_HWP_CONTENT");
+                cli_mark_scan_incomplete(ctx, "OOXML HWP content XML part is missing");
                 return CL_EFORMAT;
             }
             ret = unzip_single_internal(ctx, loff, ooxml_hwp_cb);
@@ -465,6 +477,7 @@ cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
                        "[Content_Types].xml"
                        "!\n");
             cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_NO_CONTENT_TYPES");
+            cli_mark_scan_incomplete(ctx, "OOXML content-types XML part is missing");
             return CL_EFORMAT;
         }
         cli_dbgmsg("cli_process_ooxml: found "

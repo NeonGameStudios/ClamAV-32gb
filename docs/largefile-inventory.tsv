@@ -3125,10 +3125,10 @@ fixed-width-integer	libclamav/ole2_extract.c	93	    int32_t prop_start __attribu
 fixed-width-integer	libclamav/ole2_extract.c	937	        if ((curindex < 0) || (curindex > (int32_t)hdr->max_block_no)) {
 fixed-width-integer	libclamav/ole2_extract.c	95	    uint32_t signature __attribute__((packed));
 fixed-width-integer	libclamav/ole2_extract.c	96	    uint32_t sbat_cutoff __attribute__((packed)); /* cutoff for files held
-fixed-width-integer	libclamav/ooxml.c	143	static cl_error_t ooxml_core_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/ooxml.c	161	static cl_error_t ooxml_extn_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/ooxml.c	179	static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-fixed-width-integer	libclamav/ooxml.c	351	static cl_error_t ooxml_hwp_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/ooxml.c	145	static cl_error_t ooxml_core_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/ooxml.c	163	static cl_error_t ooxml_extn_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/ooxml.c	181	static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+fixed-width-integer	libclamav/ooxml.c	359	static cl_error_t ooxml_hwp_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
 fixed-width-integer	libclamav/openioc.c	183	    uint16_t ioclen;
 fixed-width-integer	libclamav/openioc.c	227	    ioclen = (uint16_t)strlen(fname);
 fixed-width-integer	libclamav/others.c	1017	            if (num < 0 || (uint64_t)num > UINT32_MAX) {
@@ -10005,18 +10005,18 @@ native-width-integer	libclamav/ole2_extract.h	33	char *cli_ole2_get_property_nam
 native-width-integer	libclamav/ooxml.c	100	static size_t num_ooxml_hwp_keys = sizeof(ooxml_hwp_keys) / sizeof(struct key_entry);
 native-width-integer	libclamav/ooxml.c	104	static cl_error_t ooxml_updatelimits(int fd, cli_ctx *ctx)
 native-width-integer	libclamav/ooxml.c	115	static cl_error_t ooxml_parse_document(int fd, cli_ctx *ctx)
-native-width-integer	libclamav/ooxml.c	143	static cl_error_t ooxml_core_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-native-width-integer	libclamav/ooxml.c	161	static cl_error_t ooxml_extn_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-native-width-integer	libclamav/ooxml.c	179	static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-native-width-integer	libclamav/ooxml.c	182	    int tmp, toval = 0, state;
-native-width-integer	libclamav/ooxml.c	183	    int core = 0, extn = 0, cust = 0, dsig = 0;
-native-width-integer	libclamav/ooxml.c	184	    int mcore = 0, mextn = 0, mcust = 0;
-native-width-integer	libclamav/ooxml.c	187	    size_t loff;
-native-width-integer	libclamav/ooxml.c	193	    unsigned long sav_scansize    = ctx->scansize;
-native-width-integer	libclamav/ooxml.c	194	    unsigned int sav_scannedfiles = ctx->scannedfiles;
-native-width-integer	libclamav/ooxml.c	351	static cl_error_t ooxml_hwp_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
-native-width-integer	libclamav/ooxml.c	421	cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
-native-width-integer	libclamav/ooxml.c	423	    size_t loff     = 0;
+native-width-integer	libclamav/ooxml.c	145	static cl_error_t ooxml_core_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+native-width-integer	libclamav/ooxml.c	163	static cl_error_t ooxml_extn_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+native-width-integer	libclamav/ooxml.c	181	static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+native-width-integer	libclamav/ooxml.c	184	    int tmp, toval = 0, state;
+native-width-integer	libclamav/ooxml.c	185	    int core = 0, extn = 0, cust = 0, dsig = 0;
+native-width-integer	libclamav/ooxml.c	186	    int mcore = 0, mextn = 0, mcust = 0;
+native-width-integer	libclamav/ooxml.c	189	    size_t loff;
+native-width-integer	libclamav/ooxml.c	195	    unsigned long sav_scansize    = ctx->scansize;
+native-width-integer	libclamav/ooxml.c	196	    unsigned int sav_scannedfiles = ctx->scannedfiles;
+native-width-integer	libclamav/ooxml.c	359	static cl_error_t ooxml_hwp_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
+native-width-integer	libclamav/ooxml.c	431	cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
+native-width-integer	libclamav/ooxml.c	433	    size_t loff     = 0;
 native-width-integer	libclamav/ooxml.c	88	static size_t num_ooxml_keys = sizeof(ooxml_keys) / sizeof(struct key_entry);
 native-width-integer	libclamav/ooxml.h	31	cl_error_t cli_process_ooxml(cli_ctx *, int);
 native-width-integer	libclamav/openioc.c	119	static int openioc_parse_indicatoritem(xmlTextReaderPtr reader, struct openioc_hash **elems)
@@ -23947,14 +23947,14 @@ offset-size-arithmetic	libclamav/ole2_extract.c	825	    const uint8_t *const ptr
 offset-size-arithmetic	libclamav/ole2_extract.c	842	    /*Skip past this size.*/
 offset-size-arithmetic	libclamav/ole2_extract.c	881	                                   cli_ctx *ctx, uint64_t *scansize, cl_error_t *deferred_limit,
 offset-size-arithmetic	libclamav/ooxml.c	100	static size_t num_ooxml_hwp_keys = sizeof(ooxml_hwp_keys) / sizeof(struct key_entry);
-offset-size-arithmetic	libclamav/ooxml.c	193	    unsigned long sav_scansize    = ctx->scansize;
-offset-size-arithmetic	libclamav/ooxml.c	194	    unsigned int sav_scannedfiles = ctx->scannedfiles;
-offset-size-arithmetic	libclamav/ooxml.c	216	    /* locate core-properties, extended-properties, and custom-properties (optional) */
-offset-size-arithmetic	libclamav/ooxml.c	249	            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
-offset-size-arithmetic	libclamav/ooxml.c	265	        } else if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-officedocument.extended-properties+xml")) {
-offset-size-arithmetic	libclamav/ooxml.c	267	            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
-offset-size-arithmetic	libclamav/ooxml.c	283	        } else if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-officedocument.custom-properties+xml")) {
-offset-size-arithmetic	libclamav/ooxml.c	285	            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
+offset-size-arithmetic	libclamav/ooxml.c	195	    unsigned long sav_scansize    = ctx->scansize;
+offset-size-arithmetic	libclamav/ooxml.c	196	    unsigned int sav_scannedfiles = ctx->scannedfiles;
+offset-size-arithmetic	libclamav/ooxml.c	219	    /* locate core-properties, extended-properties, and custom-properties (optional) */
+offset-size-arithmetic	libclamav/ooxml.c	252	            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
+offset-size-arithmetic	libclamav/ooxml.c	268	        } else if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-officedocument.extended-properties+xml")) {
+offset-size-arithmetic	libclamav/ooxml.c	270	            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
+offset-size-arithmetic	libclamav/ooxml.c	286	        } else if (!xmlStrcmp(CT, (const xmlChar *)"application/vnd.openxmlformats-officedocument.custom-properties+xml")) {
+offset-size-arithmetic	libclamav/ooxml.c	288	            tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
 offset-size-arithmetic	libclamav/ooxml.c	88	static size_t num_ooxml_keys = sizeof(ooxml_keys) / sizeof(struct key_entry);
 offset-size-arithmetic	libclamav/openioc.c	259	        vp = hash + hashlen - 1;
 offset-size-arithmetic	libclamav/openioc.c	262	            hashlen--;
