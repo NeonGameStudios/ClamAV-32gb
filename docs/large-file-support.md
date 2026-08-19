@@ -2398,3 +2398,12 @@ scan context is incomplete or timed out. This is enforced both in
 cannot bypass the sticky incomplete result during nested-scan unwinding, and
 no incomplete layer can be inserted as clean. The focused cache regression is
 registered; compiled Linux/Sonic1 execution remains a release gate.
+
+## Mandatory raw pass after HTML parser skips — 2026-08-19
+
+The legacy `HTMLSKIPRAW` dynamic-configuration bit no longer suppresses the
+outer raw matcher in the large-file scanner path. Raw signatures remain
+authoritative even when the enabled HTML parser rejects an input at
+`MaxHTMLNormalize` or another normalized-view boundary. A compiled regression
+loads the in-tree NDB marker and verifies detection from an over-cap HTML
+input; Linux/Sonic1 execution remains a release gate.

@@ -6075,10 +6075,11 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
      * Embedded file type recognition may re-assign the current file as a new type, or
      * it may detect embedded files. E.g. ZIP entries in a PE file (i.e. self-extracting ZIP).
      */
-    if ((type != CL_TYPE_IGNORED) &&
-        /* CL_TYPE_HTML: raw HTML files are not scanned, unless safety measure activated via DCONF */
-        (type != CL_TYPE_HTML || !(SCAN_PARSE_HTML) || !(DCONF_DOC & DOC_CONF_HTML_SKIPRAW)) &&
-        (!ctx->engine->sdb)) {
+    /* The outer raw matcher is mandatory for every non-ignored layer. The
+     * legacy HTMLSKIPRAW configuration could otherwise suppress this pass
+     * after an enabled HTML parser had skipped or partially normalized the
+     * input, violating the fail-closed large-file scan contract. */
+    if ((type != CL_TYPE_IGNORED) && (!ctx->engine->sdb)) {
 
         cli_dbgmsg("cli_magic_scan: Performing raw scan to pattern match and/or detect embedded files\n");
 

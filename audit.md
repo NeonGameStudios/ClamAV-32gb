@@ -1610,3 +1610,10 @@ cached child from bypassing sticky incomplete-state reconciliation during
 nested unwinding and prevents any incomplete layer from being recorded as
 clean. The focused cache regression is registered; compiled Linux/Sonic1
 execution remains a release gate.
+
+The final `cli_magic_scan()` raw pass no longer honors the legacy HTML raw-skip
+configuration bit. An enabled HTML parser that reaches `MaxHTMLNormalize` or
+another incomplete state now still receives the required outer raw signature
+pass, while the sticky incomplete result remains fail-visible if no detection
+occurs. A compiled NDB-marker regression is registered; Linux/Sonic1
+execution remains a release gate.

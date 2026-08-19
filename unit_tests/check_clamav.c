@@ -1326,6 +1326,48 @@ START_TEST(test_html_normalize_cap_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_html_normalize_cap_does_not_skip_raw_matching)
+{
+    static const unsigned char data[] =
+        "<html><body>CLAMAV-TEST-STRING-NOT-EICAR</body></html>";
+    const char *signature = OBJDIR PATHSEP "input" PATHSEP "other_sigs" PATHSEP
+                            "Clamav-Unit-Test-Signature.ndb";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned       = 0;
+    unsigned int sigs      = 0;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_load(signature, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1);
+
+    /* Force the enabled HTML parser to skip normalization while leaving the
+     * outer raw signature applicable. The raw pass must still detect. */
+    engine->maxhtmlnormalize = sizeof(data) - 2U;
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_HTML", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_str_eq(last_alert, "Clamav-Unit-Test-Signature");
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_html_notags_cap_is_fail_visible)
 {
     struct cl_engine *engine;
@@ -8679,6 +8721,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_fmap_set_hash_accepts_full_hash);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
+    tcase_add_test(tc_cl, test_html_normalize_cap_does_not_skip_raw_matching);
     tcase_add_test(tc_cl, test_html_notags_cap_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_cl_retver);

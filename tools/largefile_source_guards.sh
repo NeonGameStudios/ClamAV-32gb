@@ -716,6 +716,8 @@ contains libclamav/scanners.c 'embedded PE metadata requires a 32-bit containing
 contains libclamav/scanners.c 'embedded PE header could not be inspected completely'
 contains libclamav/scanners.c 'A prior required-path failure belongs to the whole scan context'
 contains libclamav/cache.c 'scan incomplete or timed out, skipping cache'
+contains libclamav/scanners.c 'The outer raw matcher is mandatory for every non-ignored layer'
+contains unit_tests/check_clamav.c 'test_html_normalize_cap_does_not_skip_raw_matching'
 contains unit_tests/check_clamav.c 'test_embedded_candidate_admission_headers'
 not_contains libclamav/nsis/nulsft.c 'ret = nsist.solid ? CL_BREAK : CL_SUCCESS'
 contains libclamav/egg.c 'compressedDataOffset'
