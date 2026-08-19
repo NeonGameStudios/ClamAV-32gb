@@ -2397,7 +2397,7 @@ fixed-width-integer	libclamav/ishield.c	967	        uint16_t chunksz;
 fixed-width-integer	libclamav/ishield.c	97	    uint32_t unk_str3_off;
 fixed-width-integer	libclamav/ishield.c	98	    uint32_t unk_str4_off;
 fixed-width-integer	libclamav/ishield.c	99	    uint16_t ordinal_id;
-fixed-width-integer	libclamav/iso9660.c	253	    uint32_t nextJoliet = 0;
+fixed-width-integer	libclamav/iso9660.c	261	    uint32_t nextJoliet = 0;
 fixed-width-integer	libclamav/jpeg.c	259	    uint16_t ntmp;
 fixed-width-integer	libclamav/jpeg.c	261	    uint32_t size;
 fixed-width-integer	libclamav/jpeg.c	278	    ntmp    = nlength + ((((uint16_t)nlength) + 1) & 0x01);
@@ -8975,13 +8975,13 @@ native-width-integer	libclamav/ishield.c	944	    int ofd;
 native-width-integer	libclamav/ishield.h	27	cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset);
 native-width-integer	libclamav/ishield.h	28	cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off);
 native-width-integer	libclamav/ishield.h	29	cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz);
-native-width-integer	libclamav/iso9660.c	108	static char *iso_string(iso9660_t *iso, const void *src, unsigned int len)
-native-width-integer	libclamav/iso9660.c	136	static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int len)
-native-width-integer	libclamav/iso9660.c	148	        unsigned int dirsz;
-native-width-integer	libclamav/iso9660.c	169	            unsigned int entrysz = *dir, fileoff, filesz;
-native-width-integer	libclamav/iso9660.c	246	cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
-native-width-integer	libclamav/iso9660.c	250	    int i;
-native-width-integer	libclamav/iso9660.c	256	        /* Need 16 sectors at least 2048 bytes long */
+native-width-integer	libclamav/iso9660.c	115	static char *iso_string(iso9660_t *iso, const void *src, unsigned int len)
+native-width-integer	libclamav/iso9660.c	143	static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int len)
+native-width-integer	libclamav/iso9660.c	155	        unsigned int dirsz;
+native-width-integer	libclamav/iso9660.c	177	            unsigned int entrysz = *dir, fileoff, filesz;
+native-width-integer	libclamav/iso9660.c	254	cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
+native-width-integer	libclamav/iso9660.c	258	    int i;
+native-width-integer	libclamav/iso9660.c	264	        /* Need 16 sectors at least 2048 bytes long */
 native-width-integer	libclamav/iso9660.c	34	    size_t base_offset;
 native-width-integer	libclamav/iso9660.c	35	    unsigned int blocksz;
 native-width-integer	libclamav/iso9660.c	36	    unsigned int sectsz;
@@ -8992,7 +8992,7 @@ native-width-integer	libclamav/iso9660.c	52	    size_t loff;
 native-width-integer	libclamav/iso9660.c	53	    unsigned int blocks_per_sect = (2048 / iso->blocksz);
 native-width-integer	libclamav/iso9660.c	63	static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsigned int len)
 native-width-integer	libclamav/iso9660.c	66	    int fd         = -1;
-native-width-integer	libclamav/iso9660.c	76	        unsigned int todo = MIN(len, iso->blocksz);
+native-width-integer	libclamav/iso9660.c	77	        unsigned int todo = MIN(len, iso->blocksz);
 native-width-integer	libclamav/iso9660.h	27	cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset);
 native-width-integer	libclamav/jpeg.c	255	static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
 native-width-integer	libclamav/jpeg.c	262	    size_t offset = *off;
@@ -17163,14 +17163,14 @@ format-width	libclamav/ishield.c	825	                    cli_dbgmsg("is_parse_hd
 format-width	libclamav/ishield.c	864	                                        cli_dbgmsg("is_parse_hdr: File limit reached (max: %u)\n", ctx->engine->maxfiles);
 format-width	libclamav/ishield.c	880	                                cli_dbgmsg("is_parse_hdr: data%u.cab not available\n", cabno);
 format-width	libclamav/ishield.c	897	                    cli_dbgmsg("is_parse_hdr: skipped unknown file entry %u\n", i);
-format-width	libclamav/iso9660.c	175	                cli_dbgmsg("iso_parse_dir: Directory entry overflow, breaking out %u %u\n", entrysz, dirsz);
-format-width	libclamav/iso9660.c	206	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
-format-width	libclamav/iso9660.c	331	            cli_dbgmsg("cli_scaniso: Raw sector size: %u\n", iso.sectsz);
-format-width	libclamav/iso9660.c	332	            cli_dbgmsg("cli_scaniso: Block size: %u\n", iso.blocksz);
-format-width	libclamav/iso9660.c	334	            cli_dbgmsg("cli_scaniso: Volume descriptor version: %u\n", privol[6]);
-format-width	libclamav/iso9660.c	341	            cli_dbgmsg("cli_scaniso: Volume %u of %u\n", cli_readint32(privol + 124) & 0xffff, cli_readint32(privol + 120) & 0xffff);
-format-width	libclamav/iso9660.c	361	            cli_dbgmsg("cli_scaniso: File Structure Version: %u\n", privol[881]);
-format-width	libclamav/iso9660.c	364	                cli_dbgmsg("cli_scaniso: Joliet level %u\n", iso.joliet);
+format-width	libclamav/iso9660.c	183	                cli_dbgmsg("iso_parse_dir: Directory entry overflow, breaking out %u %u\n", entrysz, dirsz);
+format-width	libclamav/iso9660.c	214	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
+format-width	libclamav/iso9660.c	339	            cli_dbgmsg("cli_scaniso: Raw sector size: %u\n", iso.sectsz);
+format-width	libclamav/iso9660.c	340	            cli_dbgmsg("cli_scaniso: Block size: %u\n", iso.blocksz);
+format-width	libclamav/iso9660.c	342	            cli_dbgmsg("cli_scaniso: Volume descriptor version: %u\n", privol[6]);
+format-width	libclamav/iso9660.c	349	            cli_dbgmsg("cli_scaniso: Volume %u of %u\n", cli_readint32(privol + 124) & 0xffff, cli_readint32(privol + 120) & 0xffff);
+format-width	libclamav/iso9660.c	369	            cli_dbgmsg("cli_scaniso: File Structure Version: %u\n", privol[881]);
+format-width	libclamav/iso9660.c	372	                cli_dbgmsg("cli_scaniso: Joliet level %u\n", iso.joliet);
 format-width	libclamav/jpeg.c	390	                cli_warnmsg("JPEG: Spurious bytes before segment %u\n", segment);
 format-width	libclamav/jpeg.c	393	                cli_dbgmsg("Spurious bytes before segment %u\n", segment);
 format-width	libclamav/jpeg.c	421	        cli_dbgmsg("segment[%d] = 0x%02x, Length %u\n", segment, marker, len);
@@ -22490,33 +22490,33 @@ offset-size-arithmetic	libclamav/ishield.c	916	        off += sizeof(*file);
 offset-size-arithmetic	libclamav/ishield.c	979	        csize -= 2;
 offset-size-arithmetic	libclamav/ishield.c	986	        off += 2;
 offset-size-arithmetic	libclamav/ishield.c	998	        csize -= chunksz;
-offset-size-arithmetic	libclamav/iso9660.c	113	        if (len > (sizeof(iso->buf) - 2)) {
-offset-size-arithmetic	libclamav/iso9660.c	115	            len = sizeof(iso->buf) - 2;
-offset-size-arithmetic	libclamav/iso9660.c	119	        iso->buf[len + 1] = '\0';
-offset-size-arithmetic	libclamav/iso9660.c	122	        strncpy(iso->buf, uutf8, sizeof(iso->buf));
-offset-size-arithmetic	libclamav/iso9660.c	123	        iso->buf[sizeof(iso->buf) - 1] = '\0';
-offset-size-arithmetic	libclamav/iso9660.c	126	        if (len >= sizeof(iso->buf)) {
-offset-size-arithmetic	libclamav/iso9660.c	128	            len = sizeof(iso->buf) - 1;
-offset-size-arithmetic	libclamav/iso9660.c	146	    for (; len && ret == CL_SUCCESS; block++, len -= MIN(len, iso->blocksz)) {
-offset-size-arithmetic	libclamav/iso9660.c	174	            if (entrysz > dirsz) { /* record size overlaps onto the next sector, no point in looking in there */
-offset-size-arithmetic	libclamav/iso9660.c	202	            fileoff = cli_readint32(dir + 2);
-offset-size-arithmetic	libclamav/iso9660.c	203	            fileoff += dir[1];
-offset-size-arithmetic	libclamav/iso9660.c	206	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
-offset-size-arithmetic	libclamav/iso9660.c	260	    privol = fmap_need_off(ctx->fmap, offset, 2448 + 6);
-offset-size-arithmetic	libclamav/iso9660.c	268	        fmap_unneed_off(ctx->fmap, offset, 2448);
-offset-size-arithmetic	libclamav/iso9660.c	275	        fmap_unneed_off(ctx->fmap, offset, 2448);
-offset-size-arithmetic	libclamav/iso9660.c	282	        fmap_unneed_off(ctx->fmap, offset, 2448);
-offset-size-arithmetic	libclamav/iso9660.c	286	    iso.base_offset = offset - iso.sectsz * 16;
-offset-size-arithmetic	libclamav/iso9660.c	290	        next = fmap_need_off_once(ctx->fmap, iso.base_offset + i * iso.sectsz, 2048);
-offset-size-arithmetic	libclamav/iso9660.c	320	    fmap_unneed_off(ctx->fmap, offset, 2448);
-offset-size-arithmetic	libclamav/iso9660.c	356	            cli_dbgmsg("cli_scaniso: Path table size: 0x%x\n", cli_readint32(privol + 132) & 0xffff);
+offset-size-arithmetic	libclamav/iso9660.c	120	        if (len > (sizeof(iso->buf) - 2)) {
+offset-size-arithmetic	libclamav/iso9660.c	122	            len = sizeof(iso->buf) - 2;
+offset-size-arithmetic	libclamav/iso9660.c	126	        iso->buf[len + 1] = '\0';
+offset-size-arithmetic	libclamav/iso9660.c	129	        strncpy(iso->buf, uutf8, sizeof(iso->buf));
+offset-size-arithmetic	libclamav/iso9660.c	130	        iso->buf[sizeof(iso->buf) - 1] = '\0';
+offset-size-arithmetic	libclamav/iso9660.c	133	        if (len >= sizeof(iso->buf)) {
+offset-size-arithmetic	libclamav/iso9660.c	135	            len = sizeof(iso->buf) - 1;
+offset-size-arithmetic	libclamav/iso9660.c	153	    for (; len && ret == CL_SUCCESS; block++, len -= MIN(len, iso->blocksz)) {
+offset-size-arithmetic	libclamav/iso9660.c	182	            if (entrysz > dirsz) { /* record size overlaps onto the next sector, no point in looking in there */
+offset-size-arithmetic	libclamav/iso9660.c	210	            fileoff = cli_readint32(dir + 2);
+offset-size-arithmetic	libclamav/iso9660.c	211	            fileoff += dir[1];
+offset-size-arithmetic	libclamav/iso9660.c	214	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
+offset-size-arithmetic	libclamav/iso9660.c	268	    privol = fmap_need_off(ctx->fmap, offset, 2448 + 6);
+offset-size-arithmetic	libclamav/iso9660.c	276	        fmap_unneed_off(ctx->fmap, offset, 2448);
+offset-size-arithmetic	libclamav/iso9660.c	283	        fmap_unneed_off(ctx->fmap, offset, 2448);
+offset-size-arithmetic	libclamav/iso9660.c	290	        fmap_unneed_off(ctx->fmap, offset, 2448);
+offset-size-arithmetic	libclamav/iso9660.c	294	    iso.base_offset = offset - iso.sectsz * 16;
+offset-size-arithmetic	libclamav/iso9660.c	298	        next = fmap_need_off_once(ctx->fmap, iso.base_offset + i * iso.sectsz, 2048);
+offset-size-arithmetic	libclamav/iso9660.c	328	    fmap_unneed_off(ctx->fmap, offset, 2448);
+offset-size-arithmetic	libclamav/iso9660.c	364	            cli_dbgmsg("cli_scaniso: Path table size: 0x%x\n", cli_readint32(privol + 132) & 0xffff);
 offset-size-arithmetic	libclamav/iso9660.c	54	    if (block >= ((ctx->fmap->len - iso->base_offset) / iso->sectsz) * blocks_per_sect)
 offset-size-arithmetic	libclamav/iso9660.c	56	    loff = (block / blocks_per_sect) * iso->sectsz;   /* logical sector */
 offset-size-arithmetic	libclamav/iso9660.c	57	    loff += (block % blocks_per_sect) * iso->blocksz; /* logical block within the sector */
 offset-size-arithmetic	libclamav/iso9660.c	59	        return fmap_need_off_once(ctx->fmap, iso->base_offset + loff, iso->blocksz);
 offset-size-arithmetic	libclamav/iso9660.c	60	    return fmap_need_off(ctx->fmap, iso->base_offset + loff, iso->blocksz);
-offset-size-arithmetic	libclamav/iso9660.c	76	        unsigned int todo = MIN(len, iso->blocksz);
-offset-size-arithmetic	libclamav/iso9660.c	89	        len -= todo;
+offset-size-arithmetic	libclamav/iso9660.c	77	        unsigned int todo = MIN(len, iso->blocksz);
+offset-size-arithmetic	libclamav/iso9660.c	90	        len -= todo;
 offset-size-arithmetic	libclamav/jpeg.c	170	     * Since several vendors might use the *same* APPn marker type, application-
 offset-size-arithmetic	libclamav/jpeg.c	179	     *     - XMP data, starts with http://ns.adobe.com/xap/1.0/\0
 offset-size-arithmetic	libclamav/jpeg.c	255	static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)

@@ -486,6 +486,9 @@ described below.
   rewind, close, temporary-map, and cleanup failures incomplete before those
   errors can unwind through legacy or ZipCrypto paths. Partial member output is
   never presented to the nested scanner as a complete extraction.
+- ISO9660 now marks extracted-file temporary creation, nested-scan, close,
+  cleanup, and directory-traversal allocation failures incomplete before they
+  reach the containing-image result.
 - The POC harness now computes the signature per row, verifies size, status,
   signature, and engine-reported offset, aggregates failures, works with both
   GNU and BSD `time`, and is covered by executable positive/negative scanner
@@ -2496,6 +2499,15 @@ authoritative even when the enabled HTML parser rejects an input at
 `MaxHTMLNormalize` or another normalized-view boundary. A compiled regression
 loads the in-tree NDB marker and verifies detection from an over-cap HTML
 input; Linux/Sonic1 execution remains a release gate.
+
+## ISO9660 temporary and traversal failures — 2026-08-19
+
+ISO9660 extracted-file staging now marks temporary-file creation, nested scan,
+close, and cleanup failures incomplete. Directory traversal hashset allocation
+and extension failures are also sticky, so a recognized ISO cannot return a
+clean result after an extracted file or required traversal state was not fully
+processed. Source guards cover these paths; compiled Linux fault-injection and
+optical-image corpus execution remain release gates.
 
 ## ZIP extraction operational failures — 2026-08-19
 

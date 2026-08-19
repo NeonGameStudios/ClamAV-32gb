@@ -67,6 +67,7 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
     cl_error_t ret = CL_SUCCESS;
 
     if (cli_gentempfd(iso->ctx->this_layer_tmpdir, &tmpf, &fd) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be created");
         return CL_ETMPFILE;
     }
 
@@ -92,13 +93,19 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
 
     if (!len) {
         ret = cli_magic_scan_desc(fd, tmpf, iso->ctx, iso->buf, LAYER_ATTRIBUTES_NONE);
+        if (ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK)
+            cli_mark_scan_incomplete(iso->ctx, "ISO extracted-file scan did not complete");
     }
 
-    close(fd);
-    if (!iso->ctx->engine->keeptmp) {
-        if (cli_unlink(tmpf)) {
+    if (close(fd) == -1) {
+        cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be closed");
+        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
+            ret = CL_EWRITE;
+    }
+    if (!iso->ctx->engine->keeptmp && cli_unlink(tmpf)) {
+        cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be removed");
+        if (CL_SUCCESS == ret || CL_VERIFIED == ret)
             ret = CL_EUNLINK;
-        }
     }
 
     free(tmpf);
@@ -157,6 +164,7 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
         }
 
         if (CL_SUCCESS != (ret = cli_hashset_addkey(&iso->dir_blocks, block))) {
+            cli_mark_scan_incomplete(ctx, "ISO directory traversal state could not be extended");
             return ret;
         }
 
@@ -373,6 +381,7 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         iso.ctx = ctx;
         ret     = cli_hashset_init(&iso.dir_blocks, 1024, 80);
         if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "ISO directory traversal state could not be allocated");
             status = ret;
             goto done;
         }
