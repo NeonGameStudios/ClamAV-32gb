@@ -1721,3 +1721,13 @@ file scan overlaps an ordinary process signal. A focused socketpair regression
 covers fragmented header/payload delivery, the zero-length terminator, and the
 16 MiB frame ceiling. This is protocol-boundary evidence only; compiled Linux,
 Sonic1, sanitizer, and 4 GiB/32 GiB service integration remain release gates.
+
+## OLE2 temporary-stream cleanup — 2026-08-19
+
+OLE2 extracted-stream handlers now mark failed output close, zlib finalization,
+and temporary removal operations incomplete instead of allowing a nominal
+success to continue. Cleanup failures after a detection preserve `CL_VIRUS`,
+but clean/`CL_BREAK` outcomes become non-clean and non-cacheable. The existing
+Linux static-library close wrapper now has a focused OLE2 regression; compiled
+execution, sanitizer coverage, and broader OLE2/Office corpus qualification
+remain open.

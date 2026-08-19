@@ -2588,3 +2588,12 @@ delivery, the zero-length terminator, and rejection of frames above the 16 MiB
 transport bound. This protects report integrity without changing the legacy
 clamd response protocol; compiled Linux/Sonic1 protocol-scale execution and
 sanitizer coverage remain release gates.
+
+## OLE2 temporary-stream cleanup — 2026-08-19
+
+OLE2 VBA, ordinary embedded streams, encrypted streams, and MSO decompression
+now treat output close, zlib finalization, and temporary removal failures as
+sticky incomplete states. A cleanup failure after a detection preserves the
+detection, while a nominal clean/`CL_BREAK` result becomes non-clean. The
+Linux static test shape adds a close-fault regression; compiled execution,
+sanitizer coverage, and broader OLE2 corpus qualification remain release gates.

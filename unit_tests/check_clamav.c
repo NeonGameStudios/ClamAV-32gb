@@ -7262,6 +7262,47 @@ START_TEST(test_ole2_vba_materialization_failure_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_ole2_output_close_failure_is_fail_visible)
+{
+    const char *file = SRCDIR PATHSEP "input" PATHSEP "other_scanfiles" PATHSEP "has_png_and_jpeg.xls";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    struct uniq *files = NULL;
+    cl_error_t ret;
+    int fd;
+
+    fd = open(file, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file, strerror(errno));
+    map = fmap_new(fd, 0, 0, file, NULL);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = &engine;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+
+    clamav_test_fail_close = 1;
+    ret = cli_ole2_extract(tmpdir, &ctx, &files, NULL, NULL, NULL);
+    clamav_test_fail_close = 0;
+
+    ck_assert_msg(ret != CL_SUCCESS, "OLE2 output close failure returned clean");
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    if (files)
+        uniq_free(files);
+
+    cl_fmap_close(map);
+    close(fd);
+}
+END_TEST
+#endif
+
 #ifndef _WIN32
 START_TEST(test_vba_inflate_seek_failure_is_fail_visible)
 {
@@ -9082,6 +9123,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_xlm_missing_input_is_fail_visible);
     tcase_add_test(tc_cl, test_xlm_truncated_record_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_vba_materialization_failure_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_ole2_output_close_failure_is_fail_visible);
+#endif
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
 #endif

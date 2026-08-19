@@ -608,6 +608,20 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
 static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, const char *dir, cli_ctx *ctx, void *handler_ctx);
 static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *dir, cli_ctx *ctx, void *handler_ctx);
 
+static void ole2_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
+                                      cl_error_t failure, const char *reason)
+{
+    if ((NULL == ctx) || (NULL == status))
+        return;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    /* A cleanup failure after a detection must not hide the detection.  A
+     * normal or CL_BREAK completion, however, is no longer a valid clean
+     * result once the extracted stream cannot be closed or removed. */
+    if ((*status == CL_SUCCESS) || (*status == CL_BREAK))
+        *status = failure;
+}
+
 /*
  * Compare strings ignoring case.
  * This is a somewhat special case, since name is actually a utf-16 encoded string, stored
@@ -1328,7 +1342,8 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
 done:
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
-        close(ofd);
+        if (close(ofd) == -1)
+            ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 VBA temporary output could not be closed");
     }
     CLI_FREE_AND_SET_NULL(buff);
     if (NULL != blk_bitset) {
@@ -1904,11 +1919,12 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
 mso_end:
     zret = inflateEnd(&zstrm);
     if (zret != Z_OK)
-        ret = CL_EUNPACK;
-    close(ofd);
+        ole2_note_cleanup_failure(ctx, &ret, CL_EUNPACK, "MSO zlib stream could not be closed");
+    if (close(ofd) == -1)
+        ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "MSO temporary output could not be closed");
     if (!ctx->engine->keeptmp)
         if (cli_unlink(tmpname))
-            ret = CL_EUNLINK;
+            ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "MSO temporary output could not be removed");
     free(tmpname);
     fmap_free(input);
     return ret;
@@ -2086,7 +2102,8 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
 done:
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
-        close(ofd);
+        if (close(ofd) == -1)
+            ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 temporary output could not be closed");
     }
     CLI_FREE_AND_SET_NULL(buff);
     if (NULL != blk_bitset) {
@@ -2095,7 +2112,7 @@ done:
     if (NULL != tempfile) {
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempfile)) {
-                ret = CL_EUNLINK;
+                ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 temporary output could not be removed");
             }
         }
         free(tempfile);
@@ -2356,7 +2373,8 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
 done:
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
-        close(ofd);
+        if (close(ofd) == -1)
+            ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 encrypted temporary output could not be closed");
     }
     CLI_FREE_AND_SET_NULL(buff);
     if (NULL != blk_bitset) {
@@ -2365,7 +2383,7 @@ done:
     if (NULL != tempfile) {
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempfile)) {
-                ret = CL_EUNLINK;
+                ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "OLE2 encrypted temporary output could not be removed");
             }
         }
         free(tempfile);
