@@ -659,9 +659,15 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
 #ifdef HAVE_FD_PASSING
         case FILDES:
             if (c->report_stream)
-                res = (NULL != action_source) ? send_fdpass_fd_report(c->sockd, action_source->scan_fd) : send_fdpass_report(c->sockd, scan_path);
+                res = (NULL != action_source)
+                          ? send_fdpass_fd_report_checked(c->sockd, action_source->scan_fd,
+                                                          action_source->display_path, clamdopts)
+                          : send_fdpass_report_checked(c->sockd, scan_path, clamdopts);
             else
-                res = (NULL != action_source) ? send_fdpass_fd(c->sockd, action_source->scan_fd) : send_fdpass(c->sockd, scan_path);
+                res = (NULL != action_source)
+                          ? send_fdpass_fd_checked(c->sockd, action_source->scan_fd,
+                                                   action_source->display_path, clamdopts)
+                          : send_fdpass_checked(c->sockd, scan_path, clamdopts);
             break;
 #endif
         case STREAM:

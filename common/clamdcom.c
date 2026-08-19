@@ -44,6 +44,7 @@
 #endif
 
 #include "clamav.h"
+#include "default.h"
 #include "actions.h"
 #include "output.h"
 #include "clamdcom.h"
@@ -209,6 +210,62 @@ static int send_fdpass_fd_command(int sockd, int fd, const char *command)
     return 1;
 }
 
+/* FILDES carries a complete descriptor rather than a length-framed stream.
+ * Reject a known regular file before sending it when the client has the
+ * daemon's MaxFileSize policy available.  The daemon still rechecks the
+ * descriptor after receipt because the file can change between these two
+ * observations.  A zero value is the fork's bounded 32-GiB ceiling, never an
+ * unbounded client-side policy. */
+static int fdpass_size_preflight(int fd, const char *display_filename,
+                                 const struct optstruct *clamdopts)
+{
+    const struct optstruct *max_file_size;
+    STATBUF sb;
+    uint64_t limit;
+
+    if (fd < 0)
+        return 0;
+    if (!clamdopts)
+        return 1;
+
+    max_file_size = optget(clamdopts, "MaxFileSize");
+    if (!max_file_size)
+        return 1;
+    limit = max_file_size->numarg > 0 ? (uint64_t)max_file_size->numarg : CLI_MAX_LARGE_FILESIZE;
+
+    if (FSTAT(fd, &sb) != 0) {
+        logg(LOGG_ERROR, "%s: Failed to stat FILDES input: %s\n",
+             display_filename ? display_filename : "FD", strerror(errno));
+        return -1;
+    }
+    if (!S_ISREG(sb.st_mode)) {
+        logg(LOGG_ERROR, "%s: FILDES input is not a regular file. ERROR\n",
+             display_filename ? display_filename : "FD");
+        return 0;
+    }
+    if (sb.st_size < 0) {
+        logg(LOGG_ERROR, "%s: FILDES input has an invalid negative size. ERROR\n",
+             display_filename ? display_filename : "FD");
+        return -1;
+    }
+    if ((uint64_t)sb.st_size > limit) {
+        logg(LOGG_ERROR, "%s: File size exceeds MaxFileSize; refusing FILDES input. ERROR\n",
+             display_filename ? display_filename : "FD");
+        return 0;
+    }
+    return 1;
+}
+
+static int send_fdpass_fd_checked_common(int sockd, int fd, const char *display_filename,
+                                         const struct optstruct *clamdopts, bool report)
+{
+    int preflight = fdpass_size_preflight(fd, display_filename, clamdopts);
+
+    if (preflight <= 0)
+        return preflight;
+    return send_fdpass_fd_command(sockd, fd, report ? "zFILDESREPORT" : "zFILDES");
+}
+
 int send_fdpass_fd(int sockd, int fd)
 {
     return send_fdpass_fd_command(sockd, fd, "zFILDES");
@@ -257,6 +314,62 @@ int send_fdpass_report(int sockd, const char *filename)
     } else
         fd = 0;
     ret = send_fdpass_fd_report(sockd, fd);
+    if (close_fd)
+        close(fd);
+    return ret;
+}
+
+int send_fdpass_fd_checked(int sockd, int fd, const char *display_filename,
+                           const struct optstruct *clamdopts)
+{
+    return send_fdpass_fd_checked_common(sockd, fd, display_filename, clamdopts, false);
+}
+
+int send_fdpass_checked(int sockd, const char *filename,
+                        const struct optstruct *clamdopts)
+{
+    int fd;
+    int ret;
+    int close_fd = 0;
+
+    if (filename) {
+        if ((fd = open(filename, O_RDONLY)) < 0) {
+            logg(LOGG_INFO, "%s: Failed to open file\n", filename);
+            return 0;
+        }
+        close_fd = 1;
+    } else {
+        fd = 0;
+    }
+    ret = send_fdpass_fd_checked(sockd, fd, filename ? filename : "STDIN", clamdopts);
+    if (close_fd)
+        close(fd);
+    return ret;
+}
+
+int send_fdpass_fd_report_checked(int sockd, int fd, const char *display_filename,
+                                  const struct optstruct *clamdopts)
+{
+    return send_fdpass_fd_checked_common(sockd, fd, display_filename, clamdopts, true);
+}
+
+int send_fdpass_report_checked(int sockd, const char *filename,
+                               const struct optstruct *clamdopts)
+{
+    int fd;
+    int ret;
+    int close_fd = 0;
+
+    if (filename) {
+        if ((fd = open(filename, O_RDONLY)) < 0) {
+            logg(LOGG_INFO, "%s: Failed to open file\n", filename);
+            return 0;
+        }
+        close_fd = 1;
+    } else {
+        fd = 0;
+    }
+    ret = send_fdpass_fd_report_checked(sockd, fd, filename ? filename : "STDIN", clamdopts);
     if (close_fd)
         close(fd);
     return ret;
@@ -327,7 +440,8 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
         return reject_over_limit ? -1 : 0;
     }
     *buf = 0;
-    sendln(sockd, (const char *)buf, 4);
+    if (sendln(sockd, (const char *)buf, 4))
+        return -1;
     return 1;
 }
 
@@ -507,7 +621,9 @@ int dsresult(int sockd, int scantype, const char *filename, const action_source_
 #ifdef HAVE_FD_PASSING
         case FILDES:
             /* NULL filename safe in send_fdpass() */
-            len = (NULL != action_source) ? send_fdpass_fd(sockd, action_source->scan_fd) : send_fdpass(sockd, filename);
+            len = (NULL != action_source)
+                      ? send_fdpass_fd_checked(sockd, action_source->scan_fd, display_filename, clamdopts)
+                      : send_fdpass_checked(sockd, filename, clamdopts);
             break;
 #endif
     }
@@ -881,8 +997,8 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
 #ifdef HAVE_FD_PASSING
         case FILDES:
             sent = (NULL != action_source)
-                       ? send_fdpass_fd_report(sockd, action_source->scan_fd)
-                       : send_fdpass_report(sockd, filename);
+                       ? send_fdpass_fd_report_checked(sockd, action_source->scan_fd, display_filename, clamdopts)
+                       : send_fdpass_report_checked(sockd, filename, clamdopts);
             break;
 #endif
         default:
@@ -892,36 +1008,44 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
     if (sent <= 0)
         return -1;
 
-    while (!terminated) {
-        char *json = NULL;
-        uint32_t json_length = 0;
-        int frame_infected = 0;
-        int frame_incomplete = 0;
+    {
+        int received = 0;
 
-        frame = recv_scan_report_frame(sockd, &json, &json_length, &terminated);
-        if (frame < 0)
-            return -1;
-        if (terminated)
-            break;
-        if (scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete) < 0) {
+        while (!terminated) {
+            char *json = NULL;
+            uint32_t json_length = 0;
+            int frame_infected = 0;
+            int frame_incomplete = 0;
+
+            frame = recv_scan_report_frame(sockd, &json, &json_length, &terminated);
+            if (frame < 0)
+                return -1;
+            if (terminated)
+                break;
+            received = 1;
+            if (scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete) < 0) {
+                free(json);
+                return -1;
+            }
+            if (report_stream &&
+                (fwrite(json, 1, json_length, report_stream) != json_length ||
+                 fputc('\n', report_stream) == EOF)) {
+                free(json);
+                return -1;
+            }
+            if (frame_infected) {
+                (*infected)++;
+                if (apply_action && action && action_source)
+                    action((action_source_t *)action_source);
+            } else if (frame_incomplete) {
+                (*incomplete)++;
+                (*errors)++;
+            }
             free(json);
+        }
+
+        if (!received)
             return -1;
-        }
-        if (report_stream &&
-            (fwrite(json, 1, json_length, report_stream) != json_length ||
-             fputc('\n', report_stream) == EOF)) {
-            free(json);
-            return -1;
-        }
-        if (frame_infected) {
-            (*infected)++;
-            if (apply_action && action && action_source)
-                action((action_source_t *)action_source);
-        } else if (frame_incomplete) {
-            (*incomplete)++;
-            (*errors)++;
-        }
-        free(json);
     }
 
     return 0;

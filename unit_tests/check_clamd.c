@@ -394,6 +394,41 @@ START_TEST(test_stream_client_rejects_over_limit)
 }
 END_TEST
 #endif
+#if defined(HAVE_FD_PASSING) && !defined(_WIN32)
+START_TEST(test_fildes_client_rejects_over_limit)
+{
+    struct optstruct file_limit;
+    int sockets[2];
+    FILE *regular;
+    const char over[]  = "123456789";
+    const char exact[] = "12345678";
+
+    memset(&file_limit, 0, sizeof(file_limit));
+    file_limit.name   = "MaxFileSize";
+    file_limit.numarg = 8;
+
+    regular = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
+    ck_assert_int_eq(fflush(regular), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    ck_assert_int_eq(send_fdpass_fd_checked(sockets[0], fileno(regular), "regular-over-limit", &file_limit), 0);
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+
+    regular = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+    ck_assert_int_eq(fflush(regular), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    ck_assert_int_eq(send_fdpass_fd_checked(sockets[0], fileno(regular), "regular-at-limit", &file_limit), 1);
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+}
+END_TEST
+#endif
 #ifndef _WIN32
 #define SOCKET "clamd-test.socket"
 static void conn_setup_mayfail(int may)
@@ -1188,6 +1223,9 @@ static Suite *test_clamd_suite(void)
     tc_client = tcase_create("clamd client stream accounting");
     suite_add_tcase(s, tc_client);
     tcase_add_test(tc_client, test_stream_client_rejects_over_limit);
+#if defined(HAVE_FD_PASSING)
+    tcase_add_test(tc_client, test_fildes_client_rejects_over_limit);
+#endif
 #endif
     tc_commands = tcase_create("clamd commands");
     suite_add_tcase(s, tc_commands);

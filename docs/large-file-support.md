@@ -2623,3 +2623,18 @@ The OLE2 VBA-directory scanner now checks close and removal of staged
 final unwind. Failures mark the containing scan incomplete while preserving a
 prior detection or parser error. Supported-Linux execution, sanitizer
 coverage, and a real Office/VBA corpus remain release gates.
+
+## FILDES preflight and structured-report completion — 2026-08-19
+
+Known regular-file FILDES inputs from clamdscan now undergo a client-side
+`MaxFileSize` preflight before the descriptor is sent, including the
+`FILDESREPORT` path. The daemon still rechecks the descriptor after receipt so
+file growth between the two observations cannot create a false clean. The
+preflight uses the fork's bounded 32-GiB policy when the configured value is
+zero, and rejects non-regular or unstatable descriptors without sending a
+request. INSTREAM now reports a failed final zero-length terminator write, and
+the structured clamdscan report consumer rejects a terminator-only response
+instead of treating it as a clean, successful scan. A focused Linux unit test
+covers exact-limit and over-limit FILDES behavior; supported-Linux execution,
+Sonic1 service qualification, sanitizer coverage, and 4-GiB/32-GiB socket
+tests remain release gates.

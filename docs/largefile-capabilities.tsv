@@ -7,7 +7,7 @@ clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a p
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending
 clamd	FILDES	bounded	clamd/session.c	legacy command; structured parity pending
 clamd	INSTREAM	bounded	clamd/server-th.c	complete staging with stream/temp quota
-clamdscan	fdpass	bounded	clamdscan/proto.c	legacy FILDES path; qualification pending
+clamdscan	fdpass	bounded	clamdscan/proto.c	known-size MaxFileSize preflight; service qualification pending
 clamdscan	stream	bounded	clamdscan/proto.c	legacy INSTREAM path; qualification pending
 clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback when MaxThreads is one
 milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending

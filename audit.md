@@ -1756,3 +1756,17 @@ The OLE2 VBA-directory scanner now checks close and removal of staged
 final unwind. Cleanup failures mark the containing scan incomplete without
 overwriting a prior detection or parser error. Supported-Linux execution,
 sanitizer coverage, and a real Office/VBA corpus remain open.
+
+## FILDES preflight and structured-report completion — 2026-08-19
+
+The clamdscan FILDES and FILDESREPORT ingress paths now preflight known regular
+file descriptors against the configured `MaxFileSize` before sending ancillary
+data. A zero setting is treated as the fork's bounded 32-GiB ceiling, and
+stat/non-regular/over-limit inputs are refused before a request is emitted;
+the daemon remains the authoritative second check for files that change after
+preflight. The common INSTREAM client now propagates a failed final
+zero-length terminator write. The non-IDSESSION structured-report consumer
+also rejects an empty terminator-only response, closing a false-success path
+where no scan report had been received. The focused FILDES unit regression is
+registered, but compiled Linux execution, Sonic1 service qualification,
+sanitizer coverage, and 4-GiB/32-GiB socket integration remain open.

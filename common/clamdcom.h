@@ -71,6 +71,14 @@ int send_fdpass_fd(int sockd, int fd);
 int send_fdpass(int sockd, const char *filename);
 int send_fdpass_fd_report(int sockd, int fd);
 int send_fdpass_report(int sockd, const char *filename);
+int send_fdpass_fd_checked(int sockd, int fd, const char *display_filename,
+                           const struct optstruct *clamdopts);
+int send_fdpass_checked(int sockd, const char *filename,
+                        const struct optstruct *clamdopts);
+int send_fdpass_fd_report_checked(int sockd, int fd, const char *display_filename,
+                                  const struct optstruct *clamdopts);
+int send_fdpass_report_checked(int sockd, const char *filename,
+                               const struct optstruct *clamdopts);
 #endif
 int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
 int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
