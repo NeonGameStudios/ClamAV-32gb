@@ -1547,3 +1547,11 @@ not claimed here: this macOS workspace lacks the Linux build dependencies and
 the Rust dependency checkout is unavailable offline. No new Sonic1 rebuild or
 service-level qualification was performed for revision R2. The production
 release verdict therefore remains blocked.
+
+The RFC2047 mail-header decoder now propagates `messageAddStr()` and
+`messageToBlob()` materialization failures to the sticky incomplete scan state
+and discards partial decoded output. The previous ignored append failure could
+otherwise leave a required decoded-header view incomplete while allowing the
+mail parser to continue without a fail-visible report. The focused source
+guard and materialization-limit unit regression are registered; compiled
+execution remains a Linux/Sonic1 qualification gate.

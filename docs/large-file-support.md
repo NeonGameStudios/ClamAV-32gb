@@ -2330,3 +2330,12 @@ reads and `EAGAIN`, enforces the shared 16 MiB report-frame cap, and rejects
 malformed alert strings. This improves transport correctness but does not
 replace the required supported-Linux large-transfer, sanitizer, or milter
 qualification runs.
+
+## RFC2047 bounded failure propagation — 2026-08-19
+
+RFC2047 mail-header decoding now propagates bounded materialization and decoded
+blob failures to the scan's sticky incomplete state. The decoder no longer
+ignores `messageAddStr()` failure or returns a partially decoded header after
+`messageToBlob()` rejects an incomplete materialization. This keeps a required
+mail-parser view from being treated as complete merely because raw header
+matching continued.

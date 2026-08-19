@@ -198,7 +198,7 @@ static int getTextPart(message *const messages[], size_t size);
 static size_t strip(char *buf, int len);
 static int parseMimeHeader(message *m, const char *cmd, const table_t *rfc821Table, const char *arg, cli_ctx *ctx, bool *heuristicFound);
 static int saveTextPart(mbox_ctx *mctx, message *m, int destroy_text);
-static char *rfc2047(const char *in);
+static char *rfc2047(const char *in, cli_ctx *ctx);
 static char *rfc822comments(const char *in, char *out);
 static int rfc1341(mbox_ctx *mctx, message *m);
 static bool usefulHeader(int commandNumber, const char *cmd);
@@ -1397,7 +1397,7 @@ parseEmailHeader(message *m, const char *line, const table_t *rfc821, cli_ctx *c
     if (*separator == '\0')
         return -1;
 
-    copy = rfc2047(line);
+    copy = rfc2047(line, ctx);
     if (copy == NULL) {
         /* an RFC checker would return -1 here */
         copy = cli_safer_strdup(line);
@@ -3462,7 +3462,7 @@ rfc822comments(const char *in, char *out)
  * free, or NULL on error
  */
 static char *
-rfc2047(const char *in)
+rfc2047(const char *in, cli_ctx *ctx)
 {
     char *out, *pout;
     size_t len;
@@ -3539,7 +3539,13 @@ rfc2047(const char *in)
             free(enctext);
             break;
         }
-        messageAddStr(m, enctext);
+        if (messageAddStr(m, enctext) < 0) {
+            cli_mark_scan_incomplete(ctx, "RFC2047 header materialization was incomplete");
+            messageDestroy(m);
+            free(enctext);
+            free(out);
+            return NULL;
+        }
 
         free(enctext);
         enctext = NULL;
@@ -3554,8 +3560,10 @@ rfc2047(const char *in)
         }
         b = messageToBlob(m, 1);
         if (b == NULL) {
+            cli_mark_scan_incomplete(ctx, "RFC2047 decoded header could not be materialized completely");
             messageDestroy(m);
-            break;
+            free(out);
+            return NULL;
         }
         len = blobGetDataSize(b);
         cli_dbgmsg("Decoded as '%*.*s'\n", (int)len, (int)len,

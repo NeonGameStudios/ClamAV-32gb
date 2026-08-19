@@ -229,6 +229,19 @@ START_TEST(test_message_addline_materialization_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_message_addstr_materialization_limit_is_fail_visible)
+{
+    message *m = messageCreate();
+
+    ck_assert_ptr_nonnull(m);
+    m->materialized_bytes = MESSAGE_MAX_MATERIALIZED_BYTES;
+    ck_assert_int_eq(messageAddStr(m, "x"), -1);
+    ck_assert_int_eq(m->isTruncated, 1);
+    ck_assert_uint_eq(m->materialized_bytes, MESSAGE_MAX_MATERIALIZED_BYTES);
+    messageDestroy(m);
+}
+END_TEST
+
 START_TEST(test_message_move_text_preserves_materialization_limit)
 {
     message *source = messageCreate();
@@ -334,6 +347,7 @@ Suite *test_str_suite(void)
 
     tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
     tcase_add_test(tc_str, test_message_addline_materialization_limit_is_fail_visible);
+    tcase_add_test(tc_str, test_message_addstr_materialization_limit_is_fail_visible);
     tcase_add_test(tc_str, test_message_move_text_preserves_materialization_limit);
     tcase_add_test(tc_str, test_message_export_rejects_truncated_materialization);
 
