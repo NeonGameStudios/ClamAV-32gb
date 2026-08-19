@@ -1576,3 +1576,13 @@ Mail-generated fileblob callers now use a single wrapper that rejects missing
 temporary spools, preserves non-clean scan errors, and maps them to the MIME
 `FAIL` state where the caller has an `mbox_status`. This includes text parts,
 bounces, BinHex, nested attachments, and the direct `textToFileblob()` path.
+
+Deferred multipart text aggregation now also preserves the final spool scan
+result; it was previously destroyed without an authoritative scan. A focused
+source guard is registered; compiled execution remains a Linux/Sonic1
+qualification gate.
+
+The shared mail spool wrapper now restores `mctx->ctx` after the legacy
+`textToFileblob()` conversion clears it, ensuring every parser-generated mail
+spool reaches the authoritative descriptor scanner with resource accounting
+and fail-visible result policy enabled.

@@ -2361,3 +2361,13 @@ Mail attachment, bounce, BinHex, and text-part callers now share a
 fail-visible fileblob wrapper. It handles missing temporary spools and
 propagates non-clean scan errors, including the formerly unsafe direct
 `fileblobScanAndDestroy(textToFileblob(...))` call.
+
+Deferred multipart text aggregation now scans its final temporary text-part
+spool before destroying it. Spool creation, materialization, detection, and
+scan errors are propagated instead of allowing the aggregated text view to be
+discarded uninspected.
+
+The mail spool wrapper also restores the active scan context after
+`textToFileblob()` clears it for legacy conversion callers. This ensures the
+authoritative descriptor scan is actually performed rather than being treated
+as a no-context clean result.

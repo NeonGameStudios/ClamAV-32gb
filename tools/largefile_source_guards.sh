@@ -572,6 +572,8 @@ contains libclamav/mbox.c 'Unsupported MIME message format could not be inspecte
 contains libclamav/mbox.c 'Encapsulated MIME message has no body to inspect'
 contains libclamav/mbox.c 'MIME temporary spool could not be created or materialized'
 contains libclamav/mbox.c 'MIME temporary spool scan did not complete'
+contains libclamav/mbox.c 'MIME text-part temporary spool could not be created'
+contains libclamav/mbox.c 'restore the active context before the scan'
 contains libclamav/mbox.c 'HTML phishing input exceeds the bounded URL-inspection limit'
 contains libclamav/mbox.c 'HTML phishing input could not be normalized completely'
 contains libclamav/others.c 'normalized or handler-retyped layer is another view of the current'

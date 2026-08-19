@@ -342,6 +342,10 @@ scanFileblob(mbox_ctx *mctx, fileblob *fb)
         return CL_ERESOURCE;
     }
 
+    /* textToFileblob() clears the context for historical non-scanning
+     * conversion callers. Mail parser spools are authoritative scan inputs,
+     * so restore the active context before the scan. */
+    fileblobSetCTX(fb, mctx->ctx);
     rc = fileblobScanAndDestroy(fb);
     if (rc != CL_CLEAN && rc != CL_VIRUS)
         cli_mark_scan_incomplete(mctx->ctx,
@@ -2455,15 +2459,26 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                     messageDestroy(mainMessage);
 
                 if (aText && (textIn == NULL)) {
-                    if ((!infected) && (fb = fileblobCreate()) != NULL) {
+                    if (!infected) {
                         cli_dbgmsg("Save non mime and/or text/plain part\n");
-                        fileblobSetFilename(fb, mctx->dir, "textpart");
-                        /*fileblobAddData(fb, "Received: by clamd (textpart)\n", 30);*/
-                        fileblobSetCTX(fb, mctx->ctx);
-                        (void)textToFileblob(aText, fb, 1);
-
-                        fileblobDestroy(fb);
-                        mctx->files++;
+                        fb = fileblobCreate();
+                        if (fb != NULL) {
+                            fileblobSetFilename(fb, mctx->dir, "textpart");
+                            /*fileblobAddData(fb, "Received: by clamd (textpart)\n", 30);*/
+                            fileblobSetCTX(fb, mctx->ctx);
+                            {
+                                int scan_rc = scanFileblob(mctx, textToFileblob(aText, fb, 1));
+                                if (scan_rc == CL_VIRUS)
+                                    rc = VIRUS;
+                                else if (scan_rc != CL_CLEAN)
+                                    rc = FAIL;
+                            }
+                            mctx->files++;
+                        } else {
+                            cli_mark_scan_incomplete(mctx->ctx,
+                                                     "MIME text-part temporary spool could not be created");
+                            rc = FAIL;
+                        }
                     }
                     textDestroy(aText);
                 }
