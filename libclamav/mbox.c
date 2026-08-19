@@ -213,7 +213,7 @@ static int count_quotes(const char *buf);
 static bool next_is_folded_header(const text *t);
 static bool newline_in_header(const char *line);
 
-static blob *getHrefs(cli_ctx *, message *m, tag_arguments_t *hrefs);
+static blob *getHrefs(cli_ctx *, message *m, tag_arguments_t *hrefs, bool *incomplete);
 static void hrefs_done(blob *b, tag_arguments_t *hrefs);
 static void checkURLs(message *m, mbox_ctx *mctx, mbox_status *rc, int is_html);
 
@@ -3866,14 +3866,21 @@ static void extract_text_urls(const unsigned char *mem, size_t len, tag_argument
  * disabled (see ifdef)
  */
 static blob *
-getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs)
+getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
 {
     unsigned char *mem;
     blob *b = messageToBlob(m, 0);
     size_t len;
 
-    if (b == NULL)
+    if (incomplete)
+        *incomplete = false;
+
+    if (b == NULL) {
+        cli_mark_scan_incomplete(ctx, "HTML phishing input could not be materialized completely");
+        if (incomplete)
+            *incomplete = true;
         return NULL;
+    }
 
     len = blobGetDataSize(b);
 
@@ -3885,6 +3892,9 @@ getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs)
     /* TODO: make this size customisable */
     if (len > 100 * 1024) {
         cli_dbgmsg("HTML pointed to by URLs not scanned in large message\n");
+        cli_mark_scan_incomplete(ctx, "HTML phishing input exceeds the bounded URL-inspection limit");
+        if (incomplete)
+            *incomplete = true;
         blobDestroy(b);
         return NULL;
     }
@@ -3896,6 +3906,9 @@ getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs)
     cli_dbgmsg("getHrefs: calling html_normalise_mem\n");
     mem = blobGetData(b);
     if (!html_normalise_mem(ctx, mem, (off_t)len, NULL, hrefs, m->ctx->dconf)) {
+        cli_mark_scan_incomplete(ctx, "HTML phishing input could not be normalized completely");
+        if (incomplete)
+            *incomplete = true;
         blobDestroy(b);
         return NULL;
     }
@@ -3917,6 +3930,7 @@ checkURLs(message *mainMessage, mbox_ctx *mctx, mbox_status *rc, int is_html)
 {
     blob *b;
     tag_arguments_t hrefs;
+    bool incomplete = false;
 
     UNUSEDPARAM(is_html);
 
@@ -3936,7 +3950,9 @@ checkURLs(message *mainMessage, mbox_ctx *mctx, mbox_status *rc, int is_html)
     hrefs.tag = hrefs.value = NULL;
     hrefs.contents          = NULL;
 
-    b = getHrefs(mctx->ctx, mainMessage, &hrefs);
+    b = getHrefs(mctx->ctx, mainMessage, &hrefs, &incomplete);
+    if (incomplete && *rc == OK)
+        *rc = FAIL;
     if (b) {
         if (hrefs.scanContents) {
             if (phishingScan(mctx->ctx, &hrefs) == CL_VIRUS) {

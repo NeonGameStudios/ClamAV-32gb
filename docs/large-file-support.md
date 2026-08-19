@@ -2054,6 +2054,12 @@ attachment or enters a nested parser. The top-level body parser applies the
 same check, so a child or moved message cannot be silently scanned as a
 partial clean representation.
 
+When phishing URL inspection is enabled, the legacy URL extractor no longer
+treats an oversized HTML message or a failed materialization/normalization as
+“no URLs.” Its bounded 100 KiB whole-message helper now marks the scan
+incomplete and returns a non-clean parser status, preserving the explicit
+unsupported boundary until that detector is converted to a streaming reader.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`
