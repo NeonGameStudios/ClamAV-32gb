@@ -47,13 +47,14 @@ fail-visible parser error. The 50 GiB input remained fail-visible as
 not deep-parser qualification; the detailed timings and diagnostics are in
 the Sonic1 report.
 
-ALZ and OneNote now stage the root through the bounded Rust `FMapReader` into
-the shared temporary quota, then expose a disk-backed `mmap` view to the
-third-party slice APIs. The old 256 MiB admission cap is removed; a failed
-bounded read, temporary reservation, address-space mapping, parser operation,
-or extracted-member scan remains an explicit incomplete result. Their
-third-party parsers still require 64-bit supported-build and large-corpus
-qualification before release.
+LHA uses the bounded Rust `FMapReader` directly. ALZ now parses through the
+same `Read + Seek` adapter and delivers decompressed members in chunks to
+quota-accounted temporary spools; OneNote still stages its root through the
+shared temporary quota and exposes a disk-backed `mmap` view to its
+third-party slice API. The old 256 MiB admission cap is removed; bounded-read,
+temporary-reservation, mapping, parser, decoder, and extracted-member scan
+failures remain explicit incomplete results. Third-party parser memory and
+large-corpus qualification remain release gates.
 
 Local macOS validation has begun with a native host-preflight and runtime gate;
 its first result is documented in
@@ -2085,3 +2086,19 @@ failures remain fail-visible. Builds without mmap support retain the explicit
 This removes the specific PDF root-input heap/cap bottleneck; it does not claim
 that every PDF object/stream decoder is independently streaming or that a real
 large-PDF corpus has passed supported-build, sanitizer, or Sonic1 qualification.
+
+## ALZ bounded reader and member streaming — 2026-08-19
+
+ALZ no longer converts the complete fmap into a borrowed Rust slice. Its
+header and member parser now operates on the bounded `Read + Seek` adapter,
+seeks only to validated member ranges, and restores the next-header position
+after each decoder. Stored, Deflate, and BZIP2 output is delivered in bounded
+chunks to the scanner’s temporary spool; the previous per-member `Vec<u8>`
+accumulation is retained only by the compatibility byte-slice API used by
+unit tests and callers that explicitly request it. Temporary admission,
+decoder completion, short reads, member limits, and nested scan failures are
+fail-visible.
+
+This closes the ALZ whole-root and whole-member materialization path. ALZ
+third-party-equivalent corpus, sanitizer, and concurrent-RSS qualification
+remain release gates.

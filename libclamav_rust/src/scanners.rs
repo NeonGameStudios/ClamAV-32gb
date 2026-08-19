@@ -33,7 +33,7 @@ use libc::c_void;
 use log::{debug, error, warn};
 
 use crate::{
-    alz::{Alz, AlzExtractionDecision, AlzExtractionLimits, Error as AlzError},
+    alz::{Alz, AlzExtractionDecision, AlzExtractionLimits, Error as AlzError, ExtractSink},
     ctx,
     fmap::{FMap, FMapReader},
     sys,
@@ -168,8 +168,14 @@ impl TempSpool {
 
     fn write_all(&mut self, bytes: &[u8]) -> Result<(), cl_error_t> {
         let requested = u64::try_from(bytes.len()).map_err(|_| cl_error_t_CL_ERESOURCE)?;
-        if requested > self.reserved.saturating_sub(self.written) {
-            return Err(cl_error_t_CL_ERESOURCE);
+        let available = self.reserved.saturating_sub(self.written);
+        if requested > available {
+            let additional = requested.saturating_sub(available);
+            let status = unsafe { sys::cli_scan_reserve_temporary(self.ctx, additional) };
+            if status != cl_error_t_CL_SUCCESS {
+                return Err(status);
+            }
+            self.reserved = self.reserved.saturating_add(additional);
         }
 
         let mut offset = 0usize;
@@ -213,6 +219,83 @@ impl Drop for TempSpool {
             let _ = sys::cli_unlink(self.path.as_ptr());
             sys::cli_scan_release_temporary(self.ctx, self.reserved);
         }
+    }
+}
+
+struct AlzScanSink {
+    ctx: *mut cli_ctx,
+    spool: Option<TempSpool>,
+    name: Option<String>,
+    last_size: u64,
+    scan_result: cl_error_t,
+}
+
+impl AlzScanSink {
+    fn new(ctx: *mut cli_ctx) -> Self {
+        Self {
+            ctx,
+            spool: None,
+            name: None,
+            last_size: 0,
+            scan_result: cl_error_t_CL_SUCCESS,
+        }
+    }
+
+    fn record_failure(&mut self, status: cl_error_t, reason: &str) -> AlzError {
+        self.abort();
+        self.scan_result = unsafe { parser_failure(self.ctx, "ALZ", status, reason) };
+        AlzError::Stop
+    }
+}
+
+impl ExtractSink for AlzScanSink {
+    fn begin(&mut self, name: Option<&str>) -> Result<(), AlzError> {
+        self.abort();
+        self.last_size = 0;
+        self.name = name.map(str::to_owned);
+        self.spool = match unsafe { TempSpool::new(self.ctx, 0) } {
+            Ok(spool) => Some(spool),
+            Err(status) => return Err(self.record_failure(status, "member temporary spool reservation failed")),
+        };
+        Ok(())
+    }
+
+    fn write(&mut self, data: &[u8]) -> Result<(), AlzError> {
+        let status = match self.spool.as_mut() {
+            Some(spool) => spool.write_all(data),
+            None => Err(cl_error_t_CL_EWRITE),
+        };
+        if let Err(status) = status {
+            return Err(self.record_failure(status, "member temporary spool write failed"));
+        }
+        Ok(())
+    }
+
+    fn finish(&mut self) -> Result<(), AlzError> {
+        let Some(mut spool) = self.spool.take() else {
+            return Err(self.record_failure(cl_error_t_CL_EWRITE, "member spool was not started"));
+        };
+        let name = self.name.take();
+        self.last_size = spool.written;
+        if spool.written == 0 {
+            return Ok(());
+        }
+
+        let ret = unsafe { spool.scan(name.as_deref()) };
+        if ret != cl_error_t_CL_SUCCESS {
+            self.scan_result = ret;
+            return Err(AlzError::Stop);
+        }
+        Ok(())
+    }
+
+    fn last_size(&self) -> u64 {
+        self.last_size
+    }
+
+    fn abort(&mut self) {
+        self.spool.take();
+        self.name = None;
     }
 }
 
@@ -656,19 +739,10 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
 
-    let root_spool = match spool_fmap(ctx, &fmap) {
-        Ok(spool) => spool,
-        Err(status) => return parser_failure(ctx, "ALZ", status, "root temporary spool could not be populated"),
-    };
-    let mapped = match MappedInput::new(root_spool.fd, fmap.len()) {
-        Ok(mapped) => mapped,
-        Err(status) => return parser_failure(ctx, "ALZ", status, "root temporary spool mapping failed"),
-    };
-
     let mut alz_metadata_ret = cl_error_t_CL_SUCCESS;
-    let mut scan_result = cl_error_t_CL_SUCCESS;
+    let mut sink = AlzScanSink::new(ctx);
     let alz_result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-        Alz::from_bytes_with_filter_stream(mapped.as_slice(), |metadata| {
+        Alz::from_reader_with_filter_stream(FMapReader::new(&fmap), |metadata| {
             if alz_metadata_ret != cl_error_t_CL_SUCCESS {
                 return AlzExtractionDecision::Stop;
             }
@@ -720,44 +794,12 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             }
 
             AlzExtractionDecision::Extract(alz_extraction_limits(ctx))
-        }, &mut |attachment| {
-            if scan_result != cl_error_t_CL_SUCCESS {
-                return Err(AlzError::Stop);
-            }
-
-            let expected_size = match u64::try_from(attachment.data.len()) {
-                Ok(size) => size,
-                Err(_) => {
-                    scan_result = parser_failure(
-                        ctx,
-                        "ALZ",
-                        cl_error_t_CL_ERESOURCE,
-                        "attachment size does not fit the 64-bit accounting domain",
-                    );
-                    return Err(AlzError::Stop);
-                }
-            };
-            let mut attachment_spool = match TempSpool::new(ctx, expected_size) {
-                Ok(spool) => spool,
-                Err(status) => {
-                    scan_result = parser_failure(ctx, "ALZ", status, "attachment temporary spool reservation failed");
-                    return Err(AlzError::Stop);
-                }
-            };
-            if let Err(status) = attachment_spool.write_all(&attachment.data) {
-                scan_result = parser_failure(ctx, "ALZ", status, "attachment temporary spool write failed");
-                return Err(AlzError::Stop);
-            }
-
-            let ret = attachment_spool.scan(attachment.name.as_deref());
-            if ret != cl_error_t_CL_SUCCESS {
-                scan_result = ret;
-                return Err(AlzError::Stop);
-            }
-
-            Ok(())
-        })
+        }, &mut sink)
     }));
+
+    if sink.scan_result != cl_error_t_CL_SUCCESS {
+        return sink.scan_result;
+    }
 
     let alz = match alz_result {
         Ok(Ok(x)) => x,
@@ -782,10 +824,6 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             );
         }
     };
-
-    if scan_result != cl_error_t_CL_SUCCESS {
-        return scan_result;
-    }
 
     if alz_metadata_ret != cl_error_t_CL_SUCCESS {
         return alz_metadata_ret;

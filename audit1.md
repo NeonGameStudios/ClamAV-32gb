@@ -348,10 +348,11 @@ were applied in the current worktree. The principal changes are:
   partial output is scanned. ZIP variable-header/descriptor truncation,
   XZ/CAB/CHM/PE failures, and JPEG/script normalization failures now preserve
   sticky incomplete state.
-- OneNote, LHA/LZH, and ALZ Rust parsers now stage through bounded fmap
-  windows and use explicit disk-backed mappings for the third-party slice
-  APIs. Input, parser, CRC, member, mapping, and panic failures remain sticky
-  non-clean results; supported-build qualification remains open.
+- LHA uses bounded `Read + Seek`; ALZ parses through that adapter and streams
+  members into quota-accounted spools. OneNote still stages through bounded
+  fmap windows and uses an explicit disk-backed mapping for its third-party
+  slice API. Input, parser, decoder, CRC, member, mapping, and panic failures
+  remain sticky non-clean results; supported-build qualification remains open.
 - `cl_fmap_set_hash()` now accepts a digest pointer, with a public SHA-256 API
   regression added. Mach-O 64-bit alignment exponents are bounded before the
   shift, and RAR staging rejects incomplete copies.
@@ -398,7 +399,7 @@ open end-to-end. The production-blocked verdict remains correct.
 | F-04 | Source closed; exact trigger untested | HWP raw-deflate now requires `Z_STREAM_END` and does not scan a partial prefix. |
 | F-05 | Source closed; exact trigger untested | ZIP variable filename/extra/ZIP64 truncation is sticky and deferred only while valid preceding records are scanned. |
 | F-06 | Source closed; exact fault-injection evidence remains | The reported XZ/CAB/CHM-open/PE faults and CAB/CHM decompressor-construction failure now mark incomplete; focused constructor tests are present but require the supported build environment. |
-| F-07 | Bounded source policy; runtime qualification open | LHA uses bounded `Read + Seek`; ALZ/OneNote stage through bounded fmap windows and use disk-backed mappings for their slice APIs. Mapping and concurrent-RSS qualification remain open. |
+| F-07 | Bounded source policy; runtime qualification open | LHA uses bounded `Read + Seek`; ALZ uses that adapter and streams members to quota-accounted spools; OneNote stages through bounded fmap windows and uses a disk-backed mapping for its slice API. Mapping and concurrent-RSS qualification remain open. |
 | F-08 | Memory flaw closed; ABI unresolved | The digest pointer fix is correct for newly compiled callers, but the exported symbol and SOVERSION were not changed for old scalar-ABI callers. |
 | F-09 | Source closed; exact trigger untested | Both Mach-O section branches reject alignment exponents at or above 32 before shifting. |
 | F-10 | Source closed; exact boundary evidence remains | Script/JPEG/XZ state is widened or range-checked, and normalized-script output/map failures are sticky; compiled multi-GiB and injected-failure coverage remains a supported-build gate. |
@@ -584,8 +585,10 @@ though exact-trigger compiled coverage remains incomplete:
   failures, CAB/CHM archive-open rejection, and the PE entry-point read failure
   are fail-visible (libclamav/scanners.c:1510–1616;
   libclamav/libmspack.c:457–462, 586–591; libclamav/pe.c:2863–2869).
-- F-07: LHA uses `FMapReader`; ALZ and OneNote stage through bounded fmap
-  windows before creating a disk-backed parser mapping. Mapping and parser
+- F-07: LHA uses `FMapReader`; ALZ now parses through the same bounded
+  `Read + Seek` adapter and streams member output into quota-accounted spools;
+  OneNote still stages through bounded fmap windows before creating its
+  disk-backed parser mapping. Mapping, parser, decoder, and member-scan
   failures set sticky scan state. Supported-build and concurrent-RSS evidence
   remains open.
 - F-09: 64-bit and 32-bit Mach-O section alignment exponents at or above 32
@@ -723,13 +726,15 @@ supplies those inputs and their expected outcomes.
 
 ## Rust large-input staging — 2026-08-19
 
-ALZ and OneNote now stage the root through the bounded `FMapReader` into a
-quota-accounted temporary file, then parse a disk-backed `mmap` view required
-by their third-party slice APIs. The prior 256 MiB admission cap was removed;
-failed reads, temporary reservation, address-space mapping, parser, and
-extracted-member scans remain fail-visible. This removes the artificial cap
-but does not by itself prove third-party 32 GiB memory, sanitizer, or
-supported-build qualification.
+ALZ now parses directly through the bounded `FMapReader` `Read + Seek` adapter
+and emits decompressed members in chunks into quota-accounted temporary spools.
+OneNote still stages the root through the shared temporary quota and parses a
+disk-backed `mmap` view required by its third-party slice API. The prior 256
+MiB admission cap was removed; failed reads, temporary reservation, mapping,
+parser, decoder, and extracted-member scans remain fail-visible. This removes
+the artificial ALZ cap and member-vector materialization, but does not by
+itself prove third-party 32 GiB memory, sanitizer, or supported-build
+qualification.
 
 ## Daemon large-file admission — 2026-08-19
 
