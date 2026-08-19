@@ -89,7 +89,8 @@ done
 for required in "$out/provenance/ldd-clamscan.txt" \
     "$out/provenance/runtime-dependencies.txt" \
     "$out/provenance/runtime-dependency-artifacts.txt" \
-    "$out/provenance/runtime-dependency-hashes.txt"; do
+    "$out/provenance/runtime-dependency-hashes.txt" \
+    "$out/provenance/loader-clamscan.txt"; do
     if [ ! -s "$required" ]; then
         echo "missing runtime provenance: $required" >&2
         exit 1
@@ -105,6 +106,7 @@ if [ "$require_sanitizer" = yes ]; then
         "$out/provenance/runtime-dependencies-sanitizer.txt" \
         "$out/provenance/runtime-dependency-artifacts-sanitizer.txt" \
         "$out/provenance/runtime-dependency-hashes-sanitizer.txt" \
+        "$out/provenance/loader-clamscan-sanitizer.txt" \
         "$out/provenance/sanitizer-symbols.txt" \
         "$out/provenance/rust-sanitizer-symbols.txt" \
         "$sanitizer_cmake_cache" "$sanitizer_compile_commands" \
@@ -453,6 +455,10 @@ grep -Fx 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.t
     echo 'evidence does not identify runtime dependency artifact mapping' >&2
     exit 1
 }
+grep -Fx 'loader_trace=provenance/loader-clamscan.txt' "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not identify the release loader trace' >&2
+    exit 1
+}
 grep -Fx 'concurrency_levels=1 2 4' "$metadata" >/dev/null 2>&1 || {
     echo 'build identity does not record the canonical concurrency matrix' >&2
     exit 1
@@ -474,11 +480,28 @@ for dependency_manifest in provenance/runtime-dependency-hashes.txt; do
         exit 1
     }
 done
+grep -F "$out/artifacts/runtime-components" "$out/provenance/loader-clamscan.txt" >/dev/null 2>&1 || {
+    echo 'release loader trace does not reference copied runtime components' >&2
+    exit 1
+}
+if grep -F 'not found' "$out/provenance/loader-clamscan.txt" >/dev/null 2>&1; then
+    echo 'release loader trace contains an unresolved dependency' >&2
+    exit 1
+fi
 if [ "$require_sanitizer" = yes ]; then
     (cd "$out" && sha256sum -c provenance/runtime-dependency-hashes-sanitizer.txt) >/dev/null 2>&1 || {
         echo 'sanitizer runtime dependency hash manifest does not verify' >&2
         exit 1
     }
+    grep -F "$out/artifacts/runtime-components-sanitizer" \
+        "$out/provenance/loader-clamscan-sanitizer.txt" >/dev/null 2>&1 || {
+        echo 'sanitizer loader trace does not reference copied runtime components' >&2
+        exit 1
+    }
+    if grep -F 'not found' "$out/provenance/loader-clamscan-sanitizer.txt" >/dev/null 2>&1; then
+        echo 'sanitizer loader trace contains an unresolved dependency' >&2
+        exit 1
+    fi
     grep -E '__asan|__ubsan|libasan|libubsan' \
         "$out/provenance/sanitizer-symbols.txt" \
         "$out/provenance/ldd-clamscan-sanitizer.txt" >/dev/null 2>&1 || {
@@ -591,6 +614,10 @@ if [ "$require_sanitizer" = yes ]; then
     }
     grep -Fx 'sanitizer_component_dir=artifacts/runtime-components-sanitizer' "$metadata" >/dev/null 2>&1 || {
         echo 'sanitizer component artifact identity is missing' >&2
+        exit 1
+    }
+    grep -Fx 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt' "$metadata" >/dev/null 2>&1 || {
+        echo 'sanitizer loader trace identity is missing' >&2
         exit 1
     }
     grep -Fx 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt' "$metadata" >/dev/null 2>&1 || {

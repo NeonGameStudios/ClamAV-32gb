@@ -445,6 +445,36 @@ fi
 runtime_library_path="$runtime_component_dir:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
 export LD_LIBRARY_PATH=$runtime_library_path
 
+# Capture the dynamic-loader decision before the workload starts. Hashing a
+# copied dependency is not enough if the scanner later resolves a different
+# build-tree library; the loader trace must show the copied component directory
+# as an active search path for the executable that is actually exercised.
+loader_trace=$provenance/loader-clamscan.txt
+if ! LD_DEBUG=libs "$runtime_clamscan" --version > "$provenance/scanner-version.txt" 2> "$loader_trace"; then
+    echo 'release scanner could not produce a loader-bound version trace' >&2
+    exit 2
+fi
+if ! grep -F "$runtime_component_dir" "$loader_trace" >/dev/null 2>&1 ||
+    grep -F 'not found' "$loader_trace" >/dev/null 2>&1; then
+    echo 'release loader trace does not bind the scanner to copied runtime components' >&2
+    exit 2
+fi
+sanitizer_loader_trace=
+if [ -n "$sanitizer_clamscan" ]; then
+    sanitizer_loader_trace=$provenance/loader-clamscan-sanitizer.txt
+    sanitizer_loader_path="$sanitizer_component_dir:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
+    if ! LD_LIBRARY_PATH="$sanitizer_loader_path" LD_DEBUG=libs \
+        "$runtime_sanitizer_clamscan" --version > "$provenance/scanner-version-sanitizer.txt" 2> "$sanitizer_loader_trace"; then
+        echo 'sanitizer scanner could not produce a loader-bound version trace' >&2
+        exit 2
+    fi
+    if ! grep -F "$sanitizer_component_dir" "$sanitizer_loader_trace" >/dev/null 2>&1 ||
+        grep -F 'not found' "$sanitizer_loader_trace" >/dev/null 2>&1; then
+        echo 'sanitizer loader trace does not bind the scanner to copied runtime components' >&2
+        exit 2
+    fi
+fi
+
 scanner_sha256=$(sha256sum "$artifacts/clamscan" | awk '{ print $1 }')
 cargo_lock_sha256=$(sha256sum "$provenance/Cargo.lock" | awk '{ print $1 }')
 cmake_cache_sha256=$(sha256sum "$provenance/CMakeCache.txt" | awk '{ print $1 }')
@@ -527,8 +557,9 @@ metadata=$out/build-identity.txt
     printf 'runtime_dependency_hashes=provenance/runtime-dependency-hashes.txt\n'
     printf 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt\n'
     printf 'runtime_component_dir=artifacts/runtime-components\n'
+    printf 'loader_trace=provenance/loader-clamscan.txt\n'
+    cat "$provenance/scanner-version.txt"
     file "$artifacts/clamscan"
-    "$runtime_clamscan" --version
     if [ -n "$sanitizer_clamscan" ]; then
         sanitizer_scanner_sha256=$(sha256sum "$artifacts/clamscan-sanitizer" | awk '{ print $1 }')
         printf 'sanitizer_scanner_path=artifacts/clamscan-sanitizer\n'
@@ -538,6 +569,8 @@ metadata=$out/build-identity.txt
         printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
         printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
         printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'
+        printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
+        cat "$provenance/scanner-version-sanitizer.txt"
         sanitizer_rust_sha256=$(sha256sum "$artifacts/clamav_rust.a" | awk '{ print $1 }')
         printf 'sanitizer_rust_library_path=artifacts/clamav_rust.a\n'
         printf 'sanitizer_rust_library_sha256=%s\n' "$sanitizer_rust_sha256"

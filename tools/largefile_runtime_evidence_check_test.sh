@@ -94,6 +94,10 @@ printf '%s -> artifacts/runtime-components-sanitizer/libclamav.so\n' "$out/artif
 (cd "$out" && sha256sum artifacts/runtime-components-sanitizer/libclamav.so) > "$out/provenance/runtime-dependency-hashes-sanitizer.txt"
 printf 'synthetic ldd output\n' > "$out/provenance/ldd-clamscan.txt"
 printf 'synthetic ldd output\n' > "$out/provenance/ldd-clamscan-sanitizer.txt"
+printf 'search path=%s\n' "$out/artifacts/runtime-components" > "$out/provenance/loader-clamscan.txt"
+printf 'search path=%s\n' "$out/artifacts/runtime-components-sanitizer" > "$out/provenance/loader-clamscan-sanitizer.txt"
+printf 'ClamAV synthetic release\n' > "$out/provenance/scanner-version.txt"
+printf 'ClamAV synthetic sanitizer\n' > "$out/provenance/scanner-version-sanitizer.txt"
 printf '  1: __asan_init\n' > "$out/provenance/sanitizer-symbols.txt"
 printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symbols.txt"
 {
@@ -140,9 +144,11 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'runtime_dependency_hashes=provenance/runtime-dependency-hashes.txt\n'
     printf 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt\n'
     printf 'runtime_component_dir=artifacts/runtime-components\n'
+    printf 'loader_trace=provenance/loader-clamscan.txt\n'
     printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
     printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
     printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'
+    printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
     rust_library_hash=$(sha256sum "$out/artifacts/clamav_rust.a" | awk '{ print $1 }')
     printf 'sanitizer_rust_library_path=artifacts/clamav_rust.a\n'
     printf 'sanitizer_rust_library_sha256=%s\n' "$rust_library_hash"

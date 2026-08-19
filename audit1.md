@@ -754,6 +754,17 @@ than inheriting build defaults. The real production oracle, Linux/Sonic1
 execution, sanitizer, RSS, latency, temporary-space, and parser-family
 evidence remain open.
 
+## Loader-bound runtime evidence — 2026-08-19
+
+The runtime gate now captures an `LD_DEBUG=libs` trace for the copied release
+scanner and, when present, the copied sanitizer scanner. The post-run verifier
+requires each trace to reference its copied runtime-component directory and to
+contain no unresolved dependency marker. This strengthens the source/build
+provenance chain by proving that the executable invoked by the gate searched the
+hashed component set first; the trace and version output are included in the
+manifest-bound evidence artifact. It remains evidence for the Linux gate only,
+not a substitute for service or parser-family qualification.
+
 ## Rust large-input staging — 2026-08-19
 
 ALZ now parses directly through the bounded `FMapReader` `Read + Seek` adapter
