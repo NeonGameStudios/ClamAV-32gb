@@ -62,9 +62,12 @@ typedef struct fileblob {
                      */
     char *fullname; /* full pathname of the file */
     cli_ctx *ctx;   /* When set we can scan the blob, otherwise NULL */
+    cli_ctx *temporary_ctx; /* Context holding the temporary-byte reservation. */
+    uint64_t temporary_bytes; /* Bytes reserved while the spool is being built. */
     uint64_t bytes_scanned;
     unsigned int isNotEmpty : 1;
     unsigned int isInfected : 1;
+    unsigned int isIncomplete : 1;
 } fileblob;
 
 fileblob *fileblobCreate(void);
@@ -76,7 +79,7 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg);
 const char *fileblobGetFilename(const fileblob *fb);
 void fileblobSetCTX(fileblob *fb, cli_ctx *ctx);
 int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len);
-cl_error_t fileblobScan(const fileblob *fb);
+cl_error_t fileblobScan(fileblob *fb);
 int fileblobInfected(const fileblob *fb);
 void sanitiseName(char *name);
 

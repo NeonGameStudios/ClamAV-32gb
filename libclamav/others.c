@@ -1460,7 +1460,8 @@ cl_error_t cli_updatelimits(cli_ctx *ctx, size_t needed)
 
 static bool cli_scan_resource_would_exceed(uint64_t current, uint64_t bytes, uint64_t limit)
 {
-    return (limit != 0) && (current > limit || bytes > limit - current);
+    return (UINT64_MAX - current < bytes) ||
+           ((limit != 0) && (current > limit || bytes > limit - current));
 }
 
 static cl_error_t cli_scan_resource_failure(cli_ctx *ctx, const char *reason)

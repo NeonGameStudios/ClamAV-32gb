@@ -138,6 +138,8 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                     fb = NULL;
                 }
                 fb = fileblobCreate();
+                if (fb)
+                    fileblobSetCTX(fb, ctx);
                 if (tnef_message(ctx->fmap, &pos, type, tag, length, fsize) != 0) {
                     cli_dbgmsg("TNEF: Error reading TNEF message\n");
                     ret     = CL_EFORMAT;
@@ -151,6 +153,8 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                     ret     = CL_EFORMAT;
                     alldone = 1;
                 }
+                if (fb)
+                    fileblobSetCTX(fb, ctx);
                 break;
             case 0:
                 break;

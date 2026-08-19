@@ -794,3 +794,20 @@ matches are rejected as unrelated candidates, while recognized but malformed
 or truncated structures mark the parent scan incomplete. The focused unit
 test and static guard pass locally. Supported-build parser-family tests and
 the broader 32 GiB qualification evidence remain open.
+
+## Fileblob temporary-spool accounting — 2026-08-19
+
+The shared temporary quota previously began accounting a MIME/fileblob only
+when `cli_magic_scan_desc()` started the final scan. Bytes written during
+message, bounce, TNEF, and similar materialization therefore could exceed
+`MaxTemporarySize` before scanner admission. `fileblob` now keeps a per-spool
+reservation, backfills the reservation when its context is attached after
+initial writes, releases the build reservation before the descriptor scanner
+charges the same file, and releases any remaining reservation on destruction.
+Quota, measurement, and write failures set sticky incomplete state so callers
+that only test for `CL_VIRUS` cannot turn an uninspected attachment into a
+clean result. A focused quota/backfill regression and source guards were added.
+
+This is an accounting/fail-closed correction, not proof that the retained
+64 MiB MIME line-list has been replaced with an incremental large-mail parser;
+the latter and supported-build qualification remain open.

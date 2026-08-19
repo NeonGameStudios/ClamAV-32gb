@@ -1996,3 +1996,18 @@ normalized HTML, script normalization, and ZIP type-recognition gates. Values
 above 32 GiB are rejected; exact 32 GiB is accepted. This prevents a front-end
 or library caller from silently widening a parser-specific gate beyond the
 qualified outer-file policy while the legacy small defaults remain in place.
+
+## Fileblob temporary-spool accounting — 2026-08-19
+
+MIME, bounce-message, TNEF, and other fileblob paths now reserve each staged
+byte against the shared `MaxTemporarySize` budget while the temporary file is
+being built. If a caller attaches the scan context after writing has started,
+the existing file length is measured and admitted before more data is accepted.
+Reservation failures and temporary-file write/stat failures mark the scan
+incomplete; they cannot be hidden by the legacy fileblob caller convention that
+only checks for `CL_VIRUS`. The build-time reservation is released before the
+normal descriptor scan reservation and is always released during destruction.
+
+This closes the accounting and fail-visible spool gap. It does not yet claim
+that the retained 64 MiB MIME message line-list has been replaced by a fully
+incremental MIME parser; that remains an explicit parser-family release gate.

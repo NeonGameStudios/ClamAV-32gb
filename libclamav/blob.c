@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -415,6 +416,87 @@ fileblobCreate(void)
 }
 
 /*
+ * A fileblob is often populated before the descriptor scan starts. Keep its
+ * on-disk bytes in the same temporary-space budget as parser output while it
+ * is being built. The descriptor scanner releases this reservation immediately
+ * before it takes its normal whole-file reservation, and destruction releases
+ * any reservation left by an aborted or failed materialization.
+ */
+static void
+fileblobReleaseTemporary(fileblob *fb)
+{
+    if (fb == NULL)
+        return;
+
+    if (fb->temporary_ctx && fb->temporary_bytes)
+        cli_scan_release_temporary(fb->temporary_ctx, fb->temporary_bytes);
+
+    fb->temporary_ctx   = NULL;
+    fb->temporary_bytes = 0;
+}
+
+static void
+fileblobMarkIncomplete(fileblob *fb, const char *reason)
+{
+    cli_ctx *ctx;
+
+    if (fb == NULL)
+        return;
+
+    fb->isIncomplete = 1;
+    ctx              = fb->ctx ? fb->ctx : fb->temporary_ctx;
+    if (ctx)
+        cli_mark_scan_incomplete(ctx, reason);
+}
+
+static int
+fileblobReserveTemporary(fileblob *fb, cli_ctx *ctx, uint64_t bytes)
+{
+    if (fb == NULL || ctx == NULL)
+        return 0;
+
+    if (fb->temporary_ctx && fb->temporary_ctx != ctx)
+        fileblobReleaseTemporary(fb);
+
+    if (fb->temporary_ctx == NULL)
+        fb->temporary_ctx = ctx;
+
+    if (bytes == 0)
+        return 0;
+
+    if (UINT64_MAX - fb->temporary_bytes < bytes ||
+        cli_scan_reserve_temporary(ctx, bytes) != CL_SUCCESS) {
+        fileblobMarkIncomplete(fb,
+                               "fileblob temporary spool exceeded the configured resource limit");
+        return -1;
+    }
+
+    fb->temporary_bytes += bytes;
+    return 0;
+}
+
+static int
+fileblobReserveExistingTemporary(fileblob *fb)
+{
+    STATBUF sb;
+
+    if (fb == NULL || fb->ctx == NULL || fb->fp == NULL || fb->isIncomplete)
+        return 0;
+
+    if (fb->temporary_ctx == fb->ctx)
+        return 0;
+
+    if (fflush(fb->fp) != 0 || FSTAT(fb->fd, &sb) != 0 || sb.st_size < 0) {
+        fb->isIncomplete = 1;
+        cli_mark_scan_incomplete(fb->ctx,
+                                 "fileblob temporary spool could not be measured");
+        return -1;
+    }
+
+    return fileblobReserveTemporary(fb, fb->ctx, (uint64_t)sb.st_size);
+}
+
+/*
  * Returns CL_CLEAN or CL_VIRUS. Destroys the fileblob and removes the file
  * if possible
  */
@@ -465,6 +547,8 @@ void fileblobDestroy(fileblob *fb)
     assert(fb->b.magic == BLOBCLASS);
 #endif
 
+    fileblobReleaseTemporary(fb);
+
     if (fb->b.name && fb->fp) {
         fclose(fb->fp);
         if (fb->fullname) {
@@ -476,7 +560,11 @@ void fileblobDestroy(fileblob *fb)
         }
         free(fb->b.name);
 
-        assert(fb->b.data == NULL);
+        if (fb->b.data) {
+            free(fb->b.data);
+            fb->b.data = NULL;
+            fb->b.len = fb->b.size = 0;
+        }
     } else if (fb->b.data) {
         free(fb->b.data);
         if (fb->b.name) {
@@ -486,6 +574,9 @@ void fileblobDestroy(fileblob *fb)
         } else
             cli_errmsg("fileblobDestroy: file not saved (%lu bytes): report to https://github.com/Cisco-Talos/clamav/issues\n",
                        (unsigned long)fb->b.len);
+    } else if (fb->b.name) {
+        free(fb->b.name);
+        fb->b.name = NULL;
     }
     if (fb->fullname)
         free(fb->fullname);
@@ -509,6 +600,7 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
     fb->fd = open(fullname, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_EXCL, 0600);
     if (fb->fd < 0) {
         cli_errmsg("fileblobPartialSet: unable to create file: %s\n", fullname);
+        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be created");
         return;
     }
     fb->fp = fdopen(fb->fd, "wb");
@@ -516,6 +608,7 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
     if (fb->fp == NULL) {
         cli_errmsg("fileblobSetFilename: fdopen failed\n");
         close(fb->fd);
+        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be opened");
         return;
     }
     blobSetFilename(&fb->b, fb->ctx ? fb->ctx->this_layer_tmpdir : NULL, fullname);
@@ -525,6 +618,10 @@ void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg)
             fb->b.data = NULL;
             fb->b.len = fb->b.size = 0;
             fb->isNotEmpty         = 1;
+        } else {
+            free(fb->b.data);
+            fb->b.data = NULL;
+            fb->b.len = fb->b.size = 0;
         }
     fb->fullname = cli_safer_strdup(fullname);
 }
@@ -549,7 +646,10 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
 
     assert(filename != NULL);
 
-    if (cli_gentempfd(dir, &fullname, &fb->fd) != CL_SUCCESS) return;
+    if (cli_gentempfd(dir, &fullname, &fb->fd) != CL_SUCCESS) {
+        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be created");
+        return;
+    }
 
     cli_dbgmsg("fileblobSetFilename: file %s saved to %s\n", filename, fullname);
 
@@ -559,6 +659,7 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
         cli_errmsg("fileblobSetFilename: fdopen failed\n");
         close(fb->fd);
         free(fullname);
+        fileblobMarkIncomplete(fb, "fileblob temporary spool could not be opened");
         return;
     }
     if (fb->b.data)
@@ -567,6 +668,10 @@ void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename)
             fb->b.data = NULL;
             fb->b.len = fb->b.size = 0;
             fb->isNotEmpty         = 1;
+        } else {
+            free(fb->b.data);
+            fb->b.data = NULL;
+            fb->b.len = fb->b.size = 0;
         }
     fb->fullname = fullname;
 }
@@ -582,8 +687,13 @@ int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
 #if defined(MAX_SCAN_SIZE) && (MAX_SCAN_SIZE > 0)
         const cli_ctx *ctx = fb->ctx;
 
+        if (fb->isIncomplete)
+            return -1;
         if (fb->isInfected) /* pretend all was written */
             return 0;
+        if ((fb->ctx || fb->temporary_ctx) &&
+            fileblobReserveTemporary(fb, fb->ctx ? fb->ctx : fb->temporary_ctx, (uint64_t)len) < 0)
+            return -1;
         if (ctx) {
             int do_scan = 1;
 
@@ -650,14 +760,27 @@ int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
         }
 #endif
 
+#if !defined(MAX_SCAN_SIZE) || (MAX_SCAN_SIZE == 0)
+        if (fb->isIncomplete)
+            return -1;
+        if (fb->isInfected) /* pretend all was written */
+            return 0;
+        if ((fb->ctx || fb->temporary_ctx) &&
+            fileblobReserveTemporary(fb, fb->ctx ? fb->ctx : fb->temporary_ctx, (uint64_t)len) < 0)
+            return -1;
+#endif
+
         if (fwrite(data, len, 1, fb->fp) != 1) {
             cli_errmsg("fileblobAddData: Can't write %lu bytes to temporary file %s\n",
                        (unsigned long)len, fb->b.name);
+            fileblobMarkIncomplete(fb, "fileblob temporary spool write failed");
             return -1;
         }
         fb->isNotEmpty = 1;
         return 0;
     }
+    if (fb->isIncomplete)
+        return -1;
     return blobAddData(&(fb->b), data, len);
 }
 
@@ -669,7 +792,19 @@ fileblobGetFilename(const fileblob *fb)
 
 void fileblobSetCTX(fileblob *fb, cli_ctx *ctx)
 {
+    if (fb == NULL)
+        return;
+
+    if (ctx == NULL) {
+        /* textToFileblob() deliberately clears the scan context for a caller
+         * that is only using the fileblob as a formatter. Keep any reservation
+         * already acquired until destruction, because the file still exists. */
+        fb->ctx = NULL;
+        return;
+    }
+
     fb->ctx = ctx;
+    (void)fileblobReserveExistingTemporary(fb);
 }
 
 /*
@@ -678,13 +813,19 @@ void fileblobSetCTX(fileblob *fb, cli_ctx *ctx)
  *	CL_CLEAN means unknown
  *	CL_VIRUS means infected
  */
-cl_error_t fileblobScan(const fileblob *fb)
+cl_error_t fileblobScan(fileblob *fb)
 {
     cl_error_t rc;
     STATBUF sb;
 
     if (fb->isInfected)
         return CL_VIRUS;
+    if (fb->isIncomplete) {
+        if (fb->ctx)
+            cli_mark_scan_incomplete(fb->ctx,
+                                     "fileblob materialization was incomplete");
+        return CL_ERESOURCE;
+    }
     if (fb->fp == NULL || fb->fullname == NULL) {
         /* shouldn't happen, scan called before fileblobSetFilename */
         cli_warnmsg("fileblobScan, fullname == NULL\n");
@@ -696,9 +837,18 @@ cl_error_t fileblobScan(const fileblob *fb)
         return CL_CLEAN; /* there is no CL_UNKNOWN */
     }
 
-    fflush(fb->fp);
-    lseek(fb->fd, 0, SEEK_SET);
-    FSTAT(fb->fd, &sb);
+    if (fflush(fb->fp) != 0 || lseek(fb->fd, 0, SEEK_SET) == (off_t)-1 || FSTAT(fb->fd, &sb) != 0 || sb.st_size < 0) {
+        fb->isIncomplete = 1;
+        cli_mark_scan_incomplete(fb->ctx,
+                                 "fileblob temporary spool could not be scanned");
+        fileblobReleaseTemporary(fb);
+        return CL_ESTAT;
+    }
+
+    /* cli_magic_scan_desc() owns the reservation for the descriptor scan.
+     * Release the build-time reservation first so the same bytes are not
+     * charged twice. */
+    fileblobReleaseTemporary(fb);
 
     rc = cli_matchmeta(fb->ctx, fb->b.name, sb.st_size, sb.st_size, 0, 0, 0);
     if (rc != CL_SUCCESS) {

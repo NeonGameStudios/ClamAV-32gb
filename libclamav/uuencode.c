@@ -98,6 +98,7 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
         return -1;
     }
 
+    fileblobSetCTX(fb, m->ctx);
     fileblobSetFilename(fb, dir, filename);
     cli_dbgmsg("uudecode %s\n", filename);
     free(filename);

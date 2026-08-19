@@ -32,6 +32,7 @@
 
 // libclamav
 #include "clamav.h"
+#include "blob.h"
 #include "default.h"
 #include "others.h"
 #include "matcher.h"
@@ -679,6 +680,59 @@ START_TEST(test_resource_limit_engine_fields_and_accounting)
     cli_scan_release_contiguous(&ctx, 4096);
     ck_assert_int_eq(cli_scan_reserve_temporary(&ctx, 2048), CL_SUCCESS);
     cli_scan_release_temporary(&ctx, 2048);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine         = engine;
+    ctx.matcher_work   = UINT64_MAX;
+    ctx.contiguous_bytes = UINT64_MAX;
+    ctx.temporary_bytes  = UINT64_MAX;
+    ck_assert_int_eq(cli_scan_account_matcher_work(&ctx, 1), CL_ERESOURCE);
+    ck_assert_int_eq(cli_scan_reserve_contiguous(&ctx, 1), CL_ERESOURCE);
+    ck_assert_int_eq(cli_scan_reserve_temporary(&ctx, 1), CL_ERESOURCE);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_fileblob_temporary_spool_accounting)
+{
+    static const unsigned char payload[] = "12345";
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    fileblob *fb;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 4), CL_SUCCESS);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine           = engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetCTX(fb, &ctx);
+    fileblobSetFilename(fb, tmpdir, "temporary-quota");
+    ck_assert_int_eq(fileblobAddData(fb, payload, sizeof(payload) - 1), -1);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    fileblobDestructiveDestroy(fb);
+
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 8), CL_SUCCESS);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetFilename(fb, tmpdir, "temporary-backfill");
+    ck_assert_int_eq(fileblobAddData(fb, payload, sizeof(payload) - 1), 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    fileblobSetCTX(fb, &ctx);
+    ck_assert_uint_eq(ctx.temporary_bytes, sizeof(payload) - 1);
+    ck_assert_uint_eq(ctx.temporary_peak, sizeof(payload) - 1);
+    fileblobDestructiveDestroy(fb);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
 
     cl_engine_free(engine);
 }
@@ -8320,6 +8374,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
+    tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
