@@ -188,25 +188,13 @@ int cli_binhex(cli_ctx *ctx)
             }
             if (!enc_todo) {
                 if (write_phase == IN_DATA) {
-                    cli_dbgmsg("cli_binhex: scanning partially extracted data fork\n");
+                    cli_dbgmsg("cli_binhex: refusing to scan partially extracted data fork\n");
                     cli_mark_scan_incomplete(ctx, "BinHex data fork ended before its declared length");
                     ret = CL_EPARSE;
-                    if (lseek(datafd, 0, SEEK_SET) == -1) {
-                        cli_dbgmsg("cli_binhex: call to lseek() has failed\n");
-                        ret = CL_ESEEK;
-                        break;
-                    }
-                    ret = cli_magic_scan_desc(datafd, dname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
                 } else if (write_phase == IN_RES) {
-                    cli_dbgmsg("cli_binhex: scanning partially extracted resource fork\n");
+                    cli_dbgmsg("cli_binhex: refusing to scan partially extracted resource fork\n");
                     cli_mark_scan_incomplete(ctx, "BinHex resource fork ended before its declared length");
                     ret = CL_EPARSE;
-                    if (lseek(resfd, 0, SEEK_SET) == -1) {
-                        cli_dbgmsg("cli_binhex: call to lseek() has failed\n");
-                        ret = CL_ESEEK;
-                        break;
-                    }
-                    ret = cli_magic_scan_desc(resfd, rname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
                 } else if ((write_phase == IN_BANNER) ||
                            (write_phase == IN_LIMBO1) ||
                            (write_phase == IN_LIMBO2)) {

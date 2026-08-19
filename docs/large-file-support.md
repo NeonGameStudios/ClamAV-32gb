@@ -982,8 +982,11 @@ does not provide sanitizer, production-parser, or concurrency evidence.
   before the header, data fork, resource fork, or terminal state was complete;
   it also discarded configured resource-limit results. Those paths now preserve
   the limit, mark incomplete extraction non-cacheable, and return `CL_EPARSE`
-  when the encoded stream cannot reach a complete state. The public
-  `CL_TYPE_BINHEX` regression and focused ARM64 build pass. The current
+  when the encoded stream cannot reach a complete state. A follow-up check
+  found that the data/resource-fork EOF branches still dispatched their partial
+  temporary files to the nested scanner after marking them incomplete. Those
+  branches now refuse partial nested scans and retain the parse failure. The
+  public `CL_TYPE_BINHEX` regressions and focused ARM64 build pass. The current
   library-only harness recorded `1,267` checks, `786` fixture/environment
   failures, and `0` errors; remote source/build qualification remains separate.
 
