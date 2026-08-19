@@ -117,6 +117,12 @@ same status classifier. A report that is incomplete or cannot be received is
 returned as a worker error (and therefore denied in prevention mode), while a
 monitoring-only event may still allow without labeling the object clean.
 
+clamd now emits a single machine-readable startup capability manifest after
+engine initialization. It records the compiled width/build boundaries, hard
+resource ceilings, active configured limits, structured-report and bytecode-v2
+support, and fd-passing availability; `parser_qualification=unclaimed` keeps
+this observability line from being mistaken for release qualification.
+
 On-access prevention now denies permission events after stat or size-limit
 preflight failures even when the worker correctly avoids submitting a partial
 object; monitoring-only events continue to allow and log.

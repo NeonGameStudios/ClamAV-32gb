@@ -19,4 +19,9 @@ int clamd_largefile_admission_check(
     char *reason,
     size_t reason_size);
 
+/* Emit the compiled and configured large-file capability manifest once the
+ * engine has been initialized. The manifest describes capability boundaries;
+ * it is not a parser or service qualification claim. */
+void clamd_largefile_log_capabilities(const struct cl_engine *engine);
+
 #endif

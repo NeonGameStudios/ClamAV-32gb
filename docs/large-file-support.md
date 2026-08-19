@@ -2310,6 +2310,16 @@ compatibility callers and retains the global individual-allocation guard; it
 is not used by the production scanner. EGG corpus, sanitizer, and supported
 Linux x86-64 Sonic1 qualification remain release gates.
 
+## clamd startup capability manifest — 2026-08-19
+
+After engine initialization, clamd emits one machine-readable
+`Large-file capability manifest` line. It records the compiled pointer,
+`size_t`, and `off_t` widths; hard 32 GiB/64 GiB/resource ceilings; active
+engine limits; structured-report and bytecode-v2 support; fd-passing
+availability; and an explicit `parser_qualification=unclaimed` marker. This
+binds runtime logs to the actual binary/configuration without turning a
+startup capability description into parser or service qualification evidence.
+
 ## Milter structured-report alert and nonblocking transport — 2026-08-19
 
 The milter structured-report client now preserves the report's `last_alert`

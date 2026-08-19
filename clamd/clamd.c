@@ -764,6 +764,7 @@ int main(int argc, char **argv)
             if ((admission_status != CL_SUCCESS) || (NULL == temporary_directory) || (temporary_directory[0] == '\0'))
                 temporary_directory = "/tmp";
 
+            clamd_largefile_log_capabilities(engine);
             if (!clamd_largefile_admission_check(engine, temporary_directory, admission_reason, sizeof(admission_reason))) {
                 logg(LOGG_ERROR, "Large-file daemon admission failed: %s\n", admission_reason[0] ? admission_reason : "unknown reason");
                 ret = 1;

@@ -11,6 +11,9 @@
 #include "clamav.h"
 #include "default.h"
 
+// common
+#include "output.h"
+
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -29,6 +32,30 @@
 #define LARGEFILE_MIN_TEMPORARY (68ULL * LARGEFILE_GIB)
 #define LARGEFILE_MEMORY_HEADROOM (16ULL * LARGEFILE_GIB)
 #define LARGEFILE_TEMP_HEADROOM (4ULL * LARGEFILE_GIB)
+
+#if defined(C_LINUX) && (defined(__x86_64__) || defined(_M_X64))
+#define LARGEFILE_PLATFORM "linux-x86_64"
+#elif defined(C_LINUX)
+#define LARGEFILE_PLATFORM "linux-other"
+#elif defined(__APPLE__)
+#define LARGEFILE_PLATFORM "macos"
+#elif defined(_WIN32)
+#define LARGEFILE_PLATFORM "windows"
+#else
+#define LARGEFILE_PLATFORM "other"
+#endif
+
+#ifdef CLAMAV_LARGE_FILE_SUPPORT
+#define LARGEFILE_BUILD_SUPPORT 1
+#else
+#define LARGEFILE_BUILD_SUPPORT 0
+#endif
+
+#ifdef HAVE_FD_PASSING
+#define LARGEFILE_FD_PASSING 1
+#else
+#define LARGEFILE_FD_PASSING 0
+#endif
 
 static void set_reason(char *reason, size_t reason_size, const char *message)
 {
@@ -212,6 +239,56 @@ static int engine_u64(
 
     *value = (uint64_t)result;
     return 1;
+}
+
+void clamd_largefile_log_capabilities(const struct cl_engine *engine)
+{
+    uint64_t max_file_size = 0;
+    uint64_t max_scan_size = 0;
+    uint64_t max_matcher_work = 0;
+    uint64_t max_temporary_size = 0;
+    uint64_t max_contiguous_size = 0;
+    uint64_t pcre_max_file_size = 0;
+    uint64_t max_scan_time = 0;
+    uint64_t max_files = 0;
+    uint64_t max_recursion = 0;
+
+    (void)engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size);
+    (void)engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size);
+    (void)engine_u64(engine, CL_ENGINE_MAX_MATCHER_WORK, &max_matcher_work);
+    (void)engine_u64(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, &max_temporary_size);
+    (void)engine_u64(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, &max_contiguous_size);
+    (void)engine_u64(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &pcre_max_file_size);
+    (void)engine_u64(engine, CL_ENGINE_MAX_SCANTIME, &max_scan_time);
+    (void)engine_u64(engine, CL_ENGINE_MAX_FILES, &max_files);
+    (void)engine_u64(engine, CL_ENGINE_MAX_RECURSION, &max_recursion);
+
+    logg(LOGG_INFO,
+         "Large-file capability manifest: schema=1 platform=%s build_support=%d pointer_bits=%u size_t_bits=%u off_t_bits=%u large_file_ceiling=%" PRIu64 " logical_scan_ceiling=%" PRIu64 " matcher_work_ceiling=%" PRIu64 " temporary_ceiling=%" PRIu64 " contiguous_ceiling=%" PRIu64 " configured_max_file=%" PRIu64 " configured_max_scan=%" PRIu64 " configured_pcre_max_file=%" PRIu64 " configured_matcher_work=%" PRIu64 " configured_temporary=%" PRIu64 " configured_contiguous=%" PRIu64 " configured_scan_time_ms=%" PRIu64 " configured_max_files=%" PRIu64 " configured_max_recursion=%" PRIu64 " structured_reports=1 bytecode_abi_v2=8 fd_passing=%d parser_qualification=unclaimed\n",
+         LARGEFILE_PLATFORM,
+         LARGEFILE_BUILD_SUPPORT,
+         (unsigned)(sizeof(void *) * CHAR_BIT),
+         (unsigned)(sizeof(size_t) * CHAR_BIT),
+#if !defined(_WIN32)
+         (unsigned)(sizeof(off_t) * CHAR_BIT),
+#else
+         (unsigned)(sizeof(long long) * CHAR_BIT),
+#endif
+         (uint64_t)CLI_MAX_LARGE_FILESIZE,
+         (uint64_t)CLI_MAX_LOGICAL_SCAN_SIZE,
+         (uint64_t)CLI_MAX_MATCHER_WORK,
+         (uint64_t)CLI_MAX_TEMPORARY_SIZE,
+         (uint64_t)CLI_MAX_CONTIGUOUS_SIZE,
+         max_file_size,
+         max_scan_size,
+         pcre_max_file_size,
+         max_matcher_work,
+         max_temporary_size,
+         max_contiguous_size,
+         max_scan_time,
+         max_files,
+         max_recursion,
+         LARGEFILE_FD_PASSING);
 }
 
 int clamd_largefile_admission_check(

@@ -38,39 +38,53 @@ fixed-width-integer	clambc/bcrun.c	83	    uint32_t scopeid;
 fixed-width-integer	clamd/clamd.c	456	            uint64_t lim = rlim.rlim_cur;
 fixed-width-integer	clamd/clamd_others.h	61	    uint32_t chunksize;
 fixed-width-integer	clamd/clamd_others.h	62	    uint64_t quota;
-fixed-width-integer	clamd/largefile_admission.c	120	static int cgroup_headroom(uint64_t *headroom, int *bounded)
-fixed-width-integer	clamd/largefile_admission.c	127	    uint64_t limit = 0;
-fixed-width-integer	clamd/largefile_admission.c	128	    uint64_t current = 0;
-fixed-width-integer	clamd/largefile_admission.c	160	static int effective_memory_available(uint64_t *available_bytes)
-fixed-width-integer	clamd/largefile_admission.c	162	    uint64_t available;
-fixed-width-integer	clamd/largefile_admission.c	163	    uint64_t cgroup_available;
-fixed-width-integer	clamd/largefile_admission.c	178	static int temporary_free_bytes(const char *temporary_directory, uint64_t *free_bytes)
-fixed-width-integer	clamd/largefile_admission.c	186	        (stats.f_bavail > UINT64_MAX / (uint64_t)stats.f_frsize))
-fixed-width-integer	clamd/largefile_admission.c	189	    *free_bytes = (uint64_t)stats.f_bavail * (uint64_t)stats.f_frsize;
-fixed-width-integer	clamd/largefile_admission.c	201	    uint64_t *value)
-fixed-width-integer	clamd/largefile_admission.c	213	    *value = (uint64_t)result;
-fixed-width-integer	clamd/largefile_admission.c	223	    uint64_t max_file_size;
-fixed-width-integer	clamd/largefile_admission.c	224	    uint64_t max_scan_size;
-fixed-width-integer	clamd/largefile_admission.c	225	    uint64_t max_temporary_size;
-fixed-width-integer	clamd/largefile_admission.c	226	    uint64_t max_contiguous_size;
-fixed-width-integer	clamd/largefile_admission.c	227	    uint64_t required_memory;
-fixed-width-integer	clamd/largefile_admission.c	228	    uint64_t required_temporary;
-fixed-width-integer	clamd/largefile_admission.c	229	    uint64_t available_memory;
-fixed-width-integer	clamd/largefile_admission.c	230	    uint64_t free_temporary;
-fixed-width-integer	clamd/largefile_admission.c	231	    uint64_t memory_basis;
-fixed-width-integer	clamd/largefile_admission.c	232	    uint64_t temporary_basis;
-fixed-width-integer	clamd/largefile_admission.c	233	    const uint64_t legacy_file_size = (uint64_t)CLI_DEFAULT_MAXFILESIZE;
-fixed-width-integer	clamd/largefile_admission.c	234	    const uint64_t legacy_scan_size = (uint64_t)CLI_DEFAULT_MAXSCANSIZE;
-fixed-width-integer	clamd/largefile_admission.c	257	        (max_file_size > (uint64_t)SIZE_MAX) ||
-fixed-width-integer	clamd/largefile_admission.c	258	        (max_scan_size > (uint64_t)SIZE_MAX) ||
-fixed-width-integer	clamd/largefile_admission.c	259	        (max_temporary_size > (uint64_t)SIZE_MAX) ||
-fixed-width-integer	clamd/largefile_admission.c	260	        (max_contiguous_size > (uint64_t)SIZE_MAX)) {
-fixed-width-integer	clamd/largefile_admission.c	43	    uint64_t actual,
-fixed-width-integer	clamd/largefile_admission.c	44	    uint64_t required,
-fixed-width-integer	clamd/largefile_admission.c	51	static int read_u64_file(const char *path, uint64_t *value, int *unlimited)
-fixed-width-integer	clamd/largefile_admission.c	87	    *value     = (uint64_t)parsed;
-fixed-width-integer	clamd/largefile_admission.c	93	static int read_mem_available(uint64_t *available_bytes)
-fixed-width-integer	clamd/largefile_admission.c	97	    uint64_t available_kib;
+fixed-width-integer	clamd/largefile_admission.c	114	    *value     = (uint64_t)parsed;
+fixed-width-integer	clamd/largefile_admission.c	120	static int read_mem_available(uint64_t *available_bytes)
+fixed-width-integer	clamd/largefile_admission.c	124	    uint64_t available_kib;
+fixed-width-integer	clamd/largefile_admission.c	147	static int cgroup_headroom(uint64_t *headroom, int *bounded)
+fixed-width-integer	clamd/largefile_admission.c	154	    uint64_t limit = 0;
+fixed-width-integer	clamd/largefile_admission.c	155	    uint64_t current = 0;
+fixed-width-integer	clamd/largefile_admission.c	187	static int effective_memory_available(uint64_t *available_bytes)
+fixed-width-integer	clamd/largefile_admission.c	189	    uint64_t available;
+fixed-width-integer	clamd/largefile_admission.c	190	    uint64_t cgroup_available;
+fixed-width-integer	clamd/largefile_admission.c	205	static int temporary_free_bytes(const char *temporary_directory, uint64_t *free_bytes)
+fixed-width-integer	clamd/largefile_admission.c	213	        (stats.f_bavail > UINT64_MAX / (uint64_t)stats.f_frsize))
+fixed-width-integer	clamd/largefile_admission.c	216	    *free_bytes = (uint64_t)stats.f_bavail * (uint64_t)stats.f_frsize;
+fixed-width-integer	clamd/largefile_admission.c	228	    uint64_t *value)
+fixed-width-integer	clamd/largefile_admission.c	240	    *value = (uint64_t)result;
+fixed-width-integer	clamd/largefile_admission.c	246	    uint64_t max_file_size = 0;
+fixed-width-integer	clamd/largefile_admission.c	247	    uint64_t max_scan_size = 0;
+fixed-width-integer	clamd/largefile_admission.c	248	    uint64_t max_matcher_work = 0;
+fixed-width-integer	clamd/largefile_admission.c	249	    uint64_t max_temporary_size = 0;
+fixed-width-integer	clamd/largefile_admission.c	250	    uint64_t max_contiguous_size = 0;
+fixed-width-integer	clamd/largefile_admission.c	251	    uint64_t pcre_max_file_size = 0;
+fixed-width-integer	clamd/largefile_admission.c	252	    uint64_t max_scan_time = 0;
+fixed-width-integer	clamd/largefile_admission.c	253	    uint64_t max_files = 0;
+fixed-width-integer	clamd/largefile_admission.c	254	    uint64_t max_recursion = 0;
+fixed-width-integer	clamd/largefile_admission.c	277	         (uint64_t)CLI_MAX_LARGE_FILESIZE,
+fixed-width-integer	clamd/largefile_admission.c	278	         (uint64_t)CLI_MAX_LOGICAL_SCAN_SIZE,
+fixed-width-integer	clamd/largefile_admission.c	279	         (uint64_t)CLI_MAX_MATCHER_WORK,
+fixed-width-integer	clamd/largefile_admission.c	280	         (uint64_t)CLI_MAX_TEMPORARY_SIZE,
+fixed-width-integer	clamd/largefile_admission.c	281	         (uint64_t)CLI_MAX_CONTIGUOUS_SIZE,
+fixed-width-integer	clamd/largefile_admission.c	300	    uint64_t max_file_size;
+fixed-width-integer	clamd/largefile_admission.c	301	    uint64_t max_scan_size;
+fixed-width-integer	clamd/largefile_admission.c	302	    uint64_t max_temporary_size;
+fixed-width-integer	clamd/largefile_admission.c	303	    uint64_t max_contiguous_size;
+fixed-width-integer	clamd/largefile_admission.c	304	    uint64_t required_memory;
+fixed-width-integer	clamd/largefile_admission.c	305	    uint64_t required_temporary;
+fixed-width-integer	clamd/largefile_admission.c	306	    uint64_t available_memory;
+fixed-width-integer	clamd/largefile_admission.c	307	    uint64_t free_temporary;
+fixed-width-integer	clamd/largefile_admission.c	308	    uint64_t memory_basis;
+fixed-width-integer	clamd/largefile_admission.c	309	    uint64_t temporary_basis;
+fixed-width-integer	clamd/largefile_admission.c	310	    const uint64_t legacy_file_size = (uint64_t)CLI_DEFAULT_MAXFILESIZE;
+fixed-width-integer	clamd/largefile_admission.c	311	    const uint64_t legacy_scan_size = (uint64_t)CLI_DEFAULT_MAXSCANSIZE;
+fixed-width-integer	clamd/largefile_admission.c	334	        (max_file_size > (uint64_t)SIZE_MAX) ||
+fixed-width-integer	clamd/largefile_admission.c	335	        (max_scan_size > (uint64_t)SIZE_MAX) ||
+fixed-width-integer	clamd/largefile_admission.c	336	        (max_temporary_size > (uint64_t)SIZE_MAX) ||
+fixed-width-integer	clamd/largefile_admission.c	337	        (max_contiguous_size > (uint64_t)SIZE_MAX)) {
+fixed-width-integer	clamd/largefile_admission.c	70	    uint64_t actual,
+fixed-width-integer	clamd/largefile_admission.c	71	    uint64_t required,
+fixed-width-integer	clamd/largefile_admission.c	78	static int read_u64_file(const char *path, uint64_t *value, int *unlimited)
 fixed-width-integer	clamd/scanner.c	142	static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
 fixed-width-integer	clamd/scanner.c	144	    uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
 fixed-width-integer	clamd/scanner.c	149	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
@@ -5460,11 +5474,11 @@ native-width-integer	clamd/clamd.c	407	            int fac = LOG_LOCAL6;
 native-width-integer	clamd/clamd.c	469	            logg(LOGG_INFO_NF, "Log file size limited to %lld bytes.\n", (long long int)logg_size);
 native-width-integer	clamd/clamd.c	697	            logg(LOGG_INFO_NF, "Max A-C depth set to %u\n", (unsigned int)opt->numarg);
 native-width-integer	clamd/clamd.c	761	            int admission_status = CL_ERROR;
-native-width-integer	clamd/clamd.c	777	                int breakout = 0;
-native-width-integer	clamd/clamd.c	802	            int *t;
-native-width-integer	clamd/clamd.c	805	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
-native-width-integer	clamd/clamd.c	865	            int *t;
-native-width-integer	clamd/clamd.c	866	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
+native-width-integer	clamd/clamd.c	778	                int breakout = 0;
+native-width-integer	clamd/clamd.c	803	            int *t;
+native-width-integer	clamd/clamd.c	806	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
+native-width-integer	clamd/clamd.c	866	            int *t;
+native-width-integer	clamd/clamd.c	867	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
 native-width-integer	clamd/clamd_others.c	113	    size_t i, j, v = 0, f = 0, len;
 native-width-integer	clamd/clamd_others.c	197	int writen(int fd, void *buff, unsigned int count)
 native-width-integer	clamd/clamd_others.c	199	    int retval;
@@ -5512,24 +5526,27 @@ native-width-integer	clamd/clamd_others.h	94	int writen(int fd, void *buff, unsi
 native-width-integer	clamd/clamd_others.h	95	int fds_add(struct fd_data *data, int fd, int listen_only, int timeout);
 native-width-integer	clamd/clamd_others.h	96	void fds_remove(struct fd_data *data, int fd);
 native-width-integer	clamd/clamd_others.h	98	int fds_poll_recv(struct fd_data *data, int timeout, int check_signals, void *event);
-native-width-integer	clamd/largefile_admission.c	120	static int cgroup_headroom(uint64_t *headroom, int *bounded)
-native-width-integer	clamd/largefile_admission.c	129	    int limit_unlimited = 0;
-native-width-integer	clamd/largefile_admission.c	130	    int current_unlimited = 0;
-native-width-integer	clamd/largefile_admission.c	160	static int effective_memory_available(uint64_t *available_bytes)
-native-width-integer	clamd/largefile_admission.c	164	    int cgroup_bounded;
-native-width-integer	clamd/largefile_admission.c	178	static int temporary_free_bytes(const char *temporary_directory, uint64_t *free_bytes)
-native-width-integer	clamd/largefile_admission.c	198	static int engine_u64(
-native-width-integer	clamd/largefile_admission.c	203	    int status = CL_ERROR;
-native-width-integer	clamd/largefile_admission.c	204	    long long result;
-native-width-integer	clamd/largefile_admission.c	217	int clamd_largefile_admission_check(
-native-width-integer	clamd/largefile_admission.c	221	    size_t reason_size)
-native-width-integer	clamd/largefile_admission.c	253	    if ((sizeof(void *) < 8) || (sizeof(size_t) < 8) ||
-native-width-integer	clamd/largefile_admission.c	255	        (sizeof(off_t) < 8) ||
-native-width-integer	clamd/largefile_admission.c	33	static void set_reason(char *reason, size_t reason_size, const char *message)
-native-width-integer	clamd/largefile_admission.c	41	    size_t reason_size,
-native-width-integer	clamd/largefile_admission.c	51	static int read_u64_file(const char *path, uint64_t *value, int *unlimited)
-native-width-integer	clamd/largefile_admission.c	56	    unsigned long long parsed;
-native-width-integer	clamd/largefile_admission.c	93	static int read_mem_available(uint64_t *available_bytes)
+native-width-integer	clamd/largefile_admission.c	120	static int read_mem_available(uint64_t *available_bytes)
+native-width-integer	clamd/largefile_admission.c	147	static int cgroup_headroom(uint64_t *headroom, int *bounded)
+native-width-integer	clamd/largefile_admission.c	156	    int limit_unlimited = 0;
+native-width-integer	clamd/largefile_admission.c	157	    int current_unlimited = 0;
+native-width-integer	clamd/largefile_admission.c	187	static int effective_memory_available(uint64_t *available_bytes)
+native-width-integer	clamd/largefile_admission.c	191	    int cgroup_bounded;
+native-width-integer	clamd/largefile_admission.c	205	static int temporary_free_bytes(const char *temporary_directory, uint64_t *free_bytes)
+native-width-integer	clamd/largefile_admission.c	225	static int engine_u64(
+native-width-integer	clamd/largefile_admission.c	230	    int status = CL_ERROR;
+native-width-integer	clamd/largefile_admission.c	231	    long long result;
+native-width-integer	clamd/largefile_admission.c	271	         (unsigned)(sizeof(size_t) * CHAR_BIT),
+native-width-integer	clamd/largefile_admission.c	273	         (unsigned)(sizeof(off_t) * CHAR_BIT),
+native-width-integer	clamd/largefile_admission.c	275	         (unsigned)(sizeof(long long) * CHAR_BIT),
+native-width-integer	clamd/largefile_admission.c	294	int clamd_largefile_admission_check(
+native-width-integer	clamd/largefile_admission.c	298	    size_t reason_size)
+native-width-integer	clamd/largefile_admission.c	330	    if ((sizeof(void *) < 8) || (sizeof(size_t) < 8) ||
+native-width-integer	clamd/largefile_admission.c	332	        (sizeof(off_t) < 8) ||
+native-width-integer	clamd/largefile_admission.c	60	static void set_reason(char *reason, size_t reason_size, const char *message)
+native-width-integer	clamd/largefile_admission.c	68	    size_t reason_size,
+native-width-integer	clamd/largefile_admission.c	78	static int read_u64_file(const char *path, uint64_t *value, int *unlimited)
+native-width-integer	clamd/largefile_admission.c	83	    unsigned long long parsed;
 native-width-integer	clamd/largefile_admission.h	16	int clamd_largefile_admission_check(
 native-width-integer	clamd/largefile_admission.h	20	    size_t reason_size);
 native-width-integer	clamd/localserver.c	53	int localserver(const struct optstruct *opts)
@@ -15670,10 +15687,10 @@ native-width-integer	win32/compat/w32_stat.h	38	int w32_stat(const char *path, s
 native-width-integer	win32/compat/w32_stat.h	43	int w32_access(const char *pathname, int mode);
 native-width-integer	win32/compat/w32_stat.h	49	int safe_open(const char *path, int flags, ...);
 boundary-constant	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
-boundary-constant	clamd/largefile_admission.c	257	        (max_file_size > (uint64_t)SIZE_MAX) ||
-boundary-constant	clamd/largefile_admission.c	258	        (max_scan_size > (uint64_t)SIZE_MAX) ||
-boundary-constant	clamd/largefile_admission.c	259	        (max_temporary_size > (uint64_t)SIZE_MAX) ||
-boundary-constant	clamd/largefile_admission.c	260	        (max_contiguous_size > (uint64_t)SIZE_MAX)) {
+boundary-constant	clamd/largefile_admission.c	334	        (max_file_size > (uint64_t)SIZE_MAX) ||
+boundary-constant	clamd/largefile_admission.c	335	        (max_scan_size > (uint64_t)SIZE_MAX) ||
+boundary-constant	clamd/largefile_admission.c	336	        (max_temporary_size > (uint64_t)SIZE_MAX) ||
+boundary-constant	clamd/largefile_admission.c	337	        (max_contiguous_size > (uint64_t)SIZE_MAX)) {
 boundary-constant	clamd/scanner.c	149	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
 boundary-constant	clamd/session.c	508	    ret = cli_ftw(conn->filename, flags, maxdirrec ? maxdirrec : INT_MAX, scan_callback, &data, scan_pathchk);
 boundary-constant	clamdscan/proto.c	338	    cdata.maxlevel = maxlevel ? maxlevel : INT_MAX;
@@ -15902,9 +15919,9 @@ quantity-parser	clamav-milter/clamav-milter.c	284	            sock_mode = strtol
 quantity-parser	clamav-milter/netcode.c	553	        nmask = atoi(mask);
 quantity-parser	clambc/bcrun.c	424	            funcid = atoi(opts->filename[1]);
 quantity-parser	clambc/bcrun.c	433	                rc = cli_bytecode_context_setparam_int(ctx, i - 2, atoi(opts->filename[i]));
-quantity-parser	clamd/clamd.c	821	                gid_t sock_gid = strtol(gname, &end, 10);
-quantity-parser	clamd/clamd.c	843	                sock_mode = strtol(optget(opts, "LocalSocketMode")->strarg, &end, 8);
-quantity-parser	clamd/largefile_admission.c	79	    parsed = strtoull(buffer, &end, 10);
+quantity-parser	clamd/clamd.c	822	                gid_t sock_gid = strtol(gname, &end, 10);
+quantity-parser	clamd/clamd.c	844	                sock_mode = strtol(optget(opts, "LocalSocketMode")->strarg, &end, 8);
+quantity-parser	clamd/largefile_admission.c	106	    parsed = strtoull(buffer, &end, 10);
 quantity-parser	clamd/localserver.c	123	                    sock_mode = strtol(optget(opts, "LocalSocketMode")->strarg, &end, 8);
 quantity-parser	clamdscan/proto.c	396	    value = strtoul(field + 1, &end, 10);
 quantity-parser	clamdscan/proto.c	485	        if ((rid = atoi(bol))) {
@@ -16106,6 +16123,7 @@ format-width	clamd/clamd_others.c	570	                    logg(LOGG_DEBUG_NV, "R
 format-width	clamd/clamd_others.c	593	                        logg(LOGG_DEBUG, "Client disconnected (FD %d)\n",
 format-width	clamd/clamd_others.c	597	                        logg(LOGG_WARNING, "Error condition on fd %d\n",
 format-width	clamd/clamd_others.c	649	                                logg(LOGG_ERROR, "Error condition on fd %d\n",
+format-width	clamd/largefile_admission.c	267	         "Large-file capability manifest: schema=1 platform=%s build_support=%d pointer_bits=%u size_t_bits=%u off_t_bits=%u large_file_ceiling=%" PRIu64 " logical_scan_ceiling=%" PRIu64 " matcher_work_ceiling=%" PRIu64 " temporary_ceiling=%" PRIu64 " contiguous_ceiling=%" PRIu64 " configured_max_file=%" PRIu64 " configured_max_scan=%" PRIu64 " configured_pcre_max_file=%" PRIu64 " configured_matcher_work=%" PRIu64 " configured_temporary=%" PRIu64 " configured_contiguous=%" PRIu64 " configured_scan_time_ms=%" PRIu64 " configured_max_files=%" PRIu64 " configured_max_recursion=%" PRIu64 " structured_reports=1 bytecode_abi_v2=8 fd_passing=%d parser_qualification=unclaimed\n",
 format-width	clamd/localserver.c	192	    logg(LOGG_INFO_NF, "LOCAL: Setting connection queue length to %d\n", backlog);
 format-width	clamd/scanner.c	209	            logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", fname, virname, c->virhash, c->virsize);
 format-width	clamd/scanner.c	467	                logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", filename, virname, context.virhash, context.virsize);
@@ -18586,8 +18604,8 @@ offset-size-arithmetic	clamd/clamd.c	505	                    if (!(pua_cats = re
 offset-size-arithmetic	clamd/clamd.c	515	                    i += strlen(opt->strarg) + 1;
 offset-size-arithmetic	clamd/clamd.c	540	                    if (!(pua_cats = realloc(pua_cats, i + strlen(opt->strarg) + 3))) {
 offset-size-arithmetic	clamd/clamd.c	549	                    i += strlen(opt->strarg) + 1;
-offset-size-arithmetic	clamd/clamd.c	805	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
-offset-size-arithmetic	clamd/clamd.c	866	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
+offset-size-arithmetic	clamd/clamd.c	806	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
+offset-size-arithmetic	clamd/clamd.c	867	            t = realloc(lsockets, sizeof(int) * (nlsockets + 1));
 offset-size-arithmetic	clamd/clamd_others.c	106	void virusaction(const char *filename, const char *virname,
 offset-size-arithmetic	clamd/clamd_others.c	124	        (char *)malloc(strlen(VE_FILENAME) + strlen(filename) + 2);
 offset-size-arithmetic	clamd/clamd_others.c	131	        (char *)malloc(strlen(VE_VIRUSNAME) + strlen(virname) + 2);
@@ -18612,17 +18630,21 @@ offset-size-arithmetic	clamd/clamd_others.c	66	#endif /* HAVE_POLL_H */
 offset-size-arithmetic	clamd/clamd_others.c	67	#endif /* HAVE_POLL */
 offset-size-arithmetic	clamd/clamd_others.c	92	void virusaction(const char *filename, const char *virname,
 offset-size-arithmetic	clamd/clamd_others.h	93	void virusaction(const char *filename, const char *virname, const struct optstruct *opts);
-offset-size-arithmetic	clamd/largefile_admission.c	243	        set_reason(reason, reason_size, "large-file engine limits could not be read");
-offset-size-arithmetic	clamd/largefile_admission.c	253	    if ((sizeof(void *) < 8) || (sizeof(size_t) < 8) ||
-offset-size-arithmetic	clamd/largefile_admission.c	261	        set_reason(reason, reason_size, "large-file configuration requires 64-bit address and file-size types");
-offset-size-arithmetic	clamd/largefile_admission.c	266	    if (max_scan_size / 2 > memory_basis)
-offset-size-arithmetic	clamd/largefile_admission.c	267	        memory_basis = max_scan_size / 2;
-offset-size-arithmetic	clamd/largefile_admission.c	281	        set_reason(reason, reason_size, "effective Linux/cgroup memory availability could not be measured");
-offset-size-arithmetic	clamd/largefile_admission.c	291	    set_reason(reason, reason_size, "large-file daemon admission requires a measurable Linux/cgroup memory budget");
-offset-size-arithmetic	clamd/largefile_admission.c	296	        set_reason(reason, reason_size, "temporary-directory free space could not be measured");
-offset-size-arithmetic	clamd/largefile_admission.c	33	static void set_reason(char *reason, size_t reason_size, const char *message)
-offset-size-arithmetic	clamd/largefile_admission.c	82	    while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')
-offset-size-arithmetic	clamd/largefile_admission.c	83	        end++;
+offset-size-arithmetic	clamd/largefile_admission.c	109	    while (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')
+offset-size-arithmetic	clamd/largefile_admission.c	110	        end++;
+offset-size-arithmetic	clamd/largefile_admission.c	270	         (unsigned)(sizeof(void *) * CHAR_BIT),
+offset-size-arithmetic	clamd/largefile_admission.c	271	         (unsigned)(sizeof(size_t) * CHAR_BIT),
+offset-size-arithmetic	clamd/largefile_admission.c	273	         (unsigned)(sizeof(off_t) * CHAR_BIT),
+offset-size-arithmetic	clamd/largefile_admission.c	275	         (unsigned)(sizeof(long long) * CHAR_BIT),
+offset-size-arithmetic	clamd/largefile_admission.c	320	        set_reason(reason, reason_size, "large-file engine limits could not be read");
+offset-size-arithmetic	clamd/largefile_admission.c	330	    if ((sizeof(void *) < 8) || (sizeof(size_t) < 8) ||
+offset-size-arithmetic	clamd/largefile_admission.c	338	        set_reason(reason, reason_size, "large-file configuration requires 64-bit address and file-size types");
+offset-size-arithmetic	clamd/largefile_admission.c	343	    if (max_scan_size / 2 > memory_basis)
+offset-size-arithmetic	clamd/largefile_admission.c	344	        memory_basis = max_scan_size / 2;
+offset-size-arithmetic	clamd/largefile_admission.c	358	        set_reason(reason, reason_size, "effective Linux/cgroup memory availability could not be measured");
+offset-size-arithmetic	clamd/largefile_admission.c	368	    set_reason(reason, reason_size, "large-file daemon admission requires a measurable Linux/cgroup memory budget");
+offset-size-arithmetic	clamd/largefile_admission.c	373	        set_reason(reason, reason_size, "temporary-directory free space could not be measured");
+offset-size-arithmetic	clamd/largefile_admission.c	60	static void set_reason(char *reason, size_t reason_size, const char *message)
 offset-size-arithmetic	clamd/localserver.c	100	    server.sun_path[sizeof(server.sun_path) - 1] = '\0';
 offset-size-arithmetic	clamd/localserver.c	103	    if ((pos = strstr(server.sun_path, "/")) && (pos = strstr(((char *)pos + 1), "/"))) {
 offset-size-arithmetic	clamd/localserver.c	106	        pos     = server.sun_path + strlen(server.sun_path);
@@ -29874,8 +29896,10 @@ large-file-option	clamav-milter/clamav-milter.c	403	    if (!clamfi_normalize_ma
 large-file-option	clamav-milter/clamav-milter.c	404	        logg(LOGG_ERROR, "MaxFileSize must be at or below 32 GiB\n");
 large-file-option	clamav-milter/clamfi.c	201	        logg(LOGG_ERROR, "Message exceeds MaxFileSize; refusing a partial scan\n");
 large-file-option	clamav-milter/clamfi.c	361	        logg(LOGG_ERROR, "Refusing clean verdict for message exceeding MaxFileSize\n");
-large-file-option	clamd/largefile_admission.c	239	    if (!engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size) ||
-large-file-option	clamd/largefile_admission.c	240	        !engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size) ||
+large-file-option	clamd/largefile_admission.c	256	    (void)engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size);
+large-file-option	clamd/largefile_admission.c	257	    (void)engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size);
+large-file-option	clamd/largefile_admission.c	316	    if (!engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size) ||
+large-file-option	clamd/largefile_admission.c	317	        !engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size) ||
 large-file-option	clamd/server-th.c	1014	    if ((opt = optget(opts, "MaxScanSize"))->active) {
 large-file-option	clamd/server-th.c	1015	        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, opt->numarg))) {
 large-file-option	clamd/server-th.c	1016	            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
