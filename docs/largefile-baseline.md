@@ -23,7 +23,7 @@ dedicated 64 GiB Ubuntu x86-64 host.
 - `docs/largefile-inventory.tsv`: regenerated inventory of 29,591 classified
   source entries. A source line may appear in more than one classification;
   the current snapshot has SHA-256
-  `4b6e35ef023ea9d4e6a53c86278400efe0aa2d7fa7d80f091eb316537324dbba`.
+  `7357d13111b896abc884aea3bbdf9f68ac31695cedd258f8fd3bf001fdd69e6f`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.

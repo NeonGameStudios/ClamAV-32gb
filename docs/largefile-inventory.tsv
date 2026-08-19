@@ -12801,7 +12801,7 @@ native-width-integer	libclamav/yc.c	82	    unsigned int j, i;
 native-width-integer	libclamav/yc.c	83	    unsigned int max_jmp_loop = 100000000;
 native-width-integer	libclamav/yc.h	29	int yc_decrypt(cli_ctx *, char *, unsigned int, struct cli_exe_section *, unsigned int, uint32_t, int, uint32_t, int16_t);
 native-width-integer	libclamav_rust/src/evidence.rs	211	/// The out_depth and out_object_id parameters are optional, and will be size_t pointers for depth and object_id.
-native-width-integer	libclamav_rust/src/scanners.rs	746	                        "ALZ file {:?} metadata size does not fit platform size_t. Skipping metadata scan.",
+native-width-integer	libclamav_rust/src/scanners.rs	716	                        "ALZ file {:?} metadata size does not fit platform size_t. Skipping metadata scan.",
 native-width-integer	libclamav_rust/src/sys.rs	1059	    pub offset: off_t,
 native-width-integer	libclamav_rust/src/sys.rs	129	        offset: off_t,
 native-width-integer	libclamav_rust/src/sys.rs	130	    ) -> off_t,
@@ -27463,12 +27463,12 @@ offset-size-arithmetic	libclamav_rust/src/onenote.rs	84	// https://learn.microso
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	126	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	181	                    bytes.len() - offset,
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	228	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	354	                    "attachment size does not fit the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	577	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	589	            engine.maxscansize.saturating_sub((*ctx).scansize)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	642	fn alz_metadata_size(size: u64) -> Option<usize> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	765	                        "attachment size does not fit the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	972	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	340	                    "attachment size does not fit the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	563	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	575	            engine.maxscansize.saturating_sub((*ctx).scansize)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	628	fn alz_metadata_size(size: u64) -> Option<usize> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	735	                        "attachment size does not fit the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	942	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1063	    #[doc = " @brief Increment the count for a subsignature of a logical signature.\n\n This is and alternative to lsig_increment_subsig_match() for use in subsigs that don't have a specific offset,\n like byte-compare subsigs and fuzzy-hash subsigs."]
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1100	    pub sizehashes64: [*mut cli_sz_hash64; 3usize],
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1173	    pub filesize_range: *mut u64,

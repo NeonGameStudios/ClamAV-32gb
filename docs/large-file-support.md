@@ -47,11 +47,13 @@ fail-visible parser error. The 50 GiB input remained fail-visible as
 not deep-parser qualification; the detailed timings and diagnostics are in
 the Sonic1 report.
 
-ALZ and OneNote currently have an explicit 256 MiB whole-input parser cap.
-Inputs above that cap are rejected before parser staging/mapping with an
-incomplete result while the raw matcher path remains available. Their member
-spools are quota-accounted, but these parsers are not yet qualified as
-streaming-deep-parser implementations through 32 GiB.
+ALZ and OneNote now stage the root through the bounded Rust `FMapReader` into
+the shared temporary quota, then expose a disk-backed `mmap` view to the
+third-party slice APIs. The old 256 MiB admission cap is removed; a failed
+bounded read, temporary reservation, address-space mapping, parser operation,
+or extracted-member scan remains an explicit incomplete result. Their
+third-party parsers still require 64-bit supported-build and large-corpus
+qualification before release.
 
 Local macOS validation has begun with a native host-preflight and runtime gate;
 its first result is documented in

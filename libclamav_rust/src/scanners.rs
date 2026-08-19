@@ -232,6 +232,9 @@ impl MappedInput {
                 length: 0,
             });
         }
+        if length > isize::MAX as usize {
+            return Err(cl_error_t_CL_ERESOURCE);
+        }
 
         let address = libc::mmap(
             null_mut(),
@@ -308,23 +311,6 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
             return parser_failure(ctx, "OneNote", cl_error_t_CL_ERROR, e);
         }
     };
-
-    /* The onenote_parser crate still requires a borrowed whole-input slice.
-     * Reject before staging or mmap'ing a recognized multi-gigabyte root; the
-     * ordinary raw matcher remains authoritative and the report is incomplete
-     * until this parser is converted to a bounded reader API. */
-    if fmap.len() > FMap::WHOLE_INPUT_MAX {
-        return parser_failure(
-            ctx,
-            "OneNote",
-            cl_error_t_CL_ERESOURCE,
-            format!(
-                "whole-input parser request of {} bytes exceeds the bounded parser cap of {} bytes",
-                fmap.len(),
-                FMap::WHOLE_INPUT_MAX
-            ),
-        );
-    }
 
     let root_spool = match spool_fmap(ctx, &fmap) {
         Ok(spool) => spool,
@@ -669,22 +655,6 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             return parser_failure(ctx, "ALZ", cl_error_t_CL_ERROR, e);
         }
     };
-
-    /* Alz::from_bytes_with_filter_stream() streams extracted members but its
-     * archive reader still requires the complete root slice. Admission must
-     * therefore fail visibly before the root is copied and mapped. */
-    if fmap.len() > FMap::WHOLE_INPUT_MAX {
-        return parser_failure(
-            ctx,
-            "ALZ",
-            cl_error_t_CL_ERESOURCE,
-            format!(
-                "whole-input parser request of {} bytes exceeds the bounded parser cap of {} bytes",
-                fmap.len(),
-                FMap::WHOLE_INPUT_MAX
-            ),
-        );
-    }
 
     let root_spool = match spool_fmap(ctx, &fmap) {
         Ok(spool) => spool,
