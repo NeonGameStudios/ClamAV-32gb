@@ -2113,6 +2113,7 @@ treats an oversized HTML message or a failed materialization/normalization as
 “no URLs.” Its bounded 100 KiB whole-message helper now marks the scan
 incomplete and returns a non-clean parser status, preserving the explicit
 unsupported boundary until that detector is converted to a streaming reader.
+The capability manifest records this as `mail-url-inspection-over-100k`.
 
 Normalized and handler-retyped views now inherit the logical object identity
 of their source layer. They do not consume `MaxScanSize` or `MaxFiles` a second
@@ -2264,6 +2265,8 @@ This removes the former root-XML 64 MiB gate and whole-text-node allocation.
 Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
 qualification remain release gates; multi-segment DMGs remain explicit
 unsupported input.
+The deliberate metadata ceiling is recorded as
+`dmg-blkx-metadata-over-64m`; it is independent of the outer file-size limit.
 
 ## PDF file-backed staging — 2026-08-19
 
@@ -2449,6 +2452,9 @@ The legacy `cli_egg_extract_file()` byte-buffer API remains available for
 compatibility callers and retains the global individual-allocation guard; it
 is not used by the production scanner. EGG corpus, sanitizer, and supported
 Linux x86-64 Sonic1 qualification remain release gates.
+The compatibility limitation is recorded as
+`egg-compat-member-over-1g`; it does not constrain the scanner-facing
+streaming path.
 
 ## clamd startup capability manifest — 2026-08-19
 
