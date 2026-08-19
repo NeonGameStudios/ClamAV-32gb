@@ -707,6 +707,48 @@ START_TEST(test_scan_report_operational_failure_is_resource_failure)
 }
 END_TEST
 
+START_TEST(test_scan_report_merge_preserves_detection_and_peaks)
+{
+    cl_scan_report_t *aggregate = NULL;
+    cl_scan_report_t *first = NULL;
+    cl_scan_report_t *second = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_scan_completion_t completion;
+    cl_verdict_t verdict;
+
+    ck_assert_int_eq(cli_scan_report_create(&aggregate, NULL), CL_SUCCESS);
+    ck_assert_int_eq(cli_scan_report_create(&first, NULL), CL_SUCCESS);
+    ck_assert_int_eq(cli_scan_report_create(&second, NULL), CL_SUCCESS);
+
+    cli_scan_report_set_root_size(first, 10);
+    cli_scan_report_note_logical(first, 10, 1);
+    cli_scan_report_note_contiguous(first, 100);
+    cli_scan_report_finish(first, NULL, CL_SUCCESS, CL_VERDICT_NOTHING_FOUND, NULL);
+
+    cli_scan_report_set_root_size(second, 20);
+    cli_scan_report_note_logical(second, 20, 2);
+    cli_scan_report_note_temporary(second, 200);
+    cli_scan_report_finish(second, NULL, CL_VIRUS, CL_VERDICT_STRONG_INDICATOR, "Test.Merge.Detection");
+
+    cli_scan_report_merge(aggregate, first);
+    cli_scan_report_merge(aggregate, second);
+    ck_assert_int_eq(cl_scan_report_get_completion(aggregate, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
+    ck_assert_int_eq(cl_scan_report_get_verdict(aggregate, &verdict), CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_int_eq(cl_scan_report_get_metrics(aggregate, &metrics), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.root_size, 30);
+    ck_assert_uint_eq(metrics.logical_bytes, 30);
+    ck_assert_uint_eq(metrics.contiguous_bytes, 100);
+    ck_assert_uint_eq(metrics.temporary_bytes, 200);
+    ck_assert_uint_eq(metrics.files_scanned, 2);
+
+    cl_scan_report_free(aggregate);
+    cl_scan_report_free(first);
+    cl_scan_report_free(second);
+}
+END_TEST
+
 START_TEST(test_resource_limit_engine_fields_and_accounting)
 {
     struct cl_engine *engine;
@@ -8607,6 +8649,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_scan_report_break_is_application_abort);
     tcase_add_test(tc_cl, test_scan_report_operational_failure_is_resource_failure);
+    tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);

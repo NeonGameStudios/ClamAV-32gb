@@ -50,6 +50,7 @@
 // libclamav
 #include "clamav.h"
 #include "others.h"
+#include "scan_report.h"
 #include "scanners.h"
 
 // common
@@ -72,16 +73,41 @@ extern int progexit;
 extern time_t reloaded_time;
 extern pthread_mutex_t reload_mutex;
 
-static void replace_structured_scan_report(client_conn_t *conn, cl_scan_report_t *report)
+static cl_error_t record_structured_scan_report(client_conn_t *conn, cl_scan_report_t *report)
 {
     if (NULL == conn) {
         cl_scan_report_free(report);
-        return;
+        return CL_ENULLARG;
     }
 
-    if (NULL != conn->structured_scan_report)
+    if (NULL == report)
+        return CL_SUCCESS;
+
+    if (NULL == conn->structured_scan_report) {
+        conn->structured_scan_report = report;
+        conn->structured_scan_report_aggregate = 0;
+        return CL_SUCCESS;
+    }
+
+    if (!conn->structured_scan_report_aggregate) {
+        cl_error_t status;
+        cl_scan_report_t *aggregate = NULL;
+
+        status = cli_scan_report_create(&aggregate, conn->engine);
+        if (status != CL_SUCCESS) {
+            cl_scan_report_free(report);
+            return status;
+        }
+        cli_scan_report_set_target(aggregate, conn->filename);
+        cli_scan_report_merge(aggregate, conn->structured_scan_report);
         cl_scan_report_free(conn->structured_scan_report);
-    conn->structured_scan_report = report;
+        conn->structured_scan_report = aggregate;
+        conn->structured_scan_report_aggregate = 1;
+    }
+
+    cli_scan_report_merge(conn->structured_scan_report, report);
+    cl_scan_report_free(report);
+    return CL_SUCCESS;
 }
 
 static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
@@ -312,6 +338,7 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
         cl_scan_report_t *report = NULL;
         cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
         uint64_t scanned_bytes = 0;
+        cl_error_t record_status;
 
         report_status = cl_scanfile_ex2(
             scan_path,
@@ -327,9 +354,14 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
             NULL,
             NULL,
             &report);
-        replace_structured_scan_report(scandata->conn, report);
+        record_status = record_structured_scan_report(scandata->conn, report);
+        if (record_status != CL_SUCCESS) {
+            ret = CL_EMEM;
+            scandata->conn->structured_status = CL_EMEM;
+        }
         publish_scanned_bytes(&scandata->scanned, scanned_bytes);
-        ret = report_status;
+        if (record_status == CL_SUCCESS)
+            ret = report_status;
         if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
             (verdict == CL_VERDICT_POTENTIALLY_UNWANTED)) {
             ret = CL_VIRUS;
@@ -514,9 +546,9 @@ cl_error_t scanfd(
     if (conn->structured_report) {
         cl_error_t report_status;
         cl_scan_report_t *report = NULL;
-        cl_scan_report_t *old_report;
         cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
         uint64_t scanned_bytes = 0;
+        cl_error_t record_status;
 
         report_status = cl_scandesc_ex2(
             fd,
@@ -533,11 +565,14 @@ cl_error_t scanfd(
             NULL,
             NULL,
             &report);
-        old_report = conn->structured_scan_report;
-        conn->structured_scan_report = report;
-        cl_scan_report_free(old_report);
+        record_status = record_structured_scan_report(conn, report);
+        if (record_status != CL_SUCCESS) {
+            ret = CL_EMEM;
+            conn->structured_status = CL_EMEM;
+        }
         publish_scanned_bytes(scanned, scanned_bytes);
-        ret = report_status;
+        if (record_status == CL_SUCCESS)
+            ret = report_status;
         if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
             (verdict == CL_VERDICT_POTENTIALLY_UNWANTED)) {
             ret = CL_VIRUS;

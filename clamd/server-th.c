@@ -146,6 +146,7 @@ static void scanner_thread(void *arg)
         cl_scan_report_free(conn->structured_scan_report);
         conn->structured_scan_report = NULL;
     }
+    conn->structured_scan_report_aggregate = 0;
 
     thrmgr_setactiveengine(NULL);
 

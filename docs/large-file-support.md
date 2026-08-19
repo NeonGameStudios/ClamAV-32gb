@@ -2091,11 +2091,13 @@ allocation failures are reported as `RESOURCE_FAILURE` instead of being
 classified from parser wording.
 
 The opt-in clamd report commands now carry the same versioned JSON schema as
-the public `_ex2` library reports for descriptor and staged-stream scans,
-including resource counters, configured limits, file type, reason, and
-completion. The clamdscan status parser accepts both this library schema and
-the compact legacy fallback frame, so a numeric library verdict cannot be
-mistaken for a clean result merely because it lacks the legacy text label.
+the public `_ex2` library reports, including resource counters, configured
+limits, file type, reason, and completion. Directory walks aggregate additive
+logical/parser/detector counters and retain the highest-severity completion;
+contiguous and temporary usage are reported as request peaks. The clamdscan
+status parser accepts both this library schema and the compact legacy fallback
+frame, so a numeric library verdict cannot be mistaken for a clean result
+merely because it lacks the legacy text label.
 
 ## Parser-gate ceiling enforcement — 2026-08-19
 

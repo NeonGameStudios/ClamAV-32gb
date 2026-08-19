@@ -29,6 +29,7 @@ struct cl_scan_report {
 
     uint64_t started_usec;
     bool finalized;
+    bool has_result;
 };
 
 cl_error_t cli_scan_report_create(
@@ -72,5 +73,12 @@ void cli_scan_report_finish(
     cl_error_t status,
     cl_verdict_t verdict,
     const char *last_alert);
+
+/* Combine finalized child reports for front ends that walk a directory.  The
+ * destination remains mutable and is finalized by the owning front end when
+ * the request ends. */
+void cli_scan_report_merge(
+    cl_scan_report_t *destination,
+    const cl_scan_report_t *source);
 
 #endif /* __SCAN_REPORT_H_LC */

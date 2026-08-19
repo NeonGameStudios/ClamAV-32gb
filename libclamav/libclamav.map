@@ -367,6 +367,7 @@ CLAMAV_PRIVATE {
     cli_pe_calculate_overlay_range;
     cli_pcre_check_size_limit;
     cli_scan_result_should_halt;
+    cli_scan_report_merge;
     cli_matchmeta;
     cli_cvdunpack_and_verify;
     cli_cvdverify;

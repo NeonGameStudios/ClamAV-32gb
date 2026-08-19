@@ -115,6 +115,52 @@ static bool report_status_is_operational_failure(cl_error_t status)
     }
 }
 
+static int report_completion_rank(cl_scan_completion_t completion)
+{
+    switch (completion) {
+        case CL_SCAN_COMPLETION_DETECTION_TERMINATED:
+            return 7;
+        case CL_SCAN_COMPLETION_RESOURCE_FAILURE:
+            return 6;
+        case CL_SCAN_COMPLETION_LIMIT_INCOMPLETE:
+            return 5;
+        case CL_SCAN_COMPLETION_MALFORMED_CONFIRMED:
+            return 4;
+        case CL_SCAN_COMPLETION_UNSUPPORTED:
+            return 3;
+        case CL_SCAN_COMPLETION_APPLICATION_ABORT:
+            return 2;
+        case CL_SCAN_COMPLETION_COMPLETE:
+            return 0;
+        default:
+            return 1;
+    }
+}
+
+static void report_add_u64(uint64_t *destination, uint64_t value)
+{
+    if (UINT64_MAX - *destination < value)
+        *destination = UINT64_MAX;
+    else
+        *destination += value;
+}
+
+static int report_verdict_rank(cl_verdict_t verdict)
+{
+    switch (verdict) {
+        case CL_VERDICT_STRONG_INDICATOR:
+            return 4;
+        case CL_VERDICT_POTENTIALLY_UNWANTED:
+            return 3;
+        case CL_VERDICT_TRUSTED:
+            return 2;
+        case CL_VERDICT_NOTHING_FOUND:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 cl_error_t cli_scan_report_create(
     cl_scan_report_t **report_out,
     const struct cl_engine *engine)
@@ -135,6 +181,7 @@ cl_error_t cli_scan_report_create(
     report->verdict    = CL_VERDICT_NOTHING_FOUND;
     report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
     report->started_usec = report_now_usec();
+    report->has_result = false;
 
     report_get_engine_limit(engine, CL_ENGINE_MAX_FILESIZE, &report->limits.max_file_size);
     report_get_engine_limit(engine, CL_ENGINE_MAX_SCANSIZE, &report->limits.max_scan_size);
@@ -328,6 +375,76 @@ void cli_scan_report_finish(
     }
 
     report->finalized = true;
+    report->has_result = true;
+}
+
+void cli_scan_report_merge(
+    cl_scan_report_t *destination,
+    const cl_scan_report_t *source)
+{
+    int destination_completion_rank;
+    int source_completion_rank;
+    bool replace_outcome;
+
+    if ((NULL == destination) || (NULL == source) || destination->finalized)
+        return;
+
+    report_add_u64(&destination->metrics.root_size, source->metrics.root_size);
+    report_add_u64(&destination->metrics.logical_bytes, source->metrics.logical_bytes);
+    report_add_u64(&destination->metrics.matcher_bytes, source->metrics.matcher_bytes);
+    if (source->metrics.contiguous_bytes > destination->metrics.contiguous_bytes)
+        destination->metrics.contiguous_bytes = source->metrics.contiguous_bytes;
+    if (source->metrics.temporary_bytes > destination->metrics.temporary_bytes)
+        destination->metrics.temporary_bytes = source->metrics.temporary_bytes;
+    report_add_u64(&destination->metrics.files_scanned, source->metrics.files_scanned);
+    if (source->metrics.max_recursion_depth > destination->metrics.max_recursion_depth)
+        destination->metrics.max_recursion_depth = source->metrics.max_recursion_depth;
+    report_add_u64(&destination->metrics.elapsed_ms, source->metrics.elapsed_ms);
+    report_add_u64(&destination->metrics.parser_operations, source->metrics.parser_operations);
+    report_add_u64(&destination->metrics.detector_operations, source->metrics.detector_operations);
+    report_add_u64(&destination->metrics.skipped_operations, source->metrics.skipped_operations);
+
+    if (NULL == destination->target && NULL != source->target)
+        report_replace_string(&destination->target, source->target);
+    if (NULL == destination->file_type && NULL != source->file_type) {
+        report_replace_string(&destination->file_type, source->file_type);
+    } else if ((NULL != destination->file_type) && (NULL != source->file_type) &&
+               strcmp(destination->file_type, source->file_type) != 0) {
+        /* A directory has no single top-level file type. */
+        free(destination->file_type);
+        destination->file_type = NULL;
+    }
+
+    if (!destination->has_result) {
+        destination->status = source->status;
+        destination->verdict = source->verdict;
+        destination->completion = source->completion;
+        report_replace_string(&destination->reason, source->reason);
+        report_replace_string(&destination->last_alert, source->last_alert);
+        destination->has_result = true;
+        return;
+    }
+
+    destination_completion_rank = report_completion_rank(destination->completion);
+    source_completion_rank = report_completion_rank(source->completion);
+    replace_outcome = (source_completion_rank > destination_completion_rank) ||
+                      ((source_completion_rank == destination_completion_rank) &&
+                       (source->status != CL_SUCCESS) && (destination->status == CL_SUCCESS));
+
+    if (replace_outcome) {
+        destination->status = source->status;
+        destination->completion = source->completion;
+        report_replace_string(&destination->reason, source->reason);
+        report_replace_string(&destination->last_alert, source->last_alert);
+    } else if ((NULL == destination->reason) && (NULL != source->reason)) {
+        report_replace_string(&destination->reason, source->reason);
+    }
+
+    if (report_verdict_rank(source->verdict) > report_verdict_rank(destination->verdict)) {
+        destination->verdict = source->verdict;
+        if (source->completion == CL_SCAN_COMPLETION_DETECTION_TERMINATED)
+            report_replace_string(&destination->last_alert, source->last_alert);
+    }
 }
 
 void cl_scan_report_free(cl_scan_report_t *report)
