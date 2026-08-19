@@ -2259,14 +2259,18 @@ no-tags normalization over `MaxHTMLNoTags` is fail-visible rather than a
 silent parser omission. The new unit regressions and source guards are
 registered, but a supported Linux compile and runtime execution remain open.
 
-## OneNote borrowed-member extraction — 2026-08-19
+## OneNote bounded legacy extraction — 2026-08-19
 
-The scanner-facing OneNote callback now borrows modern-parser and legacy
-attachment bytes directly from the staged root mapping. It writes those bytes
-to the quota-accounted temporary spool before scanning, eliminating the
-previous intermediate whole-member allocation. The owned `ExtractedFile`
-iterator remains for compatibility callers. Root parsing still depends on the
-third-party slice API, and OneNote corpus, sanitizer, and RSS qualification
+The scanner-facing OneNote callback now borrows modern-parser attachment bytes
+from the staged root mapping and writes them to the quota-accounted temporary
+spool before scanning, eliminating the previous intermediate whole-member
+allocation. The legacy fallback now probes the header through `FMapReader` and
+scans marker, header, and payload ranges in bounded chunks, streaming each
+attachment directly into that spool without mapping the complete root. Sink
+write, scan, and truncated-input failures abort the attachment and remain
+fail-visible. The owned `ExtractedFile` iterator remains for compatibility
+callers. The third-party modern root parser is still slice-based and therefore
+uses the staged mapping; OneNote corpus, sanitizer, and RSS qualification
 remain open.
 
 ## NSIS non-solid bounded input — 2026-08-19

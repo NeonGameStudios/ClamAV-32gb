@@ -37,7 +37,7 @@ use crate::{
     ctx,
     fmap::{FMap, FMapReader},
     sys,
-    onenote::OneNote,
+    onenote::{self, OneNote},
     sys::{
         cl_error_t, cl_error_t_CL_EFORMAT, cl_error_t_CL_EMAXFILES, cl_error_t_CL_EMAXSIZE,
         cl_error_t_CL_EMEM, cl_error_t_CL_EPARSE, cl_error_t_CL_ERROR, cl_error_t_CL_ERESOURCE,
@@ -299,6 +299,83 @@ impl ExtractSink for AlzScanSink {
     }
 }
 
+struct OneNoteScanSink {
+    ctx: *mut cli_ctx,
+    spool: Option<TempSpool>,
+    scan_result: cl_error_t,
+}
+
+impl OneNoteScanSink {
+    fn new(ctx: *mut cli_ctx) -> Self {
+        Self {
+            ctx,
+            spool: None,
+            scan_result: cl_error_t_CL_SUCCESS,
+        }
+    }
+
+    fn record_failure(&mut self, status: cl_error_t, reason: &str) -> onenote::Error {
+        self.abort();
+        self.scan_result = unsafe { parser_failure(self.ctx, "OneNote", status, reason) };
+        onenote::Error::Sink(reason.to_owned())
+    }
+}
+
+impl onenote::LegacyAttachmentSink for OneNoteScanSink {
+    fn begin(&mut self) -> Result<(), onenote::Error> {
+        self.abort();
+        self.spool = match unsafe { TempSpool::new(self.ctx, 0) } {
+            Ok(spool) => Some(spool),
+            Err(status) => {
+                return Err(self.record_failure(
+                    status,
+                    "attachment temporary spool reservation failed",
+                ));
+            }
+        };
+        Ok(())
+    }
+
+    fn write(&mut self, data: &[u8]) -> Result<(), onenote::Error> {
+        let status = match self.spool.as_mut() {
+            Some(spool) => spool.write_all(data),
+            None => Err(cl_error_t_CL_EWRITE),
+        };
+        if let Err(status) = status {
+            return Err(self.record_failure(
+                status,
+                "attachment temporary spool write failed",
+            ));
+        }
+        Ok(())
+    }
+
+    fn finish(&mut self) -> Result<(), onenote::Error> {
+        let Some(mut spool) = self.spool.take() else {
+            return Err(self.record_failure(
+                cl_error_t_CL_EWRITE,
+                "attachment spool was not started",
+            ));
+        };
+        if spool.written == 0 {
+            return Ok(());
+        }
+
+        let ret = unsafe { spool.scan(None) };
+        if ret != cl_error_t_CL_SUCCESS {
+            self.scan_result = ret;
+            return Err(onenote::Error::Sink(
+                "attachment scan returned a non-success status".to_owned(),
+            ));
+        }
+        Ok(())
+    }
+
+    fn abort(&mut self) {
+        self.spool.take();
+    }
+}
+
 /// Read-only view of a disk-backed parser input. The mapping is deliberately
 /// created only after the source has been copied through FMapReader and is
 /// released before the root temporary reservation is dropped.
@@ -394,6 +471,34 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
             return parser_failure(ctx, "OneNote", cl_error_t_CL_ERROR, e);
         }
     };
+
+    let mut reader = FMapReader::new(&fmap);
+    let mut prefix = [0u8; 16];
+    if let Err(err) = reader.read_exact(&mut prefix) {
+        return parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err);
+    }
+    if onenote::is_legacy_magic(&prefix) {
+        let file_len = match u64::try_from(fmap.len()) {
+            Ok(size) => size,
+            Err(_) => {
+                return parser_failure(
+                    ctx,
+                    "OneNote",
+                    cl_error_t_CL_ERESOURCE,
+                    "OneNote input size is not representable in the 64-bit accounting domain",
+                );
+            }
+        };
+        let mut sink = OneNoteScanSink::new(ctx);
+        let parse_result = onenote::scan_legacy_reader(&mut reader, file_len, &mut sink);
+        if sink.scan_result != cl_error_t_CL_SUCCESS {
+            return sink.scan_result;
+        }
+        return match parse_result {
+            Ok(()) => cl_error_t_CL_SUCCESS,
+            Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
+        };
+    }
 
     let root_spool = match spool_fmap(ctx, &fmap) {
         Ok(spool) => spool,
