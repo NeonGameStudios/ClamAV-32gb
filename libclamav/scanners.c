@@ -2260,11 +2260,14 @@ done:
 
 static cl_error_t cli_ole2_tempdir_scan_for_xlm_and_images(const char *dir, cli_ctx *ctx, struct uniq *U)
 {
-    cl_error_t ret      = CL_SUCCESS;
-    char *hash          = NULL;
-    uint32_t hashcnt    = 0;
+    cl_error_t ret               = CL_SUCCESS;
+    cl_error_t deferred_failure  = CL_SUCCESS;
+    char *hash                   = NULL;
+    uint32_t hashcnt             = 0;
     char STR_WORKBOOK[] = "workbook";
     char STR_BOOK[]     = "book";
+    char fullname[PATH_MAX];
+    STATBUF statbuf;
 
     if (CL_SUCCESS != (ret = uniq_get(U, STR_WORKBOOK, sizeof(STR_WORKBOOK) - 1, &hash, &hashcnt))) {
         if (CL_SUCCESS != (ret = uniq_get(U, STR_BOOK, sizeof(STR_BOOK) - 1, &hash, &hashcnt))) {
@@ -2274,18 +2277,35 @@ static cl_error_t cli_ole2_tempdir_scan_for_xlm_and_images(const char *dir, cli_
     }
 
     for (; hashcnt > 0; hashcnt--) {
+        snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+        fullname[sizeof(fullname) - 1] = '\0';
+
+        /* The unique-name table covers the whole OLE2 extraction tree, while
+         * this function is called once per directory. A stream that is not in
+         * this subtree is normal and must not be reported as a failed parser. */
+        if (LSTAT(fullname, &statbuf) == -1)
+            continue;
+
         if (CL_SUCCESS != (ret = cli_extract_xlm_macros_and_images(dir, ctx, hash, hashcnt))) {
             switch (ret) {
                 case CL_VIRUS:
                 case CL_EMEM:
+                case CL_BREAK:
+                case CL_ETIMEOUT:
                     goto done;
                 default:
-                    cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: An error occurred when parsing XLM BIFF temp file, skipping to next file.\n");
+                    cli_mark_scan_incomplete(ctx, "OLE2 XLM/image stream could not be extracted completely");
+                    if (CL_SUCCESS == deferred_failure)
+                        deferred_failure = ret;
+                    cli_dbgmsg("cli_ole2_tempdir_scan_for_xlm_and_images: An error occurred when parsing XLM BIFF temp file, trying the next file (error: %s (%d)).\n", cl_strerror(ret), (int)ret);
             }
         }
     }
 
 done:
+    if (CL_SUCCESS == ret && CL_SUCCESS != deferred_failure)
+        ret = deferred_failure;
+
     return ret;
 }
 

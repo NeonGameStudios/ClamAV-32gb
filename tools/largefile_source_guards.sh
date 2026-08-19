@@ -747,6 +747,8 @@ contains libclamav/vba_extract.c 'VBA module could not be decompressed completel
 contains libclamav/vba_extract.c 'blobAddData(b, buffer, VBA_COMPRESSION_WINDOW) < 0'
 contains libclamav/scanners.c 'VBA project module could not be decompressed completely'
 contains libclamav/scanners.c 'VBA macro could not be decrypted completely'
+contains libclamav/scanners.c 'The unique-name table covers the whole OLE2 extraction tree'
+contains libclamav/scanners.c 'OLE2 XLM/image stream could not be extracted completely'
 contains libclamav/xlm_extract.c 'XLM macro input could not be opened'
 contains libclamav/xlm_extract.c 'XLM BIFF record header was truncated'
 contains libclamav/xlm_extract.c 'XLM FORMULA record was truncated'

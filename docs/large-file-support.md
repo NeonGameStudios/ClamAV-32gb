@@ -2565,5 +2565,7 @@ The Excel 4/XLM extraction path now treats a missing materialized BIFF stream,
 truncated BIFF record headers, temporary-output flush/close failures, and
 non-clean nested scans as incomplete and non-cacheable. A partial XLM staging
 file is no longer scanned as if it were complete. The focused missing-input and
-truncated-header regressions are registered; compiled Linux/Sonic1 execution,
-sanitizer coverage, and broader XLM corpus qualification remain release gates.
+truncated-header regressions are registered. Recursive OLE2 dispatch now skips
+names belonging to another extraction subtree while preserving real XLM/image
+extraction failures. Compiled Linux/Sonic1 execution, sanitizer coverage, and
+broader XLM corpus qualification remain release gates.

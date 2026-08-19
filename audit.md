@@ -754,7 +754,9 @@ stream as clean and could scan buffered or truncated staging output as though
 the input had reached a complete record boundary. It now marks missing input,
 truncated BIFF headers, output flush/close failures, and non-clean nested scans
 as explicit incomplete results. Focused missing-input and truncated-header
-regressions and source guards are registered. This is a local source change;
+regressions and source guards are registered. Recursive OLE2 dispatch now
+distinguishes streams belonging to another extraction subtree from an actual
+XLM/image extraction failure. This is a local source change;
 compiled Linux/Sonic1, sanitizer, and broader XLM corpus qualification remain
 open.
 
