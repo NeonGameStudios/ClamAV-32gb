@@ -3880,6 +3880,42 @@ static inline void perf_done(cli_ctx *ctx)
 }
 #endif
 
+/* RAR4 SFX type matching proves only the seven-byte archive signature.  Read
+ * the fixed main-header prefix before admitting an embedded RAR layer so that
+ * a coincidental signature in an executable payload cannot become a parser
+ * failure for the containing file. */
+static cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
+{
+    static const unsigned char rar_signature[] = {0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00};
+    unsigned char header[14];
+    uint16_t header_type;
+    uint16_t header_size;
+    uint64_t remaining;
+
+    if (ctx == NULL || ctx->fmap == NULL)
+        return CL_ENULLARG;
+
+    remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
+    if (remaining < sizeof(header) || fmap_readn(ctx->fmap, header, offset, sizeof(header)) != sizeof(header))
+        return CL_EFORMAT;
+
+    if (memcmp(header, rar_signature, sizeof(rar_signature)) != 0)
+        return CL_EFORMAT;
+
+    header_type = cli_readint16(header + 9);
+    header_size = cli_readint16(header + 12);
+
+    /* 0x73 is the RAR4 main archive header.  A different block type means
+     * the signature was found in unrelated data, not that a RAR layer exists. */
+    if (header_type != 0x73)
+        return CL_EFORMAT;
+
+    if (header_size < 7 || (uint64_t)header_size > remaining - 7)
+        return CL_EPARSE;
+
+    return CL_SUCCESS;
+}
+
 /**
  * @brief Perform raw scan of current fmap.
  *
@@ -4160,7 +4196,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_RARSFX:
                             if ((have_rar && SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_RAR)) &&
                                 (type != CL_TYPE_RAR)) {
-                                // TODO: Add header validity check to prevent false positives from being scanned.
+                                ret = cli_rar_sfx_header_check(ctx, fpt->offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("RAR SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "RAR SFX main header is malformed or truncated");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
+                                    break;
+                                }
                                 nret = cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,

@@ -800,3 +800,9 @@ once the minimum structure is present, malformed or unsupported header values
 are explicit incomplete results. The actual archive extractor already uses
 bounded fmap reads and streaming member output, so this change is limited to
 recognition and layer admission.
+
+The RAR4 SFX branch now performs the same kind of bounded admission for its
+fixed main-header prefix and declared header size. A signature with no valid
+main-header type is rejected as unrelated data; a valid marker whose declared
+header extends beyond the containing fmap is incomplete. RAR5 SFX qualification
+remains open.

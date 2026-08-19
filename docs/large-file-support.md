@@ -1966,3 +1966,8 @@ checked 64-bit next-header range before a nested layer is admitted. A six-byte
 magic match at the end of an unrelated payload is rejected as a candidate and
 does not taint the parent scan. A candidate with a complete but malformed or
 unsupported start header is retained as an explicit incomplete result.
+
+RAR4 SFX matches now receive the analogous bounded check for the fixed main
+header prefix and declared header extent before UnRAR admission. RAR5 remains
+covered by its ordinary top-level parser path and still requires separate SFX
+qualification.
