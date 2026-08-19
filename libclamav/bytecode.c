@@ -79,10 +79,51 @@ static const uint32_t nooffsets[64] = {
     CLI_OFF_NONE, CLI_OFF_NONE, CLI_OFF_NONE, CLI_OFF_NONE,
     CLI_OFF_NONE, CLI_OFF_NONE, CLI_OFF_NONE, CLI_OFF_NONE,
     CLI_OFF_NONE, CLI_OFF_NONE, CLI_OFF_NONE, CLI_OFF_NONE};
+static const uint64_t nooffsets64[64] = {
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
+    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64};
 
 static const uint16_t nokind;
 static const uint32_t nofilesize;
+static const uint64_t nofilesize64;
 static const struct cli_pe_hook_data nopedata;
+
+static inline bool bytecode_uses_v2(const struct cli_bc *bc)
+{
+    return bc && bc->metadata.formatlevel == BC_FORMAT_LEVEL_V2;
+}
+
+static bool bytecode_offsets_to_legacy(const uint64_t *offsets, uint32_t *legacy_offsets)
+{
+    unsigned i;
+
+    if (!offsets || !legacy_offsets)
+        return false;
+    for (i = 0; i < 64; i++) {
+        if (offsets[i] == CLI_OFF_NONE64)
+            legacy_offsets[i] = CLI_OFF_NONE;
+        else if (offsets[i] >= CLI_OFF_NONE)
+            return false;
+        else
+            legacy_offsets[i] = (uint32_t)offsets[i];
+    }
+    return true;
+}
 
 static void context_safe(struct cli_bc_ctx *ctx)
 {
@@ -95,6 +136,10 @@ static void context_safe(struct cli_bc_ctx *ctx)
         ctx->hooks.match_offsets = nooffsets;
     if (!ctx->hooks.filesize)
         ctx->hooks.filesize = &nofilesize;
+    if (!ctx->hooks.match_offsets64)
+        ctx->hooks.match_offsets64 = nooffsets64;
+    if (!ctx->hooks.filesize64)
+        ctx->hooks.filesize64 = &nofilesize64;
     if (!ctx->hooks.pedata)
         ctx->hooks.pedata = &nopedata;
 }
@@ -168,7 +213,8 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
 
     ctx->numParams = 0;
     ctx->funcid    = 0;
-    /* don't touch fmap, file_size, and hooks, sections, ctx, timeout, pdf* */
+    /* don't touch fmap, file_size/file_size64, and hooks, sections, ctx,
+     * timeout, pdf* */
     ctx->off           = 0;
     ctx->written       = 0;
     ctx->jsnormwritten = 0;
@@ -614,11 +660,12 @@ static cl_error_t parseHeader(struct cli_bc *bc, unsigned char *buffer, unsigned
         cli_errmsg("Unable to parse (format) functionality level in bytecode header\n");
         return CL_EMALFDB;
     }
-    /* we support 2 bytecode formats */
+    /* v1 formats remain supported; format 8 is the explicit 64-bit ABI. */
     if (bc->metadata.formatlevel != BC_FORMAT_096 &&
-        bc->metadata.formatlevel != BC_FORMAT_LEVEL) {
+        bc->metadata.formatlevel != BC_FORMAT_LEVEL &&
+        bc->metadata.formatlevel != BC_FORMAT_LEVEL_V2) {
         cli_dbgmsg("Skipping bytecode with (format) functionality level: %u (current %u)\n",
-                   bc->metadata.formatlevel, BC_FORMAT_LEVEL);
+                   bc->metadata.formatlevel, BC_FORMAT_LEVEL_V2);
         return CL_BREAK;
     }
     /* Optimistic parsing, check for error only at the end.*/
@@ -2813,12 +2860,14 @@ cl_error_t cli_bytecode_context_setfile(struct cli_bc_ctx *ctx, fmap_t *map)
 {
     if (!ctx || !map)
         return CL_ENULLARG;
-    if (!cli_bytecode_file_size_compatible((uint64_t)map->len))
+    if (!bytecode_uses_v2(ctx->bc) && !cli_bytecode_file_size_compatible((uint64_t)map->len))
         return CL_EMAXSIZE;
 
     ctx->fmap           = map;
-    ctx->file_size      = (uint32_t)map->len;
+    ctx->file_size64    = (uint64_t)map->len;
+    ctx->file_size      = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
     ctx->hooks.filesize = &ctx->file_size;
+    ctx->hooks.filesize64 = &ctx->file_size64;
     return CL_SUCCESS;
 }
 
@@ -2830,12 +2879,13 @@ int cli_bytecode_file_size_compatible(uint64_t file_size)
 cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
                                 const struct cli_all_bc *bcs, unsigned bc_idx,
                                 const uint32_t *lsigcnt,
-                                const uint32_t *lsigsuboff, fmap_t *map)
+                                const uint64_t *lsigsuboff, fmap_t *map)
 {
     cl_error_t ret;
     struct cli_bc_ctx ctx;
     const struct cli_bc *bc = &bcs->all_bcs[bc_idx - 1];
     struct cli_pe_hook_data pehookdata;
+    uint32_t legacy_offsets[64];
     const char *bc_name = NULL;
 
     if (bc_idx == 0)
@@ -2850,12 +2900,24 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
     bytecode_context_initialize(&ctx);
     cli_bytecode_context_setfuncid(&ctx, bc, 0);
     ctx.hooks.match_counts  = lsigcnt;
-    ctx.hooks.match_offsets = lsigsuboff;
+    ctx.hooks.match_offsets64 = lsigsuboff;
+    if (bytecode_uses_v2(bc)) {
+        ctx.hooks.match_offsets = nooffsets;
+    } else if (!bytecode_offsets_to_legacy(lsigsuboff, legacy_offsets)) {
+        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent a logical match offset\n", bc_name, bc->id);
+        cli_mark_scan_incomplete(cctx, "logical bytecode requires 64-bit matcher offsets");
+        bytecode_context_reset(&ctx);
+        return CL_EMAXSIZE;
+    } else {
+        ctx.hooks.match_offsets = legacy_offsets;
+    }
     cli_bytecode_context_setctx(&ctx, cctx);
     ret = cli_bytecode_context_setfile(&ctx, map);
     if (ret != CL_SUCCESS) {
         cli_warnmsg("Bytecode '%s' (id: %u) cannot represent the file size\n", bc_name, bc->id);
-        cli_mark_scan_incomplete(cctx, "logical bytecode requires a 32-bit file size");
+        cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ?
+                                           "logical bytecode v2 cannot represent the file coordinates" :
+                                           "logical bytecode requires a 32-bit file size");
         bytecode_context_reset(&ctx);
         return ret;
     }
@@ -2877,7 +2939,11 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
             cli_bitset_set(cctx->hook_lsig_matches, bc->hook_lsig_id - 1);
         /* save match counts */
         memcpy(&ctx.lsigcnt, lsigcnt, 64 * 4);
-        memcpy(&ctx.lsigoff, lsigsuboff, 64 * 4);
+        memcpy(&ctx.lsigoff, lsigsuboff, 64 * sizeof(*lsigsuboff));
+        if (bytecode_uses_v2(bc))
+            memset(&ctx.lsigoff32, 0, sizeof(ctx.lsigoff32));
+        else
+            memcpy(&ctx.lsigoff32, legacy_offsets, 64 * sizeof(*legacy_offsets));
         bytecode_context_reset(&ctx);
         return CL_SUCCESS;
     }
@@ -2929,8 +2995,8 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
 
     cli_dbgmsg("Bytecode executing hook id %u (%u hooks)\n", id, hooks_cnt);
 
-    /* The bytecode ABI has only a 32-bit file-size field, but that matters
-     * only if this hook would actually execute bytecode. Large layers with no
+    /* A v1 bytecode ABI has a 32-bit file-size field, but that matters only if
+     * this hook would actually execute v1 bytecode. Large layers with no
      * registered hook (or only logical hooks whose signatures did not match)
      * are fully inspected by the remaining scanners and must not be reported
      * as incomplete merely because this dispatch point was reached. */
@@ -2950,17 +3016,12 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
         return CL_SUCCESS;
     }
 
-    /* restore match counts */
-    ret = cli_bytecode_context_setfile(ctx, map);
-    if (ret != CL_SUCCESS) {
-        cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map ? map->len : 0);
-        cli_mark_scan_incomplete(cctx, "bytecode hook requires a 32-bit file size");
-        return ret;
-    }
+    /* Restore match counts. File-size admission is performed after selecting
+     * each bytecode so mixed v1/v2 hook sets remain fail-visible. */
     ctx->hooks.match_counts  = ctx->lsigcnt;
-    ctx->hooks.match_offsets = ctx->lsigoff;
     for (i = 0; i < hooks_cnt; i++) {
         const struct cli_bc *bc = &engine->bcs.all_bcs[hooks[i]];
+        uint32_t legacy_offsets[64];
         if (bc->lsig) {
             if (!cctx->hook_lsig_matches ||
                 !cli_bitset_test(cctx->hook_lsig_matches, bc->hook_lsig_id - 1))
@@ -2968,6 +3029,25 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
             cli_dbgmsg("Bytecode: executing bytecode %u (lsig matched)\n", bc->id);
         }
         cli_bytecode_context_setfuncid(ctx, bc, 0);
+        ret = cli_bytecode_context_setfile(ctx, map);
+        if (ret != CL_SUCCESS) {
+            cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
+            cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ?
+                                               "bytecode v2 cannot represent the file coordinates" :
+                                               "bytecode hook requires a 32-bit file size");
+            return ret;
+        }
+        ctx->hooks.match_offsets64 = bytecode_uses_v2(bc) ? ctx->lsigoff : nooffsets64;
+        if (bytecode_uses_v2(bc)) {
+            ctx->hooks.match_offsets = nooffsets;
+        } else {
+            if (!bytecode_offsets_to_legacy(ctx->lsigoff, legacy_offsets)) {
+                cli_mark_scan_incomplete(cctx, "bytecode hook requires 64-bit matcher offsets");
+                return CL_EMAXSIZE;
+            }
+            memcpy(ctx->lsigoff32, legacy_offsets, sizeof(ctx->lsigoff32));
+            ctx->hooks.match_offsets = ctx->lsigoff32;
+        }
         ret = cli_bytecode_run(&engine->bcs, bc, ctx);
         executed++;
         if (ret != CL_SUCCESS) {

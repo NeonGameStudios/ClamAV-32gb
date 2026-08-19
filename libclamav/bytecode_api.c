@@ -125,6 +125,34 @@ int32_t cli_bcapi_read(struct cli_bc_ctx *ctx, uint8_t *data, int32_t size)
     return (int32_t)n;
 }
 
+int64_t cli_bcapi_read64(struct cli_bc_ctx *ctx, uint8_t *data, uint32_t size)
+{
+    size_t n;
+
+    if (!ctx->fmap || ctx->off < 0 || (uint64_t)ctx->off > (uint64_t)SIZE_MAX) {
+        API_MISUSE();
+        return -1;
+    }
+
+    n = fmap_readn(ctx->fmap, data, (size_t)ctx->off, size);
+    if ((n == 0) || (n == (size_t)-1)) {
+        cli_dbgmsg("bcapi_read64: fmap_readn returned %s (requested %u)\n",
+                   n == 0 ? "EOF" : "an error", size);
+        cli_event_count(EV, BCEV_READ_ERR);
+        if (n == (size_t)-1 && (uint64_t)ctx->off < (uint64_t)ctx->fmap->len)
+            cli_bcapi_mark_map_read_error(ctx, "Bytecode v2 could not read the complete input map");
+        return (n == (size_t)-1) ? -1 : 0;
+    }
+    cli_event_int(EV, BCEV_OFFSET, ctx->off);
+    cli_event_fastdata(EV, BCEV_READ, data, (uint32_t)n);
+    if ((uint64_t)n > (uint64_t)INT64_MAX - (uint64_t)ctx->off) {
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode v2 read offset overflowed");
+        return -1;
+    }
+    ctx->off += (off_t)n;
+    return (int64_t)n;
+}
+
 int32_t cli_bcapi_seek(struct cli_bc_ctx *ctx, int32_t pos, uint32_t whence)
 {
     off_t off;
@@ -156,6 +184,49 @@ int32_t cli_bcapi_seek(struct cli_bc_ctx *ctx, int32_t pos, uint32_t whence)
     cli_event_int(EV, BCEV_OFFSET, off);
     ctx->off = off;
     return off;
+}
+
+int64_t cli_bcapi_seek64(struct cli_bc_ctx *ctx, int64_t pos, uint32_t whence)
+{
+    uint64_t base, target;
+
+    if (!ctx->fmap || ctx->off < 0) {
+        API_MISUSE();
+        return -1;
+    }
+    switch (whence) {
+        case 0:
+            base = 0;
+            break;
+        case 1:
+            base = (uint64_t)ctx->off;
+            break;
+        case 2:
+            base = ctx->file_size64;
+            break;
+        default:
+            API_MISUSE();
+            return -1;
+    }
+
+    if (pos < 0) {
+        uint64_t magnitude = (uint64_t)(-(pos + 1)) + 1;
+        if (base < magnitude)
+            return -1;
+        target = base - magnitude;
+    } else {
+        if (base > UINT64_MAX - (uint64_t)pos)
+            return -1;
+        target = base + (uint64_t)pos;
+    }
+    if (target > ctx->file_size64 || target > (uint64_t)INT64_MAX || target > (uint64_t)SIZE_MAX) {
+        cli_dbgmsg("bcapi_seek64: out of file: " STDu64 " (max " STDu64 ")\n",
+                   target, ctx->file_size64);
+        return -1;
+    }
+    cli_event_int(EV, BCEV_OFFSET, target);
+    ctx->off = (off_t)target;
+    return (int64_t)target;
 }
 
 uint32_t cli_bcapi_debug_print_str(struct cli_bc_ctx *ctx, const uint8_t *str, uint32_t len)
@@ -403,48 +474,40 @@ static inline const char *cli_memmem(const char *haystack, unsigned hlen,
     return NULL;
 }
 
-int32_t cli_bcapi_file_find(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len)
+static int64_t cli_bcapi_file_find_limit_common(struct cli_bc_ctx *ctx, const uint8_t *data,
+                                                uint32_t len, uint64_t limit)
 {
     fmap_t *map = ctx->fmap;
-    if (!map || len <= 0) {
+    uint64_t off;
+    size_t n;
+
+    if (!map || !len || !limit || ctx->off < 0) {
         cli_dbgmsg("bcapi_file_find preconditions not met\n");
         API_MISUSE();
         return -1;
     }
-    return cli_bcapi_file_find_limit(ctx, data, len, map->len);
-}
-
-int32_t cli_bcapi_file_find_limit(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len, int32_t limit)
-{
     char buf[4096];
-    fmap_t *map  = ctx->fmap;
-    uint32_t off = ctx->off;
-    size_t n;
-    size_t limit_sz;
 
-    if (!map || (len > sizeof(buf) / 4) || (len <= 0) || (limit <= 0)) {
-        cli_dbgmsg("bcapi_file_find_limit preconditions not met\n");
-        API_MISUSE();
+    if (len > sizeof(buf) / 4)
         return -1;
-    }
-
-    limit_sz = (size_t)limit;
+    off = (uint64_t)ctx->off;
+    if (off > limit || limit > (uint64_t)map->len)
+        return -1;
 
     cli_event_int(EV, BCEV_OFFSET, off);
     cli_event_fastdata(EV, BCEV_FIND, data, len);
     for (;;) {
         const char *p;
         size_t readlen = sizeof(buf);
-        if (off + readlen > limit_sz) {
-            if (off > limit_sz) {
-                return -1;
-            } else {
-                readlen = limit_sz - off;
-            }
-        }
-        n = fmap_readn(map, buf, off, readlen);
+        uint64_t remaining = limit - off;
+
+        if (!remaining || off > (uint64_t)SIZE_MAX)
+            return -1;
+        if (remaining < readlen)
+            readlen = (size_t)remaining;
+        n = fmap_readn(map, buf, (size_t)off, readlen);
         if (n == (size_t)-1) {
-            if (off < map->len)
+            if (off < (uint64_t)map->len)
                 cli_bcapi_mark_map_read_error(ctx, "Bytecode search could not read the complete input map");
             return -1;
         }
@@ -452,29 +515,63 @@ int32_t cli_bcapi_file_find_limit(struct cli_bc_ctx *ctx, const uint8_t *data, u
             return -1;
         p = cli_memmem(buf, n, data, len);
         if (p)
-            return off + (p - buf);
+            return (int64_t)(off + (uint64_t)(p - buf));
+        if ((uint64_t)n > limit - off)
+            return -1;
         off += n;
     }
-    return -1;
+}
+
+int32_t cli_bcapi_file_find(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len)
+{
+    int64_t result = cli_bcapi_file_find_limit_common(ctx, data, len, ctx->fmap ? ctx->fmap->len : 0);
+    if (result > INT32_MAX)
+        return -1;
+    return (int32_t)result;
+}
+
+int64_t cli_bcapi_file_find64(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len)
+{
+    return cli_bcapi_file_find_limit_common(ctx, data, len, ctx->fmap ? ctx->fmap->len : 0);
+}
+
+int32_t cli_bcapi_file_find_limit(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len, int32_t limit)
+{
+    int64_t result;
+    if (limit <= 0)
+        return -1;
+    result = cli_bcapi_file_find_limit_common(ctx, data, len, (uint32_t)limit);
+    if (result > INT32_MAX)
+        return -1;
+    return (int32_t)result;
+}
+
+int64_t cli_bcapi_file_find_limit64(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len, uint64_t limit)
+{
+    return cli_bcapi_file_find_limit_common(ctx, data, len, limit);
+}
+
+int32_t cli_bcapi_file_byteat64(struct cli_bc_ctx *ctx, uint64_t off)
+{
+    unsigned char c;
+    size_t n;
+    if (!ctx->fmap || off > (uint64_t)SIZE_MAX) {
+        cli_dbgmsg("bcapi_file_byteat64: invalid map or offset\n");
+        return -1;
+    }
+    cli_event_int(EV, BCEV_OFFSET, off);
+    n = fmap_readn(ctx->fmap, &c, (size_t)off, 1);
+    if (n != 1) {
+        if (n == (size_t)-1 && off < (uint64_t)ctx->fmap->len)
+            cli_bcapi_mark_map_read_error(ctx, "Bytecode v2 byte lookup could not read the complete input map");
+        return -1;
+    }
+    return c;
 }
 
 int32_t cli_bcapi_file_byteat(struct cli_bc_ctx *ctx, uint32_t off)
 {
-    unsigned char c;
-    size_t n;
-    if (!ctx->fmap) {
-        cli_dbgmsg("bcapi_file_byteat: no fmap\n");
-        return -1;
-    }
-    cli_event_int(EV, BCEV_OFFSET, off);
-    n = fmap_readn(ctx->fmap, &c, off, 1);
-    if (n != 1) {
-        cli_dbgmsg("bcapi_file_byteat: fmap_readn failed at %u\n", off);
-        if (n == (size_t)-1 && off < ctx->fmap->len)
-            cli_bcapi_mark_map_read_error(ctx, "Bytecode byte lookup could not read the complete input map");
-        return -1;
-    }
-    return c;
+    return cli_bcapi_file_byteat64(ctx, off);
 }
 
 uint8_t *cli_bcapi_malloc(struct cli_bc_ctx *ctx, uint32_t size)
@@ -760,6 +857,27 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile(struct cli_bc_ctx *ctx, uint32_t at)
     return n - 1;
 }
 
+int32_t cli_bcapi_buffer_pipe_new_fromfile64(struct cli_bc_ctx *ctx, uint64_t at)
+{
+    struct bc_buffer *b;
+    unsigned n = ctx->nbuffers + 1;
+
+    if (at >= ctx->file_size64 || at > (uint64_t)SIZE_MAX)
+        return -1;
+
+    b = cli_max_realloc(ctx->buffers, sizeof(*ctx->buffers) * n);
+    if (!b)
+        return -1;
+    ctx->buffers  = b;
+    ctx->nbuffers = n;
+    b             = &b[n - 1];
+    b->data         = NULL;
+    b->size         = 0;
+    b->read_cursor  = at;
+    b->write_cursor = 0;
+    return n - 1;
+}
+
 static struct bc_buffer *get_buffer(struct cli_bc_ctx *ctx, int32_t id)
 {
     if (!ctx->buffers || id < 0 || (unsigned int)id >= ctx->nbuffers) {
@@ -771,6 +889,12 @@ static struct bc_buffer *get_buffer(struct cli_bc_ctx *ctx, int32_t id)
 
 uint32_t cli_bcapi_buffer_pipe_read_avail(struct cli_bc_ctx *ctx, int32_t id)
 {
+    uint64_t available = cli_bcapi_buffer_pipe_read_avail64(ctx, id);
+    return available > UINT32_MAX ? UINT32_MAX : (uint32_t)available;
+}
+
+uint64_t cli_bcapi_buffer_pipe_read_avail64(struct cli_bc_ctx *ctx, int32_t id)
+{
     struct bc_buffer *b = get_buffer(ctx, id);
     if (!b)
         return 0;
@@ -779,11 +903,11 @@ uint32_t cli_bcapi_buffer_pipe_read_avail(struct cli_bc_ctx *ctx, int32_t id)
             return 0;
         return b->write_cursor - b->read_cursor;
     }
-    if (!ctx->fmap || b->read_cursor >= ctx->file_size)
+    if (!ctx->fmap || b->read_cursor >= ctx->file_size64)
         return 0;
-    if (b->read_cursor + BUFSIZ <= ctx->file_size)
+    if (ctx->file_size64 - b->read_cursor >= BUFSIZ)
         return BUFSIZ;
-    return ctx->file_size - b->read_cursor;
+    return ctx->file_size64 - b->read_cursor;
 }
 
 const uint8_t *cli_bcapi_buffer_pipe_read_get(struct cli_bc_ctx *ctx, int32_t id, uint32_t size)

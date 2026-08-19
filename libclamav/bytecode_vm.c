@@ -999,6 +999,50 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
                             WRITE32(inst->dest, resp);
                             break;
                         };
+                        case 10: {
+                            int64_t arg1;
+                            uint32_t arg2;
+                            READ64(arg1, inst->u.ops.ops[0]);
+                            READ32(arg2, inst->u.ops.ops[1]);
+                            res64 = cli_apicalls10[api->idx](ctx, arg1, arg2);
+                            WRITE64(inst->dest, res64);
+                            break;
+                        }
+                        case 11: {
+                            void *arg1;
+                            uint32_t arg2, arg1size;
+                            READ32(arg2, inst->u.ops.ops[1]);
+                            arg1size = arg2;
+                            READPOP(arg1, inst->u.ops.ops[0], arg1size);
+                            res64 = cli_apicalls11[api->idx](ctx, arg1, arg2);
+                            WRITE64(inst->dest, res64);
+                            break;
+                        }
+                        case 12: {
+                            uint64_t arg1;
+                            READ64(arg1, inst->u.ops.ops[0]);
+                            res32 = cli_apicalls12[api->idx](ctx, arg1);
+                            WRITE32(inst->dest, res32);
+                            break;
+                        }
+                        case 13: {
+                            int32_t arg1;
+                            READ32(arg1, inst->u.ops.ops[0]);
+                            res64 = cli_apicalls13[api->idx](ctx, arg1);
+                            WRITE64(inst->dest, res64);
+                            break;
+                        }
+                        case 14: {
+                            void *arg1;
+                            uint32_t arg2;
+                            uint64_t arg3;
+                            READ32(arg2, inst->u.ops.ops[1]);
+                            READPOP(arg1, inst->u.ops.ops[0], arg2);
+                            READ64(arg3, inst->u.ops.ops[2]);
+                            res64 = cli_apicalls14[api->idx](ctx, arg1, arg2, arg3);
+                            WRITE64(inst->dest, res64);
+                            break;
+                        }
                         default:
                             cli_warnmsg("bytecode: type %u apicalls not yet implemented!\n", api->kind);
                             stop = CL_EBYTECODE;

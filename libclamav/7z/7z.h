@@ -85,6 +85,13 @@ SRes SzFolder_Decode(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *stream, UInt64 startPos,
     Byte *outBuffer, size_t outSize, ISzAlloc *allocMain);
 
+/* Decode a single-coder folder directly to a sequential output stream.
+   This is the large-file path: output is emitted in bounded chunks and is
+   never materialized as a complete solid-folder buffer. */
+SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
+    ILookInStream *stream, UInt64 startPos,
+    ISeqOutStream *outStream, ISzAlloc *allocMain);
+
 typedef struct
 {
   UInt32 Low;
@@ -181,6 +188,18 @@ SRes SzArEx_Extract(
     size_t *outBufferSize,    /* buffer size for output buffer */
     size_t *offset,           /* offset of stream for required file in *outBuffer */
     size_t *outSizeProcessed, /* size of file in *outBuffer */
+    ISzAlloc *allocMain,
+    ISzAlloc *allocTemp);
+
+/* Extract one file from a folder without allocating the complete solid
+   folder. Unsupported folder graphs return SZ_ERROR_UNSUPPORTED so the
+   caller can report an incomplete inspection explicitly. */
+SRes SzArEx_ExtractToStream(
+    const CSzArEx *db,
+    ILookInStream *inStream,
+    UInt32 fileIndex,
+    ISeqOutStream *outStream,
+    UInt64 *outSizeProcessed,
     ISzAlloc *allocMain,
     ISzAlloc *allocTemp);
 

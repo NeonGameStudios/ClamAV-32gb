@@ -35,6 +35,9 @@ struct bytecode_metadata {
 
 #define BC_FORMAT_096 6
 #define BC_FORMAT_LEVEL 7
+/* Format 8 keeps the v1 API table stable and adds explicit 64-bit file
+ * coordinates/results.  v1 bytecode remains valid on representable maps. */
+#define BC_FORMAT_LEVEL_V2 8
 #define BC_HEADER "ClamBC"
 
 enum bc_opcode {
@@ -127,6 +130,8 @@ enum bc_global {
     GLOBAL_PEDATA,
     GLOBAL_FILESIZE,
     GLOBAL_MATCH_OFFSETS,
+    GLOBAL_FILESIZE64,
+    GLOBAL_MATCH_OFFSETS64,
     _LAST_GLOBAL
 };
 

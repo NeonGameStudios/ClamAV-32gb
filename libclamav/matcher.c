@@ -1116,17 +1116,21 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
         }
     } else {
         // Logical sig depends on bytecode match. Check for the bytecode match.
-        uint32_t legacy_offsets[64];
+        const struct cli_bc *bc = &ctx->engine->bcs.all_bcs[ac_lsig->bc_idx - 1];
 
-        if (!cli_lsig_bytecode_compatible((uint64_t)ctx->fmap->len, acdata->lsigsuboff_first[lsid], legacy_offsets)) {
-            cli_dbgmsg("lsig_eval: refusing to run bytecode '%s' with a file size or logical-signature offset outside the bytecode 32-bit ABI\n",
-                       ac_lsig->virname);
-            cli_mark_scan_incomplete(ctx, "logical signature requires a file size or offset outside the bytecode ABI");
-            ctx->fmap->dont_cache_flag = 1;
-            goto done;
+        if (bc->metadata.formatlevel != BC_FORMAT_LEVEL_V2) {
+            uint32_t legacy_offsets[64];
+            if (!cli_lsig_bytecode_compatible((uint64_t)ctx->fmap->len, acdata->lsigsuboff_first[lsid], legacy_offsets)) {
+                cli_dbgmsg("lsig_eval: refusing to run v1 bytecode '%s' with a file size or logical-signature offset outside the 32-bit ABI\n",
+                           ac_lsig->virname);
+                cli_mark_scan_incomplete(ctx, "logical signature requires a file size or offset outside the bytecode ABI");
+                ctx->fmap->dont_cache_flag = 1;
+                goto done;
+            }
         }
 
-        status = cli_bytecode_runlsig(ctx, target_info, &ctx->engine->bcs, ac_lsig->bc_idx, acdata->lsigcnt[lsid], legacy_offsets, ctx->fmap);
+        status = cli_bytecode_runlsig(ctx, target_info, &ctx->engine->bcs, ac_lsig->bc_idx,
+                                      acdata->lsigcnt[lsid], acdata->lsigsuboff_first[lsid], ctx->fmap);
         if (CL_SUCCESS != status) {
             goto done;
         }

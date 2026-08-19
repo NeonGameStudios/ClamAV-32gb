@@ -144,8 +144,8 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
   SizeT dicBufSize = p->dicBufSize;
   SizeT dicPos = p->dicPos;
   
-  UInt32 processedPos = p->processedPos;
-  UInt32 checkDicSize = p->checkDicSize;
+  UInt64 processedPos = p->processedPos;
+  UInt64 checkDicSize = p->checkDicSize;
   unsigned len = 0;
 
   const Byte *buf = p->buf;
@@ -460,7 +460,7 @@ static int MY_FAST_CALL LzmaDec_DecodeReal2(CLzmaDec *p, SizeT limit, const Byte
     SizeT limit2 = limit;
     if (p->checkDicSize == 0)
     {
-      UInt32 rem = p->prop.dicSize - p->processedPos;
+      UInt64 rem = p->prop.dicSize - p->processedPos;
       if (limit - p->dicPos > rem)
         limit2 = p->dicPos + rem;
     }

@@ -140,6 +140,13 @@ int32_t cli_bcapi_lzma_done(struct cli_bc_ctx *ctx , int32_t);
 int32_t cli_bcapi_bzip2_init(struct cli_bc_ctx *ctx , int32_t, int32_t);
 int32_t cli_bcapi_bzip2_process(struct cli_bc_ctx *ctx , int32_t);
 int32_t cli_bcapi_bzip2_done(struct cli_bc_ctx *ctx , int32_t);
+int64_t cli_bcapi_read64(struct cli_bc_ctx *ctx , uint8_t*, uint32_t);
+int64_t cli_bcapi_seek64(struct cli_bc_ctx *ctx , int64_t, uint32_t);
+int64_t cli_bcapi_file_find64(struct cli_bc_ctx *ctx , const uint8_t*, uint32_t);
+int32_t cli_bcapi_file_byteat64(struct cli_bc_ctx *ctx , uint64_t);
+int64_t cli_bcapi_file_find_limit64(struct cli_bc_ctx *ctx , const uint8_t*, uint32_t, uint64_t);
+int32_t cli_bcapi_buffer_pipe_new_fromfile64(struct cli_bc_ctx *ctx , uint64_t);
+uint64_t cli_bcapi_buffer_pipe_read_avail64(struct cli_bc_ctx *ctx , int32_t);
 
 const struct cli_apiglobal cli_globals[] = {
 /* Bytecode globals BEGIN */
@@ -151,6 +158,10 @@ const struct cli_apiglobal cli_globals[] = {
 	 ((char*)&((struct cli_bc_ctx*)0)->hooks.match_counts - (char*)NULL)},
 	{"__clambc_filesize", GLOBAL_FILESIZE, 75,
 	 ((char*)&((struct cli_bc_ctx*)0)->hooks.filesize - (char*)NULL)},
+	{"__clambc_filesize64", GLOBAL_FILESIZE64, 108,
+	 ((char*)&((struct cli_bc_ctx*)0)->hooks.filesize64 - (char*)NULL)},
+	{"__clambc_match_offsets64", GLOBAL_MATCH_OFFSETS64, 107,
+	 ((char*)&((struct cli_bc_ctx*)0)->hooks.match_offsets64 - (char*)NULL)},
 	{"__clambc_pedata", GLOBAL_PEDATA, 69,
 	 ((char*)&((struct cli_bc_ctx*)0)->hooks.pedata - (char*)NULL)}
 /* Bytecode globals END */
@@ -187,6 +198,15 @@ static uint16_t cli_tmp27[]={16, 8, 8, 8, 98, 97};
 static uint16_t cli_tmp28[]={8};
 static uint16_t cli_tmp29[]={99};
 static uint16_t cli_tmp30[]={8};
+static uint16_t cli_tmp31[]={64, 65, 32};
+static uint16_t cli_tmp32[]={64, 64, 32};
+static uint16_t cli_tmp33[]={64, 65, 32};
+static uint16_t cli_tmp34[]={32, 64};
+static uint16_t cli_tmp35[]={64, 65, 32, 64};
+static uint16_t cli_tmp36[]={32, 64};
+static uint16_t cli_tmp37[]={64, 32};
+static uint16_t cli_tmp38[]={64};
+static uint16_t cli_tmp39[]={64};
 
 const struct cli_bc_type cli_apicall_types[]={
 	{DStructType, cli_tmp0, 15, 0, 0},
@@ -219,7 +239,16 @@ const struct cli_bc_type cli_apicall_types[]={
 	{DStructType, cli_tmp27, 6, 0, 0},
 	{DArrayType, cli_tmp28, 29, 0, 0},
 	{DArrayType, cli_tmp29, 3, 0, 0},
-	{DArrayType, cli_tmp30, 10, 0, 0}
+	{DArrayType, cli_tmp30, 10, 0, 0},
+	{DFunctionType, cli_tmp31, 3, 0, 0},
+	{DFunctionType, cli_tmp32, 3, 0, 0},
+	{DFunctionType, cli_tmp33, 3, 0, 0},
+	{DFunctionType, cli_tmp34, 2, 0, 0},
+	{DFunctionType, cli_tmp35, 4, 0, 0},
+	{DFunctionType, cli_tmp36, 2, 0, 0},
+	{DFunctionType, cli_tmp37, 2, 0, 0},
+	{DArrayType, cli_tmp38, 64, 0, 0},
+	{DArrayType, cli_tmp39, 1, 0, 0}
 };
 
 const unsigned cli_apicall_maxtypes=sizeof(cli_apicall_types)/sizeof(cli_apicall_types[0]);
@@ -331,7 +360,15 @@ const struct cli_apicall cli_apicalls[]={
 	{"lzma_done", 8, 35, 2},
 	{"bzip2_init", 9, 13, 0},
 	{"bzip2_process", 8, 36, 2},
-	{"bzip2_done", 8, 37, 2}
+	{"bzip2_done", 8, 37, 2},
+	/* Bytecode ABI v2 calls. These are appended so v1 API ids remain stable. */
+	{"read64", 31, 0, 11},
+	{"seek64", 32, 0, 10},
+	{"file_find64", 33, 1, 11},
+	{"file_byteat64", 34, 0, 12},
+	{"file_find_limit64", 35, 0, 14},
+	{"buffer_pipe_new_fromfile64", 36, 0, 12},
+	{"buffer_pipe_read_avail64", 37, 0, 13}
 /* Bytecode APIcalls END */
 };
 const unsigned cli_numapicalls=sizeof(cli_apicalls)/sizeof(cli_apicalls[0]);
@@ -462,5 +499,22 @@ const cli_apicall_ptrbufid cli_apicalls9[] = {
 	(cli_apicall_ptrbufid)cli_bcapi_disable_jit_if,
 	(cli_apicall_ptrbufid)cli_bcapi_json_get_object,
 	(cli_apicall_ptrbufid)cli_bcapi_json_get_string
+};
+const cli_apicall_int64 cli_apicalls10[] = {
+	(cli_apicall_int64)cli_bcapi_seek64
+};
+const cli_apicall_pointer64 cli_apicalls11[] = {
+	(cli_apicall_pointer64)cli_bcapi_read64,
+	(cli_apicall_pointer64)cli_bcapi_file_find64
+};
+const cli_apicall_int64arg cli_apicalls12[] = {
+	(cli_apicall_int64arg)cli_bcapi_file_byteat64,
+	(cli_apicall_int64arg)cli_bcapi_buffer_pipe_new_fromfile64
+};
+const cli_apicall_int1_64ret cli_apicalls13[] = {
+	(cli_apicall_int1_64ret)cli_bcapi_buffer_pipe_read_avail64
+};
+const cli_apicall_ptrbufid64 cli_apicalls14[] = {
+	(cli_apicall_ptrbufid64)cli_bcapi_file_find_limit64
 };
 const unsigned cli_apicall_maxapi = sizeof(cli_apicalls)/sizeof(cli_apicalls[0]);

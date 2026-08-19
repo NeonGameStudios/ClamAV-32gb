@@ -1477,3 +1477,104 @@ SRes SzArEx_Extract(
   }
   return res;
 }
+
+typedef struct
+{
+  ISeqOutStream s;
+  ISeqOutStream *downstream;
+  UInt64 start;
+  UInt64 end;
+  UInt64 position;
+  UInt64 written;
+  UInt32 crc;
+} CSzMemberOutStream;
+
+static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
+{
+  CSzMemberOutStream *p = (CSzMemberOutStream *)pp;
+  UInt64 chunkStart = p->position;
+  UInt64 chunkEnd = chunkStart + size;
+  UInt64 writeStart, writeEnd;
+  size_t selected;
+
+  if (chunkEnd < chunkStart)
+    return 0;
+  p->position = chunkEnd;
+  if (chunkEnd <= p->start || chunkStart >= p->end)
+    return size;
+
+  writeStart = chunkStart > p->start ? chunkStart : p->start;
+  writeEnd   = chunkEnd < p->end ? chunkEnd : p->end;
+  selected   = (size_t)(writeEnd - writeStart);
+  if (p->downstream->Write(p->downstream,
+                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
+    return 0;
+  p->crc = CrcUpdate(p->crc,
+                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
+  p->written += selected;
+  return size;
+}
+
+SRes SzArEx_ExtractToStream(
+    const CSzArEx *p,
+    ILookInStream *inStream,
+    UInt32 fileIndex,
+    ISeqOutStream *outStream,
+    UInt64 *outSizeProcessed,
+    ISzAlloc *allocMain,
+    ISzAlloc *allocTemp)
+{
+  UInt32 folderIndex;
+  UInt32 i;
+  UInt64 fileOffset = 0;
+  UInt64 fileEnd;
+  CSzFolder *folder;
+  CSzFileItem *fileItem;
+  CSzMemberOutStream member;
+  SRes res;
+
+  (void)allocTemp;
+  if (!p || !inStream || !outStream || !outSizeProcessed ||
+      !p->FileIndexToFolderIndexMap || fileIndex >= p->db.NumFiles)
+    return SZ_ERROR_PARAM;
+  *outSizeProcessed = 0;
+  folderIndex = p->FileIndexToFolderIndexMap[fileIndex];
+  if (folderIndex == (UInt32)-1)
+    return SZ_OK;
+  if (!p->FolderStartFileIndex || !p->FolderStartPackStreamIndex ||
+      !p->PackStreamStartPositions || folderIndex >= p->db.NumFolders ||
+      p->FolderStartPackStreamIndex[folderIndex] >= p->db.NumPackStreams)
+    return SZ_ERROR_FAIL;
+
+  fileItem = p->db.Files + fileIndex;
+  for (i = p->FolderStartFileIndex[folderIndex]; i < fileIndex; i++) {
+    if ((UInt64)-1 - fileOffset < p->db.Files[i].Size)
+      return SZ_ERROR_DATA;
+    fileOffset += p->db.Files[i].Size;
+  }
+  if ((UInt64)-1 - fileOffset < fileItem->Size)
+    return SZ_ERROR_DATA;
+  fileEnd = fileOffset + fileItem->Size;
+  folder = p->db.Folders + folderIndex;
+
+  memset(&member, 0, sizeof(member));
+  member.s.Write   = SzMemberOutStream_Write;
+  member.downstream = outStream;
+  member.start     = fileOffset;
+  member.end       = fileEnd;
+  member.crc       = CRC_INIT_VAL;
+
+  res = SzFolder_DecodeToStream(folder,
+                                p->db.PackSizes + p->FolderStartPackStreamIndex[folderIndex],
+                                inStream,
+                                SzArEx_GetFolderStreamPos(p, folderIndex, 0),
+                                &member.s, allocMain);
+  if (res != SZ_OK)
+    return res;
+  if (member.position != SzFolder_GetUnpackSize(folder) || member.written != fileItem->Size)
+    return SZ_ERROR_DATA;
+  if (fileItem->CrcDefined && CRC_GET_DIGEST(member.crc) != fileItem->Crc)
+    return SZ_ERROR_CRC;
+  *outSizeProcessed = member.written;
+  return SZ_OK;
+}

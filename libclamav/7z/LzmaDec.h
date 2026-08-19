@@ -56,8 +56,11 @@ typedef struct
   UInt32 range, code;
   SizeT dicPos;
   SizeT dicBufSize;
-  UInt32 processedPos;
-  UInt32 checkDicSize;
+  /* Output positions are 64-bit so a streamed folder can exceed 4 GiB.
+   * The dictionary and match distances remain bounded by the 32-bit
+   * dictionary property. */
+  UInt64 processedPos;
+  UInt64 checkDicSize;
   unsigned state;
   UInt32 reps[4];
   unsigned remainLen;

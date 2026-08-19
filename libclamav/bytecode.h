@@ -129,7 +129,7 @@ void cli_bytefunc_describe(const struct cli_bc *bc, unsigned funcid);
 struct cli_exe_info;
 struct cli_ctx_tag;
 struct cli_target_info;
-cl_error_t cli_bytecode_runlsig(struct cli_ctx_tag *ctx, struct cli_target_info *info, const struct cli_all_bc *bcs, unsigned bc_idx, const uint32_t *lsigcnt, const uint32_t *lsigsuboff, fmap_t *map);
+cl_error_t cli_bytecode_runlsig(struct cli_ctx_tag *ctx, struct cli_target_info *info, const struct cli_all_bc *bcs, unsigned bc_idx, const uint32_t *lsigcnt, const uint64_t *lsigsuboff, fmap_t *map);
 cl_error_t cli_bytecode_runhook(struct cli_ctx_tag *cctx, const struct cl_engine *engine, struct cli_bc_ctx *ctx, unsigned id, fmap_t *map);
 
 #ifdef __cplusplus

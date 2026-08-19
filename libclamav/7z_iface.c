@@ -37,6 +37,18 @@
 
 static ISzAlloc allocImp = {__lzma_wrap_alloc, __lzma_wrap_free}, allocTempImp = {__lzma_wrap_alloc, __lzma_wrap_free};
 
+typedef struct
+{
+    ISeqOutStream s;
+    int fd;
+} CClamFileOutStream;
+
+static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
+{
+    CClamFileOutStream *p = (CClamFileOutStream *)pp;
+    return cli_writen(p->fd, data, size);
+}
+
 static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
 {
     CFileInStream *p = (CFileInStream *)pp;
@@ -115,19 +127,19 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
         found = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.7Zip");
     } else if (res == SZ_OK) {
         UInt32 i, blockIndex = 0xFFFFFFFF;
-        Byte *outBuffer        = 0;
-        size_t outBufferSize   = 0;
+        Byte *outBuffer      = NULL;
+        size_t outBufferSize = 0;
         unsigned int encrypted = 0;
 
         for (i = 0; i < db.db.NumFiles; i++) {
-            size_t offset           = 0;
-            size_t outSizeProcessed = 0;
+            UInt64 outSizeProcessed = 0;
             const CSzFileItem *f    = db.db.Files + i;
             char *name;
             char *tmp_name;
             size_t j;
             int newnamelen, fd;
             cl_error_t limitret;
+            CClamFileOutStream output;
 
             // abort if we would exceed max files or max scan time.
             if ((found = cli_checklimits("7unz", ctx, 0, 0, 0)))
@@ -169,19 +181,58 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             name[j] = 0;
             cli_dbgmsg("cli_7unz: extracting %s\n", name);
 
-            res = SzArEx_Extract(&db, &lookStream.s, i, &blockIndex, &outBuffer, &outBufferSize, &offset, &outSizeProcessed, &allocImp, &allocTempImp);
+            if ((found = cli_gentempfd(ctx->this_layer_tmpdir, &tmp_name, &fd)))
+                break;
+            output.s.Write = ClamFileOutStream_Write;
+            output.fd       = fd;
+            res = SzArEx_ExtractToStream(&db, &lookStream.s, i, &output.s,
+                                         &outSizeProcessed, &allocImp, &allocTempImp);
+            if (res == SZ_ERROR_UNSUPPORTED) {
+                UInt32 folderIndex = db.FileIndexToFolderIndexMap[i];
+                UInt64 folderSize = 0;
+                int allow_legacy = folderIndex == (UInt32)-1;
+                if (!allow_legacy && folderIndex < db.db.NumFolders) {
+                    folderSize = SzFolder_GetUnpackSize(&db.db.Folders[folderIndex]);
+                    allow_legacy = folderSize <= CLI_MAX_ALLOCATION;
+                }
+                if (allow_legacy) {
+                    size_t legacyOffset = 0;
+                    size_t legacySize   = 0;
+                    res = SzArEx_Extract(&db, &lookStream.s, i, &blockIndex,
+                                         &outBuffer, &outBufferSize, &legacyOffset,
+                                         &legacySize, &allocImp, &allocTempImp);
+                    if (res == SZ_OK && legacySize != 0) {
+                        if (cli_writen(fd, outBuffer + legacyOffset, legacySize) != legacySize) {
+                            cli_mark_scan_incomplete(ctx, "7-Zip legacy member output could not be written completely");
+                            res = SZ_ERROR_WRITE;
+                        } else {
+                            outSizeProcessed = legacySize;
+                        }
+                    }
+                } else {
+                    cli_dbgmsg("cli_7unz: refusing whole-folder fallback for " STDu64 " bytes\n", folderSize);
+                }
+            }
             if (res == SZ_ERROR_ENCRYPTED) {
                 encrypted = 1;
                 if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
                     cli_dbgmsg("cli_7unz: Encrypted files found in archive.\n");
                     found = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.7Zip");
                     if (found != CL_SUCCESS) {
+                        close(fd);
+                        if (!ctx->engine->keeptmp)
+                            (void)cli_unlink(tmp_name);
+                        free(tmp_name);
                         break;
                     }
                 }
             }
             if (CL_VIRUS == cli_matchmeta(ctx, name, 0, f->Size, encrypted, i, f->CrcDefined ? f->Crc : 0)) {
                 found = CL_VIRUS;
+                close(fd);
+                if (!ctx->engine->keeptmp)
+                    (void)cli_unlink(tmp_name);
+                free(tmp_name);
                 break;
             }
             if (res != SZ_OK) {
@@ -191,24 +242,19 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                     if (found == CL_CLEAN)
                         found = CL_EPARSE;
                 }
+                close(fd);
+                if (!ctx->engine->keeptmp)
+                    (void)cli_unlink(tmp_name);
+                free(tmp_name);
                 continue;
-            } else if ((outBuffer == NULL) || (outSizeProcessed == 0)) {
+            } else if (outSizeProcessed == 0) {
                 cli_dbgmsg("cli_unz: extracted empty file\n");
+                close(fd);
+                if (!ctx->engine->keeptmp)
+                    (void)cli_unlink(tmp_name);
+                free(tmp_name);
             } else {
-                if ((found = cli_gentempfd(ctx->this_layer_tmpdir, &tmp_name, &fd)))
-                    break;
-
                 cli_dbgmsg("cli_7unz: Saving to %s\n", tmp_name);
-                if (cli_writen(fd, outBuffer + offset, outSizeProcessed) != outSizeProcessed) {
-                    cli_mark_scan_incomplete(ctx, "7-Zip extracted member could not be written completely");
-                    found = CL_EWRITE;
-                    close(fd);
-                    if (!ctx->engine->keeptmp)
-                        (void)cli_unlink(tmp_name);
-                    free(tmp_name);
-                    break;
-                }
-
                 found = cli_magic_scan_desc(fd, tmp_name, ctx, name, LAYER_ATTRIBUTES_NONE);
 
                 close(fd);

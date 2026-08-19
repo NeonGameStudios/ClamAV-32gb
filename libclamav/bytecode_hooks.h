@@ -35,5 +35,8 @@ struct cli_bc_hooks {
     const uint32_t* match_counts;
     const uint32_t* filesize;
     const struct cli_pe_hook_data* pedata;
+    /* ABI v2 bridges. The v1 pointers above remain unchanged. */
+    const uint64_t* match_offsets64;
+    const uint64_t* filesize64;
 };
 #endif

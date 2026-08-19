@@ -396,6 +396,12 @@ extern const struct cli_pe_hook_data __clambc_pedata;
  */
 extern const uint32_t __clambc_filesize[1];
 
+/** ABI v2 file size, valid to bytecode with format functionality level 8. */
+extern const uint64_t __clambc_filesize64[1];
+
+/** ABI v2 logical-signature match offsets. */
+extern const uint64_t __clambc_match_offsets64[64];
+
 /**
 \group_globals
  * Kind of the bytecode, affects LibClamAV usage
@@ -454,6 +460,20 @@ int32_t write(uint8_t* data, int32_t size);
  * @return absolute position in file
  */
 int32_t seek(int32_t pos, uint32_t whence);
+
+/**
+\group_file
+ * ABI v2 file-position operation. This is available only to bytecode with
+ * format functionality level #BC_FORMAT_LEVEL_V2.
+ */
+int64_t seek64(int64_t pos, uint32_t whence);
+
+/**
+\group_file
+ * ABI v2 read operation. The buffer size remains bounded by a uint32_t, but
+ * the returned byte count is 64-bit so callers cannot silently truncate it.
+ */
+int64_t read64(uint8_t* data, uint32_t size);
 
 /**
 \group_scan
@@ -526,6 +546,9 @@ uint32_t pe_rawaddr(uint32_t rva);
  */
 int32_t file_find(const uint8_t* data, uint32_t len);
 
+/** ABI v2 search operation; returns a 64-bit file coordinate. */
+int64_t file_find64(const uint8_t* data, uint32_t len);
+
 /**
 \group_file
  * Read a single byte from current file
@@ -534,6 +557,9 @@ int32_t file_find(const uint8_t* data, uint32_t len);
  * invalid
  */
 int32_t file_byteat(uint32_t offset);
+
+/** ABI v2 byte lookup with a 64-bit file coordinate. */
+int32_t file_byteat64(uint64_t offset);
 
 /**
 \group_adt
@@ -668,6 +694,9 @@ int32_t buffer_pipe_new(uint32_t size);
   */
 int32_t buffer_pipe_new_fromfile(uint32_t pos);
 
+/** ABI v2 variant accepting a 64-bit file coordinate. */
+int32_t buffer_pipe_new_fromfile64(uint64_t pos);
+
 /**
 \group_adt
   * Returns the amount of bytes available to read.
@@ -675,6 +704,9 @@ int32_t buffer_pipe_new_fromfile(uint32_t pos);
   * @return amount of bytes available to read
   */
 uint32_t buffer_pipe_read_avail(int32_t id);
+
+/** ABI v2 variant returning the available byte count without narrowing. */
+uint64_t buffer_pipe_read_avail64(int32_t id);
 
 /**
 \group_adt
@@ -1027,6 +1059,9 @@ int32_t map_done(int32_t id);
   * @return offset in the current file if match is found, -1 otherwise
   */
 int32_t file_find_limit(const uint8_t* data, uint32_t len, int32_t maxpos);
+
+/** ABI v2 bounded search operation with 64-bit result and limit. */
+int64_t file_find_limit64(const uint8_t* data, uint32_t len, uint64_t maxpos);
 
 /* ------------- Engine Query ----------------------------------------------- */
 /**

@@ -124,7 +124,7 @@ struct bc_buffer {
     unsigned char *data;
     unsigned size;
     unsigned write_cursor;
-    unsigned read_cursor;
+    uint64_t read_cursor;
 };
 
 struct bc_inflate {
@@ -174,6 +174,7 @@ struct cli_bc_ctx {
     char *values;
     operand_t *operands;
     uint32_t file_size;
+    uint64_t file_size64;
     int outfd;
     off_t off;
     fmap_t *fmap;
@@ -182,7 +183,8 @@ struct cli_bc_ctx {
     struct cli_bc_hooks hooks;
     struct cli_exe_info exeinfo;
     uint32_t lsigcnt[64];
-    uint32_t lsigoff[64];
+    uint64_t lsigoff[64];
+    uint32_t lsigoff32[64];
     uint32_t pdf_nobjs;
     struct pdf_obj **pdf_objs;
     uint32_t *pdf_flags;

@@ -162,7 +162,7 @@ static void LzmaDec_UpdateWithUncompressed(CLzmaDec *p, const Byte *src, SizeT s
   p->dicPos += size;
   if (p->checkDicSize == 0 && p->prop.dicSize - p->processedPos <= size)
     p->checkDicSize = p->prop.dicSize;
-  p->processedPos += (UInt32)size;
+  p->processedPos += (UInt64)size;
 }
 
 void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState);

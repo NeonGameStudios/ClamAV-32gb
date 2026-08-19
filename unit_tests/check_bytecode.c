@@ -614,6 +614,52 @@ START_TEST(test_bytecode_map_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
+{
+    const uint64_t boundary = UINT64_C(4294967296);
+    struct bytecode_failing_pread_state pread_state;
+    struct cli_bc_ctx *bcctx;
+    struct cli_bc bc;
+    fmap_t *map;
+    uint8_t byte;
+    int32_t pipe_id;
+
+    memset(&bc, 0, sizeof(bc));
+    bc.metadata.formatlevel = BC_FORMAT_LEVEL_V2;
+    pread_state.length       = (size_t)(boundary + 1);
+    pread_state.fail_at      = INT64_MAX;
+    map = cl_fmap_open_handle(&pread_state, 0, pread_state.length,
+                              bytecode_failing_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->bc = &bc;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+    ck_assert_uint_eq(bcctx->file_size64, boundary + 1);
+
+    bcctx->off = (off_t)boundary;
+    ck_assert_int_eq(cli_bcapi_read64(bcctx, &byte, 1), 1);
+    ck_assert_int_eq(byte, 0x5a);
+    ck_assert_uint_eq((uint64_t)bcctx->off, boundary + 1);
+
+    ck_assert_int_eq(cli_bcapi_seek64(bcctx, -1, SEEK_END), (int64_t)boundary);
+    ck_assert_int_eq(cli_bcapi_file_byteat64(bcctx, boundary), 0x5a);
+    ck_assert_int_eq(cli_bcapi_file_find64(bcctx, (const uint8_t *)"A", 1), -1);
+    bcctx->off = (off_t)boundary;
+    ck_assert_int_eq(cli_bcapi_file_find_limit64(bcctx, &byte, 1, boundary + 1),
+                     (int64_t)boundary);
+
+    pipe_id = cli_bcapi_buffer_pipe_new_fromfile64(bcctx, boundary);
+    ck_assert(pipe_id >= 0);
+    ck_assert_uint_eq(cli_bcapi_buffer_pipe_read_avail64(bcctx, pipe_id), 1);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_done(bcctx, pipe_id), 0);
+
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_bytecode_large_map_hook_gates_only_applicable_bytecode)
 {
     struct cl_engine *engine;
@@ -796,6 +842,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_load_bytecode_jit);
     tcase_add_test(tc_cli_arith, test_load_bytecode_int);
     tcase_add_test(tc_cli_arith, test_bytecode_large_map_hook_gates_only_applicable_bytecode);
+    tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
