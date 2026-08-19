@@ -2597,3 +2597,12 @@ sticky incomplete states. A cleanup failure after a detection preserves the
 detection, while a nominal clean/`CL_BREAK` result becomes non-clean. The
 Linux static test shape adds a close-fault regression; compiled execution,
 sanitizer coverage, and broader OLE2 corpus qualification remain release gates.
+
+## BinHex temporary-stream cleanup — 2026-08-19
+
+BinHex data/resource temporary descriptor close failures and temporary-file
+removal failures now increment the sticky incomplete state. Detection results
+remain authoritative, while an otherwise clean or `CL_BREAK` result cannot
+survive failed cleanup. The Linux static-library close wrapper adds focused
+coverage for the cleanup path; compiled execution, sanitizer coverage, and
+broader legacy-mail corpus qualification remain release gates.

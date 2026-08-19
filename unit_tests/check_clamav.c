@@ -67,6 +67,7 @@
 #include "dmg.h"
 #include "egg.h"
 #include "autoit.h"
+#include "binhex.h"
 #include "nsis/nulsft.h"
 #include "apm.h"
 #include "gpt.h"
@@ -6082,6 +6083,41 @@ START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_binhex_cleanup_close_failure_is_fail_visible)
+{
+    static const uint8_t data[] =
+        "(This file must be converted with BinHex 4.0)\r\n:";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data) - 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine             = &engine;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    clamav_test_fail_close = 1;
+    ret = cli_binhex(&ctx);
+    clamav_test_fail_close = 0;
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_msg(ctx.skipped_operations > 1,
+                  "BinHex cleanup failures were not recorded after the parser failure");
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_sis_truncated_contents_is_fail_visible)
 {
     static const uint8_t data[16] = {
@@ -9094,6 +9130,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_truncated_binhex_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_binhex_cleanup_close_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_sis_truncated_contents_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_compressed_member_streams_to_nested_scan);

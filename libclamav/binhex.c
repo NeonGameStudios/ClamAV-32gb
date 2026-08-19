@@ -48,6 +48,17 @@ static const uint8_t hqxtbl[] = {
 
 #define BH_FLUSH_SZ (BUFSIZ - 256)
 
+static void binhex_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
+                                        const char *reason)
+{
+    if ((NULL == ctx) || (NULL == status))
+        return;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    if ((*status == CL_SUCCESS) || (*status == CL_BREAK))
+        *status = CL_EUNLINK;
+}
+
 int cli_binhex(cli_ctx *ctx)
 {
     fmap_t *map            = ctx->fmap;
@@ -72,8 +83,10 @@ int cli_binhex(cli_ctx *ctx)
         return ret;
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &rname, &resfd)) != CL_SUCCESS) {
-        close(datafd);
-        if (cli_unlink(dname)) ret = CL_EUNLINK;
+        if (close(datafd) == -1)
+            binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be closed");
+        if (cli_unlink(dname))
+            binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be removed");
         free(dname);
         return ret;
     }
@@ -277,11 +290,15 @@ int cli_binhex(cli_ctx *ctx)
         last_byte           = this_byte;
     }
 
-    close(datafd);
-    close(resfd);
+    if (close(datafd) == -1)
+        binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be closed");
+    if (close(resfd) == -1)
+        binhex_note_cleanup_failure(ctx, &ret, "BinHex resource temporary output could not be closed");
     if (!ctx->engine->keeptmp) {
-        if (cli_unlink(dname) && ret != CL_VIRUS) ret = CL_EUNLINK;
-        if (cli_unlink(rname) && ret != CL_VIRUS) ret = CL_EUNLINK;
+        if (cli_unlink(dname))
+            binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be removed");
+        if (cli_unlink(rname))
+            binhex_note_cleanup_failure(ctx, &ret, "BinHex resource temporary output could not be removed");
     }
     free(dname);
     free(rname);

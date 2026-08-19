@@ -1731,3 +1731,11 @@ but clean/`CL_BREAK` outcomes become non-clean and non-cacheable. The existing
 Linux static-library close wrapper now has a focused OLE2 regression; compiled
 execution, sanitizer coverage, and broader OLE2/Office corpus qualification
 remain open.
+
+## BinHex temporary-stream cleanup — 2026-08-19
+
+BinHex data/resource temporary descriptor closes and temporary-file removals
+now propagate into the sticky incomplete state. A focused Linux close-wrapper
+regression confirms that cleanup failures add failure evidence beyond a
+pre-existing truncated-input error; compiled execution, sanitizer coverage,
+and broader legacy-mail corpus qualification remain open.
