@@ -707,6 +707,26 @@ START_TEST(test_scan_report_operational_failure_is_resource_failure)
 }
 END_TEST
 
+START_TEST(test_scan_report_counts_skipped_operations)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    cli_mark_scan_incomplete(&ctx, "first required path did not complete");
+    cli_mark_scan_incomplete(&ctx, "second required path did not complete");
+
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_uint_eq(ctx.skipped_operations, 2);
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    cli_scan_report_finish(report, &ctx, CL_SUCCESS, CL_VERDICT_NOTHING_FOUND, NULL);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.skipped_operations, 2);
+    cl_scan_report_free(report);
+}
+END_TEST
+
 START_TEST(test_scan_report_merge_preserves_detection_and_peaks)
 {
     cl_scan_report_t *aggregate = NULL;
@@ -8649,6 +8669,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_scan_report_break_is_application_abort);
     tcase_add_test(tc_cl, test_scan_report_operational_failure_is_resource_failure);
+    tcase_add_test(tc_cl, test_scan_report_counts_skipped_operations);
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);

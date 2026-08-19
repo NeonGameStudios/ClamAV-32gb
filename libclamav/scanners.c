@@ -4650,6 +4650,12 @@ void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason)
     if (NULL == ctx)
         return;
 
+    /* Keep the report useful when several required paths are skipped during
+     * one scan. Saturation avoids turning repeated failure reporting into a
+     * wrapped clean-looking metric. */
+    if (ctx->skipped_operations != UINT64_MAX)
+        ctx->skipped_operations++;
+
     /* A missed detector in a child also makes every containing layer unsafe
      * to cache as clean. Repeat this even when another skip already set the
      * sticky state, because additional layers may since have been entered. */

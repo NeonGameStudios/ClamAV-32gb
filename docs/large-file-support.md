@@ -704,6 +704,11 @@ decompression, and memory testing.
 
 ## Validation results and historical POC context
 
+Structured reports expose a saturating `skipped_operations` count for required
+parser or matcher paths that could not complete. Directory-level report
+aggregation adds those counts, while legacy contexts that provide only the
+sticky incomplete flag retain a one-skip compatibility fallback.
+
 The earlier `sonic1` Linux x86-64 raw-boundary result for commit
 `bba68110e04f78504d2af389050c349e01861315` is retained as historical
 provenance: all 11 rows reported exact engine offsets, including `34359738304`

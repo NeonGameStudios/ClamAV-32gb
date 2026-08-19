@@ -304,7 +304,11 @@ void cli_scan_report_finish(
 
     if (NULL != ctx) {
         reason = ctx->scan_incomplete_reason;
-        report->metrics.skipped_operations = ctx->scan_incomplete ? 1 : 0;
+        report->metrics.skipped_operations = ctx->skipped_operations;
+        /* Preserve the old manually-constructed cli_ctx contract for callers
+         * that set only the sticky flag. */
+        if (ctx->scan_incomplete && (report->metrics.skipped_operations == 0))
+            report->metrics.skipped_operations = 1;
         report->metrics.matcher_bytes = ctx->matcher_work;
         report->metrics.contiguous_bytes = ctx->contiguous_peak;
         report->metrics.temporary_bytes = ctx->temporary_peak;

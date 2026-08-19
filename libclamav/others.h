@@ -221,6 +221,7 @@ typedef struct cli_ctx_tag {
     bool abort_scan;      /* Stop the scan even if the initiating status is lost while unwinding recursion. */
     bool scan_timed_out;  /* The sticky abort was caused by MaxScanTime, so the public API must return CL_ETIMEOUT. */
     bool scan_incomplete; /* A required parser/matcher path was skipped; never report this scan as clean. */
+    uint64_t skipped_operations; /* Number of required parser/matcher paths that were skipped. */
     const char *scan_incomplete_reason; /* First reason a required path was skipped. */
     cl_error_t limit_exceeded_result; /* First configured-limit result, retained if an AlertExceedsMax callback filters its indicator. */
     cl_scan_report_t *report; /* Optional structured report owned by the public *_ex2 caller. */

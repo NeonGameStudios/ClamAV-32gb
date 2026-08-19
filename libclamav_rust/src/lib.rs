@@ -83,18 +83,21 @@ mod ffi_layout_tests {
         assert_eq!(offset_of!(sys::cli_scan_layer, verdict), 80);
         assert_eq!(offset_of!(sys::cli_scan_layer, parent), 96);
 
-        assert_eq!(size_of::<sys::cli_ctx>(), 176);
+        assert_eq!(size_of::<sys::cli_ctx>(), 248);
         assert_eq!(align_of::<sys::cli_ctx>(), 8);
         assert_eq!(offset_of!(sys::cli_ctx, engine), 32);
         assert_eq!(offset_of!(sys::cli_ctx, scansize), 40);
         assert_eq!(offset_of!(sys::cli_ctx, scannedfiles), 56);
         assert_eq!(offset_of!(sys::cli_ctx, recursion_stack), 64);
-        assert_eq!(offset_of!(sys::cli_ctx, object_count), 96);
-        assert_eq!(offset_of!(sys::cli_ctx, time_limit), 152);
-        assert_eq!(offset_of!(sys::cli_ctx, limit_exceeded), 168);
-        assert_eq!(offset_of!(sys::cli_ctx, abort_scan), 169);
-        assert_eq!(offset_of!(sys::cli_ctx, scan_timed_out), 170);
-        assert_eq!(offset_of!(sys::cli_ctx, scan_incomplete), 171);
-        assert_eq!(offset_of!(sys::cli_ctx, limit_exceeded_result), 172);
+        assert_eq!(offset_of!(sys::cli_ctx, object_count), 136);
+        assert_eq!(offset_of!(sys::cli_ctx, time_limit), 192);
+        assert_eq!(offset_of!(sys::cli_ctx, limit_exceeded), 208);
+        assert_eq!(offset_of!(sys::cli_ctx, abort_scan), 209);
+        assert_eq!(offset_of!(sys::cli_ctx, scan_timed_out), 210);
+        assert_eq!(offset_of!(sys::cli_ctx, scan_incomplete), 211);
+        assert_eq!(offset_of!(sys::cli_ctx, skipped_operations), 216);
+        assert_eq!(offset_of!(sys::cli_ctx, scan_incomplete_reason), 224);
+        assert_eq!(offset_of!(sys::cli_ctx, limit_exceeded_result), 232);
+        assert_eq!(offset_of!(sys::cli_ctx, report), 240);
     }
 }

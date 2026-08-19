@@ -60,6 +60,11 @@ code and two strings. The transport parser accepts both the numeric library
 verdict representation and the compact legacy fallback frame. Runtime daemon
 qualification remains an open release gate.
 
+The structured report's `skipped_operations` metric now counts repeated
+required parser/matcher skips with saturating arithmetic and is summed across
+directory children; the old sticky-flag-only context shape remains compatible
+through a one-skip fallback.
+
 The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.

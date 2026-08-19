@@ -718,6 +718,7 @@ pub struct cli_ctx_tag {
     pub abort_scan: bool,
     pub scan_timed_out: bool,
     pub scan_incomplete: bool,
+    pub skipped_operations: u64,
     pub scan_incomplete_reason: *const ::std::os::raw::c_char,
     pub limit_exceeded_result: cl_error_t,
     pub report: *mut cl_scan_report,
