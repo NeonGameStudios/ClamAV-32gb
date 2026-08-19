@@ -789,3 +789,14 @@ policy, while prevention remains fail-closed.
 The change is source-guarded, but the local macOS environment still lacks the
 OpenSSL development headers needed for a C syntax/build check. Linux compile
 and fanotify runtime verification remain release-gate work on Sonic1.
+
+## Embedded 7-Zip candidate admission — 2026-08-19
+
+The embedded 7-Zip SFX path previously treated the six-byte file-type magic as
+enough evidence to create a nested layer. It now checks the complete 32-byte
+start header and validates the 64-bit next-header range before admission. A
+weak/truncated candidate is rejected without marking the parent incomplete;
+once the minimum structure is present, malformed or unsupported header values
+are explicit incomplete results. The actual archive extractor already uses
+bounded fmap reads and streaming member output, so this change is limited to
+recognition and layer admission.

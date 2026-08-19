@@ -29,5 +29,6 @@
 #include "others.h"
 
 int cli_7unz(cli_ctx *, size_t);
+cl_error_t cli_7z_header_check(cli_ctx *, size_t);
 
 #endif

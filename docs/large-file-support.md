@@ -1958,3 +1958,11 @@ This closes the on-access result-classification and unsafe-stat fall-through
 gaps, but it does not claim that the legacy `OnAccessMaxFileSize` default has
 been raised to 32 GiB. That default remains a separate release qualification
 decision.
+
+## Embedded 7-Zip candidate admission — 2026-08-19
+
+Embedded 7-Zip SFX matches now require the complete 32-byte start header and
+checked 64-bit next-header range before a nested layer is admitted. A six-byte
+magic match at the end of an unrelated payload is rejected as a candidate and
+does not taint the parent scan. A candidate with a complete but malformed or
+unsupported start header is retained as an explicit incomplete result.

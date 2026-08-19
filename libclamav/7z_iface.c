@@ -37,6 +37,46 @@
 
 static ISzAlloc allocImp = {__lzma_wrap_alloc, __lzma_wrap_free}, allocTempImp = {__lzma_wrap_alloc, __lzma_wrap_free};
 
+/* File-type matching only proves the six-byte 7-Zip signature.  Embedded SFX
+ * candidates need the complete start header before they are allowed to become
+ * a nested layer; otherwise arbitrary payload bytes can be misclassified as a
+ * malformed archive and taint an otherwise complete parent scan. */
+cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
+{
+    const unsigned char *header;
+    uint64_t archive_size;
+    uint64_t next_header_offset;
+    uint64_t next_header_size;
+
+    if (ctx == NULL || ctx->fmap == NULL)
+        return CL_ENULLARG;
+
+    if (offset > ctx->fmap->len || ctx->fmap->len - offset < k7zStartHeaderSize)
+        return CL_EFORMAT;
+
+    header = (const unsigned char *)fmap_need_off_once(ctx->fmap, offset, k7zStartHeaderSize);
+    if (header == NULL || memcmp(header, k7zSignature, k7zSignatureSize) != 0)
+        return CL_EFORMAT;
+
+    if (header[6] != k7zMajorVersion)
+        return CL_EPARSE;
+
+    /* The recovery-mode reader handles an all-zero next-header tuple by
+     * searching the tail, so leave that valid parser behavior intact. */
+    next_header_offset = (uint64_t)cli_readint64(header + 12);
+    next_header_size   = (uint64_t)cli_readint64(header + 20);
+    if (next_header_offset == 0 && next_header_size == 0)
+        return CL_SUCCESS;
+
+    archive_size = (uint64_t)(ctx->fmap->len - offset);
+    if (archive_size < k7zStartHeaderSize ||
+        next_header_offset > archive_size - k7zStartHeaderSize ||
+        next_header_size > archive_size - k7zStartHeaderSize - next_header_offset)
+        return CL_EPARSE;
+
+    return CL_SUCCESS;
+}
+
 typedef struct
 {
     ISeqOutStream s;

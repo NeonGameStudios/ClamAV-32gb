@@ -4272,7 +4272,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_7ZSFX:
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_7Z)) &&
                                 (type != CL_TYPE_7Z)) {
-                                // TODO: Add header validity check to prevent false positives from being scanned.
+                                ret = cli_7z_header_check(ctx, fpt->offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("7-Zip SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "7-Zip SFX start header is malformed or unsupported");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
+                                    break;
+                                }
                                 nret = cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
