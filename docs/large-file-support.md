@@ -2068,6 +2068,12 @@ accounting. An enabled image-fuzzy detector also marks calculation, metadata,
 mapping, and contiguous-admission failures incomplete instead of allowing a
 silent detector skip to return clean.
 
+UTF-16 HTML normalization now rejects odd trailing code units, zero-progress
+readers, conversion failures, short writes, mapping failures, child-scan
+failures, and temporary cleanup failures as incomplete. Its decoded output is
+reserved against `MaxTemporarySize` before staging, so a partial normalized
+HTML file cannot be admitted as a clean child.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

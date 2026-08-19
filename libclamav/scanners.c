@@ -3119,16 +3119,32 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
     int bytes;
     size_t at       = 0;
     fmap_t *new_map = NULL;
+    uint64_t temporary_size;
+    bool temporary_reserved = false;
 
     cli_dbgmsg("in cli_scanhtml_utf16()\n");
 
+    if (ctx->fmap->len & 1U) {
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML input has an incomplete code unit");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    temporary_size = (uint64_t)(ctx->fmap->len / 2);
+    status          = cli_scan_reserve_temporary(ctx, temporary_size);
+    if (status != CL_SUCCESS)
+        goto done;
+    temporary_reserved = true;
+
     if (!(tempname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "html-utf16-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary file could not be created");
         status = CL_EMEM;
         goto done;
     }
 
     if ((fd = open(tempname, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
         cli_errmsg("cli_scanhtml_utf16: Can't create file %s\n", tempname);
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary file could not be opened");
         status = CL_EOPEN;
         goto done;
     }
@@ -3137,26 +3153,37 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
 
     while (at < ctx->fmap->len) {
         bytes = MIN(ctx->fmap->len - at, ctx->fmap->pgsz * 16);
+        if (bytes == 0) {
+            cli_mark_scan_incomplete(ctx, "UTF-16 HTML reader made no progress");
+            status = CL_EPARSE;
+            goto done;
+        }
         if (!(buff = fmap_need_off_once(ctx->fmap, at, bytes))) {
+            cli_mark_scan_incomplete(ctx, "UTF-16 HTML input could not be read completely");
             status = CL_EREAD;
             goto done;
         }
         at += bytes;
         decoded = cli_utf16toascii(buff, bytes);
-        if (decoded) {
-            if (write(fd, decoded, bytes / 2) == -1) {
-                cli_errmsg("cli_scanhtml_utf16: Can't write to file %s\n", tempname);
-                status = CL_EWRITE;
-                goto done;
-            }
-            free(decoded);
-            decoded = NULL;
+        if (decoded == NULL) {
+            cli_mark_scan_incomplete(ctx, "UTF-16 HTML input could not be converted completely");
+            status = CL_EMEM;
+            goto done;
         }
+        if (write(fd, decoded, bytes / 2) != (ssize_t)(bytes / 2)) {
+            cli_errmsg("cli_scanhtml_utf16: Can't write file %s completely\n", tempname);
+            cli_mark_scan_incomplete(ctx, "UTF-16 HTML normalized output could not be written completely");
+            status = CL_EWRITE;
+            goto done;
+        }
+        free(decoded);
+        decoded = NULL;
     }
 
     new_map = fmap_new(fd, 0, 0, NULL, tempname);
     if (NULL == new_map) {
         cli_errmsg("cli_scanhtml_utf16: failed to create fmap for ascii HTML file decoded from utf16: %s\n.", tempname);
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML normalized output could not be mapped");
         status = CL_EMEM;
         goto done;
     }
@@ -3173,6 +3200,8 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
     (void)cli_recursion_stack_pop(ctx); /* Restore the parent fmap */
 
     if (CL_SUCCESS != status) {
+        if (status != CL_VIRUS && status != CL_VERIFIED)
+            cli_mark_scan_incomplete(ctx, "UTF-16 HTML normalized child scan did not complete");
         goto done;
     }
 
@@ -3181,7 +3210,11 @@ done:
         fmap_free(new_map);
     }
     if (-1 != fd) {
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary file could not be closed");
+            if (status == CL_SUCCESS)
+                status = CL_EWRITE;
+        }
     }
 
     if (NULL != decoded) {
@@ -3190,13 +3223,20 @@ done:
 
     if (NULL != tempname) {
         if (!ctx->engine->keeptmp) {
-            (void)cli_unlink(tempname);
+            if (cli_unlink(tempname) != 0) {
+                cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary file could not be removed");
+                if (status == CL_SUCCESS)
+                    status = CL_EUNLINK;
+            }
         } else {
             cli_dbgmsg("cli_scanhtml_utf16: Decoded HTML data saved in %s\n", tempname);
         }
 
         free(tempname);
     }
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_size);
 
     return status;
 }
