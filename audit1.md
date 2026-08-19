@@ -774,3 +774,18 @@ configurations when the effective memory, temporary-space, or 64-bit
 coordinate requirements are not met. The requirements scale down with lower
 configured ceilings and cap at the 48 GiB memory / 68 GiB temporary-space
 release envelope. Small-file configurations retain their legacy startup path.
+
+## On-access transport and stat fail-closed correction — 2026-08-19
+
+The on-access client now maps a timed-out socket wait or connection attempt to
+`CL_ETIMEOUT`, preserving the distinction from ordinary read/write errors.
+The existing prevention response therefore denies timeout, parser, resource,
+and other incomplete outcomes instead of treating a timeout as an unspecified
+transport result. Failed `stat()` calls clear the scan bit before the client
+call, preventing an uninitialized `STATBUF` from selecting a scan mode or
+being passed to the daemon. Monitoring-only events retain their log-and-allow
+policy, while prevention remains fail-closed.
+
+The change is source-guarded, but the local macOS environment still lacks the
+OpenSSL development headers needed for a C syntax/build check. Linux compile
+and fanotify runtime verification remain release-gate work on Sonic1.

@@ -276,6 +276,10 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
     if (fres != 0) {
         err      = 1;
         ret_code = CL_ESTAT;
+        /* Do not pass an uninitialized STATBUF to the client.  For a
+         * permission event, the fanotify response below will deny access when
+         * prevention is enabled; monitoring-only mode may log and continue. */
+        event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
         logg(LOGG_DEBUG, "ClamWorker: unable to stat '%s'; treating the permission event as incomplete\n", pathname);
     }
     if (event_data->sizelimit) {

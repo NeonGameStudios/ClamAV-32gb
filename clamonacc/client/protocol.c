@@ -125,7 +125,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         (void)lseek(fd, 0, SEEK_SET);
     }
 
-    if (onas_sendln(curl, zINSTREAM, sizeof(zINSTREAM), timeout)) {
+    if (onas_sendln(curl, zINSTREAM, sizeof(zINSTREAM), timeout, ret_code)) {
         ret = -1;
         goto strm_out;
     }
@@ -147,8 +147,8 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         bytesRead += bytes;
 
         chunk_len = htonl((uint32_t)bytes);
-        if (onas_sendln(curl, (const char *)&chunk_len, sizeof(chunk_len), timeout) ||
-            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout)) {
+        if (onas_sendln(curl, (const char *)&chunk_len, sizeof(chunk_len), timeout, ret_code) ||
+            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
             ret = -1;
             goto strm_out;
         }
@@ -183,7 +183,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     }
 
     *buf = 0;
-    if (onas_sendln(curl, (const char *)buf, 4, timeout)) {
+    if (onas_sendln(curl, (const char *)buf, 4, timeout, ret_code)) {
         ret = -1;
         goto strm_out;
     }
@@ -323,8 +323,8 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
                 goto done;
             }
             sprintf(bol, "z%s %s", scancmd[scantype], filename);
-            if (onas_sendln(curl, bol, len, timeout)) {
-                if (ret_code) {
+            if (onas_sendln(curl, bol, len, timeout, ret_code)) {
+                if (ret_code && *ret_code == CL_SUCCESS) {
                     *ret_code = CL_EWRITE;
                 }
                 free(bol);
@@ -368,7 +368,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
         if (len == -1) {
 
             if (ret_code) {
-                *ret_code = CL_EREAD;
+                *ret_code = (rcv.curlcode == CURLE_OPERATION_TIMEDOUT) ? CL_ETIMEOUT : CL_EREAD;
             }
             infected = -1;
             goto done;

@@ -851,7 +851,7 @@ Number of times the OnAccess client will retry a failed scan due to connection p
 Default: 0
 .TP
 \fBOnAccessDenyOnError BOOL\fR
-When using prevention, if this option is turned on, any errors that occur during  scanning will result in the event attempt being denied. This could potentially lead to unwanted system behaviour with certain configurations, so the client defaults this to off and prefers allowing access events in case of scan or connection error.
+When using prevention, incomplete, timeout, resource, parser, and transport errors during scanning result in the event attempt being denied. Monitoring-only mode still logs these outcomes and allows the event. This option remains available for compatibility and for explicitly selecting fail-closed behavior in configurations that do not enable prevention.
 .br
 Default: no
 .TP

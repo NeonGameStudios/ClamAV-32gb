@@ -578,7 +578,7 @@ const struct clam_option __clam_options[] = {
 
     {"OnAccessRetryAttempts", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 0, NULL, 0, OPT_CLAMD, "Number of times the OnAccess client will retry a failed scan due to connection problems (or other issues). Defaults to no retries.", "3"},
 
-    {"OnAccessDenyOnError", NULL, 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD, "When using prevention, if this option is turned on, any errors that occur during scanning will result in the event attempt being denied. This could potentially lead to unwanted system behaviour with certain configurations, so the client defaults to off and allowing access events in case of error.", "yes"},
+    {"OnAccessDenyOnError", NULL, 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD, "When using prevention, incomplete, timeout, resource, parser, and transport errors during scanning result in the event attempt being denied. Monitoring-only mode logs these outcomes and allows the event. This option remains available for compatibility and for explicitly selecting fail-closed behavior in configurations that do not enable prevention.", "yes"},
 
     /* clamonacc cmdline options */
 

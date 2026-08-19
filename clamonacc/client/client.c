@@ -144,7 +144,7 @@ int onas_check_remote(struct onas_context **ctx, cl_error_t *err)
         }
 
 #ifndef ONAS_DEBUG
-        if (onas_sendln(curl, zPING, sizeof(zPING), timeout)) {
+        if (onas_sendln(curl, zPING, sizeof(zPING), timeout, NULL)) {
             logg(LOGG_ERROR, "ClamClient: could not ping clamd, %s\n", curl_easy_strerror(curlcode));
             *err = CL_EARG;
             curl_easy_cleanup(curl);
@@ -239,7 +239,7 @@ int16_t onas_ping_clamd(struct onas_context **ctx)
         curlcode = curl_easy_perform(curl);
         if (CURLE_OK != curlcode) {
             logg(LOGG_DEBUG, "ClamClient: could not connect to clamd, %s\n", curl_easy_strerror(curlcode));
-        } else if (CURLE_OK == onas_sendln(curl, zPING, sizeof(zPING), timeout)) {
+        } else if (CURLE_OK == onas_sendln(curl, zPING, sizeof(zPING), timeout, NULL)) {
 
             if (!optget((*ctx)->opts, "wait")->enabled) {
                 logg(LOGG_INFO, "PONG\n");
@@ -512,7 +512,7 @@ int onas_get_clamd_version(struct onas_context **ctx)
         return 2;
     }
 
-    if (onas_sendln(curl, zVERSION, sizeof(zVERSION), timeout)) {
+    if (onas_sendln(curl, zVERSION, sizeof(zVERSION), timeout, NULL)) {
         curl_easy_cleanup(curl);
         return 2;
     }
@@ -596,7 +596,7 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
         logg(LOGG_ERROR, "ClamClient: could not init curl for scanning, %s\n", curl_easy_strerror(curlcode));
         /* curl cleanup done in onas_curl_init on error */
         curl = NULL;
-        status = CL_ECREAT;
+        status = (CURLE_OPERATION_TIMEDOUT == curlcode) ? CL_ETIMEOUT : CL_ECREAT;
         goto done;
     }
 

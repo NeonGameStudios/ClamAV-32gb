@@ -80,7 +80,7 @@ static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeo
 
 /* Sends bytes over a socket
  * Returns 0 on success */
-int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout)
+int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
 {
     size_t sent = 0;
     CURLcode curlcode;
@@ -98,6 +98,9 @@ int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout)
 
     if (CURLE_OK != curlcode) {
         logg(LOGG_ERROR, "ClamCom: could not get curl active socket info %s\n", curl_easy_strerror(curlcode));
+        if (ret_code && *ret_code == CL_SUCCESS) {
+            *ret_code = CL_EWRITE;
+        }
         return 1;
     }
 
@@ -105,8 +108,23 @@ int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout)
 
         do {
             curlcode = curl_easy_send(curl, line, len, &sent);
-            if (CURLE_AGAIN == curlcode && onas_socket_wait(sockfd, 0, timeout) <= 0) {
-                logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on socket (send)\n");
+            if (CURLE_AGAIN == curlcode) {
+                int wait_result = onas_socket_wait(sockfd, 0, timeout);
+                if (wait_result <= 0) {
+                    if (wait_result == 0) {
+                        logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on socket (send)\n");
+                        if (ret_code && *ret_code == CL_SUCCESS) {
+                            *ret_code = CL_ETIMEOUT;
+                        }
+                    } else if (ret_code && *ret_code == CL_SUCCESS) {
+                        *ret_code = CL_EWRITE;
+                    }
+                    return 1;
+                }
+            } else if (CURLE_OK != curlcode) {
+                if (ret_code && *ret_code == CL_SUCCESS) {
+                    *ret_code = CL_EWRITE;
+                }
                 return 1;
             }
         } while (CURLE_AGAIN == curlcode);
@@ -122,6 +140,10 @@ int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout)
                 logg(LOGG_DEBUG, "Can't send to clamd: %s\n", strerror(errno));
             } else {
                 logg(LOGG_ERROR, "Can't send to clamd: %s\n", strerror(errno));
+            }
+
+            if (ret_code && *ret_code == CL_SUCCESS) {
+                *ret_code = CL_EWRITE;
             }
 
             return 1;
@@ -180,9 +202,15 @@ int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int
                 rcv_data->curlcode = curl_easy_recv(rcv_data->curl, rcv_data->curr,
                                                     sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), &(rcv_data->retlen));
 
-                if (CURLE_AGAIN == rcv_data->curlcode && onas_socket_wait(sockfd, 1, timeout) <= 0) {
-                    logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on socket (recv)\n");
-                    return -1;
+                if (CURLE_AGAIN == rcv_data->curlcode) {
+                    int wait_result = onas_socket_wait(sockfd, 1, timeout);
+                    if (wait_result <= 0) {
+                        if (wait_result == 0) {
+                            logg(LOGG_ERROR, "ClamCom: TIMEOUT while waiting on socket (recv)\n");
+                            rcv_data->curlcode = CURLE_OPERATION_TIMEDOUT;
+                        }
+                        return -1;
+                    }
                 }
 
             } while (CURLE_AGAIN == rcv_data->curlcode);

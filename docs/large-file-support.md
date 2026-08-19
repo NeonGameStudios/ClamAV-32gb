@@ -1943,3 +1943,18 @@ This closes the remote baseline runtime/control evidence gap for commit
 bytecode, test, and guard files differ from this worktree. A current-worktree
 source synchronization and rebuild, broader current-head parser coverage, and
 full release/CI and attestation gates remain open.
+
+## On-access fail-closed transport handling — 2026-08-19
+
+The on-access client now preserves socket wait timeouts as `CL_ETIMEOUT`
+instead of reducing them to a generic read/write failure. The same result is
+returned for connection-level timeouts, and the prevention path treats these
+outcomes like parser, resource, and other incomplete results when deciding a
+fanotify permission response. A failed `stat()` no longer passes an
+uninitialized `STATBUF` into the scan client; it is recorded as incomplete and
+the permission response is decided by the configured prevention policy.
+
+This closes the on-access result-classification and unsafe-stat fall-through
+gaps, but it does not claim that the legacy `OnAccessMaxFileSize` default has
+been raised to 32 GiB. That default remains a separate release qualification
+decision.
