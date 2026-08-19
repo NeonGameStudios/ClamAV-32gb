@@ -1777,6 +1777,13 @@ cl_error_t find_file(const char *filename, const char *dir, char *result, size_t
     return CL_EOPEN;
 }
 
+static void cli_ole2_note_vba_cleanup_failure(cli_ctx *ctx, cl_error_t *status, const char *reason)
+{
+    cli_mark_scan_incomplete(ctx, reason);
+    if ((*status == CL_SUCCESS) || (*status == CL_BREAK))
+        *status = CL_EUNLINK;
+}
+
 /**
  * Scan an OLE directory for a VBA project.
  * Contrary to cli_ole2_tempdir_scan_vba, this function uses the dir file to locate VBA modules.
@@ -1818,7 +1825,8 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
 
                 if (tempfile) {
                     if (!ctx->engine->keeptmp) {
-                        remove(tempfile);
+                        if (remove(tempfile) != 0)
+                            cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be removed");
                     }
                     free(tempfile);
                     tempfile = NULL;
@@ -1828,6 +1836,11 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                     first_candidate_error = ret;
 
                 ret = CL_SUCCESS;
+                if (tempfd != -1) {
+                    if (close(tempfd) == -1)
+                        cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be closed");
+                    tempfd = -1;
+                }
                 hashcnt--;
                 continue;
             }
@@ -1865,12 +1878,14 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                 goto done;
             }
 
-            close(tempfd);
+            if (close(tempfd) == -1)
+                cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be closed");
             tempfd = -1;
 
             if (tempfile) {
                 if (!ctx->engine->keeptmp) {
-                    remove(tempfile);
+                    if (remove(tempfile) != 0)
+                        cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be removed");
                 }
                 free(tempfile);
                 tempfile = NULL;
@@ -1882,13 +1897,15 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
 
 done:
     if (tempfd != -1) {
-        close(tempfd);
+        if (close(tempfd) == -1)
+            cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be closed");
         tempfd = -1;
     }
 
     if (tempfile) {
         if (!ctx->engine->keeptmp) {
-            remove(tempfile);
+            if (remove(tempfile) != 0)
+                cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be removed");
         }
         free(tempfile);
         tempfile = NULL;

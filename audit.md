@@ -1748,3 +1748,11 @@ mismatches, nested scans, and normal completion. Cleanup failures mark the
 layer incomplete and cannot be normalized to clean. A Linux static-library
 close-wrapper CWS regression is registered; compiled execution, sanitizer
 coverage, and broader SWF corpus qualification remain open.
+
+## VBA project temporary cleanup — 2026-08-19
+
+The OLE2 VBA-directory scanner now checks close and removal of staged
+`vba_project` output during candidate retries, successful nested scans, and
+final unwind. Cleanup failures mark the containing scan incomplete without
+overwriting a prior detection or parser error. Supported-Linux execution,
+sanitizer coverage, and a real Office/VBA corpus remain open.

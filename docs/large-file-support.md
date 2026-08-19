@@ -2615,3 +2615,11 @@ cleanup helper. Descriptor close and temporary removal failures mark the SWF
 layer incomplete and cannot be hidden by an otherwise clean result. The Linux
 static-library close wrapper adds a focused CWS regression; compiled execution,
 sanitizer coverage, and broader SWF corpus qualification remain release gates.
+
+## VBA project temporary cleanup — 2026-08-19
+
+The OLE2 VBA-directory scanner now checks close and removal of staged
+`vba_project` output during candidate retries, successful nested scans, and
+final unwind. Failures mark the containing scan incomplete while preserving a
+prior detection or parser error. Supported-Linux execution, sanitizer
+coverage, and a real Office/VBA corpus remain release gates.
