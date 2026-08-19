@@ -749,6 +749,8 @@ contains libclamav_rust/src/scanners.rs 'temporary spool could not be rewound be
 contains libclamav_rust/src/scanners.rs 'unsafe fn release_reservation'
 contains libclamav_rust/src/scanners.rs 'if self.reserved != 0 {'
 contains libclamav_rust/src/scanners.rs 'self.reserved = 0;'
+contains libclamav_rust/src/fmap.rs 'need_failure_is_reported_as_a_bounded_error'
+contains libclamav_rust/src/fmap.rs 'reader_copies_bounded_windows_and_releases_each_window'
 contains libclamav/scanners.c 'UTF-16 HTML input could not be converted completely'
 contains libclamav/scanners.c 'UTF-16 HTML normalized output could not be written completely'
 contains libclamav/scanners.c 'cli_scan_reserve_temporary(ctx, temporary_size)'

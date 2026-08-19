@@ -600,9 +600,12 @@ though exact-trigger compiled coverage remains incomplete:
 
 The current tests and source guards do not prove the exact high-risk triggers:
 
-- PDF tests cover immediate malformed/empty Flate, not benign decoded output
-  followed by an error, LZW, or the full public scan path.
-- HWP tests do not cover raw-deflate output followed by truncation/error.
+- PDF tests cover Flate and LZW output followed by truncation, plus malformed
+  trailers, through focused/direct paths; the full public scan path and
+  fault-injected PDF I/O remain open.
+- HWP tests now cover raw-deflate output followed by truncation through the
+  direct HWP3 path; broader compressed-entry and fault-injected I/O coverage
+  remain open.
 - The ZIP truncation test contains only a four-byte signature, not a complete
   fixed local header declaring an oversized filename, extra field, or ZIP64
   field.
@@ -610,10 +613,11 @@ The current tests and source guards do not prove the exact high-risk triggers:
   open/constructor and PE entry-point I/O failures are not fault-injected.
 - The Mach-O test checks a four-byte truncated header, not a 64-bit section
   with an alignment exponent at or above 32.
-- OneNote tests toggle the ordinary ScanOneNote option, not the independent
-  document/archive dynamic-configuration words that exposed F-16.
-- No Rust test exercises `WHOLE_INPUT_MAX`, a failed fmap need, whole-input
-  residency, or concurrent clamd RSS.
+- OneNote tests now vary the document dynamic-configuration bit independently
+  of the ordinary ScanOneNote option; the archive bit remains unvaried.
+- Rust tests cover `WHOLE_INPUT_MAX` rejection, failed fmap need, bounded
+  reader windows, and window release. Successful whole-input residency and
+  concurrent clamd RSS remain open.
 - RAR dump tests cover successful healthy maps only and miss `SIZE_MAX` on a
   nested slice and mapped-read failure.
 
