@@ -4873,14 +4873,14 @@ fixed-width-integer	libclamav/www.c	192	void submit_post(const char *host, const
 fixed-width-integer	libclamav/www.c	57	int connect_host(const char *host, const char *port, uint32_t timeout, int useAsync)
 fixed-width-integer	libclamav/www.h	24	int connect_host(const char *host, const char *port, uint32_t timeout, int useAsync);
 fixed-width-integer	libclamav/www.h	27	void submit_post(const char *host, const char *port, const char *method, const char *url, const char *postdata, uint32_t timeout);
-fixed-width-integer	libclamav/xar.c	487	    uint64_t toc_reserved = 0;
-fixed-width-integer	libclamav/xar.c	544	        uint64_t compressed_read = 0;
-fixed-width-integer	libclamav/xar.c	545	        uint64_t decompressed_written = 0;
-fixed-width-integer	libclamav/xar.c	71	                                uint64_t *reserved)
-fixed-width-integer	libclamav/xar.c	721	                uint64_t total_out = 0;
-fixed-width-integer	libclamav/xar.c	76	    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS)
-fixed-width-integer	libclamav/xar.c	79	    *reserved += (uint64_t)len;
-fixed-width-integer	libclamav/xar.c	823	                uint64_t out_size           = 0;
+fixed-width-integer	libclamav/xar.c	504	    uint64_t toc_reserved = 0;
+fixed-width-integer	libclamav/xar.c	562	        uint64_t compressed_read = 0;
+fixed-width-integer	libclamav/xar.c	563	        uint64_t decompressed_written = 0;
+fixed-width-integer	libclamav/xar.c	740	                uint64_t total_out = 0;
+fixed-width-integer	libclamav/xar.c	75	                                uint64_t *reserved)
+fixed-width-integer	libclamav/xar.c	80	    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
+fixed-width-integer	libclamav/xar.c	842	                uint64_t out_size           = 0;
+fixed-width-integer	libclamav/xar.c	85	    *reserved += (uint64_t)len;
 fixed-width-integer	libclamav/xar.h	45	    uint32_t magic;
 fixed-width-integer	libclamav/xar.h	46	    uint16_t size;
 fixed-width-integer	libclamav/xar.h	47	    uint16_t version;
@@ -12632,70 +12632,73 @@ native-width-integer	libclamav/www.c	61	    int flags = 0, error;
 native-width-integer	libclamav/www.c	66	    int iResult;
 native-width-integer	libclamav/www.h	24	int connect_host(const char *host, const char *port, uint32_t timeout, int useAsync);
 native-width-integer	libclamav/www.h	25	size_t encoded_size(const char *postdata);
-native-width-integer	libclamav/xar.c	100	    return got < 0 ? -1 : (int)got;
-native-width-integer	libclamav/xar.c	103	static int xar_toc_close(void *opaque)
-native-width-integer	libclamav/xar.c	113	   value - pointer to size_t to contain the returned value
-native-width-integer	libclamav/xar.c	116	static int xar_get_numeric_from_xml_element(xmlTextReaderPtr reader, size_t *value)
-native-width-integer	libclamav/xar.c	123	            unsigned long long numval;
-native-width-integer	libclamav/xar.c	133	            *value = (size_t)numval;
-native-width-integer	libclamav/xar.c	146	    hash - pointer to int for returning checksum algorithm.
-native-width-integer	libclamav/xar.c	149	static void xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksum, int *hash)
-native-width-integer	libclamav/xar.c	197	     length - pointer to long for returning value of the <length> element.
-native-width-integer	libclamav/xar.c	198	     offset - pointer to long for returning value of the <offset> element.
-native-width-integer	libclamav/xar.c	199	     size - pointer to long for returning value of the <size> element.
-native-width-integer	libclamav/xar.c	200	     encoding - pointer to int for returning indication of the <encoding> style attribute.
-native-width-integer	libclamav/xar.c	202	     a_hash - pointer to int for returning archived checksum algorithm.
-native-width-integer	libclamav/xar.c	204	     e_hash - pointer to int for returning extracted checksum algorithm.
-native-width-integer	libclamav/xar.c	207	static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size_t *offset, size_t *size, int *encoding,
-native-width-integer	libclamav/xar.c	208	                                   unsigned char **a_cksum, int *a_hash, unsigned char **e_cksum, int *e_hash)
-native-width-integer	libclamav/xar.c	211	    int indata = 0, inea = 0;
-native-width-integer	libclamav/xar.c	212	    int rc, gotoffset = 0, gotlength = 0, gotsize = 0;
-native-width-integer	libclamav/xar.c	332	static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
-native-width-integer	libclamav/xar.c	334	    int rc = CL_SUCCESS, subdoc_len, fd;
-native-width-integer	libclamav/xar.c	335	    int reader_status;
-native-width-integer	libclamav/xar.c	368	                    if (cli_writen(fd, subdoc, subdoc_len) == (size_t)-1) {
-native-width-integer	libclamav/xar.c	390	static void *xar_hash_init(int hash, void **sc, void **mc)
-native-width-integer	libclamav/xar.c	416	static void xar_hash_update(void *hash_ctx, void *data, unsigned long size, int hash)
-native-width-integer	libclamav/xar.c	430	static void xar_hash_final(void *hash_ctx, void *result, int hash)
-native-width-integer	libclamav/xar.c	444	static int xar_hash_check(int hash, const void *result, const void *expected)
-native-width-integer	libclamav/xar.c	446	    int len;
-native-width-integer	libclamav/xar.c	472	int cli_scanxar(cli_ctx *ctx)
-native-width-integer	libclamav/xar.c	474	    int rc                      = CL_SUCCESS;
-native-width-integer	libclamav/xar.c	475	    unsigned int cksum_fails    = 0;
-native-width-integer	libclamav/xar.c	476	    unsigned int extract_errors = 0;
-native-width-integer	libclamav/xar.c	478	    int fd = -1;
-native-width-integer	libclamav/xar.c	481	    size_t length, offset, size, at, heap_start, data_end;
-native-width-integer	libclamav/xar.c	482	    int encoding;
-native-width-integer	libclamav/xar.c	486	    int toc_fd = -1;
-native-width-integer	libclamav/xar.c	488	    int a_hash, e_hash;
+native-width-integer	libclamav/xar.c	103	        got = read(fd, buffer, (size_t)len);
+native-width-integer	libclamav/xar.c	106	    return got < 0 ? -1 : (int)got;
+native-width-integer	libclamav/xar.c	109	static int xar_toc_close(void *opaque)
+native-width-integer	libclamav/xar.c	119	   value - pointer to size_t to contain the returned value
+native-width-integer	libclamav/xar.c	122	static int xar_get_numeric_from_xml_element(xmlTextReaderPtr reader, size_t *value)
+native-width-integer	libclamav/xar.c	129	            unsigned long long numval;
+native-width-integer	libclamav/xar.c	139	            *value = (size_t)numval;
+native-width-integer	libclamav/xar.c	152	    hash - pointer to int for returning checksum algorithm.
+native-width-integer	libclamav/xar.c	155	static void xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cksum, int *hash)
+native-width-integer	libclamav/xar.c	203	     length - pointer to long for returning value of the <length> element.
+native-width-integer	libclamav/xar.c	204	     offset - pointer to long for returning value of the <offset> element.
+native-width-integer	libclamav/xar.c	205	     size - pointer to long for returning value of the <size> element.
+native-width-integer	libclamav/xar.c	206	     encoding - pointer to int for returning indication of the <encoding> style attribute.
+native-width-integer	libclamav/xar.c	208	     a_hash - pointer to int for returning archived checksum algorithm.
+native-width-integer	libclamav/xar.c	210	     e_hash - pointer to int for returning extracted checksum algorithm.
+native-width-integer	libclamav/xar.c	213	static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size_t *offset, size_t *size, int *encoding,
+native-width-integer	libclamav/xar.c	214	                                   unsigned char **a_cksum, int *a_hash, unsigned char **e_cksum, int *e_hash)
+native-width-integer	libclamav/xar.c	217	    int indata = 0, inea = 0;
+native-width-integer	libclamav/xar.c	218	    int rc, gotoffset = 0, gotlength = 0, gotsize = 0;
+native-width-integer	libclamav/xar.c	338	static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
+native-width-integer	libclamav/xar.c	340	    int rc = CL_SUCCESS, subdoc_len, fd;
+native-width-integer	libclamav/xar.c	341	    int cleanup_rc;
+native-width-integer	libclamav/xar.c	342	    int temp_rc;
+native-width-integer	libclamav/xar.c	343	    int reader_status;
+native-width-integer	libclamav/xar.c	380	                    if (cli_writen(fd, subdoc, (size_t)subdoc_len) != (size_t)subdoc_len) {
+native-width-integer	libclamav/xar.c	406	static void *xar_hash_init(int hash, void **sc, void **mc)
+native-width-integer	libclamav/xar.c	432	static void xar_hash_update(void *hash_ctx, void *data, unsigned long size, int hash)
+native-width-integer	libclamav/xar.c	446	static void xar_hash_final(void *hash_ctx, void *result, int hash)
+native-width-integer	libclamav/xar.c	460	static int xar_hash_check(int hash, const void *result, const void *expected)
+native-width-integer	libclamav/xar.c	462	    int len;
+native-width-integer	libclamav/xar.c	488	int cli_scanxar(cli_ctx *ctx)
+native-width-integer	libclamav/xar.c	490	    int rc                      = CL_SUCCESS;
+native-width-integer	libclamav/xar.c	491	    unsigned int cksum_fails    = 0;
+native-width-integer	libclamav/xar.c	492	    unsigned int extract_errors = 0;
+native-width-integer	libclamav/xar.c	494	    int fd = -1;
+native-width-integer	libclamav/xar.c	497	    size_t length, offset, size, at, heap_start, data_end;
+native-width-integer	libclamav/xar.c	498	    int encoding;
+native-width-integer	libclamav/xar.c	502	    int toc_fd = -1;
+native-width-integer	libclamav/xar.c	503	    int cleanup_rc;
+native-width-integer	libclamav/xar.c	505	    int a_hash, e_hash;
 native-width-integer	libclamav/xar.c	53	static int xar_cleanup_temp_file(cli_ctx *ctx, int fd, char *tmpname)
 native-width-integer	libclamav/xar.c	55	    int rc = CL_SUCCESS;
-native-width-integer	libclamav/xar.c	557	            size_t chunk = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
-native-width-integer	libclamav/xar.c	558	            size_t source_offset = hdr.size + (size_t)compressed_read;
-native-width-integer	libclamav/xar.c	573	                int inflate_rc;
-native-width-integer	libclamav/xar.c	574	                size_t produced;
-native-width-integer	libclamav/xar.c	642	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
-native-width-integer	libclamav/xar.c	650	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
-native-width-integer	libclamav/xar.c	674	        int do_extract_cksum = 1;
-native-width-integer	libclamav/xar.c	689	            heap_start = hdr.size + (size_t)hdr.toc_length_compressed;
-native-width-integer	libclamav/xar.c	70	static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data, size_t len,
-native-width-integer	libclamav/xar.c	733	                    unsigned long avail_in;
-native-width-integer	libclamav/xar.c	735	                    unsigned int bytes = MIN(data_end - at, map->pgsz);
-native-width-integer	libclamav/xar.c	737	                        cli_dbgmsg("cli_scanxar: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
-native-width-integer	libclamav/xar.c	745	                        int inf;
-native-width-integer	libclamav/xar.c	746	                        size_t produced;
-native-width-integer	libclamav/xar.c	822	                size_t in_remaining = MIN(length, map->len - at);
-native-width-integer	libclamav/xar.c	825	                int lret;
-native-width-integer	libclamav/xar.c	877	                    unsigned long in_consumed;
-native-width-integer	libclamav/xar.c	88	static int xar_toc_read(void *opaque, char *buffer, int len)
-native-width-integer	libclamav/xar.c	90	    int fd = *(int *)opaque;
-native-width-integer	libclamav/xar.c	91	    ssize_t got;
-native-width-integer	libclamav/xar.c	910	                                   (long long unsigned)avail_in, (long long unsigned)avail_out);
-native-width-integer	libclamav/xar.c	940	                    if (cli_writen(fd, buff, avail_out) == (size_t)-1) {
-native-width-integer	libclamav/xar.c	942	                                   (long long unsigned)avail_out);
-native-width-integer	libclamav/xar.c	97	        got = read(fd, buffer, (size_t)len);
-native-width-integer	libclamav/xar.c	970	                    size_t copied = 0;
-native-width-integer	libclamav/xar.c	973	                        size_t writelen = MIN(sizeof(copy_buffer), length - copied);
+native-width-integer	libclamav/xar.c	575	            size_t chunk = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
+native-width-integer	libclamav/xar.c	576	            size_t source_offset = hdr.size + (size_t)compressed_read;
+native-width-integer	libclamav/xar.c	591	                int inflate_rc;
+native-width-integer	libclamav/xar.c	592	                size_t produced;
+native-width-integer	libclamav/xar.c	660	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/xar.c	668	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/xar.c	692	        int do_extract_cksum = 1;
+native-width-integer	libclamav/xar.c	707	            heap_start = hdr.size + (size_t)hdr.toc_length_compressed;
+native-width-integer	libclamav/xar.c	74	static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data, size_t len,
+native-width-integer	libclamav/xar.c	752	                    unsigned long avail_in;
+native-width-integer	libclamav/xar.c	754	                    unsigned int bytes = MIN(data_end - at, map->pgsz);
+native-width-integer	libclamav/xar.c	756	                        cli_dbgmsg("cli_scanxar: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
+native-width-integer	libclamav/xar.c	764	                        int inf;
+native-width-integer	libclamav/xar.c	765	                        size_t produced;
+native-width-integer	libclamav/xar.c	841	                size_t in_remaining = MIN(length, map->len - at);
+native-width-integer	libclamav/xar.c	844	                int lret;
+native-width-integer	libclamav/xar.c	896	                    unsigned long in_consumed;
+native-width-integer	libclamav/xar.c	929	                                   (long long unsigned)avail_in, (long long unsigned)avail_out);
+native-width-integer	libclamav/xar.c	94	static int xar_toc_read(void *opaque, char *buffer, int len)
+native-width-integer	libclamav/xar.c	959	                    if (cli_writen(fd, buff, avail_out) == (size_t)-1) {
+native-width-integer	libclamav/xar.c	96	    int fd = *(int *)opaque;
+native-width-integer	libclamav/xar.c	961	                                   (long long unsigned)avail_out);
+native-width-integer	libclamav/xar.c	97	    ssize_t got;
+native-width-integer	libclamav/xar.c	989	                    size_t copied = 0;
+native-width-integer	libclamav/xar.c	992	                        size_t writelen = MIN(sizeof(copy_buffer), length - copied);
 native-width-integer	libclamav/xar.h	71	int cli_scanxar(cli_ctx *ctx);
 native-width-integer	libclamav/xdp.c	58	    int fd;
 native-width-integer	libclamav/xdp.c	61	    size_t offset = 0;
@@ -15918,8 +15921,8 @@ boundary-constant	libclamav/upx.c	544	                if (backsize + oob > UINT3
 boundary-constant	libclamav/upx.c	551	                    if (backsize + oob > UINT32_MAX / 2)
 boundary-constant	libclamav/upx.c	557	                if (backsize > UINT32_MAX - 2)
 boundary-constant	libclamav/upx.c	566	        if (backsize > UINT32_MAX - 2)
-boundary-constant	libclamav/xar.c	127	            if (numstr[0] == '-' || errno == ERANGE || numval > SIZE_MAX ||
-boundary-constant	libclamav/xar.c	515	    if (hdr.toc_length_compressed > SIZE_MAX || hdr.toc_length_decompressed > SIZE_MAX ||
+boundary-constant	libclamav/xar.c	133	            if (numstr[0] == '-' || errno == ERANGE || numval > SIZE_MAX ||
+boundary-constant	libclamav/xar.c	532	    if (hdr.toc_length_compressed > SIZE_MAX || hdr.toc_length_decompressed > SIZE_MAX ||
 boundary-constant	libclamav/yara_grammar.c	327	       && UINT_LEAST8_MAX <= INT_MAX)
 boundary-constant	libclamav/yara_grammar.c	329	#elif !defined __UINT_LEAST8_MAX__ && UCHAR_MAX <= INT_MAX
 boundary-constant	libclamav/yara_grammar.c	338	       && UINT_LEAST16_MAX <= INT_MAX)
@@ -16077,7 +16080,7 @@ quantity-parser	libclamav/str.c	547	 * @param[out] endptr   [optional] If endptr
 quantity-parser	libclamav/str.c	549	 * all, however, strtol() stores the original value of str in *endptr. Nota
 quantity-parser	libclamav/str.c	671	 * @param[out] endptr   [optional] If endptr is not NULL, strtol() stores the
 quantity-parser	libclamav/str.c	673	 * all, however, strtol() stores the original value of str in *endptr. Nota
-quantity-parser	libclamav/xar.c	126	            numval       = strtoull((const char *)numstr, &endptr, 10);
+quantity-parser	libclamav/xar.c	132	            numval       = strtoull((const char *)numstr, &endptr, 10);
 quantity-parser	libclamav/yara_lexer.c	1528	  yylval->integer = (size_t) atol(yytext);
 quantity-parser	libfreshclam/libfreshclam.c	575	    recordTime = atoi(reply_token);
 quantity-parser	libfreshclam/libfreshclam_internal.c	2098	            newVersion = atoi(verStrDnsPrimary);
@@ -18116,28 +18119,28 @@ format-width	libclamav/vba_extract.c	382	    snprintf(fullname, sizeof(fullname)
 format-width	libclamav/vba_extract.c	745	                int buf_length       = snprintf(buf, sizeof(buf), "REM PROJECTVERSION: %u.%u\n", major, minor);
 format-width	libclamav/vba_extract.c	763	                int buf_length       = snprintf(buf, sizeof(buf), "REM PROJECTMODULES: %u\n", modules);
 format-width	libclamav/www.c	227	        snprintf(chunkedlen, sizeof(chunkedlen), "%zu", strlen(encoded));
-format-width	libclamav/xar.c	1075	        cli_dbgmsg("cli_scanxar: %u checksum errors and %u extraction errors.\n",
-format-width	libclamav/xar.c	359	            cli_dbgmsg("cli_scanxar: in-memory scan of xml subdocument, len %i.\n", subdoc_len);
-format-width	libclamav/xar.c	527	    /* cli_dbgmsg("hdr.size %i\n", hdr.size); */
-format-width	libclamav/xar.c	528	    /* cli_dbgmsg("hdr.version %i\n", hdr.version); */
-format-width	libclamav/xar.c	529	    /* cli_dbgmsg("hdr.toc_length_compressed %lu\n", hdr.toc_length_compressed); */
-format-width	libclamav/xar.c	530	    /* cli_dbgmsg("hdr.toc_length_decompressed %lu\n", hdr.toc_length_decompressed); */
-format-width	libclamav/xar.c	531	    /* cli_dbgmsg("hdr.chksum_alg %i\n", hdr.chksum_alg); */
-format-width	libclamav/xar.c	550	            cli_dbgmsg("cli_scanxar: inflateInit error %i\n", rc);
-format-width	libclamav/xar.c	606	                    cli_dbgmsg("cli_scanxar: TOC decoder did not reach stream end: %i\n", inflate_rc);
-format-width	libclamav/xar.c	665	        cli_dbgmsg("xar_scan_subdocuments returns %i.\n", rc);
-format-width	libclamav/xar.c	711	        cli_dbgmsg("cli_scanxar: decompress into temp file:\n%s, size %zu,\n"
-format-width	libclamav/xar.c	712	                   "from xar heap offset %zu length %zu\n",
-format-width	libclamav/xar.c	726	                    cli_dbgmsg("cli_scanxar: InflateInit failed: %d\n", rc);
-format-width	libclamav/xar.c	737	                        cli_dbgmsg("cli_scanxar: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
-format-width	libclamav/xar.c	753	                            cli_dbgmsg("cli_scanxar: inflate error %i %s.\n", inf, strm.msg ? strm.msg : "");
-format-width	libclamav/xar.c	849	                    cli_dbgmsg("cli_scanxar: Can't read %i bytes @ %zu, errno:%s.\n",
-format-width	libclamav/xar.c	864	                    cli_dbgmsg("cli_scanxar: cli_LzmaInit() fails: %i.\n", lret);
-format-width	libclamav/xar.c	886	                        cli_dbgmsg("cli_scanxar: Can't read %zu bytes @ %zu, errno: %s.\n",
-format-width	libclamav/xar.c	896	                        cli_dbgmsg("cli_scanxar: cli_LzmaDecode() fails: %i.\n", lret);
-format-width	libclamav/xar.c	909	                                   "avail_in %llu, avail_out %llu.\n",
-format-width	libclamav/xar.c	941	                        cli_dbgmsg("cli_scanxar: cli_writen error writing lzma temp file for %llu bytes.\n",
-format-width	libclamav/xar.c	983	                            cli_dbgmsg("cli_scanxar: cli_writen error %zu bytes @ %zu.\n", writelen, at + copied);
+format-width	libclamav/xar.c	1002	                            cli_dbgmsg("cli_scanxar: cli_writen error %zu bytes @ %zu.\n", writelen, at + copied);
+format-width	libclamav/xar.c	1099	        cli_dbgmsg("cli_scanxar: %u checksum errors and %u extraction errors.\n",
+format-width	libclamav/xar.c	367	            cli_dbgmsg("cli_scanxar: in-memory scan of xml subdocument, len %i.\n", subdoc_len);
+format-width	libclamav/xar.c	544	    /* cli_dbgmsg("hdr.size %i\n", hdr.size); */
+format-width	libclamav/xar.c	545	    /* cli_dbgmsg("hdr.version %i\n", hdr.version); */
+format-width	libclamav/xar.c	546	    /* cli_dbgmsg("hdr.toc_length_compressed %lu\n", hdr.toc_length_compressed); */
+format-width	libclamav/xar.c	547	    /* cli_dbgmsg("hdr.toc_length_decompressed %lu\n", hdr.toc_length_decompressed); */
+format-width	libclamav/xar.c	548	    /* cli_dbgmsg("hdr.chksum_alg %i\n", hdr.chksum_alg); */
+format-width	libclamav/xar.c	568	            cli_dbgmsg("cli_scanxar: inflateInit error %i\n", rc);
+format-width	libclamav/xar.c	624	                    cli_dbgmsg("cli_scanxar: TOC decoder did not reach stream end: %i\n", inflate_rc);
+format-width	libclamav/xar.c	683	        cli_dbgmsg("xar_scan_subdocuments returns %i.\n", rc);
+format-width	libclamav/xar.c	730	        cli_dbgmsg("cli_scanxar: decompress into temp file:\n%s, size %zu,\n"
+format-width	libclamav/xar.c	731	                   "from xar heap offset %zu length %zu\n",
+format-width	libclamav/xar.c	745	                    cli_dbgmsg("cli_scanxar: InflateInit failed: %d\n", rc);
+format-width	libclamav/xar.c	756	                        cli_dbgmsg("cli_scanxar: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
+format-width	libclamav/xar.c	772	                            cli_dbgmsg("cli_scanxar: inflate error %i %s.\n", inf, strm.msg ? strm.msg : "");
+format-width	libclamav/xar.c	868	                    cli_dbgmsg("cli_scanxar: Can't read %i bytes @ %zu, errno:%s.\n",
+format-width	libclamav/xar.c	883	                    cli_dbgmsg("cli_scanxar: cli_LzmaInit() fails: %i.\n", lret);
+format-width	libclamav/xar.c	905	                        cli_dbgmsg("cli_scanxar: Can't read %zu bytes @ %zu, errno: %s.\n",
+format-width	libclamav/xar.c	915	                        cli_dbgmsg("cli_scanxar: cli_LzmaDecode() fails: %i.\n", lret);
+format-width	libclamav/xar.c	928	                                   "avail_in %llu, avail_out %llu.\n",
+format-width	libclamav/xar.c	960	                        cli_dbgmsg("cli_scanxar: cli_writen error writing lzma temp file for %llu bytes.\n",
 format-width	libclamav/xdp.c	72	            cli_errmsg("dump_xdp: failed to read XDP input at offset %zu\n", offset);
 format-width	libclamav/xlm_extract.c	3817	    cli_dbgmsg("read_office_art_record_header:   recLen       %u\n", unpacked_header->recLen);
 format-width	libclamav/xlm_extract.c	3937	                    len = fprintf(out_file, " CHOOSE (%u)", (unsigned)(coffset + 1));
@@ -27410,42 +27413,41 @@ offset-size-arithmetic	libclamav/www.c	249	        snprintf(buf + strlen(buf), b
 offset-size-arithmetic	libclamav/www.c	250	        snprintf(buf + strlen(buf), bufsz - strlen(buf), "%s", encoded);
 offset-size-arithmetic	libclamav/www.h	25	size_t encoded_size(const char *postdata);
 offset-size-arithmetic	libclamav/www.h	27	void submit_post(const char *host, const char *port, const char *method, const char *url, const char *postdata, uint32_t timeout);
-offset-size-arithmetic	libclamav/xar.c	116	static int xar_get_numeric_from_xml_element(xmlTextReaderPtr reader, size_t *value)
-offset-size-arithmetic	libclamav/xar.c	176	            if (((*hash == XAR_CKSUM_SHA1) && (xmlStrlen(xmlval) == 2 * SHA1_HASH_SIZE)) ||
-offset-size-arithmetic	libclamav/xar.c	177	                ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) {
-offset-size-arithmetic	libclamav/xar.c	197	     length - pointer to long for returning value of the <length> element.
-offset-size-arithmetic	libclamav/xar.c	198	     offset - pointer to long for returning value of the <offset> element.
-offset-size-arithmetic	libclamav/xar.c	199	     size - pointer to long for returning value of the <size> element.
-offset-size-arithmetic	libclamav/xar.c	207	static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size_t *offset, size_t *size, int *encoding,
-offset-size-arithmetic	libclamav/xar.c	314	    } else if (0 == gotoffset + gotlength + gotsize)
-offset-size-arithmetic	libclamav/xar.c	368	                    if (cli_writen(fd, subdoc, subdoc_len) == (size_t)-1) {
-offset-size-arithmetic	libclamav/xar.c	516	        hdr.size > map->len || hdr.toc_length_compressed > map->len - hdr.size) {
-offset-size-arithmetic	libclamav/xar.c	533	    /* Stream the compressed TOC through zlib into a quota-accounted temporary
-offset-size-arithmetic	libclamav/xar.c	535	     * complete decompressed XML document, imposing an unrelated 64 MiB cap. */
-offset-size-arithmetic	libclamav/xar.c	557	            size_t chunk = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
-offset-size-arithmetic	libclamav/xar.c	558	            size_t source_offset = hdr.size + (size_t)compressed_read;
-offset-size-arithmetic	libclamav/xar.c	568	            compressed_read += chunk;
-offset-size-arithmetic	libclamav/xar.c	579	                produced = sizeof(outbuf) - strm.avail_out;
-offset-size-arithmetic	libclamav/xar.c	581	                if (produced > hdr.toc_length_decompressed - decompressed_written) {
-offset-size-arithmetic	libclamav/xar.c	593	                decompressed_written += produced;
-offset-size-arithmetic	libclamav/xar.c	642	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
-offset-size-arithmetic	libclamav/xar.c	650	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
-offset-size-arithmetic	libclamav/xar.c	689	            heap_start = hdr.size + (size_t)hdr.toc_length_compressed;
-offset-size-arithmetic	libclamav/xar.c	690	            if (offset > map->len - heap_start || length > map->len - heap_start - offset) {
-offset-size-arithmetic	libclamav/xar.c	696	            at = heap_start + offset;
-offset-size-arithmetic	libclamav/xar.c	697	            data_end = at + length;
-offset-size-arithmetic	libclamav/xar.c	735	                    unsigned int bytes = MIN(data_end - at, map->pgsz);
-offset-size-arithmetic	libclamav/xar.c	759	                        produced = sizeof(buff) - strm.avail_out;
-offset-size-arithmetic	libclamav/xar.c	822	                size_t in_remaining = MIN(length, map->len - at);
-offset-size-arithmetic	libclamav/xar.c	838	                if (data_end - at < CLI_LZMA_HDR_SIZE) {
-offset-size-arithmetic	libclamav/xar.c	928	                    out_size += avail_out;
-offset-size-arithmetic	libclamav/xar.c	935	                    /* Write a decompressed block. */
-offset-size-arithmetic	libclamav/xar.c	937	                    /*            "consumed %li of %li available compressed bytes.\n", */
-offset-size-arithmetic	libclamav/xar.c	940	                    if (cli_writen(fd, buff, avail_out) == (size_t)-1) {
-offset-size-arithmetic	libclamav/xar.c	966	                /* for uncompressed, bzip2, xz, and unknown, just pull the file, cli_magic_scan_desc does the rest */
-offset-size-arithmetic	libclamav/xar.c	973	                        size_t writelen = MIN(sizeof(copy_buffer), length - copied);
-offset-size-arithmetic	libclamav/xar.c	983	                            cli_dbgmsg("cli_scanxar: cli_writen error %zu bytes @ %zu.\n", writelen, at + copied);
-offset-size-arithmetic	libclamav/xar.c	991	        } /* end of switch */
+offset-size-arithmetic	libclamav/xar.c	1002	                            cli_dbgmsg("cli_scanxar: cli_writen error %zu bytes @ %zu.\n", writelen, at + copied);
+offset-size-arithmetic	libclamav/xar.c	1010	        } /* end of switch */
+offset-size-arithmetic	libclamav/xar.c	122	static int xar_get_numeric_from_xml_element(xmlTextReaderPtr reader, size_t *value)
+offset-size-arithmetic	libclamav/xar.c	182	            if (((*hash == XAR_CKSUM_SHA1) && (xmlStrlen(xmlval) == 2 * SHA1_HASH_SIZE)) ||
+offset-size-arithmetic	libclamav/xar.c	183	                ((*hash == XAR_CKSUM_MD5) && (xmlStrlen(xmlval) == 2 * MD5_HASH_SIZE))) {
+offset-size-arithmetic	libclamav/xar.c	203	     length - pointer to long for returning value of the <length> element.
+offset-size-arithmetic	libclamav/xar.c	204	     offset - pointer to long for returning value of the <offset> element.
+offset-size-arithmetic	libclamav/xar.c	205	     size - pointer to long for returning value of the <size> element.
+offset-size-arithmetic	libclamav/xar.c	213	static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size_t *offset, size_t *size, int *encoding,
+offset-size-arithmetic	libclamav/xar.c	320	    } else if (0 == gotoffset + gotlength + gotsize)
+offset-size-arithmetic	libclamav/xar.c	533	        hdr.size > map->len || hdr.toc_length_compressed > map->len - hdr.size) {
+offset-size-arithmetic	libclamav/xar.c	550	    /* Stream the compressed TOC through zlib into a quota-accounted temporary
+offset-size-arithmetic	libclamav/xar.c	552	     * complete decompressed XML document, imposing an unrelated 64 MiB cap. */
+offset-size-arithmetic	libclamav/xar.c	575	            size_t chunk = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
+offset-size-arithmetic	libclamav/xar.c	576	            size_t source_offset = hdr.size + (size_t)compressed_read;
+offset-size-arithmetic	libclamav/xar.c	586	            compressed_read += chunk;
+offset-size-arithmetic	libclamav/xar.c	597	                produced = sizeof(outbuf) - strm.avail_out;
+offset-size-arithmetic	libclamav/xar.c	599	                if (produced > hdr.toc_length_decompressed - decompressed_written) {
+offset-size-arithmetic	libclamav/xar.c	611	                decompressed_written += produced;
+offset-size-arithmetic	libclamav/xar.c	660	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/xar.c	668	    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/xar.c	707	            heap_start = hdr.size + (size_t)hdr.toc_length_compressed;
+offset-size-arithmetic	libclamav/xar.c	708	            if (offset > map->len - heap_start || length > map->len - heap_start - offset) {
+offset-size-arithmetic	libclamav/xar.c	714	            at = heap_start + offset;
+offset-size-arithmetic	libclamav/xar.c	715	            data_end = at + length;
+offset-size-arithmetic	libclamav/xar.c	754	                    unsigned int bytes = MIN(data_end - at, map->pgsz);
+offset-size-arithmetic	libclamav/xar.c	778	                        produced = sizeof(buff) - strm.avail_out;
+offset-size-arithmetic	libclamav/xar.c	841	                size_t in_remaining = MIN(length, map->len - at);
+offset-size-arithmetic	libclamav/xar.c	857	                if (data_end - at < CLI_LZMA_HDR_SIZE) {
+offset-size-arithmetic	libclamav/xar.c	947	                    out_size += avail_out;
+offset-size-arithmetic	libclamav/xar.c	954	                    /* Write a decompressed block. */
+offset-size-arithmetic	libclamav/xar.c	956	                    /*            "consumed %li of %li available compressed bytes.\n", */
+offset-size-arithmetic	libclamav/xar.c	959	                    if (cli_writen(fd, buff, avail_out) == (size_t)-1) {
+offset-size-arithmetic	libclamav/xar.c	985	                /* for uncompressed, bzip2, xz, and unknown, just pull the file, cli_magic_scan_desc does the rest */
+offset-size-arithmetic	libclamav/xar.c	992	                        size_t writelen = MIN(sizeof(copy_buffer), length - copied);
 offset-size-arithmetic	libclamav/xdp.c	116	    return cli_msxml_parse_document_streaming(ctx, ctx->fmap, xdp_keys, sizeof(xdp_keys) / sizeof(xdp_keys[0]),
 offset-size-arithmetic	libclamav/xdp.c	68	    while (offset < map->len) {
 offset-size-arithmetic	libclamav/xdp.c	69	        wanted = MIN(sizeof(buffer), map->len - offset);

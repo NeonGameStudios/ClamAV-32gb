@@ -53,13 +53,17 @@ static cl_error_t xar_incomplete(cli_ctx *ctx, const char *reason)
 static int xar_cleanup_temp_file(cli_ctx *ctx, int fd, char *tmpname)
 {
     int rc = CL_SUCCESS;
-    if (fd > -1)
-        close(fd);
+    if (fd > -1 && close(fd) == -1) {
+        cli_mark_scan_incomplete(ctx, "XAR temporary output could not be closed");
+        rc = CL_EWRITE;
+    }
     if (tmpname != NULL) {
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tmpname)) {
                 cli_dbgmsg("cli_scanxar: error unlinking tmpfile %s\n", tmpname);
-                rc = CL_EUNLINK;
+                cli_mark_scan_incomplete(ctx, "XAR temporary output could not be removed");
+                if (CL_SUCCESS == rc)
+                    rc = CL_EUNLINK;
             }
         }
         free(tmpname);
@@ -73,8 +77,10 @@ static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data,
     if (len == 0)
         return CL_SUCCESS;
 
-    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS)
+    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be reserved");
         return CL_ERESOURCE;
+    }
 
     *reserved += (uint64_t)len;
     if (cli_writen(fd, data, len) != len) {
@@ -332,6 +338,8 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size
 static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
 {
     int rc = CL_SUCCESS, subdoc_len, fd;
+    int cleanup_rc;
+    int temp_rc;
     int reader_status;
     xmlChar *subdoc;
     const xmlChar *name;
@@ -361,15 +369,23 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
 
             /* make a file to leave if --leave-temps in effect */
             if (ctx->engine->keeptmp) {
-                if ((rc = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
+                temp_rc = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd);
+                if (temp_rc != CL_SUCCESS) {
                     cli_dbgmsg("cli_scanxar: Can't create temporary file for subdocument.\n");
+                    cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be created");
+                    if (CL_SUCCESS == rc || CL_VERIFIED == rc)
+                        rc = temp_rc;
                 } else {
                     cli_dbgmsg("cli_scanxar: Writing subdoc to temp file %s.\n", tmpname);
-                    if (cli_writen(fd, subdoc, subdoc_len) == (size_t)-1) {
+                    if (cli_writen(fd, subdoc, (size_t)subdoc_len) != (size_t)subdoc_len) {
                         cli_dbgmsg("cli_scanxar: cli_writen error writing subdoc temporary file.\n");
-                        rc = CL_EWRITE;
+                        cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be written completely");
+                        if (CL_SUCCESS == rc || CL_VERIFIED == rc)
+                            rc = CL_EWRITE;
                     }
-                    rc      = xar_cleanup_temp_file(ctx, fd, tmpname);
+                    cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname);
+                    if (CL_SUCCESS == rc && CL_SUCCESS != cleanup_rc)
+                        rc = cleanup_rc;
                     tmpname = NULL;
                 }
             }
@@ -484,6 +500,7 @@ int cli_scanxar(cli_ctx *ctx)
     char *tmpname = NULL, *tocname = NULL;
     xmlTextReaderPtr reader = NULL;
     int toc_fd = -1;
+    int cleanup_rc;
     uint64_t toc_reserved = 0;
     int a_hash, e_hash;
     unsigned char *a_cksum = NULL, *e_cksum = NULL;
@@ -535,6 +552,7 @@ int cli_scanxar(cli_ctx *ctx)
      * complete decompressed XML document, imposing an unrelated 64 MiB cap. */
     if ((rc = cli_gentempfd(ctx->this_layer_tmpdir, &tocname, &toc_fd)) != CL_SUCCESS) {
         cli_dbgmsg("cli_scanxar: Can't create temporary file for TOC.\n");
+        cli_mark_scan_incomplete(ctx, "XAR TOC temporary output could not be created");
         goto exit_toc;
     }
 
@@ -705,6 +723,7 @@ int cli_scanxar(cli_ctx *ctx)
 
         if ((rc = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
             cli_dbgmsg("cli_scanxar: Can't generate temporary file.\n");
+            cli_mark_scan_incomplete(ctx, "XAR member temporary output could not be created");
             goto exit_reader;
         }
 
@@ -1047,7 +1066,9 @@ int cli_scanxar(cli_ctx *ctx)
     }
 
 exit_tmpfile:
-    xar_cleanup_temp_file(ctx, fd, tmpname);
+    cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname);
+    if ((CL_SUCCESS == rc || CL_VERIFIED == rc) && CL_SUCCESS != cleanup_rc)
+        rc = cleanup_rc;
     if (a_hash_ctx != NULL)
         xar_hash_final(a_hash_ctx, a_hash_result, a_hash);
     if (e_hash_ctx != NULL)
@@ -1064,8 +1085,11 @@ exit_reader:
 exit_toc:
     if (toc_reserved)
         cli_scan_release_temporary(ctx, toc_reserved);
-    if (toc_fd > -1 && tocname)
-        xar_cleanup_temp_file(ctx, toc_fd, tocname);
+    if (toc_fd > -1 && tocname) {
+        cleanup_rc = xar_cleanup_temp_file(ctx, toc_fd, tocname);
+        if ((CL_SUCCESS == rc || CL_VERIFIED == rc) && CL_SUCCESS != cleanup_rc)
+            rc = cleanup_rc;
+    }
     if (rc != CL_SUCCESS && rc != CL_VIRUS && rc != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "XAR inspection ended before completion");
     if (rc == CL_BREAK)

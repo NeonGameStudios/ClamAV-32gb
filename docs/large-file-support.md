@@ -492,6 +492,9 @@ described below.
 - 7-Zip now marks member-name allocation, temporary-file creation/close/remove,
   member metadata matching, and extracted-file scan failures incomplete while
   preserving detection and other terminal results.
+- XAR now marks TOC temporary admission/creation, member/subdocument staging,
+  close, and cleanup failures, and preserves subdocument scan errors instead of
+  allowing successful cleanup to overwrite them.
 - The POC harness now computes the signature per row, verifies size, status,
   signature, and engine-reported offset, aggregates failures, works with both
   GNU and BSD `time`, and is covered by executable positive/negative scanner
@@ -2520,6 +2523,15 @@ from metadata matching and nested extracted-file scanning instead of continuing
 as though the member completed. Detection and application-abort precedence is
 retained; source guards cover the paths, while compiled Linux and broader
 encrypted/malformed 7-Zip corpus execution remain release gates.
+
+## XAR temporary failure propagation — 2026-08-19
+
+XAR TOC temporary-space reservation and creation failures now mark the scan
+incomplete. Temporary close and removal failures are reported, and subdocument
+scan or write errors can no longer be replaced by a successful cleanup return;
+the same preservation applies to member and TOC cleanup at the final unwind.
+Source guards cover the paths; compiled Linux fault-injection and broader XAR
+corpus execution remain release gates.
 
 ## ZIP extraction operational failures — 2026-08-19
 
