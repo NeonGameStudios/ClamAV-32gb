@@ -1128,3 +1128,20 @@ This closes the specific loader-selection ambiguity in F-13 while preserving
 the remaining limitation: the evidence is still Linux x86-64 runtime proof,
 not compiled qualification of every parser family or a substitute for the
 missing authorized production-CVD/service workload.
+
+## Current-source Sonic1 transfer preflight — 2026-08-19
+
+The authoritative source checkpoint `1091a494cd5064582d11e803ae56e973d2c9b57a`
+was archived locally at 15,045,340 bytes with SHA-256
+`1711a682ef50cd2306eff0f31efaf26b263c0bf3b54c923815a9a6fb5b0cf165`. Sonic1
+could not clone the private GitHub repository (`could not read Username`), and
+the unauthenticated codeload endpoint returned 404. The MCP-SSH durable upload
+handoff reached its listener but failed before transfer with a read-only local
+staging directory; its subsequent cleanup found no remote temporary file. A
+direct upload source was also rejected because neither `/private/tmp` nor the
+canonical workspace is in the MCP-SSH server's configured local transfer roots.
+
+The existing Sonic1 mount remains stale and no current-source bytes were
+written to it. No build or scan result from Sonic1 is therefore attributed to
+`1091a49`; compiled current-source qualification remains an explicit release
+gate.
