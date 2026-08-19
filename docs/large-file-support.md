@@ -1301,11 +1301,13 @@ or waive them.
   partial prefix. Other format-specific boundaries still require dedicated
   adversarial and large-payload fixtures before an upstream support claim.
 - Contiguous metadata/decompression remains intentionally capped: one decoded
-  DMG `blkx` metadata block at 64 MiB, NSIS contiguous input, and EGG decoder
-  buffers at the 1 GiB allocation ceiling. The DMG XML resource fork itself is
-  consumed through bounded SAX input and quota-accounted Base64 spools.
-  Crossing a per-format limit is fail-visible; it is not full deep-parser
-  qualification through 32 GiB.
+  DMG `blkx` metadata block at 64 MiB, solid NSIS input, and EGG decoder
+  buffers at the 1 GiB allocation ceiling. Non-solid NSIS members now consume
+  fmap input in 64 KiB windows and charge extracted bytes to the shared
+  temporary quota. The DMG XML resource fork itself is consumed through
+  bounded SAX input and quota-accounted Base64 spools. Crossing a per-format
+  limit is fail-visible; it is not full deep-parser qualification through
+  32 GiB.
 - DMG blkx Base64 is decoded incrementally across XML callback boundaries into
   a quota-accounted spool. The completed block is retained only within the
   per-block 64 MiB cap, then its complete alphabet, quartet, padding, suffix,
@@ -2130,3 +2132,16 @@ previous intermediate whole-member allocation. The owned `ExtractedFile`
 iterator remains for compatibility callers. Root parsing still depends on the
 third-party slice API, and OneNote corpus, sanitizer, and RSS qualification
 remain open.
+
+## NSIS non-solid bounded input — 2026-08-19
+
+NSIS non-solid members no longer map their complete compressed payload before
+decoding. Stored and compressed members are read from the fmap in bounded
+64 KiB chunks, decompressed into bounded output chunks, and written to the
+existing temporary extraction file while charging output against the shared
+temporary quota through the nested scan. Exact input exhaustion, decoder
+terminal state, trailing compressed data, output limits, and write failures
+are fail-visible. Solid NSIS archives retain an explicit 1 GiB contiguous-
+decoder boundary, and their extracted output is quota-accounted, until the
+stateful decoder is converted to the same reader model; NSIS corpus,
+sanitizer, and RSS qualification remain open.
