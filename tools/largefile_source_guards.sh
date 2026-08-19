@@ -856,6 +856,8 @@ contains libclamav/message.c 'MIME body uses an encoding without a streaming dec
 contains libclamav/mbox.c 'Streaming mail body bypassed in-memory phishing URL inspection'
 contains libclamav/mbox.c 'parseMultipartBodySpool'
 contains libclamav/mbox.c 'Multipart body did not contain a terminating boundary'
+contains libclamav/mbox.c 'MIME parser exceeded MaxRecursion before the child was inspected'
+contains libclamav/mbox.c 'MIME parser exceeded MaxFiles before the child was inspected'
 contains unit_tests/check_clamav.c 'test_single_message_large_body_uses_streaming_spool'
 contains unit_tests/check_clamav.c 'test_multipart_body_uses_streaming_spool'
 contains unit_tests/check_clamav.c 'test_embedded_candidate_admission_headers'

@@ -400,7 +400,7 @@ open end-to-end. The production-blocked verdict remains correct.
 | F-05 | Source closed; exact trigger untested | ZIP variable filename/extra/ZIP64 truncation is sticky and deferred only while valid preceding records are scanned. |
 | F-06 | Source closed; exact fault-injection evidence remains | The reported XZ/CAB/CHM-open/PE faults and CAB/CHM decompressor-construction failure now mark incomplete; focused constructor tests are present but require the supported build environment. |
 | F-07 | Bounded source policy; runtime qualification open | LHA uses bounded `Read + Seek`; ALZ uses that adapter and streams members to quota-accounted spools; OneNote stages through bounded fmap windows and uses a disk-backed mapping for its slice API. Mapping and concurrent-RSS qualification remain open. |
-| F-08 | Memory flaw closed; ABI unresolved | The digest pointer fix is correct for newly compiled callers, but the exported symbol and SOVERSION were not changed for old scalar-ABI callers. |
+| F-08 | Source and release ABI transition closed; old-SO compatibility intentionally unsupported | The digest pointer fix is correct for newly compiled callers, and the fork publishes `CURRENT:REVISION:AGE 14:0:0` / SOVERSION 14. Existing binaries linked to the prior SOVERSION are not an in-place compatibility target and must be rebuilt/relinked for this release. |
 | F-09 | Source closed; exact trigger untested | Both Mach-O section branches reject alignment exponents at or above 32 before shifting. |
 | F-10 | Source closed; exact boundary evidence remains | Script/JPEG/XZ state is widened or range-checked, and normalized-script output/map failures are sticky; compiled multi-GiB and injected-failure coverage remains a supported-build gate. |
 | F-11 | Source closed; nested fault-injection evidence remains | Short-copy detection, accessible-slice range validation, and RAR staging incomplete propagation are present. |
@@ -513,7 +513,7 @@ and very long digit strings while accepting zero and `UINT32_MAX`. The
 registered `check_clamd` tests cover both configuration-file and CLI paths;
 the source finding is closed.
 
-### V-07 — Medium release-compatibility issue: the fmap hash fix changes ABI without versioning
+### V-07 — Medium release-compatibility issue: the fmap hash fix changes ABI
 
 The F-08 memory-safety flaw is corrected for newly compiled clients:
 `cl_fmap_set_hash()` now accepts a digest pointer and `fmap_set_hash()` copies
@@ -521,13 +521,13 @@ from that pointer (libclamav/clamav.h:683–695;
 libclamav/fmap.c:1322–1345, 1651–1673). The SHA-256 public API regression at
 unit_tests/check_clamav.c:121–145 is meaningful and registered.
 
-The symbol name remains unchanged in libclamav/libclamav.map, and libclamav
-retains CURRENT:REVISION:AGE 13:0:1 / SOVERSION 12
-(CMakeLists.txt:47–54). A binary compiled against the prior scalar third
-argument can pass a value from 0 through 255 that the new implementation
-interprets as a pointer, causing a crash. If no pre-fix fork binary was ever
-distributed, deployment exposure is lower; otherwise this requires an ABI
-version/SONAME transition or an explicit compatibility strategy.
+The symbol name remains unchanged in libclamav/libclamav.map, which is correct
+within a new SONAME. The current fork publishes
+CURRENT:REVISION:AGE 14:0:0 / SOVERSION 14 (CMakeLists.txt:47–54), so the
+pointer-signature change is not an in-place update to SOVERSION 12. A binary
+compiled against the prior scalar third argument must not be loaded against
+this release; it must retain the old shared object or be rebuilt/relinked.
+No compatibility shim for the old ABI is claimed.
 
 ### V-08 — High confidence gap: runtime evidence is not self-contained or semantically bound
 

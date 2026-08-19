@@ -616,6 +616,9 @@ START_TEST(test_mbox_nested_maxfiles_is_fail_visible)
 {
     struct cl_engine *engine;
     struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_scan_completion_t completion;
     cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
     const char *last_alert = "stale";
     uint64_t scanned = UINT64_MAX;
@@ -632,13 +635,21 @@ START_TEST(test_mbox_nested_maxfiles_is_fail_visible)
     engine->maxfiles = 1;
     ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
 
-    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
-                         engine, &options, NULL, NULL, NULL, NULL, NULL,
-                         NULL);
+    ret = cl_scanfile_ex2(path, &verdict, &last_alert, &scanned,
+                          engine, &options, NULL, NULL, NULL, NULL, NULL,
+                          NULL, &report);
     ck_assert_int_eq(ret, CL_EMAXFILES);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &ret), CL_SUCCESS);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_LIMIT_INCOMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert(metrics.skipped_operations > 0);
 
+    cl_scan_report_free(report);
     cl_engine_free(engine);
     free(path);
 }

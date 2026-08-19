@@ -1991,6 +1991,8 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
             // Note: engine->max_recursion_level is re-purposed here out of convenience.
             //       ole2 recursion does not leverage the ctx->recursion_stack stack.
             cli_dbgmsg("parseEmailBody: hit maximum recursion level (%u)\n", recursion_level);
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "MIME parser exceeded MaxRecursion before the child was inspected");
             return MAXREC;
         }
     if (engine->maxfiles && (mctx->files >= engine->maxfiles)) {
@@ -1999,6 +2001,8 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
          * been exceeded
          */
         cli_dbgmsg("parseEmailBody: number of files exceeded %u\n", engine->maxfiles);
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "MIME parser exceeded MaxFiles before the child was inspected");
         return MAXFILES;
     }
 

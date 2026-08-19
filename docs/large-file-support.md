@@ -2702,3 +2702,18 @@ reservation has already been charged. The existing limit regressions now
 assert both the message truncation and scan-incomplete state. Fault-injected
 allocation execution, sanitizer coverage, and broad mail-corpus qualification
 remain release gates.
+
+## Mail parser limit admission and ABI status reconciliation — 2026-08-19
+
+MIME recursion and file-count admission now set the shared sticky incomplete
+state at the point where the child is refused, before returning `MAXREC` or
+`MAXFILES` to the mailbox caller. The existing public nested-`MaxFiles`
+regression continues to assert the exact non-clean limit result; this closes
+the lower-level cache/report boundary without changing detection precedence.
+
+The public `cl_fmap_set_hash()` digest-pointer correction is published under
+the fork's existing SONAME transition: `CURRENT:REVISION:AGE 14:0:0` and
+SOVERSION 14. The symbol name remains stable within that new SONAME, but
+binaries built against the prior scalar-argument ABI must not be loaded
+against this release and require the old shared object or a rebuild. No old-
+ABI compatibility claim is made.
