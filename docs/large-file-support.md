@@ -23,6 +23,14 @@ code cannot be presented as production evidence. The gate's
 `oracle-binding.txt` records the expected status, completion, signature,
 offset, and type alongside each verified size and hash.
 
+Large-file `clamd` configurations now perform the same admission decision at
+startup on Linux: effective `/proc/meminfo` and cgroup headroom must meet the
+scaled memory requirement, the configured temporary directory must have the
+scaled free-space requirement, and the process must expose 64-bit address and
+file-coordinate types. Historical small-file configurations keep their normal
+startup path. A failed admission is logged and the daemon does not open its
+scan sockets.
+
 The first authorized real-file Sonic1 run is documented in
 [`largefile-realfile-sonic1-20260818.md`](largefile-realfile-sonic1-20260818.md).
 It confirms that the fork's 32 GiB ceiling is an explicit configuration

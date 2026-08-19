@@ -74,6 +74,7 @@
 #include "clamd_others.h"
 #include "shared.h"
 #include "scanner.h"
+#include "largefile_admission.h"
 
 #ifdef _WIN32
 #include "service.h"
@@ -753,6 +754,21 @@ int main(int argc, char **argv)
             logg(LOGG_ERROR, "Database initialization error: %s\n", cl_strerror(ret));
             ret = 1;
             break;
+        }
+
+        {
+            char admission_reason[256];
+            int admission_status = CL_ERROR;
+            const char *temporary_directory = cl_engine_get_str(engine, CL_ENGINE_TMPDIR, &admission_status);
+
+            if ((admission_status != CL_SUCCESS) || (NULL == temporary_directory) || (temporary_directory[0] == '\0'))
+                temporary_directory = "/tmp";
+
+            if (!clamd_largefile_admission_check(engine, temporary_directory, admission_reason, sizeof(admission_reason))) {
+                logg(LOGG_ERROR, "Large-file daemon admission failed: %s\n", admission_reason[0] ? admission_reason : "unknown reason");
+                ret = 1;
+                break;
+            }
         }
 
         if (tcpsock || num_fd > 0) {

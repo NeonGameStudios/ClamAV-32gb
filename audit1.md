@@ -763,3 +763,14 @@ documented 256 MiB whole-input parser cap before staging or `mmap`, mark the
 scan incomplete, and leave the ordinary raw matcher path available. This is a
 fail-visible resource boundary, not a claim of deep ALZ/OneNote support through
 32 GiB; conversion to a genuinely bounded reader API remains open work.
+
+## Daemon large-file admission — 2026-08-19
+
+`clamd` now repeats the host-resource admission at startup whenever the
+configured file or logical scan ceiling exceeds the historical defaults. On
+Linux it measures `MemAvailable` together with cgroup v1/v2 headroom, checks
+free blocks in the configured temporary directory, and rejects large-file
+configurations when the effective memory, temporary-space, or 64-bit
+coordinate requirements are not met. The requirements scale down with lower
+configured ceilings and cap at the 48 GiB memory / 68 GiB temporary-space
+release envelope. Small-file configurations retain their legacy startup path.

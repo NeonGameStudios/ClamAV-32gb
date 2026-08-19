@@ -15,6 +15,8 @@ add_executable( clamd )
 target_sources( clamd
     PRIVATE
         clamd.c
+        largefile_admission.c
+        largefile_admission.h
         clamd_others.c
         clamd_others.h
         localserver.c
