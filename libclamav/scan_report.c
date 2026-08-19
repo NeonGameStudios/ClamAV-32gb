@@ -289,7 +289,7 @@ void cli_scan_report_finish(
         } else {
             report->completion = CL_SCAN_COMPLETION_UNSUPPORTED;
         }
-    } else if ((NULL != ctx) && ctx->abort_scan) {
+    } else if ((status == CL_BREAK) || ((NULL != ctx) && ctx->abort_scan)) {
         report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
     } else if ((status == CL_EPARSE) || (status == CL_EFORMAT)) {
         report->completion = CL_SCAN_COMPLETION_MALFORMED_CONFIRMED;

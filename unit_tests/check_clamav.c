@@ -674,6 +674,20 @@ START_TEST(test_scan_report_detection_precedes_incomplete_state)
 }
 END_TEST
 
+START_TEST(test_scan_report_break_is_application_abort)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    cli_scan_report_finish(report, NULL, CL_BREAK, CL_VERDICT_NOTHING_FOUND, NULL);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_APPLICATION_ABORT);
+    cl_scan_report_free(report);
+}
+END_TEST
+
 START_TEST(test_resource_limit_engine_fields_and_accounting)
 {
     struct cl_engine *engine;
@@ -8572,6 +8586,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
+    tcase_add_test(tc_cl, test_scan_report_break_is_application_abort);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);

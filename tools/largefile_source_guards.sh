@@ -61,6 +61,8 @@ contains clamdscan/client.c 'report_stream = fopen(optget(opts, "report-json")->
 contains clamdscan/proto.c 'dspreport'
 contains libclamav/scan_report.c 'A detection is still the authoritative terminal outcome'
 contains unit_tests/check_clamav.c 'test_scan_report_detection_precedes_incomplete_state'
+contains libclamav/scan_report.c 'status == CL_BREAK'
+contains unit_tests/check_clamav.c 'test_scan_report_break_is_application_abort'
 contains common/optparser.c 'OPT_CLAMSCAN | OPT_CLAMDSCAN'
 contains libclamav_rust/src/fmap.rs 'pub struct FMapReader'
 contains libclamav_rust/src/scanners.rs 'unsafe fn spool_fmap'
