@@ -2703,6 +2703,20 @@ assert both the message truncation and scan-incomplete state. Fault-injected
 allocation execution, sanitizer coverage, and broad mail-corpus qualification
 remain release gates.
 
+## PDF unsupported-filter result propagation — 2026-08-19
+
+Recognized DCT, JPX, FAX, JBIG2, and unknown PDF filters previously returned
+`CL_BREAK`, which could let raw bytes be scanned while the required decoded
+layer was treated as complete. Disabled LZW decoding had the same behavior.
+Those paths now preserve the raw fallback but mark the containing scan
+incomplete and return a parser failure, so the layer is non-cacheable and a
+non-detecting result cannot be reported clean. The direct DCT regression
+asserts both raw-byte fallback and the `CL_EPARSE`/incomplete result.
+
+This is fail-visible unsupported-feature handling; it does not claim that
+these image/document filters have been converted to bounded streaming
+decoders or qualified on Linux/Sonic1.
+
 ## Mail parser limit admission and ABI status reconciliation — 2026-08-19
 
 MIME recursion and file-count admission now set the shared sticky incomplete

@@ -911,6 +911,17 @@ records a reason before the parser unwinds. Existing materialization-limit
 unit tests assert the sticky state as well as the legacy message flag; actual
 fault-injected allocation and supported-build mail qualification remain open.
 
+## PDF unsupported-filter result propagation — 2026-08-19
+
+The PDF decoder previously normalized unimplemented DCT/JPX/FAX/JBIG2 and
+unknown filters through `CL_BREAK` after retaining a raw-stream fallback.
+Disabled LZW used the same clean-looking path. The decoder now preserves the
+raw fallback for signature matching but marks the recognized layer incomplete
+and returns `CL_EPARSE`; the direct DCT regression verifies the status,
+sticky state, non-cacheability, and raw-byte count. This closes unsupported
+filter result propagation, not the remaining streaming-decoder and
+production-corpus qualification gates.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the

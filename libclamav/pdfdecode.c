@@ -316,13 +316,17 @@ static size_t pdf_decodestream_internal(
                 if (!filter) filter = "JBIG2DECODE";
 
                 cli_dbgmsg("pdf_decodestream_internal: unimplemented filter type [%u] => %s\n", obj->filterlist[i], filter);
+                cli_mark_scan_incomplete(pdf->ctx,
+                                         "PDF stream uses an unsupported filter and was not decoded");
                 filter = NULL;
-                retval = CL_BREAK;
+                retval = CL_EPARSE;
                 break;
 
             default:
                 cli_dbgmsg("pdf_decodestream_internal: unknown filter type [%u]\n", obj->filterlist[i]);
-                retval = CL_BREAK;
+                cli_mark_scan_incomplete(pdf->ctx,
+                                         "PDF stream uses an unknown filter and was not decoded");
+                retval = CL_EPARSE;
                 break;
         }
 
@@ -938,7 +942,9 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
     int echg = 1, lzwstat, rc = CL_SUCCESS;
 
     if (pdf->ctx && !(pdf->ctx->dconf->other & OTHER_CONF_LZW)) {
-        rc = CL_BREAK;
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF LZW decoding is disabled and the stream was not inspected");
+        rc = CL_EPARSE;
         goto done;
     }
 
