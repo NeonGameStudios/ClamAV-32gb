@@ -359,6 +359,7 @@ static size_t vba_normalize(unsigned char *buffer, size_t size)
 cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, const char *hash, uint32_t which, int *tempfd, int *has_macros, char **tempfile)
 {
     cl_error_t ret = CL_SUCCESS;
+    cl_error_t deferred_failure = CL_SUCCESS;
     char fullname[1024];
     int fd              = -1;
     unsigned char *data = NULL;
@@ -389,7 +390,8 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
     if ((data = cli_vba_inflate(fd, 0, &data_len)) == NULL) {
         cli_dbgmsg("vba_readdir_new: Failed to decompress 'dir'\n");
-        ret = CL_EARG;
+        cli_mark_scan_incomplete(ctx, "VBA project directory could not be decompressed completely");
+        ret = CL_EPARSE;
         goto done;
     }
 
@@ -1287,6 +1289,9 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     module_data = cli_vba_inflate(module_fd, module_offset, &module_data_size);
                     if (!module_data) {
                         cli_dbgmsg("cli_vba_readdir_new: Failed to extract module data\n");
+                        cli_mark_scan_incomplete(ctx, "VBA module could not be decompressed completely");
+                        if (deferred_failure == CL_SUCCESS)
+                            deferred_failure = CL_EPARSE;
                         close(module_fd);
                         continue;
                     }
@@ -1322,6 +1327,9 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
                 if (!module_stream_found) {
                     cli_dbgmsg("cli_vba_readdir_new: Cannot find module stream %s\n", stream_name);
+                    cli_mark_scan_incomplete(ctx, "VBA module stream could not be opened for inspection");
+                    if (deferred_failure == CL_SUCCESS)
+                        deferred_failure = CL_EOPEN;
                 }
                 free((void *)stream_name);
                 stream_name = NULL;
@@ -1344,6 +1352,9 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 #undef CLI_WRITEN_UTF16LE
 
 done:
+    if (ret == CL_SUCCESS && deferred_failure != CL_SUCCESS)
+        ret = deferred_failure;
+
     if (fd >= 0) {
         close(fd);
     }
@@ -1622,7 +1633,12 @@ cli_vba_inflate(int fd, off_t offset, size_t *size)
         return NULL;
 
     memset(buffer, 0, sizeof(buffer));
-    lseek(fd, offset + 3, SEEK_SET); /* 1byte ?? , 2byte length ?? */
+    if (lseek(fd, offset + 3, SEEK_SET) == (off_t)-1) { /* 1byte ?? , 2byte length ?? */
+        blobDestroy(b);
+        if (size)
+            *size = 0;
+        return NULL;
+    }
     clean = TRUE;
     pos   = 0;
 
@@ -1665,7 +1681,12 @@ cli_vba_inflate(int fd, off_t offset, size_t *size)
                             *size = 0;
                         return NULL;
                     }
-                    (void)blobAddData(b, buffer, VBA_COMPRESSION_WINDOW);
+                    if (blobAddData(b, buffer, VBA_COMPRESSION_WINDOW) < 0) {
+                        blobDestroy(b);
+                        if (size)
+                            *size = 0;
+                        return NULL;
+                    }
                     clean = FALSE;
                     break;
                 }

@@ -2028,6 +2028,17 @@ sticky non-clean results. This is an explicit unsupported boundary for legacy
 PE unpackers, not a claim that they can deeply inspect a 32 GiB executable;
 bounded PE-unpacker conversion remains a release gate.
 
+## VBA decompression failure propagation — 2026-08-19
+
+VBA project and module decompression now treats seek failures, intermediate
+blob-growth failures, and missing module streams as incomplete parser results.
+OLE/VBA callers no longer silently continue as clean when a recognized macro
+cannot be materialized or decrypted; they retain a deferred non-clean status
+while allowing unrelated sibling content to be examined. This closes a
+fail-visible gap but does not convert the legacy VBA callback/data API into a
+fully streaming 32 GiB parser; its contiguous matcher and normalization
+ceilings remain release gates.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

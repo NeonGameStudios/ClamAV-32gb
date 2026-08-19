@@ -2023,6 +2023,7 @@ done:
 static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struct uniq *U, int *has_macros)
 {
     cl_error_t status = CL_SUCCESS;
+    cl_error_t deferred_failure = CL_SUCCESS;
     cl_error_t ret;
     int i, j;
     size_t data_len;
@@ -2099,6 +2100,10 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
                     free(data);
                     data = NULL;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "VBA project module could not be decompressed completely");
+                    if (deferred_failure == CL_SUCCESS)
+                        deferred_failure = CL_EPARSE;
                 }
             }
         }
@@ -2170,6 +2175,9 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
             data = (unsigned char *)cli_wm_decrypt_macro(fd, vba_project->offset[i], vba_project->length[i], vba_project->key[i]);
             if (!data) {
                 cli_dbgmsg("cli_ole2_tempdir_scan_vba: WARNING: WM project '%s' macro %d decrypted to NULL\n", vba_project->name[i], i);
+                cli_mark_scan_incomplete(ctx, "VBA macro could not be decrypted completely");
+                if (deferred_failure == CL_SUCCESS)
+                    deferred_failure = CL_EPARSE;
             } else {
                 cli_dbgmsg("cli_ole2_tempdir_scan_vba: Project content:\n%s", data);
 
@@ -2197,6 +2205,9 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
     }
 
 done:
+
+    if (status == CL_SUCCESS && deferred_failure != CL_SUCCESS)
+        status = deferred_failure;
 
     if (*has_macros) {
         if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {

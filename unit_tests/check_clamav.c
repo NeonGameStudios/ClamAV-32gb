@@ -53,6 +53,7 @@
 #include "unzip.h"
 #include "hwp.h"
 #include "ole2_extract.h"
+#include "vba_extract.h"
 #include "pdf.h"
 #include "pdfdecode.h"
 #include "xdp.h"
@@ -6746,6 +6747,25 @@ START_TEST(test_ole2_vba_materialization_failure_is_fail_visible)
 }
 END_TEST
 
+#ifndef _WIN32
+START_TEST(test_vba_inflate_seek_failure_is_fail_visible)
+{
+    int pipefd[2];
+    unsigned char *data;
+    size_t size = SIZE_MAX;
+
+    ck_assert_int_eq(pipe(pipefd), 0);
+    close(pipefd[1]);
+
+    data = cli_vba_inflate(pipefd[0], 0, &size);
+    close(pipefd[0]);
+
+    ck_assert_ptr_null(data);
+    ck_assert_uint_eq(size, 0);
+}
+END_TEST
+#endif
+
 static void dmg_test_write_be32(uint8_t *dst, uint32_t value)
 {
     dst[0] = (uint8_t)(value >> 24);
@@ -8536,6 +8556,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_truncated_property_tree_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_vba_materialization_failure_is_fail_visible);
+#ifndef _WIN32
+    tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
+#endif
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_pdf_stream_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_extracted_object_limit_is_fail_visible);
