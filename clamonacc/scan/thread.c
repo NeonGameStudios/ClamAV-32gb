@@ -167,7 +167,6 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
         if (*err && *ret_code != CL_SUCCESS) {
             logg(LOGG_DEBUG, "ClamWorker: scan failed with error code %d\n", *ret_code);
         }
-
     }
 
 #if defined(HAVE_SYS_FANOTIFY_H)

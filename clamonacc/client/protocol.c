@@ -280,8 +280,8 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
     STATBUF sb;
     int sockd                                                        = -1;
     int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
-    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
-    int scan_fd                  = (NULL != action_source) ? action_source->scan_fd : fd;
+    const char *display_filename                                     = (NULL != action_source) ? action_source->display_path : filename;
+    int scan_fd                                                      = (NULL != action_source) ? action_source->scan_fd : fd;
 
 #ifdef HAVE_FD_PASSING
     if (FILDES == scantype) {
@@ -362,7 +362,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
      * non-detection incomplete report is an error, never an implicit clean;
      * detections retain precedence when a multi-frame request contains both. */
     {
-        int report_infected = 0;
+        int report_infected   = 0;
         int report_incomplete = 0;
 
         if (onas_recv_scan_report(&rcv, timeout, &report_infected,

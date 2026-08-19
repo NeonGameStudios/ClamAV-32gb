@@ -751,9 +751,9 @@ int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *t
 
     if (!json || !json_length || !terminator)
         return -1;
-    *json       = NULL;
+    *json        = NULL;
     *json_length = 0;
-    *terminator = 0;
+    *terminator  = 0;
 
     if (recv_full(sockd, &network_length, sizeof(network_length)) < 0)
         return -1;
@@ -796,18 +796,18 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
         return -1;
 
     if (report_json_contains(json, verdict_infected, "\"verdict\": \"infected\"")) {
-        *infected = 1;
+        *infected   = 1;
         *incomplete = 0;
         return 0;
     }
     if (report_json_contains(json, verdict_partial, "\"verdict\": \"incomplete\"")) {
-        *infected = 0;
+        *infected   = 0;
         *incomplete = 1;
         return 0;
     }
     if (report_json_contains(json, verdict_clean, "\"verdict\": \"clean\"") &&
         report_json_contains(json, completion_done, "\"completion\": \"COMPLETE\"")) {
-        *infected = 0;
+        *infected   = 0;
         *incomplete = 0;
         return 0;
     }
@@ -819,13 +819,13 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
      * an incomplete result and must not be treated as clean. */
     if (report_json_contains(json, "\"completion\":\"DETECTION_TERMINATED\"",
                              "\"completion\": \"DETECTION_TERMINATED\"")) {
-        *infected = 1;
+        *infected   = 1;
         *incomplete = 0;
         return 0;
     }
     if (report_json_contains(json, "\"completion\":\"COMPLETE\"",
                              "\"completion\": \"COMPLETE\"")) {
-        *infected = 0;
+        *infected   = 0;
         *incomplete = 0;
         return 0;
     }
@@ -839,7 +839,7 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
                              "\"completion\": \"RESOURCE_FAILURE\"") ||
         report_json_contains(json, "\"completion\":\"APPLICATION_ABORT\"",
                              "\"completion\": \"APPLICATION_ABORT\"")) {
-        *infected = 0;
+        *infected   = 0;
         *incomplete = 1;
         return 0;
     }
@@ -898,7 +898,7 @@ int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
 
         if (value == '"') {
             decoded[decoded_length] = '\0';
-            *alert = decoded;
+            *alert                  = decoded;
             return 0;
         }
         if (value == '\\') {
@@ -943,7 +943,7 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
 {
     int sent = 0;
     int frame;
-    int terminated = 0;
+    int terminated               = 0;
     const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
 
     if (!infected || !incomplete || !errors)
@@ -1012,9 +1012,9 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
         int received = 0;
 
         while (!terminated) {
-            char *json = NULL;
+            char *json           = NULL;
             uint32_t json_length = 0;
-            int frame_infected = 0;
+            int frame_infected   = 0;
             int frame_incomplete = 0;
 
             frame = recv_scan_report_frame(sockd, &json, &json_length, &terminated);

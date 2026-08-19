@@ -257,7 +257,7 @@ int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
         uint32_t network_length;
         uint32_t length;
         char *payload;
-        int frame_infected = 0;
+        int frame_infected   = 0;
         int frame_incomplete = 0;
 
         if (onas_recv_bytes(rcv_data, &network_length, sizeof(network_length), timeout_ms) < 0)
