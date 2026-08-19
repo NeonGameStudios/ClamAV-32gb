@@ -41,22 +41,17 @@
 #if !defined(_WIN32)
 #include <unistd.h>
 #endif
-#include <errno.h>
-
 #include "xar.h"
 #include "fmap.h"
 
-#include <libxml/xmlreader.h>
-
 #include "clamav.h"
-#include "str.h"
-#include "scanners.h"
-#include "conv.h"
 #include "xdp.h"
-#include "filetypes.h"
-#include "msxml.h"
+#include "msxml_parser.h"
 
 static char *dump_xdp(cli_ctx *ctx, fmap_t *map);
+
+static const struct key_entry xdp_keys[] = {
+    {"chunk", "XDPChunk", MSXML_SCAN_B64}};
 
 static char *dump_xdp(cli_ctx *ctx, fmap_t *map)
 {
@@ -66,8 +61,6 @@ static char *dump_xdp(cli_ctx *ctx, fmap_t *map)
     size_t offset = 0;
     size_t wanted;
     size_t nread;
-    size_t nwritten;
-    ssize_t writeret;
 
     if (cli_gentempfd(ctx->this_layer_tmpdir, &filename, &fd) != CL_SUCCESS)
         return NULL;
@@ -83,27 +76,20 @@ static char *dump_xdp(cli_ctx *ctx, fmap_t *map)
             return NULL;
         }
 
-        nwritten = 0;
-        while (nwritten < nread) {
-            writeret = write(fd, buffer + nwritten, nread - nwritten);
-            if (writeret < 0) {
-                if (errno == EAGAIN || errno == EINTR)
-                    continue;
-
-                close(fd);
-                cli_unlink(filename);
-                free(filename);
-                return NULL;
-            }
-            if (writeret == 0) {
-                close(fd);
-                cli_unlink(filename);
-                free(filename);
-                return NULL;
-            }
-
-            nwritten += (size_t)writeret;
+        if (cli_scan_reserve_temporary(ctx, (uint64_t)nread) != CL_SUCCESS) {
+            close(fd);
+            cli_unlink(filename);
+            free(filename);
+            return NULL;
         }
+        if (cli_writen(fd, buffer, nread) != nread) {
+            cli_scan_release_temporary(ctx, (uint64_t)nread);
+            close(fd);
+            cli_unlink(filename);
+            free(filename);
+            return NULL;
+        }
+        cli_scan_release_temporary(ctx, (uint64_t)nread);
         offset += nread;
     }
 
@@ -116,24 +102,10 @@ static char *dump_xdp(cli_ctx *ctx, fmap_t *map)
 
 cl_error_t cli_scanxdp(cli_ctx *ctx)
 {
-    xmlTextReaderPtr reader = NULL;
-    struct msxml_cbdata cbdata;
-    const xmlChar *name, *value;
-    char *decoded;
-    size_t decodedlen;
-    size_t encodedlen;
-    cl_error_t rc = CL_SUCCESS;
-    cl_error_t limitret;
     char *dumpname;
-    int read_status;
 
     if (!ctx || !ctx->fmap)
         return CL_ENULLARG;
-
-    if (ctx->fmap->len > XDP_DEEP_PARSE_MAX_SIZE) {
-        cli_mark_scan_incomplete(ctx, "XDP layer exceeds the 64 MiB libxml2 deep-parser limit");
-        return CL_EPARSE;
-    }
 
     if (ctx->engine && ctx->engine->keeptmp) {
         dumpname = dump_xdp(ctx, ctx->fmap);
@@ -141,69 +113,6 @@ cl_error_t cli_scanxdp(cli_ctx *ctx)
             free(dumpname);
     }
 
-    memset(&cbdata, 0, sizeof(cbdata));
-    cbdata.map = ctx->fmap;
-    reader     = xmlReaderForIO(msxml_read_cb, NULL, &cbdata, "xdp.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
-    if (!reader) {
-        cli_mark_scan_incomplete(ctx, "XDP streaming XML reader could not be initialized");
-        return CL_EPARSE;
-    }
-
-    while ((read_status = xmlTextReaderRead(reader)) == 1) {
-        name = xmlTextReaderConstLocalName(reader);
-        if (!(name))
-            continue;
-
-        if (!strcmp((const char *)name, "chunk") && xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
-            value = xmlTextReaderReadInnerXml(reader);
-            if (!value) {
-                cli_mark_scan_incomplete(ctx, "XDP chunk value could not be materialized within its bounded layer");
-                rc = CL_EPARSE;
-                break;
-            }
-
-            encodedlen = strlen((const char *)value);
-            decoded    = cl_base64_decode((char *)value, encodedlen, NULL, &decodedlen, 0);
-            if (!decoded || decodedlen > XDP_DEEP_PARSE_MAX_SIZE) {
-                free(decoded);
-                xmlFree((void *)value);
-                cli_mark_scan_incomplete(ctx, "XDP chunk could not be decoded within the bounded parser limit");
-                rc = CL_EPARSE;
-                break;
-            }
-
-            limitret = cli_checklimits("XDP chunk", ctx, decodedlen, 0, 0);
-            if (limitret != CL_SUCCESS) {
-                free(decoded);
-                xmlFree((void *)value);
-                cli_mark_scan_incomplete(ctx, "XDP decoded chunk exceeds configured scan limits");
-                rc = (limitret == CL_ETIMEOUT) ? limitret : CL_EPARSE;
-                break;
-            }
-
-            /* Every decoded chunk is required inspection input. The former
-             * PDF-magic prefilter allowed other decoded payloads to return
-             * clean without ever reaching the nested scanner. */
-            if (decodedlen != 0)
-                rc = cli_magic_scan_buff(decoded, decodedlen, ctx, NULL, LAYER_ATTRIBUTES_NONE);
-            free(decoded);
-            xmlFree((void *)value);
-            if (rc != CL_SUCCESS)
-                break;
-        }
-    }
-
-    if (read_status < 0 && rc == CL_SUCCESS) {
-        cli_mark_scan_incomplete(ctx, "XDP streaming XML parse failed before all chunks were inspected");
-        rc = CL_EPARSE;
-    }
-
-    if (xmlTextReaderClose(reader) != 0 && rc == CL_SUCCESS) {
-        cli_mark_scan_incomplete(ctx, "XDP streaming XML reader did not close cleanly");
-        rc = CL_EPARSE;
-    }
-
-    xmlFreeTextReader(reader);
-
-    return rc;
+    return cli_msxml_parse_document_streaming(ctx, ctx->fmap, xdp_keys, sizeof(xdp_keys) / sizeof(xdp_keys[0]),
+                                              MSXML_FLAG_FAIL_INCOMPLETE, NULL);
 }

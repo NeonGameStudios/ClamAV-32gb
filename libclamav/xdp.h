@@ -35,12 +35,6 @@
 #ifndef _XDP_H
 #define _XDP_H
 
-/* libxml2 may materialize the complete value of an XDP <chunk> node. Keep
- * that third-party allocation bounded until chunk-value parsing is converted
- * to a truly incremental API. Larger XDP layers fail visibly rather than
- * being reported clean without inspecting their decoded content. */
-#define XDP_DEEP_PARSE_MAX_SIZE ((size_t)64 * 1024 * 1024)
-
 cl_error_t cli_scanxdp(cli_ctx *ctx);
 
 #endif

@@ -106,7 +106,7 @@ not a cold-cache or production-workload certification.
 | ELF | Source-fixed and focused-tested | Truncated or incomplete ELF header, program-header, and section-header parsing no longer converts `CL_BREAK` into a clean result; the public ELF scanner marks the scan incomplete and returns `CL_EPARSE`. |
 | Mach-O | Source-fixed and focused-tested | The public Mach-O and universal-binary scanners now mark truncated or malformed header/load-command/entry-point inspection incomplete and return `CL_EPARSE`; the internal Mach-O header probe retains its non-scanning error behavior. |
 | HFS+ | Source-fixed and focused-tested | Truncated or invalid HFS+ volume headers and downstream parser failures now mark the scan incomplete, return a non-clean result, and cannot be cached as clean. |
-| PDF, XDP, HWPML, and MSXML embedded-content callers | Fail-visible bounded support | Whole-map materialization was removed from audited entry paths. PDF and XDP retain explicit deep-parser gates; PDF raw/decoded stream and extracted-object limit/write failures preserve non-clean status and refuse partial output. HWPML now uses a bounded SAX push parser, incrementally spools callback text, and streams base64 across input boundaries with strict quartet and padding validation. The MSXML embedded-content caller still opts out of parse-error suppression and marks truncated XML non-cacheable. |
+| PDF, XDP, HWPML, and MSXML embedded-content callers | Fail-visible bounded support | Whole-map materialization was removed from audited entry paths. PDF retains an explicit deep-parser gate; PDF raw/decoded stream and extracted-object limit/write failures preserve non-clean status and refuse partial output. XDP and HWPML now use bounded SAX push parsers, incrementally spool decoded content, and keep temporary admission and nested-scan failures fail-visible. The MSXML embedded-content caller still opts out of parse-error suppression and marks truncated XML non-cacheable. |
 | Nested fmap and InstallShield | Source-fixed and focused-tested | Nested ranges are strict and forced-to-disk copies are chunked. InstallShield legacy metadata now rejects truncated or malformed partial records, preserves exact-end records, and rejects invalid embedded header metadata instead of normalizing it to clean; it does not scan capped or malformed partial output as complete. |
 | ISO9660 | Source-fixed and focused-tested | Truncated volume descriptors, unavailable directory blocks, malformed directory records, unsupported interleaving, multi-extent records, and per-file scan-limit skips now mark the scan incomplete; broader optical-image corpus qualification remains open. |
 | 7-Zip | Source-fixed and focused-tested | Seek, header-open, member-extraction, output-write, and member-limit failures now remain non-clean; broader 7-Zip encrypted/malformed corpus qualification remains open. |
@@ -344,7 +344,7 @@ apparently clean result is not universally proof of complete inspection.
 
 ### 5. Fail-visible caps are not full deep-parser capability
 
-PCRE subjects above 1 GiB; PDF/XDP deep parsing above 64 MiB; DMG XML metadata
+PCRE subjects above 1 GiB; PDF deep parsing above 64 MiB; DMG XML metadata
 above 64 MiB; applicable legacy bytecode on inputs above
 4 GiB; and bounded NSIS/EGG or unsupported archive encryption/compression
 paths can produce an explicit incomplete/non-clean result. This is safe

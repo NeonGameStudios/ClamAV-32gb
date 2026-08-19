@@ -838,3 +838,15 @@ sticky incomplete results.
 This closes the specific HWPML whole-text-node/64 MiB gate. Parser-family
 fixtures, compressed-attachment qualification, and supported-build Sonic1
 evidence remain open.
+
+## XDP bounded XML streaming — 2026-08-19
+
+XDP no longer rejects the complete XML layer at the former 64 MiB gate or
+materializes `<chunk>` inner XML and its decoded payload in heap memory. It now
+uses the bounded SAX push parser; base64 chunks are decoded across XML input
+boundaries into temporary spools charged against the shared temporary-space
+budget before nested scanning. XML, base64, temporary-write, resource-limit,
+and nested-scan failures remain sticky incomplete results.
+
+This closes the specific XDP whole-text-node/64 MiB gate. XDP corpus,
+memory/sanitizer, and supported-build Sonic1 qualification remain open.

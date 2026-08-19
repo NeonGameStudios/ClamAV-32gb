@@ -4868,15 +4868,6 @@ START_TEST(test_large_document_parser_caps_are_fail_visible)
     memset(&ctx, 0, sizeof(ctx));
     memset(&map, 0, sizeof(map));
     ctx.fmap = &map;
-    map.len  = XDP_DEEP_PARSE_MAX_SIZE + 1;
-    ret      = cli_scanxdp(&ctx);
-    ck_assert_msg(ret == CL_EPARSE, "oversized XDP returned %d", ret);
-    ck_assert(ctx.scan_incomplete);
-    ck_assert(map.dont_cache_flag);
-
-    memset(&ctx, 0, sizeof(ctx));
-    memset(&map, 0, sizeof(map));
-    ctx.fmap = &map;
     map.len  = PDF_DEEP_PARSE_MAX_SIZE + 1;
     ret      = cli_pdf("unit-test", &ctx, 0);
     ck_assert_msg(ret == CL_EPARSE, "oversized PDF returned %d", ret);

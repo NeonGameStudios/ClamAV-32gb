@@ -2037,3 +2037,15 @@ short writes, callback failures, and nested scan failures remain fail-visible.
 This removes the specific HWPML whole-text-node/64 MiB gate. It does not claim
 full HWPML corpus qualification, compressed-attachment decoder qualification,
 or current-source Sonic1/build evidence; those remain release gates.
+
+## XDP bounded XML streaming — 2026-08-19
+
+XDP no longer rejects the complete XML layer at the former 64 MiB gate or
+materializes `<chunk>` inner XML and its decoded payload in heap memory. XDP
+now uses the bounded SAX push parser; each base64 chunk is decoded across XML
+input boundaries into a temporary spool charged against `MaxTemporarySize`,
+then scanned as a completed nested layer. XML, base64, temporary-write,
+resource-limit, and nested-scan failures remain fail-visible.
+
+This removes the specific XDP whole-text-node/64 MiB gate. XDP format corpus,
+memory, sanitizer, and supported-build Sonic1 qualification remain open.
