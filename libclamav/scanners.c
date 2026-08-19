@@ -2748,10 +2748,25 @@ static void save_urls(cli_ctx *ctx, tag_arguments_t *hrefs, form_data_t *form_da
     }
 }
 
+static void cli_scanhtml_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
+                                              cl_error_t failure, const char *reason)
+{
+    if ((NULL == ctx) || (NULL == status))
+        return;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    /* Preserve a detection or an earlier parser failure, but never allow a
+     * clean/verified result after a required normalized view could not be
+     * closed or the temporary directory could not be removed. */
+    if ((*status == CL_SUCCESS) || (*status == CL_VERIFIED))
+        *status = failure;
+}
+
 static cl_error_t cli_scanhtml(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
     bool normalization_ok;
+    bool tempdir_created = false;
     char *tempname    = NULL;
     char fullname[1024];
     int fd            = -1;
@@ -2769,15 +2784,18 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
     }
 
     if (NULL == (tempname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "html-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "HTML normalization temporary directory could not be created");
         status = CL_EMEM;
         goto done;
     }
 
     if (mkdir(tempname, 0700)) {
         cli_errmsg("cli_scanhtml: Can't create temporary directory %s\n", tempname);
+        cli_mark_scan_incomplete(ctx, "HTML normalization temporary directory could not be opened");
         status = CL_ETMPDIR;
         goto done;
     }
+    tempdir_created = true;
 
     cli_dbgmsg("cli_scanhtml: using tempdir %s\n", tempname);
 
@@ -2816,7 +2834,12 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
             goto done;
         }
 
-        close(fd);
+        if (close(fd) != 0) {
+            cli_scanhtml_note_cleanup_failure(ctx, &status, CL_EWRITE,
+                                              "HTML normalized no-comment output could not be closed");
+            fd = -1;
+            goto done;
+        }
         fd = -1;
     }
 
@@ -2842,7 +2865,12 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
                 goto done;
             }
 
-            close(fd);
+            if (close(fd) != 0) {
+                cli_scanhtml_note_cleanup_failure(ctx, &status, CL_EWRITE,
+                                                  "HTML normalized no-tags output could not be closed");
+                fd = -1;
+                goto done;
+            }
             fd = -1;
         }
     }
@@ -2862,7 +2890,12 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
             goto done;
         }
 
-        close(fd);
+        if (close(fd) != 0) {
+            cli_scanhtml_note_cleanup_failure(ctx, &status, CL_EWRITE,
+                                              "HTML normalized JavaScript output could not be closed");
+            fd = -1;
+            goto done;
+        }
         fd = -1;
     }
 
@@ -2878,11 +2911,16 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
 
 done:
     if (fd >= 0) {
-        close(fd);
+        if (close(fd) != 0)
+            cli_scanhtml_note_cleanup_failure(ctx, &status, CL_EWRITE,
+                                              "HTML normalized output could not be closed");
+        fd = -1;
     }
     if (NULL != tempname) {
-        if (!ctx->engine->keeptmp) {
-            cli_rmdirs(tempname);
+        if (!ctx->engine->keeptmp && tempdir_created) {
+            if (cli_rmdirs(tempname) != 0)
+                cli_scanhtml_note_cleanup_failure(ctx, &status, CL_EUNLINK,
+                                                  "HTML normalization temporary directory could not be removed");
         }
         free(tempname);
     }

@@ -1537,6 +1537,45 @@ START_TEST(test_html_notags_cap_is_fail_visible)
     cl_engine_free(engine);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_html_normalize_cleanup_close_failure_is_fail_visible)
+{
+    static const unsigned char data[] = "<html><body>normalized content</body></html>";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    clamav_test_fail_close = 1;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_HTML", NULL);
+    clamav_test_fail_close = 0;
+
+    ck_assert_msg(ret != CL_SUCCESS,
+                  "HTML normalization close failure returned clean");
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+#endif
 #endif
 
 #ifndef _WIN32
@@ -9463,6 +9502,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
     tcase_add_test(tc_cl, test_html_normalize_cap_does_not_skip_raw_matching);
     tcase_add_test(tc_cl, test_html_notags_cap_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_html_normalize_cleanup_close_failure_is_fail_visible);
+#endif
 #endif
     tcase_add_test(tc_cl, test_cl_retver);
     tcase_add_test(tc_cl, test_cl_cvdfree);

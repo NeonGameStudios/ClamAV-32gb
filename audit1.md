@@ -957,6 +957,17 @@ the first meaningful result. A Linux static-library close-wrapper regression
 uses the normalized relative-offset path; Linux/Sonic1, sanitizer, and broad
 HTML/script corpus qualification remain open.
 
+## HTML-normalization temporary cleanup — 2026-08-19
+
+`cli_scanhtml()` now marks temporary-directory allocation/creation failures,
+checks every normalized child descriptor close, and reports temporary-directory
+removal failures without hiding a detection or earlier parser result. The HTML
+normalizer also checks its input and generated-output closes, so a successful
+normalization return cannot conceal a close failure. A Linux static-library
+close-wrapper regression exercises the public HTML scan entry; compiled
+execution, sanitizer coverage, and broad HTML corpus qualification remain
+open.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the

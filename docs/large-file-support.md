@@ -2748,6 +2748,16 @@ fails. The close-fault regression exercises the normalized relative-offset
 path through the public scanner entry. Compiled execution, sanitizer coverage,
 and broad HTML/script corpus qualification remain release gates.
 
+## HTML-normalization temporary cleanup — 2026-08-19
+
+HTML normalization now marks temporary-directory allocation and creation
+failures, checks every normalized child descriptor close, and reports temporary
+directory removal failures without hiding an earlier detection or parser
+result. The normalizer also checks its input and generated-output closes. The
+close-fault regression exercises the public HTML scan entry. Compiled
+execution, sanitizer coverage, and broad HTML corpus qualification remain
+release gates.
+
 ## Mail parser limit admission and ABI status reconciliation — 2026-08-19
 
 MIME recursion and file-count admission now set the shared sticky incomplete

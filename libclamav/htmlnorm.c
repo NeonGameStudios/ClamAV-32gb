@@ -2039,7 +2039,11 @@ done:
     }
     html_tag_arg_free(&tag_args);
     if (!m_area) {
-        fclose(stream_in);
+        if (fclose(stream_in) != 0) {
+            cli_mark_scan_incomplete(ctx, "HTML normalization input could not be closed");
+            retval = false;
+        }
+        stream_in = NULL;
     }
     if (file_buff_o2) {
         html_output_flush(file_buff_o2);
@@ -2047,8 +2051,13 @@ done:
             cli_mark_scan_incomplete(ctx, "HTML normalized output could not be written completely");
             retval = false;
         }
-        if (file_buff_o2->fd != -1)
-            close(file_buff_o2->fd);
+        if (file_buff_o2->fd != -1) {
+            if (close(file_buff_o2->fd) != 0) {
+                cli_mark_scan_incomplete(ctx, "HTML normalized output could not be closed");
+                retval = false;
+            }
+            file_buff_o2->fd = -1;
+        }
         free(file_buff_o2);
     }
     if (file_buff_text) {
@@ -2057,15 +2066,24 @@ done:
             cli_mark_scan_incomplete(ctx, "HTML text output could not be written completely");
             retval = false;
         }
-        if (file_buff_text->fd != -1)
-            close(file_buff_text->fd);
+        if (file_buff_text->fd != -1) {
+            if (close(file_buff_text->fd) != 0) {
+                cli_mark_scan_incomplete(ctx, "HTML text output could not be closed");
+                retval = false;
+            }
+            file_buff_text->fd = -1;
+        }
         free(file_buff_text);
         file_buff_text = NULL;
     }
     if (file_tmp_o1) {
         if (file_tmp_o1->fd != -1) {
             html_output_flush(file_tmp_o1);
-            close(file_tmp_o1->fd);
+            if (close(file_tmp_o1->fd) != 0) {
+                cli_mark_scan_incomplete(ctx, "HTML embedded data output could not be closed");
+                retval = false;
+            }
+            file_tmp_o1->fd = -1;
         }
         if (file_tmp_o1->write_error) {
             cli_mark_scan_incomplete(ctx, "HTML embedded data output could not be written completely");
