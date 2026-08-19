@@ -4858,21 +4858,12 @@ START_TEST(test_fmap_ffi_layout)
 }
 END_TEST
 
-START_TEST(test_large_document_parser_caps_are_fail_visible)
+START_TEST(test_format_width_limits_are_fail_visible)
 {
     cli_ctx ctx;
     fmap_t map;
     fmap_t *hwpole2_map;
     cl_error_t ret;
-
-    memset(&ctx, 0, sizeof(ctx));
-    memset(&map, 0, sizeof(map));
-    ctx.fmap = &map;
-    map.len  = PDF_DEEP_PARSE_MAX_SIZE + 1;
-    ret      = cli_pdf("unit-test", &ctx, 0);
-    ck_assert_msg(ret == CL_EPARSE, "oversized PDF returned %d", ret);
-    ck_assert(ctx.scan_incomplete);
-    ck_assert(map.dont_cache_flag);
 
     /* HWPOLE2 carries only a 32-bit payload-size prefix. A native map above
      * that representable range must fail before the nested scan is entered. */
@@ -8320,7 +8311,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
-    tcase_add_test(tc_cl, test_large_document_parser_caps_are_fail_visible);
+    tcase_add_test(tc_cl, test_format_width_limits_are_fail_visible);
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);

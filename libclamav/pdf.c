@@ -42,6 +42,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+#include <sys/mman.h>
+#endif
 #include <zlib.h>
 
 #if HAVE_ICONV
@@ -3788,6 +3791,12 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     unsigned i;
     unsigned int objs_found = 0;
     char *pdf_input = NULL;
+    char *pdf_tempfile = NULL;
+    int pdf_tempfd = -1;
+    uint64_t pdf_input_reserved = 0;
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+    void *pdf_mapping = NULL;
+#endif
     size_t copied;
     size_t wanted;
     size_t nread;
@@ -3803,10 +3812,6 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     size = map->len - (size_t)offset;
     if (size == 0)
         return CL_EFORMAT;
-    if (size > PDF_DEEP_PARSE_MAX_SIZE) {
-        cli_mark_scan_incomplete(ctx, "PDF layer exceeds the 64 MiB legacy deep-parser limit");
-        return CL_EPARSE;
-    }
     versize = size > 1032 ? 1032 : (off_t)size;
 
     cli_dbgmsg("in cli_pdf(%s)\n", dir);
@@ -3967,29 +3972,71 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     }
 
     size = map->len - (size_t)offset;
-    pdf_input = cli_max_malloc(size);
-    if (!pdf_input) {
-        cli_errmsg("cli_pdf: failed to allocate bounded parser input\n");
-        rc = CL_EMEM;
+    /* The parser still requires stable pointers. Stage the layer through the
+     * shared temporary quota and expose a disk-backed virtual mapping instead
+     * of allocating and retaining the entire PDF in heap memory. */
+    rc = cli_scan_reserve_temporary(ctx, (uint64_t)size);
+    if (rc != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "PDF parser staging exceeds temporary storage limits");
+        goto done;
+    }
+    pdf_input_reserved = (uint64_t)size;
+
+    rc = cli_gentempfd(ctx->this_layer_tmpdir, &pdf_tempfile, &pdf_tempfd);
+    if (rc != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "PDF parser staging tempfile could not be created");
         goto done;
     }
 
-    /* The parser still requires stable pointers, but fmap pages no longer stay
-     * locked for the lifetime of the parse. Populate the explicitly capped
-     * private image through fixed-size reads so source residency remains
-     * governed by fmap aging. */
-    copied = 0;
-    while (copied < size) {
-        wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
-        nread  = fmap_readn(map, pdf_input + copied, (size_t)offset + copied, wanted);
-        if (nread != wanted) {
-            cli_errmsg("cli_pdf: bounded input read failed at offset %zu\n", copied);
-            cli_mark_scan_incomplete(ctx, "PDF parser input could not be read completely");
-            rc = CL_EREAD;
-            goto done;
+    {
+        uint8_t buffer[PDF_INPUT_WINDOW_SIZE];
+
+        copied = 0;
+        while (copied < size) {
+            wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
+            nread = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
+            if (nread != wanted) {
+                cli_errmsg("cli_pdf: bounded input read failed at offset %zu\n", copied);
+                cli_mark_scan_incomplete(ctx, "PDF parser input could not be read completely");
+                rc = CL_EREAD;
+                goto done;
+            }
+            if (cli_writen(pdf_tempfd, buffer, nread) != nread) {
+                cli_errmsg("cli_pdf: staged input write failed at offset %zu\n", copied);
+                cli_mark_scan_incomplete(ctx, "PDF parser input could not be staged completely");
+                rc = CL_EWRITE;
+                goto done;
+            }
+            copied += nread;
         }
-        copied += nread;
     }
+
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+    pdf_mapping = mmap(NULL, size, PROT_READ, MAP_PRIVATE, pdf_tempfd, 0);
+    if (pdf_mapping == MAP_FAILED) {
+        pdf_mapping = NULL;
+        cli_errmsg("cli_pdf: mmap() failed for staged parser input\n");
+        cli_mark_scan_incomplete(ctx, "PDF staged parser mapping could not be created");
+        rc = CL_EMEM;
+        goto done;
+    }
+    pdf_input = (char *)pdf_mapping;
+#else
+    if (size > PDF_DEEP_PARSE_MAX_SIZE) {
+        cli_mark_scan_incomplete(ctx, "PDF large parser input requires a file-backed mapping");
+        rc = CL_ERESOURCE;
+        goto done;
+    }
+    pdf_input = cli_max_malloc(size);
+    if (!pdf_input || lseek(pdf_tempfd, 0, SEEK_SET) == (off_t)-1 ||
+        cli_readn(pdf_tempfd, pdf_input, size) != size) {
+        free(pdf_input);
+        pdf_input = NULL;
+        cli_mark_scan_incomplete(ctx, "PDF staged parser input could not be materialized");
+        rc = CL_EREAD;
+        goto done;
+    }
+#endif
 
     pdf.size = size;
     pdf.map  = pdf_input;
@@ -4100,8 +4147,27 @@ err:
         free(pdf.key);
         pdf.key = NULL;
     }
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+    if (pdf_mapping)
+        munmap(pdf_mapping, size);
+#else
     free(pdf_input);
+#endif
     pdf_input = NULL;
+    if (pdf_tempfd >= 0) {
+        close(pdf_tempfd);
+        pdf_tempfd = -1;
+    }
+    if (pdf_tempfile) {
+        if (!ctx->engine->keeptmp)
+            cli_unlink(pdf_tempfile);
+        free(pdf_tempfile);
+        pdf_tempfile = NULL;
+    }
+    if (pdf_input_reserved) {
+        cli_scan_release_temporary(ctx, pdf_input_reserved);
+        pdf_input_reserved = 0;
+    }
 
     /* PDF hooks may abort, don't return CL_BREAK to caller! */
     rc = (rc == CL_BREAK) ? CL_CLEAN : rc;

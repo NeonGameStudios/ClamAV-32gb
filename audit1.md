@@ -867,3 +867,17 @@ This closes the specific DMG root-XML and whole-text-node materialization gap.
 Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
 qualification remain release gates; multi-segment DMGs remain explicit
 unsupported input.
+
+## PDF file-backed staging — 2026-08-19
+
+The PDF entry path no longer allocates the complete deep-parser input on the
+heap or rejects it solely because it exceeds 64 MiB on mmap-capable builds. It
+now copies the fmap range to a temporary file under the shared temporary quota
+in bounded windows and maps that file read-only for the legacy pointer-based
+object parser. Read, write, mapping, quota, and cleanup failures remain
+fail-visible. Builds without mmap support retain the explicit 64 MiB fallback
+gate.
+
+This is a root-input staging correction, not proof that all PDF object/stream
+decoders are independently streaming or that a large-PDF corpus has passed
+supported-build, sanitizer, or Sonic1 qualification.

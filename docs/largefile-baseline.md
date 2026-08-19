@@ -20,10 +20,10 @@ dedicated 64 GiB Ubuntu x86-64 host.
 
 - `docs/large-file-support.md`: specification, memory budget, workstreams, and
   acceptance criteria.
-- `docs/largefile-inventory.tsv`: regenerated inventory of 29,591 classified
+- `docs/largefile-inventory.tsv`: regenerated inventory of 29,597 classified
   source entries. A source line may appear in more than one classification;
   the current snapshot has SHA-256
-  `7357d13111b896abc884aea3bbdf9f68ac31695cedd258f8fd3bf001fdd69e6f`.
+  `f73d0144fb1735e31cef51865bcb06cc5c1b32d89ad7fe5a7d2d0aa5fde66116`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.
@@ -41,9 +41,9 @@ The inventory currently reports:
 
 | Classification | Sites |
 |---|---:|
-| Native-width integer | 10,189 |
-| Offset/size arithmetic | 11,292 |
-| Fixed-width integer | 5,219 |
+| Native-width integer | 10,191 |
+| Offset/size arithmetic | 11,293 |
+| Fixed-width integer | 5,222 |
 | Format-width specifier | 2,413 |
 | Boundary constant | 217 |
 | Quantity parser | 103 |

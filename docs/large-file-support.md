@@ -2070,3 +2070,18 @@ This removes the former root-XML 64 MiB gate and whole-text-node allocation.
 Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
 qualification remain release gates; multi-segment DMGs remain explicit
 unsupported input.
+
+## PDF file-backed staging — 2026-08-19
+
+The PDF entry path no longer allocates the complete deep-parser input on the
+heap or rejects it solely because it exceeds 64 MiB on mmap-capable builds. It
+copies the fmap range to a temporary file charged against `MaxTemporarySize`
+in bounded windows, then exposes that file through a read-only mapping so the
+legacy pointer-based object parser has stable addresses without a proportional
+heap allocation. Read, write, mapping, temporary-admission, and cleanup
+failures remain fail-visible. Builds without mmap support retain the explicit
+64 MiB fallback gate.
+
+This removes the specific PDF root-input heap/cap bottleneck; it does not claim
+that every PDF object/stream decoder is independently streaming or that a real
+large-PDF corpus has passed supported-build, sanitizer, or Sonic1 qualification.
