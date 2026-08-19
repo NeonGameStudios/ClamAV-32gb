@@ -1972,6 +1972,12 @@ header prefix and declared header extent before UnRAR admission. RAR5 remains
 covered by its ordinary top-level parser path and still requires separate SFX
 qualification.
 
+EGG SFX candidates now require the complete fixed EGG header, a supported
+version, a nonzero header identifier, and zero reserved bits before a nested
+layer is admitted. Short magic-only matches are rejected without tainting the
+parent; a complete but malformed or unsupported header is an explicit
+incomplete result.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

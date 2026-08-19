@@ -773,3 +773,12 @@ fixed main-header prefix and declared header size. A signature with no valid
 main-header type is rejected as unrelated data; a valid marker whose declared
 header extends beyond the containing fmap is incomplete. RAR5 SFX qualification
 remains open.
+
+## EGG SFX candidate admission — 2026-08-19
+
+The embedded EGG path now requires the complete fixed header, supported
+version, nonzero header identifier, and zero reserved bits before admitting a
+nested layer. Short magic-only candidates are rejected without tainting the
+parent; complete but malformed or unsupported headers mark the scan
+incomplete. A focused admission test and source guards are present; the full
+compiled embedded-SFX regression remains a supported-build gate.

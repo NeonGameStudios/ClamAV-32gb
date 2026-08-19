@@ -1613,6 +1613,35 @@ done:
     return status;
 }
 
+cl_error_t cli_egg_header_check(fmap_t *map, size_t offset)
+{
+    const uint8_t *index;
+    const egg_header *header;
+    uint64_t remaining;
+
+    if (!map)
+        return CL_ENULLARG;
+
+    remaining = (offset <= map->len) ? (uint64_t)(map->len - offset) : 0;
+    if (remaining < sizeof(egg_header))
+        return CL_EFORMAT;
+
+    index = (const uint8_t *)fmap_need_off_once(map, offset, sizeof(egg_header));
+    if (!index)
+        return CL_EFORMAT;
+
+    header = (const egg_header *)index;
+    if (EGG_HEADER_MAGIC != le32_to_host(header->magic))
+        return CL_EFORMAT;
+
+    if (EGG_HEADER_VERSION != le16_to_host(header->version) ||
+        le32_to_host(header->header_id) == 0 ||
+        le32_to_host(header->reserved) != 0)
+        return CL_EPARSE;
+
+    return CL_SUCCESS;
+}
+
 cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t* nComments)
 {
     cl_error_t status = CL_EPARSE;

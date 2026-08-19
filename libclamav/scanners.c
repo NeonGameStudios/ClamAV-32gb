@@ -4221,7 +4221,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_EGGSFX:
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_EGG)) &&
                                 (type != CL_TYPE_EGG)) {
-                                // TODO: Add header validity check to prevent false positives from being scanned.
+                                ret = cli_egg_header_check(ctx->fmap, fpt->offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("EGG SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "EGG SFX header is malformed or unsupported");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
+                                    break;
+                                }
                                 nret = cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,

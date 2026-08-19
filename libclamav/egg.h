@@ -66,6 +66,15 @@ cl_error_t cli_egg_open(
     uint32_t* nComments);
 
 /**
+ * @brief Validate the minimum EGG header before admitting an embedded layer.
+ *
+ * A short or unrelated magic match is rejected as a non-layer. Once the
+ * complete fixed header is present, malformed or unsupported fields are
+ * reported as an explicit parse failure.
+ */
+cl_error_t cli_egg_header_check(fmap_t *map, size_t offset);
+
+/**
  * @brief Peek at the next file in the archive, without incremented the current file index.
  *
  * @param hArchive          An open EGG archive handle from cli_egg_open()

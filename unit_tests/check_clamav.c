@@ -63,6 +63,7 @@
 #include "spin.h"
 #include "elf.h"
 #include "dmg.h"
+#include "egg.h"
 #include "apm.h"
 #include "gpt.h"
 #include "mbr.h"
@@ -6165,6 +6166,44 @@ START_TEST(test_7z_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_egg_sfx_header_admission)
+{
+    static const uint8_t valid_header[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00  /* reserved */
+    };
+    uint8_t unsupported[sizeof(valid_header)];
+    uint8_t malformed[sizeof(valid_header)];
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(valid_header, sizeof(valid_header));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_header_check(map, 0), CL_SUCCESS);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(valid_header, 4);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_header_check(map, 0), CL_EFORMAT);
+    cl_fmap_close(map);
+
+    memcpy(unsupported, valid_header, sizeof(unsupported));
+    unsupported[4] = 0x01;
+    map = cl_fmap_open_memory(unsupported, sizeof(unsupported));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_header_check(map, 0), CL_EPARSE);
+    cl_fmap_close(map);
+
+    memcpy(malformed, valid_header, sizeof(malformed));
+    malformed[6] = 0;
+    map = cl_fmap_open_memory(malformed, sizeof(malformed));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_header_check(map, 0), CL_EPARSE);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_truncated_uuencode_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -8226,6 +8265,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_egg_sfx_header_admission);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
 #ifndef _WIN32
