@@ -257,6 +257,16 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
 fi
 cp "$out/poc/results.good" "$out/poc/results.tsv"
 
+awk -F '\t' 'BEGIN { OFS = "\t" } NR == 2 { $12 = 68719476737 } { print }' \
+    "$out/poc/results.good" > "$out/poc/results.mutated"
+mv "$out/poc/results.mutated" "$out/poc/results.tsv"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted temporary usage above the fixed budget' >&2
+    exit 1
+fi
+cp "$out/poc/results.good" "$out/poc/results.tsv"
+
 mv "$out/concurrency/1/worker-1.log" "$out/concurrency/1/worker-1.missing"
 refresh_manifest
 if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
@@ -354,6 +364,18 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
     exit 1
 fi
 mv "$out/provenance/loaded-dependencies.good" "$out/provenance/loaded-dependencies.txt"
+
+cp "$out/provenance/loaded-dependencies-sanitizer.txt" \
+    "$out/provenance/loaded-dependencies-sanitizer.good"
+printf 'libclamav.so => /build-sanitizer/libclamav.so (0x0)\n' \
+    > "$out/provenance/loaded-dependencies-sanitizer.txt"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted a sanitizer build-tree dependency' >&2
+    exit 1
+fi
+mv "$out/provenance/loaded-dependencies-sanitizer.good" \
+    "$out/provenance/loaded-dependencies-sanitizer.txt"
 
 refresh_manifest
 printf 'tampered scanner\n' >> "$out/artifacts/clamscan"

@@ -498,6 +498,20 @@ while IFS= read -r dependency; do
         exit 1
     }
 done < "$out/provenance/runtime-dependencies.txt"
+if [ "$require_sanitizer" = yes ]; then
+    (cd "$out" && sha256sum -c provenance/runtime-dependency-hashes-sanitizer.txt) >/dev/null 2>&1 || {
+        echo 'sanitizer runtime dependency hash manifest does not verify' >&2
+        exit 1
+    }
+    while IFS= read -r dependency; do
+        dependency_name=${dependency##*/}
+        grep -F "$out/artifacts/runtime-components-sanitizer/$dependency_name" \
+            "$out/provenance/loaded-dependencies-sanitizer.txt" >/dev/null 2>&1 || {
+            echo "sanitizer loader selected a non-copied dependency: $dependency_name" >&2
+            exit 1
+        }
+    done < "$out/provenance/runtime-dependencies-sanitizer.txt"
+fi
 if grep -F 'not found' "$out/provenance/loader-clamscan.txt" >/dev/null 2>&1; then
     echo 'release loader trace contains an unresolved dependency' >&2
     exit 1
@@ -670,7 +684,7 @@ else
     }
 fi
 
-awk -F '\t' '
+awk -v temp_budget="$fixed_max_temp_bytes" -F '\t' '
     BEGIN {
         file[1] = "2g-minus.bin"; off[1] = 2147483647; size[1] = 2147483711
         file[2] = "2g.bin";       off[2] = 2147483648; size[2] = 2147483712
@@ -695,7 +709,8 @@ awk -F '\t' '
             $3 != size[row] || $4 != $3 + 0 || $5 != "yes" || $6 != 1 ||
             $7 != "yes" || $8 != "yes" || $9 != "yes" ||
             $10 !~ /^[0-9][0-9]*$/ || $10 != off[row] || $11 != "yes" ||
-            $12 !~ /^[0-9][0-9]*$/ || ($12 + 0) < 0) bad = 1
+            $12 !~ /^[0-9][0-9]*$/ || ($12 + 0) < 0 ||
+            ($12 + 0) > temp_budget) bad = 1
     }
     END {
         if (NR != 12 || bad) exit 1

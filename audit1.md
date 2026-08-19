@@ -1145,3 +1145,16 @@ The existing Sonic1 mount remains stale and no current-source bytes were
 written to it. No build or scan result from Sonic1 is therefore attributed to
 `1091a49`; compiled current-source qualification remains an explicit release
 gate.
+
+## Runtime evidence budget and sanitizer binding — 2026-08-19
+
+The evidence verifier now applies the copied-runtime dependency hash and
+loader-selection checks to the sanitizer artifact set as well as the release
+set. It also rejects any POC row whose recorded temporary usage exceeds the
+fixed 64-GiB temporary-space budget. The regression fixture mutates each of
+those fields and confirms that the verifier fails closed; shell syntax and the
+full synthetic verifier regression pass locally.
+
+These controls strengthen evidence integrity but do not convert synthetic
+runtime evidence into parser-family, service, production-CVD, or current-head
+Sonic1 qualification. Those release gates remain open.
