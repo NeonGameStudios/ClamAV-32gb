@@ -2645,7 +2645,7 @@ cl_error_t action_source_from_fd(const char *display_path, int fd, action_source
     source->scan_fd = dup_fd;
     dup_fd          = -1;
 #else
-    source_osfhandle = _get_osfhandle(fd);
+    source_osfhandle          = _get_osfhandle(fd);
     if (-1 == source_osfhandle) {
         status = CL_EOPEN;
         goto done;
@@ -3817,7 +3817,7 @@ int actsetup(const struct optstruct *opts)
             logg(LOGG_INFO, "action_setup: Failed to normalize quarantine directory path %s\n", requested_actarget);
             return 1;
         }
-        actarget = actarget_normalized;
+        actarget            = actarget_normalized;
 #endif
         if (!isdir()) return 1;
         targlen = strlen(actarget);
