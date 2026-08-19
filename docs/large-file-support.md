@@ -2285,6 +2285,12 @@ non-cacheability state. Converting the remaining PDF filters to a fully
 streaming reader remains a release gate; this change closes the silent
 wraparound path.
 
+PDF object and object-stream positions are also native-width now. The
+object-stream pair cursor and parsed object start no longer narrow to
+32-bit values before containment checks, extraction, or diagnostics; a focused
+unit regression preserves an offset above 4 GiB. PDF decoder qualification
+still remains separately bounded by the explicit legacy filter-input boundary.
+
 ## NSIS non-solid bounded input — 2026-08-19
 
 NSIS non-solid members no longer map their complete compressed payload before

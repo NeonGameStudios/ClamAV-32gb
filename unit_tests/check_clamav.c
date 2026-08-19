@@ -5373,6 +5373,19 @@ START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
     cl_engine_free(scan_engine);
 }
 END_TEST
+
+START_TEST(test_pdf_object_coordinates_are_native_width)
+{
+    struct pdf_obj obj;
+    const size_t wide_offset = (size_t)UINT32_MAX + 1U;
+
+    memset(&obj, 0, sizeof(obj));
+    obj.start = wide_offset;
+    ck_assert_uint_eq(obj.start, wide_offset);
+    ck_assert_msg(sizeof(obj.start) >= sizeof(size_t),
+                  "PDF object coordinate was narrowed below native size_t width");
+}
+END_TEST
 #endif
 
 START_TEST(test_pdf_extracted_object_limit_is_fail_visible)
@@ -8878,6 +8891,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_stream_limit_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pdf_stream_width_boundary_is_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_object_coordinates_are_native_width);
 #endif
     tcase_add_test(tc_cl, test_pdf_extracted_object_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_nested_fmap_ranges_and_force_to_disk_are_fail_visible);

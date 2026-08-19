@@ -422,7 +422,7 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
         index++;
         bytes_remaining--;
     }
-    objstm->current_pair = (uint32_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
+    objstm->current_pair = (size_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
 
     /* Update current_pair, if there are more */
     if ((objstm->nobjs_found < objstm->n) &&
@@ -2213,14 +2213,14 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
 
     if (obj->objstm) {
         if ((size_t)obj->start > obj->objstm->streambuf_len) {
-            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%u) is greater than size of object stream (%zu).\n",
+            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%zu) is greater than size of object stream (%zu).\n",
                        obj->id >> 8, obj->id & 0xff, obj->start, obj->objstm->streambuf_len);
             return;
         }
         q = (const char *)(obj->start + obj->objstm->streambuf);
     } else {
         if ((size_t)obj->start > pdf->size) {
-            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%u) is greater than size of PDF (%lld).\n",
+            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%zu) is greater than size of PDF (%lld).\n",
                        obj->id >> 8, obj->id & 0xff, obj->start, (long long)pdf->size);
             return;
         }
@@ -3640,7 +3640,7 @@ cl_error_t pdf_find_and_parse_objs_in_objstm(struct pdf_struct *pdf, struct objs
             break;
         }
 
-        cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Found object %u %u in object stream at offset: %u\n", obj->id >> 8, obj->id & 0xff, obj->start);
+        cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Found object %u %u in object stream at offset: %zu\n", obj->id >> 8, obj->id & 0xff, obj->start);
 
         if (cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
             cli_dbgmsg("Timeout reached in the PDF parser while parsing object stream.\n");

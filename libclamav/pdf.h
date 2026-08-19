@@ -44,7 +44,10 @@ struct objstm_struct {
 };
 
 struct pdf_obj {
-    uint32_t start;
+    /* Object positions are file/map coordinates, not format-defined fields.
+     * Keep them native-width so object streams and revisions above 4 GiB do
+     * not wrap before bounds checks or extraction. */
+    size_t start;
     size_t size;
     uint32_t id;
     uint32_t flags;

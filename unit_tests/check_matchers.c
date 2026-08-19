@@ -25,6 +25,7 @@
 #include <check.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 // libclamav
@@ -637,6 +638,50 @@ START_TEST(test_large_file_offset_values)
 }
 END_TEST
 
+START_TEST(test_bm_offset_mode_matches_above_uint32)
+{
+#if SIZE_MAX > UINT32_MAX
+    struct cli_matcher *root = ctx.engine->root[0];
+    struct cli_target_info info;
+    struct cli_bm_off offsets;
+    const struct cli_bm_patt *matched = NULL;
+    const char *matched_name = NULL;
+    cl_error_t ret;
+
+    ck_assert_ptr_nonnull(root);
+    memset(&info, 0, sizeof(info));
+    memset(&offsets, 0, sizeof(offsets));
+    root->bm_offmode = 1;
+
+#ifdef USE_MPOOL
+    root->mempool = mpool_create();
+#endif
+    ck_assert_int_eq(cli_bm_init(root), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(root, "BM_Large_Offset",
+                                                   "deadbeef", 0, 0, 0,
+                                                   "5000000000", NULL, 0),
+                     CL_SUCCESS);
+
+    info.fsize = (off_t)34359738368ULL;
+    ck_assert_int_eq(cli_bm_initoff(root, &offsets, &info), CL_SUCCESS);
+    ck_assert_uint_eq(offsets.cnt, 1);
+    ck_assert_uint_eq(offsets.offtab[0], 5000000000ULL);
+
+    ret = cli_bm_scanbuff((const unsigned char *)"\xde\xad\xbe\xef", 4,
+                          &matched_name, &matched, root, 5000000000ULL,
+                          &info, &offsets, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_str_eq(matched_name, "BM_Large_Offset");
+    ck_assert_ptr_nonnull(matched);
+    ck_assert_uint_eq(matched->offset_min, 5000000000ULL);
+
+    cli_bm_freeoff(&offsets);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_pcre_full_map_range_arithmetic)
 {
     ck_assert(cli_matcher_window_reaches_map_end(31, 1, 32));
@@ -890,6 +935,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bm_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_pcre_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_large_file_offset_values);
+    tcase_add_test(tc_matchers, test_bm_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
