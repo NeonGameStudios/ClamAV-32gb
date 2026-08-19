@@ -76,6 +76,7 @@ int loginfected;
 #define CLAMFIBUFSZ 1424
 static const char *HDR_UNAVAIL          = "UNKNOWN";
 static pthread_mutex_t virusaction_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t scan_request_lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct CLAMFI {
     const char *virusname;
@@ -95,6 +96,7 @@ struct CLAMFI {
     unsigned int scanned_count;
     unsigned int status_count;
     unsigned int nrecipients;
+    unsigned int scan_lock_held;
     uint32_t sendme;
     char buffer[CLAMFIBUFSZ];
 };
@@ -156,6 +158,10 @@ static void nullify(SMFICTX *ctx, struct CLAMFI *cf, enum CFWHAT closewhat)
         }
         free(cf->recipients);
     }
+    if (cf->scan_lock_held) {
+        pthread_mutex_unlock(&scan_request_lock);
+        cf->scan_lock_held = 0;
+    }
     smfi_setpriv(ctx, NULL);
 }
 
@@ -171,6 +177,11 @@ static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, S
 
     if (!cf->stream_started) {
         sfsistat ret;
+
+        if (!cf->scan_lock_held) {
+            pthread_mutex_lock(&scan_request_lock);
+            cf->scan_lock_held = 1;
+        }
         if (nc_connect_rand(&cf->main, &cf->alt, &cf->local)) {
             logg(LOGG_ERROR, "Failed to initiate streaming/fdpassing\n");
             nullify(ctx, cf, CF_NONE);
@@ -338,6 +349,8 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     struct CLAMFI *cf;
     char *reply;
     int len, ret;
+    int infected = 0;
+    int incomplete = 0;
     unsigned int crcpt;
 
     if (!(cf = (struct CLAMFI *)smfi_getpriv(ctx)))
@@ -379,16 +392,40 @@ sfsistat clamfi_eom(SMFICTX *ctx)
         }
     }
 
-    reply = nc_recv(cf->main);
+    if (nc_recv_scan_report(cf->main, &infected, &incomplete) < 0) {
+        logg(LOGG_ERROR, "No valid structured report from clamd\n");
+        if (cf->local)
+            close(cf->alt);
+        cf->alt = -1;
+        nullify(ctx, cf, CF_MAIN);
+        free(cf);
+        return FailAction;
+    }
 
     if (cf->local)
         close(cf->alt);
 
     cf->alt = -1;
 
+    /* Detection takes precedence over an incomplete sibling report, matching
+     * the library and clamd structured-report contract.  A non-detection
+     * incomplete result must never be treated as a clean milter action. */
+    if (incomplete && !infected) {
+        logg(LOGG_ERROR, "Structured clamd report is incomplete; refusing clean verdict\n");
+        nullify(ctx, cf, CF_MAIN);
+        free(cf);
+        return FailAction;
+    }
+
+    /* Keep the existing milter logging/action code while normalizing the
+     * structured result into its two legacy branches. The actual report was
+     * already validated by nc_recv_scan_report(). */
+    if (infected)
+        reply = strdup("stream: structured clamd report FOUND\n");
+    else
+        reply = strdup("stream: OK\n");
     if (!reply) {
-        logg(LOGG_ERROR, "No reply from clamd\n");
-        nullify(ctx, cf, CF_NONE);
+        nullify(ctx, cf, CF_MAIN);
         free(cf);
         return FailAction;
     }
@@ -764,6 +801,7 @@ sfsistat clamfi_envfrom(SMFICTX *ctx, char **argv)
     cf->over_limit = 0;
     cf->bufsz = 0;
     cf->main = cf->alt = -1;
+    cf->scan_lock_held = 0;
     cf->all_allowed    = 1;
     cf->gotbody        = 0;
     cf->msg_subj = cf->msg_date = cf->msg_id = NULL;

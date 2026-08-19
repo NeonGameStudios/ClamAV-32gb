@@ -1,14 +1,14 @@
 category	file	line	text
 fixed-width-integer	clamav-milter/clamav-milter.c	403	    if (!clamfi_normalize_maxfilesize((uint64_t)optget(opts, "MaxFileSize")->numarg, &maxfilesize)) {
 fixed-width-integer	clamav-milter/clamav-milter.c	411	    maxtemporarysize = (uint64_t)optget(opts, "MaxTemporarySize")->numarg;
-fixed-width-integer	clamav-milter/clamfi.c	164	    uint64_t next_size;
-fixed-width-integer	clamav-milter/clamfi.c	230	            uint32_t sendmetoo;
-fixed-width-integer	clamav-milter/clamfi.c	235	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
-fixed-width-integer	clamav-milter/clamfi.c	372	        uint32_t sendmetoo = 0;
+fixed-width-integer	clamav-milter/clamfi.c	100	    uint32_t sendme;
+fixed-width-integer	clamav-milter/clamfi.c	170	    uint64_t next_size;
+fixed-width-integer	clamav-milter/clamfi.c	241	            uint32_t sendmetoo;
+fixed-width-integer	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
+fixed-width-integer	clamav-milter/clamfi.c	385	        uint32_t sendmetoo = 0;
 fixed-width-integer	clamav-milter/clamfi.c	56	uint64_t maxfilesize;
 fixed-width-integer	clamav-milter/clamfi.c	57	uint64_t maxtemporarysize;
-fixed-width-integer	clamav-milter/clamfi.c	89	    uint64_t totsz;
-fixed-width-integer	clamav-milter/clamfi.c	98	    uint32_t sendme;
+fixed-width-integer	clamav-milter/clamfi.c	90	    uint64_t totsz;
 fixed-width-integer	clamav-milter/clamfi.h	29	extern uint64_t maxfilesize;
 fixed-width-integer	clamav-milter/clamfi.h	30	extern uint64_t maxtemporarysize;
 fixed-width-integer	clamav-milter/clamfi_quota.c	11	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
@@ -16,17 +16,18 @@ fixed-width-integer	clamav-milter/clamfi_quota.c	26	enum clamfi_quota_result cla
 fixed-width-integer	clamav-milter/clamfi_quota.c	28	    uint64_t requested64 = (uint64_t)requested;
 fixed-width-integer	clamav-milter/clamfi_quota.h	18	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective);
 fixed-width-integer	clamav-milter/clamfi_quota.h	19	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next);
-fixed-width-integer	clamav-milter/netcode.c	350	static int resolve(char *name, uint32_t *family, uint32_t *host)
-fixed-width-integer	clamav-milter/netcode.c	377	        uint32_t u = 0;
-fixed-width-integer	clamav-milter/netcode.c	399	    uint32_t nmask;
-fixed-width-integer	clamav-milter/netcode.c	440	static int islocalnet(uint32_t family, uint32_t *host)
-fixed-width-integer	clamav-milter/netcode.c	457	    uint32_t host[4], family;
-fixed-width-integer	clamav-milter/netcode.c	469	    uint32_t host[4] = {0};
-fixed-width-integer	clamav-milter/netcode.c	470	    uint32_t family;
-fixed-width-integer	clamav-milter/netcode.c	482	        uint32_t u = 0;
-fixed-width-integer	clamav-milter/netcode.c	69	    uint32_t basehost[4];
-fixed-width-integer	clamav-milter/netcode.c	70	    uint32_t mask[4];
-fixed-width-integer	clamav-milter/netcode.c	71	    uint32_t family;
+fixed-width-integer	clamav-milter/netcode.c	309	        uint32_t json_length = 0;
+fixed-width-integer	clamav-milter/netcode.c	391	static int resolve(char *name, uint32_t *family, uint32_t *host)
+fixed-width-integer	clamav-milter/netcode.c	418	        uint32_t u = 0;
+fixed-width-integer	clamav-milter/netcode.c	440	    uint32_t nmask;
+fixed-width-integer	clamav-milter/netcode.c	481	static int islocalnet(uint32_t family, uint32_t *host)
+fixed-width-integer	clamav-milter/netcode.c	498	    uint32_t host[4], family;
+fixed-width-integer	clamav-milter/netcode.c	510	    uint32_t host[4] = {0};
+fixed-width-integer	clamav-milter/netcode.c	511	    uint32_t family;
+fixed-width-integer	clamav-milter/netcode.c	523	        uint32_t u = 0;
+fixed-width-integer	clamav-milter/netcode.c	70	    uint32_t basehost[4];
+fixed-width-integer	clamav-milter/netcode.c	71	    uint32_t mask[4];
+fixed-width-integer	clamav-milter/netcode.c	72	    uint32_t family;
 fixed-width-integer	clambc/bcrun.c	132	static void tracehook_val(struct cli_bc_ctx *ctx, const char *name, uint32_t value)
 fixed-width-integer	clambc/bcrun.c	186	static uint32_t deadbeefcounts[64] = {
 fixed-width-integer	clambc/bcrun.c	479	            uint64_t v;
@@ -5307,34 +5308,37 @@ native-width-integer	clamav-milter/clamav-milter.c	458	                int ret  
 native-width-integer	clamav-milter/clamav-milter.c	61	static void milter_exit(int sig)
 native-width-integer	clamav-milter/clamav-milter.c	86	int main(int argc, char **argv)
 native-width-integer	clamav-milter/clamav-milter.c	94	    int dropPrivRet = 0;
-native-width-integer	clamav-milter/clamfi.c	102	static void add_x_header(SMFICTX *ctx, char *st, unsigned int scanned, unsigned int status)
-native-width-integer	clamav-milter/clamfi.c	162	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
-native-width-integer	clamav-milter/clamfi.c	206	            ssize_t n = write(cf->alt, bodyp, len);
-native-width-integer	clamav-milter/clamfi.c	217	        int sendfailed = 0;
-native-width-integer	clamav-milter/clamfi.c	302	sfsistat clamfi_body(SMFICTX *ctx, unsigned char *bodyp, size_t len)
-native-width-integer	clamav-milter/clamfi.c	340	    int len, ret;
-native-width-integer	clamav-milter/clamfi.c	341	    unsigned int crcpt;
-native-width-integer	clamav-milter/clamfi.c	431	                unsigned int have_multi = (multircpt != 0 && cf->nrecipients);
-native-width-integer	clamav-milter/clamfi.c	432	                unsigned int lst_rcpt   = (have_multi * (cf->nrecipients - 1)) + 1;
-native-width-integer	clamav-milter/clamfi.c	490	                                    int wret;
-native-width-integer	clamav-milter/clamfi.c	556	static int parse_action(char *action)
-native-width-integer	clamav-milter/clamfi.c	611	int init_actions(struct optstruct *opts)
+native-width-integer	clamav-milter/clamfi.c	104	static void add_x_header(SMFICTX *ctx, char *st, unsigned int scanned, unsigned int status)
+native-width-integer	clamav-milter/clamfi.c	168	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
+native-width-integer	clamav-milter/clamfi.c	217	            ssize_t n = write(cf->alt, bodyp, len);
+native-width-integer	clamav-milter/clamfi.c	228	        int sendfailed = 0;
+native-width-integer	clamav-milter/clamfi.c	313	sfsistat clamfi_body(SMFICTX *ctx, unsigned char *bodyp, size_t len)
+native-width-integer	clamav-milter/clamfi.c	351	    int len, ret;
+native-width-integer	clamav-milter/clamfi.c	352	    int infected = 0;
+native-width-integer	clamav-milter/clamfi.c	353	    int incomplete = 0;
+native-width-integer	clamav-milter/clamfi.c	354	    unsigned int crcpt;
+native-width-integer	clamav-milter/clamfi.c	468	                unsigned int have_multi = (multircpt != 0 && cf->nrecipients);
+native-width-integer	clamav-milter/clamfi.c	469	                unsigned int lst_rcpt   = (have_multi * (cf->nrecipients - 1)) + 1;
+native-width-integer	clamav-milter/clamfi.c	527	                                    int wret;
+native-width-integer	clamav-milter/clamfi.c	593	static int parse_action(char *action)
 native-width-integer	clamav-milter/clamfi.c	64	int addxvirus = 0; /* 0 - don't add | 1 - replace | 2 - add */
+native-width-integer	clamav-milter/clamfi.c	648	int init_actions(struct optstruct *opts)
 native-width-integer	clamav-milter/clamfi.c	67	int multircpt   = 1;
-native-width-integer	clamav-milter/clamfi.c	701	                    int gotpctv = 0;
+native-width-integer	clamav-milter/clamfi.c	738	                    int gotpctv = 0;
 native-width-integer	clamav-milter/clamfi.c	74	int loginfected;
-native-width-integer	clamav-milter/clamfi.c	795	        unsigned int rcpt_cnt;
-native-width-integer	clamav-milter/clamfi.c	86	    int local;
-native-width-integer	clamav-milter/clamfi.c	87	    int main;
-native-width-integer	clamav-milter/clamfi.c	88	    int alt;
-native-width-integer	clamav-milter/clamfi.c	90	    unsigned int stream_started;
-native-width-integer	clamav-milter/clamfi.c	91	    unsigned int over_limit;
-native-width-integer	clamav-milter/clamfi.c	92	    unsigned int bufsz;
-native-width-integer	clamav-milter/clamfi.c	93	    unsigned int all_allowed;
-native-width-integer	clamav-milter/clamfi.c	94	    unsigned int gotbody;
-native-width-integer	clamav-milter/clamfi.c	95	    unsigned int scanned_count;
-native-width-integer	clamav-milter/clamfi.c	96	    unsigned int status_count;
-native-width-integer	clamav-milter/clamfi.c	97	    unsigned int nrecipients;
+native-width-integer	clamav-milter/clamfi.c	833	        unsigned int rcpt_cnt;
+native-width-integer	clamav-milter/clamfi.c	87	    int local;
+native-width-integer	clamav-milter/clamfi.c	88	    int main;
+native-width-integer	clamav-milter/clamfi.c	89	    int alt;
+native-width-integer	clamav-milter/clamfi.c	91	    unsigned int stream_started;
+native-width-integer	clamav-milter/clamfi.c	92	    unsigned int over_limit;
+native-width-integer	clamav-milter/clamfi.c	93	    unsigned int bufsz;
+native-width-integer	clamav-milter/clamfi.c	94	    unsigned int all_allowed;
+native-width-integer	clamav-milter/clamfi.c	95	    unsigned int gotbody;
+native-width-integer	clamav-milter/clamfi.c	96	    unsigned int scanned_count;
+native-width-integer	clamav-milter/clamfi.c	97	    unsigned int status_count;
+native-width-integer	clamav-milter/clamfi.c	98	    unsigned int nrecipients;
+native-width-integer	clamav-milter/clamfi.c	99	    unsigned int scan_lock_held;
 native-width-integer	clamav-milter/clamfi.h	31	extern int addxvirus;
 native-width-integer	clamav-milter/clamfi.h	33	extern int multircpt;
 native-width-integer	clamav-milter/clamfi.h	35	sfsistat clamfi_body(SMFICTX *ctx, unsigned char *bodyp, size_t len);
@@ -5358,44 +5362,51 @@ native-width-integer	clamav-milter/connpool.c	71	static int cpool_addunix(char *
 native-width-integer	clamav-milter/connpool.h	48	    unsigned int entries;
 native-width-integer	clamav-milter/connpool.h	49	    unsigned int alive;
 native-width-integer	clamav-milter/connpool.h	56	struct CP_ENTRY *cpool_get_rand(int *s);
-native-width-integer	clamav-milter/netcode.c	106	static int nc_connect(int s, struct CP_ENTRY *cpe)
-native-width-integer	clamav-milter/netcode.c	109	    int res        = connect(s, cpe->server, cpe->socklen);
-native-width-integer	clamav-milter/netcode.c	124	        int s_err;
-native-width-integer	clamav-milter/netcode.c	151	int nc_send(int s, const void *buff, size_t len)
-native-width-integer	clamav-milter/netcode.c	156	        int res        = send(s, buf, len, 0);
-native-width-integer	clamav-milter/netcode.c	203	int nc_sendmsg(int s, int fd)
-native-width-integer	clamav-milter/netcode.c	208	    int ret;
-native-width-integer	clamav-milter/netcode.c	209	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
-native-width-integer	clamav-milter/netcode.c	218	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
-native-width-integer	clamav-milter/netcode.c	220	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
-native-width-integer	clamav-milter/netcode.c	223	    *(int *)CMSG_DATA(cmsg) = fd;
-native-width-integer	clamav-milter/netcode.c	234	char *nc_recv(int s)
-native-width-integer	clamav-milter/netcode.c	240	    int res;
-native-width-integer	clamav-milter/netcode.c	241	    unsigned int len = 0;
-native-width-integer	clamav-milter/netcode.c	295	int nc_connect_entry(struct CP_ENTRY *cpe)
-native-width-integer	clamav-milter/netcode.c	297	    int s = nc_socket(cpe);
-native-width-integer	clamav-milter/netcode.c	304	    int s = nc_connect_entry(cpe);
-native-width-integer	clamav-milter/netcode.c	319	int nc_connect_rand(int *main, int *alt, int *local)
-native-width-integer	clamav-milter/netcode.c	350	static int resolve(char *name, uint32_t *family, uint32_t *host)
-native-width-integer	clamav-milter/netcode.c	376	        unsigned int i, j;
-native-width-integer	clamav-milter/netcode.c	400	    unsigned int i;
-native-width-integer	clamav-milter/netcode.c	440	static int islocalnet(uint32_t family, uint32_t *host)
-native-width-integer	clamav-milter/netcode.c	455	int islocalnet_name(char *name)
-native-width-integer	clamav-milter/netcode.c	467	int islocalnet_sock(struct sockaddr *sa)
-native-width-integer	clamav-milter/netcode.c	481	        unsigned int i, j;
-native-width-integer	clamav-milter/netcode.c	507	int localnets_init(struct optstruct *opts)
-native-width-integer	clamav-milter/netcode.c	80	long readtimeout;
-native-width-integer	clamav-milter/netcode.c	82	static int nc_socket(struct CP_ENTRY *cpe)
-native-width-integer	clamav-milter/netcode.c	84	    int flags, s = socket(cpe->server->sa_family, SOCK_STREAM, 0);
+native-width-integer	clamav-milter/netcode.c	107	static int nc_connect(int s, struct CP_ENTRY *cpe)
+native-width-integer	clamav-milter/netcode.c	110	    int res        = connect(s, cpe->server, cpe->socklen);
+native-width-integer	clamav-milter/netcode.c	125	        int s_err;
+native-width-integer	clamav-milter/netcode.c	152	int nc_send(int s, const void *buff, size_t len)
+native-width-integer	clamav-milter/netcode.c	157	        int res        = send(s, buf, len, 0);
+native-width-integer	clamav-milter/netcode.c	204	int nc_sendmsg(int s, int fd)
+native-width-integer	clamav-milter/netcode.c	209	    int ret;
+native-width-integer	clamav-milter/netcode.c	210	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
+native-width-integer	clamav-milter/netcode.c	219	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
+native-width-integer	clamav-milter/netcode.c	221	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
+native-width-integer	clamav-milter/netcode.c	224	    *(int *)CMSG_DATA(cmsg) = fd;
+native-width-integer	clamav-milter/netcode.c	235	char *nc_recv(int s)
+native-width-integer	clamav-milter/netcode.c	241	    int res;
+native-width-integer	clamav-milter/netcode.c	242	    unsigned int len = 0;
+native-width-integer	clamav-milter/netcode.c	296	int nc_recv_scan_report(int s, int *infected, int *incomplete)
+native-width-integer	clamav-milter/netcode.c	298	    int terminated = 0;
+native-width-integer	clamav-milter/netcode.c	299	    int received   = 0;
+native-width-integer	clamav-milter/netcode.c	310	        int frame_infected = 0;
+native-width-integer	clamav-milter/netcode.c	311	        int frame_incomplete = 0;
+native-width-integer	clamav-milter/netcode.c	312	        int frame;
+native-width-integer	clamav-milter/netcode.c	336	int nc_connect_entry(struct CP_ENTRY *cpe)
+native-width-integer	clamav-milter/netcode.c	338	    int s = nc_socket(cpe);
+native-width-integer	clamav-milter/netcode.c	345	    int s = nc_connect_entry(cpe);
+native-width-integer	clamav-milter/netcode.c	360	int nc_connect_rand(int *main, int *alt, int *local)
+native-width-integer	clamav-milter/netcode.c	391	static int resolve(char *name, uint32_t *family, uint32_t *host)
+native-width-integer	clamav-milter/netcode.c	417	        unsigned int i, j;
+native-width-integer	clamav-milter/netcode.c	441	    unsigned int i;
+native-width-integer	clamav-milter/netcode.c	481	static int islocalnet(uint32_t family, uint32_t *host)
+native-width-integer	clamav-milter/netcode.c	496	int islocalnet_name(char *name)
+native-width-integer	clamav-milter/netcode.c	508	int islocalnet_sock(struct sockaddr *sa)
+native-width-integer	clamav-milter/netcode.c	522	        unsigned int i, j;
+native-width-integer	clamav-milter/netcode.c	548	int localnets_init(struct optstruct *opts)
+native-width-integer	clamav-milter/netcode.c	81	long readtimeout;
+native-width-integer	clamav-milter/netcode.c	83	static int nc_socket(struct CP_ENTRY *cpe)
+native-width-integer	clamav-milter/netcode.c	85	    int flags, s = socket(cpe->server->sa_family, SOCK_STREAM, 0);
 native-width-integer	clamav-milter/netcode.h	32	int nc_connect_rand(int *main, int *alt, int *local);
 native-width-integer	clamav-milter/netcode.h	33	int nc_send(int s, const void *buf, size_t len);
 native-width-integer	clamav-milter/netcode.h	34	char *nc_recv(int s);
-native-width-integer	clamav-milter/netcode.h	35	int nc_sendmsg(int s, int fd);
-native-width-integer	clamav-milter/netcode.h	36	int nc_connect_entry(struct CP_ENTRY *cpe);
-native-width-integer	clamav-milter/netcode.h	37	int localnets_init(struct optstruct *opts);
-native-width-integer	clamav-milter/netcode.h	39	int islocalnet_name(char *name);
-native-width-integer	clamav-milter/netcode.h	40	int islocalnet_sock(struct sockaddr *sa);
-native-width-integer	clamav-milter/netcode.h	42	extern long readtimeout;
+native-width-integer	clamav-milter/netcode.h	35	int nc_recv_scan_report(int s, int *infected, int *incomplete);
+native-width-integer	clamav-milter/netcode.h	36	int nc_sendmsg(int s, int fd);
+native-width-integer	clamav-milter/netcode.h	37	int nc_connect_entry(struct CP_ENTRY *cpe);
+native-width-integer	clamav-milter/netcode.h	38	int localnets_init(struct optstruct *opts);
+native-width-integer	clamav-milter/netcode.h	40	int islocalnet_name(char *name);
+native-width-integer	clamav-milter/netcode.h	41	int islocalnet_sock(struct sockaddr *sa);
+native-width-integer	clamav-milter/netcode.h	43	extern long readtimeout;
 native-width-integer	clambc/bcrun.c	148	    int nread, i, found = 0, lcnt = 0;
 native-width-integer	clambc/bcrun.c	252	int main(int argc, char *argv[])
 native-width-integer	clambc/bcrun.c	257	    int rc, dbgargc, bc_stats = 0;
@@ -15613,7 +15624,7 @@ native-width-integer	win32/compat/w32_stat.c	45	    size_t i;
 native-width-integer	win32/compat/w32_stat.h	38	int w32_stat(const char *path, struct stat *buf);
 native-width-integer	win32/compat/w32_stat.h	43	int w32_access(const char *pathname, int mode);
 native-width-integer	win32/compat/w32_stat.h	49	int safe_open(const char *path, int flags, ...);
-boundary-constant	clamav-milter/clamfi.c	235	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
+boundary-constant	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
 boundary-constant	clamd/largefile_admission.c	257	        (max_file_size > (uint64_t)SIZE_MAX) ||
 boundary-constant	clamd/largefile_admission.c	258	        (max_scan_size > (uint64_t)SIZE_MAX) ||
 boundary-constant	clamd/largefile_admission.c	259	        (max_temporary_size > (uint64_t)SIZE_MAX) ||
@@ -15843,7 +15854,7 @@ boundary-constant	unit_tests/check_matchers.c	751	    ck_assert_int_eq(cli_hm_sc
 boundary-constant	unit_tests/check_matchers.c	754	    ck_assert_int_eq(cli_hm_scan(second, UINT32_MAX, &matched, ctx.engine->hm_hdb, CLI_HASH_MD5), CL_VIRUS);
 quantity-parser	clamav-milter/clamav-milter.c	245	            gid_t sock_gid = strtol(gname, &end, 10);
 quantity-parser	clamav-milter/clamav-milter.c	284	            sock_mode = strtol(optget(opts, "MilterSocketMode")->strarg, &end, 8);
-quantity-parser	clamav-milter/netcode.c	420	        nmask = atoi(mask);
+quantity-parser	clamav-milter/netcode.c	461	        nmask = atoi(mask);
 quantity-parser	clambc/bcrun.c	424	            funcid = atoi(opts->filename[1]);
 quantity-parser	clambc/bcrun.c	433	                rc = cli_bytecode_context_setparam_int(ctx, i - 2, atoi(opts->filename[i]));
 quantity-parser	clamd/clamd.c	821	                gid_t sock_gid = strtol(gname, &end, 10);
@@ -15944,7 +15955,7 @@ quantity-parser	sigtool/sigtool.c	3635	        switch (atoi(tokens[1])) {
 quantity-parser	unit_tests/check_clamav.c	8836	        int timeout = atoi(user_timeout);
 quantity-parser	unit_tests/check_clamd.c	229	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	99	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
-narrowing-cast	clamav-milter/clamfi.c	235	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
+narrowing-cast	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
 narrowing-cast	common/clamdcom.c	755	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	common/clamdcom.c	768	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	common/clamdcom.c	781	                sent = sendln(sockd, command, (unsigned int)length);
@@ -16008,12 +16019,12 @@ narrowing-cast	unit_tests/check_clamd.c	279	    ck_assert_int_eq((int)write(pipe
 narrowing-cast	win32/compat/net.c	268	    int ret = send((SOCKET)sockfd, (const char *)buf, (int)len, flags);
 format-width	clamav-milter/clamav-milter.c	443	            if (fprintf(fd, "%u\n", (unsigned int)getpid()) < 0) {
 format-width	clamav-milter/clamav-milter.c	65	    logg(LOGG_DEBUG, "clamav-milter: milter_exit, signal %d\n", sig);
-format-width	clamav-milter/clamfi.c	497	                                            logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
-format-width	clamav-milter/clamfi.c	499	                                            logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
+format-width	clamav-milter/clamfi.c	534	                                            logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
+format-width	clamav-milter/clamfi.c	536	                                            logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
 format-width	clamav-milter/connpool.c	139	    logg(LOGG_DEBUG, "%s socket tcp:%s:%s added to the pool (slot %d)\n", cpe->local ? "Local" : "Remote", addr ? addr : "localhost", port ? port : "3310", cp->entries);
 format-width	clamav-milter/connpool.c	176	            logg(LOGG_DEBUG, "Probe for slot %u returned: %s\n", i, cpe->dead ? "failed" : "success");
 format-width	clamav-milter/connpool.c	96	    logg(LOGG_DEBUG, "Local socket unix:%s added to the pool (slot %d)\n", srv->sun_path, cp->entries);
-format-width	clamav-milter/netcode.c	286	        logg(LOGG_ERROR, "malloc(%d) failed\n", len + 1);
+format-width	clamav-milter/netcode.c	287	        logg(LOGG_ERROR, "malloc(%d) failed\n", len + 1);
 format-width	clambc/bcrun.c	105	            fprintf(stderr, "[trace] %s:%u:%u -> %s:%u:%u\n",
 format-width	clambc/bcrun.c	115	                fprintf(stderr, "[trace] %s:%u:%u\n",
 format-width	clambc/bcrun.c	135	    fprintf(stderr, "[trace] %s = %u\n", name, value);
@@ -18436,39 +18447,39 @@ offset-size-arithmetic	clamav-milter/clamav-milter.c	403	    if (!clamfi_normali
 offset-size-arithmetic	clamav-milter/clamav-milter.c	411	    maxtemporarysize = (uint64_t)optget(opts, "MaxTemporarySize")->numarg;
 offset-size-arithmetic	clamav-milter/clamav-milter.c	465	#endif /*_WIN32*/
 offset-size-arithmetic	clamav-milter/clamav-milter.c	95	#endif /* _WIN32 */
-offset-size-arithmetic	clamav-milter/clamfi.c	106	            if (smfi_chgheader(ctx, (char *)"X-Virus-Scanned", scanned--, NULL) != MI_SUCCESS)
-offset-size-arithmetic	clamav-milter/clamfi.c	162	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
-offset-size-arithmetic	clamav-milter/clamfi.c	180	        if ((ret = sendchunk(cf, (unsigned char *)"From clamav-milter\n", 19, ctx)) != SMFIS_CONTINUE)
-offset-size-arithmetic	clamav-milter/clamfi.c	206	            ssize_t n = write(cf->alt, bodyp, len);
-offset-size-arithmetic	clamav-milter/clamfi.c	213	            len -= n;
-offset-size-arithmetic	clamav-milter/clamfi.c	219	        if (len < CLAMFIBUFSZ - cf->bufsz) {
-offset-size-arithmetic	clamav-milter/clamfi.c	225	            sendfailed = nc_send(cf->main, &cf->sendme, CLAMFIBUFSZ + 4);
-offset-size-arithmetic	clamav-milter/clamfi.c	226	            len -= (CLAMFIBUFSZ - cf->bufsz);
-offset-size-arithmetic	clamav-milter/clamfi.c	231	            cf->sendme         = htonl(cf->bufsz);
-offset-size-arithmetic	clamav-milter/clamfi.c	232	            if (cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4))
-offset-size-arithmetic	clamav-milter/clamfi.c	237	                if (nc_send(cf->main, &sendmetoo, 4) || nc_send(cf->main, bodyp, chunk))
-offset-size-arithmetic	clamav-milter/clamfi.c	240	                len -= chunk;
-offset-size-arithmetic	clamav-milter/clamfi.c	280	        if (!strcasecmp(headerf, "X-Virus-Scanned")) cf->scanned_count++;
-offset-size-arithmetic	clamav-milter/clamfi.c	284	    if ((ret = sendchunk(cf, (unsigned char *)headerf, strlen(headerf), ctx)) != SMFIS_CONTINUE) {
-offset-size-arithmetic	clamav-milter/clamfi.c	288	    if ((ret = sendchunk(cf, (unsigned char *)": ", 2, ctx)) != SMFIS_CONTINUE) {
-offset-size-arithmetic	clamav-milter/clamfi.c	292	    if (headerv && (ret = sendchunk(cf, (unsigned char *)headerv, strlen(headerv), ctx)) != SMFIS_CONTINUE) {
-offset-size-arithmetic	clamav-milter/clamfi.c	296	    ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
-offset-size-arithmetic	clamav-milter/clamfi.c	311	        ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
-offset-size-arithmetic	clamav-milter/clamfi.c	363	        lseek(cf->alt, 0, SEEK_SET);
-offset-size-arithmetic	clamav-milter/clamfi.c	365	        if (nc_sendmsg(cf->main, cf->alt) == -1) {
-offset-size-arithmetic	clamav-milter/clamfi.c	373	        cf->sendme         = htonl(cf->bufsz);
-offset-size-arithmetic	clamav-milter/clamfi.c	374	        if ((cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4)) || nc_send(cf->main, &sendmetoo, 4)) {
-offset-size-arithmetic	clamav-milter/clamfi.c	397	    if (len > 5 && !strcmp(reply + len - 5, ": OK\n")) {
-offset-size-arithmetic	clamav-milter/clamfi.c	398	        if (addxvirus) add_x_header(ctx, "Clean", cf->scanned_count, cf->status_count);
-offset-size-arithmetic	clamav-milter/clamfi.c	423	    } else if (len > 7 && !strcmp(reply + len - 7, " FOUND\n")) {
-offset-size-arithmetic	clamav-milter/clamfi.c	428	            reply[len - 7] = '\0';
-offset-size-arithmetic	clamav-milter/clamfi.c	441	                    msg[sizeof(msg) - 1] = '\0';
-offset-size-arithmetic	clamav-milter/clamfi.c	442	                    add_x_header(ctx, msg, cf->scanned_count, cf->status_count);
-offset-size-arithmetic	clamav-milter/clamfi.c	605	    snprintf(buf, sizeof(buf), rejectfmt, cf->virusname);
-offset-size-arithmetic	clamav-milter/clamfi.c	606	    buf[sizeof(buf) - 1] = '\0';
-offset-size-arithmetic	clamav-milter/clamfi.c	703	                    rejectfmt = dst = malloc(strlen(src) * 4 + 1);
-offset-size-arithmetic	clamav-milter/clamfi.c	758	    if (!(cf = (struct CLAMFI *)malloc(sizeof(*cf)))) {
-offset-size-arithmetic	clamav-milter/clamfi.c	794	        void *new_rcpt = realloc(cf->recipients, (cf->nrecipients + 1) * sizeof(*(cf->recipients)));
+offset-size-arithmetic	clamav-milter/clamfi.c	108	            if (smfi_chgheader(ctx, (char *)"X-Virus-Scanned", scanned--, NULL) != MI_SUCCESS)
+offset-size-arithmetic	clamav-milter/clamfi.c	168	static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, SMFICTX *ctx)
+offset-size-arithmetic	clamav-milter/clamfi.c	191	        if ((ret = sendchunk(cf, (unsigned char *)"From clamav-milter\n", 19, ctx)) != SMFIS_CONTINUE)
+offset-size-arithmetic	clamav-milter/clamfi.c	217	            ssize_t n = write(cf->alt, bodyp, len);
+offset-size-arithmetic	clamav-milter/clamfi.c	224	            len -= n;
+offset-size-arithmetic	clamav-milter/clamfi.c	230	        if (len < CLAMFIBUFSZ - cf->bufsz) {
+offset-size-arithmetic	clamav-milter/clamfi.c	236	            sendfailed = nc_send(cf->main, &cf->sendme, CLAMFIBUFSZ + 4);
+offset-size-arithmetic	clamav-milter/clamfi.c	237	            len -= (CLAMFIBUFSZ - cf->bufsz);
+offset-size-arithmetic	clamav-milter/clamfi.c	242	            cf->sendme         = htonl(cf->bufsz);
+offset-size-arithmetic	clamav-milter/clamfi.c	243	            if (cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4))
+offset-size-arithmetic	clamav-milter/clamfi.c	248	                if (nc_send(cf->main, &sendmetoo, 4) || nc_send(cf->main, bodyp, chunk))
+offset-size-arithmetic	clamav-milter/clamfi.c	251	                len -= chunk;
+offset-size-arithmetic	clamav-milter/clamfi.c	291	        if (!strcasecmp(headerf, "X-Virus-Scanned")) cf->scanned_count++;
+offset-size-arithmetic	clamav-milter/clamfi.c	295	    if ((ret = sendchunk(cf, (unsigned char *)headerf, strlen(headerf), ctx)) != SMFIS_CONTINUE) {
+offset-size-arithmetic	clamav-milter/clamfi.c	299	    if ((ret = sendchunk(cf, (unsigned char *)": ", 2, ctx)) != SMFIS_CONTINUE) {
+offset-size-arithmetic	clamav-milter/clamfi.c	303	    if (headerv && (ret = sendchunk(cf, (unsigned char *)headerv, strlen(headerv), ctx)) != SMFIS_CONTINUE) {
+offset-size-arithmetic	clamav-milter/clamfi.c	307	    ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
+offset-size-arithmetic	clamav-milter/clamfi.c	322	        ret = sendchunk(cf, (unsigned char *)"\r\n", 2, ctx);
+offset-size-arithmetic	clamav-milter/clamfi.c	376	        lseek(cf->alt, 0, SEEK_SET);
+offset-size-arithmetic	clamav-milter/clamfi.c	378	        if (nc_sendmsg(cf->main, cf->alt) == -1) {
+offset-size-arithmetic	clamav-milter/clamfi.c	386	        cf->sendme         = htonl(cf->bufsz);
+offset-size-arithmetic	clamav-milter/clamfi.c	387	        if ((cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4)) || nc_send(cf->main, &sendmetoo, 4)) {
+offset-size-arithmetic	clamav-milter/clamfi.c	434	    if (len > 5 && !strcmp(reply + len - 5, ": OK\n")) {
+offset-size-arithmetic	clamav-milter/clamfi.c	435	        if (addxvirus) add_x_header(ctx, "Clean", cf->scanned_count, cf->status_count);
+offset-size-arithmetic	clamav-milter/clamfi.c	460	    } else if (len > 7 && !strcmp(reply + len - 7, " FOUND\n")) {
+offset-size-arithmetic	clamav-milter/clamfi.c	465	            reply[len - 7] = '\0';
+offset-size-arithmetic	clamav-milter/clamfi.c	478	                    msg[sizeof(msg) - 1] = '\0';
+offset-size-arithmetic	clamav-milter/clamfi.c	479	                    add_x_header(ctx, msg, cf->scanned_count, cf->status_count);
+offset-size-arithmetic	clamav-milter/clamfi.c	642	    snprintf(buf, sizeof(buf), rejectfmt, cf->virusname);
+offset-size-arithmetic	clamav-milter/clamfi.c	643	    buf[sizeof(buf) - 1] = '\0';
+offset-size-arithmetic	clamav-milter/clamfi.c	740	                    rejectfmt = dst = malloc(strlen(src) * 4 + 1);
+offset-size-arithmetic	clamav-milter/clamfi.c	795	    if (!(cf = (struct CLAMFI *)malloc(sizeof(*cf)))) {
+offset-size-arithmetic	clamav-milter/clamfi.c	832	        void *new_rcpt = realloc(cf->recipients, (cf->nrecipients + 1) * sizeof(*(cf->recipients)));
 offset-size-arithmetic	clamav-milter/clamfi_quota.c	11	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
 offset-size-arithmetic	clamav-milter/clamfi_quota.c	2	 * Pure message-size policy used by clamav-milter and its unit tests.
 offset-size-arithmetic	clamav-milter/clamfi_quota.c	26	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)
@@ -18484,21 +18495,21 @@ offset-size-arithmetic	clamav-milter/connpool.c	80	    if (!(srv = (struct socka
 offset-size-arithmetic	clamav-milter/connpool.c	86	    strncpy(srv->sun_path, path, sizeof(srv->sun_path));
 offset-size-arithmetic	clamav-milter/connpool.c	87	    srv->sun_path[sizeof(srv->sun_path) - 1] = '\0';
 offset-size-arithmetic	clamav-milter/connpool.c	93	    cpe->socklen                             = sizeof(*srv);
-offset-size-arithmetic	clamav-milter/netcode.c	142	        if (getsockopt(s, SOL_SOCKET, SO_ERROR, &s_err, (socklen_t *)&s_len) || s_err) {
-offset-size-arithmetic	clamav-milter/netcode.c	151	int nc_send(int s, const void *buff, size_t len)
-offset-size-arithmetic	clamav-milter/netcode.c	167	            len -= res;
-offset-size-arithmetic	clamav-milter/netcode.c	226	    if ((ret = sendmsg(s, &msg, 0)) == -1) {
-offset-size-arithmetic	clamav-milter/netcode.c	263	        res = recv(s, &buf[len], sizeof(buf) - len, 0);
-offset-size-arithmetic	clamav-milter/netcode.c	277	        len += res;
-offset-size-arithmetic	clamav-milter/netcode.c	278	        if (len && buf[len - 1] == '\n') break;
-offset-size-arithmetic	clamav-milter/netcode.c	285	    if (!(ret = (char *)malloc(len + 1))) {
-offset-size-arithmetic	clamav-milter/netcode.c	286	        logg(LOGG_ERROR, "malloc(%d) failed\n", len + 1);
-offset-size-arithmetic	clamav-milter/netcode.c	334	        if (nc_send(*main, "nFILDES\n", 8)) {
-offset-size-arithmetic	clamav-milter/netcode.c	341	        if (nc_send(*main, "nINSTREAM\n", 10)) {
-offset-size-arithmetic	clamav-milter/netcode.c	368	    if (res->ai_addrlen == sizeof(struct sockaddr_in) && res->ai_addr->sa_family == AF_INET) {
-offset-size-arithmetic	clamav-milter/netcode.c	374	    } else if (res->ai_addrlen == sizeof(struct sockaddr_in6) && res->ai_addr->sa_family == AF_INET6) {
-offset-size-arithmetic	clamav-milter/netcode.c	398	    struct LOCALNET *l = (struct LOCALNET *)malloc(sizeof(*l));
-offset-size-arithmetic	clamav-milter/netcode.c	77	/* for connect and send */
+offset-size-arithmetic	clamav-milter/netcode.c	143	        if (getsockopt(s, SOL_SOCKET, SO_ERROR, &s_err, (socklen_t *)&s_len) || s_err) {
+offset-size-arithmetic	clamav-milter/netcode.c	152	int nc_send(int s, const void *buff, size_t len)
+offset-size-arithmetic	clamav-milter/netcode.c	168	            len -= res;
+offset-size-arithmetic	clamav-milter/netcode.c	227	    if ((ret = sendmsg(s, &msg, 0)) == -1) {
+offset-size-arithmetic	clamav-milter/netcode.c	264	        res = recv(s, &buf[len], sizeof(buf) - len, 0);
+offset-size-arithmetic	clamav-milter/netcode.c	278	        len += res;
+offset-size-arithmetic	clamav-milter/netcode.c	279	        if (len && buf[len - 1] == '\n') break;
+offset-size-arithmetic	clamav-milter/netcode.c	286	    if (!(ret = (char *)malloc(len + 1))) {
+offset-size-arithmetic	clamav-milter/netcode.c	287	        logg(LOGG_ERROR, "malloc(%d) failed\n", len + 1);
+offset-size-arithmetic	clamav-milter/netcode.c	375	        if (nc_send(*main, "zFILDESREPORT\n", sizeof("zFILDESREPORT\n") - 1)) {
+offset-size-arithmetic	clamav-milter/netcode.c	382	        if (nc_send(*main, "zINSTREAMREPORT\n", sizeof("zINSTREAMREPORT\n") - 1)) {
+offset-size-arithmetic	clamav-milter/netcode.c	409	    if (res->ai_addrlen == sizeof(struct sockaddr_in) && res->ai_addr->sa_family == AF_INET) {
+offset-size-arithmetic	clamav-milter/netcode.c	415	    } else if (res->ai_addrlen == sizeof(struct sockaddr_in6) && res->ai_addr->sa_family == AF_INET6) {
+offset-size-arithmetic	clamav-milter/netcode.c	439	    struct LOCALNET *l = (struct LOCALNET *)malloc(sizeof(*l));
+offset-size-arithmetic	clamav-milter/netcode.c	78	/* for connect and send */
 offset-size-arithmetic	clamav-milter/netcode.h	33	int nc_send(int s, const void *buf, size_t len);
 offset-size-arithmetic	clambc/bcrun.c	180	            fseek(f, -1, SEEK_CUR);
 offset-size-arithmetic	clambc/bcrun.c	296	    bc = malloc(sizeof(*bc));
@@ -29797,8 +29808,8 @@ offset-size-arithmetic	win32/compat/w32_stat.c	91	    } else if (!(len = MultiBy
 offset-size-arithmetic	win32/compat/w32_stat.c	99	    /* append a backslash to naked drives and get rid of . and .. */
 large-file-option	clamav-milter/clamav-milter.c	403	    if (!clamfi_normalize_maxfilesize((uint64_t)optget(opts, "MaxFileSize")->numarg, &maxfilesize)) {
 large-file-option	clamav-milter/clamav-milter.c	404	        logg(LOGG_ERROR, "MaxFileSize must be at or below 32 GiB\n");
-large-file-option	clamav-milter/clamfi.c	190	        logg(LOGG_ERROR, "Message exceeds MaxFileSize; refusing a partial scan\n");
-large-file-option	clamav-milter/clamfi.c	347	        logg(LOGG_ERROR, "Refusing clean verdict for message exceeding MaxFileSize\n");
+large-file-option	clamav-milter/clamfi.c	201	        logg(LOGG_ERROR, "Message exceeds MaxFileSize; refusing a partial scan\n");
+large-file-option	clamav-milter/clamfi.c	360	        logg(LOGG_ERROR, "Refusing clean verdict for message exceeding MaxFileSize\n");
 large-file-option	clamd/largefile_admission.c	239	    if (!engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size) ||
 large-file-option	clamd/largefile_admission.c	240	        !engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size) ||
 large-file-option	clamd/server-th.c	1014	    if ((opt = optget(opts, "MaxScanSize"))->active) {

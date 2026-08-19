@@ -100,6 +100,13 @@ unsupported-special-file, stat, allocation, and realpath skips. Intentional
 symlink exclusions remain policy skips, but required paths that the walker
 cannot inspect can no longer disappear from an otherwise `COMPLETE` aggregate.
 
+clamav-milter now uses `INSTREAMREPORT`/`FILDESREPORT` and consumes the same
+length-prefixed structured report used by clamdscan. A clean milter action is
+therefore limited to a `COMPLETE` report; incomplete, resource, malformed, and
+application-abort reports take the configured failure action. The active milter
+scan request is serialized across conversations so a second request cannot
+simultaneously stage and reserve resources while the first is being scanned.
+
 On-access prevention now denies permission events after stat or size-limit
 preflight failures even when the worker correctly avoids submitting a partial
 object; monitoring-only events continue to allow and log.

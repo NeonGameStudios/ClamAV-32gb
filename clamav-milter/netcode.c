@@ -52,6 +52,7 @@
 // common
 #include "output.h"
 #include "optparser.h"
+#include "clamdcom.h"
 
 #include "netcode.h"
 
@@ -292,6 +293,46 @@ char *nc_recv(int s)
     return ret;
 }
 
+int nc_recv_scan_report(int s, int *infected, int *incomplete)
+{
+    int terminated = 0;
+    int received   = 0;
+
+    if (!infected || !incomplete)
+        return -1;
+
+    *infected   = 0;
+    *incomplete = 0;
+
+    while (!terminated) {
+        char *json = NULL;
+        uint32_t json_length = 0;
+        int frame_infected = 0;
+        int frame_incomplete = 0;
+        int frame;
+
+        frame = recv_scan_report_frame(s, &json, &json_length, &terminated);
+        if (frame < 0)
+            return -1;
+        if (terminated)
+            break;
+        if (scan_report_json_status(json, json_length, &frame_infected,
+                                    &frame_incomplete) < 0) {
+            free(json);
+            return -1;
+        }
+
+        received = 1;
+        if (frame_infected)
+            *infected = 1;
+        if (frame_incomplete)
+            *incomplete = 1;
+        free(json);
+    }
+
+    return received ? 0 : -1;
+}
+
 int nc_connect_entry(struct CP_ENTRY *cpe)
 {
     int s = nc_socket(cpe);
@@ -331,14 +372,14 @@ int nc_connect_rand(int *main, int *alt, int *local)
         }
         unlink(unlinkme);
         free(unlinkme);
-        if (nc_send(*main, "nFILDES\n", 8)) {
+        if (nc_send(*main, "zFILDESREPORT\n", sizeof("zFILDESREPORT\n") - 1)) {
             logg(LOGG_ERROR, "FD scan request failed\n");
             close(*alt);
             close(*main);
             return 1;
         }
     } else {
-        if (nc_send(*main, "nINSTREAM\n", 10)) {
+        if (nc_send(*main, "zINSTREAMREPORT\n", sizeof("zINSTREAMREPORT\n") - 1)) {
             logg(LOGG_ERROR, "Failed to communicate with clamd\n");
             close(*main);
             return 1;
