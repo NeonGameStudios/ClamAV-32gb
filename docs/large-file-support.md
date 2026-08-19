@@ -2224,6 +2224,11 @@ quota-accounted writes. Malformed XML/Base64, temporary admission, write,
 decoder, allocation, temporary-file, cleanup, and nested-scan failures remain
 fail-visible.
 
+Decoder initialization failures are fail-visible as well: allocation failures
+from the ADC, deflate, and BZIP2 stripe decoders, plus XML temporary-path
+allocation failure, mark the containing DMG scan incomplete before returning
+the resource error.
+
 This removes the former root-XML 64 MiB gate and whole-text-node allocation.
 Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
 qualification remain release gates; multi-segment DMGs remain explicit

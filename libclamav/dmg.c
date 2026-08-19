@@ -749,8 +749,10 @@ static int dmg_stripe_inflate(cli_ctx *ctx, int fd, uint32_t index, struct dmg_m
     zstat = inflateInit(&strm);
     if (zstat != Z_OK) {
         cli_warnmsg("dmg_stripe_inflate: inflateInit failed\n");
-        if (zstat == Z_MEM_ERROR)
+        if (zstat == Z_MEM_ERROR) {
+            cli_mark_scan_incomplete(ctx, "DMG deflate decompressor could not be allocated");
             return CL_EMEM;
+        }
         cli_mark_scan_incomplete(ctx, "DMG deflate decompressor could not be initialized");
         return CL_EPARSE;
     }
@@ -854,8 +856,10 @@ static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish
     rc = BZ2_bzDecompressInit(&strm, 0, 0);
     if (rc != BZ_OK) {
         cli_dbgmsg("dmg_stripe_bzip: bzDecompressInit failed\n");
-        if (rc == BZ_MEM_ERROR)
+        if (rc == BZ_MEM_ERROR) {
+            cli_mark_scan_incomplete(ctx, "DMG bzip2 decompressor could not be allocated");
             return CL_EMEM;
+        }
         cli_mark_scan_incomplete(ctx, "DMG bzip2 decompressor could not be initialized");
         return CL_EPARSE;
     }
@@ -1115,6 +1119,7 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
 
     namelen = strlen(dir) + 1 + 7 + 1;
     if (!(xmlfile = cli_max_malloc(namelen))) {
+        cli_mark_scan_incomplete(ctx, "DMG XML temporary path could not be allocated");
         return CL_EMEM;
     }
     snprintf(xmlfile, namelen, "%s" PATHSEP "toc.xml", dir);

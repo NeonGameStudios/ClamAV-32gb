@@ -1534,14 +1534,14 @@ fixed-width-integer	libclamav/dlp.c	128	    uint32_t iin_start;
 fixed-width-integer	libclamav/dlp.c	129	    uint32_t iin_end;
 fixed-width-integer	libclamav/dlp.c	159	    uint32_t iin = atoi(digits);
 fixed-width-integer	libclamav/dmg.c	100	static int dmg_expected_output(cli_ctx *ctx, uint32_t index, uint64_t sector_count, uint64_t *expected)
-fixed-width-integer	libclamav/dmg.c	1112	    uint64_t offset, remaining;
+fixed-width-integer	libclamav/dmg.c	1116	    uint64_t offset, remaining;
 fixed-width-integer	libclamav/dmg.c	113	                             uint64_t *written, uint64_t expected, const char *reason)
-fixed-width-integer	libclamav/dmg.c	1136	        size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
-fixed-width-integer	libclamav/dmg.c	1137	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
-fixed-width-integer	libclamav/dmg.c	1144	        if (cli_scan_reserve_temporary(ctx, (uint64_t)wanted) != CL_SUCCESS) {
+fixed-width-integer	libclamav/dmg.c	1141	        size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
+fixed-width-integer	libclamav/dmg.c	1142	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
+fixed-width-integer	libclamav/dmg.c	1149	        if (cli_scan_reserve_temporary(ctx, (uint64_t)wanted) != CL_SUCCESS) {
 fixed-width-integer	libclamav/dmg.c	115	    if (!written || !buffer || *written > expected || (uint64_t)length > expected - *written) {
-fixed-width-integer	libclamav/dmg.c	1151	            cli_scan_release_temporary(ctx, (uint64_t)wanted);
-fixed-width-integer	libclamav/dmg.c	1158	        cli_scan_release_temporary(ctx, (uint64_t)wanted);
+fixed-width-integer	libclamav/dmg.c	1156	            cli_scan_release_temporary(ctx, (uint64_t)wanted);
+fixed-width-integer	libclamav/dmg.c	1163	        cli_scan_release_temporary(ctx, (uint64_t)wanted);
 fixed-width-integer	libclamav/dmg.c	174	    if (hdr.dataForkOffset > (uint64_t)maplen ||
 fixed-width-integer	libclamav/dmg.c	175	        hdr.dataForkLength > (uint64_t)maplen - hdr.dataForkOffset) {
 fixed-width-integer	libclamav/dmg.c	193	    if (hdr.xmlOffset > (uint64_t)maplen || hdr.xmlLength > (uint64_t)maplen ||
@@ -1579,20 +1579,20 @@ fixed-width-integer	libclamav/dmg.c	736	    uint64_t expected_len;
 fixed-width-integer	libclamav/dmg.c	80	static int dmg_track_sectors(uint64_t *, uint8_t *, uint32_t, uint32_t, uint64_t);
 fixed-width-integer	libclamav/dmg.c	81	static int dmg_handle_mish(cli_ctx *, unsigned int, char *, uint64_t, uint64_t,
 fixed-width-integer	libclamav/dmg.c	83	static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t remaining, size_t *window_len)
-fixed-width-integer	libclamav/dmg.c	832	static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_with_stripes *mish_set)
-fixed-width-integer	libclamav/dmg.c	835	    uint64_t off       = mish_set->stripes[index].dataOffset;
-fixed-width-integer	libclamav/dmg.c	836	    uint64_t remaining = mish_set->stripes[index].dataLength;
-fixed-width-integer	libclamav/dmg.c	837	    uint64_t size_so_far = 0;
-fixed-width-integer	libclamav/dmg.c	838	    uint64_t expected_len;
+fixed-width-integer	libclamav/dmg.c	834	static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_with_stripes *mish_set)
+fixed-width-integer	libclamav/dmg.c	837	    uint64_t off       = mish_set->stripes[index].dataOffset;
+fixed-width-integer	libclamav/dmg.c	838	    uint64_t remaining = mish_set->stripes[index].dataLength;
+fixed-width-integer	libclamav/dmg.c	839	    uint64_t size_so_far = 0;
+fixed-width-integer	libclamav/dmg.c	840	    uint64_t expected_len;
 fixed-width-integer	libclamav/dmg.c	87	    if (!ctx || !ctx->fmap || !window_len || remaining == 0 || offset > (uint64_t)SIZE_MAX) {
 fixed-width-integer	libclamav/dmg.c	93	    *window_len = (size_t)MIN(remaining, (uint64_t)DMG_STREAM_CHUNK_SIZE);
-fixed-width-integer	libclamav/dmg.c	933	                           uint64_t dataForkOffset, uint64_t dataForkLength,
-fixed-width-integer	libclamav/dmg.c	937	    uint64_t totalSectors            = 0;
-fixed-width-integer	libclamav/dmg.c	938	    uint64_t outputEnd               = 0;
-fixed-width-integer	libclamav/dmg.c	939	    uint64_t sourceBase;
-fixed-width-integer	libclamav/dmg.c	940	    uint32_t i;
-fixed-width-integer	libclamav/dmg.c	941	    uint64_t projected_size;
-fixed-width-integer	libclamav/dmg.c	942	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/dmg.c	937	                           uint64_t dataForkOffset, uint64_t dataForkLength,
+fixed-width-integer	libclamav/dmg.c	941	    uint64_t totalSectors            = 0;
+fixed-width-integer	libclamav/dmg.c	942	    uint64_t outputEnd               = 0;
+fixed-width-integer	libclamav/dmg.c	943	    uint64_t sourceBase;
+fixed-width-integer	libclamav/dmg.c	944	    uint32_t i;
+fixed-width-integer	libclamav/dmg.c	945	    uint64_t projected_size;
+fixed-width-integer	libclamav/dmg.c	946	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/dmg.h	100	    uint64_t dataOffset __attribute__((packed));
 fixed-width-integer	libclamav/dmg.h	101	    uint32_t bufferCount __attribute__((packed));
 fixed-width-integer	libclamav/dmg.h	102	    uint32_t descriptorBlocks __attribute__((packed));
@@ -8149,12 +8149,12 @@ native-width-integer	libclamav/dlp.h	67	int dlp_has_cc(const unsigned char *buff
 native-width-integer	libclamav/dlp.h	80	int dlp_is_valid_ssn(const unsigned char *buffer, size_t length, int format);
 native-width-integer	libclamav/dlp.h	91	int dlp_get_ssn_count(const unsigned char *buffer, size_t length);
 native-width-integer	libclamav/dmg.c	100	static int dmg_expected_output(cli_ctx *ctx, uint32_t index, uint64_t sector_count, uint64_t *expected)
-native-width-integer	libclamav/dmg.c	1108	static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
-native-width-integer	libclamav/dmg.c	1113	    size_t namelen;
-native-width-integer	libclamav/dmg.c	1114	    int ofd;
+native-width-integer	libclamav/dmg.c	1112	static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
+native-width-integer	libclamav/dmg.c	1117	    size_t namelen;
+native-width-integer	libclamav/dmg.c	1118	    int ofd;
 native-width-integer	libclamav/dmg.c	112	static int dmg_write_checked(cli_ctx *ctx, int fd, const uint8_t *buffer, size_t length,
-native-width-integer	libclamav/dmg.c	1136	        size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
-native-width-integer	libclamav/dmg.c	1137	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
+native-width-integer	libclamav/dmg.c	1141	        size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
+native-width-integer	libclamav/dmg.c	1142	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
 native-width-integer	libclamav/dmg.c	128	int cli_scandmg(cli_ctx *ctx)
 native-width-integer	libclamav/dmg.c	134	    int ret;
 native-width-integer	libclamav/dmg.c	135	    size_t maplen;
@@ -8195,25 +8195,25 @@ native-width-integer	libclamav/dmg.c	730	    int zstat;
 native-width-integer	libclamav/dmg.c	731	    int ret;
 native-width-integer	libclamav/dmg.c	74	static int dmg_extract_xml(cli_ctx *, char *, struct dmg_koly_block *);
 native-width-integer	libclamav/dmg.c	75	static int dmg_parse_mish_bytes(cli_ctx *, unsigned int *, uint8_t *, size_t,
-native-width-integer	libclamav/dmg.c	761	        size_t produced;
+native-width-integer	libclamav/dmg.c	763	        size_t produced;
 native-width-integer	libclamav/dmg.c	77	static int dmg_decode_mish_fd(cli_ctx *, unsigned int *, int, struct dmg_mish_with_stripes *);
-native-width-integer	libclamav/dmg.c	770	            size_t window_len;
+native-width-integer	libclamav/dmg.c	772	            size_t window_len;
 native-width-integer	libclamav/dmg.c	78	static cl_error_t dmg_mish_decoded_cb(int, const char *, cli_ctx *, void *);
 native-width-integer	libclamav/dmg.c	79	static int cmp_mish_stripes(const void *stripe_a, const void *stripe_b);
 native-width-integer	libclamav/dmg.c	80	static int dmg_track_sectors(uint64_t *, uint8_t *, uint32_t, uint32_t, uint64_t);
 native-width-integer	libclamav/dmg.c	81	static int dmg_handle_mish(cli_ctx *, unsigned int, char *, uint64_t, uint64_t,
 native-width-integer	libclamav/dmg.c	83	static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t remaining, size_t *window_len)
-native-width-integer	libclamav/dmg.c	832	static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_with_stripes *mish_set)
-native-width-integer	libclamav/dmg.c	834	    int ret;
-native-width-integer	libclamav/dmg.c	839	    int rc;
-native-width-integer	libclamav/dmg.c	865	        unsigned int before_in;
-native-width-integer	libclamav/dmg.c	866	        size_t produced;
-native-width-integer	libclamav/dmg.c	875	            size_t window_len;
-native-width-integer	libclamav/dmg.c	883	            strm.avail_in = (unsigned int)window_len;
+native-width-integer	libclamav/dmg.c	834	static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_with_stripes *mish_set)
+native-width-integer	libclamav/dmg.c	836	    int ret;
+native-width-integer	libclamav/dmg.c	841	    int rc;
+native-width-integer	libclamav/dmg.c	869	        unsigned int before_in;
+native-width-integer	libclamav/dmg.c	870	        size_t produced;
+native-width-integer	libclamav/dmg.c	879	            size_t window_len;
+native-width-integer	libclamav/dmg.c	887	            strm.avail_in = (unsigned int)window_len;
 native-width-integer	libclamav/dmg.c	93	    *window_len = (size_t)MIN(remaining, (uint64_t)DMG_STREAM_CHUNK_SIZE);
-native-width-integer	libclamav/dmg.c	932	static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
+native-width-integer	libclamav/dmg.c	936	static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
 native-width-integer	libclamav/dmg.c	94	    window      = fmap_need_off_once(ctx->fmap, (size_t)offset, *window_len);
-native-width-integer	libclamav/dmg.c	943	    int ret        = CL_CLEAN, ofd;
+native-width-integer	libclamav/dmg.c	947	    int ret        = CL_CLEAN, ofd;
 native-width-integer	libclamav/dmg.h	134	int cli_scandmg(cli_ctx *ctx);
 native-width-integer	libclamav/dsig.c	166	char *cli_getdsig(const char *host, const char *user, const unsigned char *data, unsigned int datalen, unsigned short mode)
 native-width-integer	libclamav/dsig.c	170	    int sockd, bread, len;
@@ -15791,7 +15791,7 @@ boundary-constant	libclamav/bytecode_api.c	558	    if (!ctx->fmap || off > (uint
 boundary-constant	libclamav/bytecode_api.c	865	    if (at >= ctx->file_size64 || at > (uint64_t)SIZE_MAX)
 boundary-constant	libclamav/bytecode_api.c	893	    return available > UINT32_MAX ? UINT32_MAX : (uint32_t)available;
 boundary-constant	libclamav/crypto.c	728	        if (SIZE_MAX - (size_t)nread < byte_read) {
-boundary-constant	libclamav/dmg.c	1137	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
+boundary-constant	libclamav/dmg.c	1142	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
 boundary-constant	libclamav/dmg.c	87	    if (!ctx || !ctx->fmap || !window_len || remaining == 0 || offset > (uint64_t)SIZE_MAX) {
 boundary-constant	libclamav/egg.c	2363	    if (compressed_size > CLI_MAX_ALLOCATION || compressed_size > UINT_MAX) {
 boundary-constant	libclamav/egg.c	2494	    if (compressed_size > CLI_MAX_ALLOCATION || compressed_size > UINT_MAX) {
@@ -16827,9 +16827,9 @@ format-width	libclamav/cvd.c	228	        /* cli_dbgmsg("cli_tgzload: Loading %s,
 format-width	libclamav/dconf.c	476	        cli_errmsg("Problem parsing configuration file at line %u\n", line);
 format-width	libclamav/disasm.c	1231	                            hr += sprintf(hr, "%s*%d", x86regs[s->args[i].arg.marg.r1], s->args[i].arg.marg.scale);
 format-width	libclamav/dlp.c	348	            cli_dbgmsg("dlp_is_valid_ssn: unknown format type %d \n", format);
-format-width	libclamav/dmg.c	1024	        cli_warnmsg("dmg_handle_mish: mish block %u output size overflowed\n", mishblocknum);
-format-width	libclamav/dmg.c	1032	        cli_dbgmsg("dmg_handle_mish: skipping block %u, limits exceeded\n", mishblocknum);
-format-width	libclamav/dmg.c	1059	    cli_dbgmsg("dmg_handle_mish: extracting block %u to %s\n", mishblocknum, outfile);
+format-width	libclamav/dmg.c	1028	        cli_warnmsg("dmg_handle_mish: mish block %u output size overflowed\n", mishblocknum);
+format-width	libclamav/dmg.c	1036	        cli_dbgmsg("dmg_handle_mish: skipping block %u, limits exceeded\n", mishblocknum);
+format-width	libclamav/dmg.c	1063	    cli_dbgmsg("dmg_handle_mish: extracting block %u to %s\n", mishblocknum, outfile);
 format-width	libclamav/dmg.c	169	    cli_dbgmsg("cli_scandmg: Found koly block @ %zu\n", pos);
 format-width	libclamav/dmg.c	315	    dmg_parsemsg("dmg_parse_mish_bytes: decoded block %u is %lu bytes\n",
 format-width	libclamav/dmg.c	318	        cli_dbgmsg("dmg_parse_mish_bytes: block %u too short for valid mish block\n", *mishblocknum);
@@ -16840,9 +16840,9 @@ format-width	libclamav/dmg.c	354	        cli_dbgmsg("dmg_parse_mish_bytes: block
 format-width	libclamav/dmg.c	382	            cli_dbgmsg("dmg_parse_mish_bytes: block %u has an invalid or non-terminal END stripe\n", *mishblocknum);
 format-width	libclamav/dmg.c	391	        cli_dbgmsg("dmg_parse_mish_bytes: block %u has no terminal END stripe\n", *mishblocknum);
 format-width	libclamav/dmg.c	708	            cli_dbgmsg("dmg_stripe_adc: after writing " STDu64 " bytes, got error %d decompressing stripe " STDu32 "\n",
-format-width	libclamav/dmg.c	814	                cli_dbgmsg("dmg_stripe_inflate: after writing " STDu64 " bytes, got error %d inflating stripe " STDu32 "\n",
-format-width	libclamav/dmg.c	915	            cli_dbgmsg("dmg_stripe_bzip: decompress error: %d\n", rc);
-format-width	libclamav/dmg.c	955	        cli_dbgmsg("mish %u stripe " STDu32 " type " STDx32 " start " STDu64
+format-width	libclamav/dmg.c	816	                cli_dbgmsg("dmg_stripe_inflate: after writing " STDu64 " bytes, got error %d inflating stripe " STDu32 "\n",
+format-width	libclamav/dmg.c	919	            cli_dbgmsg("dmg_stripe_bzip: decompress error: %d\n", rc);
+format-width	libclamav/dmg.c	959	        cli_dbgmsg("mish %u stripe " STDu32 " type " STDx32 " start " STDu64
 format-width	libclamav/dsig.c	138	        cli_errmsg("cli_decodesig: Resulting signature too large (%d vs %d).\n",
 format-width	libclamav/dsig.c	265	            cli_infomsg(NULL, "Signature received (length = %lu)\n", (unsigned long)strlen(buff) - 10);
 format-width	libclamav/egg.c	1094	    cli_dbgmsg("egg_parse_file_extra_field: extra_field->size:     %u\n", size);
@@ -20918,14 +20918,14 @@ offset-size-arithmetic	libclamav/dlp.c	610	        return 0;                    
 offset-size-arithmetic	libclamav/dlp.c	638	    if (buffer == NULL || length < 9) /* if the buffer is empty or    */
 offset-size-arithmetic	libclamav/dlp.c	639	        return 0;                     /* the length is < 9, it's not valid    */
 offset-size-arithmetic	libclamav/dlp.h	144	#endif /* __DLP_H_ */
-offset-size-arithmetic	libclamav/dmg.c	1028	    projected_size = totalSectors * DMG_SECTOR_SIZE;
-offset-size-arithmetic	libclamav/dmg.c	1048	    snprintf(outfile, sizeof(outfile) - 1, "%s" PATHSEP "dmg%02u", dir, mishblocknum);
-offset-size-arithmetic	libclamav/dmg.c	1049	    outfile[sizeof(outfile) - 1] = '\0';
-offset-size-arithmetic	libclamav/dmg.c	1116	    namelen = strlen(dir) + 1 + 7 + 1;
-offset-size-arithmetic	libclamav/dmg.c	1133	    offset    = hdr->xmlOffset;
-offset-size-arithmetic	libclamav/dmg.c	1137	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
+offset-size-arithmetic	libclamav/dmg.c	1032	    projected_size = totalSectors * DMG_SECTOR_SIZE;
+offset-size-arithmetic	libclamav/dmg.c	1052	    snprintf(outfile, sizeof(outfile) - 1, "%s" PATHSEP "dmg%02u", dir, mishblocknum);
+offset-size-arithmetic	libclamav/dmg.c	1053	    outfile[sizeof(outfile) - 1] = '\0';
+offset-size-arithmetic	libclamav/dmg.c	1120	    namelen = strlen(dir) + 1 + 7 + 1;
+offset-size-arithmetic	libclamav/dmg.c	1138	    offset    = hdr->xmlOffset;
+offset-size-arithmetic	libclamav/dmg.c	1142	        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
 offset-size-arithmetic	libclamav/dmg.c	115	    if (!written || !buffer || *written > expected || (uint64_t)length > expected - *written) {
-offset-size-arithmetic	libclamav/dmg.c	1159	        offset += wanted;
+offset-size-arithmetic	libclamav/dmg.c	1164	        offset += wanted;
 offset-size-arithmetic	libclamav/dmg.c	148	    maplen = ctx->fmap->len;
 offset-size-arithmetic	libclamav/dmg.c	154	    pos = maplen - 512;
 offset-size-arithmetic	libclamav/dmg.c	175	        hdr.dataForkLength > (uint64_t)maplen - hdr.dataForkOffset) {
@@ -20951,16 +20951,16 @@ offset-size-arithmetic	libclamav/dmg.c	626	    uint64_t off       = mish_set->st
 offset-size-arithmetic	libclamav/dmg.c	676	            off += window_len;
 offset-size-arithmetic	libclamav/dmg.c	685	        produced = sizeof(obuf) - strm.avail_out;
 offset-size-arithmetic	libclamav/dmg.c	733	    uint64_t off       = mish_set->stripes[index].dataOffset;
-offset-size-arithmetic	libclamav/dmg.c	779	            off += window_len;
-offset-size-arithmetic	libclamav/dmg.c	787	        produced = sizeof(obuf) - strm.avail_out;
+offset-size-arithmetic	libclamav/dmg.c	781	            off += window_len;
+offset-size-arithmetic	libclamav/dmg.c	789	        produced = sizeof(obuf) - strm.avail_out;
 offset-size-arithmetic	libclamav/dmg.c	83	static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t remaining, size_t *window_len)
-offset-size-arithmetic	libclamav/dmg.c	835	    uint64_t off       = mish_set->stripes[index].dataOffset;
-offset-size-arithmetic	libclamav/dmg.c	884	            off += window_len;
-offset-size-arithmetic	libclamav/dmg.c	892	        produced = sizeof(obuf) - strm.avail_out;
+offset-size-arithmetic	libclamav/dmg.c	837	    uint64_t off       = mish_set->stripes[index].dataOffset;
+offset-size-arithmetic	libclamav/dmg.c	888	            off += window_len;
+offset-size-arithmetic	libclamav/dmg.c	896	        produced = sizeof(obuf) - strm.avail_out;
 offset-size-arithmetic	libclamav/dmg.c	94	    window      = fmap_need_off_once(ctx->fmap, (size_t)offset, *window_len);
-offset-size-arithmetic	libclamav/dmg.c	947	    /* First loop, fix endian-ness and check if already sorted */
-offset-size-arithmetic	libclamav/dmg.c	959	        /* UDIF chunk offsets are relative to both the koly data-fork offset
-offset-size-arithmetic	libclamav/dmg.c	983	        if ((i > 0) && sorted && (blocklist[i].startSector < blocklist[i - 1].startSector)) {
+offset-size-arithmetic	libclamav/dmg.c	951	    /* First loop, fix endian-ness and check if already sorted */
+offset-size-arithmetic	libclamav/dmg.c	963	        /* UDIF chunk offsets are relative to both the koly data-fork offset
+offset-size-arithmetic	libclamav/dmg.c	987	        if ((i > 0) && sorted && (blocklist[i].startSector < blocklist[i - 1].startSector)) {
 offset-size-arithmetic	libclamav/dmg.h	110	/* 40-byte block, big-endian */
 offset-size-arithmetic	libclamav/dmg.h	63	/* 512-byte block, remember these are big-endian! */
 offset-size-arithmetic	libclamav/dmg.h	93	/* 204-byte block, still big-endian */
