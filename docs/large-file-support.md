@@ -1301,10 +1301,10 @@ or waive them.
   partial prefix. Other format-specific boundaries still require dedicated
   adversarial and large-payload fixtures before an upstream support claim.
 - Contiguous metadata/decompression remains intentionally capped: one decoded
-  DMG `blkx` metadata block at 64 MiB, solid NSIS input, and EGG decoder
-  buffers at the 1 GiB allocation ceiling. Non-solid NSIS members now consume
-  fmap input in 64 KiB windows and charge extracted bytes to the shared
-  temporary quota. The DMG XML resource fork itself is consumed through
+  DMG `blkx` metadata block at 64 MiB and EGG decoder buffers at the 1 GiB
+  allocation ceiling. NSIS members now consume fmap input in 64 KiB windows
+  and charge extracted bytes to the shared temporary quota. The DMG XML
+  resource fork itself is consumed through
   bounded SAX input and quota-accounted Base64 spools. Crossing a per-format
   limit is fail-visible; it is not full deep-parser qualification through
   32 GiB.
@@ -2141,10 +2141,19 @@ decoding. Stored and compressed members are read from the fmap in bounded
 existing temporary extraction file while charging output against the shared
 temporary quota through the nested scan. Exact input exhaustion, decoder
 terminal state, trailing compressed data, output limits, and write failures
-are fail-visible. Solid NSIS archives retain an explicit 1 GiB contiguous-
-decoder boundary, and their extracted output is quota-accounted, until the
-stateful decoder is converted to the same reader model; NSIS corpus,
+are fail-visible. Solid NSIS archives now retain decoder state while refilling
+64 KiB fmap windows, skip the four-byte archive CRC, and write each extracted
+member through the same temporary-byte quota as non-solid members. NSIS corpus,
 sanitizer, and RSS qualification remain open.
+
+## NSIS solid bounded input — 2026-08-19
+
+The stateful solid NSIS path no longer maps the complete compressed archive or
+reserves a contiguous input allocation. It keeps the decoder state across
+member boundaries, reads at most 64 KiB at a time, excludes the archive CRC
+from decoder input, and treats short input, unexpected trailing data, and
+partial member output as incomplete. Extracted members remain disk-backed and
+are charged incrementally against the shared temporary quota before scanning.
 
 ## Normalized JavaScript matcher-work accounting — 2026-08-19
 

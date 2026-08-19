@@ -43,7 +43,6 @@
 #include "fmap.h"
 
 #define EC32(x) le32_to_host(x)
-#define NSIS_SOLID_CONTIGUOUS_INPUT_MAX CLI_MAX_ALLOCATION
 #define NSIS_INPUT_CHUNK (64U * 1024U)
 
 enum {
@@ -68,15 +67,17 @@ struct nsis_st {
     uint8_t solid;
     uint8_t freecomp;
     uint8_t eof;
+    uint8_t solid_started;
     struct stream_state nsis;
     nsis_bzstream bz;
     struct CLI_LZMA lz;
     /*   z_stream z; */
     nsis_z_stream z;
-    const unsigned char *freeme;
     fmap_t *map;
     uint64_t temporary_reserved;
-    uint64_t contiguous_reserved;
+    size_t solid_input_pos;
+    size_t solid_input_remaining;
+    unsigned char solid_input[NSIS_INPUT_CHUNK];
     char ofn[1024];
 };
 
@@ -145,10 +146,6 @@ static void nsis_release_reservations(struct nsis_st *n, cli_ctx *ctx)
         cli_scan_release_temporary(ctx, n->temporary_reserved);
         n->temporary_reserved = 0;
     }
-    if (n->contiguous_reserved != 0) {
-        cli_scan_release_contiguous(ctx, n->contiguous_reserved);
-        n->contiguous_reserved = 0;
-    }
 }
 
 static int nsis_decomp(struct nsis_st *n)
@@ -209,6 +206,34 @@ static int nsis_decomp(struct nsis_st *n)
             break;
     }
     return ret;
+}
+
+/* Solid NSIS streams have state that must survive member boundaries, but the
+ * decoder only needs the currently available compressed bytes. Keep the
+ * input window in the parser state so nsis_unpack_next() can refill it on
+ * every member without mapping the complete solid archive. The final four
+ * bytes are the archive CRC and are intentionally not passed to the decoder,
+ * matching the historical solid-path behavior. */
+static int nsis_solid_refill(struct nsis_st *n, cli_ctx *ctx)
+{
+    size_t chunk;
+
+    if (n->nsis.avail_in != 0)
+        return 1;
+    if (n->solid_input_remaining <= 4)
+        return 0;
+
+    chunk = MIN(sizeof(n->solid_input), n->solid_input_remaining - 4);
+    if (fmap_readn(n->map, n->solid_input, n->solid_input_pos, chunk) != chunk) {
+        cli_mark_scan_incomplete(ctx, "NSIS solid archive could not be read completely");
+        return -1;
+    }
+
+    n->solid_input_pos += chunk;
+    n->solid_input_remaining -= chunk;
+    n->nsis.next_in   = n->solid_input;
+    n->nsis.avail_in  = (unsigned int)chunk;
+    return 1;
 }
 
 static cl_error_t nsis_write_output(struct nsis_st *n,
@@ -419,36 +444,19 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         return CL_SUCCESS;
 
     } else {
-        if (!n->freeme) {
-            if (n->asz > NSIS_SOLID_CONTIGUOUS_INPUT_MAX) {
-                cli_mark_scan_incomplete(ctx, "NSIS solid archive exceeds the bounded contiguous decoder input");
-                return CL_EMAXSIZE;
-            }
-            if (cli_scan_reserve_contiguous(ctx, n->asz) != CL_SUCCESS) {
-                cli_mark_scan_incomplete(ctx, "NSIS solid archive exceeds the contiguous decoder resource limit");
-                return CL_ERESOURCE;
-            }
-            n->contiguous_reserved = n->asz;
+        if (!n->solid_started) {
             if ((ret = nsis_init(n)) != CL_SUCCESS) {
                 cli_dbgmsg("NSIS: decompressor init failed\n");
-                cli_scan_release_contiguous(ctx, n->contiguous_reserved);
-                n->contiguous_reserved = 0;
                 return ret;
             }
-            if (!(n->freeme = fmap_need_off_once(n->map, n->curpos, n->asz))) {
-                cli_dbgmsg("NSIS: cannot read %u bytes"__AT__
-                           "\n",
-                           n->asz);
-                cli_mark_scan_incomplete(ctx, "NSIS solid archive could not be read completely");
-                cli_scan_release_contiguous(ctx, n->contiguous_reserved);
-                n->contiguous_reserved = 0;
-                return CL_EREAD;
-            }
-            n->nsis.next_in  = (void *)n->freeme;
-            n->nsis.avail_in = n->asz;
+            n->solid_input_pos       = n->curpos;
+            n->solid_input_remaining = n->asz;
+            n->nsis.next_in          = n->solid_input;
+            n->nsis.avail_in         = 0;
+            n->solid_started         = 1;
         }
 
-        if (n->nsis.avail_in <= 4) {
+        if (n->nsis.avail_in == 0 && n->solid_input_remaining <= 4) {
             cli_dbgmsg("NSIS: extraction complete\n");
             return CL_BREAK;
         }
@@ -456,8 +464,19 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         n->nsis.avail_out = 4;
         loops             = 0;
 
-        while ((ret = nsis_decomp(n)) == CL_SUCCESS) {
-            if (n->nsis.next_out - obuf == 4) break;
+        while ((size_t)(n->nsis.next_out - obuf) < 4) {
+            int refill = nsis_solid_refill(n, ctx);
+            if (refill < 0)
+                return CL_EREAD;
+            if (refill == 0) {
+                ret = CL_EFORMAT;
+                break;
+            }
+            ret = nsis_decomp(n);
+            if (ret != CL_SUCCESS)
+                break;
+            if (n->nsis.next_out - obuf == 4)
+                break;
             if (++loops > 20) {
                 cli_dbgmsg("NSIS: xs looping, breaking out"__AT__
                            "\n");
@@ -485,7 +504,6 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         }
 
         n->nsis.next_out  = obuf;
-        n->nsis.avail_out = MIN(BUFSIZ, size);
         loops             = 0;
 
         if ((n->ofd = open(n->ofn, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600)) == -1) {
@@ -494,9 +512,23 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         }
         n->opened = 1;
 
-        while (size && (ret = nsis_decomp(n)) == CL_SUCCESS) {
+        while (size) {
             unsigned int wsz;
-            if ((wsz = n->nsis.next_out - obuf) > 0) {
+            int refill = nsis_solid_refill(n, ctx);
+
+            if (refill < 0) {
+                ret = CL_EREAD;
+                break;
+            }
+            if (refill == 0) {
+                ret = CL_EFORMAT;
+                break;
+            }
+
+            n->nsis.next_out  = obuf;
+            n->nsis.avail_out = MIN(BUFSIZ, size);
+            ret                = nsis_decomp(n);
+            if ((wsz = (unsigned int)(n->nsis.next_out - obuf)) > 0) {
                 gotsome = 1;
                 if ((write_ret = nsis_write_output(n, ctx, n->ofd, obuf, wsz, &total_out)) != CL_SUCCESS) {
                     cli_dbgmsg("NSIS: cannot write output file"__AT__
@@ -506,31 +538,17 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                 }
                 size -= wsz;
                 loops             = 0;
-                n->nsis.next_out  = obuf;
-                n->nsis.avail_out = MIN(size, BUFSIZ);
-            } else if (++loops > 20) {
+            } else if (ret == CL_SUCCESS && ++loops > 20) {
                 cli_dbgmsg("NSIS: xs looping, breaking out"__AT__
                            "\n");
                 ret = CL_EFORMAT;
                 break;
             }
-        }
 
-        if ((n->nsis.next_out - obuf) > 0) {
-            size_t tail = (size_t)(n->nsis.next_out - obuf);
-            gotsome = 1;
-            if (tail > size) {
-                cli_mark_scan_incomplete(ctx, "NSIS solid decoder produced more data than declared");
-                nsis_close_output(n);
-                return CL_EFORMAT;
-            }
-            size -= (uint32_t)tail;
-            if ((write_ret = nsis_write_output(n, ctx, n->ofd, obuf, tail, &total_out)) != CL_SUCCESS) {
-                cli_dbgmsg("NSIS: cannot write output file"__AT__
-                           "\n");
-                nsis_close_output(n);
-                return write_ret;
-            }
+            if (size == 0)
+                break;
+            if (ret == CL_BREAK || ret != CL_SUCCESS)
+                break;
         }
 
         if (ret == CL_EFORMAT || size != 0) {
@@ -542,6 +560,11 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         }
 
         if (ret == CL_BREAK) {
+            if (n->nsis.avail_in > 4 || n->solid_input_remaining > 4) {
+                cli_mark_scan_incomplete(ctx, "NSIS solid stream contains trailing data");
+                nsis_close_output(n);
+                return CL_EFORMAT;
+            }
             n->eof = 1;
         } else if (ret != CL_SUCCESS) {
             cli_dbgmsg("NSIS: bad stream"__AT__
