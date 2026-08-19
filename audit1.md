@@ -1074,3 +1074,15 @@ gate.
 This is a root-input staging correction, not proof that all PDF object/stream
 decoders are independently streaming or that a large-PDF corpus has passed
 supported-build, sanitizer, or Sonic1 qualification.
+
+## Mail phishing URL inspection — 2026-08-19
+
+The phishing URL path no longer materializes the complete message in a heap
+blob or rejects it at the former 100 KiB helper boundary. It now reuses a
+completed raw body spool, or exports an encoded/legacy message to a
+quota-accounted fileblob, maps that file, and runs the existing HTML
+normalizer through its fmap reader. The fallback text-URL extractor reads in
+64 KiB chunks and recognizes protocol prefixes split across chunk boundaries.
+Mapping, normalization, read, and temporary-file failures remain
+fail-visible and non-cacheable. Compiled mail/URL regression, memory,
+sanitizer, and supported-build Sonic1 qualification remain open.

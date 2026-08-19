@@ -4284,34 +4284,91 @@ hrefs_done(blob *b, tag_arguments_t *hrefs)
     html_tag_arg_free(hrefs);
 }
 
-/* extract URLs from static text */
-static void extract_text_urls(const unsigned char *mem, size_t len, tag_arguments_t *hrefs)
+#define TEXT_URL_MAP_CHUNK (64U * 1024U)
+
+/* Extract text URLs from a file-backed fmap without materializing the entire
+ * HTML body. Keep only the current URL and the six bytes needed to recognize
+ * http:, https:, and ftp: prefixes across chunk boundaries. */
+static bool extract_text_urls_map(cli_ctx *ctx, fmap_t *map, tag_arguments_t *hrefs)
 {
+    unsigned char buffer[TEXT_URL_MAP_CHUNK];
+    char history[sizeof("https:") - 1];
     char url[1024];
-    size_t off;
-    for (off = 0; off + 10 < len; off++) {
-        /* check whether this is the start of a URL */
-        int32_t proto = cli_readint32(mem + off);
-        /* convert to lowercase */
-        proto |= 0x20202020;
-        /* 'http:', 'https:', or 'ftp:' in little-endian */
-        if ((proto == 0x70747468 &&
-             (mem[off + 4] == ':' || (mem[off + 5] == 's' && mem[off + 6] == ':'))) ||
-            proto == 0x3a707466) {
-            size_t url_len;
-            for (url_len = 4; off + url_len < len && url_len < (sizeof(url) - 1); url_len++) {
-                unsigned char c = mem[off + url_len];
-                /* smart compilers will compile this if into
-                 * a single bt + jb instruction */
-                if (c == ' ' || c == '\n' || c == '\t')
-                    break;
-            }
-            memcpy(url, mem + off, url_len);
-            url[url_len] = '\0';
-            html_tag_arg_add(hrefs, "href", url);
-            off += url_len;
+    size_t history_len = 0;
+    size_t url_len     = 0;
+    size_t offset      = 0;
+
+    while (offset < map->len) {
+        size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
+        size_t i;
+
+        if (fmap_readn(map, buffer, offset, wanted) != wanted) {
+            cli_mark_scan_incomplete(ctx, "HTML phishing input could not be read completely");
+            return false;
         }
+
+        for (i = 0; i < wanted; i++) {
+            unsigned char c = buffer[i];
+
+            if (url_len) {
+                if (c == ' ' || c == '\n' || c == '\t') {
+                    url[url_len] = '\0';
+                    html_tag_arg_add(hrefs, "href", url);
+                    url_len     = 0;
+                    history_len = 0;
+                } else if (url_len < sizeof(url) - 1) {
+                    url[url_len++] = (char)c;
+                } else {
+                    url[url_len] = '\0';
+                    html_tag_arg_add(hrefs, "href", url);
+                    url_len     = 0;
+                    history_len = 0;
+                }
+                continue;
+            }
+
+            if (history_len < sizeof(history)) {
+                history[history_len++] = (char)c;
+            } else {
+                memmove(history, history + 1, sizeof(history) - 1);
+                history[sizeof(history) - 1] = (char)c;
+            }
+
+            if (history_len >= 6 &&
+                (history[history_len - 6] | 0x20) == 'h' &&
+                (history[history_len - 5] | 0x20) == 't' &&
+                (history[history_len - 4] | 0x20) == 't' &&
+                (history[history_len - 3] | 0x20) == 'p' &&
+                (history[history_len - 2] | 0x20) == 's' && history[history_len - 1] == ':') {
+                memcpy(url, history + history_len - 6, 6);
+                url_len = 6;
+            } else if (history_len >= 5 &&
+                       (history[history_len - 5] | 0x20) == 'h' &&
+                       (history[history_len - 4] | 0x20) == 't' &&
+                       (history[history_len - 3] | 0x20) == 't' &&
+                       (history[history_len - 2] | 0x20) == 'p' &&
+                       history[history_len - 1] == ':') {
+                memcpy(url, history + history_len - 5, 5);
+                url_len = 5;
+            } else if (history_len >= 4 &&
+                       (history[history_len - 4] | 0x20) == 'f' &&
+                       (history[history_len - 3] | 0x20) == 't' &&
+                       (history[history_len - 2] | 0x20) == 'p' &&
+                       history[history_len - 1] == ':') {
+                memcpy(url, history + history_len - 4, 4);
+                url_len = 4;
+            }
+        }
+
+        offset += wanted;
     }
+
+    if (url_len) {
+        url[url_len] = '\0';
+        html_tag_arg_add(hrefs, "href", url);
+    }
+
+    return true;
 }
 
 /*
@@ -4322,56 +4379,80 @@ static void extract_text_urls(const unsigned char *mem, size_t len, tag_argument
 static blob *
 getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
 {
-    unsigned char *mem;
-    blob *b = messageToBlob(m, 0);
-    size_t len;
+    const char *tmpdir  = ctx && ctx->this_layer_tmpdir ? ctx->this_layer_tmpdir : NULL;
+    fileblob *input     = NULL;
+    fmap_t *map         = NULL;
+    blob *b             = NULL;
+    bool owns_input     = false;
+    STATBUF sb;
 
     if (incomplete)
         *incomplete = false;
 
-    if (b == NULL) {
+    /* A completed raw body spool is already file-backed. Encoded spools and
+     * legacy line-list messages are exported to a temporary fileblob so the
+     * normalizer still receives decoded bytes without a whole-message blob. */
+    if (m && m->body_spool &&
+        (messageGetEncoding(m) == NOENCODING || messageGetEncoding(m) == BINARY ||
+         messageGetEncoding(m) == EIGHTBIT)) {
+        input = m->body_spool;
+    } else {
+        input = messageToFileblob(m, tmpdir, 0);
+        owns_input = true;
+    }
+
+    if (input == NULL || input->isIncomplete || input->fp == NULL || input->fullname == NULL ||
+        fflush(input->fp) != 0 || FSTAT(input->fd, &sb) != 0 || sb.st_size < 0 ||
+        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
         cli_mark_scan_incomplete(ctx, "HTML phishing input could not be materialized completely");
         if (incomplete)
             *incomplete = true;
-        return NULL;
+        goto done;
     }
 
-    len = blobGetDataSize(b);
+    if (sb.st_size == 0)
+        goto done;
 
-    if (len == 0) {
-        blobDestroy(b);
-        return NULL;
-    }
-
-    /* TODO: make this size customisable */
-    if (len > 100 * 1024) {
-        cli_dbgmsg("HTML pointed to by URLs not scanned in large message\n");
-        cli_mark_scan_incomplete(ctx, "HTML phishing input exceeds the bounded URL-inspection limit");
+    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "HTML phishing input could not be mapped completely");
         if (incomplete)
             *incomplete = true;
-        blobDestroy(b);
-        return NULL;
+        goto done;
     }
 
     hrefs->count = 0;
     hrefs->tag = hrefs->value = NULL;
     hrefs->contents           = NULL;
 
-    cli_dbgmsg("getHrefs: calling html_normalise_mem\n");
-    mem = blobGetData(b);
-    if (!html_normalise_mem(ctx, mem, (off_t)len, NULL, hrefs, m->ctx->dconf)) {
+    cli_dbgmsg("getHrefs: calling html_normalise_map\n");
+    if (!html_normalise_map(ctx, map, tmpdir, hrefs, ctx->dconf)) {
         cli_mark_scan_incomplete(ctx, "HTML phishing input could not be normalized completely");
         if (incomplete)
             *incomplete = true;
-        blobDestroy(b);
-        return NULL;
+        goto done;
     }
-    cli_dbgmsg("getHrefs: html_normalise_mem returned\n");
+    cli_dbgmsg("getHrefs: html_normalise_map returned\n");
     if (!hrefs->count && hrefs->scanContents) {
-        extract_text_urls(mem, len, hrefs);
+        if (!extract_text_urls_map(ctx, map, hrefs)) {
+            if (incomplete)
+                *incomplete = true;
+            goto done;
+        }
     }
 
-    /* TODO: Do we need to call remove_html_comments? */
+    b = blobCreate();
+    if (b == NULL) {
+        cli_mark_scan_incomplete(ctx, "HTML phishing result could not be allocated");
+        if (incomplete)
+            *incomplete = true;
+    }
+
+done:
+    if (map)
+        fmap_free(map);
+    if (owns_input && input)
+        fileblobDestructiveDestroy(input);
     return b;
 }
 

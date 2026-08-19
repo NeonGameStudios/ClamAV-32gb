@@ -2108,12 +2108,12 @@ attachment or enters a nested parser. The top-level body parser applies the
 same check, so a child or moved message cannot be silently scanned as a
 partial clean representation.
 
-When phishing URL inspection is enabled, the legacy URL extractor no longer
-treats an oversized HTML message or a failed materialization/normalization as
-“no URLs.” Its bounded 100 KiB whole-message helper now marks the scan
-incomplete and returns a non-clean parser status, preserving the explicit
-unsupported boundary until that detector is converted to a streaming reader.
-The capability manifest records this as `mail-url-inspection-over-100k`.
+When phishing URL inspection is enabled, the URL extractor now consumes the
+decoded message through a disk-backed fmap and bounded HTML normalization
+reader instead of materializing a whole-message blob. Text URLs are recognized
+with a 64 KiB chunked state machine, including prefixes split across chunk
+boundaries. Mapping, normalization, read, and temporary-file failures remain
+incomplete/non-clean; the former 100 KiB helper boundary is removed.
 
 Normalized and handler-retyped views now inherit the logical object identity
 of their source layer. They do not consume `MaxScanSize` or `MaxFiles` a second
@@ -2200,11 +2200,11 @@ from the completed spool, while multipart boundaries are consumed one part at a
 time and each child is scanned before the next child is staged. Base64 and
 quoted-printable export is line-at-a-time. Failed creation, write, decoding,
 boundary, or export paths mark the scan incomplete; raw body matching therefore
-cannot turn a partial spool into a clean result. URL-phishing inspection is
-explicitly marked incomplete when enabled for a streamed text body because that
-legacy detector still requires a bounded in-memory view. Unsupported nested
-encodings and compatibility-only bounce heuristics remain separate release-gate
-work.
+cannot turn a partial spool into a clean result. URL-phishing inspection now
+reuses the completed raw spool through the file-backed normalization path, so
+streamed text bodies do not require a whole-message heap view. Unsupported
+nested encodings and compatibility-only bounce heuristics remain separate
+release-gate work.
 
 ## XAR TOC streaming — 2026-08-19
 
