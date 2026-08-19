@@ -114,11 +114,13 @@ int32_t cli_bcapi_pdf_get_flags(struct cli_bc_ctx *ctx );
 int32_t cli_bcapi_pdf_set_flags(struct cli_bc_ctx *ctx , int32_t);
 int32_t cli_bcapi_pdf_lookupobj(struct cli_bc_ctx *ctx , uint32_t);
 uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx , int32_t);
+uint64_t cli_bcapi_pdf_getobjsize64(struct cli_bc_ctx *ctx , int32_t);
 const uint8_t* cli_bcapi_pdf_getobj(struct cli_bc_ctx *ctx , int32_t, uint32_t);
 int32_t cli_bcapi_pdf_getobjid(struct cli_bc_ctx *ctx , int32_t);
 int32_t cli_bcapi_pdf_getobjflags(struct cli_bc_ctx *ctx , int32_t);
 int32_t cli_bcapi_pdf_setobjflags(struct cli_bc_ctx *ctx , int32_t, int32_t);
 int32_t cli_bcapi_pdf_get_offset(struct cli_bc_ctx *ctx , int32_t);
+uint64_t cli_bcapi_pdf_get_offset64(struct cli_bc_ctx *ctx , int32_t);
 int32_t cli_bcapi_pdf_get_phase(struct cli_bc_ctx *ctx );
 int32_t cli_bcapi_pdf_get_dumpedobjid(struct cli_bc_ctx *ctx );
 int32_t cli_bcapi_matchicon(struct cli_bc_ctx *ctx , const uint8_t*, int32_t, const uint8_t*, int32_t);
@@ -368,7 +370,9 @@ const struct cli_apicall cli_apicalls[]={
 	{"file_byteat64", 34, 0, 12},
 	{"file_find_limit64", 35, 0, 14},
 	{"buffer_pipe_new_fromfile64", 36, 0, 12},
-	{"buffer_pipe_read_avail64", 37, 0, 13}
+	{"buffer_pipe_read_avail64", 37, 0, 13},
+	{"pdf_getobjsize64", 37, 1, 13},
+	{"pdf_get_offset64", 37, 2, 13}
 /* Bytecode APIcalls END */
 };
 const unsigned cli_numapicalls=sizeof(cli_apicalls)/sizeof(cli_apicalls[0]);
@@ -512,7 +516,9 @@ const cli_apicall_int64arg cli_apicalls12[] = {
 	(cli_apicall_int64arg)cli_bcapi_buffer_pipe_new_fromfile64
 };
 const cli_apicall_int1_64ret cli_apicalls13[] = {
-	(cli_apicall_int1_64ret)cli_bcapi_buffer_pipe_read_avail64
+	(cli_apicall_int1_64ret)cli_bcapi_buffer_pipe_read_avail64,
+	(cli_apicall_int1_64ret)cli_bcapi_pdf_getobjsize64,
+	(cli_apicall_int1_64ret)cli_bcapi_pdf_get_offset64
 };
 const cli_apicall_ptrbufid64 cli_apicalls14[] = {
 	(cli_apicall_ptrbufid64)cli_bcapi_file_find_limit64

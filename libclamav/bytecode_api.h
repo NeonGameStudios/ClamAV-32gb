@@ -1226,6 +1226,9 @@ int32_t pdf_lookupobj(uint32_t id);
   * @return >=0 - size of object */
 uint32_t pdf_getobjsize(int32_t objidx);
 
+/** ABI v2 object size accessor; returns the complete native-width size. */
+uint64_t pdf_getobjsize64(int32_t objidx);
+
 /**
 \group_pdf
  * Return the undecoded object.
@@ -1275,6 +1278,9 @@ int32_t pdf_setobjflags(int32_t objidx, int32_t flags);
  * @return >=0 - offset
  */
 int32_t pdf_get_offset(int32_t objidx);
+
+/** ABI v2 object offset accessor; UINT64_MAX denotes an invalid object. */
+uint64_t pdf_get_offset64(int32_t objidx);
 
 /**
 \group_pdf

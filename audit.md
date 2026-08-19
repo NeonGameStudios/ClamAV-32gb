@@ -1634,6 +1634,12 @@ Object-stream containment now uses subtraction-based checked bounds for both
 the current and next offsets, avoiding a wrapped base-plus-offset comparison
 before malformed content is rejected.
 
+The PDF bytecode-hook bridge now retains native-width size and start
+coordinates and exposes format-8 pdf_getobjsize64 and pdf_get_offset64
+accessors. Existing v1 APIs are preserved and return their invalid sentinel
+when a coordinate cannot be represented; independent format-8 compiler output
+and interpreter/JIT qualification remain open.
+
 Ordinary and multipart mail bodies now switch to quota-accounted disk-backed
 `fileblob` spools at the header/body separator in both direct-message and UNIX
 mbox ingress. Ordinary bodies are scanned from the completed spool; multipart

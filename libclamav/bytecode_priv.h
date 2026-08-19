@@ -188,8 +188,8 @@ struct cli_bc_ctx {
     uint32_t pdf_nobjs;
     struct pdf_obj **pdf_objs;
     uint32_t *pdf_flags;
-    uint32_t pdf_size;
-    uint32_t pdf_startoff;
+    size_t pdf_size;
+    off_t pdf_startoff;
     unsigned pdf_phase;
     int32_t pdf_dumpedid;
     const struct cli_exe_section *sections;

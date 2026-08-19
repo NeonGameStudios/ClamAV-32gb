@@ -27,6 +27,7 @@
 #include <stdio.h>
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <limits.h>
 #include <string.h>
 #include <check.h>
@@ -40,6 +41,7 @@
 #include "bytecode_api_impl.h"
 #include "dconf.h"
 #include "bytecode_priv.h"
+#include "pdf.h"
 #include "pe.h"
 #include "clamav_rust.h"
 
@@ -660,6 +662,50 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
 }
 END_TEST
 
+START_TEST(test_bytecode_v2_pdf_coordinates_are_native_width)
+{
+#if SIZE_MAX > UINT32_MAX
+    struct cli_bc_ctx *bcctx;
+    struct cli_bc bc;
+    struct pdf_obj first;
+    struct pdf_obj second;
+    struct pdf_obj *objects[2];
+    const size_t first_offset = (size_t)UINT32_MAX + 128U;
+    const size_t first_size = 37U;
+    const size_t second_offset = first_offset + 4U + first_size;
+    const off_t pdf_start = (off_t)UINT32_MAX + 64;
+
+    memset(&bc, 0, sizeof(bc));
+    memset(&first, 0, sizeof(first));
+    memset(&second, 0, sizeof(second));
+    bc.metadata.formatlevel = BC_FORMAT_LEVEL_V2;
+    first.start = first_offset;
+    second.start = second_offset;
+    objects[0] = &first;
+    objects[1] = &second;
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->bc = &bc;
+    ck_assert_int_eq(cli_bytecode_context_setpdf(bcctx, PDF_PHASE_PARSED, 2,
+                                                 objects, NULL,
+                                                 second_offset + 11U,
+                                                 pdf_start),
+                     CL_SUCCESS);
+
+    ck_assert_uint_eq(cli_bcapi_pdf_getobjsize64(bcctx, 0), first_size);
+    ck_assert_uint_eq(cli_bcapi_pdf_getobjsize64(bcctx, 1), 11U);
+    ck_assert_uint_eq(cli_bcapi_pdf_get_offset64(bcctx, 0),
+                      (uint64_t)pdf_start + first_offset);
+    ck_assert_int_eq(cli_bcapi_pdf_get_offset(bcctx, 0), -1);
+
+    cli_bytecode_context_destroy(bcctx);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_bytecode_large_map_hook_gates_only_applicable_bytecode)
 {
     struct cl_engine *engine;
@@ -843,6 +889,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_load_bytecode_int);
     tcase_add_test(tc_cli_arith, test_bytecode_large_map_hook_gates_only_applicable_bytecode);
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
+    tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);

@@ -32,6 +32,8 @@ The following entries are appended after the v1 API table:
 
 | API | Result | Arguments |
 | --- | --- | --- |
+| pdf_getobjsize64 | uint64_t | int32_t |
+| pdf_get_offset64 | uint64_t | int32_t |
 | `read64` | `int64_t` | `uint8_t *`, `uint32_t` |
 | `seek64` | `int64_t` | `int64_t`, `uint32_t` |
 | `file_find64` | `int64_t` | `const uint8_t *`, `uint32_t` |
@@ -41,6 +43,10 @@ The following entries are appended after the v1 API table:
 | `buffer_pipe_read_avail64` | `uint64_t` | `int32_t` |
 
 The interpreter and JIT use separate typed dispatch tables for these entries.
+The v2 PDF bridge also exposes native-width object size and offset accessors.
+The v1 PDF size and offset APIs remain unchanged; on a large PDF layer the v1
+offset accessor returns its existing invalid sentinel instead of silently
+wrapping.
 All read, seek, search, and byte-at operations reject offsets that cannot be
 represented by the host mapping or by the signed result type. A failed read
 or coordinate conversion is fail-visible through the scan-incomplete report.

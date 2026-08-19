@@ -3143,7 +3143,7 @@ cl_error_t cli_bytecode_context_setpe(struct cli_bc_ctx *ctx, const struct cli_p
 cl_error_t cli_bytecode_context_setpdf(struct cli_bc_ctx *ctx, unsigned phase,
                                        unsigned nobjs,
                                        struct pdf_obj **objs, uint32_t *pdf_flags,
-                                       uint32_t pdfsize, uint32_t pdfstartoff)
+                                       size_t pdfsize, off_t pdfstartoff)
 {
     ctx->pdf_nobjs    = nobjs;
     ctx->pdf_objs     = objs;

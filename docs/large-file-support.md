@@ -2294,6 +2294,16 @@ Object-stream containment now uses subtraction-based checked bounds for both
 the current and next object offsets, so malformed large values cannot wrap the
 first-plus-offset calculation before the parser rejects them.
 
+## Bytecode v2 PDF coordinate bridge — 2026-08-19
+
+The internal PDF-hook context now retains native-width PDF size and start
+coordinates. Format-8 bytecode has appended 64-bit PDF object-size and
+object-offset accessors; all existing v1 API entries and numbering remain
+unchanged. The legacy offset accessor returns its invalid sentinel when the
+coordinate is not representable instead of wrapping. The independently
+compiled format-8 fixture and supported-build interpreter/JIT qualification
+remain release gates.
+
 ## NSIS non-solid bounded input — 2026-08-19
 
 NSIS non-solid members no longer map their complete compressed payload before

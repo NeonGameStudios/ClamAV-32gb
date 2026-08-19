@@ -2100,16 +2100,32 @@ int32_t cli_bcapi_pdf_lookupobj(struct cli_bc_ctx *ctx, uint32_t objid)
     return -1;
 }
 
-uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx, int32_t objidx)
+uint64_t cli_bcapi_pdf_getobjsize64(struct cli_bc_ctx *ctx, int32_t objidx)
 {
     if (!ctx->pdf_phase ||
         (uint32_t)objidx >= ctx->pdf_nobjs ||
         ctx->pdf_phase == PDF_PHASE_POSTDUMP /* map is obj itself, no access to pdf anymore */
     )
         return 0;
-    if ((uint32_t)(objidx + 1) == ctx->pdf_nobjs)
+
+    if ((uint32_t)(objidx + 1) == ctx->pdf_nobjs) {
+        if (ctx->pdf_objs[objidx]->start > ctx->pdf_size)
+            return 0;
         return ctx->pdf_size - ctx->pdf_objs[objidx]->start;
+    }
+
+    if (ctx->pdf_objs[objidx + 1]->start < ctx->pdf_objs[objidx]->start ||
+        ctx->pdf_objs[objidx + 1]->start - ctx->pdf_objs[objidx]->start < 4)
+        return 0;
+
     return ctx->pdf_objs[objidx + 1]->start - ctx->pdf_objs[objidx]->start - 4;
+}
+
+uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx, int32_t objidx)
+{
+    uint64_t size = cli_bcapi_pdf_getobjsize64(ctx, objidx);
+
+    return size > UINT32_MAX ? 0 : (uint32_t)size;
 }
 
 const uint8_t *cli_bcapi_pdf_getobj(struct cli_bc_ctx *ctx, int32_t objidx, uint32_t amount)
@@ -2150,10 +2166,20 @@ int32_t cli_bcapi_pdf_setobjflags(struct cli_bc_ctx *ctx, int32_t objidx, int32_
 
 int32_t cli_bcapi_pdf_get_offset(struct cli_bc_ctx *ctx, int32_t objidx)
 {
+    uint64_t offset = cli_bcapi_pdf_get_offset64(ctx, objidx);
+
+    return offset > INT32_MAX ? -1 : (int32_t)offset;
+}
+
+uint64_t cli_bcapi_pdf_get_offset64(struct cli_bc_ctx *ctx, int32_t objidx)
+{
     if (!ctx->pdf_phase ||
         (uint32_t)objidx >= ctx->pdf_nobjs)
-        return -1;
-    return ctx->pdf_startoff + ctx->pdf_objs[objidx]->start;
+        return UINT64_MAX;
+    if (ctx->pdf_startoff < 0 ||
+        (uint64_t)ctx->pdf_startoff > UINT64_MAX - ctx->pdf_objs[objidx]->start)
+        return UINT64_MAX;
+    return (uint64_t)ctx->pdf_startoff + ctx->pdf_objs[objidx]->start;
 }
 
 int32_t cli_bcapi_pdf_get_phase(struct cli_bc_ctx *ctx)
