@@ -47,6 +47,15 @@ typedef struct cl_egg_metadata {
 } cl_egg_metadata;
 
 /**
+ * @brief Receive bounded output while an EGG member is decoded.
+ *
+ * The callback is invoked with chunks that are owned by the decoder and are
+ * valid only for the duration of the call.  Returning anything other than
+ * CL_SUCCESS aborts extraction and propagates that status to the caller.
+ */
+typedef cl_error_t (*cli_egg_write_callback)(void *opaque, const void *data, size_t length);
+
+/**
  * @brief Given an fmap to en EGG archive, open a handle for extracting archive contents.
  *
  * A best effort will be made for split archives, though it is incapable of properly extracting split
@@ -102,6 +111,29 @@ cl_error_t cli_egg_extract_file(
     const char** filename,
     const char** output_buffer,
     size_t* output_buffer_length);
+
+/**
+ * @brief Extract the next file without materializing the member in memory.
+ *
+ * Stored and supported compressed blocks are read from the archive in bounded
+ * windows and their output is delivered through the callback.  Solid EGG,
+ * encrypted members, and unsupported codecs remain explicit extraction
+ * failures.  The current file index is advanced on both success and failure,
+ * matching cli_egg_extract_file().
+ *
+ * @param hArchive       An open EGG archive handle from cli_egg_open().
+ * @param write          Callback receiving bounded decoded output.
+ * @param opaque         Caller-owned callback context.
+ * @param[out] filename  UTF-8 filename allocated by the function.
+ * @param[out] output_length Number of bytes delivered to the callback.
+ * @return cl_error_t    CL_SUCCESS if the complete member was delivered.
+ */
+cl_error_t cli_egg_extract_file_stream(
+    void* hArchive,
+    cli_egg_write_callback write,
+    void* opaque,
+    const char** filename,
+    uint64_t* output_length);
 
 /**
  * @brief Skip the next file.

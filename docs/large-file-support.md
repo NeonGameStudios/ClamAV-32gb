@@ -1301,9 +1301,11 @@ or waive them.
   partial prefix. Other format-specific boundaries still require dedicated
   adversarial and large-payload fixtures before an upstream support claim.
 - Contiguous metadata/decompression remains intentionally capped: one decoded
-  DMG `blkx` metadata block at 64 MiB and EGG decoder buffers at the 1 GiB
-  allocation ceiling. NSIS members now consume fmap input in 64 KiB windows
-  and charge extracted bytes to the shared temporary quota. The DMG XML
+  DMG `blkx` metadata block at 64 MiB and compatibility EGG byte-buffer
+  callers at the 1 GiB allocation ceiling. The scanner-facing EGG path now
+  consumes fmap input and decoder output in 64 KiB windows, writing members to
+  a quota-accounted temporary spool. NSIS members now consume fmap input in
+  64 KiB windows and charge extracted bytes to the shared temporary quota. The DMG XML
   resource fork itself is consumed through
   bounded SAX input and quota-accounted Base64 spools. Crossing a per-format
   limit is fail-visible; it is not full deep-parser qualification through
@@ -2163,3 +2165,20 @@ are written to the temporary normalized-script file. The bytecode normalization
 path also tracks consumed input with checked arithmetic, and HTML normalization
 uses the same context-aware output path. A matcher-work admission failure is
 fail-visible and prevents the normalized view from being scanned as complete.
+
+## EGG bounded member extraction — 2026-08-19
+
+The scanner-facing EGG path no longer maps a complete compressed block or
+retains a complete decoded member before scanning it. Stored, Deflate, and
+BZIP2 blocks are read from the fmap in 64 KiB windows, decoded into 64 KiB
+buffers, and written directly to a temporary descriptor. The declared member
+size is reserved against `MaxTemporarySize` before extraction, and the
+reserved descriptor scan avoids double-counting that spool. Short reads,
+decoder termination failures, trailing compressed bytes, output-size
+disagreements, deadline crossings, write failures, unsupported codecs, and
+solid EGG remain explicit incomplete results.
+
+The legacy `cli_egg_extract_file()` byte-buffer API remains available for
+compatibility callers and retains the global individual-allocation guard; it
+is not used by the production scanner. EGG corpus, sanitizer, and supported
+Linux x86-64 Sonic1 qualification remain release gates.

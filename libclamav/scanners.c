@@ -653,6 +653,97 @@ static cl_error_t cli_egg_scanmetadata(cl_egg_metadata *metadata, cli_ctx *ctx, 
     return status;
 }
 
+typedef struct {
+    cli_ctx* ctx;
+    int fd;
+} cli_egg_temp_output;
+
+static cl_error_t cli_egg_write_temp(void* opaque, const void* data, size_t length)
+{
+    cli_egg_temp_output* output = (cli_egg_temp_output*)opaque;
+    cl_error_t status;
+
+    if (output == NULL || output->ctx == NULL || output->fd < 0 || (data == NULL && length != 0))
+        return CL_EARG;
+
+    status = cli_checktimelimit(output->ctx);
+    if (status != CL_SUCCESS)
+        return status;
+
+    if (length != 0 && cli_writen(output->fd, data, length) != length) {
+        cli_mark_scan_incomplete(output->ctx, "EGG member temporary spool write was incomplete");
+        return CL_EWRITE;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_egg_scan_member(void* hArchive, const cl_egg_metadata* metadata,
+                                      cli_ctx* ctx, const char* filename)
+{
+    cl_error_t status = CL_SUCCESS;
+    char* tempfile = NULL;
+    const char* extracted_filename = NULL;
+    int fd = -1;
+    bool temporary_reserved = false;
+    uint64_t output_length = 0;
+    cli_egg_temp_output output;
+
+    if (hArchive == NULL || metadata == NULL || ctx == NULL)
+        return CL_EARG;
+
+    status = cli_scan_reserve_temporary(ctx, metadata->unpack_size);
+    if (status != CL_SUCCESS)
+        return status;
+    temporary_reserved = true;
+
+    status = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "egg", &tempfile, &fd);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "EGG member temporary spool could not be created");
+        goto done;
+    }
+
+    output.ctx = ctx;
+    output.fd  = fd;
+    status     = cli_egg_extract_file_stream(hArchive, cli_egg_write_temp, &output,
+                                             &extracted_filename, &output_length);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "EGG member extraction failed before content scanning");
+        goto done;
+    }
+
+    if (output_length != metadata->unpack_size) {
+        cli_mark_scan_incomplete(ctx, "EGG member extraction length disagreed with metadata");
+        status = CL_EFORMAT;
+        goto done;
+    }
+
+    status = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, CL_TYPE_ANY, filename,
+                                               LAYER_ATTRIBUTES_NONE);
+    if (status != CL_SUCCESS && status != CL_VIRUS)
+        cli_mark_scan_incomplete(ctx, "EGG nested member scan did not complete");
+
+done:
+    if (fd >= 0) {
+        if (close(fd) != 0 && status == CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "EGG member temporary spool could not be closed");
+            status = CL_EWRITE;
+        }
+        fd = -1;
+    }
+    if (tempfile != NULL) {
+        if (!ctx->engine->keeptmp && cli_unlink(tempfile) != 0 && status == CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "EGG member temporary spool could not be removed");
+            status = CL_EUNLINK;
+        }
+        free(tempfile);
+    }
+    free((void*)extracted_filename);
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, metadata->unpack_size);
+    return status;
+}
+
 static cl_error_t cli_scanegg(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -671,12 +762,7 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
 
     cl_egg_metadata metadata;
     char *filename_base    = NULL;
-    char *extract_fullpath = NULL;
     char *comment_fullpath = NULL;
-
-    char *extract_filename    = NULL;
-    char *extract_buffer      = NULL;
-    size_t extract_buffer_len = 0;
 
     if (ctx == NULL) {
         cli_dbgmsg("EGG: Invalid arguments!\n");
@@ -857,102 +943,17 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
 
                 cli_dbgmsg("EGG: Extracting file: %s\n", metadata.filename);
 
-                egg_ret = cli_egg_extract_file(hArchive, (const char **)&extract_filename, (const char **)&extract_buffer, &extract_buffer_len);
-                if (egg_ret != CL_SUCCESS) {
-                    /*
-                     * Some other error extracting the file
-                     */
-                    cli_dbgmsg("EGG: Error extracting file: %s\n", metadata.filename);
-                    cli_mark_scan_incomplete(ctx, "EGG member extraction failed before content scanning");
-                    status = egg_ret;
+                if (NULL != metadata.filename)
+                    (void)cli_basename(metadata.filename, strlen(metadata.filename), &filename_base, true /* posix_support_backslash_pathsep */);
+
+                cli_dbgmsg("EGG: Streaming extraction directly to a temporary descriptor.\n");
+                status = cli_egg_scan_member(hArchive, &metadata, ctx, filename_base);
+                if (status != CL_SUCCESS)
                     goto done;
-                } else if (!extract_buffer || 0 == extract_buffer_len) {
-                    /*
-                     * Empty file. Skip.
-                     */
-                    cli_dbgmsg("EGG: Skipping empty file: %s\n", metadata.filename);
 
-                    if (metadata.unpack_size != 0) {
-                        cli_mark_scan_incomplete(ctx, "EGG extraction returned no data for a non-empty member");
-                        status = CL_EUNPACK;
-                        goto done;
-                    }
-
-                    if (NULL != extract_filename) {
-                        free(extract_filename);
-                        extract_filename = NULL;
-                    }
-                    if (NULL != extract_buffer) {
-                        free(extract_buffer);
-                        extract_buffer = NULL;
-                    }
-                } else {
-                    /*
-                     * Drop to a temp file, if requested.
-                     */
-                    if (NULL != metadata.filename) {
-                        (void)cli_basename(metadata.filename, strlen(metadata.filename), &filename_base, true /* posix_support_backslash_pathsep */);
-                    }
-
-                    if (ctx->engine->keeptmp) {
-                        int extracted_fd = -1;
-                        if (NULL == filename_base) {
-                            extract_fullpath = cli_gentemp(ctx->this_layer_tmpdir);
-                        } else {
-                            extract_fullpath = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, filename_base);
-                        }
-                        if (NULL == extract_fullpath) {
-                            cli_dbgmsg("EGG: Memory error allocating filename for extracted file.");
-                            status = CL_EMEM;
-                            break;
-                        }
-
-                        extracted_fd = open(extract_fullpath, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-                        if (extracted_fd < 0) {
-                            cli_dbgmsg("EGG: ERROR: Failed to open output file\n");
-                            status = CL_ECREAT;
-                            goto done;
-                        } else {
-                            cli_dbgmsg("EGG: Writing the extracted file contents to temp file: %s\n", extract_fullpath);
-                            if (cli_writen(extracted_fd, extract_buffer, extract_buffer_len) != extract_buffer_len) {
-                                cli_dbgmsg("EGG: ERROR: Failed to write to output file\n");
-                                close(extracted_fd);
-                                status = CL_EWRITE;
-                                goto done;
-                            } else {
-                                close(extracted_fd);
-                                extracted_fd = -1;
-                            }
-                        }
-                    }
-
-                    /*
-                     * Scan the extracted file...
-                     */
-                    cli_dbgmsg("EGG: Extraction complete.  Scanning now...\n");
-                    status = cli_magic_scan_buff(extract_buffer, extract_buffer_len, ctx, filename_base, LAYER_ATTRIBUTES_NONE);
-                    if (status != CL_SUCCESS) {
-                        goto done;
-                    }
-
-                    if (NULL != filename_base) {
-                        free(filename_base);
-                        filename_base = NULL;
-                    }
-                    if (NULL != extract_filename) {
-                        free(extract_filename);
-                        extract_filename = NULL;
-                    }
-                    if (NULL != extract_buffer) {
-                        free(extract_buffer);
-                        extract_buffer = NULL;
-                    }
-                }
-
-                /* Free up that the filepath */
-                if (NULL != extract_fullpath) {
-                    free(extract_fullpath);
-                    extract_fullpath = NULL;
+                if (NULL != filename_base) {
+                    free(filename_base);
+                    filename_base = NULL;
                 }
             }
         }
@@ -983,16 +984,6 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
 
 done:
 
-    if (NULL != extract_filename) {
-        free(extract_filename);
-        extract_filename = NULL;
-    }
-
-    if (NULL != extract_buffer) {
-        free(extract_buffer);
-        extract_buffer = NULL;
-    }
-
     if (NULL != comment_fullpath) {
         free(comment_fullpath);
         comment_fullpath = NULL;
@@ -1019,11 +1010,6 @@ done:
     if (metadata.filename != NULL) {
         free(metadata.filename);
         metadata.filename = NULL;
-    }
-
-    if (NULL != extract_fullpath) {
-        free(extract_fullpath);
-        extract_fullpath = NULL;
     }
 
     if ((CL_VIRUS != status) && (nEncryptedFilesFound > 0)) {

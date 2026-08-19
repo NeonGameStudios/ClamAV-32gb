@@ -2017,6 +2017,333 @@ done:
     return status;
 }
 
+#define EGG_STREAM_CHUNK (64U * 1024U)
+
+typedef struct {
+    cli_egg_write_callback write;
+    void* opaque;
+    uint64_t expected;
+    uint64_t written;
+} egg_stream_output;
+
+static cl_error_t egg_stream_emit(egg_stream_output* output, const unsigned char* data, size_t length)
+{
+    cl_error_t status;
+
+    if (length == 0)
+        return CL_SUCCESS;
+
+    if (output == NULL || output->write == NULL || output->written > output->expected ||
+        (uint64_t)length > output->expected - output->written)
+        return CL_EFORMAT;
+
+    status = output->write(output->opaque, data, length);
+    if (status != CL_SUCCESS)
+        return status;
+
+    output->written += (uint64_t)length;
+    return CL_SUCCESS;
+}
+
+static cl_error_t egg_stream_read(const egg_handle* handle, const egg_block* block,
+                                  size_t* input_offset, unsigned char* buffer,
+                                  size_t* buffer_length)
+{
+    size_t available;
+    size_t chunk;
+    size_t offset;
+
+    if (handle == NULL || handle->map == NULL || block == NULL || input_offset == NULL ||
+        buffer == NULL || buffer_length == NULL || *input_offset > (size_t)block->compressedSize)
+        return CL_EARG;
+
+    available = (size_t)block->compressedSize - *input_offset;
+    if (available == 0) {
+        *buffer_length = 0;
+        return CL_SUCCESS;
+    }
+
+    chunk = (available < (size_t)EGG_STREAM_CHUNK) ? available : (size_t)EGG_STREAM_CHUNK;
+    offset = block->compressedDataOffset;
+    if (offset > handle->map->len || *input_offset > handle->map->len - offset ||
+        chunk > handle->map->len - offset - *input_offset)
+        return CL_EREAD;
+
+    if (fmap_readn(handle->map, buffer, offset + *input_offset, chunk) != chunk)
+        return CL_EREAD;
+
+    *input_offset += chunk;
+    *buffer_length = chunk;
+    return CL_SUCCESS;
+}
+
+static cl_error_t egg_stream_store(const egg_handle* handle, const egg_block* block,
+                                   egg_stream_output* output)
+{
+    unsigned char buffer[EGG_STREAM_CHUNK];
+    size_t input_offset = 0;
+    size_t buffer_length;
+    cl_error_t status;
+
+    if (block->compressedSize != block->uncompressedSize)
+        return CL_EFORMAT;
+
+    while (input_offset < (size_t)block->compressedSize) {
+        status = egg_stream_read(handle, block, &input_offset, buffer, &buffer_length);
+        if (status != CL_SUCCESS)
+            return status;
+        if (buffer_length == 0)
+            return CL_EREAD;
+
+        status = egg_stream_emit(output, buffer, buffer_length);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    return (output->written == output->expected) ? CL_SUCCESS : CL_EFORMAT;
+}
+
+static cl_error_t egg_stream_deflate(const egg_handle* handle, const egg_block* block,
+                                     egg_stream_output* output)
+{
+    unsigned char input[EGG_STREAM_CHUNK];
+    unsigned char decoded[EGG_STREAM_CHUNK];
+    size_t input_offset = 0;
+    size_t input_length = 0;
+    size_t produced;
+    z_stream stream;
+    int initialized = 0;
+    int zstat;
+    cl_error_t status = CL_EUNPACK;
+
+    memset(&stream, 0, sizeof(stream));
+    if (inflateInit2(&stream, -15) != Z_OK)
+        return CL_EMEM;
+    initialized = 1;
+
+    for (;;) {
+        if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
+            status = egg_stream_read(handle, block, &input_offset, input, &input_length);
+            if (status != CL_SUCCESS)
+                goto done;
+            stream.next_in  = input;
+            stream.avail_in = (uInt)input_length;
+        }
+
+        stream.next_out  = decoded;
+        stream.avail_out = (uInt)sizeof(decoded);
+        {
+            uInt before_in  = stream.avail_in;
+            uInt before_out = stream.avail_out;
+
+            zstat  = inflate(&stream, Z_NO_FLUSH);
+            produced = sizeof(decoded) - stream.avail_out;
+
+            status = egg_stream_emit(output, decoded, produced);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (zstat == Z_STREAM_END) {
+                if (stream.avail_in != 0 || input_offset < (size_t)block->compressedSize) {
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                status = (output->written == output->expected) ? CL_SUCCESS : CL_EFORMAT;
+                goto done;
+            }
+
+            if (zstat != Z_OK && zstat != Z_BUF_ERROR) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+
+            if (before_in == stream.avail_in && before_out == stream.avail_out &&
+                input_offset >= (size_t)block->compressedSize) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+        }
+    }
+
+done:
+    if (initialized)
+        (void)inflateEnd(&stream);
+    return status;
+}
+
+static cl_error_t egg_stream_bzip2(const egg_handle* handle, const egg_block* block,
+                                   egg_stream_output* output)
+{
+    unsigned char input[EGG_STREAM_CHUNK];
+    unsigned char decoded[EGG_STREAM_CHUNK];
+    size_t input_offset = 0;
+    size_t input_length = 0;
+    size_t produced;
+    bz_stream stream;
+    int initialized = 0;
+    int bzstat;
+    cl_error_t status = CL_EUNPACK;
+
+    memset(&stream, 0, sizeof(stream));
+    if (BZ2_bzDecompressInit(&stream, 0, 0) != BZ_OK)
+        return CL_EMEM;
+    initialized = 1;
+
+    for (;;) {
+        if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
+            status = egg_stream_read(handle, block, &input_offset, input, &input_length);
+            if (status != CL_SUCCESS)
+                goto done;
+            stream.next_in  = (char*)input;
+            stream.avail_in = (unsigned int)input_length;
+        }
+
+        stream.next_out  = (char*)decoded;
+        stream.avail_out = (unsigned int)sizeof(decoded);
+        {
+            unsigned int before_in  = stream.avail_in;
+            unsigned int before_out = stream.avail_out;
+
+            bzstat  = BZ2_bzDecompress(&stream);
+            produced = sizeof(decoded) - stream.avail_out;
+
+            status = egg_stream_emit(output, decoded, produced);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (bzstat == BZ_STREAM_END) {
+                if (stream.avail_in != 0 || input_offset < (size_t)block->compressedSize) {
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                status = (output->written == output->expected) ? CL_SUCCESS : CL_EFORMAT;
+                goto done;
+            }
+
+            if (bzstat != BZ_OK) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+
+            if (before_in == stream.avail_in && before_out == stream.avail_out &&
+                input_offset >= (size_t)block->compressedSize) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+        }
+    }
+
+done:
+    if (initialized)
+        (void)BZ2_bzDecompressEnd(&stream);
+    return status;
+}
+
+static cl_error_t egg_stream_block(const egg_handle* handle, const egg_block* block,
+                                   egg_stream_output* output)
+{
+    if (handle == NULL || block == NULL || output == NULL || block->blockHeader == NULL ||
+        block->compressedSize == 0)
+        return CL_EFORMAT;
+
+    switch (block->compressionAlgorithm) {
+        case BLOCK_HEADER_COMPRESS_ALGORITHM_STORE:
+            return egg_stream_store(handle, block, output);
+        case BLOCK_HEADER_COMPRESS_ALGORITHM_DEFLATE:
+            return egg_stream_deflate(handle, block, output);
+        case BLOCK_HEADER_COMPRESS_ALGORITHM_BZIP2:
+            return egg_stream_bzip2(handle, block, output);
+        case BLOCK_HEADER_COMPRESS_ALGORITHM_AZO:
+        case BLOCK_HEADER_COMPRESS_ALGORITHM_LZMA:
+            return CL_EUNPACK;
+        default:
+            return CL_EFORMAT;
+    }
+}
+
+cl_error_t cli_egg_extract_file_stream(void* hArchive, cli_egg_write_callback write,
+                                       void* opaque, const char** filename,
+                                       uint64_t* output_length)
+{
+    cl_error_t status = CL_EPARSE;
+    egg_handle* handle = NULL;
+    egg_file* currFile = NULL;
+    uint64_t extracted = 0;
+    uint64_t file_length;
+    uint64_t i;
+
+    if (hArchive == NULL || write == NULL || filename == NULL || output_length == NULL)
+        return CL_EARG;
+
+    *filename      = NULL;
+    *output_length = 0;
+    handle         = (egg_handle*)hArchive;
+
+    if (CL_SUCCESS != EGG_VALIDATE_HANDLE(handle) || handle->fileExtractionIndex >= handle->nFiles)
+        goto done;
+
+    currFile = handle->files[handle->fileExtractionIndex];
+    if (currFile == NULL || currFile->file == NULL || currFile->filename.name_utf8 == NULL)
+        goto done;
+
+    if (handle->bSolid) {
+        cli_warnmsg("cli_egg_extract_file_stream: solid EGG extraction is unsupported\n");
+        status = CL_EUNPACK;
+        goto done;
+    }
+
+    file_length = le64_to_host(currFile->file->file_length);
+    if ((currFile->nBlocks == 0 && file_length != 0) ||
+        (currFile->nBlocks != 0 && currFile->blocks == NULL))
+        goto done;
+
+    for (i = 0; i < currFile->nBlocks; i++) {
+        egg_block* block = currFile->blocks[i];
+        egg_stream_output output;
+
+        if (block == NULL || block->blockHeader == NULL || block->compressedSize == 0 ||
+            block->compressedDataOffset > handle->map->len ||
+            block->compressedSize > handle->map->len - block->compressedDataOffset)
+            goto done;
+
+        if (extracted > UINT64_MAX - block->uncompressedSize)
+            goto done;
+
+        memset(&output, 0, sizeof(output));
+        output.write    = write;
+        output.opaque   = opaque;
+        output.expected = block->uncompressedSize;
+
+        status = egg_stream_block(handle, block, &output);
+        if (status != CL_SUCCESS)
+            goto done;
+
+        extracted += output.written;
+    }
+
+    if (extracted != file_length)
+        goto done;
+
+    *filename = strdup(currFile->filename.name_utf8);
+    if (*filename == NULL) {
+        status = CL_EMEM;
+        goto done;
+    }
+
+    *output_length = extracted;
+    status         = CL_SUCCESS;
+
+done:
+    if (handle != NULL)
+        handle->fileExtractionIndex += 1;
+    if (status != CL_SUCCESS) {
+        free((void*)*filename);
+        *filename      = NULL;
+        *output_length = 0;
+    }
+    return status;
+}
+
 cl_error_t cli_egg_deflate_decompress(char* compressed, size_t compressed_size, char** decompressed, size_t* decompressed_size)
 {
     cl_error_t status = CL_EPARSE;
