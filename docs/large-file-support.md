@@ -2739,6 +2739,15 @@ static-library wrapper regression covers GZip write and close faults. Compiled
 execution, sanitizer coverage, and broad compressed-container qualification
 remain release gates.
 
+## Script-normalization temporary cleanup — 2026-08-19
+
+Script normalization now marks normalization-buffer allocation and temporary
+output creation failures, checks close and removal of the normalized output,
+and preserves a detection, parser, or configured-limit result when cleanup
+fails. The close-fault regression exercises the normalized relative-offset
+path through the public scanner entry. Compiled execution, sanitizer coverage,
+and broad HTML/script corpus qualification remain release gates.
+
 ## Mail parser limit admission and ABI status reconciliation — 2026-08-19
 
 MIME recursion and file-count admission now set the shared sticky incomplete

@@ -2936,6 +2936,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
 
     if (!(normalized = malloc(SCANBUFF + maxpatlen))) {
         cli_dbgmsg("cli_scanscript: Unable to malloc %u bytes\n", SCANBUFF);
+        cli_mark_scan_incomplete(ctx, "Script normalization buffer could not be allocated");
         ret = CL_EMEM;
         goto done;
     }
@@ -2957,6 +2958,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
     if (ctx->engine->keeptmp || (target_ac_root && (target_ac_root->ac_reloff_num > 0 || target_ac_root->linked_bcs))) {
         if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &ofd))) {
             cli_dbgmsg("cli_scanscript: Can't generate temporary file/descriptor\n");
+            cli_mark_scan_incomplete(ctx, "Script normalized output could not be created");
             goto done;
         }
         if (ctx->engine->keeptmp)
@@ -3040,7 +3042,8 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
                 if ((ofd != -1) && (write(ofd, state.out, state.out_pos) != (ssize_t)state.out_pos)) {
                     cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
                     cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
-                    close(ofd);
+                    if (close(ofd) != 0)
+                        cli_mark_scan_incomplete(ctx, "Script normalized output could not be closed");
                     ofd = -1;
                     ret = CL_EWRITE;
                     goto done;
@@ -3113,12 +3116,21 @@ done:
     }
 
     if (ofd != -1) {
-        close(ofd);
+        if (close(ofd) != 0) {
+            cli_mark_scan_incomplete(ctx, "Script normalized output could not be closed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+                ret = CL_EWRITE;
+        }
+        ofd = -1;
     }
 
     if (tmpname != NULL) {
         if (!ctx->engine->keeptmp) {
-            (void)cli_unlink(tmpname);
+            if (cli_unlink(tmpname) != 0) {
+                cli_mark_scan_incomplete(ctx, "Script normalized output could not be removed");
+                if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+                    ret = CL_EUNLINK;
+            }
         }
         free(tmpname);
     }

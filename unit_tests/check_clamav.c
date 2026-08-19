@@ -8791,6 +8791,52 @@ START_TEST(test_normalized_script_map_failure_is_fail_visible)
 END_TEST
 #endif
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_script_normalization_cleanup_close_failure_is_fail_visible)
+{
+    static const unsigned char script[] = "var marker = 1;";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_ptr_nonnull(scan_engine->root[7]);
+    scan_engine->root[7]->linked_bcs = 1;
+
+    map = cl_fmap_open_memory(script, sizeof(script) - 1U);
+    ck_assert_ptr_nonnull(map);
+    layer.fmap               = map;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+
+    clamav_test_fail_close = 1;
+    ret                    = cli_magic_scan(&ctx, CL_TYPE_SCRIPT);
+    clamav_test_fail_close = 0;
+    ck_assert_int_eq(ret, CL_EWRITE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
+
 START_TEST(test_mspack_scan_limit_is_fail_visible)
 {
     enum {
@@ -9525,6 +9571,9 @@ static Suite *test_cl_suite(void)
 #endif
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP
     tcase_add_test(tc_cl, test_normalized_script_map_failure_is_fail_visible);
+#endif
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_script_normalization_cleanup_close_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);

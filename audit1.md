@@ -947,6 +947,16 @@ meaningful result. The focused GZip write/close wrapper regression is
 registered; Linux/Sonic1, sanitizer, and broad compressed-family corpus
 qualification remain open.
 
+## Script-normalization temporary cleanup — 2026-08-19
+
+`cli_scanscript()` previously returned allocation or temporary-file creation
+errors without setting the sticky state and ignored final close/removal
+failures for normalized output. A write-failure branch also discarded close
+failure. The path now marks each condition incomplete/non-cacheable and keeps
+the first meaningful result. A Linux static-library close-wrapper regression
+uses the normalized relative-offset path; Linux/Sonic1, sanitizer, and broad
+HTML/script corpus qualification remain open.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the
