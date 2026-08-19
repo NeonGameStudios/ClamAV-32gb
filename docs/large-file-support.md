@@ -41,6 +41,10 @@ temporary-file write stops the stream immediately, emits one protocol-matched
 error, and removes the partial descriptor without dispatching it to the
 scanner. Quota failures use the same single-response rule.
 
+The deprecated legacy `STREAM` helper is now an explicit fail-visible stub;
+it cannot bind a socket, truncate input at a legacy limit, or scan a partial
+prefix. `INSTREAM` is the only supported staged stream path.
+
 The first authorized real-file Sonic1 run is documented in
 [`largefile-realfile-sonic1-20260818.md`](largefile-realfile-sonic1-20260818.md).
 It confirms that the fork's 32 GiB ceiling is an explicit configuration

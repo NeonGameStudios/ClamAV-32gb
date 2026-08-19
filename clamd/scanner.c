@@ -663,6 +663,10 @@ done:
     return ret;
 }
 
+/* The deprecated STREAM command is not dispatched by clamd. Keep this
+ * internal symbol fail-visible for out-of-tree callers rather than retaining
+ * the old truncating socket implementation. INSTREAM is the supported
+ * length-framed protocol and stages a complete file before scanning it. */
 int scanstream(
     int odesc,
     unsigned long int *scanned,
@@ -671,178 +675,12 @@ int scanstream(
     const struct optstruct *opts,
     char term)
 {
-    int ret, sockfd, acceptd;
-    int tmpd, bread, retval, firsttimeout, timeout, btread;
-    int limit_exceeded = 0;
-    unsigned int port       = 0, portscan, min_port, max_port;
-    uint64_t quota = 0, maxsize = 0;
-    short bound         = 0;
-    const char *virname = NULL;
-    char buff[FILEBUFF];
-    char peer_addr[32];
-    struct cb_context context;
-    struct sockaddr_in server;
-    struct sockaddr_in peer;
-    socklen_t addrlen;
-    char *tmpname;
+    UNUSEDPARAM(scanned);
+    UNUSEDPARAM(engine);
+    UNUSEDPARAM(options);
+    UNUSEDPARAM(opts);
 
-    min_port = optget(opts, "StreamMinPort")->numarg;
-    max_port = optget(opts, "StreamMaxPort")->numarg;
-
-    /* search for a free port to bind to */
-    port  = cli_rndnum(max_port - min_port);
-    bound = 0;
-    for (portscan = 0; portscan < 1000; portscan++) {
-        port = (port - 1) % (max_port - min_port + 1);
-
-        memset((char *)&server, 0, sizeof(server));
-        server.sin_family      = AF_INET;
-        server.sin_port        = htons(min_port + port);
-        server.sin_addr.s_addr = htonl(INADDR_ANY);
-
-        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-            continue;
-
-        if (bind(sockfd, (struct sockaddr *)&server, (socklen_t)sizeof(struct sockaddr_in)) == -1)
-            closesocket(sockfd);
-        else {
-            bound = 1;
-            break;
-        }
-    }
-    port += min_port;
-
-    timeout      = optget(opts, "ReadTimeout")->numarg;
-    firsttimeout = optget(opts, "CommandReadTimeout")->numarg;
-
-    if (!bound) {
-        logg(LOGG_ERROR, "ScanStream: Can't find any free port.\n");
-        mdprintf(odesc, "Can't find any free port. ERROR%c", term);
-        return -1;
-    } else {
-        if (listen(sockfd, 1) == -1) {
-            logg(LOGG_ERROR, "ScanStream: listen() error on socket. Error returned is %s.\n", strerror(errno));
-            closesocket(sockfd);
-            return -1;
-        }
-        if (mdprintf(odesc, "PORT %u%c", port, term) <= 0) {
-            logg(LOGG_ERROR, "ScanStream: error transmitting port.\n");
-            closesocket(sockfd);
-            return -1;
-        }
-    }
-
-    retval = poll_fd(sockfd, firsttimeout, 0);
-    if (!retval || retval == -1) {
-        const char *reason = !retval ? "timeout" : "poll";
-        mdprintf(odesc, "Accept %s. ERROR%c", reason, term);
-        logg(LOGG_ERROR, "ScanStream %u: accept %s.\n", port, reason);
-        closesocket(sockfd);
-        return -1;
-    }
-
-    addrlen = sizeof(peer);
-    if ((acceptd = accept(sockfd, (struct sockaddr *)&peer, (socklen_t *)&addrlen)) == -1) {
-        closesocket(sockfd);
-        mdprintf(odesc, "accept() ERROR%c", term);
-        logg(LOGG_ERROR, "ScanStream %u: accept() failed.\n", port);
-        return -1;
-    }
-
-    *peer_addr = '\0';
-    inet_ntop(peer.sin_family, &peer.sin_addr, peer_addr, sizeof(peer_addr));
-    logg(LOGG_DEBUG, "Accepted connection from %s on port %u, fd %d\n", peer_addr, port, acceptd);
-
-    if (cli_gentempfd(optget(opts, "TemporaryDirectory")->strarg, &tmpname, &tmpd)) {
-        shutdown(sockfd, 2);
-        closesocket(sockfd);
-        closesocket(acceptd);
-        mdprintf(odesc, "cli_gentempfd() failed. ERROR%c", term);
-        logg(LOGG_ERROR, "ScanStream(%s@%u): Can't create temporary file.\n", peer_addr, port);
-        return -1;
-    }
-
-    quota = maxsize = optget(opts, "StreamMaxLength")->numarg;
-
-    while ((retval = poll_fd(acceptd, timeout, 0)) == 1) {
-        /* only read up to max */
-        btread = (maxsize && (quota < sizeof(buff))) ? (int)quota : sizeof(buff);
-        if (!btread) {
-            logg(LOGG_WARNING, "ScanStream(%s@%u): Size limit reached (max: " STDu64 ")\n", peer_addr, port, maxsize);
-            limit_exceeded = 1;
-            break; /* Never scan a truncated prefix. */
-        }
-        bread = recv(acceptd, buff, btread, 0);
-        if (bread <= 0)
-            break;
-
-        quota -= bread;
-
-        if (writen(tmpd, buff, bread) != bread) {
-            shutdown(sockfd, 2);
-            closesocket(sockfd);
-            closesocket(acceptd);
-            mdprintf(odesc, "Temporary file -> write ERROR%c", term);
-            logg(LOGG_ERROR, "ScanStream(%s@%u): Can't write to temporary file.\n", peer_addr, port);
-            close(tmpd);
-            if (!optget(opts, "LeaveTemporaryFiles")->enabled)
-                unlink(tmpname);
-            free(tmpname);
-            return -1;
-        }
-    }
-
-    switch (retval) {
-        case 0: /* timeout */
-            mdprintf(odesc, "read timeout ERROR%c", term);
-            logg(LOGG_ERROR, "ScanStream(%s@%u): read timeout.\n", peer_addr, port);
-            break;
-        case -1:
-            mdprintf(odesc, "read poll ERROR%c", term);
-            logg(LOGG_ERROR, "ScanStream(%s@%u): read poll failed.\n", peer_addr, port);
-            break;
-    }
-
-    if (limit_exceeded) {
-        ret = CL_EMAXSIZE;
-    } else if (retval == 1) {
-        lseek(tmpd, 0, SEEK_SET);
-        thrmgr_setactivetask(peer_addr, NULL);
-        context.filename = peer_addr;
-        context.virsize  = 0;
-        context.scandata = NULL;
-        ret              = cl_scandesc_callback(tmpd, tmpname, &virname, scanned, engine, options, &context);
-        thrmgr_setactivetask(NULL, NULL);
-    } else {
-        ret = -1;
-    }
-    close(tmpd);
-    if (!optget(opts, "LeaveTemporaryFiles")->enabled)
-        unlink(tmpname);
-    free(tmpname);
-
-    closesocket(acceptd);
-    closesocket(sockfd);
-
-    if (ret == CL_VIRUS) {
-        if (context.virsize && optget(opts, "ExtendedDetectionInfo")->enabled) {
-            mdprintf(odesc, "stream: %s(%s:%llu) FOUND%c", virname, context.virhash, context.virsize, term);
-            logg(LOGG_INFO, "stream(%s@%u): %s(%s:%llu) FOUND\n", peer_addr, port, virname, context.virhash, context.virsize);
-        } else {
-            mdprintf(odesc, "stream: %s FOUND%c", virname, term);
-            logg(LOGG_INFO, "stream(%s@%u): %s FOUND\n", peer_addr, port, virname);
-        }
-        virusaction("stream", virname, opts);
-    } else if (ret != CL_CLEAN) {
-        if (retval == 1) {
-            mdprintf(odesc, "stream: %s ERROR%c", cl_strerror(ret), term);
-            logg(LOGG_INFO, "stream(%s@%u): %s ERROR\n", peer_addr, port, cl_strerror(ret));
-        }
-    } else {
-        mdprintf(odesc, "stream: OK%c", term);
-        if (logok)
-            logg(LOGG_INFO, "stream(%s@%u): OK\n", peer_addr, port);
-    }
-
-    return ret;
+    if (odesc >= 0)
+        mdprintf(odesc, "STREAM command is no longer supported; use INSTREAM%c", term);
+    return CL_EFORMAT;
 }

@@ -83,6 +83,11 @@ cleanup remove the partial file. The same response-suppression state prevents
 the outer receive loop from appending a second legacy error after a structured
 quota or write report.
 
+The dormant legacy `STREAM` implementation has been replaced with an explicit
+unsupported return. This removes its independent truncating socket path from
+the active build while preserving a clear failure for any out-of-tree caller;
+the length-framed, complete-file `INSTREAM` path remains the supported API.
+
 Mail message export now refuses already-truncated materializations and
 propagates decoder, output-allocation, and trailing-buffer write failures
 instead of returning a partial attachment blob. This closes a concrete
