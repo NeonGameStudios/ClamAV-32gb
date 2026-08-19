@@ -230,6 +230,7 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
             if (ctx->recursion_stack[ctx->recursion_level].calculated_image_fuzzy_hash &&
                 !fuzzy_hash_check(root->fuzzy_hashmap, mdata, ctx->recursion_stack[ctx->recursion_level].image_fuzzy_hash)) {
                 cli_errmsg("Unexpected error when checking for fuzzy hash matches.\n");
+                cli_mark_scan_incomplete(ctx, "image fuzzy hash matcher did not complete");
                 return CL_ERROR;
             }
         }

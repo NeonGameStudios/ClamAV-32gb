@@ -2363,6 +2363,16 @@ path also tracks consumed input with checked arithmetic, and HTML normalization
 uses the same context-aware output path. A matcher-work admission failure is
 fail-visible and prevents the normalized view from being scanned as complete.
 
+## Image-fuzzy detector result propagation — 2026-08-19
+
+Image-fuzzy hashing is an enabled detector family, so its bounded allocation,
+mapping, metadata, and Rust-calculation failures must not be discarded by the
+image dispatch branches. Those branches now retain the calculator's non-clean
+result while the calculator marks the scan incomplete; the matcher-side FFI
+failure path also reapplies the sticky incomplete state before returning its
+error. This preserves the explicit bounded rejection contract instead of
+allowing a failed optional detector to look like a complete image scan.
+
 ## EGG bounded member extraction — 2026-08-19
 
 The scanner-facing EGG path no longer maps a complete compressed block or

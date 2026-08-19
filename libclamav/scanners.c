@@ -5890,8 +5890,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                  */
 
                 if (SCAN_PARSE_IMAGE_FUZZY_HASH && (DCONF_OTHER & OTHER_CONF_IMAGE_FUZZY_HASH)) {
-                    // It's okay if it fails to calculate the fuzzy hash.
-                    (void)calculate_fuzzy_image_hash(ctx, type);
+                    ret = calculate_fuzzy_image_hash(ctx, type);
+                    if (ret != CL_SUCCESS)
+                        break;
                 }
             }
             break;
@@ -5911,8 +5912,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                 }
 
                 if (SCAN_PARSE_IMAGE_FUZZY_HASH && (DCONF_OTHER & OTHER_CONF_IMAGE_FUZZY_HASH)) {
-                    // It's okay if it fails to calculate the fuzzy hash.
-                    (void)calculate_fuzzy_image_hash(ctx, type);
+                    ret = calculate_fuzzy_image_hash(ctx, type);
+                    if (ret != CL_SUCCESS)
+                        break;
                 }
             }
             break;
@@ -5932,8 +5934,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                 }
 
                 if (SCAN_PARSE_IMAGE_FUZZY_HASH && (DCONF_OTHER & OTHER_CONF_IMAGE_FUZZY_HASH)) {
-                    // It's okay if it fails to calculate the fuzzy hash.
-                    (void)calculate_fuzzy_image_hash(ctx, type);
+                    ret = calculate_fuzzy_image_hash(ctx, type);
+                    if (ret != CL_SUCCESS)
+                        break;
                 }
             }
             break;
@@ -5956,8 +5959,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                 }
 
                 if (SCAN_PARSE_IMAGE_FUZZY_HASH && (DCONF_OTHER & OTHER_CONF_IMAGE_FUZZY_HASH)) {
-                    // It's okay if it fails to calculate the fuzzy hash.
-                    (void)calculate_fuzzy_image_hash(ctx, type);
+                    ret = calculate_fuzzy_image_hash(ctx, type);
+                    if (ret != CL_SUCCESS)
+                        break;
                 }
             }
             break;
@@ -5977,8 +5981,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                 }
 
                 if (SCAN_PARSE_IMAGE_FUZZY_HASH && (DCONF_OTHER & OTHER_CONF_IMAGE_FUZZY_HASH)) {
-                    // It's okay if it fails to calculate the fuzzy hash.
-                    (void)calculate_fuzzy_image_hash(ctx, type);
+                    ret = calculate_fuzzy_image_hash(ctx, type);
+                    if (ret != CL_SUCCESS)
+                        break;
                 }
             }
             break;
