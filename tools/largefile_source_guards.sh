@@ -252,6 +252,9 @@ not_contains win32/conf_examples/clamd.conf.sample 'Setting this value to zero d
 contains libclamav/scanners.c 'VBA decompressed content exceeds the legacy matcher ABI'
 contains docs/largefile-capabilities.tsv 'vba-over-4g'
 contains tools/largefile_capability_manifest.sh 'vba-over-4g'
+contains libclamav/scanners.c 'Script normalization exceeded the legacy matcher subject width'
+contains docs/largefile-capabilities.tsv 'script-normalization-over-4g'
+contains tools/largefile_capability_manifest.sh 'script-normalization-over-4g'
 contains libclamav/ole2_extract.c 'OLE2 sector chain exceeds the deep-parser ABI'
 contains libclamav/scanners.c 'OLE2 VBA project directory could not be parsed'
 contains libclamav/scanners.c 'cli_ole2_note_vba_cleanup_failure'
@@ -435,6 +438,7 @@ contains libclamav/pdfdecode.c 'PDF stream uses an unsupported filter and was no
 contains libclamav/pdfdecode.c 'PDF stream uses an unknown filter and was not decoded'
 contains libclamav/pdfdecode.c 'PDF LZW decoding is disabled and the stream was not inspected'
 contains libclamav/pdfdecode.c "PDF stream exceeds the decoder's 32-bit input boundary"
+contains docs/largefile-capabilities.tsv 'pdf-stream-over-4g'
 contains libclamav/pdfdecode.h 'const char *stream, size_t streamlen'
 contains libclamav/pdf.h 'size_t start;'
 not_contains libclamav/pdf.c 'objstm->current_pair = (uint32_t)'

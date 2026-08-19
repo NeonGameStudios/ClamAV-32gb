@@ -54,6 +54,8 @@ unsupported	bytecode-v1-over-4g	unsupported	docs/bytecode-abi-v2.md	legacy bytec
 unsupported	legacy-callback-over-1g	unsupported	libclamav/scanners.c	deprecated whole-file callback requires an oversized contiguous buffer
 unsupported	image-fuzzy-over-contiguous-limit	unsupported	libclamav/scanners.c	image fuzzy FFI requires a complete contiguous image subject
 unsupported	pe-unpacker-over-1g	unsupported	libclamav/pe.c	legacy PE unpackers require a contiguous buffer and reject requests above the 1 GiB individual-allocation ceiling as incomplete
+unsupported	pdf-stream-over-4g	unsupported	libclamav/pdfdecode.c	legacy PDF filter ABI cannot accept a stream input above 4 GiB; the decoder returns an explicit incomplete result
+unsupported	script-normalization-over-4g	unsupported	libclamav/scanners.c	legacy script matcher ABI cannot accept normalized output above 4 GiB; the scanner returns an explicit incomplete result
 unsupported	vba-over-4g	unsupported	libclamav/scanners.c	legacy VBA matcher/data ABI cannot inspect decompressed layers above 4 GiB; the engine returns an explicit incomplete result
 parser	CL_TYPE_7Z	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_7ZSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

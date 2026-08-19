@@ -2353,6 +2353,21 @@ Object-stream containment now uses subtraction-based checked bounds for both
 the current and next object offsets, so malformed large values cannot wrap the
 first-plus-offset calculation before the parser rejects them.
 
+The capability manifest records `pdf-stream-over-4g` as deliberately
+unsupported. This is a filter-ABI boundary, not an outer-file limit: a PDF
+may still contain other inspectable objects, but a legacy filter stream above
+4 GiB makes the containing scan incomplete rather than allowing a truncated
+prefix to be treated as complete.
+
+## Script normalization matcher boundary — 2026-08-19
+
+Normalized script output above 4 GiB cannot be passed to the legacy 32-bit
+matcher subject ABI. The scanner now rejects that normalized layer with an
+explicit incomplete result; the capability manifest records this as
+`script-normalization-over-4g`. Raising the outer 32-GiB policy does not remove
+this parser-specific boundary, and conversion to a streaming/native-width
+normalization matcher remains a release gate.
+
 ## Bytecode v2 PDF coordinate bridge — 2026-08-19
 
 The internal PDF-hook context now retains native-width PDF size and start
