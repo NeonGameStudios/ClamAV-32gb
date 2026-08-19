@@ -2273,6 +2273,18 @@ callers. The third-party modern root parser is still slice-based and therefore
 uses the staged mapping; OneNote corpus, sanitizer, and RSS qualification
 remain open.
 
+## PDF decoder input-width boundary — 2026-08-19
+
+The PDF stream decoder API now carries the source stream length as `size_t`
+through the caller instead of narrowing it to `uint32_t` at the object
+boundary. The legacy filter implementations still use 32-bit input lengths,
+so a stream larger than `UINT32_MAX` is rejected before decoding with
+`CL_ERESOURCE`, marks the containing scan incomplete, and cannot be treated as
+a scanned prefix. The focused boundary regression covers the status and
+non-cacheability state. Converting the remaining PDF filters to a fully
+streaming reader remains a release gate; this change closes the silent
+wraparound path.
+
 ## NSIS non-solid bounded input — 2026-08-19
 
 NSIS non-solid members no longer map their complete compressed payload before

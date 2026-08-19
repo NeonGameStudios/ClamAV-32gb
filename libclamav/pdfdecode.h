@@ -55,7 +55,7 @@
  */
 size_t pdf_decodestream(
     struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
-    const char *stream, uint32_t streamlen, int xref, int fout, cl_error_t *status,
+    const char *stream, size_t streamlen, int xref, int fout, cl_error_t *status,
     struct objstm_struct *objstm);
 
 #endif /* __PDFDECODE_H__ */

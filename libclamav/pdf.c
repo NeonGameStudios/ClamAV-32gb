@@ -1732,7 +1732,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             }
         }
 
-        sum = pdf_decodestream(pdf, obj, dparams, obj->stream, (uint32_t)length, xref, fout, &status, objstm);
+        sum = pdf_decodestream(pdf, obj, dparams, obj->stream, length, xref, fout, &status, objstm);
         if ((CL_SUCCESS != status) && (CL_VIRUS != status)) {
             cli_dbgmsg("Error decoding stream! Error code: %d\n", status);
 

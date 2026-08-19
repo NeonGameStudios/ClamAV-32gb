@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -105,7 +106,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
  */
 size_t pdf_decodestream(
     struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
-    const char *stream, uint32_t streamlen, int xref, int fout, cl_error_t *status,
+    const char *stream, size_t streamlen, int xref, int fout, cl_error_t *status,
     struct objstm_struct *objstm)
 {
     struct pdf_token *token = NULL;
@@ -119,6 +120,15 @@ size_t pdf_decodestream(
     if (!pdf || !obj) {
         /* Invalid args */
         *status = CL_EARG;
+        goto done;
+    }
+
+    /* The legacy filter implementations use 32-bit input lengths internally.
+     * Reject a larger PDF stream before assigning it to the token or narrowing
+     * it in a filter, rather than wrapping the length and scanning a prefix. */
+    if (streamlen > UINT32_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF stream exceeds the decoder's 32-bit input boundary");
+        *status = CL_ERESOURCE;
         goto done;
     }
 
