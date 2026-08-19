@@ -441,6 +441,7 @@ jobs:
           grep -Fx 'clamd_multiworker_count=4' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'clamd_multiworker=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'milter_exact_edge=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'service_temp_budget=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'edge_clamdscan_contscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'edge_clamdscan_multiscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'edge_clamdscan_allmatchscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"

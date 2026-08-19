@@ -754,6 +754,12 @@ than inheriting build defaults. The real production oracle, Linux/Sonic1
 execution, sanitizer, RSS, latency, temporary-space, and parser-family
 evidence remain open.
 
+The service harness now also samples its temporary root while daemon and milter
+requests are active, records the observed peak, and requires
+`service_temp_budget=pass` before the workflow can attest or upload service
+evidence. This catches temporary files deleted before process exit, which a
+post-run directory-size check would miss.
+
 ## Loader-bound runtime evidence — 2026-08-19
 
 The runtime gate now captures an `LD_DEBUG=libs` trace for the copied release

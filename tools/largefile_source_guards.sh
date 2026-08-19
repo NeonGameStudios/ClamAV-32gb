@@ -531,6 +531,9 @@ contains tools/largefile_service_qualification.sh 'edge_clamdscan_allmatchscan=p
 contains tools/largefile_service_qualification.sh 'edge_clamdscan_fildes=pass'
 contains tools/largefile_service_qualification.sh 'edge_clamdscan_instream=pass'
 contains tools/largefile_service_qualification.sh 'cold_cache_control=pass'
+contains tools/largefile_service_qualification.sh 'service_temp_peak_bytes='
+contains tools/largefile_service_qualification.sh 'service_temp_budget=pass'
+contains tools/largefile_service_qualification.sh 'du -s -B1'
 contains .github/workflows/cmake.yml "CLAMAV_MAX_SCAN_TIME_MS: '900000'"
 contains .github/workflows/cmake.yml 'Mandatory service and workload qualification'
 contains .github/workflows/cmake.yml 'clamav-largefile-service/SHA256SUMS'

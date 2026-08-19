@@ -2,7 +2,7 @@
 
 # Run the service and workload gates required by audit1.md. This is an
 # acceptance gate, not a best-effort smoke test: every input and budget is
-# explicit, and the gate fails when cold-cache control or RSS measurement is
+# explicit, and the gate fails when cold-cache control or resource measurement is
 # unavailable.
 #
 # Usage:
@@ -59,9 +59,9 @@ if [ ! -f "$oracle_manifest" ]; then
 fi
 if ! command -v timeout >/dev/null 2>&1 || ! command -v awk >/dev/null 2>&1 ||
     ! command -v python3 >/dev/null 2>&1 ||
-    ! command -v sha256sum >/dev/null 2>&1 ||
+    ! command -v sha256sum >/dev/null 2>&1 || ! command -v du >/dev/null 2>&1 ||
     [ ! -x /usr/bin/time ]; then
-    echo 'timeout, awk, python3, sha256sum, and GNU /usr/bin/time are required' >&2
+    echo 'timeout, awk, python3, sha256sum, du, and GNU /usr/bin/time are required' >&2
     exit 2
 fi
 
@@ -210,12 +210,28 @@ latency_budget_s=${CLAMAV_SERVICE_MAX_LATENCY_S:-900}
 case "$latency_budget_s" in
     ''|*[!0-9]*) echo 'CLAMAV_SERVICE_MAX_LATENCY_S must be an integer number of seconds' >&2; exit 2 ;;
 esac
+temporary_budget_bytes=68719476736
 mkdir -p "$out" "$out/logs" "$out/tmp"
 config=$out/clamd.conf
 socket=$out/clamd.socket
 pidfile=$out/clamd.pid
 service_pid=
 service_peak_rss_kb=0
+service_peak_temp_bytes=0
+
+measure_service_resources()
+{
+    rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
+    case "$rss" in
+        ''|*[!0-9]*) ;;
+        *) if [ "$rss" -gt "$service_peak_rss_kb" ]; then service_peak_rss_kb=$rss; fi ;;
+    esac
+    current_tmp_bytes=$(du -s -B1 "$out/tmp" 2>/dev/null | awk 'NF >= 1 && $1 ~ /^[0-9]+$/ { print $1; exit }')
+    case "$current_tmp_bytes" in
+        ''|*[!0-9]*) ;;
+        *) if [ "$current_tmp_bytes" -gt "$service_peak_temp_bytes" ]; then service_peak_temp_bytes=$current_tmp_bytes; fi ;;
+    esac
+}
 
 cleanup()
 {
@@ -375,11 +391,7 @@ run_service_scan()
         "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$scan_report" "$@" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
     scan_pid=$!
     while kill -0 "$scan_pid" 2>/dev/null; do
-        rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
-        case "$rss" in
-            ''|*[!0-9]*) ;;
-            *) if [ "$rss" -gt "$service_peak_rss_kb" ]; then service_peak_rss_kb=$rss; fi ;;
-        esac
+        measure_service_resources
         sleep 0.05
     done
     wait "$scan_pid" || scan_status=$?
@@ -440,6 +452,19 @@ run_serial_queue()
         worker=$((worker + 1))
     done
 
+    queue_running=1
+    while [ "$queue_running" -eq 1 ]; do
+        queue_running=0
+        for queue_pid in $queue_pids; do
+            if kill -0 "$queue_pid" 2>/dev/null; then
+                queue_running=1
+            fi
+        done
+        measure_service_resources
+        if [ "$queue_running" -eq 1 ]; then
+            sleep 0.05
+        fi
+    done
     queue_status=0
     for queue_pid in $queue_pids; do
         wait "$queue_pid" || queue_status=1
@@ -560,11 +585,7 @@ while [ "$multi_running" -eq 1 ]; do
             multi_running=1
         fi
     done
-    rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
-    case "$rss" in
-        ''|*[!0-9]*) ;;
-        *) if [ "$rss" -gt "$service_peak_rss_kb" ]; then service_peak_rss_kb=$rss; fi ;;
-    esac
+    measure_service_resources
     if [ "$multi_running" -eq 1 ]; then
         sleep 0.05
     fi
@@ -634,15 +655,25 @@ printf 'milter_ctest=pass\n' >> "$out/service-summary.txt"
 # this is an integration check of libmilter framing, clamav-milter quota
 # accounting, clamd FD-passing, and the final detection action.
 milter_time_file="$out/logs/milter-exact-edge.time"
-if ! CLAMD="$build_dir/clamd/clamd" \
-    CLAMAV_MILTER="$build_dir/clamav-milter/clamav-milter" \
-    CVD_CERTS_DIR="${CLAMAV_CVD_CERTS_DIR:-}" \
-    MILTER_EXACT_EDGE=1 \
-    MILTER_EXTRA_DATABASE="$edge_db" \
-    MILTER_TEST_ROOT="$out/tmp" \
-    "/usr/bin/time" -f '%e %M' -o "$milter_time_file" \
-    timeout --signal=TERM --kill-after=10 900 \
-    python3 "$root/unit_tests/milter_protocol_test.py" > "$out/logs/milter-exact-edge.log" 2>&1; then
+milter_status=0
+(
+    CLAMD="$build_dir/clamd/clamd" \
+        CLAMAV_MILTER="$build_dir/clamav-milter/clamav-milter" \
+        CVD_CERTS_DIR="${CLAMAV_CVD_CERTS_DIR:-}" \
+        MILTER_EXACT_EDGE=1 \
+        MILTER_EXTRA_DATABASE="$edge_db" \
+        MILTER_TEST_ROOT="$out/tmp" \
+        "/usr/bin/time" -f '%e %M' -o "$milter_time_file" \
+        timeout --signal=TERM --kill-after=10 900 \
+        python3 "$root/unit_tests/milter_protocol_test.py" > "$out/logs/milter-exact-edge.log" 2>&1 || exit $?
+) &
+milter_pid=$!
+while kill -0 "$milter_pid" 2>/dev/null; do
+    measure_service_resources
+    sleep 0.05
+done
+wait "$milter_pid" || milter_status=$?
+if [ "$milter_status" -ne 0 ]; then
     echo 'milter exact-edge integration gate failed' >&2
     exit 1
 fi
@@ -660,8 +691,16 @@ if [ "$milter_rss" -gt "$rss_budget_kb" ]; then
     echo "milter exact-edge RSS exceeded budget: $milter_rss > $rss_budget_kb" >&2
     exit 1
 fi
+measure_service_resources
+if [ "$service_peak_temp_bytes" -gt "$temporary_budget_bytes" ]; then
+    echo "service temporary storage exceeded budget: $service_peak_temp_bytes > $temporary_budget_bytes" >&2
+    exit 1
+fi
 printf 'milter_exact_edge=pass\n' >> "$out/service-summary.txt"
 printf 'milter_exact_edge_elapsed_s=%s\n' "$milter_elapsed" >> "$out/service-summary.txt"
 printf 'milter_exact_edge_peak_rss_kb=%s\n' "$milter_rss" >> "$out/service-summary.txt"
+printf 'service_temp_peak_bytes=%s\n' "$service_peak_temp_bytes" >> "$out/service-summary.txt"
+printf 'service_temp_budget_bytes=%s\n' "$temporary_budget_bytes" >> "$out/service-summary.txt"
+printf 'service_temp_budget=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"
 echo "service qualification passed; evidence is in $out"
