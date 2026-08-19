@@ -7362,26 +7362,27 @@ native-width-integer	libclamav/7z/XzIn.c	64	  size_t i;
 native-width-integer	libclamav/7z/XzIn.c	77	static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *alloc)
 native-width-integer	libclamav/7z/XzIn.c	79	  size_t i, numBlocks, crcStartPos, pos = 1;
 native-width-integer	libclamav/7z/XzIn.c	93	    numBlocks = (size_t)numBlocks64;
-native-width-integer	libclamav/7z_iface.c	100	    size_t read_sz;
-native-width-integer	libclamav/7z_iface.c	106	    if (read_sz == (size_t)-1) {
-native-width-integer	libclamav/7z_iface.c	150	    p->s.curpos  = (off_t)*pos;
-native-width-integer	libclamav/7z_iface.c	155	int cli_7unz(cli_ctx *ctx, size_t offset)
-native-width-integer	libclamav/7z_iface.c	162	    int namelen            = UTFBUFSZ;
-native-width-integer	libclamav/7z_iface.c	191	        size_t outBufferSize = 0;
-native-width-integer	libclamav/7z_iface.c	192	        unsigned int encrypted = 0;
-native-width-integer	libclamav/7z_iface.c	199	            size_t j;
-native-width-integer	libclamav/7z_iface.c	200	            int newnamelen, fd;
-native-width-integer	libclamav/7z_iface.c	239	            for (j = 0; j < (size_t)newnamelen; j++) /* FIXME */
-native-width-integer	libclamav/7z_iface.c	253	                int allow_legacy = folderIndex == (UInt32)-1;
-native-width-integer	libclamav/7z_iface.c	259	                    size_t legacyOffset = 0;
-native-width-integer	libclamav/7z_iface.c	260	                    size_t legacySize   = 0;
+native-width-integer	libclamav/7z_iface.c	111	static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
+native-width-integer	libclamav/7z_iface.c	114	    size_t read_sz;
+native-width-integer	libclamav/7z_iface.c	120	    if (read_sz == (size_t)-1) {
+native-width-integer	libclamav/7z_iface.c	164	    p->s.curpos  = (off_t)*pos;
+native-width-integer	libclamav/7z_iface.c	169	int cli_7unz(cli_ctx *ctx, size_t offset)
+native-width-integer	libclamav/7z_iface.c	176	    int namelen            = UTFBUFSZ;
+native-width-integer	libclamav/7z_iface.c	205	        size_t outBufferSize = 0;
+native-width-integer	libclamav/7z_iface.c	206	        unsigned int encrypted = 0;
+native-width-integer	libclamav/7z_iface.c	213	            size_t j;
+native-width-integer	libclamav/7z_iface.c	214	            int newnamelen, fd;
+native-width-integer	libclamav/7z_iface.c	255	            for (j = 0; j < (size_t)newnamelen; j++) /* FIXME */
+native-width-integer	libclamav/7z_iface.c	272	                int allow_legacy = folderIndex == (UInt32)-1;
+native-width-integer	libclamav/7z_iface.c	278	                    size_t legacyOffset = 0;
+native-width-integer	libclamav/7z_iface.c	279	                    size_t legacySize   = 0;
 native-width-integer	libclamav/7z_iface.c	44	cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
 native-width-integer	libclamav/7z_iface.c	83	    int fd;
 native-width-integer	libclamav/7z_iface.c	86	static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 native-width-integer	libclamav/7z_iface.c	89	    size_t written = cli_writen(p->fd, data, size);
 native-width-integer	libclamav/7z_iface.c	92	     * pass cli_writen()'s (size_t)-1 sentinel to the 7-Zip CRC wrapper: it
 native-width-integer	libclamav/7z_iface.c	94	    return (written == (size_t)-1) ? 0 : written;
-native-width-integer	libclamav/7z_iface.c	97	static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
+native-width-integer	libclamav/7z_iface.c	97	static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_error_t *status)
 native-width-integer	libclamav/7z_iface.h	31	int cli_7unz(cli_ctx *, size_t);
 native-width-integer	libclamav/7z_iface.h	32	cl_error_t cli_7z_header_check(cli_ctx *, size_t);
 native-width-integer	libclamav/adc.c	268	int adc_decompressEnd(adc_stream *strm)
@@ -16493,8 +16494,8 @@ format-width	fuzz/clamav_dbload_fuzzer.cpp	96	    snprintf(tmp_file_name, sizeof
 format-width	fuzz/clamav_dbload_fuzzer.cpp	98	    snprintf(tmp_file_name, sizeof(tmp_file_name), "tmp.dbload.%d.hsb", pid);
 format-width	fuzz/clamav_scanfile_fuzzer.cpp	114	    snprintf(tmp_file_name, sizeof(tmp_file_name), "tmp.scanfile.%d", pid);
 format-width	libclamav/7z/XzDec.c	559	    printf("\nf[%d] = %2X: ", i, filter->id);
-format-width	libclamav/7z_iface.c	299	                cli_dbgmsg("cli_unz: extraction failed with %d\n", res);
-format-width	libclamav/7z_iface.c	352	        cli_dbgmsg("cli_7unz: error %d\n", res);
+format-width	libclamav/7z_iface.c	317	                cli_dbgmsg("cli_unz: extraction failed with %d\n", res);
+format-width	libclamav/7z_iface.c	366	        cli_dbgmsg("cli_7unz: error %d\n", res);
 format-width	libclamav/adc.c	130	                adc_dbgmsg("adc_decompress: GETTYPE bData %x state %u offset %u length %u\n",
 format-width	libclamav/adc.c	141	                adc_dbgmsg("adc_decompress: LONGOP2 bData %x state %u offset %u length %u\n",
 format-width	libclamav/adc.c	152	                adc_dbgmsg("adc_decompress: LONGOP1 bData %x state %u offset %u length %u\n",
@@ -19895,16 +19896,17 @@ offset-size-arithmetic	libclamav/7z/XzIn.c	57	    ADD_SIZE_CHECH(size, p->blocks
 offset-size-arithmetic	libclamav/7z/XzIn.c	66	    ADD_SIZE_CHECH(size, (p->blocks[i].totalSize + 3) & ~(UInt64)3);
 offset-size-arithmetic	libclamav/7z/XzIn.c	77	static SRes Xz_ReadIndex2(CXzStream *p, const Byte *buf, size_t size, ISzAlloc *alloc)
 offset-size-arithmetic	libclamav/7z/XzIn.c	85	  size -= 4;
-offset-size-arithmetic	libclamav/7z_iface.c	105	    read_sz = fmap_readn(p->file.fmap, buf, p->s.curpos, *size);
-offset-size-arithmetic	libclamav/7z_iface.c	106	    if (read_sz == (size_t)-1) {
-offset-size-arithmetic	libclamav/7z_iface.c	111	    p->s.curpos += read_sz;
-offset-size-arithmetic	libclamav/7z_iface.c	126	    map_length = (Int64)p->file.fmap->len;
-offset-size-arithmetic	libclamav/7z_iface.c	127	    if (map_length < 0 || p->s.curpos < 0 || (Int64)p->s.curpos > map_length)
-offset-size-arithmetic	libclamav/7z_iface.c	146	    if (*pos < -base || *pos > map_length - base)
-offset-size-arithmetic	libclamav/7z_iface.c	149	    *pos         = base + *pos;
-offset-size-arithmetic	libclamav/7z_iface.c	150	    p->s.curpos  = (off_t)*pos;
-offset-size-arithmetic	libclamav/7z_iface.c	222	                newnamelen = 0; /* no filename */
-offset-size-arithmetic	libclamav/7z_iface.c	228	                    utf16name = cli_max_malloc(newnamelen * 2);
+offset-size-arithmetic	libclamav/7z_iface.c	111	static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
+offset-size-arithmetic	libclamav/7z_iface.c	119	    read_sz = fmap_readn(p->file.fmap, buf, p->s.curpos, *size);
+offset-size-arithmetic	libclamav/7z_iface.c	120	    if (read_sz == (size_t)-1) {
+offset-size-arithmetic	libclamav/7z_iface.c	125	    p->s.curpos += read_sz;
+offset-size-arithmetic	libclamav/7z_iface.c	140	    map_length = (Int64)p->file.fmap->len;
+offset-size-arithmetic	libclamav/7z_iface.c	141	    if (map_length < 0 || p->s.curpos < 0 || (Int64)p->s.curpos > map_length)
+offset-size-arithmetic	libclamav/7z_iface.c	160	    if (*pos < -base || *pos > map_length - base)
+offset-size-arithmetic	libclamav/7z_iface.c	163	    *pos         = base + *pos;
+offset-size-arithmetic	libclamav/7z_iface.c	164	    p->s.curpos  = (off_t)*pos;
+offset-size-arithmetic	libclamav/7z_iface.c	237	                newnamelen = 0; /* no filename */
+offset-size-arithmetic	libclamav/7z_iface.c	243	                    utf16name = cli_max_malloc(newnamelen * 2);
 offset-size-arithmetic	libclamav/7z_iface.c	54	    if (offset > ctx->fmap->len || ctx->fmap->len - offset < k7zStartHeaderSize)
 offset-size-arithmetic	libclamav/7z_iface.c	57	    header = (const unsigned char *)fmap_need_off_once(ctx->fmap, offset, k7zStartHeaderSize);
 offset-size-arithmetic	libclamav/7z_iface.c	66	    next_header_offset = (uint64_t)cli_readint64(header + 12);
@@ -19916,7 +19918,6 @@ offset-size-arithmetic	libclamav/7z_iface.c	86	static size_t ClamFileOutStream_W
 offset-size-arithmetic	libclamav/7z_iface.c	89	    size_t written = cli_writen(p->fd, data, size);
 offset-size-arithmetic	libclamav/7z_iface.c	92	     * pass cli_writen()'s (size_t)-1 sentinel to the 7-Zip CRC wrapper: it
 offset-size-arithmetic	libclamav/7z_iface.c	94	    return (written == (size_t)-1) ? 0 : written;
-offset-size-arithmetic	libclamav/7z_iface.c	97	static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
 offset-size-arithmetic	libclamav/adc.c	120	                    strm->length = (bData & 0x7F) + 1;
 offset-size-arithmetic	libclamav/adc.c	124	                    strm->length = (bData & 0x3F) + 4;
 offset-size-arithmetic	libclamav/adc.c	127	                    strm->offset = (bData & 0x3) * 0x100;

@@ -489,6 +489,9 @@ described below.
 - ISO9660 now marks extracted-file temporary creation, nested-scan, close,
   cleanup, and directory-traversal allocation failures incomplete before they
   reach the containing-image result.
+- 7-Zip now marks member-name allocation, temporary-file creation/close/remove,
+  member metadata matching, and extracted-file scan failures incomplete while
+  preserving detection and other terminal results.
 - The POC harness now computes the signature per row, verifies size, status,
   signature, and engine-reported offset, aggregates failures, works with both
   GNU and BSD `time`, and is covered by executable positive/negative scanner
@@ -2508,6 +2511,15 @@ and extension failures are also sticky, so a recognized ISO cannot return a
 clean result after an extracted file or required traversal state was not fully
 processed. Source guards cover these paths; compiled Linux fault-injection and
 optical-image corpus execution remain release gates.
+
+## 7-Zip member failure propagation — 2026-08-19
+
+The 7-Zip scanner now marks member-name allocation and temporary-file creation,
+close, and cleanup failures incomplete. It also preserves non-virus failures
+from metadata matching and nested extracted-file scanning instead of continuing
+as though the member completed. Detection and application-abort precedence is
+retained; source guards cover the paths, while compiled Linux and broader
+encrypted/malformed 7-Zip corpus execution remain release gates.
 
 ## ZIP extraction operational failures — 2026-08-19
 
