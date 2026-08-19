@@ -922,6 +922,19 @@ sticky state, non-cacheability, and raw-byte count. This closes unsupported
 filter result propagation, not the remaining streaming-decoder and
 production-corpus qualification gates.
 
+## CryptFF staging completion — 2026-08-19
+
+The CryptFF temporary-decryption path previously accepted an incomplete
+header, treated a source-map read stop as ordinary EOF, checked only the
+`cli_writen()` error sentinel instead of the requested byte count, ignored
+descriptor-close failure, and overwrote a prior result when unlink failed.
+The path now validates the fixed header, distinguishes EOF from an early map
+read stop, requires `written == bread`, marks all staging/cleanup failures as
+sticky incomplete, and preserves detections or parser errors over cleanup
+status. A Linux static-wrapper regression covers write and close faults;
+compiled Linux/Sonic1, sanitizer, and real CryptFF corpus qualification remain
+open.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the

@@ -2717,6 +2717,17 @@ This is fail-visible unsupported-feature handling; it does not claim that
 these image/document filters have been converted to bounded streaming
 decoders or qualified on Linux/Sonic1.
 
+## CryptFF staging completion — 2026-08-19
+
+CryptFF decryption now requires the complete fixed header, detects source-map
+read gaps, requires every temporary-output write to complete, and checks the
+temporary descriptor close and removal. Allocation, staging, and cleanup
+failures mark the containing layer incomplete/non-cacheable; a cleanup error
+cannot replace a prior detection or parser failure with a misleading status.
+The Linux static-library wrapper adds focused write- and close-fault coverage.
+Compiled execution, sanitizer coverage, and real CryptFF/parser-family
+qualification remain release gates.
+
 ## Mail parser limit admission and ABI status reconciliation — 2026-08-19
 
 MIME recursion and file-count admission now set the shared sticky incomplete

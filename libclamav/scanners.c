@@ -3545,48 +3545,80 @@ static cl_error_t cli_scancryptff(cli_ctx *ctx)
     /* Skip the CryptFF file header */
     pos = 0x10;
 
+    if (ctx->fmap->len < pos) {
+        cli_mark_scan_incomplete(ctx, "CryptFF file header is truncated");
+        return CL_EPARSE;
+    }
+
     if ((dest = (unsigned char *)malloc(FILEBUFF)) == NULL) {
         cli_dbgmsg("CryptFF: Can't allocate memory\n");
+        cli_mark_scan_incomplete(ctx, "CryptFF decryption buffer could not be allocated");
         return CL_EMEM;
     }
 
     if (!(tempfile = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "cryptff"))) {
+        cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be created");
         free(dest);
         return CL_EMEM;
     }
 
     if ((ndesc = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
         cli_errmsg("CryptFF: Can't create file %s\n", tempfile);
+        cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be opened");
         free(dest);
         free(tempfile);
         return CL_ECREAT;
     }
 
-    for (; (src = fmap_need_off_once_len(ctx->fmap, pos, FILEBUFF, &bread)) && bread; pos += bread) {
+    while (pos < ctx->fmap->len) {
+        src = fmap_need_off_once_len(ctx->fmap, pos, FILEBUFF, &bread);
+        if (!src || !bread) {
+            cli_dbgmsg("CryptFF: Can't read source at offset %zu\n", pos);
+            cli_mark_scan_incomplete(ctx, "CryptFF source map ended before decryption completed");
+            ret = CL_EREAD;
+            break;
+        }
+
         for (i = 0; i < bread; i++)
             dest[i] = src[i] ^ (unsigned char)0xff;
-        if (cli_writen(ndesc, dest, bread) == (size_t)-1) {
+        if (cli_writen(ndesc, dest, bread) != bread) {
             cli_dbgmsg("CryptFF: Can't write to descriptor %d\n", ndesc);
-            free(dest);
-            close(ndesc);
-            free(tempfile);
-            return CL_EWRITE;
+            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be written completely");
+            ret = CL_EWRITE;
+            break;
         }
+
+        pos += bread;
     }
 
     free(dest);
+
+    if (ret != CL_SUCCESS) {
+        if (close(ndesc) != 0)
+            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be closed");
+        if (!ctx->engine->keeptmp && CL_SUCCESS != cli_unlink(tempfile))
+            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be removed");
+        free(tempfile);
+        return ret;
+    }
 
     cli_dbgmsg("CryptFF: Scanning decrypted data\n");
 
     ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
 
-    close(ndesc);
+    if (close(ndesc) != 0) {
+        cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be closed");
+        if (ret == CL_SUCCESS)
+            ret = CL_EWRITE;
+    }
 
     if (ctx->engine->keeptmp) {
         cli_dbgmsg("CryptFF: Decompressed data saved in %s\n", tempfile);
     } else {
         if (CL_SUCCESS != cli_unlink(tempfile)) {
-            ret = CL_EUNLINK;
+            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be removed");
+            if (ret == CL_SUCCESS)
+                ret = CL_EUNLINK;
         }
     }
 
