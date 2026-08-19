@@ -21,7 +21,7 @@
  */
 
 use std::{
-    ffi::{c_char, CString},
+    ffi::{c_char, CStr, CString},
     io::Read,
     panic,
     path::Path,
@@ -35,13 +35,14 @@ use log::{debug, error, warn};
 use crate::{
     alz::{Alz, AlzExtractionDecision, AlzExtractionLimits, Error as AlzError},
     ctx,
-    fmap::FMapReader,
+    fmap::{FMap, FMapReader},
     sys,
     onenote::OneNote,
     sys::{
         cl_error_t, cl_error_t_CL_EFORMAT, cl_error_t_CL_EMAXFILES, cl_error_t_CL_EMAXSIZE,
-        cl_error_t_CL_EMEM, cl_error_t_CL_EPARSE, cl_error_t_CL_ERROR, cl_error_t_CL_SUCCESS,
-        cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
+        cl_error_t_CL_EMEM, cl_error_t_CL_EPARSE, cl_error_t_CL_ERROR, cl_error_t_CL_ERESOURCE,
+        cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EWRITE,
+        cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
     },
     util::{
         append_potentially_unwanted_if_heur_exceedsmax, check_scan_limits, check_scan_time_limit,
@@ -110,6 +111,190 @@ pub unsafe fn magic_scan(ctx: *mut cli_ctx, buf: &[u8], name: Option<String>) ->
     ret
 }
 
+/// Disk-backed output used by Rust decoders. The reservation is held for the
+/// complete lifetime of the spool, including the child scan, so parser
+/// output and nested parser temporary files share the same budget.
+struct TempSpool {
+    ctx: *mut cli_ctx,
+    fd: libc::c_int,
+    path: CString,
+    reserved: u64,
+    written: u64,
+}
+
+impl TempSpool {
+    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
+        let status = sys::cli_scan_reserve_temporary(ctx, expected_size);
+        if status != cl_error_t_CL_SUCCESS {
+            return Err(status);
+        }
+
+        let mut raw_name = null_mut();
+        let mut fd = -1;
+        let status = sys::cli_gentempfd(
+            if (*ctx).this_layer_tmpdir.is_null() {
+                std::ptr::null()
+            } else {
+                (*ctx).this_layer_tmpdir
+            },
+            &mut raw_name,
+            &mut fd,
+        );
+        if status != cl_error_t_CL_SUCCESS || raw_name.is_null() || fd < 0 {
+            if fd >= 0 {
+                libc::close(fd);
+            }
+            if !raw_name.is_null() {
+                libc::free(raw_name.cast());
+            }
+            sys::cli_scan_release_temporary(ctx, expected_size);
+            return Err(if status == cl_error_t_CL_SUCCESS {
+                cl_error_t_CL_ETMPFILE
+            } else {
+                status
+            });
+        }
+
+        let path = CStr::from_ptr(raw_name).to_owned();
+        libc::free(raw_name.cast());
+        Ok(Self {
+            ctx,
+            fd,
+            path,
+            reserved: expected_size,
+            written: 0,
+        })
+    }
+
+    fn write_all(&mut self, bytes: &[u8]) -> Result<(), cl_error_t> {
+        let requested = u64::try_from(bytes.len()).map_err(|_| cl_error_t_CL_ERESOURCE)?;
+        if requested > self.reserved.saturating_sub(self.written) {
+            return Err(cl_error_t_CL_ERESOURCE);
+        }
+
+        let mut offset = 0usize;
+        while offset < bytes.len() {
+            let written = unsafe {
+                libc::write(
+                    self.fd,
+                    bytes[offset..].as_ptr().cast(),
+                    bytes.len() - offset,
+                )
+            };
+            if written <= 0 {
+                return Err(cl_error_t_CL_EWRITE);
+            }
+            offset = offset.saturating_add(written as usize);
+        }
+        self.written = self.written.saturating_add(requested);
+        Ok(())
+    }
+
+    unsafe fn scan(&mut self, name: Option<&str>) -> cl_error_t {
+        if libc::lseek(self.fd, 0, libc::SEEK_SET) < 0 {
+            return cl_error_t_CL_ESEEK;
+        }
+        let name = name.and_then(|value| CString::new(value).ok());
+        sys::cli_magic_scan_desc_type_reserved(
+            self.fd,
+            self.path.as_ptr(),
+            self.ctx,
+            0,
+            name.as_ref().map_or(std::ptr::null(), |value| value.as_ptr()),
+            0,
+        )
+    }
+}
+
+impl Drop for TempSpool {
+    fn drop(&mut self) {
+        unsafe {
+            libc::close(self.fd);
+            let _ = sys::cli_unlink(self.path.as_ptr());
+            sys::cli_scan_release_temporary(self.ctx, self.reserved);
+        }
+    }
+}
+
+/// Read-only view of a disk-backed parser input. The mapping is deliberately
+/// created only after the source has been copied through FMapReader and is
+/// released before the root temporary reservation is dropped.
+struct MappedInput {
+    address: *mut c_void,
+    length: usize,
+}
+
+impl MappedInput {
+    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
+        if length == 0 {
+            return Ok(Self {
+                address: null_mut(),
+                length: 0,
+            });
+        }
+
+        let address = libc::mmap(
+            null_mut(),
+            length,
+            libc::PROT_READ,
+            libc::MAP_PRIVATE,
+            fd,
+            0,
+        );
+        if address == libc::MAP_FAILED {
+            return Err(cl_error_t_CL_EMEM);
+        }
+
+        Ok(Self { address, length })
+    }
+
+    fn as_slice(&self) -> &[u8] {
+        if self.length == 0 {
+            return &[];
+        }
+
+        unsafe { std::slice::from_raw_parts(self.address.cast(), self.length) }
+    }
+}
+
+impl Drop for MappedInput {
+    fn drop(&mut self) {
+        if self.length != 0 {
+            unsafe {
+                libc::munmap(self.address, self.length);
+            }
+        }
+    }
+}
+
+/// Copy a source fmap through a bounded reader into a temporary file. This
+/// keeps the parser's large-input residency accounted and avoids asking the
+/// fmap layer to prefault the entire source in one operation.
+unsafe fn spool_fmap(ctx: *mut cli_ctx, fmap: &FMap) -> Result<TempSpool, cl_error_t> {
+    let expected_size = u64::try_from(fmap.len()).map_err(|_| cl_error_t_CL_ERESOURCE)?;
+    let mut spool = TempSpool::new(ctx, expected_size)?;
+    let mut reader = FMapReader::new(fmap);
+    let mut buffer = [0u8; 1024 * 1024];
+    let mut copied = 0u64;
+
+    loop {
+        let read = reader
+            .read(&mut buffer)
+            .map_err(|_| cl_error_t_CL_EREAD)?;
+        if read == 0 {
+            break;
+        }
+        spool.write_all(&buffer[..read])?;
+        copied = copied.saturating_add(read as u64);
+    }
+
+    if copied != expected_size {
+        return Err(cl_error_t_CL_EREAD);
+    }
+
+    Ok(spool)
+}
+
 /// Scan a OneNote file for attachments
 ///
 /// # Safety
@@ -124,26 +309,49 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
 
-    let file_bytes = match fmap.whole_input() {
-        Ok(bytes) => bytes,
-        Err(err) => return parser_input_failure(ctx, "OneNote", err),
+    let root_spool = match spool_fmap(ctx, &fmap) {
+        Ok(spool) => spool,
+        Err(status) => return parser_failure(ctx, "OneNote", status, "root temporary spool could not be populated"),
     };
 
-    let one = match OneNote::from_bytes(file_bytes, Path::new(fmap.name())) {
-        Ok(x) => x,
-        Err(err) => return parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
+    let mapped = match MappedInput::new(root_spool.fd, fmap.len()) {
+        Ok(mapped) => mapped,
+        Err(status) => return parser_failure(ctx, "OneNote", status, "root temporary spool mapping failed"),
     };
-
     let mut scan_result = cl_error_t_CL_SUCCESS;
 
-    one.into_iter().all(|attachment| {
+    let parse_result = OneNote::scan_bytes(mapped.as_slice(), Path::new(fmap.name()), |attachment| {
         debug!(
             "Extracted {}-byte attachment with name: {:?}",
             attachment.data.len(),
             attachment.name
         );
 
-        let ret = magic_scan(ctx, &attachment.data, attachment.name);
+        let expected_size = match u64::try_from(attachment.data.len()) {
+            Ok(size) => size,
+            Err(_) => {
+                scan_result = parser_failure(
+                    ctx,
+                    "OneNote",
+                    cl_error_t_CL_ERESOURCE,
+                    "attachment size does not fit the 64-bit accounting domain",
+                );
+                return false;
+            }
+        };
+        let mut attachment_spool = match TempSpool::new(ctx, expected_size) {
+            Ok(spool) => spool,
+            Err(status) => {
+                scan_result = parser_failure(ctx, "OneNote", status, "attachment temporary spool reservation failed");
+                return false;
+            }
+        };
+        if let Err(status) = attachment_spool.write_all(&attachment.data) {
+            scan_result = parser_failure(ctx, "OneNote", status, "attachment temporary spool write failed");
+            return false;
+        }
+
+        let ret = attachment_spool.scan(attachment.name.as_deref());
         if ret != cl_error_t_CL_SUCCESS {
             scan_result = ret;
             return false;
@@ -152,7 +360,14 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         true
     });
 
-    scan_result
+    if scan_result != cl_error_t_CL_SUCCESS {
+        return scan_result;
+    }
+
+    match parse_result {
+        Ok(()) => cl_error_t_CL_SUCCESS,
+        Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
+    }
 }
 
 /// Scan the contents of a LHA or LZH archive
@@ -245,50 +460,65 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
                         "member compression method is unsupported",
                     );
                 } else {
-                    // Read the file into a buffer.
-                    let mut file_data: Vec<u8> = Vec::<u8>::new();
-
-                    match decoder.read_to_end(&mut file_data) {
-                        Ok(bytes_read) => {
-                            if bytes_read > 0 {
-                                debug!(
-                                        "Read {bytes_read} bytes from file {filename} in the LHA archive."
-                                    );
-
-                                // Verify the CRC check *after* reading the file.
-                                match decoder.crc_check() {
-                                    Ok(crc) => {
-                                        // CRC is valid.  Very likely this is an LHA or LZH archive.
-                                        debug!("CRC check passed.  Very likely this is an LHA or LZH archive.  CRC: {crc}");
-                                    }
-                                    Err(err) => {
-                                        return parser_failure(
-                                            ctx,
-                                            "LHA/LZH",
-                                            cl_error_t_CL_EFORMAT,
-                                            format!("member CRC check failed: {err}"),
-                                        );
-                                    }
+                    let expected_size = header.original_size;
+                    let mut spool = match TempSpool::new(ctx, expected_size) {
+                        Ok(spool) => spool,
+                        Err(status) => return parser_failure(ctx, "LHA/LZH", status, "member spool reservation failed"),
+                    };
+                    let mut bytes_read = 0u64;
+                    let mut buffer = [0u8; 1024 * 1024];
+                    loop {
+                        match decoder.read(&mut buffer) {
+                            Ok(0) => break,
+                            Ok(read) => {
+                                if let Err(status) = spool.write_all(&buffer[..read]) {
+                                    return parser_failure(ctx, "LHA/LZH", status, "member output exceeded its declared size or could not be written");
                                 }
-
-                                // Scan the file.
-                                let ret = magic_scan(ctx, &file_data, Some(filename.to_string()));
-                                if ret != cl_error_t_CL_SUCCESS {
-                                    debug!("cl_scandesc_magic returned error: {}", ret);
-                                    return ret;
-                                }
-                            } else {
-                                debug!("Read zero-byte file.");
+                                bytes_read = bytes_read.saturating_add(read as u64);
+                            }
+                            Err(err) => {
+                                return parser_failure(
+                                    ctx,
+                                    "LHA/LZH",
+                                    cl_error_t_CL_EFORMAT,
+                                    format!("member read failed: {err}"),
+                                );
                             }
                         }
-                        Err(err) => {
-                            return parser_failure(
-                                ctx,
-                                "LHA/LZH",
-                                cl_error_t_CL_EFORMAT,
-                                format!("member read failed: {err}"),
-                            );
+                    }
+
+                    if bytes_read != expected_size {
+                        return parser_failure(
+                            ctx,
+                            "LHA/LZH",
+                            cl_error_t_CL_EFORMAT,
+                            format!("member decoder returned {bytes_read} bytes for a declared size of {expected_size} bytes"),
+                        );
+                    }
+
+                    if bytes_read > 0 {
+                        debug!("Read {bytes_read} bytes from file {filename} in the LHA archive.");
+
+                        // Verify the CRC check *after* reading the file.
+                        match decoder.crc_check() {
+                            Ok(crc) => debug!("CRC check passed for LHA/LZH member; CRC: {crc}"),
+                            Err(err) => {
+                                return parser_failure(
+                                    ctx,
+                                    "LHA/LZH",
+                                    cl_error_t_CL_EFORMAT,
+                                    format!("member CRC check failed: {err}"),
+                                );
+                            }
                         }
+
+                        let ret = spool.scan(Some(&filename));
+                        if ret != cl_error_t_CL_SUCCESS {
+                            debug!("spooled LHA member scan returned error: {}", ret);
+                            return ret;
+                        }
+                    } else {
+                        debug!("Read zero-byte file.");
                     }
                 }
             }
@@ -423,14 +653,19 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
 
-    let file_bytes = match fmap.whole_input() {
-        Ok(bytes) => bytes,
-        Err(err) => return parser_input_failure(ctx, "ALZ", err),
+    let root_spool = match spool_fmap(ctx, &fmap) {
+        Ok(spool) => spool,
+        Err(status) => return parser_failure(ctx, "ALZ", status, "root temporary spool could not be populated"),
+    };
+    let mapped = match MappedInput::new(root_spool.fd, fmap.len()) {
+        Ok(mapped) => mapped,
+        Err(status) => return parser_failure(ctx, "ALZ", status, "root temporary spool mapping failed"),
     };
 
     let mut alz_metadata_ret = cl_error_t_CL_SUCCESS;
+    let mut scan_result = cl_error_t_CL_SUCCESS;
     let alz_result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-        Alz::from_bytes_with_filter(file_bytes, |metadata| {
+        Alz::from_bytes_with_filter_stream(mapped.as_slice(), |metadata| {
             if alz_metadata_ret != cl_error_t_CL_SUCCESS {
                 return AlzExtractionDecision::Stop;
             }
@@ -482,6 +717,42 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             }
 
             AlzExtractionDecision::Extract(alz_extraction_limits(ctx))
+        }, &mut |attachment| {
+            if scan_result != cl_error_t_CL_SUCCESS {
+                return Err(AlzError::Stop);
+            }
+
+            let expected_size = match u64::try_from(attachment.data.len()) {
+                Ok(size) => size,
+                Err(_) => {
+                    scan_result = parser_failure(
+                        ctx,
+                        "ALZ",
+                        cl_error_t_CL_ERESOURCE,
+                        "attachment size does not fit the 64-bit accounting domain",
+                    );
+                    return Err(AlzError::Stop);
+                }
+            };
+            let mut attachment_spool = match TempSpool::new(ctx, expected_size) {
+                Ok(spool) => spool,
+                Err(status) => {
+                    scan_result = parser_failure(ctx, "ALZ", status, "attachment temporary spool reservation failed");
+                    return Err(AlzError::Stop);
+                }
+            };
+            if let Err(status) = attachment_spool.write_all(&attachment.data) {
+                scan_result = parser_failure(ctx, "ALZ", status, "attachment temporary spool write failed");
+                return Err(AlzError::Stop);
+            }
+
+            let ret = attachment_spool.scan(attachment.name.as_deref());
+            if ret != cl_error_t_CL_SUCCESS {
+                scan_result = ret;
+                return Err(AlzError::Stop);
+            }
+
+            Ok(())
         })
     }));
 
@@ -509,24 +780,12 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
 
-    if alz_metadata_ret != cl_error_t_CL_SUCCESS {
-        return alz_metadata_ret;
+    if scan_result != cl_error_t_CL_SUCCESS {
+        return scan_result;
     }
 
-    // The ALZ parser retains only the bounded prefix permitted by the file,
-    // total-size, and file-count budgets. Scan those already-bounded buffers
-    // before making the configured-limit state sticky so a prefix detection
-    // can retain precedence. If no detection wins, the limit is recorded
-    // below and the public scan remains explicitly non-clean.
-    for i in 0..alz.embedded_files.len() {
-        let ret = magic_scan(
-            ctx,
-            &alz.embedded_files[i].data,
-            alz.embedded_files[i].name.clone(),
-        );
-        if ret != cl_error_t_CL_SUCCESS {
-            return ret;
-        }
+    if alz_metadata_ret != cl_error_t_CL_SUCCESS {
+        return alz_metadata_ret;
     }
 
     if let Some(needed) = alz.file_limit_exceeded_size {

@@ -257,6 +257,7 @@ void help(void)
     mprintf(LOGG_INFO, "    --reload                           Request clamd to reload virus database\n");
     mprintf(LOGG_INFO, "    --fdpass                           Pass filedescriptor to clamd (useful if clamd is running as a different user)\n");
     mprintf(LOGG_INFO, "    --stream                           Force streaming files to clamd (for debugging and unit testing)\n");
+    mprintf(LOGG_INFO, "    --report-json=FILE                 Write one structured scan report JSON object per input file\n");
     mprintf(LOGG_INFO, "\n");
 
     exit(0);

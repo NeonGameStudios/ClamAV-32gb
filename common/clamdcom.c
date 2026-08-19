@@ -34,6 +34,7 @@
 #endif
 #include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifndef _WIN32
 #include <arpa/inet.h>
@@ -171,22 +172,21 @@ done:
 }
 
 #ifdef HAVE_FD_PASSING
-/* Issues a FILDES command and pass a FD to clamd
+/* Issues a FILDES-family command and pass a FD to clamd
  * Returns >0 on success, 0 soft fail, -1 hard fail */
-int send_fdpass_fd(int sockd, int fd)
+static int send_fdpass_fd_command(int sockd, int fd, const char *command)
 {
     struct iovec iov[1];
     struct msghdr msg;
     struct cmsghdr *cmsg;
     unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
     char dummy[] = "";
-    const char zFILDES[] = "zFILDES";
 
     if (fd < 0) {
         return 0;
     }
 
-    if (sendln(sockd, zFILDES, sizeof(zFILDES))) {
+    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
         return -1;
     }
 
@@ -207,6 +207,16 @@ int send_fdpass_fd(int sockd, int fd)
         return -1;
     }
     return 1;
+}
+
+int send_fdpass_fd(int sockd, int fd)
+{
+    return send_fdpass_fd_command(sockd, fd, "zFILDES");
+}
+
+int send_fdpass_fd_report(int sockd, int fd)
+{
+    return send_fdpass_fd_command(sockd, fd, "zFILDESREPORT");
 }
 
 /* Issues a FILDES command and pass a FD to clamd
@@ -231,16 +241,37 @@ int send_fdpass(int sockd, const char *filename)
     }
     return ret;
 }
+
+int send_fdpass_report(int sockd, const char *filename)
+{
+    int fd;
+    int ret;
+    int close_fd = 0;
+
+    if (filename) {
+        if ((fd = open(filename, O_RDONLY)) < 0) {
+            logg(LOGG_INFO, "%s: Failed to open file\n", filename);
+            return 0;
+        }
+        close_fd = 1;
+    } else
+        fd = 0;
+    ret = send_fdpass_fd_report(sockd, fd);
+    if (close_fd)
+        close(fd);
+    return ret;
+}
 #endif
 
-/* Issues an INSTREAM command to clamd and streams the given file
+/* Issues an INSTREAM-family command to clamd and streams the given file
  * Returns >0 on success, 0 soft fail, -1 hard fail */
-static int send_stream_fd_common(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts, bool reject_over_limit)
+static int send_stream_fd_common(int sockd, int fd, const char *display_filename,
+                                 struct optstruct *clamdopts, bool reject_over_limit,
+                                 const char *command)
 {
     uint32_t buf[BUFSIZ / sizeof(uint32_t)];
     int len;
     uint64_t todo = (uint64_t)optget(clamdopts, "StreamMaxLength")->numarg;
-    const char zINSTREAM[] = "zINSTREAM";
     STATBUF sb;
 
     if (fd < 0) {
@@ -257,7 +288,7 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
         return 0;
     }
 
-    if (sendln(sockd, zINSTREAM, sizeof(zINSTREAM))) {
+    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
         return -1;
     }
 
@@ -307,12 +338,17 @@ int send_stream_fd(int sockd, int fd, const char *display_filename, struct optst
      * terminator, and could therefore report a clean verdict for only a file
      * prefix.  Apply the same fail-closed accounting used by action streams to
      * every stream, including pipes/stdin where no size preflight is possible. */
-    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true);
+    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true, "zINSTREAM");
 }
 
 int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
 {
-    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true);
+    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true, "zINSTREAM");
+}
+
+int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
+{
+    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true, "zINSTREAMREPORT");
 }
 
 /* Issues an INSTREAM command to clamd and streams the given file
@@ -336,6 +372,26 @@ int send_stream(int sockd, const char *filename, struct optstruct *clamdopts)
     if (0 != fd) {
         close(fd);
     }
+    return ret;
+}
+
+int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts)
+{
+    int fd;
+    int ret;
+
+    if (filename) {
+        if ((fd = safe_open(filename, O_RDONLY | O_BINARY)) < 0) {
+            logg(LOGG_INFO, "%s: Failed to open file. ERROR\n", filename);
+            return 0;
+        }
+    } else {
+        fd = 0;
+    }
+
+    ret = send_stream_fd_report(sockd, fd, filename, clamdopts);
+    if (fd != 0)
+        close(fd);
     return ret;
 }
 
@@ -550,4 +606,200 @@ int dsresult(int sockd, int scantype, const char *filename, const action_source_
 
 done:
     return infected;
+}
+
+#define CLAMD_SCAN_REPORT_MAX_FRAME (16U * 1024U * 1024U)
+
+static int recv_full(int sockd, void *buffer, size_t length)
+{
+    unsigned char *cursor = (unsigned char *)buffer;
+
+    while (length) {
+        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
+        if (received <= 0)
+            return -1;
+        cursor += (size_t)received;
+        length -= (size_t)received;
+    }
+    return 0;
+}
+
+/* Read one length-prefixed structured report frame.  A zero-length frame is
+ * the protocol terminator and is returned as 0; a JSON frame is returned as
+ * 1.  The caller owns *json. */
+int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
+{
+    uint32_t network_length;
+    uint32_t length;
+    char *payload;
+
+    if (!json || !json_length || !terminator)
+        return -1;
+    *json       = NULL;
+    *json_length = 0;
+    *terminator = 0;
+
+    if (recv_full(sockd, &network_length, sizeof(network_length)) < 0)
+        return -1;
+    length = ntohl(network_length);
+    if (!length) {
+        *terminator = 1;
+        return 0;
+    }
+    if (length > CLAMD_SCAN_REPORT_MAX_FRAME)
+        return -1;
+
+    payload = (char *)malloc((size_t)length + 1U);
+    if (!payload)
+        return -1;
+    if (recv_full(sockd, payload, length) < 0) {
+        free(payload);
+        return -1;
+    }
+    payload[length] = '\0';
+    *json           = payload;
+    *json_length    = length;
+    return 1;
+}
+
+static int report_json_contains(const char *json, const char *compact, const char *spaced)
+{
+    return (strstr(json, compact) != NULL) || (strstr(json, spaced) != NULL);
+}
+
+int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+{
+    const char *verdict_infected = "\"verdict\":\"infected\"";
+    const char *verdict_clean    = "\"verdict\":\"clean\"";
+    const char *verdict_partial  = "\"verdict\":\"incomplete\"";
+    const char *completion_done  = "\"completion\":\"COMPLETE\"";
+
+    if (!json || !infected || !incomplete || json_length == 0)
+        return -1;
+    if (json[json_length] != '\0')
+        return -1;
+
+    if (report_json_contains(json, verdict_infected, "\"verdict\": \"infected\"")) {
+        *infected = 1;
+        *incomplete = 0;
+        return 0;
+    }
+    if (report_json_contains(json, verdict_partial, "\"verdict\": \"incomplete\"")) {
+        *infected = 0;
+        *incomplete = 1;
+        return 0;
+    }
+    if (report_json_contains(json, verdict_clean, "\"verdict\": \"clean\"") &&
+        report_json_contains(json, completion_done, "\"completion\": \"COMPLETE\"")) {
+        *infected = 0;
+        *incomplete = 0;
+        return 0;
+    }
+    return -1;
+}
+
+int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
+             int *errors, struct optstruct *clamdopts)
+{
+    int sent = 0;
+    int frame;
+    int terminated = 0;
+    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
+
+    if (!infected || !incomplete || !errors)
+        return -1;
+
+    switch (scantype) {
+        case CONT:
+            if (!filename)
+                return -1;
+            {
+                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
+                char *command = (char *)malloc(length);
+                if (!command)
+                    return -1;
+                snprintf(command, length, "zCONTSCANREPORT %s", filename);
+                sent = sendln(sockd, command, (unsigned int)length);
+                free(command);
+            }
+            break;
+        case MULTI:
+            if (!filename)
+                return -1;
+            {
+                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
+                char *command = (char *)malloc(length);
+                if (!command)
+                    return -1;
+                snprintf(command, length, "zMULTISCANREPORT %s", filename);
+                sent = sendln(sockd, command, (unsigned int)length);
+                free(command);
+            }
+            break;
+        case ALLMATCH:
+            if (!filename)
+                return -1;
+            {
+                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
+                char *command = (char *)malloc(length);
+                if (!command)
+                    return -1;
+                snprintf(command, length, "zALLMATCHSCANREPORT %s", filename);
+                sent = sendln(sockd, command, (unsigned int)length);
+                free(command);
+            }
+            break;
+        case STREAM:
+            sent = (NULL != action_source)
+                       ? send_stream_fd_report(sockd, action_source->scan_fd, display_filename, clamdopts)
+                       : send_stream_report(sockd, filename, clamdopts);
+            break;
+#ifdef HAVE_FD_PASSING
+        case FILDES:
+            sent = (NULL != action_source)
+                       ? send_fdpass_fd_report(sockd, action_source->scan_fd)
+                       : send_fdpass_report(sockd, filename);
+            break;
+#endif
+        default:
+            return -1;
+    }
+
+    if (sent <= 0)
+        return -1;
+
+    while (!terminated) {
+        char *json = NULL;
+        uint32_t json_length = 0;
+        int frame_infected = 0;
+        int frame_incomplete = 0;
+
+        frame = recv_scan_report_frame(sockd, &json, &json_length, &terminated);
+        if (frame < 0)
+            return -1;
+        if (terminated)
+            break;
+        if (scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete) < 0) {
+            free(json);
+            return -1;
+        }
+        if (report_stream &&
+            (fwrite(json, 1, json_length, report_stream) != json_length ||
+             fputc('\n', report_stream) == EOF)) {
+            free(json);
+            return -1;
+        }
+        if (frame_infected) {
+            (*infected)++;
+            if (apply_action && action && action_source)
+                action((action_source_t *)action_source);
+        } else if (frame_incomplete) {
+            (*incomplete)++;
+            (*errors)++;
+        }
+        free(json);
+    }
+
+    return 0;
 }

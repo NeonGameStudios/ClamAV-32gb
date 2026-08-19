@@ -705,7 +705,11 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
         logg(LOGG_DEBUG_NV, "got command %s (%u, %u), argument: %s\n",
              cmd, (unsigned)cmdlen, (unsigned)cmdtype, argument ? argument : "");
         if (cmdtype == COMMAND_FILDES || cmdtype == COMMAND_FILDESREPORT) {
-            if (buf->buffer + buf->off <= cmd + strlen("FILDES\n")) {
+            /* A FILDES-family command may arrive before its SCM_RIGHTS
+             * message. Wait for the byte following the command delimiter;
+             * use the parsed command length so FILDESREPORT follows the same
+             * ancillary-data protocol as legacy FILDES. */
+            if (buf->buffer + buf->off <= cmd + strlen(cmd) + 1) {
                 /* we need the extra byte from recvmsg */
                 conn->mode = MODE_WAITANCILL;
                 buf->mode  = MODE_WAITANCILL;

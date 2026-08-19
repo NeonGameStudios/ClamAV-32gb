@@ -99,6 +99,84 @@ const FILE_DATA_STORE_OBJECT: &[u8] = &hex!("e716e3bd65261145a4c48d4d0b7a9eac");
 const ONE_MAGIC: &[u8] = &hex!("e4525c7b8cd8a74daeb15378d02996d3");
 
 impl<'a> OneNote<'a> {
+    /// Parse a OneNote document while handing each extracted attachment to
+    /// the caller immediately. The modern parser still receives a borrowed
+    /// byte view, but it no longer accumulates every attachment in a Vec;
+    /// callers can spool each member under their own scan budget.
+    pub fn scan_bytes<F>(data: &'a [u8], filename: &Path, mut callback: F) -> Result<(), Error>
+    where
+        F: FnMut(ExtractedFile) -> bool,
+    {
+        fn parse_section_buffer<F>(
+            data: &[u8],
+            filename: &Path,
+            callback: &mut F,
+        ) -> Result<(), Error>
+        where
+            F: FnMut(ExtractedFile) -> bool,
+        {
+            let mut parser = onenote_parser::Parser::new();
+            let section = parser
+                .parse_section_buffer(data, filename)
+                .map_err(|_| Error::Parse)?;
+            'page_series: for page_series in section.page_series().iter() {
+                for page in page_series.pages().iter() {
+                    for page_content in page.contents().iter() {
+                        if let Some(page_outline) = page_content.outline() {
+                            for outline_item in page_outline.items().iter() {
+                                for &outline_element in outline_item.element().iter() {
+                                    for content in outline_element.contents().iter() {
+                                        if let Some(embedded_file) = content.embedded_file() {
+                                            let name = if embedded_file.filename().is_empty() {
+                                                None
+                                            } else {
+                                                Some(embedded_file.filename().to_string())
+                                            };
+                                            if !callback(ExtractedFile {
+                                                name,
+                                                data: embedded_file.data().to_vec(),
+                                            }) {
+                                                break 'page_series;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(())
+        }
+
+        let modern = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+            parse_section_buffer(data, filename, &mut callback)
+        }));
+
+        match modern {
+            Ok(Ok(())) => return Ok(()),
+            Ok(Err(_)) => {}
+            Err(_) => return Err(Error::OneNoteParserPanic),
+        }
+
+        let file_magic = data.get(0..16).ok_or(Error::Format)?;
+        if file_magic != ONE_MAGIC {
+            return Err(Error::Format);
+        }
+
+        let mut legacy = OneNote {
+            embedded_files: Vec::new(),
+            remaining_vec: None,
+            remaining: Some(data),
+        };
+        while let Some(file) = legacy.next_file() {
+            if !callback(file) {
+                break;
+            }
+        }
+        Ok(())
+    }
+
     /// Open a OneNote document given a slice bytes.
     pub fn from_bytes(data: &'a [u8], filename: &Path) -> Result<OneNote<'a>, Error> {
         debug!(

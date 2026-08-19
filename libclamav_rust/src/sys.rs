@@ -28,6 +28,10 @@ pub const cl_verdict_t_CL_VERDICT_STRONG_INDICATOR: cl_verdict_t = 2;
 pub const cl_verdict_t_CL_VERDICT_POTENTIALLY_UNWANTED: cl_verdict_t = 3;
 #[doc = " @brief Scan verdicts for cl_scanmap_ex(), cl_scanfile_ex(), and cl_scandesc_ex()."]
 pub type cl_verdict_t = ::std::os::raw::c_uint;
+#[repr(C)]
+pub struct cl_scan_report {
+    _unused: [u8; 0],
+}
 pub const cl_error_t_CL_CLEAN: cl_error_t = 0;
 pub const cl_error_t_CL_SUCCESS: cl_error_t = 0;
 pub const cl_error_t_CL_VIRUS: cl_error_t = 1;
@@ -70,8 +74,10 @@ pub const cl_error_t_CL_ESTATE: cl_error_t = 32;
 pub const cl_error_t_CL_VERIFIED: cl_error_t = 33;
 #[doc = " The scan target has been deemed trusted"]
 pub const cl_error_t_CL_ERROR: cl_error_t = 34;
+#[doc = " Admission or shared-resource limit failure."]
+pub const cl_error_t_CL_ERESOURCE: cl_error_t = 35;
 #[doc = " Unspecified / generic error"]
-pub const cl_error_t_CL_ELAST_ERROR: cl_error_t = 35;
+pub const cl_error_t_CL_ELAST_ERROR: cl_error_t = 36;
 #[doc = " @brief Return codes used by libclamav functions."]
 pub type cl_error_t = ::std::os::raw::c_uint;
 #[doc = " scan options"]
@@ -693,6 +699,11 @@ pub struct cli_ctx_tag {
     pub recursion_stack: *mut cli_scan_layer_t,
     pub recursion_stack_size: u32,
     pub recursion_level: u32,
+    pub matcher_work: u64,
+    pub contiguous_bytes: u64,
+    pub contiguous_peak: u64,
+    pub temporary_bytes: u64,
+    pub temporary_peak: u64,
     pub this_layer_evidence: evidence_t,
     pub fmap: *mut fmap_t,
     pub object_count: usize,
@@ -707,7 +718,9 @@ pub struct cli_ctx_tag {
     pub abort_scan: bool,
     pub scan_timed_out: bool,
     pub scan_incomplete: bool,
+    pub scan_incomplete_reason: *const ::std::os::raw::c_char,
     pub limit_exceeded_result: cl_error_t,
+    pub report: *mut cl_scan_report,
 }
 pub type cli_ctx = cli_ctx_tag;
 #[repr(C)]
@@ -841,6 +854,9 @@ pub struct cl_engine {
     pub maxhtmlnotags: u64,
     pub maxscriptnormalize: u64,
     pub maxziptypercg: u64,
+    pub maxmatcherwork: u64,
+    pub maxtemporarysize: u64,
+    pub maxcontiguoussize: u64,
     pub stats_data: *mut ::std::os::raw::c_void,
     pub cb_stats_add_sample: clcb_stats_add_sample,
     pub cb_stats_remove_sample: clcb_stats_remove_sample,
@@ -1289,6 +1305,30 @@ extern "C" {
         datalen: ::std::os::raw::c_uint,
         mode: ::std::os::raw::c_ushort,
     ) -> *mut ::std::os::raw::c_char;
+}
+extern "C" {
+    pub fn cli_magic_scan_desc_type_reserved(
+        desc: ::std::os::raw::c_int,
+        filepath: *const ::std::os::raw::c_char,
+        ctx: *mut cli_ctx,
+        type_: cli_file_t,
+        name: *const ::std::os::raw::c_char,
+        attributes: u32,
+    ) -> cl_error_t;
+}
+extern "C" {
+    pub fn cli_gentempfd(
+        dir: *const ::std::os::raw::c_char,
+        name: *mut *mut ::std::os::raw::c_char,
+        fd: *mut ::std::os::raw::c_int,
+    ) -> cl_error_t;
+}
+extern "C" {
+    pub fn cli_unlink(pathname: *const ::std::os::raw::c_char) -> cl_error_t;
+}
+extern "C" {
+    pub fn cli_scan_reserve_temporary(ctx: *mut cli_ctx, bytes: u64) -> cl_error_t;
+    pub fn cli_scan_release_temporary(ctx: *mut cli_ctx, bytes: u64);
 }
 extern "C" {
     #[doc = " @brief   Convenience wrapper for cli_magic_scan_nested_fmap_type().\n\n Creates an fmap and calls cli_magic_scan_nested_fmap_type() for you, with type CL_TYPE_ANY.\n\n @param buffer        Pointer to the buffer to be scanned.\n @param length        Size in bytes of the buffer being scanned.\n @param ctx           Scanning context structure.\n @param name          (optional) Original name of the file (to set fmap name metadata)\n @param attributes    Layer attributes of the file being scanned (is it normalized, decrypted, etc)\n @return int          CL_SUCCESS, or an error code."]

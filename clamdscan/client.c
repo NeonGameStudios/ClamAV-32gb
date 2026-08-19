@@ -311,7 +311,7 @@ static char *makeabs(const char *basepath)
 
 /* Recursively scans a path with the given scantype
  * Returns non zero for serious errors, zero otherwise */
-static int client_scan(const char *file, int scantype, int *infected, int *err, int maxlevel, int session, int flags)
+static int client_scan(const char *file, int scantype, int *infected, int *err, int maxlevel, int session, int flags, FILE *report_stream)
 {
     int ret;
     char *fullpath  = NULL;
@@ -322,9 +322,9 @@ static int client_scan(const char *file, int scantype, int *infected, int *err, 
     if (!fullpath)
         return 0;
     if (!session)
-        ret = serial_client_scan(fullpath, scantype, infected, err, maxlevel, flags);
+        ret = serial_client_scan(fullpath, scantype, infected, err, maxlevel, flags, report_stream);
     else
-        ret = parallel_client_scan(fullpath, scantype, infected, err, maxlevel, flags);
+        ret = parallel_client_scan(fullpath, scantype, infected, err, maxlevel, flags, report_stream);
     free(fullpath);
     return ret;
 }
@@ -396,6 +396,7 @@ int client(const struct optstruct *opts, int *infected, int *err)
     int remote, scantype, session = 0, errors = 0, scandash = 0, maxrec, flags = 0;
     int action_requested, client_side_multiscan = 0;
     const char *fname;
+    FILE *report_stream = NULL;
 
     if (optget(opts, "wait")->enabled) {
         int16_t ping_result = ping_clamd(opts);
@@ -454,20 +455,44 @@ int client(const struct optstruct *opts, int *infected, int *err)
 
     *infected = 0;
 
+    if (optget(opts, "report-json")->enabled) {
+        report_stream = fopen(optget(opts, "report-json")->strarg, "ab");
+        if (!report_stream) {
+            logg(LOGG_ERROR, "Can't open structured scan report %s: %s\n",
+                 optget(opts, "report-json")->strarg, strerror(errno));
+            return 2;
+        }
+    }
+
     if (scandash) {
         int sockd, ret;
         STATBUF sb;
         if (FSTAT(0, &sb) < 0) {
             logg(LOGG_INFO, "client.c: fstat failed for file name \"%s\", with %s\n",
                  opts->filename[0], strerror(errno));
+            if (report_stream)
+                fclose(report_stream);
             return 2;
         }
         if ((sb.st_mode & S_IFMT) != S_IFREG) scantype = STREAM;
-        if ((sockd = dconnect(clamdopts)) >= 0 &&
-            (ret = dsresult(sockd, scantype, NULL, NULL, false, &ret, NULL, clamdopts)) >= 0)
-            *infected = ret;
-        else
+        if ((sockd = dconnect(clamdopts)) >= 0) {
+            if (report_stream) {
+                int report_incomplete = 0;
+                int report_errors = 0;
+                ret = dsreport(sockd, scantype, NULL, NULL, false, report_stream,
+                               infected, &report_incomplete, &report_errors, clamdopts);
+                if (ret < 0)
+                    errors = 1;
+                else
+                    errors += report_errors;
+            } else if ((ret = dsresult(sockd, scantype, NULL, NULL, false, &ret, NULL, clamdopts)) >= 0) {
+                *infected = ret;
+            } else {
+                errors = 1;
+            }
+        } else {
             errors = 1;
+        }
         if (sockd >= 0) closesocket(sockd);
     } else if (opts->filename || optget(opts, "file-list")->enabled) {
         if (opts->filename && optget(opts, "file-list")->enabled)
@@ -478,7 +503,7 @@ int client(const struct optstruct *opts, int *infected, int *err)
                 logg(LOGG_ERROR, "Scanning from standard input requires \"-\" to be the only file argument\n");
                 continue;
             }
-            errors += client_scan(fname, scantype, infected, err, maxrec, session, flags);
+            errors += client_scan(fname, scantype, infected, err, maxrec, session, flags, report_stream);
             /* this may be too strict
             if(errors >= 10) {
                 logg(LOGG_ERROR, "Too many errors\n");
@@ -500,7 +525,9 @@ int client(const struct optstruct *opts, int *infected, int *err)
     }
 #endif
     else {
-        errors = client_scan("", scantype, infected, err, maxrec, session, flags);
+        errors = client_scan("", scantype, infected, err, maxrec, session, flags, report_stream);
     }
+    if (report_stream)
+        fclose(report_stream);
     return *infected ? 1 : (errors ? 2 : 0);
 }

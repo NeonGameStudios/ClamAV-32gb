@@ -241,7 +241,7 @@ impl AlzLocalFileHeader {
         }
     }
 
-    pub fn parse(&mut self, cursor: &mut std::io::Cursor<&Vec<u8>>) -> Result<(), Error> {
+    pub fn parse(&mut self, cursor: &mut std::io::Cursor<&[u8]>) -> Result<(), Error> {
         self.head.file_name_length = cursor
             .read_u16::<LittleEndian>()
             .map_err(|_| Error::Read("file_name_length"))?;
@@ -386,7 +386,7 @@ impl AlzLocalFileHeader {
     fn extract_file_deflate_reader<R: Read>(
         &mut self,
         decompressor: &mut R,
-        files: &mut Vec<ExtractedFile>,
+        sink: &mut impl ExtractSink,
         max_extracted_size: u64,
     ) -> Result<(), Error> {
         let mut out: Vec<u8> = Vec::<u8>::new();
@@ -401,7 +401,7 @@ impl AlzLocalFileHeader {
                         return Err(Error::Extract);
                     }
 
-                    self.push_file(out, files)?;
+                    self.push_file(out, sink)?;
                     return Err(Error::Extract);
                 }
             };
@@ -412,12 +412,12 @@ impl AlzLocalFileHeader {
             if let Some(needed) =
                 self.append_output(&mut out, &buffer[..len], max_extracted_size)?
             {
-                self.push_file(out, files)?;
+                self.push_file(out, sink)?;
                 return Err(Error::ScanLimitExceeded(needed));
             }
         }
 
-        self.push_file(out, files)
+        self.push_file(out, sink)
     }
 
     /*
@@ -425,8 +425,8 @@ impl AlzLocalFileHeader {
      */
     fn extract_file_deflate(
         &mut self,
-        cursor: &std::io::Cursor<&Vec<u8>>,
-        files: &mut Vec<ExtractedFile>,
+        cursor: &std::io::Cursor<&[u8]>,
+        sink: &mut impl ExtractSink,
         max_extracted_size: u64,
     ) -> Result<(), Error> {
         let start: usize =
@@ -440,7 +440,7 @@ impl AlzLocalFileHeader {
             .ok_or(Error::Extract)?;
 
         let mut decompressor = DeflateDecoder::new(data);
-        self.extract_file_deflate_reader(&mut decompressor, files, max_extracted_size)
+        self.extract_file_deflate_reader(&mut decompressor, sink, max_extracted_size)
     }
 
     fn append_output(
@@ -471,11 +471,12 @@ impl AlzLocalFileHeader {
         Ok(None)
     }
 
-    fn push_file(&mut self, data: Vec<u8>, files: &mut Vec<ExtractedFile>) -> Result<(), Error> {
+    fn push_file(&mut self, data: Vec<u8>, sink: &mut impl ExtractSink) -> Result<(), Error> {
         if data.is_empty() {
             return Ok(());
         }
 
+        let data_size = u64::try_from(data.len()).map_err(|_| Error::Extract)?;
         let mut name = String::new();
         name.try_reserve(self.file_name.len())
             .map_err(|_| Error::Alloc)?;
@@ -486,25 +487,29 @@ impl AlzLocalFileHeader {
             data,
         };
 
-        files.try_reserve(1).map_err(|_| Error::Alloc)?;
-        files.push(extracted_file);
+        sink.emit(extracted_file)?;
+
+        if data_size > MIN_SCANNED_FILE_SIZE as u64 {
+            self.scan_counted_files = self.scan_counted_files.saturating_add(1);
+        }
+        self.extracted_size = self.extracted_size.saturating_add(data_size);
 
         Ok(())
     }
 
-    fn write_file(&mut self, buffer: &[u8], files: &mut Vec<ExtractedFile>) -> Result<(), Error> {
+    fn write_file(&mut self, buffer: &[u8], sink: &mut impl ExtractSink) -> Result<(), Error> {
         let mut data: Vec<u8> = Vec::new();
         data.try_reserve_exact(buffer.len())
             .map_err(|_| Error::Alloc)?;
         data.extend_from_slice(buffer);
 
-        self.push_file(data, files)
+        self.push_file(data, sink)
     }
 
     fn extract_file_nocomp(
         &mut self,
-        cursor: &std::io::Cursor<&Vec<u8>>,
-        files: &mut Vec<ExtractedFile>,
+        cursor: &std::io::Cursor<&[u8]>,
+        sink: &mut impl ExtractSink,
         max_extracted_size: u64,
     ) -> Result<(), Error> {
         let idx0: usize =
@@ -528,17 +533,17 @@ impl AlzLocalFileHeader {
             let copy_len = usize::try_from(max_extracted_size)
                 .unwrap_or(usize::MAX)
                 .min(contents.len());
-            self.write_file(&contents[..copy_len], files)?;
+            self.write_file(&contents[..copy_len], sink)?;
             return Err(Error::ScanLimitExceeded(contents_len));
         }
 
-        self.write_file(contents, files)
+        self.write_file(contents, sink)
     }
 
     fn extract_file_bzip2(
         &mut self,
-        cursor: &std::io::Cursor<&Vec<u8>>,
-        files: &mut Vec<ExtractedFile>,
+        cursor: &std::io::Cursor<&[u8]>,
+        sink: &mut impl ExtractSink,
         max_extracted_size: u64,
     ) -> Result<(), Error> {
         let idx0: usize =
@@ -564,7 +569,7 @@ impl AlzLocalFileHeader {
                         return Err(Error::Extract);
                     }
 
-                    self.push_file(out, files)?;
+                    self.push_file(out, sink)?;
                     return Err(Error::Extract);
                 }
             };
@@ -575,7 +580,7 @@ impl AlzLocalFileHeader {
             if let Some(needed) =
                 self.append_output(&mut out, &buffer[..len], max_extracted_size)?
             {
-                self.push_file(out, files)?;
+                self.push_file(out, sink)?;
                 return Err(Error::ScanLimitExceeded(needed));
             }
         }
@@ -588,21 +593,42 @@ impl AlzLocalFileHeader {
             }
         }
 
-        self.push_file(out, files)
+        self.push_file(out, sink)
     }
 
     fn extract_file(
         &mut self,
-        cursor: &mut std::io::Cursor<&Vec<u8>>,
-        files: &mut Vec<ExtractedFile>,
+        cursor: &mut std::io::Cursor<&[u8]>,
+        sink: &mut impl ExtractSink,
         max_extracted_size: u64,
     ) -> Result<(), Error> {
         match self.compression_method {
-            ALZ_COMP_NOCOMP => self.extract_file_nocomp(cursor, files, max_extracted_size),
-            ALZ_COMP_BZIP2 => self.extract_file_bzip2(cursor, files, max_extracted_size),
-            ALZ_COMP_DEFLATE => self.extract_file_deflate(cursor, files, max_extracted_size),
+            ALZ_COMP_NOCOMP => self.extract_file_nocomp(cursor, sink, max_extracted_size),
+            ALZ_COMP_BZIP2 => self.extract_file_bzip2(cursor, sink, max_extracted_size),
+            ALZ_COMP_DEFLATE => self.extract_file_deflate(cursor, sink, max_extracted_size),
             _ => Err(Error::Extract),
         }
+    }
+}
+
+trait ExtractSink {
+    fn emit(&mut self, file: ExtractedFile) -> Result<(), Error>;
+}
+
+impl ExtractSink for Vec<ExtractedFile> {
+    fn emit(&mut self, file: ExtractedFile) -> Result<(), Error> {
+        self.try_reserve(1).map_err(|_| Error::Alloc)?;
+        self.push(file);
+        Ok(())
+    }
+}
+
+impl<F> ExtractSink for F
+where
+    F: FnMut(ExtractedFile) -> Result<(), Error>,
+{
+    fn emit(&mut self, file: ExtractedFile) -> Result<(), Error> {
+        self(file)
     }
 }
 
@@ -610,12 +636,6 @@ impl AlzLocalFileHeader {
 pub struct ExtractedFile {
     pub name: Option<String>,
     pub data: Vec<u8>,
-}
-
-impl ExtractedFile {
-    const fn counts_toward_scan_limits(&self) -> bool {
-        self.data.len() > MIN_SCANNED_FILE_SIZE
-    }
 }
 
 pub struct AlzFileMetadata<'a> {
@@ -654,7 +674,7 @@ pub struct Alz {
 impl<'aa> Alz {
     /* Check for the ALZ file header. */
     #[allow(clippy::unused_self)]
-    fn is_alz(&self, cursor: &mut std::io::Cursor<&Vec<u8>>) -> bool {
+    fn is_alz(&self, cursor: &mut std::io::Cursor<&[u8]>) -> bool {
         cursor
             .read_u32::<LittleEndian>()
             .map_or(false, |n| ALZ_FILE_HEADER == n)
@@ -662,9 +682,10 @@ impl<'aa> Alz {
 
     fn parse_local_fileheader<F>(
         &mut self,
-        cursor: &mut std::io::Cursor<&Vec<u8>>,
+        cursor: &mut std::io::Cursor<&[u8]>,
         filepos: &mut usize,
         should_extract: &mut F,
+        sink: &mut impl ExtractSink,
     ) -> Result<(), Error>
     where
         F: FnMut(&AlzFileMetadata<'_>) -> AlzExtractionDecision,
@@ -715,8 +736,6 @@ impl<'aa> Alz {
             let base_extracted_size = self.extracted_size;
             let max_total_remaining = limits.max_total_size.saturating_sub(base_extracted_size);
             let max_extracted_size = limits.max_file_size.min(max_total_remaining);
-            let files_start = self.embedded_files.len();
-
             if self.scan_counted_files >= limits.max_files_remaining
                 && !local_fileheader.is_known_scan_limit_exempt()
             {
@@ -769,7 +788,7 @@ impl<'aa> Alz {
 
             match local_fileheader.extract_file(
                 cursor,
-                &mut self.embedded_files,
+                sink,
                 max_extracted_size,
             ) {
                 Ok(()) => {}
@@ -800,24 +819,11 @@ impl<'aa> Alz {
                         "Failed to extract ALZ file {:?}. Continuing with next entry.",
                         local_fileheader.file_name
                     );
+                    self.parse_error = true;
                 }
                 Err(err) => return Err(err),
             }
 
-            for file in &self.embedded_files[files_start..] {
-                if !file.counts_toward_scan_limits() {
-                    continue;
-                }
-
-                self.scan_counted_files = self.scan_counted_files.saturating_add(1);
-
-                let Ok(file_size) = u64::try_from(file.data.len()) else {
-                    self.extracted_size = u64::MAX;
-                    break;
-                };
-
-                self.extracted_size = self.extracted_size.saturating_add(file_size);
-            }
         } else if !local_fileheader.has_valid_compressed_data_bounds() {
             return Err(Error::Parse("Invalid compressed data length"));
         }
@@ -826,7 +832,7 @@ impl<'aa> Alz {
     }
 
     #[allow(clippy::unused_self)]
-    fn parse_central_directoryheader(&self, cursor: &mut std::io::Cursor<&Vec<u8>>) -> bool {
+    fn parse_central_directoryheader(&self, cursor: &mut std::io::Cursor<&[u8]>) -> bool {
         /*
          * This is ignored in unalz (UnAlz.cpp ReadCentralDirectoryStructure).
          *
@@ -872,8 +878,38 @@ impl<'aa> Alz {
     where
         F: FnMut(&AlzFileMetadata<'_>) -> AlzExtractionDecision,
     {
-        let binding = bytes.to_vec();
-        let mut cursor = Cursor::new(&binding);
+        let mut embedded_files = Vec::new();
+        let mut alz = Self::parse_with_sink(bytes, &mut should_extract, &mut embedded_files)?;
+        alz.embedded_files = embedded_files;
+        Ok(alz)
+    }
+
+    /// Parse an ALZ archive while delivering each extracted member to the
+    /// caller immediately. The sink may stop traversal with `Error::Stop`;
+    /// the caller can use that to preserve a scan result without retaining
+    /// already-processed members.
+    pub fn from_bytes_with_filter_stream<F, S>(
+        bytes: &'aa [u8],
+        mut should_extract: F,
+        sink: &mut S,
+    ) -> Result<Self, Error>
+    where
+        F: FnMut(&AlzFileMetadata<'_>) -> AlzExtractionDecision,
+        S: FnMut(ExtractedFile) -> Result<(), Error>,
+    {
+        Self::parse_with_sink(bytes, &mut should_extract, sink)
+    }
+
+    fn parse_with_sink<F, S>(
+        bytes: &'aa [u8],
+        should_extract: &mut F,
+        sink: &mut S,
+    ) -> Result<Self, Error>
+    where
+        F: FnMut(&AlzFileMetadata<'_>) -> AlzExtractionDecision,
+        S: ExtractSink,
+    {
+        let mut cursor = Cursor::new(bytes);
 
         let mut alz: Self = Self::new();
         let mut filepos: usize = 1;
@@ -895,8 +931,7 @@ impl<'aa> Alz {
 
             match sig {
                 ALZ_LOCAL_FILE_HEADER => {
-                    match alz.parse_local_fileheader(&mut cursor, &mut filepos, &mut should_extract)
-                    {
+                    match alz.parse_local_fileheader(&mut cursor, &mut filepos, should_extract, sink) {
                         Ok(()) => {}
                         Err(Error::Stop) => break,
                         Err(Error::Alloc) => return Err(Error::Alloc),

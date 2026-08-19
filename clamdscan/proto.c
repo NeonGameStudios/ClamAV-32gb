@@ -37,6 +37,7 @@
 #endif
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -189,6 +190,7 @@ struct client_serial_data {
     int errors;
     int flags;
     int maxlevel;
+    FILE *report_stream;
 };
 
 /* FTW callback for scanning in non IDSESSION mode
@@ -270,6 +272,31 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
         c->errors++;
         goto done;
     }
+    if (c->report_stream) {
+        int report_infected = 0;
+        int report_incomplete = 0;
+
+        ret = dsreport(sockd, c->scantype, f, have_action_source ? &action_source : NULL,
+                       have_action_source, c->report_stream, &report_infected,
+                       &report_incomplete, &c->errors, clamdopts);
+        if (ret < 0) {
+            c->errors++;
+            c->printok = 0;
+            status = CL_BREAK;
+            goto done;
+        }
+        c->infected += report_infected;
+        if (report_infected || report_incomplete)
+            c->printok = 0;
+        if (report_infected)
+            logg(LOGG_INFO, "%s: FOUND\n", f);
+        else if (report_incomplete)
+            logg(LOGG_INFO, "%s: INCOMPLETE\n", f);
+        closesocket(sockd);
+        status = CL_SUCCESS;
+        goto done;
+    }
+
     ret = dsresult(sockd, c->scantype, f, have_action_source ? &action_source : NULL, have_action_source, &c->printok, &c->errors, clamdopts);
     closesocket(sockd);
     if (ret < 0) {
@@ -296,7 +323,7 @@ done:
 
 /* Non-IDSESSION handler
  * Returns non zero for serious errors, zero otherwise */
-int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags)
+int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream)
 {
     struct cli_ftw_cbdata data;
     struct client_serial_data cdata;
@@ -309,6 +336,7 @@ int serial_client_scan(char *file, int scantype, int *infected, int *err, int ma
     cdata.scantype = scantype;
     cdata.flags    = flags;
     cdata.maxlevel = maxlevel ? maxlevel : INT_MAX;
+    cdata.report_stream = report_stream;
     client_walk_policy_init(&cdata.walk_policy, file);
     data.data      = &cdata;
 
@@ -338,6 +366,7 @@ struct client_parallel_data {
     int sockd;
     int lastid;
     int printok;
+    FILE *report_stream;
     struct SCANID {
         unsigned int id;
         const char *file;
@@ -347,6 +376,90 @@ struct client_parallel_data {
     unsigned int action_sources;
     unsigned int max_action_sources;
 };
+
+static int report_json_id(const char *json, uint32_t length, unsigned int *id)
+{
+    const char *field;
+    char *end = NULL;
+    unsigned long value;
+
+    if (!json || !id || length == 0)
+        return -1;
+    field = strstr(json, "\"id\":");
+    if (!field)
+        field = strstr(json, "\"id\": ");
+    if (!field)
+        return -1;
+    field = strchr(field, ':');
+    if (!field)
+        return -1;
+    value = strtoul(field + 1, &end, 10);
+    if (end == field + 1 || value > UINT_MAX)
+        return -1;
+    *id = (unsigned int)value;
+    return 0;
+}
+
+static int dspreport(struct client_parallel_data *c)
+{
+    char *json = NULL;
+    uint32_t json_length = 0;
+    int terminator = 0;
+    int frame_infected = 0;
+    int frame_incomplete = 0;
+    unsigned int rid;
+    struct SCANID **id;
+    const char *filename;
+    action_source_t *action_source;
+
+    if (recv_scan_report_frame(c->sockd, &json, &json_length, &terminator) < 0 || terminator)
+        return 1;
+    if (report_json_id(json, json_length, &rid) < 0 ||
+        scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete) < 0) {
+        free(json);
+        return 1;
+    }
+    id = &c->ids;
+    while (*id && (*id)->id != rid)
+        id = &(*id)->next;
+    if (!*id) {
+        free(json);
+        return 1;
+    }
+    filename = (*id)->file;
+    action_source = (*id)->action_source;
+    if (c->report_stream &&
+        (fwrite(json, 1, json_length, c->report_stream) != json_length ||
+         fputc('\n', c->report_stream) == EOF)) {
+        free(json);
+        return 1;
+    }
+    if (frame_infected) {
+        c->infected++;
+        c->printok = 0;
+        logg(LOGG_INFO, "%s: FOUND\n", filename);
+        if (action && action_source)
+            action(action_source);
+    } else if (frame_incomplete) {
+        c->errors++;
+        c->printok = 0;
+        logg(LOGG_INFO, "%s: INCOMPLETE\n", filename);
+    }
+    free(json);
+    free((void *)filename);
+    if (action_source) {
+        action_source_close(action_source);
+        free(action_source);
+        if (c->action_sources > 0)
+            c->action_sources--;
+    }
+    {
+        struct SCANID *completed = *id;
+        *id = completed->next;
+        free(completed);
+    }
+    return 0;
+}
 
 /* Sends a proper scan request to clamd and parses its replies
  * This is used only in IDSESSION mode
@@ -360,6 +473,9 @@ static int dspresult(struct client_parallel_data *c)
     int len;
     struct SCANID **id = NULL;
     struct RCVLN rcv;
+
+    if (c->report_stream)
+        return dspreport(c);
 
     recvlninit(&rcv, c->sockd);
     do {
@@ -542,11 +658,17 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     switch (c->scantype) {
 #ifdef HAVE_FD_PASSING
         case FILDES:
-            res = (NULL != action_source) ? send_fdpass_fd(c->sockd, action_source->scan_fd) : send_fdpass(c->sockd, scan_path);
+            if (c->report_stream)
+                res = (NULL != action_source) ? send_fdpass_fd_report(c->sockd, action_source->scan_fd) : send_fdpass_report(c->sockd, scan_path);
+            else
+                res = (NULL != action_source) ? send_fdpass_fd(c->sockd, action_source->scan_fd) : send_fdpass(c->sockd, scan_path);
             break;
 #endif
         case STREAM:
-            res = (NULL != action_source) ? send_stream_fd_action(c->sockd, action_source->scan_fd, action_source->display_path, clamdopts) : send_stream(c->sockd, scan_path, clamdopts);
+            if (c->report_stream)
+                res = (NULL != action_source) ? send_stream_fd_report(c->sockd, action_source->scan_fd, action_source->display_path, clamdopts) : send_stream_report(c->sockd, scan_path, clamdopts);
+            else
+                res = (NULL != action_source) ? send_stream_fd_action(c->sockd, action_source->scan_fd, action_source->display_path, clamdopts) : send_stream(c->sockd, scan_path, clamdopts);
             break;
     }
     if (res <= 0) {
@@ -594,7 +716,7 @@ done:
 
 /* IDSESSION handler
  * Returns non zero for serious errors, zero otherwise */
-int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags)
+int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream)
 {
     struct cli_ftw_cbdata data;
     struct client_parallel_data cdata;
@@ -617,6 +739,7 @@ int parallel_client_scan(char *file, int scantype, int *infected, int *err, int 
     cdata.lastid             = 0;
     cdata.ids                = NULL;
     cdata.printok            = printinfected ^ 1;
+    cdata.report_stream      = report_stream;
     cdata.action_sources     = 0;
     cdata.max_action_sources = get_max_action_sources();
     client_walk_policy_init(&cdata.walk_policy, file);

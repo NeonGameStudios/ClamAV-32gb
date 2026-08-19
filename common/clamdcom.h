@@ -27,6 +27,8 @@
 #endif
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdint.h>
 
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -65,10 +67,19 @@ int chkpath(const char *path, struct optstruct *clamdopts);
 #ifdef HAVE_FD_PASSING
 int send_fdpass_fd(int sockd, int fd);
 int send_fdpass(int sockd, const char *filename);
+int send_fdpass_fd_report(int sockd, int fd);
+int send_fdpass_report(int sockd, const char *filename);
 #endif
 int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
 int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
 int send_stream(int sockd, const char *filename, struct optstruct *clamdopts);
+int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
+int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts);
 int dconnect(struct optstruct *clamdopts);
 int dsresult(int sockd, int scantype, const char *filename, const struct action_source *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts);
+int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
+             int *errors, struct optstruct *clamdopts);
+int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
+int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
 #endif

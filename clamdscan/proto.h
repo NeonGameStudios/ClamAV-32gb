@@ -21,8 +21,9 @@
 
 #ifndef PROTO_H
 #define PROTO_H
+#include <stdio.h>
 #include "misc.h"
 
-int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags);
-int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags);
+int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream);
+int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream);
 #endif

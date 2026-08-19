@@ -6115,8 +6115,9 @@ early_ret:
     return status;
 }
 
-cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
-                                    const char *name, uint32_t attributes)
+static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
+                                                    const char *name, uint32_t attributes,
+                                                    bool temporary_already_reserved)
 {
     STATBUF sb;
     cl_error_t status = CL_SUCCESS;
@@ -6140,10 +6141,12 @@ cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx
         goto done;
     }
 
-    status = cli_scan_reserve_temporary(ctx, (uint64_t)sb.st_size);
-    if (status != CL_SUCCESS)
-        goto done;
-    temporary_reserved = true;
+    if (!temporary_already_reserved) {
+        status = cli_scan_reserve_temporary(ctx, (uint64_t)sb.st_size);
+        if (status != CL_SUCCESS)
+            goto done;
+        temporary_reserved = true;
+    }
 
     perf_start(ctx, PERFT_MAP);
     new_map = fmap_new(desc, 0, sb.st_size, name, filepath);
@@ -6172,6 +6175,18 @@ done:
     }
 
     return status;
+}
+
+cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
+                                    const char *name, uint32_t attributes)
+{
+    return cli_magic_scan_desc_type_internal(desc, filepath, ctx, type, name, attributes, false);
+}
+
+cl_error_t cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
+                                             const char *name, uint32_t attributes)
+{
+    return cli_magic_scan_desc_type_internal(desc, filepath, ctx, type, name, attributes, true);
 }
 
 cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)

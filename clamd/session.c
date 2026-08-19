@@ -230,7 +230,7 @@ static const char *scan_report_completion(cl_error_t status, int infected)
  * one JSON object, then a zero-length terminator frame. */
 int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int infected)
 {
-    char json[256];
+    char json[320];
     uint32_t length;
     uint32_t network_length;
     uint32_t terminator = 0;
@@ -242,8 +242,8 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
         return -1;
 
     json_length = snprintf(json, sizeof(json),
-                           "{\"version\":1,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
-                           (int)status, verdict, scan_report_completion(status, infected));
+                           "{\"version\":1,\"id\":%u,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
+                           conn->id, (int)status, verdict, scan_report_completion(status, infected));
     if (json_length < 0 || (size_t)json_length >= sizeof(json))
         return -1;
 

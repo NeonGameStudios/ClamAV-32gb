@@ -43,6 +43,17 @@ cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx
                                     const char *name, uint32_t attributes);
 
 /**
+ * @brief Scan a descriptor whose temporary-space reservation is owned by the caller.
+ *
+ * The caller must reserve the complete output size with
+ * cli_scan_reserve_temporary() before writing the descriptor and must keep
+ * that reservation until this function returns. This is used by streaming
+ * decoder adapters that spool output incrementally.
+ */
+cl_error_t cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
+                                             const char *name, uint32_t attributes);
+
+/**
  * @brief Scan a tempfile / sub-file of _any_ type, passing in the fd, filepath (if available), and the scanning context.
  *
  * @param desc          File descriptor
