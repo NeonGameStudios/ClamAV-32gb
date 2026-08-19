@@ -753,3 +753,13 @@ This closes the prior “FOUND/arbitrary exit code” acceptance weakness, but i
 does not provide the missing authorized production database or workload. The
 service qualification therefore remains intentionally blocked until the user
 supplies those inputs and their expected outcomes.
+
+## Rust whole-input admission correction — 2026-08-18
+
+The parser audit found that ALZ and OneNote still require a borrowed complete
+root slice even though extracted members are now spooled and scanned under the
+shared temporary budget. Their entry points now reject roots above the
+documented 256 MiB whole-input parser cap before staging or `mmap`, mark the
+scan incomplete, and leave the ordinary raw matcher path available. This is a
+fail-visible resource boundary, not a claim of deep ALZ/OneNote support through
+32 GiB; conversion to a genuinely bounded reader API remains open work.

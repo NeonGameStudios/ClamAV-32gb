@@ -39,6 +39,12 @@ fail-visible parser error. The 50 GiB input remained fail-visible as
 not deep-parser qualification; the detailed timings and diagnostics are in
 the Sonic1 report.
 
+ALZ and OneNote currently have an explicit 256 MiB whole-input parser cap.
+Inputs above that cap are rejected before parser staging/mapping with an
+incomplete result while the raw matcher path remains available. Their member
+spools are quota-accounted, but these parsers are not yet qualified as
+streaming-deep-parser implementations through 32 GiB.
+
 Local macOS validation has begun with a native host-preflight and runtime gate;
 its first result is documented in
 [`largefile-macos-20260818.md`](largefile-macos-20260818.md). The current
