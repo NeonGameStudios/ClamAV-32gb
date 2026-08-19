@@ -71,6 +71,7 @@ typedef struct fileblob {
 } fileblob;
 
 fileblob *fileblobCreate(void);
+/* Returns CL_CLEAN/CL_VIRUS for completed scans and preserves scan errors. */
 int fileblobScanAndDestroy(fileblob *fb);
 void fileblobDestructiveDestroy(fileblob *fb);
 void fileblobDestroy(fileblob *fb);

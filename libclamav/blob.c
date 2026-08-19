@@ -497,21 +497,32 @@ fileblobReserveExistingTemporary(fileblob *fb)
 }
 
 /*
- * Returns CL_CLEAN or CL_VIRUS. Destroys the fileblob and removes the file
- * if possible
+ * Returns CL_CLEAN or CL_VIRUS for completed scans, and preserves any
+ * operational/parser error returned by fileblobScan(). Destroys the fileblob
+ * and removes the file if possible.
  */
 int fileblobScanAndDestroy(fileblob *fb)
 {
-    switch (fileblobScan(fb)) {
+    cl_error_t rc;
+
+    if (fb == NULL)
+        return CL_ENULLARG;
+
+    rc = fileblobScan(fb);
+    switch (rc) {
         case CL_VIRUS:
             fileblobDestructiveDestroy(fb);
             return CL_VIRUS;
         case CL_BREAK:
             fileblobDestructiveDestroy(fb);
             return CL_CLEAN;
-        default:
+        case CL_CLEAN:
             fileblobDestroy(fb);
             return CL_CLEAN;
+        default:
+            fileblobMarkIncomplete(fb, "fileblob scan did not complete");
+            fileblobDestroy(fb);
+            return rc;
     }
 }
 

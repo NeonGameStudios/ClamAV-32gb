@@ -854,6 +854,29 @@ START_TEST(test_fileblob_temporary_spool_accounting)
 }
 END_TEST
 
+START_TEST(test_fileblob_scan_errors_are_fail_visible)
+{
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    fileblob *fb;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = engine;
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetCTX(fb, &ctx);
+    fb->isIncomplete = 1;
+    ck_assert_int_eq(fileblobScanAndDestroy(fb), CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_parser_gate_limits_reject_above_32g)
 {
     struct cl_engine *engine = cl_engine_new();
@@ -8673,6 +8696,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
+    tcase_add_test(tc_cl, test_fileblob_scan_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
     tcase_add_test(tc_cl, test_engine_set_num_rejects_narrowing_and_negative_values);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);

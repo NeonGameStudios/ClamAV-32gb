@@ -1555,3 +1555,11 @@ otherwise leave a required decoded-header view incomplete while allowing the
 mail parser to continue without a fail-visible report. The focused source
 guard and materialization-limit unit regression are registered; compiled
 execution remains a Linux/Sonic1 qualification gate.
+
+The shared fileblob destruction helper now preserves non-detection errors from
+the authoritative descriptor scan and marks the owning context incomplete for
+unclassified failures. Previously its default branch returned `CL_CLEAN` for
+resource, I/O, and parser errors, allowing callers that only checked for
+`CL_VIRUS` to continue as if the required attachment scan had completed. A
+focused incomplete-fileblob regression and source guard are registered;
+compiled execution remains a Linux/Sonic1 qualification gate.

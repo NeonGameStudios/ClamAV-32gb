@@ -2339,3 +2339,11 @@ ignores `messageAddStr()` failure or returns a partially decoded header after
 `messageToBlob()` rejects an incomplete materialization. This keeps a required
 mail-parser view from being treated as complete merely because raw header
 matching continued.
+
+## Fileblob scan error preservation — 2026-08-19
+
+`fileblobScanAndDestroy()` now preserves operational and parser errors from
+`fileblobScan()` instead of translating every non-detection into `CL_CLEAN`.
+It also marks the owning scan incomplete for an otherwise-unclassified scan
+failure. This closes a generic false-clean path for disk-backed MIME
+attachments and other parser-generated temporary files.
