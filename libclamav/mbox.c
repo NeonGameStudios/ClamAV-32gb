@@ -4119,6 +4119,7 @@ rfc1341(mbox_ctx *mctx, message *m)
             for (n = 1; n <= t; n++) {
                 char filename[NAME_MAX + 1];
                 struct dirent *dent;
+                bool found_part = false;
 
                 snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
 
@@ -4126,6 +4127,8 @@ rfc1341(mbox_ctx *mctx, message *m)
                     FILE *fin;
                     char buffer[BUFSIZ], fullname[PATH_MAX + 1 + 256 + 1];
                     int nblanks;
+                    int fin_error;
+                    int fin_close_error;
                     STATBUF statb;
                     const char *dentry_idpart;
                     int test_fd;
@@ -4170,6 +4173,7 @@ rfc1341(mbox_ctx *mctx, message *m)
                         continue;
                     }
 
+                    found_part = true;
                     fin = fopen(fullname, "rb");
                     if (fin == NULL) {
                         cli_errmsg("Can't open '%s' for reading", fullname);
@@ -4205,7 +4209,17 @@ rfc1341(mbox_ctx *mctx, message *m)
                                 return -1;
                             }
                         }
-                    fclose(fin);
+                    fin_error       = ferror(fin);
+                    fin_close_error = fclose(fin);
+                    if (fin_error || fin_close_error != 0) {
+                        cli_unlink(outname);
+                        free(md5_hex);
+                        free(id);
+                        free(number);
+                        closedir(dd);
+                        fclose(fout);
+                        return -1;
+                    }
 
                     /* don't unlink if leave temps */
                     if (!m->ctx->engine->keeptmp) {
@@ -4221,10 +4235,34 @@ rfc1341(mbox_ctx *mctx, message *m)
                     }
                     break;
                 }
+                if (!found_part) {
+                    cli_mark_scan_incomplete(mctx->ctx,
+                                             "Partial MIME message is missing a numbered fragment");
+                    fclose(fout);
+                    cli_unlink(outname);
+                    free(md5_hex);
+                    free(id);
+                    free(number);
+                    closedir(dd);
+                    return -1;
+                }
                 rewinddir(dd);
             }
             closedir(dd);
-            fclose(fout);
+            {
+                int output_error = fflush(fout);
+                if (fclose(fout) != 0)
+                    output_error = 1;
+                if (output_error) {
+                    cli_mark_scan_incomplete(mctx->ctx,
+                                             "Reassembled partial MIME message could not be closed completely");
+                    cli_unlink(outname);
+                    free(md5_hex);
+                    free(id);
+                    free(number);
+                    return -1;
+                }
+            }
         }
     }
     free(number);

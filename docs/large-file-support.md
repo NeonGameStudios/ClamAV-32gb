@@ -2677,3 +2677,17 @@ result or cache entry.
 The focused source guards cover each failure reason and the fail-incomplete
 XML-parser flag. A compiled MHTML regression, sanitizer run, and supported
 Linux/Sonic1 parser-family qualification remain release gates.
+
+## RFC 1341 partial-message reassembly — 2026-08-19
+
+RFC 1341 `message/partial` reassembly now requires every numbered fragment
+from 1 through `total` to be present. A missing fragment previously produced a
+partial output file and a successful helper return, allowing the caller to
+continue as if the message were complete. Fragment reads now check both read
+and close errors, and the completed output checks flush/close failure before it
+can be consumed. Any failure returns an error so the existing caller marks
+the scan incomplete and keeps the partial output out of the scan/cache path.
+
+The focused unit fixture supplies only fragment two and asserts a non-clean
+result. Compiled Linux execution, sanitizer coverage, and broader partial-mail
+corpus qualification remain release gates.

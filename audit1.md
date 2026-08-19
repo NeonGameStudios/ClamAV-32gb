@@ -889,6 +889,18 @@ This is source-backed fail-closed coverage. A compiled MHTML regression,
 sanitizer run, and supported Linux/Sonic1 parser-family qualification remain
 open release gates.
 
+## RFC 1341 partial-message reassembly — 2026-08-19
+
+The RFC 1341 reassembler previously returned success after writing whichever
+fragments it found; the loop did not require each numbered part to exist.
+That could produce a clean result from a truncated reconstructed message.
+The reassembler now requires every part, checks fragment read/close errors,
+and validates final output flush/close. Missing or unreadable parts return an
+error, so the existing caller sets the sticky incomplete state and does not
+scan/cache a partial reconstruction as complete. A focused unit fixture covers
+the missing-fragment case; compiled Linux, sanitizer, and broader partial-mail
+qualification remain open.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the
