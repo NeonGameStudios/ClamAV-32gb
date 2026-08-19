@@ -1295,15 +1295,18 @@ or waive them.
   configured-limit crossings are incomplete/non-clean rather than a scan of a
   partial prefix. Other format-specific boundaries still require dedicated
   adversarial and large-payload fixtures before an upstream support claim.
-- Contiguous metadata/decompression remains intentionally capped: DMG XML at
-  64 MiB, NSIS contiguous input and EGG decoder buffers at the 1 GiB
-  allocation ceiling. Crossing these limits is fail-visible; it is not full
-  deep-parser support through 32 GiB.
-- DMG blkx Base64 is prevalidated for its complete alphabet, quartet, padding,
-  and suffix grammar while allowing XML whitespace and split text/CDATA.
-  Stripe tables require exactly one zero-length final `END` record. Focused
-  valid and malformed fixtures guard both rules, and the complete configured
-  CTest suite passes with these checks enabled.
+- Contiguous metadata/decompression remains intentionally capped: one decoded
+  DMG `blkx` metadata block at 64 MiB, NSIS contiguous input, and EGG decoder
+  buffers at the 1 GiB allocation ceiling. The DMG XML resource fork itself is
+  consumed through bounded SAX input and quota-accounted Base64 spools.
+  Crossing a per-format limit is fail-visible; it is not full deep-parser
+  qualification through 32 GiB.
+- DMG blkx Base64 is decoded incrementally across XML callback boundaries into
+  a quota-accounted spool. The completed block is retained only within the
+  per-block 64 MiB cap, then its complete alphabet, quartet, padding, suffix,
+  stripe geometry, and terminal `END` record are validated. Focused valid and
+  malformed fixtures guard these rules; full DMG corpus and supported-build
+  qualification remain release gates.
 - BM offset mode now carries 64-bit runtime coordinates, but its bounded
   32-bit scan-window API still needs dedicated fixtures. PCRE full-map matching
   remains separately capped by the platform-aware `PCREMaxFileSize` policy.
@@ -2049,3 +2052,19 @@ resource-limit, and nested-scan failures remain fail-visible.
 
 This removes the specific XDP whole-text-node/64 MiB gate. XDP format corpus,
 memory, sanitizer, and supported-build Sonic1 qualification remain open.
+
+## DMG bounded XML streaming — 2026-08-19
+
+DMG resource-fork XML is now parsed through a bounded SAX reader over an fmap
+range. `<data>` Base64 text is decoded across XML callback boundaries into a
+temporary spool charged against `MaxTemporarySize`; the parser retains only
+one completed `mish` metadata block at a time within the 64 MiB per-block
+decoded cap. Reconstructed partitions reserve their expected temporary output
+while the nested scan runs, and optional retained XML copies use bounded,
+quota-accounted writes. Malformed XML/Base64, temporary admission, write,
+decoder, and nested-scan failures remain fail-visible.
+
+This removes the former root-XML 64 MiB gate and whole-text-node allocation.
+Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
+qualification remain release gates; multi-segment DMGs remain explicit
+unsupported input.

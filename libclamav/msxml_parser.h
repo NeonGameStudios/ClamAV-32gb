@@ -77,11 +77,14 @@ struct key_entry {
 };
 
 typedef cl_error_t (*msxml_scan_cb)(int fd, const char *filepath, cli_ctx *ctx, int num_attribs, struct attrib_entry *attribs, void *cbdata);
+typedef cl_error_t (*msxml_decoded_cb)(int fd, const char *filepath, cli_ctx *ctx, void *cbdata);
 typedef cl_error_t (*msxml_comment_cb)(const char *comment, cli_ctx *ctx, void *wrkjobj, void *cbdata);
 
 struct msxml_ctx {
     msxml_scan_cb scan_cb;
     void *scan_data;
+    msxml_decoded_cb decoded_cb;
+    uint64_t decoded_max_size;
     msxml_comment_cb comment_cb;
     void *comment_data;
     struct msxml_ictx *ictx;

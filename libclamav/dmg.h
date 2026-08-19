@@ -44,7 +44,8 @@
 /* So far, this has been constant */
 #define DMG_SECTOR_SIZE 512
 
-/* Maximum DMG XML metadata accepted by the bounded deep parser. */
+/* Maximum decoded metadata accepted for one DMG blkx mish block. The XML
+ * resource fork itself is streamed and is not subject to this allocation cap. */
 #define DMG_XML_PARSE_MAX_SIZE (64ULL * 1024ULL * 1024ULL)
 
 #ifndef HAVE_ATTRIB_PACKED

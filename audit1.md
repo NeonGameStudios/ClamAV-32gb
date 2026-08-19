@@ -850,3 +850,20 @@ and nested-scan failures remain sticky incomplete results.
 
 This closes the specific XDP whole-text-node/64 MiB gate. XDP corpus,
 memory/sanitizer, and supported-build Sonic1 qualification remain open.
+
+## DMG bounded XML streaming — 2026-08-19
+
+The DMG parser no longer rejects an XML resource fork merely because the root
+metadata exceeds 64 MiB, and it no longer assembles a complete `<data>` text
+node or Base64 string in heap memory. The XML range is exposed as a duplicate
+fmap and consumed by the bounded SAX reader; each Base64 value is decoded into
+a temporary spool charged against the shared temporary quota. A completed
+spool is retained only as one decoded `mish` metadata block, with the existing
+64 MiB per-block cap, strict terminal `END` validation, and fail-visible
+malformed/unsupported handling. Reconstructed partitions remain quota-charged
+while their nested scans run, and retained XML copies use bounded writes.
+
+This closes the specific DMG root-XML and whole-text-node materialization gap.
+Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
+qualification remain release gates; multi-segment DMGs remain explicit
+unsupported input.

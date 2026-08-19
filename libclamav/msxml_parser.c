@@ -819,6 +819,12 @@ static cl_error_t msxml_stream_decode_base64(struct msxml_stream_state *state, s
         }
 
         produced = frame->b64_quartet[2] == '=' ? 1 : (frame->b64_quartet[3] == '=' ? 2 : 3);
+        if (state->mxctx->decoded_max_size != 0 &&
+            (frame->b64_bytes > state->mxctx->decoded_max_size ||
+             (uint64_t)produced > state->mxctx->decoded_max_size - frame->b64_bytes)) {
+            msxml_stream_fail(state, CL_EPARSE, "MSXML decoded stream exceeded its parser-family output limit");
+            return CL_EPARSE;
+        }
         output[0] = (unsigned char)((a << 2) | (b >> 4));
         if (produced > 1)
             output[1] = (unsigned char)((b << 4) | (c >> 2));
@@ -881,7 +887,10 @@ static cl_error_t msxml_stream_finish_frame(struct msxml_stream_state *state, st
         if (frame->b64_saw_data) {
             cli_scan_release_temporary(state->ctx, frame->b64_reserved);
             frame->b64_reserved = 0;
-            ret = cli_magic_scan_desc(frame->b64_fd, frame->b64_name, state->ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            if (state->mxctx->decoded_cb)
+                ret = state->mxctx->decoded_cb(frame->b64_fd, frame->b64_name, state->ctx, state->mxctx->scan_data);
+            else
+                ret = cli_magic_scan_desc(frame->b64_fd, frame->b64_name, state->ctx, NULL, LAYER_ATTRIBUTES_NONE);
             if (ret != CL_SUCCESS)
                 return ret;
         }

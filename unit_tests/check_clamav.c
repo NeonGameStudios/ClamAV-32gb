@@ -6940,48 +6940,6 @@ static const void *dmg_test_sparse_need(fmap_t *map, size_t at, size_t length, i
     return state->trailer + (at - trailer_offset);
 }
 
-START_TEST(test_dmg_xml_limit_is_fail_visible_without_materializing_payload)
-{
-    struct dmg_test_sparse_map state;
-    struct cl_engine engine;
-    struct cl_scan_options options;
-    cli_scan_layer_t layer;
-    cli_ctx ctx;
-    fmap_t map;
-    cl_error_t ret;
-
-    memset(&state, 0, sizeof(state));
-    memset(&engine, 0, sizeof(engine));
-    memset(&options, 0, sizeof(options));
-    memset(&layer, 0, sizeof(layer));
-    memset(&ctx, 0, sizeof(ctx));
-    memset(&map, 0, sizeof(map));
-    state.logical_length = (size_t)DMG_XML_PARSE_MAX_SIZE + sizeof(struct dmg_koly_block) + 1U;
-    dmg_test_write_be32(state.trailer + offsetof(struct dmg_koly_block, magic), 0x6b6f6c79U);
-    dmg_test_write_be64(state.trailer + offsetof(struct dmg_koly_block, xmlOffset), 0);
-    dmg_test_write_be64(state.trailer + offsetof(struct dmg_koly_block, xmlLength), DMG_XML_PARSE_MAX_SIZE + 1U);
-
-    map.handle               = &state;
-    map.len                  = state.logical_length;
-    map.real_len             = map.len;
-    map.need                 = dmg_test_sparse_need;
-    ctx.engine               = &engine;
-    ctx.options              = &options;
-    ctx.fmap                 = &map;
-    ctx.this_layer_tmpdir    = tmpdir;
-    ctx.recursion_stack      = &layer;
-    ctx.recursion_stack_size = 1;
-    layer.type               = CL_TYPE_DMG;
-    layer.size               = map.len;
-    layer.fmap               = &map;
-
-    /* The range fails closed before libxml2 or any payload allocation. */
-    ret = cli_scandmg(&ctx);
-    ck_assert_msg(ret == CL_EPARSE, "oversized DMG XML returned %d", ret);
-    ck_assert(ctx.scan_incomplete);
-    ck_assert(map.dont_cache_flag);
-}
-END_TEST
 
 #ifndef _WIN32
 struct nested_copy_pread_state {
@@ -8327,7 +8285,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg, test_dmg_malformed_metadata_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_invalid_trailer_is_fail_visible);
-    tcase_add_test(tc_dmg, test_dmg_xml_limit_is_fail_visible_without_materializing_payload);
     tcase_add_test(tc_cl, test_cl_free);
     tcase_add_test(tc_cl, test_cl_build);
     tcase_add_test(tc_cl, test_cl_debug);

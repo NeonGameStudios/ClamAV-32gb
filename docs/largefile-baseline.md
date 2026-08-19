@@ -20,10 +20,10 @@ dedicated 64 GiB Ubuntu x86-64 host.
 
 - `docs/large-file-support.md`: specification, memory budget, workstreams, and
   acceptance criteria.
-- `docs/largefile-inventory.tsv`: regenerated inventory of 29,639 classified
+- `docs/largefile-inventory.tsv`: regenerated inventory of 29,591 classified
   source entries. A source line may appear in more than one classification;
   the current snapshot has SHA-256
-  `e2655d59f53cf86e69b588694056a3d743c8191f0ed43b84a444ea966989f488`.
+  `4b6e35ef023ea9d4e6a53c86278400efe0aa2d7fa7d80f091eb316537324dbba`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.
@@ -41,11 +41,11 @@ The inventory currently reports:
 
 | Classification | Sites |
 |---|---:|
-| Native-width integer | 10,212 |
-| Offset/size arithmetic | 11,310 |
-| Fixed-width integer | 5,216 |
-| Format-width specifier | 2,422 |
-| Boundary constant | 218 |
+| Native-width integer | 10,189 |
+| Offset/size arithmetic | 11,292 |
+| Fixed-width integer | 5,219 |
+| Format-width specifier | 2,413 |
+| Boundary constant | 217 |
 | Quantity parser | 103 |
 | Narrowing cast | 61 |
 | Large-file option | 97 |
@@ -136,9 +136,9 @@ The remaining 32-bit-limited runtime paths addressed in this slice are:
   remain fixed-width; the legacy in-memory VBA matcher still returns
   `CL_EFORMAT` for an unrepresentable buffer.
 - XAR TOC dimensions, UDF allocation offsets, HFS+ block-to-byte conversions,
-  and DMG fork/stripe coordinates use checked native-width arithmetic.
-  XAR and DMG compressed input is streamed; their legacy metadata parsers have
-  explicit 64 MiB fail-visible caps.
+  and DMG fork/stripe coordinates use checked native-width arithmetic. XAR and
+  DMG compressed input is streamed; DMG retains only an explicit 64 MiB
+  fail-visible cap for one decoded `blkx` metadata block, not the XML root.
 - Embedded PE analysis now checks its 32-bit executable metadata offset and
   marks embedded objects above 4 GiB incomplete instead of truncating the
   offset or allowing a clean result.
