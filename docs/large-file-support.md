@@ -2578,3 +2578,13 @@ parser regression covers `MaxScanSize`, `MaxFileSize`, `StreamMaxLength`,
 `OnAccessMaxFileSize`, `MaxHTMLNormalize`, and `PCREMaxFileSize`. Socket-level
 INSTREAM/FILDES tests at 4 GiB and 32 GiB, sanitizer coverage, and Sonic1
 execution remain release gates.
+
+## Structured clamd report framing — 2026-08-19
+
+The structured report reader now retries interrupted socket reads instead of
+turning an ordinary signal interruption into a transport failure during a
+long-running scan. Focused coverage exercises fragmented length/payload
+delivery, the zero-length terminator, and rejection of frames above the 16 MiB
+transport bound. This protects report integrity without changing the legacy
+clamd response protocol; compiled Linux/Sonic1 protocol-scale execution and
+sanitizer coverage remain release gates.

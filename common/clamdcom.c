@@ -614,6 +614,8 @@ static int recv_full(int sockd, void *buffer, size_t length)
 
     while (length) {
         int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
+        if (received < 0 && errno == EINTR)
+            continue;
         if (received <= 0)
             return -1;
         cursor += (size_t)received;

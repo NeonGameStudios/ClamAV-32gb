@@ -1712,3 +1712,12 @@ survive generic parsing and be deferred to a later engine setter. The focused
 clamd parser regression covers `MaxScanSize`, `MaxFileSize`, `StreamMaxLength`,
 `OnAccessMaxFileSize`, `MaxHTMLNormalize`, and `PCREMaxFileSize`; compiled
 Linux/Sonic1 protocol-scale tests at 4 GiB and 32 GiB remain open.
+
+## Structured clamd report framing — 2026-08-19
+
+The structured report transport now retries `EINTR`-interrupted socket reads,
+which is required for a report to remain readable when a long-running large
+file scan overlaps an ordinary process signal. A focused socketpair regression
+covers fragmented header/payload delivery, the zero-length terminator, and the
+16 MiB frame ceiling. This is protocol-boundary evidence only; compiled Linux,
+Sonic1, sanitizer, and 4 GiB/32 GiB service integration remain release gates.

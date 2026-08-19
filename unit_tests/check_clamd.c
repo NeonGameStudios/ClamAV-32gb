@@ -198,6 +198,62 @@ START_TEST(test_scan_report_json_alert_extracts_detection_name)
 }
 END_TEST
 
+#ifndef _WIN32
+START_TEST(test_scan_report_frames_are_bounded_and_fragment_safe)
+{
+    static const char payload[] =
+        "{\"version\":1,\"status\":0,\"verdict\":0,\"completion\":\"COMPLETE\"}";
+    int pair[2];
+    uint32_t network_length;
+    uint32_t json_length = 0;
+    char *json = NULL;
+    int terminator = 0;
+    int frame;
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, pair), 0);
+    network_length = htonl((uint32_t)strlen(payload));
+    ck_assert_int_eq(send(pair[0], &network_length, 1, 0), 1);
+    ck_assert_int_eq(send(pair[0], ((const char *)&network_length) + 1, sizeof(network_length) - 1, 0),
+                     (ssize_t)(sizeof(network_length) - 1));
+    ck_assert_int_eq(send(pair[0], payload, strlen(payload)), (ssize_t)strlen(payload));
+    frame = recv_scan_report_frame(pair[1], &json, &json_length, &terminator);
+    ck_assert_int_eq(frame, 1);
+    ck_assert_int_eq(terminator, 0);
+    ck_assert_int_eq(json_length, (uint32_t)strlen(payload));
+    ck_assert_str_eq(json, payload);
+    free(json);
+    close(pair[0]);
+    close(pair[1]);
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, pair), 0);
+    network_length = 0;
+    ck_assert_int_eq(send(pair[0], &network_length, sizeof(network_length), 0),
+                     (ssize_t)sizeof(network_length));
+    json = NULL;
+    json_length = 0;
+    terminator = 0;
+    frame = recv_scan_report_frame(pair[1], &json, &json_length, &terminator);
+    ck_assert_int_eq(frame, 0);
+    ck_assert_int_eq(terminator, 1);
+    ck_assert_ptr_null(json);
+    close(pair[0]);
+    close(pair[1]);
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, pair), 0);
+    network_length = htonl(CLAMD_SCAN_REPORT_MAX_FRAME + 1U);
+    ck_assert_int_eq(send(pair[0], &network_length, sizeof(network_length), 0),
+                     (ssize_t)sizeof(network_length));
+    json = NULL;
+    json_length = 0;
+    terminator = 0;
+    ck_assert_int_eq(recv_scan_report_frame(pair[1], &json, &json_length, &terminator), -1);
+    ck_assert_ptr_null(json);
+    close(pair[0]);
+    close(pair[1]);
+}
+END_TEST
+#endif
+
 START_TEST(test_large_file_size_parser_ceiling)
 {
     static const char *const names[] = {"MaxFileSize", "StreamMaxLength", "OnAccessMaxFileSize"};
@@ -1120,6 +1176,9 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
     tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
+#ifndef _WIN32
+    tcase_add_test(tc_parser, test_scan_report_frames_are_bounded_and_fragment_safe);
+#endif
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
     tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
