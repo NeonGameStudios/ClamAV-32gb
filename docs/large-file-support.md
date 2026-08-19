@@ -2017,6 +2017,17 @@ Decoded output and stored-member paths still use the legacy contiguous
 allocation ceiling, so AutoIt is not yet a 32 GiB deep-parser qualification;
 allocation failures are explicit non-clean results and remain a release gate.
 
+## Legacy PE unpacker contiguous admission — 2026-08-19
+
+Recognized legacy PE unpackers now pass their requested working size through a
+shared admission check before allocating a contiguous buffer. Requests above
+the global 1 GiB individual-allocation ceiling return `CL_ERESOURCE`, mark the
+scan incomplete/non-cacheable, and do not begin partial unpacking. Temporary
+file creation/open failures and recognized unpacker failures are likewise
+sticky non-clean results. This is an explicit unsupported boundary for legacy
+PE unpackers, not a claim that they can deeply inspect a 32 GiB executable;
+bounded PE-unpacker conversion remains a release gate.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

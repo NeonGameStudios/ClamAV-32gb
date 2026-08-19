@@ -7649,6 +7649,25 @@ START_TEST(test_pe_unpack_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_unpack_contiguous_size_is_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.options = &options;
+
+    ret = cli_pe_unpack_size_check(&ctx, "test PE unpacker", (uint64_t)CLI_MAX_ALLOCATION + 1);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+}
+END_TEST
+
 START_TEST(test_pespin_limit_accounting_is_fail_visible)
 {
     struct cl_engine engine;
@@ -8530,6 +8549,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_limit_accounting_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_member_limit_is_fail_visible);
 #ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP

@@ -120,10 +120,11 @@
 // TODO Replace all of these with static inline functions
 #define CLI_UNPSIZELIMITS(NAME, CHK)                                      \
     do {                                                                   \
-        cl_error_t limit_status = cli_checklimits(NAME, ctx, (CHK), 0, 0); \
+        cl_error_t limit_status = cli_pe_unpack_size_check(ctx, NAME, (uint64_t)(CHK)); \
         if (limit_status != CL_CLEAN) {                                   \
-            cli_mark_scan_incomplete(ctx,                                    \
-                                     "PE unpacked content exceeded configured scan limits"); \
+            if (limit_status != CL_ERESOURCE)                              \
+                cli_mark_scan_incomplete(ctx,                              \
+                                         "PE unpacked content exceeded configured scan limits"); \
             cli_exe_info_destroy(peinfo);                                  \
             return limit_status;                                           \
         }                                                                  \
@@ -131,12 +132,14 @@
 
 #define CLI_UNPTEMP(NAME, FREEME)                                                                 \
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {                                      \
+        cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be created"); \
         cli_exe_info_destroy(peinfo);                                                             \
         cli_multifree FREEME;                                                                     \
         return CL_EMEM;                                                                           \
     }                                                                                             \
     if ((ndesc = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) { \
         cli_dbgmsg(NAME ": Can't create file %s\n", tempfile);                                    \
+        cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be opened"); \
         free(tempfile);                                                                           \
         cli_exe_info_destroy(peinfo);                                                             \
         cli_multifree FREEME;                                                                     \
@@ -204,6 +207,7 @@
                                                                                                                 \
         default:                                                                                                \
             cli_dbgmsg(NAME ": Unpacking failed\n");                                                            \
+            cli_mark_scan_incomplete(ctx, NAME ": recognized unpacker did not complete");                      \
             close(ndesc);                                                                                       \
             if (cli_unlink(tempfile)) {                                                                         \
                 cli_exe_info_destroy(peinfo);                                                                   \
@@ -225,6 +229,20 @@
 #define CLI_UNPRESULTSFSG2(NAME, EXPR, GOOD, FREEME) CLI_UNPRESULTS_(NAME, FSGCASE(NAME, (void)0), EXPR, GOOD, FREEME)
 
 #define DETECT_BROKEN_PE (SCAN_HEURISTIC_BROKEN && !ctx->corrupted_input)
+
+cl_error_t cli_pe_unpack_size_check(cli_ctx *ctx, const char *who, uint64_t size)
+{
+    if (NULL == ctx)
+        return CL_ENULLARG;
+
+    if (size > (uint64_t)CLI_MAX_ALLOCATION) {
+        cli_mark_scan_incomplete(ctx, "PE unpacker requires a contiguous buffer above the individual-allocation ceiling");
+        cli_dbgmsg("%s: requested contiguous buffer is too large: " STDu64 " bytes\n", who ? who : "PE unpacker", size);
+        return CL_ERESOURCE;
+    }
+
+    return cli_checklimits(who, ctx, size, 0, 0);
+}
 
 struct offset_list {
     uint32_t offset;
@@ -3318,7 +3336,7 @@ int cli_scanpe(cli_ctx *ctx)
             cli_dbgmsg("cli_scanpe: MEW: ssize %08x dsize %08x offdiff: %08x\n", ssize, dsize, offdiff);
 
             CLI_UNPSIZELIMITS("cli_scanpe: MEW", MAX(ssize, dsize));
-            CLI_UNPSIZELIMITS("cli_scanpe: MEW", MAX(ssize + dsize, peinfo->sections[i + 1].rsz));
+            CLI_UNPSIZELIMITS("cli_scanpe: MEW", MAX((uint64_t)ssize + (uint64_t)dsize, (uint64_t)peinfo->sections[i + 1].rsz));
 
             if (peinfo->sections[i + 1].rsz < offdiff + 12 || peinfo->sections[i + 1].rsz > ssize) {
                 cli_dbgmsg("cli_scanpe: MEW: Size mismatch: %08x\n", peinfo->sections[i + 1].rsz);
@@ -4011,12 +4029,14 @@ int cli_scanpe(cli_ctx *ctx)
 
         if ((spinned = (char *)cli_max_malloc(fsize)) == NULL) {
             cli_errmsg("cli_scanpe: PESping: Unable to allocate memory for spinned %lu\n", (unsigned long)fsize);
+            cli_mark_scan_incomplete(ctx, "PEspin contiguous working buffer could not be allocated");
             cli_exe_info_destroy(peinfo);
             return CL_EMEM;
         }
 
         if (fmap_readn(map, spinned, 0, fsize) != fsize) {
             cli_dbgmsg("cli_scanpe: PESpin: Can't read %lu bytes\n", (unsigned long)fsize);
+            cli_mark_scan_incomplete(ctx, "PEspin input could not be read completely");
             free(spinned);
             cli_exe_info_destroy(peinfo);
             return CL_EREAD;
@@ -4076,14 +4096,18 @@ int cli_scanpe(cli_ctx *ctx)
             size_t num_alerts;
             char *spinned;
 
+            CLI_UNPSIZELIMITS("cli_scanpe: yC", fsize);
+
             if ((spinned = (char *)cli_max_malloc(fsize)) == NULL) {
                 cli_errmsg("cli_scanpe: yC: Unable to allocate memory for spinned %lu\n", (unsigned long)fsize);
+                cli_mark_scan_incomplete(ctx, "yC contiguous working buffer could not be allocated");
                 cli_exe_info_destroy(peinfo);
                 return CL_EMEM;
             }
 
             if (fmap_readn(map, spinned, 0, fsize) != fsize) {
                 cli_dbgmsg("cli_scanpe: yC: Can't read %lu bytes\n", (unsigned long)fsize);
+                cli_mark_scan_incomplete(ctx, "yC input could not be read completely");
                 free(spinned);
                 cli_exe_info_destroy(peinfo);
                 return CL_EREAD;

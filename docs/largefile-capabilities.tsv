@@ -53,6 +53,7 @@ unsupported	aarch64-first-release	unsupported	docs/large-file-support.md	AArch64
 unsupported	bytecode-v1-over-4g	unsupported	docs/bytecode-abi-v2.md	legacy bytecode ABI cannot represent applicable layers above 4 GiB
 unsupported	legacy-callback-over-1g	unsupported	libclamav/scanners.c	deprecated whole-file callback requires an oversized contiguous buffer
 unsupported	image-fuzzy-over-contiguous-limit	unsupported	libclamav/scanners.c	image fuzzy FFI requires a complete contiguous image subject
+unsupported	pe-unpacker-over-1g	unsupported	libclamav/pe.c	legacy PE unpackers require a contiguous buffer and reject requests above the 1 GiB individual-allocation ceiling as incomplete
 parser	CL_TYPE_7Z	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_7ZSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_AI_MODEL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

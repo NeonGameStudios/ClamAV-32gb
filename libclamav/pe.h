@@ -72,6 +72,13 @@ struct cli_pe_hook_data {
 
 int cli_scanpe(cli_ctx *ctx);
 
+/**
+ * Check a legacy PE unpacker's requested contiguous working-buffer size.
+ * Requests above the global individual-allocation ceiling are explicit
+ * incomplete resource failures rather than partial unpack attempts.
+ */
+cl_error_t cli_pe_unpack_size_check(cli_ctx *ctx, const char *who, uint64_t size);
+
 enum {
     CL_GENHASH_PE_CLASS_SECTION,
     CL_GENHASH_PE_CLASS_IMPTBL,
