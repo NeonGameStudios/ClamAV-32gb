@@ -70,6 +70,12 @@ request. Path/FILDES report commands clear the receive-loop flag after their
 worker copy is queued, and legacy commands explicitly clear stale state; the
 internal `INSTREAMSCAN` transition remains the deliberate inheritance point.
 
+Mail message export now refuses already-truncated materializations and
+propagates decoder, output-allocation, and trailing-buffer write failures
+instead of returning a partial attachment blob. This closes a concrete
+false-clean path for MHTML, phishing-URL, RFC2047, and attachment consumers
+that rely on `messageToBlob()`.
+
 The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.

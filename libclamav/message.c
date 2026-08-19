@@ -1237,9 +1237,15 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
     text *t_line;
     char *filename;
     int i;
+    int export_failed = 0;
 
     if (NULL == m)
         return NULL;
+
+    if (m->isTruncated) {
+        cli_warnmsg("messageExport: refusing to export an incompletely materialized message\n");
+        return NULL;
+    }
 
     if (messageGetBody(m) == NULL)
         return NULL;
@@ -1297,8 +1303,14 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
         if (filename)
             free((char *)filename);
 
-        if (m->numberOfEncTypes == 0)
-            return exportText(messageGetBody(m), ret, destroy_text);
+        if (m->numberOfEncTypes == 0) {
+            void *exported = exportText(messageGetBody(m), ret, destroy_text);
+            if (exported == NULL) {
+                (*destroy)(ret);
+                return NULL;
+            }
+            return exported;
+        }
     }
 
     for (i = 0; i < m->numberOfEncTypes; i++) {
@@ -1310,8 +1322,9 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
 
             newret = (*create)();
             if (newret == NULL) {
-                cli_dbgmsg("Not all decoding algorithms were run\n");
-                return ret;
+                cli_warnmsg("messageExport: unable to create output for all decoding algorithms\n");
+                (*destroy)(ret);
+                return NULL;
             }
             (*destroy)(ret);
             ret = newret;
@@ -1397,10 +1410,18 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
              */
             if (i == m->numberOfEncTypes - 1) {
                 /* last one */
-                (void)exportText(t_line, ret, destroy_text);
+                void *exported = exportText(t_line, ret, destroy_text);
+                if (exported == NULL) {
+                    (*destroy)(ret);
+                    return NULL;
+                }
+                ret = exported;
                 break;
             }
-            (void)exportText(t_line, ret, 0);
+            if (exportText(t_line, ret, 0) == NULL) {
+                (*destroy)(ret);
+                return NULL;
+            }
             continue;
         }
 
@@ -1443,17 +1464,24 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
                 if (data == bigbuf) {
                     free(data);
                 }
+                export_failed = 1;
                 break;
             }
 
             if (uptr != data) {
-                (*addData)(ret, data, (size_t)(uptr - data));
-                size += (size_t)(uptr - data);
+                if ((*addData)(ret, data, (size_t)(uptr - data)) < 0) {
+                    export_failed = 1;
+                } else {
+                    size += (size_t)(uptr - data);
+                }
             }
 
             if (data == bigbuf) {
                 free(data);
             }
+
+            if (export_failed)
+                break;
 
             /*
              * According to RFC2045, '=' is used to pad out
@@ -1471,6 +1499,12 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
             }
         } while ((t_line = t_line->t_next) != NULL);
 
+        if (export_failed) {
+            cli_warnmsg("messageExport: decoded message could not be materialized completely\n");
+            (*destroy)(ret);
+            return NULL;
+        }
+
         cli_dbgmsg("Exported %lu bytes using enctype %d\n",
                    (unsigned long)size, (int)enctype);
 
@@ -1481,7 +1515,11 @@ messageExport(message *m, const char *dir, void *(*create)(void), void (*destroy
 
             ptr = base64Flush(m, data);
             if (ptr) {
-                (*addData)(ret, data, (size_t)(ptr - data));
+                if ((*addData)(ret, data, (size_t)(ptr - data)) < 0) {
+                    cli_warnmsg("messageExport: trailing decoded data could not be materialized\n");
+                    (*destroy)(ret);
+                    return NULL;
+                }
             }
         }
     }

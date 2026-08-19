@@ -249,6 +249,20 @@ START_TEST(test_message_move_text_preserves_materialization_limit)
 }
 END_TEST
 
+START_TEST(test_message_export_rejects_truncated_materialization)
+{
+    message *m = messageCreate();
+    blob *b;
+
+    ck_assert_ptr_nonnull(m);
+    ck_assert_int_eq(messageAddStr(m, "body"), 1);
+    m->isTruncated = 1;
+    b = messageToBlob(m, 0);
+    ck_assert_ptr_null(b);
+    messageDestroy(m);
+}
+END_TEST
+
 static struct {
     const char *u16;
     const char *u8;
@@ -321,6 +335,7 @@ Suite *test_str_suite(void)
     tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
     tcase_add_test(tc_str, test_message_addline_materialization_limit_is_fail_visible);
     tcase_add_test(tc_str, test_message_move_text_preserves_materialization_limit);
+    tcase_add_test(tc_str, test_message_export_rejects_truncated_materialization);
 
     return s;
 }
