@@ -963,6 +963,36 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
     else
         logg(LOGG_WARNING, "Limits: Global size limit protection disabled.\n");
 
+    if ((opt = optget(opts, "MaxMatcherWork"))->active) {
+        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_MATCHER_WORK, opt->numarg))) {
+            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_MATCHER_WORK) failed: %s\n", cl_strerror(ret));
+            cl_engine_free(engine);
+            return 1;
+        }
+    }
+    val = cl_engine_get_num(engine, CL_ENGINE_MAX_MATCHER_WORK, NULL);
+    logg(LOGG_INFO, "Limits: Matcher work limit set to %llu bytes.\n", val);
+
+    if ((opt = optget(opts, "MaxTemporarySize"))->active) {
+        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, opt->numarg))) {
+            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_TEMPORARY_SIZE) failed: %s\n", cl_strerror(ret));
+            cl_engine_free(engine);
+            return 1;
+        }
+    }
+    val = cl_engine_get_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
+    logg(LOGG_INFO, "Limits: Temporary size limit set to %llu bytes.\n", val);
+
+    if ((opt = optget(opts, "MaxContiguousSize"))->active) {
+        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, opt->numarg))) {
+            logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_CONTIGUOUS_SIZE) failed: %s\n", cl_strerror(ret));
+            cl_engine_free(engine);
+            return 1;
+        }
+    }
+    val = cl_engine_get_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, NULL);
+    logg(LOGG_INFO, "Limits: Contiguous subject limit set to %llu bytes.\n", val);
+
     if ((opt = optget(opts, "MaxFileSize"))->active) {
         if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, opt->numarg))) {
             logg(LOGG_ERROR, "cl_engine_set_num(CL_ENGINE_MAX_FILESIZE) failed: %s\n", cl_strerror(ret));

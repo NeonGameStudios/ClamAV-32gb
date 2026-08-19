@@ -54,6 +54,7 @@
 #endif
 
 uint64_t maxfilesize;
+uint64_t maxtemporarysize;
 
 static sfsistat FailAction;
 static sfsistat (*CleanAction)(SMFICTX *ctx);
@@ -187,6 +188,14 @@ static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, S
     if (CLAMFI_QUOTA_OK != quota_result) {
         cf->over_limit = 1;
         logg(LOGG_ERROR, "Message exceeds MaxFileSize; refusing a partial scan\n");
+        nullify(ctx, cf, CF_BOTH);
+        return FailAction;
+    }
+
+    quota_result = clamfi_quota_add(cf->totsz, maxtemporarysize, len, &next_size);
+    if (CLAMFI_QUOTA_OK != quota_result) {
+        cf->over_limit = 1;
+        logg(LOGG_ERROR, "Message exceeds MaxTemporarySize; refusing a partial scan\n");
         nullify(ctx, cf, CF_BOTH);
         return FailAction;
     }

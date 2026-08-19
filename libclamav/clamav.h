@@ -139,6 +139,9 @@ typedef struct cl_scan_report_limits {
     uint64_t max_file_size;
     uint64_t max_scan_size;
     uint64_t max_pcre_file_size;
+    uint64_t max_matcher_work;
+    uint64_t max_temporary_size;
+    uint64_t max_contiguous_size;
     uint64_t max_scan_time;
     uint32_t max_files;
     uint32_t max_recursion;
@@ -393,12 +396,15 @@ enum cl_engine_field {
     CL_ENGINE_MAX_SCANTIME,        /** uint32_t */
     CL_ENGINE_PCRE_MATCH_LIMIT,    /** uint64_t */
     CL_ENGINE_PCRE_RECMATCH_LIMIT, /** uint64_t */
-    CL_ENGINE_PCRE_MAX_FILESIZE,   /** uint64_t; effective contiguous subject is capped at 1 GiB */
+    CL_ENGINE_PCRE_MAX_FILESIZE,   /** uint64_t; effective subject is also capped by MaxContiguousSize */
     CL_ENGINE_DISABLE_PE_CERTS,    /** uint32_t */
     CL_ENGINE_PE_DUMPCERTS,        /** uint32_t */
     CL_ENGINE_CVDCERTSDIR,         /** (char *) */
     CL_ENGINE_TMPDIR_RECURSION,    /** uint32_t */
     CL_ENGINE_FIPS_LIMITS,         /** uint32_t */
+    CL_ENGINE_MAX_MATCHER_WORK,    /** uint64_t; 0 selects the certified default */
+    CL_ENGINE_MAX_TEMPORARY_SIZE,  /** uint64_t; 0 selects the certified default */
+    CL_ENGINE_MAX_CONTIGUOUS_SIZE  /** uint64_t; 0 selects the certified default */
 };
 
 enum bytecode_security {

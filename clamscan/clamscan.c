@@ -350,6 +350,9 @@ void help(void)
     mprintf(LOGG_INFO, "    --max-scantime=#n                    Scan time longer than this is reported as a timeout error (milliseconds).\n");
     mprintf(LOGG_INFO, "    --max-filesize=#n                    Files larger than this will be skipped and assumed clean.\n");
     mprintf(LOGG_INFO, "    --max-scansize=#n                    The maximum amount of data to scan for each container file (**).\n");
+    mprintf(LOGG_INFO, "    --max-matcher-work=#n               Maximum cumulative bytes presented to matchers.\n");
+    mprintf(LOGG_INFO, "    --max-temporary-size=#n             Maximum temporary bytes reserved by one scan.\n");
+    mprintf(LOGG_INFO, "    --max-contiguous-size=#n            Maximum single contiguous matcher subject.\n");
     mprintf(LOGG_INFO, "    --max-files=#n                       The maximum number of files to scan for each container file (**).\n");
     mprintf(LOGG_INFO, "    --max-recursion=#n                   Maximum archive recursion level for container file (**).\n");
     mprintf(LOGG_INFO, "    --max-dir-recursion=#n               Maximum directory recursion level.\n");

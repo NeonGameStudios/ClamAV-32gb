@@ -100,12 +100,20 @@ static inline int perf_log_tries(int8_t acmode, int8_t bm_called, int32_t length
 cl_error_t cli_pcre_check_size_limit(cli_ctx *ctx, uint64_t configured_limit, uint64_t needed)
 {
     uint64_t effective_limit = configured_limit;
+    uint64_t contiguous_limit = 0;
+    int rc = CL_ERROR;
 
     /* PCRE2 consumes one contiguous subject. On qualifying 64-bit fmap builds
      * this can use the large-file ceiling while pages are loaded on demand;
      * other builds retain their bounded single-allocation ceiling. */
     if (effective_limit == 0 || effective_limit > (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE)
         effective_limit = (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE;
+
+    if (NULL != ctx && NULL != ctx->engine) {
+        contiguous_limit = (uint64_t)cl_engine_get_num(ctx->engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, &rc);
+        if (rc == CL_SUCCESS && contiguous_limit != 0 && contiguous_limit < effective_limit)
+            effective_limit = contiguous_limit;
+    }
 
     if (needed <= effective_limit)
         return CL_SUCCESS;
@@ -239,16 +247,21 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
                 if (ret != CL_SUCCESS)
                     return ret;
 
-                cli_scan_report_note_contiguous(ctx->report, map->len);
+                ret = cli_scan_reserve_contiguous(ctx, map->len);
+                if (ret != CL_SUCCESS)
+                    return ret;
 
                 cli_dbgmsg("matcher_run: performing regex matching on full map: " STDu64 "+%u(" STDu64 ") >= %zu\n", offset, length, offset + length, map->len);
 
                 buffer = fmap_need_off_once(map, 0, map->len);
-                if (!buffer)
+                if (!buffer) {
+                    cli_scan_release_contiguous(ctx, map->len);
                     return CL_EMEM;
+                }
 
                 /* scan the full buffer */
                 ret = cli_pcre_scanbuf(buffer, map->len, virname, acres, root, mdata, poffdata, ctx);
+                cli_scan_release_contiguous(ctx, map->len);
             }
         } else if (pcremode == PCRE_SCAN_BUFF) {
             /* check that scanned buffer does not exceed pcre maxfilesize limit */
@@ -259,11 +272,14 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
             if (ret != CL_SUCCESS)
                 return ret;
 
-            cli_scan_report_note_contiguous(ctx->report, length);
+            ret = cli_scan_reserve_contiguous(ctx, length);
+            if (ret != CL_SUCCESS)
+                return ret;
 
             cli_dbgmsg("matcher_run: performing regex matching on buffer with no map: " STDu64 "+%u(" STDu64 ")\n", offset, length, offset + length);
             /* scan the specified buffer */
             ret = cli_pcre_scanbuf(buffer, length, virname, acres, root, mdata, poffdata, ctx);
+            cli_scan_release_contiguous(ctx, length);
         }
     }
 
@@ -295,6 +311,10 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
         cli_errmsg("cli_scan_buff: engine == NULL\n");
         return CL_ENULLARG;
     }
+
+    ret = cli_scan_account_matcher_work(ctx, length);
+    if (ret != CL_SUCCESS)
+        return ret;
 
     generic_ac_root = engine->root[0]; /* generic signatures */
 
@@ -1428,9 +1448,11 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             ret = CL_EREAD;
             goto done;
         }
+        ret = cli_scan_account_matcher_work(ctx, bytes);
+        if (ret != CL_SUCCESS)
+            goto done;
         if (ctx->scanned)
             *ctx->scanned += bytes;
-        cli_scan_report_note_matcher(ctx->report, bytes);
 
         if (target_ac_root) {
             const char *virname = NULL;

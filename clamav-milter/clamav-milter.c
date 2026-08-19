@@ -408,6 +408,17 @@ int main(int argc, char **argv)
         optfree(opts);
         return 1;
     }
+    maxtemporarysize = (uint64_t)optget(opts, "MaxTemporarySize")->numarg;
+    if (maxtemporarysize == 0)
+        maxtemporarysize = CLI_MAX_TEMPORARY_SIZE;
+    if (maxtemporarysize > CLI_MAX_TEMPORARY_SIZE) {
+        logg(LOGG_ERROR, "MaxTemporarySize must be at or below 64 GiB\n");
+        localnets_free();
+        allow_list_free();
+        logg_close();
+        optfree(opts);
+        return 1;
+    }
     readtimeout = optget(opts, "ReadTimeout")->numarg;
 
     cpool_init(opts);

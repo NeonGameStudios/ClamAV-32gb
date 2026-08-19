@@ -498,6 +498,9 @@ struct cl_engine *cl_engine_new(void)
     new->maxhtmlnotags      = CLI_DEFAULT_MAXHTMLNOTAGS;
     new->maxscriptnormalize = CLI_DEFAULT_MAXSCRIPTNORMALIZE;
     new->maxziptypercg      = CLI_DEFAULT_MAXZIPTYPERCG;
+    new->maxmatcherwork     = CLI_DEFAULT_MAX_MATCHER_WORK;
+    new->maxtemporarysize   = CLI_DEFAULT_MAX_TEMPORARY_SIZE;
+    new->maxcontiguoussize  = CLI_DEFAULT_MAX_CONTIGUOUS_SIZE;
     new->cache_size         = CLI_DEFAULT_CACHE_SIZE;
 
     new->bytecode_security = CL_BYTECODE_TRUST_SIGNED;
@@ -694,6 +697,24 @@ static cl_error_t cli_validate_pcre_maxfilesize(uint64_t requested, uint64_t *va
     return CL_SUCCESS;
 }
 
+static cl_error_t cli_validate_resource_limit(const char *name,
+                                              long long requested,
+                                              uint64_t ceiling,
+                                              uint64_t default_value,
+                                              uint64_t *validated)
+{
+    if (!validated)
+        return CL_ENULLARG;
+
+    if (requested < 0 || (uint64_t)requested > ceiling) {
+        cli_errmsg("%s: value must be between 0 and " STDu64 " bytes\n", name, ceiling);
+        return CL_EARG;
+    }
+
+    *validated = requested == 0 ? default_value : (uint64_t)requested;
+    return CL_SUCCESS;
+}
+
 cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field field, long long num)
 {
     cl_error_t ret;
@@ -766,6 +787,24 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
                 engine->maxziptypercg = CLI_DEFAULT_MAXZIPTYPERCG;
             } else
                 engine->maxziptypercg = num;
+            break;
+        case CL_ENGINE_MAX_MATCHER_WORK:
+            ret = cli_validate_resource_limit("MaxMatcherWork", num, CLI_MAX_MATCHER_WORK,
+                                              CLI_DEFAULT_MAX_MATCHER_WORK, &engine->maxmatcherwork);
+            if (ret != CL_SUCCESS)
+                return ret;
+            break;
+        case CL_ENGINE_MAX_TEMPORARY_SIZE:
+            ret = cli_validate_resource_limit("MaxTemporarySize", num, CLI_MAX_TEMPORARY_SIZE,
+                                              CLI_DEFAULT_MAX_TEMPORARY_SIZE, &engine->maxtemporarysize);
+            if (ret != CL_SUCCESS)
+                return ret;
+            break;
+        case CL_ENGINE_MAX_CONTIGUOUS_SIZE:
+            ret = cli_validate_resource_limit("MaxContiguousSize", num, CLI_MAX_CONTIGUOUS_SIZE,
+                                              CLI_DEFAULT_MAX_CONTIGUOUS_SIZE, &engine->maxcontiguoussize);
+            if (ret != CL_SUCCESS)
+                return ret;
             break;
         case CL_ENGINE_MIN_CC_COUNT:
             engine->min_cc_count = num;
@@ -997,6 +1036,12 @@ long long cl_engine_get_num(const struct cl_engine *engine, enum cl_engine_field
             return engine->pcre_recmatch_limit;
         case CL_ENGINE_PCRE_MAX_FILESIZE:
             return engine->pcre_max_filesize;
+        case CL_ENGINE_MAX_MATCHER_WORK:
+            return engine->maxmatcherwork;
+        case CL_ENGINE_MAX_TEMPORARY_SIZE:
+            return engine->maxtemporarysize;
+        case CL_ENGINE_MAX_CONTIGUOUS_SIZE:
+            return engine->maxcontiguoussize;
         default:
             cli_errmsg("cl_engine_get: Incorrect field number\n");
             if (err)
@@ -1099,6 +1144,9 @@ struct cl_settings *cl_engine_settings_copy(const struct cl_engine *engine)
     settings->maxhtmlnotags       = engine->maxhtmlnotags;
     settings->maxscriptnormalize  = engine->maxscriptnormalize;
     settings->maxziptypercg       = engine->maxziptypercg;
+    settings->maxmatcherwork      = engine->maxmatcherwork;
+    settings->maxtemporarysize    = engine->maxtemporarysize;
+    settings->maxcontiguoussize   = engine->maxcontiguoussize;
     settings->min_cc_count        = engine->min_cc_count;
     settings->min_ssn_count       = engine->min_ssn_count;
     settings->bytecode_security   = engine->bytecode_security;
@@ -1149,6 +1197,9 @@ cl_error_t cl_engine_settings_apply(struct cl_engine *engine, const struct cl_se
 {
     uint64_t maxfilesize;
     uint64_t pcre_max_filesize;
+    uint64_t maxmatcherwork;
+    uint64_t maxtemporarysize;
+    uint64_t maxcontiguoussize;
 
     if (!engine || !settings)
         return CL_ENULLARG;
@@ -1156,6 +1207,18 @@ cl_error_t cl_engine_settings_apply(struct cl_engine *engine, const struct cl_se
     if (cli_validate_maxfilesize(settings->maxfilesize, &maxfilesize) != CL_SUCCESS)
         return CL_EARG;
     if (cli_validate_pcre_maxfilesize(settings->pcre_max_filesize, &pcre_max_filesize) != CL_SUCCESS)
+        return CL_EARG;
+    if (cli_validate_resource_limit("MaxMatcherWork", (long long)settings->maxmatcherwork,
+                                   CLI_MAX_MATCHER_WORK, CLI_DEFAULT_MAX_MATCHER_WORK,
+                                   &maxmatcherwork) != CL_SUCCESS)
+        return CL_EARG;
+    if (cli_validate_resource_limit("MaxTemporarySize", (long long)settings->maxtemporarysize,
+                                   CLI_MAX_TEMPORARY_SIZE, CLI_DEFAULT_MAX_TEMPORARY_SIZE,
+                                   &maxtemporarysize) != CL_SUCCESS)
+        return CL_EARG;
+    if (cli_validate_resource_limit("MaxContiguousSize", (long long)settings->maxcontiguoussize,
+                                   CLI_MAX_CONTIGUOUS_SIZE, CLI_DEFAULT_MAX_CONTIGUOUS_SIZE,
+                                   &maxcontiguoussize) != CL_SUCCESS)
         return CL_EARG;
 
     engine->ac_only             = settings->ac_only;
@@ -1172,6 +1235,9 @@ cl_error_t cl_engine_settings_apply(struct cl_engine *engine, const struct cl_se
     engine->maxhtmlnotags       = settings->maxhtmlnotags;
     engine->maxscriptnormalize  = settings->maxscriptnormalize;
     engine->maxziptypercg       = settings->maxziptypercg;
+    engine->maxmatcherwork      = maxmatcherwork;
+    engine->maxtemporarysize    = maxtemporarysize;
+    engine->maxcontiguoussize   = maxcontiguoussize;
     engine->min_cc_count        = settings->min_cc_count;
     engine->min_ssn_count       = settings->min_ssn_count;
     engine->bytecode_security   = settings->bytecode_security;
@@ -1362,6 +1428,99 @@ cl_error_t cli_updatelimits(cli_ctx *ctx, size_t needed)
     cli_scan_report_note_logical(ctx->report, (uint64_t)needed, ctx->recursion_level);
 
     return CL_SUCCESS;
+}
+
+static bool cli_scan_resource_would_exceed(uint64_t current, uint64_t bytes, uint64_t limit)
+{
+    return (limit != 0) && (current > limit || bytes > limit - current);
+}
+
+static cl_error_t cli_scan_resource_failure(cli_ctx *ctx, const char *reason)
+{
+    if (NULL == ctx)
+        return CL_ENULLARG;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    if (!ctx->limit_exceeded) {
+        ctx->limit_exceeded = true;
+        ctx->limit_exceeded_result = CL_ERESOURCE;
+    }
+    return CL_ERESOURCE;
+}
+
+cl_error_t cli_scan_account_matcher_work(cli_ctx *ctx, uint64_t bytes)
+{
+    if (NULL == ctx || NULL == ctx->engine)
+        return CL_ENULLARG;
+
+    if (cli_scan_resource_would_exceed(ctx->matcher_work, bytes, ctx->engine->maxmatcherwork)) {
+        cli_dbgmsg("Matcher work limit exceeded (limit: " STDu64 ", current: " STDu64 ", requested: " STDu64 ")\n",
+                   ctx->engine->maxmatcherwork, ctx->matcher_work, bytes);
+        return cli_scan_resource_failure(ctx, "matcher work exceeded the configured resource limit");
+    }
+
+    ctx->matcher_work += bytes;
+    cli_scan_report_note_matcher(ctx->report, bytes);
+    return CL_SUCCESS;
+}
+
+cl_error_t cli_scan_reserve_contiguous(cli_ctx *ctx, uint64_t bytes)
+{
+    if (NULL == ctx || NULL == ctx->engine)
+        return CL_ENULLARG;
+
+    if (bytes > ctx->engine->maxcontiguoussize ||
+        cli_scan_resource_would_exceed(ctx->contiguous_bytes, bytes, ctx->engine->maxcontiguoussize)) {
+        cli_dbgmsg("Contiguous subject limit exceeded (limit: " STDu64 ", current: " STDu64 ", requested: " STDu64 ")\n",
+                   ctx->engine->maxcontiguoussize, ctx->contiguous_bytes, bytes);
+        return cli_scan_resource_failure(ctx, "contiguous matcher subject exceeded the configured resource limit");
+    }
+
+    ctx->contiguous_bytes += bytes;
+    if (ctx->contiguous_bytes > ctx->contiguous_peak)
+        ctx->contiguous_peak = ctx->contiguous_bytes;
+    cli_scan_report_note_contiguous(ctx->report, ctx->contiguous_peak);
+    return CL_SUCCESS;
+}
+
+void cli_scan_release_contiguous(cli_ctx *ctx, uint64_t bytes)
+{
+    if (NULL == ctx)
+        return;
+
+    if (bytes >= ctx->contiguous_bytes)
+        ctx->contiguous_bytes = 0;
+    else
+        ctx->contiguous_bytes -= bytes;
+}
+
+cl_error_t cli_scan_reserve_temporary(cli_ctx *ctx, uint64_t bytes)
+{
+    if (NULL == ctx || NULL == ctx->engine)
+        return CL_ENULLARG;
+
+    if (cli_scan_resource_would_exceed(ctx->temporary_bytes, bytes, ctx->engine->maxtemporarysize)) {
+        cli_dbgmsg("Temporary storage limit exceeded (limit: " STDu64 ", current: " STDu64 ", requested: " STDu64 ")\n",
+                   ctx->engine->maxtemporarysize, ctx->temporary_bytes, bytes);
+        return cli_scan_resource_failure(ctx, "temporary storage exceeded the configured resource limit");
+    }
+
+    ctx->temporary_bytes += bytes;
+    if (ctx->temporary_bytes > ctx->temporary_peak)
+        ctx->temporary_peak = ctx->temporary_bytes;
+    cli_scan_report_note_temporary(ctx->report, ctx->temporary_peak);
+    return CL_SUCCESS;
+}
+
+void cli_scan_release_temporary(cli_ctx *ctx, uint64_t bytes)
+{
+    if (NULL == ctx)
+        return;
+
+    if (bytes >= ctx->temporary_bytes)
+        ctx->temporary_bytes = 0;
+    else
+        ctx->temporary_bytes -= bytes;
 }
 
 /**

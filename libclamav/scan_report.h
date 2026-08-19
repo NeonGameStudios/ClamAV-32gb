@@ -55,6 +55,10 @@ void cli_scan_report_note_contiguous(
     cl_scan_report_t *report,
     uint64_t bytes);
 
+void cli_scan_report_note_temporary(
+    cl_scan_report_t *report,
+    uint64_t bytes);
+
 void cli_scan_report_note_parser_operation(
     cl_scan_report_t *report);
 

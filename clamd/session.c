@@ -249,7 +249,15 @@ int command(client_conn_t *conn, int *virus)
             pthread_mutex_lock(&conn->thrpool->pool_mutex);
             multiscan = conn->thrpool->thr_multiscan;
             max       = conn->thrpool->thr_max;
-            if (multiscan + 1 < max)
+            if (max <= 1) {
+                /* With one worker, MULTISCAN has no parallel work to
+                 * schedule. Run the directory through the ordinary
+                 * sequential walker instead of rejecting a valid request. */
+                pthread_mutex_unlock(&conn->thrpool->pool_mutex);
+                thrmgr_setactivetask(NULL, "CONTSCAN");
+                type = TYPE_CONTSCAN;
+                break;
+            } else if (multiscan + 1 < max)
                 conn->thrpool->thr_multiscan = multiscan + 1;
             else {
                 alive = conn->thrpool->thr_alive;

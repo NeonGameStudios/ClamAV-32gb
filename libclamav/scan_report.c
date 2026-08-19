@@ -113,6 +113,9 @@ cl_error_t cli_scan_report_create(
     report_get_engine_limit(engine, CL_ENGINE_MAX_FILESIZE, &report->limits.max_file_size);
     report_get_engine_limit(engine, CL_ENGINE_MAX_SCANSIZE, &report->limits.max_scan_size);
     report_get_engine_limit(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &report->limits.max_pcre_file_size);
+    report_get_engine_limit(engine, CL_ENGINE_MAX_MATCHER_WORK, &report->limits.max_matcher_work);
+    report_get_engine_limit(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, &report->limits.max_temporary_size);
+    report_get_engine_limit(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, &report->limits.max_contiguous_size);
     report_get_engine_limit(engine, CL_ENGINE_MAX_SCANTIME, &report->limits.max_scan_time);
 
     if (engine != NULL) {
@@ -188,6 +191,14 @@ void cli_scan_report_note_contiguous(
         report->metrics.contiguous_bytes = bytes;
 }
 
+void cli_scan_report_note_temporary(
+    cl_scan_report_t *report,
+    uint64_t bytes)
+{
+    if ((NULL != report) && (bytes > report->metrics.temporary_bytes))
+        report->metrics.temporary_bytes = bytes;
+}
+
 void cli_scan_report_note_parser_operation(
     cl_scan_report_t *report)
 {
@@ -221,6 +232,9 @@ void cli_scan_report_finish(
     if (NULL != ctx) {
         reason = ctx->scan_incomplete_reason;
         report->metrics.skipped_operations = ctx->scan_incomplete ? 1 : 0;
+        report->metrics.matcher_bytes = ctx->matcher_work;
+        report->metrics.contiguous_bytes = ctx->contiguous_peak;
+        report->metrics.temporary_bytes = ctx->temporary_peak;
     }
 
     report_replace_string(&report->reason, reason);
@@ -230,10 +244,13 @@ void cli_scan_report_finish(
     if (finished_usec >= report->started_usec)
         report->metrics.elapsed_ms = (finished_usec - report->started_usec) / 1000ULL;
 
-    if (status == CL_ERESOURCE) {
-        report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
-    } else if (status == CL_ETIMEOUT) {
+    if ((status == CL_EMAXSIZE) ||
+        (status == CL_EMAXFILES) ||
+        (status == CL_EMAXREC) ||
+        (status == CL_ETIMEOUT)) {
         report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
+    } else if (status == CL_ERESOURCE) {
+        report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
     } else if ((NULL != ctx) && ctx->scan_incomplete) {
         if ((status == CL_EMAXSIZE) ||
             (status == CL_EMAXFILES) ||
@@ -405,6 +422,9 @@ cl_error_t cl_scan_report_to_json(
     json_object_object_add(object, "max_file_size", json_object_new_int64((int64_t)report->limits.max_file_size));
     json_object_object_add(object, "max_scan_size", json_object_new_int64((int64_t)report->limits.max_scan_size));
     json_object_object_add(object, "max_pcre_file_size", json_object_new_int64((int64_t)report->limits.max_pcre_file_size));
+    json_object_object_add(object, "max_matcher_work", json_object_new_int64((int64_t)report->limits.max_matcher_work));
+    json_object_object_add(object, "max_temporary_size", json_object_new_int64((int64_t)report->limits.max_temporary_size));
+    json_object_object_add(object, "max_contiguous_size", json_object_new_int64((int64_t)report->limits.max_contiguous_size));
     json_object_object_add(object, "max_scan_time", json_object_new_int64((int64_t)report->limits.max_scan_time));
     json_object_object_add(object, "max_files", json_object_new_int((int)report->limits.max_files));
     json_object_object_add(object, "max_recursion", json_object_new_int((int)report->limits.max_recursion));

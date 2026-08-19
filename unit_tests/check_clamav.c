@@ -602,6 +602,7 @@ START_TEST(test_scan_report_complete_and_json)
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
     cl_scan_report_metrics_t metrics;
+    cl_scan_report_limits_t limits;
     cl_scan_completion_t completion;
     cl_error_t status;
     cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
@@ -625,6 +626,10 @@ START_TEST(test_scan_report_complete_and_json)
     ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
     ck_assert_int_eq(completion, CL_SCAN_COMPLETION_COMPLETE);
     ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_limits(report, &limits), CL_SUCCESS);
+    ck_assert_uint_eq(limits.max_matcher_work, CLI_MAX_MATCHER_WORK);
+    ck_assert_uint_eq(limits.max_temporary_size, CLI_MAX_TEMPORARY_SIZE);
+    ck_assert_uint_eq(limits.max_contiguous_size, CLI_MAX_CONTIGUOUS_SIZE);
     ck_assert_uint_eq(metrics.root_size, sizeof(payload) - 1);
     ck_assert_uint_eq(metrics.logical_bytes, sizeof(payload) - 1);
     ck_assert(metrics.files_scanned > 0);
@@ -636,6 +641,38 @@ START_TEST(test_scan_report_complete_and_json)
     cl_scan_report_free(report);
     cli_unlink(path);
     free(path);
+}
+END_TEST
+
+START_TEST(test_resource_limit_engine_fields_and_accounting)
+{
+    struct cl_engine *engine;
+    cli_ctx ctx;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_MATCHER_WORK, NULL), CLI_MAX_MATCHER_WORK);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL), CLI_MAX_TEMPORARY_SIZE);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, NULL), CLI_MAX_CONTIGUOUS_SIZE);
+
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_MATCHER_WORK, 1024), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 2048), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, 4096), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_MATCHER_WORK, (long long)CLI_MAX_MATCHER_WORK + 1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, (long long)CLI_MAX_TEMPORARY_SIZE + 1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, (long long)CLI_MAX_CONTIGUOUS_SIZE + 1), CL_EARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = engine;
+    ck_assert_int_eq(cli_scan_account_matcher_work(&ctx, 1024), CL_SUCCESS);
+    ck_assert_int_eq(cli_scan_account_matcher_work(&ctx, 1), CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_int_eq(cli_scan_reserve_contiguous(&ctx, 4096), CL_SUCCESS);
+    cli_scan_release_contiguous(&ctx, 4096);
+    ck_assert_int_eq(cli_scan_reserve_temporary(&ctx, 2048), CL_SUCCESS);
+    cli_scan_release_temporary(&ctx, 2048);
+
+    cl_engine_free(engine);
 }
 END_TEST
 
@@ -8126,6 +8163,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
+    tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);

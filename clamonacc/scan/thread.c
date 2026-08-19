@@ -88,13 +88,10 @@ static int onas_scan(struct onas_scan_event *event_data, const char *fname, STAT
         }
         if (retry_on_error) {
             logg(LOGG_DEBUG, "ClamMisc: reattempting scan ... \n");
-            while (*err) {
+            while (*err && i < event_data->retry_attempts) {
                 ret = onas_scan_safe(event_data, fname, sb, infected, err, ret_code);
 
                 i++;
-                if (*err && i == event_data->retry_attempts) {
-                    *err = 0;
-                }
             }
         }
     }
@@ -173,7 +170,7 @@ static cl_error_t onas_scan_thread_scanfile(struct onas_scan_event *event_data, 
 
 #if defined(HAVE_SYS_FANOTIFY_H)
         if (b_fanotify) {
-            if ((*err && *ret_code && b_deny_on_error) || *infected) {
+            if ((*err && b_deny_on_error) || *infected) {
                 res.response = FAN_DENY;
             }
         }
@@ -276,12 +273,22 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
     }
 
     fres = CLAMSTAT(pathname, &sb);
+    if (fres != 0) {
+        err      = 1;
+        ret_code = CL_ESTAT;
+        logg(LOGG_DEBUG, "ClamWorker: unable to stat '%s'; treating the permission event as incomplete\n", pathname);
+    }
     if (event_data->sizelimit) {
         if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
             /* don't skip so we avoid lockups, but don't scan either;
              * while it should be obvious, this will unconditionally set
              * the bit in the map to 0 regardless of original orientation */
             event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
+            if (fres == 0) {
+                err      = 1;
+                ret_code = CL_EMAXSIZE;
+                logg(LOGG_DEBUG, "ClamWorker: '%s' exceeds OnAccessMaxFileSize; treating the permission event as incomplete\n", pathname);
+            }
         }
     }
 

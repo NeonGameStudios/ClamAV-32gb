@@ -27,6 +27,7 @@
 #include <libmilter/mfapi.h>
 
 extern uint64_t maxfilesize;
+extern uint64_t maxtemporarysize;
 extern int addxvirus;
 extern char xvirushdr[300];
 extern int multircpt;

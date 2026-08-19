@@ -202,6 +202,11 @@ typedef struct cli_ctx_tag {
     cli_scan_layer_t *recursion_stack; /* Array of recursion levels used as a stack. */
     uint32_t recursion_stack_size;     /* stack size must == engine->max_recursion_level */
     uint32_t recursion_level;          /* Index into recursion_stack; current fmap recursion level from start of scan. */
+    uint64_t matcher_work;              /* Raw and normalized matcher work charged to this scan. */
+    uint64_t contiguous_bytes;          /* Currently reserved contiguous matcher subject bytes. */
+    uint64_t contiguous_peak;            /* Peak contiguous matcher subject bytes. */
+    uint64_t temporary_bytes;            /* Currently reserved temporary bytes. */
+    uint64_t temporary_peak;             /* Peak temporary bytes. */
     evidence_t this_layer_evidence;    /* Pointer to current evidence in recursion_stack, varies with recursion depth. For convenience. */
     fmap_t *fmap;                      /* Pointer to current fmap in recursion_stack, varies with recursion depth. For convenience. */
     size_t object_count;               /* Counter for number of unique entities/contained files (including normalized files) processed. */
@@ -442,6 +447,9 @@ struct cl_engine {
     uint64_t maxhtmlnotags;      /* max size for scanning normalized HTML */
     uint64_t maxscriptnormalize; /* max size to normalize scripts */
     uint64_t maxziptypercg;      /* max size to re-do zip filetype */
+    uint64_t maxmatcherwork;     /* maximum raw and normalized matcher work */
+    uint64_t maxtemporarysize;   /* maximum temporary bytes reserved by a scan */
+    uint64_t maxcontiguoussize;  /* maximum single contiguous matcher subject */
 
     /* Statistics/intelligence gathering */
     void *stats_data;
@@ -520,6 +528,9 @@ struct cl_settings {
     uint64_t maxhtmlnotags;      /* max size for scanning normalized HTML */
     uint64_t maxscriptnormalize; /* max size to normalize scripts */
     uint64_t maxziptypercg;      /* max size to re-do zip filetype */
+    uint64_t maxmatcherwork;     /* maximum raw and normalized matcher work */
+    uint64_t maxtemporarysize;   /* maximum temporary bytes reserved by a scan */
+    uint64_t maxcontiguoussize;  /* maximum single contiguous matcher subject */
 
     /* Statistics/intelligence gathering */
     void *stats_data;
@@ -1200,6 +1211,12 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
  * @return cl_error_t CL_SUCCESS if we're good to keep scanning else an error status.
  */
 cl_error_t cli_updatelimits(cli_ctx *ctx, size_t needed);
+
+cl_error_t cli_scan_account_matcher_work(cli_ctx *ctx, uint64_t bytes);
+cl_error_t cli_scan_reserve_contiguous(cli_ctx *ctx, uint64_t bytes);
+void cli_scan_release_contiguous(cli_ctx *ctx, uint64_t bytes);
+cl_error_t cli_scan_reserve_temporary(cli_ctx *ctx, uint64_t bytes);
+void cli_scan_release_temporary(cli_ctx *ctx, uint64_t bytes);
 
 int cli_matchregex(const char *str, const char *regex);
 void cli_qsort(void *a, size_t n, size_t es, int (*cmp)(const void *, const void *));

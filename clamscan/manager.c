@@ -48,6 +48,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <math.h>
+#include <stdint.h>
 
 // libclamav
 #include "clamav.h"
@@ -833,7 +834,8 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 {
     cl_error_t ret;
 
-    size_t fsize           = 0;
+    uint64_t fsize         = 0;
+    uint64_t maxfilesize   = 0;
     cl_verdict_t verdict   = CL_VERDICT_NOTHING_FOUND;
     const char *alert_name = NULL;
     const char *tmpdir     = NULL;
@@ -850,6 +852,11 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
     char **file_type_out       = NULL;
     char *file_type            = NULL;
     cl_scan_report_t *report   = NULL;
+    bool over_limit_sentinel   = false;
+
+    memset(&data, 0, sizeof(data));
+    data.filename = "stdin";
+    data.chain    = NULL;
 
     tmpdir = cl_engine_get_str(engine, CL_ENGINE_TMPDIR, NULL);
     if (NULL == tmpdir) {
@@ -860,6 +867,8 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         logg(LOGG_ERROR, "Can't write to temporary directory\n");
         return 2;
     }
+
+    maxfilesize = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
 
     if (!(filename = cli_gentemp(tmpdir))) {
         logg(LOGG_ERROR, "Can't generate tempfile name\n");
@@ -873,6 +882,39 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
     }
 
     while ((bread = fread(buff, 1, FILEBUFF, stdin))) {
+        if ((UINT64_MAX - fsize < (uint64_t)bread) ||
+            (maxfilesize != 0 && (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize))) {
+            logg(LOGG_ERROR, "stdin exceeds MaxFileSize; refusing to scan a partial prefix\n");
+            if (maxfilesize != 0 && maxfilesize < (uint64_t)INT64_MAX) {
+                if (ftruncate(fileno(fs), (off_t)(maxfilesize + 1)) == -1)
+                    logg(LOGG_DEBUG, "Unable to materialize the over-limit sentinel: %s\n", strerror(errno));
+                else
+                    over_limit_sentinel = true;
+            }
+            fclose(fs);
+            if (over_limit_sentinel) {
+                ret = cl_scanfile_ex2(
+                    filename,
+                    &verdict,
+                    &alert_name,
+                    &info.bytes_scanned,
+                    engine,
+                    options,
+                    &data,
+                    hash_hint,
+                    hash_out,
+                    hash_alg,
+                    file_type_hint,
+                    file_type_out,
+                    &report);
+                if (write_structured_scan_report(opts, report) != 0)
+                    info.errors++;
+                cl_scan_report_free(report);
+            }
+            unlink(filename);
+            free(filename);
+            return ret == CL_SUCCESS ? CL_EMAXSIZE : ret;
+        }
         fsize += bread;
         if (fwrite(buff, 1, bread, fs) < bread) {
             logg(LOGG_ERROR, "Can't write to %s\n", filename);
@@ -880,6 +922,14 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
             fclose(fs);
             return 2;
         }
+    }
+
+    if (ferror(stdin)) {
+        logg(LOGG_ERROR, "Error reading stdin\n");
+        fclose(fs);
+        unlink(filename);
+        free(filename);
+        return 2;
     }
 
     fclose(fs);
@@ -904,9 +954,6 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
     info.files++;
     info.bytes_read += fsize;
-
-    data.filename = "stdin";
-    data.chain    = NULL;
 
     ret = cl_scanfile_ex2(
         filename,
@@ -1750,6 +1797,30 @@ int scanmanager(const struct optstruct *opts)
     if ((opt = optget(opts, "max-scansize"))->active) {
         if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, opt->numarg))) {
             logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_SCANSIZE) failed: %s\n", cl_strerror(ret));
+            ret = 2;
+            goto done;
+        }
+    }
+
+    if ((opt = optget(opts, "max-matcher-work"))->active) {
+        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_MATCHER_WORK, opt->numarg))) {
+            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_MATCHER_WORK) failed: %s\n", cl_strerror(ret));
+            ret = 2;
+            goto done;
+        }
+    }
+
+    if ((opt = optget(opts, "max-temporary-size"))->active) {
+        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, opt->numarg))) {
+            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_TEMPORARY_SIZE) failed: %s\n", cl_strerror(ret));
+            ret = 2;
+            goto done;
+        }
+    }
+
+    if ((opt = optget(opts, "max-contiguous-size"))->active) {
+        if ((ret = cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, opt->numarg))) {
+            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_CONTIGUOUS_SIZE) failed: %s\n", cl_strerror(ret));
             ret = 2;
             goto done;
         }

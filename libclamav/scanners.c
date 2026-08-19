@@ -6121,6 +6121,7 @@ cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx
     STATBUF sb;
     cl_error_t status = CL_SUCCESS;
     fmap_t *new_map   = NULL;
+    bool temporary_reserved = false;
 
     if (!ctx) {
         return CL_EARG;
@@ -6138,6 +6139,11 @@ cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx
         status = CL_SUCCESS;
         goto done;
     }
+
+    status = cli_scan_reserve_temporary(ctx, (uint64_t)sb.st_size);
+    if (status != CL_SUCCESS)
+        goto done;
+    temporary_reserved = true;
 
     perf_start(ctx, PERFT_MAP);
     new_map = fmap_new(desc, 0, sb.st_size, name, filepath);
@@ -6159,6 +6165,8 @@ cl_error_t cli_magic_scan_desc_type(int desc, const char *filepath, cli_ctx *ctx
     (void)cli_recursion_stack_pop(ctx); /* Restore the parent fmap */
 
 done:
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, (uint64_t)sb.st_size);
     if (NULL != new_map) {
         fmap_free(new_map);
     }
@@ -7043,6 +7051,14 @@ cl_error_t cl_scandesc_ex2(
         goto done;
     }
     cli_scan_report_set_root_size(report, (uint64_t)sb.st_size);
+    /* Reject a known-size root before creating an fmap or entering any
+     * parser/matcher path.  This preserves the exact 32 GiB boundary and
+     * prevents a descriptor that is already over MaxFileSize from being
+     * treated as a partially scanned clean input. */
+    if ((engine->maxfilesize != 0) && ((uint64_t)sb.st_size > engine->maxfilesize)) {
+        status = CL_EMAXSIZE;
+        goto done;
+    }
     if (sb.st_size <= 5) {
         cli_dbgmsg("cl_scandesc_callback: File too small (" STDu64 " bytes), ignoring\n", (uint64_t)sb.st_size);
         status = CL_SUCCESS;
@@ -7200,6 +7216,15 @@ cl_error_t cl_scanmap_ex2(
     }
 
     cli_scan_report_set_root_size(report, (uint64_t)map->len);
+
+    if ((engine->maxfilesize != 0) && ((uint64_t)map->len > engine->maxfilesize)) {
+        *verdict_out    = CL_VERDICT_NOTHING_FOUND;
+        *last_alert_out = NULL;
+        if (NULL != scanned_out)
+            *scanned_out = 0;
+        cl_scan_report_finish(report, NULL, CL_EMAXSIZE, *verdict_out, NULL);
+        return CL_EMAXSIZE;
+    }
 
     *verdict_out    = CL_VERDICT_NOTHING_FOUND;
     *last_alert_out = NULL;
