@@ -2356,3 +2356,8 @@ parsing now set the sticky incomplete result. The supported
 `disposition-notification` path remains unchanged. This prevents a required
 MIME branch from being skipped while a mailbox-level scan is still reported as
 clean.
+
+Mail attachment, bounce, BinHex, and text-part callers now share a
+fail-visible fileblob wrapper. It handles missing temporary spools and
+propagates non-clean scan errors, including the formerly unsafe direct
+`fileblobScanAndDestroy(textToFileblob(...))` call.

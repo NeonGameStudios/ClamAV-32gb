@@ -185,6 +185,7 @@ typedef struct mbox_ctx {
 #endif
 
 static int cli_parse_mbox(const char *dir, cli_ctx *ctx);
+static int scanFileblob(mbox_ctx *mctx, fileblob *fb);
 static message *parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821Table, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound);
 static message *parseEmailHeaders(message *m, const table_t *rfc821Table, bool *heuristicFound);
 static int parseEmailHeader(message *m, const char *line, const table_t *rfc821, cli_ctx *ctx, bool *heuristicFound);
@@ -324,6 +325,29 @@ int cli_mbox(const char *dir, cli_ctx *ctx)
         return CL_ENULLARG;
     }
     return cli_parse_mbox(dir, ctx);
+}
+
+/*
+ * Scan a parser-generated fileblob without allowing a missing spool or an
+ * operational scan error to collapse into a clean MIME result.
+ */
+static int
+scanFileblob(mbox_ctx *mctx, fileblob *fb)
+{
+    int rc;
+
+    if (fb == NULL) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "MIME temporary spool could not be created or materialized");
+        return CL_ERESOURCE;
+    }
+
+    rc = fileblobScanAndDestroy(fb);
+    if (rc != CL_CLEAN && rc != CL_VIRUS)
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "MIME temporary spool scan did not complete");
+
+    return rc;
 }
 
 /*
@@ -2564,14 +2588,23 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
 
                     if (fb) {
                         cli_dbgmsg("Saving main message as attachment\n");
-                        if (fileblobScanAndDestroy(fb) == CL_VIRUS)
-                            rc = VIRUS;
+                        {
+                            int scan_rc = scanFileblob(mctx, fb);
+                            if (scan_rc == CL_VIRUS)
+                                rc = VIRUS;
+                            else if (scan_rc != CL_CLEAN)
+                                rc = FAIL;
+                        }
                         mctx->files++;
                         if (mainMessage != messageIn) {
                             messageDestroy(mainMessage);
                             mainMessage = NULL;
                         } else
                             messageReset(mainMessage);
+                    }
+                    else {
+                        (void)scanFileblob(mctx, fb);
+                        rc = FAIL;
                     }
                 } /*else
                 cli_warnmsg("Discarded application not sent as attachment\n");*/
@@ -2730,7 +2763,7 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                 }
             } while (!fileblobInfected(fb));
 
-            if (fileblobScanAndDestroy(fb) == CL_VIRUS)
+            if (scanFileblob(mctx, fb) == CL_VIRUS)
                 rc = VIRUS;
             mctx->files++;
 
@@ -2754,7 +2787,15 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
         if (mainMessage->body_first != NULL &&
             (encodingLine(mainMessage) != NULL) &&
             ((t_line = bounceBegin(mainMessage)) != NULL))
-            rc = (exportBounceMessage(mctx, t_line) == CL_VIRUS) ? VIRUS : OK;
+            {
+                int scan_rc = exportBounceMessage(mctx, t_line);
+                if (scan_rc == CL_VIRUS)
+                    rc = VIRUS;
+                else if (scan_rc != CL_CLEAN)
+                    rc = FAIL;
+                else
+                    rc = OK;
+            }
         else {
             bool saveIt;
 
@@ -2783,7 +2824,7 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                                     28);
 
                     fileblobSetCTX(fb, mctx->ctx);
-                    if (fileblobScanAndDestroy(textToFileblob(t_line, fb, 1)) == CL_VIRUS)
+                    if (scanFileblob(mctx, textToFileblob(t_line, fb, 1)) == CL_VIRUS)
                         rc = VIRUS;
                     mctx->files++;
                 }
@@ -2799,8 +2840,13 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
             if (saveIt) {
                 cli_dbgmsg("Saving text part to scan, rc = %d\n",
                            (int)rc);
-                if (saveTextPart(mctx, mainMessage, 1) == CL_VIRUS)
-                    rc = VIRUS;
+                {
+                    int scan_rc = saveTextPart(mctx, mainMessage, 1);
+                    if (scan_rc == CL_VIRUS)
+                        rc = VIRUS;
+                    else if (scan_rc != CL_CLEAN)
+                        rc = FAIL;
+                }
 
                 if (mainMessage != messageIn) {
                     messageDestroy(mainMessage);
@@ -3387,8 +3433,10 @@ saveTextPart(mbox_ctx *mctx, message *m, int destroy_text)
         cli_dbgmsg("Saving main message\n");
 
         mctx->files++;
-        return fileblobScanAndDestroy(fb);
+        return scanFileblob(mctx, fb);
     }
+    cli_mark_scan_incomplete(mctx->ctx,
+                             "MIME text part could not be materialized as a temporary spool");
     return CL_ETMPFILE;
 }
 
@@ -4187,7 +4235,7 @@ exportBinhexMessage(mbox_ctx *mctx, message *m)
         cli_dbgmsg("Binhex file decoded to %s\n",
                    fileblobGetFilename(fb));
 
-        if (fileblobScanAndDestroy(fb) == CL_VIRUS)
+        if (scanFileblob(mctx, fb) == CL_VIRUS)
             infected = true;
         mctx->files++;
     } else {
@@ -4266,7 +4314,7 @@ exportBounceMessage(mbox_ctx *mctx, text *start)
             cli_dbgmsg("Nothing new to save in the bounce message\n");
             fileblobDestroy(fb);
         } else
-            rc = fileblobScanAndDestroy(fb);
+            rc = scanFileblob(ctx, fb);
         mctx->files++;
     } else
         cli_dbgmsg("Not found a bounce message\n");
@@ -4472,8 +4520,13 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
              * Save this embedded message
              * to a temporary file
              */
-            if (saveTextPart(mctx, aMessage, 1) == CL_VIRUS)
-                *rc = VIRUS;
+            {
+                int scan_rc = saveTextPart(mctx, aMessage, 1);
+                if (scan_rc == CL_VIRUS)
+                    *rc = VIRUS;
+                else if (scan_rc != CL_CLEAN)
+                    *rc = FAIL;
+            }
             messageDestroy(messages[i]);
             messages[i] = NULL;
 #else
@@ -4561,9 +4614,20 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
         if (fb) {
             /* aMessage doesn't always have a ctx set */
             fileblobSetCTX(fb, mctx->ctx);
-            if (fileblobScanAndDestroy(fb) == CL_VIRUS) {
+        }
+
+        {
+            int scan_rc = scanFileblob(mctx, fb);
+
+            if (scan_rc == CL_VIRUS) {
                 *rc = VIRUS;
+            } else if (scan_rc != CL_CLEAN) {
+                *rc = FAIL;
             }
+        }
+
+        if (fb) {
+            /* aMessage doesn't always have a ctx set */
             if (!addToText) {
                 mctx->files++;
             }

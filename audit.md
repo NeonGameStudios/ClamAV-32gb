@@ -1571,3 +1571,8 @@ closes the mailbox-loop case where an internal `FAIL` was discarded while the
 overall mailbox return remained clean. The intentionally supported
 disposition-notification branch is unchanged; compiled mail-corpus execution
 remains a Linux/Sonic1 qualification gate.
+
+Mail-generated fileblob callers now use a single wrapper that rejects missing
+temporary spools, preserves non-clean scan errors, and maps them to the MIME
+`FAIL` state where the caller has an `mbox_status`. This includes text parts,
+bounces, BinHex, nested attachments, and the direct `textToFileblob()` path.
