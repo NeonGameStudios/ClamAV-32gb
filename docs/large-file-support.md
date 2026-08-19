@@ -2544,3 +2544,12 @@ containing archive to be reported as clean. Source guards cover the failure
 reasons and error classifier, and the Linux static unit-test harness registers
 write- and close-fault regressions; their compiled execution remains a release
 gate.
+
+## OLE10 embedded-object boundary — 2026-08-19
+
+The RTF/OLE10 bridge now rejects truncated or out-of-range object headers and
+payloads before scanning a partial temporary file. Rewind, copy, nested-scan,
+temporary-output, and cleanup failures are fail-visible and mark the containing
+scan incomplete/non-cacheable. The focused `test_ole10_truncated_object_is_fail_visible`
+regression is registered; supported-Linux execution, sanitizer coverage, and
+broader legacy OLE/RTF corpus qualification remain release gates.

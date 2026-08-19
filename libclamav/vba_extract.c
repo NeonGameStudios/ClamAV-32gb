@@ -1712,7 +1712,7 @@ cli_vba_inflate(int fd, off_t offset, size_t *size)
 /*
  * See also cli_filecopy()
  */
-static void
+static cl_error_t
 ole_copy_file_data(int s, int d, uint32_t len)
 {
     unsigned char data[FILEBUFF];
@@ -1721,16 +1721,14 @@ ole_copy_file_data(int s, int d, uint32_t len)
         size_t todo = MIN(sizeof(data), len);
 
         if (cli_readn(s, data, todo) != todo)
-            break;
+            return CL_EREAD;
         if (cli_writen(d, data, todo) != todo)
-            break;
+            return CL_EWRITE;
 
-        if (todo > len) {
-            break;
-        } else {
-            len -= todo;
-        }
+        len -= todo;
     }
+
+    return CL_SUCCESS;
 }
 
 int cli_scan_ole10(int fd, cli_ctx *ctx)
@@ -1740,66 +1738,120 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     uint32_t object_size;
     STATBUF statbuf;
     char *fullname;
+    off_t payload_offset;
 
-    if (fd < 0)
-        return CL_CLEAN;
+    if (fd < 0) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object descriptor was invalid");
+        return CL_EARG;
+    }
 
-    lseek(fd, 0, SEEK_SET);
-    if (!read_uint32(fd, &object_size, FALSE))
-        return CL_CLEAN;
+    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object could not be rewound");
+        return CL_ESEEK;
+    }
+    if (!read_uint32(fd, &object_size, FALSE)) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object header was truncated");
+        return CL_EPARSE;
+    }
 
-    if (FSTAT(fd, &statbuf) == -1)
+    if (FSTAT(fd, &statbuf) == -1) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object could not be stat'ed");
         return CL_ESTAT;
+    }
 
-    if ((statbuf.st_size - object_size) >= 4) {
+    if (statbuf.st_size < 0 || (uint64_t)object_size > (uint64_t)statbuf.st_size) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object size exceeds the input");
+        return CL_EPARSE;
+    }
+
+    if (((uint64_t)statbuf.st_size - (uint64_t)object_size) >= 4) {
         /* Probably the OLE type id */
         if (lseek(fd, 2, SEEK_CUR) == -1) {
-            return CL_CLEAN;
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object type header could not be read");
+            return CL_ESEEK;
         }
 
         /* Attachment name */
-        if (!skip_past_nul(fd))
-            return CL_CLEAN;
+        if (!skip_past_nul(fd)) {
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object name was truncated");
+            return CL_EPARSE;
+        }
 
         /* Attachment full path */
-        if (!skip_past_nul(fd))
-            return CL_CLEAN;
+        if (!skip_past_nul(fd)) {
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object path was truncated");
+            return CL_EPARSE;
+        }
 
         /* ??? */
-        if (lseek(fd, 8, SEEK_CUR) == -1)
-            return CL_CLEAN;
+        if (lseek(fd, 8, SEEK_CUR) == -1) {
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object metadata was truncated");
+            return CL_ESEEK;
+        }
 
         /* Attachment full path */
-        if (!skip_past_nul(fd))
-            return CL_CLEAN;
+        if (!skip_past_nul(fd)) {
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object target path was truncated");
+            return CL_EPARSE;
+        }
 
-        if (!read_uint32(fd, &object_size, FALSE))
-            return CL_CLEAN;
+        if (!read_uint32(fd, &object_size, FALSE)) {
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload header was truncated");
+            return CL_EPARSE;
+        }
+        payload_offset = lseek(fd, 0, SEEK_CUR);
+        if (payload_offset < 0 || (uint64_t)payload_offset > (uint64_t)statbuf.st_size ||
+            (uint64_t)object_size > (uint64_t)statbuf.st_size - (uint64_t)payload_offset) {
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload exceeds the input");
+            return CL_EPARSE;
+        }
     }
     if (!(fullname = cli_gentemp(ctx ? ctx->this_layer_tmpdir : NULL))) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be allocated");
         return CL_EMEM;
     }
     ofd = open(fullname, O_RDWR | O_CREAT | O_TRUNC | O_BINARY | O_EXCL,
                S_IWUSR | S_IRUSR);
     if (ofd < 0) {
         cli_warnmsg("cli_decode_ole_object: can't create %s\n", fullname);
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be created");
         free(fullname);
         return CL_ECREAT;
     }
 
     cli_dbgmsg("cli_decode_ole_object: decoding to %s\n", fullname);
 
-    ole_copy_file_data(fd, ofd, object_size);
+    ret = ole_copy_file_data(fd, ofd, object_size);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload could not be copied completely");
+        close(ofd);
+        if (ctx && !ctx->engine->keeptmp)
+            cli_unlink(fullname);
+        free(fullname);
+        return ret;
+    }
 
-    lseek(ofd, 0, SEEK_SET);
+    if (lseek(ofd, 0, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object output could not be rewound");
+        close(ofd);
+        if (ctx && !ctx->engine->keeptmp)
+            cli_unlink(fullname);
+        free(fullname);
+        return CL_ESEEK;
+    }
 
     ret = cli_magic_scan_desc(ofd, fullname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    if (ret != CL_SUCCESS && ret != CL_VIRUS)
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object scan did not complete");
 
     close(ofd);
 
     if (ctx && !ctx->engine->keeptmp) {
         if (cli_unlink(fullname)) {
             cli_dbgmsg("cli_decode_ole_object: Failed to remove temp file: %s\n", fullname);
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be removed");
+            if (ret == CL_SUCCESS)
+                ret = CL_EUNLINK;
         }
     }
 

@@ -4091,6 +4091,45 @@ START_TEST(test_rtf_truncated_document_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole10_truncated_object_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    uint32_t object_size = 8;
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/ole10-truncated-object", tmpdir);
+    fd = open(file_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(write(fd, &object_size, sizeof(object_size)), (ssize_t)sizeof(object_size));
+    ck_assert_int_eq(write(fd, "x", 1), 1);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    map = fmap_new(fd, 0, 0, file_path, NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scan_ole10(fd, &ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    close(fd);
+    unlink(file_path);
+}
+END_TEST
+
 #if HAVE_UNRAR
 START_TEST(test_rar_truncated_header_is_fail_visible)
 {
@@ -9043,6 +9082,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
+    tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
     tcase_add_test(tc_cl, test_zip_central_index_propagates_callback_status);
