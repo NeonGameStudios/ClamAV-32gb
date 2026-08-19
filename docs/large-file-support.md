@@ -2379,3 +2379,8 @@ ZIP, CAB, and ARJ embedded candidates now distinguish a disproven signature
 truncated, unreadable, or resource-failed header. The latter marks the parent
 scan incomplete and preserves the non-clean result instead of silently
 discarding the header-check failure.
+
+Embedded PE recognition now treats `MaxEmbeddedPE` exhaustion and the legacy
+32-bit containing-offset ABI boundary as explicit incomplete/resource results.
+The scanner no longer silently skips a recognized embedded PE while allowing
+the containing layer to remain clean.

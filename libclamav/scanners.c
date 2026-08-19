@@ -4521,12 +4521,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
 
                                 if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
                                     cli_dbgmsg("scanraw: MaxEmbeddedPE exceeded\n");
+                                    cli_mark_scan_incomplete(ctx, "embedded PE exceeds MaxEmbeddedPE and was not inspected");
+                                    if (nret == CL_SUCCESS)
+                                        nret = CL_ERESOURCE;
                                     break;
                                 }
 
                                 if ((uint64_t)fpt->offset > UINT32_MAX) {
                                     cli_dbgmsg("scanraw: embedded PE offset exceeds the 32-bit executable metadata ABI; skipping at " STDu64 "\n", (uint64_t)fpt->offset);
                                     cli_mark_scan_incomplete(ctx, "embedded PE metadata requires a 32-bit containing-file offset");
+                                    if (nret == CL_SUCCESS)
+                                        nret = CL_ERESOURCE;
                                     break;
                                 }
                                 cli_exe_info_init(&peinfo, (uint32_t)fpt->offset);

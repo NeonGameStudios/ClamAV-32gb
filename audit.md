@@ -1593,3 +1593,8 @@ disproven weak candidate; `CL_EPARSE`, resource, and I/O failures mark the
 parent and are retained as non-clean status. This closes the remaining
 candidate-state gap in `scanraw()`; supported-build embedded-corpus execution
 remains open.
+
+Embedded PE dispatch now preserves `MaxEmbeddedPE` exhaustion and the
+32-bit-containing-offset ABI boundary as `CL_ERESOURCE`-class incomplete
+results, in addition to setting the sticky marker. This prevents recognized
+PE content from being silently skipped by `scanraw()`.
