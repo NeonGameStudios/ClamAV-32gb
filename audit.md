@@ -1598,3 +1598,8 @@ Embedded PE dispatch now preserves `MaxEmbeddedPE` exhaustion and the
 32-bit-containing-offset ABI boundary as `CL_ERESOURCE`-class incomplete
 results, in addition to setting the sticky marker. This prevents recognized
 PE content from being silently skipped by `scanraw()`.
+
+The embedded PE header check now distinguishes generic `CL_ERROR` candidate
+rejection from all other header failures. Truncated, timed-out, resource, and
+read/parse failures set the sticky incomplete state and preserve their status;
+only the disproven generic candidate remains non-tainting.

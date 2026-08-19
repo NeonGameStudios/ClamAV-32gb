@@ -4543,6 +4543,11 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 cli_exe_info_destroy(&peinfo);
 
                                 if (CL_SUCCESS != ret) {
+                                    if (ret != CL_ERROR) {
+                                        cli_mark_scan_incomplete(ctx, "embedded PE header could not be inspected completely");
+                                        if (nret == CL_SUCCESS)
+                                            nret = ret;
+                                    }
                                     cli_dbgmsg("Header check for MSEXE detection failed, probably not actually an embedded PE file.\n");
                                     break;
                                 }

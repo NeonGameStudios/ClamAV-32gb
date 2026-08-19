@@ -2384,3 +2384,8 @@ Embedded PE recognition now treats `MaxEmbeddedPE` exhaustion and the legacy
 32-bit containing-offset ABI boundary as explicit incomplete/resource results.
 The scanner no longer silently skips a recognized embedded PE while allowing
 the containing layer to remain clean.
+
+Embedded PE header admission now keeps generic “not actually PE” results as
+disproven candidates, but marks truncation, timeout, resource, allocation, and
+read failures incomplete. A failed confirmed header inspection can no longer
+be mistaken for an unrelated magic hit.
