@@ -2026,6 +2026,13 @@ header prefix and declared header extent before UnRAR admission. RAR5 remains
 covered by its ordinary top-level parser path and still requires separate SFX
 qualification.
 
+RAR input staged from a nested or non-file-backed fmap now uses the shared
+temporary cleanup contract. Descriptor-close and temporary-removal failures
+mark the scan incomplete/non-cacheable and preserve an earlier stronger
+result, preventing a successful archive scan from hiding cleanup failure.
+Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification remain
+open.
+
 EGG SFX candidates now require the complete fixed EGG header, a supported
 version, a nonzero header identifier, and zero reserved bits before a nested
 layer is admitted. Short magic-only matches are rejected without tainting the

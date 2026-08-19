@@ -801,6 +801,15 @@ main-header type is rejected as unrelated data; a valid marker whose declared
 header extends beyond the containing fmap is incomplete. RAR5 SFX qualification
 remains open.
 
+## RAR staged-input cleanup — 2026-08-19
+
+RAR input staged from a nested or non-file-backed fmap now uses the shared
+temporary cleanup contract. Descriptor-close and temporary-removal failures
+mark the scan incomplete/non-cacheable and preserve an earlier stronger
+result, preventing a successful archive scan from hiding cleanup failure.
+Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification remain
+open.
+
 ## EGG SFX candidate admission — 2026-08-19
 
 The embedded EGG path now requires the complete fixed header, supported

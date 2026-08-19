@@ -126,6 +126,10 @@
 #include <fcntl.h>
 #include <string.h>
 
+static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempfile,
+                                              cl_error_t status, const char *close_reason,
+                                              const char *remove_reason);
+
 cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes)
 {
     cl_error_t status = CL_SUCCESS;
@@ -610,15 +614,10 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
     }
 
 done:
-    if (tmpfd != -1) {
-        /* If dumped tempfile, need to cleanup */
-        close(tmpfd);
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tmpname)) {
-                status = CL_EUNLINK;
-            }
-        }
-    }
+    if (tmpfd != -1)
+        status = cli_cleanup_compressed_temp(ctx, &tmpfd, tmpname, status,
+                                             "RAR temporary input could not be closed",
+                                             "RAR temporary input could not be removed");
 
     if (tmpname != NULL) {
         free(tmpname);
