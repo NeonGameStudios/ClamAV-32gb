@@ -4510,6 +4510,7 @@ void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason)
         return;
 
     ctx->scan_incomplete = true;
+    ctx->scan_incomplete_reason = reason;
     cli_warnmsg("Scan incomplete: %s\n", reason ? reason : "required inspection path was unavailable");
 }
 
@@ -4822,6 +4823,7 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         case CL_EDUP:
         case CL_ETMPFILE:
         case CL_ETMPDIR:
+        case CL_ERESOURCE:
         case CL_EMEM:
             cli_dbgmsg("Descriptor[%d]: halting after file scan because: %s\n", fmap_fd(ctx->fmap), cl_strerror(result_in));
             halt_scan   = true;
@@ -5218,6 +5220,8 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
         goto early_ret;
     }
+
+    cli_scan_report_note_parser_operation(ctx->report);
 
     if (type == CL_TYPE_PART_ANY) {
         typercg = 0;
@@ -6379,7 +6383,8 @@ static cl_error_t scan_common(
     char **hash_out,
     const char *hash_alg,
     const char *file_type_hint,
-    char **file_type_out)
+    char **file_type_out,
+    cl_scan_report_t *report)
 {
     cl_error_t status = CL_SUCCESS;
     cl_error_t ret;
@@ -6471,6 +6476,7 @@ static cl_error_t scan_common(
 
     ctx.engine  = engine;
     ctx.scanned = scanned_out;
+    ctx.report  = report;
     CLI_MALLOC_OR_GOTO_DONE(ctx.options, sizeof(struct cl_scan_options), status = CL_EMEM);
 
     memcpy(ctx.options, scanoptions, sizeof(struct cl_scan_options));
@@ -6832,6 +6838,15 @@ static cl_error_t scan_common(
 
 done:
 
+    if (NULL != ctx.report) {
+        cl_scan_report_finish(
+            ctx.report,
+            &ctx,
+            status,
+            (NULL != ctx.recursion_stack) ? ctx.recursion_stack[ctx.recursion_level].verdict : *verdict_out,
+            (NULL != last_alert_out) ? *last_alert_out : NULL);
+    }
+
     if (logg_initialized) {
         cli_logg_unsetup();
     }
@@ -6977,7 +6992,7 @@ cl_error_t cl_scandesc_callback(
     return status;
 }
 
-cl_error_t cl_scandesc_ex(
+cl_error_t cl_scandesc_ex2(
     int desc,
     const char *filename,
     cl_verdict_t *verdict_out,
@@ -6990,14 +7005,26 @@ cl_error_t cl_scandesc_ex(
     char **hash_out,
     const char *hash_alg,
     const char *file_type_hint,
-    char **file_type_out)
+    char **file_type_out,
+    cl_scan_report_t **report_out)
 {
     cl_error_t status = CL_SUCCESS;
     cl_fmap_t *map    = NULL;
     STATBUF sb;
     char *filename_base = NULL;
+    cl_scan_report_t *report = NULL;
+
+    if (NULL != report_out) {
+        status = cli_scan_report_create(&report, engine);
+        if (status != CL_SUCCESS)
+            return status;
+        *report_out = report;
+    }
+
+    cli_scan_report_set_target(report, filename);
 
     if (NULL == verdict_out || NULL == last_alert_out || NULL == engine || NULL == scanoptions) {
+        cl_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
         return CL_ENULLARG;
     }
 
@@ -7015,6 +7042,7 @@ cl_error_t cl_scandesc_ex(
         status = CL_ESTAT;
         goto done;
     }
+    cli_scan_report_set_root_size(report, (uint64_t)sb.st_size);
     if (sb.st_size <= 5) {
         cli_dbgmsg("cl_scandesc_callback: File too small (" STDu64 " bytes), ignoring\n", (uint64_t)sb.st_size);
         status = CL_SUCCESS;
@@ -7043,9 +7071,12 @@ cl_error_t cl_scandesc_ex(
         hash_out,
         hash_alg,
         file_type_hint,
-        file_type_out);
+        file_type_out,
+        report);
 
 done:
+    cl_scan_report_finish(report, NULL, status, *verdict_out, *last_alert_out);
+
     if (NULL != map) {
         fmap_free(map);
     }
@@ -7054,6 +7085,38 @@ done:
     }
 
     return status;
+}
+
+cl_error_t cl_scandesc_ex(
+    int desc,
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out)
+{
+    return cl_scandesc_ex2(
+        desc,
+        filename,
+        verdict_out,
+        last_alert_out,
+        scanned_out,
+        engine,
+        scanoptions,
+        context,
+        hash_hint,
+        hash_out,
+        hash_alg,
+        file_type_hint,
+        file_type_out,
+        NULL);
 }
 
 cl_error_t cl_scanmap_callback(
@@ -7103,7 +7166,7 @@ cl_error_t cl_scanmap_callback(
     return status;
 }
 
-cl_error_t cl_scanmap_ex(
+cl_error_t cl_scanmap_ex2(
     cl_fmap_t *map,
     const char *filename,
     cl_verdict_t *verdict_out,
@@ -7116,11 +7179,27 @@ cl_error_t cl_scanmap_ex(
     char **hash_out,
     const char *hash_alg,
     const char *file_type_hint,
-    char **file_type_out)
+    char **file_type_out,
+    cl_scan_report_t **report_out)
 {
+    cl_error_t status;
+    cl_scan_report_t *report = NULL;
+
+    if (NULL != report_out) {
+        status = cli_scan_report_create(&report, engine);
+        if (status != CL_SUCCESS)
+            return status;
+        *report_out = report;
+    }
+
+    cli_scan_report_set_target(report, filename);
+
     if (NULL == map || NULL == verdict_out || NULL == last_alert_out || NULL == engine || NULL == scanoptions) {
+        cl_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
         return CL_ENULLARG;
     }
+
+    cli_scan_report_set_root_size(report, (uint64_t)map->len);
 
     *verdict_out    = CL_VERDICT_NOTHING_FOUND;
     *last_alert_out = NULL;
@@ -7149,7 +7228,40 @@ cl_error_t cl_scanmap_ex(
         hash_out,
         hash_alg,
         file_type_hint,
-        file_type_out);
+        file_type_out,
+        report);
+}
+
+cl_error_t cl_scanmap_ex(
+    cl_fmap_t *map,
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out)
+{
+    return cl_scanmap_ex2(
+        map,
+        filename,
+        verdict_out,
+        last_alert_out,
+        scanned_out,
+        engine,
+        scanoptions,
+        context,
+        hash_hint,
+        hash_out,
+        hash_alg,
+        file_type_hint,
+        file_type_out,
+        NULL);
 }
 
 cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *original_name, uint32_t attributes)
@@ -7260,6 +7372,79 @@ cl_error_t cl_scanfile_callback(
     return status;
 }
 
+cl_error_t cl_scanfile_ex2(
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    cl_scan_report_t **report_out)
+{
+    int fd;
+    cl_error_t ret;
+    cl_scan_report_t *report = NULL;
+    const char *fname = cli_to_utf8_maybe_alloc(filename);
+
+    if (NULL != report_out)
+        *report_out = NULL;
+
+    if (!fname) {
+        if (NULL != report_out) {
+            if (cli_scan_report_create(&report, engine) == CL_SUCCESS) {
+                *report_out = report;
+                cli_scan_report_set_target(report, filename);
+                cli_scan_report_finish(report, NULL, CL_EARG, CL_VERDICT_NOTHING_FOUND, NULL);
+            }
+        }
+        return CL_EARG;
+    }
+
+    if ((fd = safe_open(fname, O_RDONLY | O_BINARY)) == -1) {
+        if (NULL != report_out) {
+            if (cli_scan_report_create(&report, engine) == CL_SUCCESS) {
+                *report_out = report;
+                cli_scan_report_set_target(report, filename);
+                cli_scan_report_finish(report, NULL, errno == EACCES ? CL_EACCES : CL_EOPEN, CL_VERDICT_NOTHING_FOUND, NULL);
+            }
+        }
+        if (errno == EACCES) {
+            return CL_EACCES;
+        } else {
+            return CL_EOPEN;
+        }
+    }
+
+    if (fname != filename)
+        free((char *)fname);
+
+    ret = cl_scandesc_ex2(
+        fd,
+        filename,
+        verdict_out,
+        last_alert_out,
+        scanned_out,
+        engine,
+        scanoptions,
+        context,
+        hash_hint,
+        hash_out,
+        hash_alg,
+        file_type_hint,
+        file_type_out,
+        report_out);
+
+    close(fd);
+
+    return ret;
+}
+
 cl_error_t cl_scanfile_ex(
     const char *filename,
     cl_verdict_t *verdict_out,
@@ -7274,26 +7459,7 @@ cl_error_t cl_scanfile_ex(
     const char *file_type_hint,
     char **file_type_out)
 {
-    int fd;
-    cl_error_t ret;
-    const char *fname = cli_to_utf8_maybe_alloc(filename);
-
-    if (!fname)
-        return CL_EARG;
-
-    if ((fd = safe_open(fname, O_RDONLY | O_BINARY)) == -1) {
-        if (errno == EACCES) {
-            return CL_EACCES;
-        } else {
-            return CL_EOPEN;
-        }
-    }
-
-    if (fname != filename)
-        free((char *)fname);
-
-    ret = cl_scandesc_ex(
-        fd,
+    return cl_scanfile_ex2(
         filename,
         verdict_out,
         last_alert_out,
@@ -7305,11 +7471,8 @@ cl_error_t cl_scanfile_ex(
         hash_out,
         hash_alg,
         file_type_hint,
-        file_type_out);
-
-    close(fd);
-
-    return ret;
+        file_type_out,
+        NULL);
 }
 
 /*

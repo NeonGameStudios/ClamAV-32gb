@@ -96,6 +96,55 @@ typedef enum cl_verdict_t {
 } cl_verdict_t;
 
 /**
+ * @brief Completion state for the structured scan report API.
+ *
+ * A clean/trusted verdict is only complete when the state is
+ * CL_SCAN_COMPLETION_COMPLETE.  The other states are intentionally
+ * machine-readable so applications do not have to infer completeness from
+ * log text or an exit code alone.
+ */
+typedef enum cl_scan_completion_t {
+    CL_SCAN_COMPLETION_COMPLETE = 0,
+    CL_SCAN_COMPLETION_DETECTION_TERMINATED,
+    CL_SCAN_COMPLETION_LIMIT_INCOMPLETE,
+    CL_SCAN_COMPLETION_UNSUPPORTED,
+    CL_SCAN_COMPLETION_MALFORMED_CONFIRMED,
+    CL_SCAN_COMPLETION_RESOURCE_FAILURE,
+    CL_SCAN_COMPLETION_APPLICATION_ABORT
+} cl_scan_completion_t;
+
+typedef struct cl_scan_report cl_scan_report_t;
+
+/**
+ * @brief Counters collected for one scan.
+ */
+typedef struct cl_scan_report_metrics {
+    uint64_t root_size;
+    uint64_t logical_bytes;
+    uint64_t matcher_bytes;
+    uint64_t contiguous_bytes;
+    uint64_t temporary_bytes;
+    uint64_t files_scanned;
+    uint32_t max_recursion_depth;
+    uint64_t elapsed_ms;
+    uint64_t parser_operations;
+    uint64_t detector_operations;
+    uint64_t skipped_operations;
+} cl_scan_report_metrics_t;
+
+/**
+ * @brief Limits captured when a scan report is created.
+ */
+typedef struct cl_scan_report_limits {
+    uint64_t max_file_size;
+    uint64_t max_scan_size;
+    uint64_t max_pcre_file_size;
+    uint64_t max_scan_time;
+    uint32_t max_files;
+    uint32_t max_recursion;
+} cl_scan_report_limits_t;
+
+/**
  * @brief Return codes used by libclamav functions.
  */
 typedef enum cl_error_t {
@@ -141,6 +190,7 @@ typedef enum cl_error_t {
 
     CL_VERIFIED, /** The scan target has been deemed trusted */
     CL_ERROR,    /** Unspecified / generic error */
+    CL_ERESOURCE, /** Admission or shared-resource limit failure. */
 
     /* no error codes below this line please */
     CL_ELAST_ERROR
@@ -1685,6 +1735,71 @@ extern cl_error_t cl_scandesc_callback(
  *                           unless a reported detection takes precedence.
  *                           Does NOT return CL_VIRUS for a signature match. Check the `verdict_out` parameter instead.
  */
+/**
+ * @brief Release a structured scan report returned by one of the *_ex2 APIs.
+ */
+extern void cl_scan_report_free(cl_scan_report_t *report);
+
+extern cl_error_t cl_scan_report_get_status(
+    const cl_scan_report_t *report,
+    cl_error_t *status_out);
+
+extern cl_error_t cl_scan_report_get_verdict(
+    const cl_scan_report_t *report,
+    cl_verdict_t *verdict_out);
+
+extern cl_error_t cl_scan_report_get_completion(
+    const cl_scan_report_t *report,
+    cl_scan_completion_t *completion_out);
+
+extern cl_error_t cl_scan_report_get_metrics(
+    const cl_scan_report_t *report,
+    cl_scan_report_metrics_t *metrics_out);
+
+extern cl_error_t cl_scan_report_get_limits(
+    const cl_scan_report_t *report,
+    cl_scan_report_limits_t *limits_out);
+
+extern cl_error_t cl_scan_report_get_reason(
+    const cl_scan_report_t *report,
+    const char **reason_out);
+
+extern cl_error_t cl_scan_report_get_last_alert(
+    const cl_scan_report_t *report,
+    const char **alert_out);
+
+extern cl_error_t cl_scan_report_get_target(
+    const cl_scan_report_t *report,
+    const char **target_out);
+
+/**
+ * @brief Serialize a report as a JSON object.
+ *
+ * The caller owns the returned string and must release it with free().
+ */
+extern cl_error_t cl_scan_report_to_json(
+    const cl_scan_report_t *report,
+    char **json_out);
+
+/**
+ * @brief Extended descriptor scan with an optional structured report.
+ */
+extern cl_error_t cl_scandesc_ex2(
+    int desc,
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    cl_scan_report_t **report_out);
+
 extern cl_error_t cl_scandesc_ex(
     int desc,
     const char *filename,
@@ -1788,6 +1903,24 @@ extern cl_error_t cl_scanfile_callback(
  *                           unless a reported detection takes precedence.
  *                           Does NOT return CL_VIRUS for a signature match. Check the `verdict_out` parameter instead.
  */
+/**
+ * @brief Extended file scan with an optional structured report.
+ */
+extern cl_error_t cl_scanfile_ex2(
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    cl_scan_report_t **report_out);
+
 extern cl_error_t cl_scanfile_ex(
     const char *filename,
     cl_verdict_t *verdict_out,
@@ -1889,6 +2022,25 @@ extern cl_error_t cl_scanmap_callback(
  *                           unless a reported detection takes precedence.
  *                           Does NOT return CL_VIRUS for a signature match. Check the `verdict_out` parameter instead.
  */
+/**
+ * @brief Extended fmap scan with an optional structured report.
+ */
+extern cl_error_t cl_scanmap_ex2(
+    cl_fmap_t *map,
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    cl_scan_report_t **report_out);
+
 extern cl_error_t cl_scanmap_ex(
     cl_fmap_t *map,
     const char *filename,

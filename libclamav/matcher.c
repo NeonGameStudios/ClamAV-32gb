@@ -239,6 +239,8 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
                 if (ret != CL_SUCCESS)
                     return ret;
 
+                cli_scan_report_note_contiguous(ctx->report, map->len);
+
                 cli_dbgmsg("matcher_run: performing regex matching on full map: " STDu64 "+%u(" STDu64 ") >= %zu\n", offset, length, offset + length, map->len);
 
                 buffer = fmap_need_off_once(map, 0, map->len);
@@ -256,6 +258,8 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
             ret = cli_pcre_check_size_limit(ctx, maxfilesize, length);
             if (ret != CL_SUCCESS)
                 return ret;
+
+            cli_scan_report_note_contiguous(ctx->report, length);
 
             cli_dbgmsg("matcher_run: performing regex matching on buffer with no map: " STDu64 "+%u(" STDu64 ")\n", offset, length, offset + length);
             /* scan the specified buffer */
@@ -1426,6 +1430,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         }
         if (ctx->scanned)
             *ctx->scanned += bytes;
+        cli_scan_report_note_matcher(ctx->report, bytes);
 
         if (target_ac_root) {
             const char *virname = NULL;
@@ -1584,6 +1589,9 @@ done:
     if (bm_offsets_table_initialized) {
         cli_bm_freeoff(&bm_offsets_table);
     }
+
+    if ((ret == CL_SUCCESS || ret >= CL_TYPENO) && ctx->report)
+        cli_scan_report_note_detector_operation(ctx->report);
 
     if (ret != CL_SUCCESS) {
         return ret;

@@ -596,6 +596,49 @@ START_TEST(test_mbox_materialization_limit_without_alert_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_scan_report_complete_and_json)
+{
+    static const char payload[] = "structured scan report fixture\n";
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_scan_completion_t completion;
+    cl_error_t status;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    char *json = NULL;
+    char *path = NULL;
+    int fd = -1;
+
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_int_eq(write(fd, payload, sizeof(payload) - 1), (ssize_t)(sizeof(payload) - 1));
+    ck_assert_int_eq(close(fd), 0);
+
+    status = cl_scanfile_ex2(path, &verdict, &last_alert, NULL,
+                             g_engine, &options, NULL, NULL, NULL, NULL,
+                             NULL, NULL, &report);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_COMPLETE);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.root_size, sizeof(payload) - 1);
+    ck_assert_uint_eq(metrics.logical_bytes, sizeof(payload) - 1);
+    ck_assert(metrics.files_scanned > 0);
+    ck_assert_int_eq(cl_scan_report_to_json(report, &json), CL_SUCCESS);
+    ck_assert_ptr_nonnull(json);
+    ck_assert_ptr_nonnull(strstr(json, "\"completion\":\"COMPLETE\""));
+
+    free(json);
+    cl_scan_report_free(report);
+    cli_unlink(path);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_single_message_materialization_limit_is_fail_visible)
 {
     char *path = create_materialization_limit_fixture(0);
@@ -8082,6 +8125,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxscansize_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
+    tcase_add_test(tc_cl, test_scan_report_complete_and_json);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);

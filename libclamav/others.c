@@ -409,6 +409,8 @@ const char *cl_strerror(cl_error_t clerror)
             return "Can't allocate memory";
         case CL_ETIMEOUT:
             return "Exceeded time limit";
+        case CL_ERESOURCE:
+            return "Shared scan resource limit exceeded";
         /* internal (needed for debug messages) */
         case CL_BREAK:
             return "Process aborted";
@@ -704,8 +706,8 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
      */
     switch (field) {
         case CL_ENGINE_MAX_SCANSIZE:
-            if (num < 0 || (uint64_t)num > CLI_MAX_LARGE_FILESIZE) {
-                cli_errmsg("MaxScanSize: values must be between 0 and 32 GiB\n");
+            if (num < 0 || (uint64_t)num > CLI_MAX_LOGICAL_SCAN_SIZE) {
+                cli_errmsg("MaxScanSize: values must be between 0 and 64 GiB\n");
                 return CL_EARG;
             }
             engine->maxscansize = (uint64_t)num;
@@ -1356,6 +1358,8 @@ cl_error_t cli_updatelimits(cli_ctx *ctx, size_t needed)
     if ((ctx->engine->maxscansize != 0) &&
         (ctx->scansize > ctx->engine->maxscansize))
         ctx->scansize = ctx->engine->maxscansize;
+
+    cli_scan_report_note_logical(ctx->report, (uint64_t)needed, ctx->recursion_level);
 
     return CL_SUCCESS;
 }

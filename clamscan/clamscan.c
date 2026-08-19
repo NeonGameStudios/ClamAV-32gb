@@ -273,6 +273,7 @@ void help(void)
     mprintf(LOGG_INFO, "    --gen-json[=yes/no(*)]               Generate JSON metadata for the scanned file(s). For testing & development use ONLY.\n");
     mprintf(LOGG_INFO, "                                         JSON will be printed if --debug is enabled.\n");
     mprintf(LOGG_INFO, "                                         A JSON file will dropped to the temp directory if --leave-temps is enabled.\n");
+    mprintf(LOGG_INFO, "    --report-json=FILE                   Write one structured scan report JSON object per input file.\n");
     mprintf(LOGG_INFO, "    --json-store-html-uris[=yes(*)/no]   Store html URIs in metadata.\n");
     mprintf(LOGG_INFO, "                                         URIs will be written to the metadata.json file in an array called 'URIs'.\n");
     mprintf(LOGG_INFO, "    --json-store-pdf-uris[=yes(*)/no]    Store pdf URIs in metadata.\n");

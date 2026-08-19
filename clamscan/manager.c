@@ -292,6 +292,45 @@ static void clamscan_virus_found_cb(int fd, const char *alert_name, void *contex
     return;
 }
 
+static int write_structured_scan_report(const struct optstruct *opts, const cl_scan_report_t *report)
+{
+    const struct optstruct *opt;
+    char *json = NULL;
+    FILE *stream;
+    int status;
+
+    if (NULL == opts || NULL == report)
+        return 0;
+
+    opt = optget(opts, "report-json");
+    if (NULL == opt || !opt->enabled || NULL == opt->strarg)
+        return 0;
+
+    status = cl_scan_report_to_json(report, &json);
+    if (status != CL_SUCCESS) {
+        logg(LOGG_ERROR, "Can't serialize structured scan report: %s\n", cl_strerror(status));
+        return -1;
+    }
+
+    stream = fopen(opt->strarg, "ab");
+    if (NULL == stream) {
+        logg(LOGG_ERROR, "Can't open structured scan report %s: %s\n", opt->strarg, strerror(errno));
+        free(json);
+        return -1;
+    }
+
+    if (fwrite(json, 1, strlen(json), stream) != strlen(json) || fputc('\n', stream) == EOF) {
+        logg(LOGG_ERROR, "Can't write structured scan report %s: %s\n", opt->strarg, strerror(errno));
+        fclose(stream);
+        free(json);
+        return -1;
+    }
+
+    fclose(stream);
+    free(json);
+    return 0;
+}
+
 static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
 {
     cl_error_t ret = CL_SUCCESS;
@@ -311,6 +350,7 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
     const char *file_type_hint   = NULL;
     char **file_type_out         = NULL;
     char *file_type              = NULL;
+    cl_scan_report_t *report     = NULL;
     action_source_t action_source;
     bool have_action_source      = false;
     bool have_stat               = false;
@@ -472,7 +512,7 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
     data.chain    = &chain;
     data.filename = filename;
 
-    ret = cl_scandesc_ex(
+    ret = cl_scandesc_ex2(
         fd,
         filename,
         &verdict,
@@ -484,7 +524,11 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
         hash_out,
         hash_alg,
         file_type_hint,
-        file_type_out);
+        file_type_out,
+        &report);
+
+    if (write_structured_scan_report(opts, report) != 0)
+        info.errors++;
 
     switch (verdict) {
         case CL_VERDICT_NOTHING_FOUND: {
@@ -564,6 +608,7 @@ done:
     if (NULL != file_type) {
         free(file_type);
     }
+    cl_scan_report_free(report);
     if (NULL != real_filter_path) {
         free(real_filter_path);
     }
@@ -804,6 +849,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
     const char *file_type_hint = NULL;
     char **file_type_out       = NULL;
     char *file_type            = NULL;
+    cl_scan_report_t *report   = NULL;
 
     tmpdir = cl_engine_get_str(engine, CL_ENGINE_TMPDIR, NULL);
     if (NULL == tmpdir) {
@@ -862,7 +908,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
     data.filename = "stdin";
     data.chain    = NULL;
 
-    ret = cl_scanfile_ex(
+    ret = cl_scanfile_ex2(
         filename,
         &verdict,
         &alert_name,
@@ -874,7 +920,11 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         hash_out,
         hash_alg,
         file_type_hint,
-        file_type_out);
+        file_type_out,
+        &report);
+
+    if (write_structured_scan_report(opts, report) != 0)
+        info.errors++;
 
     switch (verdict) {
         case CL_VERDICT_NOTHING_FOUND: {
@@ -927,6 +977,8 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
     if (NULL != file_type) {
         free(file_type);
     }
+
+    cl_scan_report_free(report);
 
     unlink(filename);
     free(filename);
