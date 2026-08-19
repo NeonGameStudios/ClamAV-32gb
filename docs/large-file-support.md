@@ -2660,3 +2660,20 @@ case remains bound to the existing size/hash/status/completion/signature/type
 oracle and structured JSON report checks. This improves protocol coverage but
 does not itself constitute a completed run; the dedicated 64-GiB Linux runner,
 sanitizer, RSS, latency, and Sonic1 evidence gates remain required.
+
+## MHTML root preclassification failures — 2026-08-19
+
+The MHTML root-HTML preclassification wrapper now treats materialization
+failure, HTML-document construction failure, XML-reader construction failure,
+unterminated XML in an MHTML comment, and parser errors as incomplete
+inspection. The structured metadata error helper is best-effort and can
+return success when no metadata object is available, so each failure also
+sets the scan's sticky incomplete state directly. Builds without libxml2 HTML
+support now return an explicit failure instead of falling through without a
+status. The raw MIME/HTML scan still proceeds through its normal path, but a
+required preclassification operation can no longer be hidden by a clean
+result or cache entry.
+
+The focused source guards cover each failure reason and the fail-incomplete
+XML-parser flag. A compiled MHTML regression, sanitizer run, and supported
+Linux/Sonic1 parser-family qualification remain release gates.

@@ -873,6 +873,22 @@ Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
 qualification remain release gates; multi-segment DMGs remain explicit
 unsupported input.
 
+## MHTML root preclassification failure visibility — 2026-08-19
+
+`parseRootMHTML()` and its nested MHTML-comment callback previously had
+fail-open branches: failed message/text materialization returned `OK`, parser
+errors could be suppressed when the metadata JSON object was absent, and a
+libxml2 build without HTML support fell through without returning a status.
+Those paths now mark the scan incomplete directly, return explicit parser
+failure, and enable fail-incomplete handling for the XML walker. Unterminated
+comment XML and comment-reader construction failures receive the same sticky
+state treatment. The raw MIME/HTML scan remains available, but a failed
+preclassification operation cannot produce a clean/cacheable result.
+
+This is source-backed fail-closed coverage. A compiled MHTML regression,
+sanitizer run, and supported Linux/Sonic1 parser-family qualification remain
+open release gates.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the

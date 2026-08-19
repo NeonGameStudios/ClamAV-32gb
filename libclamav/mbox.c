@@ -1577,23 +1577,27 @@ static cl_error_t parseMHTMLComment(const char *comment, cli_ctx *ctx, void *wrk
         xmlend = strstr(xmlsrt, "</xml>");
         if (xmlend == NULL) {
             cli_dbgmsg("parseMHTMLComment: unbounded xml tag\n");
-            break;
+            cli_mark_scan_incomplete(ctx, "MHTML comment XML element was not terminated");
+            return CL_EPARSE;
         }
 
         reader = xmlReaderForMemory(xmlsrt, xmlend - xmlsrt + 6, "comment.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
         if (!reader) {
             cli_dbgmsg("parseMHTMLComment: cannot initialize xmlReader\n");
 
-            if (ctx->this_layer_metadata_json != NULL)
-                ret = cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_MEM");
+            cli_mark_scan_incomplete(ctx, "MHTML comment XML reader could not be initialized");
 
-            return ret; // libxml2 failed!
+            if (ctx->this_layer_metadata_json != NULL)
+                (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_MEM");
+
+            return CL_EPARSE; // libxml2 failed!
         }
 
         /* comment callback is not set to prevent recursion */
         /* TODO: should we separate the key dictionaries? */
         /* TODO: should we use the json object pointer? */
-        ret = cli_msxml_parse_document(ctx, reader, mhtml_comment_keys, num_mhtml_comment_keys, MSXML_FLAG_JSON, NULL);
+        ret = cli_msxml_parse_document(ctx, reader, mhtml_comment_keys, num_mhtml_comment_keys,
+                                       MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, NULL);
 
         xmlTextReaderClose(reader);
         xmlFreeTextReader(reader);
@@ -1635,20 +1639,22 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
     else /* t != NULL */
         input = textToBlob(t, NULL, 0);
 
-    if (input == NULL)
-        return OK;
+    if (input == NULL) {
+        cli_mark_scan_incomplete(ctx, "MHTML root HTML input could not be materialized completely");
+        return FAIL;
+    }
 
     htmlDoc = htmlReadMemory((char *)input->data, input->len, "mhtml.html", NULL, CLAMAV_MIN_XMLREADER_FLAGS | HTML_PARSE_NOWARNING);
     if (htmlDoc == NULL) {
         cli_dbgmsg("parseRootMHTML: cannot initialize read html document\n");
 
+        cli_mark_scan_incomplete(ctx, "MHTML root HTML document could not be parsed completely");
+
         if (ctx->this_layer_metadata_json != NULL)
-            ret = cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_HTML_READ");
-        if (ret != CL_SUCCESS)
-            rc = FAIL;
+            (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_HTML_READ");
 
         blobDestroy(input);
-        return rc;
+        return FAIL;
     }
 
     if (mctx->wrkobj) {
@@ -1664,23 +1670,23 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
     if (reader == NULL) {
         cli_dbgmsg("parseRootMHTML: cannot initialize xmlTextReader\n");
 
+        cli_mark_scan_incomplete(ctx, "MHTML root HTML XML reader could not be initialized");
+
         if (ctx->this_layer_metadata_json != NULL)
-            ret = cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_IO");
-        if (ret != CL_SUCCESS)
-            rc = FAIL;
+            (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_IO");
 
         blobDestroy(input);
-        return rc;
+        return FAIL;
     }
 
     memset(&mxctx, 0, sizeof(mxctx));
     /* no scanning callback set */
     mxctx.comment_cb = parseMHTMLComment;
-    ret              = cli_msxml_parse_document(ctx, reader, mhtml_keys, num_mhtml_keys, MSXML_FLAG_JSON | MSXML_FLAG_WALK, &mxctx);
+    ret              = cli_msxml_parse_document(ctx, reader, mhtml_keys, num_mhtml_keys,
+                                                MSXML_FLAG_JSON | MSXML_FLAG_WALK | MSXML_FLAG_FAIL_INCOMPLETE,
+                                                &mxctx);
     switch (ret) {
         case CL_SUCCESS:
-        case CL_ETIMEOUT:
-        case CL_BREAK:
             rc = OK;
             break;
 
@@ -1697,6 +1703,7 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
             break;
 
         default:
+            cli_mark_scan_incomplete(ctx, "MHTML root HTML parser did not complete");
             rc = FAIL;
     }
 
@@ -1710,6 +1717,8 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
     UNUSEDPARAM(t);
     cli_dbgmsg("in parseRootMHTML\n");
     cli_dbgmsg("parseRootMHTML: parsing html documents disabled in libxml2!\n");
+    cli_mark_scan_incomplete(mctx->ctx, "MHTML root HTML parsing is unavailable in this build");
+    return FAIL;
 #endif /* LIBXML_HTML_ENABLED */
 }
 
