@@ -7037,78 +7037,85 @@ native-width-integer	libclamav/7z/7zFile.c	97	WRes File_Read(CSzFile *p, void *d
 native-width-integer	libclamav/7z/7zFile.c	99	  size_t originalSize = *size;
 native-width-integer	libclamav/7z/7zFile.h	45	WRes File_Read(CSzFile *p, void *data, size_t *size);
 native-width-integer	libclamav/7z/7zFile.h	48	WRes File_Write(CSzFile *p, const void *data, size_t *size);
-native-width-integer	libclamav/7z/7zIn.c	1027	  MY_ALLOC(CSzFileItem, files, (size_t)numFiles, allocMain);
-native-width-integer	libclamav/7z/7zIn.c	1043	    if ((UInt64)(int)type != type)
-native-width-integer	libclamav/7z/7zIn.c	1048	    switch((int)type)
-native-width-integer	libclamav/7z/7zIn.c	1052	        size_t namesSize;
-native-width-integer	libclamav/7z/7zIn.c	1054	        namesSize = (size_t)size - 1;
-native-width-integer	libclamav/7z/7zIn.c	1061	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
-native-width-integer	libclamav/7z/7zIn.c	1220	  if (!Buf_Create(outBuffer, (size_t)unpackSize, allocTemp))
-native-width-integer	libclamav/7z/7zIn.c	1225	          outBuffer->data, (size_t)unpackSize, allocTemp);
-native-width-integer	libclamav/7z/7zIn.c	1228	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
-native-width-integer	libclamav/7z/7zIn.c	1265	  size_t nextHeaderSizeT;
-native-width-integer	libclamav/7z/7zIn.c	1291	    int i, checkSize = 500;
-native-width-integer	libclamav/7z/7zIn.c	1300	    for (i = (int)checkSize - 2; i >= 0; i--)
-native-width-integer	libclamav/7z/7zIn.c	1310	    nextHeaderCRC = CrcCalc(buf + i, (size_t)nextHeaderSize);
-native-width-integer	libclamav/7z/7zIn.c	1315	  nextHeaderSizeT = (size_t)nextHeaderSize;
-native-width-integer	libclamav/7z/7zIn.c	1396	    size_t *outBufferSize,
-native-width-integer	libclamav/7z/7zIn.c	1397	    size_t *offset,
-native-width-integer	libclamav/7z/7zIn.c	1398	    size_t *outSizeProcessed,
-native-width-integer	libclamav/7z/7zIn.c	1422	    size_t unpackSize = (size_t)unpackSizeSpec;
-native-width-integer	libclamav/7z/7zIn.c	1472	    *outSizeProcessed = (size_t)fileItem->Size;
-native-width-integer	libclamav/7z/7zIn.c	1492	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
-native-width-integer	libclamav/7z/7zIn.c	1498	  size_t selected;
-native-width-integer	libclamav/7z/7zIn.c	1508	  selected   = (size_t)(writeEnd - writeStart);
-native-width-integer	libclamav/7z/7zIn.c	1510	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
-native-width-integer	libclamav/7z/7zIn.c	1513	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
+native-width-integer	libclamav/7z/7zIn.c	1034	  MY_ALLOC(CSzFileItem, files, (size_t)numFiles, allocMain);
+native-width-integer	libclamav/7z/7zIn.c	1050	    if ((UInt64)(int)type != type)
+native-width-integer	libclamav/7z/7zIn.c	1055	    switch((int)type)
+native-width-integer	libclamav/7z/7zIn.c	1059	        size_t namesSize;
+native-width-integer	libclamav/7z/7zIn.c	1061	        namesSize = (size_t)size - 1;
+native-width-integer	libclamav/7z/7zIn.c	1068	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
+native-width-integer	libclamav/7z/7zIn.c	1226	  if (unpackSize > (UInt64)(size_t)-1)
+native-width-integer	libclamav/7z/7zIn.c	1231	  if (!Buf_Create(outBuffer, (size_t)unpackSize, allocTemp))
+native-width-integer	libclamav/7z/7zIn.c	1236	          outBuffer->data, (size_t)unpackSize, allocTemp);
+native-width-integer	libclamav/7z/7zIn.c	1239	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
+native-width-integer	libclamav/7z/7zIn.c	1276	  size_t nextHeaderSizeT;
+native-width-integer	libclamav/7z/7zIn.c	1304	    int i, checkSize = 500;
+native-width-integer	libclamav/7z/7zIn.c	1311	    if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
+native-width-integer	libclamav/7z/7zIn.c	1315	    for (i = (int)checkSize - 2; i >= 0; i--)
+native-width-integer	libclamav/7z/7zIn.c	1325	    nextHeaderCRC = CrcCalc(buf + i, (size_t)nextHeaderSize);
+native-width-integer	libclamav/7z/7zIn.c	1330	  nextHeaderSizeT = (size_t)nextHeaderSize;
+native-width-integer	libclamav/7z/7zIn.c	1414	    size_t *outBufferSize,
+native-width-integer	libclamav/7z/7zIn.c	1415	    size_t *offset,
+native-width-integer	libclamav/7z/7zIn.c	1416	    size_t *outSizeProcessed,
+native-width-integer	libclamav/7z/7zIn.c	1445	    size_t unpackSize;
+native-width-integer	libclamav/7z/7zIn.c	1452	    if (unpackSizeSpec > (UInt64)(size_t)-1)
+native-width-integer	libclamav/7z/7zIn.c	1454	    unpackSize = (size_t)unpackSizeSpec;
+native-width-integer	libclamav/7z/7zIn.c	1502	      if (offset64 > (UInt64)(size_t)-1 ||
+native-width-integer	libclamav/7z/7zIn.c	1503	          fileItem->Size > (UInt64)(size_t)-1)
+native-width-integer	libclamav/7z/7zIn.c	1505	      *offset           = (size_t)offset64;
+native-width-integer	libclamav/7z/7zIn.c	1506	      *outSizeProcessed = (size_t)fileItem->Size;
+native-width-integer	libclamav/7z/7zIn.c	1528	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
+native-width-integer	libclamav/7z/7zIn.c	1534	  size_t selected;
+native-width-integer	libclamav/7z/7zIn.c	1544	  selected   = (size_t)(writeEnd - writeStart);
+native-width-integer	libclamav/7z/7zIn.c	1546	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
+native-width-integer	libclamav/7z/7zIn.c	1549	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
 native-width-integer	libclamav/7z/7zIn.c	166	UInt64 GetFolderPackStreamSize(int folderIndex, int streamIndex) const
 native-width-integer	libclamav/7z/7zIn.c	171	UInt64 GetFilePackSize(int fileIndex) const
 native-width-integer	libclamav/7z/7zIn.c	173	  int folderIndex = FileIndexToFolderIndexMap[fileIndex];
-native-width-integer	libclamav/7z/7zIn.c	215	    int emptyStream = !file->HasStream;
+native-width-integer	libclamav/7z/7zIn.c	220	    int emptyStream = !file->HasStream;
 native-width-integer	libclamav/7z/7zIn.c	23	int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex);
-native-width-integer	libclamav/7z/7zIn.c	257	int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, UInt64 *resSize)
-native-width-integer	libclamav/7z/7zIn.c	285	  for (int i = 0; i < files.Size(); i++)
-native-width-integer	libclamav/7z/7zIn.c	309	static int TestSignatureCandidate(Byte *testBytes)
-native-width-integer	libclamav/7z/7zIn.c	311	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	321	  size_t Size;
-native-width-integer	libclamav/7z/7zIn.c	333	static SRes SzReadBytes(CSzData *sd, Byte *data, size_t size)
-native-width-integer	libclamav/7z/7zIn.c	335	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	345	  int i;
-native-width-integer	libclamav/7z/7zIn.c	360	  int i;
-native-width-integer	libclamav/7z/7zIn.c	385	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
-native-width-integer	libclamav/7z/7zIn.c	400	  sd->Size -= (size_t)size;
-native-width-integer	libclamav/7z/7zIn.c	401	  sd->Data += (size_t)size;
-native-width-integer	libclamav/7z/7zIn.c	439	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-native-width-integer	libclamav/7z/7zIn.c	443	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	461	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-native-width-integer	libclamav/7z/7zIn.c	464	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	478	    size_t numItems,
-native-width-integer	libclamav/7z/7zIn.c	483	  size_t i;
-native-width-integer	libclamav/7z/7zIn.c	513	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	528	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
-native-width-integer	libclamav/7z/7zIn.c	537	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	538	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	565	  MY_ALLOC(CSzCoderInfo, folder->Coders, (size_t)numCoders, alloc);
-native-width-integer	libclamav/7z/7zIn.c	603	        if (!Buf_Create(&coder->Props, (size_t)propertiesSize, alloc))
-native-width-integer	libclamav/7z/7zIn.c	605	        RINOK(SzReadBytes(sd, coder->Props.data, (size_t)propertiesSize));
-native-width-integer	libclamav/7z/7zIn.c	633	  MY_ALLOC(CSzBindPair, folder->BindPairs, (size_t)numBindPairs, alloc);
-native-width-integer	libclamav/7z/7zIn.c	646	  MY_ALLOC(UInt32, folder->PackStreams, (size_t)numPackStreams, alloc);
-native-width-integer	libclamav/7z/7zIn.c	679	    MY_ALLOC(CSzFolder, *folders, (size_t)nfdrs, alloc);
-native-width-integer	libclamav/7z/7zIn.c	703	    MY_ALLOC(UInt64, folder->UnpackSizes, (size_t)numOutStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	262	int SzArEx_GetFolderFullPackSize(const CSzArEx *p, UInt32 folderIndex, UInt64 *resSize)
+native-width-integer	libclamav/7z/7zIn.c	290	  for (int i = 0; i < files.Size(); i++)
+native-width-integer	libclamav/7z/7zIn.c	314	static int TestSignatureCandidate(Byte *testBytes)
+native-width-integer	libclamav/7z/7zIn.c	316	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	326	  size_t Size;
+native-width-integer	libclamav/7z/7zIn.c	338	static SRes SzReadBytes(CSzData *sd, Byte *data, size_t size)
+native-width-integer	libclamav/7z/7zIn.c	340	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	350	  int i;
+native-width-integer	libclamav/7z/7zIn.c	365	  int i;
+native-width-integer	libclamav/7z/7zIn.c	390	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
+native-width-integer	libclamav/7z/7zIn.c	405	  sd->Size -= (size_t)size;
+native-width-integer	libclamav/7z/7zIn.c	406	  sd->Data += (size_t)size;
+native-width-integer	libclamav/7z/7zIn.c	444	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+native-width-integer	libclamav/7z/7zIn.c	448	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	466	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+native-width-integer	libclamav/7z/7zIn.c	469	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	483	    size_t numItems,
+native-width-integer	libclamav/7z/7zIn.c	488	  size_t i;
+native-width-integer	libclamav/7z/7zIn.c	518	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	533	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
+native-width-integer	libclamav/7z/7zIn.c	542	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	543	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	570	  MY_ALLOC(CSzCoderInfo, folder->Coders, (size_t)numCoders, alloc);
+native-width-integer	libclamav/7z/7zIn.c	608	        if (!Buf_Create(&coder->Props, (size_t)propertiesSize, alloc))
+native-width-integer	libclamav/7z/7zIn.c	610	        RINOK(SzReadBytes(sd, coder->Props.data, (size_t)propertiesSize));
+native-width-integer	libclamav/7z/7zIn.c	638	  MY_ALLOC(CSzBindPair, folder->BindPairs, (size_t)numBindPairs, alloc);
+native-width-integer	libclamav/7z/7zIn.c	651	  MY_ALLOC(UInt32, folder->PackStreams, (size_t)numPackStreams, alloc);
+native-width-integer	libclamav/7z/7zIn.c	684	    MY_ALLOC(CSzFolder, *folders, (size_t)nfdrs, alloc);
+native-width-integer	libclamav/7z/7zIn.c	708	    MY_ALLOC(UInt64, folder->UnpackSizes, (size_t)numOutStreams, alloc);
 native-width-integer	libclamav/7z/7zIn.c	72	int SzFolder_FindBindPairForInStream(CSzFolder *p, UInt32 inStreamIndex)
-native-width-integer	libclamav/7z/7zIn.c	795	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
-native-width-integer	libclamav/7z/7zIn.c	797	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
-native-width-integer	libclamav/7z/7zIn.c	799	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
+native-width-integer	libclamav/7z/7zIn.c	800	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
+native-width-integer	libclamav/7z/7zIn.c	802	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
+native-width-integer	libclamav/7z/7zIn.c	804	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
 native-width-integer	libclamav/7z/7zIn.c	82	int SzFolder_FindBindPairForOutStream(CSzFolder *p, UInt32 outStreamIndex)
-native-width-integer	libclamav/7z/7zIn.c	849	      int digestIndex = 0;
-native-width-integer	libclamav/7z/7zIn.c	915	    if ((UInt64)(int)type != type)
-native-width-integer	libclamav/7z/7zIn.c	917	    switch((int)type)
+native-width-integer	libclamav/7z/7zIn.c	854	      int digestIndex = 0;
+native-width-integer	libclamav/7z/7zIn.c	920	    if ((UInt64)(int)type != type)
+native-width-integer	libclamav/7z/7zIn.c	922	    switch((int)type)
 native-width-integer	libclamav/7z/7zIn.c	93	  int i = (int)SzFolder_GetNumOutStreams(p);
-native-width-integer	libclamav/7z/7zIn.c	944	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
-native-width-integer	libclamav/7z/7zIn.c	946	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
-native-width-integer	libclamav/7z/7zIn.c	949	    size_t i;
-native-width-integer	libclamav/7z/7zIn.c	957	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
-native-width-integer	libclamav/7z/7zIn.c	960	  size_t pos = 0;
+native-width-integer	libclamav/7z/7zIn.c	949	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
+native-width-integer	libclamav/7z/7zIn.c	951	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
+native-width-integer	libclamav/7z/7zIn.c	954	    size_t i;
+native-width-integer	libclamav/7z/7zIn.c	962	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
+native-width-integer	libclamav/7z/7zIn.c	965	  size_t pos = 0;
 native-width-integer	libclamav/7z/7zStream.c	106	static SRes LookToRead_Skip(void *pp, size_t offset)
 native-width-integer	libclamav/7z/7zStream.c	113	static SRes LookToRead_Read(void *pp, void *buf, size_t *size)
 native-width-integer	libclamav/7z/7zStream.c	116	  size_t rem = p->size - p->pos;
@@ -15630,7 +15637,7 @@ boundary-constant	common/optparser.c	1597	                    lnumlimit = LLONG_
 boundary-constant	common/optparser.c	1640	                    lnumarg = (optentry->argtype == CLOPT_TYPE_SIZE64) ? lnumlimit : UINT_MAX;
 boundary-constant	common/optparser.c	1654	                numarg = lnumarg ? lnumarg : ((optentry->argtype == CLOPT_TYPE_SIZE64) ? lnumlimit : UINT_MAX);
 boundary-constant	common/optparser.c	90	        if (parsed > (UINT32_MAX - digit) / 10U)
-boundary-constant	libclamav/7z/7zIn.c	771	        if (*numUnpackStreams > UINT32_MAX - numStreams)
+boundary-constant	libclamav/7z/7zIn.c	776	        if (*numUnpackStreams > UINT32_MAX - numStreams)
 boundary-constant	libclamav/autoit.c	1052	                                        if (addme > UINT32_MAX - 255) {
 boundary-constant	libclamav/autoit.c	1062	                    if (UNP.error || addme > UINT32_MAX - 3 || bs > UINT32_MAX - 3 - addme) {
 boundary-constant	libclamav/autoit.c	1118	            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
@@ -19509,57 +19516,63 @@ offset-size-arithmetic	libclamav/7z/7zFile.h	44	/* reads max(*size, remain file'
 offset-size-arithmetic	libclamav/7z/7zFile.h	45	WRes File_Read(CSzFile *p, void *data, size_t *size);
 offset-size-arithmetic	libclamav/7z/7zFile.h	47	/* writes *size bytes */
 offset-size-arithmetic	libclamav/7z/7zFile.h	48	WRes File_Write(CSzFile *p, const void *data, size_t *size);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1041	    if (size > sd->Size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1054	        namesSize = (size_t)size - 1;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1061	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1146	        sizeIndex++;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1228	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1284	  p->startPosAfterHeader = startArcPos + k7zStartHeaderSize;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1296	    if(endpos-curpos < 500) checkSize = endpos-curpos;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1297	    readpos = endpos - checkSize;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1306	    nextHeaderOffset = readpos + i;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1327	    if ((UInt64)pos < startArcPos + nextHeaderOffset ||
-offset-size-arithmetic	libclamav/7z/7zIn.c	1328	        (UInt64)pos < startArcPos + k7zStartHeaderSize + nextHeaderOffset ||
-offset-size-arithmetic	libclamav/7z/7zIn.c	1329	        (UInt64)pos < startArcPos + k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1333	  RINOK(LookInStream_SeekTo(inStream, startArcPos + k7zStartHeaderSize + nextHeaderOffset));
-offset-size-arithmetic	libclamav/7z/7zIn.c	1396	    size_t *outBufferSize,
-offset-size-arithmetic	libclamav/7z/7zIn.c	1397	    size_t *offset,
-offset-size-arithmetic	libclamav/7z/7zIn.c	1398	    size_t *outSizeProcessed,
-offset-size-arithmetic	libclamav/7z/7zIn.c	1471	      *offset += (UInt32)p->db.Files[i].Size;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1472	    *outSizeProcessed = (size_t)fileItem->Size;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1473	    if (*offset + *outSizeProcessed > *outBufferSize)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1475	    if (fileItem->CrcDefined && CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->Crc)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1492	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1503	  if (chunkEnd <= p->start || chunkStart >= p->end)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1506	  writeStart = chunkStart > p->start ? chunkStart : p->start;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1507	  writeEnd   = chunkEnd < p->end ? chunkEnd : p->end;
-offset-size-arithmetic	libclamav/7z/7zIn.c	1508	  selected   = (size_t)(writeEnd - writeStart);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1510	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
-offset-size-arithmetic	libclamav/7z/7zIn.c	1513	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
-offset-size-arithmetic	libclamav/7z/7zIn.c	1574	  if (member.position != SzFolder_GetUnpackSize(folder) || member.written != fileItem->Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1048	    if (size > sd->Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1061	        namesSize = (size_t)size - 1;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1068	        MY_ALLOC(size_t, p->FileNameOffsets, numFiles + 1, allocMain);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1153	        sizeIndex++;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1226	  if (unpackSize > (UInt64)(size_t)-1)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1239	    if (CrcCalc(outBuffer->data, (size_t)unpackSize) != folder->UnpackCRC)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1295	  if (startArcPos < 0 || (UInt64)startArcPos > (UInt64)-1 - k7zStartHeaderSize)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1297	  p->startPosAfterHeader = (UInt64)startArcPos + k7zStartHeaderSize;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1311	    if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1312	    readpos = endpos - checkSize;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1321	    nextHeaderOffset = readpos + i;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1346	        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	1347	        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1351	  RINOK(LookInStream_SeekTo(inStream, startArcPos + k7zStartHeaderSize + nextHeaderOffset));
+offset-size-arithmetic	libclamav/7z/7zIn.c	1414	    size_t *outBufferSize,
+offset-size-arithmetic	libclamav/7z/7zIn.c	1415	    size_t *offset,
+offset-size-arithmetic	libclamav/7z/7zIn.c	1416	    size_t *outSizeProcessed,
+offset-size-arithmetic	libclamav/7z/7zIn.c	1452	    if (unpackSizeSpec > (UInt64)(size_t)-1)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1498	        if (offset64 > (UInt64)-1 - p->db.Files[i].Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1500	        offset64 += p->db.Files[i].Size;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1502	      if (offset64 > (UInt64)(size_t)-1 ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	1503	          fileItem->Size > (UInt64)(size_t)-1)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1506	      *outSizeProcessed = (size_t)fileItem->Size;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1508	    if (*offset > *outBufferSize ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	1511	    if (fileItem->CrcDefined && CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->Crc)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1528	static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1539	  if (chunkEnd <= p->start || chunkStart >= p->end)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1542	  writeStart = chunkStart > p->start ? chunkStart : p->start;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1543	  writeEnd   = chunkEnd < p->end ? chunkEnd : p->end;
+offset-size-arithmetic	libclamav/7z/7zIn.c	1544	  selected   = (size_t)(writeEnd - writeStart);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1546	                           (const Byte *)data + (size_t)(writeStart - chunkStart), selected) != selected)
+offset-size-arithmetic	libclamav/7z/7zIn.c	1549	                     (const Byte *)data + (size_t)(writeStart - chunkStart), selected);
+offset-size-arithmetic	libclamav/7z/7zIn.c	1610	  if (member.position != SzFolder_GetUnpackSize(folder) || member.written != fileItem->Size)
 offset-size-arithmetic	libclamav/7z/7zIn.c	185	  if ((p = (T *)IAlloc_Alloc(alloc, (size) * sizeof(T))) == 0) return SZ_ERROR_MEM; }
-offset-size-arithmetic	libclamav/7z/7zIn.c	198	    startPos += p->db.Folders[i].NumPackStreams;
-offset-size-arithmetic	libclamav/7z/7zIn.c	206	    startPosSize += p->db.PackSizes[i];
-offset-size-arithmetic	libclamav/7z/7zIn.c	265	    UInt64 t = size + p->db.PackSizes[packStreamIndex + i];
-offset-size-arithmetic	libclamav/7z/7zIn.c	266	    if (t < size) /* check it */
-offset-size-arithmetic	libclamav/7z/7zIn.c	385	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
-offset-size-arithmetic	libclamav/7z/7zIn.c	398	  if (size > sd->Size)
-offset-size-arithmetic	libclamav/7z/7zIn.c	439	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-offset-size-arithmetic	libclamav/7z/7zIn.c	461	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
-offset-size-arithmetic	libclamav/7z/7zIn.c	513	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
-offset-size-arithmetic	libclamav/7z/7zIn.c	528	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
-offset-size-arithmetic	libclamav/7z/7zIn.c	537	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
-offset-size-arithmetic	libclamav/7z/7zIn.c	538	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
-offset-size-arithmetic	libclamav/7z/7zIn.c	580	      if (idSize > sizeof(coder->MethodID))
-offset-size-arithmetic	libclamav/7z/7zIn.c	795	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
-offset-size-arithmetic	libclamav/7z/7zIn.c	797	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
-offset-size-arithmetic	libclamav/7z/7zIn.c	799	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
-offset-size-arithmetic	libclamav/7z/7zIn.c	944	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
-offset-size-arithmetic	libclamav/7z/7zIn.c	946	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
-offset-size-arithmetic	libclamav/7z/7zIn.c	957	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
-offset-size-arithmetic	libclamav/7z/7zIn.c	968	      if (p[pos * 2] == 0 && p[pos * 2 + 1] == 0)
-offset-size-arithmetic	libclamav/7z/7zIn.c	970	      pos++;
-offset-size-arithmetic	libclamav/7z/7zIn.c	972	    pos++;
+offset-size-arithmetic	libclamav/7z/7zIn.c	200	    startPos += p->db.Folders[i].NumPackStreams;
+offset-size-arithmetic	libclamav/7z/7zIn.c	207	    if (startPosSize > (UInt64)-1 - p->dataPos ||
+offset-size-arithmetic	libclamav/7z/7zIn.c	211	    startPosSize += p->db.PackSizes[i];
+offset-size-arithmetic	libclamav/7z/7zIn.c	270	    UInt64 t = size + p->db.PackSizes[packStreamIndex + i];
+offset-size-arithmetic	libclamav/7z/7zIn.c	271	    if (t < size) /* check it */
+offset-size-arithmetic	libclamav/7z/7zIn.c	390	  if (value64 >= ((UInt64)(1) << ((sizeof(size_t) - 1) * 8 + 2)))
+offset-size-arithmetic	libclamav/7z/7zIn.c	403	  if (size > sd->Size)
+offset-size-arithmetic	libclamav/7z/7zIn.c	444	static SRes SzReadBoolVector(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+offset-size-arithmetic	libclamav/7z/7zIn.c	466	static SRes SzReadBoolVector2(CSzData *sd, size_t numItems, Byte **v, ISzAlloc *alloc)
+offset-size-arithmetic	libclamav/7z/7zIn.c	518	  MY_ALLOC(UInt64, *packSizes, (size_t)*numPackStreams, alloc);
+offset-size-arithmetic	libclamav/7z/7zIn.c	533	      RINOK(SzReadHashDigests(sd, (size_t)*numPackStreams, packCRCsDefined, packCRCs, alloc));
+offset-size-arithmetic	libclamav/7z/7zIn.c	542	    MY_ALLOC(Byte, *packCRCsDefined, (size_t)*numPackStreams, alloc);
+offset-size-arithmetic	libclamav/7z/7zIn.c	543	    MY_ALLOC(UInt32, *packCRCs, (size_t)*numPackStreams, alloc);
+offset-size-arithmetic	libclamav/7z/7zIn.c	585	      if (idSize > sizeof(coder->MethodID))
+offset-size-arithmetic	libclamav/7z/7zIn.c	800	    *unpackSizes = (UInt64 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt64) + sizeof(UInt64));
+offset-size-arithmetic	libclamav/7z/7zIn.c	802	    *digestsDefined = (Byte *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(Byte) + 1);
+offset-size-arithmetic	libclamav/7z/7zIn.c	804	    *digests = (UInt32 *)IAlloc_Alloc(allocTemp, (size_t)*numUnpackStreams * sizeof(UInt32) + sizeof(UInt32));
+offset-size-arithmetic	libclamav/7z/7zIn.c	949	size_t SzArEx_GetFileNameUtf16(const CSzArEx *p, size_t fileIndex, UInt16 *dest)
+offset-size-arithmetic	libclamav/7z/7zIn.c	951	  size_t len = p->FileNameOffsets[fileIndex + 1] - p->FileNameOffsets[fileIndex];
+offset-size-arithmetic	libclamav/7z/7zIn.c	962	static SRes SzReadFileNames(const Byte *p, size_t size, UInt32 numFiles, size_t *sizes)
+offset-size-arithmetic	libclamav/7z/7zIn.c	973	      if (p[pos * 2] == 0 && p[pos * 2 + 1] == 0)
+offset-size-arithmetic	libclamav/7z/7zIn.c	975	      pos++;
+offset-size-arithmetic	libclamav/7z/7zIn.c	977	    pos++;
 offset-size-arithmetic	libclamav/7z/7zStream.c	100	  if (size2 < *size)
 offset-size-arithmetic	libclamav/7z/7zStream.c	109	  p->pos += offset;
 offset-size-arithmetic	libclamav/7z/7zStream.c	113	static SRes LookToRead_Read(void *pp, void *buf, size_t *size)

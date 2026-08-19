@@ -82,6 +82,15 @@ also rejects negative and out-of-map positions before arithmetic. This keeps
 failed extraction and archive-coordinate overflow fail-visible instead of
 feeding bogus byte counts to the decoder.
 
+7-Zip header, packed-stream, and legacy solid-folder coordinate arithmetic is
+now checked before addition or narrowing. The legacy compatibility extractor
+cannot truncate a member offset or size to 32 bits, and encoded-header staging
+cannot wrap its 64-bit data position.
+
+The packed-stream position checks also include the current data base when
+validating each pack-size increment, so the final cumulative position cannot
+wrap after an individually representable member size.
+
 The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.

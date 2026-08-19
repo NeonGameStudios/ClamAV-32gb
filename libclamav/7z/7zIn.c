@@ -195,6 +195,8 @@ static SRes SzArEx_Fill(CSzArEx *p, ISzAlloc *alloc)
   for (i = 0; i < p->db.NumFolders; i++)
   {
     p->FolderStartPackStreamIndex[i] = startPos;
+    if (p->db.Folders[i].NumPackStreams > (UInt32)-1 - startPos)
+      return SZ_ERROR_ARCHIVE;
     startPos += p->db.Folders[i].NumPackStreams;
   }
 
@@ -202,6 +204,9 @@ static SRes SzArEx_Fill(CSzArEx *p, ISzAlloc *alloc)
 
   for (i = 0; i < p->db.NumPackStreams; i++)
   {
+    if (startPosSize > (UInt64)-1 - p->dataPos ||
+        p->db.PackSizes[i] > (UInt64)-1 - p->dataPos - startPosSize)
+      return SZ_ERROR_ARCHIVE;
     p->PackStreamStartPositions[i] = startPosSize;
     startPosSize += p->db.PackSizes[i];
   }
@@ -1012,6 +1017,8 @@ static SRes SzReadHeader2(
         unpackSizes,
         digestsDefined,
         digests, allocMain, allocTemp));
+    if (p->dataPos > (UInt64)-1 - p->startPosAfterHeader)
+      return SZ_ERROR_ARCHIVE;
     p->dataPos += p->startPosAfterHeader;
     RINOK(SzReadID(sd, &type));
   }
@@ -1208,12 +1215,16 @@ static SRes SzReadAndDecodePackedStreams2(
       &numUnpackStreams,  unpackSizes, digestsDefined, digests,
       allocTemp, allocTemp));
   
+  if (dataStartPos > (UInt64)-1 - baseOffset)
+    return SZ_ERROR_ARCHIVE;
   dataStartPos += baseOffset;
   if (p->NumFolders != 1)
     return SZ_ERROR_ARCHIVE;
 
   folder = p->Folders;
   unpackSize = SzFolder_GetUnpackSize(folder);
+  if (unpackSize > (UInt64)(size_t)-1)
+    return SZ_ERROR_MEM;
   
   RINOK(LookInStream_SeekTo(inStream, dataStartPos));
 
@@ -1281,7 +1292,9 @@ static SRes SzArEx_Open2(
   nextHeaderSize = GetUi64(header + 20);
   nextHeaderCRC = GetUi32(header + 28);
 
-  p->startPosAfterHeader = startArcPos + k7zStartHeaderSize;
+  if (startArcPos < 0 || (UInt64)startArcPos > (UInt64)-1 - k7zStartHeaderSize)
+    return SZ_ERROR_ARCHIVE;
+  p->startPosAfterHeader = (UInt64)startArcPos + k7zStartHeaderSize;
   
   /*aCaB - 2010-02-16 - START OF RECOVERY MODE
   if (CrcCalc(header + 12, 20) != GetUi32(header + 8)) {
@@ -1293,7 +1306,9 @@ static SRes SzArEx_Open2(
     Int64 curpos=0, endpos=0, readpos;
     RINOK(inStream->Seek(inStream, &curpos, SZ_SEEK_CUR));
     RINOK(inStream->Seek(inStream, &endpos, SZ_SEEK_END));
-    if(endpos-curpos < 500) checkSize = endpos-curpos;
+    if (endpos < curpos)
+      return SZ_ERROR_ARCHIVE;
+    if(endpos-curpos < 500) checkSize = (int)(endpos-curpos);
     readpos = endpos - checkSize;
     RINOK(inStream->Seek(inStream, &readpos, SZ_SEEK_SET));
     RINOK(LookInStream_Read2(inStream, buf, checkSize, SZ_ERROR_ARCHIVE));
@@ -1317,16 +1332,19 @@ static SRes SzArEx_Open2(
     return SZ_ERROR_MEM;
   if (nextHeaderSizeT == 0)
     return SZ_OK;
-  if (nextHeaderOffset > nextHeaderOffset + nextHeaderSize ||
-      nextHeaderOffset > nextHeaderOffset + nextHeaderSize + k7zStartHeaderSize)
+  if (nextHeaderOffset > (UInt64)-1 - k7zStartHeaderSize ||
+      nextHeaderSize > (UInt64)-1 - k7zStartHeaderSize - nextHeaderOffset)
+    return SZ_ERROR_NO_ARCHIVE;
+  if ((UInt64)startArcPos >
+      (UInt64)-1 - k7zStartHeaderSize - nextHeaderOffset - nextHeaderSize)
     return SZ_ERROR_NO_ARCHIVE;
 
   {
     Int64 pos = 0;
     RINOK(inStream->Seek(inStream, &pos, SZ_SEEK_END));
-    if ((UInt64)pos < startArcPos + nextHeaderOffset ||
-        (UInt64)pos < startArcPos + k7zStartHeaderSize + nextHeaderOffset ||
-        (UInt64)pos < startArcPos + k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
+    if (pos < 0 || (UInt64)startArcPos > (UInt64)pos ||
+        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset ||
+        (UInt64)pos - (UInt64)startArcPos < k7zStartHeaderSize + nextHeaderOffset + nextHeaderSize)
       return SZ_ERROR_INPUT_EOF;
   }
 
@@ -1401,6 +1419,9 @@ SRes SzArEx_Extract(
 {
   UInt32 folderIndex;
   SRes res = SZ_OK;
+  if (!p || !inStream || !blockIndex || !outBuffer || !outBufferSize ||
+      !offset || !outSizeProcessed || !allocMain || !allocTemp)
+    return SZ_ERROR_PARAM;
   if (!(p->FileIndexToFolderIndexMap) || (fileIndex >= p->db.NumFiles))
     return SZ_ERROR_FAIL;
   folderIndex = p->FileIndexToFolderIndexMap[fileIndex];
@@ -1414,20 +1435,23 @@ SRes SzArEx_Extract(
     *outBufferSize = 0;
     return SZ_OK;
   }
+  if (!p->db.Folders || folderIndex >= p->db.NumFolders)
+    return SZ_ERROR_FAIL;
 
   if (*outBuffer == 0 || *blockIndex != folderIndex)
   {
     CSzFolder *folder = p->db.Folders + folderIndex;
     UInt64 unpackSizeSpec = SzFolder_GetUnpackSize(folder);
-    size_t unpackSize = (size_t)unpackSizeSpec;
+    size_t unpackSize;
     UInt64 startOffset;
-    if (!(p->PackStreamStartPositions) || !(p->FolderStartPackStreamIndex) || (folderIndex >= p->db.NumFolders) ||
+    if (!(p->PackStreamStartPositions) || !(p->FolderStartPackStreamIndex) ||
         (p->FolderStartPackStreamIndex[folderIndex] >= p->db.NumPackStreams))
       return SZ_ERROR_FAIL;
     startOffset = SzArEx_GetFolderStreamPos(p, folderIndex, 0);
 
-    if (unpackSize != unpackSizeSpec)
+    if (unpackSizeSpec > (UInt64)(size_t)-1)
       return SZ_ERROR_MEM;
+    unpackSize = (size_t)unpackSizeSpec;
     *blockIndex = folderIndex;
     IAlloc_Free(allocMain, *outBuffer);
     *outBuffer = 0;
@@ -1467,10 +1491,22 @@ SRes SzArEx_Extract(
     *offset = 0;
     if (!(p->FolderStartFileIndex) || (folderIndex >= p->db.NumFolders))
       return SZ_ERROR_FAIL;
-    for (i = p->FolderStartFileIndex[folderIndex]; i < fileIndex; i++)
-      *offset += (UInt32)p->db.Files[i].Size;
-    *outSizeProcessed = (size_t)fileItem->Size;
-    if (*offset + *outSizeProcessed > *outBufferSize)
+    {
+      UInt64 offset64 = 0;
+
+      for (i = p->FolderStartFileIndex[folderIndex]; i < fileIndex; i++) {
+        if (offset64 > (UInt64)-1 - p->db.Files[i].Size)
+          return SZ_ERROR_FAIL;
+        offset64 += p->db.Files[i].Size;
+      }
+      if (offset64 > (UInt64)(size_t)-1 ||
+          fileItem->Size > (UInt64)(size_t)-1)
+        return SZ_ERROR_MEM;
+      *offset           = (size_t)offset64;
+      *outSizeProcessed = (size_t)fileItem->Size;
+    }
+    if (*offset > *outBufferSize ||
+        *outSizeProcessed > *outBufferSize - *offset)
       return SZ_ERROR_FAIL;
     if (fileItem->CrcDefined && CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->Crc)
       res = SZ_ERROR_CRC;
