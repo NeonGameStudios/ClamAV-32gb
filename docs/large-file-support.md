@@ -2691,6 +2691,15 @@ MULTISCAN, and ALLMATCHSCAN modes in addition to path, FILDES, and INSTREAM.
 These are still qualification requirements rather than evidence that the
 dedicated runner has passed them.
 
+## Service resource-evidence fail-closed behavior — 2026-08-19
+
+The service qualification harness now fails if the live clamd RSS sampler or
+temporary-directory sampler produces no usable samples, or if a live process
+reports malformed measurement data. A zero-valued peak is therefore no longer
+accepted as evidence that the service stayed within budget. This strengthens
+the gate’s evidence integrity; it does not replace the required Linux,
+sanitizer, RSS, temporary-space, and Sonic1 qualification run.
+
 ## MHTML root preclassification failures — 2026-08-19
 
 The MHTML root-HTML preclassification wrapper now treats materialization

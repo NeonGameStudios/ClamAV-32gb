@@ -218,18 +218,35 @@ pidfile=$out/clamd.pid
 service_pid=
 service_peak_rss_kb=0
 service_peak_temp_bytes=0
+service_rss_samples=0
+service_temp_samples=0
+service_resource_measurement_failed=0
 
 measure_service_resources()
 {
-    rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
-    case "$rss" in
-        ''|*[!0-9]*) ;;
-        *) if [ "$rss" -gt "$service_peak_rss_kb" ]; then service_peak_rss_kb=$rss; fi ;;
-    esac
+    if [ -n "${service_pid:-}" ]; then
+        if [ ! -r "/proc/$service_pid/status" ]; then
+            if kill -0 "$service_pid" 2>/dev/null; then
+                service_resource_measurement_failed=1
+            fi
+        else
+            rss=$(sed -n 's/^VmRSS:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' "/proc/$service_pid/status" 2>/dev/null || true)
+            case "$rss" in
+                ''|*[!0-9]*) service_resource_measurement_failed=1 ;;
+                *)
+                    service_rss_samples=$((service_rss_samples + 1))
+                    if [ "$rss" -gt "$service_peak_rss_kb" ]; then service_peak_rss_kb=$rss; fi
+                    ;;
+            esac
+        fi
+    fi
     current_tmp_bytes=$(du -s -B1 "$out/tmp" 2>/dev/null | awk 'NF >= 1 && $1 ~ /^[0-9]+$/ { print $1; exit }')
     case "$current_tmp_bytes" in
-        ''|*[!0-9]*) ;;
-        *) if [ "$current_tmp_bytes" -gt "$service_peak_temp_bytes" ]; then service_peak_temp_bytes=$current_tmp_bytes; fi ;;
+        ''|*[!0-9]*) service_resource_measurement_failed=1 ;;
+        *)
+            service_temp_samples=$((service_temp_samples + 1))
+            if [ "$current_tmp_bytes" -gt "$service_peak_temp_bytes" ]; then service_peak_temp_bytes=$current_tmp_bytes; fi
+            ;;
     esac
 }
 
@@ -637,6 +654,18 @@ done
 printf 'latency_budget_s=%s\n' "$latency_budget_s" >> "$out/service-summary.txt"
 printf 'latency=pass\n' >> "$out/service-summary.txt"
 
+if [ "$service_resource_measurement_failed" -ne 0 ]; then
+    echo 'service resource measurement failed or produced malformed evidence' >&2
+    exit 1
+fi
+if [ "$service_rss_samples" -eq 0 ]; then
+    echo 'service RSS measurement produced no samples' >&2
+    exit 1
+fi
+if [ "$service_temp_samples" -eq 0 ]; then
+    echo 'service temporary-space measurement produced no samples' >&2
+    exit 1
+fi
 if [ "$service_peak_rss_kb" -gt "$rss_budget_kb" ]; then
     echo "clamd RSS exceeded budget: ${service_peak_rss_kb} > ${rss_budget_kb} KiB" >&2
     exit 1
