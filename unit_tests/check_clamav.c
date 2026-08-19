@@ -80,6 +80,7 @@
 #include "tiff.h"
 #include "jpeg.h"
 #include "xar.h"
+#include "xlm_extract.h"
 #include "special.h"
 #include "textnorm.h"
 #include "scan_report.h"
@@ -7151,6 +7152,76 @@ START_TEST(test_ole2_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xlm_missing_input_is_fail_visible)
+{
+    static const uint8_t parent_data[] = {0};
+    char hash[] = "xlm-missing-input";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    map = cl_fmap_open_memory(parent_data, sizeof(parent_data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = &engine;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_extract_xlm_macros_and_images(tmpdir, &ctx, hash, 1);
+    ck_assert_int_eq(ret, CL_EOPEN);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_xlm_truncated_record_header_is_fail_visible)
+{
+    static const uint8_t parent_data[] = {0};
+    const uint8_t truncated_header[] = {0x06};
+    char hash[] = "xlm-truncated-header";
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/%s_1", tmpdir, hash);
+    fd = open(file_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(write(fd, truncated_header, sizeof(truncated_header)), (ssize_t)sizeof(truncated_header));
+    ck_assert_int_eq(close(fd), 0);
+
+    map = cl_fmap_open_memory(parent_data, sizeof(parent_data));
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = &engine;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_extract_xlm_macros_and_images(tmpdir, &ctx, hash, 1);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    unlink(file_path);
+}
+END_TEST
+
 START_TEST(test_ole2_vba_materialization_failure_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -9008,6 +9079,8 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_truncated_property_tree_is_fail_visible);
+    tcase_add_test(tc_cl, test_xlm_missing_input_is_fail_visible);
+    tcase_add_test(tc_cl, test_xlm_truncated_record_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_vba_materialization_failure_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);

@@ -4638,14 +4638,14 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
 
     if (in_fd == -1) {
         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to open input file\n");
-        /* Don't return an error. If the file is missing, an error probably occurred
-         * earlier, such as a UTF8 conversion error in parse_formula() and so the file was never written.
-         * There are no macros to scan, so report SUCCESS / CLEAN. */
+        cli_mark_scan_incomplete(ctx, "XLM macro input could not be opened");
+        status = CL_EOPEN;
         goto done;
     }
 
     if ((ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "xlm_macros", &tempfile, &out_fd)) != CL_SUCCESS) {
         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to open output file descriptor\n");
+        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be created");
         status = ret;
         goto done;
     }
@@ -4653,6 +4653,8 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
     out_file = fdopen(out_fd, "wb");
     if (NULL == out_file) {
         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to open output file pointer\n");
+        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be opened");
+        status = CL_EOPEN;
         goto done;
     }
 
@@ -4664,6 +4666,7 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
 
     if (cli_writen(out_fd, FILE_HEADER, sizeof(FILE_HEADER) - 1) != sizeof(FILE_HEADER) - 1) {
         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to write header\n");
+        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
         status = CL_EWRITE;
         goto done;
     }
@@ -4683,6 +4686,7 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
         len = fprintf(out_file, "%04x %6d   %s", biff_header.opcode, biff_header.length, opcode_name == NULL ? "<unknown>" : opcode_name);
         if (len < 0) {
             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error formatting opcode message\n");
+            cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
             status = CL_EFORMAT;
             goto done;
         }
@@ -4690,12 +4694,14 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
 
         if (biff_header.length > BIFF8_MAX_RECORD_LENGTH) {
             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Record size exceeds maximum allowed\n");
+            cli_mark_scan_incomplete(ctx, "XLM BIFF record exceeds the bounded decoder limit");
             status = CL_EFORMAT;
             goto done;
         }
 
         if (cli_readn(in_fd, data, biff_header.length) != biff_header.length) {
             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to read BIFF record data\n");
+            cli_mark_scan_incomplete(ctx, "XLM BIFF record data was truncated");
             status = CL_EREAD;
             goto done;
         }
@@ -4708,7 +4714,7 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                     uint16_t length;
                 } formula_header;
 
-                if (biff_header.length >= 21) {
+                if (biff_header.length >= 22) {
                     formula_header.row    = data[0] | (data[1] << 8);
                     formula_header.column = data[2] | (data[3] << 8);
                     formula_header.length = data[20] | (data[21] << 8);
@@ -4721,20 +4727,24 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                         formula_header.length);
                     if (len < 0) {
                         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error formatting FORMULA record message\n");
-
-                        // Move along to the next record.
-                        break;
+                        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
+                        status = CL_EWRITE;
+                        goto done;
                     }
 
                     ret = parse_formula(out_file, &data[22], biff_header.length - 21);
                     if (CL_SUCCESS != ret) {
                         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error parsing formula in FORMULA record message\n");
-
-                        // Move along to the next record.
-                        break;
+                        cli_mark_scan_incomplete(ctx, "XLM FORMULA expression could not be parsed completely");
+                        status = ret;
+                        goto done;
                     }
 
                     // formula successfully parsed.
+                } else {
+                    cli_mark_scan_incomplete(ctx, "XLM FORMULA record was truncated");
+                    status = CL_EPARSE;
+                    goto done;
                 }
 
                 break;
@@ -4766,14 +4776,17 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                     }
                     if (len < 0) {
                         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error formatting NAME record message\n");
-
-                        // Move along to the next record.
-                        break;
+                        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
+                        status = CL_EWRITE;
+                        goto done;
                     }
 
                     // name record successfully parsed
                 } else {
                     cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken NAME record (length %u)\n", biff_header.length);
+                    cli_mark_scan_incomplete(ctx, "XLM NAME record was truncated");
+                    status = CL_EPARSE;
+                    goto done;
                 }
 
                 break;
@@ -4786,6 +4799,11 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                     /* Found beginning of a drawing group */
                     drawinggroup_len = (size_t)biff_header.length;
                     drawinggroup     = malloc(drawinggroup_len);
+                    if (NULL == drawinggroup) {
+                        cli_mark_scan_incomplete(ctx, "XLM drawing-group data could not be allocated");
+                        status = CL_EMEM;
+                        goto done;
+                    }
                     memcpy(drawinggroup, data, drawinggroup_len);
                     // cli_dbgmsg("Collected %zu drawing group bytes\n", drawinggroup_len);
 
@@ -4849,20 +4867,24 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                     len = fprintf(out_file, " - %s, %s", sheet_type, sheet_state);
                     if (len < 0) {
                         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error formatting BOUNDSHEET record message\n");
-                        // Move along to the next record.
-                        break;
+                        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
+                        status = CL_EWRITE;
+                        goto done;
                     }
 
                     // boundsheet record successfully parsed
                 } else {
                     cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken BOUNDSHEET record (length %u)\n", biff_header.length);
+                    cli_mark_scan_incomplete(ctx, "XLM BOUNDSHEET record was truncated");
+                    status = CL_EPARSE;
+                    goto done;
                 }
                 break;
             }
             case OPC_STRING: {
                 // Documented in Microsoft Office Excel97-2007Binary File Format (.xls) Specification
                 // Page 17: Unicode Strings in BIFF8
-                if (biff_header.length >= 4) {
+                if (biff_header.length >= 6) {
                     uint16_t string_length = data[0] | (data[1] << 8);
                     uint8_t flags          = data[2];
 
@@ -4876,12 +4898,15 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
 
                     if (!(flags & 0x1)) {
                         // String is compressed
-                        len = fprintf(out_file, " - \"%.*s\"", (int)(biff_header.length - 3), &data[6]);
+                        size_t text_length = biff_header.length - 3;
+                        if (text_length > string_length)
+                            text_length = string_length;
+                        len = fprintf(out_file, " - \"%.*s\"", (int)text_length, &data[3]);
                         if (len < 0) {
                             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error formatting STRING record message with ANSI content\n");
-
-                            // Move along to the next record.
-                            break;
+                            cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
+                            status = CL_EWRITE;
+                            goto done;
                         }
                     } else {
                         char *utf8       = NULL;
@@ -4890,9 +4915,9 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                         len = fprintf(out_file, " - ");
                         if (len < 0) {
                             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error formatting STRING record message with UTF16 content\n");
-
-                            // Move along to the next record.
-                            break;
+                            cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
+                            status = CL_EWRITE;
+                            goto done;
                         }
 
                         if (string_length > biff_header.length - 3) {
@@ -4905,23 +4930,23 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                                 free(utf8);
                                 if (size_written < utf8_size) {
                                     cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error writing STRING record message with UTF16LE content\n");
+                                    cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
+                                    status = CL_EWRITE;
                                     goto done;
                                 }
                             }
                         } else {
                             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to decode UTF16LE string\n");
-                            len = fprintf(out_file, "<Failed to decode UTF16LE string>");
-                            if (len < 0) {
-                                cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error formatting STRING record message with UTF16LE content\n");
-                                goto done;
-                            }
+                            cli_mark_scan_incomplete(ctx, "XLM STRING record could not be decoded completely");
+                            status = CL_EPARSE;
+                            goto done;
                         }
                     }
                 } else {
                     cli_dbgmsg("[cli_extract_xlm_macros_and_images] Skipping broken STRING record (length %u)\n", biff_header.length);
-
-                    // Move along to the next record.
-                    break;
+                    cli_mark_scan_incomplete(ctx, "XLM STRING record was truncated");
+                    status = CL_EPARSE;
+                    goto done;
                 }
 
                 // Not implemented. See Microsoft Office Excel97-2007Binary File Format (.xls) Specification Page 18 for details.
@@ -4935,6 +4960,8 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
         len = fputc('\n', out_file);
         if (len == EOF) {
             cli_dbgmsg("[cli_extract_xlm_macros_and_images] Error writing new line to out file\n");
+            cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be written completely");
+            status = CL_EWRITE;
             goto done;
         }
 
@@ -4944,23 +4971,41 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
         }
     }
 
+    if (size_read != 0) {
+        if (size_read == (size_t)-1) {
+            cli_mark_scan_incomplete(ctx, "XLM BIFF record header could not be read completely");
+            status = CL_EREAD;
+        } else {
+            cli_mark_scan_incomplete(ctx, "XLM BIFF record header was truncated");
+            status = CL_EPARSE;
+        }
+        goto done;
+    }
+
+    if (fflush(out_file) != 0) {
+        cli_dbgmsg("cli_extract_xlm_macros_and_images: Failed to flush temporary output\n");
+        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be flushed completely");
+        status = CL_EWRITE;
+        goto done;
+    }
+
     /* Scan the extracted content */
     if (lseek(out_fd, 0, SEEK_SET) != 0) {
         cli_dbgmsg("cli_extract_xlm_macros_and_images: Failed to seek to beginning of temporary file\n");
+        cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be rewound");
         status = CL_ESEEK;
         goto done;
     }
 
-    if (CL_VIRUS == cli_scan_desc(out_fd, ctx, CL_TYPE_SCRIPT, false, NULL, AC_SCAN_VIR,
-                                  NULL, "xlm-macro", tempfile, LAYER_ATTRIBUTES_NONE)) {
+    ret = cli_scan_desc(out_fd, ctx, CL_TYPE_SCRIPT, false, NULL, AC_SCAN_VIR,
+                        NULL, "xlm-macro", tempfile, LAYER_ATTRIBUTES_NONE);
+    if (CL_VIRUS == ret) {
         status = CL_VIRUS;
         goto done;
     }
-
-    /* If a read failed, return with an error. */
-    if (size_read == (size_t)-1) {
-        cli_dbgmsg("cli_extract_xlm_macros_and_images: Read error occurred when trying to read BIFF header. Truncated or malformed XLM macro file?\n");
-        status = CL_EREAD;
+    if (ret != CL_SUCCESS && ret != CL_VERIFIED) {
+        cli_mark_scan_incomplete(ctx, "XLM extracted macro scan did not complete");
+        status = ret;
         goto done;
     }
 
@@ -4970,7 +5015,8 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
          * If we fail to extract images, that's fine.
          */
         ret = cli_extract_images_from_drawing_group(drawinggroup, drawinggroup_len, ctx);
-        if (CL_SUCCESS != ret) {
+        if (ret != CL_SUCCESS && ret != CL_VERIFIED) {
+            cli_mark_scan_incomplete(ctx, "XLM drawing-group image extraction did not complete");
             status = ret;
             goto done;
         }
@@ -4982,15 +5028,25 @@ done:
     CLI_FREE_AND_SET_NULL(drawinggroup);
 
     if (in_fd != -1) {
-        close(in_fd);
+        if (close(in_fd) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+            cli_mark_scan_incomplete(ctx, "XLM macro input could not be closed");
+            status = CL_EREAD;
+        }
         in_fd = -1;
     }
 
     if (NULL != out_file) {
-        fclose(out_file);
+        if (fclose(out_file) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+            cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be closed");
+            status = CL_EWRITE;
+        }
         out_file = NULL;
+        out_fd = -1;
     } else if (-1 != out_fd) {
-        close(out_fd);
+        if (close(out_fd) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+            cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be closed");
+            status = CL_EWRITE;
+        }
         out_fd = -1;
     }
 

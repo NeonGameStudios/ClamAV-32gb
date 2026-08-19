@@ -2558,3 +2558,12 @@ temporary-output, and cleanup failures are fail-visible and mark the containing
 scan incomplete/non-cacheable. The focused `test_ole10_truncated_object_is_fail_visible`
 regression is registered; supported-Linux execution, sanitizer coverage, and
 broader legacy OLE/RTF corpus qualification remain release gates.
+
+## XLM extraction completion boundary — 2026-08-19
+
+The Excel 4/XLM extraction path now treats a missing materialized BIFF stream,
+truncated BIFF record headers, temporary-output flush/close failures, and
+non-clean nested scans as incomplete and non-cacheable. A partial XLM staging
+file is no longer scanned as if it were complete. The focused missing-input and
+truncated-header regressions are registered; compiled Linux/Sonic1 execution,
+sanitizer coverage, and broader XLM corpus qualification remain release gates.

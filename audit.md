@@ -747,6 +747,17 @@ qualification claim. Production CVD, broader parser corpus, cold-cache,
 sanitizer/multi-worker current-head, full release/CI, and remote rebuild gates
 remain open.
 
+## Latest XLM extraction completion follow-up — 2026-08-19
+
+The Excel 4/XLM extraction path previously treated a missing materialized BIFF
+stream as clean and could scan buffered or truncated staging output as though
+the input had reached a complete record boundary. It now marks missing input,
+truncated BIFF headers, output flush/close failures, and non-clean nested scans
+as explicit incomplete results. Focused missing-input and truncated-header
+regressions and source guards are registered. This is a local source change;
+compiled Linux/Sonic1, sanitizer, and broader XLM corpus qualification remain
+open.
+
 ## Latest 7-Zip member-name width follow-up — 2026-08-19
 
 The 7-Zip SDK exposes member-name lengths as `size_t`, but the scanner stored
