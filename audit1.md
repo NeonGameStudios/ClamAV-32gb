@@ -618,8 +618,9 @@ The current tests and source guards do not prove the exact high-risk triggers:
 - Rust tests cover `WHOLE_INPUT_MAX` rejection, failed fmap need, bounded
   reader windows, and window release. Successful whole-input residency and
   concurrent clamd RSS remain open.
-- RAR dump tests cover successful healthy maps only and miss `SIZE_MAX` on a
-  nested slice and mapped-read failure.
+- RAR tests now cover a nested mapped-read failure and public incomplete-result
+  propagation; `SIZE_MAX` nested-slice boundaries, success-path cleanup fault
+  injection, and RAR5 SFX qualification remain open.
 
 `tools/largefile_source_guards.sh` is primarily a source-text presence suite.
 Passing it does not demonstrate that the guarded branch is reachable, that
