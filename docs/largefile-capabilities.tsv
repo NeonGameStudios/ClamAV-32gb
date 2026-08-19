@@ -50,6 +50,7 @@ feature	MAINTAINER_MODE	pending	CMakeOptions.cmake	qualify generated-source conf
 feature	OPTIMIZE	pending	CMakeOptions.cmake	qualify optimized and unoptimized large-file behavior
 unsupported	macos-first-release	unsupported	docs/large-file-support.md	macOS is outside the first Linux x86-64 production qualification target
 unsupported	aarch64-first-release	unsupported	docs/large-file-support.md	AArch64 is outside the first Linux x86-64 production qualification target
+unsupported	autoit-member-over-1g	unsupported	libclamav/autoit.c	AutoIt decoded and stored members still require a contiguous buffer and reject requests above the 1 GiB individual-allocation ceiling as incomplete
 unsupported	bytecode-v1-over-4g	unsupported	docs/bytecode-abi-v2.md	legacy bytecode ABI cannot represent applicable layers above 4 GiB
 unsupported	legacy-callback-over-1g	unsupported	libclamav/scanners.c	deprecated whole-file callback requires an oversized contiguous buffer
 unsupported	image-fuzzy-over-contiguous-limit	unsupported	libclamav/scanners.c	image fuzzy FFI requires a complete contiguous image subject

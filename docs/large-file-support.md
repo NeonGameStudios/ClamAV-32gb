@@ -2066,6 +2066,9 @@ across refills, and makes short input or decoder-header failures incomplete.
 Decoded output and stored-member paths still use the legacy contiguous
 allocation ceiling, so AutoIt is not yet a 32 GiB deep-parser qualification;
 allocation failures are explicit non-clean results and remain a release gate.
+The capability manifest records this deliberate boundary as
+`autoit-member-over-1g`; converting the decoder’s output and back-reference
+state to bounded disk-backed processing remains a release item.
 
 ## Legacy PE unpacker contiguous admission — 2026-08-19
 

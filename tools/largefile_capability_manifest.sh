@@ -95,7 +95,7 @@ for id in $required_features; do
     fi
 done
 
-required_unsupported='macos-first-release aarch64-first-release bytecode-v1-over-4g legacy-callback-over-1g image-fuzzy-over-contiguous-limit pdf-stream-over-4g script-normalization-over-4g vba-over-4g'
+required_unsupported='macos-first-release aarch64-first-release autoit-member-over-1g bytecode-v1-over-4g legacy-callback-over-1g image-fuzzy-over-contiguous-limit pdf-stream-over-4g script-normalization-over-4g vba-over-4g'
 for id in $required_unsupported; do
     if ! awk -F '\t' -v wanted_id="$id" \
         '$1 == "unsupported" && $2 == wanted_id && $3 == "unsupported" { found = 1 } END { exit !found }' "$manifest"; then
