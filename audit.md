@@ -95,6 +95,11 @@ The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.
 
+clamd directory scans now add an incomplete child report for recursion-limit,
+unsupported-special-file, stat, allocation, and realpath skips. Intentional
+symlink exclusions remain policy skips, but required paths that the walker
+cannot inspect can no longer disappear from an otherwise `COMPLETE` aggregate.
+
 On-access prevention now denies permission events after stat or size-limit
 preflight failures even when the worker correctly avoids submitting a partial
 object; monitoring-only events continue to allow and log.

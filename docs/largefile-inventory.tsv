@@ -67,12 +67,12 @@ fixed-width-integer	clamd/largefile_admission.c	51	static int read_u64_file(cons
 fixed-width-integer	clamd/largefile_admission.c	87	    *value     = (uint64_t)parsed;
 fixed-width-integer	clamd/largefile_admission.c	93	static int read_mem_available(uint64_t *available_bytes)
 fixed-width-integer	clamd/largefile_admission.c	97	    uint64_t available_kib;
-fixed-width-integer	clamd/scanner.c	113	static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
-fixed-width-integer	clamd/scanner.c	115	    uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
-fixed-width-integer	clamd/scanner.c	120	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
-fixed-width-integer	clamd/scanner.c	340	        uint64_t scanned_bytes = 0;
-fixed-width-integer	clamd/scanner.c	550	        uint64_t scanned_bytes = 0;
-fixed-width-integer	clamd/scanner.c	637	    uint64_t quota = 0, maxsize = 0;
+fixed-width-integer	clamd/scanner.c	142	static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
+fixed-width-integer	clamd/scanner.c	144	    uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
+fixed-width-integer	clamd/scanner.c	149	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
+fixed-width-integer	clamd/scanner.c	381	        uint64_t scanned_bytes = 0;
+fixed-width-integer	clamd/scanner.c	591	        uint64_t scanned_bytes = 0;
+fixed-width-integer	clamd/scanner.c	678	    uint64_t quota = 0, maxsize = 0;
 fixed-width-integer	clamd/server-th.c	882	                uint32_t cs;
 fixed-width-integer	clamd/session.c	238	    uint32_t length;
 fixed-width-integer	clamd/session.c	239	    uint32_t network_length;
@@ -5506,25 +5506,25 @@ native-width-integer	clamd/localserver.c	70	    int cnt;
 native-width-integer	clamd/localserver.c	72	    int num_fd = sd_listen_fds(0);
 native-width-integer	clamd/localserver.c	78	        int i;
 native-width-integer	clamd/localserver.h	27	int localserver(const struct optstruct *opts);
-native-width-integer	clamd/scanner.c	113	static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
-native-width-integer	clamd/scanner.c	120	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
-native-width-integer	clamd/scanner.c	146	void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx)
-native-width-integer	clamd/scanner.c	159	void clamd_virus_found_cb(int fd, const char *virname, void *ctx)
-native-width-integer	clamd/scanner.c	193	    int type = scandata->type;
-native-width-integer	clamd/scanner.c	457	int scan_pathchk(const char *path, struct cli_ftw_cbdata *data)
-native-width-integer	clamd/scanner.c	489	    unsigned long int *scanned,
-native-width-integer	clamd/scanner.c	493	    int odesc,
-native-width-integer	clamd/scanner.c	494	    int stream)
-native-width-integer	clamd/scanner.c	497	    int fd              = conn->scanfd;
-native-width-integer	clamd/scanner.c	625	int scanstream(
-native-width-integer	clamd/scanner.c	626	    int odesc,
-native-width-integer	clamd/scanner.c	627	    unsigned long int *scanned,
-native-width-integer	clamd/scanner.c	633	    int ret, sockfd, acceptd;
-native-width-integer	clamd/scanner.c	634	    int tmpd, bread, retval, firsttimeout, timeout, btread;
-native-width-integer	clamd/scanner.c	635	    int limit_exceeded = 0;
-native-width-integer	clamd/scanner.c	636	    unsigned int port       = 0, portscan, min_port, max_port;
+native-width-integer	clamd/scanner.c	142	static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
+native-width-integer	clamd/scanner.c	149	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
+native-width-integer	clamd/scanner.c	175	void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx)
+native-width-integer	clamd/scanner.c	188	void clamd_virus_found_cb(int fd, const char *virname, void *ctx)
+native-width-integer	clamd/scanner.c	222	    int type = scandata->type;
+native-width-integer	clamd/scanner.c	498	int scan_pathchk(const char *path, struct cli_ftw_cbdata *data)
+native-width-integer	clamd/scanner.c	530	    unsigned long int *scanned,
+native-width-integer	clamd/scanner.c	534	    int odesc,
+native-width-integer	clamd/scanner.c	535	    int stream)
+native-width-integer	clamd/scanner.c	538	    int fd              = conn->scanfd;
+native-width-integer	clamd/scanner.c	666	int scanstream(
+native-width-integer	clamd/scanner.c	667	    int odesc,
+native-width-integer	clamd/scanner.c	668	    unsigned long int *scanned,
+native-width-integer	clamd/scanner.c	674	    int ret, sockfd, acceptd;
+native-width-integer	clamd/scanner.c	675	    int tmpd, bread, retval, firsttimeout, timeout, btread;
+native-width-integer	clamd/scanner.c	676	    int limit_exceeded = 0;
+native-width-integer	clamd/scanner.c	677	    unsigned int port       = 0, portscan, min_port, max_port;
 native-width-integer	clamd/scanner.c	72	extern int progexit;
-native-width-integer	clamd/scanner.c	728	        btread = (maxsize && (quota < sizeof(buff))) ? (int)quota : sizeof(buff);
+native-width-integer	clamd/scanner.c	769	        btread = (maxsize && (quota < sizeof(buff))) ? (int)quota : sizeof(buff);
 native-width-integer	clamd/scanner.h	43	    int scantype;
 native-width-integer	clamd/scanner.h	44	    int odesc;
 native-width-integer	clamd/scanner.h	45	    int type;
@@ -15618,7 +15618,7 @@ boundary-constant	clamd/largefile_admission.c	257	        (max_file_size > (uint
 boundary-constant	clamd/largefile_admission.c	258	        (max_scan_size > (uint64_t)SIZE_MAX) ||
 boundary-constant	clamd/largefile_admission.c	259	        (max_temporary_size > (uint64_t)SIZE_MAX) ||
 boundary-constant	clamd/largefile_admission.c	260	        (max_contiguous_size > (uint64_t)SIZE_MAX)) {
-boundary-constant	clamd/scanner.c	120	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
+boundary-constant	clamd/scanner.c	149	    *destination = (scaled > (uint64_t)ULONG_MAX) ? ULONG_MAX : (unsigned long int)scaled;
 boundary-constant	clamd/session.c	508	    ret = cli_ftw(conn->filename, flags, maxdirrec ? maxdirrec : INT_MAX, scan_callback, &data, scan_pathchk);
 boundary-constant	clamdscan/proto.c	338	    cdata.maxlevel = maxlevel ? maxlevel : INT_MAX;
 boundary-constant	clamdscan/proto.c	343	    ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, serial_callback, &data, ftw_chkpath);
@@ -16051,25 +16051,25 @@ format-width	clamd/clamd_others.c	593	                        logg(LOGG_DEBUG, "
 format-width	clamd/clamd_others.c	597	                        logg(LOGG_WARNING, "Error condition on fd %d\n",
 format-width	clamd/clamd_others.c	649	                                logg(LOGG_ERROR, "Error condition on fd %d\n",
 format-width	clamd/localserver.c	192	    logg(LOGG_INFO_NF, "LOCAL: Setting connection queue length to %d\n", backlog);
-format-width	clamd/scanner.c	180	            logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", fname, virname, c->virhash, c->virsize);
-format-width	clamd/scanner.c	426	                logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", filename, virname, context.virhash, context.virsize);
-format-width	clamd/scanner.c	515	            snprintf(fdstr, sizeof(fdstr), "instream(%s@%u)", inet_ntoa(sa.sin_addr), ntohs(sa.sin_port));
-format-width	clamd/scanner.c	518	        snprintf(fdstr, sizeof(fdstr), "fd[%d]", fd);
-format-width	clamd/scanner.c	603	            logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", log_filename, virname, context.virhash, context.virsize);
-format-width	clamd/scanner.c	687	        if (mdprintf(odesc, "PORT %u%c", port, term) <= 0) {
-format-width	clamd/scanner.c	698	        logg(LOGG_ERROR, "ScanStream %u: accept %s.\n", port, reason);
-format-width	clamd/scanner.c	707	        logg(LOGG_ERROR, "ScanStream %u: accept() failed.\n", port);
-format-width	clamd/scanner.c	713	    logg(LOGG_DEBUG, "Accepted connection from %s on port %u, fd %d\n", peer_addr, port, acceptd);
-format-width	clamd/scanner.c	720	        logg(LOGG_ERROR, "ScanStream(%s@%u): Can't create temporary file.\n", peer_addr, port);
-format-width	clamd/scanner.c	730	            logg(LOGG_WARNING, "ScanStream(%s@%u): Size limit reached (max: " STDu64 ")\n", peer_addr, port, maxsize);
-format-width	clamd/scanner.c	745	            logg(LOGG_ERROR, "ScanStream(%s@%u): Can't write to temporary file.\n", peer_addr, port);
-format-width	clamd/scanner.c	757	            logg(LOGG_ERROR, "ScanStream(%s@%u): read timeout.\n", peer_addr, port);
-format-width	clamd/scanner.c	761	            logg(LOGG_ERROR, "ScanStream(%s@%u): read poll failed.\n", peer_addr, port);
-format-width	clamd/scanner.c	788	            mdprintf(odesc, "stream: %s(%s:%llu) FOUND%c", virname, context.virhash, context.virsize, term);
-format-width	clamd/scanner.c	789	            logg(LOGG_INFO, "stream(%s@%u): %s(%s:%llu) FOUND\n", peer_addr, port, virname, context.virhash, context.virsize);
-format-width	clamd/scanner.c	792	            logg(LOGG_INFO, "stream(%s@%u): %s FOUND\n", peer_addr, port, virname);
-format-width	clamd/scanner.c	798	            logg(LOGG_INFO, "stream(%s@%u): %s ERROR\n", peer_addr, port, cl_strerror(ret));
-format-width	clamd/scanner.c	803	            logg(LOGG_INFO, "stream(%s@%u): OK\n", peer_addr, port);
+format-width	clamd/scanner.c	209	            logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", fname, virname, c->virhash, c->virsize);
+format-width	clamd/scanner.c	467	                logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", filename, virname, context.virhash, context.virsize);
+format-width	clamd/scanner.c	556	            snprintf(fdstr, sizeof(fdstr), "instream(%s@%u)", inet_ntoa(sa.sin_addr), ntohs(sa.sin_port));
+format-width	clamd/scanner.c	559	        snprintf(fdstr, sizeof(fdstr), "fd[%d]", fd);
+format-width	clamd/scanner.c	644	            logg(LOGG_INFO, "%s: %s(%s:%llu) FOUND\n", log_filename, virname, context.virhash, context.virsize);
+format-width	clamd/scanner.c	728	        if (mdprintf(odesc, "PORT %u%c", port, term) <= 0) {
+format-width	clamd/scanner.c	739	        logg(LOGG_ERROR, "ScanStream %u: accept %s.\n", port, reason);
+format-width	clamd/scanner.c	748	        logg(LOGG_ERROR, "ScanStream %u: accept() failed.\n", port);
+format-width	clamd/scanner.c	754	    logg(LOGG_DEBUG, "Accepted connection from %s on port %u, fd %d\n", peer_addr, port, acceptd);
+format-width	clamd/scanner.c	761	        logg(LOGG_ERROR, "ScanStream(%s@%u): Can't create temporary file.\n", peer_addr, port);
+format-width	clamd/scanner.c	771	            logg(LOGG_WARNING, "ScanStream(%s@%u): Size limit reached (max: " STDu64 ")\n", peer_addr, port, maxsize);
+format-width	clamd/scanner.c	786	            logg(LOGG_ERROR, "ScanStream(%s@%u): Can't write to temporary file.\n", peer_addr, port);
+format-width	clamd/scanner.c	798	            logg(LOGG_ERROR, "ScanStream(%s@%u): read timeout.\n", peer_addr, port);
+format-width	clamd/scanner.c	802	            logg(LOGG_ERROR, "ScanStream(%s@%u): read poll failed.\n", peer_addr, port);
+format-width	clamd/scanner.c	829	            mdprintf(odesc, "stream: %s(%s:%llu) FOUND%c", virname, context.virhash, context.virsize, term);
+format-width	clamd/scanner.c	830	            logg(LOGG_INFO, "stream(%s@%u): %s(%s:%llu) FOUND\n", peer_addr, port, virname, context.virhash, context.virsize);
+format-width	clamd/scanner.c	833	            logg(LOGG_INFO, "stream(%s@%u): %s FOUND\n", peer_addr, port, virname);
+format-width	clamd/scanner.c	839	            logg(LOGG_INFO, "stream(%s@%u): %s ERROR\n", peer_addr, port, cl_strerror(ret));
+format-width	clamd/scanner.c	844	            logg(LOGG_INFO, "stream(%s@%u): OK\n", peer_addr, port);
 format-width	clamd/server-th.c	1010	        logg(LOGG_INFO, "Limits: Global time limit set to %llu milliseconds.\n", val);
 format-width	clamd/server-th.c	1023	        logg(LOGG_INFO, "Limits: Global size limit set to %llu bytes.\n", val);
 format-width	clamd/server-th.c	1035	    logg(LOGG_INFO, "Limits: Matcher work limit set to %llu bytes.\n", val);
@@ -18571,27 +18571,27 @@ offset-size-arithmetic	clamd/localserver.c	109	                sockdir = CLI_STR
 offset-size-arithmetic	clamd/localserver.c	112	                pos--;
 offset-size-arithmetic	clamd/localserver.c	155	    if (bind(sockfd, (struct sockaddr *)&server, sizeof(struct sockaddr_un)) == -1) {
 offset-size-arithmetic	clamd/localserver.c	170	                if (bind(sockfd, (struct sockaddr *)&server, sizeof(struct sockaddr_un)) == -1) {
-offset-size-arithmetic	clamd/scanner.c	113	static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
-offset-size-arithmetic	clamd/scanner.c	115	    uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
-offset-size-arithmetic	clamd/scanner.c	126	    const char *filename = (c && c->filename) ? c->filename : "";
-offset-size-arithmetic	clamd/scanner.c	146	void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx)
-offset-size-arithmetic	clamd/scanner.c	174	    fname = (c && c->filename) ? c->filename : "(filename not set)";
-offset-size-arithmetic	clamd/scanner.c	179	        if (c->virsize > 0 && optget(d->opts, "ExtendedDetectionInfo")->enabled)
-offset-size-arithmetic	clamd/scanner.c	188	cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data)
-offset-size-arithmetic	clamd/scanner.c	200	    if (send(scandata->conn->sd, &ret, 0, 0) == -1 && errno != EINTR) {
-offset-size-arithmetic	clamd/scanner.c	260	    if (sb && sb->st_size == 0) { /* empty file */
-offset-size-arithmetic	clamd/scanner.c	362	        publish_scanned_bytes(&scandata->scanned, scanned_bytes);
-offset-size-arithmetic	clamd/scanner.c	373	        ret = cl_scanfile_callback(scan_path, &virname, &scandata->scanned, scandata->engine, scandata->options, &context);
-offset-size-arithmetic	clamd/scanner.c	394	        if (conn_reply(scandata->conn, filename, "Access denied.", "ERROR") == -1) {
-offset-size-arithmetic	clamd/scanner.c	416	            if (conn_reply_virus(scandata->conn, filename, virname) == -1) {
-offset-size-arithmetic	clamd/scanner.c	425	            if (context.virsize && optget(scandata->opts, "ExtendedDetectionInfo")->enabled)
-offset-size-arithmetic	clamd/scanner.c	432	        if (conn_reply(scandata->conn, filename, cl_strerror(ret), "ERROR") == -1) {
-offset-size-arithmetic	clamd/scanner.c	533	    /* Try to get the real filename, for logging purposes */
-offset-size-arithmetic	clamd/scanner.c	602	        if (context.virsize && optget(opts, "ExtendedDetectionInfo")->enabled)
-offset-size-arithmetic	clamd/scanner.c	665	        if (bind(sockfd, (struct sockaddr *)&server, (socklen_t)sizeof(struct sockaddr_in)) == -1)
-offset-size-arithmetic	clamd/scanner.c	704	    if ((acceptd = accept(sockfd, (struct sockaddr *)&peer, (socklen_t *)&addrlen)) == -1) {
-offset-size-arithmetic	clamd/scanner.c	724	    quota = maxsize = optget(opts, "StreamMaxLength")->numarg;
-offset-size-arithmetic	clamd/scanner.c	787	        if (context.virsize && optget(opts, "ExtendedDetectionInfo")->enabled) {
+offset-size-arithmetic	clamd/scanner.c	142	static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
+offset-size-arithmetic	clamd/scanner.c	144	    uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
+offset-size-arithmetic	clamd/scanner.c	155	    const char *filename = (c && c->filename) ? c->filename : "";
+offset-size-arithmetic	clamd/scanner.c	175	void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx)
+offset-size-arithmetic	clamd/scanner.c	203	    fname = (c && c->filename) ? c->filename : "(filename not set)";
+offset-size-arithmetic	clamd/scanner.c	208	        if (c->virsize > 0 && optget(d->opts, "ExtendedDetectionInfo")->enabled)
+offset-size-arithmetic	clamd/scanner.c	217	cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data)
+offset-size-arithmetic	clamd/scanner.c	229	    if (send(scandata->conn->sd, &ret, 0, 0) == -1 && errno != EINTR) {
+offset-size-arithmetic	clamd/scanner.c	299	    if (sb && sb->st_size == 0) { /* empty file */
+offset-size-arithmetic	clamd/scanner.c	403	        publish_scanned_bytes(&scandata->scanned, scanned_bytes);
+offset-size-arithmetic	clamd/scanner.c	414	        ret = cl_scanfile_callback(scan_path, &virname, &scandata->scanned, scandata->engine, scandata->options, &context);
+offset-size-arithmetic	clamd/scanner.c	435	        if (conn_reply(scandata->conn, filename, "Access denied.", "ERROR") == -1) {
+offset-size-arithmetic	clamd/scanner.c	457	            if (conn_reply_virus(scandata->conn, filename, virname) == -1) {
+offset-size-arithmetic	clamd/scanner.c	466	            if (context.virsize && optget(scandata->opts, "ExtendedDetectionInfo")->enabled)
+offset-size-arithmetic	clamd/scanner.c	473	        if (conn_reply(scandata->conn, filename, cl_strerror(ret), "ERROR") == -1) {
+offset-size-arithmetic	clamd/scanner.c	574	    /* Try to get the real filename, for logging purposes */
+offset-size-arithmetic	clamd/scanner.c	643	        if (context.virsize && optget(opts, "ExtendedDetectionInfo")->enabled)
+offset-size-arithmetic	clamd/scanner.c	706	        if (bind(sockfd, (struct sockaddr *)&server, (socklen_t)sizeof(struct sockaddr_in)) == -1)
+offset-size-arithmetic	clamd/scanner.c	745	    if ((acceptd = accept(sockfd, (struct sockaddr *)&peer, (socklen_t *)&addrlen)) == -1) {
+offset-size-arithmetic	clamd/scanner.c	765	    quota = maxsize = optget(opts, "StreamMaxLength")->numarg;
+offset-size-arithmetic	clamd/scanner.c	828	        if (context.virsize && optget(opts, "ExtendedDetectionInfo")->enabled) {
 offset-size-arithmetic	clamd/scanner.h	68	cl_error_t scanfd(client_conn_t *conn, unsigned long int *scanned, const struct cl_engine *engine, struct cl_scan_options *options, const struct optstruct *opts, int odesc, int stream);
 offset-size-arithmetic	clamd/scanner.h	69	int scanstream(int odesc, unsigned long int *scanned, const struct cl_engine *engine, struct cl_scan_options *options, const struct optstruct *opts, char term);
 offset-size-arithmetic	clamd/scanner.h	70	cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_ftw_reason reason, struct cli_ftw_cbdata *data);

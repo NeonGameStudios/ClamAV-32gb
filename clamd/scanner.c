@@ -110,6 +110,35 @@ static cl_error_t record_structured_scan_report(client_conn_t *conn, cl_scan_rep
     return CL_SUCCESS;
 }
 
+static void record_structured_scan_skip(struct scan_cb_data *scandata,
+                                        cl_error_t status,
+                                        const char *reason)
+{
+    cl_scan_report_t *report = NULL;
+    cli_ctx context;
+
+    if ((NULL == scandata) || (NULL == scandata->conn) ||
+        !scandata->conn->structured_report)
+        return;
+
+    if (cli_scan_report_create(&report, scandata->engine) != CL_SUCCESS) {
+        scandata->conn->structured_status = CL_EMEM;
+        return;
+    }
+
+    memset(&context, 0, sizeof(context));
+    context.engine                 = scandata->engine;
+    context.scan_incomplete        = true;
+    context.skipped_operations     = 1;
+    context.scan_incomplete_reason = reason;
+    cli_scan_report_set_target(report, scandata->toplevel_path);
+    cli_scan_report_finish(report, &context, status,
+                           CL_VERDICT_NOTHING_FOUND, NULL);
+
+    if (record_structured_scan_report(scandata->conn, report) != CL_SUCCESS)
+        scandata->conn->structured_status = CL_EMEM;
+}
+
 static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
 {
     uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
@@ -220,16 +249,23 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
             else
                 logg(LOGG_ERROR, "Memory allocation failed during cli_ftw()\n");
             scandata->errors++;
+            record_structured_scan_skip(scandata, CL_EMEM,
+                                        "directory walk allocation failed");
             free(filename);
             return CL_EMEM;
         case error_stat:
             conn_reply_errno(scandata->conn, msg, "File path check failure:");
             logg(LOGG_WARNING, "File path check failure on: %s\n", msg);
             scandata->errors++;
+            record_structured_scan_skip(scandata, CL_ESTAT,
+                                        "directory walk stat failed");
             free(filename);
             return CL_SUCCESS;
         case warning_skipped_dir:
             logg(LOGG_WARNING, "Directory recursion limit reached, skipping %s\n", msg);
+            scandata->errors++;
+            record_structured_scan_skip(scandata, CL_EMAXREC,
+                                        "directory recursion limit skipped a required path");
             free(filename);
             return CL_SUCCESS;
         case warning_skipped_link:
@@ -240,6 +276,9 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
             if (msg == scandata->toplevel_path)
                 conn_reply(scandata->conn, msg, "Not supported file type", "ERROR");
             logg(LOGG_DEBUG, "Not supported file type: %s\n", msg);
+            scandata->errors++;
+            record_structured_scan_skip(scandata, CL_SUCCESS,
+                                        "unsupported file type was skipped");
             free(filename);
             return CL_SUCCESS;
         case visit_directory_toplev:
@@ -276,6 +315,8 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
             conn_reply_errno(scandata->conn, filename, "File path check failure:");
             logg(LOGG_WARNING, "File path check failure for: %s\n", filename);
             scandata->errors++;
+            record_structured_scan_skip(scandata, ret,
+                                        "real path resolution failed");
             free(filename);
             return (CL_EMEM == ret) ? ret : CL_SUCCESS;
         }
