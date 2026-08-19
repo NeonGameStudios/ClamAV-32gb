@@ -26,6 +26,61 @@ the host on cooldown, so no newer database was downloaded.
 
 The two 4 KiB `._*` AppleDouble metadata files in the directory were excluded.
 
+## Latest official-CVD verification — 2026-08-18
+
+The current Sonic1 source mount was rebuilt successfully in the existing
+`clamav-32gb:test-tools-742a8a4` container (`gmake -C /work/build-current-release
+-j2`, exit 0). The resulting binary reports `ClamAV 1.5.3-largefile-devel`.
+The preprocessor output for the rebuilt `libclamav` translation unit confirms
+`SIZE_MAX`, `ANONYMOUS_MAP`, and the 32 GiB
+`CLI_MAX_PCRE_CONTIGUOUS_FILESIZE` branch are active.
+
+The USB files were then scanned serially with the official `main.cvd`,
+`daily.cvd`, and `bytecode.cvd` database files. Sonic1 reported 62 GiB total
+memory and 58 GiB available before the run. The evidence is preserved at:
+
+```text
+/home/camera/clamav-32gb-work/usb-scan-20260818-current/
+```
+
+With top-level limits of 32 GiB but the normal `PCREMaxFileSize` default
+(100 MiB), the four files below 32 GiB all returned exit 2 with:
+`PCRE signatures require an oversized contiguous subject`. The 50 GiB file
+returned exit 2 with `Heuristics.Limits.Exceeded.MaxFileSize` and
+`Exceeded max scan size`. No file was reported clean after an incomplete scan.
+
+| File | Bytes | Result | Wall time | Peak RSS |
+|---|---:|---|---:|---:|
+| `1.53gb.m4v` | 1,529,898,209 | incomplete, PCRE subject limit | 1:59.80 | 1,071,752 KB |
+| `2.31gb.exe` | 2,313,609,237 | incomplete, PCRE subject limit | 13:35.45 | 1,370,368 KB |
+| `3.27gb.mp4` | 3,272,094,941 | incomplete, PCRE subject limit | 3:10.92 | 1,072,056 KB |
+| `4.7gb.iso` | 4,699,979,776 | incomplete, PCRE subject limit | 4:44.83 | 1,073,572 KB |
+| `50.gb.iso` | 49,999,802,368 | rejected, top-level 32 GiB limit | 0:11.35 | 1,057,800 KB |
+
+As a focused override check, `1.53gb.m4v` was rescanned with
+`--pcre-max-filesize=32G`. It no longer reported the PCRE contiguous-subject
+warning; instead it reached a separate parser limitation:
+`ZIP masked local-header values are unsupported` (exit 2, 1:44.90 wall time,
+2,551,708 KB peak RSS). This is evidence that the large-file/PCRE path is
+active, not evidence of full embedded ZIP/format-parser support.
+
+The 50 GiB file was also checked with the explicit 32 GiB PCRE setting and
+remained fail-visible: exit 2 after 11.60 seconds with
+`Heuristics.Limits.Exceeded.MaxFileSize` and `Exceeded max scan size`.
+
+The official database fingerprints for this run were:
+
+```text
+bytecode.cvd  6d4aa01f219e988060fc419f495d07f27e0cdf1a2cccc065971da922c76f7ffb
+daily.cvd     09571f432efc1cc88bfff594768f880ed5abf4b9913e97e5f9c0a98a7a4bed70
+main.cvd      0b2182d229f46981ec8f535382222f7c9dfdd656b250ad47988b910a8d302365
+```
+
+This pass complements the earlier raw-only POC profile: synthetic boundary
+tests and raw scans demonstrate the large-file fmap/offset path, while the
+official-CVD pass shows the expected distinction between top-level limits,
+PCRE configuration, and independent deep-parser limits.
+
 The Sonic1 binary was rebuilt from the current local working tree after the
 PCRE whole-file path was upgraded. On qualifying 64-bit anonymous-map builds,
 the effective `PCREMaxFileSize` ceiling now follows the 32 GiB large-file
