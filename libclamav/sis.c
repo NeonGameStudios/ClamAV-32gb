@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #endif
 #include <fcntl.h>
+#include <stdbool.h>
 #include <zlib.h>
 
 #include "others.h"
@@ -65,6 +66,162 @@ sis_incomplete(cli_ctx *ctx, const char *reason)
 {
     cli_mark_scan_incomplete(ctx, reason);
     return CL_EPARSE;
+}
+
+#define SIS_STREAM_CHUNK (64U * 1024U)
+
+/* Copy or inflate one SIS member into a caller-owned temporary descriptor.
+ * The caller reserves the declared output size before invoking this helper and
+ * keeps that reservation until the nested descriptor scan has completed. */
+static cl_error_t sis_stream_member_to_fd(cli_ctx *ctx, fmap_t *map, uint64_t input_offset,
+                                          uint64_t input_size, uint64_t output_size, bool compressed, int fd)
+{
+    uint8_t input[SIS_STREAM_CHUNK];
+    uint8_t output[SIS_STREAM_CHUNK];
+    uint64_t input_pos       = input_offset;
+    uint64_t input_remaining = input_size;
+    uint64_t output_total    = 0;
+    const char *failure_reason = "SIS member could not be streamed completely";
+    cl_error_t status         = CL_SUCCESS;
+    z_stream stream;
+    bool stream_initialized = false;
+
+    if (ctx == NULL || map == NULL || fd < 0) {
+        return CL_EARG;
+    }
+
+    if (input_offset > (uint64_t)map->len || input_size > (uint64_t)map->len - input_offset) {
+        failure_reason = "SIS member data was outside the archive map";
+        status         = CL_EPARSE;
+        goto done;
+    }
+
+    if (!compressed && input_size != output_size) {
+        failure_reason = "SIS uncompressed member size disagreed with its metadata";
+        status         = CL_EPARSE;
+        goto done;
+    }
+
+    if (!compressed) {
+        while (input_remaining != 0) {
+            size_t chunk;
+            size_t nread;
+
+            status = cli_checktimelimit(ctx);
+            if (status != CL_SUCCESS) {
+                failure_reason = "SIS member copy reached the configured time limit";
+                goto done;
+            }
+
+            chunk = (input_remaining > sizeof(input)) ? sizeof(input) : (size_t)input_remaining;
+            nread = fmap_readn(map, input, (size_t)input_pos, chunk);
+            if (nread != chunk) {
+                failure_reason = "SIS member could not be read completely";
+                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+                goto done;
+            }
+            if (cli_writen(fd, input, chunk) != chunk) {
+                failure_reason = "SIS member could not be written completely";
+                status         = CL_EWRITE;
+                goto done;
+            }
+
+            input_pos += chunk;
+            input_remaining -= chunk;
+            output_total += chunk;
+        }
+
+        goto done;
+    }
+
+    memset(&stream, 0, sizeof(stream));
+    if (inflateInit(&stream) != Z_OK) {
+        failure_reason = "SIS zlib stream could not be initialized";
+        status         = CL_EPARSE;
+        goto done;
+    }
+    stream_initialized = true;
+
+    for (;;) {
+        uInt before_input;
+        size_t produced;
+        int zstatus;
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            failure_reason = "SIS zlib stream reached the configured time limit";
+            goto done;
+        }
+
+        if (stream.avail_in == 0 && input_remaining != 0) {
+            size_t chunk = (input_remaining > sizeof(input)) ? sizeof(input) : (size_t)input_remaining;
+            size_t nread = fmap_readn(map, input, (size_t)input_pos, chunk);
+
+            if (nread != chunk) {
+                failure_reason = "SIS compressed member could not be read completely";
+                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+                goto done;
+            }
+            input_pos += chunk;
+            input_remaining -= chunk;
+            stream.next_in  = input;
+            stream.avail_in = (uInt)chunk;
+        }
+
+        stream.next_out  = output;
+        stream.avail_out = sizeof(output);
+        before_input     = stream.avail_in;
+        zstatus          = inflate(&stream, Z_NO_FLUSH);
+        produced         = sizeof(output) - stream.avail_out;
+
+        if (produced != 0) {
+            if (output_total > output_size || (uint64_t)produced > output_size - output_total) {
+                failure_reason = "SIS decompressed member exceeded its declared output size";
+                status         = CL_EFORMAT;
+                goto done;
+            }
+            if (cli_writen(fd, output, produced) != produced) {
+                failure_reason = "SIS decompressed member could not be written completely";
+                status         = CL_EWRITE;
+                goto done;
+            }
+            output_total += produced;
+        }
+
+        if (zstatus == Z_STREAM_END) {
+            if (input_remaining != 0 || stream.avail_in != 0) {
+                failure_reason = "SIS compressed member contains trailing data";
+                status         = CL_EPARSE;
+            } else if (output_total != output_size) {
+                failure_reason = "SIS decompressed member size disagreed with its metadata";
+                status         = CL_EPARSE;
+            }
+            break;
+        }
+        if (zstatus != Z_OK) {
+            failure_reason = "SIS compressed member did not reach zlib stream completion";
+            status         = (zstatus == Z_MEM_ERROR) ? CL_EMEM : CL_EPARSE;
+            goto done;
+        }
+        if (before_input == stream.avail_in && produced == 0) {
+            failure_reason = "SIS zlib stream made no progress";
+            status         = CL_EPARSE;
+            goto done;
+        }
+    }
+
+done:
+    if (stream_initialized && inflateEnd(&stream) != Z_OK && status == CL_SUCCESS) {
+        failure_reason = "SIS zlib stream could not be finalized";
+        status         = CL_EPARSE;
+    }
+    if (status == CL_SUCCESS && output_total != output_size) {
+        failure_reason = "SIS member output size disagreed with its metadata";
+        status         = CL_EPARSE;
+    }
+    if (status != CL_SUCCESS && status != CL_ETIMEOUT)
+        cli_mark_scan_incomplete(ctx, failure_reason);
+    return status;
 }
 
 /*************************************************
@@ -275,7 +432,6 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
     size_t pos;
     fmap_t *map             = ctx->fmap;
     uint32_t *ptrs          = NULL;
-    void *decomp            = NULL;
     int fd                  = -1;
     char *original_filepath = NULL;
     char *install_filepath  = NULL;
@@ -460,9 +616,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
                      * There should be 1 version of the file for each language.
                      */
                     for (j = 0; j < fcount; j++) {
-                        const void *comp;
-                        const void *decompp = NULL;
-                        uLongf olen;
+                        uint64_t member_output_size;
+                        bool temporary_reserved = false;
 
                         if (!lens[j]) {
                             cli_dbgmsg("\tSkipping empty file\n");
@@ -486,81 +641,57 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
                         }
                         cli_dbgmsg("\tUnpacking lang#%d - ptr:%x compressed size:%x original (decompressed) size:%x\n", j, ptrs[j], lens[j], olens[j]);
 
-                        if (!(comp = fmap_need_off_once(map, ptrs[j], lens[j]))) {
-                            cli_dbgmsg("\tSkipping ghost or otherwise out of archive file\n");
-                            if (limit_status == CL_CLEAN)
-                                limit_status = CL_EPARSE;
-                            cli_mark_scan_incomplete(ctx, "SIS member data was outside the archive map");
-                            continue;
-                        }
-
-                        if (compd) {
-                            /*
-                             * The compressed flag was set. Try to decompress it.
-                             */
-                            {
-                                cl_error_t limitret = CL_CLEAN;
-
-                                if (olens[j] <= lens[j] * 3) {
-                                    limitret = cli_checklimits("sis", ctx, lens[j] * 3, 0, 0);
-                                    if (limitret == CL_CLEAN)
-                                        olen = lens[j] * 3;
-                                }
-                                if (olens[j] > lens[j] * 3 || limitret != CL_CLEAN) {
-                                    limitret = cli_checklimits("sis", ctx, olens[j], 0, 0);
-                                    if (limitret == CL_CLEAN)
-                                        olen = olens[j];
-                                }
-                                if (limitret != CL_CLEAN) {
-                                    if (limitret != CL_ETIMEOUT)
-                                        cli_mark_scan_incomplete(ctx, "SIS decompressed member exceeds configured scan limits");
-                                    if (limit_status == CL_CLEAN)
-                                        limit_status = limitret;
-                                    continue;
-                                }
-                            }
-
-                            if (!(decomp = cli_max_malloc(olen))) {
-                                cli_dbgmsg("\tOOM\n");
-                                goto done;
-                            }
-                            if (uncompress(decomp, &olen, comp, lens[j]) != Z_OK) {
-                                cli_dbgmsg("\tUnpacking failure\n");
-                                CLI_FREE_AND_SET_NULL(decomp);
+                        member_output_size = compd ? (uint64_t)olens[j] : (uint64_t)lens[j];
+                        {
+                            cl_error_t limitret = cli_checklimits("sis", ctx, member_output_size, 0, 0);
+                            if (limitret != CL_CLEAN) {
+                                if (limitret != CL_ETIMEOUT)
+                                    cli_mark_scan_incomplete(ctx, "SIS decompressed member exceeds configured scan limits");
                                 if (limit_status == CL_CLEAN)
-                                    limit_status = CL_EPARSE;
-                                cli_mark_scan_incomplete(ctx, "SIS member could not be decompressed completely");
+                                    limit_status = limitret;
                                 continue;
                             }
-                            decompp = decomp;
-                        } else {
-                            /*
-                             * File not compressed, scan it as-is.
-                             */
-                            olen    = lens[j];
-                            decompp = comp;
                         }
+
+                        status = cli_scan_reserve_temporary(ctx, member_output_size);
+                        if (status != CL_SUCCESS) {
+                            if (limit_status == CL_CLEAN)
+                                limit_status = status;
+                            continue;
+                        }
+                        temporary_reserved = true;
+
                         snprintf(ofn, 1024, "%s" PATHSEP "sis%02d", tmpd, umped);
                         ofn[1023] = '\0';
                         if ((fd = open(ofn, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600)) == -1) {
                             cli_errmsg("SIS: unable to create output file %s - aborting.\n", ofn);
+                            cli_scan_release_temporary(ctx, member_output_size);
                             status = CL_ECREAT;
                             goto done;
                         }
-                        if (cli_writen(fd, decompp, olen) != olen) {
-                            status = CL_EWRITE;
-                            goto done;
+
+                        status = sis_stream_member_to_fd(ctx, map, ptrs[j], lens[j], member_output_size, compd, fd);
+                        if (status != CL_SUCCESS) {
+                            close(fd);
+                            fd = -1;
+                            cli_scan_release_temporary(ctx, member_output_size);
+                            if (limit_status == CL_CLEAN)
+                                limit_status = status;
+                            continue;
                         }
 
-                        CLI_FREE_AND_SET_NULL(decomp);
-
-                        status = cli_magic_scan_desc(fd, ofn, ctx, original_filepath, LAYER_ATTRIBUTES_NONE);
+                        status = cli_magic_scan_desc_type_reserved(fd, ofn, ctx, CL_TYPE_ANY, original_filepath,
+                                                                   LAYER_ATTRIBUTES_NONE);
+                        if (close(fd) != 0 && status == CL_SUCCESS)
+                            status = CL_EWRITE;
+                        fd = -1;
+                        if (temporary_reserved) {
+                            cli_scan_release_temporary(ctx, member_output_size);
+                            temporary_reserved = false;
+                        }
                         if (CL_SUCCESS != status) {
                             goto done;
                         }
-
-                        close(fd);
-                        fd = -1;
 
                         umped++;
                     }
@@ -607,7 +738,6 @@ done:
         close(fd);
     }
     CLI_FREE_AND_SET_NULL(original_filepath);
-    CLI_FREE_AND_SET_NULL(decomp);
     CLI_FREE_AND_SET_NULL(ptrs);
     CLI_FREE_AND_SET_NULL(alangs);
 
@@ -830,10 +960,11 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
                     s->level++;
                     while (s->fsize[s->level - 1] && !getsize(s)) { /* FOREACH DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA */
                         uint32_t usize, usizeh, len;
-                        void *src, *dst;
                         char tempf[1024];
-                        uLongf uusize;
                         int fd;
+                        uint64_t member_input_size;
+                        uint64_t member_output_size;
+                        bool temporary_reserved = false;
 
                         cli_dbgmsg("SIS: %d:Got filedata element with size %x\n", s->level, s->fsize[s->level]);
                         if (ALIGN4(s->fsize[s->level]) < s->fsize[s->level - 1])
@@ -850,9 +981,16 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
                             tempf[1023] = '\0';
                             s->pos -= (long)s->sleft;
                             s->sleft = s->smax = 0;
+                            len                = ALIGN4(s->fsize[s->level]);
+                            /* The field is four-byte aligned on disk, but
+                             * compressed data uses its exact declared length;
+                             * the alignment bytes are skipped with the
+                             * surrounding field cursor below. */
+                            member_input_size  = field ? (uint64_t)s->fsize[s->level] : (uint64_t)len;
+                            member_output_size = field ? (uint64_t)usize : (uint64_t)len;
 
                             {
-                                cl_error_t limitret = cli_checklimits("sis", ctx, ALIGN4(s->fsize[s->level]), 0, 0);
+                                cl_error_t limitret = cli_checklimits("sis", ctx, member_input_size, 0, 0);
                                 if (limitret != CL_CLEAN) {
                                     if (limitret != CL_ETIMEOUT)
                                         cli_mark_scan_incomplete(ctx, "SIS 9.x member exceeds configured scan limits");
@@ -862,100 +1000,61 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
                                     break;
                                 }
                             }
-                            if (!(src = cli_max_malloc(ALIGN4(s->fsize[s->level])))) {
-                                s->incomplete = 1;
-                                if (s->failure == CL_CLEAN)
-                                    s->failure = CL_EMEM;
-                                break;
-                            }
-
-                            len = ALIGN4(s->fsize[s->level]);
                             {
-                                size_t nread = fmap_readn(s->map, src, s->pos, len);
-                                if (nread != len) {
-                                    s->incomplete = 1;
-                                    if (s->failure == CL_CLEAN)
-                                        s->failure = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-                                    free(src);
-                                    break;
-                                }
-                            }
-                            s->pos += len;
-
-                            if (field) { /* compressed */
-                                int zresult;
-
-                                cl_error_t limitret = CL_CLEAN;
-
-                                if (usize <= s->fsize[s->level] * 3) {
-                                    limitret = cli_checklimits("sis", ctx, s->fsize[s->level] * 3, 0, 0);
-                                    if (limitret == CL_CLEAN)
-                                        uusize = s->fsize[s->level] * 3;
-                                }
-                                if (usize > s->fsize[s->level] * 3 || limitret != CL_CLEAN) {
-                                    limitret = cli_checklimits("sis", ctx, usize, 0, 0);
-                                    if (limitret == CL_CLEAN)
-                                        uusize = usize;
-                                }
+                                cl_error_t limitret = cli_checklimits("sis", ctx, member_output_size, 0, 0);
                                 if (limitret != CL_CLEAN) {
                                     if (limitret != CL_ETIMEOUT)
                                         cli_mark_scan_incomplete(ctx, "SIS 9.x decompressed member exceeds configured scan limits");
                                     s->incomplete = 1;
                                     if (s->failure == CL_CLEAN)
                                         s->failure = limitret;
-                                    free(src);
                                     break;
                                 }
-
-                                if (!(dst = cli_max_malloc(uusize))) {
-                                    cli_dbgmsg("SIS: OOM\n");
-                                    s->incomplete = 1;
-                                    if (s->failure == CL_CLEAN)
-                                        s->failure = CL_EMEM;
-                                    free(src);
-                                    break;
-                                }
-                                zresult = uncompress(dst, &uusize, src, s->fsize[s->level]);
-                                free(src);
-                                if (zresult != Z_OK) {
-                                    cli_dbgmsg("SIS: Inflate failure (%d)\n", zresult);
-                                    s->incomplete = 1;
-                                    if (s->failure == CL_CLEAN)
-                                        s->failure = CL_EPARSE;
-                                    free(dst);
-                                    break;
-                                }
-                                if ((uLongf)usize != uusize)
-                                    cli_dbgmsg("SIS: Warning: expected size %lx but got %lx\n", (uLongf)usize, uusize);
-                                else
-                                    cli_dbgmsg("SIS: File successfully inflated\n");
-                            } else { /* not compressed */
-                                dst    = src;
-                                uusize = s->fsize[s->level];
                             }
+                            if ((ret = cli_scan_reserve_temporary(ctx, member_output_size)) != CL_SUCCESS) {
+                                s->incomplete = 1;
+                                if (s->failure == CL_CLEAN)
+                                    s->failure = ret;
+                                break;
+                            }
+                            temporary_reserved = true;
+
                             if ((fd = open(tempf, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600)) == -1) {
                                 cli_errmsg("SIS: unable to create output file %s - aborting.\n", tempf);
                                 s->incomplete = 1;
                                 if (s->failure == CL_CLEAN)
                                     s->failure = CL_ECREAT;
-                                free(dst);
+                                cli_scan_release_temporary(ctx, member_output_size);
+                                temporary_reserved = false;
                                 break;
                             }
-                            if (cli_writen(fd, dst, uusize) != uusize) {
+
+                            ret = sis_stream_member_to_fd(ctx, s->map, s->pos, member_input_size,
+                                                          member_output_size, field != 0, fd);
+                            s->pos += len;
+                            if (ret != CL_SUCCESS) {
                                 s->incomplete = 1;
                                 if (s->failure == CL_CLEAN)
-                                    s->failure = CL_EWRITE;
-                                free(dst);
+                                    s->failure = ret;
                                 close(fd);
+                                fd = -1;
+                                cli_scan_release_temporary(ctx, member_output_size);
+                                temporary_reserved = false;
                                 break;
                             }
-                            free(dst);
-                            ret = cli_magic_scan_desc(fd, tempf, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+
+                            ret = cli_magic_scan_desc_type_reserved(fd, tempf, ctx, CL_TYPE_ANY, NULL,
+                                                                    LAYER_ATTRIBUTES_NONE);
+                            if (close(fd) != 0 && ret == CL_SUCCESS)
+                                ret = CL_EWRITE;
+                            fd = -1;
+                            if (temporary_reserved) {
+                                cli_scan_release_temporary(ctx, member_output_size);
+                                temporary_reserved = false;
+                            }
                             if (CL_SUCCESS != ret) {
-                                close(fd);
                                 return ret;
                             }
-                            close(fd);
                             break;
                         } /* DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA[x]::COMPRESSED */
                         s->level--;

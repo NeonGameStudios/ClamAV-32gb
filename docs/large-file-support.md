@@ -2155,6 +2155,17 @@ are fail-visible. Solid NSIS archives now retain decoder state while refilling
 member through the same temporary-byte quota as non-solid members. NSIS corpus,
 sanitizer, and RSS qualification remain open.
 
+## SIS bounded member extraction — 2026-08-19
+
+Both legacy and 9.x SIS member handlers now read fmap input in 64 KiB windows
+and stream stored or zlib-compressed output directly into temporary files.
+Declared input and output sizes are checked before extraction, output is
+reserved against `MaxTemporarySize` until the nested descriptor scan finishes,
+and zlib completion, exact output length, trailing input, read, write, and
+time-limit failures mark the scan incomplete rather than scanning a partial
+member. SIS parser corpus, sanitizer, and large-payload qualification remain
+open.
+
 ## NSIS solid bounded input — 2026-08-19
 
 The stateful solid NSIS path no longer maps the complete compressed archive or
