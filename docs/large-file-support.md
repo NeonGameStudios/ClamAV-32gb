@@ -2007,6 +2007,16 @@ reported as incomplete. The checks do not claim that these parser families
 have been converted to 32 GiB deep streaming; their existing parser-specific
 allocation, format, and qualification limits remain separate release gates.
 
+## AutoIt bounded encrypted input — 2026-08-19
+
+EA05 and EA06 compressed members now decrypt their fmap input through a
+64 KiB window instead of materializing the complete encrypted member. The
+stream reader checks the declared range, preserves MT/LAME keystream state
+across refills, and makes short input or decoder-header failures incomplete.
+Decoded output and stored-member paths still use the legacy contiguous
+allocation ceiling, so AutoIt is not yet a 32 GiB deep-parser qualification;
+allocation failures are explicit non-clean results and remain a release gate.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

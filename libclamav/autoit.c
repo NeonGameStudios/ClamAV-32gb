@@ -568,17 +568,27 @@ static uint8_t MT_getnext(struct MT *MT)
     return (uint8_t)(r >> 1);
 }
 
-static void MT_decrypt(uint8_t *buf, unsigned int size, uint32_t seed)
+static void MT_init(struct MT *MT, uint32_t seed)
 {
-    struct MT MT;
     unsigned int i;
-    uint32_t *mt = MT.mt;
+    uint32_t *mt = MT->mt;
 
     *mt = seed;
     for (i = 1; i < 624; i++)
         mt[i] = i + 0x6c078965 * ((mt[i - 1] >> 30) ^ mt[i - 1]);
-    MT.items = 1;
-    MT.next  = MT.mt;
+    MT->items = 1;
+    MT->next  = MT->mt;
+}
+
+static uint8_t MT_getnext_void(void *opaque)
+{
+    return MT_getnext((struct MT *)opaque);
+}
+
+static void MT_decrypt(uint8_t *buf, unsigned int size, uint32_t seed)
+{
+    struct MT MT;
+    MT_init(&MT, seed);
 
     while (size--)
         *buf++ ^= MT_getnext(&MT);
@@ -588,9 +598,22 @@ static void MT_decrypt(uint8_t *buf, unsigned int size, uint32_t seed)
      inflate stuff
 *********************/
 
+#define AUTOIT_INPUT_CHUNK (64U * 1024U)
+
+typedef uint8_t (*autoit_input_key_next)(void *opaque);
+
 struct UNP {
     uint8_t *outputbuf;
     uint8_t *inputbuf;
+    size_t input_capacity;
+    size_t input_window_pos;
+    size_t input_window_len;
+    size_t input_source_offset;
+    size_t input_source_remaining;
+    fmap_t *input_map;
+    void *input_key_ctx;
+    autoit_input_key_next input_key_next;
+    cli_ctx *ctx;
     uint32_t cur_output;
     uint32_t cur_input;
     uint32_t usize;
@@ -695,37 +718,116 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
     do {                                                                             \
         cl_error_t reserve_status_ = autoit_reserve_output(&(buf_), &(cap_), (used_), (additional_)); \
         if (reserve_status_ != CL_SUCCESS) {                                          \
-            if (reserve_status_ == CL_EMAXSIZE)                                       \
-                cli_mark_scan_incomplete((ctx_), "AutoIt decompiled script exceeds the bounded allocation limit"); \
+            cli_mark_scan_incomplete((ctx_), "AutoIt decompiled script exceeds the bounded allocation limit"); \
             cleanup_;                                                                 \
             return reserve_status_;                                                   \
         }                                                                             \
     } while (0)
 
+static bool autoit_input_refill(struct UNP *UNP, cli_ctx *ctx)
+{
+    size_t chunk;
+    size_t i;
+
+    if (UNP->input_source_remaining == 0 || UNP->input_capacity == 0 ||
+        UNP->input_map == NULL || UNP->input_key_next == NULL) {
+        cli_mark_scan_incomplete(ctx, "AutoIt compressed input ended before the decoder completed");
+        UNP->error = 1;
+        return false;
+    }
+
+    chunk = MIN(UNP->input_source_remaining, UNP->input_capacity);
+    if (fmap_readn(UNP->input_map, UNP->inputbuf, UNP->input_source_offset, chunk) != chunk) {
+        cli_mark_scan_incomplete(ctx, "AutoIt compressed input could not be read completely");
+        UNP->error = 1;
+        return false;
+    }
+
+    for (i = 0; i < chunk; i++)
+        UNP->inputbuf[i] ^= UNP->input_key_next(UNP->input_key_ctx);
+
+    UNP->input_source_offset += chunk;
+    UNP->input_source_remaining -= chunk;
+    UNP->input_window_pos = 0;
+    UNP->input_window_len = chunk;
+    return true;
+}
+
+static bool autoit_input_byte(struct UNP *UNP, cli_ctx *ctx, uint8_t *value)
+{
+    if (UNP->cur_input >= UNP->csize) {
+        cli_mark_scan_incomplete(ctx, "AutoIt compressed input ended before the decoder completed");
+        UNP->error = 1;
+        return false;
+    }
+    if (UNP->input_window_pos == UNP->input_window_len && !autoit_input_refill(UNP, ctx))
+        return false;
+
+    *value = UNP->inputbuf[UNP->input_window_pos++];
+    UNP->cur_input++;
+    return true;
+}
+
+static cl_error_t autoit_init_input_stream(struct UNP *UNP, cli_ctx *ctx, fmap_t *map,
+                                           size_t offset, uint32_t size, void *key_ctx,
+                                           autoit_input_key_next key_next)
+{
+    if (offset > map->len || (size_t)size > map->len - offset) {
+        cli_mark_scan_incomplete(ctx, "AutoIt compressed stream is outside the input map");
+        return CL_EREAD;
+    }
+
+    UNP->input_capacity = MIN((size_t)size, (size_t)AUTOIT_INPUT_CHUNK);
+    if (UNP->input_capacity == 0)
+        return CL_EFORMAT;
+    if (!(UNP->inputbuf = cli_max_malloc(UNP->input_capacity))) {
+        cli_mark_scan_incomplete(ctx, "AutoIt compressed input window could not be allocated");
+        return CL_EMEM;
+    }
+
+    UNP->input_window_pos       = 0;
+    UNP->input_window_len       = 0;
+    UNP->input_source_offset    = offset;
+    UNP->input_source_remaining = size;
+    UNP->input_map              = map;
+    UNP->input_key_ctx          = key_ctx;
+    UNP->input_key_next         = key_next;
+    UNP->ctx                    = ctx;
+    return CL_SUCCESS;
+}
+
+static bool autoit_input_read(struct UNP *UNP, cli_ctx *ctx, uint8_t *buffer, size_t length)
+{
+    size_t i;
+
+    for (i = 0; i < length; i++) {
+        if (!autoit_input_byte(UNP, ctx, &buffer[i]))
+            return false;
+    }
+    return true;
+}
+
 static uint32_t getbits(struct UNP *UNP, uint32_t size)
 {
-    uint32_t missing;
-    uint32_t words;
-
     // cli_dbgmsg("In getbits, (size: %u, bits_avail: %u, UNP->cur_input: %u)\n", size, UNP->bits_avail, UNP->cur_input);
     UNP->bitmap.half.h = 0;
-    if (UNP->cur_input > UNP->csize) {
-        cli_dbgmsg("autoit: getbits() - input cursor is outside the compressed buffer\n");
-        UNP->error = 1;
-        return 0;
-    }
-    missing = size > UNP->bits_avail ? size - UNP->bits_avail : 0;
-    words   = missing == 0 ? 0 : ((missing - 1) / 16) + 1;
-    if (words > (UNP->csize - UNP->cur_input) / 2) {
-        cli_dbgmsg("autoit: getbits() - not enough bits available\n");
-        UNP->error = 1;
-        return 0; /* won't infloop nor spam */
-    }
     while (size) {
         if (!UNP->bits_avail) {
             // cli_dbgmsg("cur_input: %u (size: %u)\n", UNP->cur_input, size);
-            UNP->bitmap.half.l |= UNP->inputbuf[UNP->cur_input++] << 8;
-            UNP->bitmap.half.l |= UNP->inputbuf[UNP->cur_input++];
+            uint8_t high, low;
+            if (UNP->input_key_next == NULL) {
+                if (UNP->cur_input > UNP->csize || UNP->csize - UNP->cur_input < 2) {
+                    cli_mark_scan_incomplete(UNP->ctx, "AutoIt compressed input ended before the decoder completed");
+                    UNP->error = 1;
+                    return 0;
+                }
+                high = UNP->inputbuf[UNP->cur_input++];
+                low  = UNP->inputbuf[UNP->cur_input++];
+            } else if (!autoit_input_byte(UNP, UNP->ctx, &high) || !autoit_input_byte(UNP, UNP->ctx, &low)) {
+                return 0;
+            }
+            UNP->bitmap.half.l |= high << 8;
+            UNP->bitmap.half.l |= low;
             UNP->bits_avail = 16;
         }
         UNP->bitmap.full <<= 1;
@@ -751,7 +853,13 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
     char tempfile[1024] = {0};
     int tempfd          = -1;
     struct UNP UNP      = {0};
+    struct MT input_mt;
+    size_t input_offset;
+    size_t next_offset;
+    uint8_t decoded_header[8];
     fmap_t *map         = ctx->fmap;
+
+    UNP.ctx = ctx;
 
     if (!autoit_require_range(ctx, map, base, 16, "AutoIt EA05 header is truncated")) {
         status = CL_EREAD;
@@ -763,6 +871,8 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
     // While we have not exceeded the max files limit or the max time limit...
     while (CL_SUCCESS == (status = cli_checklimits("autoit", ctx, 0, 0, 0))) {
+        if (base == NULL)
+            goto done;
         if (!autoit_require_range(ctx, map, base, 8, "AutoIt EA05 member header is truncated")) {
             status = CL_EREAD;
             goto done;
@@ -847,11 +957,6 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             goto done;
         }
 
-        if (!autoit_require_range(ctx, map, base, UNP.csize, "AutoIt EA05 compressed stream is truncated")) {
-            status = CL_EREAD;
-            goto done;
-        }
-
         if (comp == 1 && UNP.csize < 8) {
             cli_dbgmsg("autoit: compressed size too small\n");
             cli_mark_scan_incomplete(ctx, "AutoIt EA05 compressed member is shorter than its header");
@@ -859,27 +964,49 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             goto done;
         }
 
-        if (!(UNP.inputbuf = cli_max_malloc(UNP.csize))) {
-            status = CL_EMEM;
-            goto done;
-        }
-        memcpy(UNP.inputbuf, base, UNP.csize);
-        base += UNP.csize;
-        MT_decrypt(UNP.inputbuf, UNP.csize, 0x22af + m4sum);
-
         if (comp == 1) {
             /*
              * File is compressed. Decompress!
              */
             cli_dbgmsg("autoit: file is compressed\n");
-            if (cli_readint32(UNP.inputbuf) != 0x35304145) {
+            input_offset = fmap_ptr2off(map, base);
+            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 compressed stream is truncated");
+                status = CL_EREAD;
+                goto done;
+            }
+            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 compressed stream offset overflowed");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            next_offset = input_offset + (size_t)UNP.csize;
+            if (next_offset == map->len) {
+                base = NULL;
+            } else if (!(base = fmap_need_off_once(map, next_offset, 1))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 next member could not be read");
+                status = CL_EREAD;
+                goto done;
+            }
+
+            MT_init(&input_mt, 0x22af + m4sum);
+            status = autoit_init_input_stream(&UNP, ctx, map, input_offset, UNP.csize,
+                                              &input_mt, MT_getnext_void);
+            if (status != CL_SUCCESS)
+                goto done;
+            if (!autoit_input_read(&UNP, ctx, decoded_header, sizeof(decoded_header))) {
+                status = CL_EREAD;
+                goto done;
+            }
+
+            if (cli_readint32(decoded_header) != 0x35304145) {
                 cli_dbgmsg("autoit: bad magic or unsupported version\n");
                 cli_mark_scan_incomplete(ctx, "AutoIt EA05 compressed member has invalid decoder magic");
                 status = CL_EFORMAT;
                 goto done;
             }
 
-            if (!(UNP.usize = be32_to_host(*(uint32_t *)(UNP.inputbuf + 4)))) {
+            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
                 cli_mark_scan_incomplete(ctx, "AutoIt EA05 compressed member declares a zero output size");
                 status = CL_EFORMAT;
                 goto done;
@@ -895,6 +1022,7 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             }
 
             if (!(UNP.outputbuf = cli_max_malloc(UNP.usize))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 expanded member could not be allocated");
                 status = CL_EMEM;
                 goto done;
             }
@@ -981,6 +1109,36 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
              * File is NOT compressed.
              */
             cli_dbgmsg("autoit: file is not compressed\n");
+            input_offset = fmap_ptr2off(map, base);
+            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member is truncated");
+                status = CL_EREAD;
+                goto done;
+            }
+            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member offset overflowed");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            next_offset = input_offset + (size_t)UNP.csize;
+            if (next_offset == map->len) {
+                base = NULL;
+            } else if (!(base = fmap_need_off_once(map, next_offset, 1))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 next member could not be read");
+                status = CL_EREAD;
+                goto done;
+            }
+            if (!(UNP.inputbuf = cli_max_malloc(UNP.csize))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member could not be allocated");
+                status = CL_EMEM;
+                goto done;
+            }
+            if (fmap_readn(map, UNP.inputbuf, input_offset, UNP.csize) != UNP.csize) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member could not be read completely");
+                status = CL_EREAD;
+                goto done;
+            }
+            MT_decrypt(UNP.inputbuf, UNP.csize, 0x22af + m4sum);
             UNP.outputbuf = UNP.inputbuf;
             UNP.inputbuf  = NULL;
 
@@ -1138,6 +1296,11 @@ static uint8_t LAME_getnext(struct LAME *l)
     return ret;
 }
 
+static uint8_t LAME_getnext_void(void *opaque)
+{
+    return LAME_getnext((struct LAME *)opaque);
+}
+
 static void LAME_decrypt(uint8_t *cypher, uint32_t size, uint16_t seed)
 {
     struct LAME lame;
@@ -1163,7 +1326,13 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
     const char prefixes[] = {'\0', '\0', '@', '$', '\0', '.', '"', '\0'};
     const char *opers[]   = {",", "=", ">", "<", "<>", ">=", "<=", "(", ")", "+", "-", "/", "*", "&", "[", "]", "==", "^", "+=", "-=", "/=", "*=", "&=", "?", ":"};
     struct UNP UNP = {0};
+    struct LAME input_lame;
+    size_t input_offset;
+    size_t next_offset;
+    uint8_t decoded_header[8];
     fmap_t *map = ctx->fmap;
+
+    UNP.ctx = ctx;
 
     /* Useless due to a bug in CRC calculation - LMAO!!1 */
     /*   if (cli_readn(desc, buf, 24)!=24) */
@@ -1176,6 +1345,9 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
     while (CL_SUCCESS == (ret = cli_checklimits("cli_autoit", ctx, 0, 0, 0))) {
         bool script = false;
+
+        if (base == NULL)
+            break;
 
         if (!autoit_require_range(ctx, map, base, 8, "AutoIt EA06 member header is truncated")) {
             return CL_EREAD;
@@ -1270,9 +1442,6 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             return ret;
         }
 
-        if (!autoit_require_range(ctx, map, base, UNP.csize, "AutoIt EA06 compressed stream is truncated"))
-            return CL_EREAD;
-
         if (comp == 1 && UNP.csize < 8) {
             cli_dbgmsg("autoit: compressed size too small\n");
             cli_mark_scan_incomplete(ctx, "AutoIt EA06 compressed member is shorter than its header");
@@ -1281,28 +1450,49 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
         files++;
 
-        if (!(UNP.inputbuf = cli_max_malloc(UNP.csize))) {
-            return CL_EMEM;
-        }
-
-        memcpy(UNP.inputbuf, base, UNP.csize);
-        base += UNP.csize;
-
-        LAME_decrypt(UNP.inputbuf, UNP.csize, 0x2477 /* + m4sum (broken by design) */);
-
         if (comp == 1) {
             cli_dbgmsg("autoit: file is compressed\n");
 
-            if (cli_readint32(UNP.inputbuf) != 0x36304145) {
+            input_offset = fmap_ptr2off(map, base);
+            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 compressed stream is truncated");
+                return CL_EREAD;
+            }
+            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 compressed stream offset overflowed");
+                return CL_EFORMAT;
+            }
+            next_offset = input_offset + (size_t)UNP.csize;
+            if (next_offset == map->len) {
+                base = NULL;
+            } else if (!(base = fmap_need_off_once(map, next_offset, 1))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 next member could not be read");
+                return CL_EREAD;
+            }
+
+            LAME_srand(&input_lame, 0x2477 /* + m4sum (broken by design) */);
+            ret = autoit_init_input_stream(&UNP, ctx, map, input_offset, UNP.csize,
+                                           &input_lame, LAME_getnext_void);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (!autoit_input_read(&UNP, ctx, decoded_header, sizeof(decoded_header))) {
+                free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
+                return CL_EREAD;
+            }
+
+            if (cli_readint32(decoded_header) != 0x36304145) {
                 cli_dbgmsg("autoit: bad magic or unsupported version\n");
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 compressed member has invalid decoder magic");
                 free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
                 return CL_EFORMAT;
             }
 
-            if (!(UNP.usize = be32_to_host(*(uint32_t *)(UNP.inputbuf + 4)))) {
+            if (!(UNP.usize = be32_to_host(*(uint32_t *)(decoded_header + 4)))) {
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 compressed member declares a zero output size");
                 free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
                 return CL_EFORMAT;
             }
 
@@ -1310,11 +1500,14 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             if (ret != CL_CLEAN) {
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 expanded member exceeds configured scan limits");
                 free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
                 return ret;
             }
 
             if (!(UNP.outputbuf = cli_max_malloc(UNP.usize))) {
                 free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 expanded member could not be allocated");
                 return CL_EMEM;
             }
 
@@ -1382,6 +1575,7 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             }
 
             free(UNP.inputbuf);
+            UNP.inputbuf = NULL;
             if (UNP.error) {
                 cli_dbgmsg("autoit: decompression error after %u bytes - partial file may exist\n", UNP.cur_output);
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 member decompression was incomplete");
@@ -1390,6 +1584,33 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             }
         } else {
             cli_dbgmsg("autoit: file is not compressed\n");
+            input_offset = fmap_ptr2off(map, base);
+            if (input_offset > map->len || (size_t)UNP.csize > map->len - input_offset) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member is truncated");
+                return CL_EREAD;
+            }
+            if (input_offset > SIZE_MAX - (size_t)UNP.csize) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member offset overflowed");
+                return CL_EFORMAT;
+            }
+            next_offset = input_offset + (size_t)UNP.csize;
+            if (next_offset == map->len) {
+                base = NULL;
+            } else if (!(base = fmap_need_off_once(map, next_offset, 1))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 next member could not be read");
+                return CL_EREAD;
+            }
+            if (!(UNP.inputbuf = cli_max_malloc(UNP.csize))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member could not be allocated");
+                return CL_EMEM;
+            }
+            if (fmap_readn(map, UNP.inputbuf, input_offset, UNP.csize) != UNP.csize) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member could not be read completely");
+                free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
+                return CL_EREAD;
+            }
+            LAME_decrypt(UNP.inputbuf, UNP.csize, 0x2477 /* + m4sum (broken by design) */);
             UNP.outputbuf = UNP.inputbuf;
             UNP.usize     = UNP.csize;
         }
