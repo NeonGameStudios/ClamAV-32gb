@@ -39,6 +39,12 @@ enum mode {
     MODE_HANDSHAKE
 };
 
+/* The active INSTREAM quota may be limited by the protocol's stream cap or
+ * by the shared temporary-staging budget. */
+#define CLAMD_QUOTA_SOURCE_NONE      0
+#define CLAMD_QUOTA_SOURCE_STREAM    1
+#define CLAMD_QUOTA_SOURCE_TEMPORARY 2
+
 struct fd_buf {
     char *buffer;
     size_t bufsize;
@@ -54,6 +60,8 @@ struct fd_buf {
     int dumpfd;
     uint32_t chunksize;
     uint64_t quota;
+    int quota_source;
+    int structured_report;
     char *dumpname;
     time_t timeout_at; /* 0 - no timeout */
     jobgroup_t *group;

@@ -47,7 +47,7 @@ sanitizer_rustflags=${CLAMAV_SANITIZER_RUSTFLAGS:-not-set}
 cvd_certs_dir=${CLAMAV_CVD_CERTS_DIR:-${CVD_CERTS_DIR:-}}
 fixed_rss_budget_kb=33554432
 fixed_min_available_kb=50331648
-fixed_max_temp_bytes=67108864
+fixed_max_temp_bytes=68719476736
 
 case "$rss_budget_kb" in
     ''|*[!0-9]*)

@@ -44,6 +44,12 @@
 #define CMD20 "DETSTATS"
 
 #define CMD21 "ALLMATCHSCAN"
+#define CMD25 "SCANREPORT"
+#define CMD26 "CONTSCANREPORT"
+#define CMD27 "MULTISCANREPORT"
+#define CMD28 "ALLMATCHSCANREPORT"
+#define CMD29 "FILDESREPORT"
+#define CMD30 "INSTREAMREPORT"
 
 #define CMD22 "GET / HTTP/1.1"
 #define CMD23 "GET / HTTP/2"
@@ -80,6 +86,12 @@ enum commands {
     COMMAND_MULTISCANFILE,
     COMMAND_INSTREAMSCAN,
     COMMAND_ALLMATCHSCAN,
+    COMMAND_SCANREPORT,
+    COMMAND_CONTSCANREPORT,
+    COMMAND_MULTISCANREPORT,
+    COMMAND_ALLMATCHSCANREPORT,
+    COMMAND_FILDESREPORT,
+    COMMAND_INSTREAMREPORT,
     COMMAND_SYNACK,
     COMMAND_ACK,
     COMMAND_GOPHER
@@ -99,6 +111,9 @@ typedef struct client_conn_tag {
     threadpool_t *thrpool;
     int id;
     uint64_t quota;
+    int quota_source;
+    int structured_report;
+    cl_error_t structured_status;
     jobgroup_t *group;
     enum mode mode;
 } client_conn_t;
@@ -112,4 +127,5 @@ int conn_reply_single(const client_conn_t *conn, const char *path, const char *s
 int conn_reply_virus(const client_conn_t *conn, const char *file, const char *virname);
 int conn_reply_error(const client_conn_t *conn, const char *msg);
 int conn_reply_errno(const client_conn_t *conn, const char *path, const char *msg);
+int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int infected);
 #endif

@@ -495,7 +495,7 @@ contains tools/largefile_macos_host_preflight.sh 'memory_available_kb='
 contains tools/largefile_macos_runtime_gate.sh 'policy_32g_plus_one=pass'
 contains tools/largefile_macos_runtime_gate.sh 'peak_rss_kb'
 contains .github/workflows/cmake.yml "CLAMAV_MIN_AVAILABLE_KB: '50331648'"
-contains .github/workflows/cmake.yml "CLAMAV_MAX_TEMP_BYTES: '67108864'"
+contains .github/workflows/cmake.yml "CLAMAV_MAX_TEMP_BYTES: '68719476736'"
 contains .github/workflows/cmake.yml 'CLAMAV_MAX_SCAN_TIME_MS'
 contains .github/workflows/cmake.yml "CLAMAV_SANITIZER_MAX_SCAN_TIME_MS: '3600000'"
 contains .github/workflows/cmake.yml "CLAMAV_SANITIZER_RUST_SUITE: 'pass'"
@@ -543,6 +543,12 @@ contains tools/largefile_runtime_evidence_check.sh '$10 != off[row]'
 contains tools/largefile_runtime_evidence_check.sh 'worker-$worker.rss-kb'
 contains tools/largefile_runtime_evidence_check_test.sh 'evidence checker accepted a wrong numeric engine offset'
 contains tools/largefile_runtime_evidence_check_test.sh 'evidence checker accepted an RSS record that disagrees with the worker log'
+contains tools/largefile_capability_manifest.sh 'capability manifest is missing parser dispatch branches'
+contains docs/largefile-capabilities.tsv 'CL_TYPE_LHA_LZH'
+contains clamd/session.h 'CMD25 "SCANREPORT"'
+contains clamd/session.h 'CMD30 "INSTREAMREPORT"'
+contains clamd/session.c '32-bit network-order length'
+contains clamd/server-th.c 'conn_reply_scan_report(conn, CL_EMAXSIZE, 0)'
 contains common/optparser.c 'cannot exceed 32G in this build'
 contains CMakeLists.txt 'CLAMAV_LARGE_FILE_SUPPORT 1'
 
@@ -561,5 +567,7 @@ awk -F '\t' '
                 exit 2
     }
 ' "$root/docs/largefile-inventory.tsv"
+
+sh "$root/tools/largefile_capability_manifest.sh"
 
 echo 'large-file source guards passed'

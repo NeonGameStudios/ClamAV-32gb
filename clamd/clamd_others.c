@@ -374,6 +374,8 @@ buf_init(struct fd_buf *buf, int listen_only, int timeout)
     buf->dumpfd      = -1;
     buf->chunksize   = 0;
     buf->quota       = 0;
+    buf->quota_source = CLAMD_QUOTA_SOURCE_NONE;
+    buf->structured_report = 0;
     buf->dumpname    = NULL;
     buf->group       = NULL;
     buf->term        = '\0';

@@ -245,6 +245,7 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
             }
             filename             = NULL;
             client_conn->cmdtype  = COMMAND_MULTISCANFILE;
+            client_conn->structured_report = 0;
             client_conn->term     = scandata->conn->term;
             client_conn->options  = scandata->options;
             client_conn->opts     = scandata->opts;
@@ -284,6 +285,10 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
     context.virsize  = 0;
     context.scandata = scandata;
     ret              = cl_scanfile_callback(scan_path, &virname, &scandata->scanned, scandata->engine, scandata->options, &context);
+    if (ret == CL_VIRUS)
+        scandata->conn->structured_status = CL_VIRUS;
+    else if (ret != CL_SUCCESS && scandata->conn->structured_status == CL_SUCCESS)
+        scandata->conn->structured_status = ret;
     thrmgr_setactivetask(NULL, NULL);
 
     if (thrmgr_group_need_terminate(scandata->conn->group)) {
@@ -393,7 +398,7 @@ int scan_pathchk(const char *path, struct cli_ftw_cbdata *data)
 }
 
 cl_error_t scanfd(
-    const client_conn_t *conn,
+    client_conn_t *conn,
     unsigned long int *scanned,
     const struct cl_engine *engine,
     struct cl_scan_options *options,
@@ -427,6 +432,8 @@ cl_error_t scanfd(
         reply_fdstr = fdstr;
     }
     if (FSTAT(fd, &statbuf) == -1 || !S_ISREG(statbuf.st_mode)) {
+        if (conn->structured_report)
+            conn->structured_status = CL_ESTAT;
         logg(LOGG_INFO, "%s: Not a regular file. ERROR\n", fdstr);
         if (conn_reply(conn, reply_fdstr, "Not a regular file", "ERROR") == -1) {
             ret = CL_ETIMEOUT;
@@ -450,6 +457,10 @@ cl_error_t scanfd(
     context.virsize  = 0;
     context.scandata = NULL;
     ret              = cl_scandesc_callback(fd, log_filename, &virname, scanned, engine, options, &context);
+    if (ret == CL_VIRUS)
+        conn->structured_status = CL_VIRUS;
+    else if (ret != CL_SUCCESS && conn->structured_status == CL_SUCCESS)
+        conn->structured_status = ret;
     thrmgr_setactivetask(NULL, NULL);
 
     if (thrmgr_group_need_terminate(conn->group)) {
@@ -495,6 +506,7 @@ int scanstream(
 {
     int ret, sockfd, acceptd;
     int tmpd, bread, retval, firsttimeout, timeout, btread;
+    int limit_exceeded = 0;
     unsigned int port       = 0, portscan, min_port, max_port;
     uint64_t quota = 0, maxsize = 0;
     short bound         = 0;
@@ -590,7 +602,8 @@ int scanstream(
         btread = (maxsize && (quota < sizeof(buff))) ? (int)quota : sizeof(buff);
         if (!btread) {
             logg(LOGG_WARNING, "ScanStream(%s@%u): Size limit reached (max: " STDu64 ")\n", peer_addr, port, maxsize);
-            break; /* Scan what we have */
+            limit_exceeded = 1;
+            break; /* Never scan a truncated prefix. */
         }
         bread = recv(acceptd, buff, btread, 0);
         if (bread <= 0)
@@ -623,7 +636,9 @@ int scanstream(
             break;
     }
 
-    if (retval == 1) {
+    if (limit_exceeded) {
+        ret = CL_EMAXSIZE;
+    } else if (retval == 1) {
         lseek(tmpd, 0, SEEK_SET);
         thrmgr_setactivetask(peer_addr, NULL);
         context.filename = peer_addr;

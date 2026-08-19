@@ -133,6 +133,15 @@ static void scanner_thread(void *arg)
     } else
         errors = ret;
 
+    if (conn->structured_report) {
+        cl_error_t report_status = conn->structured_status;
+        if (report_status == CL_SUCCESS && virus)
+            report_status = CL_VIRUS;
+        else if (report_status == CL_SUCCESS && errors)
+            report_status = CL_ERROR;
+        (void)conn_reply_scan_report(conn, report_status, virus);
+    }
+
     thrmgr_setactiveengine(NULL);
 
     if (conn->filename)
@@ -695,7 +704,7 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
         cmdtype = parse_command(cmd, &argument, oldstyle);
         logg(LOGG_DEBUG_NV, "got command %s (%u, %u), argument: %s\n",
              cmd, (unsigned)cmdlen, (unsigned)cmdtype, argument ? argument : "");
-        if (cmdtype == COMMAND_FILDES) {
+        if (cmdtype == COMMAND_FILDES || cmdtype == COMMAND_FILDESREPORT) {
             if (buf->buffer + buf->off <= cmd + strlen("FILDES\n")) {
                 /* we need the extra byte from recvmsg */
                 conn->mode = MODE_WAITANCILL;
@@ -787,6 +796,8 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
     buf->id    = conn->id;
     buf->group = conn->group;
     buf->quota = conn->quota;
+    buf->quota_source = conn->quota_source;
+    buf->structured_report = conn->structured_report;
     if (conn->scanfd != -1 && conn->scanfd != buf->dumpfd) {
         logg(LOGG_DEBUG_NV, "Unclaimed file descriptor received, closing: %d\n", conn->scanfd);
         close(conn->scanfd);
@@ -856,13 +867,23 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                         buf->off -= pos;
                         *ppos = 0;
                         buf->id++;
+                        /* The report format is scoped to this request.  Do
+                         * not make a later IDSESSION command inherit it. */
+                        conn->structured_report = 0;
+                        buf->structured_report = 0;
                         return 0;
                     }
                 }
                 if (buf->chunksize > buf->quota) {
                     logg(LOGG_WARNING, "INSTREAM: Size limit reached, (requested: %u, max: " STDu64 ")\n",
                          buf->chunksize, buf->quota);
-                    conn_reply_error(conn, "INSTREAM size limit exceeded.");
+                    if (buf->structured_report) {
+                        conn_reply_scan_report(conn, CL_EMAXSIZE, 0);
+                    } else if (buf->quota_source == CLAMD_QUOTA_SOURCE_TEMPORARY) {
+                        conn_reply_error(conn, "INSTREAM temporary staging limit exceeded.");
+                    } else {
+                        conn_reply_error(conn, "INSTREAM size limit exceeded.");
+                    }
                     *error = 1;
                     *ppos  = pos;
                     return -1;
@@ -1694,6 +1715,9 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                 conn.group    = buf->group;
                 conn.id       = buf->id;
                 conn.quota    = buf->quota;
+                conn.quota_source = buf->quota_source;
+                conn.structured_report = buf->structured_report;
+                conn.structured_status = CL_SUCCESS;
                 conn.filename = buf->dumpname;
                 conn.mode     = buf->mode;
                 conn.term     = buf->term;

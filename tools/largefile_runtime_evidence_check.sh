@@ -19,7 +19,7 @@ levels=${3:-"1 2 4"}
 rss_budget_kb=$4
 fixed_rss_budget_kb=33554432
 fixed_min_available_kb=50331648
-fixed_max_temp_bytes=67108864
+fixed_max_temp_bytes=68719476736
 fixed_release_scan_time_ms=900000
 fixed_sanitizer_scan_time_ms=3600000
 

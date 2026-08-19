@@ -1,0 +1,117 @@
+#!/bin/sh
+
+# Validate the authoritative large-file capability manifest.
+# The manifest is deliberately allowed to contain pending entries; it is a
+# coverage contract, not a claim that every parser has already qualified.
+
+set -eu
+
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+manifest=$root/docs/largefile-capabilities.tsv
+
+if [ ! -f "$manifest" ]; then
+    echo "capability manifest is missing: $manifest" >&2
+    exit 1
+fi
+
+awk -F '\t' '
+    NR == 1 {
+        if (NF != 5 || $1 != "kind" || $2 != "id" || $3 != "status" ||
+            $4 != "source" || $5 != "evidence_or_required_work") {
+            print "invalid capability manifest header" > "/dev/stderr"
+            bad = 1
+        }
+        next
+    }
+    {
+        if (NF != 5) {
+            print "capability manifest row does not have five columns at line " NR > "/dev/stderr"
+            bad = 1
+            next
+        }
+        if ($1 != "library" && $1 != "clamscan" && $1 != "clamd" &&
+            $1 != "clamdscan" && $1 != "milter" && $1 != "on-access" &&
+            $1 != "parser") {
+            print "unknown capability kind at line " NR > "/dev/stderr"
+            bad = 1
+        }
+        if ($3 != "qualified" && $3 != "bounded" && $3 != "pending" &&
+            $3 != "unsupported") {
+            print "unknown capability status at line " NR > "/dev/stderr"
+            bad = 1
+        }
+        if ($2 == "" || $4 == "" || $5 == "") {
+            print "empty capability field at line " NR > "/dev/stderr"
+            bad = 1
+        }
+        key = $1 SUBSEP $2
+        seen[key] += 1
+        if (seen[key] != 1) {
+            print "duplicate capability entry: " $1 ":" $2 > "/dev/stderr"
+            bad = 1
+        }
+        count++
+    }
+    END {
+        if (NR < 2 || count == 0)
+            bad = 1
+        exit bad
+    }
+' "$manifest"
+
+required_ingress='library:path library:fd library:fmap clamscan:file clamscan:stdin clamd:SCAN clamd:FILDES clamd:INSTREAM clamdscan:fdpass clamdscan:stream clamd:MULTISCAN milter:message on-access:permission'
+for entry in $required_ingress; do
+    kind=${entry%%:*}
+    id=${entry#*:}
+    if ! awk -F '\t' -v wanted_kind="$kind" -v wanted_id="$id" \
+        '$1 == wanted_kind && $2 == wanted_id { found = 1 } END { exit !found }' "$manifest"; then
+        echo "capability manifest is missing ingress ${kind}:${id}" >&2
+        exit 1
+    fi
+done
+
+dispatch_tmp=$(mktemp "${TMPDIR:-/tmp}/clamav-capabilities.XXXXXX")
+manifest_tmp=$(mktemp "${TMPDIR:-/tmp}/clamav-capabilities-manifest.XXXXXX")
+cleanup()
+{
+    rm -f "$dispatch_tmp" "$manifest_tmp"
+}
+trap cleanup EXIT HUP INT TERM
+
+awk '$1 == "case" && $2 ~ /^CL_TYPE_[A-Z0-9_]*:/ { sub(/:.*/, "", $2); print $2 }' \
+    "$root/libclamav/scanners.c" | sort -u > "$dispatch_tmp"
+awk -F '\t' '$1 == "parser" { print $2 }' "$manifest" | sort -u > "$manifest_tmp"
+
+if ! missing=$(comm -23 "$dispatch_tmp" "$manifest_tmp"); then
+    echo 'failed to compare parser dispatch coverage' >&2
+    exit 1
+fi
+if [ -n "$missing" ]; then
+    echo "capability manifest is missing parser dispatch branches:" >&2
+    printf '%s\n' "$missing" >&2
+    exit 1
+fi
+
+if ! stale=$(comm -13 "$dispatch_tmp" "$manifest_tmp"); then
+    echo 'failed to compare parser manifest entries' >&2
+    exit 1
+fi
+if [ -n "$stale" ]; then
+    echo "capability manifest contains stale parser entries:" >&2
+    printf '%s\n' "$stale" >&2
+    exit 1
+fi
+
+while IFS="$(printf '\t')" read -r kind id status source evidence; do
+    [ "$kind" = kind ] && continue
+    case "$source" in
+        /*) source_path=$source ;;
+        *) source_path=$root/$source ;;
+    esac
+    if [ ! -f "$source_path" ]; then
+        echo "capability source does not exist for ${kind}:${id}: $source" >&2
+        exit 1
+    fi
+done < "$manifest"
+
+printf 'large-file capability manifest passed (%s entries)\n' "$(awk 'NR > 1 { count++ } END { print count + 0 }' "$manifest")"

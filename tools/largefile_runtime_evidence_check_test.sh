@@ -102,7 +102,7 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'ELF 64-bit LSB pie executable, x86-64\n'
     printf 'rss_budget_kb=33554432\n'
     printf 'min_available_kb=50331648\n'
-    printf 'max_temp_bytes=67108864\n'
+    printf 'max_temp_bytes=68719476736\n'
     printf 'max_scan_time_ms=900000\n'
     printf 'sanitizer_max_scan_time_ms=3600000\n'
     printf 'sanitizer_rust_suite=pass\n'

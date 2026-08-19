@@ -20,7 +20,10 @@
  *  MA 02110-1301, USA.
  */
 
-use std::convert::TryFrom;
+use std::{
+    convert::TryFrom,
+    io::{self, ErrorKind, Read, Seek, SeekFrom},
+};
 
 use log::debug;
 
@@ -46,6 +49,105 @@ pub enum Error {
 
     #[error("Attempted to create Rust FMap interface from NULL pointer")]
     Null,
+}
+
+/// A bounded `Read + Seek` view over a C fmap.
+///
+/// The adapter only borrows one small fmap window at a time.  It is intended
+/// for parser APIs that need a reader but must not receive a whole-file slice
+/// for a multi-gigabyte input.  The bytes are copied into the caller's
+/// buffer, then the fmap window is released immediately.
+pub struct FMapReader<'a> {
+    map: &'a FMap,
+    position: u64,
+}
+
+impl<'a> FMapReader<'a> {
+    const MAX_READ_CHUNK: usize = 1024 * 1024;
+
+    pub fn new(map: &'a FMap) -> Self {
+        Self { map, position: 0 }
+    }
+
+    fn read_window(&self, at: usize, dst: &mut [u8]) -> io::Result<usize> {
+        if dst.is_empty() {
+            return Ok(0);
+        }
+
+        let need_fn = match unsafe { (*self.map.fmap_ptr).need } {
+            Some(ptr) => ptr,
+            None => {
+                return Err(io::Error::new(
+                    ErrorKind::Unsupported,
+                    Error::UninitializedPtr("need()"),
+                ));
+            }
+        };
+
+        let requested = dst.len().min(Self::MAX_READ_CHUNK);
+        let ptr = unsafe { need_fn(self.map.fmap_ptr, at, requested, 1) } as *const u8;
+        if ptr.is_null() {
+            return Err(io::Error::new(
+                ErrorKind::UnexpectedEof,
+                Error::NotContained(at, requested, self.map.len()),
+            ));
+        }
+
+        unsafe {
+            std::ptr::copy_nonoverlapping(ptr, dst.as_mut_ptr(), requested);
+            if let Some(unneed_fn) = (*self.map.fmap_ptr).unneed_off {
+                unneed_fn(self.map.fmap_ptr, at, requested);
+            }
+        }
+
+        Ok(requested)
+    }
+
+    fn checked_position(base: u64, offset: i64) -> io::Result<u64> {
+        let next = i128::from(base) + i128::from(offset);
+        if next < 0 || next > i128::from(u64::MAX) {
+            return Err(io::Error::new(
+                ErrorKind::InvalidInput,
+                "fmap seek would overflow the 64-bit coordinate space",
+            ));
+        }
+        Ok(next as u64)
+    }
+}
+
+impl Read for FMapReader<'_> {
+    fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
+        let len = self.map.len() as u64;
+        if self.position >= len || dst.is_empty() {
+            return Ok(0);
+        }
+
+        let remaining = len - self.position;
+        let requested = (dst.len() as u64).min(remaining) as usize;
+        let at = usize::try_from(self.position).map_err(|_| {
+            io::Error::new(
+                ErrorKind::InvalidInput,
+                "fmap offset is not representable on this platform",
+            )
+        })?;
+        let read = self.read_window(at, &mut dst[..requested])?;
+        self.position = self.position.checked_add(read as u64).ok_or_else(|| {
+            io::Error::new(ErrorKind::InvalidInput, "fmap position overflow")
+        })?;
+        Ok(read)
+    }
+}
+
+impl Seek for FMapReader<'_> {
+    fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+        let next = match from {
+            SeekFrom::Start(offset) => offset,
+            SeekFrom::Current(offset) => Self::checked_position(self.position, offset)?,
+            SeekFrom::End(offset) => Self::checked_position(self.map.len() as u64, offset)?,
+        };
+        self.position = next;
+        Ok(next)
+    }
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -128,6 +230,7 @@ mod tests {
     use std::{ptr, sync::{atomic::{AtomicUsize, Ordering}, Mutex}};
 
     static NEED_CALLS: AtomicUsize = AtomicUsize::new(0);
+    static UNNEED_CALLS: AtomicUsize = AtomicUsize::new(0);
     static NEED_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     unsafe extern "C" fn null_need(
@@ -138,6 +241,27 @@ mod tests {
     ) -> *const std::os::raw::c_void {
         NEED_CALLS.fetch_add(1, Ordering::Relaxed);
         ptr::null()
+    }
+
+    unsafe extern "C" fn memory_need(
+        map: *mut sys::cl_fmap_t,
+        at: usize,
+        len: usize,
+        _lock: std::os::raw::c_int,
+    ) -> *const std::os::raw::c_void {
+        let raw = &*map;
+        if at.checked_add(len).is_none() || at + len > raw.len || raw.data.is_null() {
+            return ptr::null();
+        }
+        (raw.data as *const u8).add(at) as *const std::os::raw::c_void
+    }
+
+    unsafe extern "C" fn count_unneed(
+        _map: *mut sys::cl_fmap_t,
+        _at: usize,
+        _len: usize,
+    ) {
+        UNNEED_CALLS.fetch_add(1, Ordering::Relaxed);
     }
 
     #[test]
@@ -164,5 +288,41 @@ mod tests {
 
         assert!(matches!(map.need_off(128, 64), Err(Error::NotContained(128, 64, 4096))));
         assert_eq!(NEED_CALLS.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn reader_copies_bounded_windows_and_releases_each_window() {
+        let _guard = NEED_TEST_LOCK.lock().expect("need test lock");
+        UNNEED_CALLS.store(0, Ordering::Relaxed);
+        let data: Vec<u8> = (0..64).map(|value| value as u8).collect();
+        let mut raw: sys::cl_fmap_t = unsafe { std::mem::zeroed() };
+        raw.len = data.len();
+        raw.data = data.as_ptr() as *const std::os::raw::c_void;
+        raw.need = Some(memory_need);
+        raw.unneed_off = Some(count_unneed);
+        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+
+        let mut reader = FMapReader::new(&map);
+        let mut output = [0u8; 12];
+        reader.read_exact(&mut output).expect("read fmap data");
+        assert_eq!(output, data[..12]);
+        assert_eq!(reader.seek(SeekFrom::Start(40)).expect("seek"), 40);
+        let mut tail = [0u8; 24];
+        reader.read_exact(&mut tail).expect("read tail");
+        assert_eq!(tail, data[40..]);
+        assert_eq!(reader.read(&mut [0u8; 1]).expect("eof read"), 0);
+        assert_eq!(UNNEED_CALLS.load(Ordering::Relaxed), 2);
+    }
+
+    #[test]
+    fn reader_rejects_negative_seek_without_changing_position() {
+        let _guard = NEED_TEST_LOCK.lock().expect("need test lock");
+        let mut raw: sys::cl_fmap_t = unsafe { std::mem::zeroed() };
+        raw.len = 8;
+        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+        let mut reader = FMapReader::new(&map);
+
+        assert!(reader.seek(SeekFrom::Current(-1)).is_err());
+        assert_eq!(reader.stream_position().expect("position"), 0);
     }
 }

@@ -33,6 +33,7 @@
 #include <dirent.h>
 #ifndef _WIN32
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
@@ -80,6 +81,14 @@ static struct {
     int support_old;
     int enabled;
 } commands[] = {
+    /* Report commands must precede their legacy prefixes (SCAN, CONTSCAN,
+     * MULTISCAN, and ALLMATCHSCAN). */
+    {CMD25, sizeof(CMD25) - 1, COMMAND_SCANREPORT, 1, 0, 1},
+    {CMD26, sizeof(CMD26) - 1, COMMAND_CONTSCANREPORT, 1, 0, 1},
+    {CMD27, sizeof(CMD27) - 1, COMMAND_MULTISCANREPORT, 1, 0, 1},
+    {CMD28, sizeof(CMD28) - 1, COMMAND_ALLMATCHSCANREPORT, 1, 0, 1},
+    {CMD29, sizeof(CMD29) - 1, COMMAND_FILDESREPORT, 0, 0, FEATURE_FDPASSING},
+    {CMD30, sizeof(CMD30) - 1, COMMAND_INSTREAMREPORT, 0, 0, 1},
     {CMD1, sizeof(CMD1) - 1, COMMAND_SCAN, 1, 1, 0},
     {CMD3, sizeof(CMD3) - 1, COMMAND_SHUTDOWN, 0, 1, 0},
     {CMD4, sizeof(CMD4) - 1, COMMAND_RELOAD, 0, 1, 0},
@@ -132,6 +141,9 @@ enum commands parse_command(const char *cmd, const char **argument, int oldstyle
 
 int conn_reply_single(const client_conn_t *conn, const char *path, const char *status)
 {
+    if (conn->structured_report)
+        return 0;
+
     if (conn->id) {
         if (path)
             return mdprintf(conn->sd, "%u: %s: %s%c", conn->id, path, status, conn->term);
@@ -145,6 +157,9 @@ int conn_reply_single(const client_conn_t *conn, const char *path, const char *s
 int conn_reply(const client_conn_t *conn, const char *path,
                const char *msg, const char *status)
 {
+    if (conn->structured_report)
+        return 0;
+
     if (conn->id) {
         if (path)
             return mdprintf(conn->sd, "%u: %s: %s %s%c", conn->id, path, msg,
@@ -160,6 +175,9 @@ int conn_reply(const client_conn_t *conn, const char *path,
 int conn_reply_virus(const client_conn_t *conn, const char *file,
                      const char *virname)
 {
+    if (conn->structured_report)
+        return 0;
+
     if (conn->id) {
         return mdprintf(conn->sd, "%u: %s: %s FOUND%c", conn->id, file, virname,
                         conn->term);
@@ -180,6 +198,63 @@ int conn_reply_errno(const client_conn_t *conn, const char *path,
     cli_strerror(errno, err, BUFFSIZE - 1);
     strcat(err, ". ERROR");
     return conn_reply(conn, path, msg, err);
+}
+
+static const char *scan_report_completion(cl_error_t status, int infected)
+{
+    if (infected || status == CL_VIRUS)
+        return "DETECTION_TERMINATED";
+
+    switch (status) {
+        case CL_SUCCESS:
+            return "COMPLETE";
+        case CL_EMAXSIZE:
+        case CL_EMAXFILES:
+        case CL_EMAXREC:
+        case CL_ETIMEOUT:
+            return "LIMIT_INCOMPLETE";
+        case CL_ERESOURCE:
+            return "RESOURCE_FAILURE";
+        case CL_EPARSE:
+        case CL_EFORMAT:
+            return "MALFORMED_CONFIRMED";
+        case CL_BREAK:
+            return "APPLICATION_ABORT";
+        default:
+            return "UNSUPPORTED";
+    }
+}
+
+/* Send only non-sensitive completion data.  The frame is deliberately
+ * independent of the legacy text protocol: a 32-bit network-order length,
+ * one JSON object, then a zero-length terminator frame. */
+int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int infected)
+{
+    char json[256];
+    uint32_t length;
+    uint32_t network_length;
+    uint32_t terminator = 0;
+    int json_length;
+    const char *verdict = (infected || status == CL_VIRUS) ? "infected" :
+                          (status == CL_SUCCESS ? "clean" : "incomplete");
+
+    if (!conn)
+        return -1;
+
+    json_length = snprintf(json, sizeof(json),
+                           "{\"version\":1,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
+                           (int)status, verdict, scan_report_completion(status, infected));
+    if (json_length < 0 || (size_t)json_length >= sizeof(json))
+        return -1;
+
+    length         = (uint32_t)json_length;
+    network_length = htonl(length);
+    if (cli_writen(conn->sd, &network_length, sizeof(network_length)) != sizeof(network_length) ||
+        cli_writen(conn->sd, json, length) != length ||
+        cli_writen(conn->sd, &terminator, sizeof(terminator)) != sizeof(terminator))
+        return -1;
+
+    return 0;
 }
 
 /* returns
@@ -445,7 +520,10 @@ static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *
     switch (cmd) {
         case COMMAND_FILDES:
             if (conn->scanfd == -1) {
-                conn_reply_error(dup_conn, "No file descriptor received.");
+                if (conn->structured_report)
+                    (void)conn_reply_scan_report(dup_conn, CL_ESTAT, 0);
+                else
+                    conn_reply_error(dup_conn, "No file descriptor received.");
                 ret = 1;
             }
             dup_conn->scanfd = conn->scanfd;
@@ -547,9 +625,15 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
     if (conn->group) {
         switch (cmd) {
             case COMMAND_FILDES:
+            case COMMAND_FILDESREPORT:
             case COMMAND_SCAN:
+            case COMMAND_SCANREPORT:
+            case COMMAND_CONTSCANREPORT:
+            case COMMAND_MULTISCANREPORT:
+            case COMMAND_ALLMATCHSCANREPORT:
             case COMMAND_END:
             case COMMAND_INSTREAM:
+            case COMMAND_INSTREAMREPORT:
             case COMMAND_INSTREAMSCAN:
             case COMMAND_VERSION:
             case COMMAND_PING:
@@ -567,6 +651,24 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
     }
 
     switch (cmd) {
+        case COMMAND_SCANREPORT:
+            conn->structured_report = 1;
+            return dispatch_command(conn, COMMAND_SCAN, argument);
+        case COMMAND_CONTSCANREPORT:
+            conn->structured_report = 1;
+            return dispatch_command(conn, COMMAND_CONTSCAN, argument);
+        case COMMAND_MULTISCANREPORT:
+            /* Keep one report frame per request.  The sequential CONTSCAN
+             * path is the same semantics used when MaxThreads is one and
+             * avoids interleaving child responses on the socket. */
+            conn->structured_report = 1;
+            return dispatch_command(conn, COMMAND_CONTSCAN, argument);
+        case COMMAND_ALLMATCHSCANREPORT:
+            conn->structured_report = 1;
+            return dispatch_command(conn, COMMAND_ALLMATCHSCAN, argument);
+        case COMMAND_FILDESREPORT:
+            conn->structured_report = 1;
+            return dispatch_command(conn, COMMAND_FILDES, argument);
         case COMMAND_SHUTDOWN:
             if (optget(conn->opts, "EnableShutdownCommand")->enabled) {
                 pthread_mutex_lock(&exit_mutex);
@@ -618,13 +720,28 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
             /* TODO: tell client this command has been removed */
             return 1;
         }
-        case COMMAND_INSTREAM: {
-            int rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
+        case COMMAND_INSTREAM:
+        case COMMAND_INSTREAMREPORT: {
+            uint64_t stream_limit;
+            uint64_t temporary_limit;
+            int rc;
+            if (cmd == COMMAND_INSTREAMREPORT)
+                conn->structured_report = 1;
+            rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
             if (rc != CL_SUCCESS) {
+                if (conn->structured_report)
+                    (void)conn_reply_scan_report(conn, CL_ETMPFILE, 0);
                 return 1;
             }
-            conn->quota = optget(conn->opts, "StreamMaxLength")->numarg;
-            conn->mode  = MODE_STREAM;
+            stream_limit     = (uint64_t)optget(conn->opts, "StreamMaxLength")->numarg;
+            temporary_limit  = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
+            conn->quota_source = CLAMD_QUOTA_SOURCE_STREAM;
+            conn->quota         = stream_limit;
+            if (temporary_limit && (!stream_limit || temporary_limit < stream_limit)) {
+                conn->quota        = temporary_limit;
+                conn->quota_source = CLAMD_QUOTA_SOURCE_TEMPORARY;
+            }
+            conn->mode = MODE_STREAM;
             return 0;
         }
         case COMMAND_STATS: {

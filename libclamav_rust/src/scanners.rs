@@ -35,6 +35,7 @@ use log::{debug, error, warn};
 use crate::{
     alz::{Alz, AlzExtractionDecision, AlzExtractionLimits, Error as AlzError},
     ctx,
+    fmap::FMapReader,
     sys,
     onenote::OneNote,
     sys::{
@@ -168,20 +169,13 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
 
-    let file_bytes = match fmap.whole_input() {
-        Ok(bytes) => bytes,
-        Err(err) => return parser_input_failure(ctx, "LHA/LZH", err),
-    };
-
     // Try to parse the LHA/LZH file data using the delharc crate.
     debug!("Attempting to parse the LHA/LZH file data using the delharc crate.");
 
     // Attempt to catch panics in case the parser encounter unexpected issues.
-    let result_result = panic::catch_unwind(
-        || -> Result<LhaDecodeReader<&[u8]>, delharc::decode::LhaDecodeError<&[u8]>> {
-            LhaDecodeReader::new(file_bytes)
-        },
-    );
+    let result_result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        LhaDecodeReader::new(FMapReader::new(&fmap))
+    }));
 
     // Check if it panicked. If no panic, grab the parse result.
     let result = match result_result {
