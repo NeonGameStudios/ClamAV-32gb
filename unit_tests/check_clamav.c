@@ -7087,10 +7087,29 @@ START_TEST(test_onenote_dispatch_honors_document_dconf)
     ck_assert_ptr_nonnull(scan_engine);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
 
-    /* The parser must be skipped when the document dynamic-configuration
-     * bit is disabled, even though the ordinary ScanOneNote parse option is
+    /* The parser must be skipped when both dynamic-configuration bits are
+     * disabled, even though the ordinary ScanOneNote parse option is
      * requested. */
+    scan_engine->dconf->archive &= ~ARCH_CONF_SIS;
     scan_engine->dconf->doc &= ~DOC_CONF_ONENOTE;
+    map = cl_fmap_open_memory(malformed, sizeof(malformed));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ONENOTE", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    /* The archive bit is intentionally enabled alone. It must not dispatch
+     * OneNote, because ARCH_CONF_SIS and DOC_CONF_ONENOTE are independent
+     * dynamic-configuration words despite sharing the same numeric bit. */
+    scan_engine->dconf->archive |= ARCH_CONF_SIS;
     map = cl_fmap_open_memory(malformed, sizeof(malformed));
     ck_assert_ptr_nonnull(map);
     verdict    = CL_VERDICT_STRONG_INDICATOR;
@@ -7107,6 +7126,7 @@ START_TEST(test_onenote_dispatch_honors_document_dconf)
 
     /* Enabling only the document bit must dispatch the parser and preserve
      * its malformed-input failure instead of silently falling through clean. */
+    scan_engine->dconf->archive &= ~ARCH_CONF_SIS;
     scan_engine->dconf->doc |= DOC_CONF_ONENOTE;
     map = cl_fmap_open_memory(malformed, sizeof(malformed));
     ck_assert_ptr_nonnull(map);

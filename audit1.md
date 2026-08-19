@@ -774,6 +774,15 @@ both exact failure classes: negative values and one-past-`64 GiB`/`UINT32_MAX`
 values. This closes the missing trigger coverage for the corrected F-12 setter
 path; the broader compiled parser and service qualification gates remain open.
 
+## OneNote dynamic-configuration isolation — 2026-08-19
+
+The OneNote dispatch regression now varies `ARCH_CONF_SIS` and
+`DOC_CONF_ONENOTE` independently. It proves that both bits disabled and the
+archive bit alone skip OneNote cleanly, while the document bit alone dispatches
+the malformed fixture and preserves a fail-visible parser result. This closes
+the exact dynamic-configuration trigger coverage for F-16; full OneNote parser
+and large-input qualification remain open.
+
 ## Rust large-input staging — 2026-08-19
 
 ALZ now parses directly through the bounded `FMapReader` `Read + Seek` adapter
