@@ -368,8 +368,12 @@ CLAMAV_PRIVATE {
     cli_pcre_check_size_limit;
     cli_scan_result_should_halt;
     cli_scan_report_create;
+    cli_scan_report_finish;
     cli_scan_report_set_target;
     cli_scan_report_merge;
+    cli_scan_reserve_temporary;
+    cli_scan_release_temporary;
+    cli_magic_scan_desc_type_reserved;
     cli_matchmeta;
     cli_cvdunpack_and_verify;
     cli_cvdverify;

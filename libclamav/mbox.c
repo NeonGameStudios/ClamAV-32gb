@@ -2018,8 +2018,7 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
             rc = parseMultipartBodySpool(mainMessage, mctx, recursion_level);
         } else {
             if (doPhishingScan && (streamed_type == NOMIME || streamed_type == TEXT))
-                cli_mark_scan_incomplete(mctx->ctx,
-                                         "Streaming mail body bypassed in-memory phishing URL inspection");
+                checkURLs(mainMessage, mctx, &rc, streamed_type == TEXT);
 
             fb = messageToFileblob(mainMessage, mctx->dir, 1);
             if (fb == NULL) {
@@ -2028,7 +2027,7 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                 const int scan_rc = scanFileblob(mctx, fb);
                 if (scan_rc == CL_VIRUS)
                     rc = VIRUS;
-                else if (scan_rc != CL_CLEAN)
+                else if (scan_rc != CL_CLEAN && rc == OK)
                     rc = FAIL;
                 mctx->files++;
             }
@@ -4775,7 +4774,7 @@ exportBounceMessage(mbox_ctx *mctx, text *start)
             cli_dbgmsg("Nothing new to save in the bounce message\n");
             fileblobDestroy(fb);
         } else
-            rc = scanFileblob(ctx, fb);
+            rc = scanFileblob(mctx, fb);
         mctx->files++;
     } else
         cli_dbgmsg("Not found a bounce message\n");

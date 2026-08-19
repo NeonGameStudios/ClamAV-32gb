@@ -378,6 +378,25 @@ while IFS= read -r dependency; do
     (cd "$out" && sha256sum "$dependency_artifact") >> "$provenance/runtime-dependency-hashes.txt"
 done < "$provenance/runtime-dependencies.txt"
 
+# Resolve the scanner again with the copied component directory first and
+# record the paths the dynamic loader would actually select.  The earlier ldd
+# capture intentionally records the build-tree dependency set; this second
+# capture is the binding check that prevents a later workload from silently
+# using a stale build-tree library with the same basename.
+runtime_loader_path="$runtime_component_dir:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
+LD_LIBRARY_PATH="$runtime_loader_path" ldd "$runtime_clamscan" > "$provenance/loaded-dependencies.txt" 2>&1
+if grep -F 'not found' "$provenance/loaded-dependencies.txt" >/dev/null 2>&1; then
+    echo "copied release dependencies do not resolve: $provenance/loaded-dependencies.txt" >&2
+    exit 2
+fi
+while IFS= read -r dependency; do
+    dependency_name=${dependency##*/}
+    if ! grep -F "$runtime_component_dir/$dependency_name" "$provenance/loaded-dependencies.txt" >/dev/null 2>&1; then
+        echo "loader did not select copied release dependency: $dependency_name" >&2
+        exit 2
+    fi
+done < "$provenance/runtime-dependencies.txt"
+
 if [ -n "$sanitizer_clamscan" ]; then
     ldd "$runtime_sanitizer_clamscan" > "$provenance/ldd-clamscan-sanitizer.txt" 2>&1
     if grep -F 'not found' "$provenance/ldd-clamscan-sanitizer.txt" >/dev/null 2>&1; then
@@ -407,6 +426,19 @@ if [ -n "$sanitizer_clamscan" ]; then
         dependency_artifact="artifacts/runtime-components-sanitizer/$dependency_name"
         printf '%s -> %s\n' "$dependency" "$dependency_artifact" >> "$provenance/runtime-dependency-artifacts-sanitizer.txt"
         (cd "$out" && sha256sum "$dependency_artifact") >> "$provenance/runtime-dependency-hashes-sanitizer.txt"
+    done < "$provenance/runtime-dependencies-sanitizer.txt"
+    sanitizer_loader_path="$sanitizer_component_dir:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
+    LD_LIBRARY_PATH="$sanitizer_loader_path" ldd "$runtime_sanitizer_clamscan" > "$provenance/loaded-dependencies-sanitizer.txt" 2>&1
+    if grep -F 'not found' "$provenance/loaded-dependencies-sanitizer.txt" >/dev/null 2>&1; then
+        echo "copied sanitizer dependencies do not resolve: $provenance/loaded-dependencies-sanitizer.txt" >&2
+        exit 2
+    fi
+    while IFS= read -r dependency; do
+        dependency_name=${dependency##*/}
+        if ! grep -F "$sanitizer_component_dir/$dependency_name" "$provenance/loaded-dependencies-sanitizer.txt" >/dev/null 2>&1; then
+            echo "loader did not select copied sanitizer dependency: $dependency_name" >&2
+            exit 2
+        fi
     done < "$provenance/runtime-dependencies-sanitizer.txt"
     if command -v readelf >/dev/null 2>&1; then
         readelf -Ws "$runtime_sanitizer_clamscan" > "$provenance/sanitizer-symbols.txt" 2>&1
@@ -557,6 +589,7 @@ metadata=$out/build-identity.txt
     printf 'runtime_dependency_hashes=provenance/runtime-dependency-hashes.txt\n'
     printf 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt\n'
     printf 'runtime_component_dir=artifacts/runtime-components\n'
+    printf 'loaded_dependencies=provenance/loaded-dependencies.txt\n'
     printf 'loader_trace=provenance/loader-clamscan.txt\n'
     cat "$provenance/scanner-version.txt"
     file "$artifacts/clamscan"
@@ -569,6 +602,7 @@ metadata=$out/build-identity.txt
         printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
         printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
         printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'
+        printf 'sanitizer_loaded_dependencies=provenance/loaded-dependencies-sanitizer.txt\n'
         printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
         cat "$provenance/scanner-version-sanitizer.txt"
         sanitizer_rust_sha256=$(sha256sum "$artifacts/clamav_rust.a" | awk '{ print $1 }')

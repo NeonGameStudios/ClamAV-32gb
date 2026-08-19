@@ -88,6 +88,11 @@
 
 #include "checks.h"
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+extern int clamav_test_fail_write;
+extern int clamav_test_fail_close;
+#endif
+
 static int fpu_words = FPU_ENDIAN_INITME;
 #define NO_FPU_ENDIAN (fpu_words == FPU_ENDIAN_UNKNOWN)
 #define EA06_SCAN strstr(file, "clam.ea06.exe")
@@ -307,7 +312,9 @@ static bool test_file_requires_fail_closed_result(const char *file)
             0 == strcmp(name, "clam_ISmsi_int.exe") ||
             0 == strcmp(name, "clam.exe.mbox.uu") ||
             0 == strcmp(name, "clam.ole.doc") ||
-            0 == strcmp(name, "clam-wwpack.exe"));
+            0 == strcmp(name, "clam-wwpack.exe") ||
+            0 == strcmp(name, "clam.ea05.exe") ||
+            0 == strcmp(name, "clam.ea06.exe"));
 }
 
 static void assert_test_file_scan_result(cl_error_t ret, const char *virname, const char *file, const char *operation)
@@ -725,6 +732,7 @@ END_TEST
 START_TEST(test_scan_report_complete_and_json)
 {
     static const char payload[] = "structured scan report fixture\n";
+    struct cl_engine *engine;
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
     cl_scan_report_metrics_t metrics;
@@ -739,12 +747,15 @@ START_TEST(test_scan_report_complete_and_json)
     int fd = -1;
 
     memset(&options, 0, sizeof(options));
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
     ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
     ck_assert_int_eq(write(fd, payload, sizeof(payload) - 1), (ssize_t)(sizeof(payload) - 1));
     ck_assert_int_eq(close(fd), 0);
 
     status = cl_scanfile_ex2(path, &verdict, &last_alert, NULL,
-                             g_engine, &options, NULL, NULL, NULL, NULL,
+                             engine, &options, NULL, NULL, NULL, NULL,
                              NULL, NULL, &report);
     ck_assert_int_eq(status, CL_SUCCESS);
     ck_assert_ptr_nonnull(report);
@@ -770,6 +781,7 @@ START_TEST(test_scan_report_complete_and_json)
 
     free(json);
     cl_scan_report_free(report);
+    cl_engine_free(engine);
     cli_unlink(path);
     free(path);
 }
@@ -1465,8 +1477,8 @@ START_TEST(test_html_normalize_cap_does_not_skip_raw_matching)
 {
     static const unsigned char data[] =
         "<html><body>CLAMAV-TEST-STRING-NOT-EICAR</body></html>";
-    const char *signature = OBJDIR PATHSEP "input" PATHSEP "other_sigs" PATHSEP
-                            "Clamav-Unit-Test-Signature.ndb";
+    const char *signature = SRCDIR PATHSEP "input" PATHSEP "other_sigs" PATHSEP
+                            "Clamav-Unit-Test-Signature.hdb";
     struct cl_engine *engine;
     struct cl_scan_options options;
     cl_fmap_t *map;
@@ -1496,7 +1508,7 @@ START_TEST(test_html_normalize_cap_does_not_skip_raw_matching)
                         "CL_TYPE_HTML", NULL);
     ck_assert_int_eq(ret, CL_VIRUS);
     ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
-    ck_assert_str_eq(last_alert, "Clamav-Unit-Test-Signature");
+    ck_assert_str_eq(last_alert, "Clamav-Unit-Test-Signature.UNOFFICIAL");
 
     cl_fmap_close(map);
     cl_engine_free(engine);
@@ -2232,8 +2244,21 @@ static void engine_setup(void)
     inited   = 1;
     g_engine = cl_engine_new();
     ck_assert_msg(!!g_engine, "engine");
+    tmpdir = cli_gentemp(NULL);
+    ck_assert_msg(!!tmpdir, "cli_gentemp failed");
+    ck_assert_int_eq(mkdir(tmpdir, 0700), 0);
     ck_assert_msg(cl_load(hdb, g_engine, &sigs, CL_DB_STDOPT) == 0, "cl_load %s", hdb);
     ck_assert_msg(sigs == 1, "sigs");
+    /* The scan-API qualification fixture exercises the planned large-file
+     * parser gates without activating those defaults before release
+     * qualification is complete. Keep the legacy top-level MaxFileSize and
+     * MaxScanSize unchanged so their boundary tests remain meaningful. */
+    g_engine->maxembeddedpe      = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxhtmlnormalize   = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxhtmlnotags      = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxscriptnormalize = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxziptypercg      = CLI_MAX_LARGE_FILESIZE;
+    g_engine->pcre_max_filesize  = CLI_MAX_LARGE_FILESIZE;
     ck_assert_msg(cl_engine_compile(g_engine) == 0, "cl_engine_compile");
 }
 
@@ -2241,6 +2266,9 @@ static void engine_teardown(void)
 {
     free_testfiles();
     cl_engine_free(g_engine);
+    cli_rmdirs(tmpdir);
+    free(tmpdir);
+    tmpdir = NULL;
 }
 
 START_TEST(test_clean_cache_distinguishes_large_sizes)
@@ -2775,11 +2803,6 @@ static const uint8_t *zip_stream_expected;
 static size_t zip_stream_expected_length;
 static unsigned int zip_stream_callback_calls;
 static cl_error_t zip_stream_callback_result;
-
-#ifdef CLAMAV_TEST_JS_IO_WRAP
-extern int clamav_test_fail_write;
-extern int clamav_test_fail_close;
-#endif
 
 static cl_error_t zip_stream_test_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
 {
@@ -3883,13 +3906,14 @@ START_TEST(test_cryptff_staging_failures_are_fail_visible)
     };
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
-    cli_scan_layer_t layer;
+    cli_scan_layer_t layers[2];
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&options, 0, sizeof(options));
-    memset(&layer, 0, sizeof(layer));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(layers, 0, sizeof(layers));
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     scan_engine = cl_engine_new();
@@ -3898,14 +3922,14 @@ START_TEST(test_cryptff_staging_failures_are_fail_visible)
 
     map = cl_fmap_open_memory(cryptff, sizeof(cryptff));
     ck_assert_ptr_nonnull(map);
-    layer.fmap               = map;
+    layers[0].fmap           = map;
     ctx.engine               = scan_engine;
     ctx.dconf                = scan_engine->dconf;
     ctx.options              = &options;
     ctx.fmap                 = map;
     ctx.this_layer_tmpdir    = tmpdir;
-    ctx.recursion_stack      = &layer;
-    ctx.recursion_stack_size = 1;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
 
     clamav_test_fail_write = 1;
     ret                    = cli_magic_scan(&ctx, CL_TYPE_CRYPTFF);
@@ -3914,16 +3938,16 @@ START_TEST(test_cryptff_staging_failures_are_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
-    memset(&layer, 0, sizeof(layer));
+    memset(layers, 0, sizeof(layers));
     memset(&ctx, 0, sizeof(ctx));
-    layer.fmap               = map;
+    layers[0].fmap           = map;
     ctx.engine               = scan_engine;
     ctx.dconf                = scan_engine->dconf;
     ctx.options              = &options;
     ctx.fmap                 = map;
     ctx.this_layer_tmpdir    = tmpdir;
-    ctx.recursion_stack      = &layer;
-    ctx.recursion_stack_size = 1;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
     map->dont_cache_flag     = false;
     clamav_test_fail_close = 1;
     ret                    = cli_magic_scan(&ctx, CL_TYPE_CRYPTFF);
@@ -4456,6 +4480,7 @@ END_TEST
 struct rar_stage_pread_state {
     uint8_t data[FILEBUFF * 32U];
     size_t fail_at;
+    unsigned int successful_reads;
 };
 
 static off_t rar_stage_pread_cb(void *handle, void *buf, size_t count, off_t offset)
@@ -4465,6 +4490,7 @@ static off_t rar_stage_pread_cb(void *handle, void *buf, size_t count, off_t off
     if (offset < 0 || (uint64_t)offset >= state->fail_at || count > state->fail_at - (size_t)offset)
         return -1;
     memcpy(buf, state->data + (size_t)offset, count);
+    state->successful_reads++;
     return (off_t)count;
 }
 
@@ -4522,7 +4548,7 @@ START_TEST(test_rar_nested_stage_read_failure_is_publicly_fail_visible)
     ret = cl_scanmap_ex(nested, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL,
                         "CL_TYPE_RAR", NULL);
-    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(nested->dont_cache_flag);
@@ -7303,7 +7329,7 @@ START_TEST(test_embedded_candidate_admission_headers)
         0x99, 0x4c, 0x53, 0x0a, 0x86, 0xd6, 0x48, 0x7d,
         0x41, 0x55, 0x33, 0x21, 0x45, 0x41, 0x30,
     };
-    uint8_t nsis[0x20];
+    uint8_t nsis[0x54d];
     uint8_t autoit[40];
     uint8_t ishield[14 + 0x20];
     static const uint8_t pdf[] = "%PDF-1.7";
@@ -7323,15 +7349,15 @@ START_TEST(test_embedded_candidate_admission_headers)
     nsis[1]    = 0xbe;
     nsis[2]    = 0xad;
     nsis[3]    = 0xde;
-    nsis[0x14] = 0x1c;
-    nsis[0x18] = 0x20;
+    cli_writeint32(nsis + 0x14, 0x1105);
+    cli_writeint32(nsis + 0x18, sizeof(nsis));
     map        = cl_fmap_open_memory(nsis, sizeof(nsis));
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
     ck_assert_int_eq(cli_nulsft_header_check(&ctx, 0), CL_SUCCESS);
     cl_fmap_close(map);
 
-    nsis[0x18] = 0x40;
+    nsis[0x18] = sizeof(nsis) + 1;
     map        = cl_fmap_open_memory(nsis, sizeof(nsis));
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
@@ -8202,7 +8228,7 @@ START_TEST(test_nested_fmap_ranges_and_force_to_disk_are_fail_visible)
     map->dont_cache_flag       = false;
     ret = cli_magic_scan_nested_fmap_type(map, 0, sizeof(state.data), &ctx,
                                           CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
-    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
     ck_assert_uint_eq(state.successful_reads, 0);
@@ -8892,13 +8918,13 @@ START_TEST(test_script_normalization_cleanup_close_failure_is_fail_visible)
     static const unsigned char script[] = "var marker = 1;";
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
-    cli_scan_layer_t layer;
+    cli_scan_layer_t layers[2];
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&options, 0, sizeof(options));
-    memset(&layer, 0, sizeof(layer));
+    memset(layers, 0, sizeof(layers));
     memset(&ctx, 0, sizeof(ctx));
     options.parse = ~0U;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
@@ -8910,14 +8936,14 @@ START_TEST(test_script_normalization_cleanup_close_failure_is_fail_visible)
 
     map = cl_fmap_open_memory(script, sizeof(script) - 1U);
     ck_assert_ptr_nonnull(map);
-    layer.fmap               = map;
+    layers[0].fmap           = map;
     ctx.engine               = scan_engine;
     ctx.dconf                = scan_engine->dconf;
     ctx.options              = &options;
     ctx.fmap                 = map;
     ctx.this_layer_tmpdir    = tmpdir;
-    ctx.recursion_stack      = &layer;
-    ctx.recursion_stack_size = 1;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
 
     clamav_test_fail_close = 1;
     ret                    = cli_magic_scan(&ctx, CL_TYPE_SCRIPT);

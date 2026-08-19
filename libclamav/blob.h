@@ -24,6 +24,8 @@
 
 #include "clamav.h"
 
+struct cli_ctx_tag;
+
 /*
  * Resizable chunk of memory
  */
@@ -61,8 +63,8 @@ typedef struct fileblob {
                      * email, not the full path name of the temporary file
                      */
     char *fullname; /* full pathname of the file */
-    cli_ctx *ctx;   /* When set we can scan the blob, otherwise NULL */
-    cli_ctx *temporary_ctx; /* Context holding the temporary-byte reservation. */
+    struct cli_ctx_tag *ctx;   /* When set we can scan the blob, otherwise NULL */
+    struct cli_ctx_tag *temporary_ctx; /* Context holding the temporary-byte reservation. */
     uint64_t temporary_bytes; /* Bytes reserved while the spool is being built. */
     uint64_t bytes_scanned;
     unsigned int isNotEmpty : 1;
@@ -78,7 +80,7 @@ void fileblobDestroy(fileblob *fb);
 void fileblobSetFilename(fileblob *fb, const char *dir, const char *filename);
 void fileblobPartialSet(fileblob *fb, const char *fullname, const char *arg);
 const char *fileblobGetFilename(const fileblob *fb);
-void fileblobSetCTX(fileblob *fb, cli_ctx *ctx);
+void fileblobSetCTX(fileblob *fb, struct cli_ctx_tag *ctx);
 int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len);
 cl_error_t fileblobScan(fileblob *fb);
 int fileblobInfected(const fileblob *fb);

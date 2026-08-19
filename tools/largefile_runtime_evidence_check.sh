@@ -90,6 +90,7 @@ for required in "$out/provenance/ldd-clamscan.txt" \
     "$out/provenance/runtime-dependencies.txt" \
     "$out/provenance/runtime-dependency-artifacts.txt" \
     "$out/provenance/runtime-dependency-hashes.txt" \
+    "$out/provenance/loaded-dependencies.txt" \
     "$out/provenance/loader-clamscan.txt"; do
     if [ ! -s "$required" ]; then
         echo "missing runtime provenance: $required" >&2
@@ -106,6 +107,7 @@ if [ "$require_sanitizer" = yes ]; then
         "$out/provenance/runtime-dependencies-sanitizer.txt" \
         "$out/provenance/runtime-dependency-artifacts-sanitizer.txt" \
         "$out/provenance/runtime-dependency-hashes-sanitizer.txt" \
+        "$out/provenance/loaded-dependencies-sanitizer.txt" \
         "$out/provenance/loader-clamscan-sanitizer.txt" \
         "$out/provenance/sanitizer-symbols.txt" \
         "$out/provenance/rust-sanitizer-symbols.txt" \
@@ -455,6 +457,10 @@ grep -Fx 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.t
     echo 'evidence does not identify runtime dependency artifact mapping' >&2
     exit 1
 }
+grep -Fx 'loaded_dependencies=provenance/loaded-dependencies.txt' "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not identify the loader-selected release dependencies' >&2
+    exit 1
+}
 grep -Fx 'loader_trace=provenance/loader-clamscan.txt' "$metadata" >/dev/null 2>&1 || {
     echo 'evidence does not identify the release loader trace' >&2
     exit 1
@@ -484,6 +490,14 @@ grep -F "$out/artifacts/runtime-components" "$out/provenance/loader-clamscan.txt
     echo 'release loader trace does not reference copied runtime components' >&2
     exit 1
 }
+while IFS= read -r dependency; do
+    dependency_name=${dependency##*/}
+    grep -F "$out/artifacts/runtime-components/$dependency_name" \
+        "$out/provenance/loaded-dependencies.txt" >/dev/null 2>&1 || {
+        echo "release loader selected a non-copied dependency: $dependency_name" >&2
+        exit 1
+    }
+done < "$out/provenance/runtime-dependencies.txt"
 if grep -F 'not found' "$out/provenance/loader-clamscan.txt" >/dev/null 2>&1; then
     echo 'release loader trace contains an unresolved dependency' >&2
     exit 1
@@ -498,6 +512,14 @@ if [ "$require_sanitizer" = yes ]; then
         echo 'sanitizer loader trace does not reference copied runtime components' >&2
         exit 1
     }
+    while IFS= read -r dependency; do
+        dependency_name=${dependency##*/}
+        grep -F "$out/artifacts/runtime-components-sanitizer/$dependency_name" \
+            "$out/provenance/loaded-dependencies-sanitizer.txt" >/dev/null 2>&1 || {
+            echo "sanitizer loader selected a non-copied dependency: $dependency_name" >&2
+            exit 1
+        }
+    done < "$out/provenance/runtime-dependencies-sanitizer.txt"
     if grep -F 'not found' "$out/provenance/loader-clamscan-sanitizer.txt" >/dev/null 2>&1; then
         echo 'sanitizer loader trace contains an unresolved dependency' >&2
         exit 1
@@ -622,6 +644,10 @@ if [ "$require_sanitizer" = yes ]; then
     }
     grep -Fx 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt' "$metadata" >/dev/null 2>&1 || {
         echo 'sanitizer dependency artifact mapping is missing' >&2
+        exit 1
+    }
+    grep -Fx 'sanitizer_loaded_dependencies=provenance/loaded-dependencies-sanitizer.txt' "$metadata" >/dev/null 2>&1 || {
+        echo 'sanitizer loader-selected dependency identity is missing' >&2
         exit 1
     }
     sanitizer_scanner_sha256=$(sha256sum "$sanitizer_scanner_copy" | awk '{ print $1 }')

@@ -671,7 +671,7 @@ START_TEST(test_bm_offset_mode_matches_above_uint32)
                           &matched_name, &matched, root, 5000000000ULL,
                           &info, &offsets, NULL);
     ck_assert_int_eq(ret, CL_VIRUS);
-    ck_assert_str_eq(matched_name, "BM_Large_Offset");
+    ck_assert_str_eq(matched_name, "BM_Large_Offset.UNOFFICIAL");
     ck_assert_ptr_nonnull(matched);
     ck_assert_uint_eq(matched->offset_min, 5000000000ULL);
 

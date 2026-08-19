@@ -86,14 +86,16 @@ printf 'metadata_version=1\nworktree_root=%s\nsource_commit=%s\nsource_tree=%s\n
     "$root" "$source_commit" "$source_commit" "$source_manifest_hash" "$repository_tree_hash" "$repository_index_hash" > "$out/provenance/repository-metadata.txt"
 printf 'source_manifest=provenance/source-manifest.txt\n' >> "$out/provenance/repository-metadata.txt"
 repository_metadata_hash=$(sha256sum "$out/provenance/repository-metadata.txt" | awk '{ print $1 }')
-printf 'artifacts/runtime-components/libclamav.so\n' > "$out/provenance/runtime-dependencies.txt"
-printf 'artifacts/runtime-components-sanitizer/libclamav.so\n' > "$out/provenance/runtime-dependencies-sanitizer.txt"
+printf '/build/libclamav.so\n' > "$out/provenance/runtime-dependencies.txt"
+printf '/build-sanitizer/libclamav.so\n' > "$out/provenance/runtime-dependencies-sanitizer.txt"
 printf '%s -> artifacts/runtime-components/libclamav.so\n' "$out/artifacts/runtime-components/libclamav.so" > "$out/provenance/runtime-dependency-artifacts.txt"
 printf '%s -> artifacts/runtime-components-sanitizer/libclamav.so\n' "$out/artifacts/runtime-components-sanitizer/libclamav.so" > "$out/provenance/runtime-dependency-artifacts-sanitizer.txt"
 (cd "$out" && sha256sum artifacts/runtime-components/libclamav.so) > "$out/provenance/runtime-dependency-hashes.txt"
 (cd "$out" && sha256sum artifacts/runtime-components-sanitizer/libclamav.so) > "$out/provenance/runtime-dependency-hashes-sanitizer.txt"
 printf 'synthetic ldd output\n' > "$out/provenance/ldd-clamscan.txt"
 printf 'synthetic ldd output\n' > "$out/provenance/ldd-clamscan-sanitizer.txt"
+printf 'libclamav.so => %s/artifacts/runtime-components/libclamav.so (0x0)\n' "$out" > "$out/provenance/loaded-dependencies.txt"
+printf 'libclamav.so => %s/artifacts/runtime-components-sanitizer/libclamav.so (0x0)\n' "$out" > "$out/provenance/loaded-dependencies-sanitizer.txt"
 printf 'search path=%s\n' "$out/artifacts/runtime-components" > "$out/provenance/loader-clamscan.txt"
 printf 'search path=%s\n' "$out/artifacts/runtime-components-sanitizer" > "$out/provenance/loader-clamscan-sanitizer.txt"
 printf 'ClamAV synthetic release\n' > "$out/provenance/scanner-version.txt"
@@ -144,10 +146,12 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'runtime_dependency_hashes=provenance/runtime-dependency-hashes.txt\n'
     printf 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt\n'
     printf 'runtime_component_dir=artifacts/runtime-components\n'
+    printf 'loaded_dependencies=provenance/loaded-dependencies.txt\n'
     printf 'loader_trace=provenance/loader-clamscan.txt\n'
     printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
     printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
     printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'
+    printf 'sanitizer_loaded_dependencies=provenance/loaded-dependencies-sanitizer.txt\n'
     printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
     rust_library_hash=$(sha256sum "$out/artifacts/clamav_rust.a" | awk '{ print $1 }')
     printf 'sanitizer_rust_library_path=artifacts/clamav_rust.a\n'
@@ -341,6 +345,15 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
     exit 1
 fi
 mv "$out/provenance/repository-index.missing" "$out/provenance/repository-index.txt"
+
+cp "$out/provenance/loaded-dependencies.txt" "$out/provenance/loaded-dependencies.good"
+printf 'libclamav.so => /build/libclamav.so (0x0)\n' > "$out/provenance/loaded-dependencies.txt"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted a loader-selected build-tree dependency' >&2
+    exit 1
+fi
+mv "$out/provenance/loaded-dependencies.good" "$out/provenance/loaded-dependencies.txt"
 
 refresh_manifest
 printf 'tampered scanner\n' >> "$out/artifacts/clamscan"

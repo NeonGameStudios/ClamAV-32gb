@@ -1086,3 +1086,45 @@ normalizer through its fmap reader. The fallback text-URL extractor reads in
 Mapping, normalization, read, and temporary-file failures remain
 fail-visible and non-cacheable. Compiled mail/URL regression, memory,
 sanitizer, and supported-build Sonic1 qualification remain open.
+
+## Current qualification follow-up — 2026-08-19
+
+The clang-format 16 backlog is closed on `origin/main` through the recorded
+formatting commits; no local clang-format 16 executable is available for a
+fresh byte-for-byte check. The local source guard suite passes all 141
+capability checks, and the POC fail-closed and runtime-evidence verifier
+regressions pass.
+
+The current worktree additionally fixes the scan-API test fixture's temporary
+directory setup, classifies the known malformed nested AutoIt fixtures as
+fail-closed, accepts the valid NSIS header layout where the uncompressed header
+can exceed the compressed archive size, and runs phishing URL inspection on
+completed streamed mail bodies before raw scanning. These changes still need
+compiled Sonic1 verification; the transfer attempt was stopped before any
+bytes were written because MCP-SSH required explicit authorization for the
+source payload and destination.
+
+The NSIS admission regression now uses a 0x1105-byte header and 0x54d-byte
+archive extent, matching the observed valid layout, and separately verifies
+that an archive extent beyond the available fmap is rejected. This closes the
+previous test gap without weakening the remaining bounds checks.
+
+Read-only Sonic1 provenance confirms that the existing qualification workspace
+is not the current authoritative source: its `mbox.c`, `nulsft.c`, and
+`unit_tests/check_clamav.c` hashes differ from the local worktree. No test
+result from that stale workspace is being attributed to the current changes.
+
+## Runtime loader component selection binding — 2026-08-19
+
+The runtime evidence gate previously proved only that the copied component
+directory appeared in `LD_DEBUG` search-path output. It now performs a second
+`ldd` resolution with the copied component directory first, records
+`loaded-dependencies.txt` (and the sanitizer equivalent), and requires every
+dependency captured from the build-tree set to resolve to its copied artifact
+by basename. The post-run verifier checks those records and rejects a
+substituted build-tree dependency; the control test covers that rejection.
+
+This closes the specific loader-selection ambiguity in F-13 while preserving
+the remaining limitation: the evidence is still Linux x86-64 runtime proof,
+not compiled qualification of every parser family or a substitute for the
+missing authorized production-CVD/service workload.

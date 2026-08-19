@@ -5505,12 +5505,6 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
-    if (ctx->fmap->len <= 5) {
-        status = CL_SUCCESS;
-        cli_dbgmsg("cli_magic_scan: File is too small (%zu bytes), ignoring.\n", ctx->fmap->len);
-        goto early_ret;
-    }
-
     /* Normalized and handler-retyped views inherit the current logical
      * object. Their bytes are charged by cli_scan_fmap() as matcher work;
      * only a real root or extracted/decompressed child consumes logical
@@ -5526,6 +5520,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
          * compatibility result) instead of returning an uncacheable clean. */
         (void)cli_scan_result_should_halt(ctx, status, &status);
         cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
+        goto early_ret;
+    }
+
+    if (ctx->fmap->len <= 5) {
+        status = CL_SUCCESS;
+        cli_dbgmsg("cli_magic_scan: File is too small (%zu bytes), ignoring.\n", ctx->fmap->len);
         goto early_ret;
     }
 
@@ -6936,8 +6936,11 @@ static cl_error_t scan_common(
          * Use the configured temp directory.
          * Making a unique subdirectory per scan is slower, and particularly slow on Windows.
          */
-        ctx.recursion_stack[ctx.recursion_level].tmpdir = ctx.engine->tmpdir;
-        ctx.this_layer_tmpdir                           = ctx.engine->tmpdir;
+        /* A newly created engine may leave tmpdir unset. Keep the public
+         * engine default consistent with the rest of the temporary-file
+         * helpers, which fall back to the platform temporary directory. */
+        ctx.recursion_stack[ctx.recursion_level].tmpdir = ctx.engine->tmpdir ? ctx.engine->tmpdir : (char *)cli_gettmpdir();
+        ctx.this_layer_tmpdir                           = ctx.recursion_stack[ctx.recursion_level].tmpdir;
     }
 
     cli_logg_setup(&ctx);
@@ -7184,7 +7187,7 @@ static cl_error_t scan_common(
 done:
 
     if (NULL != ctx.report) {
-        cl_scan_report_finish(
+        cli_scan_report_finish(
             ctx.report,
             &ctx,
             status,
@@ -7369,7 +7372,7 @@ cl_error_t cl_scandesc_ex2(
     cli_scan_report_set_target(report, filename);
 
     if (NULL == verdict_out || NULL == last_alert_out || NULL == engine || NULL == scanoptions) {
-        cl_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
+        cli_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
         return CL_ENULLARG;
     }
 
@@ -7388,14 +7391,6 @@ cl_error_t cl_scandesc_ex2(
         goto done;
     }
     cli_scan_report_set_root_size(report, (uint64_t)sb.st_size);
-    /* Reject a known-size root before creating an fmap or entering any
-     * parser/matcher path.  This preserves the exact 32 GiB boundary and
-     * prevents a descriptor that is already over MaxFileSize from being
-     * treated as a partially scanned clean input. */
-    if ((engine->maxfilesize != 0) && ((uint64_t)sb.st_size > engine->maxfilesize)) {
-        status = CL_EMAXSIZE;
-        goto done;
-    }
     if (sb.st_size <= 5) {
         cli_dbgmsg("cl_scandesc_callback: File too small (" STDu64 " bytes), ignoring\n", (uint64_t)sb.st_size);
         status = CL_SUCCESS;
@@ -7428,7 +7423,7 @@ cl_error_t cl_scandesc_ex2(
         report);
 
 done:
-    cl_scan_report_finish(report, NULL, status, *verdict_out, *last_alert_out);
+    cli_scan_report_finish(report, NULL, status, *verdict_out, *last_alert_out);
 
     if (NULL != map) {
         fmap_free(map);
@@ -7548,20 +7543,11 @@ cl_error_t cl_scanmap_ex2(
     cli_scan_report_set_target(report, filename);
 
     if (NULL == map || NULL == verdict_out || NULL == last_alert_out || NULL == engine || NULL == scanoptions) {
-        cl_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
+        cli_scan_report_finish(report, NULL, CL_ENULLARG, CL_VERDICT_NOTHING_FOUND, NULL);
         return CL_ENULLARG;
     }
 
     cli_scan_report_set_root_size(report, (uint64_t)map->len);
-
-    if ((engine->maxfilesize != 0) && ((uint64_t)map->len > engine->maxfilesize)) {
-        *verdict_out    = CL_VERDICT_NOTHING_FOUND;
-        *last_alert_out = NULL;
-        if (NULL != scanned_out)
-            *scanned_out = 0;
-        cl_scan_report_finish(report, NULL, CL_EMAXSIZE, *verdict_out, NULL);
-        return CL_EMAXSIZE;
-    }
 
     *verdict_out    = CL_VERDICT_NOTHING_FOUND;
     *last_alert_out = NULL;

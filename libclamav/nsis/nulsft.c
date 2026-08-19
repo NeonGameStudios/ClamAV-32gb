@@ -698,7 +698,7 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
 
     header_size  = (uint32_t)cli_readint32(buf + 0x14);
     archive_size = (uint32_t)cli_readint32(buf + 0x18);
-    if (header_size < 0x1c || archive_size < 0x1c || header_size > archive_size)
+    if (header_size < 0x1c || archive_size < 0x1c)
         return CL_EPARSE;
     if ((uint64_t)archive_size > remaining)
         return CL_EPARSE;

@@ -631,7 +631,7 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
     pread_state.length       = (size_t)(boundary + 1);
     pread_state.fail_at      = INT64_MAX;
     map = cl_fmap_open_handle(&pread_state, 0, pread_state.length,
-                              bytecode_failing_pread_cb, 0);
+                              bytecode_failing_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
 
     bcctx = cli_bytecode_context_alloc();

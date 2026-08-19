@@ -215,7 +215,7 @@ START_TEST(test_scan_report_frames_are_bounded_and_fragment_safe)
     ck_assert_int_eq(send(pair[0], &network_length, 1, 0), 1);
     ck_assert_int_eq(send(pair[0], ((const char *)&network_length) + 1, sizeof(network_length) - 1, 0),
                      (ssize_t)(sizeof(network_length) - 1));
-    ck_assert_int_eq(send(pair[0], payload, strlen(payload)), (ssize_t)strlen(payload));
+    ck_assert_int_eq(send(pair[0], payload, strlen(payload), 0), (ssize_t)strlen(payload));
     network_length = 0;
     ck_assert_int_eq(send(pair[0], &network_length, sizeof(network_length), 0),
                      (ssize_t)sizeof(network_length));
