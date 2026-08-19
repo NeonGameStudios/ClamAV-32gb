@@ -4353,12 +4353,23 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_NULSFT:
                             // Note: CL_TYPE_NULSFT is special, because the file actually starts 4 bytes before the start of the signature match
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_NSIS)) &&
-                                (type == CL_TYPE_MSEXE && fpt->offset > 4)) {
-                                // TODO: Add header validity check to prevent false positives from being scanned.
+                                (type == CL_TYPE_MSEXE && fpt->offset >= 4)) {
+                                off_t archive_offset = fpt->offset - 4;
+                                ret = cli_nulsft_header_check(ctx, archive_offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("NSIS SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "NSIS SFX header is malformed or unsupported");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
+                                    break;
+                                }
                                 nret = cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
-                                    fpt->offset - 4,
-                                    ctx->fmap->len - (fpt->offset - 4),
+                                    (size_t)archive_offset,
+                                    ctx->fmap->len - (size_t)archive_offset,
                                     ctx,
                                     CL_TYPE_NULSFT,
                                     NULL,
@@ -4369,7 +4380,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_AUTOIT:
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_AUTOIT)) &&
                                 (type == CL_TYPE_MSEXE)) {
-                                // TODO: Add header validity check to prevent false positives from being scanned.
+                                ret = cli_autoit_header_check(ctx, fpt->offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("AutoIt SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "AutoIt SFX header is malformed or unsupported");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
+                                    break;
+                                }
                                 nret = cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
@@ -4384,7 +4405,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_ISHIELD_MSI:
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_ISHIELD)) &&
                                 (type == CL_TYPE_MSEXE)) {
-                                // TODO: Add header validity check to prevent false positives from being scanned.
+                                ret = cli_ishield_msi_header_check(ctx, fpt->offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("InstallShield MSI SFX candidate rejected before layer admission\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "InstallShield MSI SFX header is malformed or unsupported");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
+                                    break;
+                                }
                                 nret = cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
@@ -4399,7 +4430,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         case CL_TYPE_PDF:
                             if ((SCAN_PARSE_PDF && (DCONF_DOC & DOC_CONF_PDF)) &&
                                 (type != CL_TYPE_PDF)) {
-                                // TODO: Add header validity check to prevent false positives from being scanned.
+                                ret = cli_pdf_header_check(ctx->fmap, fpt->offset);
+                                if (ret == CL_EFORMAT) {
+                                    cli_dbgmsg("embedded PDF candidate rejected before layer admission\n");
+                                    break;
+                                }
+                                if (ret != CL_SUCCESS) {
+                                    cli_mark_scan_incomplete(ctx, "embedded PDF header is malformed or unsupported");
+                                    if (nret == CL_SUCCESS)
+                                        nret = ret;
+                                    break;
+                                }
                                 nret = cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,

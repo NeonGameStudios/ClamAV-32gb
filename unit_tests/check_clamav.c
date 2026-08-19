@@ -64,6 +64,8 @@
 #include "elf.h"
 #include "dmg.h"
 #include "egg.h"
+#include "autoit.h"
+#include "nsis/nulsft.h"
 #include "apm.h"
 #include "gpt.h"
 #include "mbr.h"
@@ -6204,6 +6206,89 @@ START_TEST(test_egg_sfx_header_admission)
 }
 END_TEST
 
+START_TEST(test_embedded_candidate_admission_headers)
+{
+    static const uint8_t autoit_prefix[] = {
+        0xa3, 0x48, 0x4b, 0xbe, 0x98, 0x6c, 0x4a, 0xa9,
+        0x99, 0x4c, 0x53, 0x0a, 0x86, 0xd6, 0x48, 0x7d,
+        0x41, 0x55, 0x33, 0x21, 0x45, 0x41, 0x30,
+    };
+    uint8_t nsis[0x20];
+    uint8_t autoit[40];
+    uint8_t ishield[14 + 0x20];
+    static const uint8_t pdf[] = "%PDF-1.7";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine  = &engine;
+    ctx.options = &options;
+
+    memset(nsis, 0, sizeof(nsis));
+    nsis[0]    = 0xef;
+    nsis[1]    = 0xbe;
+    nsis[2]    = 0xad;
+    nsis[3]    = 0xde;
+    nsis[0x14] = 0x1c;
+    nsis[0x18] = 0x20;
+    map        = cl_fmap_open_memory(nsis, sizeof(nsis));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_nulsft_header_check(&ctx, 0), CL_SUCCESS);
+    cl_fmap_close(map);
+
+    nsis[0x18] = 0x40;
+    map        = cl_fmap_open_memory(nsis, sizeof(nsis));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_nulsft_header_check(&ctx, 0), CL_EPARSE);
+    cl_fmap_close(map);
+
+    memset(autoit, 0, sizeof(autoit));
+    memcpy(autoit, autoit_prefix, sizeof(autoit_prefix));
+    autoit[sizeof(autoit_prefix)] = 0x35;
+    map                            = cl_fmap_open_memory(autoit, sizeof(autoit));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_autoit_header_check(&ctx, 0), CL_SUCCESS);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(autoit, sizeof(autoit_prefix) + 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_autoit_header_check(&ctx, 0), CL_EPARSE);
+    cl_fmap_close(map);
+
+    memset(ishield, 0, sizeof(ishield));
+    memcpy(ishield, "InstallShield\0", 14);
+    map = cl_fmap_open_memory(ishield, sizeof(ishield));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_ishield_msi_header_check(&ctx, 0), CL_SUCCESS);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(ishield, 14 + 0x1f);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_ishield_msi_header_check(&ctx, 0), CL_EPARSE);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(pdf, sizeof(pdf) - 1);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_pdf_header_check(map, 0), CL_SUCCESS);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory("%PDF-2.7", 8);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_pdf_header_check(map, 0), CL_EPARSE);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_truncated_uuencode_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -8266,6 +8351,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
+    tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
 #ifndef _WIN32

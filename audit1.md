@@ -782,3 +782,15 @@ nested layer. Short magic-only candidates are rejected without tainting the
 parent; complete but malformed or unsupported headers mark the scan
 incomplete. A focused admission test and source guards are present; the full
 compiled embedded-SFX regression remains a supported-build gate.
+
+## Remaining embedded candidate admission — 2026-08-19
+
+The remaining TODO branches in `scanraw()` are now guarded before nested-layer
+creation. NSIS checks its archive marker, fixed header sizes, and containing
+range; AutoIt checks the recognized EA05/EA06 entry and fixed pre-member
+bytes; InstallShield MSI checks the complete `InstallShield` marker and its
+0x20-byte control block; and embedded PDF checks `%PDF-1.[1-9]`. Weak or short
+matches are rejected as unrelated candidates, while recognized but malformed
+or truncated structures mark the parent scan incomplete. The focused unit
+test and static guard pass locally. Supported-build parser-family tests and
+the broader 32 GiB qualification evidence remain open.

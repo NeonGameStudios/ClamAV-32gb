@@ -23,5 +23,6 @@
 #define __AUTOIT_H
 
 #include "others.h"
+cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset);
 cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset);
 #endif

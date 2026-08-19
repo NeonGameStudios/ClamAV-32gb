@@ -22,5 +22,6 @@
 #define __NSIS_H
 
 #include "others.h"
+cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset);
 int cli_scannulsft(cli_ctx *ctx, off_t offset);
 #endif

@@ -577,6 +577,40 @@ static int cli_nsis_unpack(struct nsis_st *n, cli_ctx *ctx)
     return (n->fno) ? nsis_unpack_next(n, ctx) : nsis_headers(n, ctx);
 }
 
+cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
+{
+    const char *buf;
+    size_t remaining;
+    uint32_t header_size;
+    uint32_t archive_size;
+
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
+        return CL_EFORMAT;
+
+    remaining = ctx->fmap->len - (size_t)offset;
+    if (remaining < 0x1c)
+        return CL_EFORMAT;
+    if (!(buf = fmap_need_off_once(ctx->fmap, offset, 0x1c)))
+        return CL_EFORMAT;
+
+    /* The four bytes immediately before the NullsoftInst signature are the
+     * NSIS archive marker. The complete fixed header is required before an
+     * embedded candidate can create a nested layer. */
+    if (cli_readint32(buf) != UINT32_C(0xdeadbeef))
+        return CL_EFORMAT;
+
+    header_size  = (uint32_t)cli_readint32(buf + 0x14);
+    archive_size = (uint32_t)cli_readint32(buf + 0x18);
+    if (header_size < 0x1c || archive_size < 0x1c || header_size > archive_size)
+        return CL_EPARSE;
+    if ((uint64_t)archive_size > remaining)
+        return CL_EPARSE;
+
+    return CL_SUCCESS;
+}
+
 int cli_scannulsft(cli_ctx *ctx, off_t offset)
 {
     int ret;

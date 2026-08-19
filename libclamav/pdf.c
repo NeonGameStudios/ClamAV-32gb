@@ -162,6 +162,25 @@ static int xrefCheck(const char *xref, const char *eof)
 #define noisy_warnmsg(...)
 #endif
 
+cl_error_t cli_pdf_header_check(fmap_t *map, off_t offset)
+{
+    const uint8_t *header;
+
+    if (!map)
+        return CL_ENULLARG;
+    if (offset < 0 || (uint64_t)offset > map->len)
+        return CL_EFORMAT;
+    if (map->len - (size_t)offset < 8)
+        return CL_EFORMAT;
+    if (!(header = fmap_need_off_once(map, offset, 8)))
+        return CL_EFORMAT;
+    if (memcmp(header, "%PDF-", 5) != 0)
+        return CL_EFORMAT;
+    if (header[5] != '1' || header[6] != '.' || header[7] < '1' || header[7] > '9')
+        return CL_EPARSE;
+    return CL_SUCCESS;
+}
+
 /**
  * @brief   Searching BACKwards, find the next character that is not a whitespace.
  *

@@ -24,6 +24,7 @@
 
 #include "others.h"
 
+cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset);
 cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off);
 cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz);
 

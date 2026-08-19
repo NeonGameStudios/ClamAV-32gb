@@ -1978,6 +1978,16 @@ layer is admitted. Short magic-only matches are rejected without tainting the
 parent; a complete but malformed or unsupported header is an explicit
 incomplete result.
 
+## Remaining embedded candidate admission — 2026-08-19
+
+The NSIS, AutoIt, InstallShield MSI, and embedded PDF branches now perform a
+bounded minimum-header check before creating a nested layer. Obvious weak or
+short candidates are rejected without tainting the containing file; candidates
+with a recognized marker but a malformed or truncated required structure are
+reported as incomplete. The checks do not claim that these parser families
+have been converted to 32 GiB deep streaming; their existing parser-specific
+allocation, format, and qualification limits remain separate release gates.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

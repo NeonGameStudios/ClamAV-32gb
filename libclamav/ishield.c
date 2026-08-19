@@ -187,6 +187,35 @@ struct IS_FILEITEM {
 static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize);
 static const uint8_t skey[] = {0xec, 0xca, 0x79, 0xf8}; /* ~0x13, ~0x35, ~0x86, ~0x07 */
 
+cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
+{
+    static const uint8_t magic[] = "InstallShield\0";
+    const uint8_t *buf;
+    size_t remaining;
+
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
+        return CL_EFORMAT;
+
+    remaining = ctx->fmap->len - (size_t)offset;
+    if (remaining < sizeof(magic) - 1)
+        return CL_EFORMAT;
+    if (!(buf = fmap_need_off_once(ctx->fmap, offset, sizeof(magic) - 1)))
+        return CL_EFORMAT;
+    if (memcmp(buf, magic, sizeof(magic) - 1) != 0)
+        return CL_EFORMAT;
+
+    /* cli_scanishield_msi() consumes a 0x20-byte control block immediately
+     * after the 14-byte InstallShield marker. */
+    if (remaining - (sizeof(magic) - 1) < 0x20)
+        return CL_EPARSE;
+    if (!fmap_need_off_once(ctx->fmap, offset + (sizeof(magic) - 1), 0x20))
+        return CL_EPARSE;
+
+    return CL_SUCCESS;
+}
+
 /* Extracts the content of MSI based IS */
 cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
 {

@@ -646,6 +646,51 @@ static cl_error_t autoit_reserve_output(uint8_t **buffer, uint32_t *capacity, ui
     return CL_SUCCESS;
 }
 
+cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
+{
+    static const uint8_t signature_prefix[] = {
+        0xa3, 0x48, 0x4b, 0xbe, 0x98, 0x6c, 0x4a, 0xa9,
+        0x99, 0x4c, 0x53, 0x0a, 0x86, 0xd6, 0x48, 0x7d,
+        0x41, 0x55, 0x33, 0x21, 0x45, 0x41, 0x30,
+    };
+    const uint8_t *buf;
+    size_t remaining;
+
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
+        return CL_EFORMAT;
+
+    remaining = ctx->fmap->len - (size_t)offset;
+    if (remaining < 1)
+        return CL_EFORMAT;
+    if (!(buf = fmap_need_off_once(ctx->fmap, offset, 1)))
+        return CL_EFORMAT;
+
+    /* File-type recognition normally reports the 23-byte signature prefix;
+     * accepting the version byte directly also keeps this check usable by
+     * callers that already advanced to the parser's entry point. */
+    if ((*buf != 0x35) && (*buf != 0x36)) {
+        if (remaining < sizeof(signature_prefix) + 1)
+            return CL_EFORMAT;
+        if (!(buf = fmap_need_off_once(ctx->fmap, offset, sizeof(signature_prefix) + 1)))
+            return CL_EFORMAT;
+        if (memcmp(buf, signature_prefix, sizeof(signature_prefix)) != 0)
+            return CL_EFORMAT;
+        if ((buf[sizeof(signature_prefix)] != 0x35) && (buf[sizeof(signature_prefix)] != 0x36))
+            return CL_EFORMAT;
+        if (remaining - (sizeof(signature_prefix) + 1) < 16)
+            return CL_EPARSE;
+        return CL_SUCCESS;
+    }
+
+    if (remaining < 17)
+        return CL_EPARSE;
+    if (!fmap_need_off_once(ctx->fmap, offset, 17))
+        return CL_EPARSE;
+    return CL_SUCCESS;
+}
+
 #define AUTOIT_RESERVE_OR_RETURN(buf_, cap_, used_, additional_, ctx_, cleanup_)     \
     do {                                                                             \
         cl_error_t reserve_status_ = autoit_reserve_output(&(buf_), &(cap_), (used_), (additional_)); \
