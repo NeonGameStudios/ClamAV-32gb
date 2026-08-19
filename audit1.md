@@ -724,6 +724,15 @@ does not provide the missing authorized production database or workload. The
 service qualification therefore remains intentionally blocked until the user
 supplies those inputs and their expected outcomes.
 
+## Service logical-budget and report-mode coverage — 2026-08-19
+
+The service qualification configuration had been writing `MaxScanSize 32G`,
+which did not exercise the release contract's 64-GiB logical-content budget.
+It now writes `MaxScanSize 64G`. The exact-edge structured-report gate also
+explicitly runs CONTSCAN, MULTISCAN, and ALLMATCHSCAN, alongside the existing
+path, FILDES, and INSTREAM cases. The dedicated Linux/Sonic1 run, production
+oracle, sanitizer, RSS, latency, and temporary-space evidence remain open.
+
 ## Rust large-input staging — 2026-08-19
 
 ALZ now parses directly through the bounded `FMapReader` `Read + Seek` adapter

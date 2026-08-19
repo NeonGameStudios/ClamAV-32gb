@@ -247,7 +247,7 @@ write_config()
         printf 'MaxThreads 4\n'
         printf 'MaxQueue 8\n'
         printf 'MaxFileSize 32G\n'
-        printf 'MaxScanSize 32G\n'
+        printf 'MaxScanSize 64G\n'
         printf 'StreamMaxLength 32G\n'
         printf 'MaxScanTime 900000\n'
         printf 'MaxRecursion 17\n'
@@ -434,7 +434,12 @@ if ! check_oracle_output edge-clamscan "$out/logs/edge-clamscan.log" "$edge_repo
 fi
 stop_service
 start_service "$edge_db"
-run_service_scan edge edge_service "$edge_file"
+run_service_scan edge edge_contscan "$edge_file"
+printf 'edge_clamdscan_contscan=pass\n' >> "$out/service-summary.txt"
+run_service_scan edge edge_multiscan "$edge_file" --multiscan
+printf 'edge_clamdscan_multiscan=pass\n' >> "$out/service-summary.txt"
+run_service_scan edge edge_allmatch "$edge_file" --allmatch
+printf 'edge_clamdscan_allmatchscan=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_fildes "$edge_file" --fdpass
 printf 'edge_clamdscan_fildes=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_instream "$edge_file" --stream

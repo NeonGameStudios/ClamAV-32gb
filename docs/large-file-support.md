@@ -2661,6 +2661,12 @@ oracle and structured JSON report checks. This improves protocol coverage but
 does not itself constitute a completed run; the dedicated 64-GiB Linux runner,
 sanitizer, RSS, latency, and Sonic1 evidence gates remain required.
 
+The service configuration now gives the logical scan budget its required
+64-GiB ceiling, and the exact-edge report gate explicitly runs CONTSCAN,
+MULTISCAN, and ALLMATCHSCAN modes in addition to path, FILDES, and INSTREAM.
+These are still qualification requirements rather than evidence that the
+dedicated runner has passed them.
+
 ## MHTML root preclassification failures — 2026-08-19
 
 The MHTML root-HTML preclassification wrapper now treats materialization
