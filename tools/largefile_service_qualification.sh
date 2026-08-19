@@ -238,20 +238,28 @@ stop_service()
 write_config()
 {
     database=$1
+    max_threads=$2
+    max_queue=$3
     rm -f "$socket" "$pidfile"
     {
         printf 'DatabaseDirectory %s\n' "$database"
         printf 'LocalSocket %s\n' "$socket"
         printf 'PidFile %s\n' "$pidfile"
         printf 'TemporaryDirectory %s\n' "$out/tmp"
-        printf 'MaxThreads 4\n'
-        printf 'MaxQueue 8\n'
+        printf 'MaxThreads %s\n' "$max_threads"
+        printf 'MaxQueue %s\n' "$max_queue"
         printf 'MaxFileSize 32G\n'
         printf 'MaxScanSize 64G\n'
         printf 'StreamMaxLength 32G\n'
         printf 'MaxScanTime 900000\n'
         printf 'MaxRecursion 17\n'
         printf 'MaxFiles 10000\n'
+        # Keep worker contention visible in the daemon log. The serial queue
+        # gate below requires proof that the second request waited for the
+        # single certified worker instead of merely completing sequentially
+        # by chance in two independent clients.
+        printf 'Debug yes\n'
+        printf 'LogVerbose yes\n'
         printf 'Foreground yes\n'
         if [ -n "${CLAMAV_CVD_CERTS_DIR:-}" ]; then
             printf 'CVDCertsDir %s\n' "$CLAMAV_CVD_CERTS_DIR"
@@ -262,7 +270,9 @@ write_config()
 start_service()
 {
     database=$1
-    write_config "$database"
+    max_threads=${2:-1}
+    max_queue=${3:-2}
+    write_config "$database" "$max_threads" "$max_queue"
     "$build_dir/clamd/clamd" --config-file="$config" > "$out/logs/clamd-$(basename "$database").log" 2>&1 &
     service_pid=$!
     i=0
@@ -398,8 +408,73 @@ run_direct_production()
     printf 'production_cvd_clamscan=pass\n' >> "$out/service-summary.txt"
 }
 
+run_serial_queue()
+{
+    queue_dir="$out/logs/clamd-serial-queue"
+    mkdir -p "$queue_dir"
+    queue_pids=
+    worker=1
+    while [ "$worker" -le 2 ]; do
+        queue_log="$queue_dir/worker-$worker.log"
+        queue_report="$out/reports/clamd-serial-queue-$worker.jsonl"
+        queue_status_file="$queue_dir/worker-$worker.status"
+        (
+            status=0
+            timeout --signal=TERM --kill-after=5 900 \
+                "$build_dir/clamdscan/clamdscan" --no-summary \
+                --report-json="$queue_report" -c "$config" "$materialized_file" \
+                > "$queue_log" 2>&1 || status=$?
+            printf '%s\n' "$status" > "$queue_status_file"
+        ) &
+        queue_pids="$queue_pids $!"
+        # Give the first request a chance to enter the sole worker before the
+        # second client is submitted. The daemon log remains the acceptance
+        # oracle, so a fast fixture cannot silently satisfy this gate.
+        if [ "$worker" -eq 1 ]; then
+            sleep 0.1
+        fi
+        worker=$((worker + 1))
+    done
+
+    queue_status=0
+    for queue_pid in $queue_pids; do
+        wait "$queue_pid" || queue_status=1
+    done
+    if [ "$queue_status" -ne 0 ]; then
+        echo 'serial clamd queue clients did not complete' >&2
+        return 1
+    fi
+
+    worker=1
+    while [ "$worker" -le 2 ]; do
+        queue_log="$queue_dir/worker-$worker.log"
+        queue_report="$out/reports/clamd-serial-queue-$worker.jsonl"
+        queue_status_file="$queue_dir/worker-$worker.status"
+        if [ ! -s "$queue_log" ] || [ ! -s "$queue_report" ] ||
+            [ ! -s "$queue_status_file" ]; then
+            echo "serial clamd queue evidence is incomplete for worker $worker" >&2
+            return 1
+        fi
+        oracle_load materialized "$materialized_file"
+        oracle_status=$(sed -n '1p' "$queue_status_file")
+        check_oracle_output "serial clamd queue request $worker" \
+            "$queue_log" "$queue_report" yes no
+        worker=$((worker + 1))
+    done
+
+    if ! grep -F 'THRMGR: contended, sleeping' \
+        "$out/logs/clamd-$(basename "$production_db").log" >/dev/null 2>&1; then
+        echo 'serial clamd queue did not record worker contention' >&2
+        return 1
+    fi
+    printf 'serial_worker_count=1\n' >> "$out/service-summary.txt"
+    printf 'serial_queue_count=2\n' >> "$out/service-summary.txt"
+    printf 'serial_queue=pass\n' >> "$out/service-summary.txt"
+}
+
 : > "$out/service-summary.txt"
 run_direct_production
+run_serial_queue
 run_service_scan production production_cvd "$production_file"
 printf 'production_cvd_clamdscan=pass\n' >> "$out/service-summary.txt"
 run_service_scan production production_cvd_fildes "$production_file" --fdpass
@@ -433,7 +508,7 @@ if ! check_oracle_output edge-clamscan "$out/logs/edge-clamscan.log" "$edge_repo
     exit 1
 fi
 stop_service
-start_service "$edge_db"
+start_service "$edge_db" 1 2
 run_service_scan edge edge_contscan "$edge_file"
 printf 'edge_clamdscan_contscan=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_multiscan "$edge_file" --multiscan
@@ -445,9 +520,13 @@ printf 'edge_clamdscan_fildes=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_instream "$edge_file" --stream
 printf 'edge_clamdscan_instream=pass\n' >> "$out/service-summary.txt"
 
-# Exercise MaxThreads=4 with four simultaneous clamdscan clients. These are
-# independent requests to the same daemon, not four standalone clamscan
-# processes, so the evidence covers the service worker/queue path directly.
+# Exercise MaxThreads=4 with four simultaneous clamdscan clients. This is a
+# separate explicit service profile from the certified one-worker/2-queue
+# profile above. These are independent requests to the same daemon, not four
+# standalone clamscan processes, so the evidence covers the service
+# worker/queue path directly.
+stop_service
+start_service "$edge_db" 4 8
 multi_dir="$out/logs/clamd-multiworker"
 mkdir -p "$multi_dir"
 multi_pids=

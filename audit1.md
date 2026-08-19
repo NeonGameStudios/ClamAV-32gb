@@ -738,6 +738,19 @@ explicitly runs CONTSCAN, MULTISCAN, and ALLMATCHSCAN, alongside the existing
 path, FILDES, and INSTREAM cases. The dedicated Linux/Sonic1 run, production
 oracle, sanitizer, RSS, latency, and temporary-space evidence remain open.
 
+## Service serial-queue coverage — 2026-08-19
+
+The service qualification harness now uses the roadmap's certified
+`MaxThreads 1` / `MaxQueue 2` profile for the ordinary production, materialized,
+expansion, and exact-edge service requests. Before the multiworker check it
+submits two concurrent materialized-file requests and requires both exact
+oracle-bound structured reports plus a `THRMGR: contended, sleeping` daemon-log
+record. This prevents a fast fixture or two independent clients from silently
+being reported as proof of queue behavior. The harness then restarts clamd
+explicitly with `MaxThreads 4` / `MaxQueue 8` for the four-client worker
+qualification. The real production oracle, Linux/Sonic1 execution, sanitizer,
+RSS, latency, temporary-space, and parser-family evidence remain open.
+
 ## Rust large-input staging — 2026-08-19
 
 ALZ now parses directly through the bounded `FMapReader` `Read + Seek` adapter
