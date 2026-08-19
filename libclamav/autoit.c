@@ -672,9 +672,29 @@ static cl_error_t autoit_reserve_output(uint8_t **buffer, uint32_t *capacity, ui
 cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
 {
     static const uint8_t signature_prefix[] = {
-        0xa3, 0x48, 0x4b, 0xbe, 0x98, 0x6c, 0x4a, 0xa9,
-        0x99, 0x4c, 0x53, 0x0a, 0x86, 0xd6, 0x48, 0x7d,
-        0x41, 0x55, 0x33, 0x21, 0x45, 0x41, 0x30,
+        0xa3,
+        0x48,
+        0x4b,
+        0xbe,
+        0x98,
+        0x6c,
+        0x4a,
+        0xa9,
+        0x99,
+        0x4c,
+        0x53,
+        0x0a,
+        0x86,
+        0xd6,
+        0x48,
+        0x7d,
+        0x41,
+        0x55,
+        0x33,
+        0x21,
+        0x45,
+        0x41,
+        0x30,
     };
     const uint8_t *buf;
     size_t remaining;
@@ -714,14 +734,14 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
     return CL_SUCCESS;
 }
 
-#define AUTOIT_RESERVE_OR_RETURN(buf_, cap_, used_, additional_, ctx_, cleanup_)     \
-    do {                                                                             \
-        cl_error_t reserve_status_ = autoit_reserve_output(&(buf_), &(cap_), (used_), (additional_)); \
-        if (reserve_status_ != CL_SUCCESS) {                                          \
+#define AUTOIT_RESERVE_OR_RETURN(buf_, cap_, used_, additional_, ctx_, cleanup_)                               \
+    do {                                                                                                       \
+        cl_error_t reserve_status_ = autoit_reserve_output(&(buf_), &(cap_), (used_), (additional_));          \
+        if (reserve_status_ != CL_SUCCESS) {                                                                   \
             cli_mark_scan_incomplete((ctx_), "AutoIt decompiled script exceeds the bounded allocation limit"); \
-            cleanup_;                                                                 \
-            return reserve_status_;                                                   \
-        }                                                                             \
+            cleanup_;                                                                                          \
+            return reserve_status_;                                                                            \
+        }                                                                                                      \
     } while (0)
 
 static bool autoit_input_refill(struct UNP *UNP, cli_ctx *ctx)
@@ -857,7 +877,7 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
     size_t input_offset;
     size_t next_offset;
     uint8_t decoded_header[8];
-    fmap_t *map         = ctx->fmap;
+    fmap_t *map = ctx->fmap;
 
     UNP.ctx = ctx;
 
@@ -1325,7 +1345,7 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
     char tempfile[1024];
     const char prefixes[] = {'\0', '\0', '@', '$', '\0', '.', '"', '\0'};
     const char *opers[]   = {",", "=", ">", "<", "<>", ">=", "<=", "(", ")", "+", "-", "/", "*", "&", "[", "]", "==", "^", "+=", "-=", "/=", "*=", "&=", "?", ":"};
-    struct UNP UNP = {0};
+    struct UNP UNP        = {0};
     struct LAME input_lame;
     size_t input_offset;
     size_t next_offset;
@@ -1662,7 +1682,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
                         keyword_len = strlen(autoit_keywords[keyword_id]);
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, (size_t)keyword_len + 2, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
 
                         if (cli_debug_flag) {
                             if (0 == memcmp(autoit_keywords[keyword_id], "UNKNOWN", MIN(strlen("UNKNOWN"), keyword_len))) {
@@ -1694,7 +1715,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
                         function_len = strlen(autoit_functions[function_id]);
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, (size_t)function_len + 2, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
 
                         if (cli_debug_flag) {
                             if (0 == memcmp(autoit_functions[function_id], "UNKNOWN", MIN(strlen("UNKNOWN"), function_len))) {
@@ -1714,7 +1736,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 12, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
 
                         snprintf((char *)&buf[UNP.cur_output], 12, "0x%08x ", cli_readint32((char *)&UNP.outputbuf[UNP.cur_input]));
                         UNP.cur_output += 11;
@@ -1731,7 +1754,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 20, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
 
                         val = (uint64_t)cli_readint32((char *)&UNP.outputbuf[UNP.cur_input + 4]);
                         val <<= 32;
@@ -1750,7 +1774,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 40, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
 
                         if (fpu_words == FPU_ENDIAN_LITTLE) {
                             snprintf((char *)&buf[UNP.cur_output], 39, "%g ", *(double *)&UNP.outputbuf[UNP.cur_input]);
@@ -1805,7 +1830,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, (size_t)chars + 3, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
 
                         if (prefixes[op - 0x30]) {
                             buf[UNP.cur_output++] = prefixes[op - 0x30];
@@ -1857,7 +1883,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     case 0x57: /* ? */
                     case 0x58: /* : */
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 4, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
 
                         // TODO: Fix Autoit plus bug
                         //  if (op == 0x49) /* + */ and next op ==0x05 /*int32*/ and that int32 is negative...
@@ -1871,7 +1898,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     case 0x7f:
                         UNP.bits_avail--;
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 1, ctx,
-                                                 free(UNP.outputbuf); free(buf));
+                                                 free(UNP.outputbuf);
+                                                 free(buf));
                         buf[UNP.cur_output++] = '\n';
                         break;
 

@@ -3780,7 +3780,7 @@ done:
  */
 cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
 {
-    cl_error_t rc = CL_SUCCESS;
+    cl_error_t rc                  = CL_SUCCESS;
     const char *parse_error_reason = NULL;
     struct pdf_struct pdf;
     fmap_t *map = ctx ? ctx->fmap : NULL;
@@ -3791,10 +3791,10 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     long temp_long;
     const char *pdfver, *tmp, *start, *eofmap, *q, *eof;
     unsigned i;
-    unsigned int objs_found = 0;
-    char *pdf_input = NULL;
-    char *pdf_tempfile = NULL;
-    int pdf_tempfd = -1;
+    unsigned int objs_found     = 0;
+    char *pdf_input             = NULL;
+    char *pdf_tempfile          = NULL;
+    int pdf_tempfd              = -1;
     uint64_t pdf_input_reserved = 0;
 #if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
     void *pdf_mapping = NULL;
@@ -3996,7 +3996,7 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
         copied = 0;
         while (copied < size) {
             wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
-            nread = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
+            nread  = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
             if (nread != wanted) {
                 cli_errmsg("cli_pdf: bounded input read failed at offset %zu\n", copied);
                 cli_mark_scan_incomplete(ctx, "PDF parser input could not be read completely");

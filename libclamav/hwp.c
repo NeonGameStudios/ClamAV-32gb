@@ -1985,7 +1985,7 @@ static int hwpml_base64_value(unsigned char value)
 }
 
 static cl_error_t hwpml_flush_base64_output(cli_ctx *ctx, int output_fd, const unsigned char *output,
-                                             size_t output_used, uint64_t *total)
+                                            size_t output_used, uint64_t *total)
 {
     cl_error_t ret;
     uint64_t next_total;
@@ -2026,8 +2026,8 @@ cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd,
     unsigned char input[HWPML_BASE64_IO_SIZE];
     unsigned char output[HWPML_BASE64_IO_SIZE];
     unsigned char quartet[4];
-    uint64_t total = 0;
-    size_t output_used = 0;
+    uint64_t total      = 0;
+    size_t output_used  = 0;
     size_t quartet_used = 0;
     size_t i;
     size_t produced;
@@ -2132,7 +2132,7 @@ static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, in
 
     int i, df = -1, com = 0, enc = 0;
     uint64_t decoded_reserved = 0;
-    char *tempfile = NULL;
+    char *tempfile            = NULL;
 
     UNUSEDPARAM(cbdata);
 
@@ -2255,8 +2255,8 @@ cl_error_t cli_scanhwpml(cli_ctx *ctx)
 
     memset(&mxctx, 0, sizeof(mxctx));
     mxctx.scan_cb = hwpml_binary_cb;
-    ret = cli_msxml_parse_document_streaming(ctx, ctx->fmap, hwpml_keys, num_hwpml_keys,
-                                             MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    ret           = cli_msxml_parse_document_streaming(ctx, ctx->fmap, hwpml_keys, num_hwpml_keys,
+                                                       MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
 
     /* HWPML attachment scanning cannot suppress XML errors: an incomplete
      * document may hide later embedded content. Preserve both callback

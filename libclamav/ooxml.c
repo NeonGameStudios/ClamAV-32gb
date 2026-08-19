@@ -430,7 +430,7 @@ cli_file_t cli_ooxml_filetype(cli_ctx *ctx)
 
 cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
 {
-    size_t loff     = 0;
+    size_t loff    = 0;
     cl_error_t ret = CL_SUCCESS;
 
     cli_dbgmsg("in cli_process_ooxml\n");

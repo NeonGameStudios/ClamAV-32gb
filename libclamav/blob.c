@@ -741,30 +741,30 @@ int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
                     if (stateful_matchers) {
                         cli_dbgmsg("fileblobAddData: deferring early scan to preserve multipart/logical matcher state\n");
                     } else if (len > 5) {
-                    /* cli_scan_buff() deliberately keeps a bounded uint32_t
-                     * window. Split an unusually large in-memory append, but
-                     * overlap adjacent windows by the longest configured
-                     * pattern so a signature cannot straddle the split. */
-                    size_t scan_offset = 0;
-                    size_t overlap     = 0;
-                    unsigned int i;
+                        /* cli_scan_buff() deliberately keeps a bounded uint32_t
+                         * window. Split an unusually large in-memory append, but
+                         * overlap adjacent windows by the longest configured
+                         * pattern so a signature cannot straddle the split. */
+                        size_t scan_offset = 0;
+                        size_t overlap     = 0;
+                        unsigned int i;
 
-                    for (i = 0; i < CLI_MTARGETS; i++) {
-                        if (ctx->engine->root[i] && ctx->engine->root[i]->maxpatlen > overlap)
-                            overlap = ctx->engine->root[i]->maxpatlen - 1;
-                    }
-
-                    while (scan_offset < len) {
-                        size_t chunk_start = scan_offset > overlap ? scan_offset - overlap : 0;
-                        size_t available   = len - chunk_start;
-                        uint32_t scan_length = available > UINT32_MAX ? UINT32_MAX : (uint32_t)available;
-
-                        if (cli_scan_buff(data + chunk_start, scan_length, (uint64_t)chunk_start, ctx, CL_TYPE_BINARY_DATA, NULL) == CL_VIRUS) {
-                            fb->isInfected = 1;
-                            break;
+                        for (i = 0; i < CLI_MTARGETS; i++) {
+                            if (ctx->engine->root[i] && ctx->engine->root[i]->maxpatlen > overlap)
+                                overlap = ctx->engine->root[i]->maxpatlen - 1;
                         }
-                        scan_offset = chunk_start + scan_length;
-                    }
+
+                        while (scan_offset < len) {
+                            size_t chunk_start   = scan_offset > overlap ? scan_offset - overlap : 0;
+                            size_t available     = len - chunk_start;
+                            uint32_t scan_length = available > UINT32_MAX ? UINT32_MAX : (uint32_t)available;
+
+                            if (cli_scan_buff(data + chunk_start, scan_length, (uint64_t)chunk_start, ctx, CL_TYPE_BINARY_DATA, NULL) == CL_VIRUS) {
+                                fb->isInfected = 1;
+                                break;
+                            }
+                            scan_offset = chunk_start + scan_length;
+                        }
                     }
                 }
             }

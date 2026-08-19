@@ -202,11 +202,11 @@ typedef struct cli_ctx_tag {
     cli_scan_layer_t *recursion_stack; /* Array of recursion levels used as a stack. */
     uint32_t recursion_stack_size;     /* stack size must == engine->max_recursion_level */
     uint32_t recursion_level;          /* Index into recursion_stack; current fmap recursion level from start of scan. */
-    uint64_t matcher_work;              /* Raw and normalized matcher work charged to this scan. */
-    uint64_t contiguous_bytes;          /* Currently reserved contiguous matcher subject bytes. */
-    uint64_t contiguous_peak;            /* Peak contiguous matcher subject bytes. */
-    uint64_t temporary_bytes;            /* Currently reserved temporary bytes. */
-    uint64_t temporary_peak;             /* Peak temporary bytes. */
+    uint64_t matcher_work;             /* Raw and normalized matcher work charged to this scan. */
+    uint64_t contiguous_bytes;         /* Currently reserved contiguous matcher subject bytes. */
+    uint64_t contiguous_peak;          /* Peak contiguous matcher subject bytes. */
+    uint64_t temporary_bytes;          /* Currently reserved temporary bytes. */
+    uint64_t temporary_peak;           /* Peak temporary bytes. */
     evidence_t this_layer_evidence;    /* Pointer to current evidence in recursion_stack, varies with recursion depth. For convenience. */
     fmap_t *fmap;                      /* Pointer to current fmap in recursion_stack, varies with recursion depth. For convenience. */
     size_t object_count;               /* Counter for number of unique entities/contained files (including normalized files) processed. */
@@ -217,14 +217,14 @@ typedef struct cli_ctx_tag {
     struct json_object *metadata_json;            /* Top level metadata JSON object for the whole scan. */
     struct json_object *this_layer_metadata_json; /* Pointer to current metadata JSON object in recursion_stack, varies with recursion depth. For convenience. */
     struct timeval time_limit;
-    bool limit_exceeded;  /* To guard against alerting on limits exceeded more than once, or storing that in the JSON metadata more than once. */
-    bool abort_scan;      /* Stop the scan even if the initiating status is lost while unwinding recursion. */
-    bool scan_timed_out;  /* The sticky abort was caused by MaxScanTime, so the public API must return CL_ETIMEOUT. */
-    bool scan_incomplete; /* A required parser/matcher path was skipped; never report this scan as clean. */
-    uint64_t skipped_operations; /* Number of required parser/matcher paths that were skipped. */
+    bool limit_exceeded;                /* To guard against alerting on limits exceeded more than once, or storing that in the JSON metadata more than once. */
+    bool abort_scan;                    /* Stop the scan even if the initiating status is lost while unwinding recursion. */
+    bool scan_timed_out;                /* The sticky abort was caused by MaxScanTime, so the public API must return CL_ETIMEOUT. */
+    bool scan_incomplete;               /* A required parser/matcher path was skipped; never report this scan as clean. */
+    uint64_t skipped_operations;        /* Number of required parser/matcher paths that were skipped. */
     const char *scan_incomplete_reason; /* First reason a required path was skipped. */
-    cl_error_t limit_exceeded_result; /* First configured-limit result, retained if an AlertExceedsMax callback filters its indicator. */
-    cl_scan_report_t *report; /* Optional structured report owned by the public *_ex2 caller. */
+    cl_error_t limit_exceeded_result;   /* First configured-limit result, retained if an AlertExceedsMax callback filters its indicator. */
+    cl_scan_report_t *report;           /* Optional structured report owned by the public *_ex2 caller. */
 } cli_ctx;
 
 #define STATS_ANON_UUID "5b585e8f-3be5-11e3-bf0b-18037319526c"
@@ -607,16 +607,16 @@ extern LIBCLAMAV_EXPORT int have_rar;
 
 /* based on macros from A. Melnikoff */
 #define cbswap16(v) (((v & 0xff) << 8) | (((v) >> 8) & 0xff))
-#define cbswap32(v) ((((v) & 0x000000ff) << 24) | (((v) & 0x0000ff00) << 8) | \
-                     (((v) & 0x00ff0000) >> 8) | (((v) & 0xff000000) >> 24))
-#define cbswap64(v) ((((v) & 0x00000000000000ffULL) << 56) | \
-                     (((v) & 0x000000000000ff00ULL) << 40) | \
-                     (((v) & 0x0000000000ff0000ULL) << 24) | \
-                     (((v) & 0x00000000ff000000ULL) << 8) |  \
-                     (((v) & 0x000000ff00000000ULL) >> 8) |  \
-                     (((v) & 0x0000ff0000000000ULL) >> 24) | \
-                     (((v) & 0x00ff000000000000ULL) >> 40) | \
-                     (((v) & 0xff00000000000000ULL) >> 56))
+#define cbswap32(v) ((((v)&0x000000ff) << 24) | (((v)&0x0000ff00) << 8) | \
+                     (((v)&0x00ff0000) >> 8) | (((v)&0xff000000) >> 24))
+#define cbswap64(v) ((((v)&0x00000000000000ffULL) << 56) | \
+                     (((v)&0x000000000000ff00ULL) << 40) | \
+                     (((v)&0x0000000000ff0000ULL) << 24) | \
+                     (((v)&0x00000000ff000000ULL) << 8) |  \
+                     (((v)&0x000000ff00000000ULL) >> 8) |  \
+                     (((v)&0x0000ff0000000000ULL) >> 24) | \
+                     (((v)&0x00ff000000000000ULL) >> 40) | \
+                     (((v)&0xff00000000000000ULL) >> 56))
 
 #ifndef HAVE_ATTRIB_PACKED
 #define __attribute__(x)
@@ -867,8 +867,8 @@ cl_error_t cli_dispatch_scan_callback(cli_ctx *ctx, cl_scan_callback_t location)
 /* used by: spin, yc (C) aCaB */
 #define __SHIFTBITS(a) (sizeof(a) << 3)
 #define __SHIFTMASK(a) (__SHIFTBITS(a) - 1)
-#define CLI_ROL(a, b) a = (a << ((b) & __SHIFTMASK(a))) | (a >> ((__SHIFTBITS(a) - (b)) & __SHIFTMASK(a)))
-#define CLI_ROR(a, b) a = (a >> ((b) & __SHIFTMASK(a))) | (a << ((__SHIFTBITS(a) - (b)) & __SHIFTMASK(a)))
+#define CLI_ROL(a, b) a = (a << ((b)&__SHIFTMASK(a))) | (a >> ((__SHIFTBITS(a) - (b)) & __SHIFTMASK(a)))
+#define CLI_ROR(a, b) a = (a >> ((b)&__SHIFTMASK(a))) | (a << ((__SHIFTBITS(a) - (b)) & __SHIFTMASK(a)))
 
 /* Implementation independent sign-extended signed right shift */
 #ifdef HAVE_SAR

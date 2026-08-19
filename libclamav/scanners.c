@@ -471,7 +471,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                      */
                     cli_dbgmsg("RAR: Extraction complete.  Scanning now...\n");
                     extracted_file_exists = (access(extract_fullpath, F_OK) == 0);
-                    status = cli_magic_scan_file(extract_fullpath, ctx, filename_base, LAYER_ATTRIBUTES_NONE);
+                    status                = cli_magic_scan_file(extract_fullpath, ctx, filename_base, LAYER_ATTRIBUTES_NONE);
                     if (CL_EOPEN == status && !extracted_file_exists) {
                         /* A successful extractor may report no output for an
                          * empty or unsupported member. Only that no-file case
@@ -569,8 +569,8 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
     const char *filepath = NULL;
     int fd               = -1;
 
-    char *tmpname = NULL;
-    int tmpfd     = -1;
+    char *tmpname           = NULL;
+    int tmpfd               = -1;
     uint64_t temporary_size = 0;
     bool temporary_reserved = false;
 
@@ -585,7 +585,7 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
         if (status != CL_SUCCESS)
             goto done;
         temporary_reserved = true;
-        status = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
+        status             = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
             cli_mark_scan_incomplete(ctx, "RAR input could not be staged completely");
@@ -612,7 +612,7 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
         if (status != CL_SUCCESS)
             goto done;
         temporary_reserved = true;
-        status = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
+        status             = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
             cli_mark_scan_incomplete(ctx, "RAR fallback input could not be staged completely");
@@ -667,13 +667,13 @@ static cl_error_t cli_egg_scanmetadata(cl_egg_metadata *metadata, cli_ctx *ctx, 
 }
 
 typedef struct {
-    cli_ctx* ctx;
+    cli_ctx *ctx;
     int fd;
 } cli_egg_temp_output;
 
-static cl_error_t cli_egg_write_temp(void* opaque, const void* data, size_t length)
+static cl_error_t cli_egg_write_temp(void *opaque, const void *data, size_t length)
 {
-    cli_egg_temp_output* output = (cli_egg_temp_output*)opaque;
+    cli_egg_temp_output *output = (cli_egg_temp_output *)opaque;
     cl_error_t status;
 
     if (output == NULL || output->ctx == NULL || output->fd < 0 || (data == NULL && length != 0))
@@ -691,15 +691,15 @@ static cl_error_t cli_egg_write_temp(void* opaque, const void* data, size_t leng
     return CL_SUCCESS;
 }
 
-static cl_error_t cli_egg_scan_member(void* hArchive, const cl_egg_metadata* metadata,
-                                      cli_ctx* ctx, const char* filename)
+static cl_error_t cli_egg_scan_member(void *hArchive, const cl_egg_metadata *metadata,
+                                      cli_ctx *ctx, const char *filename)
 {
-    cl_error_t status = CL_SUCCESS;
-    char* tempfile = NULL;
-    const char* extracted_filename = NULL;
-    int fd = -1;
-    bool temporary_reserved = false;
-    uint64_t output_length = 0;
+    cl_error_t status              = CL_SUCCESS;
+    char *tempfile                 = NULL;
+    const char *extracted_filename = NULL;
+    int fd                         = -1;
+    bool temporary_reserved        = false;
+    uint64_t output_length         = 0;
     cli_egg_temp_output output;
 
     if (hArchive == NULL || metadata == NULL || ctx == NULL)
@@ -751,7 +751,7 @@ done:
         }
         free(tempfile);
     }
-    free((void*)extracted_filename);
+    free((void *)extracted_filename);
     if (temporary_reserved)
         cli_scan_release_temporary(ctx, metadata->unpack_size);
     return status;
@@ -811,7 +811,7 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
              * Drop the comment to a temp file, if requested
              */
             if (ctx->engine->keeptmp) {
-                int comment_fd   = -1;
+                int comment_fd = -1;
                 char prefix[sizeof("comments_") + 10];
 
                 snprintf(prefix, sizeof(prefix), "comments_%u", i);
@@ -906,7 +906,7 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
             if (status == CL_EUNPACK) {
                 nEncryptedFilesFound += 1;
                 incomplete_status = CL_EUNPACK;
-                status = CL_SUCCESS;
+                status            = CL_SUCCESS;
             } else if (status != CL_SUCCESS) {
                 break;
             }
@@ -1043,7 +1043,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
 {
     cl_error_t ret            = CL_SUCCESS;
     cl_error_t deferred_limit = CL_SUCCESS;
-    int file = 0;
+    int file                  = 0;
     arj_metadata_t metadata;
     char *dir = NULL;
 
@@ -1117,7 +1117,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
                 cli_mark_scan_incomplete(ctx, "ARJ extracted member could not be rewound for scanning");
                 close(metadata.ofd);
                 metadata.ofd = -1;
-                ret = CL_ESEEK;
+                ret          = CL_ESEEK;
                 break;
             }
 
@@ -1189,10 +1189,10 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     int gzerr = Z_OK;
     cl_error_t ret;
     cl_error_t decode_status = CL_SUCCESS;
-    size_t outsize = 0;
+    size_t outsize           = 0;
     int bytes;
     bool stream_complete = false;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map          = ctx->fmap;
     char *tmpname;
     gzFile gz;
 
@@ -1273,14 +1273,14 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
 
 static cl_error_t cli_scangzip(cli_ctx *ctx)
 {
-    int fd = -1;
-    cl_error_t ret = CL_SUCCESS;
+    int fd                   = -1;
+    cl_error_t ret           = CL_SUCCESS;
     cl_error_t decode_status = CL_SUCCESS;
     unsigned char buff[FILEBUFF];
     char *tmpname;
     z_stream z;
     size_t at = 0, outsize = 0;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map          = ctx->fmap;
     bool stream_complete = false;
 
     cli_dbgmsg("in cli_scangzip()\n");
@@ -1299,7 +1299,7 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
     }
 
     while (at < map->len) {
-        stream_complete = false;
+        stream_complete    = false;
         unsigned int bytes = MIN(map->len - at, map->pgsz);
         if (!(z.next_in = (void *)fmap_need_off_once(map, at, bytes))) {
             cli_dbgmsg("GZip: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
@@ -1348,7 +1348,7 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
                 cli_dbgmsg("GZip: decoder stopped before stream completion; refusing partial output.\n");
                 cli_mark_scan_incomplete(ctx, "GZip stream ended before decompression completed");
                 decode_status = CL_EUNPACK;
-                at = map->len;
+                at            = map->len;
                 break;
             }
         } while (z.avail_out == 0);
@@ -1388,7 +1388,7 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
 
 static cl_error_t cli_scanbzip(cli_ctx *ctx)
 {
-    cl_error_t ret = CL_SUCCESS;
+    cl_error_t ret           = CL_SUCCESS;
     cl_error_t decode_status = CL_SUCCESS;
     int fd, rc;
     uint64_t size = 0;
@@ -1418,7 +1418,7 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
 
     do {
         if (!strm.avail_in) {
-            avail          = 0;
+            avail         = 0;
             strm.next_in  = (void *)fmap_need_off_once_len(ctx->fmap, off, FILEBUFF, &avail);
             strm.avail_in = avail;
             off += avail;
@@ -1783,12 +1783,12 @@ static void cli_ole2_note_vba_cleanup_failure(cli_ctx *ctx, cl_error_t *status, 
  */
 static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, struct uniq *U, int *has_macros)
 {
-    cl_error_t ret                    = CL_SUCCESS;
-    cl_error_t first_candidate_error  = CL_SUCCESS;
-    uint32_t hashcnt                  = 0;
-    bool found_dir_file               = false;
-    bool candidate_succeeded          = false;
-    char *hash       = NULL;
+    cl_error_t ret                   = CL_SUCCESS;
+    cl_error_t first_candidate_error = CL_SUCCESS;
+    uint32_t hashcnt                 = 0;
+    bool found_dir_file              = false;
+    bool candidate_succeeded         = false;
+    char *hash                       = NULL;
     char path[PATH_MAX];
     char filename[PATH_MAX];
     int tempfd     = -1;
@@ -2032,7 +2032,7 @@ done:
 
 static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struct uniq *U, int *has_macros)
 {
-    cl_error_t status = CL_SUCCESS;
+    cl_error_t status           = CL_SUCCESS;
     cl_error_t deferred_failure = CL_SUCCESS;
     cl_error_t ret;
     int i, j;
@@ -2270,12 +2270,12 @@ done:
 
 static cl_error_t cli_ole2_tempdir_scan_for_xlm_and_images(const char *dir, cli_ctx *ctx, struct uniq *U)
 {
-    cl_error_t ret               = CL_SUCCESS;
-    cl_error_t deferred_failure  = CL_SUCCESS;
-    char *hash                   = NULL;
-    uint32_t hashcnt             = 0;
-    char STR_WORKBOOK[] = "workbook";
-    char STR_BOOK[]     = "book";
+    cl_error_t ret              = CL_SUCCESS;
+    cl_error_t deferred_failure = CL_SUCCESS;
+    char *hash                  = NULL;
+    uint32_t hashcnt            = 0;
+    char STR_WORKBOOK[]         = "workbook";
+    char STR_BOOK[]             = "book";
     char fullname[PATH_MAX];
     STATBUF statbuf;
 
@@ -2780,7 +2780,7 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
     cl_error_t status = CL_SUCCESS;
     bool normalization_ok;
     bool tempdir_created = false;
-    char *tempname    = NULL;
+    char *tempname       = NULL;
     char fullname[1024];
     int fd            = -1;
     fmap_t *map       = ctx->fmap;
@@ -2817,7 +2817,7 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
         tag_arguments_t hrefs = {0};
         hrefs.scanContents    = 1;
         form_data_t form_data = {0};
-        normalization_ok = html_normalise_map_form_data(ctx, map, tempname, &hrefs, ctx->dconf, &form_data);
+        normalization_ok      = html_normalise_map_form_data(ctx, map, tempname, &hrefs, ctx->dconf, &form_data);
         save_urls(ctx, &hrefs, &form_data);
         html_tag_arg_free(&hrefs);
         html_form_data_tag_free(&form_data);
@@ -3211,7 +3211,7 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
     }
 
     temporary_size = (uint64_t)(ctx->fmap->len / 2);
-    status          = cli_scan_reserve_temporary(ctx, temporary_size);
+    status         = cli_scan_reserve_temporary(ctx, temporary_size);
     if (status != CL_SUCCESS)
         goto done;
     temporary_reserved = true;
@@ -4529,7 +4529,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_NSIS)) &&
                                 (type == CL_TYPE_MSEXE && fpt->offset >= 4)) {
                                 off_t archive_offset = fpt->offset - 4;
-                                ret = cli_nulsft_header_check(ctx, archive_offset);
+                                ret                  = cli_nulsft_header_check(ctx, archive_offset);
                                 if (ret == CL_EFORMAT) {
                                     cli_dbgmsg("NSIS SFX candidate rejected before layer admission\n");
                                     break;
@@ -4807,7 +4807,7 @@ void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason)
     if (ctx->scan_incomplete)
         return;
 
-    ctx->scan_incomplete = true;
+    ctx->scan_incomplete        = true;
     ctx->scan_incomplete_reason = reason;
     cli_warnmsg("Scan incomplete: %s\n", reason ? reason : "required inspection path was unavailable");
 }
@@ -5052,7 +5052,7 @@ done:
  */
 static bool configured_limit_alert_is_visible(const cli_ctx *ctx)
 {
-    static const char prefix[] = "Heuristics.Limits.Exceeded.";
+    static const char prefix[]         = "Heuristics.Limits.Exceeded.";
     static const IndicatorType types[] = {
         IndicatorType_Strong,
         IndicatorType_PotentiallyUnwanted,
@@ -5173,7 +5173,7 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
      * generic incomplete-scan error only after a parser has discarded it. */
     if (ctx->scan_incomplete && result_in != CL_VIRUS) {
         cli_dbgmsg("Descriptor[%d]: halting incomplete scan\n", fmap_fd(ctx->fmap));
-        halt_scan   = true;
+        halt_scan = true;
         switch (result_in) {
             case CL_EMAXREC:
             case CL_EMAXSIZE:
@@ -6439,8 +6439,8 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
                                                     bool temporary_already_reserved)
 {
     STATBUF sb;
-    cl_error_t status = CL_SUCCESS;
-    fmap_t *new_map   = NULL;
+    cl_error_t status       = CL_SUCCESS;
+    fmap_t *new_map         = NULL;
     bool temporary_reserved = false;
 
     if (!ctx) {
@@ -6601,8 +6601,8 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
          * Write the offset + length section of the fmap to disk, and scan it.
          */
         uint8_t copybuf[FILEBUFF];
-        char *tempfile         = NULL;
-        int fd                 = -1;
+        char *tempfile          = NULL;
+        int fd                  = -1;
         size_t copied           = 0;
         uint64_t temporary_size = (uint64_t)length;
         bool temporary_reserved = false;
@@ -7359,7 +7359,7 @@ cl_error_t cl_scandesc_ex2(
     cl_error_t status = CL_SUCCESS;
     cl_fmap_t *map    = NULL;
     STATBUF sb;
-    char *filename_base = NULL;
+    char *filename_base      = NULL;
     cl_scan_report_t *report = NULL;
 
     if (NULL != report_out) {
@@ -7738,7 +7738,7 @@ cl_error_t cl_scanfile_ex2(
     int fd;
     cl_error_t ret;
     cl_scan_report_t *report = NULL;
-    const char *fname = cli_to_utf8_maybe_alloc(filename);
+    const char *fname        = cli_to_utf8_maybe_alloc(filename);
 
     if (NULL != report_out)
         *report_out = NULL;

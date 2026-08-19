@@ -253,7 +253,7 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
         unsigned int i, lameidx = 0, keylen;
         int ofd;
         uint64_t csize;
-        uint64_t outsize = 0;
+        uint64_t outsize     = 0;
         bool stream_complete = false;
         z_stream z;
 
@@ -466,7 +466,7 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
     off_t coff           = off;
     struct IS_CABSTUFF c = {NULL, -1, 0, 0};
     fmap_t *map;
-    unsigned fc          = 0;
+    unsigned fc = 0;
     size_t input_end;
 
     if (!ctx || !ctx->engine || !ctx->fmap)
@@ -586,7 +586,6 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
                 cli_dbgmsg("ishield: scanning data%u.cab\n", c.cabs[i].cabno);
                 ret = is_dump_and_scan(ctx, c.cabs[i].off, c.cabs[i].sz);
             }
-
         }
     }
 
@@ -634,7 +633,7 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
 
     while (fsize) {
         size_t rd = MIN(fsize, map->pgsz);
-        ret = cli_checktimelimit(ctx);
+        ret       = cli_checktimelimit(ctx);
         if (ret != CL_SUCCESS)
             break;
         if (!(buf = fmap_need_off_once(map, off, rd))) {
@@ -707,7 +706,7 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
         return CL_EPARSE;
     }
 
-    hdr         = (char *)h1;
+    hdr = (char *)h1;
     if (le32_to_host(h1->magic) != 0x28635349) {
         cli_dbgmsg("is_parse_hdr: bad magic. wrong version?\n");
         fmap_unneed_ptr(map, h1, sizeof(*h1));
@@ -721,7 +720,7 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
         cli_mark_scan_incomplete(ctx, "InstallShield object table is outside the header");
         return CL_EPARSE;
     }
-    objs        = (struct IS_OBJECTS *)fmap_need_ptr(map, hdr + h1_data_off, sizeof(*objs));
+    objs = (struct IS_OBJECTS *)fmap_need_ptr(map, hdr + h1_data_off, sizeof(*objs));
     if (!objs) {
         cli_dbgmsg("is_parse_hdr: not enough room for OBJECTS\n");
         fmap_unneed_ptr(map, h1, sizeof(*h1));
@@ -785,8 +784,8 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
 
         if (file) {
             const char *emptyname = "", *dir_name = emptyname, *file_name = emptyname;
-            uint64_t dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file->dir_id);   /* rel off of dir entry from array of rel ptrs */
-            uint64_t file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file->str_name_off); /* rel off of fname */
+            uint64_t dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file->dir_id); /* rel off of dir entry from array of rel ptrs */
+            uint64_t file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file->str_name_off);  /* rel off of fname */
             uint64_t file_stream_off, file_size, file_csize;
             uint16_t cabno;
 
@@ -943,9 +942,9 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
     char *tempfile;
     int ofd;
     z_stream z;
-    uint64_t outsz = 0;
+    uint64_t outsz           = 0;
     bool extraction_complete = false;
-    fmap_t *map    = ctx->fmap;
+    fmap_t *map              = ctx->fmap;
 
     if (!(outbuf = malloc(IS_CABBUFSZ))) {
         cli_errmsg("is_extract_cab: Unable to allocate memory for outbuf\n");

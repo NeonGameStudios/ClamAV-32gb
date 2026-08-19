@@ -132,7 +132,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
     int in_block        = 0;
     int last_header_bad = 0;
     int limitnear       = 0;
-    bool incomplete      = false;
+    bool incomplete     = false;
     unsigned int files  = 0;
     char fullname[PATH_MAX + 1];
     char name[101];
@@ -366,7 +366,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 cli_dbgmsg("cli_untar: No bytes read! Forcing end of file content.\n");
                 cli_mark_scan_incomplete(ctx, "TAR entry ended before its declared content length");
                 incomplete = true;
-                size = 0;
+                size       = 0;
             }
         }
         if (size == 0)

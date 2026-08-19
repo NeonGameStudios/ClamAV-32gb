@@ -99,9 +99,9 @@ static inline int perf_log_tries(int8_t acmode, int8_t bm_called, int32_t length
 
 cl_error_t cli_pcre_check_size_limit(cli_ctx *ctx, uint64_t configured_limit, uint64_t needed)
 {
-    uint64_t effective_limit = configured_limit;
+    uint64_t effective_limit  = configured_limit;
     uint64_t contiguous_limit = 0;
-    int rc = CL_ERROR;
+    int rc                    = CL_ERROR;
 
     /* PCRE2 consumes one contiguous subject. On qualifying 64-bit fmap builds
      * this can use the large-file ceiling while pages are loaded on demand;
@@ -492,7 +492,7 @@ cl_error_t cli_caloff(const char *offstr, const struct cli_target_info *info, cl
 
             } else if (offcpy[1] && strchr(&offcpy[1], '+')) {
                 char *plus = strchr(&offcpy[1], '+');
-                *plus++ = '\0';
+                *plus++    = '\0';
                 if (!cli_parse_uint64(&offcpy[1], &n) || !cli_parse_uint64(plus, &val)) {
                     cli_errmsg("cli_caloff: Invalid section offset\n");
                     return CL_EMALFDB;
@@ -550,7 +550,7 @@ cl_error_t cli_caloff(const char *offstr, const struct cli_target_info *info, cl
             }
 
             *offset_min = offdata[1] = val;
-            *offset_max = *offset_min + offdata[2];
+            *offset_max              = *offset_min + offdata[2];
         }
 
         if (offdata[0] != CLI_OFF_ANY64 && offdata[0] != CLI_OFF_ABSOLUTE &&

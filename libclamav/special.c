@@ -119,7 +119,7 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
     uint32_t chunk_size;
     uint64_t next_offset;
     off_t cur_offset = *offset;
-    fmap_t *map       = ctx->fmap;
+    fmap_t *map      = ctx->fmap;
 
     if (rec_level > 1000) {
         cli_dbgmsg("riff_read_chunk: recursion level exceeded\n");

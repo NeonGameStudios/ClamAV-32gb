@@ -168,21 +168,21 @@ struct macho_fat_arch {
     uint32_t align;
 };
 
-#define RETURN_BROKEN                                                                         \
+#define RETURN_BROKEN                                                                                   \
+    if (SCAN_HEURISTIC_BROKEN) {                                                                        \
+        if (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))           \
+            return CL_VIRUS;                                                                            \
+    }                                                                                                   \
+    cli_mark_scan_incomplete(ctx, "Mach-O universal-binary parsing ended before inspection completed"); \
+    return CL_EPARSE
+
+#define RETURN_MACHO_BROKEN                                                                   \
     if (SCAN_HEURISTIC_BROKEN) {                                                              \
         if (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable")) \
             return CL_VIRUS;                                                                  \
     }                                                                                         \
-    cli_mark_scan_incomplete(ctx, "Mach-O universal-binary parsing ended before inspection completed"); \
-    return CL_EPARSE
-
-#define RETURN_MACHO_BROKEN                                                                    \
-    if (SCAN_HEURISTIC_BROKEN) {                                                               \
-        if (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable")) \
-            return CL_VIRUS;                                                                   \
-    }                                                                                          \
-    if (!get_fileinfo)                                                                         \
-        cli_mark_scan_incomplete(ctx, "Mach-O parsing ended before inspection completed");      \
+    if (!get_fileinfo)                                                                        \
+        cli_mark_scan_incomplete(ctx, "Mach-O parsing ended before inspection completed");    \
     return CL_EPARSE
 
 static uint32_t cli_rawaddr(uint32_t vaddr, struct cli_exe_section *sects, uint16_t nsects, unsigned int *err)

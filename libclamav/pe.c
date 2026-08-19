@@ -118,32 +118,32 @@
 #define PESALIGN(o, a) (((a)) ? (((o) / (a) + ((o) % (a) != 0)) * (a)) : (o))
 
 // TODO Replace all of these with static inline functions
-#define CLI_UNPSIZELIMITS(NAME, CHK)                                      \
-    do {                                                                   \
-        cl_error_t limit_status = cli_pe_unpack_size_check(ctx, NAME, (uint64_t)(CHK)); \
-        if (limit_status != CL_CLEAN) {                                   \
-            if (limit_status != CL_ERESOURCE)                              \
-                cli_mark_scan_incomplete(ctx,                              \
+#define CLI_UNPSIZELIMITS(NAME, CHK)                                                             \
+    do {                                                                                         \
+        cl_error_t limit_status = cli_pe_unpack_size_check(ctx, NAME, (uint64_t)(CHK));          \
+        if (limit_status != CL_CLEAN) {                                                          \
+            if (limit_status != CL_ERESOURCE)                                                    \
+                cli_mark_scan_incomplete(ctx,                                                    \
                                          "PE unpacked content exceeded configured scan limits"); \
-            cli_exe_info_destroy(peinfo);                                  \
-            return limit_status;                                           \
-        }                                                                  \
+            cli_exe_info_destroy(peinfo);                                                        \
+            return limit_status;                                                                 \
+        }                                                                                        \
     } while (0)
 
-#define CLI_UNPTEMP(NAME, FREEME)                                                                 \
-    if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {                                      \
+#define CLI_UNPTEMP(NAME, FREEME)                                                                    \
+    if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {                                         \
         cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be created"); \
-        cli_exe_info_destroy(peinfo);                                                             \
-        cli_multifree FREEME;                                                                     \
-        return CL_EMEM;                                                                           \
-    }                                                                                             \
-    if ((ndesc = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) { \
-        cli_dbgmsg(NAME ": Can't create file %s\n", tempfile);                                    \
-        cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be opened"); \
-        free(tempfile);                                                                           \
-        cli_exe_info_destroy(peinfo);                                                             \
-        cli_multifree FREEME;                                                                     \
-        return CL_ECREAT;                                                                         \
+        cli_exe_info_destroy(peinfo);                                                                \
+        cli_multifree FREEME;                                                                        \
+        return CL_EMEM;                                                                              \
+    }                                                                                                \
+    if ((ndesc = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {    \
+        cli_dbgmsg(NAME ": Can't create file %s\n", tempfile);                                       \
+        cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be opened");  \
+        free(tempfile);                                                                              \
+        cli_exe_info_destroy(peinfo);                                                                \
+        cli_multifree FREEME;                                                                        \
+        return CL_ECREAT;                                                                            \
     }
 
 #define CLI_TMPUNLK()               \
@@ -207,7 +207,7 @@
                                                                                                                 \
         default:                                                                                                \
             cli_dbgmsg(NAME ": Unpacking failed\n");                                                            \
-            cli_mark_scan_incomplete(ctx, NAME ": recognized unpacker did not complete");                      \
+            cli_mark_scan_incomplete(ctx, NAME ": recognized unpacker did not complete");                       \
             close(ndesc);                                                                                       \
             if (cli_unlink(tempfile)) {                                                                         \
                 cli_exe_info_destroy(peinfo);                                                                   \
@@ -571,9 +571,9 @@ static cl_error_t cli_hashsect(cli_ctx *ctx, const struct cli_exe_section *s, ui
 /* check hash section sigs */
 static cl_error_t scan_pe_mdb(cli_ctx *ctx, struct cli_exe_section *exe_section)
 {
-    struct cli_matcher *mdb_sect = ctx->engine->hm_mdb;
+    struct cli_matcher *mdb_sect           = ctx->engine->hm_mdb;
     uint8_t *hashset[CLI_HASH_AVAIL_TYPES] = {NULL};
-    const char *virname = NULL;
+    const char *virname                    = NULL;
     bool foundsize[CLI_HASH_AVAIL_TYPES];
     bool foundwild[CLI_HASH_AVAIL_TYPES];
     bool generate[CLI_HASH_AVAIL_TYPES];
@@ -5215,7 +5215,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
                 peinfo->min = section->rva;
 
             if (section->rva + section->rsz > peinfo->max) {
-                peinfo->max           = section->rva + section->rsz;
+                peinfo->max = section->rva + section->rsz;
             }
 
             // TODO This case might be possible, which would lead to us

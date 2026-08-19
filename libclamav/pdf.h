@@ -28,7 +28,7 @@
  * mapping to the legacy pointer-based object parser. Certified 64-bit POSIX
  * builds stage large inputs on disk and map them without a heap copy. */
 #define PDF_DEEP_PARSE_MAX_SIZE ((size_t)64 * 1024 * 1024)
-#define PDF_INPUT_WINDOW_SIZE   (64 * 1024)
+#define PDF_INPUT_WINDOW_SIZE (64 * 1024)
 
 #define PDF_OBJECT_RECURSION_LIMIT 25
 

@@ -734,7 +734,7 @@ static cl_error_t msxml_stream_reserve_write(struct msxml_stream_state *state, i
                                              uint64_t *reserved, uint64_t *written)
 {
     const unsigned char *cursor = (const unsigned char *)data;
-    size_t offset = 0;
+    size_t offset               = 0;
 
     while (offset < len) {
         size_t chunk = MIN((size_t)MSXML_STREAM_IO_SIZE, len - offset);
@@ -899,8 +899,8 @@ static cl_error_t msxml_stream_finish_frame(struct msxml_stream_state *state, st
     if (frame->cb_fd >= 0 && frame->cb_saw_data && state->mxctx->scan_cb) {
         cli_scan_release_temporary(state->ctx, frame->cb_reserved);
         frame->cb_reserved = 0;
-        ret = state->mxctx->scan_cb(frame->cb_fd, frame->cb_name, state->ctx, frame->num_attribs,
-                                    frame->attribs, state->mxctx->scan_data);
+        ret                = state->mxctx->scan_cb(frame->cb_fd, frame->cb_name, state->ctx, frame->num_attribs,
+                                                   frame->attribs, state->mxctx->scan_data);
         if (ret != CL_SUCCESS)
             return ret;
     }
@@ -972,9 +972,9 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
 
     frame = &state->frames[state->depth];
     memset(frame, 0, sizeof(*frame));
-    frame->cb_fd  = -1;
-    frame->b64_fd = -1;
-    keyinfo       = msxml_check_key(&state->ictx, localname, (size_t)xmlStrlen(localname));
+    frame->cb_fd   = -1;
+    frame->b64_fd  = -1;
+    keyinfo        = msxml_check_key(&state->ictx, localname, (size_t)xmlStrlen(localname));
     frame->keyinfo = keyinfo;
     frame->ignored = (state->depth != 0 && state->frames[state->depth - 1].ignored) ||
                      ((keyinfo->type & MSXML_IGNORE_ELEM) != 0);
@@ -983,7 +983,7 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
         frame->json_parent = state->ictx.root;
     } else {
         struct msxml_stream_frame *parent = &state->frames[state->depth - 1];
-        frame->json_parent                 = parent->json_obj ? parent->json_obj : parent->json_parent;
+        frame->json_parent                = parent->json_obj ? parent->json_obj : parent->json_parent;
     }
 
     state->depth++;
@@ -1023,7 +1023,7 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
         nb_attributes = MAX_ATTRIBS;
 
     for (i = 0; i < nb_attributes; i++) {
-        const xmlChar *attr_name = attributes[5 * i];
+        const xmlChar *attr_name   = attributes[5 * i];
         const xmlChar *value_begin = attributes[5 * i + 3];
         const xmlChar *value_end   = attributes[5 * i + 4];
 
@@ -1186,12 +1186,12 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
     }
 
     memset(&state, 0, sizeof(state));
-    state.ctx      = ctx;
-    state.mxctx    = mxctx;
-    state.ret      = CL_SUCCESS;
-    state.ictx.ctx = ctx;
-    state.ictx.flags = flags;
-    state.ictx.keys = keys;
+    state.ctx           = ctx;
+    state.mxctx         = mxctx;
+    state.ret           = CL_SUCCESS;
+    state.ictx.ctx      = ctx;
+    state.ictx.flags    = flags;
+    state.ictx.keys     = keys;
     state.ictx.num_keys = num_keys;
     if (flags & MSXML_FLAG_JSON) {
         state.ictx.root = ctx->this_layer_metadata_json;
@@ -1201,16 +1201,16 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
     mxctx->ictx = &state.ictx;
 
     memset(&sax, 0, sizeof(sax));
-    sax.initialized     = XML_SAX2_MAGIC;
-    sax.startElementNs  = msxml_sax_start_element_ns;
-    sax.endElementNs    = msxml_sax_end_element_ns;
-    sax.characters      = msxml_sax_characters;
+    sax.initialized         = XML_SAX2_MAGIC;
+    sax.startElementNs      = msxml_sax_start_element_ns;
+    sax.endElementNs        = msxml_sax_end_element_ns;
+    sax.characters          = msxml_sax_characters;
     sax.ignorableWhitespace = msxml_sax_characters;
-    sax.cdataBlock      = msxml_sax_cdata;
-    sax.comment         = msxml_sax_comment;
-    sax.warning         = msxml_sax_warning;
-    sax.error           = msxml_sax_error;
-    sax.fatalError      = msxml_sax_error;
+    sax.cdataBlock          = msxml_sax_cdata;
+    sax.comment             = msxml_sax_comment;
+    sax.warning             = msxml_sax_warning;
+    sax.error               = msxml_sax_error;
+    sax.fatalError          = msxml_sax_error;
 
     state.parser = xmlCreatePushParserCtxt(&sax, &state, NULL, 0, "msxml-stream.xml");
     if (!state.parser) {

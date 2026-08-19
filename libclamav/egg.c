@@ -1613,10 +1613,10 @@ done:
     return status;
 }
 
-cl_error_t cli_egg_header_check(fmap_t *map, size_t offset)
+cl_error_t cli_egg_header_check(fmap_t* map, size_t offset)
 {
-    const uint8_t *index;
-    const egg_header *header;
+    const uint8_t* index;
+    const egg_header* header;
     uint64_t remaining;
 
     if (!map)
@@ -1626,11 +1626,11 @@ cl_error_t cli_egg_header_check(fmap_t *map, size_t offset)
     if (remaining < sizeof(egg_header))
         return CL_EFORMAT;
 
-    index = (const uint8_t *)fmap_need_off_once(map, offset, sizeof(egg_header));
+    index = (const uint8_t*)fmap_need_off_once(map, offset, sizeof(egg_header));
     if (!index)
         return CL_EFORMAT;
 
-    header = (const egg_header *)index;
+    header = (const egg_header*)index;
     if (EGG_HEADER_MAGIC != le32_to_host(header->magic))
         return CL_EFORMAT;
 
@@ -1646,9 +1646,9 @@ cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t
 {
     cl_error_t status = CL_EPARSE;
     cl_error_t retval;
-    egg_handle* handle   = NULL;
-    uint32_t magic       = 0;
-    const uint8_t* index = 0;
+    egg_handle* handle    = NULL;
+    uint32_t magic        = 0;
+    const uint8_t* index  = 0;
     bool archive_complete = false;
 
     if (!map || !hArchive || !comments || !nComments) {
@@ -1967,7 +1967,7 @@ cl_error_t cli_egg_peek_file_header(void* hArchive, cl_egg_metadata* file_metada
          * TODO: Add support for extracting files from solid archives.
          *
          * See the comments in cli_egg_extract_file() for more details.
-        */
+         */
         file_metadata->pack_size   = 0;
         file_metadata->unpack_size = le64_to_host(currFile->file->file_length);
     } else {
@@ -2063,7 +2063,7 @@ static cl_error_t egg_stream_read(const egg_handle* handle, const egg_block* blo
         return CL_SUCCESS;
     }
 
-    chunk = (available < (size_t)EGG_STREAM_CHUNK) ? available : (size_t)EGG_STREAM_CHUNK;
+    chunk  = (available < (size_t)EGG_STREAM_CHUNK) ? available : (size_t)EGG_STREAM_CHUNK;
     offset = block->compressedDataOffset;
     if (offset > handle->map->len || *input_offset > handle->map->len - offset ||
         chunk > handle->map->len - offset - *input_offset)
@@ -2136,7 +2136,7 @@ static cl_error_t egg_stream_deflate(const egg_handle* handle, const egg_block* 
             uInt before_in  = stream.avail_in;
             uInt before_out = stream.avail_out;
 
-            zstat  = inflate(&stream, Z_NO_FLUSH);
+            zstat    = inflate(&stream, Z_NO_FLUSH);
             produced = sizeof(decoded) - stream.avail_out;
 
             status = egg_stream_emit(output, decoded, produced);
@@ -2204,7 +2204,7 @@ static cl_error_t egg_stream_bzip2(const egg_handle* handle, const egg_block* bl
             unsigned int before_in  = stream.avail_in;
             unsigned int before_out = stream.avail_out;
 
-            bzstat  = BZ2_bzDecompress(&stream);
+            bzstat   = BZ2_bzDecompress(&stream);
             produced = sizeof(decoded) - stream.avail_out;
 
             status = egg_stream_emit(output, decoded, produced);
@@ -2265,7 +2265,7 @@ cl_error_t cli_egg_extract_file_stream(void* hArchive, cli_egg_write_callback wr
                                        void* opaque, const char** filename,
                                        uint64_t* output_length)
 {
-    cl_error_t status = CL_EPARSE;
+    cl_error_t status  = CL_EPARSE;
     egg_handle* handle = NULL;
     egg_file* currFile = NULL;
     uint64_t extracted = 0;
@@ -2421,7 +2421,7 @@ cl_error_t cli_egg_deflate_decompress(char* compressed, size_t compressed_size, 
         {
             uInt before_in  = stream.avail_in;
             uInt before_out = stream.avail_out;
-            zstat = inflate(&stream, Z_NO_FLUSH);
+            zstat           = inflate(&stream, Z_NO_FLUSH);
             if (zstat == Z_OK && before_in == stream.avail_in && before_out == stream.avail_out) {
                 zstat = Z_BUF_ERROR;
             }
@@ -2551,7 +2551,7 @@ cl_error_t cli_egg_bzip2_decompress(char* compressed, size_t compressed_size, ch
         {
             unsigned int before_in  = stream.avail_in;
             unsigned int before_out = stream.avail_out;
-            bzstat = BZ2_bzDecompress(&stream);
+            bzstat                  = BZ2_bzDecompress(&stream);
             if (bzstat == BZ_OK && before_in == stream.avail_in && before_out == stream.avail_out)
                 bzstat = BZ_DATA_ERROR;
         }
@@ -2674,7 +2674,7 @@ cl_error_t cli_egg_lzma_decompress(char* compressed, size_t compressed_size, cha
         {
             SizeT before_in  = stream.avail_in;
             SizeT before_out = stream.avail_out;
-            lzmastat = cli_LzmaDecode(&stream);
+            lzmastat         = cli_LzmaDecode(&stream);
             if (lzmastat == LZMA_RESULT_OK && before_in == stream.avail_in && before_out == stream.avail_out)
                 lzmastat = LZMA_RESULT_DATA_ERROR;
         }
@@ -2857,10 +2857,10 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                     char* decompressed_block       = NULL;
                     size_t decompressed_block_size = 0;
 
-                    if (CL_SUCCESS != (retval = cli_egg_deflate_decompress((char *)compressedData,
-                                                                 currBlock->compressedSize,
-                                                                 &decompressed_block,
-                                                                 &decompressed_block_size))) {
+                    if (CL_SUCCESS != (retval = cli_egg_deflate_decompress((char*)compressedData,
+                                                                           currBlock->compressedSize,
+                                                                           &decompressed_block,
+                                                                           &decompressed_block_size))) {
                         /* Failed to decompress block */
                         cli_warnmsg("Failed to decompress RFC 1951 deflate compressed block\n");
                         status = retval;
@@ -2896,10 +2896,10 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                     char* decompressed_block       = NULL;
                     size_t decompressed_block_size = 0;
 
-                    if (CL_SUCCESS != (retval = cli_egg_bzip2_decompress((char *)compressedData,
-                                                               currBlock->compressedSize,
-                                                               &decompressed_block,
-                                                               &decompressed_block_size))) {
+                    if (CL_SUCCESS != (retval = cli_egg_bzip2_decompress((char*)compressedData,
+                                                                         currBlock->compressedSize,
+                                                                         &decompressed_block,
+                                                                         &decompressed_block_size))) {
                         /* Failed to decompress block */
                         cli_warnmsg("Failed to decompress BZIP2 compressed block\n");
                         status = retval;
@@ -2978,7 +2978,7 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                             currFile->filename.name_utf8);
             }
 
-            if ((i == currFile->nBlocks - 1) &&                       // last block ?
+            if ((i == currFile->nBlocks - 1) &&                                     // last block ?
                 (decompressed_size != le64_to_host(currFile->file->file_length))) { // right amount of data ?
                 cli_warnmsg("cli_egg_extract_file: alleged filesize (%" PRIu64 ") != actual filesize (%" PRIu64 ")!\n",
                             le64_to_host(currFile->file->file_length),

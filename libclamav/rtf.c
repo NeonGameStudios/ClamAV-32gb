@@ -509,21 +509,21 @@ static void cleanup_stack(struct stack* stack, struct rtf_state* state, cli_ctx*
     }
 }
 
-#define SCAN_CLEANUP                     \
-    if (state.cb_data && state.cb_end)   \
-        ret = state.cb_end(&state, ctx); \
-    if (stack.elements != 0 || state.parse_state != PARSE_MAIN) { \
+#define SCAN_CLEANUP                                                                  \
+    if (state.cb_data && state.cb_end)                                                \
+        ret = state.cb_end(&state, ctx);                                              \
+    if (stack.elements != 0 || state.parse_state != PARSE_MAIN) {                     \
         cli_mark_scan_incomplete(ctx, "RTF document ended before parsing completed"); \
-        if (ret == CL_SUCCESS)            \
-            ret = CL_EPARSE;              \
-    }                                    \
-    tableDestroy(actiontable);           \
-    cleanup_stack(&stack, &state, ctx);  \
-    if (!ctx->engine->keeptmp)           \
-        cli_rmdirs(tempname);            \
-    else                                 \
-        rmdir(tempname);                 \
-    free(tempname);                      \
+        if (ret == CL_SUCCESS)                                                        \
+            ret = CL_EPARSE;                                                          \
+    }                                                                                 \
+    tableDestroy(actiontable);                                                        \
+    cleanup_stack(&stack, &state, ctx);                                               \
+    if (!ctx->engine->keeptmp)                                                        \
+        cli_rmdirs(tempname);                                                         \
+    else                                                                              \
+        rmdir(tempname);                                                              \
+    free(tempname);                                                                   \
     free(stack.states);
 
 int cli_scanrtf(cli_ctx* ctx)

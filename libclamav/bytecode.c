@@ -2863,10 +2863,10 @@ cl_error_t cli_bytecode_context_setfile(struct cli_bc_ctx *ctx, fmap_t *map)
     if (!bytecode_uses_v2(ctx->bc) && !cli_bytecode_file_size_compatible((uint64_t)map->len))
         return CL_EMAXSIZE;
 
-    ctx->fmap           = map;
-    ctx->file_size64    = (uint64_t)map->len;
-    ctx->file_size      = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
-    ctx->hooks.filesize = &ctx->file_size;
+    ctx->fmap             = map;
+    ctx->file_size64      = (uint64_t)map->len;
+    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
+    ctx->hooks.filesize   = &ctx->file_size;
     ctx->hooks.filesize64 = &ctx->file_size64;
     return CL_SUCCESS;
 }
@@ -2899,7 +2899,7 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
 
     bytecode_context_initialize(&ctx);
     cli_bytecode_context_setfuncid(&ctx, bc, 0);
-    ctx.hooks.match_counts  = lsigcnt;
+    ctx.hooks.match_counts    = lsigcnt;
     ctx.hooks.match_offsets64 = lsigsuboff;
     if (bytecode_uses_v2(bc)) {
         ctx.hooks.match_offsets = nooffsets;
@@ -2915,9 +2915,7 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
     ret = cli_bytecode_context_setfile(&ctx, map);
     if (ret != CL_SUCCESS) {
         cli_warnmsg("Bytecode '%s' (id: %u) cannot represent the file size\n", bc_name, bc->id);
-        cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ?
-                                           "logical bytecode v2 cannot represent the file coordinates" :
-                                           "logical bytecode requires a 32-bit file size");
+        cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ? "logical bytecode v2 cannot represent the file coordinates" : "logical bytecode requires a 32-bit file size");
         bytecode_context_reset(&ctx);
         return ret;
     }
@@ -3018,7 +3016,7 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
 
     /* Restore match counts. File-size admission is performed after selecting
      * each bytecode so mixed v1/v2 hook sets remain fail-visible. */
-    ctx->hooks.match_counts  = ctx->lsigcnt;
+    ctx->hooks.match_counts = ctx->lsigcnt;
     for (i = 0; i < hooks_cnt; i++) {
         const struct cli_bc *bc = &engine->bcs.all_bcs[hooks[i]];
         uint32_t legacy_offsets[64];
@@ -3032,9 +3030,7 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
         ret = cli_bytecode_context_setfile(ctx, map);
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
-            cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ?
-                                               "bytecode v2 cannot represent the file coordinates" :
-                                               "bytecode hook requires a 32-bit file size");
+            cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ? "bytecode v2 cannot represent the file coordinates" : "bytecode hook requires a 32-bit file size");
             return ret;
         }
         ctx->hooks.match_offsets64 = bytecode_uses_v2(bc) ? ctx->lsigoff : nooffsets64;

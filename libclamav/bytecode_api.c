@@ -498,7 +498,7 @@ static int64_t cli_bcapi_file_find_limit_common(struct cli_bc_ctx *ctx, const ui
     cli_event_fastdata(EV, BCEV_FIND, data, len);
     for (;;) {
         const char *p;
-        size_t readlen = sizeof(buf);
+        size_t readlen     = sizeof(buf);
         uint64_t remaining = limit - off;
 
         if (!remaining || off > (uint64_t)SIZE_MAX)
@@ -868,9 +868,9 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile64(struct cli_bc_ctx *ctx, uint64_t at
     b = cli_max_realloc(ctx->buffers, sizeof(*ctx->buffers) * n);
     if (!b)
         return -1;
-    ctx->buffers  = b;
-    ctx->nbuffers = n;
-    b             = &b[n - 1];
+    ctx->buffers    = b;
+    ctx->nbuffers   = n;
+    b               = &b[n - 1];
     b->data         = NULL;
     b->size         = 0;
     b->read_cursor  = at;
@@ -1394,7 +1394,7 @@ int32_t cli_bcapi_jsnorm_done(struct cli_bc_ctx *ctx, int32_t id)
     }
     cli_js_destroy(b->state);
     b->state = NULL;
-    b->from = -1;
+    b->from  = -1;
     return 0;
 }
 

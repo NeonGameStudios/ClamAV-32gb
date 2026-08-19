@@ -358,7 +358,7 @@ static size_t vba_normalize(unsigned char *buffer, size_t size)
  */
 cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, const char *hash, uint32_t which, int *tempfd, int *has_macros, char **tempfile)
 {
-    cl_error_t ret = CL_SUCCESS;
+    cl_error_t ret              = CL_SUCCESS;
     cl_error_t deferred_failure = CL_SUCCESS;
     char fullname[1024];
     int fd              = -1;
@@ -2149,7 +2149,7 @@ word_read_macro_info(int fd, macro_info_t *macro_info)
     if (!word_read_macro_entry(fd, macro_info)) {
         free(macro_info->entries);
         macro_info->entries = NULL;
-        macro_info->count = 0;
+        macro_info->count   = 0;
         return NULL;
     }
     return macro_info;

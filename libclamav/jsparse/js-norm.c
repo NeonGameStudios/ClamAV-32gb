@@ -990,11 +990,11 @@ cl_error_t cli_js_output_ctx(struct parser_state *state, const char *tempdir, cl
 
     snprintf(filename, 1024, "%s" PATHSEP "javascript", tempdir);
 
-    buf.pos   = 0;
-    buf.error = CL_SUCCESS;
+    buf.pos      = 0;
+    buf.error    = CL_SUCCESS;
     buf.scan_ctx = ctx;
-    buf.total = 0;
-    buf.outfd = open(filename, O_CREAT | O_WRONLY | O_BINARY, 0600);
+    buf.total    = 0;
+    buf.outfd    = open(filename, O_CREAT | O_WRONLY | O_BINARY, 0600);
     if (buf.outfd < 0) {
         cli_errmsg(MODULE "cannot open output file for writing: %s\n", filename);
         return CL_EOPEN;

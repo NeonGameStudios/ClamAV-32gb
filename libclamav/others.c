@@ -326,10 +326,10 @@ static void rarload(void)
     if (NULL == rhandle)
         return;
 
-    if ((NULL == (cli_unrar_open = (cl_unrar_error_t (*)(const char *, void **, char **, uint32_t *, uint8_t))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_open"))) ||
-        (NULL == (cli_unrar_peek_file_header = (cl_unrar_error_t (*)(void *, unrar_metadata_t *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_peek_file_header"))) ||
-        (NULL == (cli_unrar_extract_file = (cl_unrar_error_t (*)(void *, const char *, char *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_extract_file"))) ||
-        (NULL == (cli_unrar_skip_file = (cl_unrar_error_t (*)(void *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_skip_file"))) ||
+    if ((NULL == (cli_unrar_open = (cl_unrar_error_t(*)(const char *, void **, char **, uint32_t *, uint8_t))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_open"))) ||
+        (NULL == (cli_unrar_peek_file_header = (cl_unrar_error_t(*)(void *, unrar_metadata_t *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_peek_file_header"))) ||
+        (NULL == (cli_unrar_extract_file = (cl_unrar_error_t(*)(void *, const char *, char *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_extract_file"))) ||
+        (NULL == (cli_unrar_skip_file = (cl_unrar_error_t(*)(void *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_skip_file"))) ||
         (NULL == (cli_unrar_close = (void (*)(void *))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_close")))) {
 
         cli_warnmsg("Failed to load function from UnRAR module\n");
@@ -1339,16 +1339,16 @@ cl_error_t cl_engine_settings_apply(struct cl_engine *engine, const struct cl_se
     if (cli_validate_pcre_maxfilesize(settings->pcre_max_filesize, &pcre_max_filesize) != CL_SUCCESS)
         return CL_EARG;
     if (cli_validate_resource_limit("MaxMatcherWork", (long long)settings->maxmatcherwork,
-                                   CLI_MAX_MATCHER_WORK, CLI_DEFAULT_MAX_MATCHER_WORK,
-                                   &maxmatcherwork) != CL_SUCCESS)
+                                    CLI_MAX_MATCHER_WORK, CLI_DEFAULT_MAX_MATCHER_WORK,
+                                    &maxmatcherwork) != CL_SUCCESS)
         return CL_EARG;
     if (cli_validate_resource_limit("MaxTemporarySize", (long long)settings->maxtemporarysize,
-                                   CLI_MAX_TEMPORARY_SIZE, CLI_DEFAULT_MAX_TEMPORARY_SIZE,
-                                   &maxtemporarysize) != CL_SUCCESS)
+                                    CLI_MAX_TEMPORARY_SIZE, CLI_DEFAULT_MAX_TEMPORARY_SIZE,
+                                    &maxtemporarysize) != CL_SUCCESS)
         return CL_EARG;
     if (cli_validate_resource_limit("MaxContiguousSize", (long long)settings->maxcontiguoussize,
-                                   CLI_MAX_CONTIGUOUS_SIZE, CLI_DEFAULT_MAX_CONTIGUOUS_SIZE,
-                                   &maxcontiguoussize) != CL_SUCCESS)
+                                    CLI_MAX_CONTIGUOUS_SIZE, CLI_DEFAULT_MAX_CONTIGUOUS_SIZE,
+                                    &maxcontiguoussize) != CL_SUCCESS)
         return CL_EARG;
 
     engine->ac_only             = settings->ac_only;
@@ -1458,8 +1458,8 @@ void cli_append_potentially_unwanted_if_heur_exceedsmax(cli_ctx *ctx, const char
 
     if (!ctx->limit_exceeded) {
         ctx->limit_exceeded_result = limit_result;
-        ctx->limit_exceeded = true; // guard against adding an alert (or metadata) a million times for non-fatal exceeds-max conditions
-                                    // TODO: consider changing this from a bool to a threshold so we could at least see more than 1 limits exceeded
+        ctx->limit_exceeded        = true; // guard against adding an alert (or metadata) a million times for non-fatal exceeds-max conditions
+                                           // TODO: consider changing this from a bool to a threshold so we could at least see more than 1 limits exceeded
 
         if (SCAN_HEURISTIC_EXCEEDS_MAX) {
             cli_append_potentially_unwanted(ctx, vname);
@@ -1573,7 +1573,7 @@ static cl_error_t cli_scan_resource_failure(cli_ctx *ctx, const char *reason)
 
     cli_mark_scan_incomplete(ctx, reason);
     if (!ctx->limit_exceeded) {
-        ctx->limit_exceeded = true;
+        ctx->limit_exceeded        = true;
         ctx->limit_exceeded_result = CL_ERESOURCE;
     }
     return CL_ERESOURCE;

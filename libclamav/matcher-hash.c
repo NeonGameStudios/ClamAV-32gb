@@ -44,7 +44,8 @@ const char *cli_hash_name(cli_hash_type_t type)
     }
 }
 
-const char *to_openssl_alg(const char *alg) {
+const char *to_openssl_alg(const char *alg)
+{
     cl_error_t ret;
     cli_hash_type_t type;
 
@@ -370,7 +371,7 @@ void hm_flush(struct cli_matcher *root)
         }
 
         for (i = 0; i < root->hm.sizehashes64_count[type]; i++) {
-            szh = &root->hm.sizehashes64[type][i].hashes;
+            szh    = &root->hm.sizehashes64[type][i].hashes;
             keylen = cli_hash_len(type);
             if (szh->items > 1)
                 hm_sort(szh, 0, szh->items, keylen);

@@ -451,7 +451,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         }
 
         lastLineWasEmpty = false;
-        headersParsed     = false;
+        headersParsed    = false;
         messagenumber    = 1;
         messageSetCTX(m, ctx);
 
@@ -516,7 +516,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                             ctx, "Heuristics.Limits.Exceeded.MaxRecursion", CL_EMAXREC);
                         messageDestroy(body);
                         body = NULL;
-                        m = NULL;
+                        m    = NULL;
                         break;
                     } else if (rc == MAXFILES) {
                         retcode = CL_EMAXFILES;
@@ -524,7 +524,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                             ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
                         messageDestroy(body);
                         body = NULL;
-                        m = NULL;
+                        m    = NULL;
                         break;
                     }
                 }
@@ -579,7 +579,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                 /*
                  * Fast track visa to uudecode.
                  * TODO: binhex, yenc
-                */
+                 */
                 if (uudecodeFile(m, buffer, dir, map, &at) < 0) {
                     cli_mark_scan_incomplete(ctx, "UUencoded attachment in mail was not terminated or decoded completely");
                     if (messageAddStr(m, buffer) < 0) {
@@ -669,14 +669,14 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                 case MAXREC:
                     retcode = CL_EMAXREC;
                     cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxRecursion", CL_EMAXREC); // Doing this now because it's actually tracking email recursion,-
-                                                                                                                        // not fmap recursion, but it still is aborting with stuff not scanned.
-                                                                                                                        // Also, we didn't have access to the ctx when this happened earlier.
+                                                                                                                                    // not fmap recursion, but it still is aborting with stuff not scanned.
+                                                                                                                                    // Also, we didn't have access to the ctx when this happened earlier.
                     break;
                 case MAXFILES:
                     retcode = CL_EMAXFILES;
                     cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES); // Doing this now because it's actually tracking email parts,-
-                                                                                                                    // not actual files, but it still is aborting with stuff not scanned.
-                                                                                                                    // Also, we didn't have access to the ctx when this happened earlier.
+                                                                                                                                  // not actual files, but it still is aborting with stuff not scanned.
+                                                                                                                                  // Also, we didn't have access to the ctx when this happened earlier.
                     break;
                 case VIRUS:
                     retcode = CL_VIRUS;
@@ -1166,7 +1166,7 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
             /*
              * Fast track visa to uudecode.
              * TODO: binhex, yenc
-            */
+             */
             bodyIsEmpty = false;
             if (uudecodeFile(ret, line, dir, map, at) < 0) {
                 cli_mark_scan_incomplete(ctx, "UUencoded attachment in mail was not terminated or decoded completely");
@@ -1723,7 +1723,7 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
 }
 
 static mbox_status finishStreamedMultipartPart(message **partp, mbox_ctx *mctx,
-                                                unsigned int recursion_level)
+                                               unsigned int recursion_level)
 {
     message *part;
     mbox_status rc;
@@ -1731,9 +1731,9 @@ static mbox_status finishStreamedMultipartPart(message **partp, mbox_ctx *mctx,
     if (partp == NULL || *partp == NULL)
         return OK;
 
-    part  = *partp;
+    part   = *partp;
     *partp = NULL;
-    rc    = parseEmailBody(part, NULL, mctx, recursion_level + 1);
+    rc     = parseEmailBody(part, NULL, mctx, recursion_level + 1);
     messageDestroy(part);
     return rc;
 }
@@ -1750,11 +1750,11 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
     char *boundary = NULL;
     FILE *input    = NULL;
     fileblob *source;
-    message *headers = NULL;
-    message *part    = NULL;
+    message *headers   = NULL;
+    message *part      = NULL;
     mbox_status result = OK;
-    bool saw_boundary = false;
-    bool closed       = false;
+    bool saw_boundary  = false;
+    bool closed        = false;
     char line[4096];
 
     if (mainMessage == NULL || mctx == NULL || mainMessage->body_spool == NULL)
@@ -1805,7 +1805,7 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
                                          "Multipart part ended before its headers terminated");
                 messageDestroy(headers);
                 headers = NULL;
-                result   = FAIL;
+                result  = FAIL;
             }
             part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
             if (part_rc == VIRUS) {
@@ -1868,8 +1868,8 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
             }
             if (line[0] == '\0') {
                 bool heuristicFound = false;
-                message *parsed = parseEmailHeaders(headers, mctx->rfc821Table,
-                                                     &heuristicFound);
+                message *parsed     = parseEmailHeaders(headers, mctx->rfc821Table,
+                                                        &heuristicFound);
                 messageDestroy(headers);
                 headers = NULL;
                 if (parsed == NULL) {
@@ -2942,8 +2942,7 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                             mainMessage = NULL;
                         } else
                             messageReset(mainMessage);
-                    }
-                    else {
+                    } else {
                         (void)scanFileblob(mctx, fb);
                         rc = FAIL;
                     }
@@ -3127,17 +3126,15 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
          */
         if (mainMessage->body_first != NULL &&
             (encodingLine(mainMessage) != NULL) &&
-            ((t_line = bounceBegin(mainMessage)) != NULL))
-            {
-                int scan_rc = exportBounceMessage(mctx, t_line);
-                if (scan_rc == CL_VIRUS)
-                    rc = VIRUS;
-                else if (scan_rc != CL_CLEAN)
-                    rc = FAIL;
-                else
-                    rc = OK;
-            }
-        else {
+            ((t_line = bounceBegin(mainMessage)) != NULL)) {
+            int scan_rc = exportBounceMessage(mctx, t_line);
+            if (scan_rc == CL_VIRUS)
+                rc = VIRUS;
+            else if (scan_rc != CL_CLEAN)
+                rc = FAIL;
+            else
+                rc = OK;
+        } else {
             bool saveIt;
 
             if (messageGetMimeType(mainMessage) == MESSAGE)
@@ -4177,7 +4174,7 @@ rfc1341(mbox_ctx *mctx, message *m)
                     }
 
                     found_part = true;
-                    fin = fopen(fullname, "rb");
+                    fin        = fopen(fullname, "rb");
                     if (fin == NULL) {
                         cli_errmsg("Can't open '%s' for reading", fullname);
                         fclose(fout);
@@ -4378,11 +4375,11 @@ static bool extract_text_urls_map(cli_ctx *ctx, fmap_t *map, tag_arguments_t *hr
 static blob *
 getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
 {
-    const char *tmpdir  = ctx && ctx->this_layer_tmpdir ? ctx->this_layer_tmpdir : NULL;
-    fileblob *input     = NULL;
-    fmap_t *map         = NULL;
-    blob *b             = NULL;
-    bool owns_input     = false;
+    const char *tmpdir = ctx && ctx->this_layer_tmpdir ? ctx->this_layer_tmpdir : NULL;
+    fileblob *input    = NULL;
+    fmap_t *map        = NULL;
+    blob *b            = NULL;
+    bool owns_input    = false;
     STATBUF sb;
 
     if (incomplete)
@@ -4396,7 +4393,7 @@ getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
          messageGetEncoding(m) == EIGHTBIT)) {
         input = m->body_spool;
     } else {
-        input = messageToFileblob(m, tmpdir, 0);
+        input      = messageToFileblob(m, tmpdir, 0);
         owns_input = true;
     }
 

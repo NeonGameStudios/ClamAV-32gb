@@ -46,7 +46,7 @@
 static cl_error_t gpt_crc32_fmap(cli_ctx *ctx, size_t offset, size_t length, uint32_t *result)
 {
     unsigned char buffer[GPT_CRC_CHUNK_SIZE];
-    size_t done = 0;
+    size_t done       = 0;
     uint32_t checksum = crc32(0, NULL, 0);
 
     if (result == NULL || offset > ctx->fmap->len || length > ctx->fmap->len - offset)

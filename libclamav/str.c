@@ -424,7 +424,8 @@ char *cli_strrcpy(char *dest, const char *source) /* by NJH */
         return NULL;
     }
 
-    while ((*dest++ = *source++));
+    while ((*dest++ = *source++))
+        ;
 
     return --dest;
 }
@@ -469,7 +470,8 @@ char *__cli_strndup(const char *s, size_t n)
 size_t __cli_strnlen(const char *s, size_t n)
 {
     size_t i = 0;
-    for (; (i < n) && s[i] != '\0'; ++i);
+    for (; (i < n) && s[i] != '\0'; ++i)
+        ;
     return i;
 }
 

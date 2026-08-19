@@ -2089,9 +2089,9 @@ cl_error_t cli_ac_scanbuff(
                                             offmatrix[j][0] = 0;
                                     }
 
-                            } else { /* !pt->type */
-                                cli_dbgmsg("cli_ac_scanbuff: signature %s matched at " STDu64 "\n", pt->virname, realoff);
-                                if (pt->lsigid[0]) {
+                                } else { /* !pt->type */
+                                    cli_dbgmsg("cli_ac_scanbuff: signature %s matched at " STDu64 "\n", pt->virname, realoff);
+                                    if (pt->lsigid[0]) {
                                         rc = lsig_sub_matched(root, mdata, pt->lsigid[1], pt->lsigid[2], offmatrix[pt->parts - 1][1], 1);
                                         if (rc != CL_SUCCESS)
                                             return rc;

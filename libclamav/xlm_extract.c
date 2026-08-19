@@ -5041,7 +5041,7 @@ done:
             status = CL_EWRITE;
         }
         out_file = NULL;
-        out_fd = -1;
+        out_fd   = -1;
     } else if (-1 != out_fd) {
         if (close(out_fd) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
             cli_mark_scan_incomplete(ctx, "XLM macro temporary output could not be closed");

@@ -599,15 +599,15 @@ static void fmap_aging(fmap_t *m)
     uint64_t target_pages;
     uint64_t pages_to_free;
     uint64_t scan_limit;
-    uint64_t scanned = 0;
-    uint64_t selected = 0;
-    uint64_t released = 0;
+    uint64_t scanned     = 0;
+    uint64_t selected    = 0;
+    uint64_t released    = 0;
     uint64_t range_first = 0;
     uint64_t range_last  = 0;
     uint64_t page;
     uint64_t state;
     uint64_t range_count;
-    int have_range       = 0;
+    int have_range = 0;
 
     owner->aging_scanned_last  = 0;
     owner->aging_released_last = 0;
@@ -656,7 +656,7 @@ static void fmap_aging(fmap_t *m)
                 range_first = page;
                 have_range  = 1;
             }
-            range_last        = page;
+            range_last = page;
             selected++;
         } else if (have_range) {
             range_count = range_last - range_first + 1;
@@ -1005,10 +1005,10 @@ static const void *handle_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
 {
     uint64_t i, first_page, last_page;
     size_t start_at = *at;
-    char *src     = (char *)m->data + m->nested_offset + *at;
-    char *endptr  = NULL;
-    size_t len    = MIN(max_len - 1, m->len - *at);
-    size_t fullen = len;
+    char *src       = (char *)m->data + m->nested_offset + *at;
+    char *endptr    = NULL;
+    size_t len      = MIN(max_len - 1, m->len - *at);
+    size_t fullen   = len;
 
     if (!len || !CLI_ISCONTAINED_0_TO(m->len, *at, len))
         return NULL;
@@ -1221,7 +1221,7 @@ cl_error_t fmap_dump_to_file(fmap_t *map, const char *filepath, const char *tmpd
         return ret;
     }
 
-    pos             = start_offset;
+    pos = start_offset;
     if (end_offset == SIZE_MAX)
         end_offset = map->len;
     else

@@ -114,7 +114,7 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
         pos += sizeof(hdr_old);
         if (!hdr_old.magic && trailer) {
             complete = 1;
-            status = CL_SUCCESS;
+            status   = CL_SUCCESS;
             goto done;
         }
 
@@ -216,7 +216,7 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
         pos += sizeof(hdr_odc);
         if (!hdr_odc.magic[0] && trailer) {
             complete = 1;
-            status = CL_SUCCESS;
+            status   = CL_SUCCESS;
             goto done;
         }
 
@@ -313,7 +313,7 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
         pos += sizeof(hdr_newc);
         if (!hdr_newc.magic[0] && trailer) {
             complete = 1;
-            status = CL_SUCCESS;
+            status   = CL_SUCCESS;
             goto done;
         }
 

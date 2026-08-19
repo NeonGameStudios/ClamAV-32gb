@@ -1262,9 +1262,9 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         if (strcmp(tag, "/script") == 0) {
                             in_tag = TAG_DONT_EXTRACT;
                             if (js_state) {
-                                js_end = ptr;
+                                js_end            = ptr;
                                 cl_error_t js_ret = js_process(ctx, js_state, js_begin, js_end, line, ptr, in_tag, dirname);
-                                js_state = NULL;
+                                js_state          = NULL;
                                 js_begin = js_end = NULL;
                                 if (js_ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "JavaScript normalization output could not be completed");
@@ -1772,7 +1772,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         }
                         file_tmp_o1->ctx         = ctx;
                         file_tmp_o1->write_error = false;
-                        file_tmp_o1->fd = -1;
+                        file_tmp_o1->fd          = -1;
 
                         /* Create rfc2397 directory if it doesn't already exist */
                         snprintf(filename, 1024, "%s" PATHSEP "rfc2397", dirname);
@@ -2106,10 +2106,10 @@ bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in
 {
     m_area_t m_area;
 
-    m_area.buffer = in_buff;
-    m_area.length = in_size;
-    m_area.offset = 0;
-    m_area.map    = NULL;
+    m_area.buffer     = in_buff;
+    m_area.length     = in_size;
+    m_area.offset     = 0;
+    m_area.map        = NULL;
     m_area.read_error = false;
 
     return cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data);
@@ -2125,12 +2125,12 @@ bool html_normalise_map_form_data(cli_ctx *ctx, fmap_t *map, const char *dirname
     bool retval = false;
     m_area_t m_area;
 
-    m_area.buffer    = NULL;
-    m_area.length    = map->len;
-    m_area.offset    = 0;
-    m_area.map       = map;
+    m_area.buffer     = NULL;
+    m_area.length     = map->len;
+    m_area.offset     = 0;
+    m_area.map        = map;
     m_area.read_error = false;
-    retval        = cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data);
+    retval            = cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data);
     return retval;
 }
 

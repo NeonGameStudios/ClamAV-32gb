@@ -104,7 +104,7 @@ static int messageReserveMaterializedBytes(message *m, size_t bytes, const char 
     if ((bytes > MESSAGE_MAX_MATERIALIZED_BYTES) ||
         (m->materialized_bytes > MESSAGE_MAX_MATERIALIZED_BYTES - bytes)) {
         messageMarkMaterializationFailure(m,
-                                           "MIME message materialization exceeded its bounded memory limit");
+                                          "MIME message materialization exceeded its bounded memory limit");
         m->materialized_bytes = MESSAGE_MAX_MATERIALIZED_BYTES;
         cli_warnmsg("%s: mail materialization exceeds the 64 MiB deep-parser limit\n", caller);
         return 0;
@@ -266,7 +266,7 @@ int messageHasBodySpool(const message *m)
 static int messageAddSpoolLine(message *m, const char *data)
 {
     const unsigned char *line = (const unsigned char *)(data ? data : "");
-    size_t len                  = data ? strlen(data) : 0;
+    size_t len                = data ? strlen(data) : 0;
 
     if (m == NULL || m->body_spool == NULL)
         return -1;
@@ -1219,7 +1219,7 @@ int messageAddStr(message *m, const char *data)
 int messageMoveText(message *m, text *t, message *old_message)
 {
     int rc;
-    int materialization_ok = 1;
+    int materialization_ok   = 1;
     const size_t moved_bytes = messageTextMaterializedBytes(t);
 
     if (m == NULL || t == NULL)
@@ -1258,7 +1258,7 @@ int messageMoveText(message *m, text *t, message *old_message)
 
             m->body_last            = old_message->body_last;
             old_message->body_first = old_message->body_last = NULL;
-            old_message->materialized_bytes = 0;
+            old_message->materialized_bytes                  = 0;
 
             /* Do any pointers need to be reset? */
             if ((old_message->bounce == NULL) &&
@@ -1701,7 +1701,7 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
     char *filename = NULL;
     fileblob *source;
     fileblob *out = NULL;
-    FILE *input = NULL;
+    FILE *input   = NULL;
     encoding_type enctype;
     char line[4096];
     int failed = 0;
@@ -1773,7 +1773,7 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
         return NULL;
     }
 
-    enctype  = m->encodingTypes[0];
+    enctype   = m->encodingTypes[0];
     spool_dir = dir;
     if (spool_dir == NULL || *spool_dir == '\0')
         spool_dir = m->ctx ? m->ctx->this_layer_tmpdir : NULL;
@@ -1813,7 +1813,7 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
         cli_chomp(line);
         end = decodeLine(m, enctype, line, decoded, sizeof(decoded));
         if (end == NULL || (end != decoded && fileblobAddData(out, decoded,
-                                                               (size_t)(end - decoded)) < 0)) {
+                                                              (size_t)(end - decoded)) < 0)) {
             failed = 1;
             break;
         }

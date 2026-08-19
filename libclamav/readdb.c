@@ -1944,7 +1944,7 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
 
                     tdb->filesize_range[0] = min_size;
                     tdb->filesize_range[1] = max_size;
-                    off[i]                  = 0;
+                    off[i]                 = 0;
                     break;
                 }
 
@@ -2053,32 +2053,32 @@ static int lsigattribs(char *attribs, struct cli_lsig_tdb *tdb)
     return 0;
 }
 
-#define FREE_TDB(x)                               \
-    do {                                          \
-        if (x.cnt[CLI_TDB_UINT])                  \
-            MPOOL_FREE(x.mempool, x.val);         \
-        if (x.cnt[CLI_TDB_RANGE])                 \
-            MPOOL_FREE(x.mempool, x.range);       \
-        if (x.filesize_range)                     \
+#define FREE_TDB(x)                                  \
+    do {                                             \
+        if (x.cnt[CLI_TDB_UINT])                     \
+            MPOOL_FREE(x.mempool, x.val);            \
+        if (x.cnt[CLI_TDB_RANGE])                    \
+            MPOOL_FREE(x.mempool, x.range);          \
+        if (x.filesize_range)                        \
             MPOOL_FREE(x.mempool, x.filesize_range); \
-        if (x.cnt[CLI_TDB_STR])                   \
-            MPOOL_FREE(x.mempool, x.str);         \
-        if (x.macro_ptids)                        \
-            MPOOL_FREE(x.mempool, x.macro_ptids); \
+        if (x.cnt[CLI_TDB_STR])                      \
+            MPOOL_FREE(x.mempool, x.str);            \
+        if (x.macro_ptids)                           \
+            MPOOL_FREE(x.mempool, x.macro_ptids);    \
     } while (0);
 
-#define FREE_TDB_P(x)                               \
-    do {                                            \
-        if (x->cnt[CLI_TDB_UINT])                   \
-            MPOOL_FREE(x->mempool, x->val);         \
-        if (x->cnt[CLI_TDB_RANGE])                  \
-            MPOOL_FREE(x->mempool, x->range);       \
-        if (x->filesize_range)                      \
+#define FREE_TDB_P(x)                                  \
+    do {                                               \
+        if (x->cnt[CLI_TDB_UINT])                      \
+            MPOOL_FREE(x->mempool, x->val);            \
+        if (x->cnt[CLI_TDB_RANGE])                     \
+            MPOOL_FREE(x->mempool, x->range);          \
+        if (x->filesize_range)                         \
             MPOOL_FREE(x->mempool, x->filesize_range); \
-        if (x->cnt[CLI_TDB_STR])                    \
-            MPOOL_FREE(x->mempool, x->str);         \
-        if (x->macro_ptids)                         \
-            MPOOL_FREE(x->mempool, x->macro_ptids); \
+        if (x->cnt[CLI_TDB_STR])                       \
+            MPOOL_FREE(x->mempool, x->str);            \
+        if (x->macro_ptids)                            \
+            MPOOL_FREE(x->mempool, x->macro_ptids);    \
     } while (0);
 
 static inline int init_tdb(struct cli_lsig_tdb *tdb, struct cl_engine *engine, char *target, const char *virname)
@@ -2923,7 +2923,7 @@ static int cli_loadhash(FILE *fs, struct cl_engine *engine, unsigned int *signo,
 
         if (strcmp(tokens[size_field], "*")) {
             errno = 0;
-            size = strtoull(tokens[size_field], (char **)&pt, 10);
+            size  = strtoull(tokens[size_field], (char **)&pt, 10);
             if (*pt || errno == ERANGE || !size) {
                 cli_errmsg("cli_loadhash: Invalid value for the size field\n");
                 ret = CL_EMALFDB;

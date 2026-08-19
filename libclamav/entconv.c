@@ -527,10 +527,10 @@ static void iconv_cache_destroy(struct iconv_cache* cache)
 {
     size_t i;
     // Don't use cli_dbgmsg() in destroy, because this happens *after* main() exits and we've already closed the log file handle.
-    //printf(MODULE_NAME "Destroying iconv pool:%p\n", (void*)cache);
+    // printf(MODULE_NAME "Destroying iconv pool:%p\n", (void*)cache);
     for (i = 0; i < cache->last; i++) {
         // Don't log on destroy, because this happens *after* main() exits and we've already closed the log file handle.
-        //printf(MODULE_NAME "closing iconv:%p\n", cache->tab[i]);
+        // printf(MODULE_NAME "closing iconv:%p\n", cache->tab[i]);
         iconv_close(cache->tab[i]);
     }
     cli_hashtab_clear(&cache->hashtab);

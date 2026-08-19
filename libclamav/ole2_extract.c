@@ -1080,7 +1080,7 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                     ole2_list_delete(&node_list);
                     return CL_EMAXFILES;
                 }
-                bool within_limits = true;
+                bool within_limits     = true;
                 const char *limit_name = NULL;
 
                 if (ctx && ctx->engine->maxfilesize && (uint64_t)prop_block[idx].size > ctx->engine->maxfilesize) {
@@ -2153,10 +2153,10 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     uint32_t *rk          = NULL;
     uint32_t bytesRead    = 0;
     uint64_t actualFileLength;
-    uint64_t bytesWritten = 0;
+    uint64_t bytesWritten    = 0;
     size_t stream_bytes_read = 0;
-    uint32_t leftover     = 0;
-    uint32_t readIdx      = 0;
+    uint32_t leftover        = 0;
+    uint32_t readIdx         = 0;
 
     UNUSEDPARAM(dir);
 
@@ -2586,7 +2586,7 @@ static cl_error_t generate_key_aes(const char *const password, encryption_key_t 
     }
     sha1_md = EVP_MD_fetch(ossl_ctx, "SHA1", "-fips");
 #else
-    sha1_md = EVP_get_digestbyname("sha1");
+    sha1_md               = EVP_get_digestbyname("sha1");
 #endif
     if (NULL == sha1_md) {
         cli_errmsg("ole2: Failed to initialize SHA1 digest\n");
@@ -3185,7 +3185,7 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
             goto done;
         }
         file_count = 0;
-        ret = ole2_walk_property_tree(&hdr, dirname, 0, handler_writefile, 0, &file_count, ctx, &scansize2, &deferred_limit, NULL, &encryption_status);
+        ret        = ole2_walk_property_tree(&hdr, dirname, 0, handler_writefile, 0, &file_count, ctx, &scansize2, &deferred_limit, NULL, &encryption_status);
         if (ret != CL_SUCCESS) {
             goto done;
         }

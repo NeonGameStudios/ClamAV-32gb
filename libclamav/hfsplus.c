@@ -229,23 +229,23 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     switch (headerType) {
         case HFS_FILETREE_ALLOCATION:
             offset64 = (uint64_t)volHeader->allocationFile.extents[0].startBlock * volHeader->blockSize;
-            minSize = 512;
+            minSize  = 512;
             break;
         case HFS_FILETREE_EXTENTS:
             offset64 = (uint64_t)volHeader->extentsFile.extents[0].startBlock * volHeader->blockSize;
-            minSize = 512;
+            minSize  = 512;
             break;
         case HFS_FILETREE_CATALOG:
             offset64 = (uint64_t)volHeader->catalogFile.extents[0].startBlock * volHeader->blockSize;
-            minSize = 4096;
+            minSize  = 4096;
             break;
         case HFS_FILETREE_ATTRIBUTES:
             offset64 = (uint64_t)volHeader->attributesFile.extents[0].startBlock * volHeader->blockSize;
-            minSize = 4096;
+            minSize  = 4096;
             break;
         case HFS_FILETREE_STARTUP:
             offset64 = (uint64_t)volHeader->startupFile.extents[0].startBlock * volHeader->blockSize;
-            minSize = 512;
+            minSize  = 512;
             break;
         default:
             cli_errmsg("hfsplus_readheader: %s: invalid headerType %d\n", name, headerType);
@@ -256,7 +256,7 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
         return CL_EFORMAT;
     }
     offset = (size_t)offset64;
-    mPtr = fmap_need_off_once(ctx->fmap, offset, volHeader->blockSize);
+    mPtr   = fmap_need_off_once(ctx->fmap, offset, volHeader->blockSize);
     if (!mPtr) {
         cli_dbgmsg("hfsplus_readheader: %s: headerNode is out-of-range\n", name);
         return CL_EFORMAT;
@@ -765,7 +765,7 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
             }
             fileOffset = (size_t)fileOffset64;
         }
-        readSize   = volHeader->blockSize;
+        readSize = volHeader->blockSize;
 
         if (curBlock == startBlock) {
             if (startOffset > SIZE_MAX - fileOffset) {

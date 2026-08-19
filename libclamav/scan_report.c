@@ -176,12 +176,12 @@ cl_error_t cli_scan_report_create(
     if (NULL == report)
         return CL_EMEM;
 
-    report->version    = 1;
-    report->status     = CL_SUCCESS;
-    report->verdict    = CL_VERDICT_NOTHING_FOUND;
-    report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
+    report->version      = 1;
+    report->status       = CL_SUCCESS;
+    report->verdict      = CL_VERDICT_NOTHING_FOUND;
+    report->completion   = CL_SCAN_COMPLETION_APPLICATION_ABORT;
     report->started_usec = report_now_usec();
-    report->has_result = false;
+    report->has_result   = false;
 
     report_get_engine_limit(engine, CL_ENGINE_MAX_FILESIZE, &report->limits.max_file_size);
     report_get_engine_limit(engine, CL_ENGINE_MAX_SCANSIZE, &report->limits.max_scan_size);
@@ -303,15 +303,15 @@ void cli_scan_report_finish(
     report->verdict = verdict;
 
     if (NULL != ctx) {
-        reason = ctx->scan_incomplete_reason;
+        reason                             = ctx->scan_incomplete_reason;
         report->metrics.skipped_operations = ctx->skipped_operations;
         /* Preserve the old manually-constructed cli_ctx contract for callers
          * that set only the sticky flag. */
         if (ctx->scan_incomplete && (report->metrics.skipped_operations == 0))
             report->metrics.skipped_operations = 1;
-        report->metrics.matcher_bytes = ctx->matcher_work;
+        report->metrics.matcher_bytes    = ctx->matcher_work;
         report->metrics.contiguous_bytes = ctx->contiguous_peak;
-        report->metrics.temporary_bytes = ctx->temporary_peak;
+        report->metrics.temporary_bytes  = ctx->temporary_peak;
 
         if ((NULL != ctx->recursion_stack) &&
             (ctx->recursion_level < ctx->recursion_stack_size)) {
@@ -341,9 +341,9 @@ void cli_scan_report_finish(
         (status == CL_VIRUS)) {
         report->completion = CL_SCAN_COMPLETION_DETECTION_TERMINATED;
     } else if ((status == CL_EMAXSIZE) ||
-        (status == CL_EMAXFILES) ||
-        (status == CL_EMAXREC) ||
-        (status == CL_ETIMEOUT)) {
+               (status == CL_EMAXFILES) ||
+               (status == CL_EMAXREC) ||
+               (status == CL_ETIMEOUT)) {
         report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
     } else if (status == CL_ERESOURCE) {
         report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
@@ -378,7 +378,7 @@ void cli_scan_report_finish(
         report->completion = CL_SCAN_COMPLETION_COMPLETE;
     }
 
-    report->finalized = true;
+    report->finalized  = true;
     report->has_result = true;
 }
 
@@ -420,8 +420,8 @@ void cli_scan_report_merge(
     }
 
     if (!destination->has_result) {
-        destination->status = source->status;
-        destination->verdict = source->verdict;
+        destination->status     = source->status;
+        destination->verdict    = source->verdict;
         destination->completion = source->completion;
         report_replace_string(&destination->reason, source->reason);
         report_replace_string(&destination->last_alert, source->last_alert);
@@ -430,13 +430,13 @@ void cli_scan_report_merge(
     }
 
     destination_completion_rank = report_completion_rank(destination->completion);
-    source_completion_rank = report_completion_rank(source->completion);
-    replace_outcome = (source_completion_rank > destination_completion_rank) ||
+    source_completion_rank      = report_completion_rank(source->completion);
+    replace_outcome             = (source_completion_rank > destination_completion_rank) ||
                       ((source_completion_rank == destination_completion_rank) &&
                        (source->status != CL_SUCCESS) && (destination->status == CL_SUCCESS));
 
     if (replace_outcome) {
-        destination->status = source->status;
+        destination->status     = source->status;
         destination->completion = source->completion;
         report_replace_string(&destination->reason, source->reason);
         report_replace_string(&destination->last_alert, source->last_alert);

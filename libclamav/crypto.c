@@ -233,7 +233,7 @@ extern cl_error_t cl_hash_data_ex(
         md = EVP_MD_fetch(NULL, to_openssl_alg(alg), NULL);
     }
 #else
-    md = EVP_get_digestbyname(to_openssl_alg(alg));
+    md               = EVP_get_digestbyname(to_openssl_alg(alg));
 #endif
     if (NULL == md) {
         cli_errmsg("cl_hash_data_ex: Unsupported hash algorithm: %s\n", alg);
@@ -384,7 +384,7 @@ extern cl_error_t cl_hash_init_ex(
         md = EVP_MD_fetch(NULL, to_openssl_alg(alg), NULL);
     }
 #else
-    md = EVP_get_digestbyname(to_openssl_alg(alg));
+    md               = EVP_get_digestbyname(to_openssl_alg(alg));
 #endif
     if (NULL == md) {
         cli_errmsg("cl_hash_data_ex: Unsupported hash algorithm: %s\n", alg);
@@ -816,7 +816,7 @@ unsigned char *cl_hash_data(const char *alg, const void *buf, size_t len, unsign
 
     md = EVP_MD_fetch(ossl_ctx, to_openssl_alg(alg), "-fips");
 #else
-    md = EVP_get_digestbyname(to_openssl_alg(alg));
+    md               = EVP_get_digestbyname(to_openssl_alg(alg));
 #endif
     if (!(md))
         return NULL;
@@ -957,7 +957,7 @@ unsigned char *cl_hash_file_fd(int fd, const char *alg, unsigned int *olen)
 
     md = EVP_MD_fetch(ossl_ctx, to_openssl_alg(alg), "-fips");
 #else
-    md = EVP_get_digestbyname(to_openssl_alg(alg));
+    md               = EVP_get_digestbyname(to_openssl_alg(alg));
 #endif
     if (!(md))
         return NULL;
@@ -1861,7 +1861,7 @@ void *cl_hash_init(const char *alg)
 
     md = EVP_MD_fetch(ossl_ctx, to_openssl_alg(alg), "-fips");
 #else
-    md = EVP_get_digestbyname(to_openssl_alg(alg));
+    md               = EVP_get_digestbyname(to_openssl_alg(alg));
 #endif
     if (!(md))
         return NULL;

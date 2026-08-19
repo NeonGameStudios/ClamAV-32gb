@@ -87,7 +87,7 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     fileblob *fb;
     char buffer[RFC2821LENGTH + 1];
     char *filename = cli_strtok(firstline, 2, " ");
-    bool saw_end = false;
+    bool saw_end   = false;
 
     if (filename == NULL)
         return -1;

@@ -58,14 +58,14 @@ int blobGrow(blob *b, size_t len);
 typedef struct fileblob {
     FILE *fp;
     int fd;
-    blob b;         /*
-                     * b.name is the name of the attachment as stored in the
-                     * email, not the full path name of the temporary file
-                     */
-    char *fullname; /* full pathname of the file */
-    struct cli_ctx_tag *ctx;   /* When set we can scan the blob, otherwise NULL */
+    blob b;                            /*
+                                        * b.name is the name of the attachment as stored in the
+                                        * email, not the full path name of the temporary file
+                                        */
+    char *fullname;                    /* full pathname of the file */
+    struct cli_ctx_tag *ctx;           /* When set we can scan the blob, otherwise NULL */
     struct cli_ctx_tag *temporary_ctx; /* Context holding the temporary-byte reservation. */
-    uint64_t temporary_bytes; /* Bytes reserved while the spool is being built. */
+    uint64_t temporary_bytes;          /* Bytes reserved while the spool is being built. */
     uint64_t bytes_scanned;
     unsigned int isNotEmpty : 1;
     unsigned int isInfected : 1;

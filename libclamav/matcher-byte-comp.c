@@ -456,8 +456,8 @@ cl_error_t cli_bcomp_scanbuf(const unsigned char *buffer, size_t buffer_length, 
     cl_error_t ret         = CL_SUCCESS;
     cl_error_t bcomp_check = CL_SUCCESS;
     uint32_t lsigid, ref_subsigid;
-    uint64_t offset              = 0;
-    uint64_t comparison_offset   = 0;
+    uint64_t offset            = 0;
+    uint64_t comparison_offset = 0;
     int64_t relative_offset;
     uint64_t distance;
     struct cli_bcomp_meta *bcomp = NULL;

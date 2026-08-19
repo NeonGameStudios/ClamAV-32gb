@@ -191,8 +191,8 @@ typedef enum cl_error_t {
     CL_EBUSY,
     CL_ESTATE,
 
-    CL_VERIFIED, /** The scan target has been deemed trusted */
-    CL_ERROR,    /** Unspecified / generic error */
+    CL_VERIFIED,  /** The scan target has been deemed trusted */
+    CL_ERROR,     /** Unspecified / generic error */
     CL_ERESOURCE, /** Admission or shared-resource limit failure. */
 
     /* no error codes below this line please */

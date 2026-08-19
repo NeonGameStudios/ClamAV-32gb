@@ -86,7 +86,7 @@ static int groupicon_scan_cb(void *ptr, uint32_t type, uint32_t name, uint32_t l
         icon_env->lastg = name;
 
         /* scan icon group */
-        ret = cli_groupiconscan(icon_env, rva);
+        ret              = cli_groupiconscan(icon_env, rva);
         icon_env->result = ret;
         if (ret != CL_CLEAN)
             return 1;
@@ -246,14 +246,11 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
 
                 if (icnt != 0 || gsz != 0)
                     return icon_parse_error(icon_env, NULL, "PE icon group ended before all declared entries were inspected");
-            }
-            else
+            } else
                 return icon_parse_error(icon_env, NULL, "PE icon group data was outside the input map");
-        }
-        else
+        } else
             return icon_parse_error(icon_env, NULL, "PE icon group header was truncated");
-    }
-    else
+    } else
         return icon_parse_error(icon_env, NULL, "PE icon group resource was outside the input map");
 
     return icon_env->result;

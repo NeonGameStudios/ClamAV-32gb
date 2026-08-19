@@ -501,7 +501,7 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         ops_ex.max_size = max_size;
 
         /* scan */
-        ret = cab_d->extract(cab_d, cab_f, tmp_fname);
+        ret             = cab_d->extract(cab_d, cab_f, tmp_fname);
         tempfile_exists = (access(tmp_fname, F_OK) == 0);
         if (ret) {
             /* Salvage mode may leave a truncated member on disk. Never let
@@ -631,7 +631,7 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         ops_ex.max_size = max_size;
 
         /* scan */
-        ret = mschm_d->extract(mschm_d, mschm_f, tmp_fname);
+        ret             = mschm_d->extract(mschm_d, mschm_f, tmp_fname);
         tempfile_exists = (access(tmp_fname, F_OK) == 0);
         if (ret) {
             /* Failed to extract. Never scan the partial output. */

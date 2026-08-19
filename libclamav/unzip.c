@@ -373,9 +373,9 @@ static cl_error_t unz_stream(
 {
     struct zip_input input;
     uint8_t obuf[BUFSIZ];
-    char *tempfile = NULL;
-    int out_file   = -1;
-    uint64_t written = 0;
+    char *tempfile        = NULL;
+    int out_file          = -1;
+    uint64_t written      = 0;
     uint32_t output_crc32 = 0;
     cl_error_t ret;
     bool complete = false;
@@ -549,8 +549,8 @@ static cl_error_t unz_stream(
                 if (CL_SUCCESS != ret)
                     break;
                 output_crc32 = (uint32_t)crc32(output_crc32, obuf, (uInt)produced);
-                *next_out  = obuf;
-                *avail_out = sizeof(obuf);
+                *next_out    = obuf;
+                *avail_out   = sizeof(obuf);
             }
 
             if (Z_STREAM_END == zret) {
@@ -635,7 +635,7 @@ static cl_error_t unz_stream(
                 ret = zip_write_output(out_file, obuf, produced, &written, ctx);
                 if (CL_SUCCESS != ret)
                     break;
-                output_crc32 = (uint32_t)crc32(output_crc32, obuf, (uInt)produced);
+                output_crc32   = (uint32_t)crc32(output_crc32, obuf, (uInt)produced);
                 strm.next_out  = (char *)obuf;
                 strm.avail_out = sizeof(obuf);
             }
@@ -676,7 +676,7 @@ static cl_error_t unz_stream(
         memset(&strm, 0, sizeof(strm));
         strm.next_out  = obuf;
         strm.avail_out = sizeof(obuf);
-        xret = explode_init(&strm, flags);
+        xret           = explode_init(&strm, flags);
         if (EXPLODE_OK != xret) {
             cli_dbgmsg("cli_unzip: bounded Implode initialization failed\n");
             ret = CL_EUNPACK;
@@ -718,7 +718,7 @@ static cl_error_t unz_stream(
                 ret = zip_write_output(out_file, obuf, produced, &written, ctx);
                 if (CL_SUCCESS != ret)
                     break;
-                output_crc32 = (uint32_t)crc32(output_crc32, obuf, (uInt)produced);
+                output_crc32   = (uint32_t)crc32(output_crc32, obuf, (uInt)produced);
                 strm.next_out  = obuf;
                 strm.avail_out = sizeof(obuf);
             }
@@ -819,7 +819,7 @@ static cl_error_t unz_legacy(
     char obuf[BUFSIZ] = {0};
     char *tempfile    = NULL;
     int out_file, ret = CL_EUNPACK;
-    int res           = 1;
+    int res          = 1;
     uint64_t written = 0;
 
     if (NULL == src || NULL == num_files_unzipped || NULL == ctx || NULL == ctx->engine || NULL == zcb)
@@ -990,7 +990,7 @@ static cl_error_t unz_legacy(
             while (1) {
                 bool output_full;
 
-                res = explode(&strm);
+                res         = explode(&strm);
                 output_full = (0 == strm.avail_out);
                 if (strm.avail_out != sizeof(obuf)) {
                     size_t produced = sizeof(obuf) - strm.avail_out;
@@ -1233,26 +1233,26 @@ static cl_error_t zdecrypt_from_fmap(
         }
 
         if (version > 20) {
-            uint8_t check = encryption_header[SIZEOF_ENCRYPTION_HEADER - 1];
-            uint8_t want  = (uint8_t)(((flags & F_USEDD) ? mtime : member_crc32) >> ((flags & F_USEDD) ? 8 : 24));
+            uint8_t check    = encryption_header[SIZEOF_ENCRYPTION_HEADER - 1];
+            uint8_t want     = (uint8_t)(((flags & F_USEDD) ? mtime : member_crc32) >> ((flags & F_USEDD) ? 8 : 24));
             password_matches = check == want;
         } else {
             uint16_t check = (uint16_t)encryption_header[SIZEOF_ENCRYPTION_HEADER - 2] |
                              (uint16_t)((uint16_t)encryption_header[SIZEOF_ENCRYPTION_HEADER - 1] << 8);
-            uint16_t want = (uint16_t)((flags & F_USEDD) ? mtime : (member_crc32 >> 16));
+            uint16_t want    = (uint16_t)((flags & F_USEDD) ? mtime : (member_crc32 >> 16));
             password_matches = check == want;
         }
 
         if (password_matches) {
             char name[1024];
             char obuf[BUFSIZ];
-            char *tempfile = name;
+            char *tempfile          = name;
             bool allocated_tempfile = false;
-            size_t buffered = 0;
-            uint64_t total = 0;
-            unsigned int input_pos = SIZEOF_ENCRYPTION_HEADER;
-            fmap_t *decrypted_map = NULL;
-            int out_file = -1;
+            size_t buffered         = 0;
+            uint64_t total          = 0;
+            unsigned int input_pos  = SIZEOF_ENCRYPTION_HEADER;
+            fmap_t *decrypted_map   = NULL;
+            int out_file            = -1;
 
             cli_dbgmsg("cli_unzip: ZipCrypto password [%s] matches\n", password->name ? password->name : "(unnamed)");
 
@@ -1455,13 +1455,13 @@ static cl_error_t parse_local_file_header(
     uint32_t name_size = 0;
     const char *src    = NULL;
 
-    const uint8_t *zip     = NULL;
-    size_t bytes_remaining = 0;
-    size_t data_offset     = 0;
+    const uint8_t *zip       = NULL;
+    size_t bytes_remaining   = 0;
+    size_t data_offset       = 0;
     size_t after_data_offset = 0;
-    size_t descriptor_size = 0;
-    bool zip64_sizes = false;
-    uint32_t expected_crc32 = 0;
+    size_t descriptor_size   = 0;
+    bool zip64_sizes         = false;
+    uint32_t expected_crc32  = 0;
 
     if (NULL != file_record_size) {
         *file_record_size = 0;
@@ -1549,13 +1549,13 @@ static cl_error_t parse_local_file_header(
     }
 
     if (central_header && central_values) {
-        csize = central_values->compressed_size;
-        usize = central_values->uncompressed_size;
-        zip64_sizes = central_values->zip64_sizes;
+        csize          = central_values->compressed_size;
+        usize          = central_values->uncompressed_size;
+        zip64_sizes    = central_values->zip64_sizes;
         expected_crc32 = CENTRAL_HEADER_crc32;
     } else {
-        csize = LOCAL_HEADER_csize;
-        usize = LOCAL_HEADER_usize;
+        csize          = LOCAL_HEADER_csize;
+        usize          = LOCAL_HEADER_usize;
         expected_crc32 = LOCAL_HEADER_crc32;
 
         if (csize == UINT32_MAX || usize == UINT32_MAX) {
@@ -1575,8 +1575,8 @@ static cl_error_t parse_local_file_header(
                 status = CL_EFORMAT;
                 goto done;
             }
-            csize = local_values.compressed_size;
-            usize = local_values.uncompressed_size;
+            csize       = local_values.compressed_size;
+            usize       = local_values.uncompressed_size;
             zip64_sizes = local_values.zip64_sizes;
         }
     }
@@ -2242,7 +2242,6 @@ done:
             free(zip_catalogue);
             zip_catalogue = NULL;
         }
-
     }
 
     return status;
@@ -2455,7 +2454,6 @@ done:
             zip_catalogue   = NULL;
             *temp_catalogue = NULL; // zip_catalogue and *temp_catalogue have the same value. Set temp_catalogue to NULL to ensure no use after free
         }
-
     }
 
     return status;
@@ -2911,7 +2909,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
          * Index the central directory.
          */
         scan_incomplete_before_index = ctx->scan_incomplete;
-        ret = index_the_central_directory(
+        ret                          = index_the_central_directory(
             ctx,
             coff,
             &zip_catalogue,
@@ -2972,7 +2970,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
      * Add local file headers not referenced by the central directory.
      */
     scan_incomplete_before_index = ctx->scan_incomplete;
-    ret = index_local_file_headers(
+    ret                          = index_local_file_headers(
         ctx,
         map,
         fsize,
@@ -3204,7 +3202,7 @@ cl_error_t unzip_single_internal(cli_ctx *ctx, size_t local_header_offset, zip_c
         NULL, /* tmpd */
         0,    /* detect_encrypted */
         zcb,
-        NULL, /* central_values */
+        NULL,  /* central_values */
         NULL,  /* record */
         NULL); /* file_record_size */
 

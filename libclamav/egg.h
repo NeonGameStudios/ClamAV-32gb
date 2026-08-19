@@ -53,7 +53,7 @@ typedef struct cl_egg_metadata {
  * valid only for the duration of the call.  Returning anything other than
  * CL_SUCCESS aborts extraction and propagates that status to the caller.
  */
-typedef cl_error_t (*cli_egg_write_callback)(void *opaque, const void *data, size_t length);
+typedef cl_error_t (*cli_egg_write_callback)(void* opaque, const void* data, size_t length);
 
 /**
  * @brief Given an fmap to en EGG archive, open a handle for extracting archive contents.
@@ -81,7 +81,7 @@ cl_error_t cli_egg_open(
  * complete fixed header is present, malformed or unsupported fields are
  * reported as an explicit parse failure.
  */
-cl_error_t cli_egg_header_check(fmap_t *map, size_t offset);
+cl_error_t cli_egg_header_check(fmap_t* map, size_t offset);
 
 /**
  * @brief Peek at the next file in the archive, without incremented the current file index.

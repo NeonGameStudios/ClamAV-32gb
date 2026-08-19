@@ -499,7 +499,7 @@ int cli_scanxar(cli_ctx *ctx)
     z_stream strm;
     char *tmpname = NULL, *tocname = NULL;
     xmlTextReaderPtr reader = NULL;
-    int toc_fd = -1;
+    int toc_fd              = -1;
     int cleanup_rc;
     uint64_t toc_reserved = 0;
     int a_hash, e_hash;
@@ -559,9 +559,9 @@ int cli_scanxar(cli_ctx *ctx)
     {
         unsigned char inbuf[XAR_COPY_CHUNK_SIZE];
         unsigned char outbuf[XAR_COPY_CHUNK_SIZE];
-        uint64_t compressed_read = 0;
+        uint64_t compressed_read      = 0;
         uint64_t decompressed_written = 0;
-        bool stream_complete = false;
+        bool stream_complete          = false;
 
         rc = inflateInit(&strm);
         if (rc != Z_OK) {
@@ -572,7 +572,7 @@ int cli_scanxar(cli_ctx *ctx)
         }
 
         while (compressed_read < hdr.toc_length_compressed && !stream_complete) {
-            size_t chunk = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
+            size_t chunk         = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
             size_t source_offset = hdr.size + (size_t)compressed_read;
 
             if (fmap_readn(ctx->fmap, inbuf, source_offset, chunk) != chunk) {
@@ -584,17 +584,17 @@ int cli_scanxar(cli_ctx *ctx)
             }
 
             compressed_read += chunk;
-            strm.next_in = inbuf;
+            strm.next_in  = inbuf;
             strm.avail_in = (uInt)chunk;
 
             do {
                 int inflate_rc;
                 size_t produced;
 
-                strm.next_out = outbuf;
+                strm.next_out  = outbuf;
                 strm.avail_out = sizeof(outbuf);
-                inflate_rc = inflate(&strm, compressed_read == hdr.toc_length_compressed ? Z_FINISH : Z_NO_FLUSH);
-                produced = sizeof(outbuf) - strm.avail_out;
+                inflate_rc     = inflate(&strm, compressed_read == hdr.toc_length_compressed ? Z_FINISH : Z_NO_FLUSH);
+                produced       = sizeof(outbuf) - strm.avail_out;
 
                 if (produced > hdr.toc_length_decompressed - decompressed_written) {
                     cli_mark_scan_incomplete(ctx, "XAR TOC decompressed output exceeded its declared length");
@@ -711,7 +711,7 @@ int cli_scanxar(cli_ctx *ctx)
                 goto exit_reader;
             }
 
-            at = heap_start + offset;
+            at       = heap_start + offset;
             data_end = at + length;
         }
 
@@ -735,9 +735,8 @@ int cli_scanxar(cli_ctx *ctx)
         e_hash_ctx = xar_hash_init(e_hash, &e_sc, &e_mc);
 
         switch (encoding) {
-            case CL_TYPE_GZ:
-            {
-                uint64_t total_out = 0;
+            case CL_TYPE_GZ: {
+                uint64_t total_out   = 0;
                 bool stream_complete = false;
                 /* inflate gzip directly because file segments do not contain magic */
                 memset(&strm, 0, sizeof(strm));
@@ -839,8 +838,8 @@ int cli_scanxar(cli_ctx *ctx)
             {
                 struct CLI_LZMA lz;
                 size_t in_remaining = MIN(length, map->len - at);
-                uint64_t out_size           = 0;
-                unsigned char *buff        = __lzma_wrap_alloc(NULL, CLI_LZMA_OBUF_SIZE);
+                uint64_t out_size   = 0;
+                unsigned char *buff = __lzma_wrap_alloc(NULL, CLI_LZMA_OBUF_SIZE);
                 int lret;
                 bool stream_complete = false;
 

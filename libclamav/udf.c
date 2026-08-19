@@ -181,9 +181,9 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
 
             ext_ad *extDesc = (ext_ad *)allocation_descriptor;
 
-            extentBlock      = le32_to_host(extDesc->extentLocation.blockNumber);
-            rawLength        = le32_to_host(extDesc->extentLen);
-            recordedLength   = le32_to_host(extDesc->recordedLen);
+            extentBlock       = le32_to_host(extDesc->extentLocation.blockNumber);
+            rawLength         = le32_to_host(extDesc->extentLen);
+            recordedLength    = le32_to_host(extDesc->recordedLen);
             hasRecordedLength = true;
 
             if (le16_to_host(extDesc->extentLocation.partitionReferenceNumber) != le16_to_host(pPartitionDescriptor->partitionNumber)) {

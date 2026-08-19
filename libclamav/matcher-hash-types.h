@@ -49,7 +49,7 @@ const char* cli_hash_name(cli_hash_type_t type);
  * @param alg The name of the hash algorithm.
  * @return char* The OpenSSL name of the hash algorithm.
  */
-const char *to_openssl_alg(const char *alg);
+const char* to_openssl_alg(const char* alg);
 
 /**
  * @brief Get the size of the hash type.

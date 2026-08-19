@@ -553,8 +553,8 @@ cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const ch
     unsigned int i, evalcnt = 0;
     uint64_t evalids = 0;
     uint32_t global, encompass, rolling;
-    int rc          = 0;
-    int options     = 0;
+    int rc        = 0;
+    int options   = 0;
     size_t offset = 0;
 
     if ((root->pcre_metas == 0) || (!root->pcre_metatable) || (ctx && ctx->dconf && !(ctx->dconf->pcre & PCRE_CONF_SUPPORT)))

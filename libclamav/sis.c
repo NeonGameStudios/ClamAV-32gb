@@ -78,11 +78,11 @@ static cl_error_t sis_stream_member_to_fd(cli_ctx *ctx, fmap_t *map, uint64_t in
 {
     uint8_t input[SIS_STREAM_CHUNK];
     uint8_t output[SIS_STREAM_CHUNK];
-    uint64_t input_pos       = input_offset;
-    uint64_t input_remaining = input_size;
-    uint64_t output_total    = 0;
+    uint64_t input_pos         = input_offset;
+    uint64_t input_remaining   = input_size;
+    uint64_t output_total      = 0;
     const char *failure_reason = "SIS member could not be streamed completely";
-    cl_error_t status         = CL_SUCCESS;
+    cl_error_t status          = CL_SUCCESS;
     z_stream stream;
     bool stream_initialized = false;
 
@@ -300,48 +300,48 @@ enum {
     FTnotinst = 99
 };
 
-#define GETD2(VAR)                                                           \
-    {                                                                        \
-        /* cli_dbgmsg("GETD2 smax: %d sleft: %d\n", smax, sleft); */         \
-        if (sleft < 4) {                                                     \
-            memcpy(buff, buff + smax - sleft, sleft);                        \
-            size_t tmp = fmap_readn(map, buff + sleft, pos, BUFSIZ - sleft); \
-            smax       = tmp;                                                \
-            if (((size_t)-1) == tmp) {                                       \
-                cli_dbgmsg("SIS: Read failed during GETD2\n");               \
-                status = sis_incomplete(ctx, "SIS field could not be read completely"); \
-                goto done;                                                   \
-            } else if ((smax += sleft) < 4) {                                \
-                cli_dbgmsg("SIS: EOF\n");                                    \
+#define GETD2(VAR)                                                                             \
+    {                                                                                          \
+        /* cli_dbgmsg("GETD2 smax: %d sleft: %d\n", smax, sleft); */                           \
+        if (sleft < 4) {                                                                       \
+            memcpy(buff, buff + smax - sleft, sleft);                                          \
+            size_t tmp = fmap_readn(map, buff + sleft, pos, BUFSIZ - sleft);                   \
+            smax       = tmp;                                                                  \
+            if (((size_t)-1) == tmp) {                                                         \
+                cli_dbgmsg("SIS: Read failed during GETD2\n");                                 \
+                status = sis_incomplete(ctx, "SIS field could not be read completely");        \
+                goto done;                                                                     \
+            } else if ((smax += sleft) < 4) {                                                  \
+                cli_dbgmsg("SIS: EOF\n");                                                      \
                 status = sis_incomplete(ctx, "SIS field ended before its value was complete"); \
-                goto done;                                                   \
-            }                                                                \
-            pos += smax - sleft;                                             \
-            sleft = smax;                                                    \
-        }                                                                    \
-        VAR = cli_readint32(&buff[smax - sleft]);                            \
-        sleft -= 4;                                                          \
+                goto done;                                                                     \
+            }                                                                                  \
+            pos += smax - sleft;                                                               \
+            sleft = smax;                                                                      \
+        }                                                                                      \
+        VAR = cli_readint32(&buff[smax - sleft]);                                              \
+        sleft -= 4;                                                                            \
     }
 
-#define SKIP(N)                                                 \
-    /* cli_dbgmsg("SKIP smax: %d sleft: %d\n", smax, sleft); */ \
-    if (sleft >= (N))                                           \
-        sleft -= (N);                                           \
-    else {                                                      \
-        if ((N) < sleft) {                                      \
-            cli_dbgmsg("SIS: Refusing to seek back\n");         \
-            free((void *)alangs);                               \
+#define SKIP(N)                                                                                     \
+    /* cli_dbgmsg("SKIP smax: %d sleft: %d\n", smax, sleft); */                                     \
+    if (sleft >= (N))                                                                               \
+        sleft -= (N);                                                                               \
+    else {                                                                                          \
+        if ((N) < sleft) {                                                                          \
+            cli_dbgmsg("SIS: Refusing to seek back\n");                                             \
+            free((void *)alangs);                                                                   \
             return sis_incomplete(ctx, "SIS parser attempted to seek outside its buffered stream"); \
-        }                                                       \
-        pos += (N)-sleft;                                       \
-        size_t tmp = fmap_readn(map, buff, pos, BUFSIZ);        \
-        if (((size_t)-1) == tmp) {                              \
-            cli_dbgmsg("SIS: Read failed during SKIP\n");       \
-            free((void *)alangs);                               \
-            return sis_incomplete(ctx, "SIS skip could not be read completely"); \
-        }                                                       \
-        sleft = smax = tmp;                                     \
-        pos += smax;                                            \
+        }                                                                                           \
+        pos += (N)-sleft;                                                                           \
+        size_t tmp = fmap_readn(map, buff, pos, BUFSIZ);                                            \
+        if (((size_t)-1) == tmp) {                                                                  \
+            cli_dbgmsg("SIS: Read failed during SKIP\n");                                           \
+            free((void *)alangs);                                                                   \
+            return sis_incomplete(ctx, "SIS skip could not be read completely");                    \
+        }                                                                                           \
+        sleft = smax = tmp;                                                                         \
+        pos += smax;                                                                                \
     }
 
 const char *sislangs[] = {"UNKNOWN", "UK English", "French", "German", "Spanish", "Italian", "Swedish", "Danish", "Norwegian", "Finnish", "American", "Swiss French", "Swiss German", "Portuguese", "Turkish", "Icelandic", "Russian", "Hungarian", "Dutch", "Belgian Flemish", "Australian English", "Belgian French", "Austrian German", "New Zealand English", "International French", "Czech", "Slovak", "Polish", "Slovenian", "Taiwanese Chinese", "Hong Kong Chinese", "PRC Chinese", "Japanese", "Thai", "Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Tagalog", "Belarussian", "Bengali", "Bulgarian", "Burmese", "Catalan", "Croation", "Canadian English", "International English", "South African English", "Estonian", "Farsi", "Canadian French", "Gaelic", "Georgian", "Greek", "Cyprus Greek", "Gujarati", "Hebrew", "Hindi", "Indonesian", "Irish", "Swiss Italian", "Kannada", "Kazakh", "Kmer", "Korean", "Lao", "Latvian", "Lithuanian", "Macedonian", "Malay", "Malayalam", "Marathi", "Moldovian", "Mongolian", "Norwegian Nynorsk", "Brazilian Portuguese", "Punjabi", "Romanian", "Serbian", "Sinhalese", "Somali", "International Spanish", "American Spanish", "Swahili", "Finland Swedish", "Reserved", "Tamil", "Telugu", "Tibetan", "Tigrinya", "Cyprus Turkish", "Turkmen", "Ukrainian", "Urdu", "Reserved", "Vietnamese", "Welsh", "Zulu", "Other"};
@@ -396,7 +396,7 @@ static int spamsisnames(fmap_t *map, size_t pos, uint16_t langs, const char **al
 
 static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 {
-    cl_error_t status = CL_EPARSE;
+    cl_error_t status       = CL_EPARSE;
     cl_error_t limit_status = CL_CLEAN;
 
     struct {
@@ -909,13 +909,13 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
     uint32_t field, optst[] = {T_CONTROLLERCHECKSUM, T_DATACHECKSUM, T_COMPRESSED};
     unsigned int i;
 
-    s->map   = ctx->fmap;
-    s->pos   = 0;
-    s->smax  = 0;
-    s->sleft = 0;
-    s->level = 0;
+    s->map        = ctx->fmap;
+    s->pos        = 0;
+    s->smax       = 0;
+    s->sleft      = 0;
+    s->level      = 0;
     s->incomplete = 0;
-    s->failure = CL_CLEAN;
+    s->failure    = CL_CLEAN;
 
     if (getfield(s, &field) || field != T_CONTENTS)
         return sis_incomplete(ctx, "SIS 9.x contents field was truncated or invalid");
