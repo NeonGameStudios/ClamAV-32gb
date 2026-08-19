@@ -1652,6 +1652,12 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
     json_object *saveobj           = mctx->wrkobj;
     bool heuristicFound            = false;
 
+    if (messageIn && messageIn->isTruncated) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Mail parser input was materialized incompletely");
+        return FAIL;
+    }
+
     cli_dbgmsg("in parseEmailBody, %u files saved so far\n",
                mctx->files);
 
@@ -4293,6 +4299,13 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
 
     if (*rc != OK)
         return mainMessage;
+
+    if (aMessage->isTruncated) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "MIME part text materialization was truncated");
+        *rc = FAIL;
+        return mainMessage;
+    }
 
     cli_dbgmsg("Mixed message part %d is of type %d\n",
                i, messageGetMimeType(aMessage));

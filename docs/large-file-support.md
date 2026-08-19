@@ -2039,6 +2039,21 @@ fail-visible gap but does not convert the legacy VBA callback/data API into a
 fully streaming 32 GiB parser; its contiguous matcher and normalization
 ceilings remain release gates.
 
+## Mail text-list accounting — 2026-08-19
+
+The 64 MiB deep-parser materialization ceiling now covers both direct
+`messageAddStr()` input and ref-counted `messageAddLine()` input. Text moved
+between parser message objects also transfers its retained-byte accounting, so
+header/body and multipart transitions cannot silently reset the bound. A
+ceiling breach marks the message truncated and returns a failure; this is a
+fail-visible guard, not a claim that the legacy mail parser has been converted
+to an incremental 32 GiB representation.
+
+Truncated multipart children are rejected before `do_multipart()` writes an
+attachment or enters a nested parser. The top-level body parser applies the
+same check, so a child or moved message cannot be silently scanned as a
+partial clean representation.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

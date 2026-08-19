@@ -81,6 +81,44 @@ static void messageDedup(message *m);
 static char *rfc2231(const char *in);
 static int simil(const char *str1, const char *str2);
 
+static size_t messageLineMaterializedBytes(const line_t *line)
+{
+    const char *data = lineGetData(line);
+
+    return data ? strlen(data) + 1 : 1;
+}
+
+static int messageReserveMaterializedBytes(message *m, size_t bytes, const char *caller)
+{
+    if ((bytes > MESSAGE_MAX_MATERIALIZED_BYTES) ||
+        (m->materialized_bytes > MESSAGE_MAX_MATERIALIZED_BYTES - bytes)) {
+        m->isTruncated = 1;
+        m->materialized_bytes = MESSAGE_MAX_MATERIALIZED_BYTES;
+        cli_warnmsg("%s: mail materialization exceeds the 64 MiB deep-parser limit\n", caller);
+        return 0;
+    }
+
+    m->materialized_bytes += bytes;
+    return 1;
+}
+
+static size_t messageTextMaterializedBytes(const text *t)
+{
+    size_t total = 0;
+
+    for (; t; t = t->t_next) {
+        const size_t bytes = messageLineMaterializedBytes(t->t_line);
+
+        if ((bytes > MESSAGE_MAX_MATERIALIZED_BYTES) ||
+            (total > MESSAGE_MAX_MATERIALIZED_BYTES - bytes))
+            return MESSAGE_MAX_MATERIALIZED_BYTES + 1;
+
+        total += bytes;
+    }
+
+    return total;
+}
+
 /*
  * These maps are ordered in decreasing likelihood of their appearance
  * in an e-mail. Probably these should be in a table...
@@ -914,6 +952,9 @@ int messageAddLine(message *m, line_t *line)
         return -1;
     }
 
+    if (!messageReserveMaterializedBytes(m, messageLineMaterializedBytes(line), "messageAddLine"))
+        return -1;
+
     if (m->body_first == NULL)
         m->body_last = m->body_first = (text *)malloc(sizeof(text));
     else {
@@ -978,13 +1019,8 @@ int messageAddStr(message *m, const char *data)
     }
 
     stored_bytes = (data != NULL) ? strlen(data) + 1 : 1;
-    if (m->materialized_bytes > MESSAGE_MAX_MATERIALIZED_BYTES ||
-        stored_bytes > MESSAGE_MAX_MATERIALIZED_BYTES - m->materialized_bytes) {
-        m->isTruncated = 1;
-        cli_warnmsg("messageAddStr: mail materialization exceeds the 64 MiB deep-parser limit\n");
+    if (!messageReserveMaterializedBytes(m, stored_bytes, "messageAddStr"))
         return -1;
-    }
-    m->materialized_bytes += stored_bytes;
 
     if (m->body_first == NULL)
         m->body_last = m->body_first = (text *)malloc(sizeof(text));
@@ -1061,6 +1097,14 @@ int messageAddStr(message *m, const char *data)
 int messageMoveText(message *m, text *t, message *old_message)
 {
     int rc;
+    int materialization_ok = 1;
+    const size_t moved_bytes = messageTextMaterializedBytes(t);
+
+    if (m == NULL || t == NULL)
+        return -1;
+
+    if (moved_bytes != 0)
+        materialization_ok = messageReserveMaterializedBytes(m, moved_bytes, "messageMoveText");
 
     if (m->body_first == NULL) {
         if ((NULL != old_message) &&
@@ -1092,13 +1136,14 @@ int messageMoveText(message *m, text *t, message *old_message)
 
             m->body_last            = old_message->body_last;
             old_message->body_first = old_message->body_last = NULL;
+            old_message->materialized_bytes = 0;
 
             /* Do any pointers need to be reset? */
             if ((old_message->bounce == NULL) &&
                 (old_message->encoding == NULL) &&
                 (old_message->binhex == NULL) &&
                 (old_message->yenc == NULL))
-                return 0;
+                return materialization_ok ? 0 : -1;
 
             m->body_last = m->body_first;
             rc           = 0;
@@ -1124,7 +1169,7 @@ int messageMoveText(message *m, text *t, message *old_message)
             messageIsEncoding(m);
     }
 
-    return rc;
+    return materialization_ok ? rc : -1;
 }
 
 /*

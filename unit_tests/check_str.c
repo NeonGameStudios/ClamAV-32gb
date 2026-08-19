@@ -36,6 +36,7 @@
 #include "others.h"
 #include "str.h"
 #include "entconv.h"
+#include "line.h"
 #include "mbox.h"
 #include "message.h"
 #include "jsparse/textbuf.h"
@@ -212,6 +213,42 @@ START_TEST(test_base64)
 }
 END_TEST
 
+START_TEST(test_message_addline_materialization_limit_is_fail_visible)
+{
+    message *m = messageCreate();
+    line_t *line = lineCreate("x");
+
+    ck_assert_ptr_nonnull(m);
+    ck_assert_ptr_nonnull(line);
+    m->materialized_bytes = MESSAGE_MAX_MATERIALIZED_BYTES;
+    ck_assert_int_eq(messageAddLine(m, line), -1);
+    ck_assert_int_eq(m->isTruncated, 1);
+    ck_assert_uint_eq(m->materialized_bytes, MESSAGE_MAX_MATERIALIZED_BYTES);
+    lineUnlink(line);
+    messageDestroy(m);
+}
+END_TEST
+
+START_TEST(test_message_move_text_preserves_materialization_limit)
+{
+    message *source = messageCreate();
+    message *destination = messageCreate();
+    text *body;
+
+    ck_assert_ptr_nonnull(source);
+    ck_assert_ptr_nonnull(destination);
+    ck_assert_int_eq(messageAddStr(source, "body"), 1);
+    ck_assert_uint_eq(source->materialized_bytes, strlen("body") + 1);
+    body = messageGetBody(source);
+    ck_assert_ptr_nonnull(body);
+    ck_assert_int_eq(messageMoveText(destination, body, source), 0);
+    ck_assert_uint_eq(destination->materialized_bytes, strlen("body") + 1);
+    ck_assert_uint_eq(source->materialized_bytes, 0);
+    messageDestroy(destination);
+    messageDestroy(source);
+}
+END_TEST
+
 static struct {
     const char *u16;
     const char *u8;
@@ -282,6 +319,8 @@ Suite *test_str_suite(void)
     suite_add_tcase(s, tc_decodeline);
 
     tcase_add_loop_test(tc_decodeline, test_base64, 0, sizeof(base64tests) / sizeof(base64tests[0]));
+    tcase_add_test(tc_str, test_message_addline_materialization_limit_is_fail_visible);
+    tcase_add_test(tc_str, test_message_move_text_preserves_materialization_limit);
 
     return s;
 }
