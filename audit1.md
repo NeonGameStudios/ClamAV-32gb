@@ -392,28 +392,30 @@ open end-to-end. The production-blocked verdict remains correct.
 
 | Finding | Verified disposition | Reason |
 |---|---|---|
-| F-01 | Partial | The deterministic MaxHTMLNormalize bypass and main HTML buffered-output failures are fixed, but JavaScript normalization output failures are still invisible. |
+| F-01 | Source closed; exact fault-injection evidence remains | MaxHTMLNormalize skips and HTML/JavaScript normalization output failures now set sticky incomplete state; compiled fault-injection coverage remains a supported-build gate. |
 | F-02 | Source closed; exact trigger untested | Metadata hash failure now sets sticky incomplete state and returns a read error. |
 | F-03 | Source closed; exact regressions incomplete | Flate/LZW now require a decoder terminal state and discard partial output on error; benign-prefix-then-error and LZW regressions are absent. |
 | F-04 | Source closed; exact trigger untested | HWP raw-deflate now requires `Z_STREAM_END` and does not scan a partial prefix. |
 | F-05 | Source closed; exact trigger untested | ZIP variable filename/extra/ZIP64 truncation is sticky and deferred only while valid preceding records are scanned. |
-| F-06 | Partial | The reported XZ/CAB/CHM-open/PE faults are fixed, but CAB/CHM decompressor-construction failure remains unmarked and can normalize clean. |
+| F-06 | Source closed; exact fault-injection evidence remains | The reported XZ/CAB/CHM-open/PE faults and CAB/CHM decompressor-construction failure now mark incomplete; focused constructor tests are present but require the supported build environment. |
 | F-07 | Bounded source policy; runtime qualification open | OneNote/LHA/ALZ reject inputs above 256 MiB before whole-map page-in. Accepted inputs are still wholly locked, and cap/failing-need/concurrent-RSS tests are absent. |
 | F-08 | Memory flaw closed; ABI unresolved | The digest pointer fix is correct for newly compiled callers, but the exported symbol and SOVERSION were not changed for old scalar-ABI callers. |
 | F-09 | Source closed; exact trigger untested | Both Mach-O section branches reject alignment exponents at or above 32 before shifting. |
-| F-10 | Partial | Width changes are present, but normalized script fmap creation can still fail and return clean. |
-| F-11 | Open end-to-end | Short-copy detection was added, but nested/sliced RAR staging now has a deterministic range error and its unmarked `CL_EREAD` can normalize clean. |
-| F-12 | Partial | StreamMaxLength and direct setter checks are fixed, but MaxScanTime text still narrows through unchecked `atoi()`. |
+| F-10 | Source closed; exact boundary evidence remains | Script/JPEG/XZ state is widened or range-checked, and normalized-script output/map failures are sticky; compiled multi-GiB and injected-failure coverage remains a supported-build gate. |
+| F-11 | Source closed; nested fault-injection evidence remains | Short-copy detection, accessible-slice range validation, and RAR staging incomplete propagation are present. |
+| F-12 | Source closed; boundary evidence present | StreamMaxLength, direct setters, and MaxScanTime configuration/CLI parsing use checked full-width values and reject narrowing/overflow. |
 | F-13 | Partial | The gate records more provenance, but it still does not create a self-contained or semantic source-to-runtime binding. |
-| F-14 | Open | The sanitizer workflow is internally inconsistent and cannot pass its verifier; mandatory service and workload gates also remain absent. |
+| F-14 | Open; service qualification required | The release/sanitizer deadline contract, canonical worker matrix, provenance, attestation ordering, and mandatory service/workload job are wired and statically checked. The gate remains intentionally unavailable until authorized production fixtures and an exact-outcome oracle are supplied. |
 | F-15 | Partial | The R2 supersession language helps, but historical overclaims remain, R2 is not tied to an immutable source revision, and its workflow disposition is incorrect. |
 | F-16 | Source closed; exact trigger untested | OneNote dispatch now uses the document configuration word, but tests do not vary the document and archive dynamic-configuration bits independently. |
 
-### V-01 — High: nested RAR staging is still false-clean and has a deterministic slice regression
+### V-01 — High: nested RAR staging required an accessible-slice correction
 
 `fmap_dump_to_file()` now rejects a nonzero unread remainder and deletes the
-partial tempfile (libclamav/fmap.c:1267–1295). That helper-only improvement
-does not close F-11.
+partial tempfile (libclamav/fmap.c:1267–1295). The earlier audit text below
+describes the trigger that motivated the correction; the current source uses
+the accessible slice length and propagates staging failure to sticky
+incomplete state.
 
 The helper receives map-relative `start_offset` and `end_offset` values, but it
 validates and clamps them against `map->real_len` rather than the accessible
@@ -429,103 +431,73 @@ and requests the whole map with `end_offset=SIZE_MAX`
 unread remainder corresponding to the parent offset, deletes the tempfile,
 and returns `CL_EREAD`.
 
-`cli_scanrar()` does not call `cli_mark_scan_incomplete()` when either staging
-call fails (libclamav/scanners.c:578–581, 599–601). The common result policy
-normalizes an unmarked `CL_EREAD` to success
-(libclamav/scanners.c:4938–4950). A clean raw pass over the compressed RAR bytes
-can consequently be cached or returned even though embedded RAR contents were
-never extracted.
+`cli_scanrar()` now calls `cli_mark_scan_incomplete()` when either staging call
+fails (libclamav/scanners.c:578–581, 599–601). The common result policy thus
+cannot normalize the staging failure to a clean result.
 
 The same end-to-end false-clean remains possible for a genuine mapped-read
 failure. The existing fmap dump tests use healthy maps, pass
 `end_offset=map->len`, and do not assert the helper status
 (unit_tests/check_clamav.c:4309–4315, 4368–4372), so they miss both triggers.
 
-Required correction: use the fmap’s accessible `len` for map-relative range
-validation, make `SIZE_MAX` mean the complete accessible fmap, mark RAR staging
-failure incomplete before returning, and add nested-slice plus fault-injected
-public-scan regressions.
+The source correction is complete. A supported Linux build should still add
+the nested-slice and fault-injected public-scan regressions to close the exact
+runtime evidence gap.
 
-### V-02 — High: the sanitizer acceptance workflow cannot succeed as written
+### V-02 — High: the acceptance workflow required a deadline-contract correction
 
-The sanitizer job sets both `CLAMAV_MAX_SCAN_TIME_MS` and
-`CLAMAV_SANITIZER_MAX_SCAN_TIME_MS` to 3,600,000
-(.github/workflows/cmake.yml:185–208). The runtime gate records the first value
-as `max_scan_time_ms` (tools/largefile_runtime_gate.sh:292–301). The verifier,
-however, requires `max_scan_time_ms=900000` for every evidence set and separately
-requires `sanitizer_max_scan_time_ms=3600000` for sanitizer evidence
-(tools/largefile_runtime_evidence_check.sh:310–347).
-
-The sanitizer job therefore fails verification even if its build, tests, and
-32 GiB scans all succeed. Its attestation/upload cannot complete, and the
-combined `largefile-acceptance` job cannot succeed. Static YAML parsing and the
-synthetic evidence fixture do not exercise this workflow-to-verifier contract.
-
-The intended split appears to be:
+The workflow now uses the intended split:
 
 - `CLAMAV_MAX_SCAN_TIME_MS=900000`; and
 - `CLAMAV_SANITIZER_MAX_SCAN_TIME_MS=3600000`.
 
-The production command documented in audit.md:352–360 also supplies four
-workflow inputs that no longer exist in `.github/workflows/cmake.yml:6–17`.
+The evidence control test compares both workflow values with the verifier's
+fixed deadlines and checks the required production, materialized,
+parser-expansion, and oracle inputs. The release job also runs the mandatory
+service qualification before attestation and uploads only after its exact
+summary checks pass. The remaining blocker is operational: those inputs must
+be authorized and present on the dedicated runner.
 
-### V-03 — High operational gap: HTML JavaScript output failures remain invisible
+### V-03 — High operational gap: HTML JavaScript output failures required a status path
 
-The headline F-01 bypass is fixed: an HTML layer above MaxHTMLNormalize now
-sets sticky incomplete state and returns `CL_EPARSE`
-(libclamav/scanners.c:2747–2752), and `cli_scanhtml()` now consumes the boolean
-normalizer result (lines 2773–2784). The primary HTML output buffers also track
-read and write failure (libclamav/htmlnorm.c:319–353, 2003–2050).
+The current source closes the status-path defect. `cli_js_output()` returns a
+`cl_error_t`, tracks short writes, checks final close status, and reports open,
+write, seek, and close failures (libclamav/jsparse/js-norm.h:31;
+libclamav/jsparse/js-norm.c:963–1007). HTML normalization consumes that result
+and marks the scan incomplete at every JavaScript flush/finalization site
+(libclamav/htmlnorm.c:683–685, 1270, 1924, 2033). The bytecode JavaScript
+consumer also preserves the failure (libclamav/bytecode_api.c:1384–1391), and
+`cli_scanhtml()` rejects a failed normalized output path rather than silently
+falling through (libclamav/scanners.c:2773–2784).
 
-The embedded-JavaScript path was not converted to the same contract:
+Focused open/write/close unit tests and source guards are present
+(unit_tests/check_jsnorm.c and tools/largefile_source_guards.sh). A supported
+build should still run the exact injected-failure public-scan regression.
 
-- `cli_js_output()` returns `void` (libclamav/jsparse/js-norm.h:28–32 and
-  libclamav/jsparse/js-norm.c:954–988).
-- Failure to open the normalized JavaScript file only logs and returns
-  (js-norm.c:961–968).
-- Buffer-output helpers return `CL_EWRITE`, but their callers discard those
-  results (js-norm.c:313–345, 970–983).
-- The final write treats only a negative return as failure, not a positive
-  short write (js-norm.c:983–985).
-- HTML normalization invokes this void function without a status path
-  (libclamav/htmlnorm.c:680–685, 2016–2021).
-- `cli_scanhtml()` silently skips an absent JavaScript output file
-  (libclamav/scanners.c:2830–2847).
-
-A disk, descriptor, or write fault can therefore remove
-JavaScript-normalization-dependent inspection without setting sticky state.
-The mapped-read unit test at unit_tests/check_htmlnorm.c:184–202 does not cover
-the MaxHTMLNormalize boundary, allocation/open/write failure, the full
-`cli_scanhtml()` path, or JavaScript output failure.
-
-### V-04 — Medium-High: normalized script map failure still returns clean
+### V-04 — Medium-High: normalized script map failure required sticky propagation
 
 The named F-10 width corrections are present: the cumulative script offset is
 64-bit, an over-cap script is sticky, JPEG uses native offsets with time/range
 checks, and XZ output accounting is 64-bit
 (libclamav/scanners.c:1510–1616, 2873–3058; libclamav/jpeg.c:325–433).
 
-In the relative-offset or linked-bytecode script branch, however,
-`fmap_new()` failure after normalized output has been written jumps to cleanup
-without changing the still-successful `ret` and without calling
-`cli_mark_scan_incomplete()` (libclamav/scanners.c:2973–2977, 3073–3103).
-Normalization-dependent matching is skipped and the script parser reports
-clean. No test injects this failure or exercises the original multi-GiB offset
-boundary.
+The remaining `fmap_new()` failure in the relative-offset or linked-bytecode
+branch now marks the scan incomplete and returns `CL_EREAD` before cleanup
+(libclamav/scanners.c:2976–2981). Output-write, input-read, legacy matcher
+width, offset-overflow, and incomplete-consumption paths are likewise sticky.
+The injected map-failure unit test is registered when the test wrapper is
+enabled; supported-build execution remains the evidence gate.
 
-### V-05 — Medium: CAB/CHM constructor failure still normalizes clean
+### V-05 — Medium: CAB/CHM constructor failure required an incomplete marker
 
-The reported recognized-header open failures now mark incomplete
-(libclamav/libmspack.c:457–462, 586–591). Immediately before those calls,
-failure to construct the CAB or CHM decompressor returns unmarked `CL_EUNPACK`
-(libclamav/libmspack.c:445–449, 579–583).
+The current source marks both CAB and CHM decompressor-construction failures
+incomplete before returning `CL_EUNPACK` (libclamav/libmspack.c:445–449,
+579–583). The recognized-header open failures are likewise marked
+(libclamav/libmspack.c:457–462, 586–591), and constructor fault-injection
+coverage is wired into the unit-test build. This historical finding is source
+closed; compiled execution remains a supported-build gate.
 
-These are principally allocation/resource failures, but the public result
-policy still normalizes the unmarked error to clean after a clean raw pass.
-The constructor failure should return the appropriate critical error or set
-sticky incomplete state. Existing tests do not fault-inject these constructors.
-
-### V-06 — Medium-High: MaxScanTime configuration can bypass the hardened setter
+### V-06 — Medium-High: MaxScanTime configuration required checked parsing
 
 The direct `cl_engine_set_num()` fixes are correct: invalid MaxScanSize and
 out-of-range MaxScanTime values now return `CL_EARG`
@@ -533,17 +505,12 @@ out-of-range MaxScanTime values now return `CL_EARG`
 32 GiB ceiling are also handled in both option paths
 (common/optparser.c:1361–1373, 1587–1596).
 
-MaxScanTime remains a generic `CLOPT_TYPE_NUMBER` whose regular expression
-accepts arbitrarily long digit strings (common/optparser.c:66, 485). Both the
-configuration and command-line parsers call `atoi()` before storing the result
-in the wider option field (common/optparser.c:1285–1290, 1525–1530).
-Out-of-`int` input has no safe checked conversion; on common implementations a
-value such as `4294967296` becomes zero before clamd calls the hardened setter,
-thereby disabling the timer. No boundary regression covers this path.
-
-Required correction: use a checked full-width conversion, reject overflow and
-trailing data, and test zero, `UINT32_MAX`, `UINT32_MAX+1`, and very long digit
-strings through both configuration and CLI parsing.
+The current configuration and command-line parsers call the checked
+`parse_max_scantime()` conversion instead of `atoi()` (common/optparser.c:71–98,
+1323–1331, 1572–1580). It rejects overflow, signs, whitespace, trailing data,
+and very long digit strings while accepting zero and `UINT32_MAX`. The
+registered `check_clamd` tests cover both configuration-file and CLI paths;
+the source finding is closed.
 
 ### V-07 — Medium release-compatibility issue: the fmap hash fix changes ABI without versioning
 

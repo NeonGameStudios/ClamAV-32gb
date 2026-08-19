@@ -1971,3 +1971,12 @@ RAR4 SFX matches now receive the analogous bounded check for the fixed main
 header prefix and declared header extent before UnRAR admission. RAR5 remains
 covered by its ordinary top-level parser path and still requires separate SFX
 qualification.
+
+## Parser-gate ceiling enforcement — 2026-08-19
+
+The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`
+and to the public engine/settings controls for embedded-PE, HTML normalization,
+normalized HTML, script normalization, and ZIP type-recognition gates. Values
+above 32 GiB are rejected; exact 32 GiB is accepted. This prevents a front-end
+or library caller from silently widening a parser-specific gate beyond the
+qualified outer-file policy while the legacy small defaults remain in place.

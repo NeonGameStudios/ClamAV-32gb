@@ -56,6 +56,7 @@
 
 // libclamav
 #include "clamav.h"
+#include "default.h"
 #include "platform.h"
 #include "version.h"
 #include "str.h"
@@ -154,6 +155,33 @@ START_TEST(test_maxscantime_parser_rejects_narrowing)
         }
     }
 #endif
+}
+END_TEST
+
+START_TEST(test_large_file_size_parser_ceiling)
+{
+    static const char *const names[] = {"MaxFileSize", "StreamMaxLength", "OnAccessMaxFileSize"};
+    size_t i;
+
+    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        struct optstruct *opts = optadditem(names[i], "32G", 1, OPT_CLAMD, 0, NULL);
+        const struct optstruct *option;
+
+        ck_assert_ptr_nonnull(opts);
+        option = optget(opts, names[i]);
+        ck_assert_ptr_nonnull(option);
+        ck_assert_int_eq(option->numarg, (long long)CLI_MAX_LARGE_FILESIZE);
+        optfree(opts);
+
+        opts = optadditem(names[i], "0", 1, OPT_CLAMD, 0, NULL);
+        ck_assert_ptr_nonnull(opts);
+        option = optget(opts, names[i]);
+        ck_assert_ptr_nonnull(option);
+        ck_assert_int_eq(option->numarg, (long long)CLI_MAX_LARGE_FILESIZE);
+        optfree(opts);
+
+        ck_assert_ptr_null(optadditem(names[i], "34359738369", 1, OPT_CLAMD, 0, NULL));
+    }
 }
 END_TEST
 
@@ -1016,6 +1044,7 @@ static Suite *test_clamd_suite(void)
     suite_add_tcase(s, tc_parser);
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
+    tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
 #ifndef _WIN32
     TCase *tc_client;
 

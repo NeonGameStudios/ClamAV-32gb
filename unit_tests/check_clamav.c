@@ -681,6 +681,33 @@ START_TEST(test_resource_limit_engine_fields_and_accounting)
 }
 END_TEST
 
+START_TEST(test_parser_gate_limits_reject_above_32g)
+{
+    struct cl_engine *engine = cl_engine_new();
+    struct cl_settings *settings;
+    const long long over_32g = (long long)CLI_MAX_LARGE_FILESIZE + 1;
+
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_EMBEDDEDPE, over_32g), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_HTMLNORMALIZE, over_32g), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_HTMLNOTAGS, over_32g), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCRIPTNORMALIZE, over_32g), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_ZIPTYPERCG, over_32g), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_HTMLNORMALIZE, CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
+    ck_assert_uint_eq(cl_engine_get_num(engine, CL_ENGINE_MAX_HTMLNORMALIZE, NULL), CLI_MAX_LARGE_FILESIZE);
+
+    settings = cl_engine_settings_copy(engine);
+    ck_assert_ptr_nonnull(settings);
+    settings->maxhtmlnormalize = (uint64_t)over_32g;
+    ck_assert_int_eq(cl_engine_settings_apply(engine, settings), CL_EARG);
+    settings->maxhtmlnormalize = CLI_MAX_LARGE_FILESIZE;
+    settings->maxscansize      = CLI_MAX_LOGICAL_SCAN_SIZE + 1;
+    ck_assert_int_eq(cl_engine_settings_apply(engine, settings), CL_EARG);
+    ck_assert_int_eq(cl_engine_settings_free(settings), CL_SUCCESS);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_single_message_materialization_limit_is_fail_visible)
 {
     char *path = create_materialization_limit_fixture(0);
@@ -8169,6 +8196,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
+    tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);

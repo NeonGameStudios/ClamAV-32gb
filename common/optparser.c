@@ -529,15 +529,15 @@ const struct clam_option __clam_options[] = {
     {"MaxFiles", "max-files", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_MAXFILES, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "Number of files to be scanned within an archive, a document, or any other\ncontainer file.\nThe value of 0 disables the limit.\nWARNING: disabling this limit or setting it too high may result in severe\ndamage to the system.", "10000"},
 
     /* Engine maximums */
-    {"MaxEmbeddedPE", "max-embeddedpe", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXEMBEDDEDPE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a file to check for embedded PE.\nFiles larger than this value will skip the additional analysis step.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "40M"},
+    {"MaxEmbeddedPE", "max-embeddedpe", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXEMBEDDEDPE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a file to check for embedded PE.\nFiles larger than this value will skip the additional analysis step. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "40M"},
 
-    {"MaxHTMLNormalize", "max-htmlnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a HTML file to normalize.\nHTML files larger than this value will not be normalized or scanned.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "40M"},
+    {"MaxHTMLNormalize", "max-htmlnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a HTML file to normalize.\nHTML files larger than this value will not be normalized or scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "40M"},
 
-    {"MaxHTMLNoTags", "max-htmlnotags", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNOTAGS, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a normalized HTML file to scan.\nHTML files larger than this value after normalization will not be scanned.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "8M"},
+    {"MaxHTMLNoTags", "max-htmlnotags", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNOTAGS, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a normalized HTML file to scan.\nHTML files larger than this value after normalization will not be scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "8M"},
 
-    {"MaxScriptNormalize", "max-scriptnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXSCRIPTNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a script file to normalize.\nScript content larger than this value will not be normalized or scanned.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "20M"},
+    {"MaxScriptNormalize", "max-scriptnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXSCRIPTNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a script file to normalize.\nScript content larger than this value will not be normalized or scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "20M"},
 
-    {"MaxZipTypeRcg", "max-ziptypercg", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXZIPTYPERCG, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a ZIP file to reanalyze type recognition.\nZIP files larger than this value will skip the step to potentially reanalyze as PE.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "1M"},
+    {"MaxZipTypeRcg", "max-ziptypercg", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXZIPTYPERCG, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a ZIP file to reanalyze type recognition.\nZIP files larger than this value will skip the step to potentially reanalyze as PE. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "1M"},
 
     {"MaxPartitions", "max-partitions", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_MAXPARTITIONS, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum number of partitions of a raw disk image to be scanned.\nRaw disk images with more partitions than this value will have up to the value number partitions scanned.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "128"},
 
@@ -564,7 +564,7 @@ const struct clam_option __clam_options[] = {
 
     {"OnAccessExcludeUname", NULL, 0, CLOPT_TYPE_STRING, NULL, -1, NULL, FLAG_MULTIPLE, OPT_CLAMD, "This option allows exclusions via user names when using the on-access scanning client. It can\nbe used multiple times.", "clamuser"},
 
-    {"OnAccessMaxFileSize", NULL, 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, 5242880, NULL, 0, OPT_CLAMD, "Files larger than this value will not be scanned in on access.", "5M"},
+    {"OnAccessMaxFileSize", NULL, 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, 5242880, NULL, 0, OPT_CLAMD, "Files larger than this value will not be scanned in on access. Values above 32G are rejected; zero selects the 32G ceiling.", "5M"},
 
     {"OnAccessDisableDDD", NULL, 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD, "This option toggles the dynamic directory determination system for on-access scanning (Linux only).", "no"},
 
@@ -1403,7 +1403,9 @@ struct optstruct *optparse(const char *cfgfile, int argc, char **argv, int verbo
                     lnumarg = lnumlimit;
                 }
 
-                if (!strcmp(optentry->name, "MaxFileSize") || !strcmp(optentry->name, "StreamMaxLength")) {
+                if (!strcmp(optentry->name, "MaxFileSize") ||
+                    !strcmp(optentry->name, "StreamMaxLength") ||
+                    !strcmp(optentry->name, "OnAccessMaxFileSize")) {
                     if (lnumarg == 0) {
                         /* The experimental large-file build has a hard
                          * 32-GiB ceiling; zero selects that ceiling rather
@@ -1638,7 +1640,9 @@ struct optstruct *optadditem(const char *name, const char *arg, int verbose, int
                     lnumarg = (optentry->argtype == CLOPT_TYPE_SIZE64) ? lnumlimit : UINT_MAX;
                 }
 
-                if (!strcmp(optentry->name, "MaxFileSize") || !strcmp(optentry->name, "StreamMaxLength")) {
+                if (!strcmp(optentry->name, "MaxFileSize") ||
+                    !strcmp(optentry->name, "StreamMaxLength") ||
+                    !strcmp(optentry->name, "OnAccessMaxFileSize")) {
                     if (lnumarg == 0) {
                         lnumarg = CLI_MAX_LARGE_FILESIZE;
                     } else if ((uint64_t)lnumarg > CLI_MAX_LARGE_FILESIZE) {

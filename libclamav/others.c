@@ -697,6 +697,16 @@ static cl_error_t cli_validate_pcre_maxfilesize(uint64_t requested, uint64_t *va
     return CL_SUCCESS;
 }
 
+static cl_error_t cli_validate_32g_limit(const char *name, uint64_t requested)
+{
+    if (requested > CLI_MAX_LARGE_FILESIZE) {
+        cli_errmsg("%s: values above 32 GiB are not supported\n", name);
+        return CL_EARG;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t cli_validate_resource_limit(const char *name,
                                               long long requested,
                                               uint64_t ceiling,
@@ -757,6 +767,8 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             if (num < 0) {
                 cli_warnmsg("MaxEmbeddedPE: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXEMBEDDEDPE);
                 engine->maxembeddedpe = CLI_DEFAULT_MAXEMBEDDEDPE;
+            } else if (cli_validate_32g_limit("MaxEmbeddedPE", (uint64_t)num) != CL_SUCCESS) {
+                return CL_EARG;
             } else
                 engine->maxembeddedpe = num;
             break;
@@ -764,6 +776,8 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             if (num < 0) {
                 cli_warnmsg("MaxHTMLNormalize: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXHTMLNORMALIZE);
                 engine->maxhtmlnormalize = CLI_DEFAULT_MAXHTMLNORMALIZE;
+            } else if (cli_validate_32g_limit("MaxHTMLNormalize", (uint64_t)num) != CL_SUCCESS) {
+                return CL_EARG;
             } else
                 engine->maxhtmlnormalize = num;
             break;
@@ -771,6 +785,8 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             if (num < 0) {
                 cli_warnmsg("MaxHTMLNoTags: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXHTMLNOTAGS);
                 engine->maxhtmlnotags = CLI_DEFAULT_MAXHTMLNOTAGS;
+            } else if (cli_validate_32g_limit("MaxHTMLNoTags", (uint64_t)num) != CL_SUCCESS) {
+                return CL_EARG;
             } else
                 engine->maxhtmlnotags = num;
             break;
@@ -778,6 +794,8 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             if (num < 0) {
                 cli_warnmsg("MaxScriptNormalize: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXSCRIPTNORMALIZE);
                 engine->maxscriptnormalize = CLI_DEFAULT_MAXSCRIPTNORMALIZE;
+            } else if (cli_validate_32g_limit("MaxScriptNormalize", (uint64_t)num) != CL_SUCCESS) {
+                return CL_EARG;
             } else
                 engine->maxscriptnormalize = num;
             break;
@@ -785,6 +803,8 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             if (num < 0) {
                 cli_warnmsg("MaxZipTypeRcg: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXZIPTYPERCG);
                 engine->maxziptypercg = CLI_DEFAULT_MAXZIPTYPERCG;
+            } else if (cli_validate_32g_limit("MaxZipTypeRcg", (uint64_t)num) != CL_SUCCESS) {
+                return CL_EARG;
             } else
                 engine->maxziptypercg = num;
             break;
@@ -1204,7 +1224,15 @@ cl_error_t cl_engine_settings_apply(struct cl_engine *engine, const struct cl_se
     if (!engine || !settings)
         return CL_ENULLARG;
 
+    if (settings->maxscansize > CLI_MAX_LOGICAL_SCAN_SIZE)
+        return CL_EARG;
     if (cli_validate_maxfilesize(settings->maxfilesize, &maxfilesize) != CL_SUCCESS)
+        return CL_EARG;
+    if (cli_validate_32g_limit("MaxEmbeddedPE", settings->maxembeddedpe) != CL_SUCCESS ||
+        cli_validate_32g_limit("MaxHTMLNormalize", settings->maxhtmlnormalize) != CL_SUCCESS ||
+        cli_validate_32g_limit("MaxHTMLNoTags", settings->maxhtmlnotags) != CL_SUCCESS ||
+        cli_validate_32g_limit("MaxScriptNormalize", settings->maxscriptnormalize) != CL_SUCCESS ||
+        cli_validate_32g_limit("MaxZipTypeRcg", settings->maxziptypercg) != CL_SUCCESS)
         return CL_EARG;
     if (cli_validate_pcre_maxfilesize(settings->pcre_max_filesize, &pcre_max_filesize) != CL_SUCCESS)
         return CL_EARG;
