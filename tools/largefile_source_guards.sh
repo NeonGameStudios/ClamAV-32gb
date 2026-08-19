@@ -250,6 +250,8 @@ not_contains etc/clamd.conf.sample 'Setting this value to zero disables the limi
 not_contains docs/man/clamd.conf.5.in 'Setting this value to zero disables the limit.'
 not_contains win32/conf_examples/clamd.conf.sample 'Setting this value to zero disables the limit.'
 contains libclamav/scanners.c 'VBA decompressed content exceeds the legacy matcher ABI'
+contains docs/largefile-capabilities.tsv 'vba-over-4g'
+contains tools/largefile_capability_manifest.sh 'vba-over-4g'
 contains libclamav/ole2_extract.c 'OLE2 sector chain exceeds the deep-parser ABI'
 contains libclamav/scanners.c 'OLE2 VBA project directory could not be parsed'
 contains libclamav/scanners.c 'cli_ole2_note_vba_cleanup_failure'
