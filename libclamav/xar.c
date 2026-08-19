@@ -34,7 +34,6 @@
 #include "inflate64.h"
 #include "lzma_iface.h"
 
-#define XAR_TOC_DEEP_PARSE_MAX_SIZE (64U * 1024U * 1024U)
 #define XAR_COPY_CHUNK_SIZE (64U * 1024U)
 
 static cl_error_t xar_incomplete(cli_ctx *ctx, const char *reason)
@@ -66,6 +65,45 @@ static int xar_cleanup_temp_file(cli_ctx *ctx, int fd, char *tmpname)
         free(tmpname);
     }
     return rc;
+}
+
+static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data, size_t len,
+                                uint64_t *reserved)
+{
+    if (len == 0)
+        return CL_SUCCESS;
+
+    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS)
+        return CL_ERESOURCE;
+
+    *reserved += (uint64_t)len;
+    if (cli_writen(fd, data, len) != len) {
+        cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be written completely");
+        return CL_EWRITE;
+    }
+
+    return CL_SUCCESS;
+}
+
+static int xar_toc_read(void *opaque, char *buffer, int len)
+{
+    int fd = *(int *)opaque;
+    ssize_t got;
+
+    if (len <= 0)
+        return 0;
+
+    do {
+        got = read(fd, buffer, (size_t)len);
+    } while (got < 0 && errno == EINTR);
+
+    return got < 0 ? -1 : (int)got;
+}
+
+static int xar_toc_close(void *opaque)
+{
+    UNUSEDPARAM(opaque);
+    return 0;
 }
 
 /*
@@ -443,8 +481,10 @@ int cli_scanxar(cli_ctx *ctx)
     size_t length, offset, size, at, heap_start, data_end;
     int encoding;
     z_stream strm;
-    char *toc, *tmpname = NULL;
+    char *tmpname = NULL, *tocname = NULL;
     xmlTextReaderPtr reader = NULL;
+    int toc_fd = -1;
+    uint64_t toc_reserved = 0;
     int a_hash, e_hash;
     unsigned char *a_cksum = NULL, *e_cksum = NULL;
     void *a_hash_ctx = NULL, *e_hash_ctx = NULL;
@@ -472,16 +512,10 @@ int cli_scanxar(cli_ctx *ctx)
     hdr.toc_length_decompressed = be64_to_host(hdr.toc_length_decompressed);
     hdr.chksum_alg              = be32_to_host(hdr.chksum_alg);
 
-    if (hdr.toc_length_compressed > SIZE_MAX || hdr.toc_length_decompressed >= SIZE_MAX ||
-        hdr.toc_length_compressed > UINT_MAX || hdr.toc_length_decompressed > INT_MAX ||
+    if (hdr.toc_length_compressed > SIZE_MAX || hdr.toc_length_decompressed > SIZE_MAX ||
         hdr.size > map->len || hdr.toc_length_compressed > map->len - hdr.size) {
         cli_dbgmsg("cli_scanxar: TOC dimensions exceed the native/parser range or the input map\n");
         return xar_incomplete(ctx, "XAR TOC dimensions are invalid or outside the input map");
-    }
-    if (hdr.toc_length_compressed > XAR_TOC_DEEP_PARSE_MAX_SIZE ||
-        hdr.toc_length_decompressed > XAR_TOC_DEEP_PARSE_MAX_SIZE) {
-        cli_mark_scan_incomplete(ctx, "XAR TOC exceeds the bounded in-memory XML parser limit");
-        return CL_EMAXSIZE;
     }
     rc = cli_checklimits("XAR TOC", ctx, hdr.toc_length_decompressed, hdr.toc_length_compressed, 0);
     if (rc != CL_SUCCESS) {
@@ -496,85 +530,132 @@ int cli_scanxar(cli_ctx *ctx)
     /* cli_dbgmsg("hdr.toc_length_decompressed %lu\n", hdr.toc_length_decompressed); */
     /* cli_dbgmsg("hdr.chksum_alg %i\n", hdr.chksum_alg); */
 
-    /* Uncompress TOC */
-    strm.next_in = (unsigned char *)fmap_need_off_once(ctx->fmap, hdr.size, hdr.toc_length_compressed);
-    if (strm.next_in == NULL) {
-        cli_dbgmsg("cli_scanxar: fmap_need_off_once fails on TOC.\n");
-        return xar_incomplete(ctx, "XAR TOC could not be read completely");
-    }
-    strm.avail_in = hdr.toc_length_compressed;
-    toc           = cli_max_malloc(hdr.toc_length_decompressed + 1);
-    if (toc == NULL) {
-        cli_dbgmsg("cli_scanxar: cli_max_malloc fails on TOC decompress buffer.\n");
-        return CL_EMEM;
-    }
-    toc[hdr.toc_length_decompressed] = '\0';
-    strm.avail_out                   = hdr.toc_length_decompressed;
-    strm.next_out                    = (unsigned char *)toc;
-    rc                               = inflateInit(&strm);
-    if (rc != Z_OK) {
-        cli_dbgmsg("cli_scanxar:inflateInit error %i \n", rc);
-        cli_mark_scan_incomplete(ctx, "XAR TOC decoder could not be initialized");
-        rc = CL_EFORMAT;
-        goto exit_toc;
-    }
-    rc = inflate(&strm, Z_FINISH);
-    if (rc != Z_STREAM_END) {
-        inflateEnd(&strm);
-        cli_dbgmsg("cli_scanxar: TOC decoder did not reach stream end: %i\n", rc);
-        cli_mark_scan_incomplete(ctx, "XAR TOC decompression was incomplete");
-        rc = CL_EFORMAT;
-        goto exit_toc;
-    }
-    rc = inflateEnd(&strm);
-    if (rc != Z_OK) {
-        cli_dbgmsg("cli_scanxar:inflateEnd error %i \n", rc);
-        cli_mark_scan_incomplete(ctx, "XAR TOC decoder could not be finalized");
-        rc = CL_EFORMAT;
+    /* Stream the compressed TOC through zlib into a quota-accounted temporary
+     * file. The old path mapped the complete compressed TOC and allocated the
+     * complete decompressed XML document, imposing an unrelated 64 MiB cap. */
+    if ((rc = cli_gentempfd(ctx->this_layer_tmpdir, &tocname, &toc_fd)) != CL_SUCCESS) {
+        cli_dbgmsg("cli_scanxar: Can't create temporary file for TOC.\n");
         goto exit_toc;
     }
 
-    if (hdr.toc_length_decompressed != strm.total_out) {
-        cli_dbgmsg("TOC decompress length %" PRIu64 " does not match amount decompressed %lu\n",
-                   hdr.toc_length_decompressed, strm.total_out);
-        cli_mark_scan_incomplete(ctx, "XAR TOC decompressed length disagrees with its header");
-        rc = CL_EFORMAT;
-        goto exit_toc;
-    }
+    {
+        unsigned char inbuf[XAR_COPY_CHUNK_SIZE];
+        unsigned char outbuf[XAR_COPY_CHUNK_SIZE];
+        uint64_t compressed_read = 0;
+        uint64_t decompressed_written = 0;
+        bool stream_complete = false;
 
-    /* cli_dbgmsg("cli_scanxar: TOC xml:\n%s\n", toc); */
-    /* printf("cli_scanxar: TOC xml:\n%s\n", toc); */
-    /* cli_dbgmsg("cli_scanxar: TOC end:\n"); */
-    /* printf("cli_scanxar: TOC end:\n"); */
-
-    /* scan the xml */
-    cli_dbgmsg("cli_scanxar: scanning xar TOC xml in memory.\n");
-    rc = cli_magic_scan_buff(toc, hdr.toc_length_decompressed, ctx, NULL, LAYER_ATTRIBUTES_NONE);
-    if (rc != CL_SUCCESS) {
-        goto exit_toc;
-    }
-
-    /* make a file to leave if --leave-temps in effect */
-    if (ctx->engine->keeptmp) {
-        if ((rc = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
-            cli_dbgmsg("cli_scanxar: Can't create temporary file for TOC.\n");
+        rc = inflateInit(&strm);
+        if (rc != Z_OK) {
+            cli_dbgmsg("cli_scanxar: inflateInit error %i\n", rc);
+            cli_mark_scan_incomplete(ctx, "XAR TOC decoder could not be initialized");
+            rc = CL_EFORMAT;
             goto exit_toc;
         }
-        if (cli_writen(fd, toc, hdr.toc_length_decompressed) == (size_t)-1) {
-            cli_dbgmsg("cli_scanxar: cli_writen error writing TOC.\n");
-            rc = CL_EWRITE;
-            xar_cleanup_temp_file(ctx, fd, tmpname);
+
+        while (compressed_read < hdr.toc_length_compressed && !stream_complete) {
+            size_t chunk = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
+            size_t source_offset = hdr.size + (size_t)compressed_read;
+
+            if (fmap_readn(ctx->fmap, inbuf, source_offset, chunk) != chunk) {
+                cli_dbgmsg("cli_scanxar: could not read the complete compressed TOC chunk\n");
+                cli_mark_scan_incomplete(ctx, "XAR TOC could not be read completely");
+                rc = CL_EREAD;
+                inflateEnd(&strm);
+                goto exit_toc;
+            }
+
+            compressed_read += chunk;
+            strm.next_in = inbuf;
+            strm.avail_in = (uInt)chunk;
+
+            do {
+                int inflate_rc;
+                size_t produced;
+
+                strm.next_out = outbuf;
+                strm.avail_out = sizeof(outbuf);
+                inflate_rc = inflate(&strm, compressed_read == hdr.toc_length_compressed ? Z_FINISH : Z_NO_FLUSH);
+                produced = sizeof(outbuf) - strm.avail_out;
+
+                if (produced > hdr.toc_length_decompressed - decompressed_written) {
+                    cli_mark_scan_incomplete(ctx, "XAR TOC decompressed output exceeded its declared length");
+                    rc = CL_EFORMAT;
+                    inflateEnd(&strm);
+                    goto exit_toc;
+                }
+
+                rc = xar_spool_toc(ctx, toc_fd, outbuf, produced, &toc_reserved);
+                if (rc != CL_SUCCESS) {
+                    inflateEnd(&strm);
+                    goto exit_toc;
+                }
+                decompressed_written += produced;
+
+                if (inflate_rc == Z_STREAM_END) {
+                    stream_complete = true;
+                    if (strm.avail_in != 0 || compressed_read != hdr.toc_length_compressed) {
+                        cli_mark_scan_incomplete(ctx, "XAR TOC compressed range contains trailing data");
+                        rc = CL_EFORMAT;
+                        inflateEnd(&strm);
+                        goto exit_toc;
+                    }
+                    break;
+                }
+                if (inflate_rc != Z_OK && inflate_rc != Z_BUF_ERROR) {
+                    cli_dbgmsg("cli_scanxar: TOC decoder did not reach stream end: %i\n", inflate_rc);
+                    cli_mark_scan_incomplete(ctx, "XAR TOC decompression was incomplete");
+                    rc = CL_EFORMAT;
+                    inflateEnd(&strm);
+                    goto exit_toc;
+                }
+                if (inflate_rc == Z_BUF_ERROR && strm.avail_in == 0 && produced == 0) {
+                    cli_mark_scan_incomplete(ctx, "XAR TOC decoder made no progress");
+                    rc = CL_EFORMAT;
+                    inflateEnd(&strm);
+                    goto exit_toc;
+                }
+            } while (strm.avail_in != 0 || strm.avail_out == 0);
+        }
+
+        if (!stream_complete || decompressed_written != hdr.toc_length_decompressed) {
+            cli_mark_scan_incomplete(ctx, "XAR TOC decompressed length disagrees with its header");
+            rc = CL_EFORMAT;
+            inflateEnd(&strm);
             goto exit_toc;
         }
-        rc      = xar_cleanup_temp_file(ctx, fd, tmpname);
-        tmpname = NULL;
-        if (rc != CL_SUCCESS)
+
+        if (inflateEnd(&strm) != Z_OK) {
+            cli_mark_scan_incomplete(ctx, "XAR TOC decoder could not be finalized");
+            rc = CL_EFORMAT;
             goto exit_toc;
+        }
     }
 
-    reader = xmlReaderForMemory(toc, hdr.toc_length_decompressed, "noname.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
+    /* Scan the completed TOC as a child, then parse it through libxml2's
+     * streaming file-descriptor reader. Avoid charging the same TOC bytes as
+     * both materialization and descriptor scan. */
+    if (toc_reserved) {
+        cli_scan_release_temporary(ctx, toc_reserved);
+        toc_reserved = 0;
+    }
+    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be rewound");
+        rc = CL_ESEEK;
+        goto exit_toc;
+    }
+    rc = cli_magic_scan_desc(toc_fd, tocname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    if (rc != CL_SUCCESS)
+        goto exit_toc;
+    if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be rewound for XML parsing");
+        rc = CL_ESEEK;
+        goto exit_toc;
+    }
+
+    reader = xmlReaderForIO(xar_toc_read, xar_toc_close, &toc_fd, "xar-toc.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
     if (reader == NULL) {
-        cli_dbgmsg("cli_scanxar: xmlReaderForMemory error for TOC\n");
+        cli_dbgmsg("cli_scanxar: xmlReaderForIO error for TOC\n");
         rc = xar_incomplete(ctx, "XAR TOC XML parser could not be initialized");
         goto exit_toc;
     }
@@ -981,9 +1062,12 @@ exit_reader:
     xmlFreeTextReader(reader);
 
 exit_toc:
+    if (toc_reserved)
+        cli_scan_release_temporary(ctx, toc_reserved);
+    if (toc_fd > -1 && tocname)
+        xar_cleanup_temp_file(ctx, toc_fd, tocname);
     if (rc != CL_SUCCESS && rc != CL_VIRUS && rc != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "XAR inspection ended before completion");
-    free(toc);
     if (rc == CL_BREAK)
         rc = CL_SUCCESS;
 

@@ -811,3 +811,15 @@ clean result. A focused quota/backfill regression and source guards were added.
 This is an accounting/fail-closed correction, not proof that the retained
 64 MiB MIME line-list has been replaced with an incremental large-mail parser;
 the latter and supported-build qualification remain open.
+
+## XAR TOC streaming — 2026-08-19
+
+The XAR parser previously mapped the entire compressed TOC and allocated its
+entire decompressed XML document, enforcing an unrelated 64 MiB deep-parser
+cap. It now reads the compressed range in bounded chunks, writes decompressed
+XML to a temporary file under the shared temporary quota, scans that completed
+child, and parses it through a streaming `xmlReaderForIO` callback. Exact
+declared lengths, decoder terminal state, output writes, temporary admission,
+and XML reader errors are fail-visible. This removes the specific XAR 64 MiB
+heap cap; parser-family fixtures and supported-build 32 GiB qualification
+remain open.

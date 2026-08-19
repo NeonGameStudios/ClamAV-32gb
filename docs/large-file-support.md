@@ -1295,8 +1295,8 @@ or waive them.
   configured-limit crossings are incomplete/non-clean rather than a scan of a
   partial prefix. Other format-specific boundaries still require dedicated
   adversarial and large-payload fixtures before an upstream support claim.
-- Contiguous metadata/decompression remains intentionally capped: XAR TOCs and
-  DMG XML at 64 MiB, NSIS contiguous input and EGG decoder buffers at the 1 GiB
+- Contiguous metadata/decompression remains intentionally capped: DMG XML at
+  64 MiB, NSIS contiguous input and EGG decoder buffers at the 1 GiB
   allocation ceiling. Crossing these limits is fail-visible; it is not full
   deep-parser support through 32 GiB.
 - DMG blkx Base64 is prevalidated for its complete alphabet, quartet, padding,
@@ -2011,3 +2011,15 @@ normal descriptor scan reservation and is always released during destruction.
 This closes the accounting and fail-visible spool gap. It does not yet claim
 that the retained 64 MiB MIME message line-list has been replaced by a fully
 incremental MIME parser; that remains an explicit parser-family release gate.
+
+## XAR TOC streaming — 2026-08-19
+
+XAR TOC decompression now reads the compressed extent in bounded chunks,
+writes decompressed XML to a temporary file charged against the shared
+`MaxTemporarySize`, scans that completed child, and feeds libxml2 through
+`xmlReaderForIO`. The previous complete-map/complete-heap path and its
+independent 64 MiB TOC cap were removed. Declared compressed and decompressed
+lengths, decoder progress, exact output length, temporary writes, and XML
+reader failures remain fail-visible. The XAR parser still has separate
+format-specific and qualification gates; this change is not a claim of full
+32 GiB XAR corpus qualification.
