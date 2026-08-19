@@ -70,6 +70,12 @@ request. Path/FILDES report commands clear the receive-loop flag after their
 worker copy is queued, and legacy commands explicitly clear stale state; the
 internal `INSTREAMSCAN` transition remains the deliberate inheritance point.
 
+The structured-report producer now applies the same 16 MiB frame ceiling as
+the common clamd, clamonacc, and milter receivers. An oversized serialized
+report falls back to the bounded status object before allocation and 32-bit
+wire-length conversion, so report growth cannot become a transport truncation
+or allocation hazard.
+
 Mail message export now refuses already-truncated materializations and
 propagates decoder, output-allocation, and trailing-buffer write failures
 instead of returning a partial attachment blob. This closes a concrete

@@ -31,6 +31,11 @@ file-coordinate types. Historical small-file configurations keep their normal
 startup path. A failed admission is logged and the daemon does not open its
 scan sockets.
 
+Structured clamd report producers and consumers now share a 16 MiB payload
+ceiling. If report serialization would exceed that bound, clamd sends its
+small bounded status fallback instead of allocating and narrowing an
+oversized JSON frame; clients reject any larger received frame.
+
 The first authorized real-file Sonic1 run is documented in
 [`largefile-realfile-sonic1-20260818.md`](largefile-realfile-sonic1-20260818.md).
 It confirms that the fork's 32 GiB ceiling is an explicit configuration

@@ -66,6 +66,7 @@
 #include "server.h"
 #include "session.h"
 #include "thrmgr.h"
+#include "clamdcom.h"
 
 #ifndef HAVE_FDPASSING
 #define FEATURE_FDPASSING 0
@@ -255,7 +256,13 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
         int prefix_length = snprintf(id_prefix, sizeof(id_prefix), "{\"id\":%u,", conn->id);
         size_t serialized_length = strlen(serialized);
 
-        if (prefix_length >= 0 && (size_t)prefix_length < sizeof(id_prefix) && serialized_length >= 2) {
+        /* Keep the producer bound identical to the clamd clients.  The
+         * length-prefixed wire field is 32-bit, but accepting an arbitrary
+         * serialized report here could still allocate or narrow an oversized
+         * JSON payload before the client has a chance to reject it. */
+        if (prefix_length >= 0 && (size_t)prefix_length < sizeof(id_prefix) && serialized_length >= 2 &&
+            (size_t)prefix_length <= CLAMD_SCAN_REPORT_MAX_FRAME &&
+            serialized_length - 1U <= CLAMD_SCAN_REPORT_MAX_FRAME - (size_t)prefix_length) {
             json = (char *)malloc((size_t)prefix_length + serialized_length);
             if (json) {
                 memcpy(json, id_prefix, (size_t)prefix_length);
