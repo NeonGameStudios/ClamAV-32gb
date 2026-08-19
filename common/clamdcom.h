@@ -38,6 +38,8 @@
 
 struct action_source;
 
+#define CLAMD_SCAN_REPORT_MAX_FRAME (16U * 1024U * 1024U)
+
 enum {
     CONT,
     MULTI,

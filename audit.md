@@ -107,6 +107,12 @@ application-abort reports take the configured failure action. The active milter
 scan request is serialized across conversations so a second request cannot
 simultaneously stage and reserve resources while the first is being scanned.
 
+On-access stream, fd-passing, and path requests now use the corresponding
+structured report commands and parse the length-prefixed frames through the
+same status classifier. A report that is incomplete or cannot be received is
+returned as a worker error (and therefore denied in prevention mode), while a
+monitoring-only event may still allow without labeling the object clean.
+
 On-access prevention now denies permission events after stat or size-limit
 preflight failures even when the worker correctly avoids submitting a partial
 object; monitoring-only events continue to allow and log.

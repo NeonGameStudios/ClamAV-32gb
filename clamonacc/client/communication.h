@@ -46,5 +46,7 @@ int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout_ms, cl
 void onas_recvlninit(struct onas_rcvln *s, CURL *curl, int sockd);
 int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
 int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
+int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
+                          int *infected, int *incomplete);
 
 #endif

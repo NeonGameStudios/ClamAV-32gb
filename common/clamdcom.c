@@ -608,8 +608,6 @@ done:
     return infected;
 }
 
-#define CLAMD_SCAN_REPORT_MAX_FRAME (16U * 1024U * 1024U)
-
 static int recv_full(int sockd, void *buffer, size_t length)
 {
     unsigned char *cursor = (unsigned char *)buffer;

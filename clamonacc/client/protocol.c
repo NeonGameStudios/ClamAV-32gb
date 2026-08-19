@@ -80,7 +80,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     int close_flag = 0;
     STATBUF statbuf;
     uint64_t bytesRead     = 0;
-    const char zINSTREAM[] = "zINSTREAM";
+    const char zINSTREAM[] = "zINSTREAMREPORT";
 
     if (-1 == fd) {
         if (NULL == filename) {
@@ -108,16 +108,11 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     }
 
     if ((uint64_t)statbuf.st_size > maxstream) {
-        if (action_stream) {
-            logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated quarantine stream. ERROR\n",
-                 filename ? filename : "FD");
-            if (ret_code) {
-                *ret_code = CL_EMAXSIZE;
-            }
-            ret = -1;
-        } else {
-            ret = 0;
-        }
+        logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
+             filename ? filename : "FD");
+        if (ret_code)
+            *ret_code = CL_EMAXSIZE;
+        ret = -1;
         goto strm_out;
     }
 
@@ -204,7 +199,7 @@ static int onas_send_fdpass(int sockd, int fd)
     struct msghdr msg;
     struct cmsghdr *cmsg;
     unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
-    const char zFILDES[] = "zFILDES";
+    const char zFILDES[] = "zFILDESREPORT";
 
     if (sendln(sockd, zFILDES, sizeof(zFILDES))) {
         return -1;
@@ -295,7 +290,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
 #endif
 
     onas_recvlninit(&rcv, curl, sockd);
-    if ((FILDES == scantype) && (rcv.sockd > 0)) {
+    if ((FILDES == scantype) && (rcv.sockd >= 0)) {
         recv_func = &onas_fd_recvln;
     } else {
         recv_func = &onas_recvln;
@@ -313,7 +308,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
                 infected = -1;
                 goto done;
             }
-            len = strlen(filename) + strlen(scancmd[scantype]) + 3;
+            len = strlen(filename) + strlen(scancmd[scantype]) + strlen("zREPORT ") + 1;
             if (!(bol = malloc(len))) {
                 logg(LOGG_ERROR, "Cannot allocate a command buffer: %s\n", strerror(errno));
                 if (ret_code) {
@@ -322,7 +317,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
                 infected = -1;
                 goto done;
             }
-            sprintf(bol, "z%s %s", scancmd[scantype], filename);
+            sprintf(bol, "z%sREPORT %s", scancmd[scantype], filename);
             if (onas_sendln(curl, bol, len, timeout, ret_code)) {
                 if (ret_code && *ret_code == CL_SUCCESS) {
                     *ret_code = CL_EWRITE;
@@ -360,6 +355,55 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
             *ret_code = CL_EWRITE;
         }
         infected = ((NULL != action_source) && (0 == len)) ? -1 : len;
+        goto done;
+    }
+
+    /* All on-access scan modes use the versioned framed report protocol. A
+     * non-detection incomplete report is an error, never an implicit clean;
+     * detections retain precedence when a multi-frame request contains both. */
+    {
+        int report_infected = 0;
+        int report_incomplete = 0;
+
+        if (onas_recv_scan_report(&rcv, timeout, &report_infected,
+                                  &report_incomplete) < 0) {
+            if (ret_code && *ret_code == CL_SUCCESS)
+                *ret_code = (rcv.curlcode == CURLE_OPERATION_TIMEDOUT) ? CL_ETIMEOUT : CL_EREAD;
+            if (errors)
+                (*errors)++;
+            *printok = 0;
+            infected = -1;
+            goto done;
+        }
+
+        if (report_incomplete && !report_infected) {
+            if (ret_code)
+                *ret_code = CL_EPARSE;
+            if (errors)
+                (*errors)++;
+            *printok = 0;
+            infected = -1;
+            logg(LOGG_INFO, "%s: structured clamd report incomplete\n",
+                 display_filename ? display_filename : "FD");
+            goto done;
+        }
+
+        if (report_infected) {
+            *printok = 0;
+            if (ret_code)
+                *ret_code = CL_VIRUS;
+            infected = 1;
+            if (display_filename)
+                logg(LOGG_INFO, "%s FOUND\n", display_filename);
+            if (action && NULL != action_source)
+                action(action_source);
+            goto done;
+        }
+
+        *printok = 1;
+        infected = 0;
+        if (ret_code)
+            *ret_code = CL_SUCCESS;
         goto done;
     }
 
@@ -518,7 +562,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
     }
 
 done:
-    if (sockd > 0) {
+    if (sockd >= 0) {
         closesocket(sockd);
     }
     return infected;

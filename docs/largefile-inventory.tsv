@@ -120,21 +120,27 @@ fixed-width-integer	clamonacc/client/client.c	91	    int64_t timeout;
 fixed-width-integer	clamonacc/client/client.h	34	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 fixed-width-integer	clamonacc/client/client.h	35	CURLcode onas_curl_init(CURL **curl, const char *ipaddr, int64_t port, int64_t timeout);
 fixed-width-integer	clamonacc/client/client.h	39	int16_t onas_ping_clamd(struct onas_context **ctx);
-fixed-width-integer	clamonacc/client/communication.c	178	int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout)
-fixed-width-integer	clamonacc/client/communication.c	287	int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms)
-fixed-width-integer	clamonacc/client/communication.c	49	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms);
-fixed-width-integer	clamonacc/client/communication.c	54	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms)
-fixed-width-integer	clamonacc/client/communication.c	83	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
+fixed-width-integer	clamonacc/client/communication.c	130	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms)
+fixed-width-integer	clamonacc/client/communication.c	159	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
+fixed-width-integer	clamonacc/client/communication.c	245	int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
+fixed-width-integer	clamonacc/client/communication.c	257	        uint32_t network_length;
+fixed-width-integer	clamonacc/client/communication.c	258	        uint32_t length;
+fixed-width-integer	clamonacc/client/communication.c	305	int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout)
+fixed-width-integer	clamonacc/client/communication.c	414	int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms)
+fixed-width-integer	clamonacc/client/communication.c	53	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms);
+fixed-width-integer	clamonacc/client/communication.c	56	                           size_t length, int64_t timeout_ms)
+fixed-width-integer	clamonacc/client/communication.c	59	    uint64_t wait_timeout = timeout_ms > 0 ? (uint64_t)timeout_ms : 0;
 fixed-width-integer	clamonacc/client/communication.h	45	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout_ms, cl_error_t *ret_code);
 fixed-width-integer	clamonacc/client/communication.h	47	int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
 fixed-width-integer	clamonacc/client/communication.h	48	int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
+fixed-width-integer	clamonacc/client/communication.h	49	int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
 fixed-width-integer	clamonacc/client/protocol.c	110	    if ((uint64_t)statbuf.st_size > maxstream) {
-fixed-width-integer	clamonacc/client/protocol.c	135	        uint64_t remaining = len - bytesRead;
-fixed-width-integer	clamonacc/client/protocol.c	138	        uint32_t chunk_len;
-fixed-width-integer	clamonacc/client/protocol.c	149	        chunk_len = htonl((uint32_t)bytes);
-fixed-width-integer	clamonacc/client/protocol.c	279	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
-fixed-width-integer	clamonacc/client/protocol.c	280	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
-fixed-width-integer	clamonacc/client/protocol.c	287	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
+fixed-width-integer	clamonacc/client/protocol.c	130	        uint64_t remaining = len - bytesRead;
+fixed-width-integer	clamonacc/client/protocol.c	133	        uint32_t chunk_len;
+fixed-width-integer	clamonacc/client/protocol.c	144	        chunk_len = htonl((uint32_t)bytes);
+fixed-width-integer	clamonacc/client/protocol.c	274	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
+fixed-width-integer	clamonacc/client/protocol.c	275	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
+fixed-width-integer	clamonacc/client/protocol.c	282	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
 fixed-width-integer	clamonacc/client/protocol.c	75	static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
 fixed-width-integer	clamonacc/client/protocol.c	77	    uint32_t buf[BUFSIZ / sizeof(uint32_t)];
 fixed-width-integer	clamonacc/client/protocol.c	78	    uint64_t len;
@@ -228,13 +234,13 @@ fixed-width-integer	common/clamdcom.c	299	    while ((len = read(fd, &buf[1], si
 fixed-width-integer	common/clamdcom.c	300	        if (reject_over_limit && ((uint64_t)len > todo)) {
 fixed-width-integer	common/clamdcom.c	305	        if ((uint64_t)len > todo) len = (int)todo;
 fixed-width-integer	common/clamdcom.c	307	        if (sendln(sockd, (const char *)buf, len + sizeof(uint32_t))) {
-fixed-width-integer	common/clamdcom.c	630	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
-fixed-width-integer	common/clamdcom.c	632	    uint32_t network_length;
-fixed-width-integer	common/clamdcom.c	633	    uint32_t length;
-fixed-width-integer	common/clamdcom.c	670	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
-fixed-width-integer	common/clamdcom.c	806	        uint32_t json_length = 0;
-fixed-width-integer	common/clamdcom.h	83	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
-fixed-width-integer	common/clamdcom.h	84	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
+fixed-width-integer	common/clamdcom.c	628	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
+fixed-width-integer	common/clamdcom.c	630	    uint32_t network_length;
+fixed-width-integer	common/clamdcom.c	631	    uint32_t length;
+fixed-width-integer	common/clamdcom.c	668	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+fixed-width-integer	common/clamdcom.c	804	        uint32_t json_length = 0;
+fixed-width-integer	common/clamdcom.h	85	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
+fixed-width-integer	common/clamdcom.h	86	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
 fixed-width-integer	common/exeScanner.c	116	int sigcmp(const uint8_t *data, const int16_t *sig, size_t n)
 fixed-width-integer	common/exeScanner.c	119	    int16_t *s = (int16_t *)sig;
 fixed-width-integer	common/exeScanner.c	175	    uint16_t e_mz;
@@ -5935,45 +5941,63 @@ native-width-integer	clamonacc/client/client.c	86	    int ret;
 native-width-integer	clamonacc/client/client.h	34	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 native-width-integer	clamonacc/client/client.h	36	int onas_get_clamd_version(struct onas_context **ctx);
 native-width-integer	clamonacc/client/client.h	38	int onas_check_remote(struct onas_context **ctx, cl_error_t *err);
-native-width-integer	clamonacc/client/communication.c	112	                int wait_result = onas_socket_wait(sockfd, 0, timeout);
-native-width-integer	clamonacc/client/communication.c	160	void onas_recvlninit(struct onas_rcvln *rcv_data, CURL *curl, int sockd)
-native-width-integer	clamonacc/client/communication.c	178	int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout)
-native-width-integer	clamonacc/client/communication.c	181	    int ret = 0;
-native-width-integer	clamonacc/client/communication.c	189	    long long_sockfd;
-native-width-integer	clamonacc/client/communication.c	206	                    int wait_result = onas_socket_wait(sockfd, 1, timeout);
-native-width-integer	clamonacc/client/communication.c	287	int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms)
-native-width-integer	clamonacc/client/communication.c	313	            int ret = 0;
-native-width-integer	clamonacc/client/communication.c	49	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms);
-native-width-integer	clamonacc/client/communication.c	54	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms)
-native-width-integer	clamonacc/client/communication.c	58	    int ret;
-native-width-integer	clamonacc/client/communication.c	76	    ret = select((int)sockfd + 1, &infd, &outfd, &errfd, &tv);
-native-width-integer	clamonacc/client/communication.c	83	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
-native-width-integer	clamonacc/client/communication.c	85	    size_t sent = 0;
-native-width-integer	clamonacc/client/communication.c	94	    long long_sockfd;
+native-width-integer	clamonacc/client/communication.c	106	                    int wait_result = onas_socket_wait(sockfd, 1, wait_timeout);
+native-width-integer	clamonacc/client/communication.c	130	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms)
+native-width-integer	clamonacc/client/communication.c	134	    int ret;
+native-width-integer	clamonacc/client/communication.c	152	    ret = select((int)sockfd + 1, &infd, &outfd, &errfd, &tv);
+native-width-integer	clamonacc/client/communication.c	159	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
+native-width-integer	clamonacc/client/communication.c	161	    size_t sent = 0;
+native-width-integer	clamonacc/client/communication.c	170	    long long_sockfd;
+native-width-integer	clamonacc/client/communication.c	188	                int wait_result = onas_socket_wait(sockfd, 0, timeout);
+native-width-integer	clamonacc/client/communication.c	236	void onas_recvlninit(struct onas_rcvln *rcv_data, CURL *curl, int sockd)
+native-width-integer	clamonacc/client/communication.c	245	int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
+native-width-integer	clamonacc/client/communication.c	246	                          int *infected, int *incomplete)
+native-width-integer	clamonacc/client/communication.c	248	    int received = 0;
+native-width-integer	clamonacc/client/communication.c	260	        int frame_infected = 0;
+native-width-integer	clamonacc/client/communication.c	261	        int frame_incomplete = 0;
+native-width-integer	clamonacc/client/communication.c	272	        payload = (char *)malloc((size_t)length + 1U);
+native-width-integer	clamonacc/client/communication.c	305	int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout)
+native-width-integer	clamonacc/client/communication.c	308	    int ret = 0;
+native-width-integer	clamonacc/client/communication.c	316	    long long_sockfd;
+native-width-integer	clamonacc/client/communication.c	333	                    int wait_result = onas_socket_wait(sockfd, 1, timeout);
+native-width-integer	clamonacc/client/communication.c	414	int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms)
+native-width-integer	clamonacc/client/communication.c	440	            int ret = 0;
+native-width-integer	clamonacc/client/communication.c	53	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms);
+native-width-integer	clamonacc/client/communication.c	55	static int onas_recv_bytes(struct onas_rcvln *rcv_data, void *buffer,
+native-width-integer	clamonacc/client/communication.c	56	                           size_t length, int64_t timeout_ms)
+native-width-integer	clamonacc/client/communication.c	65	        size_t received = 0;
+native-width-integer	clamonacc/client/communication.c	68	            int wait_result = onas_socket_wait(rcv_data->sockd, 1, wait_timeout);
+native-width-integer	clamonacc/client/communication.c	69	            ssize_t result;
+native-width-integer	clamonacc/client/communication.c	86	            received = (size_t)result;
+native-width-integer	clamonacc/client/communication.c	94	            long long_sockfd;
 native-width-integer	clamonacc/client/communication.h	37	    int sockd;
 native-width-integer	clamonacc/client/communication.h	40	    size_t retlen;
 native-width-integer	clamonacc/client/communication.h	45	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout_ms, cl_error_t *ret_code);
 native-width-integer	clamonacc/client/communication.h	46	void onas_recvlninit(struct onas_rcvln *s, CURL *curl, int sockd);
 native-width-integer	clamonacc/client/communication.h	47	int onas_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
 native-width-integer	clamonacc/client/communication.h	48	int onas_fd_recvln(struct onas_rcvln *rcv_data, char **ret_bol, char **ret_eol, int64_t timeout_ms);
-native-width-integer	clamonacc/client/protocol.c	136	        size_t read_len    = (remaining < sizeof(buf)) ? (size_t)remaining : sizeof(buf);
-native-width-integer	clamonacc/client/protocol.c	137	        ssize_t bytes      = read(fd, buf, read_len);
-native-width-integer	clamonacc/client/protocol.c	151	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
-native-width-integer	clamonacc/client/protocol.c	168	        ssize_t bytes = read(fd, buf, 1);
-native-width-integer	clamonacc/client/protocol.c	199	static int onas_send_fdpass(int sockd, int fd)
-native-width-integer	clamonacc/client/protocol.c	206	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
-native-width-integer	clamonacc/client/protocol.c	219	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
-native-width-integer	clamonacc/client/protocol.c	221	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
-native-width-integer	clamonacc/client/protocol.c	224	    *(int *)CMSG_DATA(cmsg) = fd;
-native-width-integer	clamonacc/client/protocol.c	236	static int onas_fdpass(const char *filename, int fd, int sockd)
-native-width-integer	clamonacc/client/protocol.c	238	    int ret        = 1;
-native-width-integer	clamonacc/client/protocol.c	239	    int close_flag = 0;
-native-width-integer	clamonacc/client/protocol.c	279	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
-native-width-integer	clamonacc/client/protocol.c	280	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
-native-width-integer	clamonacc/client/protocol.c	282	    int infected = 0, len = 0, beenthere = 0;
-native-width-integer	clamonacc/client/protocol.c	286	    int sockd                                                        = -1;
-native-width-integer	clamonacc/client/protocol.c	287	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
-native-width-integer	clamonacc/client/protocol.c	289	    int scan_fd                  = (NULL != action_source) ? action_source->scan_fd : fd;
+native-width-integer	clamonacc/client/communication.h	49	int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
+native-width-integer	clamonacc/client/communication.h	50	                          int *infected, int *incomplete);
+native-width-integer	clamonacc/client/protocol.c	131	        size_t read_len    = (remaining < sizeof(buf)) ? (size_t)remaining : sizeof(buf);
+native-width-integer	clamonacc/client/protocol.c	132	        ssize_t bytes      = read(fd, buf, read_len);
+native-width-integer	clamonacc/client/protocol.c	146	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
+native-width-integer	clamonacc/client/protocol.c	163	        ssize_t bytes = read(fd, buf, 1);
+native-width-integer	clamonacc/client/protocol.c	194	static int onas_send_fdpass(int sockd, int fd)
+native-width-integer	clamonacc/client/protocol.c	201	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
+native-width-integer	clamonacc/client/protocol.c	214	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
+native-width-integer	clamonacc/client/protocol.c	216	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
+native-width-integer	clamonacc/client/protocol.c	219	    *(int *)CMSG_DATA(cmsg) = fd;
+native-width-integer	clamonacc/client/protocol.c	231	static int onas_fdpass(const char *filename, int fd, int sockd)
+native-width-integer	clamonacc/client/protocol.c	233	    int ret        = 1;
+native-width-integer	clamonacc/client/protocol.c	234	    int close_flag = 0;
+native-width-integer	clamonacc/client/protocol.c	274	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
+native-width-integer	clamonacc/client/protocol.c	275	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
+native-width-integer	clamonacc/client/protocol.c	277	    int infected = 0, len = 0, beenthere = 0;
+native-width-integer	clamonacc/client/protocol.c	281	    int sockd                                                        = -1;
+native-width-integer	clamonacc/client/protocol.c	282	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
+native-width-integer	clamonacc/client/protocol.c	284	    int scan_fd                  = (NULL != action_source) ? action_source->scan_fd : fd;
+native-width-integer	clamonacc/client/protocol.c	365	        int report_infected = 0;
+native-width-integer	clamonacc/client/protocol.c	366	        int report_incomplete = 0;
 native-width-integer	clamonacc/client/protocol.c	75	static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
 native-width-integer	clamonacc/client/protocol.c	79	    int ret        = 1;
 native-width-integer	clamonacc/client/protocol.c	80	    int close_flag = 0;
@@ -6575,53 +6599,53 @@ native-width-integer	common/clamdcom.c	402	    int sockd, res;
 native-width-integer	common/clamdcom.c	469	int dsresult(int sockd, int scantype, const char *filename, const action_source_t *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts)
 native-width-integer	common/clamdcom.c	471	    int infected = 0, len = 0, beenthere = 0;
 native-width-integer	common/clamdcom.c	59	int sendln(int sockd, const char *line, unsigned int len)
-native-width-integer	common/clamdcom.c	613	static int recv_full(int sockd, void *buffer, size_t length)
-native-width-integer	common/clamdcom.c	618	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
+native-width-integer	common/clamdcom.c	611	static int recv_full(int sockd, void *buffer, size_t length)
+native-width-integer	common/clamdcom.c	616	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
+native-width-integer	common/clamdcom.c	619	        cursor += (size_t)received;
 native-width-integer	common/clamdcom.c	62	        int sent = send(sockd, line, len, 0);
-native-width-integer	common/clamdcom.c	621	        cursor += (size_t)received;
-native-width-integer	common/clamdcom.c	622	        length -= (size_t)received;
-native-width-integer	common/clamdcom.c	630	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
-native-width-integer	common/clamdcom.c	652	    payload = (char *)malloc((size_t)length + 1U);
-native-width-integer	common/clamdcom.c	665	static int report_json_contains(const char *json, const char *compact, const char *spaced)
-native-width-integer	common/clamdcom.c	670	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
-native-width-integer	common/clamdcom.c	733	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
-native-width-integer	common/clamdcom.c	734	             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
-native-width-integer	common/clamdcom.c	735	             int *errors, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	737	    int sent = 0;
-native-width-integer	common/clamdcom.c	738	    int frame;
-native-width-integer	common/clamdcom.c	739	    int terminated = 0;
+native-width-integer	common/clamdcom.c	620	        length -= (size_t)received;
+native-width-integer	common/clamdcom.c	628	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
+native-width-integer	common/clamdcom.c	650	    payload = (char *)malloc((size_t)length + 1U);
+native-width-integer	common/clamdcom.c	663	static int report_json_contains(const char *json, const char *compact, const char *spaced)
+native-width-integer	common/clamdcom.c	668	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+native-width-integer	common/clamdcom.c	731	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+native-width-integer	common/clamdcom.c	732	             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
+native-width-integer	common/clamdcom.c	733	             int *errors, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	735	    int sent = 0;
+native-width-integer	common/clamdcom.c	736	    int frame;
+native-width-integer	common/clamdcom.c	737	    int terminated = 0;
+native-width-integer	common/clamdcom.c	748	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
 native-width-integer	common/clamdcom.c	75	void recvlninit(struct RCVLN *s, int sockd)
-native-width-integer	common/clamdcom.c	750	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
-native-width-integer	common/clamdcom.c	755	                sent = sendln(sockd, command, (unsigned int)length);
-native-width-integer	common/clamdcom.c	763	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
-native-width-integer	common/clamdcom.c	768	                sent = sendln(sockd, command, (unsigned int)length);
-native-width-integer	common/clamdcom.c	776	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
-native-width-integer	common/clamdcom.c	781	                sent = sendln(sockd, command, (unsigned int)length);
-native-width-integer	common/clamdcom.c	807	        int frame_infected = 0;
-native-width-integer	common/clamdcom.c	808	        int frame_incomplete = 0;
+native-width-integer	common/clamdcom.c	753	                sent = sendln(sockd, command, (unsigned int)length);
+native-width-integer	common/clamdcom.c	761	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
+native-width-integer	common/clamdcom.c	766	                sent = sendln(sockd, command, (unsigned int)length);
+native-width-integer	common/clamdcom.c	774	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
+native-width-integer	common/clamdcom.c	779	                sent = sendln(sockd, command, (unsigned int)length);
+native-width-integer	common/clamdcom.c	805	        int frame_infected = 0;
+native-width-integer	common/clamdcom.c	806	        int frame_incomplete = 0;
 native-width-integer	common/clamdcom.c	91	int recvln(struct RCVLN *s, char **rbol, char **reol)
-native-width-integer	common/clamdcom.h	52	    int sockd;
-native-width-integer	common/clamdcom.h	53	    int r;
-native-width-integer	common/clamdcom.h	62	int sendln(int sockd, const char *line, unsigned int len);
-native-width-integer	common/clamdcom.h	63	void recvlninit(struct RCVLN *s, int sockd);
-native-width-integer	common/clamdcom.h	64	int recvln(struct RCVLN *s, char **rbol, char **reol);
-native-width-integer	common/clamdcom.h	66	int chkpath(const char *path, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	68	int send_fdpass_fd(int sockd, int fd);
-native-width-integer	common/clamdcom.h	69	int send_fdpass(int sockd, const char *filename);
-native-width-integer	common/clamdcom.h	70	int send_fdpass_fd_report(int sockd, int fd);
-native-width-integer	common/clamdcom.h	71	int send_fdpass_report(int sockd, const char *filename);
-native-width-integer	common/clamdcom.h	73	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	74	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	75	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	76	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	77	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	78	int dconnect(struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	79	int dsresult(int sockd, int scantype, const char *filename, const struct action_source *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	80	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
-native-width-integer	common/clamdcom.h	81	             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
-native-width-integer	common/clamdcom.h	82	             int *errors, struct optstruct *clamdopts);
-native-width-integer	common/clamdcom.h	83	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
-native-width-integer	common/clamdcom.h	84	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
+native-width-integer	common/clamdcom.h	54	    int sockd;
+native-width-integer	common/clamdcom.h	55	    int r;
+native-width-integer	common/clamdcom.h	64	int sendln(int sockd, const char *line, unsigned int len);
+native-width-integer	common/clamdcom.h	65	void recvlninit(struct RCVLN *s, int sockd);
+native-width-integer	common/clamdcom.h	66	int recvln(struct RCVLN *s, char **rbol, char **reol);
+native-width-integer	common/clamdcom.h	68	int chkpath(const char *path, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	70	int send_fdpass_fd(int sockd, int fd);
+native-width-integer	common/clamdcom.h	71	int send_fdpass(int sockd, const char *filename);
+native-width-integer	common/clamdcom.h	72	int send_fdpass_fd_report(int sockd, int fd);
+native-width-integer	common/clamdcom.h	73	int send_fdpass_report(int sockd, const char *filename);
+native-width-integer	common/clamdcom.h	75	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	76	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	77	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	78	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	79	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	80	int dconnect(struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	81	int dsresult(int sockd, int scantype, const char *filename, const struct action_source *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	82	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+native-width-integer	common/clamdcom.h	83	             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
+native-width-integer	common/clamdcom.h	84	             int *errors, struct optstruct *clamdopts);
+native-width-integer	common/clamdcom.h	85	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
+native-width-integer	common/clamdcom.h	86	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
 native-width-integer	common/exeScanner.c	116	int sigcmp(const uint8_t *data, const int16_t *sig, size_t n)
 native-width-integer	common/exeScanner.c	133	    int i = 0;
 native-width-integer	common/exeScanner.c	142	double calc_entropy(const unsigned char *data, size_t size)
@@ -15638,7 +15662,7 @@ boundary-constant	clamdscan/proto.c	748	    ftw = cli_ftw(file, flags, maxlevel 
 boundary-constant	common/actions.c	1141	        if (stream_size.QuadPart > UINT32_MAX) {
 boundary-constant	common/actions.c	1142	            want = UINT32_MAX;
 boundary-constant	common/actions.c	1307	            if (stream_name_chars > (SIZE_MAX / sizeof(WCHAR)) - 1) {
-boundary-constant	common/clamdcom.c	618	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
+boundary-constant	common/clamdcom.c	616	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
 boundary-constant	common/optparser.c	1325	                            fprintf(stderr, "ERROR: MaxScanTime must be an integer from 0 through %u\n", UINT32_MAX);
 boundary-constant	common/optparser.c	1342	                    lnumlimit = LLONG_MAX;
 boundary-constant	common/optparser.c	1346	                    lnumlimit = LLONG_MAX < ULONG_MAX ? LLONG_MAX : ULONG_MAX;
@@ -15956,9 +15980,9 @@ quantity-parser	unit_tests/check_clamav.c	8836	        int timeout = atoi(user_t
 quantity-parser	unit_tests/check_clamd.c	229	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	99	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 narrowing-cast	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
-narrowing-cast	common/clamdcom.c	755	                sent = sendln(sockd, command, (unsigned int)length);
-narrowing-cast	common/clamdcom.c	768	                sent = sendln(sockd, command, (unsigned int)length);
-narrowing-cast	common/clamdcom.c	781	                sent = sendln(sockd, command, (unsigned int)length);
+narrowing-cast	common/clamdcom.c	753	                sent = sendln(sockd, command, (unsigned int)length);
+narrowing-cast	common/clamdcom.c	766	                sent = sendln(sockd, command, (unsigned int)length);
+narrowing-cast	common/clamdcom.c	779	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	libclamav/blob.c	775	                       (unsigned long)len, fb->b.name);
 narrowing-cast	libclamav/bytecode.c	123	            legacy_offsets[i] = (uint32_t)offsets[i];
 narrowing-cast	libclamav/bytecode.c	1513	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
@@ -18836,54 +18860,56 @@ offset-size-arithmetic	clamonacc/clamonacc.c	65	static int startup_checks(struct
 offset-size-arithmetic	clamonacc/clamonacc.h	83	int onas_start_eloop(struct onas_context **ctx);
 offset-size-arithmetic	clamonacc/client/client.c	366	    /* we implement our own transfer protocol via send and recv, so we only need to connect */
 offset-size-arithmetic	clamonacc/client/client.c	521	        if (len == -1) {
-offset-size-arithmetic	clamonacc/client/communication.c	153	        len -= sent;
-offset-size-arithmetic	clamonacc/client/communication.c	164	    rcv_data->lnstart = rcv_data->curr = rcv_data->buf;
-offset-size-arithmetic	clamonacc/client/communication.c	203	                                                    sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), &(rcv_data->retlen));
-offset-size-arithmetic	clamonacc/client/communication.c	224	                if (rcv_data->retlen || rcv_data->curr != rcv_data->buf) {
-offset-size-arithmetic	clamonacc/client/communication.c	242	            rcv_data->retlen -= eol - rcv_data->curr;
-offset-size-arithmetic	clamonacc/client/communication.c	251	                rcv_data->lnstart = rcv_data->curr = eol;
-offset-size-arithmetic	clamonacc/client/communication.c	253	                rcv_data->lnstart = rcv_data->curr = rcv_data->buf;
-offset-size-arithmetic	clamonacc/client/communication.c	259	        rcv_data->retlen += rcv_data->curr - rcv_data->lnstart;
-offset-size-arithmetic	clamonacc/client/communication.c	261	        if (!eol && rcv_data->retlen == sizeof(rcv_data->buf)) {
-offset-size-arithmetic	clamonacc/client/communication.c	268	                memmove(rcv_data->buf, rcv_data->lnstart, rcv_data->retlen);
-offset-size-arithmetic	clamonacc/client/communication.c	269	                rcv_data->lnstart = rcv_data->buf;
-offset-size-arithmetic	clamonacc/client/communication.c	272	            rcv_data->curr   = &rcv_data->lnstart[rcv_data->retlen];
-offset-size-arithmetic	clamonacc/client/communication.c	295	            rcv_data->retlen = recv(rcv_data->sockd, rcv_data->curr, sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), 0);
-offset-size-arithmetic	clamonacc/client/communication.c	301	                if (rcv_data->retlen || rcv_data->curr != rcv_data->buf) {
-offset-size-arithmetic	clamonacc/client/communication.c	315	            rcv_data->retlen -= eol - rcv_data->curr;
-offset-size-arithmetic	clamonacc/client/communication.c	320	                rcv_data->lnstart = rcv_data->curr = eol;
-offset-size-arithmetic	clamonacc/client/communication.c	322	                rcv_data->lnstart = rcv_data->curr = rcv_data->buf;
-offset-size-arithmetic	clamonacc/client/communication.c	325	        rcv_data->retlen += rcv_data->curr - rcv_data->lnstart;
-offset-size-arithmetic	clamonacc/client/communication.c	326	        if (!eol && rcv_data->retlen == sizeof(rcv_data->buf)) {
-offset-size-arithmetic	clamonacc/client/communication.c	331	            if (rcv_data->buf != rcv_data->lnstart) { /* old memmove sux */
-offset-size-arithmetic	clamonacc/client/communication.c	332	                memmove(rcv_data->buf, rcv_data->lnstart, rcv_data->retlen);
-offset-size-arithmetic	clamonacc/client/communication.c	333	                rcv_data->lnstart = rcv_data->buf;
-offset-size-arithmetic	clamonacc/client/communication.c	335	            rcv_data->curr   = &rcv_data->lnstart[rcv_data->retlen];
-offset-size-arithmetic	clamonacc/client/communication.c	83	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
+offset-size-arithmetic	clamonacc/client/communication.c	121	        length -= received;
+offset-size-arithmetic	clamonacc/client/communication.c	159	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
+offset-size-arithmetic	clamonacc/client/communication.c	229	        len -= sent;
+offset-size-arithmetic	clamonacc/client/communication.c	240	    rcv_data->lnstart = rcv_data->curr = rcv_data->buf;
+offset-size-arithmetic	clamonacc/client/communication.c	272	        payload = (char *)malloc((size_t)length + 1U);
+offset-size-arithmetic	clamonacc/client/communication.c	330	                                                    sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), &(rcv_data->retlen));
+offset-size-arithmetic	clamonacc/client/communication.c	351	                if (rcv_data->retlen || rcv_data->curr != rcv_data->buf) {
+offset-size-arithmetic	clamonacc/client/communication.c	369	            rcv_data->retlen -= eol - rcv_data->curr;
+offset-size-arithmetic	clamonacc/client/communication.c	378	                rcv_data->lnstart = rcv_data->curr = eol;
+offset-size-arithmetic	clamonacc/client/communication.c	380	                rcv_data->lnstart = rcv_data->curr = rcv_data->buf;
+offset-size-arithmetic	clamonacc/client/communication.c	386	        rcv_data->retlen += rcv_data->curr - rcv_data->lnstart;
+offset-size-arithmetic	clamonacc/client/communication.c	388	        if (!eol && rcv_data->retlen == sizeof(rcv_data->buf)) {
+offset-size-arithmetic	clamonacc/client/communication.c	395	                memmove(rcv_data->buf, rcv_data->lnstart, rcv_data->retlen);
+offset-size-arithmetic	clamonacc/client/communication.c	396	                rcv_data->lnstart = rcv_data->buf;
+offset-size-arithmetic	clamonacc/client/communication.c	399	            rcv_data->curr   = &rcv_data->lnstart[rcv_data->retlen];
+offset-size-arithmetic	clamonacc/client/communication.c	422	            rcv_data->retlen = recv(rcv_data->sockd, rcv_data->curr, sizeof(rcv_data->buf) - (rcv_data->curr - rcv_data->buf), 0);
+offset-size-arithmetic	clamonacc/client/communication.c	428	                if (rcv_data->retlen || rcv_data->curr != rcv_data->buf) {
+offset-size-arithmetic	clamonacc/client/communication.c	442	            rcv_data->retlen -= eol - rcv_data->curr;
+offset-size-arithmetic	clamonacc/client/communication.c	447	                rcv_data->lnstart = rcv_data->curr = eol;
+offset-size-arithmetic	clamonacc/client/communication.c	449	                rcv_data->lnstart = rcv_data->curr = rcv_data->buf;
+offset-size-arithmetic	clamonacc/client/communication.c	452	        rcv_data->retlen += rcv_data->curr - rcv_data->lnstart;
+offset-size-arithmetic	clamonacc/client/communication.c	453	        if (!eol && rcv_data->retlen == sizeof(rcv_data->buf)) {
+offset-size-arithmetic	clamonacc/client/communication.c	458	            if (rcv_data->buf != rcv_data->lnstart) { /* old memmove sux */
+offset-size-arithmetic	clamonacc/client/communication.c	459	                memmove(rcv_data->buf, rcv_data->lnstart, rcv_data->retlen);
+offset-size-arithmetic	clamonacc/client/communication.c	460	                rcv_data->lnstart = rcv_data->buf;
+offset-size-arithmetic	clamonacc/client/communication.c	462	            rcv_data->curr   = &rcv_data->lnstart[rcv_data->retlen];
 offset-size-arithmetic	clamonacc/client/communication.h	45	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout_ms, cl_error_t *ret_code);
-offset-size-arithmetic	clamonacc/client/protocol.c	135	        uint64_t remaining = len - bytesRead;
-offset-size-arithmetic	clamonacc/client/protocol.c	150	        if (onas_sendln(curl, (const char *)&chunk_len, sizeof(chunk_len), timeout, ret_code) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	151	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	186	    if (onas_sendln(curl, (const char *)buf, 4, timeout, ret_code)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	226	    if (sendmsg(sockd, &msg, 0) == -1) {
-offset-size-arithmetic	clamonacc/client/protocol.c	278	 * NOTE: filename may be NULL for STREAM scantype. */
-offset-size-arithmetic	clamonacc/client/protocol.c	279	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
-offset-size-arithmetic	clamonacc/client/protocol.c	288	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
-offset-size-arithmetic	clamonacc/client/protocol.c	316	            len = strlen(filename) + strlen(scancmd[scantype]) + 3;
-offset-size-arithmetic	clamonacc/client/protocol.c	338	            /* NULL filename safe in send_stream() */
-offset-size-arithmetic	clamonacc/client/protocol.c	343	            /* NULL filename safe in send_fdpass() */
-offset-size-arithmetic	clamonacc/client/protocol.c	362	        infected = ((NULL != action_source) && (0 == len)) ? -1 : len;
-offset-size-arithmetic	clamonacc/client/protocol.c	366	    while ((len = (*recv_func)(&rcv, &bol, &eol, timeout))) {
-offset-size-arithmetic	clamonacc/client/protocol.c	368	        if (len == -1) {
-offset-size-arithmetic	clamonacc/client/protocol.c	396	                if (!strncmp(bol, unkco, sizeof(unkco) - 1)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	410	                static char last_filename[PATH_MAX + 1] = {'\0'};
-offset-size-arithmetic	clamonacc/client/protocol.c	447	            } else if ((len > 32 && !memcmp(eol - 33, "No such file or directory. ERROR", 32)) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	448	                       (len > 34 && !memcmp(eol - 35, "Can't open file or directory ERROR", 34))) {
-offset-size-arithmetic	clamonacc/client/protocol.c	461	            } else if ((len > 21 && !memcmp(eol - 22, " Access denied. ERROR", 21)) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	462	                       (len > 23 && !memcmp(eol - 24, "Can't access file ERROR", 23)) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	463	                       (len > 41 && !memcmp(eol - 42, " lstat() failed: Permission denied. ERROR", 41))) {
-offset-size-arithmetic	clamonacc/client/protocol.c	476	            } else if (len > 6 && !memcmp(eol - 7, " ERROR", 6)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	501	        if (CLAMSTAT(display_filename, &sb) == -1) {
+offset-size-arithmetic	clamonacc/client/protocol.c	130	        uint64_t remaining = len - bytesRead;
+offset-size-arithmetic	clamonacc/client/protocol.c	145	        if (onas_sendln(curl, (const char *)&chunk_len, sizeof(chunk_len), timeout, ret_code) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	146	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	181	    if (onas_sendln(curl, (const char *)buf, 4, timeout, ret_code)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	221	    if (sendmsg(sockd, &msg, 0) == -1) {
+offset-size-arithmetic	clamonacc/client/protocol.c	273	 * NOTE: filename may be NULL for STREAM scantype. */
+offset-size-arithmetic	clamonacc/client/protocol.c	274	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
+offset-size-arithmetic	clamonacc/client/protocol.c	283	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
+offset-size-arithmetic	clamonacc/client/protocol.c	311	            len = strlen(filename) + strlen(scancmd[scantype]) + strlen("zREPORT ") + 1;
+offset-size-arithmetic	clamonacc/client/protocol.c	333	            /* NULL filename safe in send_stream() */
+offset-size-arithmetic	clamonacc/client/protocol.c	338	            /* NULL filename safe in send_fdpass() */
+offset-size-arithmetic	clamonacc/client/protocol.c	357	        infected = ((NULL != action_source) && (0 == len)) ? -1 : len;
+offset-size-arithmetic	clamonacc/client/protocol.c	410	    while ((len = (*recv_func)(&rcv, &bol, &eol, timeout))) {
+offset-size-arithmetic	clamonacc/client/protocol.c	412	        if (len == -1) {
+offset-size-arithmetic	clamonacc/client/protocol.c	440	                if (!strncmp(bol, unkco, sizeof(unkco) - 1)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	454	                static char last_filename[PATH_MAX + 1] = {'\0'};
+offset-size-arithmetic	clamonacc/client/protocol.c	491	            } else if ((len > 32 && !memcmp(eol - 33, "No such file or directory. ERROR", 32)) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	492	                       (len > 34 && !memcmp(eol - 35, "Can't open file or directory ERROR", 34))) {
+offset-size-arithmetic	clamonacc/client/protocol.c	505	            } else if ((len > 21 && !memcmp(eol - 22, " Access denied. ERROR", 21)) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	506	                       (len > 23 && !memcmp(eol - 24, "Can't access file ERROR", 23)) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	507	                       (len > 41 && !memcmp(eol - 42, " lstat() failed: Permission denied. ERROR", 41))) {
+offset-size-arithmetic	clamonacc/client/protocol.c	520	            } else if (len > 6 && !memcmp(eol - 7, " ERROR", 6)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	545	        if (CLAMSTAT(display_filename, &sb) == -1) {
 offset-size-arithmetic	clamonacc/client/protocol.c	75	static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
 offset-size-arithmetic	clamonacc/client/protocol.h	32	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const struct action_source *action_source,
 offset-size-arithmetic	clamonacc/client/socket.c	62	            onas_sock.sock.sun_path[sizeof(onas_sock.sock.sun_path) - 1] = '\0';
@@ -19207,32 +19233,32 @@ offset-size-arithmetic	common/clamdcom.c	543	                if (!strncmp(bol, u
 offset-size-arithmetic	common/clamdcom.c	551	                static char last_filename[PATH_MAX + 1] = {'\0'};
 offset-size-arithmetic	common/clamdcom.c	59	int sendln(int sockd, const char *line, unsigned int len)
 offset-size-arithmetic	common/clamdcom.c	594	        if (CLAMSTAT(filename, &sb) == -1) {
-offset-size-arithmetic	common/clamdcom.c	622	        length -= (size_t)received;
-offset-size-arithmetic	common/clamdcom.c	627	/* Read one length-prefixed structured report frame.  A zero-length frame is
-offset-size-arithmetic	common/clamdcom.c	630	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
-offset-size-arithmetic	common/clamdcom.c	652	    payload = (char *)malloc((size_t)length + 1U);
-offset-size-arithmetic	common/clamdcom.c	670	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+offset-size-arithmetic	common/clamdcom.c	620	        length -= (size_t)received;
+offset-size-arithmetic	common/clamdcom.c	625	/* Read one length-prefixed structured report frame.  A zero-length frame is
+offset-size-arithmetic	common/clamdcom.c	628	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
+offset-size-arithmetic	common/clamdcom.c	650	    payload = (char *)malloc((size_t)length + 1U);
+offset-size-arithmetic	common/clamdcom.c	668	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
 offset-size-arithmetic	common/clamdcom.c	69	        len -= sent;
-offset-size-arithmetic	common/clamdcom.c	733	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
-offset-size-arithmetic	common/clamdcom.c	740	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
-offset-size-arithmetic	common/clamdcom.c	750	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
-offset-size-arithmetic	common/clamdcom.c	763	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
-offset-size-arithmetic	common/clamdcom.c	776	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
-offset-size-arithmetic	common/clamdcom.c	787	                       ? send_stream_fd_report(sockd, action_source->scan_fd, display_filename, clamdopts)
-offset-size-arithmetic	common/clamdcom.c	793	                       ? send_fdpass_fd_report(sockd, action_source->scan_fd)
+offset-size-arithmetic	common/clamdcom.c	731	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+offset-size-arithmetic	common/clamdcom.c	738	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
+offset-size-arithmetic	common/clamdcom.c	748	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
+offset-size-arithmetic	common/clamdcom.c	761	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
+offset-size-arithmetic	common/clamdcom.c	774	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
+offset-size-arithmetic	common/clamdcom.c	785	                       ? send_stream_fd_report(sockd, action_source->scan_fd, display_filename, clamdopts)
+offset-size-arithmetic	common/clamdcom.c	791	                       ? send_fdpass_fd_report(sockd, action_source->scan_fd)
 offset-size-arithmetic	common/clamdcom.c	97	            s->r = recv(s->sockd, s->cur, sizeof(s->buf) - (s->cur - s->buf), 0);
-offset-size-arithmetic	common/clamdcom.h	62	int sendln(int sockd, const char *line, unsigned int len);
-offset-size-arithmetic	common/clamdcom.h	69	int send_fdpass(int sockd, const char *filename);
-offset-size-arithmetic	common/clamdcom.h	71	int send_fdpass_report(int sockd, const char *filename);
-offset-size-arithmetic	common/clamdcom.h	73	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
-offset-size-arithmetic	common/clamdcom.h	74	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
-offset-size-arithmetic	common/clamdcom.h	75	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts);
-offset-size-arithmetic	common/clamdcom.h	76	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
-offset-size-arithmetic	common/clamdcom.h	77	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts);
-offset-size-arithmetic	common/clamdcom.h	79	int dsresult(int sockd, int scantype, const char *filename, const struct action_source *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts);
-offset-size-arithmetic	common/clamdcom.h	80	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
-offset-size-arithmetic	common/clamdcom.h	83	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
-offset-size-arithmetic	common/clamdcom.h	84	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
+offset-size-arithmetic	common/clamdcom.h	64	int sendln(int sockd, const char *line, unsigned int len);
+offset-size-arithmetic	common/clamdcom.h	71	int send_fdpass(int sockd, const char *filename);
+offset-size-arithmetic	common/clamdcom.h	73	int send_fdpass_report(int sockd, const char *filename);
+offset-size-arithmetic	common/clamdcom.h	75	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
+offset-size-arithmetic	common/clamdcom.h	76	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
+offset-size-arithmetic	common/clamdcom.h	77	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts);
+offset-size-arithmetic	common/clamdcom.h	78	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts);
+offset-size-arithmetic	common/clamdcom.h	79	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts);
+offset-size-arithmetic	common/clamdcom.h	81	int dsresult(int sockd, int scantype, const char *filename, const struct action_source *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts);
+offset-size-arithmetic	common/clamdcom.h	82	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+offset-size-arithmetic	common/clamdcom.h	85	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
+offset-size-arithmetic	common/clamdcom.h	86	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
 offset-size-arithmetic	common/exeScanner.c	155	            entropy -= ((double)p[i] / size) * log((double)p[i] / size);
 offset-size-arithmetic	common/exeScanner.c	178	    unsigned char *seek = NULL, *s_start = NULL, *ep = NULL, *lpMapAddress = NULL;
 offset-size-arithmetic	common/exeScanner.c	216	    seek += 0x3c;

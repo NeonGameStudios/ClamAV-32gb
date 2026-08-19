@@ -35,6 +35,7 @@
 #include <errno.h>
 
 #if !defined(_WIN32)
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #endif
 
@@ -44,9 +45,84 @@
 // shared
 #include "output.h"
 
+// common
+#include "clamdcom.h"
+
 #include "communication.h"
 
 static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms);
+
+static int onas_recv_bytes(struct onas_rcvln *rcv_data, void *buffer,
+                           size_t length, int64_t timeout_ms)
+{
+    unsigned char *cursor = (unsigned char *)buffer;
+    uint64_t wait_timeout = timeout_ms > 0 ? (uint64_t)timeout_ms : 0;
+
+    if (!rcv_data || !buffer)
+        return -1;
+
+    while (length) {
+        size_t received = 0;
+
+        if (rcv_data->sockd >= 0) {
+            int wait_result = onas_socket_wait(rcv_data->sockd, 1, wait_timeout);
+            ssize_t result;
+
+            if (wait_result <= 0) {
+                rcv_data->curlcode = (wait_result == 0) ? CURLE_OPERATION_TIMEDOUT : CURLE_RECV_ERROR;
+                return -1;
+            }
+
+            do {
+                result = recv(rcv_data->sockd, cursor,
+                              length,
+                              0);
+            } while (result < 0 && errno == EINTR);
+
+            if (result <= 0) {
+                rcv_data->curlcode = CURLE_RECV_ERROR;
+                return -1;
+            }
+            received = (size_t)result;
+        } else {
+            curl_socket_t sockfd;
+            CURLcode curlcode;
+
+#if ((LIBCURL_VERSION_MAJOR > 7) || (LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 45))
+            curlcode = curl_easy_getinfo(rcv_data->curl, CURLINFO_ACTIVESOCKET, &sockfd);
+#else
+            long long_sockfd;
+            curlcode = curl_easy_getinfo(rcv_data->curl, CURLINFO_LASTSOCKET, &long_sockfd);
+            sockfd   = (curl_socket_t)long_sockfd;
+#endif
+            if (CURLE_OK != curlcode) {
+                rcv_data->curlcode = curlcode;
+                return -1;
+            }
+
+            do {
+                curlcode = curl_easy_recv(rcv_data->curl, cursor, length, &received);
+                if (CURLE_AGAIN == curlcode) {
+                    int wait_result = onas_socket_wait(sockfd, 1, wait_timeout);
+                    if (wait_result <= 0) {
+                        rcv_data->curlcode = (wait_result == 0) ? CURLE_OPERATION_TIMEDOUT : CURLE_RECV_ERROR;
+                        return -1;
+                    }
+                }
+            } while (CURLE_AGAIN == curlcode);
+
+            if (CURLE_OK != curlcode || received == 0) {
+                rcv_data->curlcode = (CURLE_OK == curlcode) ? CURLE_RECV_ERROR : curlcode;
+                return -1;
+            }
+        }
+
+        cursor += received;
+        length -= received;
+    }
+
+    return 0;
+}
 
 /**
  * Function from curl example code, Copyright (C) 1998 - 2018, Daniel Stenberg, see COPYING.curl for license details
@@ -164,6 +240,57 @@ void onas_recvlninit(struct onas_rcvln *rcv_data, CURL *curl, int sockd)
     rcv_data->lnstart = rcv_data->curr = rcv_data->buf;
     rcv_data->retlen                   = 0;
     rcv_data->sockd                    = sockd;
+}
+
+int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
+                          int *infected, int *incomplete)
+{
+    int received = 0;
+
+    if (!rcv_data || !infected || !incomplete)
+        return -1;
+
+    *infected   = 0;
+    *incomplete = 0;
+
+    for (;;) {
+        uint32_t network_length;
+        uint32_t length;
+        char *payload;
+        int frame_infected = 0;
+        int frame_incomplete = 0;
+
+        if (onas_recv_bytes(rcv_data, &network_length, sizeof(network_length), timeout_ms) < 0)
+            return -1;
+
+        length = ntohl(network_length);
+        if (length == 0)
+            return received ? 0 : -1;
+        if (length > CLAMD_SCAN_REPORT_MAX_FRAME)
+            return -1;
+
+        payload = (char *)malloc((size_t)length + 1U);
+        if (!payload)
+            return -1;
+        if (onas_recv_bytes(rcv_data, payload, length, timeout_ms) < 0) {
+            free(payload);
+            return -1;
+        }
+        payload[length] = '\0';
+
+        if (scan_report_json_status(payload, length, &frame_infected,
+                                    &frame_incomplete) < 0) {
+            free(payload);
+            return -1;
+        }
+
+        received = 1;
+        if (frame_infected)
+            *infected = 1;
+        if (frame_incomplete)
+            *incomplete = 1;
+        free(payload);
+    }
 }
 
 /* Receives a full (terminated with \0) line from a socket
