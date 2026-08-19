@@ -8151,6 +8151,19 @@ START_TEST(test_nested_fmap_ranges_and_force_to_disk_are_fail_visible)
     ck_assert_msg(state.successful_reads != 0,
                   "force-to-disk copy attempted to materialize the entire nested range at once");
 
+    /* Temporary admission must happen before the force-to-disk copy. */
+    state.fail_at             = sizeof(state.data);
+    state.successful_reads    = 0;
+    engine.maxtemporarysize   = sizeof(state.data) - 1U;
+    ctx.scan_incomplete       = false;
+    map->dont_cache_flag       = false;
+    ret = cli_magic_scan_nested_fmap_type(map, 0, sizeof(state.data), &ctx,
+                                          CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(state.successful_reads, 0);
+
     cl_fmap_close(map);
 }
 END_TEST

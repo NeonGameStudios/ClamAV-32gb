@@ -810,6 +810,15 @@ result, preventing a successful archive scan from hiding cleanup failure.
 Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification remain
 open.
 
+## Force-to-disk nested fmap accounting — 2026-08-19
+
+Nested fmap scans forced to disk now reserve the complete staged range against
+`MaxTemporarySize` until the child scan and cleanup finish. Temporary-file
+creation, close, removal, and partial-copy failures remain fail-visible, and
+the child uses the already-held reservation rather than double-counting the
+same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
+qualification remain open.
+
 ## EGG SFX candidate admission — 2026-08-19
 
 The embedded EGG path now requires the complete fixed header, supported

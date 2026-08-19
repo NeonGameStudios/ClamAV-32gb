@@ -6590,9 +6590,18 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         char *tempfile         = NULL;
         int fd                 = -1;
         size_t copied           = 0;
+        uint64_t temporary_size = (uint64_t)length;
+        bool temporary_reserved = false;
+
+        ret = cli_scan_reserve_temporary(ctx, temporary_size);
+        if (ret != CL_SUCCESS)
+            return ret;
+        temporary_reserved = true;
 
         ret = cli_gentempfd(ctx->this_layer_tmpdir, &tempfile, &fd);
         if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "nested fmap temporary file could not be created");
+            cli_scan_release_temporary(ctx, temporary_size);
             return ret;
         }
 
@@ -6623,20 +6632,14 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         if (ret == CL_SUCCESS) {
             /* Scan only a complete copy. A partial tempfile must never be
              * treated as a faithful representation of the nested layer. */
-            ret = cli_magic_scan_desc_type(fd, tempfile, ctx, type, name, attributes);
+            ret = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, type, name, attributes);
         }
 
-        /* remove the temp file, if needed */
-        if (fd >= 0) {
-            close(fd);
-        }
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tempfile)) {
-                cli_errmsg("cli_magic_scan_nested_fmap_type: error unlinking tempfile %s\n", tempfile);
-                if (ret == CL_SUCCESS)
-                    ret = CL_EUNLINK;
-            }
-        }
+        ret = cli_cleanup_compressed_temp(ctx, &fd, tempfile, ret,
+                                          "nested fmap temporary output could not be closed",
+                                          "nested fmap temporary output could not be removed");
+        if (temporary_reserved)
+            cli_scan_release_temporary(ctx, temporary_size);
         free(tempfile);
     } else {
         /*
