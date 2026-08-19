@@ -86,7 +86,12 @@ typedef struct
 static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 {
     CClamFileOutStream *p = (CClamFileOutStream *)pp;
-    return cli_writen(p->fd, data, size);
+    size_t written = cli_writen(p->fd, data, size);
+
+    /* ISeqOutStream uses a short write (zero here) to report failure. Do not
+     * pass cli_writen()'s (size_t)-1 sentinel to the 7-Zip CRC wrapper: it
+     * would be interpreted as an enormous successful write. */
+    return (written == (size_t)-1) ? 0 : written;
 }
 
 static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
@@ -112,22 +117,37 @@ static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
 static SRes FileInStream_fmap_Seek(void *pp, Int64 *pos, ESzSeek origin)
 {
     CFileInStream *p = (CFileInStream *)pp;
+    Int64 map_length;
+    Int64 base;
+
+    if (p == NULL || p->file.fmap == NULL || pos == NULL)
+        return 1;
+
+    map_length = (Int64)p->file.fmap->len;
+    if (map_length < 0 || p->s.curpos < 0 || (Int64)p->s.curpos > map_length)
+        return 1;
 
     switch (origin) {
         case SZ_SEEK_SET:
-            p->s.curpos = *pos;
+            base = 0;
             break;
         case SZ_SEEK_CUR:
-            p->s.curpos += *pos;
-            *pos = p->s.curpos;
+            base = (Int64)p->s.curpos;
             break;
         case SZ_SEEK_END:
-            p->s.curpos = p->file.fmap->len + *pos;
-            *pos        = p->s.curpos;
+            base = map_length;
             break;
         default:
             return 1;
     }
+
+    /* The position must remain within the fmap. Comparing before adding also
+     * handles INT64_MIN without negating it and prevents signed overflow. */
+    if (*pos < -base || *pos > map_length - base)
+        return 1;
+
+    *pos         = base + *pos;
+    p->s.curpos  = (off_t)*pos;
     return 0;
 }
 

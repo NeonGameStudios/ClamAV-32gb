@@ -76,6 +76,12 @@ instead of returning a partial attachment blob. This closes a concrete
 false-clean path for MHTML, phishing-URL, RFC2047, and attachment consumers
 that rely on `messageToBlob()`.
 
+The 7-Zip fmap adapter now translates `cli_writen()` failure into the
+short-write signal required by `ISeqOutStream`; its signed 64-bit seek adapter
+also rejects negative and out-of-map positions before arithmetic. This keeps
+failed extraction and archive-coordinate overflow fail-visible instead of
+feeding bogus byte counts to the decoder.
+
 The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.
