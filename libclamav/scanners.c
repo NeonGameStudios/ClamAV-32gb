@@ -4807,6 +4807,7 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
     if (SCAN_COLLECT_METADATA && (NULL != ctx->this_layer_metadata_json)) {
         if (NULL == (header = cli_jsonobj(ctx->this_layer_metadata_json, "ImageFuzzyHash"))) {
             cli_errmsg("Failed to allocate ImageFuzzyHash JSON object\n");
+            cli_mark_scan_incomplete(ctx, "image fuzzy hash metadata could not be allocated");
             status = CL_EMEM;
             goto done;
         }
@@ -4816,6 +4817,7 @@ static cl_error_t calculate_fuzzy_image_hash(cli_ctx *ctx, cli_file_t type)
         cli_dbgmsg("Failed to calculate image fuzzy hash for %s: %s\n",
                    cli_ftname(type),
                    ffierror_fmt(fuzzy_hash_calc_error));
+        cli_mark_scan_incomplete(ctx, "image fuzzy hash calculation did not complete");
 
         if (SCAN_COLLECT_METADATA && (NULL != header)) {
             (void)cli_jsonstr(header, "Error", ffierror_fmt(fuzzy_hash_calc_error));
@@ -5320,7 +5322,15 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
-    status = cli_updatelimits(ctx, ctx->fmap->len);
+    /* Normalized and handler-retyped views inherit the current logical
+     * object. Their bytes are charged by cli_scan_fmap() as matcher work;
+     * only a real root or extracted/decompressed child consumes logical
+     * MaxScanSize/MaxFiles accounting here. */
+    if (ctx->recursion_stack[ctx->recursion_level].attributes &
+        (LAYER_ATTRIBUTES_NORMALIZED | LAYER_ATTRIBUTES_RETYPED))
+        status = cli_checktimelimit(ctx);
+    else
+        status = cli_updatelimits(ctx, ctx->fmap->len);
     if (status != CL_SUCCESS) {
         /* cli_updatelimits() marks configured-limit skips incomplete. Keep
          * its specific error (or the detection-visible AlertExceedsMax

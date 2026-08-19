@@ -12,12 +12,14 @@ unbounded whole-input residency in paths that must be streamed
 
 This table is the authoritative status for the current worktree. All older
 appendices below are historical evidence and must not be read as superseding
-this revision-scoped disposition. The worktree has no Git metadata, so no
-immutable source commit is claimed until the revised tree is rebuilt from a
-real supported-Linux checkout.
+this revision-scoped disposition. The canonical worktree is a Git checkout;
+the current source still has no supported-Linux compile or immutable runtime
+qualification, so those claims remain open until the revised tree is rebuilt
+from a real supported-Linux checkout.
 
 | Requirement | Current disposition | Evidence state |
 |---|---|---|
+| Logical-object accounting | Normalized and handler-retyped views no longer consume `MaxScanSize`/`MaxFiles` a second time; their matcher bytes remain charged to `MaxMatcherWork` | Local source guard and focused unit regression registered; supported-Linux execution pending |
 | Nested/sliced RAR staging | Accessible-fmap range handling and staging-error propagation implemented | Local source controls pass; compiled Sonic1 verification pending |
 | JavaScript normalizer failures | Open/write/close status now propagates through HTML and bytecode callers | Local source controls pass; exact fault-injection regression pending |
 | Normalized-script remapping | `fmap_new()` failure marks the scan incomplete and non-clean | Local source change; compiled regression pending |
@@ -34,14 +36,16 @@ compiled evidence and the service/workload gates pass.
 
 ## Current source-hardening follow-up — 2026-08-19
 
-The canonical worktree adds four source-level controls while preserving the
-production-blocked verdict. The capability manifest now checks 134 entries,
+The canonical worktree adds six source-level controls while preserving the
+production-blocked verdict. The capability manifest now checks 135 entries,
 including all parser dispatch branches, matcher families, large-file-relevant
 build switches, and explicit first-release unsupported boundaries. Public
 engine numeric setters reject negative or narrowing values before assignment,
 HTML no-tags normalization over its cap now returns an incomplete result
-instead of silently omitting a required normalized view, JavaScript normalized
-output is admitted against shared matcher-work at bounded flushes, and
+instead of silently omitting a required normalized view, logical MaxScanSize/
+MaxFiles accounting now excludes normalized and handler-retyped views,
+JavaScript normalized output is admitted against shared matcher-work at
+bounded flushes, and
 scanner-facing OneNote attachment extraction no longer creates an intermediate
 whole-member buffer. Focused unit tests and shell source guards are registered, but the current macOS checkout has not
 produced a supported Linux compile, sanitizer run, or new Sonic1 qualification

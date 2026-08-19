@@ -2145,8 +2145,17 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
 
     old_recursion_level = ctx->recursion_level;
 
-    // Check the regular limits
-    if (CL_SUCCESS != (status = cli_checklimits("cli_recursion_stack_push", ctx, map->len, 0, 0))) {
+    /* A normalized or handler-retyped layer is another view of the current
+     * logical object. It must not consume MaxScanSize or MaxFiles again (the
+     * matcher path charges the bytes it actually presents against
+     * MaxMatcherWork). Real extracted/decompressed children still use the
+     * ordinary logical-content admission path. */
+    if (attributes & (LAYER_ATTRIBUTES_NORMALIZED | LAYER_ATTRIBUTES_RETYPED)) {
+        status = cli_checktimelimit(ctx);
+    } else {
+        status = cli_checklimits("cli_recursion_stack_push", ctx, map->len, 0, 0);
+    }
+    if (CL_SUCCESS != status) {
         cli_dbgmsg("cli_recursion_stack_push: Some content was skipped. The scan result will not be cached.\n");
         emax_reached(ctx); // Disable caching for all recursion layers.
         goto done;

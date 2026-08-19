@@ -2060,6 +2060,14 @@ treats an oversized HTML message or a failed materialization/normalization as
 incomplete and returns a non-clean parser status, preserving the explicit
 unsupported boundary until that detector is converted to a streaming reader.
 
+Normalized and handler-retyped views now inherit the logical object identity
+of their source layer. They do not consume `MaxScanSize` or `MaxFiles` a second
+time; bytes actually presented to matchers are charged to `MaxMatcherWork`.
+Real extracted or decompressed children retain ordinary logical-content
+accounting. An enabled image-fuzzy detector also marks calculation, metadata,
+mapping, and contiguous-admission failures incomplete instead of allowing a
+silent detector skip to return clean.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`

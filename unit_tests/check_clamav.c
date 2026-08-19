@@ -1373,6 +1373,46 @@ START_TEST(test_maxscansize_exact_and_crossing_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_logical_views_do_not_consume_logical_scan_budget)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t root_map;
+    fmap_t view_map;
+
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 2, &root_map);
+    memset(&view_map, 0, sizeof(view_map));
+    engine.max_recursion_level = 2;
+    engine.maxscansize         = 5;
+    engine.maxfilesize         = 5;
+    engine.maxfiles            = 1;
+    ctx.scannedfiles           = 1;
+    view_map.len               = 7;
+
+    /* A normalized view can be larger than the remaining logical budget: it
+     * is the same object, and its actual matcher bytes are accounted by the
+     * matcher-work path rather than by MaxScanSize/MaxFiles. */
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, &view_map, CL_TYPE_ANY, true,
+                                              LAYER_ATTRIBUTES_NORMALIZED),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(ctx.scansize, 0);
+    ck_assert_uint_eq(ctx.scannedfiles, 1);
+    ck_assert(!ctx.scan_incomplete);
+    (void)cli_recursion_stack_pop(&ctx);
+
+    /* HandlerType reclassification follows the same logical-object rule. */
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, &view_map, CL_TYPE_ANY, true,
+                                              LAYER_ATTRIBUTES_RETYPED),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(ctx.scansize, 0);
+    ck_assert_uint_eq(ctx.scannedfiles, 1);
+    ck_assert(!ctx.scan_incomplete);
+    (void)cli_recursion_stack_pop(&ctx);
+}
+END_TEST
+
 START_TEST(test_maxfiles_exact_and_crossing_are_fail_visible)
 {
     struct cl_engine engine;
@@ -8507,6 +8547,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_strerror);
     tcase_add_test(tc_cl, test_top_level_maxfilesize_is_fail_visible);
     tcase_add_test(tc_cl, test_maxscansize_exact_and_crossing_are_fail_visible);
+    tcase_add_test(tc_cl, test_logical_views_do_not_consume_logical_scan_budget);
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
