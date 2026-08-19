@@ -116,8 +116,10 @@ static int dmg_write_checked(cli_ctx *ctx, int fd, const uint8_t *buffer, size_t
         cli_mark_scan_incomplete(ctx, reason);
         return CL_EPARSE;
     }
-    if (length != 0 && cli_writen(fd, buffer, length) != length)
+    if (length != 0 && cli_writen(fd, buffer, length) != length) {
+        cli_mark_scan_incomplete(ctx, "DMG reconstructed output could not be written completely");
         return CL_EWRITE;
+    }
 
     *written += length;
     return CL_CLEAN;
@@ -201,10 +203,13 @@ int cli_scandmg(cli_ctx *ctx)
         return CL_EPARSE;
     }
 
-    if (!(dirname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "dmg-tmp")))
+    if (!(dirname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "dmg-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "DMG temporary directory could not be created");
         return CL_ETMPDIR;
+    }
     if (mkdir(dirname, 0700)) {
         cli_errmsg("cli_scandmg: Cannot create temporary directory %s\n", dirname);
+        cli_mark_scan_incomplete(ctx, "DMG temporary directory could not be created");
         free(dirname);
         return CL_ETMPDIR;
     }
@@ -414,8 +419,10 @@ static int dmg_decode_mish_fd(cli_ctx *ctx, unsigned int *mishblocknum, int fd,
 
     decoded_len = (size_t)statbuf.st_size;
     decoded = cli_max_malloc(decoded_len);
-    if (!decoded)
+    if (!decoded) {
+        cli_mark_scan_incomplete(ctx, "DMG decoded mish metadata could not be allocated");
         return CL_EMEM;
+    }
 
     if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
         free(decoded);
@@ -444,8 +451,10 @@ static cl_error_t dmg_mish_decoded_cb(int fd, const char *filepath, cli_ctx *ctx
         return CL_ENULLARG;
 
     mish_set = calloc(1, sizeof(*mish_set));
-    if (!mish_set)
+    if (!mish_set) {
+        cli_mark_scan_incomplete(ctx, "DMG mish metadata could not be allocated");
         return CL_EMEM;
+    }
 
     ret = dmg_decode_mish_fd(ctx, &state->mishblocknum, fd, mish_set);
     if (ret == CL_EFORMAT) {
@@ -634,8 +643,10 @@ static int dmg_stripe_adc(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_
     adcret = adc_decompressInit(&strm);
     if (adcret != ADC_OK) {
         cli_warnmsg("dmg_stripe_adc: adc_decompressInit failed\n");
-        if (adcret == ADC_MEM_ERROR)
+        if (adcret == ADC_MEM_ERROR) {
+            cli_mark_scan_incomplete(ctx, "DMG ADC decompressor could not be allocated");
             return CL_EMEM;
+        }
         cli_mark_scan_incomplete(ctx, "DMG ADC decompressor could not be initialized");
         return CL_EPARSE;
     }
@@ -1042,6 +1053,7 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
         cli_errmsg("cli_scandmg: Can't create temporary file %s: %s\n",
                    outfile, cli_strerror(errno, err, sizeof(err)));
         cli_scan_release_temporary(ctx, temporary_reserved);
+        cli_mark_scan_incomplete(ctx, "DMG reconstructed partition temporary file could not be opened");
         return CL_ETMPFILE;
     }
     cli_dbgmsg("dmg_handle_mish: extracting block %u to %s\n", mishblocknum, outfile);
@@ -1079,10 +1091,16 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
         ret = cli_magic_scan_desc_type(ofd, outfile, ctx, CL_TYPE_PART_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     }
 
-    close(ofd);
+    if (close(ofd) == -1 && ret == CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "DMG reconstructed partition could not be closed completely");
+        ret = CL_EWRITE;
+    }
     cli_scan_release_temporary(ctx, temporary_reserved);
-    if (!ctx->engine->keeptmp)
-        if (cli_unlink(outfile)) return CL_EUNLINK;
+    if (!ctx->engine->keeptmp && cli_unlink(outfile)) {
+        cli_mark_scan_incomplete(ctx, "DMG reconstructed partition temporary file could not be removed");
+        if (ret == CL_SUCCESS)
+            ret = CL_EUNLINK;
+    }
 
     return ret;
 }
@@ -1107,6 +1125,7 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
         char err[128];
         cli_errmsg("cli_scandmg: Can't create temporary file %s: %s\n",
                    xmlfile, cli_strerror(errno, err, sizeof(err)));
+        cli_mark_scan_incomplete(ctx, "DMG XML temporary file could not be opened");
         free(xmlfile);
         return CL_ETMPFILE;
     }
@@ -1131,6 +1150,7 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
         if (cli_writen(ofd, buffer, wanted) != wanted) {
             cli_scan_release_temporary(ctx, (uint64_t)wanted);
             cli_errmsg("cli_scandmg: Not all XML bytes were written!\n");
+            cli_mark_scan_incomplete(ctx, "DMG XML temporary file could not be written completely");
             close(ofd);
             free(xmlfile);
             return CL_EWRITE;
@@ -1140,7 +1160,11 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
         remaining -= wanted;
     }
 
-    close(ofd);
+    if (close(ofd) == -1) {
+        cli_mark_scan_incomplete(ctx, "DMG XML temporary file could not be closed completely");
+        free(xmlfile);
+        return CL_EWRITE;
+    }
     free(xmlfile);
     return CL_SUCCESS;
 }

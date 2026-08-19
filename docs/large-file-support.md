@@ -2153,7 +2153,8 @@ one completed `mish` metadata block at a time within the 64 MiB per-block
 decoded cap. Reconstructed partitions reserve their expected temporary output
 while the nested scan runs, and optional retained XML copies use bounded,
 quota-accounted writes. Malformed XML/Base64, temporary admission, write,
-decoder, and nested-scan failures remain fail-visible.
+decoder, allocation, temporary-file, cleanup, and nested-scan failures remain
+fail-visible.
 
 This removes the former root-XML 64 MiB gate and whole-text-node allocation.
 Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
