@@ -48,7 +48,8 @@ JavaScript normalized output is admitted against shared matcher-work at
 bounded flushes, UTF-16 HTML normalization now has fail-visible conversion,
 read, write, mapping, and temporary-quota paths, and
 scanner-facing OneNote attachment extraction no longer creates an intermediate
-whole-member buffer. Focused unit tests and shell source guards are registered, but the current macOS checkout has not
+whole-member buffer. Structured reports now preserve detection precedence over
+sticky incomplete parser state. Focused unit tests and shell source guards are registered, but the current macOS checkout has not
 produced a supported Linux compile, sanitizer run, or new Sonic1 qualification
 for this follow-up.
 

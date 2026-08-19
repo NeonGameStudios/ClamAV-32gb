@@ -82,6 +82,7 @@
 #include "xar.h"
 #include "special.h"
 #include "textnorm.h"
+#include "scan_report.h"
 
 #include "checks.h"
 
@@ -651,6 +652,25 @@ START_TEST(test_scan_report_complete_and_json)
     cl_scan_report_free(report);
     cli_unlink(path);
     free(path);
+}
+END_TEST
+
+START_TEST(test_scan_report_detection_precedes_incomplete_state)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete = true;
+    ctx.scan_incomplete_reason = "required parser did not complete";
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    cli_scan_report_finish(report, &ctx, CL_VIRUS, CL_VERDICT_NOTHING_FOUND, "Test.Detection");
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
+    cl_scan_report_free(report);
 }
 END_TEST
 
@@ -8551,6 +8571,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
+    tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);

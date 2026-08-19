@@ -254,7 +254,16 @@ void cli_scan_report_finish(
     if (finished_usec >= report->started_usec)
         report->metrics.elapsed_ms = (finished_usec - report->started_usec) / 1000ULL;
 
-    if ((status == CL_EMAXSIZE) ||
+    /* A detection is still the authoritative terminal outcome when an
+     * earlier optional/deep-parser path left a sticky incomplete marker. The
+     * scan was not clean, and the report must not disguise the detection as a
+     * parser/resource classification while the caller unwinds the remaining
+     * bookkeeping. */
+    if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
+        (verdict == CL_VERDICT_POTENTIALLY_UNWANTED) ||
+        (status == CL_VIRUS)) {
+        report->completion = CL_SCAN_COMPLETION_DETECTION_TERMINATED;
+    } else if ((status == CL_EMAXSIZE) ||
         (status == CL_EMAXFILES) ||
         (status == CL_EMAXREC) ||
         (status == CL_ETIMEOUT)) {
@@ -280,10 +289,6 @@ void cli_scan_report_finish(
         } else {
             report->completion = CL_SCAN_COMPLETION_UNSUPPORTED;
         }
-    } else if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
-               (verdict == CL_VERDICT_POTENTIALLY_UNWANTED) ||
-               (status == CL_VIRUS)) {
-        report->completion = CL_SCAN_COMPLETION_DETECTION_TERMINATED;
     } else if ((NULL != ctx) && ctx->abort_scan) {
         report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
     } else if ((status == CL_EPARSE) || (status == CL_EFORMAT)) {

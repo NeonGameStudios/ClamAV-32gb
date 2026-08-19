@@ -2082,6 +2082,12 @@ not silently suppressed while the ZIP content scan continues. This closes a
 false-clean metadata path; OOXML deep-parser corpus and supported-Linux
 qualification remain open.
 
+Structured reports now preserve detection precedence over sticky incomplete
+parser state. A detection that terminates the scan is reported as
+`DETECTION_TERMINATED`, even when cleanup or an earlier optional parser left an
+incomplete marker; incomplete states still prevent clean completion and remain
+visible for non-detecting scans.
+
 ## Parser-gate ceiling enforcement — 2026-08-19
 
 The 32 GiB policy ceiling now applies consistently to `OnAccessMaxFileSize`
