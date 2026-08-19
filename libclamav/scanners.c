@@ -571,6 +571,8 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
 
     char *tmpname = NULL;
     int tmpfd     = -1;
+    uint64_t temporary_size = 0;
+    bool temporary_reserved = false;
 
     if ((SCAN_UNPRIVILEGED) ||
         (NULL == ctx->fmap->path) ||
@@ -578,6 +580,11 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
         (ctx->fmap->nested_offset > 0) || (ctx->fmap->len < ctx->fmap->real_len)) {
 
         /* If map is not file-backed have to dump to file for scanrar. */
+        temporary_size = (uint64_t)ctx->fmap->len;
+        status         = cli_scan_reserve_temporary(ctx, temporary_size);
+        if (status != CL_SUCCESS)
+            goto done;
+        temporary_reserved = true;
         status = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
@@ -600,6 +607,11 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
          * Failed to open the file using the original filename.
          * Try writing the file descriptor to a temp file and try again.
          */
+        temporary_size = (uint64_t)ctx->fmap->len;
+        status         = cli_scan_reserve_temporary(ctx, temporary_size);
+        if (status != CL_SUCCESS)
+            goto done;
+        temporary_reserved = true;
         status = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
@@ -618,6 +630,8 @@ done:
         status = cli_cleanup_compressed_temp(ctx, &tmpfd, tmpname, status,
                                              "RAR temporary input could not be closed",
                                              "RAR temporary input could not be removed");
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_size);
 
     if (tmpname != NULL) {
         free(tmpname);

@@ -804,12 +804,13 @@ remains open.
 
 ## RAR staged-input cleanup — 2026-08-19
 
-RAR input staged from a nested or non-file-backed fmap now uses the shared
-temporary cleanup contract. Descriptor-close and temporary-removal failures
-mark the scan incomplete/non-cacheable and preserve an earlier stronger
-result, preventing a successful archive scan from hiding cleanup failure.
-Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification remain
-open.
+RAR input staged from a nested or non-file-backed fmap now reserves the staged
+input against `MaxTemporarySize` through UnRAR and child scans, then uses the
+shared temporary cleanup contract. Descriptor-close and temporary-removal
+failures mark the scan incomplete/non-cacheable and preserve an earlier
+stronger result, preventing a successful archive scan from hiding cleanup
+failure. Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification
+remain open.
 
 ## Force-to-disk nested fmap accounting — 2026-08-19
 

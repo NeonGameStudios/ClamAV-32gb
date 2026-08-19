@@ -4505,6 +4505,23 @@ START_TEST(test_rar_nested_stage_read_failure_is_publicly_fail_visible)
     ck_assert(last_alert == NULL);
     ck_assert(nested->dont_cache_flag);
 
+    /* RAR staging must be admitted against the temporary quota before any
+     * nested fmap bytes are copied to disk. */
+    scan_engine->maxtemporarysize = nested->len - 1U;
+    state.successful_reads       = 0;
+    nested->dont_cache_flag      = false;
+    verdict                      = CL_VERDICT_STRONG_INDICATOR;
+    last_alert                   = "stale";
+    scanned                      = UINT64_MAX;
+    ret = cl_scanmap_ex(nested, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_RAR", NULL);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(nested->dont_cache_flag);
+    ck_assert_uint_eq(state.successful_reads, 0);
+
     free_duplicate_fmap(nested);
     cl_fmap_close(parent);
     cl_engine_free(scan_engine);
