@@ -1574,7 +1574,7 @@ revision.
 | F-09 Mach-O shift/divisor | Source remediated | 64-bit alignment exponents ≥32 are rejected before shifting. The compiled malformed-section regression is registered; Linux execution remains required. |
 | F-10 parser-local width/state | Source remediated in reviewed paths | Script offsets, JPEG coordinates, and XZ output totals use bounded native/64-bit state; JPEG segment bounds and scan-time checks are explicit. Image-fuzzy detector allocation, mapping, calculation, and matcher-side failures now preserve the sticky incomplete result instead of being discarded. Broader parser-width review remains open. |
 | F-11 RAR staging copy | Source remediated | `fmap_dump_to_file()` rejects a nonzero unread remainder and removes the partial tempfile. Fault-injected RAR staging coverage is registered; Linux execution remains required. |
-| F-12 protocol/API limits | Partially remediated | `StreamMaxLength` and public scan-size/time overflow/negative paths are bounded; full protocol tests for clamd INSTREAM and all setter edge values remain open. |
+| F-12 protocol/API limits | Parser boundary remediated; protocol scale open | `StreamMaxLength` and public scan-size/time overflow/negative paths are bounded, and both clamd config-file and CLI `SIZE64` parsing paths now reject negative values before later engine setup. Full socket-level clamd INSTREAM/FILDES tests at 4 GiB and 32 GiB, plus the remaining setter matrix, remain open. |
 | F-13 runtime provenance | Gate remediated structurally | The gate now binds the CMake source root and configure-time commit/tree, preserves complete Git tree/index metadata plus the copied launcher/build graph/loaded dependency artifacts and hashes, records sanitizer symbols and the Rust suite result, and enforces the canonical matrix. A real Linux rebuild must produce the evidence. |
 | F-14 acceptance workflow | Partially remediated | Canonical `1 2 4` workers, mandatory temp budget, explicit production/deep-parser fixture inputs, combined release/sanitizer decision, and post-attestation verified artifact ordering are enforced. Mandatory clamd/clamdscan/milter, materialized/cold-cache, production-CVD, parser-expansion, latency, and RSS jobs remain open. |
 | F-15 contradictory qualification claims | Documentation remediated for this revision | This table supersedes the historical append-only labels. Prior test-CVD and production-CVD results are snapshot evidence, not qualification of R2. |
@@ -1702,3 +1702,13 @@ failures as incomplete/non-cacheable results. The focused
 registered. This is a local source change only: supported-Linux execution,
 sanitizer coverage, Sonic1 rebuild, and broader OLE/RTF corpus qualification
 remain open.
+
+## Clamd size-option parser boundary — 2026-08-19
+
+The shared `SIZE64` option parser now rejects negative values before suffix
+scaling or overflow fallback in both the configuration-file and CLI parsing
+paths. This closes the `MaxScanSize`/related-setting case where `-1` could
+survive generic parsing and be deferred to a later engine setter. The focused
+clamd parser regression covers `MaxScanSize`, `MaxFileSize`, `StreamMaxLength`,
+`OnAccessMaxFileSize`, `MaxHTMLNormalize`, and `PCREMaxFileSize`; compiled
+Linux/Sonic1 protocol-scale tests at 4 GiB and 32 GiB remain open.

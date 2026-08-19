@@ -225,6 +225,41 @@ START_TEST(test_large_file_size_parser_ceiling)
 }
 END_TEST
 
+START_TEST(test_size_parser_rejects_negative_values)
+{
+    static const char *const names[] = {
+        "MaxScanSize",
+        "MaxFileSize",
+        "StreamMaxLength",
+        "OnAccessMaxFileSize",
+        "MaxHTMLNormalize",
+        "PCREMaxFileSize"};
+    static const char *const invalid[] = {"-1", "-1G"};
+    size_t i, j;
+
+    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        for (j = 0; j < sizeof(invalid) / sizeof(invalid[0]); j++)
+            ck_assert_ptr_null(optadditem(names[i], invalid[j], 1, OPT_CLAMD, 0, NULL));
+    }
+
+#ifndef _WIN32
+    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        char config_path[] = "/tmp/clamav-negative-size-XXXXXX";
+        int fd              = mkstemp(config_path);
+        FILE *config;
+
+        ck_assert_int_ge(fd, 0);
+        config = fdopen(fd, "w");
+        ck_assert_ptr_nonnull(config);
+        ck_assert_int_gt(fprintf(config, "%s -1\n", names[i]), 0);
+        ck_assert_int_eq(fclose(config), 0);
+        ck_assert_ptr_null(optparse(config_path, 0, NULL, 1, OPT_CLAMD, 0, NULL));
+        unlink(config_path);
+    }
+#endif
+}
+END_TEST
+
 START_TEST(test_maxscantime_cli_boundaries)
 {
     const char *valid[]   = {"0", "4294967295"};
@@ -1087,6 +1122,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
+    tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
 #ifndef _WIN32
     TCase *tc_client;
 

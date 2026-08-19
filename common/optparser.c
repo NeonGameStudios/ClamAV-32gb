@@ -1351,6 +1351,11 @@ struct optstruct *optparse(const char *cfgfile, int argc, char **argv, int verbo
                     numarg = 0;
                     break;
                 }
+                if (lnumarg < 0) {
+                    fprintf(stderr, "ERROR: Numerical value for option %s cannot be negative\n", name);
+                    err = 1;
+                    break;
+                }
                 if (errno != ERANGE) {
                     switch (*buff) {
                         case 'G':
@@ -1600,6 +1605,11 @@ struct optstruct *optadditem(const char *name, const char *arg, int verbose, int
                     lnumarg = strtoll(arg, &buff, 0);
                 else {
                     numarg = 0;
+                    break;
+                }
+                if (lnumarg < 0) {
+                    fprintf(stderr, "ERROR: Numerical value for option %s cannot be negative\n", name);
+                    err = 1;
                     break;
                 }
                 if (errno != ERANGE) {

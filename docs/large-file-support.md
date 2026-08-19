@@ -2569,3 +2569,12 @@ truncated-header regressions are registered. Recursive OLE2 dispatch now skips
 names belonging to another extraction subtree while preserving real XLM/image
 extraction failures. Compiled Linux/Sonic1 execution, sanitizer coverage, and
 broader XLM corpus qualification remain release gates.
+
+## Clamd size-option parser boundary — 2026-08-19
+
+The shared `SIZE64` parser now rejects negative values before suffix scaling or
+overflow fallback in both configuration-file and CLI paths. The focused clamd
+parser regression covers `MaxScanSize`, `MaxFileSize`, `StreamMaxLength`,
+`OnAccessMaxFileSize`, `MaxHTMLNormalize`, and `PCREMaxFileSize`. Socket-level
+INSTREAM/FILDES tests at 4 GiB and 32 GiB, sanitizer coverage, and Sonic1
+execution remain release gates.
