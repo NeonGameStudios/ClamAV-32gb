@@ -441,6 +441,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
          * fill up the tmp directory before it starts scanning
          */
         bool lastLineWasEmpty;
+        bool headersParsed;
         int messagenumber;
         message *m = messageCreate(); /*Create an empty email */
 
@@ -449,6 +450,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         }
 
         lastLineWasEmpty = false;
+        headersParsed     = false;
         messagenumber    = 1;
         messageSetCTX(m, ctx);
 
@@ -461,18 +463,26 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                  * End of a message in the mail box
                  */
                 bool heuristicFound = false;
-                body                = parseEmailHeaders(m, rfc821, &heuristicFound);
-                if (body == NULL) {
-                    messageReset(m);
-                    messageSetCTX(m, ctx);
-                    if (heuristicFound) {
-                        retcode = CL_VIRUS;
-                        break;
+                if (headersParsed) {
+                    /* Headers were finalized at the first body separator;
+                     * m already contains only the current body. */
+                    body          = m;
+                    m             = NULL;
+                    headersParsed = false;
+                } else {
+                    body = parseEmailHeaders(m, rfc821, &heuristicFound);
+                    if (body == NULL) {
+                        messageReset(m);
+                        messageSetCTX(m, ctx);
+                        if (heuristicFound) {
+                            retcode = CL_VIRUS;
+                            break;
+                        }
+                        continue;
                     }
-                    continue;
+                    messageDestroy(m);
                 }
                 messageSetCTX(body, ctx);
-                messageDestroy(m);
                 if (body->isTruncated) {
                     cli_append_potentially_unwanted_if_heur_exceedsmax(
                         ctx, "Heuristics.Limits.Exceeded.MailMaterialization", CL_EMAXSIZE);
@@ -486,7 +496,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                     m    = NULL;
                     break;
                 }
-                if (messageGetBody(body)) {
+                if (messageGetBody(body) || messageHasBodySpool(body)) {
                     mbox_status rc = parseEmailBody(body, NULL, &mctx, 0);
                     if (rc == FAIL) {
                         m = body;
@@ -534,6 +544,38 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                 lastLineWasEmpty = (bool)(buffer[0] == '\0');
             }
 
+            if (!headersParsed && buffer[0] == '\0') {
+                bool heuristicFound = false;
+
+                /* Parse headers as soon as their separator arrives. This
+                 * allows ordinary bodies to switch to disk-backed streaming
+                 * before any large body content is retained in text nodes. */
+                if (messageAddStr(m, NULL) < 0)
+                    break;
+                body = parseEmailHeaders(m, rfc821, &heuristicFound);
+                if (body == NULL) {
+                    messageReset(m);
+                    messageSetCTX(m, ctx);
+                    if (heuristicFound) {
+                        retcode = CL_VIRUS;
+                        break;
+                    }
+                    continue;
+                }
+                messageSetCTX(body, ctx);
+                messageDestroy(m);
+                m             = body;
+                headersParsed = true;
+
+                if ((messageGetMimeType(m) != MULTIPART) &&
+                    (messageGetMimeType(m) != MESSAGE) &&
+                    (messageBeginBodySpool(m) < 0)) {
+                    m->isTruncated = true;
+                    break;
+                }
+                continue;
+            }
+
             if (isuuencodebegin(buffer)) {
                 /*
                  * Fast track visa to uudecode.
@@ -555,10 +597,16 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
 
         if (retcode == CL_SUCCESS) {
             cli_dbgmsg("Extract attachments from email %d\n", messagenumber);
-            bool heuristicFound = false;
-            body                = parseEmailHeaders(m, rfc821, &heuristicFound);
-            if (heuristicFound) {
-                retcode = CL_VIRUS;
+            if (headersParsed) {
+                body          = m;
+                m             = NULL;
+                headersParsed = false;
+            } else {
+                bool heuristicFound = false;
+                body                = parseEmailHeaders(m, rfc821, &heuristicFound);
+                if (heuristicFound) {
+                    retcode = CL_VIRUS;
+                }
             }
         }
         if (m) {
@@ -600,7 +648,8 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         /*
          * Write out the last entry in the mailbox
          */
-        if ((retcode == CL_SUCCESS) && !body->isTruncated && messageGetBody(body)) {
+        if ((retcode == CL_SUCCESS) && !body->isTruncated &&
+            (messageGetBody(body) || messageHasBodySpool(body))) {
             messageSetCTX(body, ctx);
             switch (parseEmailBody(body, NULL, &mctx, 0)) {
                 case OK:
@@ -1001,6 +1050,16 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                 cli_dbgmsg("End of header information\n");
                 inHeader    = false;
                 bodyIsEmpty = true;
+                /* Multipart and encapsulated-message bodies still need the
+                 * legacy boundary/header state machine. Ordinary text and
+                 * application parts can be consumed incrementally into the
+                 * shared disk-backed spool instead of retaining every line. */
+                if ((messageGetMimeType(ret) != MULTIPART) &&
+                    (messageGetMimeType(ret) != MESSAGE) &&
+                    (messageBeginBodySpool(ret) < 0)) {
+                    ret->isTruncated = true;
+                    break;
+                }
             } else {
                 char *ptr;
                 const char *lookahead;
@@ -1710,6 +1769,34 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
     }
 
     rc = OK;
+
+    /* Ordinary single-part bodies are collected by messageAddStr() directly
+     * into a quota-accounted fileblob. Scan that spool as the child object
+     * without reconstructing a linked list of every mail line. Multipart and
+     * encapsulated-message bodies intentionally continue through the
+     * line-oriented state machine below. */
+    if (mainMessage && messageHasBodySpool(mainMessage)) {
+        const mime_type streamed_type = messageGetMimeType(mainMessage);
+
+        if (doPhishingScan && (streamed_type == NOMIME || streamed_type == TEXT))
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "Streaming mail body bypassed in-memory phishing URL inspection");
+
+        fb = messageToFileblob(mainMessage, mctx->dir, 1);
+        if (fb == NULL) {
+            rc = FAIL;
+        } else {
+            const int scan_rc = scanFileblob(mctx, fb);
+            if (scan_rc == CL_VIRUS)
+                rc = VIRUS;
+            else if (scan_rc != CL_CLEAN)
+                rc = FAIL;
+            mctx->files++;
+        }
+
+        mctx->wrkobj = saveobj;
+        return rc;
+    }
 
     /* Anything left to be parsed? */
     if (mainMessage && (messageGetBody(mainMessage) != NULL)) {

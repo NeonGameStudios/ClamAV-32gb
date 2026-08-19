@@ -454,8 +454,8 @@ static char *create_materialization_limit_fixture(int unix_mbox)
 
     /* Keep each generated line below RFC2821LENGTH while using block writes
      * so this remains a practical integration test rather than a syscall
-     * benchmark. messageAddStr() retains one byte per stored line as well as
-     * the line contents, so the final block crosses the deep-parser cap. */
+     * benchmark. The body crosses the former in-memory materialization cap and
+     * must now be handled by the disk-backed mail spool. */
     for (line = 0; line < sizeof(block) / 1000U; line++) {
         memset(block + line * 1000U, 'A', 999U);
         block[line * 1000U + 999U] = '\n';
@@ -474,7 +474,7 @@ static char *create_materialization_limit_fixture(int unix_mbox)
     return path;
 }
 
-static void assert_materialization_limit_is_fail_visible(const char *path)
+static void assert_large_mail_body_streams(const char *path, int alert_limits)
 {
     struct cl_scan_options options;
     cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
@@ -484,35 +484,18 @@ static void assert_materialization_limit_is_fail_visible(const char *path)
 
     memset(&options, 0, sizeof(options));
     options.parse = ~0U;
-    options.heuristic = CL_SCAN_HEURISTIC_EXCEEDS_MAX;
+    if (alert_limits)
+        options.heuristic = CL_SCAN_HEURISTIC_EXCEEDS_MAX;
 
     ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
                          g_engine, &options, NULL, NULL, NULL, NULL, NULL,
                          NULL);
 
     ck_assert_int_eq(ret, CL_SUCCESS);
-    ck_assert_int_eq(verdict, CL_VERDICT_POTENTIALLY_UNWANTED);
-    ck_assert_str_eq(last_alert, "Heuristics.Limits.Exceeded.MailMaterialization");
-}
-
-static void assert_materialization_limit_error_is_fail_visible(const char *path)
-{
-    struct cl_scan_options options;
-    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
-    const char *last_alert = NULL;
-    uint64_t scanned = 0;
-    cl_error_t ret;
-
-    memset(&options, 0, sizeof(options));
-    options.parse = ~0U;
-
-    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
-                         g_engine, &options, NULL, NULL, NULL, NULL, NULL,
-                         NULL);
-
-    ck_assert_int_eq(ret, CL_EMAXSIZE);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
+    ck_assert_msg(scanned > (uint64_t)(64U * 1024U * 1024U),
+                  "large mail body was not fully scanned");
 }
 
 static char *create_nested_maxfiles_fixture(void)
@@ -584,20 +567,20 @@ START_TEST(test_mbox_nested_maxfiles_is_fail_visible)
 }
 END_TEST
 
-START_TEST(test_mbox_materialization_limit_is_fail_visible)
+START_TEST(test_mbox_large_body_uses_streaming_spool)
 {
     char *path = create_materialization_limit_fixture(1);
 
-    assert_materialization_limit_is_fail_visible(path);
+    assert_large_mail_body_streams(path, 1);
     free(path);
 }
 END_TEST
 
-START_TEST(test_mbox_materialization_limit_without_alert_is_fail_visible)
+START_TEST(test_mbox_large_body_streams_without_alert)
 {
     char *path = create_materialization_limit_fixture(1);
 
-    assert_materialization_limit_error_is_fail_visible(path);
+    assert_large_mail_body_streams(path, 0);
     free(path);
 }
 END_TEST
@@ -927,20 +910,20 @@ START_TEST(test_engine_set_num_rejects_narrowing_and_negative_values)
 }
 END_TEST
 
-START_TEST(test_single_message_materialization_limit_is_fail_visible)
+START_TEST(test_single_message_large_body_uses_streaming_spool)
 {
     char *path = create_materialization_limit_fixture(0);
 
-    assert_materialization_limit_is_fail_visible(path);
+    assert_large_mail_body_streams(path, 1);
     free(path);
 }
 END_TEST
 
-START_TEST(test_single_message_materialization_limit_without_alert_is_fail_visible)
+START_TEST(test_single_message_large_body_streams_without_alert)
 {
     char *path = create_materialization_limit_fixture(0);
 
-    assert_materialization_limit_error_is_fail_visible(path);
+    assert_large_mail_body_streams(path, 0);
     free(path);
 }
 END_TEST
@@ -8875,10 +8858,10 @@ static Suite *test_cl_suite(void)
     tcase_add_loop_test(tc_cl_scan, test_cl_scandesc_allscan, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanfile, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanfile_allscan, 0, expect);
-    tcase_add_test(tc_cl_scan, test_mbox_materialization_limit_is_fail_visible);
-    tcase_add_test(tc_cl_scan, test_mbox_materialization_limit_without_alert_is_fail_visible);
-    tcase_add_test(tc_cl_scan, test_single_message_materialization_limit_is_fail_visible);
-    tcase_add_test(tc_cl_scan, test_single_message_materialization_limit_without_alert_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_mbox_large_body_uses_streaming_spool);
+    tcase_add_test(tc_cl_scan, test_mbox_large_body_streams_without_alert);
+    tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
+    tcase_add_test(tc_cl_scan, test_single_message_large_body_streams_without_alert);
     tcase_add_loop_test(tc_cl_scan, test_cl_scandesc_callback, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scandesc_callback_allscan, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanfile_callback, 0, expect);

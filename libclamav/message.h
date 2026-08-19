@@ -53,6 +53,12 @@ typedef struct message {
      * list. This deep-parser representation is intentionally bounded. */
     size_t materialized_bytes;
 
+    /* Non-multipart bodies are appended to an on-disk fileblob after the
+     * headers are parsed. Keeping this separate from body_first preserves the
+     * legacy line-oriented multipart parser while preventing large ordinary
+     * mail bodies from becoming an unbounded linked list in memory. */
+    fileblob *body_spool;
+
     char base64_1, base64_2, base64_3;
     unsigned int isInfected : 1;
     unsigned int isTruncated : 1;
@@ -76,6 +82,8 @@ void messageSetEncoding(message *m, const char *enctype);
 encoding_type messageGetEncoding(const message *m);
 int messageAddLine(message *m, line_t *line);
 int messageAddStr(message *m, const char *data);
+int messageBeginBodySpool(message *m);
+int messageHasBodySpool(const message *m);
 int messageMoveText(message *m, text *t, message *old_message);
 text *messageGetBody(message *m);
 unsigned char *base64Flush(message *m, unsigned char *buf);

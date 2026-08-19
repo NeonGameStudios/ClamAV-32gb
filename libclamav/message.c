@@ -50,6 +50,7 @@
 #include "others.h"
 #include "str.h"
 #include "filetypes.h"
+#include "blob.h"
 
 #include "mbox.h"
 #include "clamav.h"
@@ -80,6 +81,7 @@ static int usefulArg(const char *arg);
 static void messageDedup(message *m);
 static char *rfc2231(const char *in);
 static int simil(const char *str1, const char *str2);
+static void messageSetSpoolBuildContext(fileblob *fb, cli_ctx *ctx);
 
 static size_t messageLineMaterializedBytes(const line_t *line)
 {
@@ -186,6 +188,103 @@ messageCreate(void)
     return m;
 }
 
+/*
+ * Start the disk-backed representation used for ordinary (non-multipart)
+ * message bodies. Header parsing has already completed when this is called,
+ * so the line list is not needed for MIME boundary discovery. The fileblob
+ * owns the temporary-space reservation and therefore applies the same shared
+ * quota as every other parser spool.
+ */
+int messageBeginBodySpool(message *m)
+{
+    const char *dir;
+    char *filename = NULL;
+    fileblob *fb;
+
+    if (m == NULL || m->ctx == NULL || m->ctx->engine == NULL)
+        return -1;
+
+    if (m->body_spool != NULL)
+        return 0;
+
+    /* A caller must not discard an already materialized line list. */
+    if (m->body_first != NULL || m->body_last != NULL) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body spool requested after line materialization");
+        m->isTruncated = 1;
+        return -1;
+    }
+
+    dir = m->ctx->this_layer_tmpdir ? m->ctx->this_layer_tmpdir : m->ctx->engine->tmpdir;
+    if (dir == NULL || *dir == '\0') {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body spool has no usable temporary directory");
+        m->isTruncated = 1;
+        return -1;
+    }
+
+    fb = fileblobCreate();
+    if (fb == NULL) {
+        cli_mark_scan_incomplete(m->ctx, "MIME body spool could not be allocated");
+        m->isTruncated = 1;
+        return -1;
+    }
+
+    filename = messageGetFilename(m);
+    fileblobSetFilename(fb, dir, (filename && *filename) ? filename : "mailbody");
+    if (filename)
+        free(filename);
+    messageSetSpoolBuildContext(fb, m->ctx);
+
+    if (fb->isIncomplete || fb->fp == NULL || fb->fullname == NULL) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body spool could not be created or opened");
+        fileblobDestroy(fb);
+        m->isTruncated = 1;
+        return -1;
+    }
+
+    m->body_spool = fb;
+    return 0;
+}
+
+int messageHasBodySpool(const message *m)
+{
+    return (m != NULL && m->body_spool != NULL) ? 1 : 0;
+}
+
+static int messageAddSpoolLine(message *m, const char *data)
+{
+    const unsigned char *line = (const unsigned char *)(data ? data : "");
+    size_t len                  = data ? strlen(data) : 0;
+
+    if (m == NULL || m->body_spool == NULL)
+        return -1;
+
+    if ((len && fileblobAddData(m->body_spool, line, len) < 0) ||
+        fileblobAddData(m->body_spool, (const unsigned char *)"\n", 1) < 0) {
+        m->isTruncated = 1;
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body temporary spool write was incomplete");
+        return -1;
+    }
+
+    return 1;
+}
+
+/* Reserve bytes while the spool is being built, but defer the authoritative
+ * scan until the body is complete. fileblobAddData() uses temporary_ctx for
+ * quota accounting and ctx for its optional early matcher. */
+static void messageSetSpoolBuildContext(fileblob *fb, cli_ctx *ctx)
+{
+    if (fb == NULL || ctx == NULL)
+        return;
+
+    fileblobSetCTX(fb, ctx);
+    fb->temporary_ctx = fb->ctx;
+    fb->ctx           = NULL;
+}
+
 void messageDestroy(message *m)
 {
     if (NULL == m) {
@@ -219,6 +318,9 @@ void messageReset(message *m)
 
     if (m->body_first)
         textDestroy(m->body_first);
+
+    if (m->body_spool)
+        fileblobDestroy(m->body_spool);
 
     if (0 != m->base64chars) {
         cli_errmsg("Internal email parse error: message base64chars should be 0 when resetting the message\n");
@@ -952,6 +1054,9 @@ int messageAddLine(message *m, line_t *line)
         return -1;
     }
 
+    if (m->body_spool)
+        return messageAddSpoolLine(m, line ? lineGetData(line) : NULL);
+
     if (!messageReserveMaterializedBytes(m, messageLineMaterializedBytes(line), "messageAddLine"))
         return -1;
 
@@ -1017,6 +1122,9 @@ int messageAddStr(message *m, const char *data)
             }
         }
     }
+
+    if (m->body_spool)
+        return messageAddSpoolLine(m, data);
 
     stored_bytes = (data != NULL) ? strlen(data) + 1 : 1;
     if (!messageReserveMaterializedBytes(m, stored_bytes, "messageAddStr"))
@@ -1567,6 +1675,168 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
 }
 
 /*
+ * Export a disk-backed body. A raw body can be handed to the scanner without
+ * copying it. Encoded bodies are decoded one input line at a time into a new
+ * bounded fileblob, keeping both the source and output in the shared
+ * temporary-space accounting. The source remains owned by message until a
+ * destroy=1 export succeeds.
+ */
+static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy)
+{
+    const char *spool_dir;
+    char *filename = NULL;
+    fileblob *source;
+    fileblob *out = NULL;
+    FILE *input = NULL;
+    encoding_type enctype;
+    char line[4096];
+    int failed = 0;
+
+    if (m == NULL || m->body_spool == NULL)
+        return NULL;
+
+    source = m->body_spool;
+    if (source->isIncomplete || source->fp == NULL || source->fullname == NULL) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body spool is not a complete scan source");
+        return NULL;
+    }
+
+    if (m->numberOfEncTypes == 0 ||
+        m->encodingTypes[0] == NOENCODING ||
+        m->encodingTypes[0] == BINARY ||
+        m->encodingTypes[0] == EIGHTBIT) {
+        if (destroy) {
+            m->body_spool = NULL;
+            return source;
+        }
+
+        /* Preserve the historical non-destructive export contract. */
+        out = fileblobCreate();
+        if (out == NULL)
+            goto fail;
+        spool_dir = dir;
+        if (spool_dir == NULL || *spool_dir == '\0')
+            spool_dir = m->ctx ? m->ctx->this_layer_tmpdir : NULL;
+        if (spool_dir == NULL || *spool_dir == '\0')
+            goto fail;
+        filename = messageGetFilename(m);
+        fileblobSetFilename(out, spool_dir,
+                            (filename && *filename) ? filename : "mailbody");
+        if (filename) {
+            free(filename);
+            filename = NULL;
+        }
+        messageSetSpoolBuildContext(out, m->ctx);
+        if (out->isIncomplete || out->fp == NULL)
+            goto fail;
+
+        if (fflush(source->fp) != 0 || (input = fopen(source->fullname, "rb")) == NULL)
+            goto fail;
+
+        while (!feof(input)) {
+            size_t n = fread(line, 1, sizeof(line), input);
+            if (n != 0 && fileblobAddData(out, (const unsigned char *)line, n) < 0) {
+                failed = 1;
+                break;
+            }
+            if (ferror(input)) {
+                failed = 1;
+                break;
+            }
+        }
+        fclose(input);
+        input = NULL;
+        if (failed)
+            goto fail;
+        return out;
+    }
+
+    if (m->numberOfEncTypes != 1 ||
+        (m->encodingTypes[0] != BASE64 && m->encodingTypes[0] != QUOTEDPRINTABLE)) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body uses an encoding without a streaming decoder");
+        return NULL;
+    }
+
+    enctype  = m->encodingTypes[0];
+    spool_dir = dir;
+    if (spool_dir == NULL || *spool_dir == '\0')
+        spool_dir = m->ctx ? m->ctx->this_layer_tmpdir : NULL;
+    if (spool_dir == NULL || *spool_dir == '\0')
+        goto fail;
+
+    out = fileblobCreate();
+    if (out == NULL)
+        goto fail;
+    filename = messageGetFilename(m);
+    fileblobSetFilename(out, spool_dir,
+                        (filename && *filename) ? filename : "attachment");
+    if (filename) {
+        free(filename);
+        filename = NULL;
+    }
+    messageSetSpoolBuildContext(out, m->ctx);
+    if (out->isIncomplete || out->fp == NULL)
+        goto fail;
+
+    if (fflush(source->fp) != 0 || (input = fopen(source->fullname, "rb")) == NULL)
+        goto fail;
+
+    m->base64chars = 0;
+    while (fgets(line, sizeof(line), input) != NULL) {
+        unsigned char decoded[sizeof(line) + 4];
+        unsigned char *end;
+        size_t line_len = strlen(line);
+
+        if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
+            cli_mark_scan_incomplete(m->ctx,
+                                     "MIME encoded body line exceeded the streaming decoder buffer");
+            failed = 1;
+            break;
+        }
+
+        cli_chomp(line);
+        end = decodeLine(m, enctype, line, decoded, sizeof(decoded));
+        if (end == NULL || (end != decoded && fileblobAddData(out, decoded,
+                                                               (size_t)(end - decoded)) < 0)) {
+            failed = 1;
+            break;
+        }
+    }
+    if (!failed && ferror(input))
+        failed = 1;
+    if (!failed && m->base64chars) {
+        unsigned char decoded[4];
+        unsigned char *end = base64Flush(m, decoded);
+        if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0)
+            failed = 1;
+    }
+    fclose(input);
+    input = NULL;
+
+    if (failed)
+        goto fail;
+
+    if (destroy) {
+        m->body_spool = NULL;
+        fileblobDestructiveDestroy(source);
+    }
+    return out;
+
+fail:
+    if (filename)
+        free(filename);
+    if (input)
+        fclose(input);
+    if (out)
+        fileblobDestructiveDestroy(out);
+    cli_mark_scan_incomplete(m->ctx,
+                             "MIME body could not be exported completely from its spool");
+    return NULL;
+}
+
+/*
  * Decode and transfer the contents of the message into a fileblob
  * The caller must free the returned fileblob
  */
@@ -1576,6 +1846,9 @@ messageToFileblob(message *m, const char *dir, int destroy)
     fileblob *fb;
 
     cli_dbgmsg("messageToFileblob\n");
+    if (m && m->body_spool)
+        return messageExportBodySpool(m, dir, destroy);
+
     fb = messageExport(m, dir,
                        (void *(*)(void))fileblobCreate,
                        (void (*)(void *))fileblobDestroy,
@@ -1601,6 +1874,12 @@ messageToBlob(message *m, int destroy)
     blob *b;
 
     cli_dbgmsg("messageToBlob\n");
+
+    if (m && m->body_spool) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body requires a disk-backed export rather than blob materialization");
+        return NULL;
+    }
 
     b = messageExport(m, NULL,
                       (void *(*)(void))blobCreate,
@@ -1631,6 +1910,12 @@ messageToText(message *m)
 
     if (m == NULL) {
         cli_errmsg("Internal email parser error: invalid arguments when converting message to text.\n");
+        return NULL;
+    }
+
+    if (m->body_spool) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body requires a disk-backed export rather than text materialization");
         return NULL;
     }
 
@@ -2324,7 +2609,12 @@ usefulArg(const char *arg)
 
 void messageSetCTX(message *m, cli_ctx *ctx)
 {
+    if (m == NULL)
+        return;
+
     m->ctx = ctx;
+    if (m->body_spool && ctx)
+        fileblobSetCTX(m->body_spool, ctx);
 }
 
 int messageContainsVirus(const message *m)
