@@ -2047,13 +2047,13 @@ ceilings remain release gates.
 ## Mail text-list accounting — 2026-08-19
 
 The 64 MiB deep-parser materialization ceiling still covers ref-counted
-`messageAddLine()` input, text moved between parser message objects, and the
-legacy multipart line-state path. Ordinary single-part text and application
-bodies now switch to a quota-accounted disk spool immediately after header
-parsing, so their body bytes are no longer retained as a linked list. A
-ceiling breach in a path that still requires the legacy line representation
-marks the message truncated and returns a failure; multipart conversion to a
-fully incremental boundary iterator remains a release gate.
+`messageAddLine()` input and text moved between parser message objects. Ordinary
+single-part text/application bodies and multipart bodies now switch to
+quota-accounted disk spools immediately after header parsing, so their body
+bytes are no longer retained as linked lists. A ceiling breach in a path that
+still requires the legacy line representation marks the message truncated and
+returns a failure; malformed headers, unsupported encodings, and streaming
+decoder failures remain explicit incomplete results.
 
 Truncated multipart children are rejected before `do_multipart()` writes an
 attachment or enters a nested parser. The top-level body parser applies the
@@ -2137,23 +2137,25 @@ only checks for `CL_VIRUS`. The build-time reservation is released before the
 normal descriptor scan reservation and is always released during destruction.
 
 This closes the accounting and fail-visible spool gap. It does not yet claim
-that every MIME form has a fully incremental parser: ordinary single-part
-mail now uses the disk-backed body spool, while multipart and encapsulated
-message bodies continue to use the bounded legacy line representation.
+that every MIME form has identical semantics: ordinary single-part mail and
+multipart bodies now use disk-backed spools, while compatibility-only bounce
+heuristics and a few unsupported nested encodings continue to use explicit
+fail-closed fallbacks.
 
-## Disk-backed ordinary MIME body spooling — 2026-08-19
+## Disk-backed MIME body spooling — 2026-08-19
 
-Single-part text/application bodies in both direct-message and UNIX mbox
-ingress are finalized at the header/body separator and appended incrementally
-to a `fileblob`. The spool reserves each byte against `MaxTemporarySize`,
-defers the authoritative descriptor scan until the body is complete, and
-supports line-at-a-time base64 and quoted-printable export. Failed creation,
-write, decoding, or export paths mark the scan incomplete; raw body matching
-therefore cannot turn a partial spool into a clean result. URL-phishing
-inspection is explicitly marked incomplete when enabled for a streamed text
-body because that legacy detector still requires a bounded in-memory view.
-Multipart boundary parsing, nested `message/*`, and unsupported transfer
-encodings remain separate release-gate work.
+Single-part text/application bodies and multipart bodies in both direct-message
+and UNIX mbox ingress are finalized at the header/body separator and appended
+incrementally to quota-accounted `fileblob` spools. Ordinary bodies are scanned
+from the completed spool, while multipart boundaries are consumed one part at a
+time and each child is scanned before the next child is staged. Base64 and
+quoted-printable export is line-at-a-time. Failed creation, write, decoding,
+boundary, or export paths mark the scan incomplete; raw body matching therefore
+cannot turn a partial spool into a clean result. URL-phishing inspection is
+explicitly marked incomplete when enabled for a streamed text body because that
+legacy detector still requires a bounded in-memory view. Unsupported nested
+encodings and compatibility-only bounce heuristics remain separate release-gate
+work.
 
 ## XAR TOC streaming — 2026-08-19
 

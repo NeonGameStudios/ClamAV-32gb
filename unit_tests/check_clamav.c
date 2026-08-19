@@ -474,7 +474,38 @@ static char *create_materialization_limit_fixture(int unix_mbox)
     return path;
 }
 
-static void assert_large_mail_body_streams(const char *path, int alert_limits)
+static char *create_streaming_multipart_fixture(void)
+{
+    static const char header[] =
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "Content-Type: multipart/mixed; boundary=stream-part\n"
+        "\n"
+        "--stream-part\n"
+        "Content-Type: application/octet-stream\n"
+        "Content-Disposition: attachment; filename=stream.bin\n"
+        "\n";
+    static const char trailer[] = "\n--stream-part--\n";
+    char block[64000];
+    char *path = NULL;
+    int fd     = -1;
+    size_t i;
+
+    memset(block, 'B', sizeof(block));
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, header, sizeof(header) - 1),
+                     (ssize_t)(sizeof(header) - 1));
+    for (i = 0; i < 32; i++)
+        ck_assert_int_eq(write(fd, block, sizeof(block)), (ssize_t)sizeof(block));
+    ck_assert_int_eq(write(fd, trailer, sizeof(trailer) - 1),
+                     (ssize_t)(sizeof(trailer) - 1));
+    ck_assert_int_eq(close(fd), 0);
+
+    return path;
+}
+
+static void assert_large_mail_body_streams(const char *path, int alert_limits,
+                                           uint64_t minimum_scanned)
 {
     struct cl_scan_options options;
     cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
@@ -494,7 +525,7 @@ static void assert_large_mail_body_streams(const char *path, int alert_limits)
     ck_assert_int_eq(ret, CL_SUCCESS);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
-    ck_assert_msg(scanned > (uint64_t)(64U * 1024U * 1024U),
+    ck_assert_msg(scanned > minimum_scanned,
                   "large mail body was not fully scanned");
 }
 
@@ -571,7 +602,7 @@ START_TEST(test_mbox_large_body_uses_streaming_spool)
 {
     char *path = create_materialization_limit_fixture(1);
 
-    assert_large_mail_body_streams(path, 1);
+    assert_large_mail_body_streams(path, 1, 64U * 1024U * 1024U);
     free(path);
 }
 END_TEST
@@ -580,7 +611,7 @@ START_TEST(test_mbox_large_body_streams_without_alert)
 {
     char *path = create_materialization_limit_fixture(1);
 
-    assert_large_mail_body_streams(path, 0);
+    assert_large_mail_body_streams(path, 0, 64U * 1024U * 1024U);
     free(path);
 }
 END_TEST
@@ -914,7 +945,7 @@ START_TEST(test_single_message_large_body_uses_streaming_spool)
 {
     char *path = create_materialization_limit_fixture(0);
 
-    assert_large_mail_body_streams(path, 1);
+    assert_large_mail_body_streams(path, 1, 64U * 1024U * 1024U);
     free(path);
 }
 END_TEST
@@ -923,7 +954,16 @@ START_TEST(test_single_message_large_body_streams_without_alert)
 {
     char *path = create_materialization_limit_fixture(0);
 
-    assert_large_mail_body_streams(path, 0);
+    assert_large_mail_body_streams(path, 0, 64U * 1024U * 1024U);
+    free(path);
+}
+END_TEST
+
+START_TEST(test_multipart_body_uses_streaming_spool)
+{
+    char *path = create_streaming_multipart_fixture();
+
+    assert_large_mail_body_streams(path, 0, 1024U * 1024U);
     free(path);
 }
 END_TEST
@@ -8862,6 +8902,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_mbox_large_body_streams_without_alert);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_streams_without_alert);
+    tcase_add_test(tc_cl_scan, test_multipart_body_uses_streaming_spool);
     tcase_add_loop_test(tc_cl_scan, test_cl_scandesc_callback, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scandesc_callback_allscan, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanfile_callback, 0, expect);

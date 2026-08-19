@@ -1618,13 +1618,13 @@ pass, while the sticky incomplete result remains fail-visible if no detection
 occurs. A compiled NDB-marker regression is registered; Linux/Sonic1
 execution remains a release gate.
 
-Ordinary single-part text/application mail bodies now switch to a
-quota-accounted disk-backed `fileblob` at the header/body separator in both
-direct-message and UNIX mbox ingress. Raw bodies are scanned from the
-completed spool; base64 and quoted-printable bodies are decoded line by line,
-and spool creation/write/decode failures remain incomplete and non-clean.
-Multipart and encapsulated `message/*` bodies intentionally remain on the
-bounded legacy line-state path, and phishing URL inspection is explicitly
-incomplete for streamed text when enabled. The large-body integration tests
-now verify that both ingress forms scan past the former 64 MiB materialization
-boundary; compiled Linux/Sonic1 execution remains a release gate.
+Ordinary and multipart mail bodies now switch to quota-accounted disk-backed
+`fileblob` spools at the header/body separator in both direct-message and UNIX
+mbox ingress. Ordinary bodies are scanned from the completed spool; multipart
+boundaries are consumed one child at a time; base64 and quoted-printable bodies
+are decoded line by line. Spool creation/write/decode/boundary failures remain
+incomplete and non-clean. Phishing URL inspection is explicitly incomplete for
+streamed text when enabled, and unsupported nested encodings remain fail-closed.
+The large-body integration tests now verify that both ingress forms scan past
+the former 64 MiB materialization boundary; compiled Linux/Sonic1 execution
+remains a release gate.

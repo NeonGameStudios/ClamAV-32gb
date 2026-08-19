@@ -192,6 +192,7 @@ static int parseEmailHeader(message *m, const char *line, const table_t *rfc821,
 static cl_error_t parseMHTMLComment(const char *comment, cli_ctx *ctx, void *wrkjobj, void *cbdata);
 static mbox_status parseRootMHTML(mbox_ctx *mctx, message *m, text *t);
 static mbox_status parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int recursion_level);
+static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx, unsigned int recursion_level);
 static int boundaryStart(const char *line, const char *boundary);
 static int boundaryEnd(const char *line, const char *boundary);
 static int initialiseTables(table_t **rfc821Table, table_t **subtypeTable);
@@ -567,9 +568,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                 m             = body;
                 headersParsed = true;
 
-                if ((messageGetMimeType(m) != MULTIPART) &&
-                    (messageGetMimeType(m) != MESSAGE) &&
-                    (messageBeginBodySpool(m) < 0)) {
+                if (messageBeginBodySpool(m) < 0) {
                     m->isTruncated = true;
                     break;
                 }
@@ -1054,9 +1053,7 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                  * legacy boundary/header state machine. Ordinary text and
                  * application parts can be consumed incrementally into the
                  * shared disk-backed spool instead of retaining every line. */
-                if ((messageGetMimeType(ret) != MULTIPART) &&
-                    (messageGetMimeType(ret) != MESSAGE) &&
-                    (messageBeginBodySpool(ret) < 0)) {
+                if (messageBeginBodySpool(ret) < 0) {
                     ret->isTruncated = true;
                     break;
                 }
@@ -1716,6 +1713,234 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
 #endif /* LIBXML_HTML_ENABLED */
 }
 
+static mbox_status finishStreamedMultipartPart(message **partp, mbox_ctx *mctx,
+                                                unsigned int recursion_level)
+{
+    message *part;
+    mbox_status rc;
+
+    if (partp == NULL || *partp == NULL)
+        return OK;
+
+    part  = *partp;
+    *partp = NULL;
+    rc    = parseEmailBody(part, NULL, mctx, recursion_level + 1);
+    messageDestroy(part);
+    return rc;
+}
+
+/*
+ * Consume a disk-backed multipart body one MIME part at a time. The parent
+ * spool remains on disk while the current child owns its own bounded spool;
+ * this keeps the working set independent of the total message size and lets
+ * nested multipart messages recurse through the same state machine.
+ */
+static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
+                                           unsigned int recursion_level)
+{
+    char *boundary = NULL;
+    FILE *input    = NULL;
+    fileblob *source;
+    message *headers = NULL;
+    message *part    = NULL;
+    mbox_status result = OK;
+    bool saw_boundary = false;
+    bool closed       = false;
+    char line[4096];
+
+    if (mainMessage == NULL || mctx == NULL || mainMessage->body_spool == NULL)
+        return FAIL;
+
+    if ((messageGetEncoding(mainMessage) != NOENCODING) &&
+        (messageGetEncoding(mainMessage) != BINARY) &&
+        (messageGetEncoding(mainMessage) != EIGHTBIT)) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Multipart body uses an unsupported transfer encoding");
+        return FAIL;
+    }
+
+    boundary = messageFindArgument(mainMessage, "boundary");
+    if (boundary == NULL || *boundary == '\0') {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Multipart body has no usable boundary");
+        if (boundary)
+            free(boundary);
+        return FAIL;
+    }
+    cli_chomp(boundary);
+
+    source = mainMessage->body_spool;
+    if (source->isIncomplete || source->fp == NULL || source->fullname == NULL ||
+        fflush(source->fp) != 0 || (input = fopen(source->fullname, "rb")) == NULL) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Multipart body spool could not be opened completely");
+        goto done;
+    }
+
+    while (fgets(line, sizeof(line), input) != NULL) {
+        size_t line_len = strlen(line);
+
+        if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "Multipart boundary line exceeded the streaming buffer");
+            result = FAIL;
+            break;
+        }
+        cli_chomp(line);
+
+        if (boundaryEnd(line, boundary)) {
+            mbox_status part_rc;
+
+            if (headers != NULL) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Multipart part ended before its headers terminated");
+                messageDestroy(headers);
+                headers = NULL;
+                result   = FAIL;
+            }
+            part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
+            if (part_rc == VIRUS) {
+                result = VIRUS;
+                break;
+            }
+            if ((part_rc == MAXREC) || (part_rc == MAXFILES)) {
+                result = part_rc;
+                break;
+            }
+            if (part_rc != OK && result == OK)
+                result = part_rc;
+            closed = true;
+            break;
+        }
+
+        if (boundaryStart(line, boundary)) {
+            mbox_status part_rc;
+
+            part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
+            if (part_rc == VIRUS) {
+                result = VIRUS;
+                break;
+            }
+            if ((part_rc == MAXREC) || (part_rc == MAXFILES)) {
+                result = part_rc;
+                break;
+            }
+            if (part_rc != OK && result == OK)
+                result = part_rc;
+            if (headers != NULL) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Multipart boundary interrupted part headers");
+                messageDestroy(headers);
+                headers = NULL;
+                if (result == OK)
+                    result = FAIL;
+            }
+            headers = messageCreate();
+            if (headers == NULL) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Multipart part headers could not be allocated");
+                result = FAIL;
+                break;
+            }
+            messageSetCTX(headers, mctx->ctx);
+            saw_boundary = true;
+            continue;
+        }
+
+        if (!saw_boundary)
+            continue; /* MIME preamble. */
+
+        if (headers != NULL) {
+            if (messageAddStr(headers, (line[0] == '\0') ? NULL : line) < 0) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Multipart part headers could not be materialized");
+                result = FAIL;
+                break;
+            }
+            if (line[0] == '\0') {
+                bool heuristicFound = false;
+                message *parsed = parseEmailHeaders(headers, mctx->rfc821Table,
+                                                     &heuristicFound);
+                messageDestroy(headers);
+                headers = NULL;
+                if (parsed == NULL) {
+                    if (heuristicFound)
+                        result = VIRUS;
+                    else {
+                        cli_mark_scan_incomplete(mctx->ctx,
+                                                 "Multipart part headers could not be parsed");
+                        result = FAIL;
+                    }
+                    break;
+                }
+                messageSetCTX(parsed, mctx->ctx);
+                if (messageBeginBodySpool(parsed) < 0) {
+                    messageDestroy(parsed);
+                    result = FAIL;
+                    break;
+                }
+                part = parsed;
+            }
+        } else if (part == NULL || messageAddStr(part, (line[0] == '\0') ? NULL : line) < 0) {
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "Multipart part body could not be spooled");
+            result = FAIL;
+            break;
+        }
+    }
+
+    if (input != NULL && ferror(input)) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Multipart body spool read failed");
+        if (result == OK)
+            result = FAIL;
+    }
+
+    if (!closed) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Multipart body did not contain a terminating boundary");
+        if (result == OK)
+            result = FAIL;
+    }
+
+    if (headers != NULL) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Multipart part ended before its headers terminated");
+        messageDestroy(headers);
+        headers = NULL;
+        if (result == OK)
+            result = FAIL;
+    }
+
+    if (part != NULL) {
+        mbox_status part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
+        if (part_rc == VIRUS)
+            result = VIRUS;
+        else if ((part_rc == MAXREC) || (part_rc == MAXFILES))
+            result = part_rc;
+        else if (part_rc != OK && result == OK)
+            result = part_rc;
+    }
+
+    if (!saw_boundary) {
+        cli_mark_scan_incomplete(mctx->ctx,
+                                 "Multipart body contained no boundary-delimited part");
+        if (result == OK)
+            result = FAIL;
+    }
+
+done:
+    if (input)
+        fclose(input);
+    if (headers)
+        messageDestroy(headers);
+    if (part)
+        messageDestroy(part);
+    if (boundary)
+        free(boundary);
+    return result;
+}
+
 /*
  * This is a recursive routine.
  *
@@ -1770,28 +1995,30 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
 
     rc = OK;
 
-    /* Ordinary single-part bodies are collected by messageAddStr() directly
-     * into a quota-accounted fileblob. Scan that spool as the child object
-     * without reconstructing a linked list of every mail line. Multipart and
-     * encapsulated-message bodies intentionally continue through the
-     * line-oriented state machine below. */
+    /* Bodies are collected by messageAddStr() directly into a quota-accounted
+     * fileblob. Multipart parts are split from that spool one child at a time;
+     * ordinary and encapsulated bodies are scanned from their completed spool. */
     if (mainMessage && messageHasBodySpool(mainMessage)) {
         const mime_type streamed_type = messageGetMimeType(mainMessage);
 
-        if (doPhishingScan && (streamed_type == NOMIME || streamed_type == TEXT))
-            cli_mark_scan_incomplete(mctx->ctx,
-                                     "Streaming mail body bypassed in-memory phishing URL inspection");
-
-        fb = messageToFileblob(mainMessage, mctx->dir, 1);
-        if (fb == NULL) {
-            rc = FAIL;
+        if (streamed_type == MULTIPART) {
+            rc = parseMultipartBodySpool(mainMessage, mctx, recursion_level);
         } else {
-            const int scan_rc = scanFileblob(mctx, fb);
-            if (scan_rc == CL_VIRUS)
-                rc = VIRUS;
-            else if (scan_rc != CL_CLEAN)
+            if (doPhishingScan && (streamed_type == NOMIME || streamed_type == TEXT))
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Streaming mail body bypassed in-memory phishing URL inspection");
+
+            fb = messageToFileblob(mainMessage, mctx->dir, 1);
+            if (fb == NULL) {
                 rc = FAIL;
-            mctx->files++;
+            } else {
+                const int scan_rc = scanFileblob(mctx, fb);
+                if (scan_rc == CL_VIRUS)
+                    rc = VIRUS;
+                else if (scan_rc != CL_CLEAN)
+                    rc = FAIL;
+                mctx->files++;
+            }
         }
 
         mctx->wrkobj = saveobj;
