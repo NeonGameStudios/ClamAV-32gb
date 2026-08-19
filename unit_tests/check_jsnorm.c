@@ -215,10 +215,12 @@ extern int __real_close(int fd);
 
 static int jsnorm_test_fail_write;
 static int jsnorm_test_fail_close;
+int clamav_test_fail_write;
+int clamav_test_fail_close;
 
 size_t __wrap_cli_writen(int fd, const void *buff, size_t count)
 {
-    if (jsnorm_test_fail_write)
+    if (jsnorm_test_fail_write || clamav_test_fail_write)
         return 0;
     return __real_cli_writen(fd, buff, count);
 }
@@ -227,7 +229,7 @@ int __wrap_close(int fd)
 {
     int ret = __real_close(fd);
 
-    if (jsnorm_test_fail_close)
+    if (jsnorm_test_fail_close || clamav_test_fail_close)
         return -1;
     return ret;
 }

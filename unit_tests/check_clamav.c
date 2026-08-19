@@ -2625,6 +2625,11 @@ static size_t zip_stream_expected_length;
 static unsigned int zip_stream_callback_calls;
 static cl_error_t zip_stream_callback_result;
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+extern int clamav_test_fail_write;
+extern int clamav_test_fail_close;
+#endif
+
 static cl_error_t zip_stream_test_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
 {
     uint8_t *actual = NULL;
@@ -3674,6 +3679,50 @@ START_TEST(test_zip_stream_truncated_deflate_and_callback_status)
     free(input);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_zip_output_write_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "ZIP output write fault injection";
+    size_t max_read;
+    size_t files_unzipped;
+    bool incomplete;
+    cl_error_t ret;
+
+    clamav_test_fail_write = 1;
+    ret = zip_stream_run(input, sizeof(input) - 1U, sizeof(input) - 1U,
+                         ZIP_TEST_METHOD_STORED, sizeof(input) - 1U,
+                         input, sizeof(input) - 1U, CL_SUCCESS, &max_read,
+                         &incomplete, &files_unzipped);
+    clamav_test_fail_write = 0;
+
+    ck_assert_int_eq(ret, CL_EWRITE);
+    ck_assert_uint_eq(files_unzipped, 0);
+    ck_assert(incomplete);
+}
+END_TEST
+
+START_TEST(test_zip_output_close_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "ZIP output close fault injection";
+    size_t max_read;
+    size_t files_unzipped;
+    bool incomplete;
+    cl_error_t ret;
+
+    clamav_test_fail_close = 1;
+    ret = zip_stream_run(input, sizeof(input) - 1U, sizeof(input) - 1U,
+                         ZIP_TEST_METHOD_STORED, sizeof(input) - 1U,
+                         input, sizeof(input) - 1U, CL_SUCCESS, &max_read,
+                         &incomplete, &files_unzipped);
+    clamav_test_fail_close = 0;
+
+    ck_assert_int_eq(ret, CL_EWRITE);
+    ck_assert_uint_eq(files_unzipped, 1);
+    ck_assert(incomplete);
+}
+END_TEST
+#endif
 
 START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
 {
@@ -8981,6 +9030,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_stream_implode_refill_bound_and_terminal);
     tcase_add_test(tc_cl, test_zip_stream_exact_limit_and_n_plus_one);
     tcase_add_test(tc_cl, test_zip_stream_truncated_deflate_and_callback_status);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_zip_output_write_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_zip_output_close_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_zip_truncated_entry_paths_are_fail_visible);
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
     tcase_add_test(tc_cl, test_xz_limit_is_fail_visible);

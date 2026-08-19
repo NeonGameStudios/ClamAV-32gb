@@ -482,6 +482,10 @@ described below.
 - ZIP EOCD search is bounded to the legal classic trailer window, ZIP64
   placement is checked separately, and fallback local-header scanning observes
   the scan deadline even on malformed input.
+- ZIP bounded extraction now marks output-write, temporary-file allocation/open,
+  rewind, close, temporary-map, and cleanup failures incomplete before those
+  errors can unwind through legacy or ZipCrypto paths. Partial member output is
+  never presented to the nested scanner as a complete extraction.
 - The POC harness now computes the signature per row, verifies size, status,
   signature, and engine-reported offset, aggregates failures, works with both
   GNU and BSD `time`, and is covered by executable positive/negative scanner
@@ -2492,3 +2496,15 @@ authoritative even when the enabled HTML parser rejects an input at
 `MaxHTMLNormalize` or another normalized-view boundary. A compiled regression
 loads the in-tree NDB marker and verifies detection from an over-cap HTML
 input; Linux/Sonic1 execution remains a release gate.
+
+## ZIP extraction operational failures — 2026-08-19
+
+The bounded ZIP reader now treats output-write, temporary-file allocation/open,
+rewind, close, temporary-map creation, and cleanup failures as incomplete
+inspection states. The same sticky state is applied to the legacy extraction
+fallback and the traditional ZipCrypto staging path, so a resource or I/O
+failure cannot allow partial member output to be nested-scanned or allow the
+containing archive to be reported as clean. Source guards cover the failure
+reasons and error classifier, and the Linux static unit-test harness registers
+write- and close-fault regressions; their compiled execution remains a release
+gate.
