@@ -49,9 +49,11 @@ the Sonic1 report.
 
 LHA uses the bounded Rust `FMapReader` directly. ALZ now parses through the
 same `Read + Seek` adapter and delivers decompressed members in chunks to
-quota-accounted temporary spools; OneNote still stages its root through the
-shared temporary quota and exposes a disk-backed `mmap` view to its
-third-party slice API. The old 256 MiB admission cap is removed; bounded-read,
+quota-accounted temporary spools. OneNote stages its root through the shared
+temporary quota and exposes a disk-backed `mmap` view to its third-party slice
+API, but its modern and legacy attachment callbacks now borrow member bytes
+directly into the scanner spool instead of creating an intermediate whole-member
+`Vec<u8>`. The old 256 MiB admission cap is removed; bounded-read,
 temporary-reservation, mapping, parser, decoder, and extracted-member scan
 failures remain explicit incomplete results. Third-party parser memory and
 large-corpus qualification remain release gates.
@@ -2118,3 +2120,13 @@ rejects AC depth values that cannot be represented by the matcher ABI. HTML
 no-tags normalization over `MaxHTMLNoTags` is fail-visible rather than a
 silent parser omission. The new unit regressions and source guards are
 registered, but a supported Linux compile and runtime execution remain open.
+
+## OneNote borrowed-member extraction — 2026-08-19
+
+The scanner-facing OneNote callback now borrows modern-parser and legacy
+attachment bytes directly from the staged root mapping. It writes those bytes
+to the quota-accounted temporary spool before scanning, eliminating the
+previous intermediate whole-member allocation. The owned `ExtractedFile`
+iterator remains for compatibility callers. Root parsing still depends on the
+third-party slice API, and OneNote corpus, sanitizer, and RSS qualification
+remain open.

@@ -27475,13 +27475,15 @@ offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	136	        let _ = unsa
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	154	    let hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	186	    let mut hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	355	/// appears to be slightly different and values are sometimes off-by-one.
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	106	    pub fn scan_bytes<F>(data: &'a [u8], filename: &Path, mut callback: F) -> Result<(), Error>
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	181	    pub fn from_bytes(data: &'a [u8], filename: &Path) -> Result<OneNote<'a>, Error> {
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	183	            "Inspecting OneNote file for attachments from in-memory buffer of size {}-bytes named {}\n",
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	187	        fn parse_section_buffer(data: &[u8], filename: &Path) -> Result<Vec<ExtractedFile>, Error> {
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	206	                                                    debug!("Found unnamed attached file of size {}-bytes", data.len());
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	209	                                                    debug!("Found attached file '{}' of size {}-bytes", name, data.len());
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	84	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	124	            data[header_start + 16..data_length_end]
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	149	    pub fn scan_bytes<F>(data: &[u8], filename: &Path, mut callback: F) -> Result<(), Error>
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	211	    pub fn from_bytes(data: &'a [u8], filename: &Path) -> Result<OneNote<'a>, Error> {
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	213	            "Inspecting OneNote file for attachments from in-memory buffer of size {}-bytes named {}\n",
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	217	        fn parse_section_buffer(data: &[u8], filename: &Path) -> Result<Vec<ExtractedFile>, Error> {
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	236	                                                    debug!("Found unnamed attached file of size {}-bytes", data.len());
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	239	                                                    debug!("Found attached file '{}' of size {}-bytes", name, data.len());
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	426	        fixture.truncate(fixture.len() - 1);
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	88	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	126	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	187	                    bytes.len() - offset,
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	292	    fn last_size(&self) -> u64 {

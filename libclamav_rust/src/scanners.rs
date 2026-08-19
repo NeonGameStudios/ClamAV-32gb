@@ -406,14 +406,14 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
     };
     let mut scan_result = cl_error_t_CL_SUCCESS;
 
-    let parse_result = OneNote::scan_bytes(mapped.as_slice(), Path::new(fmap.name()), |attachment| {
+    let parse_result = OneNote::scan_bytes(mapped.as_slice(), Path::new(fmap.name()), |name, data| {
         debug!(
             "Extracted {}-byte attachment with name: {:?}",
-            attachment.data.len(),
-            attachment.name
+            data.len(),
+            name
         );
 
-        let expected_size = match u64::try_from(attachment.data.len()) {
+        let expected_size = match u64::try_from(data.len()) {
             Ok(size) => size,
             Err(_) => {
                 scan_result = parser_failure(
@@ -432,12 +432,12 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
                 return false;
             }
         };
-        if let Err(status) = attachment_spool.write_all(&attachment.data) {
+        if let Err(status) = attachment_spool.write_all(data) {
             scan_result = parser_failure(ctx, "OneNote", status, "attachment temporary spool write failed");
             return false;
         }
 
-        let ret = attachment_spool.scan(attachment.name.as_deref());
+        let ret = attachment_spool.scan(name);
         if ret != cl_error_t_CL_SUCCESS {
             scan_result = ret;
             return false;

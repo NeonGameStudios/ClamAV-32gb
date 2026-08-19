@@ -65,7 +65,11 @@ fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 }
 
 /// Struct representing a file extracted from a OneNote document.
-/// This has the option of providing a file name, if one was found when extracting the file.
+///
+/// This owned compatibility representation is used by the iterator and
+/// `from_bytes` APIs. The scanner-facing `scan_bytes` API deliberately uses a
+/// borrowed callback so an attachment can be written to its bounded spool
+/// without first allocating a second whole-member `Vec<u8>`.
 pub struct ExtractedFile {
     pub name: Option<String>,
     pub data: Vec<u8>,
@@ -98,14 +102,53 @@ const FILE_DATA_STORE_OBJECT: &[u8] = &hex!("e716e3bd65261145a4c48d4d0b7a9eac");
 // Hex sequence identifying the start of a OneNote file.
 const ONE_MAGIC: &[u8] = &hex!("e4525c7b8cd8a74daeb15378d02996d3");
 
+fn scan_legacy_bytes<F>(data: &[u8], callback: &mut F) -> Result<(), Error>
+where
+    F: FnMut(Option<&str>, &[u8]) -> bool,
+{
+    let mut cursor = 0usize;
+    loop {
+        let Some(relative) = find_bytes(&data[cursor..], FILE_DATA_STORE_OBJECT) else {
+            break;
+        };
+        let header_start = cursor.checked_add(relative).ok_or(Error::Format)?;
+        let data_length_end = header_start.checked_add(20).ok_or(Error::Format)?;
+        let header_end = header_start
+            .checked_add(SIZE_OF_FILE_DATA_HEADER)
+            .ok_or(Error::Format)?;
+        if data_length_end > data.len() || header_end > data.len() {
+            return Err(Error::Parse);
+        }
+
+        let data_length = u32::from_le_bytes(
+            data[header_start + 16..data_length_end]
+                .try_into()
+                .map_err(|_| Error::Parse)?,
+        );
+        let data_length = usize::try_from(data_length).map_err(|_| Error::Format)?;
+        let data_end = header_end.checked_add(data_length).ok_or(Error::Format)?;
+        if data_end > data.len() {
+            return Err(Error::Parse);
+        }
+
+        if !callback(None, &data[header_end..data_end]) {
+            break;
+        }
+        cursor = data_end;
+    }
+
+    Ok(())
+}
+
 impl<'a> OneNote<'a> {
     /// Parse a OneNote document while handing each extracted attachment to
-    /// the caller immediately. The modern parser still receives a borrowed
-    /// byte view, but it no longer accumulates every attachment in a Vec;
-    /// callers can spool each member under their own scan budget.
-    pub fn scan_bytes<F>(data: &'a [u8], filename: &Path, mut callback: F) -> Result<(), Error>
+    /// the caller immediately. Attachment bytes are borrowed from the root
+    /// input and must be consumed before the callback returns. This keeps the
+    /// scanner path bounded by its destination spool rather than allocating a
+    /// second whole-member buffer.
+    pub fn scan_bytes<F>(data: &[u8], filename: &Path, mut callback: F) -> Result<(), Error>
     where
-        F: FnMut(ExtractedFile) -> bool,
+        F: FnMut(Option<&str>, &[u8]) -> bool,
     {
         fn parse_section_buffer<F>(
             data: &[u8],
@@ -113,7 +156,7 @@ impl<'a> OneNote<'a> {
             callback: &mut F,
         ) -> Result<(), Error>
         where
-            F: FnMut(ExtractedFile) -> bool,
+            F: FnMut(Option<&str>, &[u8]) -> bool,
         {
             let mut parser = onenote_parser::Parser::new();
             let section = parser
@@ -130,12 +173,9 @@ impl<'a> OneNote<'a> {
                                             let name = if embedded_file.filename().is_empty() {
                                                 None
                                             } else {
-                                                Some(embedded_file.filename().to_string())
+                                                Some(embedded_file.filename())
                                             };
-                                            if !callback(ExtractedFile {
-                                                name,
-                                                data: embedded_file.data().to_vec(),
-                                            }) {
+                                            if !callback(name, embedded_file.data()) {
                                                 break 'page_series;
                                             }
                                         }
@@ -164,17 +204,7 @@ impl<'a> OneNote<'a> {
             return Err(Error::Format);
         }
 
-        let mut legacy = OneNote {
-            embedded_files: Vec::new(),
-            remaining_vec: None,
-            remaining: Some(data),
-        };
-        while let Some(file) = legacy.next_file() {
-            if !callback(file) {
-                break;
-            }
-        }
-        Ok(())
+        scan_legacy_bytes(data, &mut callback)
     }
 
     /// Open a OneNote document given a slice bytes.
@@ -359,5 +389,45 @@ impl<'a> Iterator for OneNote<'a> {
         } else {
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn legacy_fixture(payload: &[u8]) -> Vec<u8> {
+        let mut fixture = ONE_MAGIC.to_vec();
+        fixture.extend_from_slice(FILE_DATA_STORE_OBJECT);
+        fixture.extend_from_slice(&(payload.len() as u32).to_le_bytes());
+        fixture.extend_from_slice(&[0u8; 16]);
+        fixture.extend_from_slice(payload);
+        fixture
+    }
+
+    #[test]
+    fn legacy_scan_borrows_attachment_bytes() {
+        let fixture = legacy_fixture(b"attachment");
+        let mut seen = Vec::new();
+
+        scan_legacy_bytes(&fixture, &mut |name, data| {
+            assert!(name.is_none());
+            seen.extend_from_slice(data);
+            true
+        })
+        .expect("legacy fixture should parse");
+
+        assert_eq!(seen, b"attachment");
+    }
+
+    #[test]
+    fn legacy_scan_rejects_truncated_attachment() {
+        let mut fixture = legacy_fixture(b"attachment");
+        fixture.truncate(fixture.len() - 1);
+
+        assert!(matches!(
+            scan_legacy_bytes(&fixture, &mut |_name, _data| true),
+            Err(Error::Parse)
+        ));
     }
 }
