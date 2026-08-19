@@ -725,16 +725,43 @@ static cl_error_t cli_validate_resource_limit(const char *name,
     return CL_SUCCESS;
 }
 
+static cl_error_t cli_validate_u32_setting(const char *name, long long requested, uint32_t *validated)
+{
+    if (!validated)
+        return CL_ENULLARG;
+
+    if (requested < 0 || (uint64_t)requested > UINT32_MAX) {
+        cli_errmsg("%s: value must be between 0 and " STDu64 "\n", name, (uint64_t)UINT32_MAX);
+        return CL_EARG;
+    }
+
+    *validated = (uint32_t)requested;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_validate_u8_setting(const char *name, long long requested, uint8_t *validated)
+{
+    if (!validated)
+        return CL_ENULLARG;
+
+    if (requested < 0 || (uint64_t)requested > UINT8_MAX) {
+        cli_errmsg("%s: value must be between 0 and %u\n", name, (unsigned)UINT8_MAX);
+        return CL_EARG;
+    }
+
+    *validated = (uint8_t)requested;
+    return CL_SUCCESS;
+}
+
 cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field field, long long num)
 {
     cl_error_t ret;
+    uint32_t value32;
+    uint8_t value8;
 
     if (!engine)
         return CL_ENULLARG;
 
-    /* TODO: consider adding checks and warn/errs when num overflows the
-     * destination type
-     */
     switch (field) {
         case CL_ENGINE_MAX_SCANSIZE:
             if (num < 0 || (uint64_t)num > CLI_MAX_LOGICAL_SCAN_SIZE) {
@@ -754,18 +781,24 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             }
             break;
         case CL_ENGINE_MAX_RECURSION:
-            if (!num) {
+            ret = cli_validate_u32_setting("MaxRecursion", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (!value32) {
                 cli_warnmsg("MaxRecursion: the value of 0 is not allowed, using default: %u\n", CLI_DEFAULT_MAXRECLEVEL);
                 engine->max_recursion_level = CLI_DEFAULT_MAXRECLEVEL;
             } else
-                engine->max_recursion_level = num;
+                engine->max_recursion_level = value32;
             break;
         case CL_ENGINE_MAX_FILES:
-            engine->maxfiles = num;
+            ret = cli_validate_u32_setting("MaxFiles", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->maxfiles = value32;
             break;
         case CL_ENGINE_MAX_EMBEDDEDPE:
             if (num < 0) {
-                cli_warnmsg("MaxEmbeddedPE: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXEMBEDDEDPE);
+                cli_warnmsg("MaxEmbeddedPE: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXEMBEDDEDPE);
                 engine->maxembeddedpe = CLI_DEFAULT_MAXEMBEDDEDPE;
             } else if (cli_validate_32g_limit("MaxEmbeddedPE", (uint64_t)num) != CL_SUCCESS) {
                 return CL_EARG;
@@ -774,7 +807,7 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             break;
         case CL_ENGINE_MAX_HTMLNORMALIZE:
             if (num < 0) {
-                cli_warnmsg("MaxHTMLNormalize: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXHTMLNORMALIZE);
+                cli_warnmsg("MaxHTMLNormalize: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXHTMLNORMALIZE);
                 engine->maxhtmlnormalize = CLI_DEFAULT_MAXHTMLNORMALIZE;
             } else if (cli_validate_32g_limit("MaxHTMLNormalize", (uint64_t)num) != CL_SUCCESS) {
                 return CL_EARG;
@@ -783,7 +816,7 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             break;
         case CL_ENGINE_MAX_HTMLNOTAGS:
             if (num < 0) {
-                cli_warnmsg("MaxHTMLNoTags: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXHTMLNOTAGS);
+                cli_warnmsg("MaxHTMLNoTags: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXHTMLNOTAGS);
                 engine->maxhtmlnotags = CLI_DEFAULT_MAXHTMLNOTAGS;
             } else if (cli_validate_32g_limit("MaxHTMLNoTags", (uint64_t)num) != CL_SUCCESS) {
                 return CL_EARG;
@@ -792,7 +825,7 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             break;
         case CL_ENGINE_MAX_SCRIPTNORMALIZE:
             if (num < 0) {
-                cli_warnmsg("MaxScriptNormalize: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXSCRIPTNORMALIZE);
+                cli_warnmsg("MaxScriptNormalize: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXSCRIPTNORMALIZE);
                 engine->maxscriptnormalize = CLI_DEFAULT_MAXSCRIPTNORMALIZE;
             } else if (cli_validate_32g_limit("MaxScriptNormalize", (uint64_t)num) != CL_SUCCESS) {
                 return CL_EARG;
@@ -801,7 +834,7 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             break;
         case CL_ENGINE_MAX_ZIPTYPERCG:
             if (num < 0) {
-                cli_warnmsg("MaxZipTypeRcg: negative values are not allowed, using default: %u\n", CLI_DEFAULT_MAXZIPTYPERCG);
+                cli_warnmsg("MaxZipTypeRcg: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXZIPTYPERCG);
                 engine->maxziptypercg = CLI_DEFAULT_MAXZIPTYPERCG;
             } else if (cli_validate_32g_limit("MaxZipTypeRcg", (uint64_t)num) != CL_SUCCESS) {
                 return CL_EARG;
@@ -827,10 +860,16 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
                 return ret;
             break;
         case CL_ENGINE_MIN_CC_COUNT:
-            engine->min_cc_count = num;
+            ret = cli_validate_u32_setting("MinCCCount", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->min_cc_count = value32;
             break;
         case CL_ENGINE_MIN_SSN_COUNT:
-            engine->min_ssn_count = num;
+            ret = cli_validate_u32_setting("MinSSNCount", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->min_ssn_count = value32;
             break;
         case CL_ENGINE_DB_OPTIONS:
         case CL_ENGINE_DB_VERSION:
@@ -838,25 +877,43 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             cli_warnmsg("cl_engine_set_num: The field is read only\n");
             return CL_EARG;
         case CL_ENGINE_AC_ONLY:
-            engine->ac_only = num;
+            ret = cli_validate_u32_setting("ACOnly", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->ac_only = value32;
             break;
         case CL_ENGINE_AC_MINDEPTH:
-            engine->ac_mindepth = num;
+            ret = cli_validate_u8_setting("ACMinDepth", num, &value8);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->ac_mindepth = value8;
             break;
         case CL_ENGINE_AC_MAXDEPTH:
-            engine->ac_maxdepth = num;
+            ret = cli_validate_u8_setting("ACMaxDepth", num, &value8);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->ac_maxdepth = value8;
             break;
         case CL_ENGINE_KEEPTMP:
-            engine->keeptmp = num;
+            ret = cli_validate_u32_setting("KeepTemporary", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->keeptmp = value32;
             break;
         case CL_ENGINE_TMPDIR_RECURSION:
-            if (num)
+            ret = cli_validate_u32_setting("TmpDirRecursion", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32)
                 engine->engine_options |= ENGINE_OPTIONS_TMPDIR_RECURSION;
             else
                 engine->engine_options &= ~(ENGINE_OPTIONS_TMPDIR_RECURSION);
             break;
         case CL_ENGINE_FORCETODISK:
-            if (num)
+            ret = cli_validate_u32_setting("ForceToDisk", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32)
                 engine->engine_options |= ENGINE_OPTIONS_FORCE_TO_DISK;
             else
                 engine->engine_options &= ~(ENGINE_OPTIONS_FORCE_TO_DISK);
@@ -866,26 +923,38 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
                 cli_errmsg("cl_engine_set_num: CL_ENGINE_BYTECODE_SECURITY cannot be set after engine was compiled\n");
                 return CL_EARG;
             }
-            engine->bytecode_security = num;
+            ret = cli_validate_u32_setting("BytecodeSecurity", num, &value32);
+            if (ret != CL_SUCCESS || value32 > CL_BYTECODE_TRUST_NOTHING)
+                return CL_EARG;
+            engine->bytecode_security = (enum bytecode_security)value32;
             break;
         case CL_ENGINE_BYTECODE_TIMEOUT:
-            engine->bytecode_timeout = num;
+            ret = cli_validate_u32_setting("BytecodeTimeout", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->bytecode_timeout = value32;
             break;
         case CL_ENGINE_BYTECODE_MODE:
             if (engine->dboptions & CL_DB_COMPILED) {
                 cli_errmsg("cl_engine_set_num: CL_ENGINE_BYTECODE_MODE cannot be set after engine was compiled\n");
                 return CL_EARG;
             }
-            if (num == CL_BYTECODE_MODE_OFF) {
+            ret = cli_validate_u32_setting("BytecodeMode", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32 == CL_BYTECODE_MODE_OFF || value32 > CL_BYTECODE_MODE_TEST) {
                 cli_errmsg("cl_engine_set_num: CL_BYTECODE_MODE_OFF is not settable, use dboptions to turn off!\n");
                 return CL_EARG;
             }
-            engine->bytecode_mode = num;
-            if (num == CL_BYTECODE_MODE_TEST)
+            engine->bytecode_mode = (enum bytecode_mode)value32;
+            if (value32 == CL_BYTECODE_MODE_TEST)
                 cli_infomsg(NULL, "bytecode engine in test mode\n");
             break;
         case CL_ENGINE_DISABLE_CACHE:
-            if (num) {
+            ret = cli_validate_u32_setting("DisableCache", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32) {
                 engine->engine_options |= ENGINE_OPTIONS_DISABLE_CACHE;
             } else {
                 engine->engine_options &= ~(ENGINE_OPTIONS_DISABLE_CACHE);
@@ -899,32 +968,50 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             }
             break;
         case CL_ENGINE_CACHE_SIZE:
-            if (num) {
-                engine->cache_size = (uint32_t)num;
+            ret = cli_validate_u32_setting("CacheSize", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32) {
+                engine->cache_size = value32;
             }
             break;
         case CL_ENGINE_DISABLE_PE_STATS:
-            if (num) {
+            ret = cli_validate_u32_setting("DisablePEStats", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32) {
                 engine->engine_options |= ENGINE_OPTIONS_DISABLE_PE_STATS;
             } else {
                 engine->engine_options &= ~(ENGINE_OPTIONS_DISABLE_PE_STATS);
             }
             break;
         case CL_ENGINE_STATS_TIMEOUT:
+            ret = cli_validate_u32_setting("StatsTimeout", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
             if ((engine->stats_data)) {
                 cli_intel_t *intel = (cli_intel_t *)(engine->stats_data);
 
-                intel->timeout = (uint32_t)num;
+                intel->timeout = value32;
             }
             break;
         case CL_ENGINE_MAX_PARTITIONS:
-            engine->maxpartitions = (uint32_t)num;
+            ret = cli_validate_u32_setting("MaxPartitions", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->maxpartitions = value32;
             break;
         case CL_ENGINE_MAX_ICONSPE:
-            engine->maxiconspe = (uint32_t)num;
+            ret = cli_validate_u32_setting("MaxIconsPE", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->maxiconspe = value32;
             break;
         case CL_ENGINE_MAX_RECHWP3:
-            engine->maxrechwp3 = (uint32_t)num;
+            ret = cli_validate_u32_setting("MaxRecHWP3", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            engine->maxrechwp3 = value32;
             break;
         case CL_ENGINE_MAX_SCANTIME:
             if (num < 0 || (uint64_t)num > UINT32_MAX) {
@@ -934,9 +1021,13 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             engine->maxscantime = (uint32_t)num;
             break;
         case CL_ENGINE_PCRE_MATCH_LIMIT:
+            if (num < 0)
+                return CL_EARG;
             engine->pcre_match_limit = (uint64_t)num;
             break;
         case CL_ENGINE_PCRE_RECMATCH_LIMIT:
+            if (num < 0)
+                return CL_EARG;
             engine->pcre_recmatch_limit = (uint64_t)num;
             break;
         case CL_ENGINE_PCRE_MAX_FILESIZE:
@@ -949,21 +1040,30 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
                 return ret;
             break;
         case CL_ENGINE_DISABLE_PE_CERTS:
-            if (num) {
+            ret = cli_validate_u32_setting("DisablePECerts", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32) {
                 engine->engine_options |= ENGINE_OPTIONS_DISABLE_PE_CERTS;
             } else {
                 engine->engine_options &= ~(ENGINE_OPTIONS_DISABLE_PE_CERTS);
             }
             break;
         case CL_ENGINE_PE_DUMPCERTS:
-            if (num) {
+            ret = cli_validate_u32_setting("PEDumpCerts", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32) {
                 engine->engine_options |= ENGINE_OPTIONS_PE_DUMPCERTS;
             } else {
                 engine->engine_options &= ~(ENGINE_OPTIONS_PE_DUMPCERTS);
             }
             break;
         case CL_ENGINE_FIPS_LIMITS:
-            if (num) {
+            ret = cli_validate_u32_setting("FIPSLimits", num, &value32);
+            if (ret != CL_SUCCESS)
+                return ret;
+            if (value32) {
                 engine->engine_options |= ENGINE_OPTIONS_FIPS_LIMITS;
             } else {
                 engine->engine_options &= ~(ENGINE_OPTIONS_FIPS_LIMITS);
@@ -1225,6 +1325,8 @@ cl_error_t cl_engine_settings_apply(struct cl_engine *engine, const struct cl_se
         return CL_ENULLARG;
 
     if (settings->maxscansize > CLI_MAX_LOGICAL_SCAN_SIZE)
+        return CL_EARG;
+    if (settings->ac_mindepth > UINT8_MAX || settings->ac_maxdepth > UINT8_MAX)
         return CL_EARG;
     if (cli_validate_maxfilesize(settings->maxfilesize, &maxfilesize) != CL_SUCCESS)
         return CL_EARG;

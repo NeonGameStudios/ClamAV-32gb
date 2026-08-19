@@ -31,7 +31,8 @@ awk -F '\t' '
         }
         if ($1 != "library" && $1 != "clamscan" && $1 != "clamd" &&
             $1 != "clamdscan" && $1 != "milter" && $1 != "on-access" &&
-            $1 != "parser") {
+            $1 != "parser" && $1 != "matcher" && $1 != "feature" &&
+            $1 != "unsupported") {
             print "unknown capability kind at line " NR > "/dev/stderr"
             bad = 1
         }
@@ -42,6 +43,10 @@ awk -F '\t' '
         }
         if ($2 == "" || $4 == "" || $5 == "") {
             print "empty capability field at line " NR > "/dev/stderr"
+            bad = 1
+        }
+        if ($1 == "unsupported" && $3 != "unsupported") {
+            print "unsupported capability must use unsupported status at line " NR > "/dev/stderr"
             bad = 1
         }
         key = $1 SUBSEP $2
@@ -66,6 +71,35 @@ for entry in $required_ingress; do
     if ! awk -F '\t' -v wanted_kind="$kind" -v wanted_id="$id" \
         '$1 == wanted_kind && $2 == wanted_id { found = 1 } END { exit !found }' "$manifest"; then
         echo "capability manifest is missing ingress ${kind}:${id}" >&2
+        exit 1
+    fi
+done
+
+required_matchers='ac bm byte-compare hash pcre logical yara bytecode fuzzy-image'
+for id in $required_matchers; do
+    if ! awk -F '\t' -v wanted_id="$id" \
+        '$1 == "matcher" && $2 == wanted_id { found = 1 } END { exit !found }' "$manifest"; then
+        echo "capability manifest is missing matcher ${id}" >&2
+        exit 1
+    fi
+done
+
+# These are the build switches that can change which large-file ingress,
+# parser, matcher, or resource policy is present in the resulting binary.
+required_features='BYTECODE_RUNTIME MMAP_FOR_CROSSCOMPILING DISABLE_MPOOL ENABLE_FUZZ ENABLE_EXTERNAL_MSPACK ENABLE_JSON_SHARED ENABLE_APP ENABLE_MILTER ENABLE_CLAMONACC ENABLE_MAN_PAGES ENABLE_DOXYGEN ENABLE_EXAMPLES ENABLE_TESTS ENABLE_LIBCLAMAV_ONLY ENABLE_STATIC_LIB ENABLE_SHARED_LIB ENABLE_UNRAR ENABLE_SYSTEMD ENABLE_WERROR ENABLE_ALL_THE_WARNINGS ENABLE_DEBUG ENABLE_EXPERIMENTAL ENABLE_FRESHCLAM_DNS_FIX ENABLE_FRESHCLAM_NO_CACHE ENABLE_STRN_INTERNAL MAINTAINER_MODE OPTIMIZE'
+for id in $required_features; do
+    if ! awk -F '\t' -v wanted_id="$id" \
+        '$1 == "feature" && $2 == wanted_id { found = 1 } END { exit !found }' "$manifest"; then
+        echo "capability manifest is missing feature ${id}" >&2
+        exit 1
+    fi
+done
+
+required_unsupported='macos-first-release aarch64-first-release bytecode-v1-over-4g legacy-callback-over-1g image-fuzzy-over-contiguous-limit'
+for id in $required_unsupported; do
+    if ! awk -F '\t' -v wanted_id="$id" \
+        '$1 == "unsupported" && $2 == wanted_id && $3 == "unsupported" { found = 1 } END { exit !found }' "$manifest"; then
+        echo "capability manifest is missing deliberate unsupported feature ${id}" >&2
         exit 1
     fi
 done

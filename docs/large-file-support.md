@@ -2102,3 +2102,19 @@ fail-visible.
 This closes the ALZ whole-root and whole-member materialization path. ALZ
 third-party-equivalent corpus, sanitizer, and concurrent-RSS qualification
 remain release gates.
+
+## Capability manifest and public setter boundaries — 2026-08-19
+
+The checked capability manifest now covers the required library and service
+ingresses, every parser dispatch branch, the AC/BM/byte-compare/hash/PCRE/
+logical/YARA/bytecode/fuzzy-image matcher families, the large-file-relevant
+build switches, and deliberate unsupported boundaries. `pending` rows are
+coverage obligations, not qualification claims; unsupported rows require the
+explicit `unsupported` status.
+
+Public numeric engine setters now reject negative values and narrowing
+overflow for their 32-bit and 8-bit destinations, and settings-copy apply
+rejects AC depth values that cannot be represented by the matcher ABI. HTML
+no-tags normalization over `MaxHTMLNoTags` is fail-visible rather than a
+silent parser omission. The new unit regressions and source guards are
+registered, but a supported Linux compile and runtime execution remain open.

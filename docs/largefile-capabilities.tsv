@@ -12,6 +12,47 @@ clamdscan	stream	bounded	clamdscan/proto.c	legacy INSTREAM path; qualification p
 clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback when MaxThreads is one
 milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending
 on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies incomplete outcomes
+matcher	ac	pending	libclamav/matcher-ac.c	qualify exact-tail raw matching and 64-bit result offsets
+matcher	bm	pending	libclamav/matcher-bm.c	qualify bounded scan windows and offset-mode matches across 4 GiB
+matcher	byte-compare	pending	libclamav/matcher-byte-comp.c	qualify byte-compare and logical-signature bridges at large offsets
+matcher	hash	pending	libclamav/matcher-hash.c	qualify file, section, import, and fuzzy-hash consumers with exact sizes
+matcher	pcre	pending	libclamav/matcher-pcre.c	qualify full-subject PCRE within the effective contiguous-subject ceiling
+matcher	logical	pending	libclamav/matcher.c	qualify logical-expression evaluation and incomplete propagation
+matcher	yara	pending	libclamav/yara_exec.c	qualify YARA evaluation and matcher-work accounting
+matcher	bytecode	pending	libclamav/bytecode.c	qualify ABI v2 and explicit ABI v1 representability behavior
+matcher	fuzzy-image	pending	libclamav/scanners.c	qualify optional image fuzzy hashing or record its bounded rejection
+feature	BYTECODE_RUNTIME	pending	CMakeOptions.cmake	qualify interpreter, LLVM, and disabled runtime variants
+feature	MMAP_FOR_CROSSCOMPILING	pending	CMakeOptions.cmake	qualify file-backed mapping policy in cross-compiled builds
+feature	DISABLE_MPOOL	pending	CMakeOptions.cmake	qualify allocator variant without changing scan completeness
+feature	ENABLE_FUZZ	pending	CMakeOptions.cmake	qualify fuzz-only build boundaries and required large-file guards
+feature	ENABLE_EXTERNAL_MSPACK	pending	CMakeOptions.cmake	qualify external versus bundled CAB decoder behavior
+feature	ENABLE_JSON_SHARED	pending	CMakeOptions.cmake	qualify report serialization with shared and static JSON-C
+feature	ENABLE_APP	pending	CMakeOptions.cmake	qualify application ingress parity when front ends are enabled
+feature	ENABLE_MILTER	pending	CMakeOptions.cmake	qualify milter build and one-request resource policy
+feature	ENABLE_CLAMONACC	pending	CMakeOptions.cmake	qualify Linux on-access build and incomplete-event denial
+feature	ENABLE_MAN_PAGES	pending	CMakeOptions.cmake	qualify generated option documentation for the release contract
+feature	ENABLE_DOXYGEN	pending	CMakeOptions.cmake	qualify generated API documentation for report and limit interfaces
+feature	ENABLE_EXAMPLES	pending	CMakeOptions.cmake	qualify example consumers against the widened API
+feature	ENABLE_TESTS	pending	CMakeOptions.cmake	qualify unit and integration test coverage in the release build
+feature	ENABLE_LIBCLAMAV_ONLY	pending	CMakeOptions.cmake	qualify library-only resource and capability behavior
+feature	ENABLE_STATIC_LIB	pending	CMakeOptions.cmake	qualify static-link large-file capability and Rust integration
+feature	ENABLE_SHARED_LIB	pending	CMakeOptions.cmake	qualify shared-link large-file capability and ABI exports
+feature	ENABLE_UNRAR	pending	CMakeOptions.cmake	qualify RAR extraction and explicit unavailable-library behavior
+feature	ENABLE_SYSTEMD	pending	CMakeOptions.cmake	qualify daemon service integration and startup admission checks
+feature	ENABLE_WERROR	pending	CMakeOptions.cmake	qualify warning-clean release compilation
+feature	ENABLE_ALL_THE_WARNINGS	pending	CMakeOptions.cmake	qualify maximal warning configuration
+feature	ENABLE_DEBUG	pending	CMakeOptions.cmake	qualify debug resource diagnostics without changing verdicts
+feature	ENABLE_EXPERIMENTAL	pending	CMakeOptions.cmake	qualify experimental feature gating
+feature	ENABLE_FRESHCLAM_DNS_FIX	pending	CMakeOptions.cmake	qualify database-update configuration used by production scans
+feature	ENABLE_FRESHCLAM_NO_CACHE	pending	CMakeOptions.cmake	qualify database-update cache policy used by production scans
+feature	ENABLE_STRN_INTERNAL	pending	CMakeOptions.cmake	qualify internal string implementation variants
+feature	MAINTAINER_MODE	pending	CMakeOptions.cmake	qualify generated-source configuration and reproducibility
+feature	OPTIMIZE	pending	CMakeOptions.cmake	qualify optimized and unoptimized large-file behavior
+unsupported	macos-first-release	unsupported	docs/large-file-support.md	macOS is outside the first Linux x86-64 production qualification target
+unsupported	aarch64-first-release	unsupported	docs/large-file-support.md	AArch64 is outside the first Linux x86-64 production qualification target
+unsupported	bytecode-v1-over-4g	unsupported	docs/bytecode-abi-v2.md	legacy bytecode ABI cannot represent applicable layers above 4 GiB
+unsupported	legacy-callback-over-1g	unsupported	libclamav/scanners.c	deprecated whole-file callback requires an oversized contiguous buffer
+unsupported	image-fuzzy-over-contiguous-limit	unsupported	libclamav/scanners.c	image fuzzy FFI requires a complete contiguous image subject
 parser	CL_TYPE_7Z	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_7ZSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_AI_MODEL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

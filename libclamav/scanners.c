@@ -2809,9 +2809,13 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
     /* CL_ENGINE_MAX_HTMLNOTAGS */
     curr_len = map->len;
     if (curr_len > ctx->engine->maxhtmlnotags) {
-        /* we're not interested in scanning large files in notags form */
-        /* TODO: don't even create notags if file is over limit */
-        cli_dbgmsg("cli_scanhtml: skipping notags (normalized size over MaxHTMLNoTags)\n");
+        /* The no-tags representation is a required normalized view. Do not
+         * silently omit it: doing so would allow signatures that only match
+         * the normalized content to return a false clean result. */
+        cli_dbgmsg("cli_scanhtml: normalized no-tags view exceeds MaxHTMLNoTags\n");
+        cli_mark_scan_incomplete(ctx, "HTML no-tags normalization exceeds MaxHTMLNoTags");
+        status = CL_EPARSE;
+        goto done;
     } else {
         snprintf(fullname, 1024, "%s" PATHSEP "notags.html", tempname);
 

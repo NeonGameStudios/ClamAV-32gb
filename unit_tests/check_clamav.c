@@ -765,6 +765,29 @@ START_TEST(test_parser_gate_limits_reject_above_32g)
 }
 END_TEST
 
+START_TEST(test_engine_set_num_rejects_narrowing_and_negative_values)
+{
+    struct cl_engine *engine = cl_engine_new();
+    struct cl_settings *settings;
+
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILES, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILES, (long long)UINT32_MAX + 1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_RECURSION, (long long)UINT32_MAX + 1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_AC_MINDEPTH, (long long)UINT8_MAX + 1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_AC_MAXDEPTH, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MATCH_LIMIT, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_RECMATCH_LIMIT, -1), CL_EARG);
+
+    settings = cl_engine_settings_copy(engine);
+    ck_assert_ptr_nonnull(settings);
+    settings->ac_mindepth = UINT8_MAX + 1U;
+    ck_assert_int_eq(cl_engine_settings_apply(engine, settings), CL_EARG);
+    ck_assert_int_eq(cl_engine_settings_free(settings), CL_SUCCESS);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_single_message_materialization_limit_is_fail_visible)
 {
     char *path = create_materialization_limit_fixture(0);
@@ -1117,7 +1140,7 @@ START_TEST(test_top_level_maxfilesize_is_fail_visible)
 END_TEST
 
 #ifndef _WIN32
-START_TEST(test_html_normalize_default_cap_is_fail_visible)
+START_TEST(test_html_normalize_cap_is_fail_visible)
 {
     struct cl_engine *engine;
     struct cl_scan_options options;
@@ -1132,7 +1155,9 @@ START_TEST(test_html_normalize_default_cap_is_fail_visible)
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
-    ck_assert_msg(engine->maxhtmlnormalize < SIZE_MAX, "HTML normalization limit does not fit in size_t");
+    /* Use a small explicit cap so this regression never allocates a large
+     * fixture merely to exercise the fail-visible boundary. */
+    engine->maxhtmlnormalize = 1024;
     length = (size_t)engine->maxhtmlnormalize + 1U;
     data   = calloc(1, length);
     ck_assert_ptr_nonnull(data);
@@ -1159,6 +1184,47 @@ START_TEST(test_html_normalize_default_cap_is_fail_visible)
     cl_fmap_close(map);
     cl_engine_free(engine);
     free(data);
+}
+END_TEST
+
+START_TEST(test_html_notags_cap_is_fail_visible)
+{
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    static const unsigned char data[] = "<html><body>normalized content</body></html>";
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    /* Let normalization complete, then force the required no-tags view over
+     * its independent cap. The scanner must not silently omit that view. */
+    engine->maxhtmlnormalize = 1024;
+    engine->maxhtmlnotags   = 1;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_HTML", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
 }
 END_TEST
 #endif
@@ -8284,7 +8350,8 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_cl_fmap_set_hash_accepts_full_hash);
 #ifndef _WIN32
-    tcase_add_test(tc_cl, test_html_normalize_default_cap_is_fail_visible);
+    tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
+    tcase_add_test(tc_cl, test_html_notags_cap_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_cl_retver);
     tcase_add_test(tc_cl, test_cl_cvdfree);
@@ -8306,6 +8373,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
+    tcase_add_test(tc_cl, test_engine_set_num_rejects_narrowing_and_negative_values);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);

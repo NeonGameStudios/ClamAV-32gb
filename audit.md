@@ -32,6 +32,19 @@ real supported-Linux checkout.
 The release remains production-blocked until every row has supported-Linux
 compiled evidence and the service/workload gates pass.
 
+## Current source-hardening follow-up — 2026-08-19
+
+The canonical worktree adds three source-level controls while preserving the
+production-blocked verdict. The capability manifest now checks 134 entries,
+including all parser dispatch branches, matcher families, large-file-relevant
+build switches, and explicit first-release unsupported boundaries. Public
+engine numeric setters reject negative or narrowing values before assignment,
+and HTML no-tags normalization over its cap now returns an incomplete result
+instead of silently omitting a required normalized view. Focused unit tests and
+shell source guards are registered, but the current macOS checkout has not
+produced a supported Linux compile, sanitizer run, or new Sonic1 qualification
+for this follow-up.
+
 ## Executive summary
 
 The fork now has a coherent 64-bit raw-scan path and materially stronger
