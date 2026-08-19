@@ -3817,7 +3817,7 @@ int actsetup(const struct optstruct *opts)
             logg(LOGG_INFO, "action_setup: Failed to normalize quarantine directory path %s\n", requested_actarget);
             return 1;
         }
-        actarget            = actarget_normalized;
+        actarget = actarget_normalized;
 #endif
         if (!isdir()) return 1;
         targlen = strlen(actarget);
