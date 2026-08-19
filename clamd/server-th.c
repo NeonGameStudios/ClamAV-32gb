@@ -831,12 +831,12 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
             conn->structured_report = 0;
         conn->id++;
     }
-    *ppos      = pos;
-    buf->mode  = conn->mode;
-    buf->id    = conn->id;
-    buf->group = conn->group;
-    buf->quota = conn->quota;
-    buf->quota_source = conn->quota_source;
+    *ppos                  = pos;
+    buf->mode              = conn->mode;
+    buf->id                = conn->id;
+    buf->group             = conn->group;
+    buf->quota             = conn->quota;
+    buf->quota_source      = conn->quota_source;
     buf->structured_report = conn->structured_report;
     if (conn->scanfd != -1 && conn->scanfd != buf->dumpfd) {
         logg(LOGG_DEBUG_NV, "Unclaimed file descriptor received, closing: %d\n", conn->scanfd);
@@ -911,7 +911,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                         /* The report format is scoped to this request.  Do
                          * not make a later IDSESSION command inherit it. */
                         conn->structured_report = 0;
-                        buf->structured_report = 0;
+                        buf->structured_report  = 0;
                         return 0;
                     }
                 }
@@ -926,8 +926,8 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                         conn_reply_error(conn, "INSTREAM size limit exceeded.");
                     }
                     buf->response_sent = 1;
-                    *error = 1;
-                    *ppos  = pos;
+                    *error             = 1;
+                    *ppos              = pos;
                     return -1;
                 } else {
                     buf->quota -= buf->chunksize;
@@ -955,8 +955,8 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
             /* Never dispatch the partially staged descriptor. The receive
              * loop will close the socket and remove dumpname below. */
             buf->response_sent = 1;
-            *error = 1;
-            *ppos  = pos;
+            *error             = 1;
+            *ppos              = pos;
             return -1;
         }
         logg(LOGG_DEBUG_NV, "Processed %llu bytes of chunkdata, pos %llu\n", (long long unsigned)cmdlen, (long long unsigned)pos);
@@ -1755,22 +1755,22 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                 /* New data available to read on socket. */
 
                 memset(&conn, 0, sizeof(conn));
-                conn.scanfd   = buf->recvfd;
-                buf->recvfd   = -1;
-                conn.sd       = buf->fd;
-                conn.options  = &options;
-                conn.opts     = opts;
-                conn.thrpool  = thr_pool;
-                conn.engine   = engine;
-                conn.group    = buf->group;
-                conn.id       = buf->id;
-                conn.quota    = buf->quota;
-                conn.quota_source = buf->quota_source;
+                conn.scanfd            = buf->recvfd;
+                buf->recvfd            = -1;
+                conn.sd                = buf->fd;
+                conn.options           = &options;
+                conn.opts              = opts;
+                conn.thrpool           = thr_pool;
+                conn.engine            = engine;
+                conn.group             = buf->group;
+                conn.id                = buf->id;
+                conn.quota             = buf->quota;
+                conn.quota_source      = buf->quota_source;
                 conn.structured_report = buf->structured_report;
                 conn.structured_status = CL_SUCCESS;
-                conn.filename = buf->dumpname;
-                conn.mode     = buf->mode;
-                conn.term     = buf->term;
+                conn.filename          = buf->dumpname;
+                conn.mode              = buf->mode;
+                conn.term              = buf->term;
 
                 /* Parse & dispatch command */
                 cmd = parse_dispatch_cmd(&conn, buf, &pos, &error, opts, readtimeout);

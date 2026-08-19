@@ -296,7 +296,7 @@ char *nc_recv(int s)
 static int nc_recv_full(int s, void *buffer, size_t length)
 {
     unsigned char *cursor = (unsigned char *)buffer;
-    time_t deadline = readtimeout ? time(NULL) + readtimeout : 0;
+    time_t deadline       = readtimeout ? time(NULL) + readtimeout : 0;
 
     while (length) {
         fd_set fds;
@@ -384,11 +384,11 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete, char **alert)
     *alert      = NULL;
 
     while (!terminated) {
-        char *json = NULL;
+        char *json           = NULL;
         uint32_t json_length = 0;
-        int frame_infected = 0;
+        int frame_infected   = 0;
         int frame_incomplete = 0;
-        char *frame_alert = NULL;
+        char *frame_alert    = NULL;
         int frame;
 
         frame = nc_recv_scan_report_frame(s, &json, &json_length, &terminated);
@@ -412,7 +412,7 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete, char **alert)
             *infected = 1;
             if (frame_alert) {
                 free(*alert);
-                *alert = frame_alert;
+                *alert      = frame_alert;
                 frame_alert = NULL;
             }
         }

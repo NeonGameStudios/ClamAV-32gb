@@ -74,8 +74,8 @@ int multircpt   = 1;
 int loginfected;
 
 #define CLAMFIBUFSZ 1424
-static const char *HDR_UNAVAIL          = "UNKNOWN";
-static pthread_mutex_t virusaction_lock = PTHREAD_MUTEX_INITIALIZER;
+static const char *HDR_UNAVAIL           = "UNKNOWN";
+static pthread_mutex_t virusaction_lock  = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t scan_request_lock = PTHREAD_MUTEX_INITIALIZER;
 
 struct CLAMFI {
@@ -239,12 +239,12 @@ static sfsistat sendchunk(struct CLAMFI *cf, unsigned char *bodyp, size_t len, S
             cf->bufsz = len;
         } else {
             uint32_t sendmetoo;
-            cf->sendme         = htonl(cf->bufsz);
+            cf->sendme = htonl(cf->bufsz);
             if (cf->bufsz && nc_send(cf->main, &cf->sendme, cf->bufsz + 4))
                 sendfailed = 1;
             while (!sendfailed && len) {
                 uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
-                sendmetoo       = htonl(chunk);
+                sendmetoo      = htonl(chunk);
                 if (nc_send(cf->main, &sendmetoo, 4) || nc_send(cf->main, bodyp, chunk))
                     sendfailed = 1;
                 bodyp += chunk;
@@ -349,9 +349,9 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     struct CLAMFI *cf;
     char *reply;
     int len, ret;
-    int infected = 0;
+    int infected   = 0;
     int incomplete = 0;
-    char *alert = NULL;
+    char *alert    = NULL;
     unsigned int crcpt;
 
     if (!(cf = (struct CLAMFI *)smfi_getpriv(ctx)))
@@ -425,7 +425,7 @@ sfsistat clamfi_eom(SMFICTX *ctx)
      * already validated by nc_recv_scan_report(). */
     if (infected && alert && *alert) {
         size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
-        reply = (char *)malloc(reply_size);
+        reply             = (char *)malloc(reply_size);
         if (reply)
             snprintf(reply, reply_size, "stream: %s FOUND\n", alert);
     } else if (infected)
@@ -811,10 +811,10 @@ sfsistat clamfi_envfrom(SMFICTX *ctx, char **argv)
         logg(LOGG_ERROR, "Failed to allocate CLAMFI struct\n");
         return FailAction;
     }
-    cf->totsz = 0;
+    cf->totsz          = 0;
     cf->stream_started = 0;
-    cf->over_limit = 0;
-    cf->bufsz = 0;
+    cf->over_limit     = 0;
+    cf->bufsz          = 0;
     cf->main = cf->alt = -1;
     cf->scan_lock_held = 0;
     cf->all_allowed    = 1;

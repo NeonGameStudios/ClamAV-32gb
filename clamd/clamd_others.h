@@ -41,8 +41,8 @@ enum mode {
 
 /* The active INSTREAM quota may be limited by the protocol's stream cap or
  * by the shared temporary-staging budget. */
-#define CLAMD_QUOTA_SOURCE_NONE      0
-#define CLAMD_QUOTA_SOURCE_STREAM    1
+#define CLAMD_QUOTA_SOURCE_NONE 0
+#define CLAMD_QUOTA_SOURCE_STREAM 1
 #define CLAMD_QUOTA_SOURCE_TEMPORARY 2
 
 struct fd_buf {

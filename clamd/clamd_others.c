@@ -366,20 +366,20 @@ read_fd_data(struct fd_buf *buf)
 static int
 buf_init(struct fd_buf *buf, int listen_only, int timeout)
 {
-    buf->off         = 0;
-    buf->got_newdata = 0;
-    buf->recvfd      = -1;
-    buf->mode        = MODE_COMMAND;
-    buf->id          = 0;
-    buf->dumpfd      = -1;
-    buf->chunksize   = 0;
-    buf->quota       = 0;
-    buf->quota_source = CLAMD_QUOTA_SOURCE_NONE;
+    buf->off               = 0;
+    buf->got_newdata       = 0;
+    buf->recvfd            = -1;
+    buf->mode              = MODE_COMMAND;
+    buf->id                = 0;
+    buf->dumpfd            = -1;
+    buf->chunksize         = 0;
+    buf->quota             = 0;
+    buf->quota_source      = CLAMD_QUOTA_SOURCE_NONE;
     buf->structured_report = 0;
-    buf->response_sent = 0;
-    buf->dumpname    = NULL;
-    buf->group       = NULL;
-    buf->term        = '\0';
+    buf->response_sent     = 0;
+    buf->dumpname          = NULL;
+    buf->group             = NULL;
+    buf->term              = '\0';
     if (!listen_only) {
         if (!buf->buffer) {
             buf->bufsize = PATH_MAX + 8;

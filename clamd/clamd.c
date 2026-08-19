@@ -758,7 +758,7 @@ int main(int argc, char **argv)
 
         {
             char admission_reason[256];
-            int admission_status = CL_ERROR;
+            int admission_status            = CL_ERROR;
             const char *temporary_directory = cl_engine_get_str(engine, CL_ENGINE_TMPDIR, &admission_status);
 
             if ((admission_status != CL_SUCCESS) || (NULL == temporary_directory) || (temporary_directory[0] == '\0'))

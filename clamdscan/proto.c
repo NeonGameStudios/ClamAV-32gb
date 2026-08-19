@@ -273,7 +273,7 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
         goto done;
     }
     if (c->report_stream) {
-        int report_infected = 0;
+        int report_infected   = 0;
         int report_incomplete = 0;
 
         ret = dsreport(sockd, c->scantype, f, have_action_source ? &action_source : NULL,
@@ -282,7 +282,7 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
         if (ret < 0) {
             c->errors++;
             c->printok = 0;
-            status = CL_BREAK;
+            status     = CL_BREAK;
             goto done;
         }
         c->infected += report_infected;
@@ -329,16 +329,16 @@ int serial_client_scan(char *file, int scantype, int *infected, int *err, int ma
     struct client_serial_data cdata;
     int ftw;
 
-    cdata.infected = 0;
-    cdata.files    = 0;
-    cdata.errors   = 0;
-    cdata.printok  = printinfected ^ 1;
-    cdata.scantype = scantype;
-    cdata.flags    = flags;
-    cdata.maxlevel = maxlevel ? maxlevel : INT_MAX;
+    cdata.infected      = 0;
+    cdata.files         = 0;
+    cdata.errors        = 0;
+    cdata.printok       = printinfected ^ 1;
+    cdata.scantype      = scantype;
+    cdata.flags         = flags;
+    cdata.maxlevel      = maxlevel ? maxlevel : INT_MAX;
     cdata.report_stream = report_stream;
     client_walk_policy_init(&cdata.walk_policy, file);
-    data.data      = &cdata;
+    data.data = &cdata;
 
     ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, serial_callback, &data, ftw_chkpath);
     *infected += cdata.infected;
@@ -402,13 +402,13 @@ static int report_json_id(const char *json, uint32_t length, unsigned int *id)
 
 static int dspreport(struct client_parallel_data *c)
 {
-    char *json = NULL;
-    char *terminator_json = NULL;
-    uint32_t json_length = 0;
+    char *json                 = NULL;
+    char *terminator_json      = NULL;
+    uint32_t json_length       = 0;
     uint32_t terminator_length = 0;
-    int terminator = 0;
-    int frame_infected = 0;
-    int frame_incomplete = 0;
+    int terminator             = 0;
+    int frame_infected         = 0;
+    int frame_incomplete       = 0;
     unsigned int rid;
     struct SCANID **id;
     const char *filename;
@@ -439,7 +439,7 @@ static int dspreport(struct client_parallel_data *c)
         free(json);
         return 1;
     }
-    filename = (*id)->file;
+    filename      = (*id)->file;
     action_source = (*id)->action_source;
     if (c->report_stream &&
         (fwrite(json, 1, json_length, c->report_stream) != json_length ||
@@ -468,7 +468,7 @@ static int dspreport(struct client_parallel_data *c)
     }
     {
         struct SCANID *completed = *id;
-        *id = completed->next;
+        *id                      = completed->next;
         free(completed);
     }
     return 0;
@@ -507,7 +507,7 @@ static int dspresult(struct client_parallel_data *c)
             logg(LOGG_ERROR, "Bogus session id from clamd\n");
             return 1;
         }
-        filename = (*id)->file;
+        filename      = (*id)->file;
         action_source = (*id)->action_source;
         if (len > 7) {
             char *colon = strrchr(bol, ':');
@@ -762,7 +762,7 @@ int parallel_client_scan(char *file, int scantype, int *infected, int *err, int 
     cdata.action_sources     = 0;
     cdata.max_action_sources = get_max_action_sources();
     client_walk_policy_init(&cdata.walk_policy, file);
-    data.data                = &cdata;
+    data.data = &cdata;
 
     ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, parallel_callback, &data, ftw_chkpath);
 

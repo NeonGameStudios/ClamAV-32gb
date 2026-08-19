@@ -234,15 +234,14 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
     char fallback[320];
     char id_prefix[64];
     char *serialized = NULL;
-    char *json = NULL;
+    char *json       = NULL;
     const char *payload;
     uint32_t length;
     uint32_t network_length;
     uint32_t terminator = 0;
     int json_length;
-    int use_fallback = 1;
-    const char *verdict = (infected || status == CL_VIRUS) ? "infected" :
-                          (status == CL_SUCCESS ? "clean" : "incomplete");
+    int use_fallback    = 1;
+    const char *verdict = (infected || status == CL_VIRUS) ? "infected" : (status == CL_SUCCESS ? "clean" : "incomplete");
 
     if (!conn)
         return -1;
@@ -253,7 +252,7 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
     if (conn->structured_scan_report &&
         cl_scan_report_to_json(conn->structured_scan_report, &serialized) == CL_SUCCESS &&
         serialized && serialized[0] == '{') {
-        int prefix_length = snprintf(id_prefix, sizeof(id_prefix), "{\"id\":%u,", conn->id);
+        int prefix_length        = snprintf(id_prefix, sizeof(id_prefix), "{\"id\":%u,", conn->id);
         size_t serialized_length = strlen(serialized);
 
         /* Keep the producer bound identical to the clamd clients.  The
@@ -267,8 +266,8 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
             if (json) {
                 memcpy(json, id_prefix, (size_t)prefix_length);
                 memcpy(json + prefix_length, serialized + 1, serialized_length);
-                json_length = (int)((size_t)prefix_length + serialized_length - 1);
-                payload = json;
+                json_length  = (int)((size_t)prefix_length + serialized_length - 1);
+                payload      = json;
                 use_fallback = 0;
             }
         }
@@ -276,7 +275,7 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
 
     if (use_fallback) {
         free(json);
-        json = NULL;
+        json        = NULL;
         json_length = snprintf(fallback, sizeof(fallback),
                                "{\"version\":1,\"id\":%u,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
                                conn->id, (int)status, verdict, scan_report_completion(status, infected));
@@ -403,8 +402,7 @@ int command(client_conn_t *conn, int *virus)
             }
             break;
         }
-        case COMMAND_MULTISCANFILE:
-        {
+        case COMMAND_MULTISCANFILE: {
             char *scan_filename    = conn->filename;
             char *display_filename = (NULL != conn->display_filename) ? conn->display_filename : conn->filename;
 
@@ -776,10 +774,10 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
                     (void)conn_reply_scan_report(conn, CL_ETMPFILE, 0);
                 return 1;
             }
-            stream_limit     = (uint64_t)optget(conn->opts, "StreamMaxLength")->numarg;
-            temporary_limit  = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
+            stream_limit       = (uint64_t)optget(conn->opts, "StreamMaxLength")->numarg;
+            temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
             conn->quota_source = CLAMD_QUOTA_SOURCE_STREAM;
-            conn->quota         = stream_limit;
+            conn->quota        = stream_limit;
             if (temporary_limit && (!stream_limit || temporary_limit < stream_limit)) {
                 conn->quota        = temporary_limit;
                 conn->quota_source = CLAMD_QUOTA_SOURCE_TEMPORARY;

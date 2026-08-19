@@ -146,15 +146,15 @@ static int read_mem_available(uint64_t *available_bytes)
 
 static int cgroup_headroom(uint64_t *headroom, int *bounded)
 {
-    static const char *const v2_limit = "/sys/fs/cgroup/memory.max";
+    static const char *const v2_limit   = "/sys/fs/cgroup/memory.max";
     static const char *const v2_current = "/sys/fs/cgroup/memory.current";
-    static const char *const v1_limit = "/sys/fs/cgroup/memory/memory.limit_in_bytes";
+    static const char *const v1_limit   = "/sys/fs/cgroup/memory/memory.limit_in_bytes";
     static const char *const v1_current = "/sys/fs/cgroup/memory/memory.usage_in_bytes";
-    const char *current_path = NULL;
-    uint64_t limit = 0;
-    uint64_t current = 0;
-    int limit_unlimited = 0;
-    int current_unlimited = 0;
+    const char *current_path            = NULL;
+    uint64_t limit                      = 0;
+    uint64_t current                    = 0;
+    int limit_unlimited                 = 0;
+    int current_unlimited               = 0;
 
     if ((NULL == headroom) || (NULL == bounded))
         return 0;
@@ -243,15 +243,15 @@ static int engine_u64(
 
 void clamd_largefile_log_capabilities(const struct cl_engine *engine)
 {
-    uint64_t max_file_size = 0;
-    uint64_t max_scan_size = 0;
-    uint64_t max_matcher_work = 0;
-    uint64_t max_temporary_size = 0;
+    uint64_t max_file_size       = 0;
+    uint64_t max_scan_size       = 0;
+    uint64_t max_matcher_work    = 0;
+    uint64_t max_temporary_size  = 0;
     uint64_t max_contiguous_size = 0;
-    uint64_t pcre_max_file_size = 0;
-    uint64_t max_scan_time = 0;
-    uint64_t max_files = 0;
-    uint64_t max_recursion = 0;
+    uint64_t pcre_max_file_size  = 0;
+    uint64_t max_scan_time       = 0;
+    uint64_t max_files           = 0;
+    uint64_t max_recursion       = 0;
 
     (void)engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size);
     (void)engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size);
