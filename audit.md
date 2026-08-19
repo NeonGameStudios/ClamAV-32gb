@@ -1603,3 +1603,10 @@ The embedded PE header check now distinguishes generic `CL_ERROR` candidate
 rejection from all other header failures. Truncated, timed-out, resource, and
 read/parse failures set the sticky incomplete state and preserve their status;
 only the disproven generic candidate remains non-tainting.
+
+The clean-cache lookup and insertion paths now reject incomplete or timed-out
+contexts in addition to the scanner-level admission guard. This prevents a
+cached child from bypassing sticky incomplete-state reconciliation during
+nested unwinding and prevents any incomplete layer from being recorded as
+clean. The focused cache regression is registered; compiled Linux/Sonic1
+execution remains a release gate.

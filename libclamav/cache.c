@@ -678,6 +678,14 @@ void clean_cache_add(cli_ctx *ctx)
         goto done;
     }
 
+    /* A clean cache entry is only valid after every required scan path has
+     * completed. Keep the cache layer fail-closed even for callers that do
+     * not pass through cli_magic_scan()'s admission guard. */
+    if (ctx->scan_incomplete || ctx->scan_timed_out) {
+        cli_dbgmsg("clean_cache_add: scan incomplete or timed out, skipping cache\n");
+        goto done;
+    }
+
     if (ctx->fmap && ctx->fmap->dont_cache_flag == true) {
         cli_dbgmsg("clean_cache_add: caching disabled for this layer, skipping cache\n");
         goto done;
@@ -805,6 +813,13 @@ cl_error_t clean_cache_check(cli_ctx *ctx)
         // Don't cache when using the "collect metadata" feature.
         // We don't cache the JSON, so we can't reproduce it when the cache is positive.
         cli_dbgmsg("clean_cache_check: collect metadata feature enabled, skipping cache\n");
+        status = CL_VIRUS;
+        goto done;
+    }
+
+    /* Never turn a prior required-path failure into a clean cache hit. */
+    if (ctx->scan_incomplete || ctx->scan_timed_out) {
+        cli_dbgmsg("clean_cache_check: scan incomplete or timed out, skipping cache\n");
         status = CL_VIRUS;
         goto done;
     }

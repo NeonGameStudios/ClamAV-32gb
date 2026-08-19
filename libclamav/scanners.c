@@ -5552,7 +5552,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         perf_stop(ctx, PERFT_CACHE);
     }
 
-    if (cache_enabled && (cache_check_result != CL_VIRUS)) {
+    /* A prior required-path failure belongs to the whole scan context. Do not
+     * let a clean-cache hit bypass the sticky incomplete result while an
+     * enclosing layer is still being unwound. A timed-out context is equally
+     * ineligible for a clean fast path. */
+    if (cache_enabled && !ctx->scan_incomplete && !ctx->scan_timed_out &&
+        (cache_check_result != CL_VIRUS)) {
         status = CL_SUCCESS;
         cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
         // We can go to early_ret here, because we know status is CL_SUCCESS, and we obviously add to the cache.
@@ -6288,7 +6293,7 @@ done:
      * so this may not actually cache if we exceeded limits earlier.
      * It will also check if caching is disabled.
      */
-    if ((CL_SUCCESS == status) &&
+    if ((CL_SUCCESS == status) && !ctx->scan_incomplete && !ctx->scan_timed_out &&
         ((CL_VERDICT_TRUSTED == ctx->recursion_stack[ctx->recursion_level].verdict) ||
          (CL_VERDICT_NOTHING_FOUND == ctx->recursion_stack[ctx->recursion_level].verdict))) {
         // Also verify we have no weak indicators before adding to the clean cache.

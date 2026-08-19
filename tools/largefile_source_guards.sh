@@ -714,6 +714,8 @@ contains libclamav/scanners.c 'ARJ SFX header is malformed or could not be read 
 contains libclamav/scanners.c 'embedded PE exceeds MaxEmbeddedPE and was not inspected'
 contains libclamav/scanners.c 'embedded PE metadata requires a 32-bit containing-file offset'
 contains libclamav/scanners.c 'embedded PE header could not be inspected completely'
+contains libclamav/scanners.c 'A prior required-path failure belongs to the whole scan context'
+contains libclamav/cache.c 'scan incomplete or timed out, skipping cache'
 contains unit_tests/check_clamav.c 'test_embedded_candidate_admission_headers'
 not_contains libclamav/nsis/nulsft.c 'ret = nsist.solid ? CL_BREAK : CL_SUCCESS'
 contains libclamav/egg.c 'compressedDataOffset'

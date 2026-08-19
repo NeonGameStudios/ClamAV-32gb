@@ -2389,3 +2389,12 @@ Embedded PE header admission now keeps generic “not actually PE” results as
 disproven candidates, but marks truncation, timeout, resource, allocation, and
 read failures incomplete. A failed confirmed header inspection can no longer
 be mistaken for an unrelated magic hit.
+
+## Incomplete-scan cache exclusion — 2026-08-19
+
+The clean-cache lookup and insertion paths now fail closed when the active
+scan context is incomplete or timed out. This is enforced both in
+`cli_magic_scan()` and in the cache implementation itself, so a cached child
+cannot bypass the sticky incomplete result during nested-scan unwinding, and
+no incomplete layer can be inserted as clean. The focused cache regression is
+registered; compiled Linux/Sonic1 execution remains a release gate.

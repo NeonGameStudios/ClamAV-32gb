@@ -2051,6 +2051,16 @@ START_TEST(test_clean_cache_distinguishes_large_sizes)
     clean_cache_add(&ctx);
     ck_assert_msg(CL_CLEAN == clean_cache_check(&ctx), "large clean-cache entry was not found");
 
+    clean_cache_remove(hash, large_size, g_engine);
+    ctx.scan_incomplete = true;
+    ck_assert_msg(CL_VIRUS == clean_cache_check(&ctx), "incomplete scan was allowed to use clean cache");
+    clean_cache_add(&ctx);
+    ctx.scan_incomplete = false;
+    ck_assert_msg(CL_VIRUS == clean_cache_check(&ctx), "incomplete scan was added to clean cache");
+
+    clean_cache_add(&ctx);
+    ck_assert_msg(CL_CLEAN == clean_cache_check(&ctx), "clean scan was not restored to cache");
+
     map.len = 0;
     ck_assert_msg(CL_VIRUS == clean_cache_check(&ctx), "large clean-cache size aliased its truncated 32-bit value");
 
