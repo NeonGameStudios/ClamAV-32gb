@@ -2309,3 +2309,14 @@ The legacy `cli_egg_extract_file()` byte-buffer API remains available for
 compatibility callers and retains the global individual-allocation guard; it
 is not used by the production scanner. EGG corpus, sanitizer, and supported
 Linux x86-64 Sonic1 qualification remain release gates.
+
+## Milter structured-report alert and nonblocking transport — 2026-08-19
+
+The milter structured-report client now preserves the report's `last_alert`
+signature name for reject formatting, logging, and `VirusEvent` rather than
+using a generic transport label. The milter socket is nonblocking, so its
+framed-report reader now performs deadline-aware exact reads, handles short
+reads and `EAGAIN`, enforces the shared 16 MiB report-frame cap, and rejects
+malformed alert strings. This improves transport correctness but does not
+replace the required supported-Linux large-transfer, sanitizer, or milter
+qualification runs.

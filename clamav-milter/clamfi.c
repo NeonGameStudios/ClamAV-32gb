@@ -351,6 +351,7 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     int len, ret;
     int infected = 0;
     int incomplete = 0;
+    char *alert = NULL;
     unsigned int crcpt;
 
     if (!(cf = (struct CLAMFI *)smfi_getpriv(ctx)))
@@ -392,8 +393,9 @@ sfsistat clamfi_eom(SMFICTX *ctx)
         }
     }
 
-    if (nc_recv_scan_report(cf->main, &infected, &incomplete) < 0) {
+    if (nc_recv_scan_report(cf->main, &infected, &incomplete, &alert) < 0) {
         logg(LOGG_ERROR, "No valid structured report from clamd\n");
+        free(alert);
         if (cf->local)
             close(cf->alt);
         cf->alt = -1;
@@ -412,6 +414,7 @@ sfsistat clamfi_eom(SMFICTX *ctx)
      * incomplete result must never be treated as a clean milter action. */
     if (incomplete && !infected) {
         logg(LOGG_ERROR, "Structured clamd report is incomplete; refusing clean verdict\n");
+        free(alert);
         nullify(ctx, cf, CF_MAIN);
         free(cf);
         return FailAction;
@@ -420,11 +423,17 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     /* Keep the existing milter logging/action code while normalizing the
      * structured result into its two legacy branches. The actual report was
      * already validated by nc_recv_scan_report(). */
-    if (infected)
+    if (infected && alert && *alert) {
+        size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
+        reply = (char *)malloc(reply_size);
+        if (reply)
+            snprintf(reply, reply_size, "stream: %s FOUND\n", alert);
+    } else if (infected)
         reply = strdup("stream: structured clamd report FOUND\n");
     else
         reply = strdup("stream: OK\n");
     if (!reply) {
+        free(alert);
         nullify(ctx, cf, CF_MAIN);
         free(cf);
         return FailAction;
@@ -460,14 +469,19 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     } else if (len > 7 && !strcmp(reply + len - 7, " FOUND\n")) {
         cf->virusname = NULL;
         if ((loginfected & (LOGINF_BASIC | LOGINF_FULL)) || addxvirus || rejectfmt || viraction) {
-            char *vir;
+            char *vir = NULL;
 
-            reply[len - 7] = '\0';
-            vir            = strrchr(reply, ' ');
+            if (alert && *alert) {
+                vir = alert;
+            } else {
+                reply[len - 7] = '\0';
+                vir            = strrchr(reply, ' ');
+                if (vir)
+                    vir++;
+            }
             if (vir) {
                 unsigned int have_multi = (multircpt != 0 && cf->nrecipients);
                 unsigned int lst_rcpt   = (have_multi * (cf->nrecipients - 1)) + 1;
-                vir++;
 
                 if (rejectfmt)
                     cf->virusname = vir;
@@ -562,6 +576,7 @@ sfsistat clamfi_eom(SMFICTX *ctx)
 
     nullify(ctx, cf, CF_MAIN);
     free(cf);
+    free(alert);
     free(reply);
     return ret;
 }

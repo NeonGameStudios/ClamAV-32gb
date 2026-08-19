@@ -728,6 +728,97 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
     return -1;
 }
 
+static const char *report_json_find_key(const char *json, uint32_t json_length,
+                                        const char *key, size_t key_length)
+{
+    uint32_t offset;
+
+    if (!json || !key || key_length > json_length)
+        return NULL;
+
+    for (offset = 0; offset <= json_length - key_length; offset++) {
+        if (memcmp(json + offset, key, key_length) == 0)
+            return json + offset + key_length;
+    }
+    return NULL;
+}
+
+int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
+{
+    static const char key[] = "\"last_alert\"";
+    const char *cursor;
+    const char *end;
+    char *decoded;
+    size_t decoded_length = 0;
+
+    if (!json || !alert || json_length == 0 || json[json_length] != '\0')
+        return -1;
+
+    *alert = NULL;
+    cursor = report_json_find_key(json, json_length, key, sizeof(key) - 1);
+    if (!cursor)
+        return 0;
+    end = json + json_length;
+
+    while (cursor < end && (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' || *cursor == '\n'))
+        cursor++;
+    if (cursor >= end || *cursor++ != ':')
+        return -1;
+    while (cursor < end && (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' || *cursor == '\n'))
+        cursor++;
+    if (cursor + 4 <= end && memcmp(cursor, "null", 4) == 0)
+        return 0;
+    if (cursor >= end || *cursor++ != '"')
+        return -1;
+
+    decoded = (char *)malloc((size_t)(end - cursor) + 1U);
+    if (!decoded)
+        return -1;
+
+    while (cursor < end) {
+        unsigned char value = (unsigned char)*cursor++;
+
+        if (value == '"') {
+            decoded[decoded_length] = '\0';
+            *alert = decoded;
+            return 0;
+        }
+        if (value == '\\') {
+            if (cursor >= end) {
+                free(decoded);
+                return -1;
+            }
+            value = (unsigned char)*cursor++;
+            switch (value) {
+                case '"':
+                case '\\':
+                case '/':
+                    break;
+                case 'b':
+                case 'f':
+                case 'n':
+                case 'r':
+                case 't':
+                    free(decoded);
+                    return -1;
+                default:
+                    /* Preserve uncommon escapes rather than changing a
+                     * signature name; control escapes are rejected above. */
+                    decoded[decoded_length++] = '\\';
+                    break;
+            }
+        } else if (value < 0x20U) {
+            free(decoded);
+            return -1;
+        }
+
+        decoded[decoded_length++] = (char)value;
+    }
+
+    free(decoded);
+    return -1;
+}
+
 int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
              bool apply_action, FILE *report_stream, int *infected, int *incomplete,
              int *errors, struct optstruct *clamdopts)

@@ -84,4 +84,5 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
              int *errors, struct optstruct *clamdopts);
 int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
 int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
+int scan_report_json_alert(const char *json, uint32_t json_length, char **alert);
 #endif

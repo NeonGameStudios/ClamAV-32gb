@@ -106,6 +106,10 @@ therefore limited to a `COMPLETE` report; incomplete, resource, malformed, and
 application-abort reports take the configured failure action. The active milter
 scan request is serialized across conversations so a second request cannot
 simultaneously stage and reserve resources while the first is being scanned.
+The milter now preserves the structured report's `last_alert` value for
+reject formatting, logging, and `VirusEvent` instead of substituting a generic
+transport label. Its nonblocking socket path now reads each report frame with
+the configured receive deadline and handles short reads and `EAGAIN` safely.
 
 On-access stream, fd-passing, and path requests now use the corresponding
 structured report commands and parse the length-prefixed frames through the

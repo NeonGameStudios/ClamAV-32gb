@@ -181,6 +181,23 @@ START_TEST(test_scan_report_json_status_accepts_library_reports)
 }
 END_TEST
 
+START_TEST(test_scan_report_json_alert_extracts_detection_name)
+{
+    static const char report[] =
+        "{\"last_alert\":\"Heuristics.Test\\/EICAR\"}";
+    static const char no_alert[] = "{\"last_alert\":null}";
+    char *alert = NULL;
+
+    ck_assert_int_eq(scan_report_json_alert(report, (uint32_t)strlen(report), &alert), 0);
+    ck_assert_ptr_nonnull(alert);
+    ck_assert_str_eq(alert, "Heuristics.Test/EICAR");
+    free(alert);
+
+    ck_assert_int_eq(scan_report_json_alert(no_alert, (uint32_t)strlen(no_alert), &alert), 0);
+    ck_assert_ptr_null(alert);
+}
+END_TEST
+
 START_TEST(test_large_file_size_parser_ceiling)
 {
     static const char *const names[] = {"MaxFileSize", "StreamMaxLength", "OnAccessMaxFileSize"};
@@ -1067,6 +1084,7 @@ static Suite *test_clamd_suite(void)
     suite_add_tcase(s, tc_parser);
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
+    tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
 #ifndef _WIN32

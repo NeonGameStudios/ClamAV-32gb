@@ -293,25 +293,105 @@ char *nc_recv(int s)
     return ret;
 }
 
-int nc_recv_scan_report(int s, int *infected, int *incomplete)
+static int nc_recv_full(int s, void *buffer, size_t length)
+{
+    unsigned char *cursor = (unsigned char *)buffer;
+    time_t deadline = readtimeout ? time(NULL) + readtimeout : 0;
+
+    while (length) {
+        fd_set fds;
+        struct timeval tv;
+        struct timeval *timeout = NULL;
+        ssize_t received;
+        int ready;
+
+        if (readtimeout) {
+            time_t now = time(NULL);
+            if (now >= deadline)
+                return -1;
+            tv.tv_sec  = deadline - now;
+            tv.tv_usec = 0;
+            timeout    = &tv;
+        }
+
+        FD_ZERO(&fds);
+        FD_SET(s, &fds);
+        ready = select(s + 1, &fds, NULL, NULL, timeout);
+        if (ready < 0 && errno == EINTR)
+            continue;
+        if (ready <= 0)
+            return -1;
+
+        do {
+            received = recv(s, cursor, length, 0);
+        } while (received < 0 && errno == EINTR);
+
+        if (received < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            continue;
+
+        if (received <= 0)
+            return -1;
+        cursor += received;
+        length -= (size_t)received;
+    }
+    return 0;
+}
+
+static int nc_recv_scan_report_frame(int s, char **json, uint32_t *json_length, int *terminated)
+{
+    uint32_t network_length;
+    uint32_t length;
+
+    if (!json || !json_length || !terminated)
+        return -1;
+    *json        = NULL;
+    *json_length = 0;
+    *terminated  = 0;
+
+    if (nc_recv_full(s, &network_length, sizeof(network_length)) < 0)
+        return -1;
+    length = ntohl(network_length);
+    if (length == 0) {
+        *terminated = 1;
+        return 0;
+    }
+    if (length > CLAMD_SCAN_REPORT_MAX_FRAME)
+        return -1;
+
+    *json = (char *)malloc((size_t)length + 1U);
+    if (!*json)
+        return -1;
+    if (nc_recv_full(s, *json, length) < 0) {
+        free(*json);
+        *json = NULL;
+        return -1;
+    }
+    (*json)[length] = '\0';
+    *json_length    = length;
+    return 1;
+}
+
+int nc_recv_scan_report(int s, int *infected, int *incomplete, char **alert)
 {
     int terminated = 0;
     int received   = 0;
 
-    if (!infected || !incomplete)
+    if (!infected || !incomplete || !alert)
         return -1;
 
     *infected   = 0;
     *incomplete = 0;
+    *alert      = NULL;
 
     while (!terminated) {
         char *json = NULL;
         uint32_t json_length = 0;
         int frame_infected = 0;
         int frame_incomplete = 0;
+        char *frame_alert = NULL;
         int frame;
 
-        frame = recv_scan_report_frame(s, &json, &json_length, &terminated);
+        frame = nc_recv_scan_report_frame(s, &json, &json_length, &terminated);
         if (frame < 0)
             return -1;
         if (terminated)
@@ -321,12 +401,24 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete)
             free(json);
             return -1;
         }
+        if (scan_report_json_alert(json, json_length, &frame_alert) < 0) {
+            free(json);
+            free(frame_alert);
+            return -1;
+        }
 
         received = 1;
-        if (frame_infected)
+        if (frame_infected) {
             *infected = 1;
+            if (frame_alert) {
+                free(*alert);
+                *alert = frame_alert;
+                frame_alert = NULL;
+            }
+        }
         if (frame_incomplete)
             *incomplete = 1;
+        free(frame_alert);
         free(json);
     }
 
