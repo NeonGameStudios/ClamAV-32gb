@@ -39,9 +39,6 @@
 #define HWP5_CCL            0x800
 // clang-format on
 
-/* The HWPML XML walker may materialize one complete text node. Bound that
- * third-party allocation until the walker has a chunked text-value API. */
-#define HWPML_DEEP_PARSE_MAX_SIZE ((size_t)64 * 1024 * 1024)
 /* Deliberately not divisible by four: the decoder must preserve quartets
  * across every input-read boundary rather than relying on aligned reads. */
 #define HWPML_BASE64_IO_SIZE 16381

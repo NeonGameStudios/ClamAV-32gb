@@ -2082,7 +2082,9 @@ Safe failure is not the same as full deep-parser support. Current deliberate
 boundaries include:
 
 - PCRE contiguous subjects capped at 1 GiB;
-- legacy PDF, XDP, HWPML, XAR TOC, and DMG metadata paths capped at 64 MiB;
+- legacy PDF, XDP, and DMG metadata paths capped at 64 MiB; HWPML and XAR TOC
+  input paths now use bounded streaming readers with separate parser-family
+  qualification gates;
 - applicable legacy bytecode limited by its 32-bit ABI;
 - intentionally bounded/unsupported archive methods or strong encryption; and
 - other legacy parsers that return an explicit incomplete result when they

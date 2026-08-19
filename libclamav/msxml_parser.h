@@ -28,6 +28,7 @@
 #endif
 
 #include "others.h"
+#include "fmap.h"
 
 #ifdef _WIN32
 #ifndef LIBXML_WRITER_ENABLED
@@ -38,6 +39,7 @@
 
 #define MSXML_RECLEVEL_MAX 20
 #define MSXML_JSON_STRLEN_MAX 128
+#define MSXML_STREAM_IO_SIZE (64U * 1024U)
 
 /* reader usage flags */
 #define MSXML_FLAG_JSON 0x1
@@ -86,5 +88,12 @@ struct msxml_ctx {
 };
 
 cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const struct key_entry *keys, const size_t num_keys, uint32_t flags, struct msxml_ctx *mxctx);
+
+/* Push-parser variant for documents whose text nodes may be much larger than
+ * the XML reader's in-memory node representation. Input is consumed through
+ * bounded fmap windows; callback and base64 fields are written to temporary
+ * files incrementally and charged to the shared temporary-space budget. */
+cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const struct key_entry *keys, size_t num_keys,
+                                              uint32_t flags, struct msxml_ctx *mxctx);
 
 #endif /* __MSXML_PARSER_H */

@@ -33,8 +33,11 @@
 #include "conv.h"
 #include "scanners.h"
 #include "json_api.h"
+#include "msxml.h"
 #include "msxml_parser.h"
 
+#include <libxml/parser.h>
+#include <libxml/SAX2.h>
 #include <libxml/xmlreader.h>
 
 #define MSXML_VERBIOSE 0
@@ -637,4 +640,613 @@ cl_error_t cli_msxml_parse_document(cli_ctx *ctx, xmlTextReaderPtr reader, const
     }
 
     return ret;
+}
+
+/*
+ * The xmlTextReader API is a good fit for small metadata documents, but its
+ * value accessor exposes one complete text node.  HWPML binary fields are
+ * commonly represented by one very large base64 text node, so using that API
+ * imposes an accidental allocation proportional to the attachment.  The
+ * push-parser path below keeps libxml2's well-formedness checks while feeding
+ * it bounded input chunks and handling the relevant text callbacks as a
+ * stream.
+ */
+#define MSXML_STREAM_ATTR_VALUE_MAX 1024U
+
+struct msxml_stream_frame {
+    const struct key_entry *keyinfo;
+    json_object *json_parent;
+    json_object *json_obj;
+    int ignored;
+
+    int cb_fd;
+    char *cb_name;
+    uint64_t cb_reserved;
+    uint64_t cb_bytes;
+    int cb_saw_data;
+
+    int b64_fd;
+    char *b64_name;
+    uint64_t b64_reserved;
+    uint64_t b64_bytes;
+    unsigned char b64_quartet[4];
+    size_t b64_used;
+    int b64_terminal;
+    int b64_saw_data;
+
+    char attr_keys[MAX_ATTRIBS][MSXML_JSON_STRLEN_MAX];
+    char attr_values[MAX_ATTRIBS][MSXML_STREAM_ATTR_VALUE_MAX];
+    struct attrib_entry attribs[MAX_ATTRIBS];
+    int num_attribs;
+};
+
+struct msxml_stream_state {
+    cli_ctx *ctx;
+    struct msxml_ctx *mxctx;
+    struct msxml_ictx ictx;
+    struct msxml_stream_frame frames[MSXML_RECLEVEL_MAX];
+    size_t depth;
+    size_t skipped_depth;
+    cl_error_t ret;
+    int parser_failed;
+    xmlParserCtxtPtr parser;
+};
+
+static void msxml_stream_fail(struct msxml_stream_state *state, cl_error_t ret, const char *reason)
+{
+    if (!state)
+        return;
+
+    if (reason)
+        cli_dbgmsg("MSXML streaming parser: %s\n", reason);
+
+    if (state->ret == CL_SUCCESS || state->ret == CL_BREAK)
+        state->ret = ret;
+
+    if (ret != CL_VIRUS && ret != CL_BREAK)
+        cli_mark_scan_incomplete(state->ctx, reason ? reason : "MSXML streaming parser stopped before completion");
+
+    if (state->parser)
+        xmlStopParser(state->parser);
+}
+
+static int msxml_stream_copy_xml_string(char *dst, size_t dst_size, const xmlChar *begin, const xmlChar *end)
+{
+    size_t len;
+
+    if (!dst || dst_size == 0 || !begin)
+        return -1;
+
+    if (end && end >= begin)
+        len = (size_t)(end - begin);
+    else
+        len = (size_t)xmlStrlen(begin);
+
+    if (len >= dst_size)
+        return -1;
+
+    memcpy(dst, begin, len);
+    dst[len] = '\0';
+    return 0;
+}
+
+static cl_error_t msxml_stream_reserve_write(struct msxml_stream_state *state, int fd, const void *data, size_t len,
+                                             uint64_t *reserved, uint64_t *written)
+{
+    const unsigned char *cursor = (const unsigned char *)data;
+    size_t offset = 0;
+
+    while (offset < len) {
+        size_t chunk = MIN((size_t)MSXML_STREAM_IO_SIZE, len - offset);
+
+        if (cli_scan_reserve_temporary(state->ctx, (uint64_t)chunk) != CL_SUCCESS) {
+            msxml_stream_fail(state, CL_ERESOURCE, "MSXML streaming spool exceeded the temporary-space limit");
+            return CL_ERESOURCE;
+        }
+
+        if (cli_writen(fd, cursor + offset, chunk) != chunk) {
+            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
+            msxml_stream_fail(state, CL_EWRITE, "MSXML streaming spool write failed");
+            return CL_EWRITE;
+        }
+
+        if (*reserved > UINT64_MAX - chunk || *written > UINT64_MAX - chunk) {
+            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
+            msxml_stream_fail(state, CL_EPARSE, "MSXML streaming spool size overflowed");
+            return CL_EPARSE;
+        }
+
+        *reserved += (uint64_t)chunk;
+        *written += (uint64_t)chunk;
+        offset += chunk;
+    }
+
+    return CL_SUCCESS;
+}
+
+static int msxml_stream_base64_value(unsigned char value)
+{
+    if (value >= 'A' && value <= 'Z')
+        return value - 'A';
+    if (value >= 'a' && value <= 'z')
+        return value - 'a' + 26;
+    if (value >= '0' && value <= '9')
+        return value - '0' + 52;
+    if (value == '+')
+        return 62;
+    if (value == '/')
+        return 63;
+    return -1;
+}
+
+static cl_error_t msxml_stream_decode_base64(struct msxml_stream_state *state, struct msxml_stream_frame *frame,
+                                             const xmlChar *data, int len)
+{
+    size_t i;
+
+    for (i = 0; i < (size_t)len; i++) {
+        unsigned char value = data[i];
+        unsigned char output[3];
+        int a, b, c, d;
+        size_t produced;
+
+        if (isspace((int)value))
+            continue;
+
+        frame->b64_saw_data = 1;
+        if (frame->b64_terminal || (value != '=' && msxml_stream_base64_value(value) < 0)) {
+            msxml_stream_fail(state, CL_EPARSE, "MSXML base64 stream contains invalid trailing data");
+            return CL_EPARSE;
+        }
+
+        frame->b64_quartet[frame->b64_used++] = value;
+        if (frame->b64_used != sizeof(frame->b64_quartet))
+            continue;
+
+        if (frame->b64_quartet[0] == '=' || frame->b64_quartet[1] == '=' ||
+            (frame->b64_quartet[2] == '=' && frame->b64_quartet[3] != '=')) {
+            msxml_stream_fail(state, CL_EPARSE, "MSXML base64 stream contains invalid padding");
+            return CL_EPARSE;
+        }
+
+        a = msxml_stream_base64_value(frame->b64_quartet[0]);
+        b = msxml_stream_base64_value(frame->b64_quartet[1]);
+        c = frame->b64_quartet[2] == '=' ? 0 : msxml_stream_base64_value(frame->b64_quartet[2]);
+        d = frame->b64_quartet[3] == '=' ? 0 : msxml_stream_base64_value(frame->b64_quartet[3]);
+        if (a < 0 || b < 0 || c < 0 || d < 0) {
+            msxml_stream_fail(state, CL_EPARSE, "MSXML base64 stream contains an invalid alphabet value");
+            return CL_EPARSE;
+        }
+
+        produced = frame->b64_quartet[2] == '=' ? 1 : (frame->b64_quartet[3] == '=' ? 2 : 3);
+        output[0] = (unsigned char)((a << 2) | (b >> 4));
+        if (produced > 1)
+            output[1] = (unsigned char)((b << 4) | (c >> 2));
+        if (produced > 2)
+            output[2] = (unsigned char)((c << 6) | d);
+
+        if (msxml_stream_reserve_write(state, frame->b64_fd, output, produced, &frame->b64_reserved, &frame->b64_bytes) != CL_SUCCESS)
+            return state->ret;
+
+        if (produced != 3)
+            frame->b64_terminal = 1;
+        frame->b64_used = 0;
+    }
+
+    return CL_SUCCESS;
+}
+
+static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
+{
+    if (!state || !fd || !name || !reserved)
+        return;
+
+    if (*reserved) {
+        cli_scan_release_temporary(state->ctx, *reserved);
+        *reserved = 0;
+    }
+    if (*fd >= 0)
+        close(*fd);
+    if (*name) {
+        if (!state->ctx->engine->keeptmp)
+            cli_unlink(*name);
+        free(*name);
+    }
+    *fd   = -1;
+    *name = NULL;
+}
+
+static void msxml_stream_cleanup_frame(struct msxml_stream_state *state, struct msxml_stream_frame *frame)
+{
+    if (!state || !frame)
+        return;
+
+    msxml_stream_dispose_fd(state, &frame->cb_fd, &frame->cb_name, &frame->cb_reserved);
+    msxml_stream_dispose_fd(state, &frame->b64_fd, &frame->b64_name, &frame->b64_reserved);
+}
+
+static cl_error_t msxml_stream_finish_frame(struct msxml_stream_state *state, struct msxml_stream_frame *frame)
+{
+    cl_error_t ret;
+
+    if (!state || !frame || frame->ignored)
+        return CL_SUCCESS;
+
+    if (frame->b64_fd >= 0) {
+        if (frame->b64_used != 0) {
+            msxml_stream_fail(state, CL_EPARSE, "MSXML base64 stream ended with an incomplete quartet");
+            return CL_EPARSE;
+        }
+
+        if (frame->b64_saw_data) {
+            cli_scan_release_temporary(state->ctx, frame->b64_reserved);
+            frame->b64_reserved = 0;
+            ret = cli_magic_scan_desc(frame->b64_fd, frame->b64_name, state->ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            if (ret != CL_SUCCESS)
+                return ret;
+        }
+    }
+
+    if (frame->cb_fd >= 0 && frame->cb_saw_data && state->mxctx->scan_cb) {
+        cli_scan_release_temporary(state->ctx, frame->cb_reserved);
+        frame->cb_reserved = 0;
+        ret = state->mxctx->scan_cb(frame->cb_fd, frame->cb_name, state->ctx, frame->num_attribs,
+                                    frame->attribs, state->mxctx->scan_data);
+        if (ret != CL_SUCCESS)
+            return ret;
+    }
+
+    return CL_SUCCESS;
+}
+
+static void msxml_stream_add_json_value(struct msxml_stream_state *state, struct msxml_stream_frame *frame,
+                                        const xmlChar *data, int len)
+{
+    xmlChar value[4096];
+    size_t offset = 0;
+
+    if (!frame->json_obj || !(frame->keyinfo->type & MSXML_JSON_VALUE))
+        return;
+
+    while (offset < (size_t)len) {
+        size_t chunk = MIN(sizeof(value) - 1, (size_t)len - offset);
+        cl_error_t ret;
+
+        memcpy(value, data + offset, chunk);
+        value[chunk] = '\0';
+        ret          = msxml_parse_value(frame->json_obj, "Value", value);
+        if (ret != CL_SUCCESS) {
+            msxml_stream_fail(state, ret, "MSXML JSON value could not be retained");
+            return;
+        }
+        offset += chunk;
+    }
+}
+
+static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI,
+                                       int nb_namespaces, const xmlChar **namespaces, int nb_attributes,
+                                       int nb_defaulted, const xmlChar **attributes)
+{
+    struct msxml_stream_state *state = (struct msxml_stream_state *)arg;
+    struct msxml_stream_frame *frame;
+    const struct key_entry *keyinfo;
+    int i;
+
+    UNUSEDPARAM(prefix);
+    UNUSEDPARAM(URI);
+    UNUSEDPARAM(nb_namespaces);
+    UNUSEDPARAM(namespaces);
+    UNUSEDPARAM(nb_defaulted);
+
+    if (!state || state->ret == CL_VIRUS || state->ret == CL_BREAK || state->ret != CL_SUCCESS)
+        return;
+
+    if (state->skipped_depth) {
+        state->skipped_depth++;
+        return;
+    }
+
+    /* Once an element is deliberately ignored, keep libxml2 validating its
+     * subtree but do not allocate one callback frame per descendant. This is
+     * important for large HWPML document bodies, which may be deeply nested
+     * while carrying no required embedded stream. */
+    if (state->depth != 0 && state->frames[state->depth - 1].ignored) {
+        state->skipped_depth = 1;
+        return;
+    }
+
+    if (!localname || state->depth >= MSXML_RECLEVEL_MAX) {
+        state->skipped_depth = 1;
+        msxml_stream_fail(state, CL_EPARSE, "MSXML streaming parser exceeded its recursion limit");
+        return;
+    }
+
+    frame = &state->frames[state->depth];
+    memset(frame, 0, sizeof(*frame));
+    frame->cb_fd  = -1;
+    frame->b64_fd = -1;
+    keyinfo       = msxml_check_key(&state->ictx, localname, (size_t)xmlStrlen(localname));
+    frame->keyinfo = keyinfo;
+    frame->ignored = (state->depth != 0 && state->frames[state->depth - 1].ignored) ||
+                     ((keyinfo->type & MSXML_IGNORE_ELEM) != 0);
+
+    if (state->depth == 0) {
+        frame->json_parent = state->ictx.root;
+    } else {
+        struct msxml_stream_frame *parent = &state->frames[state->depth - 1];
+        frame->json_parent                 = parent->json_obj ? parent->json_obj : parent->json_parent;
+    }
+
+    state->depth++;
+
+    if (frame->ignored)
+        return;
+
+    if ((state->ictx.flags & MSXML_FLAG_JSON) && (keyinfo->type & MSXML_JSON_TRACK)) {
+        if (keyinfo->type & MSXML_JSON_ROOT)
+            frame->json_obj = cli_jsonobj(state->ictx.root, keyinfo->name);
+        else if (keyinfo->type & MSXML_JSON_WRKPTR)
+            frame->json_obj = cli_jsonobj(frame->json_parent, keyinfo->name);
+
+        if (!frame->json_obj) {
+            msxml_stream_fail(state, CL_EMEM, "MSXML JSON object allocation failed");
+            return;
+        }
+
+        if (keyinfo->type & MSXML_JSON_COUNT) {
+            json_object *counter = NULL;
+            if (!json_object_object_get_ex(frame->json_obj, "Count", &counter))
+                cli_jsonint(frame->json_obj, "Count", 1);
+            else
+                cli_jsonint(frame->json_obj, "Count", json_object_get_int(counter) + 1);
+        }
+
+        if (keyinfo->type & MSXML_JSON_MULTI) {
+            json_object *multi = cli_jsonarray(frame->json_obj, "Multi");
+            if (!multi || !(frame->json_obj = cli_jsonobj(multi, NULL))) {
+                msxml_stream_fail(state, CL_EMEM, "MSXML JSON multi-value allocation failed");
+                return;
+            }
+        }
+    }
+
+    if (nb_attributes > MAX_ATTRIBS)
+        nb_attributes = MAX_ATTRIBS;
+
+    for (i = 0; i < nb_attributes; i++) {
+        const xmlChar *attr_name = attributes[5 * i];
+        const xmlChar *value_begin = attributes[5 * i + 3];
+        const xmlChar *value_end   = attributes[5 * i + 4];
+
+        if (msxml_stream_copy_xml_string(frame->attr_keys[i], sizeof(frame->attr_keys[i]), attr_name, NULL) != 0 ||
+            msxml_stream_copy_xml_string(frame->attr_values[i], sizeof(frame->attr_values[i]), value_begin, value_end) != 0) {
+            msxml_stream_fail(state, CL_EPARSE, "MSXML attribute exceeded the bounded callback representation");
+            return;
+        }
+        frame->attribs[i].key   = frame->attr_keys[i];
+        frame->attribs[i].value = frame->attr_values[i];
+    }
+    frame->num_attribs = nb_attributes;
+
+    if ((state->ictx.flags & MSXML_FLAG_JSON) && frame->json_obj && (keyinfo->type & MSXML_JSON_ATTRIB)) {
+        json_object *json_attrs = cli_jsonobj(frame->json_obj, "Attributes");
+        if (!json_attrs) {
+            msxml_stream_fail(state, CL_EMEM, "MSXML JSON attribute object allocation failed");
+            return;
+        }
+        for (i = 0; i < frame->num_attribs; i++)
+            cli_jsonstr(json_attrs, frame->attribs[i].key, frame->attribs[i].value);
+    }
+
+    if (keyinfo->type & MSXML_SCAN_CB) {
+        if (state->mxctx->scan_cb) {
+            if (cli_gentempfd(state->ctx->this_layer_tmpdir, &frame->cb_name, &frame->cb_fd) != CL_SUCCESS) {
+                msxml_stream_fail(state, CL_ECREAT, "MSXML callback spool could not be created");
+                return;
+            }
+        }
+    }
+
+    if (keyinfo->type & MSXML_SCAN_B64) {
+        if (cli_gentempfd(state->ctx->this_layer_tmpdir, &frame->b64_name, &frame->b64_fd) != CL_SUCCESS) {
+            msxml_stream_fail(state, CL_ECREAT, "MSXML base64 spool could not be created");
+            return;
+        }
+    }
+}
+
+static void msxml_sax_characters(void *arg, const xmlChar *ch, int len)
+{
+    struct msxml_stream_state *state = (struct msxml_stream_state *)arg;
+    struct msxml_stream_frame *frame;
+    cl_error_t ret;
+
+    if (!state || !ch || len <= 0 || state->ret != CL_SUCCESS || state->skipped_depth || state->depth == 0)
+        return;
+
+    frame = &state->frames[state->depth - 1];
+    if (frame->ignored)
+        return;
+
+    if ((state->ictx.flags & MSXML_FLAG_JSON) && (frame->keyinfo->type & MSXML_JSON_VALUE))
+        msxml_stream_add_json_value(state, frame, ch, len);
+    if (state->ret != CL_SUCCESS)
+        return;
+
+    if (frame->cb_fd >= 0) {
+        ret = msxml_stream_reserve_write(state, frame->cb_fd, ch, (size_t)len, &frame->cb_reserved, &frame->cb_bytes);
+        if (ret != CL_SUCCESS)
+            return;
+        frame->cb_saw_data = 1;
+    }
+
+    if (frame->b64_fd >= 0) {
+        ret = msxml_stream_decode_base64(state, frame, ch, len);
+        if (ret != CL_SUCCESS)
+            return;
+    }
+}
+
+static void msxml_sax_end_element_ns(void *arg, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI)
+{
+    struct msxml_stream_state *state = (struct msxml_stream_state *)arg;
+    struct msxml_stream_frame *frame;
+    cl_error_t ret;
+
+    UNUSEDPARAM(localname);
+    UNUSEDPARAM(prefix);
+    UNUSEDPARAM(URI);
+
+    if (!state || state->ret == CL_VIRUS || state->ret == CL_BREAK || state->ret != CL_SUCCESS)
+        return;
+
+    if (state->skipped_depth) {
+        state->skipped_depth--;
+        return;
+    }
+
+    if (state->depth == 0) {
+        msxml_stream_fail(state, CL_EPARSE, "MSXML end element had no matching start element");
+        return;
+    }
+
+    frame = &state->frames[state->depth - 1];
+    ret   = msxml_stream_finish_frame(state, frame);
+    msxml_stream_cleanup_frame(state, frame);
+    state->depth--;
+
+    if (ret != CL_SUCCESS)
+        msxml_stream_fail(state, ret, "MSXML embedded stream scan did not complete");
+}
+
+static void msxml_sax_comment(void *arg, const xmlChar *value)
+{
+    struct msxml_stream_state *state = (struct msxml_stream_state *)arg;
+    struct msxml_stream_frame *frame;
+    cl_error_t ret;
+
+    if (!state || !value || state->ret != CL_SUCCESS || state->skipped_depth || state->depth == 0)
+        return;
+
+    frame = &state->frames[state->depth - 1];
+    if (frame->ignored || !(frame->keyinfo->type & MSXML_COMMENT_CB) || !state->mxctx->comment_cb)
+        return;
+
+    ret = state->mxctx->comment_cb((const char *)value, state->ctx, frame->json_obj, state->mxctx->comment_data);
+    if (ret != CL_SUCCESS)
+        msxml_stream_fail(state, ret, "MSXML comment callback did not complete");
+}
+
+static void msxml_sax_error(void *arg, const char *message, ...)
+{
+    struct msxml_stream_state *state = (struct msxml_stream_state *)arg;
+
+    UNUSEDPARAM(message);
+    if (state)
+        state->parser_failed = 1;
+}
+
+static void msxml_sax_warning(void *arg, const char *message, ...)
+{
+    UNUSEDPARAM(arg);
+    UNUSEDPARAM(message);
+}
+
+static void msxml_sax_cdata(void *arg, const xmlChar *value, int len)
+{
+    msxml_sax_characters(arg, value, len);
+}
+
+cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const struct key_entry *keys, size_t num_keys,
+                                              uint32_t flags, struct msxml_ctx *mxctx)
+{
+    struct msxml_ctx reserve;
+    struct msxml_stream_state state;
+    struct msxml_cbdata input;
+    xmlSAXHandler sax;
+    unsigned char buffer[MSXML_STREAM_IO_SIZE];
+    int nread;
+    int parse_ret;
+
+    if (!ctx || !map || !keys)
+        return CL_ENULLARG;
+
+    if (!mxctx) {
+        memset(&reserve, 0, sizeof(reserve));
+        mxctx = &reserve;
+    }
+
+    memset(&state, 0, sizeof(state));
+    state.ctx      = ctx;
+    state.mxctx    = mxctx;
+    state.ret      = CL_SUCCESS;
+    state.ictx.ctx = ctx;
+    state.ictx.flags = flags;
+    state.ictx.keys = keys;
+    state.ictx.num_keys = num_keys;
+    if (flags & MSXML_FLAG_JSON) {
+        state.ictx.root = ctx->this_layer_metadata_json;
+        if (!state.ictx.root)
+            state.ictx.flags &= ~MSXML_FLAG_JSON;
+    }
+    mxctx->ictx = &state.ictx;
+
+    memset(&sax, 0, sizeof(sax));
+    sax.initialized     = XML_SAX2_MAGIC;
+    sax.startElementNs  = msxml_sax_start_element_ns;
+    sax.endElementNs    = msxml_sax_end_element_ns;
+    sax.characters      = msxml_sax_characters;
+    sax.ignorableWhitespace = msxml_sax_characters;
+    sax.cdataBlock      = msxml_sax_cdata;
+    sax.comment         = msxml_sax_comment;
+    sax.warning         = msxml_sax_warning;
+    sax.error           = msxml_sax_error;
+    sax.fatalError      = msxml_sax_error;
+
+    state.parser = xmlCreatePushParserCtxt(&sax, &state, NULL, 0, "msxml-stream.xml");
+    if (!state.parser) {
+        cli_mark_scan_incomplete(ctx, "MSXML streaming XML parser could not be initialized");
+        return CL_EPARSE;
+    }
+    (void)xmlCtxtUseOptions(state.parser, CLAMAV_MIN_XMLREADER_FLAGS);
+
+    memset(&input, 0, sizeof(input));
+    input.map = map;
+    for (;;) {
+        nread = msxml_read_cb(&input, (char *)buffer, sizeof(buffer));
+        if (nread < 0) {
+            msxml_stream_fail(&state, CL_EREAD, "MSXML fmap input could not be read completely");
+            break;
+        }
+        if (nread == 0)
+            break;
+
+        parse_ret = xmlParseChunk(state.parser, (const char *)buffer, nread, 0);
+        if (parse_ret != 0) {
+            if (state.ret == CL_SUCCESS)
+                msxml_stream_fail(&state, CL_EPARSE, "MSXML streaming XML parse failed");
+            break;
+        }
+        if (state.ret != CL_SUCCESS)
+            break;
+    }
+
+    if (state.ret == CL_SUCCESS) {
+        parse_ret = xmlParseChunk(state.parser, NULL, 0, 1);
+        if (parse_ret != 0 || state.parser_failed || !state.parser->wellFormed)
+            msxml_stream_fail(&state, CL_EPARSE, "MSXML streaming XML document was not complete");
+    }
+
+    while (state.depth) {
+        state.depth--;
+        msxml_stream_cleanup_frame(&state, &state.frames[state.depth]);
+    }
+    xmlFreeParserCtxt(state.parser);
+
+    if ((flags & MSXML_FLAG_FAIL_INCOMPLETE) && state.ret != CL_SUCCESS && state.ret != CL_VIRUS && state.ret != CL_BREAK)
+        cli_mark_scan_incomplete(ctx, "MSXML streaming document ended before XML content was fully inspected");
+
+    if (state.ret == CL_BREAK)
+        state.ret = CL_SUCCESS;
+    return state.ret;
 }

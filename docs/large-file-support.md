@@ -2023,3 +2023,17 @@ lengths, decoder progress, exact output length, temporary writes, and XML
 reader failures remain fail-visible. The XAR parser still has separate
 format-specific and qualification gates; this change is not a claim of full
 32 GiB XAR corpus qualification.
+
+## HWPML bounded XML streaming — 2026-08-19
+
+HWPML no longer rejects the complete XML layer at the former 64 MiB deep-parser
+cap. Its attachment-bearing path now uses a libxml2 SAX push parser fed from
+bounded fmap windows. Binary callback text is written incrementally to a
+temporary file charged against `MaxTemporarySize`, and generic base64 fields
+are decoded across input boundaries into a quota-accounted spool before the
+nested scan. Malformed XML, invalid base64, temporary admission failures,
+short writes, callback failures, and nested scan failures remain fail-visible.
+
+This removes the specific HWPML whole-text-node/64 MiB gate. It does not claim
+full HWPML corpus qualification, compressed-attachment decoder qualification,
+or current-source Sonic1/build evidence; those remain release gates.

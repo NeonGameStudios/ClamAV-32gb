@@ -823,3 +823,18 @@ declared lengths, decoder terminal state, output writes, temporary admission,
 and XML reader errors are fail-visible. This removes the specific XAR 64 MiB
 heap cap; parser-family fixtures and supported-build 32 GiB qualification
 remain open.
+
+## HWPML bounded XML streaming — 2026-08-19
+
+The HWPML attachment-bearing path no longer rejects the entire XML layer above
+64 MiB or exposes a complete binary text node to the XML reader caller. It now
+uses a libxml2 SAX push parser fed from bounded fmap windows. Callback text is
+written incrementally to a temporary file charged against the shared
+temporary-space budget, and generic base64 fields are decoded across input
+boundaries into a quota-accounted spool before nested scanning. Invalid XML,
+base64, temporary admission, write, callback, and nested-scan failures remain
+sticky incomplete results.
+
+This closes the specific HWPML whole-text-node/64 MiB gate. Parser-family
+fixtures, compressed-attachment qualification, and supported-build Sonic1
+evidence remain open.

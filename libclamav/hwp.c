@@ -23,7 +23,6 @@
 #include "clamav-config.h"
 #endif
 
-#include <libxml/xmlreader.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -47,7 +46,6 @@
 #include "others.h"
 #include "scanners.h"
 #include "msxml_parser.h"
-#include "msxml.h"
 #include "json_api.h"
 #include "hwp.h"
 #include "msdoc.h"
@@ -2007,7 +2005,14 @@ static cl_error_t hwpml_flush_base64_output(cli_ctx *ctx, int output_fd, const u
         return (ret == CL_ETIMEOUT) ? ret : CL_EPARSE;
     }
 
+    ret = cli_scan_reserve_temporary(ctx, (uint64_t)output_used);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "HWPML Base64 decoded attachment exceeds temporary storage limits");
+        return ret;
+    }
+
     if (cli_writen(output_fd, output, output_used) != output_used) {
+        cli_scan_release_temporary(ctx, (uint64_t)output_used);
         cli_mark_scan_incomplete(ctx, "HWPML Base64 decoded attachment could not be written completely");
         return CL_EWRITE;
     }
@@ -2090,6 +2095,8 @@ cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd,
                 ret = hwpml_flush_base64_output(ctx, output_fd, output, output_used, &total);
                 if (ret != CL_SUCCESS)
                     return ret;
+                if (decoded_size)
+                    *decoded_size = total;
                 output_used = 0;
             }
 
@@ -2124,6 +2131,7 @@ static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, in
     cl_error_t ret;
 
     int i, df = -1, com = 0, enc = 0;
+    uint64_t decoded_reserved = 0;
     char *tempfile = NULL;
 
     UNUSEDPARAM(cbdata);
@@ -2170,9 +2178,17 @@ static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, in
             return ret;
         }
 
-        ret = cli_hwpml_decode_base64_fd(ctx, fd, df, NULL);
-        if (ret != CL_SUCCESS)
+        ret = cli_hwpml_decode_base64_fd(ctx, fd, df, &decoded_reserved);
+        if (ret != CL_SUCCESS) {
+            cli_scan_release_temporary(ctx, decoded_reserved);
+            decoded_reserved = 0;
             goto hwpml_end;
+        }
+
+        /* The nested descriptor scan reserves the completed decoded child
+         * itself. Do not count the same bytes a second time. */
+        cli_scan_release_temporary(ctx, decoded_reserved);
+        decoded_reserved = 0;
 
         /* keeps the later logic simpler */
         fd = df;
@@ -2212,6 +2228,8 @@ static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, in
 
     /* close decoded file descriptor if used */
 hwpml_end:
+    if (decoded_reserved)
+        cli_scan_release_temporary(ctx, decoded_reserved);
     if (df >= 0) {
         close(df);
         if (!(ctx->engine->keeptmp))
@@ -2225,9 +2243,7 @@ cl_error_t cli_scanhwpml(cli_ctx *ctx)
 {
     cl_error_t ret = CL_SUCCESS;
 
-    struct msxml_cbdata cbdata;
     struct msxml_ctx mxctx;
-    xmlTextReaderPtr reader = NULL;
 
     cli_dbgmsg("in cli_scanhwpml()\n");
 
@@ -2237,40 +2253,18 @@ cl_error_t cli_scanhwpml(cli_ctx *ctx)
     if (!ctx->fmap)
         return CL_ENULLARG;
 
-    if (ctx->fmap->len > HWPML_DEEP_PARSE_MAX_SIZE) {
-        cli_mark_scan_incomplete(ctx, "HWPML layer exceeds the 64 MiB libxml2 deep-parser limit");
-        return CL_EPARSE;
-    }
-
-    memset(&cbdata, 0, sizeof(cbdata));
-    cbdata.map = ctx->fmap;
-
-    reader = xmlReaderForIO(msxml_read_cb, NULL, &cbdata, "hwpml.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
-    if (!reader) {
-        cli_dbgmsg("cli_scanhwpml: cannot initialize xmlReader\n");
-
-        ret = cli_json_parse_error(ctx->this_layer_metadata_json, "HWPML_ERROR_XML_READER_IO");
-        cli_mark_scan_incomplete(ctx, "HWPML streaming XML reader could not be initialized");
-        return (ret == CL_EMEM) ? ret : CL_EPARSE;
-    }
-
     memset(&mxctx, 0, sizeof(mxctx));
     mxctx.scan_cb = hwpml_binary_cb;
-    ret           = cli_msxml_parse_document(ctx, reader, hwpml_keys, num_hwpml_keys,
+    ret = cli_msxml_parse_document_streaming(ctx, ctx->fmap, hwpml_keys, num_hwpml_keys,
                                              MSXML_FLAG_JSON | MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
 
-    /* cli_msxml_parse_document historically suppresses CL_EPARSE for its
-     * best-effort metadata callers. HWPML attachment scanning cannot inherit
-     * that behavior: an XML error may hide later embedded content. Preserve
-     * both callback failures and native libxml2 reader errors as non-clean. */
+    /* HWPML attachment scanning cannot suppress XML errors: an incomplete
+     * document may hide later embedded content. Preserve both callback
+     * failures and native libxml2 parser errors as non-clean. */
     if (ret == CL_SUCCESS && ctx->scan_incomplete) {
         cli_mark_scan_incomplete(ctx, "HWPML XML parse ended before every embedded attachment was inspected");
         ret = CL_EPARSE;
     }
-
-    if (xmlTextReaderClose(reader) != 0 && ret == CL_SUCCESS)
-        ret = CL_EPARSE;
-    xmlFreeTextReader(reader);
 
     if (ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_BREAK)
         cli_mark_scan_incomplete(ctx, "HWPML XML parse ended before every embedded attachment was inspected");

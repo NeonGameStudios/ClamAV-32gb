@@ -20,11 +20,10 @@ dedicated 64 GiB Ubuntu x86-64 host.
 
 - `docs/large-file-support.md`: specification, memory budget, workstreams, and
   acceptance criteria.
-- `docs/largefile-inventory.tsv`: generated inventory of 28,426 classified
-  source entries (the earlier 49,184 count included duplicate directory
-  scans). A source line may appear in more than one classification. The
-  normalized snapshot has SHA-256
-  `b65ab90166dcfb3cdd681cd99a80121936d8e9d92625c7a1c474f07ee5c8cfe7`.
+- `docs/largefile-inventory.tsv`: regenerated inventory of 29,646 classified
+  source entries. A source line may appear in more than one classification;
+  the current snapshot has SHA-256
+  `26aa848a5d502cd81e78261e2c450fbf0b4bd3c436b42b26fdc17339966bf20f`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.
@@ -42,14 +41,14 @@ The inventory currently reports:
 
 | Classification | Sites |
 |---|---:|
-| Native-width integer | 9,845 |
-| Offset/size arithmetic | 10,957 |
-| Fixed-width integer | 4,799 |
-| Format-width specifier | 2,405 |
-| Boundary constant | 192 |
-| Quantity parser | 98 |
-| Narrowing cast | 57 |
-| Large-file option | 73 |
+| Native-width integer | 10,219 |
+| Offset/size arithmetic | 11,312 |
+| Fixed-width integer | 5,213 |
+| Format-width specifier | 2,423 |
+| Boundary constant | 218 |
+| Quantity parser | 103 |
+| Narrowing cast | 61 |
+| Large-file option | 97 |
 
 These are review candidates, not automatic conversions. The classification
 is intentionally over-inclusive so format-defined fields can be separated
