@@ -124,6 +124,13 @@ cl_error_t cli_pcre_check_size_limit(cli_ctx *ctx, uint64_t configured_limit, ui
     return CL_EMAXSIZE;
 }
 
+bool cli_matcher_window_reaches_map_end(uint64_t offset, uint32_t length, size_t map_length)
+{
+    /* The subtraction is evaluated only when offset is within the map. */
+    return (offset >= (uint64_t)map_length) ||
+           ((uint64_t)length >= (uint64_t)map_length - offset);
+}
+
 static inline cl_error_t matcher_run(const struct cli_matcher *root,
                                      const unsigned char *buffer, uint32_t length,
                                      const char **virname, struct cli_ac_data *mdata,
@@ -238,7 +245,13 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
         uint64_t maxfilesize;
 
         if (map && (pcremode == PCRE_SCAN_FMAP)) {
-            if (offset + length >= map->len) {
+            /* Do not add the 64-bit file offset and 32-bit window length
+             * before comparing them with the map length. Large-file scans
+             * can legitimately carry offsets near UINT64_MAX, and wrapping
+             * that addition would skip the required full-subject PCRE pass. */
+            const bool scanned_to_map_end = cli_matcher_window_reaches_map_end(offset, length, map->len);
+
+            if (scanned_to_map_end) {
                 /* check that scanned map does not exceed pcre maxfilesize limit */
                 maxfilesize = (uint64_t)cl_engine_get_num(ctx->engine, CL_ENGINE_PCRE_MAX_FILESIZE, &rc);
                 if (rc != CL_SUCCESS)
@@ -251,7 +264,8 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
                 if (ret != CL_SUCCESS)
                     return ret;
 
-                cli_dbgmsg("matcher_run: performing regex matching on full map: " STDu64 "+%u(" STDu64 ") >= %zu\n", offset, length, offset + length, map->len);
+                cli_dbgmsg("matcher_run: performing regex matching on full map after window at " STDu64 "+%u (map length %zu)\n",
+                           offset, length, map->len);
 
                 buffer = fmap_need_off_once(map, 0, map->len);
                 if (!buffer) {

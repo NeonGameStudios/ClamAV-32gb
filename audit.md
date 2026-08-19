@@ -110,7 +110,7 @@ not a cold-cache or production-workload certification.
 |---|---|---|
 | Matcher offsets and sorting | Source-fixed and focused-tested | BM uses an explicit 64-bit comparator; native sentinels cannot collide with valid 32-bit-boundary offsets; absolute/window coordinates and byte-compare overlap de-duplication are checked. |
 | Signature size/offset parsing | Source-fixed and focused-tested | Logical `FileSize`, calculated offsets, and exact-size hash keys retain native 64-bit values; reserved sentinel values are rejected. |
-| PCRE | Fail-visible bounded support | PCRE subjects are capped by the 1 GiB contiguous-allocation ceiling. A required skipped pass marks all active layers incomplete and non-cacheable. |
+| PCRE | Fail-visible bounded support | PCRE subjects are capped by the 1 GiB contiguous-allocation ceiling. A required skipped pass marks all active layers incomplete and non-cacheable; full-map dispatch now uses overflow-safe range arithmetic for large offsets. |
 | Bytecode | Fail-visible ABI boundary | The legacy bytecode ABI remains 32-bit. Maps or offsets that cannot be represented are rejected only when an applicable hook would run, and the result is incomplete/non-clean. |
 | fmap and hashing | Source-fixed and synthetic-tested | Aging uses a persistent bounded cursor and release budget; read failures roll back page state and return `CL_EREAD`; hash and extraction readers use bounded windows. |
 | Cache, stats, and FFI | Source-fixed and focused-tested | File sizes are 64-bit in cache/stat records and JSON; checked-in Rust layouts match the widened C structures and have layout assertions. |

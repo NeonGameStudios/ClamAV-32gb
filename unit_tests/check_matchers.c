@@ -637,6 +637,16 @@ START_TEST(test_large_file_offset_values)
 }
 END_TEST
 
+START_TEST(test_pcre_full_map_range_arithmetic)
+{
+    ck_assert(cli_matcher_window_reaches_map_end(31, 1, 32));
+    ck_assert(cli_matcher_window_reaches_map_end(32, 0, 32));
+    ck_assert(cli_matcher_window_reaches_map_end(UINT64_MAX, UINT32_MAX, 32));
+    ck_assert(!cli_matcher_window_reaches_map_end(0, 31, 32));
+    ck_assert(cli_matcher_window_reaches_map_end(1, 31, 32));
+}
+END_TEST
+
 START_TEST(test_bytecode_offset_compatibility)
 {
     uint64_t offsets[64];
@@ -880,6 +890,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bm_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_pcre_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_large_file_offset_values);
+    tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);

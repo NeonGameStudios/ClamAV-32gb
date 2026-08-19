@@ -370,6 +370,12 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
 cl_error_t cli_pcre_check_size_limit(cli_ctx *ctx, uint64_t configured_limit, uint64_t needed);
 
 /**
+ * Check whether a bounded matcher window reaches the end of its fmap without
+ * overflowing the 64-bit file offset arithmetic.
+ */
+bool cli_matcher_window_reaches_map_end(uint64_t offset, uint32_t length, size_t map_length);
+
+/**
  * @brief Evaluate logical signatures and yara rules given the AC matching results
  * from cli_scan_buff() / matcher_run().
  *

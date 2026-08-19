@@ -1320,6 +1320,13 @@ or waive them.
   32-bit scan-window API still needs dedicated fixtures. PCRE full-map matching
   remains separately capped by the platform-aware `PCREMaxFileSize` policy.
 
+- PCRE full-map dispatch uses checked range arithmetic. It tests whether the
+  current bounded window reaches the end of the fmap without evaluating
+  `offset + length`, so a near-`UINT64_MAX` runtime offset cannot wrap and
+  accidentally suppress the required whole-subject pass. The source guard
+  rejects regressions to the overflowing comparison; compiled large-offset
+  matcher qualification remains part of the Linux/Sonic1 release gate.
+
 ## Acceptance criteria
 
 LargeFile 1.0 is complete only when a 64-bit build can scan the complete
