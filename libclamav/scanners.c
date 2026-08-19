@@ -3030,6 +3030,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
                 /* when we flush the buffer also scan */
                 if (state.out_pos > UINT32_MAX) {
                     cli_dbgmsg("cli_scanscript: refusing to narrow normalized output larger than 4 GiB for the legacy matcher API\n");
+                    cli_mark_scan_incomplete(ctx, "Script normalization exceeded the legacy matcher subject width");
                     ret = CL_EFORMAT;
                     goto done;
                 }

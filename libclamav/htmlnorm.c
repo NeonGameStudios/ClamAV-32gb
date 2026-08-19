@@ -1336,6 +1336,9 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                             js_state = cli_js_init();
                             if (!js_state) {
                                 cli_dbgmsg("htmlnorm: Failed to initialize js parser\n");
+                                cli_mark_scan_incomplete(ctx, "JavaScript normalization could not initialize");
+                                retval = false;
+                                goto done;
                             }
                             js_begin = ptr;
                             js_end   = NULL;
@@ -2040,16 +2043,20 @@ done:
     }
     if (file_buff_o2) {
         html_output_flush(file_buff_o2);
-        if (file_buff_o2->write_error)
+        if (file_buff_o2->write_error) {
+            cli_mark_scan_incomplete(ctx, "HTML normalized output could not be written completely");
             retval = false;
+        }
         if (file_buff_o2->fd != -1)
             close(file_buff_o2->fd);
         free(file_buff_o2);
     }
     if (file_buff_text) {
         html_output_flush(file_buff_text);
-        if (file_buff_text->write_error)
+        if (file_buff_text->write_error) {
+            cli_mark_scan_incomplete(ctx, "HTML text output could not be written completely");
             retval = false;
+        }
         if (file_buff_text->fd != -1)
             close(file_buff_text->fd);
         free(file_buff_text);
@@ -2060,8 +2067,10 @@ done:
             html_output_flush(file_tmp_o1);
             close(file_tmp_o1->fd);
         }
-        if (file_tmp_o1->write_error)
+        if (file_tmp_o1->write_error) {
+            cli_mark_scan_incomplete(ctx, "HTML embedded data output could not be written completely");
             retval = false;
+        }
         free(file_tmp_o1);
     }
     if (style_buff != NULL) {
