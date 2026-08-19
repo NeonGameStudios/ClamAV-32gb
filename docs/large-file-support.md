@@ -2278,6 +2278,15 @@ This closes the ALZ whole-root and whole-member materialization path. ALZ
 third-party-equivalent corpus, sanitizer, and concurrent-RSS qualification
 remain release gates.
 
+## Rust temporary-spool ownership — 2026-08-19
+
+Rust ALZ/OneNote temporary spools now release their shared temporary-space
+reservation exactly once. Cleanup honors `keeptmp` and marks close/removal
+failures sticky; a failed rewind before nested scanning is also incomplete.
+This prevents early counter release from allowing later staging beyond
+`MaxTemporarySize` and keeps cleanup non-clean/non-cacheable. Compiled
+Rust/CTest and Linux/Sonic1 RSS/temporary-quota qualification remain open.
+
 ## Capability manifest and public setter boundaries — 2026-08-19
 
 The checked capability manifest now covers the required library and service

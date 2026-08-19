@@ -41,7 +41,7 @@ use crate::{
     sys::{
         cl_error_t, cl_error_t_CL_EFORMAT, cl_error_t_CL_EMAXFILES, cl_error_t_CL_EMAXSIZE,
         cl_error_t_CL_EMEM, cl_error_t_CL_EPARSE, cl_error_t_CL_ERROR, cl_error_t_CL_ERESOURCE,
-        cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EWRITE,
+        cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNLINK, cl_error_t_CL_EWRITE,
         cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
     },
     util::{
@@ -198,7 +198,12 @@ impl TempSpool {
 
     unsafe fn scan(&mut self, name: Option<&str>) -> cl_error_t {
         if libc::lseek(self.fd, 0, libc::SEEK_SET) < 0 {
-            return cl_error_t_CL_ESEEK;
+            return parser_failure(
+                self.ctx,
+                "Rust temporary spool",
+                cl_error_t_CL_ESEEK,
+                "temporary spool could not be rewound before nested scanning",
+            );
         }
         let name = name.and_then(|value| CString::new(value).ok());
         sys::cli_magic_scan_desc_type_reserved(
@@ -210,14 +215,44 @@ impl TempSpool {
             0,
         )
     }
+
+    unsafe fn mark_cleanup_failure(&self, status: cl_error_t, reason: &str) {
+        let _ = parser_failure(self.ctx, "Rust temporary spool", status, reason);
+    }
+
+    unsafe fn release_reservation(&mut self) {
+        if self.reserved != 0 {
+            sys::cli_scan_release_temporary(self.ctx, self.reserved);
+            self.reserved = 0;
+        }
+    }
 }
 
 impl Drop for TempSpool {
     fn drop(&mut self) {
         unsafe {
-            libc::close(self.fd);
-            let _ = sys::cli_unlink(self.path.as_ptr());
-            sys::cli_scan_release_temporary(self.ctx, self.reserved);
+            if self.fd >= 0 {
+                if libc::close(self.fd) != 0 {
+                    self.mark_cleanup_failure(
+                        cl_error_t_CL_EWRITE,
+                        "temporary spool could not be closed",
+                    );
+                }
+                self.fd = -1;
+            }
+
+            let keep_tmp = !(*self.ctx).engine.is_null()
+                && (*(*self.ctx).engine).keeptmp != 0;
+            if !keep_tmp
+                && sys::cli_unlink(self.path.as_ptr()) != cl_error_t_CL_SUCCESS
+            {
+                self.mark_cleanup_failure(
+                    cl_error_t_CL_EUNLINK,
+                    "temporary spool could not be removed",
+                );
+            }
+
+            self.release_reservation();
         }
     }
 }

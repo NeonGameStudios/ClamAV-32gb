@@ -745,6 +745,15 @@ the artificial ALZ cap and member-vector materialization, but does not by
 itself prove third-party 32 GiB memory, sanitizer, or supported-build
 qualification.
 
+## Rust temporary-spool ownership — 2026-08-19
+
+Rust ALZ/OneNote temporary spools now release their shared temporary-space
+reservation exactly once. Cleanup honors `keeptmp` and marks close/removal
+failures sticky; a failed rewind before nested scanning is also incomplete.
+This prevents early counter release from allowing later staging beyond
+`MaxTemporarySize` and keeps cleanup non-clean/non-cacheable. Compiled
+Rust/CTest and Linux/Sonic1 RSS/temporary-quota qualification remain open.
+
 ## Daemon large-file admission — 2026-08-19
 
 `clamd` now repeats the host-resource admission at startup whenever the
