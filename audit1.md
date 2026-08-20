@@ -2472,3 +2472,12 @@ path now emits a bounded fallback report for those exits and publishes normal
 and sentinel reports only after completion enforcement. Legacy return values
 remain unchanged; source guards cover the failure mapping and compiled fault
 injection plus supported-build qualification remain open.
+
+## clamdscan serial pre-dispatch report completion — 2026-08-20
+
+`clamdscan --report-json` previously emitted no object when its serial walker
+failed before sending a file to clamd. The client now writes a structured
+non-clean fallback for stat, allocation, quarantine-open, connection, and
+protocol failures, preserving the existing error counters and exits. The
+parallel IDSESSION path still needs its own fallback/ordering qualification;
+fault-injected and supported-build Sonic1 evidence remain open.

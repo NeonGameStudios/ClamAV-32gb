@@ -3931,3 +3931,13 @@ sentinel scan reports are published only after completion enforcement, so
 `--report-json` cannot silently omit a failed stdin input. Legacy exit behavior
 is preserved; compiled fault injection and supported-build Sonic1 qualification
 remain release gates.
+
+## clamdscan serial pre-dispatch report completion — 2026-08-20
+
+The serial `clamdscan --report-json` walker now emits a bounded structured
+fallback object for file inputs that fail before clamd owns the request,
+including stat, allocation, quarantine-open, connection, and protocol
+failures. Successful daemon reports remain unchanged, while a client-side
+error can no longer silently omit its input from the JSONL artifact. Parallel
+IDSESSION fallback coverage, fault injection, and supported-build Sonic1
+qualification remain release gates.

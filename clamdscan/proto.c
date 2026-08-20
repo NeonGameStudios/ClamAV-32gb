@@ -179,6 +179,32 @@ static int ftw_chkpath(const char *path, struct cli_ftw_cbdata *data)
     return client_path_excluded(path, policy);
 }
 
+static int write_client_failure_report(FILE *stream, const char *target, cl_error_t status)
+{
+    cl_scan_report_t *report = NULL;
+    char *json              = NULL;
+    int result              = 0;
+
+    if (NULL == stream)
+        return 0;
+
+    if (cli_scan_report_create(&report, NULL) != CL_SUCCESS)
+        return -1;
+    cli_scan_report_set_target(report, target);
+    cli_scan_report_finish(report, NULL, status, CL_VERDICT_NOTHING_FOUND, NULL);
+    if (cl_scan_report_to_json(report, &json) != CL_SUCCESS) {
+        cl_scan_report_free(report);
+        return -1;
+    }
+
+    if (fwrite(json, 1, strlen(json), stream) != strlen(json) || fputc('\n', stream) == EOF)
+        result = -1;
+
+    free(json);
+    cl_scan_report_free(report);
+    return result;
+}
+
 /* Used by serial_callback() */
 struct client_serial_data {
     /* Must be first: ftw_chkpath() receives only cli_ftw_cbdata::data. */
@@ -206,6 +232,9 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
     char *real_filter_path = NULL;
     action_source_t action_source;
     bool have_action_source = false;
+    bool report_target      = (reason == visit_file);
+    bool report_written     = false;
+    cl_error_t report_status = CL_SUCCESS;
 
     action_source_init(&action_source);
 
@@ -227,22 +256,31 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
         case error_stat:
             logg(LOGG_ERROR, "Can't access file %s\n", path);
             c->errors++;
+            report_target = true;
+            report_status = CL_ESTAT;
             status = CL_SUCCESS;
             goto done;
         case error_mem:
             logg(LOGG_ERROR, "Memory allocation failed in ftw\n");
             c->errors++;
+            report_target = true;
+            report_status = CL_EMEM;
             status = CL_EMEM;
             goto done;
         case warning_skipped_dir:
             logg(LOGG_WARNING, "Directory recursion limit reached\n");
+            report_target = true;
+            report_status = CL_ERROR;
             /* fall-through */
         case warning_skipped_link:
+            report_status = CL_ERROR;
             status = CL_SUCCESS;
             goto done;
         case warning_skipped_special:
             logg(LOGG_WARNING, "%s: Not supported file type\n", path);
             c->errors++;
+            report_target = true;
+            report_status = CL_ERROR;
             status = CL_SUCCESS;
             goto done;
         case visit_directory_toplev:
@@ -258,6 +296,7 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
                 if (CL_SUCCESS != ret) {
                     logg(LOGG_WARNING, "Can't open file %s for safe quarantine action: %s\n", f, cl_strerror(ret));
                     c->errors++;
+                    report_status = ret;
                     status = CL_SUCCESS;
                     goto done;
                 }
@@ -270,6 +309,7 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
 
     if ((sockd = dconnect(clamdopts)) < 0) {
         c->errors++;
+        report_status = CL_EOPEN;
         goto done;
     }
     if (c->report_stream) {
@@ -282,9 +322,11 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
         if (ret < 0) {
             c->errors++;
             c->printok = 0;
+            report_status = CL_ERROR;
             status     = CL_BREAK;
             goto done;
         }
+        report_written = true;
         c->infected += report_infected;
         if (report_infected || report_incomplete)
             c->printok = 0;
@@ -311,6 +353,9 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
 
     status = CL_SUCCESS;
 done:
+    if (c->report_stream && report_target && !report_written &&
+        write_client_failure_report(c->report_stream, f, report_status) != 0)
+        c->errors++;
     if (have_action_source) {
         action_source_close(&action_source);
     }
