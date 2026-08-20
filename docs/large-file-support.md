@@ -3504,11 +3504,12 @@ Sonic1 qualification remain release gates.
 
 DMG reconstructed partitions now pass their existing full-output reservation
 to the reservation-aware child descriptor scan instead of reserving the same
-partition a second time. XLM's optional extracted-image path reserves the
-declared image size before writing, requires a complete write, and transfers
-that reservation through the nested scan. Source guards and `git diff --check`
-pass; compiled parser execution, document/image corpus, sanitizer, and
-supported-build Sonic1 qualification remain release gates.
+partition a second time. XLM extracted images now always use a temporary
+descriptor, including when temporary retention is disabled; the declared image
+size is reserved before writing, requires a complete write, and stays reserved
+through the nested scan and cleanup. Source guards and `git diff --check` pass;
+compiled parser execution, document/image corpus, sanitizer, and supported-
+build Sonic1 qualification remain release gates.
 
 DMG reconstructed-partition close/removal failures now remain fail-visible
 even when an earlier detection or parser error exists, and all DMG temporary

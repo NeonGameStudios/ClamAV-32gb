@@ -4394,38 +4394,34 @@ cl_error_t process_blip_record(struct OfficeArtRecordHeader_Unpacked *rh, const 
 
         cli_dbgmsg("Scanning extracted image of size %zu\n", size_of_image);
 
-        if (ctx->engine->keeptmp) {
-            /* Drop a temp file and scan that */
-            if (CL_SUCCESS != (ret = cli_gentempfd_with_prefix(
-                                   ctx->this_layer_tmpdir,
-                                   extracted_image_type,
-                                   &extracted_image_filepath,
-                                   &extracted_image_tempfd))) {
-                cli_warnmsg("Failed to create temp file for extracted %s file\n", extracted_image_type);
-                status = CL_EOPEN;
-                goto done;
-            }
-
-            if (cli_scan_reserve_temporary(ctx, (uint64_t)size_of_image) != CL_SUCCESS) {
-                cli_mark_scan_incomplete(ctx, "XLM extracted image exceeds temporary storage limits");
-                status = CL_ERESOURCE;
-                goto done;
-            }
-            temporary_reserved = (uint64_t)size_of_image;
-
-            if (cli_writen(extracted_image_tempfd, start_of_image, size_of_image) != size_of_image) {
-                cli_errmsg("failed to write output file\n");
-                cli_mark_scan_incomplete(ctx, "XLM extracted image could not be written completely");
-                status = CL_EWRITE;
-                goto done;
-            }
-
-            ret = cli_magic_scan_desc_type_reserved(extracted_image_tempfd, extracted_image_filepath, ctx, CL_TYPE_ANY,
-                                                     NULL, LAYER_ATTRIBUTES_NONE);
-        } else {
-            /* Scan the buffer */
-            ret = cli_magic_scan_buff(start_of_image, size_of_image, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        /* Extracted images are parser children, not optional debug output.
+         * Always stage them through the shared temporary quota so the
+         * no-keeptmp path cannot bypass resource admission with a direct
+         * whole-buffer child scan. */
+        if (cli_scan_reserve_temporary(ctx, (uint64_t)size_of_image) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "XLM extracted image exceeds temporary storage limits");
+            status = CL_ERESOURCE;
+            goto done;
         }
+        temporary_reserved = (uint64_t)size_of_image;
+
+        if (CL_SUCCESS != (ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, extracted_image_type,
+                                                            &extracted_image_filepath, &extracted_image_tempfd))) {
+            cli_warnmsg("Failed to create temp file for extracted %s file\n", extracted_image_type);
+            cli_mark_scan_incomplete(ctx, "XLM extracted image temporary output could not be created");
+            status = ret;
+            goto done;
+        }
+
+        if (cli_writen(extracted_image_tempfd, start_of_image, size_of_image) != size_of_image) {
+            cli_errmsg("failed to write output file\n");
+            cli_mark_scan_incomplete(ctx, "XLM extracted image could not be written completely");
+            status = CL_EWRITE;
+            goto done;
+        }
+
+        ret = cli_magic_scan_desc_type_reserved(extracted_image_tempfd, extracted_image_filepath, ctx, CL_TYPE_ANY,
+                                                 NULL, LAYER_ATTRIBUTES_NONE);
         if (CL_SUCCESS != ret) {
             status = ret;
             goto done;
@@ -4442,14 +4438,23 @@ cl_error_t process_blip_record(struct OfficeArtRecordHeader_Unpacked *rh, const 
     status = CL_SUCCESS;
 
 done:
-    if (temporary_reserved)
-        cli_scan_release_temporary(ctx, temporary_reserved);
     if (-1 != extracted_image_tempfd) {
-        close(extracted_image_tempfd);
+        if (close(extracted_image_tempfd) != 0) {
+            cli_mark_scan_incomplete(ctx, "XLM extracted image temporary output could not be closed");
+            if (CL_SUCCESS == status || CL_VERIFIED == status || CL_BREAK == status)
+                status = CL_EWRITE;
+        }
     }
     if (NULL != extracted_image_filepath) {
+        if (!ctx->engine->keeptmp && cli_unlink(extracted_image_filepath) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "XLM extracted image temporary output could not be removed");
+            if (CL_SUCCESS == status || CL_VERIFIED == status || CL_BREAK == status)
+                status = CL_EUNLINK;
+        }
         free(extracted_image_filepath);
     }
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     return status;
 }
