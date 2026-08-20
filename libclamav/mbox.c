@@ -380,6 +380,15 @@ scanFileblob(mbox_ctx *mctx, fileblob *fb)
     return rc;
 }
 
+static void
+destroyPartialOutput(fileblob *fb, const char *outname)
+{
+    if (fb)
+        fileblobDestructiveDestroy(fb);
+    if (outname)
+        cli_unlink(outname);
+}
+
 /*
  * TODO: when signal handling is added, need to remove temp files when a
  *    signal is received
@@ -2916,7 +2925,11 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                 } else if (strcasecmp(mimeSubtype, "partial") == 0) {
                     if (mctx->ctx->options->mail & CL_SCAN_MAIL_PARTIAL_MESSAGE) {
                         /* RFC1341 message split over many emails */
-                        if (rfc1341(mctx, mainMessage) >= 0)
+                        const int partial_rc = rfc1341(mctx, mainMessage);
+
+                        if (partial_rc == CL_VIRUS)
+                            rc = VIRUS;
+                        else if (partial_rc == CL_SUCCESS || partial_rc == CL_CLEAN)
                             rc = OK;
                         else
                             cli_mark_scan_incomplete(mctx->ctx,
@@ -4139,7 +4152,7 @@ rfc1341(mbox_ctx *mctx, message *m)
          * FIXME: this assumes that we receive the parts in order
          */
         if ((n == t) && ((dd = opendir(pdir)) != NULL)) {
-            FILE *fout;
+            fileblob *fout;
             char outname[PATH_MAX + 1];
             time_t now;
 
@@ -4149,9 +4162,22 @@ rfc1341(mbox_ctx *mctx, message *m)
 
             cli_dbgmsg("outname: %s\n", outname);
 
-            fout = fopen(outname, "wb");
+            fout = fileblobCreate();
             if (fout == NULL) {
                 cli_errmsg("Can't open '%s' for writing", outname);
+                free(id);
+                free(number);
+                free(md5_hex);
+                closedir(dd);
+                return -1;
+            }
+
+            fileblobSetCTX(fout, mctx->ctx);
+            (void)cli_unlink(outname);
+            fileblobPartialSet(fout, outname, NULL);
+            if (fout->isIncomplete || fout->fp == NULL) {
+                cli_errmsg("Can't open '%s' for writing", outname);
+                destroyPartialOutput(fout, outname);
                 free(id);
                 free(number);
                 free(md5_hex);
@@ -4202,8 +4228,7 @@ rfc1341(mbox_ctx *mctx, message *m)
 
                         if (now - statb.st_mtime > (time_t)(7 * 24 * 3600)) {
                             if (cli_unlink(fullname)) {
-                                cli_unlink(outname);
-                                fclose(fout);
+                                destroyPartialOutput(fout, outname);
                                 free(md5_hex);
                                 free(id);
                                 free(number);
@@ -4221,8 +4246,7 @@ rfc1341(mbox_ctx *mctx, message *m)
                     fin        = fopen(fullname, "rb");
                     if (fin == NULL) {
                         cli_errmsg("Can't open '%s' for reading", fullname);
-                        fclose(fout);
-                        cli_unlink(outname);
+                        destroyPartialOutput(fout, outname);
                         free(md5_hex);
                         free(id);
                         free(number);
@@ -4240,12 +4264,14 @@ rfc1341(mbox_ctx *mctx, message *m)
                         else {
                             if (nblanks)
                                 do {
-                                    if (putc('\n', fout) == EOF) break;
+                                    if (fileblobAddData(fout, (const unsigned char *)"\n", 1) < 0)
+                                        break;
                                 } while (--nblanks > 0);
-                            if (nblanks || fputs(buffer, fout) == EOF) {
+                            if (nblanks || fileblobAddData(fout,
+                                                            (const unsigned char *)buffer,
+                                                            strlen(buffer)) < 0) {
                                 fclose(fin);
-                                fclose(fout);
-                                cli_unlink(outname);
+                                destroyPartialOutput(fout, outname);
                                 free(md5_hex);
                                 free(id);
                                 free(number);
@@ -4256,20 +4282,18 @@ rfc1341(mbox_ctx *mctx, message *m)
                     fin_error       = ferror(fin);
                     fin_close_error = fclose(fin);
                     if (fin_error || fin_close_error != 0) {
-                        cli_unlink(outname);
+                        destroyPartialOutput(fout, outname);
                         free(md5_hex);
                         free(id);
                         free(number);
                         closedir(dd);
-                        fclose(fout);
                         return -1;
                     }
 
                     /* don't unlink if leave temps */
                     if (!m->ctx->engine->keeptmp) {
                         if (cli_unlink(fullname)) {
-                            fclose(fout);
-                            cli_unlink(outname);
+                            destroyPartialOutput(fout, outname);
                             free(md5_hex);
                             free(id);
                             free(number);
@@ -4282,8 +4306,7 @@ rfc1341(mbox_ctx *mctx, message *m)
                 if (!found_part) {
                     cli_mark_scan_incomplete(mctx->ctx,
                                              "Partial MIME message is missing a numbered fragment");
-                    fclose(fout);
-                    cli_unlink(outname);
+                    destroyPartialOutput(fout, outname);
                     free(md5_hex);
                     free(id);
                     free(number);
@@ -4294,18 +4317,18 @@ rfc1341(mbox_ctx *mctx, message *m)
             }
             closedir(dd);
             {
-                int output_error = fflush(fout);
-                if (fclose(fout) != 0)
-                    output_error = 1;
-                if (output_error) {
+                int scan_rc = scanFileblob(mctx, fout);
+
+                mctx->files++;
+                if (scan_rc != CL_CLEAN && scan_rc != CL_VIRUS) {
                     cli_mark_scan_incomplete(mctx->ctx,
-                                             "Reassembled partial MIME message could not be closed completely");
+                                             "Reassembled partial MIME message could not be scanned completely");
                     cli_unlink(outname);
-                    free(md5_hex);
-                    free(id);
-                    free(number);
-                    return -1;
                 }
+                free(md5_hex);
+                free(id);
+                free(number);
+                return scan_rc;
             }
         }
     }

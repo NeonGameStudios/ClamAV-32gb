@@ -2879,9 +2879,12 @@ RFC 1341 `message/partial` reassembly now requires every numbered fragment
 from 1 through `total` to be present. A missing fragment previously produced a
 partial output file and a successful helper return, allowing the caller to
 continue as if the message were complete. Fragment reads now check both read
-and close errors, and the completed output checks flush/close failure before it
-can be consumed. Any failure returns an error so the existing caller marks
-the scan incomplete and keeps the partial output out of the scan/cache path.
+and close errors. The final reassembled output is now a quota-accounted
+`fileblob` and is scanned through the normal nested descriptor path, so
+temporary-space admission, output writes, scan errors, and detections remain
+visible to the mailbox caller. Any failure returns an error so the caller
+marks the scan incomplete and keeps an uninspected partial output out of the
+scan/cache path.
 
 The focused unit fixture supplies only fragment two and asserts a non-clean
 result. Compiled Linux execution, sanitizer coverage, and broader partial-mail
