@@ -1511,6 +1511,20 @@ this is focused mixed-source verification rather than full current-head
 qualification. The authorized production-CVD rescan and broad ZIP corpus
 qualification remain open release gates.
 
+## DMG/XLM child reservation ownership — 2026-08-20
+
+The DMG reconstructed-partition path already reserved the complete expected
+output before writing it, but then used the ordinary child descriptor scanner,
+which attempted to reserve the same bytes a second time. It now transfers the
+existing reservation to the reservation-aware child scan. XLM's optional
+extracted-image path now reserves its declared image bytes before writing and
+uses the same ownership transfer through nested scanning; write and quota
+failures remain sticky incomplete results.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+DMG/XLM execution, sanitizer coverage, real document corpus testing, and
+supported-build Sonic1 qualification remain open release gates.
+
 ## Sonic1 clamscan parser-regression matrix — 2026-08-20
 
 The repository's complete `unit_tests/clamscan` collection was counted and

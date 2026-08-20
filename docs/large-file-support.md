@@ -3197,6 +3197,16 @@ Source guards and `git diff --check` remain the available local evidence. A
 dependency-complete compiled HFS+ corpus, sanitizer run, and supported-build
 Sonic1 qualification remain release gates.
 
+## DMG/XLM child reservation ownership — 2026-08-20
+
+DMG reconstructed partitions now pass their existing full-output reservation
+to the reservation-aware child descriptor scan instead of reserving the same
+partition a second time. XLM's optional extracted-image path reserves the
+declared image size before writing, requires a complete write, and transfers
+that reservation through the nested scan. Source guards and `git diff --check`
+pass; compiled parser execution, document/image corpus, sanitizer, and
+supported-build Sonic1 qualification remain release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor now reserves each generated script

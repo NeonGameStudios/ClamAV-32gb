@@ -1092,7 +1092,7 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
     /* If okay so far, scan rebuilt partition */
     if (ret == CL_CLEAN) {
         /* Have to keep partition typing separate */
-        ret = cli_magic_scan_desc_type(ofd, outfile, ctx, CL_TYPE_PART_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+        ret = cli_magic_scan_desc_type_reserved(ofd, outfile, ctx, CL_TYPE_PART_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     }
 
     if (close(ofd) == -1 && ret == CL_SUCCESS) {

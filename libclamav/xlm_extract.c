@@ -4220,6 +4220,7 @@ cl_error_t process_blip_record(struct OfficeArtRecordHeader_Unpacked *rh, const 
 
     char *extracted_image_filepath = NULL;
     int extracted_image_tempfd     = -1;
+    uint64_t temporary_reserved    = 0;
 
     size_t blip_bytes_before_image      = 0; /* the number of bytes between the record header and the image */
     const unsigned char *start_of_image = NULL;
@@ -4345,14 +4346,22 @@ cl_error_t process_blip_record(struct OfficeArtRecordHeader_Unpacked *rh, const 
                 goto done;
             }
 
+            if (cli_scan_reserve_temporary(ctx, (uint64_t)size_of_image) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "XLM extracted image exceeds temporary storage limits");
+                status = CL_ERESOURCE;
+                goto done;
+            }
+            temporary_reserved = (uint64_t)size_of_image;
+
             if (cli_writen(extracted_image_tempfd, start_of_image, size_of_image) != size_of_image) {
                 cli_errmsg("failed to write output file\n");
+                cli_mark_scan_incomplete(ctx, "XLM extracted image could not be written completely");
                 status = CL_EWRITE;
                 goto done;
             }
 
-            ret = cli_magic_scan_desc_type(extracted_image_tempfd, extracted_image_filepath, ctx, CL_TYPE_ANY,
-                                           NULL, LAYER_ATTRIBUTES_NONE);
+            ret = cli_magic_scan_desc_type_reserved(extracted_image_tempfd, extracted_image_filepath, ctx, CL_TYPE_ANY,
+                                                     NULL, LAYER_ATTRIBUTES_NONE);
         } else {
             /* Scan the buffer */
             ret = cli_magic_scan_buff(start_of_image, size_of_image, ctx, NULL, LAYER_ATTRIBUTES_NONE);
@@ -4373,6 +4382,8 @@ cl_error_t process_blip_record(struct OfficeArtRecordHeader_Unpacked *rh, const 
     status = CL_SUCCESS;
 
 done:
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
     if (-1 != extracted_image_tempfd) {
         close(extracted_image_tempfd);
     }
