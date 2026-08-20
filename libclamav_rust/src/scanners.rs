@@ -74,6 +74,45 @@ unsafe fn parser_input_failure(ctx: *mut cli_ctx, parser: &str, err: impl std::f
     parser_failure(ctx, parser, cl_error_t_CL_EPARSE, err)
 }
 
+/// Decode or otherwise produce a child through a bounded reader and scan it
+/// from a quota-accounted temporary spool.  The reservation remains held
+/// through the nested scan so child parser scratch space cannot hide behind
+/// an uncharged in-memory buffer.
+pub(crate) unsafe fn scan_reader_via_temp_spool<R: Read>(
+    ctx: *mut cli_ctx,
+    reader: &mut R,
+    parser: &str,
+) -> cl_error_t {
+    let mut spool = match TempSpool::new(ctx, 0) {
+        Ok(spool) => spool,
+        Err(status) => return parser_failure(ctx, parser, status, "temporary spool reservation failed"),
+    };
+    let mut buffer = [0u8; 64 * 1024];
+
+    loop {
+        let read = match reader.read(&mut buffer) {
+            Ok(read) => read,
+            Err(err) => return parser_failure(ctx, parser, cl_error_t_CL_EREAD, err),
+        };
+        if read == 0 {
+            break;
+        }
+        if let Err(status) = spool.write_all(&buffer[..read]) {
+            return parser_failure(ctx, parser, status, "temporary spool write failed");
+        }
+    }
+
+    if spool.written == 0 {
+        return cl_error_t_CL_SUCCESS;
+    }
+
+    let status = spool.scan(None);
+    if status != cl_error_t_CL_SUCCESS {
+        debug!("{parser} temporary-spool child scan returned error: {status}");
+    }
+    status
+}
+
 fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
     let chunk_len = match u64::try_from(chunk_len) {
         Ok(value) => value,

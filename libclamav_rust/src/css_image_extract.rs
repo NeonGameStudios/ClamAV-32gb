@@ -20,14 +20,15 @@
  *  MA 02110-1301, USA.
  */
 
-use std::{ffi::CStr, os::raw::c_char};
+use std::{ffi::CStr, io::Cursor, os::raw::c_char};
 
 use base64::{engine::general_purpose as base64_engine_standard, Engine as _};
+use base64::read::DecoderReader;
 use log::{debug, warn};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
-    scanners::magic_scan,
+    scanners::scan_reader_via_temp_spool,
     sys::{cl_error_t, cl_error_t_CL_ERROR, cl_error_t_CL_SUCCESS, cli_ctx},
 };
 
@@ -287,17 +288,17 @@ pub unsafe extern "C" fn html_style_block_handler(
 
     let mut scan_result = cl_error_t_CL_SUCCESS;
 
-    extractor.into_iter().all(|image| {
-        debug!("Extracted {}-byte image", image.len());
-
-        let ret = magic_scan(ctx, &image, None);
+    while let Some(base64_image) = extractor.next_base64_image() {
+        let mut decoder = DecoderReader::new(
+            Cursor::new(base64_image.as_bytes()),
+            &base64_engine_standard::STANDARD,
+        );
+        let ret = unsafe { scan_reader_via_temp_spool(ctx, &mut decoder, "HTML CSS image") };
         if ret != cl_error_t_CL_SUCCESS {
             scan_result = ret;
-            return false;
+            break;
         }
-
-        true
-    });
+    }
 
     scan_result
 }

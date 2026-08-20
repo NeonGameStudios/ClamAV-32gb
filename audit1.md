@@ -1546,6 +1546,24 @@ Source guards and `git diff --check` are the current local evidence. Compiled
 DMG/XLM execution, sanitizer coverage, real document corpus testing, and
 supported-build Sonic1 qualification remain open release gates.
 
+## HTML CSS image streaming — 2026-08-20
+
+The Rust HTML `<style>` handler previously base64-decoded each embedded CSS
+image into a whole `Vec<u8>` and passed it directly to
+`cli_magic_scan_buff()`. The production handler now uses the base64 decoder as
+a reader, writes decoded bytes in 64 KiB chunks to the shared Rust temporary
+spool, and performs the nested descriptor scan while the temporary reservation
+remains held. Quota, reader, write, and cleanup failures therefore remain
+visible as incomplete results instead of allowing an unaccounted decoded child
+buffer.
+
+The existing HTML CSS extraction detection test remains the behavioral
+regression coverage, and source guards verify that the handler uses
+`DecoderReader` and the quota-accounted reader helper rather than the old
+direct buffer scan. Dependency-complete Rust/CTest, sanitizer, large
+CSS/HTML-corpus, and supported-build Sonic1 qualification remain open release
+gates.
+
 ## XLM macro-output accounting — 2026-08-20
 
 XLM macro normalization previously emitted formatted script text directly

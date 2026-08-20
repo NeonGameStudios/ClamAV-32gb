@@ -13,6 +13,9 @@
   width. These are tracked in `docs/largefile-capabilities.tsv`.
 - AutoIt EA05 decoded and stored members now use bounded output/temp spooling;
   EA06 script decompilation remains an explicit random-access boundary.
+- HTML CSS data-URI images now decode through a 64 KiB reader into the shared
+  temporary quota before nested scanning; oversized or incomplete extraction
+  is fail-visible instead of using an unaccounted whole-image buffer.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
