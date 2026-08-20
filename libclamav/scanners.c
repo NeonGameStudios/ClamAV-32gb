@@ -1129,6 +1129,35 @@ done:
     return status;
 }
 
+static void cli_arj_close_output(cli_ctx *ctx, int *fd, cl_error_t *status)
+{
+    if (fd == NULL || *fd < 0)
+        return;
+
+    if (close(*fd) != 0) {
+        cli_mark_scan_incomplete(ctx, "ARJ temporary output could not be closed");
+        if (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK)
+            *status = CL_EWRITE;
+    }
+    *fd = -1;
+}
+
+static cl_error_t cli_arj_cleanup_dir(cli_ctx *ctx, char **dir, cl_error_t status)
+{
+    if (dir == NULL || *dir == NULL)
+        return status;
+
+    if (!ctx->engine->keeptmp && cli_rmdirs(*dir) != 0) {
+        cli_mark_scan_incomplete(ctx, "ARJ temporary directory could not be removed");
+        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+            status = CL_EUNLINK;
+    }
+
+    free(*dir);
+    *dir = NULL;
+    return status;
+}
+
 static cl_error_t cli_scanarj(cli_ctx *ctx)
 {
     cl_error_t ret            = CL_SUCCESS;
@@ -1143,20 +1172,21 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
     memset(&metadata, 0, sizeof(arj_metadata_t));
 
     /* generate the temporary directory */
-    if (!(dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "arj-tmp")))
+    if (!(dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "arj-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "ARJ temporary directory could not be allocated");
         return CL_EMEM;
+    }
 
     if (mkdir(dir, 0700)) {
         cli_dbgmsg("ARJ: Can't create temporary directory %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "ARJ temporary directory could not be created");
         free(dir);
         return CL_ETMPDIR;
     }
 
     ret = cli_unarj_open(ctx->fmap, dir, &metadata);
     if (ret != CL_SUCCESS) {
-        if (!ctx->engine->keeptmp)
-            cli_rmdirs(dir);
-        free(dir);
+        ret = cli_arj_cleanup_dir(ctx, &dir, ret);
         cli_dbgmsg("ARJ: Error: %s\n", cl_strerror(ret));
         return ret;
     }
@@ -1173,9 +1203,11 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
         file++;
 
         if (CL_VIRUS == cli_matchmeta(ctx, metadata.filename, metadata.comp_size, metadata.orig_size, metadata.encrypted, file, 0)) {
-            cli_rmdirs(dir);
-            free(dir);
-            return CL_VIRUS;
+            if (metadata.filename) {
+                free(metadata.filename);
+                metadata.filename = NULL;
+            }
+            return cli_arj_cleanup_dir(ctx, &dir, CL_VIRUS);
         }
 
         ret = cli_checklimits("ARJ", ctx, metadata.orig_size, metadata.comp_size, 0);
@@ -1213,8 +1245,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
             cli_dbgmsg("ARJ: cli_unarj_extract_file Error: %s; refusing to scan partial output\n", cl_strerror(ret));
             cli_mark_scan_incomplete(ctx, "ARJ member extraction was incomplete");
             if (metadata.ofd >= 0) {
-                close(metadata.ofd);
-                metadata.ofd = -1;
+                cli_arj_close_output(ctx, &metadata.ofd, &ret);
             }
             if (temporary_reserved) {
                 cli_scan_release_temporary(ctx, temporary_reserved);
@@ -1227,8 +1258,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
             if (lseek(metadata.ofd, 0, SEEK_SET) == -1) {
                 cli_dbgmsg("ARJ: call to lseek() failed; refusing to scan extracted output\n");
                 cli_mark_scan_incomplete(ctx, "ARJ extracted member could not be rewound for scanning");
-                close(metadata.ofd);
-                metadata.ofd = -1;
+                cli_arj_close_output(ctx, &metadata.ofd, &ret);
                 ret          = CL_ESEEK;
                 if (temporary_reserved) {
                     cli_scan_release_temporary(ctx, temporary_reserved);
@@ -1239,8 +1269,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
 
             ret = cli_magic_scan_desc_type_reserved(metadata.ofd, NULL, ctx, CL_TYPE_ANY, metadata.filename,
                                                      LAYER_ATTRIBUTES_NONE);
-            close(metadata.ofd);
-            metadata.ofd = -1;
+            cli_arj_close_output(ctx, &metadata.ofd, &ret);
             if (temporary_reserved) {
                 cli_scan_release_temporary(ctx, temporary_reserved);
                 temporary_reserved = 0;
@@ -1260,13 +1289,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
 
     } while (ret == CL_SUCCESS);
 
-    if (!ctx->engine->keeptmp) {
-        cli_rmdirs(dir);
-    }
-
-    if (NULL != dir) {
-        free(dir);
-    }
+    ret = cli_arj_cleanup_dir(ctx, &dir, ret);
 
     if (metadata.filename) {
         free(metadata.filename);

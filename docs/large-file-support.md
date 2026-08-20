@@ -2057,6 +2057,10 @@ are explicitly reported as uninspected rather than being treated as clean.
 ARJ temporary-limit and encrypted-member behavior still require a
 dependency-complete runtime qualification.
 
+ARJ descriptor-close and temporary-directory removal failures are now
+fail-visible across normal, limit, extraction-error, and detection exits while
+preserving an earlier detection or parser result.
+
 The ARJ compressed decoders now reject back-reference lengths that exceed the
 declared member size, fail closed on invalid ring-buffer positions, and check
 the final partial-output write before returning success. A malformed or failed
