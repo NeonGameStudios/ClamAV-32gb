@@ -851,6 +851,15 @@ if(NOT CLAMAV_LARGE_FILE_PROCESSOR IN_LIST CLAMAV_LARGE_FILE_SUPPORTED_ARCHES)
 endif()
 set(CLAMAV_LARGE_FILE_SUPPORT 1)
 
+if(ENABLE_LARGE_FILE_DEFAULTS)
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
+       NOT CLAMAV_LARGE_FILE_PROCESSOR MATCHES "^(x86_64|amd64)$")
+        message(FATAL_ERROR
+            "ENABLE_LARGE_FILE_DEFAULTS is restricted to the qualified Linux x86-64 profile")
+    endif()
+    add_definitions(-DCLAMAV_LARGE_FILE_DEFAULTS=1)
+endif()
+
 # Checks for library functions.
 include(CheckSymbolExists)
 check_symbol_exists(_Exit           "stdlib.h"      HAVE__EXIT)
@@ -1206,6 +1215,7 @@ ${b}        Build apps:         ${e}${ENABLE_APP}
 ${b}        Shared library:     ${e}${ENABLE_SHARED_LIB}
 ${b}        Static library:     ${e}${ENABLE_STATIC_LIB}
 ${b}        Enable UnRAR:       ${e}${ENABLE_UNRAR}
+${b}        Large-file defaults: ${e}${ENABLE_LARGE_FILE_DEFAULTS}
 ${b}        Examples:           ${e}${ENABLE_EXAMPLES}
 ${b}        Tests:              ${e}${ENABLE_TESTS}
 ${b}        Build man pages:    ${e}${ENABLE_MAN_PAGES}

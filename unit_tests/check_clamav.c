@@ -976,6 +976,26 @@ START_TEST(test_resource_limit_engine_fields_and_accounting)
 }
 END_TEST
 
+START_TEST(test_largefile_default_profile_values)
+{
+    struct cl_engine *engine = cl_engine_new();
+
+    ck_assert_ptr_nonnull(engine);
+#ifdef CLAMAV_LARGE_FILE_DEFAULTS
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL), CLI_MAX_LARGE_FILESIZE);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL), CLI_MAX_LOGICAL_SCAN_SIZE);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, NULL), CLI_MAX_CONTIGUOUS_SIZE);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANTIME, NULL), CLI_DEFAULT_TIMELIMIT);
+#else
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL), CLI_DEFAULT_MAXFILESIZE);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL), CLI_DEFAULT_MAXSCANSIZE);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, NULL), CLI_DEFAULT_PCRE_MAX_FILESIZE);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANTIME, NULL), CLI_DEFAULT_TIMELIMIT);
+#endif
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_fileblob_temporary_spool_accounting)
 {
     static const unsigned char payload[] = "12345";
@@ -10281,6 +10301,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_counts_skipped_operations);
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
+    tcase_add_test(tc_cl, test_largefile_default_profile_values);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
     tcase_add_test(tc_cl, test_fileblob_scan_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);

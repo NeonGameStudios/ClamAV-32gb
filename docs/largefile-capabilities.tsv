@@ -28,6 +28,7 @@ matcher	yara	pending	libclamav/yara_exec.c	exact-tail fmap read regression added
 matcher	bytecode	pending	libclamav/bytecode.c	ABI v2 coordinate APIs including PDF bridge; independently compiled fixture and interpreter/JIT qualification remain required
 matcher	fuzzy-image	pending	libclamav/scanners.c	qualify optional image fuzzy hashing or record its bounded rejection
 feature	BYTECODE_RUNTIME	pending	CMakeOptions.cmake	qualify interpreter, LLVM, and disabled runtime variants
+feature	LARGE_FILE_DEFAULTS	pending	CMakeOptions.cmake	opt-in certified Linux x86-64 defaults; keep disabled until full parser and ingress qualification is complete
 feature	MMAP_FOR_CROSSCOMPILING	pending	CMakeOptions.cmake	qualify file-backed mapping policy in cross-compiled builds
 feature	DISABLE_MPOOL	pending	CMakeOptions.cmake	qualify allocator variant without changing scan completeness
 feature	ENABLE_FUZZ	pending	CMakeOptions.cmake	qualify fuzz-only build boundaries and required large-file guards

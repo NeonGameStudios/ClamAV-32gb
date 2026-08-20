@@ -1238,6 +1238,13 @@ not_contains clamd/scanner.c 'StreamMinPort'
 not_contains clamd/scanner.c 'poll_fd(acceptd'
 contains common/optparser.c 'cannot exceed 32G in this build'
 contains CMakeLists.txt 'CLAMAV_LARGE_FILE_SUPPORT 1'
+contains CMakeOptions.cmake 'option(ENABLE_LARGE_FILE_DEFAULTS'
+contains CMakeLists.txt 'ENABLE_LARGE_FILE_DEFAULTS is restricted to the qualified Linux x86-64 profile'
+contains CMakeLists.txt 'CLAMAV_LARGE_FILE_DEFAULTS=1'
+contains libclamav/default.h 'CLI_DEFAULT_MAXFILESIZE           CLI_MAX_LARGE_FILESIZE'
+contains libclamav/default.h 'CLI_DEFAULT_MAXSCANSIZE           CLI_MAX_LOGICAL_SCAN_SIZE'
+contains common/optparser.c 'CLI_DEFAULT_ONACCESS_MAXFILESIZE'
+contains unit_tests/check_clamav.c 'test_largefile_default_profile_values'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

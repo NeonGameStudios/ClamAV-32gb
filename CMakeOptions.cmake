@@ -32,6 +32,10 @@ set(DISABLE_MPOOL
     0 CACHE STRING
     "Disable mpool support entirely.")
 
+option(ENABLE_LARGE_FILE_DEFAULTS
+    "Use the gated 32 GiB/64 GiB large-file defaults. Requires Linux x86-64 qualification."
+    OFF)
+
 set(BYTECODE_RUNTIME
     "interpreter" CACHE STRING
     "Bytecode Runtime, may be: 'llvm', 'interpreter', 'none'.")

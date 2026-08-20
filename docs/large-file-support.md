@@ -3148,6 +3148,21 @@ Source guards and `git diff --check` are the current local evidence. A
 dependency-complete HWP/HWPML corpus, sanitizer and fault-injected cleanup
 coverage, and supported-build Sonic1 qualification remain open release gates.
 
+## Gated large-file default profile — 2026-08-20
+
+The build now exposes `-DENABLE_LARGE_FILE_DEFAULTS=ON` as an explicit
+development/deployment profile. It is accepted only for Linux x86-64 and
+selects the roadmap defaults: 32 GiB root/stream/on-access/PCRE and parser
+size ceilings, 64 GiB logical scan size, four-hour scan time, and one worker
+with a two-entry queue. The ordinary build remains on its historical defaults
+until the full parser, ingress, sanitizer, and Sonic1 qualification gates
+pass.
+
+The profile is deliberately a build-time choice, is visible in the CMake
+summary, and is covered by the engine default regression. Enabling it is not
+itself release qualification; the capability manifest keeps this feature
+pending until the complete acceptance matrix is current-source verified.
+
 ## PE32+ inspection boundary — 2026-08-20
 
 PE32+ header parsing and the outer raw matcher remain enabled, but the

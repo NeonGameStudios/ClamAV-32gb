@@ -296,7 +296,7 @@ const struct clam_option __clam_options[] = {
 #endif
 
     /* config file/cmdline options */
-    {"AlertExceedsMax", "alert-exceeds-max", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "", ""},
+    {"AlertExceedsMax", "alert-exceeds-max", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, CLI_DEFAULT_ALERT_EXCEEDS_MAX, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "", CLI_DEFAULT_ALERT_EXCEEDS_MAX_STRING},
 
     {"CacheSize", "cache-size", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_CACHE_SIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "Number of entries the cache can store.", "65536"},
 
@@ -361,13 +361,13 @@ const struct clam_option __clam_options[] = {
 
     {"MaxConnectionQueueLength", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 200, NULL, 0, OPT_CLAMD, "Maximum length the queue of pending connections may grow to.", "30"},
 
-    {"StreamMaxLength", NULL, 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXFILESIZE, NULL, 0, OPT_CLAMD, "Close the STREAM session when the data size limit is exceeded.\nThe value should match your MTA's limit for the maximum attachment size.", "100M"},
+    {"StreamMaxLength", NULL, 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXFILESIZE, NULL, 0, OPT_CLAMD, "Close the STREAM session when the data size limit is exceeded.\nThe value should match your MTA's limit for the maximum attachment size.", CLI_DEFAULT_MAXFILESIZE_STRING},
 
     {"StreamMinPort", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 1024, NULL, 0, OPT_CLAMD, "The STREAM command uses an FTP-like protocol.\nThis option sets the lower boundary for the port range.", "1024"},
 
     {"StreamMaxPort", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 2048, NULL, 0, OPT_CLAMD, "This option sets the upper boundary for the port range.", "2048"},
 
-    {"MaxThreads", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 10, NULL, 0, OPT_CLAMD | OPT_MILTER, "Maximum number of threads running at the same time.", "20"},
+    {"MaxThreads", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_MAXTHREADS, NULL, 0, OPT_CLAMD | OPT_MILTER, "Maximum number of threads running at the same time.", CLI_DEFAULT_MAXTHREADS_STRING},
 
     {"ReadTimeout", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 120, NULL, 0, OPT_CLAMD, "This option specifies the time (in seconds) after which clamd should\ntimeout if a client doesn't provide any data.", "120"},
 
@@ -377,7 +377,7 @@ const struct clam_option __clam_options[] = {
 
     {"ReadTimeout", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 120, NULL, 0, OPT_MILTER, "Waiting for data from clamd will timeout after this time (seconds).", "300"},
 
-    {"MaxQueue", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 100, NULL, 0, OPT_CLAMD, "Maximum number of queued items (including those being processed by MaxThreads\nthreads). It is recommended to have this value at least twice MaxThreads\nif possible.\nWARNING: you shouldn't increase this too much to avoid running out of file\n descriptors, the following condition should hold:\n MaxThreads*MaxRecursion + MaxQueue - MaxThreads  + 6 < RLIMIT_NOFILE\n (usual max for RLIMIT_NOFILE is 1024)\n", "200"},
+    {"MaxQueue", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_MAXQUEUE, NULL, 0, OPT_CLAMD, "Maximum number of queued items (including those being processed by MaxThreads\nthreads). It is recommended to have this value at least twice MaxThreads\nif possible.\nWARNING: you shouldn't increase this too much to avoid running out of file\n descriptors, the following condition should hold:\n MaxThreads*MaxRecursion + MaxQueue - MaxThreads  + 6 < RLIMIT_NOFILE\n (usual max for RLIMIT_NOFILE is 1024)\n", CLI_DEFAULT_MAXQUEUE_STRING},
 
     {"IdleTimeout", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 30, NULL, 0, OPT_CLAMD, "This option specifies how long (in seconds) the process should wait\nfor a new job.", "60"},
 
@@ -512,9 +512,9 @@ const struct clam_option __clam_options[] = {
 
     {"ForceToDisk", "force-to-disk", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option causes memory or nested map scans to dump the content to disk.\nIf you turn on this option, more data is written to disk and is available\nwhen the leave-temps option is enabled at the cost of more disk writes.", "no"},
 
-    {"MaxScanTime", "max-scantime", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 0, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum amount of time a scan may take to complete.\nA scan that exhausts this limit returns a non-clean timeout unless a detection\ntakes precedence. The value of 0 disables the limit.\nWARNING: disabling this limit or setting it too high may allow scanning\nof certain files to lock up the scanning process/threads resulting in a Denial of Service.\nThe value is in milliseconds.", "120000"},
+    {"MaxScanTime", "max-scantime", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 0, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum amount of time a scan may take to complete.\nA scan that exhausts this limit returns a non-clean timeout unless a detection\ntakes precedence. The value of 0 disables the limit.\nWARNING: disabling this limit or setting it too high may allow scanning\nof certain files to lock up the scanning process/threads resulting in a Denial of Service.\nThe value is in milliseconds.", CLI_DEFAULT_MAXSCANTIME_STRING},
 
-    {"MaxScanSize", "max-scansize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXSCANSIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum amount of data to be scanned for each input file.\nArchives and other containers are recursively extracted and scanned up to this\nvalue.\nThe value of 0 disables the limit.\nWARNING: disabling this limit or setting it too high may result in severe\ndamage.", "400M"},
+    {"MaxScanSize", "max-scansize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXSCANSIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum amount of data to be scanned for each input file.\nArchives and other containers are recursively extracted and scanned up to this\nvalue.\nThe value of 0 disables the limit.\nWARNING: disabling this limit or setting it too high may result in severe\ndamage.", CLI_DEFAULT_MAXSCANSIZE_STRING},
 
     {"MaxMatcherWork", "max-matcher-work", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAX_MATCHER_WORK, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum cumulative raw and normalized bytes presented to\nmatchers during one scan. The value of 0 selects the certified 256G default.\nValues above 256G are rejected.", "256G"},
 
@@ -522,22 +522,22 @@ const struct clam_option __clam_options[] = {
 
     {"MaxContiguousSize", "max-contiguous-size", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAX_CONTIGUOUS_SIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum single contiguous matcher subject. The value of 0\nselects the certified 32G default. Values above 32G are rejected.", "32G"},
 
-    {"MaxFileSize", "max-filesize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXFILESIZE, NULL, 0, OPT_CLAMD | OPT_MILTER | OPT_CLAMSCAN, "Files/messages larger than this limit won't be scanned. A top-level input\nrejected by this limit returns a non-clean size error unless AlertExceedsMax\npromotes it to an alert. The limit also affects files contained inside an\narchive, document, or other container. This large-file fork accepts values\nthrough 32G on supported 64-bit builds. The value of 0 selects the 32G ceiling.\nWARNING: setting this limit too high may result in severe damage to the system.", "100M"},
+    {"MaxFileSize", "max-filesize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXFILESIZE, NULL, 0, OPT_CLAMD | OPT_MILTER | OPT_CLAMSCAN, "Files/messages larger than this limit won't be scanned. A top-level input\nrejected by this limit returns a non-clean size error unless AlertExceedsMax\npromotes it to an alert. The limit also affects files contained inside an\narchive, document, or other container. This large-file fork accepts values\nthrough 32G on supported 64-bit builds. The value of 0 selects the 32G ceiling.\nWARNING: setting this limit too high may result in severe damage to the system.", CLI_DEFAULT_MAXFILESIZE_STRING},
 
     {"MaxRecursion", "max-recursion", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_MAXRECLEVEL, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "Nested archives are scanned recursively, e.g. if a Zip archive contains a RAR\nfile, all files within it will also be scanned. This option specifies how\ndeeply the process should be continued.\nThe value of 0 disables the limit.\nWARNING: disabling this limit or setting it too high may result in severe\ndamage to the system.", "17"},
 
     {"MaxFiles", "max-files", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_MAXFILES, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "Number of files to be scanned within an archive, a document, or any other\ncontainer file.\nThe value of 0 disables the limit.\nWARNING: disabling this limit or setting it too high may result in severe\ndamage to the system.", "10000"},
 
     /* Engine maximums */
-    {"MaxEmbeddedPE", "max-embeddedpe", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXEMBEDDEDPE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a file to check for embedded PE.\nFiles larger than this value will skip the additional analysis step. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "40M"},
+    {"MaxEmbeddedPE", "max-embeddedpe", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXEMBEDDEDPE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a file to check for embedded PE.\nFiles larger than this value will skip the additional analysis step. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", CLI_DEFAULT_MAXEMBEDDEDPE_STRING},
 
-    {"MaxHTMLNormalize", "max-htmlnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a HTML file to normalize.\nHTML files larger than this value will not be normalized or scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "40M"},
+    {"MaxHTMLNormalize", "max-htmlnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a HTML file to normalize.\nHTML files larger than this value will not be normalized or scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", CLI_DEFAULT_MAXHTMLNORMALIZE_STRING},
 
-    {"MaxHTMLNoTags", "max-htmlnotags", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNOTAGS, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a normalized HTML file to scan.\nHTML files larger than this value after normalization will not be scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "8M"},
+    {"MaxHTMLNoTags", "max-htmlnotags", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXHTMLNOTAGS, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a normalized HTML file to scan.\nHTML files larger than this value after normalization will not be scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", CLI_DEFAULT_MAXHTMLNOTAGS_STRING},
 
-    {"MaxScriptNormalize", "max-scriptnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXSCRIPTNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a script file to normalize.\nScript content larger than this value will not be normalized or scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "20M"},
+    {"MaxScriptNormalize", "max-scriptnormalize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXSCRIPTNORMALIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a script file to normalize.\nScript content larger than this value will not be normalized or scanned. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", CLI_DEFAULT_MAXSCRIPTNORMALIZE_STRING},
 
-    {"MaxZipTypeRcg", "max-ziptypercg", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXZIPTYPERCG, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a ZIP file to reanalyze type recognition.\nZIP files larger than this value will skip the step to potentially reanalyze as PE. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "1M"},
+    {"MaxZipTypeRcg", "max-ziptypercg", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_MAXZIPTYPERCG, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum size of a ZIP file to reanalyze type recognition.\nZIP files larger than this value will skip the step to potentially reanalyze as PE. Values above 32G are rejected.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", CLI_DEFAULT_MAXZIPTYPERCG_STRING},
 
     {"MaxPartitions", "max-partitions", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_MAXPARTITIONS, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum number of partitions of a raw disk image to be scanned.\nRaw disk images with more partitions than this value will have up to the value number partitions scanned.\nNegative values are not allowed.\nWARNING: setting this limit too high may result in severe damage or impact performance.", "128"},
 
@@ -549,7 +549,7 @@ const struct clam_option __clam_options[] = {
 
     {"PCRERecMatchLimit", "pcre-recmatch-limit", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_PCRE_RECMATCH_LIMIT, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum recursive calls to the PCRE match function during an instance of regex matching.\nInstances using more than this limit will be terminated and alert the user but the scan will continue.\nFor more information on match_limit_recursion, see the PCRE documentation.\nNegative values are not allowed and values > PCREMatchLimit are superfluous.\nWARNING: setting this limit too high may severely impact performance.", "5000"},
 
-    {"PCREMaxFileSize", "pcre-max-filesize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_PCRE_MAX_FILESIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum filesize for which PCRE subsigs will be executed.\nPCRE requires one contiguous subject. On qualifying 64-bit fmap builds, this fork permits values through the 32 GiB large-file ceiling; other builds retain their bounded single-allocation ceiling. Values of zero select the platform ceiling; they do not permit an unbounded whole-file mapping. A required PCRE pass that exceeds the effective limit makes the scan incomplete and returns non-clean.\nNegative values are not allowed.", "100M"},
+    {"PCREMaxFileSize", "pcre-max-filesize", 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_PCRE_MAX_FILESIZE, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "This option sets the maximum filesize for which PCRE subsigs will be executed.\nPCRE requires one contiguous subject. On qualifying 64-bit fmap builds, this fork permits values through the 32 GiB large-file ceiling; other builds retain their bounded single-allocation ceiling. Values of zero select the platform ceiling; they do not permit an unbounded whole-file mapping. A required PCRE pass that exceeds the effective limit makes the scan incomplete and returns non-clean.\nNegative values are not allowed.", CLI_DEFAULT_MAXFILESIZE_STRING},
 
     /* OnAccess settings */
     {"OnAccessMountPath", NULL, 0, CLOPT_TYPE_STRING, NULL, -1, NULL, FLAG_MULTIPLE, OPT_CLAMD, "This option specifies a directory or mount point which should be scanned on access. The mount point specified, or the mount point containing the specified directory will be watched, but only notifications will occur. If any directories are specified, this option will preempt the DDD system. It can also be used multiple times.", "/\n/home/user"},
@@ -564,7 +564,7 @@ const struct clam_option __clam_options[] = {
 
     {"OnAccessExcludeUname", NULL, 0, CLOPT_TYPE_STRING, NULL, -1, NULL, FLAG_MULTIPLE, OPT_CLAMD, "This option allows exclusions via user names when using the on-access scanning client. It can\nbe used multiple times.", "clamuser"},
 
-    {"OnAccessMaxFileSize", NULL, 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, 5242880, NULL, 0, OPT_CLAMD, "Files larger than this value will not be scanned in on access. Values above 32G are rejected; zero selects the 32G ceiling.", "5M"},
+    {"OnAccessMaxFileSize", NULL, 0, CLOPT_TYPE_SIZE64, MATCH_SIZE, CLI_DEFAULT_ONACCESS_MAXFILESIZE, NULL, 0, OPT_CLAMD, "Files larger than this value will not be scanned in on access. Values above 32G are rejected; zero selects the 32G ceiling.", CLI_DEFAULT_ONACCESS_MAXFILESIZE_STRING},
 
     {"OnAccessDisableDDD", NULL, 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD, "This option toggles the dynamic directory determination system for on-access scanning (Linux only).", "no"},
 
@@ -574,7 +574,7 @@ const struct clam_option __clam_options[] = {
 
     {"OnAccessCurlTimeout", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 5000l, NULL, 0, OPT_CLAMD, "Max amount of time (in milliseconds) that the OnAccess client should spend for every connect, send, and receive attempt when communicating with clamd via curl (5s default)", "10000L"},
 
-    {"OnAccessMaxThreads", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 5, NULL, 0, OPT_CLAMD, "Max number of scanning threads to allocate to the OnAccess thread pool at startup--these threads are the ones responsible for creating a connection with the daemon and kicking off scanning after an event has been processed. To prevent clamonacc from consuming all clamd's resources keep this lower than clamd's max threads. Default is 5", "10"},
+    {"OnAccessMaxThreads", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, CLI_DEFAULT_ONACCESS_MAXTHREADS, NULL, 0, OPT_CLAMD, "Max number of scanning threads to allocate to the OnAccess thread pool at startup--these threads are the ones responsible for creating a connection with the daemon and kicking off scanning after an event has been processed. To prevent clamonacc from consuming all clamd's resources keep this lower than clamd's max threads. The default follows the selected build profile.", CLI_DEFAULT_ONACCESS_MAXTHREADS_STRING},
 
     {"OnAccessRetryAttempts", NULL, 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 0, NULL, 0, OPT_CLAMD, "Number of times the OnAccess client will retry a failed scan due to connection problems (or other issues). Defaults to no retries.", "3"},
 
@@ -654,7 +654,7 @@ const struct clam_option __clam_options[] = {
     /* Deprecated options */
 
     {"SafeBrowsing", NULL, 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_FRESHCLAM | OPT_DEPRECATED, "Deprecated option to download signatures derived from the Google Safe Browsing API. See https://blog.clamav.net/2020/06/the-future-of-clamav-safebrowsing.html for more details.", "no"},
-    {"TimeLimit", "timelimit", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 0, NULL, 0, OPT_CLAMSCAN | OPT_DEPRECATED, "Deprecated option to set the max-scantime.\nThe value is in milliseconds.", "120000"},
+    {"TimeLimit", "timelimit", 0, CLOPT_TYPE_NUMBER, MATCH_NUMBER, 0, NULL, 0, OPT_CLAMSCAN | OPT_DEPRECATED, "Deprecated option to set the max-scantime.\nThe value is in milliseconds.", CLI_DEFAULT_MAXSCANTIME_STRING},
     {"DetectBrokenExecutables", "detect-broken", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN | OPT_DEPRECATED, "Deprecated option to alert on broken PE and ELF executable files.", "no"},
     {"AlgorithmicDetection", "algorithmic-detection", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 1, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "Deprecated option to enable heuristic alerts (e.g. \"Heuristics.<sig name>\")", "no"},
     {"BlockMax", "block-max", 0, CLOPT_TYPE_BOOL, MATCH_BOOL, 0, NULL, 0, OPT_CLAMD | OPT_CLAMSCAN, "", ""},
