@@ -1074,7 +1074,8 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
     cl_error_t deferred_limit = CL_SUCCESS;
     int file                  = 0;
     arj_metadata_t metadata;
-    char *dir = NULL;
+    char *dir                   = NULL;
+    uint64_t temporary_reserved = 0;
 
     cli_dbgmsg("in cli_scanarj()\n");
 
@@ -1129,6 +1130,23 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
             continue;
         }
 
+        if (metadata.encrypted) {
+            cli_dbgmsg("ARJ: Encrypted member contents were not inspected\n");
+            cli_mark_scan_incomplete(ctx, "ARJ encrypted member contents were not inspected");
+            if (metadata.filename) {
+                free(metadata.filename);
+                metadata.filename = NULL;
+            }
+            continue;
+        }
+
+        ret = cli_scan_reserve_temporary(ctx, metadata.orig_size);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "ARJ member temporary output exceeded the configured limit");
+            break;
+        }
+        temporary_reserved = metadata.orig_size;
+
         ret = cli_unarj_extract_file(dir, &metadata);
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("ARJ: cli_unarj_extract_file Error: %s; refusing to scan partial output\n", cl_strerror(ret));
@@ -1136,6 +1154,10 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
             if (metadata.ofd >= 0) {
                 close(metadata.ofd);
                 metadata.ofd = -1;
+            }
+            if (temporary_reserved) {
+                cli_scan_release_temporary(ctx, temporary_reserved);
+                temporary_reserved = 0;
             }
             break;
         }
@@ -1147,15 +1169,27 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
                 close(metadata.ofd);
                 metadata.ofd = -1;
                 ret          = CL_ESEEK;
+                if (temporary_reserved) {
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
+                }
                 break;
             }
 
-            ret = cli_magic_scan_desc(metadata.ofd, NULL, ctx, metadata.filename, LAYER_ATTRIBUTES_NONE);
+            ret = cli_magic_scan_desc_type_reserved(metadata.ofd, NULL, ctx, CL_TYPE_ANY, metadata.filename,
+                                                     LAYER_ATTRIBUTES_NONE);
             close(metadata.ofd);
             metadata.ofd = -1;
+            if (temporary_reserved) {
+                cli_scan_release_temporary(ctx, temporary_reserved);
+                temporary_reserved = 0;
+            }
             if (ret != CL_SUCCESS) {
                 break;
             }
+        } else if (temporary_reserved) {
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
         }
 
         if (metadata.filename) {
@@ -1175,6 +1209,10 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
 
     if (metadata.filename) {
         free(metadata.filename);
+    }
+
+    if (temporary_reserved) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
     }
 
     cli_dbgmsg("ARJ: Exit code: %d\n", ret);

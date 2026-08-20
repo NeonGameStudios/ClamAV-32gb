@@ -2048,6 +2048,15 @@ removal failures are now incomplete/non-cacheable instead of diagnostic-only.
 RAR extraction remains subject to the optional UnRAR build and separate
 dependency-complete runtime qualification.
 
+## ARJ temporary-output admission — 2026-08-20
+
+The enabled ARJ extraction path now reserves each unencrypted member's
+declared original size against `MaxTemporarySize` before creating output and
+holds that reservation through the nested descriptor scan. Encrypted members
+are explicitly reported as uninspected rather than being treated as clean.
+ARJ temporary-limit and encrypted-member behavior still require a
+dependency-complete runtime qualification.
+
 ## Embedded 7-Zip candidate admission — 2026-08-19
 
 Embedded 7-Zip SFX matches now require the complete 32-byte start header and
