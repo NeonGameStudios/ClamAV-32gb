@@ -905,6 +905,11 @@ handshake failure. The fallback preserves the requested target and maps the
 failure to a non-clean status; source guards cover all three boundaries.
 Compiled fault injection and supported-build Sonic1 evidence remain open.
 
+The `clamdscan -` ingress now emits a structured `stdin` fallback for input
+`fstat`, clamd connection, and structured-response failures while retaining its
+legacy exit behavior. Source guards cover each failure boundary; compiled
+stdin fault injection and supported-build Sonic1 evidence remain open.
+
 ## Force-to-disk nested fmap accounting — 2026-08-19
 
 Nested fmap scans forced to disk now reserve the complete staged range against

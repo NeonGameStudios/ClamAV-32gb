@@ -473,6 +473,8 @@ int client(const struct optstruct *opts, int *infected, int *err)
         if (FSTAT(0, &sb) < 0) {
             logg(LOGG_INFO, "client.c: fstat failed for file name \"%s\", with %s\n",
                  opts->filename[0], strerror(errno));
+            if (report_stream && clamdscan_write_client_failure_report(report_stream, "stdin", CL_ESTAT) != 0)
+                logg(LOGG_ERROR, "Can't write structured scan report for stdin\n");
             if (report_stream)
                 fclose(report_stream);
             return 2;
@@ -484,9 +486,11 @@ int client(const struct optstruct *opts, int *infected, int *err)
                 int report_errors     = 0;
                 ret                   = dsreport(sockd, scantype, NULL, NULL, false, report_stream,
                                                  infected, &report_incomplete, &report_errors, clamdopts);
-                if (ret < 0)
+                if (ret < 0) {
                     errors = 1;
-                else
+                    if (clamdscan_write_client_failure_report(report_stream, "stdin", CL_ERROR) != 0)
+                        logg(LOGG_ERROR, "Can't write structured scan report for stdin\n");
+                } else
                     errors += report_errors;
             } else if ((ret = dsresult(sockd, scantype, NULL, NULL, false, &ret, NULL, clamdopts)) >= 0) {
                 *infected = ret;
@@ -495,6 +499,8 @@ int client(const struct optstruct *opts, int *infected, int *err)
             }
         } else {
             errors = 1;
+            if (report_stream && clamdscan_write_client_failure_report(report_stream, "stdin", CL_EOPEN) != 0)
+                logg(LOGG_ERROR, "Can't write structured scan report for stdin\n");
         }
         if (sockd >= 0) closesocket(sockd);
     } else if (opts->filename || optget(opts, "file-list")->enabled) {

@@ -3958,3 +3958,8 @@ canonicalization fails, or when a parallel session cannot connect or accept
 the IDSESSION handshake. This prevents wrapper and whole-session failures from
 silently producing no JSONL row; compiled fault injection and supported-build
 Sonic1 qualification remain release gates.
+
+The stdin ingress now uses the same fallback for descriptor inspection,
+connection, and structured-response failures, so `clamdscan -` also retains a
+bounded non-clean JSONL row. Compiled stdin fault injection and supported-build
+Sonic1 qualification remain release gates.
