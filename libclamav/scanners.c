@@ -255,6 +255,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
     char *filename_base    = NULL;
     char *extract_fullpath = NULL;
     char *comment_fullpath = NULL;
+    uint64_t temporary_reserved = 0;
 
     UNUSEDPARAM(desc);
 
@@ -420,6 +421,11 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 /*
                  * Extract the file...
                  */
+                status = cli_scan_reserve_temporary(ctx, metadata.unpack_size);
+                if (status != CL_SUCCESS)
+                    break;
+                temporary_reserved = metadata.unpack_size;
+
                 if (0 != metadata.filename[0]) {
                     (void)cli_basename(metadata.filename, strlen(metadata.filename), &filename_base, true /* posix_support_backslash_pathsep */);
                 }
@@ -432,6 +438,8 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 }
                 if (NULL == extract_fullpath) {
                     cli_dbgmsg("RAR: Memory error allocating filename for extracted file.");
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
                     status = CL_EMEM;
                     break;
                 }
@@ -449,6 +457,8 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                         status = CL_EUNPACK;
                     if (!ctx->engine->keeptmp)
                         (void)cli_unlink(extract_fullpath);
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
                 } else {
                     bool extracted_file_exists;
 
@@ -494,8 +504,16 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     if (!ctx->engine->keeptmp && extracted_file_exists) {
                         if (cli_unlink(extract_fullpath)) {
                             cli_dbgmsg("RAR: Failed to unlink the extracted file: %s\n", extract_fullpath);
+                            cli_mark_scan_incomplete(ctx, "RAR extracted member could not be removed");
+                            if (status == CL_SUCCESS || status == CL_VERIFIED)
+                                status = CL_EUNLINK;
                         }
                     }
+                }
+
+                if (temporary_reserved) {
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
                 }
 
                 /* Free up that the filepath */
@@ -545,8 +563,19 @@ done:
     }
 
     if (NULL != extract_fullpath) {
+        if (!ctx->engine->keeptmp && access(extract_fullpath, F_OK) == 0 &&
+            cli_unlink(extract_fullpath)) {
+            cli_mark_scan_incomplete(ctx, "RAR extracted member could not be removed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED)
+                status = CL_EUNLINK;
+        }
         free(extract_fullpath);
         extract_fullpath = NULL;
+    }
+
+    if (temporary_reserved) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        temporary_reserved = 0;
     }
 
     if ((CL_VIRUS != status) && (nEncryptedFilesFound > 0)) {

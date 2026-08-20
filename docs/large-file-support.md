@@ -2039,6 +2039,15 @@ lengths are rejected as unrepresentable, and cleanup failures remain
 fail-visible. This closes the temporary-quota bypass; dependency-complete
 parser, sanitizer, and Linux/Sonic1 qualification remain open.
 
+## RAR temporary-output admission — 2026-08-20
+
+The enabled RAR extraction path now reserves each unencrypted member's
+declared unpacked size against `MaxTemporarySize` before creating output and
+holds the reservation through extraction and nested scanning. Extracted-file
+removal failures are now incomplete/non-cacheable instead of diagnostic-only.
+RAR extraction remains subject to the optional UnRAR build and separate
+dependency-complete runtime qualification.
+
 ## Embedded 7-Zip candidate admission — 2026-08-19
 
 Embedded 7-Zip SFX matches now require the complete 32-byte start header and
