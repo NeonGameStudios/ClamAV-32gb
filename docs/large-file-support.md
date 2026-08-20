@@ -3685,6 +3685,19 @@ Source guards and `git diff --check` pass. Fault-injected front-end execution,
 dependency-complete builds, and supported-build Sonic1 service qualification
 remain release gates.
 
+## Parser error status fail-closed policy — 2026-08-20
+
+The central scan-result policy now converts parser and decoder returns of
+`CL_EFORMAT`, `CL_EPARSE`, `CL_EREAD`, and `CL_EUNPACK` into the shared sticky
+incomplete state when the parser did not already do so. This prevents a later
+raw scan or sibling parser from turning a confirmed but partially inspected
+layer into a clean or cacheable result while preserving detection and stronger
+resource-error precedence.
+
+The focused policy regression and source guards pass. Full C/CTest execution,
+sanitizer coverage, and supported-build Sonic1 qualification remain release
+gates.
+
 ## Stdin over-limit staging closeout — 2026-08-20
 
 The `clamscan` stdin path now initializes the over-limit result before trying

@@ -2223,3 +2223,15 @@ directory traversal has completed cleanly.
 The source guards and `git diff --check` pass. Fault-injected partial-directory
 traversal, dependency-complete builds, and supported-build Sonic1 qualification
 remain release gates.
+
+## Parser error status fail-closed policy — 2026-08-20
+
+The central result policy now marks a scan incomplete when a parser or decoder
+returns `CL_EFORMAT`, `CL_EPARSE`, `CL_EREAD`, or `CL_EUNPACK` without having
+already recorded the shared sticky state. This closes the path where a later
+raw matcher could otherwise make a confirmed, partially inspected layer look
+clean or cacheable.
+
+The focused policy regression, source guards, capability manifest, runtime
+evidence verifier, and `git diff --check` pass. Dependency-complete C/CTest,
+sanitizer, and supported-build Sonic1 qualification remain release gates.

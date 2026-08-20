@@ -2209,6 +2209,37 @@ START_TEST(test_timeout_policy_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_parser_error_statuses_are_fail_closed)
+{
+    static const cl_error_t parser_errors[] = {CL_EFORMAT, CL_EPARSE, CL_EREAD, CL_EUNPACK};
+    cli_scan_layer_t layers[1];
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t result;
+    size_t i;
+
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&map, 0, sizeof(map));
+    layers[0].fmap           = &map;
+    ctx.fmap                 = &map;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 1;
+
+    for (i = 0; i < sizeof(parser_errors) / sizeof(parser_errors[0]); i++) {
+        ctx.scan_incomplete        = false;
+        ctx.scan_incomplete_reason = NULL;
+        map.dont_cache_flag        = false;
+        result                     = CL_SUCCESS;
+
+        ck_assert(cli_scan_result_should_halt(&ctx, parser_errors[i], &result));
+        ck_assert_int_eq(result, parser_errors[i]);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert(map.dont_cache_flag);
+    }
+}
+END_TEST
+
 #ifndef _WIN32
 START_TEST(test_action_setup_quarantine_lock_uses_validated_directory_handle)
 {
@@ -11260,6 +11291,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
+    tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
     tcase_add_test(tc_cl, test_format_width_limits_are_fail_visible);
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);

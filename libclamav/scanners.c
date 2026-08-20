@@ -5513,6 +5513,17 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         goto done;
     }
 
+    /* Parser and decoder entry points historically returned these statuses
+     * without always setting the shared sticky state themselves. Treating
+     * them as advisory allowed a later raw pass to turn a confirmed,
+     * partially inspected layer into a clean result. Preserve the specific
+     * status while making the omission visible to the report and cache policy. */
+    if (!ctx->scan_incomplete &&
+        (result_in == CL_EFORMAT || result_in == CL_EPARSE ||
+         result_in == CL_EREAD || result_in == CL_EUNPACK)) {
+        cli_mark_scan_incomplete(ctx, "parser or decoder returned an incomplete result");
+    }
+
     /* A recursion-limit skip applies only to the child that could not be
      * entered. While unwinding a nested layer, normalize that one result so
      * the parent container can continue scanning independent siblings. The
@@ -5549,6 +5560,12 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
             case CL_EMAXREC:
             case CL_EMAXSIZE:
             case CL_EMAXFILES:
+                *result_out = result_in;
+                break;
+            case CL_EFORMAT:
+            case CL_EPARSE:
+            case CL_EREAD:
+            case CL_EUNPACK:
                 *result_out = result_in;
                 break;
             default:
@@ -5612,9 +5629,8 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
         case CL_EMAXSIZE:
         case CL_EMAXFILES:
 
-        // The following are explicitly listed here so you think twice before putting them in the scan-halt list, above.
-        // Malformed/truncated files could report as any of these three, and that's fine.
-        // See commit 087e7fc3fa923e5d6a6fd2efe8df852a36256b5b for additional details.
+        // Parser/decoder errors are made sticky above, then become fail-visible
+        // here unless a stronger detection or terminal resource result won.
         case CL_EFORMAT:
         case CL_EPARSE:
         case CL_EREAD:
