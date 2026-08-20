@@ -3288,6 +3288,19 @@ Source guards and `git diff --check` are the current local evidence. A
 dependency-complete XAR corpus covering all encodings, sanitizer/fault-injected
 cleanup, and supported-build Sonic1 qualification remain release gates.
 
+## Legacy PE temporary-output accounting — 2026-08-20
+
+Recognized legacy PE unpackers now reserve their declared reconstructed-output
+capacity against `MaxTemporarySize` before creating the temporary descriptor.
+The reservation remains held through the reservation-aware nested scan and is
+released on unpack failure, output-write failure, cleanup, or completion. The
+UPX/FSG direct path now requires complete output writes and uses the same
+reservation-aware child entry point.
+
+Source guards and `git diff --check` are the current local evidence. Legacy
+packer fixture, sanitizer/fault-injected cleanup, and supported-build Sonic1
+qualification remain release gates.
+
 ## CryptFF temporary-output accounting — 2026-08-20
 
 CryptFF decryption now checks its growing logical output with 64-bit

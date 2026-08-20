@@ -9702,6 +9702,55 @@ START_TEST(test_pe_unpack_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_unpack_temporary_limit_is_fail_visible)
+{
+    const char *file = OBJDIR PATHSEP "input" PATHSEP "clamav_hdb_scanfiles" PATHSEP "clam-upx.exe";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    struct stat st;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    fd = open(file, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    ck_assert_msg((uintmax_t)st.st_size > 1024U,
+                  "UPX fixture is too small for the temporary-limit regression: %jd",
+                  (intmax_t)st.st_size);
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_handle(&fd, 0, (size_t)st.st_size, pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    close(fd);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pe_unpack_contiguous_size_is_fail_visible)
 {
     struct cl_engine engine;
@@ -10740,6 +10789,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_unpack_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_limit_accounting_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_member_limit_is_fail_visible);

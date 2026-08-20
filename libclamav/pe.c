@@ -130,25 +130,50 @@
         }                                                                                        \
     } while (0)
 
-#define CLI_UNPTEMP(NAME, FREEME)                                                                    \
-    if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {                                         \
-        cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be created"); \
-        cli_exe_info_destroy(peinfo);                                                                \
-        cli_multifree FREEME;                                                                        \
-        return CL_EMEM;                                                                              \
-    }                                                                                                \
-    if ((ndesc = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {    \
-        cli_dbgmsg(NAME ": Can't create file %s\n", tempfile);                                       \
-        cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be opened");  \
-        free(tempfile);                                                                              \
-        cli_exe_info_destroy(peinfo);                                                                \
-        cli_multifree FREEME;                                                                        \
-        return CL_ECREAT;                                                                            \
-    }
+#define CLI_UNP_RELEASE()                         \
+    do {                                          \
+        if (temporary_reserved) {                \
+            cli_scan_release_temporary(ctx, temporary_reserved); \
+            temporary_reserved = 0;              \
+        }                                         \
+    } while (0)
+
+#define CLI_UNPTEMP(NAME, FREEME)                                                                     \
+    do {                                                                                                \
+        cl_error_t temp_status = CL_SUCCESS;                                                          \
+        if (dsize != 0) {                                                                              \
+            temp_status = cli_scan_reserve_temporary(ctx, (uint64_t)dsize);                            \
+            if (temp_status != CL_SUCCESS) {                                                          \
+                cli_mark_scan_incomplete(ctx, NAME ": unpacked output exceeds temporary storage limits"); \
+                cli_exe_info_destroy(peinfo);                                                         \
+                cli_multifree FREEME;                                                                 \
+                return temp_status;                                                                   \
+            }                                                                                         \
+            temporary_reserved = (uint64_t)dsize;                                                     \
+        }                                                                                              \
+        if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {                                      \
+            cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be created"); \
+            CLI_UNP_RELEASE();                                                                        \
+            cli_exe_info_destroy(peinfo);                                                             \
+            cli_multifree FREEME;                                                                     \
+            return CL_EMEM;                                                                           \
+        }                                                                                              \
+        if ((ndesc = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) { \
+            cli_dbgmsg(NAME ": Can't create file %s\n", tempfile);                                    \
+            cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be opened"); \
+            free(tempfile);                                                                           \
+            CLI_UNP_RELEASE();                                                                        \
+            cli_exe_info_destroy(peinfo);                                                             \
+            cli_multifree FREEME;                                                                     \
+            return CL_ECREAT;                                                                         \
+        }                                                                                              \
+    } while (0)
 
 #define CLI_TMPUNLK()               \
     if (!ctx->engine->keeptmp) {    \
         if (cli_unlink(tempfile)) { \
+            cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be removed"); \
+            CLI_UNP_RELEASE();       \
             free(tempfile);         \
             return CL_EUNLINK;      \
         }                           \
@@ -157,6 +182,7 @@
 #define FSGCASE(NAME, FREESEC)                            \
     case 0: /* Unpacked and NOT rebuilt */                \
         cli_dbgmsg(NAME ": Successfully decompressed\n"); \
+        CLI_UNP_RELEASE();                                  \
         close(ndesc);                                     \
         if (cli_unlink(tempfile)) {                       \
             cli_exe_info_destroy(peinfo);                 \
@@ -172,6 +198,7 @@
 
 #define SPINCASE()                                         \
     case 2:                                                \
+        CLI_UNP_RELEASE();                                 \
         free(spinned);                                     \
         close(ndesc);                                      \
         if (cli_unlink(tempfile)) {                        \
@@ -190,16 +217,20 @@
             cli_dbgmsg(NAME ": Unpacked and rebuilt executable saved in %s\n", tempfile);                       \
             cli_multifree FREEME;                                                                               \
             cli_exe_info_destroy(peinfo);                                                                       \
-            lseek(ndesc, 0, SEEK_SET);                                                                          \
+            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {                                                       \
+                cli_mark_scan_incomplete(ctx, NAME ": unpacked output temporary file could not be rewound");   \
+                CLI_UNP_RELEASE();                                                                              \
+                close(ndesc);                                                                                   \
+                CLI_TMPUNLK();                                                                                  \
+                free(tempfile);                                                                                 \
+                return CL_ESEEK;                                                                                \
+            }                                                                                                   \
             cli_dbgmsg("***** Scanning rebuilt PE file *****\n");                                               \
             if (temporary_reserved) \
                 ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); \
             else \
                 ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE); \
-            if (temporary_reserved) { \
-                cli_scan_release_temporary(ctx, temporary_reserved); \
-                temporary_reserved = 0; \
-            } \
+            CLI_UNP_RELEASE();                                                                                     \
             if (CL_SUCCESS != ret) { \
                 close(ndesc);                                                                                   \
                 CLI_TMPUNLK();                                                                                  \
@@ -216,10 +247,7 @@
         default:                                                                                                \
             cli_dbgmsg(NAME ": Unpacking failed\n");                                                            \
             cli_mark_scan_incomplete(ctx, NAME ": recognized unpacker did not complete");                       \
-            if (temporary_reserved) { \
-                cli_scan_release_temporary(ctx, temporary_reserved); \
-                temporary_reserved = 0; \
-            } \
+            CLI_UNP_RELEASE(); \
             close(ndesc);                                                                                       \
             if (cli_unlink(tempfile)) {                                                                         \
                 cli_exe_info_destroy(peinfo);                                                                   \
@@ -3935,9 +3963,13 @@ int cli_scanpe(cli_ctx *ctx)
 
         if ((unsigned int)write(ndesc, dest, dsize) != dsize) {
             cli_dbgmsg("cli_scanpe: UPX/FSG: Can't write %d bytes\n", dsize);
-            free(tempfile);
+            cli_mark_scan_incomplete(ctx, "PE UPX/FSG unpacked output could not be written completely");
             free(dest);
             close(ndesc);
+            if (!ctx->engine->keeptmp && cli_unlink(tempfile))
+                cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be removed");
+            CLI_UNP_RELEASE();
+            free(tempfile);
             return CL_EWRITE;
         }
 
@@ -3947,6 +3979,7 @@ int cli_scanpe(cli_ctx *ctx)
             close(ndesc);
             CLI_TMPUNLK();
             free(tempfile);
+            CLI_UNP_RELEASE();
             return CL_ESEEK;
         }
 
@@ -3954,7 +3987,11 @@ int cli_scanpe(cli_ctx *ctx)
             cli_dbgmsg("cli_scanpe: UPX/FSG: Decompressed data saved in %s\n", tempfile);
 
         cli_dbgmsg("***** Scanning decompressed file *****\n");
-        ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        if (temporary_reserved)
+            ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+        else
+            ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        CLI_UNP_RELEASE();
         if (CL_SUCCESS != ret) {
             close(ndesc);
             CLI_TMPUNLK();
