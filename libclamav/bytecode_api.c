@@ -294,11 +294,17 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
 {
     char err[128];
     size_t res;
+    uint64_t write_len;
 
     cli_ctx *cctx = (cli_ctx *)ctx->ctx;
     if (len < 0) {
         cli_warnmsg("Bytecode API: called with negative length!\n");
         API_MISUSE();
+        return -1;
+    }
+    write_len = (uint64_t)(uint32_t)len;
+    if (UINT64_MAX - ctx->written < write_len) {
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode output size accounting overflowed");
         return -1;
     }
     if (-1 == ctx->outfd) {
@@ -319,13 +325,25 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
     }
 
     cli_event_fastdata(ctx->bc_events, BCEV_WRITE, data, len);
-    if (cli_checklimits("bytecode api", cctx, ctx->written + len, 0, 0))
+    if (cli_checklimits("bytecode api", cctx, ctx->written + write_len, 0, 0))
         return -1;
+    if (cctx && write_len) {
+        if (cli_scan_reserve_temporary(cctx, write_len) != CL_SUCCESS)
+            return -1;
+        if (UINT64_MAX - ctx->temporary_reserved < write_len) {
+            cli_scan_release_temporary(cctx, write_len);
+            cli_bcapi_mark_map_read_error(ctx, "Bytecode temporary output accounting overflowed");
+            return -1;
+        }
+        ctx->temporary_reserved += write_len;
+    }
     res = cli_writen(ctx->outfd, data, (size_t)len);
     if (res > 0) ctx->written += res;
     if (res == (size_t)-1) {
         cli_warnmsg("Bytecode API: write failed: %s\n", cli_strerror(errno, err, sizeof(err)));
         cli_event_error_str(EV, "cli_bcapi_write: write failed");
+        if (cctx)
+            cli_mark_scan_incomplete(cctx, "Bytecode temporary output could not be written completely");
     }
     return (int32_t)res;
 }
@@ -659,20 +677,25 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
     int res = -1;
 
     cli_event_count(EV, BCEV_EXTRACTED);
-    cli_dbgmsg("previous tempfile had %u bytes\n", ctx->written);
+    cli_dbgmsg("previous tempfile had " STDu64 " bytes\n", ctx->written);
     if (!ctx->written)
         return 0;
     if (ctx->ctx && cli_updatelimits(ctx->ctx, ctx->written))
         return -1;
     ctx->written = 0;
+    cctx = (cli_ctx *)ctx->ctx;
     if (lseek(ctx->outfd, 0, SEEK_SET) == -1) {
         cli_dbgmsg("bytecode: call to lseek() has failed\n");
+        if (cctx)
+            cli_mark_scan_incomplete(cctx, "Bytecode extracted output could not be rewound");
         return CL_ESEEK;
     }
     cli_dbgmsg("bytecode: scanning extracted file %s\n", ctx->tempfile);
-    cctx = (cli_ctx *)ctx->ctx;
     if (cctx) {
-        res = cli_magic_scan_desc_type(ctx->outfd, ctx->tempfile, cctx, ctx->containertype, NULL, LAYER_ATTRIBUTES_NONE);
+        if (ctx->temporary_reserved)
+            res = cli_magic_scan_desc_type_reserved(ctx->outfd, ctx->tempfile, cctx, ctx->containertype, NULL, LAYER_ATTRIBUTES_NONE);
+        else
+            res = cli_magic_scan_desc_type(ctx->outfd, ctx->tempfile, cctx, ctx->containertype, NULL, LAYER_ATTRIBUTES_NONE);
         if (res == CL_VIRUS) {
             ctx->virname = cli_get_last_virus(cctx);
             ctx->found   = 1;
@@ -688,6 +711,10 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
         }
         free(ctx->tempfile);
         ctx->tempfile = NULL;
+    }
+    if (ctx->temporary_reserved && cctx) {
+        cli_scan_release_temporary(cctx, ctx->temporary_reserved);
+        ctx->temporary_reserved = 0;
     }
     cli_dbgmsg("bytecode: extracting new file with id %u\n", id);
     return res;

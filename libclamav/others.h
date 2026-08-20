@@ -1211,7 +1211,7 @@ cl_error_t cli_checklimits(const char *who, cli_ctx *ctx, uint64_t need1, uint64
  * @param needed    The size of the file we're considering scanning.
  * @return cl_error_t CL_SUCCESS if we're good to keep scanning else an error status.
  */
-cl_error_t cli_updatelimits(cli_ctx *ctx, size_t needed);
+cl_error_t cli_updatelimits(cli_ctx *ctx, uint64_t needed);
 
 cl_error_t cli_scan_account_matcher_work(cli_ctx *ctx, uint64_t bytes);
 cl_error_t cli_scan_reserve_contiguous(cli_ctx *ctx, uint64_t bytes);

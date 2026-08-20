@@ -98,9 +98,11 @@ int cli_bytecode_file_size_compatible(uint64_t file_size);
 cl_error_t cli_bytecode_context_setpe(struct cli_bc_ctx *ctx, const struct cli_pe_hook_data *data, const struct cli_exe_section *sections);
 cl_error_t cli_bytecode_context_setpdf(struct cli_bc_ctx *ctx, unsigned phase, unsigned nobjs, struct pdf_obj **objs, uint32_t *pdf_flags, size_t pdfsize, off_t pdfstartoff);
 
-/* returns file descriptor, sets tempfile. Caller takes ownership, and is
- * responsible for freeing/unlinking */
-int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename);
+/* returns file descriptor, sets tempfile and transfers any temporary-space
+ * reservation. Caller takes ownership, and is responsible for releasing the
+ * reservation after the child scan and for freeing/unlinking the file. */
+int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename,
+                                        uint64_t *temporary_reserved);
 uint64_t cli_bytecode_context_getresult_int(struct cli_bc_ctx *ctx);
 void cli_bytecode_context_destroy(struct cli_bc_ctx *ctx);
 

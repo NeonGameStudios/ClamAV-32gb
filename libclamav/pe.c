@@ -192,7 +192,15 @@
             cli_exe_info_destroy(peinfo);                                                                       \
             lseek(ndesc, 0, SEEK_SET);                                                                          \
             cli_dbgmsg("***** Scanning rebuilt PE file *****\n");                                               \
-            if (CL_SUCCESS != (ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE))) { \
+            if (temporary_reserved) \
+                ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); \
+            else \
+                ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE); \
+            if (temporary_reserved) { \
+                cli_scan_release_temporary(ctx, temporary_reserved); \
+                temporary_reserved = 0; \
+            } \
+            if (CL_SUCCESS != ret) { \
                 close(ndesc);                                                                                   \
                 CLI_TMPUNLK();                                                                                  \
                 free(tempfile);                                                                                 \
@@ -208,6 +216,10 @@
         default:                                                                                                \
             cli_dbgmsg(NAME ": Unpacking failed\n");                                                            \
             cli_mark_scan_incomplete(ctx, NAME ": recognized unpacker did not complete");                       \
+            if (temporary_reserved) { \
+                cli_scan_release_temporary(ctx, temporary_reserved); \
+                temporary_reserved = 0; \
+            } \
             close(ndesc);                                                                                       \
             if (cli_unlink(tempfile)) {                                                                         \
                 cli_exe_info_destroy(peinfo);                                                                   \
@@ -2765,6 +2777,7 @@ int cli_scanpe(cli_ctx *ctx)
     struct cli_bc_ctx *bc_ctx;
     fmap_t *map;
     struct cli_pe_hook_data pedata;
+    uint64_t temporary_reserved = 0;
     int toval                   = 0;
     struct json_object *pe_json = NULL;
 
@@ -4382,11 +4395,13 @@ int cli_scanpe(cli_ctx *ctx)
             cli_bytecode_context_destroy(bc_ctx);
             return CL_VIRUS;
         case CL_SUCCESS:
-            ndesc = cli_bytecode_context_getresult_file(bc_ctx, &tempfile);
+            ndesc = cli_bytecode_context_getresult_file(bc_ctx, &tempfile, &temporary_reserved);
             cli_bytecode_context_destroy(bc_ctx);
             if (ndesc != -1 && tempfile) {
                 CLI_UNPRESULTS("cli_scanpe: bytecode PE hook", 1, 1, (0));
             }
+            if (temporary_reserved)
+                cli_scan_release_temporary(ctx, temporary_reserved);
 
             break;
         default:

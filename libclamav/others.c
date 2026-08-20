@@ -1537,7 +1537,7 @@ done:
     return ret;
 }
 
-cl_error_t cli_updatelimits(cli_ctx *ctx, size_t needed)
+cl_error_t cli_updatelimits(cli_ctx *ctx, uint64_t needed)
 {
     cl_error_t ret = cli_checklimits("cli_updatelimits", ctx, needed, 0, 0);
 

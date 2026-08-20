@@ -176,6 +176,11 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
         ctx->tempfile = NULL;
     }
 
+    if (ctx->temporary_reserved && ctx->ctx) {
+        cli_scan_release_temporary((cli_ctx *)ctx->ctx, ctx->temporary_reserved);
+        ctx->temporary_reserved = 0;
+    }
+
     if (ctx->jsnormdir) {
         char fullname[1025];
         cli_ctx *cctx = ctx->ctx;
@@ -309,13 +314,17 @@ void cli_bytecode_context_destroy(struct cli_bc_ctx *ctx)
     free(ctx);
 }
 
-int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename)
+int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename,
+                                        uint64_t *temporary_reserved)
 {
     int fd;
+
     *tempfilename = ctx->tempfile;
+    *temporary_reserved = ctx->temporary_reserved;
     fd            = ctx->outfd;
     ctx->tempfile = NULL;
     ctx->outfd    = -1;
+    ctx->temporary_reserved = 0;
     return fd;
 }
 
@@ -3075,8 +3084,10 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
         }
         if (!ret) {
             char *tempfile;
+            uint64_t temporary_reserved = 0;
+            int fd;
 
-            int fd = cli_bytecode_context_getresult_file(ctx, &tempfile);
+            fd = cli_bytecode_context_getresult_file(ctx, &tempfile, &temporary_reserved);
             if (fd && fd != -1) {
                 if (cctx->engine->keeptmp) {
                     cli_dbgmsg("Bytecode %u unpacked file saved in %s\n",
@@ -3085,14 +3096,24 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
                     cli_dbgmsg("Bytecode %u unpacked file\n", bc->id);
                 }
 
-                lseek(fd, 0, SEEK_SET);
-                cli_dbgmsg("***** Scanning unpacked file ******\n");
+                if (lseek(fd, 0, SEEK_SET) == -1) {
+                    cli_mark_scan_incomplete(cctx, "Bytecode unpacked output could not be rewound");
+                    ret = CL_ESEEK;
+                } else {
+                    cli_dbgmsg("***** Scanning unpacked file ******\n");
 
-                ret = cli_magic_scan_desc(fd, tempfile, cctx, NULL, LAYER_ATTRIBUTES_NONE);
+                    if (temporary_reserved)
+                        ret = cli_magic_scan_desc_type_reserved(fd, tempfile, cctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+                    else
+                        ret = cli_magic_scan_desc(fd, tempfile, cctx, NULL, LAYER_ATTRIBUTES_NONE);
+                }
 
                 if (!cctx->engine->keeptmp) {
                     if (ftruncate(fd, 0) == -1) {
                         cli_dbgmsg("ftruncate failed on %d\n", fd);
+                        cli_mark_scan_incomplete(cctx, "Bytecode unpacked output could not be truncated");
+                        if (ret == CL_SUCCESS)
+                            ret = CL_EWRITE;
                     }
                 }
 
@@ -3102,6 +3123,11 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
                     if (tempfile && cli_unlink(tempfile)) {
                         ret = CL_EUNLINK;
                     }
+                }
+
+                if (temporary_reserved) {
+                    cli_scan_release_temporary(cctx, temporary_reserved);
+                    temporary_reserved = 0;
                 }
 
                 free(tempfile);
@@ -3114,6 +3140,10 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
 
                 bytecode_context_reset(ctx);
                 continue;
+            }
+            if (temporary_reserved) {
+                cli_scan_release_temporary(cctx, temporary_reserved);
+                temporary_reserved = 0;
             }
         }
         bytecode_context_reset(ctx);

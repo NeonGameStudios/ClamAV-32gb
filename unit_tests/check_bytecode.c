@@ -616,6 +616,61 @@ START_TEST(test_bytecode_map_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
+{
+    struct cl_engine *engine;
+    struct cli_bc_ctx *bcctx;
+    cli_ctx cctx;
+    uint8_t payload[5] = {0, 1, 2, 3, 4};
+    uint8_t byte = 0;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
+    ck_assert_int_eq(cli_updatelimits(&cctx, UINT64_C(4294967296)), CL_SUCCESS);
+    ck_assert_uint_eq(cctx.scansize, UINT64_C(4294967296));
+
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 4), CL_SUCCESS);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
+    bcctx         = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_uint_eq(cctx.temporary_bytes, 0);
+    cli_bytecode_context_destroy(bcctx);
+
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 8), CL_SUCCESS);
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
+    bcctx       = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), sizeof(payload));
+    ck_assert_uint_eq(bcctx->written, sizeof(payload));
+    ck_assert_uint_eq(bcctx->temporary_reserved, sizeof(payload));
+    ck_assert_uint_eq(cctx.temporary_bytes, sizeof(payload));
+    cli_bytecode_context_destroy(bcctx);
+    ck_assert_uint_eq(cctx.temporary_bytes, 0);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
+    bcctx       = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx     = &cctx;
+    bcctx->written = UINT32_MAX;
+    ck_assert_int_eq(cli_bcapi_write(bcctx, &byte, 1), 1);
+    ck_assert_uint_eq(bcctx->written, UINT64_C(4294967296));
+    cli_bytecode_context_destroy(bcctx);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
 {
     const uint64_t boundary = UINT64_C(4294967296);
@@ -891,6 +946,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
+    tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

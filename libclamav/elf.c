@@ -846,6 +846,7 @@ cl_error_t cli_unpackelf(cli_ctx *ctx)
     cl_error_t ret = CL_SUCCESS;
     char *tempfile = NULL;
     int ndesc      = -1;
+    uint64_t temporary_reserved = 0;
     struct cli_bc_ctx *bc_ctx;
 
     /* Bytecode BC_ELF_UNPACKER hook */
@@ -863,18 +864,23 @@ cl_error_t cli_unpackelf(cli_ctx *ctx)
     cli_dbgmsg("Finished running bytecode hook\n");
     if (CL_SUCCESS == ret) {
         // check for unpacked/rebuilt executable
-        ndesc = cli_bytecode_context_getresult_file(bc_ctx, &tempfile);
+        ndesc = cli_bytecode_context_getresult_file(bc_ctx, &tempfile, &temporary_reserved);
         if (ndesc != -1 && tempfile) {
             cli_dbgmsg("cli_scanelf: Unpacked and rebuilt ELF executable saved in %s\n", tempfile);
 
             lseek(ndesc, 0, SEEK_SET);
 
             cli_dbgmsg("***** Scanning rebuilt ELF file *****\n");
-            ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            if (temporary_reserved)
+                ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+            else
+                ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
         }
     }
 
 done:
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
     // cli_bytecode_context_getresult_file() gives up ownership of temp file, so we must clean it up.
     if (-1 != ndesc) {
         close(ndesc);

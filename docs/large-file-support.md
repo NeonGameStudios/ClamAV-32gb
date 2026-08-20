@@ -3260,3 +3260,18 @@ reported or cached as fully clean without PE-specific coverage.
 The capability manifest records this as an intentional unsupported boundary.
 Dependency-complete PE32+ fixtures, sanitizer coverage, and supported-build
 Sonic1 qualification remain release gates.
+
+## Bytecode extracted-output accounting — 2026-08-20
+
+Bytecode extraction totals are now native-width and each output write reserves
+the requested bytes against `MaxTemporarySize`. The reservation remains held
+through `extract_new` and bytecode unpacker child scans, including the PE,
+ELF, and Mach-O hook handoffs; transferred ownership is released only after
+the scan and temporary cleanup. Complete writes are required, arithmetic
+overflow and write failures mark the scan incomplete, and the logical scan
+counter now accepts a 64-bit byte count.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete bytecode-v2 fixture exercising multi-gigabyte repeated
+writes, interpreter/JIT behavior, sanitizer/fault-injected cleanup, and
+supported-build Sonic1 qualification remain release gates.
