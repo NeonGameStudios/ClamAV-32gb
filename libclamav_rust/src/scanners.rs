@@ -181,14 +181,25 @@ impl TempSpool {
 
     fn write_all(&mut self, bytes: &[u8]) -> Result<(), cl_error_t> {
         let requested = u64::try_from(bytes.len()).map_err(|_| cl_error_t_CL_ERESOURCE)?;
-        let available = self.reserved.saturating_sub(self.written);
-        if requested > available {
-            let additional = requested.saturating_sub(available);
+        let new_written = self
+            .written
+            .checked_add(requested)
+            .ok_or(cl_error_t_CL_ERESOURCE)?;
+        let available = self
+            .reserved
+            .checked_sub(self.written)
+            .ok_or(cl_error_t_CL_ERESOURCE)?;
+        let additional = requested.saturating_sub(available);
+        if additional != 0 {
+            let new_reserved = self
+                .reserved
+                .checked_add(additional)
+                .ok_or(cl_error_t_CL_ERESOURCE)?;
             let status = unsafe { sys::cli_scan_reserve_temporary(self.ctx, additional) };
             if status != cl_error_t_CL_SUCCESS {
                 return Err(status);
             }
-            self.reserved = self.reserved.saturating_add(additional);
+            self.reserved = new_reserved;
         }
 
         let mut offset = 0usize;
@@ -205,7 +216,7 @@ impl TempSpool {
             }
             offset = offset.saturating_add(written as usize);
         }
-        self.written = self.written.saturating_add(requested);
+        self.written = new_written;
         Ok(())
     }
 
@@ -499,7 +510,9 @@ unsafe fn spool_fmap(ctx: *mut cli_ctx, fmap: &FMap) -> Result<TempSpool, cl_err
             break;
         }
         spool.write_all(&buffer[..read])?;
-        copied = copied.saturating_add(read as u64);
+        copied = copied
+            .checked_add(read as u64)
+            .ok_or(cl_error_t_CL_EREAD)?;
     }
 
     if copied != expected_size {

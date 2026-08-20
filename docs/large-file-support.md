@@ -2528,6 +2528,8 @@ large-member qualification remain release gates.
 Rust ALZ/OneNote temporary spools now release their shared temporary-space
 reservation exactly once. Cleanup honors `keeptmp` and marks close/removal
 failures sticky; a failed rewind before nested scanning is also incomplete.
+Spool-written and source-copy counters now use checked arithmetic and return a
+resource/read failure on accounting overflow instead of saturating silently.
 This prevents early counter release from allowing later staging beyond
 `MaxTemporarySize` and keeps cleanup non-clean/non-cacheable. Compiled
 Rust/CTest and Linux/Sonic1 RSS/temporary-quota qualification remain open.
