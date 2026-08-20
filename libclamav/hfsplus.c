@@ -1754,7 +1754,11 @@ done:
     if (NULL != targetdir) {
         /* Clean up extracted content, if needed */
         if (!ctx->engine->keeptmp) {
-            (void)cli_rmdirs(targetdir);
+            if (cli_rmdirs(targetdir) != 0) {
+                cli_mark_scan_incomplete(ctx, "HFS+ temporary directory could not be removed");
+                if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                    status = CL_EUNLINK;
+            }
         }
         free(targetdir);
     }

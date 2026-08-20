@@ -97,6 +97,7 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
         }
         if (cli_writen(fd, buffer, chunk) != chunk) {
             cli_warnmsg("writeWholeFile: Can't write to file %s\n", tmpf);
+            cli_mark_scan_incomplete(ctx, "UDF file extent could not be written completely");
             status = CL_EWRITE;
             goto done;
         }
@@ -107,15 +108,18 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
 
 done:
     if (-1 != fd) {
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "UDF temporary output could not be closed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                status = CL_EWRITE;
+        }
         fd = -1;
     }
     if (!ctx->engine->keeptmp) {
         if (NULL != tmpf) {
             if (cli_unlink(tmpf)) {
-                /* If status is already set to virus or something, that should take priority of the
-                 * error unlinking the file. */
-                if (CL_CLEAN == status) {
+                cli_mark_scan_incomplete(ctx, "UDF temporary output could not be removed");
+                if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK) {
                     status = CL_EUNLINK;
                 }
             }

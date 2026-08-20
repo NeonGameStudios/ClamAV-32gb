@@ -3031,6 +3031,13 @@ on both parser failure and successful child scans; extent quota failures are
 fail-visible. Compiled filesystem-parser and broad corpus qualification remain
 release gates.
 
+UDF short writes, descriptor-close failures, and temporary-file removal
+failures now also mark the containing filesystem scan incomplete while
+preserving an earlier detection or parser error. HFS+ now applies the same
+fail-closed rule to removal of its extracted temporary directory. Source guards
+and `git diff --check` are the current local evidence; compiled fault-injected
+cleanup and supported-build filesystem qualification remain release gates.
+
 RTF embedded objects now reserve their declared payload plus the OLE10 bridge
 header before staging, retain that reservation through nested scanning, and
 release it on both complete and truncated-object cleanup. Ordinary embedded
