@@ -2097,7 +2097,21 @@ staging copy. The existing missing-fragment regression continues to cover
 fail-visible reassembly, and a new 65 MiB fragment fixture verifies that the
 partial-body path crosses the former materialization boundary successfully.
 
-External-body, disposition-notification, and unknown `message/*` subtypes
+External-body and unknown `message/*` subtypes
 remain explicit unsupported materialization cases. Dependency-complete C/CTest,
 sanitizer, broad MIME corpus, and supported-build Sonic1 qualification remain
 open release gates.
+
+## RFC 2298 disposition-notification spool handoff — 2026-08-20
+
+message/disposition-notification now uses the disk-backed MIME body spool and
+the ordinary bounded fileblob scan path. This removes the former 64 MiB
+linked-line materialization boundary while preserving transfer decoding,
+temporary-space accounting, and the existing raw scan behavior. A new 65 MiB
+regression fixture verifies that the body is scanned past the old
+materialization limit.
+
+External-body references and unknown message/* subtypes remain explicit
+unsupported materialization cases. Dependency-complete C/CTest, sanitizer,
+broad MIME corpus, and supported-build Sonic1 qualification remain open release
+gates.

@@ -225,14 +225,15 @@ static bool messageNeedsMaterializedBody(const message *m)
     if (messageGetMimeType(m) == MESSAGE) {
         subtype = messageGetMimeSubtype(m);
 
-        /* RFC822, delivery-status, and partial bodies can be handled from a
-         * disk-backed representation. Keep the legacy in-memory state
-         * machine for external-body references, disposition notifications,
-         * and unknown message types, whose parser semantics are not
-         * equivalent to a nested scan. */
+        /* RFC822, delivery-status, partial, and disposition-notification
+         * bodies can be handled from a disk-backed representation. Keep the
+         * legacy in-memory state machine for external-body references and
+         * unknown message types, whose parser semantics are not equivalent
+         * to a nested scan. */
         return (strcasecmp(subtype, "rfc822") != 0) &&
                (strcasecmp(subtype, "delivery-status") != 0) &&
-               (strcasecmp(subtype, "partial") != 0);
+               (strcasecmp(subtype, "partial") != 0) &&
+               (strcasecmp(subtype, "disposition-notification") != 0);
     }
 
     subtype = messageGetMimeSubtype(m);

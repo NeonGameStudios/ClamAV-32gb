@@ -679,6 +679,40 @@ static char *create_large_partial_message_fixture(void)
     return path;
 }
 
+static char *create_large_disposition_notification_fixture(void)
+{
+    static const char header[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: message/disposition-notification\n"
+        "Content-Transfer-Encoding: 8bit\n"
+        "\n";
+    char block[64000];
+    char *path = NULL;
+    int fd     = -1;
+    size_t body_bytes;
+    size_t line;
+
+    for (line = 0; line < sizeof(block) / 1000U; line++) {
+        memset(block + line * 1000U, 'D', 999U);
+        block[line * 1000U + 999U] = '\n';
+    }
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, header, sizeof(header) - 1), (ssize_t)(sizeof(header) - 1));
+
+    body_bytes = 0;
+    while (body_bytes <= 64U * 1024U * 1024U) {
+        ck_assert_int_eq(write(fd, block, sizeof(block)), (ssize_t)sizeof(block));
+        body_bytes += sizeof(block);
+    }
+
+    ck_assert_int_eq(close(fd), 0);
+    return path;
+}
+
 START_TEST(test_mbox_nested_maxfiles_is_fail_visible)
 {
     struct cl_engine *engine;
@@ -769,6 +803,15 @@ START_TEST(test_partial_message_large_body_uses_streaming_spool)
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
 
+    free(path);
+}
+END_TEST
+
+START_TEST(test_disposition_notification_large_body_uses_streaming_spool)
+{
+    char *path = create_large_disposition_notification_fixture();
+
+    assert_large_mail_body_streams(path, 0, 64U * 1024U * 1024U);
     free(path);
 }
 END_TEST
@@ -11392,6 +11435,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_mbox_large_body_streams_without_alert);
     tcase_add_test(tc_cl_scan, test_partial_message_missing_fragment_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_partial_message_large_body_uses_streaming_spool);
+    tcase_add_test(tc_cl_scan, test_disposition_notification_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_mhtml_unterminated_comment_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_streams_without_alert);
