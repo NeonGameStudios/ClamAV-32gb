@@ -2171,6 +2171,18 @@ failures preserve an earlier detection and make an otherwise-clean generated
 member non-clean. Valid large-member, malformed-decoder, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+## UUEncode temporary-output accounting — 2026-08-20
+
+Standalone UUEncode extraction now carries the active scan context into its
+disk-backed fileblob, so decoded attachment bytes are charged to
+`MaxTemporarySize` while they are materialized. A quota or fileblob write
+failure is no longer hidden by a present UUEncode terminator; the parser
+returns an incomplete result and does not scan partial output.
+
+The focused temporary-quota regression and source guards are the current local
+evidence. Compiled write-fault coverage, sanitizer execution, and supported
+build Sonic1 qualification remain release gates.
+
 ## Legacy PE unpacker contiguous admission — 2026-08-19
 
 Recognized legacy PE unpackers now pass their requested working size through a

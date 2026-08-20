@@ -45,7 +45,7 @@
 /* Maximum line length according to RFC821 */
 #define RFC2821LENGTH 1000
 
-int cli_uuencode(const char *dir, fmap_t *map)
+int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 {
     message *m;
     char buffer[RFC2821LENGTH + 1];
@@ -64,6 +64,8 @@ int cli_uuencode(const char *dir, fmap_t *map)
     if (m == NULL) {
         return CL_EMEM;
     }
+
+    messageSetCTX(m, ctx);
 
     cli_dbgmsg("found uuencode file\n");
 
@@ -87,7 +89,8 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     fileblob *fb;
     char buffer[RFC2821LENGTH + 1];
     char *filename = cli_strtok(firstline, 2, " ");
-    bool saw_end   = false;
+    bool saw_end                = false;
+    bool materialization_failed = false;
 
     if (filename == NULL)
         return -1;
@@ -124,11 +127,13 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
         if ((len > 62) || (len == 0))
             break;
 
-        if (fileblobAddData(fb, data, len) < 0)
+        if (fileblobAddData(fb, data, len) < 0) {
+            materialization_failed = true;
             break;
+        }
     }
 
     fileblobDestroy(fb);
 
-    return saw_end ? 1 : -1;
+    return saw_end && !materialization_failed ? 1 : -1;
 }

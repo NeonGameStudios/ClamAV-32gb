@@ -4051,7 +4051,7 @@ static cl_error_t cli_scanuuencoded(cli_ctx *ctx)
         return CL_ETMPDIR;
     }
 
-    ret = cli_uuencode(dir, ctx->fmap);
+    ret = cli_uuencode(ctx, dir, ctx->fmap);
 
     if (ret == CL_EPARSE)
         cli_mark_scan_incomplete(ctx, "UUencoded attachment was not terminated or decoded completely");
