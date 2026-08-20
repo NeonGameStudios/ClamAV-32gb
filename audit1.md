@@ -2127,6 +2127,18 @@ The source guards and `git diff --check` pass. Dependency-complete front-end
 builds, fault-injected report-output coverage, and supported-build Sonic1
 service qualification remain open release gates.
 
+## Stdin over-limit staging closeout — 2026-08-20
+
+`clamscan` now initializes the stdin over-limit result to `CL_EMAXSIZE` before
+attempting its sentinel file. If sentinel creation fails, the path therefore
+returns a deterministic limit result instead of an uninitialized `ret`. The
+normal and over-limit staging paths also check `fclose()` and refuse to scan or
+report success when buffered temporary output cannot be closed.
+
+The source guards and `git diff --check` pass. Dependency-complete front-end
+builds, fault-injected stdin staging, and supported-build Sonic1 qualification
+remain open release gates.
+
 ## Rust parser failure accounting — 2026-08-20
 
 Rust-backed parser failures previously set only the Rust-side sticky

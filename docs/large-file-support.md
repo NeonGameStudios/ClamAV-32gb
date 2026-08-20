@@ -3635,3 +3635,16 @@ existing scan verdict handling.
 Source guards and `git diff --check` pass. Fault-injected front-end execution,
 dependency-complete builds, and supported-build Sonic1 service qualification
 remain release gates.
+
+## Stdin over-limit staging closeout — 2026-08-20
+
+The `clamscan` stdin path now initializes the over-limit result before trying
+to materialize its boundary sentinel, so a failed `ftruncate()` cannot expose
+an uninitialized return code. It also checks the temporary staging file's
+`fclose()` both on the over-limit path and before a normal scan; close failures
+remove the staging file and return an error rather than scanning uncertain
+contents.
+
+Source guards and `git diff --check` pass. Fault-injected stdin staging,
+dependency-complete front-end builds, and supported-build Sonic1 qualification
+remain release gates.

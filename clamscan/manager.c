@@ -920,13 +920,19 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         if ((UINT64_MAX - fsize < (uint64_t)bread) ||
             (maxfilesize != 0 && (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize))) {
             logg(LOGG_ERROR, "stdin exceeds MaxFileSize; refusing to scan a partial prefix\n");
+            ret = CL_EMAXSIZE;
             if (maxfilesize != 0 && maxfilesize < (uint64_t)INT64_MAX) {
                 if (ftruncate(fileno(fs), (off_t)(maxfilesize + 1)) == -1)
                     logg(LOGG_DEBUG, "Unable to materialize the over-limit sentinel: %s\n", strerror(errno));
                 else
                     over_limit_sentinel = true;
             }
-            fclose(fs);
+            if (fclose(fs) != 0) {
+                logg(LOGG_ERROR, "Can't close stdin temporary file: %s\n", strerror(errno));
+                unlink(filename);
+                free(filename);
+                return 2;
+            }
             if (over_limit_sentinel) {
                 ret = cl_scanfile_ex2(
                     filename,
@@ -967,7 +973,12 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         return 2;
     }
 
-    fclose(fs);
+    if (fclose(fs) != 0) {
+        logg(LOGG_ERROR, "Can't close stdin temporary file: %s\n", strerror(errno));
+        unlink(filename);
+        free(filename);
+        return 2;
+    }
 
     if ((opt = optget(opts, "hash-alg"))->enabled) {
         hash_alg = opt->strarg;
