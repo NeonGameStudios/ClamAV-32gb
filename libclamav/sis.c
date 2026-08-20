@@ -641,6 +641,15 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
                         if (SIZEOF_HEADER_UUIDS + sizeof(sis) > ptrs[j]) {
                             cli_dbgmsg("\tThe pointer (offset) of the file in the archive cannot be within the SIS header: %u\n", ptrs[j]);
+                            /* A non-empty language member was declared, but
+                             * its payload points into the package header. Do
+                             * not silently discard it and let the package
+                             * appear clean; preserve any valid sibling
+                             * members while making this malformed layer
+                             * fail-visible. */
+                            cli_mark_scan_incomplete(ctx, "SIS member offset points inside the package header");
+                            if (limit_status == CL_CLEAN)
+                                limit_status = CL_EPARSE;
                             continue;
                         }
 

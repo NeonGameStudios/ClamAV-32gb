@@ -7643,6 +7643,56 @@ START_TEST(test_sis_member_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_sis_member_header_offset_is_fail_visible)
+{
+    uint8_t data[134] = {0};
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* Minimal pre-9.x SIS package whose declared member points into the
+     * package header. The parser must not turn that omitted member into clean. */
+    data[8]  = 0x19;
+    data[9]  = 0x04;
+    data[11] = 0x10; /* old SIS format UID */
+    data[18] = 1;    /* one language */
+    data[20] = 1;    /* one file */
+    data[36] = 0x08; /* package is not compressed */
+    cli_writeint32(data + 48, 84);  /* language table */
+    cli_writeint32(data + 52, 86);  /* file records */
+    cli_writeint32(data + 114, 8);  /* compressed/member length */
+    cli_writeint32(data + 118, 80); /* invalid offset inside SIS header */
+    cli_writeint32(data + 122, 8);  /* decompressed length */
+    memcpy(data + 126, "SISDATA!", 8);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_SIS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tar_truncated_header_is_fail_visible)
 {
     uint8_t data[511] = {0};
@@ -11348,6 +11398,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_compressed_member_streams_to_nested_scan);
     tcase_add_test(tc_cl, test_sis_member_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_sis_member_header_offset_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_truncated_header_is_fail_visible);

@@ -3725,6 +3725,16 @@ and `CL_EMAP` returns when the callee did not already record the failure. These
 operational errors cannot silently become a clean result after required
 extracted content or a decoder map was skipped.
 
+## SIS malformed member-offset propagation — 2026-08-20
+
+Legacy SIS extraction now treats a declared non-empty member whose offset
+points inside the package header as malformed instead of silently skipping the
+member and returning clean. Valid sibling language members may still be
+processed, but the containing layer is sticky incomplete, non-cacheable, and
+returns `CL_EPARSE` when no stronger result exists. A focused public-map
+regression and source guard cover the boundary; dependency-complete SIS
+corpus, sanitizer, and supported-build Sonic1 qualification remain open.
+
 The focused policy regression and source guards pass. Full C/CTest execution,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.

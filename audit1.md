@@ -2252,6 +2252,16 @@ The reconciliation policy also now covers unmarked parser/decoder
 `CL_EOPEN`, `CL_ECREAT`, `CL_EACCES`, and `CL_EMAP` returns, preserving those
 operational failures instead of allowing a later raw pass to report clean.
 
+## SIS malformed member-offset propagation — 2026-08-20
+
+Legacy SIS extraction previously logged and skipped a non-empty member whose
+declared offset pointed inside the package header, allowing the containing
+layer to finish clean after required content was omitted. The path now marks
+the layer incomplete and preserves `CL_EPARSE` while continuing to inspect any
+valid sibling members. A focused public-map regression and source guard cover
+the boundary; compiled SIS corpus and sanitizer qualification remain release
+gates.
+
 ## OLE2 temporary-tree error propagation — 2026-08-20
 
 Recursive OLE2 scans now preserve the distinction between a globally indexed
