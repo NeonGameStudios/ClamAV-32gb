@@ -200,7 +200,10 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
     res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
     if (res == SZ_ERROR_ENCRYPTED && SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
         cli_dbgmsg("cli_7unz: Encrypted header found in archive.\n");
+        cli_mark_scan_incomplete(ctx, "7-Zip encrypted archive header prevents inspection");
         found = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.7Zip");
+        if (found == CL_SUCCESS)
+            found = CL_EPARSE;
     } else if (res == SZ_OK) {
         UInt32 i, blockIndex = 0xFFFFFFFF;
         Byte *outBuffer      = NULL;
@@ -314,6 +317,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             }
             if (res == SZ_ERROR_ENCRYPTED) {
                 encrypted = 1;
+                cli_mark_scan_incomplete(ctx, "7-Zip encrypted member contents prevent inspection");
                 if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
                     cli_dbgmsg("cli_7unz: Encrypted files found in archive.\n");
                     found = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.7Zip");
@@ -323,6 +327,8 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                         break;
                     }
                 }
+                if (found == CL_SUCCESS)
+                    found = CL_EPARSE;
             }
             metadata_status = cli_matchmeta(ctx, name, 0, f->Size, encrypted, i, f->CrcDefined ? f->Crc : 0);
             if (metadata_status != CL_SUCCESS) {
@@ -385,6 +391,9 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
         cli_dbgmsg("cli_7unz: encrypted\n");
     else
         cli_dbgmsg("cli_7unz: error %d\n", res);
+
+    if (ctx->scan_incomplete && found == CL_SUCCESS)
+        found = CL_EPARSE;
 
     return found;
 }

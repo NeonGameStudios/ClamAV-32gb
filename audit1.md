@@ -2043,3 +2043,15 @@ A direct truncated-directory regression and source guards cover the boundary.
 
 Compiled legacy-Word/OLE execution, sanitizer and allocation-fault coverage,
 and supported-build Sonic1 qualification remain open release gates.
+
+## 7-Zip encryption fail-closed propagation — 2026-08-20
+
+7-Zip encrypted headers and encrypted members previously relied on the optional
+`Heuristics.Encrypted.7Zip` alert; when that alert was enabled, the parser could
+return a clean status even though the ciphertext was not inspected. Both the
+archive-header and member paths now mark the scan incomplete and return a
+non-clean parser result when no stronger detection result exists, while
+preserving the heuristic alert and any stronger result.
+
+Compiled encrypted 7-Zip fixtures, sanitizer coverage, and supported-build
+Sonic1 qualification remain open release gates.

@@ -2189,6 +2189,14 @@ incomplete result instead of treating it as “no macros.” A direct regression
 and source guards cover the fail-closed boundary. Compiled legacy-Word/OLE,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
 
+## 7-Zip encrypted-content result propagation — 2026-08-20
+
+Encrypted 7-Zip headers and members now remain incomplete even when the
+optional encrypted-archive heuristic is enabled. The parser preserves the
+heuristic alert and stronger detections, but cannot return clean after
+ciphertext was left uninspected. Compiled encrypted fixtures, sanitizer, and
+supported-build Sonic1 qualification remain release gates.
+
 ## OLE metadata and VBA input cleanup propagation — 2026-08-20
 
 OLE summary-property parser errors and close failures are now retained by the
