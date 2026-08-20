@@ -1933,10 +1933,54 @@ ppt_read_atom_header(int fd, atom_header_t *atom_header)
  * TODO: combine shared code with flatedecode() or cli_unzip_single()
  *	Needs cli_unzip_single to have a "length" argument
  */
+static cl_error_t
+ppt_reserve_output(cli_ctx *ctx, uint64_t *temporary_reserved, size_t output_size)
+{
+    uint64_t bytes = (uint64_t)output_size;
+
+    if (ctx == NULL || bytes == 0)
+        return CL_SUCCESS;
+
+    if (bytes > UINT64_MAX - *temporary_reserved ||
+        cli_scan_reserve_temporary(ctx, bytes) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "PowerPoint temporary output exceeds temporary storage limits");
+        return CL_ERESOURCE;
+    }
+
+    *temporary_reserved += bytes;
+    return CL_SUCCESS;
+}
+
 static int
-ppt_unlzw(const char *dir, int fd, uint32_t length)
+ppt_write_output(cli_ctx *ctx, uint64_t *temporary_reserved, int ofd, const void *buffer, size_t size)
+{
+    if (ppt_reserve_output(ctx, temporary_reserved, size) != CL_SUCCESS)
+        return FALSE;
+
+    if (cli_writen(ofd, buffer, size) != size) {
+        cli_mark_scan_incomplete(ctx, "PowerPoint temporary output could not be written completely");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int
+ppt_close_output(cli_ctx *ctx, int ofd)
+{
+    if (close(ofd) != 0) {
+        cli_mark_scan_incomplete(ctx, "PowerPoint temporary output could not be closed");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int
+ppt_unlzw(const char *dir, int fd, uint32_t length, cli_ctx *ctx, uint64_t *temporary_reserved)
 {
     int ofd;
+    int zret;
     z_stream stream;
     unsigned char inbuff[PPT_LZW_BUFFSIZE], outbuff[PPT_LZW_BUFFSIZE];
     char fullname[PATH_MAX + 1];
@@ -1948,6 +1992,7 @@ ppt_unlzw(const char *dir, int fd, uint32_t length)
                S_IWUSR | S_IRUSR);
     if (ofd == -1) {
         cli_warnmsg("ppt_unlzw: can't create %s\n", fullname);
+        cli_mark_scan_incomplete(ctx, "PowerPoint temporary output could not be created");
         return FALSE;
     }
 
@@ -1962,24 +2007,27 @@ ppt_unlzw(const char *dir, int fd, uint32_t length)
     stream.avail_in  = MIN(length, PPT_LZW_BUFFSIZE);
 
     if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
-        close(ofd);
+        ppt_close_output(ctx, ofd);
         cli_unlink(fullname);
+        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be read completely");
         return FALSE;
     }
     length -= stream.avail_in;
 
     if (inflateInit(&stream) != Z_OK) {
-        close(ofd);
+        ppt_close_output(ctx, ofd);
         cli_unlink(fullname);
+        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be initialized");
         cli_warnmsg("ppt_unlzw: inflateInit failed\n");
         return FALSE;
     }
 
     do {
         if (stream.avail_out == 0) {
-            if (cli_writen(ofd, outbuff, PPT_LZW_BUFFSIZE) != PPT_LZW_BUFFSIZE) {
-                close(ofd);
+            if (!ppt_write_output(ctx, temporary_reserved, ofd, outbuff, PPT_LZW_BUFFSIZE)) {
+                ppt_close_output(ctx, ofd);
                 inflateEnd(&stream);
+                cli_unlink(fullname);
                 return FALSE;
             }
             stream.next_out  = outbuff;
@@ -1989,83 +2037,165 @@ ppt_unlzw(const char *dir, int fd, uint32_t length)
             stream.next_in  = inbuff;
             stream.avail_in = MIN(length, PPT_LZW_BUFFSIZE);
             if (cli_readn(fd, inbuff, (size_t)stream.avail_in) != (size_t)stream.avail_in) {
-                close(ofd);
+                ppt_close_output(ctx, ofd);
                 inflateEnd(&stream);
+                cli_unlink(fullname);
+                cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream could not be read completely");
                 return FALSE;
             }
             length -= stream.avail_in;
         }
-    } while (inflate(&stream, Z_NO_FLUSH) == Z_OK);
+        zret = inflate(&stream, Z_NO_FLUSH);
+    } while (zret == Z_OK);
 
-    if (cli_writen(ofd, outbuff, PPT_LZW_BUFFSIZE - stream.avail_out) != (size_t)(PPT_LZW_BUFFSIZE - stream.avail_out)) {
-        close(ofd);
+    if (zret != Z_STREAM_END) {
+        ppt_close_output(ctx, ofd);
+        inflateEnd(&stream);
+        cli_unlink(fullname);
+        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream was not fully decoded");
+        return FALSE;
+    }
+
+    if (!ppt_write_output(ctx, temporary_reserved, ofd, outbuff,
+                          PPT_LZW_BUFFSIZE - stream.avail_out)) {
+        ppt_close_output(ctx, ofd);
+        inflateEnd(&stream);
+        cli_unlink(fullname);
+        return FALSE;
+    }
+    if (!ppt_close_output(ctx, ofd)) {
+        cli_unlink(fullname);
         inflateEnd(&stream);
         return FALSE;
     }
-    close(ofd);
-    return inflateEnd(&stream) == Z_OK;
+    if (inflateEnd(&stream) != Z_OK) {
+        cli_unlink(fullname);
+        cli_mark_scan_incomplete(ctx, "PowerPoint compressed stream was not fully decoded");
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 static const char *
-ppt_stream_iter(int fd, const char *dir)
+ppt_stream_iter(int fd, const char *dir, cli_ctx *ctx, uint64_t *temporary_reserved)
 {
     atom_header_t atom_header;
+    STATBUF statbuf;
 
-    while (ppt_read_atom_header(fd, &atom_header)) {
-        if (atom_header.length == 0)
+    if (FSTAT(fd, &statbuf) == -1 || statbuf.st_size < 0) {
+        cli_mark_scan_incomplete(ctx, "PowerPoint input could not be inspected");
+        return NULL;
+    }
+
+    while (1) {
+        off_t header_offset = lseek(fd, 0, SEEK_CUR);
+
+        if (header_offset < 0 || (uint64_t)header_offset > (uint64_t)statbuf.st_size) {
+            cli_mark_scan_incomplete(ctx, "PowerPoint atom header could not be positioned");
             return NULL;
+        }
+        if ((uint64_t)header_offset == (uint64_t)statbuf.st_size)
+            break;
+        if ((uint64_t)sizeof(atom_header_t) > (uint64_t)statbuf.st_size - (uint64_t)header_offset) {
+            cli_mark_scan_incomplete(ctx, "PowerPoint input ended before an atom header was complete");
+            return NULL;
+        }
+        if (!ppt_read_atom_header(fd, &atom_header)) {
+            cli_mark_scan_incomplete(ctx, "PowerPoint atom header could not be read completely");
+            return NULL;
+        }
+
+        if (atom_header.length == 0) {
+            cli_mark_scan_incomplete(ctx, "PowerPoint atom has zero length");
+            return NULL;
+        }
 
         if (atom_header.type == 0x1011) {
             uint32_t length;
+            off_t offset = lseek(fd, 0, SEEK_CUR);
+
+            if (offset < 0 || (uint64_t)offset > (uint64_t)statbuf.st_size || atom_header.length < sizeof(uint32_t) ||
+                (uint64_t)(atom_header.length - sizeof(uint32_t)) > (uint64_t)statbuf.st_size - (uint64_t)offset) {
+                cli_mark_scan_incomplete(ctx, "PowerPoint compressed atom exceeds the input");
+                return NULL;
+            }
 
             /* Skip over ID */
             if (lseek(fd, sizeof(uint32_t), SEEK_CUR) == -1) {
                 cli_dbgmsg("ppt_stream_iter: seek failed\n");
+                cli_mark_scan_incomplete(ctx, "PowerPoint compressed atom could not be positioned");
                 return NULL;
             }
-            length = atom_header.length - 4;
+            length = atom_header.length - sizeof(uint32_t);
             cli_dbgmsg("length: %d\n", (int)length);
-            if (!ppt_unlzw(dir, fd, length)) {
+            if (!ppt_unlzw(dir, fd, length, ctx, temporary_reserved)) {
                 cli_dbgmsg("ppt_unlzw failed\n");
                 return NULL;
             }
         } else {
             off_t offset = lseek(fd, 0, SEEK_CUR);
-            /* Check we don't wrap */
-            if ((offset + (off_t)atom_header.length) < offset) {
-                break;
+            /* Check we don't wrap or seek past the materialized input. */
+            if (offset < 0 || (uint64_t)offset > (uint64_t)statbuf.st_size ||
+                (uint64_t)atom_header.length > (uint64_t)statbuf.st_size - (uint64_t)offset) {
+                cli_mark_scan_incomplete(ctx, "PowerPoint atom exceeds the input");
+                return NULL;
             }
             offset += atom_header.length;
             if (lseek(fd, offset, SEEK_SET) != offset) {
-                break;
+                cli_mark_scan_incomplete(ctx, "PowerPoint atom could not be skipped completely");
+                return NULL;
             }
         }
     }
+
+    return dir;
+}
+
+char *
+cli_ppt_vba_read_ex(int ifd, cli_ctx *ctx, uint64_t *temporary_reserved_out)
+{
+    char *dir;
+    const char *ret;
+    uint64_t temporary_reserved = 0;
+
+    if (temporary_reserved_out != NULL)
+        *temporary_reserved_out = 0;
+
+    /* Create a directory to store the extracted OLE2 objects */
+    dir = cli_gentemp_with_prefix(ctx ? ctx->this_layer_tmpdir : NULL, "ppt-ole2-tmp");
+    if (dir == NULL) {
+        cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be allocated");
+        return NULL;
+    }
+    if (mkdir(dir, 0700)) {
+        cli_errmsg("cli_ppt_vba_read: Can't create temporary directory %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be created");
+        free(dir);
+        return NULL;
+    }
+    ret = ppt_stream_iter(ifd, dir, ctx, &temporary_reserved);
+    if (ret == NULL) {
+        if (cli_rmdirs(dir) != 0)
+            cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be removed");
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        free(dir);
+        return NULL;
+    }
+
+    if (temporary_reserved_out != NULL) {
+        *temporary_reserved_out = temporary_reserved;
+    } else {
+        cli_scan_release_temporary(ctx, temporary_reserved);
+    }
+
     return dir;
 }
 
 char *
 cli_ppt_vba_read(int ifd, cli_ctx *ctx)
 {
-    char *dir;
-    const char *ret;
-
-    /* Create a directory to store the extracted OLE2 objects */
-    dir = cli_gentemp_with_prefix(ctx ? ctx->this_layer_tmpdir : NULL, "ppt-ole2-tmp");
-    if (dir == NULL)
-        return NULL;
-    if (mkdir(dir, 0700)) {
-        cli_errmsg("cli_ppt_vba_read: Can't create temporary directory %s\n", dir);
-        free(dir);
-        return NULL;
-    }
-    ret = ppt_stream_iter(ifd, dir);
-    if (ret == NULL) {
-        cli_rmdirs(dir);
-        free(dir);
-        return NULL;
-    }
-    return dir;
+    return cli_ppt_vba_read_ex(ifd, ctx, NULL);
 }
 
 /*

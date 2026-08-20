@@ -2839,6 +2839,20 @@ final unwind. Failures mark the containing scan incomplete while preserving a
 prior detection or parser error. Supported-Linux execution, sanitizer
 coverage, and a real Office/VBA corpus remain release gates.
 
+## PowerPoint VBA temporary-output accounting — 2026-08-20
+
+The legacy PowerPoint VBA extractor now reserves decompressed atom output
+incrementally against `MaxTemporarySize` and retains that reservation through
+the nested directory scan. Truncated or out-of-range atoms, incomplete zlib
+input/output, descriptor close failures, and temporary-directory removal
+failures are fail-visible; a partial PowerPoint stream is never scanned as a
+complete layer. The reservation-aware directory path avoids charging the same
+materialized child twice.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+PowerPoint/VBA corpus execution, sanitizer and fault-injected cleanup coverage,
+and supported-build Sonic1 qualification remain release gates.
+
 ## FILDES preflight and structured-report completion — 2026-08-19
 
 Known regular-file FILDES inputs from clamdscan now undergo a client-side

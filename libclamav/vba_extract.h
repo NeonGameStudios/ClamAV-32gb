@@ -48,6 +48,7 @@ void cli_free_vba_project(vba_project_t *vba_project);
 unsigned char *cli_vba_inflate(int fd, off_t offset, size_t *size);
 int cli_scan_ole10(int fd, cli_ctx *ctx);
 char *cli_ppt_vba_read(int fd, cli_ctx *ctx);
+char *cli_ppt_vba_read_ex(int fd, cli_ctx *ctx, uint64_t *temporary_reserved_out);
 unsigned char *cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len,
                                     unsigned char key);
 #endif

@@ -131,7 +131,40 @@ static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempf
                                               const char *close_reason,
                                               const char *remove_reason);
 
+static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uint32_t attributes,
+                                              bool temporary_already_reserved);
+
+static cl_error_t cli_magic_scan_file_reserved(const char *filename, cli_ctx *ctx,
+                                                const char *original_name, uint32_t attributes)
+{
+    int fd         = -1;
+    cl_error_t ret = CL_EOPEN;
+
+    fd = safe_open(filename, O_RDONLY | O_BINARY);
+    if (fd < 0)
+        goto done;
+
+    ret = cli_magic_scan_desc_type_reserved(fd, filename, ctx, CL_TYPE_ANY, original_name, attributes);
+
+done:
+    if (fd >= 0) {
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "reserved temporary directory file could not be closed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
+                ret = CL_EREAD;
+        }
+    }
+
+    return ret;
+}
+
 cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes)
+{
+    return cli_magic_scan_dir_internal(dir, ctx, attributes, false);
+}
+
+static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uint32_t attributes,
+                                              bool temporary_already_reserved)
 {
     cl_error_t status = CL_SUCCESS;
     DIR *dd           = NULL;
@@ -167,13 +200,17 @@ cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes
                         goto done;
                     }
                     if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
-                        status = cli_magic_scan_dir(fname, ctx, attributes);
+                        status = cli_magic_scan_dir_internal(fname, ctx, attributes, temporary_already_reserved);
                         if (CL_SUCCESS != status) {
                             goto done;
                         }
                     } else {
                         if (S_ISREG(statbuf.st_mode)) {
-                            status = cli_magic_scan_file(fname, ctx, dent->d_name, attributes);
+                            if (temporary_already_reserved) {
+                                status = cli_magic_scan_file_reserved(fname, ctx, dent->d_name, attributes);
+                            } else {
+                                status = cli_magic_scan_file(fname, ctx, dent->d_name, attributes);
+                            }
                             if (CL_SUCCESS != status) {
                                 goto done;
                             }
@@ -208,6 +245,11 @@ done:
     }
 
     return status;
+}
+
+static cl_error_t cli_magic_scan_dir_reserved(const char *dir, cli_ctx *ctx, uint32_t attributes)
+{
+    return cli_magic_scan_dir_internal(dir, ctx, attributes, true);
 }
 
 /**
@@ -2237,6 +2279,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
     int proj_contents_fd      = -1;
     char *proj_contents_fname = NULL;
+    uint64_t ppt_temporary_reserved = 0;
 
     if (CL_SUCCESS != (status = uniq_get(U, "_vba_project", 12, NULL, &hashcnt))) {
         cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('_vba_project') failed with ret code (%d)!\n", status);
@@ -2327,16 +2370,22 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
             continue;
         }
 
-        fullname = cli_ppt_vba_read(fd, ctx);
+        fullname = cli_ppt_vba_read_ex(fd, ctx, &ppt_temporary_reserved);
         if (NULL != fullname) {
-            status = cli_magic_scan_dir(fullname, ctx, LAYER_ATTRIBUTES_NONE);
+            status = cli_magic_scan_dir_reserved(fullname, ctx, LAYER_ATTRIBUTES_NONE);
             if (CL_SUCCESS != status) {
                 goto done;
             }
 
             if (!ctx->engine->keeptmp) {
-                cli_rmdirs(fullname);
+                if (cli_rmdirs(fullname) != 0) {
+                    cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be removed");
+                    if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                        status = CL_EUNLINK;
+                }
             }
+            cli_scan_release_temporary(ctx, ppt_temporary_reserved);
+            ppt_temporary_reserved = 0;
             free(fullname);
             fullname = NULL;
         }
@@ -2444,11 +2493,18 @@ done:
 
     if (NULL != fullname) {
         if (!ctx->engine->keeptmp) {
-            (void)cli_rmdirs(fullname);
+            if (cli_rmdirs(fullname) != 0) {
+                cli_mark_scan_incomplete(ctx, "PowerPoint temporary directory could not be removed");
+                if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                    status = CL_EUNLINK;
+            }
         }
 
         free(fullname);
     }
+
+    if (ppt_temporary_reserved != 0)
+        cli_scan_release_temporary(ctx, ppt_temporary_reserved);
 
     if (fd >= 0) {
         close(fd);
