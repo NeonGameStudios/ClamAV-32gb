@@ -686,6 +686,46 @@ START_TEST(test_bm_offset_mode_matches_above_uint32)
 }
 END_TEST
 
+START_TEST(test_ac_offset_mode_matches_above_uint32)
+{
+#if SIZE_MAX > UINT32_MAX
+    struct cli_matcher *root = ctx.engine->root[0];
+    struct cli_ac_data mdata;
+    struct cli_ac_result *results = NULL;
+    cl_error_t ret;
+
+    ck_assert_ptr_nonnull(root);
+    root->ac_only = 1;
+
+#ifdef USE_MPOOL
+    root->mempool = mpool_create();
+#endif
+    ck_assert_int_eq(cli_ac_init(root, CLI_DEFAULT_AC_MINDEPTH, CLI_DEFAULT_AC_MAXDEPTH, 1), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(root, "AC_Large_Offset",
+                                                   "deadbeef", 0, 0, 0,
+                                                   "5000000000", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_ac_buildtrie(root), CL_SUCCESS);
+    ck_assert_int_eq(cli_ac_initdata(&mdata, root->ac_partsigs, 0, 0,
+                                     CLI_DEFAULT_AC_TRACKLEN),
+                     CL_SUCCESS);
+
+    ret = cli_ac_scanbuff((const unsigned char *)"\xde\xad\xbe\xef", 4,
+                          NULL, NULL, &results, root, &mdata,
+                          5000000000ULL, CL_TYPE_ANY, NULL, AC_SCAN_VIR, NULL);
+    ck_assert_int_eq(ret, CL_CLEAN);
+    ck_assert_ptr_nonnull(results);
+    ck_assert_str_eq(results->virname, "AC_Large_Offset.UNOFFICIAL");
+    ck_assert_uint_eq((uint64_t)results->offset, 5000000000ULL);
+
+    free(results);
+    cli_ac_freedata(&mdata);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_pcre_full_map_range_arithmetic)
 {
     ck_assert(cli_matcher_window_reaches_map_end(31, 1, 32));
@@ -955,6 +995,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_pcre_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_large_file_offset_values);
     tcase_add_test(tc_matchers, test_bm_offset_mode_matches_above_uint32);
+    tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);

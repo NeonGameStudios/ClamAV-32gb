@@ -2624,3 +2624,13 @@ reads one descriptor at a time, and marks a descriptor read failure
 incomplete. This also removes the old whole-directory fmap lifetime and keeps
 the raw matcher’s required PE import inspection fail-visible. Compiled PE,
 sanitizer, parser-corpus, and supported-build qualification remain open.
+
+## AC exact-tail offset qualification slice — 2026-08-20
+
+The AC matcher already stores runtime match coordinates in 64-bit fields, but
+the matcher suite had only exercised the corresponding BM offset path above
+4 GiB. `test_ac_offset_mode_matches_above_uint32` now builds an AC signature,
+scans an exact four-byte tail at offset 5,000,000,000, and asserts both the
+signature identity and the returned `off_t` coordinate. The capability
+manifest records AC as bounded on this focused evidence while retaining the
+production-signature and full 32 GiB qualification gate.

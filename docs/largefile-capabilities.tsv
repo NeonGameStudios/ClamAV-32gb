@@ -18,7 +18,7 @@ clamdscan	stream	bounded	clamdscan/proto.c	legacy INSTREAM path; qualification p
 clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback at MaxThreads=1; MULTISCANREPORT aggregates parallel child reports
 milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending
 on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies incomplete outcomes
-matcher	ac	pending	libclamav/matcher-ac.c	qualify exact-tail raw matching and 64-bit result offsets
+matcher	ac	bounded	libclamav/matcher-ac.c	test_ac_offset_mode_matches_above_uint32 verifies an exact-tail AC result and preserved 64-bit match offset; production-signature qualification remains open
 matcher	bm	pending	libclamav/matcher-bm.c	focused offset-mode regression above 4 GiB; qualify bounded scan windows and production matches
 matcher	byte-compare	pending	libclamav/matcher-byte-comp.c	qualify byte-compare and logical-signature bridges at large offsets
 matcher	hash	pending	libclamav/matcher-hash.c	qualify file, section, import, and fuzzy-hash consumers with exact sizes

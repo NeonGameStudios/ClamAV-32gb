@@ -27,6 +27,9 @@
   detector consumes, with subtraction-form resource range validation.
 - EGG metadata extra fields now reject sizes above the individual-allocation
   ceiling explicitly, and encryption-header size subtraction is underflow-safe.
+- AC exact-tail matching now has a >4 GiB offset regression that verifies the
+  returned match coordinate remains 64-bit; production-signature qualification
+  is still open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
