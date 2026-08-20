@@ -2665,3 +2665,13 @@ purpose: whole-file detection, PE-section detection, false-positive checking,
 and PE-import detection. This closes the shared table/admission/lookup slice;
 actual PE section/import materialization, production signatures, and fuzzy-image
 qualification remain open.
+
+## PCRE effective contiguous-limit qualification slice — 2026-08-20
+
+The PCRE admission helper clamps the configured PCRE subject limit to the
+certified large-file ceiling and then applies the engine's lower
+`MaxContiguousSize` resource limit. The existing boundary regression now also
+sets that resource limit to 4 KiB, accepts an exact 4 KiB subject, rejects 4 KiB
+plus 1 bytes, and verifies sticky incomplete/non-cacheable state. This qualifies the
+admission policy only; full-size PCRE matching, sanitizer, and RSS evidence
+remain open.

@@ -1119,6 +1119,19 @@ START_TEST(test_pcre_subject_limit_is_fail_visible)
     ck_assert_int_eq(ret, CL_EMAXSIZE);
     ck_assert(ctx.scan_incomplete);
 
+    ctx.scan_incomplete        = false;
+    parent.dont_cache_flag     = false;
+    child.dont_cache_flag      = false;
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, 4096), CL_SUCCESS);
+    ret = cli_pcre_check_size_limit(&ctx, 0, 4096);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ret = cli_pcre_check_size_limit(&ctx, 0, 4097);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(parent.dont_cache_flag);
+    ck_assert(child.dont_cache_flag);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, 0), CL_SUCCESS);
+
     ctx.recursion_level         = 0;
     ctx.recursion_stack[0].fmap = &thefmap;
     ctx.recursion_stack[1].fmap = NULL;

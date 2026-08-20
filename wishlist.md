@@ -37,6 +37,8 @@
   production-signature qualification remains open.
 - Exact-size hash lookup now has a 5 GB regression across all four hash
   purposes; parser and fuzzy-image qualification remains open.
+- PCRE subject admission now tests the lower `MaxContiguousSize` override;
+  full-size execution and RSS qualification remains open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
