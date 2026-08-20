@@ -382,6 +382,7 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             char name[1024];
                             char *tempfile = name;
                             int of;
+                            int cleanup_failed = 0;
                             size_t vlen = strlen((const char *)node_value);
                             uint64_t temporary_reserved = (uint64_t)vlen;
 
@@ -411,12 +412,17 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             cli_dbgmsg("msxml_parse_element: extracted binary data to %s\n", tempfile);
 
                             ret = mxctx->scan_cb(of, tempfile, ctx, num_attribs, attribs, mxctx->scan_data);
-                            close(of);
-                            if (!(ctx->engine->keeptmp)) {
-                                cli_unlink(tempfile);
-                            }
+                            if (close(of) != 0)
+                                cleanup_failed = 1;
+                            if (!(ctx->engine->keeptmp) && cli_unlink(tempfile) != 0)
+                                cleanup_failed = 1;
                             cli_scan_release_temporary(ctx, temporary_reserved);
                             free(tempfile);
+                            if (cleanup_failed) {
+                                cli_mark_scan_incomplete(ctx, "MSXML callback temporary output cleanup failed");
+                                if (ret == CL_SUCCESS)
+                                    ret = CL_EUNLINK;
+                            }
                             if (ret != CL_SUCCESS) {
                                 return ret;
                             }
@@ -428,6 +434,7 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             char *decoded, *tempfile = name;
                             size_t decodedlen;
                             int of;
+                            int cleanup_failed = 0;
                             uint64_t temporary_reserved;
 
                             cli_msxmlmsg("BINARY DATA!\n");
@@ -469,11 +476,17 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             cli_dbgmsg("msxml_parse_element: extracted binary data to %s\n", tempfile);
 
                             ret = cli_magic_scan_desc_type_reserved(of, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
-                            close(of);
-                            if (!(ctx->engine->keeptmp))
-                                cli_unlink(tempfile);
+                            if (close(of) != 0)
+                                cleanup_failed = 1;
+                            if (!(ctx->engine->keeptmp) && cli_unlink(tempfile) != 0)
+                                cleanup_failed = 1;
                             cli_scan_release_temporary(ctx, temporary_reserved);
                             free(tempfile);
+                            if (cleanup_failed) {
+                                cli_mark_scan_incomplete(ctx, "MSXML base64 temporary output cleanup failed");
+                                if (ret == CL_SUCCESS)
+                                    ret = CL_EUNLINK;
+                            }
                             if (ret != CL_SUCCESS) {
                                 return ret;
                             }
@@ -866,6 +879,8 @@ static cl_error_t msxml_stream_decode_base64(struct msxml_stream_state *state, s
 
 static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, char **name, uint64_t *reserved)
 {
+    int cleanup_failed = 0;
+
     if (!state || !fd || !name || !reserved)
         return;
 
@@ -873,15 +888,18 @@ static void msxml_stream_dispose_fd(struct msxml_stream_state *state, int *fd, c
         cli_scan_release_temporary(state->ctx, *reserved);
         *reserved = 0;
     }
-    if (*fd >= 0)
-        close(*fd);
+    if (*fd >= 0 && close(*fd) != 0)
+        cleanup_failed = 1;
     if (*name) {
-        if (!state->ctx->engine->keeptmp)
-            cli_unlink(*name);
+        if (!state->ctx->engine->keeptmp && cli_unlink(*name) != 0)
+            cleanup_failed = 1;
         free(*name);
     }
     *fd   = -1;
     *name = NULL;
+
+    if (cleanup_failed)
+        msxml_stream_fail(state, CL_EUNLINK, "MSXML streaming temporary output cleanup failed");
 }
 
 static void msxml_stream_cleanup_frame(struct msxml_stream_state *state, struct msxml_stream_frame *frame)

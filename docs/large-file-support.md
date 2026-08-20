@@ -2328,6 +2328,17 @@ write, quota, and nested-scan failures remain fail-visible. Legacy XML-reader
 memory behavior and broader Office/HWP corpus qualification remain release
 gates.
 
+## MSXML temporary cleanup propagation — 2026-08-20
+
+The legacy and streaming MSXML paths now treat temporary descriptor close and
+removal failures as incomplete cleanup results. A successful callback or
+embedded-object scan can no longer hide a failed cleanup operation; an earlier
+detection remains authoritative while the sticky incomplete state is retained.
+This closes cleanup-only false-clean paths without changing the legacy
+best-effort behavior for callers that do not request fail-incomplete XML
+semantics. Compiled MSXML fault-injection, sanitizer, and supported-build
+Sonic1 qualification remain release gates.
+
 ## XDP bounded XML streaming — 2026-08-19
 
 XDP no longer rejects the complete XML layer at the former 64 MiB gate or
