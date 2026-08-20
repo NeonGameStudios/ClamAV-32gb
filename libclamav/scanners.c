@@ -2200,10 +2200,20 @@ static cl_error_t cli_ole2_tempdir_scan_summary(const char *dir, cli_ctx *ctx, s
 
         fd = open(summary_filename, O_RDONLY | O_BINARY);
         if (fd >= 0) {
+            cl_error_t summary_status;
+
             cli_dbgmsg("cli_ole2_tempdir_scan_summary: detected a '_5_summaryinformation' stream\n");
-            /* JSONOLE2 - what to do if something breaks? */
-            cli_ole2_summary_json(ctx, fd, 0, summary_filename);
-            close(fd);
+            summary_status = cli_ole2_summary_json(ctx, fd, 0, summary_filename);
+            if (summary_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "OLE2 summary information could not be inspected completely");
+                if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
+                    status = summary_status;
+            }
+            if (close(fd) != 0) {
+                cli_mark_scan_incomplete(ctx, "OLE2 summary information could not be closed");
+                if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
+                    status = CL_EREAD;
+            }
         }
         hashcnt--;
     }
@@ -2221,10 +2231,20 @@ static cl_error_t cli_ole2_tempdir_scan_summary(const char *dir, cli_ctx *ctx, s
 
         fd = open(summary_filename, O_RDONLY | O_BINARY);
         if (fd >= 0) {
+            cl_error_t summary_status;
+
             cli_dbgmsg("cli_ole2_tempdir_scan_summary: detected a '_5_documentsummaryinformation' stream\n");
-            /* JSONOLE2 - what to do if something breaks? */
-            cli_ole2_summary_json(ctx, fd, 1, summary_filename);
-            close(fd);
+            summary_status = cli_ole2_summary_json(ctx, fd, 1, summary_filename);
+            if (summary_status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "OLE2 document summary information could not be inspected completely");
+                if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
+                    status = summary_status;
+            }
+            if (close(fd) != 0) {
+                cli_mark_scan_incomplete(ctx, "OLE2 document summary information could not be closed");
+                if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
+                    status = CL_EREAD;
+            }
         }
         hashcnt--;
     }

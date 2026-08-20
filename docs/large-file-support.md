@@ -2171,6 +2171,17 @@ failures preserve an earlier detection and make an otherwise-clean generated
 member non-clean. Valid large-member, malformed-decoder, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+## OLE metadata and VBA input cleanup propagation — 2026-08-20
+
+OLE summary-property parser errors and close failures are now retained by the
+OLE2 temporary-directory scanner instead of being discarded after metadata
+inspection. VBA module and project-directory input descriptor close failures
+are also marked incomplete and preserve a prior parser failure or detection.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+fault-injected OLE/VBA cleanup coverage, sanitizer execution, and supported
+build Sonic1 qualification remain release gates.
+
 ## Scan-level temporary-directory cleanup propagation — 2026-08-20
 
 When recursive temporary-directory mode is enabled, scan-level directory

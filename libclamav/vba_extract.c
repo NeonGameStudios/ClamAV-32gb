@@ -1305,11 +1305,16 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                         cli_mark_scan_incomplete(ctx, "VBA module could not be decompressed completely");
                         if (deferred_failure == CL_SUCCESS)
                             deferred_failure = CL_EPARSE;
-                        close(module_fd);
+                        if (close(module_fd) != 0)
+                            cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
                         continue;
                     }
 
-                    close(module_fd);
+                    if (close(module_fd) != 0) {
+                        cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
+                        if (deferred_failure == CL_SUCCESS)
+                            deferred_failure = CL_EREAD;
+                    }
 
                     if (CL_SUCCESS == cli_codepage_to_utf8((char *)module_data, module_data_size, codepage, (char **)&module_data_utf8, &module_data_utf8_size)) {
                         module_data_utf8_size = vba_normalize(module_data_utf8, module_data_utf8_size);
@@ -1369,7 +1374,11 @@ done:
         ret = deferred_failure;
 
     if (fd >= 0) {
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory input could not be closed");
+            if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
+                ret = CL_EREAD;
+        }
     }
     if (data) {
         free((void *)data);
