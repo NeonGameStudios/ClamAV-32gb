@@ -2912,13 +2912,16 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
 {
     cl_error_t ret;
     struct cli_bc_ctx ctx;
-    const struct cli_bc *bc = &bcs->all_bcs[bc_idx - 1];
+    const struct cli_bc *bc;
     struct cli_pe_hook_data pehookdata;
     uint32_t legacy_offsets[64];
     const char *bc_name = NULL;
 
-    if (bc_idx == 0)
+    if (!cctx || !bcs || !bcs->all_bcs || bc_idx == 0 || bc_idx > bcs->count ||
+        !lsigcnt || !lsigsuboff || !map)
         return CL_ENULLARG;
+
+    bc = &bcs->all_bcs[bc_idx - 1];
 
     if (NULL != bc->lsig) {
         bc_name = bc->lsig;

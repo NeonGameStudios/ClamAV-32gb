@@ -53,6 +53,10 @@
 - Optional fuzzy-image matching now has an explicit unsupported boundary for
   images above the individual-allocation ceiling; it cannot silently skip the
   detector and report a clean scan.
+- Logical bytecode dispatch now validates its context, table, one-based index,
+  match arrays, and fmap before indexed pointer formation; a focused malformed
+  dispatch regression is covered, while v1/v2 fixture and interpreter/JIT
+  qualification remains open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

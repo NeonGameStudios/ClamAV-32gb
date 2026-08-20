@@ -831,6 +831,21 @@ START_TEST(test_bytecode_large_map_hook_gates_only_applicable_bytecode)
 }
 END_TEST
 
+START_TEST(test_bytecode_lsig_rejects_invalid_dispatch_arguments)
+{
+    struct cli_all_bc bcs;
+    cli_ctx cctx;
+
+    memset(&bcs, 0, sizeof(bcs));
+    memset(&cctx, 0, sizeof(cctx));
+
+    /* Invalid dispatch metadata must be rejected before all_bcs[bc_idx - 1]
+     * can perform pointer arithmetic on a null or out-of-range base. */
+    ck_assert_int_eq(cli_bytecode_runlsig(&cctx, NULL, NULL, 0, NULL, NULL, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_bytecode_runlsig(&cctx, NULL, &bcs, 0, NULL, NULL, NULL), CL_ENULLARG);
+}
+END_TEST
+
 #if defined(CL_THREAD_SAFE) && defined(C_LINUX) && ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= (2 << 16) + 4)
 #define DO_BARRIER
 #endif
@@ -943,6 +958,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_load_bytecode_jit);
     tcase_add_test(tc_cli_arith, test_load_bytecode_int);
     tcase_add_test(tc_cli_arith, test_bytecode_large_map_hook_gates_only_applicable_bytecode);
+    tcase_add_test(tc_cli_arith, test_bytecode_lsig_rejects_invalid_dispatch_arguments);
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);

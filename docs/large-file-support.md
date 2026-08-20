@@ -3975,6 +3975,16 @@ failed detector cannot be published as a successful fuzzy result. The
 capability manifest records this deliberate unsupported boundary; image
 corpus, sanitizer, and supported-build qualification remain release gates.
 
+## Bytecode logical-dispatch argument validation — 2026-08-20
+
+The logical-bytecode entry point now validates the scan context, bytecode
+table, one-based bytecode index, signature match arrays, and fmap before
+forming the indexed bytecode pointer. Invalid dispatch metadata therefore
+returns `CL_ENULLARG` instead of performing undefined pointer arithmetic before
+the v1/v2 coordinate admission checks. A focused regression covers null and
+zero-index dispatch; independently compiled fixture, interpreter/JIT, and
+supported-build Sonic1 qualification remain release gates.
+
 ## clamscan directory and symlink report completion — 2026-08-20
 
 The clamscan walker now emits bounded non-clean fallback rows when an explicit

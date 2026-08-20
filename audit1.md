@@ -4,7 +4,15 @@
 **Reviewed report:** audit.md, SHA-256 ce78ba7003031e6007bfe000c8ee6718175252ec5fed5e149ddda47617fb4e48  
 **Review target:** the delivered source tree at /Volumes/512gbNVME/github-external/ClamAV  
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
-**Excluded by request:** the previous contents of audit1.md were not read  
+**Excluded by request:** the previous contents of audit1.md were not read
+
+**Logical bytecode dispatch preflight.** `cli_bytecode_runlsig()` now validates
+the scan context, bytecode table, one-based index, logical-signature match
+arrays, and fmap before forming `all_bcs[bc_idx - 1]`. The focused bytecode
+regression covers null-table and zero-index calls, preventing malformed
+signature metadata from reaching undefined pointer arithmetic before the
+large-file ABI admission checks. Independently compiled fixture,
+interpreter/JIT, and supported-build qualification remain open.
 
 ## Verdict
 

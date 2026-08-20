@@ -25,7 +25,7 @@ matcher	hash	bounded	libclamav/matcher-hash.c	test_exact_hash_at_large_size exer
 matcher	pcre	bounded	libclamav/matcher-pcre.c	test_pcre_subject_limit_is_fail_visible covers the 32 GiB ceiling, configured PCRE limit, and lower MaxContiguousSize admission; full-size PCRE execution and RSS qualification remain open
 matcher	logical	pending	libclamav/matcher.c	qualify logical-expression evaluation and incomplete propagation
 matcher	yara	pending	libclamav/yara_exec.c	exact-tail fmap read regression added; qualify YARA evaluation and matcher-work accounting
-matcher	bytecode	pending	libclamav/bytecode.c	ABI v2 coordinate APIs including PDF bridge; independently compiled fixture and interpreter/JIT qualification remain required
+matcher	bytecode	pending	libclamav/bytecode.c	ABI v2 coordinate APIs including PDF bridge and dispatch-argument validation regression; independently compiled fixture and interpreter/JIT qualification remain required
 matcher	fuzzy-image	unsupported	libclamav/scanners.c	optional fuzzy-image FFI requires one contiguous image subject; inputs above the individual-allocation ceiling return an explicit incomplete result
 feature	BYTECODE_RUNTIME	pending	CMakeOptions.cmake	qualify interpreter, LLVM, and disabled runtime variants
 feature	LARGE_FILE_DEFAULTS	pending	CMakeOptions.cmake	opt-in certified Linux x86-64 defaults; keep disabled until full parser and ingress qualification is complete
