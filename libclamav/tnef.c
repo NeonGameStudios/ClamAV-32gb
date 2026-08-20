@@ -134,6 +134,9 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         switch (part) {
             case LVL_MESSAGE:
                 cli_dbgmsg("TNEF - found message\n");
+                if (tag == attBODY) {
+                    cli_mark_scan_incomplete(ctx, "TNEF message body is not inspected");
+                }
                 if (fb != NULL) {
                     fileblobDestroy(fb);
                     fb = NULL;
@@ -213,6 +216,12 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         fb = NULL;
     }
 
+    /* The message body is a required content path.  Preserve any stronger
+     * result, but never let the sticky omission normalize back to clean for
+     * direct callers that do not run the common result reconciler. */
+    if ((ret == CL_CLEAN || ret == CL_SUCCESS) && ctx->scan_incomplete)
+        ret = CL_EPARSE;
+
     cli_dbgmsg("cli_tnef: returning %d\n", ret);
     return ret;
 }
@@ -238,7 +247,7 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
      */
     switch (tag) {
         case attBODY:
-            cli_warnmsg("TNEF body not being scanned - if you believe this file contains a virus, submit it to www.clamav.net\n");
+            cli_warnmsg("TNEF body is not inspected; scan is incomplete\n");
             break;
 #ifdef CL_DEBUG
         case attTNEFVERSION:

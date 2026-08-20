@@ -8498,6 +8498,43 @@ START_TEST(test_tnef_short_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_message_body_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x01,                   /* message level */
+        0x0c, 0x80, 0x00, 0x00, /* attBODY, type 0 */
+        0x05, 0x00, 0x00, 0x00, /* five-byte body */
+        'h', 'e', 'l', 'l', 'o',
+        0x00, 0x00 /* checksum */
+    };
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse         = CL_SCAN_PARSE_MAIL;
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+    map                   = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_tnef(tmpdir, &ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tnef_attachment_temporary_limit_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -11008,6 +11045,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_fileblob_cleanup_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_tnef_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_short_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_tnef_message_body_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_attachment_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_truncated_attachment_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_temporary_limit_is_fail_visible);

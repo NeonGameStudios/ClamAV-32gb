@@ -1949,6 +1949,19 @@ This is source-level and unit-test evidence only. A dependency-complete XLM
 corpus, sanitizer execution, and supported-build Sonic1 qualification remain
 release gates.
 
+## TNEF message-body omission — 2026-08-20
+
+The TNEF message-level `attBODY` attribute was explicitly logged as “not being
+scanned,” but the parser retained its initial clean result. A TNEF message
+with a body could therefore leave required content uninspected without a
+sticky incomplete result. The parser now marks that path incomplete and
+returns `CL_EPARSE` for an otherwise-clean direct call, while preserving any
+stronger detection or operational error.
+
+A focused body-bearing TNEF regression now requires the non-cacheable,
+fail-visible result. Full TNEF corpus, sanitizer, and supported-build Sonic1
+qualification remain release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script

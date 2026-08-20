@@ -2233,6 +2233,11 @@ payload changes the record layout, so the extractor now stops with an
 incomplete/unsupported result instead of scanning a potentially misaligned
 macro prefix as complete.
 
+TNEF message-body attributes are required content, not optional metadata. The
+TNEF parser now marks an `attBODY` attribute incomplete and returns a visible
+parser error when no stronger result exists; it no longer reports a clean scan
+while leaving the message body uninspected.
+
 ## Scan-level temporary-directory cleanup propagation — 2026-08-20
 
 When recursive temporary-directory mode is enabled, scan-level directory
