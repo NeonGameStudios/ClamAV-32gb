@@ -80,6 +80,23 @@ static int cmp_mish_stripes(const void *stripe_a, const void *stripe_b);
 static int dmg_track_sectors(uint64_t *, uint8_t *, uint32_t, uint32_t, uint64_t);
 static int dmg_handle_mish(cli_ctx *, unsigned int, char *, uint64_t, uint64_t,
                            struct dmg_mish_with_stripes *);
+
+static int dmg_cleanup_temp_dir(cli_ctx *ctx, char **dirname, int status)
+{
+    if (dirname == NULL || *dirname == NULL)
+        return status;
+
+    if (!ctx->engine->keeptmp && cli_rmdirs(*dirname) != 0) {
+        cli_mark_scan_incomplete(ctx, "DMG temporary directory could not be removed");
+        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+            status = CL_EUNLINK;
+    }
+
+    free(*dirname);
+    *dirname = NULL;
+    return status;
+}
+
 static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t remaining, size_t *window_len)
 {
     const uint8_t *window;
@@ -219,10 +236,7 @@ int cli_scandmg(cli_ctx *ctx)
     if (ctx->engine->keeptmp && !(ctx->engine->engine_options & ENGINE_OPTIONS_FORCE_TO_DISK)) {
         ret = dmg_extract_xml(ctx, dirname, &hdr);
         if (ret != CL_SUCCESS) {
-            if (!ctx->engine->keeptmp)
-                cli_rmdirs(dirname);
-            free(dirname);
-            return ret;
+            return dmg_cleanup_temp_dir(ctx, &dirname, ret);
         }
     }
 
@@ -233,10 +247,7 @@ int cli_scandmg(cli_ctx *ctx)
         cli_dbgmsg("cli_scandmg: retcode from scanning TOC xml: %s\n", cl_strerror(ret));
         if (ret != CL_VIRUS)
             cli_mark_scan_incomplete(ctx, "DMG XML nested scan did not complete successfully");
-        if (!ctx->engine->keeptmp)
-            cli_rmdirs(dirname);
-        free(dirname);
-        return ret;
+        return dmg_cleanup_temp_dir(ctx, &dirname, ret);
     }
 
     /*
@@ -247,10 +258,7 @@ int cli_scandmg(cli_ctx *ctx)
     xml_map = fmap_duplicate(ctx->fmap, (size_t)hdr.xmlOffset, (size_t)hdr.xmlLength, "toc.xml");
     if (!xml_map) {
         cli_mark_scan_incomplete(ctx, "DMG XML fmap view could not be created");
-        if (!ctx->engine->keeptmp)
-            cli_rmdirs(dirname);
-        free(dirname);
-        return CL_EMAP;
+        return dmg_cleanup_temp_dir(ctx, &dirname, CL_EMAP);
     }
 
     memset(&xml_state, 0, sizeof(xml_state));
@@ -289,10 +297,7 @@ int cli_scandmg(cli_ctx *ctx)
         mish_list = next;
     }
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(dirname);
-    free(dirname);
-    return ret;
+    return dmg_cleanup_temp_dir(ctx, &dirname, ret);
 }
 /* Validate one completed, bounded decoded blkx metadata spool. Ownership of
  * decoded transfers to this function and is released on every failure. */
@@ -1095,14 +1100,15 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
         ret = cli_magic_scan_desc_type_reserved(ofd, outfile, ctx, CL_TYPE_PART_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     }
 
-    if (close(ofd) == -1 && ret == CL_SUCCESS) {
+    if (close(ofd) == -1) {
         cli_mark_scan_incomplete(ctx, "DMG reconstructed partition could not be closed completely");
-        ret = CL_EWRITE;
+        if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
+            ret = CL_EWRITE;
     }
     cli_scan_release_temporary(ctx, temporary_reserved);
     if (!ctx->engine->keeptmp && cli_unlink(outfile)) {
         cli_mark_scan_incomplete(ctx, "DMG reconstructed partition temporary file could not be removed");
-        if (ret == CL_SUCCESS)
+        if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
             ret = CL_EUNLINK;
     }
 

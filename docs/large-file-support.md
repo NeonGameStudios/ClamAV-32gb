@@ -3274,6 +3274,11 @@ that reservation through the nested scan. Source guards and `git diff --check`
 pass; compiled parser execution, document/image corpus, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+DMG reconstructed-partition close/removal failures now remain fail-visible
+even when an earlier detection or parser error exists, and all DMG temporary
+directory unwind paths report removal failures. Detections remain authoritative
+without allowing cleanup errors to produce a cacheable clean result.
+
 ## XLM macro-output accounting — 2026-08-20
 
 XLM macro normalization now routes formatted and decoded output through a
