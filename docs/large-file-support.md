@@ -2188,6 +2188,20 @@ Source guards and `git diff --check` are the current local evidence. Compiled
 fault-injected OLE/VBA cleanup coverage, sanitizer execution, and supported
 build Sonic1 qualification remain release gates.
 
+## OOXML required-part failure propagation — 2026-08-20
+
+OOXML content-types lookups now distinguish an absent optional property part
+from a ZIP-directory or extraction failure. Non-success lookup and nested
+property-parser results are propagated and marked incomplete, while a
+declared-but-absent property part now becomes an explicit malformed-package
+result. Property parts that are never declared remain optional.
+The HWP-flavored OOXML entry points apply the same distinction to their
+required version and content parts.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+malformed-archive and fault-injected ZIP/OOXML coverage, sanitizer execution,
+and supported-build Sonic1 qualification remain release gates.
+
 ## Scan-level temporary-directory cleanup propagation — 2026-08-20
 
 When recursive temporary-directory mode is enabled, scan-level directory

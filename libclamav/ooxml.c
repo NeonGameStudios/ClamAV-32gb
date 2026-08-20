@@ -112,6 +112,12 @@ static cl_error_t ooxml_updatelimits(int fd, cli_ctx *ctx)
     return cli_updatelimits(ctx, sb.st_size);
 }
 
+static void ooxml_note_failure(cli_ctx *ctx, cl_error_t status, const char *reason)
+{
+    if ((status != CL_SUCCESS) && (status != CL_VIRUS) && (status != CL_BREAK) && (status != CL_ETIMEOUT))
+        cli_mark_scan_incomplete(ctx, reason);
+}
+
 static cl_error_t ooxml_parse_document(int fd, cli_ctx *ctx)
 {
     cl_error_t ret          = CL_SUCCESS;
@@ -252,14 +258,20 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
             tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
             if (tmp == CL_ETIMEOUT) {
                 ret = tmp;
-            } else if (tmp != CL_VIRUS) {
+            } else if (tmp != CL_SUCCESS && tmp != CL_VIRUS) {
+                ooxml_note_failure(ctx, tmp, "OOXML core-properties part lookup did not complete");
+                ret = tmp;
+            } else if (tmp == CL_SUCCESS) {
                 cli_dbgmsg("cli_process_ooxml: failed to find core properties file \"%s\"!\n", PN);
+                cli_mark_scan_incomplete(ctx, "OOXML declared core-properties part is missing");
                 mcore++;
+                ret = CL_EFORMAT;
             } else {
                 cli_dbgmsg("ooxml_content_cb: found core properties file \"%s\" @ %zx\n", PN, loff);
                 if (!core) {
                     tmp = unzip_single_internal(ctx, loff, ooxml_core_cb);
-                    if (tmp == CL_ETIMEOUT || tmp == CL_EMEM) {
+                    if (tmp != CL_SUCCESS) {
+                        ooxml_note_failure(ctx, tmp, "OOXML core-properties part could not be inspected completely");
                         ret = tmp;
                     }
                 }
@@ -270,14 +282,20 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
             tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
             if (tmp == CL_ETIMEOUT) {
                 ret = tmp;
-            } else if (tmp != CL_VIRUS) {
+            } else if (tmp != CL_SUCCESS && tmp != CL_VIRUS) {
+                ooxml_note_failure(ctx, tmp, "OOXML extended-properties part lookup did not complete");
+                ret = tmp;
+            } else if (tmp == CL_SUCCESS) {
                 cli_dbgmsg("cli_process_ooxml: failed to find extended properties file \"%s\"!\n", PN);
+                cli_mark_scan_incomplete(ctx, "OOXML declared extended-properties part is missing");
                 mextn++;
+                ret = CL_EFORMAT;
             } else {
                 cli_dbgmsg("ooxml_content_cb: found extended properties file \"%s\" @ %zx\n", PN, loff);
                 if (!extn) {
                     tmp = unzip_single_internal(ctx, loff, ooxml_extn_cb);
-                    if (tmp == CL_ETIMEOUT || tmp == CL_EMEM) {
+                    if (tmp != CL_SUCCESS) {
+                        ooxml_note_failure(ctx, tmp, "OOXML extended-properties part could not be inspected completely");
                         ret = tmp;
                     }
                 }
@@ -288,9 +306,14 @@ static cl_error_t ooxml_content_cb(int fd, const char *filepath, cli_ctx *ctx, c
             tmp = unzip_search_single(ctx, (const char *)(PN + 1), xmlStrlen(PN) - 1, &loff);
             if (tmp == CL_ETIMEOUT) {
                 ret = tmp;
-            } else if (tmp != CL_VIRUS) {
+            } else if (tmp != CL_SUCCESS && tmp != CL_VIRUS) {
+                ooxml_note_failure(ctx, tmp, "OOXML custom-properties part lookup did not complete");
+                ret = tmp;
+            } else if (tmp == CL_SUCCESS) {
                 cli_dbgmsg("cli_process_ooxml: failed to find custom properties file \"%s\"!\n", PN);
+                cli_mark_scan_incomplete(ctx, "OOXML declared custom-properties part is missing");
                 mcust++;
+                ret = CL_EFORMAT;
             } else {
                 cli_dbgmsg("ooxml_content_cb: found custom properties file \"%s\" @ %zx\n", PN, loff);
                 /* custom properties are not parsed */
@@ -443,6 +466,9 @@ cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
         ret = unzip_search_single(ctx, "version.xml", 11, &loff);
         if (ret == CL_ETIMEOUT) {
             return CL_ETIMEOUT;
+        } else if (ret != CL_SUCCESS && ret != CL_VIRUS) {
+            ooxml_note_failure(ctx, ret, "OOXML HWP version XML part lookup did not complete");
+            return ret;
         } else if (ret != CL_VIRUS) {
             cli_dbgmsg("cli_process_ooxml: failed to find "
                        "version.xml"
@@ -457,6 +483,9 @@ cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
             ret = unzip_search_single(ctx, "Contents/content.hpf", 20, &loff);
             if (ret == CL_ETIMEOUT) {
                 return CL_ETIMEOUT;
+            } else if (ret != CL_SUCCESS && ret != CL_VIRUS) {
+                ooxml_note_failure(ctx, ret, "OOXML HWP content XML part lookup did not complete");
+                return ret;
             } else if (ret != CL_VIRUS) {
                 cli_dbgmsg("cli_process_ooxml: failed to find "
                            "Contents/content.hpf"
@@ -472,6 +501,9 @@ cl_error_t cli_process_ooxml(cli_ctx *ctx, int type)
         ret = unzip_search_single(ctx, "[Content_Types].xml", 19, &loff);
         if (ret == CL_ETIMEOUT) {
             return CL_ETIMEOUT;
+        } else if (ret != CL_SUCCESS && ret != CL_VIRUS) {
+            ooxml_note_failure(ctx, ret, "OOXML content-types XML part lookup did not complete");
+            return ret;
         } else if (ret != CL_VIRUS) {
             cli_dbgmsg("cli_process_ooxml: failed to find "
                        "[Content_Types].xml"
