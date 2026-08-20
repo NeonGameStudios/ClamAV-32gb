@@ -2086,3 +2086,18 @@ and keeps the rule shared by clamdscan, milter, and on-access consumers.
 A focused clamd unit regression covers nested and contradictory reports.
 Dependency-complete builds, service protocol qualification, and supported-build
 Sonic1 qualification remain open release gates.
+
+## RFC 1341 partial-body spool handoff — 2026-08-20
+
+`message/partial` now enters the disk-backed MIME spool instead of retaining its
+body in the 64 MiB linked-line representation. RFC 1341 reassembly streams the
+spooled body directly into the numbered partial file, preserving transfer
+decoding and temporary-space accounting without creating a second full-size
+staging copy. The existing missing-fragment regression continues to cover
+fail-visible reassembly, and a new 65 MiB fragment fixture verifies that the
+partial-body path crosses the former materialization boundary successfully.
+
+External-body, disposition-notification, and unknown `message/*` subtypes
+remain explicit unsupported materialization cases. Dependency-complete C/CTest,
+sanitizer, broad MIME corpus, and supported-build Sonic1 qualification remain
+open release gates.

@@ -82,6 +82,7 @@ static void messageDedup(message *m);
 static char *rfc2231(const char *in);
 static int simil(const char *str1, const char *str2);
 static void messageSetSpoolBuildContext(fileblob *fb, cli_ctx *ctx);
+static int messageCopyBodySpool(message *m, fileblob *out);
 
 static size_t messageLineMaterializedBytes(const line_t *line)
 {
@@ -1674,6 +1675,22 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
     time_val = time(NULL);
     snprintf(fullname, 1024, "%s" PATHSEP "clamav-partial-%lu_%s-%u", dir, time_val, md5id, part);
 
+    if (m && m->body_spool) {
+        fb = fileblobCreate();
+        if (!fb)
+            return CL_EMEM;
+
+        fileblobSetCTX(fb, m->ctx);
+        fileblobPartialSet(fb, fullname, NULL);
+        messageSetSpoolBuildContext(fb, m->ctx);
+        if (fb->isIncomplete || fb->fp == NULL || messageCopyBodySpool(m, fb) < 0) {
+            fileblobDestructiveDestroy(fb);
+            return CL_EFORMAT;
+        }
+        fileblobDestroy(fb);
+        return CL_SUCCESS;
+    }
+
     fb = messageExport(m, fullname,
                        (void *(*)(void))fileblobCreate,
                        (void (*)(void *))fileblobDestroy,
@@ -1688,65 +1705,35 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
     return CL_SUCCESS;
 }
 
-/*
- * Export a disk-backed body. A raw body can be handed to the scanner without
- * copying it. Encoded bodies are decoded one input line at a time into a new
- * bounded fileblob, keeping both the source and output in the shared
- * temporary-space accounting. The source remains owned by message until a
- * destroy=1 export succeeds.
- */
-static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy)
+/* Copy a disk-backed body into an already-open output fileblob. Raw bodies are
+ * copied in bounded chunks; base64 and quoted-printable bodies are decoded a
+ * line at a time. Keeping the destination supplied by the caller lets partial
+ * message reassembly write directly to its final file instead of creating an
+ * additional full-size staging copy. */
+static int messageCopyBodySpool(message *m, fileblob *out)
 {
-    const char *spool_dir;
-    char *filename = NULL;
     fileblob *source;
-    fileblob *out = NULL;
     FILE *input   = NULL;
     encoding_type enctype;
     char line[4096];
     int failed = 0;
 
-    if (m == NULL || m->body_spool == NULL)
-        return NULL;
+    if (m == NULL || m->body_spool == NULL || out == NULL)
+        return -1;
 
     source = m->body_spool;
     if (source->isIncomplete || source->fp == NULL || source->fullname == NULL) {
         cli_mark_scan_incomplete(m->ctx,
                                  "MIME body spool is not a complete scan source");
-        return NULL;
+        return -1;
     }
 
     if (m->numberOfEncTypes == 0 ||
         m->encodingTypes[0] == NOENCODING ||
         m->encodingTypes[0] == BINARY ||
         m->encodingTypes[0] == EIGHTBIT) {
-        if (destroy) {
-            m->body_spool = NULL;
-            return source;
-        }
-
-        /* Preserve the historical non-destructive export contract. */
-        out = fileblobCreate();
-        if (out == NULL)
-            goto fail;
-        spool_dir = dir;
-        if (spool_dir == NULL || *spool_dir == '\0')
-            spool_dir = m->ctx ? m->ctx->this_layer_tmpdir : NULL;
-        if (spool_dir == NULL || *spool_dir == '\0')
-            goto fail;
-        filename = messageGetFilename(m);
-        fileblobSetFilename(out, spool_dir,
-                            (filename && *filename) ? filename : "mailbody");
-        if (filename) {
-            free(filename);
-            filename = NULL;
-        }
-        messageSetSpoolBuildContext(out, m->ctx);
-        if (out->isIncomplete || out->fp == NULL)
-            goto fail;
-
         if (fflush(source->fp) != 0 || (input = fopen(source->fullname, "rb")) == NULL)
-            goto fail;
+            goto copy_fail;
 
         while (!feof(input)) {
             size_t n = fread(line, 1, sizeof(line), input);
@@ -1759,43 +1746,24 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
                 break;
             }
         }
-        fclose(input);
+        if (fclose(input) != 0)
+            failed = 1;
         input = NULL;
         if (failed)
-            goto fail;
-        return out;
+            goto copy_fail;
+        return 0;
     }
 
     if (m->numberOfEncTypes != 1 ||
         (m->encodingTypes[0] != BASE64 && m->encodingTypes[0] != QUOTEDPRINTABLE)) {
         cli_mark_scan_incomplete(m->ctx,
                                  "MIME body uses an encoding without a streaming decoder");
-        return NULL;
+        return -1;
     }
 
     enctype   = m->encodingTypes[0];
-    spool_dir = dir;
-    if (spool_dir == NULL || *spool_dir == '\0')
-        spool_dir = m->ctx ? m->ctx->this_layer_tmpdir : NULL;
-    if (spool_dir == NULL || *spool_dir == '\0')
-        goto fail;
-
-    out = fileblobCreate();
-    if (out == NULL)
-        goto fail;
-    filename = messageGetFilename(m);
-    fileblobSetFilename(out, spool_dir,
-                        (filename && *filename) ? filename : "attachment");
-    if (filename) {
-        free(filename);
-        filename = NULL;
-    }
-    messageSetSpoolBuildContext(out, m->ctx);
-    if (out->isIncomplete || out->fp == NULL)
-        goto fail;
-
     if (fflush(source->fp) != 0 || (input = fopen(source->fullname, "rb")) == NULL)
-        goto fail;
+        goto copy_fail;
 
     m->base64chars = 0;
     while (fgets(line, sizeof(line), input) != NULL) {
@@ -1826,10 +1794,78 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
         if (end && fileblobAddData(out, decoded, (size_t)(end - decoded)) < 0)
             failed = 1;
     }
-    fclose(input);
+    if (fclose(input) != 0)
+        failed = 1;
     input = NULL;
 
     if (failed)
+        goto copy_fail;
+
+    return 0;
+
+copy_fail:
+    if (input)
+        fclose(input);
+    m->base64chars = 0;
+    cli_mark_scan_incomplete(m->ctx,
+                             "MIME body could not be copied completely from its spool");
+    return -1;
+}
+
+/*
+ * Export a disk-backed body. A raw body can be handed to the scanner without
+ * copying it. Encoded bodies are decoded one input line at a time into a new
+ * bounded fileblob, keeping both the source and output in the shared
+ * temporary-space accounting. The source remains owned by message until a
+ * destroy=1 export succeeds.
+ */
+static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy)
+{
+    const char *spool_dir;
+    char *filename = NULL;
+    fileblob *source;
+    fileblob *out = NULL;
+
+    if (m == NULL || m->body_spool == NULL)
+        return NULL;
+
+    source = m->body_spool;
+    if (source->isIncomplete || source->fp == NULL || source->fullname == NULL) {
+        cli_mark_scan_incomplete(m->ctx,
+                                 "MIME body spool is not a complete scan source");
+        return NULL;
+    }
+
+    if ((m->numberOfEncTypes == 0 ||
+         m->encodingTypes[0] == NOENCODING ||
+         m->encodingTypes[0] == BINARY ||
+         m->encodingTypes[0] == EIGHTBIT) &&
+        destroy) {
+        m->body_spool = NULL;
+        return source;
+    }
+
+    spool_dir = dir;
+    if (spool_dir == NULL || *spool_dir == '\0')
+        spool_dir = m->ctx ? m->ctx->this_layer_tmpdir : NULL;
+    if (spool_dir == NULL || *spool_dir == '\0')
+        goto fail;
+
+    out = fileblobCreate();
+    if (out == NULL)
+        goto fail;
+    filename = messageGetFilename(m);
+    fileblobSetFilename(out, spool_dir,
+                        (filename && *filename) ? filename : "mailbody");
+    if (filename) {
+        free(filename);
+        filename = NULL;
+    }
+    messageSetSpoolBuildContext(out, m->ctx);
+    if (out->isIncomplete || out->fp == NULL)
+        goto fail;
+
+    if (messageCopyBodySpool(m, out) < 0)
         goto fail;
 
     if (destroy) {
@@ -1841,8 +1877,6 @@ static fileblob *messageExportBodySpool(message *m, const char *dir, int destroy
 fail:
     if (filename)
         free(filename);
-    if (input)
-        fclose(input);
     if (out)
         fileblobDestructiveDestroy(out);
     cli_mark_scan_incomplete(m->ctx,

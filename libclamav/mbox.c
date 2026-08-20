@@ -225,14 +225,14 @@ static bool messageNeedsMaterializedBody(const message *m)
     if (messageGetMimeType(m) == MESSAGE) {
         subtype = messageGetMimeSubtype(m);
 
-        /* RFC822 and delivery-status bodies are complete nested messages.
-         * They can be staged and handed back to the normal scanner without
-         * retaining every body line in the parent message. Keep the legacy
-         * in-memory state machine for partial messages, external-body
-         * references, disposition notifications, and unknown message types,
-         * whose parser semantics are not equivalent to a nested scan. */
+        /* RFC822, delivery-status, and partial bodies can be handled from a
+         * disk-backed representation. Keep the legacy in-memory state
+         * machine for external-body references, disposition notifications,
+         * and unknown message types, whose parser semantics are not
+         * equivalent to a nested scan. */
         return (strcasecmp(subtype, "rfc822") != 0) &&
-               (strcasecmp(subtype, "delivery-status") != 0);
+               (strcasecmp(subtype, "delivery-status") != 0) &&
+               (strcasecmp(subtype, "partial") != 0);
     }
 
     subtype = messageGetMimeSubtype(m);
@@ -2056,6 +2056,26 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
 
         if (streamed_type == MULTIPART) {
             rc = parseMultipartBodySpool(mainMessage, mctx, recursion_level);
+        } else if (streamed_type == MESSAGE &&
+                   strcasecmp(messageGetMimeSubtype(mainMessage), "partial") == 0) {
+            if (mctx->ctx->options->mail & CL_SCAN_MAIL_PARTIAL_MESSAGE) {
+                const int partial_rc = rfc1341(mctx, mainMessage);
+
+                if (partial_rc == CL_VIRUS)
+                    rc = VIRUS;
+                else if (partial_rc == CL_SUCCESS || partial_rc == CL_CLEAN)
+                    rc = OK;
+                else {
+                    cli_mark_scan_incomplete(mctx->ctx,
+                                             "Partial MIME message could not be saved completely");
+                    rc = FAIL;
+                }
+            } else {
+                cli_warnmsg("Partial message received from MUA/MTA - message cannot be scanned\n");
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Partial MIME message support is disabled");
+                rc = FAIL;
+            }
         } else {
             if (doPhishingScan && (streamed_type == NOMIME || streamed_type == TEXT))
                 checkURLs(mainMessage, mctx, &rc, streamed_type == TEXT);

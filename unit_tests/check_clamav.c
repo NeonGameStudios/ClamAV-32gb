@@ -653,6 +653,32 @@ static char *create_partial_message_missing_fragment_fixture(void)
     return path;
 }
 
+static char *create_large_partial_message_fixture(void)
+{
+    static const char header[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: message/partial; id=large-partial-regression; number=1; total=2\n"
+        "\n";
+    char block[4096];
+    char *path = NULL;
+    int fd     = -1;
+    size_t i;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, header, sizeof(header) - 1), (ssize_t)(sizeof(header) - 1));
+
+    memset(block, 'P', sizeof(block));
+    block[sizeof(block) - 1] = '\n';
+    for (i = 0; i < (65U * 1024U * 1024U) / sizeof(block); i++)
+        ck_assert_int_eq(write(fd, block, sizeof(block)), (ssize_t)sizeof(block));
+
+    ck_assert_int_eq(close(fd), 0);
+    return path;
+}
+
 START_TEST(test_mbox_nested_maxfiles_is_fail_visible)
 {
     struct cl_engine *engine;
@@ -716,6 +742,32 @@ START_TEST(test_partial_message_missing_fragment_is_fail_visible)
                          NULL, NULL);
     ck_assert_msg(ret != CL_SUCCESS,
                   "missing RFC 1341 fragment returned clean");
+
+    free(path);
+}
+END_TEST
+
+START_TEST(test_partial_message_large_body_uses_streaming_spool)
+{
+    struct cl_scan_options options;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    char *path;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_engine_set_str(g_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    options.mail  = CL_SCAN_MAIL_PARTIAL_MESSAGE;
+    path          = create_large_partial_message_fixture();
+
+    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL,
+                         NULL, NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
 
     free(path);
 }
@@ -11339,6 +11391,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_mbox_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_mbox_large_body_streams_without_alert);
     tcase_add_test(tc_cl_scan, test_partial_message_missing_fragment_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_partial_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_mhtml_unterminated_comment_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_streams_without_alert);
