@@ -172,6 +172,8 @@ contains clamscan/manager.c 'Unable to allocate a scan path for %s'
 contains clamscan/manager.c 'write_input_failure_report(opts, engine, filename, CL_EMEM)'
 contains clamscan/manager.c 'write_input_failure_report(opts, engine, file, CL_ESTAT)'
 contains clamscan/manager.c 'write_input_failure_report(opts, engine, file, CL_EARG)'
+contains clamscan/manager.c 'write_input_failure_report(opts, engine, dirname, CL_EOPEN)'
+contains clamscan/manager.c "Can't inspect symbolic link target"
 contains clamscan/manager.c 'write_structured_scan_report(opts, report) != 0'
 contains clamscan/manager.c 'input descriptor could not be closed'
 contains clamscan/manager.c 'action source descriptor could not be closed'

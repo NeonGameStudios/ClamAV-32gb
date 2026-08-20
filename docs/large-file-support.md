@@ -3951,6 +3951,15 @@ IDs retain their daemon-owned framed reports. This closes the client-side
 JSONL omission for parallel pre-dispatch failures; compiled IDSESSION fault
 injection and supported-build Sonic1 qualification remain release gates.
 
+## clamscan directory and symlink report completion — 2026-08-20
+
+The clamscan walker now emits bounded non-clean fallback rows when an explicit
+directory cannot be opened or a followed symbolic link cannot be inspected.
+These failures remain visible in legacy errors and now also remain represented
+in JSONL evidence; normal symlink exclusion behavior is unchanged. Compiled
+filesystem-fault injection and supported-build Sonic1 qualification remain
+release gates.
+
 ## clamdscan wrapper/session failure reports — 2026-08-20
 
 The structured-report path now emits a bounded fallback object when path

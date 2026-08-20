@@ -988,6 +988,8 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
         if (!printinfected)
             logg(LOGG_INFO, "%s: Can't open directory.\n", dirname);
 
+        if (write_input_failure_report(opts, engine, dirname, CL_EOPEN) != 0)
+            info.errors++;
         info.errors++;
     }
 }
@@ -1629,6 +1631,12 @@ static int scan_files(struct cl_engine *engine, const struct optstruct *opts, st
                             logg(LOGG_INFO, "%s: Symbolic link\n", file);
                         }
                     }
+                } else {
+                    logg(LOGG_ERROR, "%s: Can't inspect symbolic link target\n", file);
+                    if (write_input_failure_report(opts, engine, file, CL_ESTAT) != 0)
+                        info.errors++;
+                    info.errors++;
+                    ret = 2;
                 }
             } else if (S_ISREG(sb.st_mode)) {
                 /* Found a file, scan it. */

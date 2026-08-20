@@ -2512,3 +2512,12 @@ explicitly requested path fails allocation or `lstat()`, or is a top-level
 unsupported file type. This prevents pre-scan input failures from disappearing
 from JSONL evidence while preserving legacy console and exit behavior. Compiled
 fault injection and supported-build qualification remain open.
+
+## clamscan directory and symlink report completion — 2026-08-20
+
+The clamscan walker now emits bounded non-clean fallback rows when an explicit
+directory cannot be opened or a followed symbolic link cannot be inspected.
+Legacy error accounting and ordinary symlink exclusion behavior remain
+unchanged; the previously omitted pre-scan failures are now represented in
+JSONL evidence. Compiled filesystem-fault injection and supported-build
+qualification remain open.
