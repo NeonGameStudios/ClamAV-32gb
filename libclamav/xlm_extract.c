@@ -4947,11 +4947,23 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                     uint8_t flags          = data[2];
 
                     if (flags & 0x4) {
-                        cli_dbgmsg("[cli_extract_xlm_macros_and_images] East Asian extended strings not implemented\n");
+                        cli_dbgmsg("[cli_extract_xlm_macros_and_images] East Asian extended strings are unsupported\n");
                     }
 
                     if (flags & 0x8) {
-                        cli_dbgmsg("[cli_extract_xlm_macros_and_images] Rich strings not implemented\n");
+                        cli_dbgmsg("[cli_extract_xlm_macros_and_images] Rich strings are unsupported\n");
+                    }
+
+                    /* The extension payload changes the STRING layout: rich
+                     * formatting runs and East-Asian phonetic data surround
+                     * the text bytes.  Until those records are decoded, the
+                     * bytes below cannot be treated as a complete macro
+                     * representation.  Do not scan a misaligned prefix as
+                     * though the required XLM layer were complete. */
+                    if (flags & (0x4 | 0x8)) {
+                        cli_mark_scan_incomplete(ctx, "XLM STRING record uses unsupported extension data");
+                        status = CL_EUNPACK;
+                        goto done;
                     }
 
                     if (!(flags & 0x1)) {
@@ -4999,7 +5011,6 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                     goto done;
                 }
 
-                // Not implemented. See Microsoft Office Excel97-2007Binary File Format (.xls) Specification Page 18 for details.
                 break;
             }
             default: {

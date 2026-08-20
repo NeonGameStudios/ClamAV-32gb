@@ -2227,6 +2227,12 @@ returns an unsupported result instead of scanning only the inline prefix. HFS+
 resource compression is implemented through the bounded temporary-fork path;
 its completion diagnostic is not an unsupported-feature indication.
 
+XLM/BIFF8 `STRING` records carrying rich-text formatting runs or East-Asian
+phonetic extensions are also an explicit unsupported boundary. Their extension
+payload changes the record layout, so the extractor now stops with an
+incomplete/unsupported result instead of scanning a potentially misaligned
+macro prefix as complete.
+
 ## Scan-level temporary-directory cleanup propagation — 2026-08-20
 
 When recursive temporary-directory mode is enabled, scan-level directory

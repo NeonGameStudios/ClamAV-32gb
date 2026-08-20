@@ -391,6 +391,8 @@ contains libclamav/hfsplus.c 'HFS+ fork requires unsupported ExtentOverflow reco
 contains libclamav/hfsplus.c 'Resource compression processing complete'
 contains unit_tests/check_clamav.c 'test_hfsplus_declared_attributes_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_truncated_header_is_fail_visible'
+contains libclamav/xlm_extract.c 'XLM STRING record uses unsupported extension data'
+contains unit_tests/check_clamav.c 'test_xlm_string_extensions_are_fail_visible'
 contains libclammspack/mspack/cabd.c 'report an error even in salvage mode'
 contains libclamav/unzip.c 'ZIP_EOCD_MAX_SEARCH_SIZE'
 contains libclamav/unzip.c 'ZIP_MAGIC_ZIP64_END'

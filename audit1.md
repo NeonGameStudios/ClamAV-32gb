@@ -1935,6 +1935,20 @@ This is source-level evidence only. A compiled HFS+ ExtentOverflow fixture,
 sanitizer execution, and supported-build Sonic1 qualification remain open
 release gates.
 
+## XLM STRING extension boundary — 2026-08-20
+
+BIFF8 `STRING` records with rich-text formatting runs or East-Asian phonetic
+extensions have additional payload fields that the extractor does not decode.
+The prior implementation logged those flags and continued using the base
+string layout, which could produce a misaligned macro representation while
+still reporting success. The extractor now marks the layer incomplete and
+returns `CL_EUNPACK` before scanning that output. A focused regression covers a
+rich-string record and requires a non-cacheable unsupported result.
+
+This is source-level and unit-test evidence only. A dependency-complete XLM
+corpus, sanitizer execution, and supported-build Sonic1 qualification remain
+release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script
