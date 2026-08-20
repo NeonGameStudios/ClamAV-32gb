@@ -829,6 +829,8 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
     struct dirent_data *entries = NULL;
     size_t i, entries_cnt = 0;
     cl_error_t ret;
+    cl_error_t walk_status = CL_SUCCESS;
+    bool readdir_failed     = false;
 
     if (maxdepth < 0) {
         /* exceeded recursion limit */
@@ -838,14 +840,22 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
 
     if ((dd = opendir(dirname)) != NULL) {
         struct dirent *dent;
-        errno = 0;
-        ret   = CL_SUCCESS;
-        while ((dent = readdir(dd))) {
+        ret = CL_SUCCESS;
+        for (;;) {
             int stated = 0;
             enum filetype ft;
             char *fname;
             STATBUF statbuf;
             STATBUF *statbufp;
+            struct dirent_data *new_entries;
+
+            errno = 0;
+            dent  = readdir(dd);
+            if (NULL == dent) {
+                if (errno != 0)
+                    readdir_failed = true;
+                break;
+            }
 
             if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
                 continue;
@@ -879,6 +889,7 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
             fname = (char *)cli_max_malloc(strlen(dirname) + strlen(dent->d_name) + 2);
             if (!fname) {
                 ret = callback(NULL, NULL, dirname, error_mem, data);
+                walk_status = (ret == CL_SUCCESS) ? CL_EMEM : ret;
                 if (ret != CL_SUCCESS)
                     break;
                 continue; /* have to skip this one if continuing after error */
@@ -895,6 +906,7 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
 
             ret = handle_filetype(fname, flags, &statbuf, &stated, &ft, callback, data);
             if (ret != CL_SUCCESS) {
+                walk_status = ret;
                 free(fname);
                 break;
             }
@@ -909,6 +921,7 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
                 statbufp = malloc(sizeof(*statbufp));
                 if (!statbufp) {
                     ret = callback(stated ? &statbuf : NULL, NULL, fname, error_mem, data);
+                    walk_status = (ret == CL_SUCCESS) ? CL_EMEM : ret;
                     free(fname);
                     if (ret != CL_SUCCESS)
                         break;
@@ -923,14 +936,17 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
             }
 
             entries_cnt++;
-            entries = cli_max_realloc(entries, entries_cnt * sizeof(*entries));
-            if (!entries) {
+            new_entries = cli_max_realloc(entries, entries_cnt * sizeof(*entries));
+            if (!new_entries) {
                 ret = callback(stated ? &statbuf : NULL, NULL, fname, error_mem, data);
+                walk_status = (ret == CL_SUCCESS) ? CL_EMEM : ret;
+                entries_cnt--;
                 free(fname);
                 if (statbufp)
                     free(statbufp);
                 break;
             } else {
+                entries = new_entries;
                 struct dirent_data *entry = &entries[entries_cnt - 1];
                 entry->filename           = fname;
                 entry->statbuf            = statbufp;
@@ -942,10 +958,18 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
                 entry->ino = -1;
 #endif
             }
-            errno = 0;
         }
-        closedir(dd);
-        ret = CL_SUCCESS;
+
+        if (readdir_failed) {
+            ret = callback(NULL, NULL, dirname, error_stat, data);
+            if (walk_status == CL_SUCCESS)
+                walk_status = (ret == CL_SUCCESS) ? CL_EREAD : ret;
+        }
+        if (closedir(dd) != 0) {
+            ret = callback(NULL, NULL, dirname, error_stat, data);
+            if (walk_status == CL_SUCCESS)
+                walk_status = (ret == CL_SUCCESS) ? CL_EREAD : ret;
+        }
 
         if (entries) {
             cli_qsort(entries, entries_cnt, sizeof(*entries), ftw_compare);
@@ -959,6 +983,8 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
                 if (ret != CL_SUCCESS) {
                     /* Something went horribly wrong, Skip the rest of the files */
                     cli_errmsg("File tree walk aborted.\n");
+                    if (walk_status == CL_SUCCESS)
+                        walk_status = ret;
                     break;
                 }
             }
@@ -971,8 +997,9 @@ static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_
         }
     } else {
         ret = callback(NULL, NULL, dirname, error_stat, data);
+        walk_status = ret;
     }
-    return ret;
+    return walk_status;
 }
 
 /* strerror_r is not available everywhere, (and when it is there are two variants,

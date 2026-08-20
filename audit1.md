@@ -2166,6 +2166,18 @@ Source guards and `git diff --check` are the current local evidence.
 Fault-injected directory traversal, dependency-complete front-end builds, and
 supported-build Sonic1 qualification remain release gates.
 
+## Clamd directory-walk error propagation — 2026-08-20
+
+The shared `cli_ftw()` walker used by clamd directory and `MULTISCAN` paths
+now preserves allocation/stat errors and reports `readdir()` or `closedir()`
+failures through the existing structured skip callback. Entries collected before
+an operational failure may still be scanned, but the overall request cannot be
+reported clean or cacheable as if the directory were complete.
+
+Source guards and `git diff --check` are the current local evidence.
+Fault-injected service traversal, dependency-complete builds, and supported-
+build Sonic1 qualification remain release gates.
+
 ## Shared temporary-directory cleanup closeout — 2026-08-20
 
 The shared `cli_rmdirs()` cleanup helper now fails closed when directory
