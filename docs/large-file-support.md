@@ -2374,6 +2374,13 @@ This removes the specific PDF root-input heap/cap bottleneck; it does not claim
 that every PDF object/stream decoder is independently streaming or that a real
 large-PDF corpus has passed supported-build, sanitizer, or Sonic1 qualification.
 
+Legacy extracted-object and normalized-content temporary files now charge
+incrementally against `MaxTemporarySize` and retain their reservations through
+the reservation-aware nested scans. Read, write, quota, rewind, and cleanup
+failures remain fail-visible. This closes the temporary-spool accounting gap
+without changing the deliberate legacy PDF filter boundary recorded as
+`pdf-stream-over-4g`; parser-family and large-PDF qualification remain open.
+
 ## ALZ bounded reader and member streaming — 2026-08-19
 
 ALZ no longer converts the complete fmap into a borrowed Rust slice. Its

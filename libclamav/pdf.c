@@ -762,7 +762,8 @@ done:
     return status;
 }
 
-static cl_error_t filter_writen(struct pdf_struct *pdf, struct pdf_obj *obj, int fout, const char *buf, size_t len, size_t *sum)
+static cl_error_t filter_writen(struct pdf_struct *pdf, struct pdf_obj *obj, int fout, const char *buf, size_t len,
+                                size_t *sum, uint64_t *temporary_reserved)
 {
     uint64_t needed;
 
@@ -779,11 +780,26 @@ static cl_error_t filter_writen(struct pdf_struct *pdf, struct pdf_obj *obj, int
         return limit_status;
     }
 
+    if (cli_scan_reserve_temporary(pdf->ctx, (uint64_t)len) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object exceeds temporary storage limits");
+        return CL_ERESOURCE;
+    }
+    if (*temporary_reserved > UINT64_MAX - (uint64_t)len) {
+        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
+        cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object temporary size overflowed");
+        return CL_EPARSE;
+    }
+    *temporary_reserved += (uint64_t)len;
+
     if (cli_writen(fout, buf, len) != len) {
         cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object could not be written completely");
         return CL_EWRITE;
     }
 
+    if (len > SIZE_MAX - *sum) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object size overflowed");
+        return CL_EPARSE;
+    }
     *sum += len;
     return CL_SUCCESS;
 }
@@ -1397,7 +1413,8 @@ enum cstate {
     CSTATE_TJ_PAROPEN
 };
 
-static void process(struct text_norm_state *s, enum cstate *st, const char *buf, size_t length, int fout)
+static cl_error_t process(struct pdf_struct *pdf, struct text_norm_state *s, enum cstate *st, const char *buf,
+                          size_t length, int fout, uint64_t *temporary_reserved)
 {
     do {
         switch (*st) {
@@ -1407,7 +1424,7 @@ static void process(struct text_norm_state *s, enum cstate *st, const char *buf,
                 } else {
                     const char *nl = memchr(buf, '\n', length);
                     if (!nl)
-                        return;
+                        return CL_SUCCESS;
 
                     if ((size_t)(nl - buf) > length) {
                         length = 0;
@@ -1428,7 +1445,15 @@ static void process(struct text_norm_state *s, enum cstate *st, const char *buf,
                     *st = CSTATE_TJ;
                 } else {
                     if (text_normalize_buffer(s, (const unsigned char *)buf, 1) != 1) {
-                        cli_writen(fout, s->out, s->out_pos);
+                        if (cli_scan_reserve_temporary(pdf->ctx, (uint64_t)s->out_pos) != CL_SUCCESS) {
+                            cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents exceed temporary storage limits");
+                            return CL_ERESOURCE;
+                        }
+                        *temporary_reserved += (uint64_t)s->out_pos;
+                        if (cli_writen(fout, s->out, s->out_pos) != s->out_pos) {
+                            cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents could not be written completely");
+                            return CL_EWRITE;
+                        }
                         text_normalize_reset(s);
                     }
                 }
@@ -1440,6 +1465,8 @@ static void process(struct text_norm_state *s, enum cstate *st, const char *buf,
         if (length > 0)
             length--;
     } while (length > 0);
+
+    return CL_SUCCESS;
 }
 
 static int pdf_scan_contents(int fd, struct pdf_struct *pdf, struct pdf_obj *obj)
@@ -1451,6 +1478,7 @@ static int pdf_scan_contents(int fd, struct pdf_struct *pdf, struct pdf_obj *obj
     int fout;
     size_t n;
     cl_error_t rc;
+    uint64_t temporary_reserved = 0;
     enum cstate st = CSTATE_NONE;
 
     snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d contents", pdf->dir, obj->id >> 8, obj->id & 0xff);
@@ -1465,21 +1493,46 @@ static int pdf_scan_contents(int fd, struct pdf_struct *pdf, struct pdf_obj *obj
     text_normalize_init(&s, (unsigned char *)outbuff, sizeof(outbuff));
     while (1) {
         n = cli_readn(fd, inbuf, sizeof(inbuf));
-        if ((n == 0) || (n == (size_t)-1))
+        if (n == (size_t)-1) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF contents could not be read completely");
+            rc = CL_EREAD;
+            goto done;
+        }
+        if (n == 0)
             break;
 
-        process(&s, &st, inbuf, n, fout);
+        rc = process(pdf, &s, &st, inbuf, n, fout, &temporary_reserved);
+        if (rc != CL_SUCCESS)
+            goto done;
     }
 
-    cli_writen(fout, s.out, s.out_pos);
+    if (cli_scan_reserve_temporary(pdf->ctx, (uint64_t)s.out_pos) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents exceed temporary storage limits");
+        rc = CL_ERESOURCE;
+        goto done;
+    }
+    temporary_reserved += (uint64_t)s.out_pos;
+    if (cli_writen(fout, s.out, s.out_pos) != s.out_pos) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents could not be written completely");
+        rc = CL_EWRITE;
+        goto done;
+    }
 
-    lseek(fout, 0, SEEK_SET);
-    rc = cli_magic_scan_desc(fout, fullname, pdf->ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents could not be rewound");
+        rc = CL_ESEEK;
+        goto done;
+    }
+    rc = cli_magic_scan_desc_type_reserved(fout, fullname, pdf->ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+
+done:
     close(fout);
 
     if (!pdf->ctx->engine->keeptmp || (s.out_pos == 0))
         if (cli_unlink(fullname) && rc != CL_VIRUS)
             rc = CL_EUNLINK;
+
+    cli_scan_release_temporary(pdf->ctx, temporary_reserved);
 
     return rc;
 }
@@ -1493,6 +1546,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
     bool extracted_an_object = false;
     int fout                 = -1;
     size_t sum               = 0;
+    uint64_t temporary_reserved = 0;
     bool dump                = true;
     struct pdf_dict *dparams = NULL;
 
@@ -1852,7 +1906,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
 
                 pdf->stats.njs++;
 
-                status = filter_writen(pdf, obj, fout, out, js_len, &sum);
+                status = filter_writen(pdf, obj, fout, out, js_len, &sum, &temporary_reserved);
                 if (status != CL_SUCCESS) {
                     free(js);
                     break;
@@ -1877,7 +1931,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
 
                     if (q2 > q) {
                         q--;
-                        status = filter_writen(pdf, obj, fout, q, q2 - q, &sum);
+                        status = filter_writen(pdf, obj, fout, q, q2 - q, &sum, &temporary_reserved);
                         q++;
                         if (status != CL_SUCCESS)
                             break;
@@ -1893,9 +1947,10 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             status = CL_EFORMAT;
         else {
             if (obj->objstm) {
-                status = filter_writen(pdf, obj, fout, obj->objstm->streambuf + obj->start, bytesleft, &sum);
+                status = filter_writen(pdf, obj, fout, obj->objstm->streambuf + obj->start, bytesleft, &sum,
+                                       &temporary_reserved);
             } else {
-                status = filter_writen(pdf, obj, fout, pdf->map + obj->start, bytesleft, &sum);
+                status = filter_writen(pdf, obj, fout, pdf->map + obj->start, bytesleft, &sum, &temporary_reserved);
             }
         }
     }
@@ -1913,7 +1968,7 @@ scan_extracted_objects:
 
         /* TODO: invoke bytecode on this pdf obj with metainformation associated */
         lseek(fout, 0, SEEK_SET);
-        ret = cli_magic_scan_desc(fout, fullname, pdf->ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        ret = cli_magic_scan_desc_type_reserved(fout, fullname, pdf->ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
         if (ret != CL_SUCCESS) {
             status = ret;
             goto done;
@@ -1959,6 +2014,8 @@ done:
             status = CL_EUNLINK;
         }
     }
+
+    cli_scan_release_temporary(pdf->ctx, temporary_reserved);
 
     return status;
 }
