@@ -5661,11 +5661,13 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
      * partially inspected layer into a clean result. Preserve the specific
      * status while making the omission visible to the report and cache policy. */
     if (!ctx->scan_incomplete &&
-        (result_in == CL_ERROR || result_in == CL_EFORMAT || result_in == CL_EPARSE ||
-         result_in == CL_EREAD || result_in == CL_EUNPACK)) {
-        cli_mark_scan_incomplete(ctx, (result_in == CL_ERROR)
-                                           ? "parser or decoder returned an unspecified error"
-                                           : "parser or decoder returned an incomplete result");
+        (result_in == CL_ERROR || result_in == CL_EOPEN || result_in == CL_ECREAT ||
+         result_in == CL_EACCES || result_in == CL_EMAP || result_in == CL_EFORMAT ||
+         result_in == CL_EPARSE || result_in == CL_EREAD || result_in == CL_EUNPACK)) {
+        cli_mark_scan_incomplete(ctx,
+                                 (result_in == CL_ERROR)
+                                     ? "parser or decoder returned an unspecified error"
+                                     : "parser or decoder returned an operational or incomplete error");
     }
 
     /* A recursion-limit skip applies only to the child that could not be
@@ -5710,6 +5712,10 @@ bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t 
             case CL_EPARSE:
             case CL_EREAD:
             case CL_EUNPACK:
+            case CL_EOPEN:
+            case CL_ECREAT:
+            case CL_EACCES:
+            case CL_EMAP:
             case CL_ERROR:
                 *result_out = result_in;
                 break;

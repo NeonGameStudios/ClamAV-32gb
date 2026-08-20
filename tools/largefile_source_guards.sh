@@ -143,7 +143,7 @@ contains unit_tests/check_clamav.c 'test_scan_report_detection_precedes_incomple
 contains libclamav/scan_report.c 'status == CL_BREAK'
 contains unit_tests/check_clamav.c 'test_scan_report_break_is_application_abort'
 contains libclamav/scan_report.c 'report_status_is_operational_failure'
-contains libclamav/scanners.c 'parser or decoder returned an incomplete result'
+contains libclamav/scanners.c 'parser or decoder returned an operational or incomplete error'
 contains unit_tests/check_clamav.c 'test_scan_report_operational_failure_is_resource_failure'
 contains libclamav/others.h 'uint64_t skipped_operations;'
 contains libclamav/scanners.c 'ctx->skipped_operations++'

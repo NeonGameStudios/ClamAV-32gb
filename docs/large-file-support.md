@@ -3720,6 +3720,11 @@ An unspecified `CL_ERROR` from the same parser/decoder boundary is now treated
 the same way and is preserved as the public result. It cannot be normalized to
 `CL_SUCCESS` after a later raw pass.
 
+The same policy now covers parser/decoder `CL_EOPEN`, `CL_ECREAT`, `CL_EACCES`,
+and `CL_EMAP` returns when the callee did not already record the failure. These
+operational errors cannot silently become a clean result after required
+extracted content or a decoder map was skipped.
+
 The focused policy regression and source guards pass. Full C/CTest execution,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.
