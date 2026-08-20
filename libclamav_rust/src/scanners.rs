@@ -1002,10 +1002,16 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
                     }
                 }
                 _ => {
-                    debug!(
-                        "ALZ file {:?} metadata size does not fit platform size_t. Skipping metadata scan.",
-                        metadata.file_name
+                    alz_metadata_ret = parser_failure(
+                        ctx,
+                        "ALZ",
+                        cl_error_t_CL_ERESOURCE,
+                        format!(
+                            "member metadata size for {:?} is not representable on this platform",
+                            metadata.file_name
+                        ),
                     );
+                    return AlzExtractionDecision::Stop;
                 }
             }
 

@@ -2315,8 +2315,9 @@ after each decoder. Stored, Deflate, and BZIP2 output is delivered in bounded
 chunks to the scanner’s temporary spool; the previous per-member `Vec<u8>`
 accumulation is retained only by the compatibility byte-slice API used by
 unit tests and callers that explicitly request it. Temporary admission,
-decoder completion, short reads, member limits, and nested scan failures are
-fail-visible.
+decoder completion, short reads, member limits, unrepresentable declared
+sizes, and nested scan failures are fail-visible; the scanner never silently
+skips an ALZ member's metadata because a platform-width conversion failed.
 
 This closes the ALZ whole-root and whole-member materialization path. ALZ
 third-party-equivalent corpus, sanitizer, and concurrent-RSS qualification
@@ -3146,3 +3147,16 @@ the owned bytes on every path.
 Source guards and `git diff --check` are the current local evidence. A
 dependency-complete HWP/HWPML corpus, sanitizer and fault-injected cleanup
 coverage, and supported-build Sonic1 qualification remain open release gates.
+
+## PE32+ inspection boundary — 2026-08-20
+
+PE32+ header parsing and the outer raw matcher remain enabled, but the
+remaining PE-specific inspection still depends on legacy PE32 structures. The
+scanner now marks that layer explicitly incomplete and returns `CL_EPARSE`
+instead of returning `CL_CLEAN` after silently skipping the inspection. This
+keeps raw detection available while preventing a PE32+ file from being
+reported or cached as fully clean without PE-specific coverage.
+
+The capability manifest records this as an intentional unsupported boundary.
+Dependency-complete PE32+ fixtures, sanitizer coverage, and supported-build
+Sonic1 qualification remain release gates.

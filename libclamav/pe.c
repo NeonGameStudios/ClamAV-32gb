@@ -2872,10 +2872,14 @@ int cli_scanpe(cli_ctx *ctx)
         }
     }
 
-    // TODO Don't bail out here
-    if (peinfo->is_pe32plus) { /* Do not continue for PE32+ files */
+    /* The remaining PE-specific inspection still consumes legacy PE32
+     * structures and is not safe to run against PE32+ coordinates. The raw
+     * matcher has already completed above, so preserve that coverage while
+     * making the skipped PE-specific layer fail-visible. */
+    if (peinfo->is_pe32plus) {
+        cli_mark_scan_incomplete(ctx, "PE32+ PE-specific inspection is unsupported");
         cli_exe_info_destroy(peinfo);
-        return CL_CLEAN;
+        return CL_EPARSE;
     }
 
     epsize = fmap_readn(map, epbuff, peinfo->ep, 4096);
