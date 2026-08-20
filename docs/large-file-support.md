@@ -2543,6 +2543,14 @@ from decoder input, and treats short input, unexpected trailing data, and
 partial member output as incomplete. Extracted members remain disk-backed and
 are charged incrementally against the shared temporary quota before scanning.
 
+## NSIS temporary cleanup propagation — 2026-08-20
+
+NSIS extraction now treats output close, extracted-member removal, and
+temporary-directory removal failures as incomplete results. Cleanup failures
+cannot overwrite an earlier detection; otherwise-clean extraction now returns
+a non-clean error and retains the sticky incomplete state. Parser-family,
+sanitizer, and supported-build Sonic1 qualification remain release gates.
+
 ## Normalized JavaScript matcher-work accounting — 2026-08-19
 
 JavaScript normalization output is now admitted against the shared

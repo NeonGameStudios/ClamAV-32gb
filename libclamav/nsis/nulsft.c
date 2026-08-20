@@ -67,6 +67,7 @@ struct nsis_st {
     uint8_t solid;
     uint8_t freecomp;
     uint8_t eof;
+    uint8_t close_failed;
     uint8_t solid_started;
     struct stream_state nsis;
     nsis_bzstream bz;
@@ -134,10 +135,21 @@ static void nsis_shutdown(struct nsis_st *n)
 static void nsis_close_output(struct nsis_st *n)
 {
     if (n->opened) {
-        close(n->ofd);
+        if (close(n->ofd) != 0)
+            n->close_failed = 1;
         n->ofd    = -1;
         n->opened = 0;
     }
+}
+
+static void nsis_note_close_failure(struct nsis_st *n, cli_ctx *ctx, cl_error_t *ret)
+{
+    if (!n->close_failed)
+        return;
+
+    cli_mark_scan_incomplete(ctx, "NSIS temporary output could not be closed");
+    if (*ret == CL_SUCCESS || *ret == CL_CLEAN || *ret == CL_BREAK)
+        *ret = CL_EUNLINK;
 }
 
 static void nsis_release_reservations(struct nsis_st *n, cli_ctx *ctx)
@@ -341,6 +353,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
             cli_errmsg("NSIS: unable to create output file %s - aborting.\n", n->ofn);
             return CL_ECREAT;
         }
+        n->close_failed = 0;
         n->opened = 1;
         {
             size_t input_pos = n->curpos;
@@ -510,6 +523,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
             cli_errmsg("NSIS: unable to create output file %s - aborting.\n", n->ofn);
             return CL_ECREAT;
         }
+        n->close_failed = 0;
         n->opened = 1;
 
         while (size) {
@@ -795,11 +809,14 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
             CLI_FREE_AND_SET_NULL(name);
 
             nsis_close_output(&nsist);
+            nsis_note_close_failure(&nsist, ctx, &ret);
             nsis_release_reservations(&nsist, ctx);
 
             if (!ctx->engine->keeptmp) {
                 if (cli_unlink(nsist.ofn)) {
-                    ret = CL_EUNLINK;
+                    cli_mark_scan_incomplete(ctx, "NSIS extracted member could not be removed");
+                    if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
+                        ret = CL_EUNLINK;
                 }
             }
         }
@@ -809,11 +826,16 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
         ret = CL_CLEAN;
 
     nsis_close_output(&nsist);
+    nsis_note_close_failure(&nsist, ctx, &ret);
     nsis_shutdown(&nsist);
     nsis_release_reservations(&nsist, ctx);
 
     if (!ctx->engine->keeptmp) {
-        cli_rmdirs(nsist.dir);
+        if (cli_rmdirs(nsist.dir) != 0) {
+            cli_mark_scan_incomplete(ctx, "NSIS temporary directory could not be removed");
+            if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
+                ret = CL_EUNLINK;
+        }
     }
 
     free(nsist.dir);
