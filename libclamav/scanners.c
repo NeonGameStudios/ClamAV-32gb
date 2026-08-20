@@ -141,8 +141,10 @@ static cl_error_t cli_magic_scan_file_reserved(const char *filename, cli_ctx *ct
     cl_error_t ret = CL_EOPEN;
 
     fd = safe_open(filename, O_RDONLY | O_BINARY);
-    if (fd < 0)
+    if (fd < 0) {
+        cli_mark_scan_incomplete(ctx, "reserved temporary directory file could not be opened");
         goto done;
+    }
 
     ret = cli_magic_scan_desc_type_reserved(fd, filename, ctx, CL_TYPE_ANY, original_name, attributes);
 
@@ -227,8 +229,18 @@ static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uin
             goto done;
         }
     } else {
+        int open_errno = errno;
+
         cli_dbgmsg("cli_magic_scan_dir: Can't open directory %s.\n", dir);
-        status = CL_EOPEN;
+        /* Some normalized paths are optional and legitimately absent. A
+         * reservation-owned extracted directory, however, was returned by a
+         * parser as a required child and cannot disappear silently. */
+        if ((open_errno != ENOENT) || temporary_already_reserved) {
+            cli_mark_scan_incomplete(ctx, "temporary scan directory could not be opened");
+            status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
+        } else {
+            status = CL_EOPEN;
+        }
         goto done;
     }
 
@@ -2226,7 +2238,13 @@ static cl_error_t cli_ole2_tempdir_scan_summary(const char *dir, cli_ctx *ctx, s
         summary_filename[sizeof(summary_filename) - 1] = '\0';
 
         fd = open(summary_filename, O_RDONLY | O_BINARY);
-        if (fd >= 0) {
+        if (fd < 0) {
+            int open_errno = errno;
+
+            cli_mark_scan_incomplete(ctx, "OLE2 summary information stream could not be opened");
+            if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
+                status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
+        } else {
             cl_error_t summary_status;
 
             cli_dbgmsg("cli_ole2_tempdir_scan_summary: detected a '_5_summaryinformation' stream\n");
@@ -2257,7 +2275,13 @@ static cl_error_t cli_ole2_tempdir_scan_summary(const char *dir, cli_ctx *ctx, s
         summary_filename[sizeof(summary_filename) - 1] = '\0';
 
         fd = open(summary_filename, O_RDONLY | O_BINARY);
-        if (fd >= 0) {
+        if (fd < 0) {
+            int open_errno = errno;
+
+            cli_mark_scan_incomplete(ctx, "OLE2 document summary information stream could not be opened");
+            if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
+                status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
+        } else {
             cl_error_t summary_status;
 
             cli_dbgmsg("cli_ole2_tempdir_scan_summary: detected a '_5_documentsummaryinformation' stream\n");

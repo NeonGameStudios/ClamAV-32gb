@@ -3021,6 +3021,11 @@ closed. OLE10 and XLM/image failures, as well as failure to open a confirmed
 temporary directory, are therefore explicit incomplete results instead of
 silent omissions.
 
+The same rule now covers OLE summary-information streams and reservation-owned
+extracted children. An indexed summary stream or child file that cannot be
+opened marks the containing layer incomplete; an optional normalized directory
+that is simply absent remains a normal no-op.
+
 ## BinHex temporary-stream cleanup — 2026-08-19
 
 BinHex data/resource temporary descriptor close failures and temporary-file

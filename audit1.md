@@ -2258,3 +2258,16 @@ failures remain sticky incomplete results instead of being silently skipped.
 The source guards and `git diff --check` pass. Fault-injected OLE/VBA
 execution, dependency-complete builds, sanitizer coverage, and supported-build
 Sonic1 qualification remain release gates.
+
+## OLE2 indexed-child open failures — 2026-08-20
+
+The OLE2 summary-information scanner previously ignored an indexed stream when
+its temporary file could not be opened. Reservation-owned extracted files and
+directories could likewise return `CL_EOPEN` without setting the containing
+scan's sticky incomplete state. Those paths now mark the scan incomplete and
+preserve an explicit open/access result, while an optional absent normalized
+directory remains a normal no-op.
+
+Source guards and `git diff --check` are the current local evidence.
+Fault-injected OLE2 temporary-child open coverage, dependency-complete builds,
+sanitizers, and supported-build Sonic1 qualification remain release gates.
