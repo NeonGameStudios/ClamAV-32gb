@@ -2030,6 +2030,15 @@ path releases the reservation, and an unrepresentable member size fails closed
 as a resource failure. This closes an accounting gap; decoder, filesystem, and
 Linux/Sonic1 runtime qualification remain open.
 
+## CAB/CHM temporary-output admission — 2026-08-20
+
+The libmspack CAB and CHM bridges now reserve each declared extracted-member
+size against `MaxTemporarySize` before creating disk output and hold the
+reservation through extraction and nested scanning. Negative CHM member
+lengths are rejected as unrepresentable, and cleanup failures remain
+fail-visible. This closes the temporary-quota bypass; dependency-complete
+parser, sanitizer, and Linux/Sonic1 qualification remain open.
+
 ## Embedded 7-Zip candidate admission — 2026-08-19
 
 Embedded 7-Zip SFX matches now require the complete 32-byte start header and

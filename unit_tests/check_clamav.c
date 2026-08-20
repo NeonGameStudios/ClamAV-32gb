@@ -9730,6 +9730,22 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
+    /* A member that is otherwise admissible must still be rejected before
+     * extraction when the shared temporary budget is already exhausted. */
+    ctx.scansize              = 0;
+    ctx.temporary_bytes       = 1;
+    ctx.scan_incomplete       = false;
+    ctx.limit_exceeded        = false;
+    ctx.limit_exceeded_result = CL_SUCCESS;
+    engine.maxscansize        = 0;
+    engine.maxtemporarysize   = 1;
+    map->dont_cache_flag      = false;
+
+    ret = cli_scanmscab(&ctx, 0);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
     cl_fmap_close(map);
 }
 END_TEST

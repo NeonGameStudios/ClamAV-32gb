@@ -358,6 +358,28 @@ static struct mspack_system mspack_sys_fmap_ops = {
     .copy    = mspack_fmap_copy,
 };
 
+static void mspack_cleanup_temp(cli_ctx *ctx, char **tmp_fname, bool *tempfile_exists,
+                                uint64_t *temporary_reserved, cl_error_t *status,
+                                const char *unlink_reason)
+{
+    if (tmp_fname != NULL && *tmp_fname != NULL) {
+        if (!ctx->engine->keeptmp && (tempfile_exists == NULL || *tempfile_exists) &&
+            cli_unlink(*tmp_fname)) {
+            cli_mark_scan_incomplete(ctx, unlink_reason);
+            if (*status == CL_SUCCESS || *status == CL_BREAK)
+                *status = CL_EUNLINK;
+        }
+        free(*tmp_fname);
+        *tmp_fname = NULL;
+    }
+    if (tempfile_exists != NULL)
+        *tempfile_exists = false;
+    if (temporary_reserved != NULL) {
+        cli_scan_release_temporary(ctx, *temporary_reserved);
+        *temporary_reserved = 0;
+    }
+}
+
 cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
 {
     cl_error_t status = CL_EFORMAT;
@@ -429,6 +451,7 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
 
     char *tmp_fname      = NULL;
     bool tempfile_exists = false;
+    uint64_t temporary_reserved = 0;
 
     mspack_fmap.fmap = ctx->fmap;
 
@@ -466,9 +489,12 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
 
     files = 0;
     for (cab_f = cab_h->files; cab_f; cab_f = cab_f->next) {
+        uint64_t member_size;
         uint64_t max_size;
 
-        ret = cli_matchmeta(ctx, cab_f->filename, 0, cab_f->length, 0,
+        member_size = (uint64_t)cab_f->length;
+
+        ret = cli_matchmeta(ctx, cab_f->filename, 0, member_size, 0,
                             files, 0);
         if (CL_SUCCESS != ret) {
             goto done;
@@ -491,9 +517,16 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
             max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
         }
 
+        ret = cli_scan_reserve_temporary(ctx, member_size);
+        if (ret != CL_SUCCESS)
+            goto done;
+        temporary_reserved = member_size;
+
         tmp_fname = cli_gentemp(ctx->this_layer_tmpdir);
         if (!tmp_fname) {
             ret = CL_EMEM;
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
             goto done;
         }
         tempfile_exists = false;
@@ -527,28 +560,18 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
             goto done;
         }
 
-        if (!ctx->engine->keeptmp && tempfile_exists) {
-            if (cli_unlink(tmp_fname)) {
-                ret = CL_EUNLINK;
-                goto done;
-            }
-        }
-
-        free(tmp_fname);
-        tmp_fname = NULL;
+        mspack_cleanup_temp(ctx, &tmp_fname, &tempfile_exists, &temporary_reserved,
+                            &ret, "CAB temporary output could not be removed");
+        if (ret != CL_SUCCESS)
+            goto done;
 
         files++;
     }
 
 done:
 
-    if (NULL != tmp_fname) {
-        if (!ctx->engine->keeptmp && tempfile_exists) {
-            (void)cli_unlink(tmp_fname);
-        }
-
-        free(tmp_fname);
-    }
+    mspack_cleanup_temp(ctx, &tmp_fname, &tempfile_exists, &temporary_reserved,
+                        &ret, "CAB temporary output could not be removed");
 
     if (NULL != cab_d) {
         if (NULL != cab_h) {
@@ -574,6 +597,7 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
 
     char *tmp_fname      = NULL;
     bool tempfile_exists = false;
+    uint64_t temporary_reserved = 0;
 
     memset(&ops_ex, 0, sizeof(struct mspack_system_ex));
     ops_ex.ops = mspack_sys_fmap_ops;
@@ -596,9 +620,17 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
 
     files = 0;
     for (mschm_f = mschm_h->files; mschm_f; mschm_f = mschm_f->next) {
+        uint64_t member_size;
         uint64_t max_size;
 
-        ret = cli_matchmeta(ctx, mschm_f->filename, 0, mschm_f->length,
+        if (mschm_f->length < 0) {
+            cli_mark_scan_incomplete(ctx, "CHM member length is not representable");
+            ret = CL_EFORMAT;
+            goto done;
+        }
+        member_size = (uint64_t)mschm_f->length;
+
+        ret = cli_matchmeta(ctx, mschm_f->filename, 0, member_size,
                             0, files, 0);
         if (CL_SUCCESS != ret) {
             goto done;
@@ -621,9 +653,16 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
             max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
         }
 
+        ret = cli_scan_reserve_temporary(ctx, member_size);
+        if (ret != CL_SUCCESS)
+            goto done;
+        temporary_reserved = member_size;
+
         tmp_fname = cli_gentemp(ctx->this_layer_tmpdir);
         if (!tmp_fname) {
             ret = CL_EMEM;
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
             break;
         }
         tempfile_exists = false;
@@ -654,28 +693,18 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
             goto done;
         }
 
-        if (!ctx->engine->keeptmp && tempfile_exists) {
-            if (cli_unlink(tmp_fname)) {
-                ret = CL_EUNLINK;
-                goto done;
-            }
-        }
-
-        free(tmp_fname);
-        tmp_fname = NULL;
+        mspack_cleanup_temp(ctx, &tmp_fname, &tempfile_exists, &temporary_reserved,
+                            &ret, "CHM temporary output could not be removed");
+        if (ret != CL_SUCCESS)
+            goto done;
 
         files++;
     }
 
 done:
 
-    if (NULL != tmp_fname) {
-        if (!ctx->engine->keeptmp && tempfile_exists) {
-            (void)cli_unlink(tmp_fname);
-        }
-
-        free(tmp_fname);
-    }
+    mspack_cleanup_temp(ctx, &tmp_fname, &tempfile_exists, &temporary_reserved,
+                        &ret, "CHM temporary output could not be removed");
 
     if (NULL != mschm_d) {
         if (NULL != mschm_h) {
