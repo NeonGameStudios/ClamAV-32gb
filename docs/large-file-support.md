@@ -3207,6 +3207,15 @@ that reservation through the nested scan. Source guards and `git diff --check`
 pass; compiled parser execution, document/image corpus, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+## XLM macro-output accounting — 2026-08-20
+
+XLM macro normalization now routes formatted and decoded output through a
+quota-aware writer that reserves bytes before each write and retains the
+aggregate reservation through the macro scan. Quota, allocation, formatting,
+write, flush, removal, and cleanup failures remain fail-visible. A one-byte quota
+regression and source guards cover the new path; compiled XLM/Office corpus,
+sanitizer, and supported-build Sonic1 qualification remain release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor now reserves each generated script

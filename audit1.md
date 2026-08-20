@@ -1525,6 +1525,21 @@ Source guards and `git diff --check` are the current local evidence. Compiled
 DMG/XLM execution, sanitizer coverage, real document corpus testing, and
 supported-build Sonic1 qualification remain open release gates.
 
+## XLM macro-output accounting — 2026-08-20
+
+XLM macro normalization previously emitted formatted script text directly
+through `fprintf`, `fwrite`, and `fputc`, so a large generated macro file could
+grow outside the shared temporary quota before its legacy descriptor scan.
+Formatted and decoded output now passes through a quota-aware writer that
+reserves each chunk before writing, retains the aggregate through the scan,
+and returns explicit allocation, quota, and write failures. A one-byte quota
+regression verifies fail-closed behavior and reservation cleanup; temporary
+removal failure is now also retained as an incomplete result.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+XLM execution, sanitizer coverage, real Office corpus testing, and
+supported-build Sonic1 qualification remain open release gates.
+
 ## Sonic1 clamscan parser-regression matrix — 2026-08-20
 
 The repository's complete `unit_tests/clamscan` collection was counted and
