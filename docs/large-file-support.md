@@ -4003,3 +4003,12 @@ its top-level type is not scannable. This keeps the JSONL artifact aligned with
 the requested inputs instead of silently omitting pre-scan failures. Legacy
 console output and exit behavior are unchanged; compiled allocation/path fault
 injection and supported-build Sonic1 qualification remain release gates.
+
+## RTF split object-header probe — 2026-08-20
+
+The RTF decoder now carries the two-byte embedded-object probe across 8 KiB
+fmap reader boundaries. A payload ending one reader chunk after its first
+decoded byte no longer causes an out-of-bounds probe; truncated payloads remain
+incomplete and non-cacheable. The focused regression is registered in
+`check_clamav`; compiled sanitizer and broad RTF/OLE corpus qualification
+remain release gates.

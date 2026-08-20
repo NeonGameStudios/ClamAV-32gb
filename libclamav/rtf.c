@@ -114,6 +114,8 @@ struct rtf_object_data {
     cli_ctx* ctx;
     size_t desc_len;
     size_t bread;
+    unsigned char object_header[2];
+    size_t object_header_len;
     uint64_t temporary_reserved;
 };
 
@@ -233,6 +235,7 @@ static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* t
     data->ctx                = ctx;
     data->name               = NULL;
     data->desc_name          = NULL;
+    data->object_header_len  = 0;
     data->temporary_reserved = 0;
 
     state->cb_data = data;
@@ -436,9 +439,25 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                 break;
             }
             case DUMP_DATA: {
-                size_t out_want = (out_cnt < data->desc_len) ? out_cnt : data->desc_len;
                 if (!data->bread) {
-                    if (out_data[0] != 0xd0 || out_data[1] != 0xcf) {
+                    /* The decoded object may straddle two fmap reader
+                     * chunks. Keep the two-byte probe until it is complete
+                     * instead of reading past the current output buffer. */
+                    if (data->desc_len >= sizeof(data->object_header)) {
+                        size_t header_want = sizeof(data->object_header) - data->object_header_len;
+
+                        if (header_want > out_cnt)
+                            header_want = out_cnt;
+                        memcpy(data->object_header + data->object_header_len, out_data, header_want);
+                        data->object_header_len += header_want;
+                        out_data += header_want;
+                        out_cnt -= header_want;
+                        if (data->object_header_len < sizeof(data->object_header))
+                            break;
+                    }
+
+                    if (data->desc_len < sizeof(data->object_header) ||
+                        data->object_header[0] != 0xd0 || data->object_header[1] != 0xcf) {
                         /* this is not an ole2 doc, but some ole (stream?) to be
                          * decoded by cli_decode_ole_object*/
                         char out[4];
@@ -446,22 +465,34 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                         cli_writeint32(out, data->desc_len);
                         if (cli_writen(data->fd, out, 4) != 4)
                             return CL_EWRITE;
-                    } else
+                    } else {
                         data->bread = 2;
+                    }
+
+                    if (data->object_header_len > 0) {
+                        if (cli_writen(data->fd, data->object_header, data->object_header_len) != data->object_header_len)
+                            return CL_EWRITE;
+                        data->desc_len -= data->object_header_len;
+                        data->object_header_len = 0;
+                    }
                 }
 
-                data->desc_len -= out_want;
-                if (cli_writen(data->fd, out_data, out_want) != out_want) {
-                    return CL_EWRITE;
-                }
-                out_data += out_want;
-                out_cnt -= out_want;
-                if (!data->desc_len) {
-                    int rc;
-                    if ((rc = decode_and_scan(data, data->ctx)))
-                        return rc;
-                    data->bread          = 0;
-                    data->internal_state = WAIT_MAGIC;
+                {
+                    size_t out_want = (out_cnt < data->desc_len) ? out_cnt : data->desc_len;
+
+                    data->desc_len -= out_want;
+                    if (cli_writen(data->fd, out_data, out_want) != out_want)
+                        return CL_EWRITE;
+                    out_data += out_want;
+                    out_cnt -= out_want;
+                    if (!data->desc_len) {
+                        int rc;
+                        if ((rc = decode_and_scan(data, data->ctx)))
+                            return rc;
+                        data->bread          = 0;
+                        data->object_header_len = 0;
+                        data->internal_state = WAIT_MAGIC;
+                    }
                 }
                 break;
             }

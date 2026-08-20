@@ -898,6 +898,17 @@ stronger result, preventing a successful archive scan from hiding cleanup
 failure. Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification
 remain open.
 
+## RTF split object-header probe — 2026-08-20
+
+The RTF embedded-object decoder assumed that two decoded payload bytes were
+available in every callback before deciding whether the object was an OLE2
+stream. An 8 KiB fmap reader boundary can leave exactly one decoded byte in the
+callback, making that probe read beyond the output buffer. The decoder now
+carries the two-byte probe across callbacks and only commits it once complete;
+truncated payloads remain fail-visible. A regression forces the boundary and
+verifies an incomplete, non-cacheable result. Compiled sanitizer and broad
+RTF/OLE corpus qualification remain open.
+
 ## EGG metadata-size admission — 2026-08-20
 
 EGG archive and file extra-field handlers accepted attacker-controlled

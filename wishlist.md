@@ -47,6 +47,9 @@
   adjacent string-literal folding now reject native-size arithmetic overflow
   before allocation or mutation; the existing concatenation regression remains
   covered by the tokenizer suite.
+- RTF embedded-object probing now carries its two-byte header across 8 KiB
+  reader boundaries instead of reading beyond a one-byte callback; the
+  split-boundary regression is fail-visible and non-cacheable.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
