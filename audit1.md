@@ -2504,3 +2504,11 @@ daemon disconnect. Successfully completed IDs continue to use the daemon's
 framed reports. Source guards cover the pending-ID cleanup and pre-dispatch
 status mapping; compiled fault injection and supported-build Sonic1 evidence
 remain open.
+
+## clamscan requested-path report completion — 2026-08-20
+
+`clamscan --report-json` now emits a bounded non-clean fallback row when an
+explicitly requested path fails allocation or `lstat()`, or is a top-level
+unsupported file type. This prevents pre-scan input failures from disappearing
+from JSONL evidence while preserving legacy console and exit behavior. Compiled
+fault injection and supported-build qualification remain open.

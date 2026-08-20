@@ -384,15 +384,16 @@ static int ensure_structured_scan_report(
     return 0;
 }
 
-static int write_stdin_failure_report(
+static int write_input_failure_report(
     const struct optstruct *opts,
     const struct cl_engine *engine,
+    const char *filename,
     cl_error_t status)
 {
     cl_scan_report_t *report = NULL;
     int result              = 0;
 
-    if (ensure_structured_scan_report(opts, engine, "stdin", status,
+    if (ensure_structured_scan_report(opts, engine, filename, status,
                                       CL_VERDICT_NOTHING_FOUND, NULL,
                                       &report) != 0)
         result = -1;
@@ -401,6 +402,14 @@ static int write_stdin_failure_report(
         result = -1;
     cl_scan_report_free(report);
     return result;
+}
+
+static int write_stdin_failure_report(
+    const struct optstruct *opts,
+    const struct cl_engine *engine,
+    cl_error_t status)
+{
+    return write_input_failure_report(opts, engine, "stdin", status);
 }
 
 static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
@@ -1568,7 +1577,16 @@ static int scan_files(struct cl_engine *engine, const struct optstruct *opts, st
     }
 #endif
 
-    while ((filename = filelist(opts, &ret)) && (file = strdup(filename))) {
+    while ((filename = filelist(opts, &ret))) {
+        file = strdup(filename);
+        if (NULL == file) {
+            logg(LOGG_ERROR, "Unable to allocate a scan path for %s\n", filename);
+            if (write_input_failure_report(opts, engine, filename, CL_EMEM) != 0)
+                info.errors++;
+            info.errors++;
+            ret = 2;
+            continue;
+        }
         if (!strcmp(file, "-")) {
             /* scan data from stdin */
             ret = scanstdin(engine, opts, options);
@@ -1576,6 +1594,9 @@ static int scan_files(struct cl_engine *engine, const struct optstruct *opts, st
             /* Can't access the file */
             perror(file);
             logg(LOGG_WARNING, "%s: Can't access file\n", file);
+            if (write_input_failure_report(opts, engine, file, CL_ESTAT) != 0)
+                info.errors++;
+            info.errors++;
             ret = 2;
         } else {
             /* Can access the file. Now have to identify what type of file it is */
@@ -1617,6 +1638,9 @@ static int scan_files(struct cl_engine *engine, const struct optstruct *opts, st
                 scandirs(file, engine, opts, options, 1, sb.st_dev);
             } else {
                 logg(LOGG_WARNING, "%s: Not supported file type\n", file);
+                if (write_input_failure_report(opts, engine, file, CL_EARG) != 0)
+                    info.errors++;
+                info.errors++;
                 ret = 2;
             }
         }

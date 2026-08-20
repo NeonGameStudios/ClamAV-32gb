@@ -3963,3 +3963,12 @@ The stdin ingress now uses the same fallback for descriptor inspection,
 connection, and structured-response failures, so `clamdscan -` also retains a
 bounded non-clean JSONL row. Compiled stdin fault injection and supported-build
 Sonic1 qualification remain release gates.
+
+## clamscan requested-path report completion — 2026-08-20
+
+The `clamscan --report-json` ingress now emits a bounded non-clean fallback row
+when an explicitly requested path cannot be duplicated or inspected, or when
+its top-level type is not scannable. This keeps the JSONL artifact aligned with
+the requested inputs instead of silently omitting pre-scan failures. Legacy
+console output and exit behavior are unchanged; compiled allocation/path fault
+injection and supported-build Sonic1 qualification remain release gates.
