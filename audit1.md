@@ -1886,9 +1886,11 @@ attributes tree only when both its declared logical size and block count are
 zero; any non-empty declared tree that cannot be read or validated marks the
 scan incomplete and propagates the parser error.
 
-This is source-level evidence only. A dependency-complete HFS+ build, malformed
-attributes-tree regression, sanitizer run, and supported-build Sonic1
-qualification remain open release gates.
+The unit suite now includes a synthetic HFS+ volume with valid extent/catalog
+headers and a non-empty attributes fork outside the map; it requires the
+fail-visible `CL_EFORMAT` result and non-cacheable state. A dependency-complete
+HFS+ build, sanitizer run, and supported-build Sonic1 qualification remain open
+release gates.
 
 ## RAR staging cleanup propagation — 2026-08-20
 

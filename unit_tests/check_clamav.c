@@ -10398,6 +10398,99 @@ START_TEST(test_udf_truncated_descriptor_area_is_fail_visible)
 }
 END_TEST
 
+static void test_hfsplus_put_be16(uint8_t *dst, uint16_t value)
+{
+    dst[0] = (uint8_t)(value >> 8);
+    dst[1] = (uint8_t)value;
+}
+
+static void test_hfsplus_put_be32(uint8_t *dst, uint32_t value)
+{
+    dst[0] = (uint8_t)(value >> 24);
+    dst[1] = (uint8_t)(value >> 16);
+    dst[2] = (uint8_t)(value >> 8);
+    dst[3] = (uint8_t)value;
+}
+
+static void test_hfsplus_put_be64(uint8_t *dst, uint64_t value)
+{
+    test_hfsplus_put_be32(dst, (uint32_t)(value >> 32));
+    test_hfsplus_put_be32(dst + 4, (uint32_t)value);
+}
+
+static void test_hfsplus_tree_header(uint8_t *data, size_t offset, uint16_t node_size, uint16_t max_key_length)
+{
+    uint8_t *record = data + offset + sizeof(hfsNodeDescriptor);
+
+    test_hfsplus_put_be32(data + offset + offsetof(hfsNodeDescriptor, fLink), 0);
+    test_hfsplus_put_be32(data + offset + offsetof(hfsNodeDescriptor, bLink), 0);
+    data[offset + offsetof(hfsNodeDescriptor, kind)] = HFS_NODEKIND_HEADER;
+    data[offset + offsetof(hfsNodeDescriptor, height)] = 0;
+    test_hfsplus_put_be16(data + offset + offsetof(hfsNodeDescriptor, numRecords), 3);
+    test_hfsplus_put_be16(data + offset + offsetof(hfsNodeDescriptor, reserved), 0);
+
+    test_hfsplus_put_be16(record + offsetof(hfsHeaderRecord, treeDepth), 0);
+    test_hfsplus_put_be32(record + offsetof(hfsHeaderRecord, firstLeafNode), 0);
+    test_hfsplus_put_be16(record + offsetof(hfsHeaderRecord, nodeSize), node_size);
+    test_hfsplus_put_be16(record + offsetof(hfsHeaderRecord, maxKeyLength), max_key_length);
+    test_hfsplus_put_be32(record + offsetof(hfsHeaderRecord, totalNodes), 1);
+}
+
+START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
+{
+    uint8_t data[1024 + (32 * 512)];
+    uint8_t *volume;
+    uint8_t *fork;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    volume = data + 1024;
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, signature), 0x482b);
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, version), 4);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, blockSize), 512);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, totalBlocks), 32);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, extentsFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 4);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, catalogFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 4096);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 8);
+
+    /* A non-empty attributes fork whose first block is outside the map. */
+    fork = volume + offsetof(hfsPlusVolumeHeader, attributesFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 100);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    test_hfsplus_tree_header(data, 4 * 512, 512, 10);
+    test_hfsplus_tree_header(data, 8 * 512, 4096, 6);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hfsplus_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -10956,6 +11049,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
+    tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
