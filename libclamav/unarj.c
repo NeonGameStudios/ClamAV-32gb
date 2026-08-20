@@ -1212,7 +1212,8 @@ cl_error_t cli_unarj_header_check(
     bool_ret = arj_read_main_header(&metadata);
     if (false == bool_ret) {
         cli_dbgmsg("Failed to read main header\n");
-        status = CL_EFORMAT;
+        cli_mark_scan_incomplete(ctx, "ARJ main header is malformed or truncated");
+        status = CL_EPARSE;
         goto done;
     }
 

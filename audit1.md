@@ -2387,3 +2387,13 @@ result to failure, preserving detections and earlier parser/resource results.
 The source guard and `git diff --check` are the current local evidence.
 Fault-injected mail-spool cleanup, dependency-complete C/CTest, sanitizer
 coverage, and supported-build Sonic1 qualification remain release gates.
+
+## ARJ SFX main-header classification — 2026-08-20
+
+ARJ SFX admission now distinguishes a confirmed ARJ signature with a malformed
+or truncated main header from a disproven magic candidate. The former marks the
+containing scan incomplete and preserves `CL_EPARSE`; it can no longer be
+treated as `CL_EFORMAT` and silently discarded by the raw embedded-candidate
+path. A focused four-byte public-map regression and source guards cover this
+boundary. Full ARJ corpus, sanitizer, and supported-build Sonic1 qualification
+remain release gates.
