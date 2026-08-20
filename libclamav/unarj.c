@@ -834,7 +834,7 @@ static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
     return CL_SUCCESS;
 }
 
-static bool is_arj_archive(arj_metadata_t *metadata)
+static cl_error_t is_arj_archive(arj_metadata_t *metadata)
 {
     const char header_id[2] = {0x60, 0xea};
     const char *mark;
@@ -842,14 +842,14 @@ static bool is_arj_archive(arj_metadata_t *metadata)
     mark = fmap_need_off_once(metadata->map, metadata->offset, 2);
     if (!mark) {
         cli_dbgmsg("is_arj_archive: Failed to read the two-byte ARJ header ID at offset %zu\n", metadata->offset);
-        return false;
+        return CL_EREAD;
     }
     metadata->offset += 2;
     if (memcmp(&mark[0], &header_id[0], 2) == 0) {
-        return true;
+        return CL_SUCCESS;
     }
     cli_dbgmsg("is_arj_archive: The two-byte ARJ header ID did not match; This is not an ARJ archive\n");
-    return false;
+    return CL_EFORMAT;
 }
 
 static bool arj_read_main_header(arj_metadata_t *metadata)
@@ -1163,13 +1163,16 @@ done:
 
 cl_error_t cli_unarj_open(fmap_t *map, const char *dirname, arj_metadata_t *metadata)
 {
+    cl_error_t ret;
+
     UNUSEDPARAM(dirname);
     cli_dbgmsg("in cli_unarj_open\n");
     metadata->map    = map;
     metadata->offset = 0;
-    if (!is_arj_archive(metadata)) {
+    ret = is_arj_archive(metadata);
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("cli_unarj_open: is_arj_archive check failed\n");
-        return CL_EFORMAT;
+        return ret;
     }
     if (!arj_read_main_header(metadata)) {
         cli_dbgmsg("cli_unarj_open: Failed to read main header\n");
@@ -1200,10 +1203,11 @@ cl_error_t cli_unarj_header_check(
     metadata.offset = offset;
     *size           = 0;
 
-    bool_ret = is_arj_archive(&metadata);
-    if (false == bool_ret) {
+    status = is_arj_archive(&metadata);
+    if (CL_SUCCESS != status) {
         cli_dbgmsg("Not in ARJ format\n");
-        status = CL_EFORMAT;
+        if (status == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "ARJ signature could not be read completely");
         goto done;
     }
 
@@ -1269,6 +1273,8 @@ done:
 
 cl_error_t cli_unarj_prepare_file(arj_metadata_t *metadata)
 {
+    cl_error_t ret;
+
     cli_dbgmsg("in cli_unarj_prepare_file\n");
 
     if (NULL == metadata) {
@@ -1277,9 +1283,10 @@ cl_error_t cli_unarj_prepare_file(arj_metadata_t *metadata)
     }
 
     /* Each file is preceded by the ARJ file marker */
-    if (!is_arj_archive(metadata)) {
+    ret = is_arj_archive(metadata);
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("Not in ARJ format\n");
-        return CL_EFORMAT;
+        return ret;
     }
 
     return arj_read_file_header(metadata);

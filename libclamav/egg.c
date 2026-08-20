@@ -1628,7 +1628,7 @@ cl_error_t cli_egg_header_check(fmap_t* map, size_t offset)
 
     index = (const uint8_t*)fmap_need_off_once(map, offset, sizeof(egg_header));
     if (!index)
-        return CL_EFORMAT;
+        return CL_EREAD;
 
     header = (const egg_header*)index;
     if (EGG_HEADER_MAGIC != le32_to_host(header->magic))

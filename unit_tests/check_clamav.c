@@ -8738,6 +8738,47 @@ START_TEST(test_embedded_candidate_admission_headers)
 }
 END_TEST
 
+static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
+START_TEST(test_embedded_header_read_failures_are_fail_visible)
+{
+    static const uint8_t pdf[] = "%PDF-1.7";
+    static const uint8_t arj[] = {0x60, 0xea, 0x22, 0x00};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_size = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    map = cl_fmap_open_memory(pdf, sizeof(pdf) - 1);
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ck_assert_int_eq(cli_pdf_header_check(map, 0), CL_EREAD);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(arj, sizeof(arj));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap = map;
+    ret      = cli_unarj_header_check(&ctx, 0, &archive_size);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_truncated_uuencode_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -11711,6 +11752,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
     tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);
+    tcase_add_test(tc_cl, test_embedded_header_read_failures_are_fail_visible);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
 #ifndef _WIN32

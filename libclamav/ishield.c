@@ -202,7 +202,7 @@ cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
     if (remaining < sizeof(magic) - 1)
         return CL_EFORMAT;
     if (!(buf = fmap_need_off_once(ctx->fmap, offset, sizeof(magic) - 1)))
-        return CL_EFORMAT;
+        return CL_EREAD;
     if (memcmp(buf, magic, sizeof(magic) - 1) != 0)
         return CL_EFORMAT;
 
@@ -211,7 +211,7 @@ cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
     if (remaining - (sizeof(magic) - 1) < 0x20)
         return CL_EPARSE;
     if (!fmap_need_off_once(ctx->fmap, offset + (sizeof(magic) - 1), 0x20))
-        return CL_EPARSE;
+        return CL_EREAD;
 
     return CL_SUCCESS;
 }

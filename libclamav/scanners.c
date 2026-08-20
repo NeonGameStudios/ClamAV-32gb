@@ -4562,8 +4562,10 @@ static cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
         return CL_ENULLARG;
 
     remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
-    if (remaining < sizeof(header) || fmap_readn(ctx->fmap, header, offset, sizeof(header)) != sizeof(header))
+    if (remaining < sizeof(header))
         return CL_EFORMAT;
+    if (fmap_readn(ctx->fmap, header, offset, sizeof(header)) != sizeof(header))
+        return CL_EREAD;
 
     if (memcmp(header, rar_signature, sizeof(rar_signature)) != 0)
         return CL_EFORMAT;

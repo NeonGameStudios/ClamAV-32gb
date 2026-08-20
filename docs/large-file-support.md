@@ -3865,3 +3865,15 @@ with sticky incomplete state. A later libmspack open failure after fixed-header
 admission is also fail-visible. A focused synthetic public-map regression and
 source guards cover the boundary. Full CAB corpus, sanitizer, and supported-
 build Sonic1 qualification remain release gates.
+
+## Embedded-header read-failure classification — 2026-08-20
+
+The remaining embedded SFX/document admission helpers now distinguish an
+in-range `fmap` read failure from a disproven short or mismatched signature.
+7-Zip, EGG, NSIS, AutoIt, InstallShield, PDF, RAR, and ARJ header reads return
+`CL_EREAD` when the required window cannot be read, allowing the central scan
+policy to mark the containing layer incomplete instead of silently rejecting a
+candidate as unrelated magic. A focused injected-read regression covers PDF
+and ARJ, with source guards covering the helper family. Full fault-injected
+parser, sanitizer, and supported-build Sonic1 qualification remain release
+gates.

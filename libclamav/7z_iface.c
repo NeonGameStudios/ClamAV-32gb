@@ -55,7 +55,9 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
         return CL_EFORMAT;
 
     header = (const unsigned char *)fmap_need_off_once(ctx->fmap, offset, k7zStartHeaderSize);
-    if (header == NULL || memcmp(header, k7zSignature, k7zSignatureSize) != 0)
+    if (header == NULL)
+        return CL_EREAD;
+    if (memcmp(header, k7zSignature, k7zSignatureSize) != 0)
         return CL_EFORMAT;
 
     if (header[6] != k7zMajorVersion)

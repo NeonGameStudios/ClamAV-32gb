@@ -722,7 +722,7 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
         buf = header;
     } else {
         if (!(buf = fmap_need_off(ctx->fmap, offset, sizeof(header))))
-            return CL_EFORMAT;
+            return CL_EREAD;
     }
 
     /* The four bytes immediately before the NullsoftInst signature are the

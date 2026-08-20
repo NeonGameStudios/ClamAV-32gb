@@ -201,7 +201,7 @@ cl_error_t cli_pdf_header_check(fmap_t *map, off_t offset)
     if (map->len - (size_t)offset < 8)
         return CL_EFORMAT;
     if (!(header = fmap_need_off_once(map, offset, 8)))
-        return CL_EFORMAT;
+        return CL_EREAD;
     if (memcmp(header, "%PDF-", 5) != 0)
         return CL_EFORMAT;
     if (header[5] != '1' || header[6] != '.' || header[7] < '1' || header[7] > '9')
