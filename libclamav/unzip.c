@@ -3256,8 +3256,10 @@ done:
     }
 
     if (NULL != tmpd) {
-        if (!ctx->engine->keeptmp) {
-            cli_rmdirs(tmpd);
+        if (!ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0) {
+            cli_mark_scan_incomplete(ctx, "ZIP temporary directory could not be removed");
+            if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_VERIFIED || status == CL_BREAK)
+                status = CL_EUNLINK;
         }
         free(tmpd);
     }

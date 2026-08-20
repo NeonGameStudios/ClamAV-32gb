@@ -2171,6 +2171,16 @@ failures preserve an earlier detection and make an otherwise-clean generated
 member non-clean. Valid large-member, malformed-decoder, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+## ZIP temporary-directory cleanup propagation — 2026-08-20
+
+The ZIP outer extraction directory now checks removal after member processing.
+Cleanup failure marks the scan incomplete and returns `CL_EUNLINK` when no
+stronger detection or parser/resource result already exists.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+fault-injected ZIP-directory cleanup, sanitizer execution, and supported-build
+Sonic1 qualification remain release gates.
+
 ## UUEncode temporary-output accounting — 2026-08-20
 
 Standalone UUEncode extraction now carries the active scan context into its
