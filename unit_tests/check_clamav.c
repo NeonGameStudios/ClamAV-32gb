@@ -8093,13 +8093,12 @@ static void xar_test_write_be64(uint8_t *dst, uint64_t value)
         dst[i] = (uint8_t)(value >> (56U - (8U * i)));
 }
 
-static uint8_t *xar_test_make_archive(size_t *data_length)
+static uint8_t *xar_test_make_archive_from_toc(const uint8_t *toc, size_t toc_length, size_t *data_length)
 {
-    static const uint8_t toc[] = "<?xml version=\"1.0\"?><xar><toc><file>";
     uLongf compressed_length;
     uint8_t *data;
 
-    compressed_length = compressBound((uLong)sizeof(toc) - 1U);
+    compressed_length = compressBound((uLong)toc_length);
     *data_length = sizeof(struct xar_header) + (size_t)compressed_length;
     data         = calloc(1, *data_length);
     if (data == NULL)
@@ -8111,8 +8110,8 @@ static uint8_t *xar_test_make_archive(size_t *data_length)
     data[3] = 0x21;
     data[4] = 0;
     data[5] = sizeof(struct xar_header);
-    xar_test_write_be64(data + 16, sizeof(toc) - 1U);
-    if (compress(data + sizeof(struct xar_header), &compressed_length, toc, sizeof(toc) - 1U) != Z_OK) {
+    xar_test_write_be64(data + 16, toc_length);
+    if (compress(data + sizeof(struct xar_header), &compressed_length, toc, (uLong)toc_length) != Z_OK) {
         free(data);
         return NULL;
     }
@@ -8120,6 +8119,13 @@ static uint8_t *xar_test_make_archive(size_t *data_length)
     *data_length = sizeof(struct xar_header) + (size_t)compressed_length;
 
     return data;
+}
+
+static uint8_t *xar_test_make_archive(size_t *data_length)
+{
+    static const uint8_t toc[] = "<?xml version=\"1.0\"?><xar><toc><file>";
+
+    return xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, data_length);
 }
 
 START_TEST(test_xar_xml_reader_error_is_fail_visible)
@@ -8195,6 +8201,53 @@ START_TEST(test_xar_toc_temporary_quota_is_fail_visible)
                         scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
     ck_assert_msg(ret == CL_ERESOURCE,
                   "XAR temporary limit returned %s (%d)", cl_strerror(ret), ret);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
+START_TEST(test_xar_subdocument_temporary_quota_is_fail_visible)
+{
+    static const uint8_t toc[] = "<?xml version=\"1.0\"?><xar><subdoc><file/></subdoc><toc>";
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    /* The TOC reservation fits, but the 7-byte <file/> subdocument cannot be
+     * added while that reservation remains held through the XML walk. */
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE,
+                                       (long long)(sizeof(toc) - 1U + 6U)),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
+    ck_assert_msg(ret == CL_ERESOURCE,
+                  "XAR subdocument temporary limit returned %s (%d)", cl_strerror(ret), ret);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
@@ -11792,6 +11845,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_xml_reader_error_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_subdocument_temporary_quota_is_fail_visible);
     tcase_add_test(tc_cl, test_partition_parser_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_limit_is_fail_visible);

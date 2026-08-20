@@ -3625,6 +3625,14 @@ against `MaxTemporarySize` before writing them. Completed TOC and member scans
 use the reservation-aware descriptor path; cleanup releases the corresponding
 reservation after close/removal and preserves failure results.
 
+XAR `<subdoc>` fragments now use the same reservation-aware temporary
+descriptor handoff instead of being scanned directly from an unaccounted
+in-memory buffer. Their XML length is checked without narrowing through the
+legacy `int` API, and fragments above the 1 GiB individual-allocation boundary
+return an explicit incomplete result. The upstream `ReadInnerXml` API still
+materializes the fragment, so that format-specific boundary remains an
+unsupported capability until a streaming fragment API is available.
+
 Source guards and `git diff --check` are the current local evidence. A
 dependency-complete XAR corpus covering all encodings, sanitizer/fault-injected
 cleanup, and supported-build Sonic1 qualification remain release gates.

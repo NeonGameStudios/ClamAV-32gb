@@ -97,6 +97,28 @@ static cl_error_t xar_reserve_output(cli_ctx *ctx, uint64_t *reserved, uint64_t 
     return CL_SUCCESS;
 }
 
+static cl_error_t xar_bounded_xml_length(const xmlChar *data, size_t limit, size_t *length)
+{
+    size_t i;
+
+    if (NULL == data || NULL == length)
+        return CL_ENULLARG;
+
+    for (i = 0; i < limit; i++) {
+        if (data[i] == 0) {
+            *length = i;
+            return CL_SUCCESS;
+        }
+    }
+
+    if (data[limit] == 0) {
+        *length = limit;
+        return CL_SUCCESS;
+    }
+
+    return CL_ERESOURCE;
+}
+
 static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data, size_t len,
                                 uint64_t *reserved)
 {
@@ -363,10 +385,12 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size
 */
 static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
 {
-    int rc = CL_SUCCESS, subdoc_len, fd;
+    int rc = CL_SUCCESS, fd;
     int cleanup_rc;
     int temp_rc;
     int reader_status;
+    size_t subdoc_len;
+    uint64_t subdoc_reserved;
     xmlChar *subdoc;
     const xmlChar *name;
     char *tmpname;
@@ -389,32 +413,59 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
                 xmlTextReaderNext(reader);
                 continue;
             }
-            subdoc_len = xmlStrlen(subdoc);
-            cli_dbgmsg("cli_scanxar: in-memory scan of xml subdocument, len %i.\n", subdoc_len);
-            rc = cli_magic_scan_buff(subdoc, subdoc_len, ctx, NULL, LAYER_ATTRIBUTES_NONE);
 
-            /* make a file to leave if --leave-temps in effect */
-            if (ctx->engine->keeptmp) {
-                temp_rc = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd);
-                if (temp_rc != CL_SUCCESS) {
-                    cli_dbgmsg("cli_scanxar: Can't create temporary file for subdocument.\n");
-                    cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be created");
-                    if (CL_SUCCESS == rc || CL_VERIFIED == rc)
-                        rc = temp_rc;
-                } else {
-                    cli_dbgmsg("cli_scanxar: Writing subdoc to temp file %s.\n", tmpname);
-                    if (cli_writen(fd, subdoc, (size_t)subdoc_len) != (size_t)subdoc_len) {
-                        cli_dbgmsg("cli_scanxar: cli_writen error writing subdoc temporary file.\n");
-                        cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be written completely");
-                        if (CL_SUCCESS == rc || CL_VERIFIED == rc)
-                            rc = CL_EWRITE;
-                    }
-                    cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname, NULL);
-                    if (CL_SUCCESS == rc && CL_SUCCESS != cleanup_rc)
-                        rc = cleanup_rc;
-                    tmpname = NULL;
-                }
+            /* xmlTextReaderReadInnerXml() necessarily materializes this one
+             * XML fragment, but the old path then scanned that allocation
+             * directly and used an int length. Bound the legacy API, account
+             * the handoff against temporary storage, and keep the nested scan
+             * on the reservation-aware descriptor path. */
+            if (xar_bounded_xml_length(subdoc, CLI_MAX_ALLOCATION, &subdoc_len) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "XAR subdocument exceeds the bounded allocation limit");
+                xmlFree(subdoc);
+                return CL_ERESOURCE;
             }
+            cli_dbgmsg("cli_scanxar: staged XML subdocument, len %zu.\n", subdoc_len);
+
+            subdoc_reserved = 0;
+            rc             = xar_reserve_output(ctx, &subdoc_reserved, (uint64_t)subdoc_len,
+                                                "XAR subdocument temporary output exceeds storage limits");
+            if (rc != CL_SUCCESS) {
+                xmlFree(subdoc);
+                return rc;
+            }
+
+            fd      = -1;
+            tmpname = NULL;
+            temp_rc = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd);
+            if (temp_rc != CL_SUCCESS) {
+                cli_dbgmsg("cli_scanxar: Can't create temporary file for subdocument.\n");
+                cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be created");
+                rc = temp_rc;
+                goto subdocument_cleanup;
+            }
+
+            if (cli_writen(fd, subdoc, subdoc_len) != subdoc_len) {
+                cli_dbgmsg("cli_scanxar: cli_writen error writing subdoc temporary file.\n");
+                cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be written completely");
+                rc = CL_EWRITE;
+                goto subdocument_cleanup;
+            }
+
+            if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+                cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be rewound");
+                rc = CL_ESEEK;
+                goto subdocument_cleanup;
+            }
+
+            rc = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL,
+                                                   LAYER_ATTRIBUTES_NONE);
+
+        subdocument_cleanup:
+            cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname, &subdoc_reserved);
+            fd          = -1;
+            tmpname     = NULL;
+            if (CL_SUCCESS == rc && CL_SUCCESS != cleanup_rc)
+                rc = cleanup_rc;
 
             xmlFree(subdoc);
             if (rc != CL_SUCCESS)

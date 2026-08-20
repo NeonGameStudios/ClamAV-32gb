@@ -970,6 +970,12 @@ and XML reader errors are fail-visible. This removes the specific XAR 64 MiB
 heap cap; parser-family fixtures and supported-build 32 GiB qualification
 remain open.
 
+The `<subdoc>` handoff now writes through a quota-accounted temporary
+descriptor and uses a bounded native-width length check before nested scanning.
+The legacy libxml2 `ReadInnerXml` API still materializes each fragment, so
+fragments above the 1 GiB individual-allocation boundary are explicit
+unsupported/incomplete results rather than unbounded whole-buffer scans.
+
 ## HWPML bounded XML streaming — 2026-08-19
 
 The HWPML attachment-bearing path no longer rejects the entire XML layer above
