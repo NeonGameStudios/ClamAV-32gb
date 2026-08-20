@@ -1708,12 +1708,19 @@ cli_dbgmsg("sizeof(hfsNodeDescriptor) is %lu\n", sizeof(hfsNodeDescriptor));
         goto done;
     }
 
-    /* Get root node (header node) of attributes file */
-    ret = hfsplus_readheader(ctx, volHeader, &attributesFileDesc, &attributesFileHeader, HFS_FILETREE_ATTRIBUTES, "attributesFile");
-    if (ret == CL_SUCCESS) {
-        hasAttributesFileHeader = 1;
-    } else {
+    /* The attributes file is optional only when its fork is empty. A declared
+     * but unreadable attributes tree must not be treated as absent: that tree
+     * can carry decmpfs metadata required to inspect compressed files. */
+    if (volHeader->attributesFile.logicalSize == 0 && volHeader->attributesFile.totalBlocks == 0) {
         hasAttributesFileHeader = 0;
+    } else {
+        ret = hfsplus_readheader(ctx, volHeader, &attributesFileDesc, &attributesFileHeader, HFS_FILETREE_ATTRIBUTES, "attributesFile");
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ declared attributes file could not be inspected");
+            status = ret;
+            goto done;
+        }
+        hasAttributesFileHeader = 1;
     }
 
     /* Create temp folder for contents */

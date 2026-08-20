@@ -1876,6 +1876,20 @@ Source guards and `git diff --check` are the current local evidence. A
 dependency-complete HFS+ build, corpus/fault-injection regression, sanitizer
 run, and supported-build Sonic1 qualification remain open release gates.
 
+## HFS+ declared-attributes failure propagation — 2026-08-20
+
+The HFS+ catalog walker previously treated every attributes-tree header failure
+as if the optional attributes fork were absent. A malformed or truncated
+declared attributes tree could therefore suppress decmpfs metadata inspection
+and leave compressed files incompletely inspected. The walker now skips the
+attributes tree only when both its declared logical size and block count are
+zero; any non-empty declared tree that cannot be read or validated marks the
+scan incomplete and propagates the parser error.
+
+This is source-level evidence only. A dependency-complete HFS+ build, malformed
+attributes-tree regression, sanitizer run, and supported-build Sonic1
+qualification remain open release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script
