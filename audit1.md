@@ -2115,3 +2115,19 @@ External-body references and unknown message/* subtypes remain explicit
 unsupported materialization cases. Dependency-complete C/CTest, sanitizer,
 broad MIME corpus, and supported-build Sonic1 qualification remain open release
 gates.
+
+## Rust parser failure accounting — 2026-08-20
+
+Rust-backed parser failures previously set only the Rust-side sticky
+`scan_incomplete` flag and called `emax_reached()`. They now call the shared C
+`cli_mark_scan_incomplete()` helper with a static classification reason. This
+keeps the common no-cache propagation, increments `skipped_operations`, and
+preserves the first failure reason used by structured reports; the detailed
+decoder error remains in the Rust log without storing a dangling temporary
+pointer in `cli_ctx`.
+
+The source guards, capability manifest, runtime-evidence verifier regression,
+and `git diff --check` pass. `cargo test --offline --lib` could not start
+because the pinned `clam-sigutil` Git dependency is not present in the local
+Cargo cache. Dependency-complete Rust/CTest, sanitizer, and supported-build
+Sonic1 qualification therefore remain open release gates.

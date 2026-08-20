@@ -59,8 +59,14 @@ unsafe fn parser_failure(
     err: impl std::fmt::Display,
 ) -> cl_error_t {
     error!("{parser} parser stopped before inspection completed: {err}");
-    sys::emax_reached(ctx);
-    (*ctx).scan_incomplete = true;
+    let reason: &[u8] = if status == cl_error_t_CL_ERESOURCE {
+        b"Rust parser resource admission failed\0"
+    } else if status == cl_error_t_CL_EPARSE || status == cl_error_t_CL_EFORMAT {
+        b"Rust parser reported malformed or incomplete input\0"
+    } else {
+        b"Rust parser inspection was incomplete\0"
+    };
+    sys::cli_mark_scan_incomplete(ctx, reason.as_ptr().cast());
     status
 }
 

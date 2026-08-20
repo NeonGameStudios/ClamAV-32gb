@@ -63,6 +63,7 @@ const BINDGEN_FUNCTIONS: &[&str] = &[
     "cli_scan_release_temporary",
     "cli_checklimits",
     "emax_reached",
+    "cli_mark_scan_incomplete",
     "cli_matchmeta",
 ];
 

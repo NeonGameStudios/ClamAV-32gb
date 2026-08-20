@@ -156,4 +156,12 @@ cl_error_t cli_magic_scan_dir(const char *dirname, cli_ctx *ctx, uint32_t attrib
  */
 void emax_reached(cli_ctx *ctx);
 
+/**
+ * @brief Mark the current scan incomplete and preserve its first failure reason.
+ *
+ * @param ctx    Scan context.
+ * @param reason Static or otherwise context-lifetime-safe reason string.
+ */
+void cli_mark_scan_incomplete(cli_ctx *ctx, const char *reason);
+
 #endif

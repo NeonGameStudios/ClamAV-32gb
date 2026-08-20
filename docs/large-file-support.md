@@ -3607,3 +3607,18 @@ parser/resource failures.
 Source guards and `git diff --check` are the current local evidence. Compiled
 fault-injected directory-cleanup coverage, sanitizer execution, and supported
 build Sonic1 qualification remain release gates.
+
+## Rust parser failure accounting — 2026-08-20
+
+Rust-backed parser failures now use the shared `cli_mark_scan_incomplete()` C
+helper instead of setting only the Rust-side sticky flag. This preserves the
+common non-cacheable propagation, increments the structured report's skipped
+operation count, and records a context-lifetime-safe classification reason
+while retaining the detailed decoder error in the Rust log. The checked-in
+bindgen allowlist and bindings now expose the helper.
+
+The source guards, capability manifest, runtime-evidence verifier regression,
+and whitespace checks pass. The local offline Cargo test cannot resolve the
+pinned `clam-sigutil` Git dependency, so dependency-complete Rust compilation,
+sanitizer execution, and supported-build Sonic1 parser qualification remain
+open release gates.

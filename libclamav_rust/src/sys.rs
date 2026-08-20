@@ -913,6 +913,9 @@ extern "C" {
     pub fn emax_reached(ctx: *mut cli_ctx);
 }
 extern "C" {
+    pub fn cli_mark_scan_incomplete(ctx: *mut cli_ctx, reason: *const ::std::os::raw::c_char);
+}
+extern "C" {
     #[doc = " @brief   Get the libclamav debug flag (e.g. if debug logging is enabled)\n\n This is required for unit tests to be able to link with clamav.dll and not\n directly manipulate libclamav global variables."]
     pub fn cli_get_debug_flag() -> u8;
 }
