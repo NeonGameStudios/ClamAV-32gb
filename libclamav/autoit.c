@@ -947,6 +947,7 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
     size_t next_offset;
     uint8_t decoded_header[8];
     fmap_t *map = ctx->fmap;
+    uint64_t temporary_reserved = 0;
 
     UNP.ctx       = ctx;
     UNP.output_fd = -1;
@@ -2026,15 +2027,28 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
         snprintf(tempfile, 1023, "%s" PATHSEP "autoit.%.3u", tmpd, files);
         tempfile[1023] = '\0';
+        ret = cli_scan_reserve_temporary(ctx, (uint64_t)UNP.cur_output);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "AutoIt EA06 script output exceeds temporary storage limits");
+            free(buf);
+            return ret;
+        }
+        temporary_reserved = (uint64_t)UNP.cur_output;
+
         if ((i = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
             cli_dbgmsg("autoit: Can't create file %s\n", tempfile);
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
             free(buf);
             return CL_ECREAT;
         }
         if (cli_writen(i, buf, UNP.cur_output) != UNP.cur_output) {
             cli_dbgmsg("autoit: cannot write %d bytes\n", UNP.usize);
             close(i);
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
             free(buf);
+            cli_mark_scan_incomplete(ctx, "AutoIt EA06 script output could not be written completely");
             return CL_EWRITE;
         }
 
@@ -2049,17 +2063,23 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
         if (lseek(i, 0, SEEK_SET) == -1) {
             cli_dbgmsg("autoit: call to lseek() has failed\n");
             close(i);
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
             return CL_ESEEK;
         }
 
-        ret = cli_magic_scan_desc(i, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        ret = cli_magic_scan_desc_type_reserved(i, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
         if (CL_SUCCESS != ret) {
             close(i);
             if (!ctx->engine->keeptmp) {
                 if (cli_unlink(tempfile)) {
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
                     return CL_EUNLINK;
                 }
             }
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
             return ret;
         }
 
@@ -2067,9 +2087,13 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempfile)) {
+                cli_scan_release_temporary(ctx, temporary_reserved);
+                temporary_reserved = 0;
                 return CL_EUNLINK;
             }
         }
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        temporary_reserved = 0;
     }
     if (ret != CL_SUCCESS)
         cli_mark_scan_incomplete(ctx, "AutoIt EA06 extraction stopped at a configured limit");

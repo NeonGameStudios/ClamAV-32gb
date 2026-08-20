@@ -2134,9 +2134,11 @@ EA05 members; the format’s 32-bit size fields remain an explicit 4 GiB output
 boundary. EA06 script decompilation still requires random access to its
 decoded member and remains an explicit unsupported-over-1-GiB capability.
 
-The EA05 nested scan now uses the reservation-aware descriptor entry point, so
-the declared output reservation is not charged a second time at the child
-boundary.
+Both EA05 and EA06 temporary child outputs are now admitted against
+`MaxTemporarySize` and scanned through the reservation-aware descriptor entry
+point, so a declared output reservation is not charged a second time at the
+child boundary. EA06’s individual-allocation and random-access constraints are
+unchanged.
 
 This is an implementation improvement, not parser-family qualification: valid
 EA05 compressed/stored fixtures above 1 GiB, malformed decoder states,
