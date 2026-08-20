@@ -2215,6 +2215,11 @@ Source guards and `git diff --check` are the current local evidence. Compiled
 malformed-UDF fixtures, sanitizer execution, and supported-build Sonic1
 qualification remain release gates.
 
+UDF extended file-entry descriptors are a separate intentional unsupported
+boundary. Because the parser does not implement their allocation and
+extended-attribute semantics, encountering one marks the layer incomplete and
+returns an explicit unsupported result; it is never silently skipped.
+
 ## Scan-level temporary-directory cleanup propagation — 2026-08-20
 
 When recursive temporary-directory mode is enabled, scan-level directory

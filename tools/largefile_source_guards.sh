@@ -382,6 +382,8 @@ contains libclamav/udf.c 'UDF file-identifier descriptor exceeds its volume bloc
 contains libclamav/udf.c 'UDF file-entry descriptor exceeds its volume block'
 contains libclamav/udf.c 'UDF file-identifier descriptor indexing did not complete'
 contains libclamav/udf.c 'UDF file-entry descriptor indexing did not complete'
+contains libclamav/udf.c 'UDF extended file entries are unsupported'
+contains docs/large-file-support.md 'UDF extended file-entry descriptors are a separate intentional unsupported'
 contains unit_tests/check_clamav.c 'test_udf_truncated_descriptor_area_is_fail_visible'
 contains libclamav/hfsplus.c 'HFS+ volume header is incomplete'
 contains libclamav/hfsplus.c 'HFS+ inspection ended before completion'

@@ -1054,8 +1054,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
             }
 
             case EXTENDED_FILE_ENTRY_DESCRIPTOR: {
-                // Not supported yet. Skip.
-                break;
+                cli_warnmsg("cli_scanudf: Extended File Entry descriptors are unsupported\n");
+                cli_mark_scan_incomplete(ctx, "UDF extended file entries are unsupported");
+                ret = CL_EUNPACK;
+                goto done;
             }
 
             case TERMINATING_DESCRIPTOR: {

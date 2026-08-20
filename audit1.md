@@ -1906,6 +1906,20 @@ This is source-level evidence only. Fault-injected RAR staging, dependency-
 complete build, sanitizer run, and supported-build Sonic1 qualification remain
 open release gates.
 
+## UDF extended-file-entry fail-closed handling — 2026-08-20
+
+UDF extended file-entry descriptors are a valid file-entry form, but the
+parser does not implement their allocation and extended-attribute semantics.
+The previous branch silently skipped them, allowing the later identifier/file
+entry pairing to inspect only ordinary entries and potentially report a clean
+result with content omitted. The parser now marks the layer incomplete and
+returns an explicit unsupported-result status as soon as an extended entry is
+encountered.
+
+This is source-level evidence only. A compiled UDF fixture containing an
+extended file entry, sanitizer execution, and supported-build Sonic1
+qualification remain open release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script
