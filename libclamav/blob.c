@@ -449,6 +449,13 @@ fileblobMarkIncomplete(fileblob *fb, const char *reason)
         cli_mark_scan_incomplete(ctx, reason);
 }
 
+static void
+fileblobNoteCleanupFailure(cli_ctx *ctx, const char *reason)
+{
+    if (ctx)
+        cli_mark_scan_incomplete(ctx, reason);
+}
+
 static int
 fileblobReserveTemporary(fileblob *fb, cli_ctx *ctx, uint64_t bytes)
 {
@@ -531,11 +538,16 @@ int fileblobScanAndDestroy(fileblob *fb)
  */
 void fileblobDestructiveDestroy(fileblob *fb)
 {
+    cli_ctx *cleanup_ctx = fb->ctx ? fb->ctx : fb->temporary_ctx;
+
     if (fb->fp && fb->fullname) {
-        fclose(fb->fp);
+        if (fclose(fb->fp) != 0)
+            fileblobNoteCleanupFailure(cleanup_ctx, "fileblob temporary spool could not be closed");
         cli_dbgmsg("fileblobDestructiveDestroy: %s\n", fb->fullname);
-        if (!fb->ctx || !fb->ctx->engine->keeptmp)
-            cli_unlink(fb->fullname);
+        if (!cleanup_ctx || !cleanup_ctx->engine->keeptmp) {
+            if (cli_unlink(fb->fullname))
+                fileblobNoteCleanupFailure(cleanup_ctx, "fileblob temporary spool could not be removed");
+        }
         free(fb->fullname);
         fb->fp       = NULL;
         fb->fullname = NULL;
@@ -553,20 +565,25 @@ void fileblobDestructiveDestroy(fileblob *fb)
  */
 void fileblobDestroy(fileblob *fb)
 {
+    cli_ctx *cleanup_ctx;
+
     assert(fb != NULL);
 #ifdef CL_DEBUG
     assert(fb->b.magic == BLOBCLASS);
 #endif
 
+    cleanup_ctx = fb->ctx ? fb->ctx : fb->temporary_ctx;
     fileblobReleaseTemporary(fb);
 
     if (fb->b.name && fb->fp) {
-        fclose(fb->fp);
+        if (fclose(fb->fp) != 0)
+            fileblobNoteCleanupFailure(cleanup_ctx, "fileblob temporary spool could not be closed");
         if (fb->fullname) {
             cli_dbgmsg("fileblobDestroy: %s\n", fb->fullname);
             if (!fb->isNotEmpty) {
                 cli_dbgmsg("fileblobDestroy: not saving empty file\n");
-                cli_unlink(fb->fullname);
+                if (cli_unlink(fb->fullname))
+                    fileblobNoteCleanupFailure(cleanup_ctx, "fileblob temporary spool could not be removed");
             }
         }
         free(fb->b.name);

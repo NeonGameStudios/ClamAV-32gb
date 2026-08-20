@@ -8367,6 +8367,31 @@ START_TEST(test_mbox_truncated_binhex_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_fileblob_cleanup_failures_are_fail_visible)
+{
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    fileblob *fb;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetCTX(fb, &ctx);
+    fileblobSetFilename(fb, tmpdir, "cleanup-failure");
+    ck_assert_ptr_nonnull(fb->fp);
+    ck_assert_int_eq(close(fb->fd), 0);
+    fileblobDestructiveDestroy(fb);
+    ck_assert(ctx.scan_incomplete);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_tnef_truncated_header_is_fail_visible)
 {
     const uint8_t data[7] = {
@@ -10801,6 +10826,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
+    tcase_add_test(tc_cl, test_fileblob_cleanup_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_tnef_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_short_header_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_attachment_temporary_limit_is_fail_visible);

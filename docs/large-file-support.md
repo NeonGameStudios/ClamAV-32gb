@@ -2285,6 +2285,8 @@ Reservation failures and temporary-file write/stat failures mark the scan
 incomplete; they cannot be hidden by the legacy fileblob caller convention that
 only checks for `CL_VIRUS`. The build-time reservation is released before the
 normal descriptor scan reservation and is always released during destruction.
+Fileblob destruction now also marks the scan incomplete when closing or removing
+its temporary spool fails, including destructive cleanup after a detection.
 
 This closes the accounting and fail-visible spool gap. It does not yet claim
 that every MIME form has identical semantics: ordinary single-part mail and
