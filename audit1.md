@@ -2567,3 +2567,19 @@ payloads without making them resident. A sparse 2 GiB ancillary-chunk
 regression covers successful traversal through the following `IEND` chunk;
 compiled media-corpus, sanitizer, and supported-build qualification remain
 open release gates.
+
+## OLE2 summary metadata bounded windows — 2026-08-20
+
+The OLE2 summary-information parser previously mapped the complete
+attacker-declared property-set size in one fmap request. That size is a
+32-bit format field, so a valid large OLE2 stream could make the metadata
+parser borrow up to 4 GiB contiguously even though it only processes a
+bounded property table and at most 25 properties.
+
+The parser now validates the property-set range, maps only the bounded
+property table, and maps a bounded window at each referenced property. Scalar
+and string reads validate against both the mapped window and the full
+property remainder; wide-string length multiplication is overflow-checked.
+This preserves explicit malformed/truncated results without turning a large
+metadata declaration into an unbounded contiguous read. Compiled OLE2,
+sanitizer, parser-corpus, and supported-build qualification remain open.

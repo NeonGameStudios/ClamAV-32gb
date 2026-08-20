@@ -49,6 +49,8 @@
 #include "json_api.h"
 #include "entconv.h"
 
+#define OLE2_PROPERTY_READ_WINDOW (2 * PROPSTRLIMIT + 16)
+
 static char *ole2_convert_utf(summary_ctx_t *sctx, char *begin, size_t sz, const char *encoding)
 {
     char *outbuf = NULL;
@@ -197,7 +199,8 @@ static char *ole2_convert_utf(summary_ctx_t *sctx, char *begin, size_t sz, const
 }
 
 static int
-ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offset)
+ole2_process_property(summary_ctx_t *sctx, const unsigned char *databuf, uint32_t offset,
+                      size_t available, size_t property_remaining)
 {
     uint16_t proptype, padding;
     int ret = CL_SUCCESS;
@@ -207,7 +210,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         return CL_ETIMEOUT;
     }
 
-    if (offset + sizeof(proptype) + sizeof(padding) > sctx->pssize) {
+    if ((size_t)offset + sizeof(proptype) + sizeof(padding) > available) {
         sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
         return CL_EFORMAT;
     }
@@ -233,7 +236,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
             break;
         case PT_INT16: {
             int16_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -252,7 +255,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         case PT_INT32:
         case PT_INT32v1: {
             int32_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -267,7 +270,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         case PT_FLOAT32: /* review this please */
         {
             float dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -283,7 +286,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         case PT_DOUBLE64: /* review this please */
         {
             double dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -297,7 +300,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         }
         case PT_BOOL: {
             uint16_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -310,7 +313,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         }
         case PT_INT8v1: {
             int8_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -323,7 +326,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         }
         case PT_UINT8: {
             uint8_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -336,7 +339,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         }
         case PT_UINT16: {
             uint16_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -354,7 +357,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         case PT_UINT32:
         case PT_UINT32v1: {
             uint32_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -368,7 +371,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         }
         case PT_INT64: {
             int64_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -382,7 +385,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
         }
         case PT_UINT64: {
             uint64_t dout;
-            if (offset + sizeof(dout) > sctx->pssize) {
+            if ((size_t)offset + sizeof(dout) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -403,7 +406,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
                 uint32_t strsize;
                 char *outstr, *outstr2;
 
-                if (offset + sizeof(strsize) > sctx->pssize) {
+                if ((size_t)offset + sizeof(strsize) > available) {
                     sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                     return CL_EFORMAT;
                 }
@@ -413,7 +416,8 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
                 /* endian conversion? */
                 strsize = sum32_endian_convert(strsize);
 
-                if (offset + strsize > sctx->pssize) {
+                if ((size_t)offset > property_remaining ||
+                    (size_t)strsize > property_remaining - (size_t)offset) {
                     sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                     return CL_EFORMAT;
                 }
@@ -424,6 +428,11 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
                                (unsigned long)strsize, (unsigned long)PROPSTRLIMIT);
                     sctx->flags |= OLE2_SUMMARY_FLAG_TRUNC_STR;
                     strsize = PROPSTRLIMIT;
+                }
+
+                if ((size_t)offset + strsize > available) {
+                    sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
+                    return CL_EFORMAT;
                 }
 
                 outstr = cli_max_calloc(strsize + 1, 1); /* last char must be NULL */
@@ -464,14 +473,26 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
             uint32_t strsize;
             char *outstr, *outstr2;
 
-            if (offset + sizeof(strsize) > sctx->pssize) {
+            if ((size_t)offset + sizeof(strsize) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
             memcpy(&strsize, databuf + offset, sizeof(strsize));
             offset += sizeof(strsize);
             /* endian conversion; wide strings are by length, not size (x2) */
-            strsize = sum32_endian_convert(strsize) * 2;
+            strsize = sum32_endian_convert(strsize);
+
+            if (strsize > UINT32_MAX / 2) {
+                sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
+                return CL_EFORMAT;
+            }
+            strsize *= 2;
+
+            if ((size_t)offset > property_remaining ||
+                (size_t)strsize > property_remaining - (size_t)offset) {
+                sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
+                return CL_EFORMAT;
+            }
 
             /* limitation on string length */
             if (strsize > (2 * PROPSTRLIMIT)) {
@@ -481,7 +502,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
                 strsize = (2 * PROPSTRLIMIT);
             }
 
-            if (offset + strsize > sctx->pssize) {
+            if ((size_t)offset + strsize > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -520,7 +541,7 @@ ole2_process_property(summary_ctx_t *sctx, unsigned char *databuf, uint32_t offs
             uint32_t ltime, htime;
             uint64_t wtime = 0, utime = 0;
 
-            if (offset + sizeof(ltime) + sizeof(htime) > sctx->pssize) {
+            if ((size_t)offset + sizeof(ltime) + sizeof(htime) > available) {
                 sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
                 return CL_EFORMAT;
             }
@@ -715,9 +736,10 @@ static void ole2_translate_summary_propid(summary_ctx_t *sctx, uint32_t propid)
 
 static int ole2_summary_propset_json(summary_ctx_t *sctx, off_t offset)
 {
-    unsigned char *hdr, *ps;
+    const unsigned char *hdr, *ps, *property;
     uint32_t numprops, limitprops;
-    off_t foff = offset, psoff = 0;
+    size_t propset_offset, psoff = sizeof(uint32_t) * 2;
+    size_t table_len, property_offset, property_len, property_remaining;
     uint32_t poffset;
     int ret;
     uint32_t i;
@@ -729,18 +751,23 @@ static int ole2_summary_propset_json(summary_ctx_t *sctx, off_t offset)
     sctx->writecp  = 0;
     sctx->propname = NULL;
 
-    /* examine property set metadata */
-    if ((foff + (2 * sizeof(uint32_t))) > sctx->maplen) {
+    /* Examine property-set metadata through small fmap windows. The property
+     * set size is a 32-bit attacker-controlled field and must not become a
+     * request to map the complete property set contiguously. */
+    if (offset < 0 || (uint64_t)offset > (uint64_t)sctx->maplen) {
         sctx->flags |= OLE2_SUMMARY_ERROR_TOOSMALL;
         return CL_EFORMAT;
     }
-    hdr = (unsigned char *)fmap_need_off_once(sctx->sfmap, foff, (2 * sizeof(uint32_t)));
+    propset_offset = (size_t)offset;
+    if (sctx->maplen - propset_offset < psoff) {
+        sctx->flags |= OLE2_SUMMARY_ERROR_TOOSMALL;
+        return CL_EFORMAT;
+    }
+    hdr = fmap_need_off_once(sctx->sfmap, propset_offset, psoff);
     if (!hdr) {
         sctx->flags |= OLE2_SUMMARY_ERROR_DATABUF;
         return CL_EREAD;
     }
-    // foff+=(2*sizeof(uint32_t)); // keep foff pointing to start of propset segment
-    psoff += (2 * sizeof(uint32_t));
     memcpy(&(sctx->pssize), hdr, sizeof(sctx->pssize));
     memcpy(&numprops, hdr + sizeof(sctx->pssize), sizeof(numprops));
     /* endian conversion */
@@ -756,12 +783,19 @@ static int ole2_summary_propset_json(summary_ctx_t *sctx, off_t offset)
     cli_dbgmsg("ole2_summary_propset_json: processing %u of %u (%u max) properties\n",
                limitprops, numprops, PROPCNTLIMIT);
 
-    /* extract remaining fragment of propset */
-    if ((size_t)(foff + (sctx->pssize)) > (size_t)(sctx->maplen)) {
+    if ((uint64_t)sctx->pssize > (uint64_t)(sctx->maplen - propset_offset)) {
         sctx->flags |= OLE2_SUMMARY_ERROR_TOOSMALL;
         return CL_EFORMAT;
     }
-    ps = (unsigned char *)fmap_need_off_once(sctx->sfmap, foff, sctx->pssize);
+    if (sctx->pssize < psoff || limitprops > (sctx->pssize - psoff) / (2 * sizeof(uint32_t))) {
+        sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
+        return CL_EFORMAT;
+    }
+
+    /* The property table is bounded by PROPCNTLIMIT; keep only this small
+     * index window resident while each property is inspected below. */
+    table_len = psoff + (size_t)limitprops * (2 * sizeof(uint32_t));
+    ps        = fmap_need_off_once(sctx->sfmap, propset_offset, table_len);
     if (!ps) {
         sctx->flags |= OLE2_SUMMARY_ERROR_DATABUF;
         return CL_EREAD;
@@ -771,10 +805,6 @@ static int ole2_summary_propset_json(summary_ctx_t *sctx, off_t offset)
     for (i = 0; i < limitprops; ++i) {
         uint32_t propid, propoff;
 
-        if (psoff + sizeof(propid) + sizeof(poffset) > sctx->pssize) {
-            sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
-            return CL_EFORMAT;
-        }
         memcpy(&propid, ps + psoff, sizeof(propid));
         psoff += sizeof(propid);
         memcpy(&propoff, ps + psoff, sizeof(propoff));
@@ -795,7 +825,21 @@ static int ole2_summary_propset_json(summary_ctx_t *sctx, off_t offset)
         }
 
         if (sctx->propname != NULL) {
-            ret = ole2_process_property(sctx, ps, propoff);
+            if (propoff > sctx->pssize || sctx->pssize - propoff < sizeof(uint32_t)) {
+                sctx->flags |= OLE2_SUMMARY_ERROR_OOB;
+                return CL_EFORMAT;
+            }
+
+            property_remaining = sctx->pssize - propoff;
+            property_offset    = propset_offset + (size_t)propoff;
+            property_len       = MIN(property_remaining, (size_t)OLE2_PROPERTY_READ_WINDOW);
+            property            = fmap_need_off_once(sctx->sfmap, property_offset, property_len);
+            if (!property) {
+                sctx->flags |= OLE2_SUMMARY_ERROR_DATABUF;
+                return CL_EREAD;
+            }
+
+            ret = ole2_process_property(sctx, property, 0, property_len, property_remaining);
             if (ret != CL_SUCCESS)
                 return ret;
         } else {

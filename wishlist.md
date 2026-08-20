@@ -18,6 +18,9 @@
   is fail-visible instead of using an unaccounted whole-image buffer.
 - PNG large ancillary and IDAT chunks now skip their payload without a whole-
   chunk fmap mapping; only the fixed-size IHDR is borrowed.
+- OLE2 summary-property metadata now reads only the bounded property table and
+  bounded per-property windows instead of mapping the full attacker-declared
+  property-set size; malformed/truncated windows remain fail-visible.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
