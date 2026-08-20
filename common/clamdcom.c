@@ -384,12 +384,21 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
 {
     uint32_t buf[BUFSIZ / sizeof(uint32_t)];
     int len;
-    uint64_t todo = (uint64_t)optget(clamdopts, "StreamMaxLength")->numarg;
+    const struct optstruct *stream_limit = optget(clamdopts, "StreamMaxLength");
+    uint64_t todo;
     STATBUF sb;
 
     if (fd < 0) {
         return 0;
     }
+
+    if (NULL == stream_limit)
+        return -1;
+
+    /* The public option contract treats zero as the bounded 32-GiB ceiling,
+     * not as an unbounded or zero-byte stream. Keep the client-side
+     * preflight identical to clamd's engine validation. */
+    todo = (stream_limit->numarg > 0) ? (uint64_t)stream_limit->numarg : CLI_MAX_LARGE_FILESIZE;
 
     if (reject_over_limit &&
         (0 == FSTAT(fd, &sb)) &&

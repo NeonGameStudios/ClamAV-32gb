@@ -421,6 +421,20 @@ START_TEST(test_stream_client_rejects_over_limit)
     close(sockets[1]);
     fclose(regular);
 
+    /* A zero StreamMaxLength selects the certified 32-GiB ceiling. It must
+     * not make the client reject a normal stream as a zero-byte input. */
+    stream_limit.numarg = 0;
+    regular            = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+    ck_assert_int_eq(fflush(regular), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "regular-zero-limit", &stream_limit), 1);
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+
+    stream_limit.numarg = 8;
     ck_assert_int_eq(pipe(pipefd), 0);
     ck_assert_int_eq((int)write(pipefd[1], over, sizeof(over) - 1), (int)sizeof(over) - 1);
     close(pipefd[1]);
