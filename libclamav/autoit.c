@@ -1292,7 +1292,8 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
             goto done;
         }
 
-        ret = cli_magic_scan_desc(tempfd, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        ret = cli_magic_scan_desc_type_reserved(tempfd, tempfile, ctx, CL_TYPE_ANY, NULL,
+                                                 LAYER_ATTRIBUTES_NONE);
         if (CL_SUCCESS != ret) {
             status = ret;
             goto done;
