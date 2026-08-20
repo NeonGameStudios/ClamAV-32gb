@@ -405,10 +405,13 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
     char *file_type              = NULL;
     cl_scan_report_t *report     = NULL;
     action_source_t action_source;
+    cl_error_t close_status      = CL_SUCCESS;
+    const char *close_reason     = NULL;
     bool have_action_source = false;
     bool have_stat          = false;
     const char *scan_path   = filename;
     char *real_filter_path  = NULL;
+    bool clean_scan         = false;
 
     action_source_init(&action_source);
 
@@ -588,10 +591,7 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
     switch (verdict) {
         case CL_VERDICT_NOTHING_FOUND: {
             if (CL_SUCCESS == ret) {
-                if (!printinfected && printclean) {
-                    mprintf(LOGG_INFO, "%s: OK\n", filename);
-                }
-                info.files++;
+                clean_scan = true;
             } else {
                 if (!printinfected)
                     logg(LOGG_INFO, "%s: %s ERROR\n", filename, cl_strerror(ret));
@@ -603,10 +603,7 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
         case CL_VERDICT_TRUSTED: {
             // TODO: Option to print "TRUSTED" verdict instead of "OK"?
             if (CL_SUCCESS == ret) {
-                if (!printinfected && printclean) {
-                    mprintf(LOGG_INFO, "%s: OK\n", filename);
-                }
-                info.files++;
+                clean_scan = true;
             } else {
                 if (!printinfected)
                     logg(LOGG_INFO, "%s: %s ERROR\n", filename, cl_strerror(ret));
@@ -648,12 +645,6 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
     }
 
 done:
-    if (ensure_structured_scan_report(opts, engine, filename, ret, verdict, alert_name, &report) != 0)
-        info.errors++;
-    enforce_structured_completion(report, &ret);
-    if (write_structured_scan_report(opts, report) != 0)
-        info.errors++;
-
     /*
      * Run the action callback if the file was infected.
      */
@@ -662,12 +653,42 @@ done:
     }
 
     if (have_action_source) {
-        action_source_close(&action_source);
+        close_status = action_source_close(&action_source);
+        close_reason = "action source descriptor could not be closed";
         fd = -1;
     } else if (fd != -1) {
-        close(fd);
+        if (close(fd) != 0)
+            close_status = CL_EREAD;
+        close_reason = "input descriptor could not be closed";
         fd = -1;
     }
+
+    if (CL_SUCCESS != close_status) {
+        if (NULL != report)
+            cli_scan_report_note_post_scan_failure(report, close_status, close_reason);
+        if ((CL_SUCCESS == ret) || (CL_VERIFIED == ret))
+            ret = close_status;
+        if (!clean_scan)
+            info.errors++;
+    }
+
+    if (clean_scan) {
+        if (CL_SUCCESS == ret) {
+            if (!printinfected && printclean)
+                mprintf(LOGG_INFO, "%s: OK\n", filename);
+            info.files++;
+        } else {
+            if (!printinfected)
+                logg(LOGG_INFO, "%s: %s ERROR\n", filename, cl_strerror(ret));
+            info.errors++;
+        }
+    }
+
+    if (ensure_structured_scan_report(opts, engine, filename, ret, verdict, alert_name, &report) != 0)
+        info.errors++;
+    enforce_structured_completion(report, &ret);
+    if (write_structured_scan_report(opts, report) != 0)
+        info.errors++;
 
     if (NULL != hash) {
         free(hash);

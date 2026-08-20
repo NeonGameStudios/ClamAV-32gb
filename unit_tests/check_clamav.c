@@ -2427,6 +2427,31 @@ START_TEST(test_action_source_open_path_rejects_replaced_symlink)
     free(parent_dir);
 }
 END_TEST
+
+START_TEST(test_action_source_close_reports_descriptor_failure)
+{
+    action_source_t source;
+    char *path = NULL;
+    int fd = -1;
+
+    action_source_init(&source);
+    path = cli_gentemp(NULL);
+    ck_assert_ptr_nonnull(path);
+
+    fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_int_ge(fd, 0);
+    ck_assert_int_eq(write(fd, "test", 4), 4);
+    ck_assert_int_eq(close(fd), 0);
+
+    ck_assert_int_eq(action_source_open(path, &source), CL_SUCCESS);
+    ck_assert_int_eq(close(source.scan_fd), 0);
+    ck_assert_int_eq(action_source_close(&source), CL_EREAD);
+    ck_assert_int_eq(source.scan_fd, -1);
+
+    ck_assert_int_eq(unlink(path), 0);
+    free(path);
+}
+END_TEST
 #endif
 
 static char **testfiles     = NULL;
@@ -11862,6 +11887,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_action_setup_quarantine_lock_uses_validated_directory_handle);
     tcase_add_test(tc_cl, test_action_source_open_relative_path_stores_absolute_action_path);
     tcase_add_test(tc_cl, test_action_source_open_path_rejects_replaced_symlink);
+    tcase_add_test(tc_cl, test_action_source_close_reports_descriptor_failure);
     tcase_add_test(tc_cl, test_zip_stream_stored_refill_bound_and_tail);
     tcase_add_test(tc_cl, test_zip_stream_deflate_refill_bound_and_tail);
     tcase_add_test(tc_cl, test_zip_stream_bzip2_refill_bound_and_tail);

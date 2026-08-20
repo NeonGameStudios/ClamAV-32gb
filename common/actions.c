@@ -2687,18 +2687,22 @@ done:
     return status;
 }
 
-void action_source_close(action_source_t *source)
+cl_error_t action_source_close(action_source_t *source)
 {
+    cl_error_t status = CL_SUCCESS;
+
     if (NULL == source) {
-        return;
+        return CL_SUCCESS;
     }
 
     if (-1 != source->scan_fd) {
-        close(source->scan_fd);
+        if (close(source->scan_fd) != 0)
+            status = CL_EREAD;
     }
 #ifdef _WIN32
     if ((NULL != source->handle) && (INVALID_HANDLE_VALUE != source->handle)) {
-        CloseHandle((HANDLE)source->handle);
+        if (FALSE == CloseHandle((HANDLE)source->handle))
+            status = CL_EREAD;
     }
 #endif
     if (NULL != source->display_path) {
@@ -2709,6 +2713,7 @@ void action_source_close(action_source_t *source)
     }
 
     action_source_init(source);
+    return status;
 }
 
 static int getdest(const char *fullpath, char **newname)

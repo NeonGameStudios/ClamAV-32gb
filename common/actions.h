@@ -100,8 +100,10 @@ cl_error_t action_source_from_fd(const char *display_path, int fd, action_source
  * @brief Close and reset an action source.
  *
  * @param source Source object to close.
+ * @return cl_error_t CL_SUCCESS when all owned handles close successfully;
+ *         CL_EREAD when a scan/action handle close fails.
  */
-void action_source_close(action_source_t *source);
+cl_error_t action_source_close(action_source_t *source);
 
 /**
  * @brief Select the appropriate callback function based on the configuration options.

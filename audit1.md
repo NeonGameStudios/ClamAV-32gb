@@ -2451,3 +2451,14 @@ the JSONL evidence. The manager now creates a bounded fallback report for
 those early exits and writes all reports after completion enforcement. The
 source guards cover the fallback and error mappings; compiled failure
 injection and supported-build qualification remain open.
+
+## clamscan cleanup failure completion — 2026-08-20
+
+The clamscan manager previously published its structured report and printed a
+clean `OK` before closing the scan descriptor or quarantine source, and the
+shared action-source close helper discarded close failures. The close helper
+now returns `CL_EREAD`; clamscan performs cleanup before report publication and
+clean-result output, records a post-scan failure in the report, and preserves
+detections as authoritative. A focused invalid-descriptor regression and
+source guards cover the change; fault-injected cleanup and supported-build
+qualification remain open.

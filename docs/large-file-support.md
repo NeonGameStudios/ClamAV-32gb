@@ -3910,3 +3910,14 @@ after completion enforcement, so the JSONL artifact cannot omit an errored
 input or publish an incomplete result as clean. Legacy console and exit
 behavior is preserved; compiled early-failure injection and supported-build
 Sonic1 qualification remain release gates.
+
+## clamscan cleanup failure completion — 2026-08-20
+
+The clamscan action/scan path now reports failures closing its owned scan
+descriptor or quarantine source as `CL_EREAD`. Cleanup runs before the
+structured JSONL report is finalized and before a clean `OK` is printed, so a
+post-scan descriptor failure cannot be published as clean evidence. The
+internal action-source close API returns the failure while preserving the
+existing reset semantics; a focused invalid-descriptor regression covers the
+contract. Fault-injected clamscan cleanup and supported-build Sonic1
+qualification remain release gates.
