@@ -1759,6 +1759,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     STATBUF statbuf;
     char *fullname;
     off_t payload_offset;
+    uint64_t temporary_reserved = 0;
 
     if (fd < 0) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object descriptor was invalid");
@@ -1826,8 +1827,17 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
             return CL_EPARSE;
         }
     }
+
+    ret = cli_scan_reserve_temporary(ctx, (uint64_t)object_size);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object exceeds temporary storage limits");
+        return ret;
+    }
+    temporary_reserved = (uint64_t)object_size;
+
     if (!(fullname = cli_gentemp(ctx ? ctx->this_layer_tmpdir : NULL))) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be allocated");
+        cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_EMEM;
     }
     ofd = open(fullname, O_RDWR | O_CREAT | O_TRUNC | O_BINARY | O_EXCL,
@@ -1835,6 +1845,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     if (ofd < 0) {
         cli_warnmsg("cli_decode_ole_object: can't create %s\n", fullname);
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be created");
+        cli_scan_release_temporary(ctx, temporary_reserved);
         free(fullname);
         return CL_ECREAT;
     }
@@ -1847,6 +1858,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
         close(ofd);
         if (ctx && !ctx->engine->keeptmp)
             cli_unlink(fullname);
+        cli_scan_release_temporary(ctx, temporary_reserved);
         free(fullname);
         return ret;
     }
@@ -1856,11 +1868,12 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
         close(ofd);
         if (ctx && !ctx->engine->keeptmp)
             cli_unlink(fullname);
+        cli_scan_release_temporary(ctx, temporary_reserved);
         free(fullname);
         return CL_ESEEK;
     }
 
-    ret = cli_magic_scan_desc(ofd, fullname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_magic_scan_desc_type_reserved(ofd, fullname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     if (ret != CL_SUCCESS && ret != CL_VIRUS)
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object scan did not complete");
 
@@ -1875,6 +1888,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
         }
     }
 
+    cli_scan_release_temporary(ctx, temporary_reserved);
     free(fullname);
 
     return ret;

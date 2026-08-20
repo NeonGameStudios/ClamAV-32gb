@@ -2707,6 +2707,13 @@ scan incomplete/non-cacheable. The focused `test_ole10_truncated_object_is_fail_
 regression is registered; supported-Linux execution, sanitizer coverage, and
 broader legacy OLE/RTF corpus qualification remain release gates.
 
+The bridge now reserves the declared OLE10 payload before temporary-file
+creation and retains that reservation through the nested scan. Quota rejection
+is fail-visible and cannot be bypassed by the legacy embedded-object path. The
+focused `test_ole10_temporary_limit_is_fail_visible` regression is registered;
+compiled execution and broader Office/RTF corpus qualification remain release
+gates.
+
 ## XLM extraction completion boundary — 2026-08-19
 
 The Excel 4/XLM extraction path now treats a missing materialized BIFF stream,
