@@ -8759,6 +8759,105 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
 }
 END_TEST
 
+START_TEST(test_egg_extra_field_admission_is_fail_visible)
+{
+    static const uint8_t valid_header[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00  /* reserved */
+    };
+    uint8_t archive[sizeof(valid_header) + 4 + 4 + 1 + 2];
+    uint8_t file_archive[sizeof(valid_header) + 4 + 16 + 4 + 1 + 4];
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    size_t offset;
+
+    memset(archive, 0, sizeof(archive));
+    memcpy(archive, valid_header, sizeof(valid_header));
+    offset = sizeof(valid_header);
+    zip_stream_write_u32(archive + offset, 0x08D1470FU);
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, 0);
+
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EFORMAT);
+    ck_assert_ptr_null(handle);
+    cl_fmap_close(map);
+
+    memset(file_archive, 0, sizeof(file_archive));
+    memcpy(file_archive, valid_header, sizeof(valid_header));
+    offset = sizeof(valid_header);
+    zip_stream_write_u32(file_archive + offset, 0x08E28222U);
+    offset += 4;
+    zip_stream_write_u32(file_archive + offset, 0x0A8590E3U);
+    offset += 4;
+    zip_stream_write_u32(file_archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(file_archive + offset, 0U);
+    offset += 8;
+    zip_stream_write_u32(file_archive + offset, 0x08D1470FU);
+    offset += 4;
+    file_archive[offset++] = 0;
+    zip_stream_write_u16(file_archive + offset, 0);
+
+    map = cl_fmap_open_memory(file_archive, sizeof(file_archive));
+    ck_assert_ptr_nonnull(map);
+    handle    = NULL;
+    comments  = NULL;
+    ncomments = 0;
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EFORMAT);
+    ck_assert_ptr_null(handle);
+    cl_fmap_close(map);
+
+    memset(archive, 0, sizeof(archive));
+    memcpy(archive, valid_header, sizeof(valid_header));
+    offset = sizeof(valid_header);
+    zip_stream_write_u32(archive + offset, 0x08D1470FU);
+    offset += 4;
+    archive[offset++] = 1;
+    zip_stream_write_u32(archive + offset, UINT32_MAX);
+
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    handle    = NULL;
+    comments  = NULL;
+    ncomments = 0;
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EMAXSIZE);
+    ck_assert_ptr_null(handle);
+    cl_fmap_close(map);
+
+    memset(file_archive, 0, sizeof(file_archive));
+    memcpy(file_archive, valid_header, sizeof(valid_header));
+    offset = sizeof(valid_header);
+    zip_stream_write_u32(file_archive + offset, 0x08E28222U);
+    offset += 4;
+    zip_stream_write_u32(file_archive + offset, 0x0A8590E3U);
+    offset += 4;
+    zip_stream_write_u32(file_archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(file_archive + offset, 0U);
+    offset += 8;
+    zip_stream_write_u32(file_archive + offset, 0x08D1470FU);
+    offset += 4;
+    file_archive[offset++] = 1;
+    zip_stream_write_u32(file_archive + offset, UINT32_MAX);
+
+    map = cl_fmap_open_memory(file_archive, sizeof(file_archive));
+    ck_assert_ptr_nonnull(map);
+    handle    = NULL;
+    comments  = NULL;
+    ncomments = 0;
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EMAXSIZE);
+    ck_assert_ptr_null(handle);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_embedded_candidate_admission_headers)
 {
     static const uint8_t autoit_prefix[] = {
@@ -11918,6 +12017,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
+    tcase_add_test(tc_cl, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
     tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);
     tcase_add_test(tc_cl, test_embedded_header_read_failures_are_fail_visible);
