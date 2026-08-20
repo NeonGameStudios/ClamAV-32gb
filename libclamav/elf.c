@@ -868,29 +868,41 @@ cl_error_t cli_unpackelf(cli_ctx *ctx)
         if (ndesc != -1 && tempfile) {
             cli_dbgmsg("cli_scanelf: Unpacked and rebuilt ELF executable saved in %s\n", tempfile);
 
-            lseek(ndesc, 0, SEEK_SET);
-
-            cli_dbgmsg("***** Scanning rebuilt ELF file *****\n");
-            if (temporary_reserved)
-                ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
-            else
-                ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
+                cli_mark_scan_incomplete(ctx, "ELF unpacked output could not be rewound");
+                ret = CL_ESEEK;
+            } else {
+                cli_dbgmsg("***** Scanning rebuilt ELF file *****\n");
+                if (temporary_reserved)
+                    ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+                else
+                    ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            }
         }
     }
 
 done:
-    if (temporary_reserved)
-        cli_scan_release_temporary(ctx, temporary_reserved);
     // cli_bytecode_context_getresult_file() gives up ownership of temp file, so we must clean it up.
     if (-1 != ndesc) {
-        close(ndesc);
+        if (close(ndesc) != 0) {
+            cli_mark_scan_incomplete(ctx, "ELF unpacked output could not be closed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
+                ret = CL_EWRITE;
+        }
     }
     if (NULL != tempfile) {
         if (!ctx->engine->keeptmp) {
-            (void)cli_unlink(tempfile);
+            if (cli_unlink(tempfile) != 0) {
+                cli_mark_scan_incomplete(ctx, "ELF unpacked output could not be removed");
+                if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
+                    ret = CL_EUNLINK;
+            }
         }
         free(tempfile);
     }
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     if (NULL != bc_ctx) {
         cli_bytecode_context_destroy(bc_ctx);

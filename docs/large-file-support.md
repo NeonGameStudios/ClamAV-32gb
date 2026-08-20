@@ -3384,6 +3384,10 @@ the scan and temporary cleanup. Complete writes are required, arithmetic
 overflow and write failures mark the scan incomplete, and the logical scan
 counter now accepts a 64-bit byte count.
 
+ELF and Mach-O unpacker handoffs now also fail closed on rewind, descriptor
+close, and temporary-file removal failures while preserving earlier detections
+or parser errors and releasing the transferred reservation after cleanup.
+
 Source guards and `git diff --check` are the current local evidence. A
 dependency-complete bytecode-v2 fixture exercising multi-gigabyte repeated
 writes, interpreter/JIT behavior, sanitizer/fault-injected cleanup, and
