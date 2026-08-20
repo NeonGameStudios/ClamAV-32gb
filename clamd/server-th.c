@@ -704,6 +704,24 @@ static int is_structured_report_command(enum commands cmdtype)
     }
 }
 
+static void reply_structured_dispatch_failure(client_conn_t *conn,
+                                              struct fd_buf *buf,
+                                              int dispatch_status)
+{
+    cl_error_t report_status;
+
+    if ((NULL == conn) || (NULL == buf) || !conn->structured_report || buf->response_sent)
+        return;
+
+    /* A structured request must always terminate with a report frame. A
+     * dispatch failure has no scanner-owned report, so use the bounded
+     * fallback object rather than suppressing the legacy text error and
+     * leaving clamdscan/milter waiting for a frame that will never arrive. */
+    report_status = (dispatch_status == -1) ? CL_EMEM : CL_ERROR;
+    if (conn_reply_scan_report(conn, report_status, 0) == 0)
+        buf->response_sent = 1;
+}
+
 static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout)
 {
     const char *cmd = NULL;
@@ -759,6 +777,7 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
 
         if ((rc = execute_or_dispatch_command(conn, cmdtype, argument)) < 0) {
             logg(LOGG_ERROR, "Command dispatch failed\n");
+            reply_structured_dispatch_failure(conn, buf, rc);
             if (rc == -1 && optget(opts, "ExitOnOOM")->enabled) {
                 pthread_mutex_lock(&exit_mutex);
                 progexit = 1;
@@ -898,6 +917,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                     buf->dumpname = NULL;
                     if ((rc = execute_or_dispatch_command(conn, COMMAND_INSTREAMSCAN, NULL)) < 0) {
                         logg(LOGG_ERROR, "Command dispatch failed\n");
+                        reply_structured_dispatch_failure(conn, buf, rc);
                         if (rc == -1 && optget(opts, "ExitOnOOM")->enabled) {
                             pthread_mutex_lock(&exit_mutex);
                             progexit = 1;

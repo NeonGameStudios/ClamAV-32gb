@@ -182,6 +182,21 @@ START_TEST(test_scan_report_json_status_accepts_library_reports)
 }
 END_TEST
 
+START_TEST(test_scan_report_json_status_accepts_dispatch_failure_fallback)
+{
+    static const char fallback[] =
+        "{\"version\":1,\"id\":7,\"status_code\":35,\"verdict\":\"incomplete\",\"completion\":\"RESOURCE_FAILURE\"}";
+    int infected = -1;
+    int incomplete = -1;
+
+    ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback),
+                                             &infected, &incomplete),
+                     0);
+    ck_assert_int_eq(infected, 0);
+    ck_assert_int_eq(incomplete, 1);
+}
+END_TEST
+
 START_TEST(test_scan_report_json_status_rejects_contradictory_reports)
 {
     static const char nested[] =
@@ -1292,6 +1307,7 @@ static Suite *test_clamd_suite(void)
     suite_add_tcase(s, tc_parser);
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
+    tcase_add_test(tc_parser, test_scan_report_json_status_accepts_dispatch_failure_fallback);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_contradictory_reports);
     tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
 #ifndef _WIN32

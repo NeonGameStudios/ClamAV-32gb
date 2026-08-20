@@ -2430,3 +2430,14 @@ structured report as `RESOURCE_FAILURE` with one skipped operation. Existing
 detections remain authoritative. A focused internal report regression and
 source guards cover the state transition; injected close-failure and
 dependency-complete test coverage remain open.
+
+## Structured clamd dispatch-failure framing — 2026-08-20
+
+Structured clamd requests previously suppressed the legacy error reply after
+a recognized report command failed during worker dispatch, leaving clients
+without the required terminal JSON frame. The receive thread now emits the
+bounded fallback report with `RESOURCE_FAILURE` (or `CL_EMEM` for allocation
+failure) before closing the request. The same handling covers the final
+staged-stream dispatch. A focused fallback-parser regression and source guards
+cover the protocol contract; compiled failure injection and supported-build
+Sonic1 qualification remain open.

@@ -3889,3 +3889,14 @@ authoritative result when a virus was already found. The focused report
 regression and source guards cover the post-scan transition; injected close,
 sanitizer, dependency-complete, and supported-build Sonic1 qualification
 remain release gates.
+
+## Structured clamd dispatch-failure framing — 2026-08-20
+
+Opt-in structured clamd requests now emit a bounded fallback JSON report when
+worker dispatch fails before a scanner-owned report exists. This covers both
+path/descriptor command dispatch and the final staged `INSTREAMREPORT` scan;
+the legacy text error remains suppressed so clients receive exactly the
+length-prefixed report plus zero terminator required by the structured
+protocol. A focused client-parser regression and source guards cover the
+fallback shape; compiled dispatch-failure injection and supported-build
+Sonic1 protocol qualification remain release gates.
