@@ -2660,8 +2660,12 @@ attachment directly into that spool without mapping the complete root. Sink
 write, scan, and truncated-input failures abort the attachment and remain
 fail-visible. The owned `ExtractedFile` iterator remains for compatibility
 callers. The third-party modern root parser is still slice-based and therefore
-uses the staged mapping; OneNote corpus, sanitizer, and RSS qualification
-remain open.
+uses the staged mapping only through its explicit 256 MiB whole-input cap;
+larger modern documents return `CL_ERESOURCE` before staging or mapping.
+Legacy documents continue to use the bounded reader path above that cap. This
+is a deliberate unsupported boundary until the upstream parser exposes a
+reader-backed API; OneNote corpus, sanitizer, and RSS qualification remain
+open.
 
 ## PDF decoder input-width boundary — 2026-08-19
 

@@ -794,12 +794,13 @@ and large-input qualification remain open.
 ALZ now parses directly through the bounded `FMapReader` `Read + Seek` adapter
 and emits decompressed members in chunks into quota-accounted temporary spools.
 OneNote still stages the root through the shared temporary quota and parses a
-disk-backed `mmap` view required by its third-party slice API. The prior 256
-MiB admission cap was removed; failed reads, temporary reservation, mapping,
-parser, decoder, and extracted-member scans remain fail-visible. This removes
-the artificial ALZ cap and member-vector materialization, but does not by
-itself prove third-party 32 GiB memory, sanitizer, or supported-build
-qualification.
+disk-backed `mmap` view required by its third-party slice API. Modern OneNote
+inputs above the explicit 256 MiB whole-input parser cap now fail before
+staging or mapping; the bounded legacy reader remains available for larger
+legacy documents. Failed reads, temporary reservation, mapping, parser,
+decoder, and extracted-member scans remain fail-visible. This removes the
+artificial ALZ cap and member-vector materialization, but does not by itself
+prove third-party 32 GiB memory, sanitizer, or supported-build qualification.
 
 ## Rust temporary-spool ownership — 2026-08-19
 

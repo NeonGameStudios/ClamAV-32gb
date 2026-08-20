@@ -528,6 +528,10 @@ unsafe fn spool_fmap(ctx: *mut cli_ctx, fmap: &FMap) -> Result<TempSpool, cl_err
     Ok(spool)
 }
 
+fn onenote_modern_parser_admitted(input_len: usize) -> bool {
+    input_len <= FMap::WHOLE_INPUT_MAX
+}
+
 /// Scan a OneNote file for attachments
 ///
 /// # Safety
@@ -577,6 +581,19 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
          * attachment record was found, let the modern parser inspect the
          * complete root instead of treating the input as an empty legacy
          * document. */
+    }
+
+    /* The modern third-party parser still accepts only a borrowed whole-file
+     * slice. Keep that API boundary explicit: large modern documents must not
+     * be staged and mapped as though they were reader-backed. The bounded
+     * legacy extractor above remains available for legacy documents. */
+    if !onenote_modern_parser_admitted(fmap.len()) {
+        return parser_failure(
+            ctx,
+            "OneNote",
+            cl_error_t_CL_ERESOURCE,
+            "OneNote modern whole-input parser exceeds the bounded parser cap",
+        );
     }
 
     let root_spool = match spool_fmap(ctx, &fmap) {
@@ -1232,5 +1249,13 @@ mod tests {
         assert!(!lha_output_chunk_fits(65, 64, 0));
         assert!(!lha_output_chunk_fits(64, 64, 1));
         assert!(!lha_output_chunk_fits(u64::MAX, u64::MAX, 1));
+    }
+
+    #[test]
+    fn onenote_modern_parser_rejects_inputs_above_whole_input_cap() {
+        assert!(onenote_modern_parser_admitted(FMap::WHOLE_INPUT_MAX));
+        assert!(!onenote_modern_parser_admitted(
+            FMap::WHOLE_INPUT_MAX.saturating_add(1)
+        ));
     }
 }
