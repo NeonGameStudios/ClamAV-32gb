@@ -3995,6 +3995,16 @@ The focused matcher regression covers both the successful charge and the
 fail-closed limit path. Full YARA rule evaluation, production signatures,
 sanitizer, and large-file qualification remain release gates.
 
+## Logical bytecode-reference admission — 2026-08-20
+
+The logical-signature evaluator now validates the referenced bytecode table and
+one-based entry before dereferencing it. A missing or stale entry marks the
+current layer incomplete, non-cacheable, and returns `CL_EPARSE`; it cannot
+crash or fall through as a clean logical evaluation. A focused malformed
+logical-signature regression covers the fail-visible path. Full logical
+expression, mixed ABI, production-signature, and supported-build qualification
+remain release gates.
+
 ## clamscan directory and symlink report completion — 2026-08-20
 
 The clamscan walker now emits bounded non-clean fallback rows when an explicit

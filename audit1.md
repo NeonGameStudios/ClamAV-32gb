@@ -22,6 +22,13 @@ matcher regression covers both the admitted and exhausted-budget paths; full
 rule, production-signature, sanitizer, and large-file qualification remain
 open.
 
+**Logical bytecode-reference admission.** `lsig_eval()` now validates the
+referenced bytecode table and one-based entry before forming its indexed
+pointer. A missing entry marks the current layer incomplete and non-cacheable
+and returns `CL_EPARSE`; the malformed logical-signature regression covers this
+fail-visible path. Full logical-expression, mixed-ABI, production-signature,
+and supported-build qualification remain open.
+
 ## Verdict
 
 The conservative headline in audit.md — production release remains blocked — is correct. Many of its narrower raw-matcher, cache-width, fmap-aging, exact-boundary, and limit-propagation findings are also supported by the current source.

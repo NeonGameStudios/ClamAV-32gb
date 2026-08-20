@@ -1133,6 +1133,16 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
         }
     } else {
         // Logical sig depends on bytecode match. Check for the bytecode match.
+        if (!ctx || !ctx->engine || !ctx->engine->bcs.all_bcs ||
+            ac_lsig->bc_idx > ctx->engine->bcs.count) {
+            cli_dbgmsg("lsig_eval: logical signature '%s' references unavailable bytecode entry %u\n",
+                       ac_lsig->virname, ac_lsig->bc_idx);
+            cli_mark_scan_incomplete(ctx, "logical signature references unavailable bytecode");
+            if (ctx && ctx->fmap)
+                ctx->fmap->dont_cache_flag = 1;
+            status = CL_EPARSE;
+            goto done;
+        }
         const struct cli_bc *bc = &ctx->engine->bcs.all_bcs[ac_lsig->bc_idx - 1];
 
         if (bc->metadata.formatlevel != BC_FORMAT_LEVEL_V2) {

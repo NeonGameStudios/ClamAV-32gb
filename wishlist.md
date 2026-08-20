@@ -60,6 +60,9 @@
 - YARA-compatible logical roots now charge one bounded fmap pass to shared
   matcher-work accounting and fail closed when that budget is exhausted; full
   production-rule and large-file qualification remains open.
+- Logical signatures now validate referenced bytecode entries before indexed
+  dereference and return a fail-visible parse result when metadata is stale or
+  missing; full logical-expression and mixed-ABI qualification remains open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

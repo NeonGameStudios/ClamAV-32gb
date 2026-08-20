@@ -800,6 +800,48 @@ START_TEST(test_bytecode_offset_compatibility)
 }
 END_TEST
 
+START_TEST(test_logical_bytecode_missing_entry_is_fail_visible)
+{
+    static const unsigned char bytes[] = {0x00};
+    static char logic[]                  = "0";
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id             = 0;
+    lsig.bc_idx         = 1;
+    lsig.type           = CLI_LSIG_NORMAL;
+    lsig.u.logic        = logic;
+    lsig.virname        = (char *)"MissingLogicalBytecode";
+    lsig.tdb.subsigs    = 1;
+    lsigtable[0]        = &lsig;
+    root.ac_lsigs       = 1;
+    root.ac_lsigtable   = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    map = cl_fmap_open_memory(bytes, sizeof(bytes));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                    = map;
+    ctx.recursion_stack[0].fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    ctx.fmap                    = &thefmap;
+    ctx.recursion_stack[0].fmap = &thefmap;
+    cl_fmap_close(map);
+    cli_ac_freedata(&mdata);
+}
+END_TEST
+
 START_TEST(test_yara_uint32_read_accepts_exact_tail)
 {
     static const unsigned char bytes[] = {0x78, 0x56, 0x34, 0x12};
@@ -1207,6 +1249,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
+    tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
