@@ -2057,6 +2057,11 @@ are explicitly reported as uninspected rather than being treated as clean.
 ARJ temporary-limit and encrypted-member behavior still require a
 dependency-complete runtime qualification.
 
+The ARJ compressed decoders now reject back-reference lengths that exceed the
+declared member size, fail closed on invalid ring-buffer positions, and check
+the final partial-output write before returning success. A malformed or failed
+decoder therefore cannot hand a partial temporary member to the nested scan.
+
 ## ZIP temporary-output admission — 2026-08-20
 
 The bounded ZIP readers now reserve the declared output size against

@@ -576,6 +576,11 @@ static cl_error_t decode(arj_metadata_t *metadata)
             }
         } else {
             j = chr - (UCHAR_MAX + 1 - THRESHOLD);
+            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
+                cli_dbgmsg("UNARJ: match exceeds the declared member size.\n");
+                decode_data.status = CL_EFORMAT;
+                break;
+            }
             count += j;
             i = decode_p(&decode_data);
             if ((i = out_ptr - i - 1) < 0) {
@@ -583,6 +588,7 @@ static cl_error_t decode(arj_metadata_t *metadata)
             }
             if ((i >= DDICSIZ) || (i < 0)) {
                 cli_dbgmsg("UNARJ: bounds exceeded - probably a corrupted file.\n");
+                decode_data.status = CL_EUNPACK;
                 break;
             }
             if (out_ptr > (uint32_t)i && out_ptr < DDICSIZ - MAXMATCH - 1) {
@@ -612,8 +618,14 @@ static cl_error_t decode(arj_metadata_t *metadata)
             return decode_data.status;
         }
     }
-    if (out_ptr != 0) {
-        write_text(metadata->ofd, decode_data.text, out_ptr);
+    if (decode_data.status == CL_SUCCESS && out_ptr != 0) {
+        if (write_text(metadata->ofd, decode_data.text, out_ptr) != CL_SUCCESS)
+            decode_data.status = CL_EWRITE;
+    }
+    if (decode_data.status != CL_SUCCESS) {
+        free(decode_data.text);
+        metadata->offset = decode_data.offset;
+        return decode_data.status;
     }
 
     free(decode_data.text);
@@ -744,6 +756,11 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
             }
         } else {
             j = chr - 1 + THRESHOLD;
+            if (j < 0 || (uint32_t)j > metadata->orig_size - count) {
+                cli_dbgmsg("UNARJ: match exceeds the declared member size.\n");
+                decode_data.status = CL_EFORMAT;
+                break;
+            }
             count += j;
             pos = decode_ptr(&decode_data);
             if (decode_data.status != CL_SUCCESS) {
@@ -756,6 +773,7 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
             }
             if ((i >= DDICSIZ) || (i < 0)) {
                 cli_dbgmsg("UNARJ: bounds exceeded - probably a corrupted file.\n");
+                decode_data.status = CL_EUNPACK;
                 break;
             }
             while (j-- > 0) {
@@ -774,8 +792,14 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
             }
         }
     }
-    if (out_ptr != 0) {
-        write_text(metadata->ofd, decode_data.text, out_ptr);
+    if (decode_data.status == CL_SUCCESS && out_ptr != 0) {
+        if (write_text(metadata->ofd, decode_data.text, out_ptr) != CL_SUCCESS)
+            decode_data.status = CL_EWRITE;
+    }
+    if (decode_data.status != CL_SUCCESS) {
+        free(decode_data.text);
+        metadata->offset = decode_data.offset;
+        return decode_data.status;
     }
 
     free(decode_data.text);
