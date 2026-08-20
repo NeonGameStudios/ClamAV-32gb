@@ -2584,6 +2584,19 @@ This preserves explicit malformed/truncated results without turning a large
 metadata declaration into an unbounded contiguous read. Compiled OLE2,
 sanitizer, parser-corpus, and supported-build qualification remain open.
 
+## PE resource-string bounded heuristic reads — 2026-08-20
+
+The PE resource-string heuristic passed an attacker-controlled resource length
+directly to fmap even though `cli_detect_swizz_str()` stops after its first
+8 KiB of UTF-16 input. That could turn a large resource declaration into an
+unnecessary contiguous mapping.
+
+The heuristic now validates the resource range without addition wraparound
+and maps no more than its fixed 8 KiB inspection prefix. Exact-end resource
+ranges remain representable, while malformed ranges are skipped as before.
+Compiled PE, sanitizer, parser-corpus, and supported-build qualification
+remain open.
+
 ## PE import-directory bounded reads — 2026-08-20
 
 The PE import-hash path previously borrowed the complete import-directory

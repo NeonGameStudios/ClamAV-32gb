@@ -1676,6 +1676,9 @@ not_contains libclamav/msdoc.c 'fmap_need_off_once(sctx->sfmap, foff, sctx->pssi
 contains libclamav/pe.c 'PE import descriptor could not be read completely'
 contains libclamav/pe.c 'descriptor_offset = impoff'
 not_contains libclamav/pe.c 'fmap_need_off(map, impoff, peinfo->dirs[1].Size)'
+contains libclamav/pe.c '#define PE_SWIZZ_MAX_READ 8192U'
+contains libclamav/pe.c 'inspect_size = (uint32_t)MIN((size_t)isz, (size_t)PE_SWIZZ_MAX_READ)'
+not_contains libclamav/pe.c 'fmap_need_off_once(map, rawaddr, isz)'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

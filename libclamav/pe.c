@@ -109,6 +109,7 @@
 
 #define PE_MAXNAMESIZE 256
 #define PE_MAXIMPORTS 1024
+#define PE_SWIZZ_MAX_READ 8192U
 
 #define EC64(x) ((uint64_t)cli_readint64(&(x))) /* Convert little endian to host */
 #define EC32(x) ((uint32_t)cli_readint32(&(x)))
@@ -553,18 +554,21 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
             if (!err && (resdir = fmap_need_off_once(map, rawaddr, 16))) {
                 uint32_t isz = cli_readint32(resdir + 4);
                 const uint8_t *str;
-                rawaddr = cli_rawaddr(cli_readint32(resdir), peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
-                if (err || !isz || isz >= fsize || rawaddr + isz >= fsize) {
-                    cli_dbgmsg("cli_parseres_special: invalid resource table entry: %lu + %lu\n",
-                               (unsigned long)rawaddr,
-                               (unsigned long)isz);
+            rawaddr = cli_rawaddr(cli_readint32(resdir), peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
+            if (err || !isz || (size_t)rawaddr > fsize || (size_t)isz > fsize - (size_t)rawaddr) {
+                cli_dbgmsg("cli_parseres_special: invalid resource table entry: %lu + %lu\n",
+                           (unsigned long)rawaddr,
+                           (unsigned long)isz);
                     stats->errors++;
                     continue;
                 }
                 if ((id & 0xff) != 0x09) /* english res only */
                     continue;
-                if ((str = fmap_need_off_once(map, rawaddr, isz)))
-                    cli_detect_swizz_str(str, isz, stats, type);
+                {
+                    uint32_t inspect_size = (uint32_t)MIN((size_t)isz, (size_t)PE_SWIZZ_MAX_READ);
+                    if ((str = fmap_need_off_once(map, rawaddr, inspect_size)))
+                        cli_detect_swizz_str(str, inspect_size, stats, type);
+                }
             }
         }
     }
