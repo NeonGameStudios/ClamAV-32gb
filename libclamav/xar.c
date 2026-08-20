@@ -48,9 +48,10 @@ static cl_error_t xar_incomplete(cli_ctx *ctx, const char *reason)
      ctx - cli_ctx context pointer
      fd  - fd to close
      tmpname - name of file to unlink, address of storage to free
+     temporary_reserved - reserved output bytes to release, may be NULL
    returns - CL_SUCCESS or CL_EUNLINK
  */
-static int xar_cleanup_temp_file(cli_ctx *ctx, int fd, char *tmpname)
+static int xar_cleanup_temp_file(cli_ctx *ctx, int fd, char *tmpname, uint64_t *temporary_reserved)
 {
     int rc = CL_SUCCESS;
     if (fd > -1 && close(fd) == -1) {
@@ -68,21 +69,46 @@ static int xar_cleanup_temp_file(cli_ctx *ctx, int fd, char *tmpname)
         }
         free(tmpname);
     }
+    if (temporary_reserved && *temporary_reserved) {
+        cli_scan_release_temporary(ctx, *temporary_reserved);
+        *temporary_reserved = 0;
+    }
     return rc;
+}
+
+static cl_error_t xar_reserve_output(cli_ctx *ctx, uint64_t *reserved, uint64_t bytes, const char *reason)
+{
+    cl_error_t status;
+
+    if (bytes == 0)
+        return CL_SUCCESS;
+    if (NULL == reserved || UINT64_MAX - *reserved < bytes) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_ERESOURCE;
+    }
+
+    status = cli_scan_reserve_temporary(ctx, bytes);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return status;
+    }
+
+    *reserved += bytes;
+    return CL_SUCCESS;
 }
 
 static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data, size_t len,
                                 uint64_t *reserved)
 {
+    cl_error_t status;
+
     if (len == 0)
         return CL_SUCCESS;
 
-    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
-        cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be reserved");
-        return CL_ERESOURCE;
-    }
-
-    *reserved += (uint64_t)len;
+    status = xar_reserve_output(ctx, reserved, (uint64_t)len,
+                                "XAR TOC temporary spool could not be reserved");
+    if (status != CL_SUCCESS)
+        return status;
     if (cli_writen(fd, data, len) != len) {
         cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be written completely");
         return CL_EWRITE;
@@ -383,7 +409,7 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
                         if (CL_SUCCESS == rc || CL_VERIFIED == rc)
                             rc = CL_EWRITE;
                     }
-                    cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname);
+                    cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname, NULL);
                     if (CL_SUCCESS == rc && CL_SUCCESS != cleanup_rc)
                         rc = cleanup_rc;
                     tmpname = NULL;
@@ -502,6 +528,7 @@ int cli_scanxar(cli_ctx *ctx)
     int toc_fd              = -1;
     int cleanup_rc;
     uint64_t toc_reserved = 0;
+    uint64_t member_reserved = 0;
     int a_hash, e_hash;
     unsigned char *a_cksum = NULL, *e_cksum = NULL;
     void *a_hash_ctx = NULL, *e_hash_ctx = NULL;
@@ -653,16 +680,12 @@ int cli_scanxar(cli_ctx *ctx)
     /* Scan the completed TOC as a child, then parse it through libxml2's
      * streaming file-descriptor reader. Avoid charging the same TOC bytes as
      * both materialization and descriptor scan. */
-    if (toc_reserved) {
-        cli_scan_release_temporary(ctx, toc_reserved);
-        toc_reserved = 0;
-    }
     if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
         cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be rewound");
         rc = CL_ESEEK;
         goto exit_toc;
     }
-    rc = cli_magic_scan_desc(toc_fd, tocname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    rc = cli_magic_scan_desc_type_reserved(toc_fd, tocname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     if (rc != CL_SUCCESS)
         goto exit_toc;
     if (lseek(toc_fd, 0, SEEK_SET) == (off_t)-1) {
@@ -697,7 +720,7 @@ int cli_scanxar(cli_ctx *ctx)
 
         /* clean up temp file from previous loop iteration */
         if (fd > -1 && tmpname) {
-            rc      = xar_cleanup_temp_file(ctx, fd, tmpname);
+            rc      = xar_cleanup_temp_file(ctx, fd, tmpname, &member_reserved);
             tmpname = NULL;
             if (rc != CL_SUCCESS)
                 goto exit_reader;
@@ -789,6 +812,10 @@ int cli_scanxar(cli_ctx *ctx)
                             break;
                         }
 
+                        if ((rc = xar_reserve_output(ctx, &member_reserved, (uint64_t)produced,
+                                                     "XAR gzip member exceeds temporary storage limits")) != CL_SUCCESS)
+                            break;
+
                         if (e_hash_ctx != NULL)
                             xar_hash_update(e_hash_ctx, buff, produced, e_hash);
 
@@ -829,6 +856,8 @@ int cli_scanxar(cli_ctx *ctx)
                     cli_mark_scan_incomplete(ctx, "XAR gzip member ended before the decoder reached stream end");
                     rc = CL_EFORMAT;
                 }
+                if (rc != CL_SUCCESS)
+                    goto exit_tmpfile;
                 break;
             }
             case CL_TYPE_7Z:
@@ -950,14 +979,22 @@ int cli_scanxar(cli_ctx *ctx)
                         break;
                     }
 
+                    if ((rc = xar_reserve_output(ctx, &member_reserved, (uint64_t)avail_out,
+                                                 "XAR LZMA member exceeds temporary storage limits")) != CL_SUCCESS) {
+                        cli_LzmaShutdown(&lz);
+                        __lzma_wrap_free(NULL, buff);
+                        goto exit_tmpfile;
+                    }
+
                     /* Write a decompressed block. */
                     /* cli_dbgmsg("Writing %li bytes to LZMA decompress temp file, " */
                     /*            "consumed %li of %li available compressed bytes.\n", */
                     /*            avail_out, in_consumed, avail_in); */
 
-                    if (cli_writen(fd, buff, avail_out) == (size_t)-1) {
+                    if (cli_writen(fd, buff, avail_out) != avail_out) {
                         cli_dbgmsg("cli_scanxar: cli_writen error writing lzma temp file for %llu bytes.\n",
                                    (long long unsigned)avail_out);
+                        cli_mark_scan_incomplete(ctx, "XAR LZMA member could not be written completely");
                         __lzma_wrap_free(NULL, buff);
                         cli_LzmaShutdown(&lz);
                         rc = CL_EWRITE;
@@ -976,6 +1013,8 @@ int cli_scanxar(cli_ctx *ctx)
                     cli_mark_scan_incomplete(ctx, "XAR LZMA member ended before the decoder reached stream end");
                     rc = CL_EFORMAT;
                 }
+                if (rc != CL_SUCCESS)
+                    goto exit_tmpfile;
             } break;
             case CL_TYPE_ANY:
             default:
@@ -997,6 +1036,9 @@ int cli_scanxar(cli_ctx *ctx)
                         }
                         if (a_hash_ctx != NULL)
                             xar_hash_update(a_hash_ctx, copy_buffer, writelen, a_hash);
+                        if ((rc = xar_reserve_output(ctx, &member_reserved, (uint64_t)writelen,
+                                                     "XAR member exceeds temporary storage limits")) != CL_SUCCESS)
+                            goto exit_tmpfile;
                         if (cli_writen(fd, copy_buffer, writelen) != writelen) {
                             cli_dbgmsg("cli_scanxar: cli_writen error %zu bytes @ %zu.\n", writelen, at + copied);
                             rc = CL_EWRITE;
@@ -1048,7 +1090,7 @@ int cli_scanxar(cli_ctx *ctx)
                 }
             }
 
-            rc = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE); /// TODO: collect file names in xar_get_toc_data_values()
+            rc = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); /// TODO: collect file names in xar_get_toc_data_values()
             if (rc != CL_SUCCESS) {
                 goto exit_tmpfile;
             }
@@ -1065,7 +1107,7 @@ int cli_scanxar(cli_ctx *ctx)
     }
 
 exit_tmpfile:
-    cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname);
+    cleanup_rc = xar_cleanup_temp_file(ctx, fd, tmpname, &member_reserved);
     if ((CL_SUCCESS == rc || CL_VERIFIED == rc) && CL_SUCCESS != cleanup_rc)
         rc = cleanup_rc;
     if (a_hash_ctx != NULL)
@@ -1082,13 +1124,9 @@ exit_reader:
     xmlFreeTextReader(reader);
 
 exit_toc:
-    if (toc_reserved)
-        cli_scan_release_temporary(ctx, toc_reserved);
-    if (toc_fd > -1 && tocname) {
-        cleanup_rc = xar_cleanup_temp_file(ctx, toc_fd, tocname);
-        if ((CL_SUCCESS == rc || CL_VERIFIED == rc) && CL_SUCCESS != cleanup_rc)
-            rc = cleanup_rc;
-    }
+    cleanup_rc = xar_cleanup_temp_file(ctx, toc_fd, tocname, &toc_reserved);
+    if ((CL_SUCCESS == rc || CL_VERIFIED == rc) && CL_SUCCESS != cleanup_rc)
+        rc = cleanup_rc;
     if (rc != CL_SUCCESS && rc != CL_VIRUS && rc != CL_BREAK && !ctx->scan_incomplete)
         cli_mark_scan_incomplete(ctx, "XAR inspection ended before completion");
     if (rc == CL_BREAK)

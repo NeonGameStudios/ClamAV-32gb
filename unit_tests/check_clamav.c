@@ -7689,10 +7689,37 @@ static void xar_test_write_be64(uint8_t *dst, uint64_t value)
         dst[i] = (uint8_t)(value >> (56U - (8U * i)));
 }
 
-START_TEST(test_xar_xml_reader_error_is_fail_visible)
+static uint8_t *xar_test_make_archive(size_t *data_length)
 {
     static const uint8_t toc[] = "<?xml version=\"1.0\"?><xar><toc><file>";
     uLongf compressed_length;
+    uint8_t *data;
+
+    compressed_length = compressBound((uLong)sizeof(toc) - 1U);
+    *data_length = sizeof(struct xar_header) + (size_t)compressed_length;
+    data         = calloc(1, *data_length);
+    if (data == NULL)
+        return NULL;
+
+    data[0] = 0x78;
+    data[1] = 0x61;
+    data[2] = 0x72;
+    data[3] = 0x21;
+    data[4] = 0;
+    data[5] = sizeof(struct xar_header);
+    xar_test_write_be64(data + 16, sizeof(toc) - 1U);
+    if (compress(data + sizeof(struct xar_header), &compressed_length, toc, sizeof(toc) - 1U) != Z_OK) {
+        free(data);
+        return NULL;
+    }
+    xar_test_write_be64(data + 8, compressed_length);
+    *data_length = sizeof(struct xar_header) + (size_t)compressed_length;
+
+    return data;
+}
+
+START_TEST(test_xar_xml_reader_error_is_fail_visible)
+{
     uint8_t *data;
     size_t data_length;
     struct cl_scan_options options;
@@ -7703,20 +7730,8 @@ START_TEST(test_xar_xml_reader_error_is_fail_visible)
     uint64_t scanned;
     cl_error_t ret;
 
-    compressed_length = compressBound((uLong)sizeof(toc) - 1U);
-    data_length       = sizeof(struct xar_header) + (size_t)compressed_length;
-    data              = calloc(1, data_length);
+    data = xar_test_make_archive(&data_length);
     ck_assert_ptr_nonnull(data);
-
-    data[0] = 0x78;
-    data[1] = 0x61;
-    data[2] = 0x72;
-    data[3] = 0x21;
-    data[4] = 0;
-    data[5] = sizeof(struct xar_header);
-    xar_test_write_be64(data + 8, compressed_length);
-    xar_test_write_be64(data + 16, sizeof(toc) - 1U);
-    ck_assert_int_eq(compress(data + sizeof(struct xar_header), &compressed_length, toc, sizeof(toc) - 1U), Z_OK);
 
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
@@ -7734,6 +7749,48 @@ START_TEST(test_xar_xml_reader_error_is_fail_visible)
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
     ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
+START_TEST(test_xar_toc_temporary_quota_is_fail_visible)
+{
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive(&data_length);
+    ck_assert_ptr_nonnull(data);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 4), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
+    ck_assert_msg(ret == CL_ERESOURCE,
+                  "XAR temporary limit returned %s (%d)", cl_strerror(ret), ret);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
@@ -10636,6 +10693,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_xml_reader_error_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
     tcase_add_test(tc_cl, test_partition_parser_errors_are_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_parser_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_onenote_dispatch_honors_document_dconf);

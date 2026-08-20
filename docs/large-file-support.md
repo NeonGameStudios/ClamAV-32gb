@@ -3276,6 +3276,18 @@ dependency-complete bytecode-v2 fixture exercising multi-gigabyte repeated
 writes, interpreter/JIT behavior, sanitizer/fault-injected cleanup, and
 supported-build Sonic1 qualification remain release gates.
 
+## XAR member temporary-output accounting — 2026-08-20
+
+XAR now keeps the decompressed TOC reservation through its descriptor scan and
+streaming XML walk, and reserves gzip, LZMA, and raw-member output chunks
+against `MaxTemporarySize` before writing them. Completed TOC and member scans
+use the reservation-aware descriptor path; cleanup releases the corresponding
+reservation after close/removal and preserves failure results.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete XAR corpus covering all encodings, sanitizer/fault-injected
+cleanup, and supported-build Sonic1 qualification remain release gates.
+
 ## CryptFF temporary-output accounting — 2026-08-20
 
 CryptFF decryption now checks its growing logical output with 64-bit
