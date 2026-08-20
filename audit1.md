@@ -2644,3 +2644,14 @@ The path now uses checked addition and subtraction-form range checks; invalid
 coordinates are ignored as non-applicable signatures, while a real allocation
 or offset-calculation failure still propagates. The focused matcher test keeps
 the valid 5,000,000,000-byte coordinate and rejects the wrapped coordinate.
+
+## Byte-compare large-coordinate qualification slice — 2026-08-20
+
+The byte-compare bridge already converts an absolute logical-signature
+reference into a signed window-relative coordinate and checks both signed
+offset arithmetic and the absolute comparison-coordinate addition. The
+matcher suite now exercises a byte-compare result whose referenced subsignature
+starts at 5,000,000,000 and verifies that the dependent comparison is counted
+at 5,000,000,004. The capability manifest records this focused path as
+bounded; production-signature, parser-expansion, and full 32 GiB qualification
+remain open.

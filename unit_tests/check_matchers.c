@@ -872,6 +872,66 @@ START_TEST(test_byte_compare_overlap_dedup)
 }
 END_TEST
 
+START_TEST(test_byte_compare_offset_above_uint32)
+{
+#if SIZE_MAX > UINT32_MAX
+    const uint64_t reference_offset = 5000000000ULL;
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_bcomp_meta bcomp;
+    struct cli_bcomp_meta *bcomptable[1];
+    struct cli_bcomp_comp comparison;
+    struct cli_bcomp_comp *comparisons[1];
+    unsigned char window[16] = {0};
+
+    memset(&root, 0, sizeof(root));
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&bcomp, 0, sizeof(bcomp));
+    memset(&comparison, 0, sizeof(comparison));
+
+    lsig.tdb.subsigs = 2;
+    lsigtable[0]      = &lsig;
+    root.ac_lsigs     = 1;
+    root.ac_lsigtable = lsigtable;
+
+    comparison.comp_symbol = '=';
+    comparison.comp_value  = 42;
+    comparisons[0]         = &comparison;
+
+    bcomp.ref_subsigid = 0;
+    bcomp.lsigid[0]    = 1;
+    bcomp.lsigid[1]    = 0;
+    bcomp.lsigid[2]    = 1;
+    bcomp.offset       = 4;
+    bcomp.options      = CLI_BCOMP_BIN | CLI_BCOMP_BE;
+    bcomp.byte_len     = 1;
+    bcomp.comps        = comparisons;
+    bcomp.comp_count   = 1;
+    bcomptable[0]      = &bcomp;
+    root.bcomp_metas     = 1;
+    root.bcomp_metatable = bcomptable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 1, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0]          = 1;
+    mdata.lsigsuboff_first[0][0] = reference_offset;
+    mdata.lsigsuboff_last[0][0]  = reference_offset;
+
+    window[4] = 42;
+    ck_assert_int_eq(cli_bcomp_scanbuf(window, sizeof(window), reference_offset,
+                                       NULL, &root, &mdata, &ctx),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(mdata.lsigcnt[0][1], 1);
+    ck_assert_uint_eq(mdata.lsigsuboff_last[0][1], reference_offset + 4);
+
+    cli_ac_freedata(&mdata);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_exact_hash_at_uint32_max)
 {
     uint8_t first[16]  = {0};
@@ -1042,6 +1102,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
+    tcase_add_test(tc_matchers, test_byte_compare_offset_above_uint32);
 #ifndef _WIN32
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);
 #endif

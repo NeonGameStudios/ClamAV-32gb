@@ -33,6 +33,8 @@
 - BM offset admission now rejects checked-addition wraparound before building
   its offset table; the >4 GiB match and near-`UINT64_MAX` regression paths
   are both covered.
+- Byte-compare logical-signature matching now has a >4 GiB window regression;
+  production-signature qualification remains open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
