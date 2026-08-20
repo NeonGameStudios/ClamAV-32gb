@@ -75,9 +75,11 @@ quota-accounted temporary spools. OneNote stages its root through the shared
 temporary quota and exposes a disk-backed `mmap` view to its third-party slice
 API, but its modern and legacy attachment callbacks now borrow member bytes
 directly into the scanner spool instead of creating an intermediate whole-member
-`Vec<u8>`. The old 256 MiB admission cap is removed; bounded-read,
-temporary-reservation, mapping, parser, decoder, and extracted-member scan
-failures remain explicit incomplete results. Third-party parser memory and
+`Vec<u8>`. Bounded-read, temporary-reservation, mapping, parser, decoder, and
+extracted-member scan failures remain explicit incomplete results. The legacy
+reader path is not subject to the modern parser's 256 MiB whole-input cap; the
+third-party modern parser still retains that explicit cap because its pinned
+API accepts only a borrowed whole-file slice. Third-party parser memory and
 large-corpus qualification remain release gates.
 
 Local macOS validation has begun with a native host-preflight and runtime gate;
@@ -3963,6 +3965,15 @@ pending when the session aborts or clamd disconnects. Successfully completed
 IDs retain their daemon-owned framed reports. This closes the client-side
 JSONL omission for parallel pre-dispatch failures; compiled IDSESSION fault
 injection and supported-build Sonic1 qualification remain release gates.
+
+## Fuzzy-image contiguous-subject boundary — 2026-08-20
+
+The optional fuzzy-image FFI consumes one contiguous image subject and cannot
+be used as a 32 GiB streaming detector. Images above the individual-allocation
+ceiling are rejected before mapping with an explicit incomplete state, and a
+failed detector cannot be published as a successful fuzzy result. The
+capability manifest records this deliberate unsupported boundary; image
+corpus, sanitizer, and supported-build qualification remain release gates.
 
 ## clamscan directory and symlink report completion — 2026-08-20
 

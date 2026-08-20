@@ -909,6 +909,16 @@ truncated payloads remain fail-visible. A regression forces the boundary and
 verifies an incomplete, non-cacheable result. Compiled sanitizer and broad
 RTF/OLE corpus qualification remain open.
 
+## Fuzzy-image contiguous-subject boundary — 2026-08-20
+
+The optional fuzzy-image FFI consumes one contiguous image subject and cannot
+be used as a 32 GiB streaming detector. Its scanner path now explicitly marks
+images above the individual-allocation ceiling incomplete before mapping them,
+and the matcher does not publish a successful fuzzy result after a failed
+check. The capability manifest records this as unsupported rather than
+pending; image corpus, sanitizer, and supported-build qualification remain
+open for inputs within the bounded subject policy.
+
 ## EGG metadata-size admission — 2026-08-20
 
 EGG archive and file extra-field handlers accepted attacker-controlled

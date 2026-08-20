@@ -21,12 +21,12 @@ on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies inco
 matcher	ac	bounded	libclamav/matcher-ac.c	test_ac_offset_mode_matches_above_uint32 verifies an exact-tail AC result and preserved 64-bit match offset; production-signature qualification remains open
 matcher	bm	bounded	libclamav/matcher-bm.c	test_bm_offset_mode_matches_above_uint32 covers an exact match above 4 GiB and test_bm_initoff_rejects_coordinate_wrap covers checked coordinate admission; production-signature qualification remains open
 matcher	byte-compare	bounded	libclamav/matcher-byte-comp.c	test_byte_compare_offset_above_uint32 verifies a logical byte-compare result and preserved comparison coordinate at 5,000,000,000; production-signature qualification remains open
-matcher	hash	bounded	libclamav/matcher-hash.c	test_exact_hash_at_large_size exercises 64-bit exact-size table admission and lookup for whole-file, PE-section, false-positive, and PE-import purposes at 5,000,000,000; parser and fuzzy-image qualification remains open
+matcher	hash	bounded	libclamav/matcher-hash.c	test_exact_hash_at_large_size exercises 64-bit exact-size table admission and lookup for whole-file, PE-section, false-positive, and PE-import purposes at 5,000,000,000; parser qualification remains open
 matcher	pcre	bounded	libclamav/matcher-pcre.c	test_pcre_subject_limit_is_fail_visible covers the 32 GiB ceiling, configured PCRE limit, and lower MaxContiguousSize admission; full-size PCRE execution and RSS qualification remain open
 matcher	logical	pending	libclamav/matcher.c	qualify logical-expression evaluation and incomplete propagation
 matcher	yara	pending	libclamav/yara_exec.c	exact-tail fmap read regression added; qualify YARA evaluation and matcher-work accounting
 matcher	bytecode	pending	libclamav/bytecode.c	ABI v2 coordinate APIs including PDF bridge; independently compiled fixture and interpreter/JIT qualification remain required
-matcher	fuzzy-image	pending	libclamav/scanners.c	qualify optional image fuzzy hashing or record its bounded rejection
+matcher	fuzzy-image	unsupported	libclamav/scanners.c	optional fuzzy-image FFI requires one contiguous image subject; inputs above the individual-allocation ceiling return an explicit incomplete result
 feature	BYTECODE_RUNTIME	pending	CMakeOptions.cmake	qualify interpreter, LLVM, and disabled runtime variants
 feature	LARGE_FILE_DEFAULTS	pending	CMakeOptions.cmake	opt-in certified Linux x86-64 defaults; keep disabled until full parser and ingress qualification is complete
 feature	MMAP_FOR_CROSSCOMPILING	pending	CMakeOptions.cmake	qualify file-backed mapping policy in cross-compiled builds
