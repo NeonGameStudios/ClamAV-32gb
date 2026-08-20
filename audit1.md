@@ -2212,3 +2212,14 @@ remain normal exclusions.
 Source guards and `git diff --check` are the current local evidence.
 Fault-injected entry inspection, dependency-complete front-end builds, and
 supported-build Sonic1 qualification remain release gates.
+
+## RFC 1341 partial-directory traversal closeout — 2026-08-20
+
+RFC 1341 `message/partial` reassembly now fails closed when its temporary
+directory cannot be opened, fully enumerated, or closed. A successful nested
+scan is attempted only after every numbered fragment has been found and the
+directory traversal has completed cleanly.
+
+The source guards and `git diff --check` pass. Fault-injected partial-directory
+traversal, dependency-complete builds, and supported-build Sonic1 qualification
+remain release gates.

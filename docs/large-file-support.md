@@ -3129,7 +3129,9 @@ and close errors. The final reassembled output is now a quota-accounted
 temporary-space admission, output writes, scan errors, and detections remain
 visible to the mailbox caller. Any failure returns an error so the caller
 marks the scan incomplete and keeps an uninspected partial output out of the
-scan/cache path.
+scan/cache path. The reassembly directory is also fail-closed: open, enumerate,
+and close failures now mark the message incomplete rather than allowing a
+partial directory view to be scanned as complete.
 
 The focused unit fixture supplies only fragment two and asserts a non-clean
 result. Compiled Linux execution, sanitizer coverage, and broader partial-mail

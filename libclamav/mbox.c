@@ -4214,7 +4214,7 @@ rfc1341(mbox_ctx *mctx, message *m)
 
                 snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
 
-                while ((dent = readdir(dd))) {
+                for (;;) {
                     FILE *fin;
                     char buffer[BUFSIZ], fullname[PATH_MAX + 1 + 256 + 1];
                     int nblanks;
@@ -4223,6 +4223,23 @@ rfc1341(mbox_ctx *mctx, message *m)
                     STATBUF statb;
                     const char *dentry_idpart;
                     int test_fd;
+
+                    errno = 0;
+                    dent  = readdir(dd);
+                    if (dent == NULL) {
+                        if (errno != 0) {
+                            cli_mark_scan_incomplete(
+                                mctx->ctx,
+                                "Partial MIME directory could not be enumerated completely");
+                            destroyPartialOutput(fout, outname);
+                            free(md5_hex);
+                            free(id);
+                            free(number);
+                            closedir(dd);
+                            return -1;
+                        }
+                        break;
+                    }
 
                     if (dent->d_ino == 0)
                         continue;
@@ -4336,7 +4353,15 @@ rfc1341(mbox_ctx *mctx, message *m)
                 }
                 rewinddir(dd);
             }
-            closedir(dd);
+            if (closedir(dd) != 0) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Partial MIME directory could not be closed");
+                destroyPartialOutput(fout, outname);
+                free(md5_hex);
+                free(id);
+                free(number);
+                return -1;
+            }
             {
                 int scan_rc = scanFileblob(mctx, fout);
 
@@ -4351,6 +4376,9 @@ rfc1341(mbox_ctx *mctx, message *m)
                 free(number);
                 return scan_rc;
             }
+        } else if (n == t) {
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "Partial MIME directory could not be opened");
         }
     }
     free(number);
