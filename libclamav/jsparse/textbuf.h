@@ -21,6 +21,8 @@
 #ifndef TEXTBUF_H
 #define TEXTBUF_H
 
+#include <stddef.h>
+
 struct text_buffer {
     char *data;
     size_t pos;
@@ -41,15 +43,26 @@ struct text_buffer {
  */
 static inline int textbuffer_ensure_capacity(struct text_buffer *txtbuf, size_t len)
 {
-    if (txtbuf->pos + len > txtbuf->capacity) {
-        char *d;
-        unsigned capacity = MAX(txtbuf->pos + len, txtbuf->capacity + 4096);
-        d                 = cli_max_realloc(txtbuf->data, capacity);
-        if (!d)
-            return -1;
-        txtbuf->capacity = capacity;
-        txtbuf->data     = d;
-    }
+    size_t required;
+    size_t capacity;
+    char *d;
+
+    if (len > (size_t)-1 - txtbuf->pos)
+        return -1;
+    required = txtbuf->pos + len;
+    if (required <= txtbuf->capacity)
+        return 0;
+
+    if (txtbuf->capacity > (size_t)-1 - 4096)
+        capacity = required;
+    else
+        capacity = MAX(required, txtbuf->capacity + 4096);
+
+    d = cli_max_realloc(txtbuf->data, capacity);
+    if (!d)
+        return -1;
+    txtbuf->capacity = capacity;
+    txtbuf->data     = d;
     return 0;
 }
 

@@ -2684,3 +2684,14 @@ length could wrap that addition and reach the fmap reader without the intended
 end-of-map clamp. The check now compares `len` with the already validated
 `map->len - offset`, and a public API regression verifies that a wrapping
 length returns exactly the remaining tail bytes.
+
+## JavaScript normalization text-buffer width — 2026-08-20
+
+The JavaScript normalizer's shared text buffer previously evaluated
+`pos + len` without an overflow check and stored its growth target in an
+`unsigned`, which could truncate a native-width request on a 64-bit build.
+Capacity growth now checks the append arithmetic, uses `size_t` throughout,
+and returns failure before any allocation when the request cannot be
+represented. A focused test exercises the overflow path without allocating;
+the deliberate legacy matcher boundary for normalized output above 4 GiB
+remains an explicit unsupported/incomplete result.

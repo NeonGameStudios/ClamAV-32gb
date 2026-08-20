@@ -41,6 +41,8 @@
   full-size execution and RSS qualification remains open.
 - The public `cl_fmap_get_data()` range clamp now uses subtraction-form
   bounds, including a regression for a wrapping caller length.
+- JavaScript normalization text-buffer growth now uses native-width checked
+  capacity arithmetic instead of an `unsigned` capacity.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

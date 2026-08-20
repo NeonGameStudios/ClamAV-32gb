@@ -138,6 +138,16 @@ START_TEST(test_putc)
 }
 END_TEST
 
+START_TEST(test_textbuffer_rejects_size_overflow)
+{
+    buf.pos      = (size_t)-1;
+    buf.capacity = (size_t)-1;
+
+    ck_assert_int_eq(textbuffer_ensure_capacity(&buf, 1), -1);
+    ck_assert_ptr_null(buf.data);
+}
+END_TEST
+
 START_TEST(test_normalize)
 {
     const char *str      = "test\\0\\b\\t\\n\\v\\f\\r\\z\\x2a\\u1234test";
@@ -342,6 +352,7 @@ Suite *test_str_suite(void)
     tcase_add_test(tc_tbuf, test_append_len);
     tcase_add_test(tc_tbuf, test_append);
     tcase_add_test(tc_tbuf, test_putc);
+    tcase_add_test(tc_tbuf, test_textbuffer_rejects_size_overflow);
     tcase_add_test(tc_tbuf, test_normalize);
 
     tc_str = tcase_create("str functions");
