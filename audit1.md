@@ -2064,3 +2064,12 @@ returns `CL_EPARSE`. This prevents an encrypted 7-Zip layer from being
 misreported as confirmed malformed content. A focused report regression covers
 the encrypted-header reason; compiled current-head and service qualification
 remain release gates.
+
+## ZIP variable-header regression expansion — 2026-08-20
+
+The focused ZIP truncation regression now exercises all three variable local
+header boundaries: a filename longer than the mapped slice, a truncated extra
+field, and a ZIP64 extra field that does not contain its declared size values.
+Each case requires `CL_EPARSE`, sticky incomplete state, and a non-cacheable
+fmap. This strengthens exact-trigger coverage; compiled current-head,
+sanitizer, and broad ZIP corpus qualification remain release gates.

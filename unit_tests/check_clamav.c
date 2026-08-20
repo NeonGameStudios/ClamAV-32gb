@@ -4313,12 +4313,21 @@ START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
 {
     static const uint8_t archive[] = {0x50, 0x4b, 0x03, 0x04};
     uint8_t variable_header[32] = {0};
+    uint8_t truncated_extra[34] = {0};
+    uint8_t truncated_zip64[38] = {0};
+    const uint8_t *variable_fixtures[3];
+    const size_t variable_fixture_lengths[3] = {
+        sizeof(variable_header),
+        sizeof(truncated_extra),
+        sizeof(truncated_zip64),
+    };
     struct cl_engine engine;
     struct cl_scan_options options;
     cli_scan_layer_t layer;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
+    size_t fixture_index;
 
     memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
@@ -4377,19 +4386,45 @@ START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
     zip_stream_write_u16(variable_header + 4, 20U);
     zip_stream_write_u16(variable_header + 26, 8U);
     memcpy(variable_header + 30, "ab", 2);
-    map = cl_fmap_open_memory(variable_header, sizeof(variable_header));
-    ck_assert_ptr_nonnull(map);
-    memset(&ctx, 0, sizeof(ctx));
-    ctx.engine            = &engine;
-    ctx.options           = &options;
-    ctx.fmap              = map;
-    ctx.this_layer_tmpdir = tmpdir;
+    variable_fixtures[0] = variable_header;
 
-    ret = cli_unzip(&ctx);
-    ck_assert_int_eq(ret, CL_EPARSE);
-    ck_assert(ctx.scan_incomplete);
-    ck_assert(map->dont_cache_flag);
-    cl_fmap_close(map);
+    /* The fixed header is complete, but the declared extra field extends
+     * beyond the mapped slice. */
+    zip_stream_write_u32(truncated_extra, 0x04034b50U);
+    zip_stream_write_u16(truncated_extra + 4, 20U);
+    zip_stream_write_u16(truncated_extra + 28, 8U);
+    zip_stream_write_u16(truncated_extra + 30, 0x5455U);
+    zip_stream_write_u16(truncated_extra + 32, 4U);
+    variable_fixtures[1] = truncated_extra;
+
+    /* A ZIP64 local header declares both 64-bit sizes, but its ZIP64 extra
+     * field contains only a prefix of the required values. */
+    zip_stream_write_u32(truncated_zip64, 0x04034b50U);
+    zip_stream_write_u16(truncated_zip64 + 4, 45U);
+    zip_stream_write_u32(truncated_zip64 + 18, UINT32_MAX);
+    zip_stream_write_u32(truncated_zip64 + 22, UINT32_MAX);
+    zip_stream_write_u16(truncated_zip64 + 28, 20U);
+    zip_stream_write_u16(truncated_zip64 + 30, 0x0001U);
+    zip_stream_write_u16(truncated_zip64 + 32, 16U);
+    zip_stream_write_u32(truncated_zip64 + 34, 1U);
+    variable_fixtures[2] = truncated_zip64;
+
+    for (fixture_index = 0; fixture_index < 3; fixture_index++) {
+        map = cl_fmap_open_memory(variable_fixtures[fixture_index],
+                                  variable_fixture_lengths[fixture_index]);
+        ck_assert_ptr_nonnull(map);
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine            = &engine;
+        ctx.options           = &options;
+        ctx.fmap              = map;
+        ctx.this_layer_tmpdir = tmpdir;
+
+        ret = cli_unzip(&ctx);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
 }
 END_TEST
 
