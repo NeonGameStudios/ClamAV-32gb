@@ -35,6 +35,9 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <limits.h>
+#include <ctype.h>
+
+#include <json.h>
 
 #ifndef _WIN32
 #include <arpa/inet.h>
@@ -787,163 +790,177 @@ int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *t
     return 1;
 }
 
-static int report_json_contains(const char *json, const char *compact, const char *spaced)
+static struct json_object *report_json_parse_object(const char *json, uint32_t json_length)
 {
-    return (strstr(json, compact) != NULL) || (strstr(json, spaced) != NULL);
+    struct json_object *object;
+    struct json_tokener *tokener;
+    enum json_tokener_error error;
+    size_t parse_end;
+
+    if (!json || json_length == 0 || json[json_length] != '\0')
+        return NULL;
+
+    tokener = json_tokener_new();
+    if (!tokener)
+        return NULL;
+    object = json_tokener_parse_ex(tokener, json, (int)json_length);
+    error  = json_tokener_get_error(tokener);
+    parse_end = (size_t)json_tokener_get_parse_end(tokener);
+    while (parse_end < json_length && isspace((unsigned char)json[parse_end]))
+        parse_end++;
+    json_tokener_free(tokener);
+
+    if (error != json_tokener_success || !object || parse_end != json_length ||
+        !json_object_is_type(object, json_type_object)) {
+        json_object_put(object);
+        return NULL;
+    }
+    return object;
 }
 
 int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
 {
-    const char *verdict_infected = "\"verdict\":\"infected\"";
-    const char *verdict_clean    = "\"verdict\":\"clean\"";
-    const char *verdict_partial  = "\"verdict\":\"incomplete\"";
-    const char *completion_done  = "\"completion\":\"COMPLETE\"";
+    struct json_object *object;
+    struct json_object *completion_object = NULL;
+    struct json_object *status_object     = NULL;
+    struct json_object *verdict_object    = NULL;
+    const char *completion;
+    int status;
+    int verdict;
 
     if (!json || !infected || !incomplete || json_length == 0)
         return -1;
-    if (json[json_length] != '\0')
+
+    object = report_json_parse_object(json, json_length);
+    if (!object || !json_object_object_get_ex(object, "verdict", &verdict_object)) {
+        json_object_put(object);
         return -1;
-
-    if (report_json_contains(json, verdict_infected, "\"verdict\": \"infected\"")) {
-        *infected   = 1;
-        *incomplete = 0;
-        return 0;
-    }
-    if (report_json_contains(json, verdict_partial, "\"verdict\": \"incomplete\"")) {
-        *infected   = 0;
-        *incomplete = 1;
-        return 0;
-    }
-    if (report_json_contains(json, verdict_clean, "\"verdict\": \"clean\"") &&
-        report_json_contains(json, completion_done, "\"completion\": \"COMPLETE\"")) {
-        *infected   = 0;
-        *incomplete = 0;
-        return 0;
     }
 
-    /* libclamav's versioned report uses the public numeric cl_verdict_t
-     * field.  Transport clients must accept that representation as well as
-     * the compact legacy clamd wrapper above.  A detection-terminated
-     * completion is unambiguous; every other recognized non-complete state is
-     * an incomplete result and must not be treated as clean. */
-    if (report_json_contains(json, "\"completion\":\"DETECTION_TERMINATED\"",
-                             "\"completion\": \"DETECTION_TERMINATED\"")) {
+    if (json_object_object_get_ex(object, "completion", &completion_object)) {
+        if (!json_object_is_type(completion_object, json_type_string))
+            goto invalid;
+        completion = json_object_get_string(completion_object);
+        if (!completion)
+            goto invalid;
+    } else {
+        completion = NULL;
+    }
+
+    if (json_object_is_type(verdict_object, json_type_int)) {
+        verdict = json_object_get_int(verdict_object);
+
+        if (!completion || verdict < CL_VERDICT_NOTHING_FOUND ||
+            verdict > CL_VERDICT_POTENTIALLY_UNWANTED)
+            goto invalid;
+
+        /* Detection remains authoritative even when a sibling parser path
+         * also reported an incomplete outcome. */
+        if (verdict == CL_VERDICT_STRONG_INDICATOR ||
+            verdict == CL_VERDICT_POTENTIALLY_UNWANTED) {
+            if (strcmp(completion, "COMPLETE") == 0)
+                goto invalid;
+            *infected   = 1;
+            *incomplete = 0;
+            json_object_put(object);
+            return 0;
+        }
+
+        if (strcmp(completion, "DETECTION_TERMINATED") == 0)
+            goto invalid;
+        if (strcmp(completion, "COMPLETE") == 0) {
+            if (verdict != CL_VERDICT_NOTHING_FOUND && verdict != CL_VERDICT_TRUSTED)
+                goto invalid;
+            if (json_object_object_get_ex(object, "status", &status_object)) {
+                if (!json_object_is_type(status_object, json_type_int))
+                    goto invalid;
+                status = json_object_get_int(status_object);
+                if (status != CL_SUCCESS)
+                    goto invalid;
+            }
+            *infected   = 0;
+            *incomplete = 0;
+            json_object_put(object);
+            return 0;
+        }
+        if (strcmp(completion, "LIMIT_INCOMPLETE") == 0 ||
+            strcmp(completion, "UNSUPPORTED") == 0 ||
+            strcmp(completion, "MALFORMED_CONFIRMED") == 0 ||
+            strcmp(completion, "RESOURCE_FAILURE") == 0 ||
+            strcmp(completion, "APPLICATION_ABORT") == 0) {
+            *infected   = 0;
+            *incomplete = 1;
+            json_object_put(object);
+            return 0;
+        }
+        goto invalid;
+    }
+
+    if (!json_object_is_type(verdict_object, json_type_string))
+        goto invalid;
+    if (strcmp(json_object_get_string(verdict_object), "infected") == 0) {
+        if (completion && strcmp(completion, "COMPLETE") == 0)
+            goto invalid;
         *infected   = 1;
         *incomplete = 0;
+        json_object_put(object);
         return 0;
     }
-    if (report_json_contains(json, "\"completion\":\"COMPLETE\"",
-                             "\"completion\": \"COMPLETE\"")) {
-        *infected   = 0;
-        *incomplete = 0;
-        return 0;
-    }
-    if (report_json_contains(json, "\"completion\":\"LIMIT_INCOMPLETE\"",
-                             "\"completion\": \"LIMIT_INCOMPLETE\"") ||
-        report_json_contains(json, "\"completion\":\"UNSUPPORTED\"",
-                             "\"completion\": \"UNSUPPORTED\"") ||
-        report_json_contains(json, "\"completion\":\"MALFORMED_CONFIRMED\"",
-                             "\"completion\": \"MALFORMED_CONFIRMED\"") ||
-        report_json_contains(json, "\"completion\":\"RESOURCE_FAILURE\"",
-                             "\"completion\": \"RESOURCE_FAILURE\"") ||
-        report_json_contains(json, "\"completion\":\"APPLICATION_ABORT\"",
-                             "\"completion\": \"APPLICATION_ABORT\"")) {
+    if (strcmp(json_object_get_string(verdict_object), "incomplete") == 0) {
+        if (completion && strcmp(completion, "COMPLETE") == 0)
+            goto invalid;
         *infected   = 0;
         *incomplete = 1;
+        json_object_put(object);
         return 0;
     }
+    if (strcmp(json_object_get_string(verdict_object), "clean") == 0 &&
+        completion && strcmp(completion, "COMPLETE") == 0) {
+        if (json_object_object_get_ex(object, "status", &status_object)) {
+            if (!json_object_is_type(status_object, json_type_int) ||
+                json_object_get_int(status_object) != CL_SUCCESS)
+                goto invalid;
+        }
+        *infected   = 0;
+        *incomplete = 0;
+        json_object_put(object);
+        return 0;
+    }
+
+invalid:
+    json_object_put(object);
     return -1;
-}
-
-static const char *report_json_find_key(const char *json, uint32_t json_length,
-                                        const char *key, size_t key_length)
-{
-    uint32_t offset;
-
-    if (!json || !key || key_length > json_length)
-        return NULL;
-
-    for (offset = 0; offset <= json_length - key_length; offset++) {
-        if (memcmp(json + offset, key, key_length) == 0)
-            return json + offset + key_length;
-    }
-    return NULL;
 }
 
 int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
 {
-    static const char key[] = "\"last_alert\"";
-    const char *cursor;
-    const char *end;
-    char *decoded;
-    size_t decoded_length = 0;
+    struct json_object *object;
+    struct json_object *alert_object = NULL;
+    const char *value;
 
     if (!json || !alert || json_length == 0 || json[json_length] != '\0')
         return -1;
 
     *alert = NULL;
-    cursor = report_json_find_key(json, json_length, key, sizeof(key) - 1);
-    if (!cursor)
+    object = report_json_parse_object(json, json_length);
+    if (!object)
+        return -1;
+    if (!json_object_object_get_ex(object, "last_alert", &alert_object)) {
+        json_object_put(object);
         return 0;
-    end = json + json_length;
-
-    while (cursor < end && (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' || *cursor == '\n'))
-        cursor++;
-    if (cursor >= end || *cursor++ != ':')
-        return -1;
-    while (cursor < end && (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' || *cursor == '\n'))
-        cursor++;
-    if (cursor + 4 <= end && memcmp(cursor, "null", 4) == 0)
-        return 0;
-    if (cursor >= end || *cursor++ != '"')
-        return -1;
-
-    decoded = (char *)malloc((size_t)(end - cursor) + 1U);
-    if (!decoded)
-        return -1;
-
-    while (cursor < end) {
-        unsigned char value = (unsigned char)*cursor++;
-
-        if (value == '"') {
-            decoded[decoded_length] = '\0';
-            *alert                  = decoded;
-            return 0;
-        }
-        if (value == '\\') {
-            if (cursor >= end) {
-                free(decoded);
-                return -1;
-            }
-            value = (unsigned char)*cursor++;
-            switch (value) {
-                case '"':
-                case '\\':
-                case '/':
-                    break;
-                case 'b':
-                case 'f':
-                case 'n':
-                case 'r':
-                case 't':
-                    free(decoded);
-                    return -1;
-                default:
-                    /* Preserve uncommon escapes rather than changing a
-                     * signature name; control escapes are rejected above. */
-                    decoded[decoded_length++] = '\\';
-                    break;
-            }
-        } else if (value < 0x20U) {
-            free(decoded);
-            return -1;
-        }
-
-        decoded[decoded_length++] = (char)value;
     }
-
-    free(decoded);
-    return -1;
+    if (json_object_is_type(alert_object, json_type_null)) {
+        json_object_put(object);
+        return 0;
+    }
+    if (!json_object_is_type(alert_object, json_type_string)) {
+        json_object_put(object);
+        return -1;
+    }
+    value = json_object_get_string(alert_object);
+    *alert = value ? strdup(value) : NULL;
+    json_object_put(object);
+    return value && !*alert ? -1 : 0;
 }
 
 int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,

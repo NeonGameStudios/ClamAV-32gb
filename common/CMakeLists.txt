@@ -62,7 +62,11 @@ target_link_libraries( common
         ZLIB::ZLIB
         CURL::libcurl
         OpenSSL::SSL
-        OpenSSL::Crypto )
+        OpenSSL::Crypto
+        JSONC::jsonc )
+
+target_include_directories( common
+    PRIVATE ${JSONC_INCLUDE_DIRS} )
 if(WIN32)
     target_link_libraries( common
         PUBLIC

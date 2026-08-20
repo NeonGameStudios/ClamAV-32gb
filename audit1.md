@@ -2073,3 +2073,16 @@ field, and a ZIP64 extra field that does not contain its declared size values.
 Each case requires `CL_EPARSE`, sticky incomplete state, and a non-cacheable
 fmap. This strengthens exact-trigger coverage; compiled current-head,
 sanitizer, and broad ZIP corpus qualification remain release gates.
+
+## Structured report parser hardening — 2026-08-20
+
+The shared clamd report consumer no longer classifies reports by substring
+matching. It now parses a bounded JSON object, reads only top-level typed
+fields, rejects malformed or contradictory verdict/completion/status
+combinations, and decodes `last_alert` through the same JSON parser. This
+prevents a nested or inconsistent field from being accepted as a clean result
+and keeps the rule shared by clamdscan, milter, and on-access consumers.
+
+A focused clamd unit regression covers nested and contradictory reports.
+Dependency-complete builds, service protocol qualification, and supported-build
+Sonic1 qualification remain open release gates.

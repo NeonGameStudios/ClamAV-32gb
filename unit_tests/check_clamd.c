@@ -182,11 +182,37 @@ START_TEST(test_scan_report_json_status_accepts_library_reports)
 }
 END_TEST
 
+START_TEST(test_scan_report_json_status_rejects_contradictory_reports)
+{
+    static const char nested[] =
+        "{\"metadata\":{\"completion\":\"COMPLETE\"},\"verdict\":0}";
+    static const char clean_error[] =
+        "{\"status\":35,\"verdict\":0,\"completion\":\"COMPLETE\"}";
+    static const char clean_detection[] =
+        "{\"status\":0,\"verdict\":0,\"completion\":\"DETECTION_TERMINATED\"}";
+    static const char detected_complete[] =
+        "{\"status\":0,\"verdict\":2,\"completion\":\"COMPLETE\"}";
+    const char *reports[] = {nested, clean_error, clean_detection, detected_complete};
+    size_t i;
+
+    for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
+        int infected = -1;
+        int incomplete = -1;
+        ck_assert_int_eq(scan_report_json_status(reports[i], (uint32_t)strlen(reports[i]),
+                                                 &infected, &incomplete),
+                         -1);
+    }
+}
+END_TEST
+
 START_TEST(test_scan_report_json_alert_extracts_detection_name)
 {
     static const char report[] =
         "{\"last_alert\":\"Heuristics.Test\\/EICAR\"}";
     static const char no_alert[] = "{\"last_alert\":null}";
+    static const char nested_alert[] =
+        "{\"metadata\":{\"last_alert\":\"not-a-verdict\"}}";
+    static const char invalid_alert[] = "{\"last_alert\":5}";
     char *alert = NULL;
 
     ck_assert_int_eq(scan_report_json_alert(report, (uint32_t)strlen(report), &alert), 0);
@@ -196,6 +222,10 @@ START_TEST(test_scan_report_json_alert_extracts_detection_name)
 
     ck_assert_int_eq(scan_report_json_alert(no_alert, (uint32_t)strlen(no_alert), &alert), 0);
     ck_assert_ptr_null(alert);
+
+    ck_assert_int_eq(scan_report_json_alert(nested_alert, (uint32_t)strlen(nested_alert), &alert), 0);
+    ck_assert_ptr_null(alert);
+    ck_assert_int_eq(scan_report_json_alert(invalid_alert, (uint32_t)strlen(invalid_alert), &alert), -1);
 }
 END_TEST
 
@@ -1262,6 +1292,7 @@ static Suite *test_clamd_suite(void)
     suite_add_tcase(s, tc_parser);
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
+    tcase_add_test(tc_parser, test_scan_report_json_status_rejects_contradictory_reports);
     tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
 #ifndef _WIN32
     tcase_add_test(tc_parser, test_scan_report_frames_are_bounded_and_fragment_safe);
