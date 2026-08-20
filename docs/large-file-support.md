@@ -3803,3 +3803,16 @@ result after scanning the entries that happened to be visible.
 Source guards and `git diff --check` are the current local evidence.
 Fault-injected directory traversal, dependency-complete front-end builds, and
 supported-build Sonic1 qualification remain release gates.
+
+## PDF extraction decoder-status propagation — 2026-08-20
+
+The PDF decoder's truncated and unsupported-filter paths already marked the
+scan incomplete, but `pdf_extract_obj()` normalized its `CL_EPARSE` result to
+success. The extraction layer now preserves that status, so direct PDF object
+extraction cannot report a clean result for an incompletely decoded filtered
+stream. The object walker still visits independent siblings and retains a
+non-clean aggregate result after the failed object is counted.
+
+The focused malformed-Flate extraction regression and source guards cover the
+boundary. Dependency-complete PDF corpus, sanitizer, and supported-build
+Sonic1 qualification remain release gates.

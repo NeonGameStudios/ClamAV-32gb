@@ -601,6 +601,8 @@ contains libclamav/pdf.c 'cli_magic_scan_desc_type_reserved(fout, fullname, pdf-
 not_contains libclamav/pdf.c 'ret = cli_magic_scan_desc(fout, fullname, pdf->ctx'
 not_contains libclamav/pdf.c 'rc = cli_magic_scan_desc(fout, fullname, pdf->ctx'
 contains libclamav/pdf.c 'obj->stream, length, xref, fout'
+contains libclamav/pdf.c 'Object extraction was incomplete, skipping to the next object'
+contains unit_tests/check_clamav.c 'test_pdf_extract_decoder_error_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_pdf_stream_width_boundary_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_format_width_limits_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_cl_fmap_set_hash_accepts_full_hash'

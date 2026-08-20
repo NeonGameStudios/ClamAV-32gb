@@ -395,7 +395,7 @@ open end-to-end. The production-blocked verdict remains correct.
 |---|---|---|
 | F-01 | Source closed; exact fault-injection evidence remains | MaxHTMLNormalize skips and HTML/JavaScript normalization output failures now set sticky incomplete state; compiled fault-injection coverage remains a supported-build gate. |
 | F-02 | Source closed; exact trigger untested | Metadata hash failure now sets sticky incomplete state and returns a read error. |
-| F-03 | Source closed; exact regressions incomplete | Flate/LZW now require a decoder terminal state and discard partial output on error; benign-prefix-then-error and LZW regressions are absent. |
+| F-03 | Source closed; exact regressions incomplete | Flate/LZW now require a decoder terminal state and discard partial output on error; the extraction caller now preserves `CL_EPARSE` while continuing independent objects; compiled benign-prefix and LZW regressions remain a supported-build gate. |
 | F-04 | Source closed; exact trigger untested | HWP raw-deflate now requires `Z_STREAM_END` and does not scan a partial prefix. |
 | F-05 | Source closed; exact trigger untested | ZIP variable filename/extra/ZIP64 truncation is sticky and deferred only while valid preceding records are scanned. |
 | F-06 | Source closed; exact fault-injection evidence remains | The reported XZ/CAB/CHM-open/PE faults and CAB/CHM decompressor-construction failure now mark incomplete; focused constructor tests are present but require the supported build environment. |
@@ -2339,3 +2339,19 @@ map-creation failures.
 Source guards and `git diff --check` are the current local evidence.
 Fault-injected OLE2 temporary-child open coverage, dependency-complete builds,
 sanitizers, and supported-build Sonic1 qualification remain release gates.
+
+## PDF extraction decoder-status propagation — 2026-08-20
+
+The PDF decoder already rejected truncated Flate/LZW streams and marked the
+shared scan incomplete, but `pdf_extract_obj()` converted the resulting
+`CL_EPARSE` back to success. That made the direct extraction contract weaker
+than the decoder contract and allowed an incomplete filtered object to look
+successful to callers outside the central scanner.
+
+The extraction layer now preserves `CL_EPARSE`. `pdf_find_and_extract_objs()`
+continues with independent objects by counting the failed object and returns a
+non-clean aggregate result after the object pass, while the sticky incomplete
+state remains attached to the containing fmap and disables clean caching. A
+focused malformed-Flate extraction regression covers the full caller path;
+compiled PDF corpus, sanitizer, and supported-build Sonic1 qualification
+remain release gates.

@@ -1815,14 +1815,13 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         if ((CL_SUCCESS != status) && (CL_VIRUS != status)) {
             cli_dbgmsg("Error decoding stream! Error code: %d\n", status);
 
-            /* It's ok if we couldn't decode the stream,
-             *   make a best effort to keep parsing...
-             *   Unless we were unable to allocate memory.*/
+            /* Keep decoder parse failures fail-visible. The decoder may have
+             * written the raw stream for a failed optional filter fallback,
+             * but CL_EPARSE still means the required filtered representation
+             * was not completely inspected. Independent PDF objects are
+             * handled by the caller's bad-object accounting below. */
             if (CL_EMEM == status) {
                 goto done;
-            }
-            if (CL_EPARSE == status) {
-                status = CL_SUCCESS;
             }
 
             if (NULL != objstm) {
@@ -3818,8 +3817,9 @@ static cl_error_t pdf_find_and_extract_objs(struct pdf_struct *pdf)
             pdf->parse_recursion_depth--;
             switch (status) {
                 case CL_EFORMAT:
+                case CL_EPARSE:
                     /* Don't halt on one bad object */
-                    cli_dbgmsg("pdf_find_and_extract_objs: Format error when extracting object, skipping to the next object.\n");
+                    cli_dbgmsg("pdf_find_and_extract_objs: Object extraction was incomplete, skipping to the next object.\n");
                     badobjects++;
                     pdf->stats.ninvalidobjs++;
                     status = CL_CLEAN;
