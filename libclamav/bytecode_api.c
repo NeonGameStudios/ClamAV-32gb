@@ -73,6 +73,15 @@ static void cli_bcapi_mark_map_read_error(struct cli_bc_ctx *ctx, const char *re
     cli_mark_scan_incomplete(cctx, reason);
 }
 
+static void cli_bcapi_note_cleanup_failure(cli_ctx *cctx, cl_error_t *status,
+                                           cl_error_t failure, const char *reason)
+{
+    if (cctx)
+        cli_mark_scan_incomplete(cctx, reason);
+    if (status && (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK))
+        *status = failure;
+}
+
 struct bc_lzma {
     struct CLI_LZMA stream;
     int32_t from;
@@ -675,6 +684,7 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
 {
     cli_ctx *cctx;
     int res = -1;
+    bool discard_output;
 
     cli_event_count(EV, BCEV_EXTRACTED);
     cli_dbgmsg("previous tempfile had " STDu64 " bytes\n", ctx->written);
@@ -701,13 +711,23 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
             ctx->found   = 1;
         }
     }
-    if ((cctx && cctx->engine->keeptmp) ||
-        (ftruncate(ctx->outfd, 0) == -1)) {
-        close(ctx->outfd);
+    discard_output = cctx && cctx->engine->keeptmp;
+    if (!discard_output && ftruncate(ctx->outfd, 0) == -1) {
+        cli_dbgmsg("ftruncate failed on %d\n", ctx->outfd);
+        cli_bcapi_note_cleanup_failure(cctx, &res, CL_EWRITE,
+                                        "Bytecode extracted output could not be truncated");
+        discard_output = true;
+    }
+    if (discard_output) {
+        if (close(ctx->outfd) == -1)
+            cli_bcapi_note_cleanup_failure(cctx, &res, CL_EWRITE,
+                                            "Bytecode extracted output could not be closed");
         ctx->outfd = -1;
 
         if (!(cctx && cctx->engine->keeptmp) && ctx->tempfile) {
-            cli_unlink(ctx->tempfile);
+            if (cli_unlink(ctx->tempfile))
+                cli_bcapi_note_cleanup_failure(cctx, &res, CL_EUNLINK,
+                                                "Bytecode extracted output could not be removed");
         }
         free(ctx->tempfile);
         ctx->tempfile = NULL;

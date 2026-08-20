@@ -3388,6 +3388,11 @@ ELF and Mach-O unpacker handoffs now also fail closed on rewind, descriptor
 close, and temporary-file removal failures while preserving earlier detections
 or parser errors and releasing the transferred reservation after cleanup.
 
+Bytecode context reset, JavaScript normalization, and incremental extracted-file
+cleanup now also fail closed on descriptor close, rewind, open, truncation, and
+temporary-file removal failures without replacing an earlier detection or parser
+error. The reservation is still released after every cleanup path.
+
 Source guards and `git diff --check` are the current local evidence. A
 dependency-complete bytecode-v2 fixture exercising multi-gigabyte repeated
 writes, interpreter/JIT behavior, sanitizer/fault-injected cleanup, and

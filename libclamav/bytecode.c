@@ -52,6 +52,15 @@
 cli_events_t *g_sigevents = NULL;
 unsigned int g_sigid;
 
+static void bytecode_note_cleanup_failure(cli_ctx *cctx, cl_error_t *status,
+                                          cl_error_t failure, const char *reason)
+{
+    if (cctx)
+        cli_mark_scan_incomplete(cctx, reason);
+    if (status && (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK))
+        *status = failure;
+}
+
 /* dummy values */
 static const uint32_t nomatch[64] = {
     0xdeadbeef, 0xdeaddead, 0xbeefdead, 0xdeaddead, 0xdeadbeef, 0, 0, 0,
@@ -165,12 +174,14 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
     ctx->operands = NULL;
 
     if (-1 != ctx->outfd) {
-        close(ctx->outfd);
+        cli_ctx *cctx = ctx->ctx;
+        if (close(ctx->outfd) == -1)
+            bytecode_note_cleanup_failure(cctx, NULL, CL_EWRITE, "Bytecode temporary output could not be closed");
         ctx->outfd = -1;
 
-        cli_ctx *cctx = ctx->ctx;
         if (ctx->tempfile && (!cctx || !cctx->engine->keeptmp)) {
-            cli_unlink(ctx->tempfile);
+            if (cli_unlink(ctx->tempfile))
+                bytecode_note_cleanup_failure(cctx, NULL, CL_EUNLINK, "Bytecode temporary output could not be removed");
         }
         free(ctx->tempfile);
         ctx->tempfile = NULL;
@@ -194,19 +205,28 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
                 ret = cli_scan_desc(fd, cctx, CL_TYPE_HTML, false, NULL, AC_SCAN_VIR,
                                     NULL, "javascript-as-html", fullname, LAYER_ATTRIBUTES_NORMALIZED);
                 if (ret == CL_CLEAN) {
-                    if (lseek(fd, 0, SEEK_SET) == -1)
+                    if (lseek(fd, 0, SEEK_SET) == -1) {
                         cli_dbgmsg("cli_bytecode: call to lseek() has failed\n");
-                    else {
+                        bytecode_note_cleanup_failure(cctx, &ret, CL_ESEEK,
+                                                       "Bytecode normalized JavaScript output could not be rewound");
+                    } else {
                         ret = cli_scan_desc(fd, cctx, CL_TYPE_TEXT_ASCII, false, NULL, AC_SCAN_VIR,
                                             NULL, "javascript-as-text-ascii", fullname, LAYER_ATTRIBUTES_NORMALIZED);
                     }
                 }
-                close(fd);
+                if (close(fd) == -1)
+                    bytecode_note_cleanup_failure(cctx, &ret, CL_EWRITE,
+                                                   "Bytecode normalized JavaScript output could not be closed");
+            } else {
+                bytecode_note_cleanup_failure(cctx, &ret, CL_EOPEN,
+                                               "Bytecode normalized JavaScript output could not be opened");
             }
         }
 
         if (!cctx || !cctx->engine->keeptmp) {
-            cli_rmdirs(ctx->jsnormdir);
+            if (cli_rmdirs(ctx->jsnormdir) != 0)
+                bytecode_note_cleanup_failure(cctx, &ret, CL_EUNLINK,
+                                               "Bytecode normalized JavaScript output could not be removed");
         }
 
         free(ctx->jsnormdir);
@@ -1946,7 +1966,7 @@ cl_error_t cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *b
         cli_event_string(interp_ev, BCEV_VIRUSNAME, ctx->virname);
 
         /* need to be called here to catch any extracted but not yet scanned files */
-        if (ctx->outfd && (ret != CL_VIRUS))
+        if (ctx->outfd != -1 && (ret != CL_VIRUS))
             cli_bcapi_extract_new(ctx, -1);
     }
     if (bc->state == bc_jit || test_mode) {
@@ -1965,7 +1985,7 @@ cl_error_t cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *b
         cli_event_string(jit_ev, BCEV_VIRUSNAME, ctx->virname);
 
         /* need to be called here to catch any extracted but not yet scanned files */
-        if (ctx->outfd && (ret != CL_VIRUS))
+        if (ctx->outfd != -1 && (ret != CL_VIRUS))
             cli_bcapi_extract_new(ctx, -1);
     }
     cli_event_time_stop(g_sigevents, bc->sigtime_id);
@@ -3088,7 +3108,7 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
             int fd;
 
             fd = cli_bytecode_context_getresult_file(ctx, &tempfile, &temporary_reserved);
-            if (fd && fd != -1) {
+            if (fd != -1) {
                 if (cctx->engine->keeptmp) {
                     cli_dbgmsg("Bytecode %u unpacked file saved in %s\n",
                                bc->id, tempfile);
@@ -3117,11 +3137,14 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
                     }
                 }
 
-                close(fd);
+                if (close(fd) == -1)
+                    bytecode_note_cleanup_failure(cctx, &ret, CL_EWRITE,
+                                                   "Bytecode unpacked output could not be closed");
 
                 if (!cctx->engine->keeptmp) {
                     if (tempfile && cli_unlink(tempfile)) {
-                        ret = CL_EUNLINK;
+                        bytecode_note_cleanup_failure(cctx, &ret, CL_EUNLINK,
+                                                       "Bytecode unpacked output could not be removed");
                     }
                 }
 
