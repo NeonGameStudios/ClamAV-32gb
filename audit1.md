@@ -14,6 +14,14 @@ signature metadata from reaching undefined pointer arithmetic before the
 large-file ABI admission checks. Independently compiled fixture,
 interpreter/JIT, and supported-build qualification remain open.
 
+**YARA matcher-work accounting.** YARA-compatible logical roots can read
+integer fields from the current fmap after the raw matcher pass. Each root now
+charges one bounded fmap-length pass to `MaxMatcherWork`, and a rejected charge
+marks the scan incomplete and non-cacheable before YARA execution. The focused
+matcher regression covers both the admitted and exhausted-budget paths; full
+rule, production-signature, sanitizer, and large-file qualification remain
+open.
+
 ## Verdict
 
 The conservative headline in audit.md — production release remains blocked — is correct. Many of its narrower raw-matcher, cache-width, fmap-aging, exact-boundary, and limit-propagation findings are also supported by the current source.

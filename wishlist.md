@@ -57,6 +57,9 @@
   match arrays, and fmap before indexed pointer formation; a focused malformed
   dispatch regression is covered, while v1/v2 fixture and interpreter/JIT
   qualification remains open.
+- YARA-compatible logical roots now charge one bounded fmap pass to shared
+  matcher-work accounting and fail closed when that budget is exhausted; full
+  production-rule and large-file qualification remains open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

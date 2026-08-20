@@ -3985,6 +3985,16 @@ the v1/v2 coordinate admission checks. A focused regression covers null and
 zero-index dispatch; independently compiled fixture, interpreter/JIT, and
 supported-build Sonic1 qualification remain release gates.
 
+## YARA logical-pass matcher-work accounting — 2026-08-20
+
+YARA-compatible logical evaluation can read integer fields from the current
+fmap after the outer raw matcher has completed. Each logical root now charges
+one bounded pass over that fmap to `MaxMatcherWork`; if the shared budget cannot
+admit it, evaluation stops with a resource-incomplete, non-cacheable result.
+The focused matcher regression covers both the successful charge and the
+fail-closed limit path. Full YARA rule evaluation, production signatures,
+sanitizer, and large-file qualification remain release gates.
+
 ## clamscan directory and symlink report completion — 2026-08-20
 
 The clamscan walker now emits bounded non-clean fallback rows when an explicit

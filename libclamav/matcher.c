@@ -1199,6 +1199,7 @@ cl_error_t cli_exp_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_da
 {
     uint32_t i;
     cl_error_t status = CL_SUCCESS;
+    bool yara_work_accounted = false;
 
     for (i = 0; i < root->ac_lsigs; i++) {
         if (root->ac_lsigtable[i]->type == CLI_LSIG_NORMAL) {
@@ -1206,6 +1207,20 @@ cl_error_t cli_exp_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_da
         }
 #ifdef HAVE_YARA
         else if (root->ac_lsigtable[i]->type == CLI_YARA_NORMAL || root->ac_lsigtable[i]->type == CLI_YARA_OFFSET) {
+            /* YARA bytecode can read arbitrary integer fields from the
+             * current fmap after the raw matcher has completed. Charge one
+             * bounded pass over this representation per logical root rather
+             * than allowing those reads to bypass MaxMatcherWork. */
+            if (!yara_work_accounted) {
+                if (!ctx || !ctx->fmap) {
+                    status = CL_ENULLARG;
+                } else {
+                    status = cli_scan_account_matcher_work(ctx, (uint64_t)ctx->fmap->len);
+                }
+                if (status != CL_SUCCESS)
+                    break;
+                yara_work_accounted = true;
+            }
             status = yara_eval(ctx, root, acdata, target_info, i);
         }
 #endif

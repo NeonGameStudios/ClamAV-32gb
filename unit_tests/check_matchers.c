@@ -40,6 +40,7 @@
 #include "scanners.h"
 #include "default.h"
 #include "clamav_rust.h"
+#include "yara_exec.h"
 
 #include "checks.h"
 
@@ -814,6 +815,50 @@ START_TEST(test_yara_uint32_read_accepts_exact_tail)
 }
 END_TEST
 
+START_TEST(test_yara_evaluation_accounts_matcher_work)
+{
+#ifdef HAVE_YARA
+    static const unsigned char bytes[] = {0x00, 0x01, 0x02, 0x03};
+    static uint8_t code[]                  = {OP_HALT};
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id             = 0;
+    lsig.type           = CLI_YARA_NORMAL;
+    lsig.u.code_start   = code;
+    lsig.virname        = (char *)"YaraMatcherWorkTest";
+    lsigtable[0]        = &lsig;
+    root.ac_lsigs       = 1;
+    root.ac_lsigtable   = lsigtable;
+
+    map = cl_fmap_open_memory(bytes, sizeof(bytes));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, NULL, NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(ctx.matcher_work, sizeof(bytes));
+
+    ctx.matcher_work = 0;
+    ck_assert_int_eq(cl_engine_set_num(ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
+    ret = cli_exp_eval(&ctx, &root, NULL, NULL);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ctx.fmap = &thefmap;
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_byte_compare_overlap_dedup)
 {
     struct cli_matcher root;
@@ -1163,6 +1208,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
+    tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
     tcase_add_test(tc_matchers, test_byte_compare_offset_above_uint32);
 #ifndef _WIN32
