@@ -2202,6 +2202,19 @@ Source guards and `git diff --check` are the current local evidence. Compiled
 malformed-archive and fault-injected ZIP/OOXML coverage, sanitizer execution,
 and supported-build Sonic1 qualification remain release gates.
 
+## UDF descriptor indexing failure propagation — 2026-08-20
+
+UDF file-identifier and file-entry indexing now rejects a descriptor whose
+declared size crosses its 2 KiB volume block, instead of stopping the local
+walk and allowing the containing volume to continue as if the remaining
+entries had been inspected. Allocation/indexing failures are propagated as
+incomplete results; valid zero padding after the final descriptor remains
+accepted.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+malformed-UDF fixtures, sanitizer execution, and supported-build Sonic1
+qualification remain release gates.
+
 ## Scan-level temporary-directory cleanup propagation — 2026-08-20
 
 When recursive temporary-directory mode is enabled, scan-level directory

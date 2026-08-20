@@ -770,7 +770,7 @@ done:
     return ret;
 }
 
-static cl_error_t findFileIdentifiers(const uint8_t *const input, PointerList *pfil)
+static cl_error_t findFileIdentifiers(cli_ctx *ctx, const uint8_t *const input, PointerList *pfil)
 {
     cl_error_t ret        = CL_SUCCESS;
     const uint8_t *buffer = input;
@@ -785,6 +785,8 @@ static cl_error_t findFileIdentifiers(const uint8_t *const input, PointerList *p
 
         /* Check that it's safe to save the file identifier pointer for later use */
         if (bufUsed > VOLUME_DESCRIPTOR_SIZE || fidDescSize > VOLUME_DESCRIPTOR_SIZE - bufUsed) {
+            cli_mark_scan_incomplete(ctx, "UDF file-identifier descriptor exceeds its volume block");
+            ret = CL_EPARSE;
             break;
         }
 
@@ -806,7 +808,7 @@ done:
     return ret;
 }
 
-static cl_error_t findFileEntries(const uint8_t *const input, PointerList *pfil)
+static cl_error_t findFileEntries(cli_ctx *ctx, const uint8_t *const input, PointerList *pfil)
 {
     cl_error_t ret        = CL_SUCCESS;
     const uint8_t *buffer = input;
@@ -821,6 +823,8 @@ static cl_error_t findFileEntries(const uint8_t *const input, PointerList *pfil)
 
         /* Check that it's safe to save the file identifier pointer for later use */
         if (bufUsed > VOLUME_DESCRIPTOR_SIZE || fedDescSize > VOLUME_DESCRIPTOR_SIZE - bufUsed) {
+            cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor exceeds its volume block");
+            ret = CL_EPARSE;
             break;
         }
 
@@ -1028,8 +1032,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
         switch (tagId) {
             case FILE_IDENTIFIER_DESCRIPTOR: {
-                cl_error_t temp = findFileIdentifiers((const uint8_t *)file_volume_tag, &fileIdentifierList);
+                cl_error_t temp = findFileIdentifiers(ctx, (const uint8_t *)file_volume_tag, &fileIdentifierList);
                 if (CL_SUCCESS != temp) {
+                    if (!ctx->scan_incomplete)
+                        cli_mark_scan_incomplete(ctx, "UDF file-identifier descriptor indexing did not complete");
                     ret = temp;
                     goto done;
                 }
@@ -1037,8 +1043,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
             }
 
             case FILE_ENTRY_DESCRIPTOR: {
-                cl_error_t temp = findFileEntries((const uint8_t *)file_volume_tag, &fileEntryList);
+                cl_error_t temp = findFileEntries(ctx, (const uint8_t *)file_volume_tag, &fileEntryList);
                 if (CL_SUCCESS != temp) {
+                    if (!ctx->scan_incomplete)
+                        cli_mark_scan_incomplete(ctx, "UDF file-entry descriptor indexing did not complete");
                     ret = temp;
                     goto done;
                 }
