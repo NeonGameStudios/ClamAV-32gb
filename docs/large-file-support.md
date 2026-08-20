@@ -2973,6 +2973,12 @@ names belonging to another extraction subtree while preserving real XLM/image
 extraction failures. Compiled Linux/Sonic1 execution, sanitizer coverage, and
 broader XLM corpus qualification remain release gates.
 
+Legacy VBA, PowerPoint VBA, and Word-macro traversal now applies the same
+distinction to present files: failed inspection, open, parse, decompression, or
+close operations are retained as incomplete, while names absent from the
+current recursive subtree remain normal. This keeps the older extraction path
+from silently dropping a confirmed macro stream.
+
 ## Clamd size-option parser boundary — 2026-08-19
 
 The shared `SIZE64` parser now rejects negative values before suffix scaling or

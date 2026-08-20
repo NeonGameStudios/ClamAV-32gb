@@ -2374,6 +2374,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
     unsigned char *data = NULL;
     char *hash;
     uint32_t hashcnt = 0;
+    STATBUF statbuf;
 
     int fd = -1;
 
@@ -2381,12 +2382,29 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
     char *proj_contents_fname = NULL;
     uint64_t ppt_temporary_reserved = 0;
 
-    if (CL_SUCCESS != (status = uniq_get(U, "_vba_project", 12, NULL, &hashcnt))) {
+    if (CL_SUCCESS != (status = uniq_get(U, "_vba_project", 12, &hash, &hashcnt))) {
         cli_dbgmsg("cli_ole2_tempdir_scan_vba: uniq_get('_vba_project') failed with ret code (%d)!\n", status);
         goto done;
     }
     while (hashcnt) {
+        snprintf(vbaname, sizeof(vbaname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
+        vbaname[sizeof(vbaname) - 1] = '\0';
+        if (LSTAT(vbaname, &statbuf) == -1) {
+            if (errno == ENOENT) {
+                hashcnt--;
+                continue;
+            }
+            cli_mark_scan_incomplete(ctx, "VBA project input could not be inspected");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_ESTAT;
+            hashcnt--;
+            continue;
+        }
+
         if (!(vba_project = (vba_project_t *)cli_vba_readdir(dir, U, hashcnt))) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory could not be parsed");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EPARSE;
             hashcnt--;
             continue;
         }
@@ -2398,6 +2416,9 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
                 fd = open(vbaname, O_RDONLY | O_BINARY);
                 if (fd == -1) {
+                    cli_mark_scan_incomplete(ctx, "VBA project module could not be opened");
+                    if (deferred_failure == CL_SUCCESS)
+                        deferred_failure = CL_EOPEN;
                     continue;
                 }
 
@@ -2405,7 +2426,11 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
                 data = (unsigned char *)cli_vba_inflate(fd, vba_project->offset[i], &data_len);
 
-                close(fd);
+                if (close(fd) != 0) {
+                    cli_mark_scan_incomplete(ctx, "VBA project module input could not be closed");
+                    if (deferred_failure == CL_SUCCESS)
+                        deferred_failure = CL_EREAD;
+                }
                 fd = -1;
 
                 *has_macros = *has_macros + 1;
@@ -2426,7 +2451,11 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
                             goto done;
                         }
 
-                        close(proj_contents_fd);
+                        if (close(proj_contents_fd) != 0) {
+                            cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be closed");
+                            if (deferred_failure == CL_SUCCESS)
+                                deferred_failure = CL_EREAD;
+                        }
                         proj_contents_fd = -1;
 
                         cli_dbgmsg("cli_ole2_tempdir_scan_vba: VBA project '%s_%u' dumped to %s\n", vba_project->name[i], j, proj_contents_fname);
@@ -2464,8 +2493,23 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
         snprintf(vbaname, 1024, "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
         vbaname[sizeof(vbaname) - 1] = '\0';
 
+        if (LSTAT(vbaname, &statbuf) == -1) {
+            if (errno == ENOENT) {
+                hashcnt--;
+                continue;
+            }
+            cli_mark_scan_incomplete(ctx, "PowerPoint VBA input could not be inspected");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_ESTAT;
+            hashcnt--;
+            continue;
+        }
+
         fd = open(vbaname, O_RDONLY | O_BINARY);
         if (fd == -1) {
+            cli_mark_scan_incomplete(ctx, "PowerPoint VBA input could not be opened");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EOPEN;
             hashcnt--;
             continue;
         }
@@ -2488,9 +2532,17 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
             ppt_temporary_reserved = 0;
             free(fullname);
             fullname = NULL;
+        } else {
+            cli_mark_scan_incomplete(ctx, "PowerPoint VBA project could not be extracted completely");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EPARSE;
         }
 
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "PowerPoint VBA input could not be closed");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EREAD;
+        }
         fd = -1;
 
         hashcnt--;
@@ -2504,14 +2556,36 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
         snprintf(vbaname, sizeof(vbaname), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
         vbaname[sizeof(vbaname) - 1] = '\0';
 
+        if (LSTAT(vbaname, &statbuf) == -1) {
+            if (errno == ENOENT) {
+                hashcnt--;
+                continue;
+            }
+            cli_mark_scan_incomplete(ctx, "Word macro input could not be inspected");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_ESTAT;
+            hashcnt--;
+            continue;
+        }
+
         fd = open(vbaname, O_RDONLY | O_BINARY);
         if (fd == -1) {
+            cli_mark_scan_incomplete(ctx, "Word macro input could not be opened");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EOPEN;
             hashcnt--;
             continue;
         }
 
         if (!(vba_project = (vba_project_t *)cli_wm_readdir_ex(fd, ctx))) {
-            close(fd);
+            cli_mark_scan_incomplete(ctx, "Word macro directory could not be parsed");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EPARSE;
+            if (close(fd) != 0) {
+                cli_mark_scan_incomplete(ctx, "Word macro input could not be closed");
+                if (deferred_failure == CL_SUCCESS)
+                    deferred_failure = CL_EREAD;
+            }
             fd = -1;
             hashcnt--;
             continue;
@@ -2543,7 +2617,11 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
             }
         }
 
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "Word macro input could not be closed");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EREAD;
+        }
         fd = -1;
 
         cli_free_vba_project(vba_project);
@@ -2577,7 +2655,11 @@ done:
     }
 
     if (proj_contents_fd >= 0) {
-        close(proj_contents_fd);
+        if (close(proj_contents_fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be closed");
+            if (deferred_failure == CL_SUCCESS)
+                deferred_failure = CL_EREAD;
+        }
     }
     if (NULL != proj_contents_fname) {
         free(proj_contents_fname);
@@ -2607,7 +2689,11 @@ done:
         cli_scan_release_temporary(ctx, ppt_temporary_reserved);
 
     if (fd >= 0) {
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "VBA input descriptor could not be closed");
+            if (status == CL_SUCCESS)
+                status = CL_EREAD;
+        }
     }
 
     return status;

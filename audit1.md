@@ -2247,3 +2247,14 @@ silently from an otherwise clean result.
 The source guards and `git diff --check` pass. Fault-injected OLE2 tree
 execution, dependency-complete builds, sanitizer coverage, and supported-build
 Sonic1 qualification remain release gates.
+
+## Legacy OLE macro traversal closeout — 2026-08-20
+
+Legacy VBA, PowerPoint VBA, and Word-macro extraction now distinguishes a
+globally indexed file that belongs to another recursive subtree from a present
+file that cannot be inspected, opened, parsed, decompressed, or closed. Those
+failures remain sticky incomplete results instead of being silently skipped.
+
+The source guards and `git diff --check` pass. Fault-injected OLE/VBA
+execution, dependency-complete builds, sanitizer coverage, and supported-build
+Sonic1 qualification remain release gates.
