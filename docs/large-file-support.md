@@ -2313,6 +2313,14 @@ This removes the specific HWPML whole-text-node/64 MiB gate. It does not claim
 full HWPML corpus qualification, compressed-attachment decoder qualification,
 or current-source Sonic1/build evidence; those remain release gates.
 
+The legacy MSXML reader fallback now also charges callback and base64 temporary
+outputs against `MaxTemporarySize`; completed base64 children use the
+reservation-aware nested scanner, while custom callback handoffs retain the
+spool reservation through the callback's own reserved nested scan. Allocation,
+write, quota, and nested-scan failures remain fail-visible. Legacy XML-reader
+memory behavior and broader Office/HWP corpus qualification remain release
+gates.
+
 ## XDP bounded XML streaming — 2026-08-19
 
 XDP no longer rejects the complete XML layer at the former 64 MiB gate or

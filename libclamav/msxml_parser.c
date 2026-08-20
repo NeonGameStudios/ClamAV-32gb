@@ -383,11 +383,18 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             char *tempfile = name;
                             int of;
                             size_t vlen = strlen((const char *)node_value);
+                            uint64_t temporary_reserved = (uint64_t)vlen;
 
                             cli_msxmlmsg("BINARY CALLBACK DATA!\n");
 
+                            if (cli_scan_reserve_temporary(ctx, temporary_reserved) != CL_SUCCESS) {
+                                cli_mark_scan_incomplete(ctx, "MSXML callback temporary output exceeds temporary storage limits");
+                                return CL_ERESOURCE;
+                            }
+
                             if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tempfile, &of)) != CL_SUCCESS) {
                                 cli_warnmsg("msxml_parse_element: failed to create temporary file %s\n", tempfile);
+                                cli_scan_release_temporary(ctx, temporary_reserved);
                                 return ret;
                             }
 
@@ -395,7 +402,9 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                                 close(of);
                                 if (!(ctx->engine->keeptmp))
                                     cli_unlink(tempfile);
+                                cli_scan_release_temporary(ctx, temporary_reserved);
                                 free(tempfile);
+                                cli_mark_scan_incomplete(ctx, "MSXML callback temporary output could not be written completely");
                                 return CL_EWRITE;
                             }
 
@@ -406,6 +415,7 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             if (!(ctx->engine->keeptmp)) {
                                 cli_unlink(tempfile);
                             }
+                            cli_scan_release_temporary(ctx, temporary_reserved);
                             free(tempfile);
                             if (ret != CL_SUCCESS) {
                                 return ret;
@@ -418,6 +428,7 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                             char *decoded, *tempfile = name;
                             size_t decodedlen;
                             int of;
+                            uint64_t temporary_reserved;
 
                             cli_msxmlmsg("BINARY DATA!\n");
 
@@ -429,8 +440,16 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                                 break;
                             }
 
+                            temporary_reserved = (uint64_t)decodedlen;
+                            if (cli_scan_reserve_temporary(ctx, temporary_reserved) != CL_SUCCESS) {
+                                cli_mark_scan_incomplete(ctx, "MSXML base64 temporary output exceeds temporary storage limits");
+                                free(decoded);
+                                return CL_ERESOURCE;
+                            }
+
                             if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tempfile, &of)) != CL_SUCCESS) {
                                 cli_warnmsg("msxml_parse_element: failed to create temporary file %s\n", tempfile);
+                                cli_scan_release_temporary(ctx, temporary_reserved);
                                 free(decoded);
                                 return ret;
                             }
@@ -440,17 +459,20 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                                 close(of);
                                 if (!(ctx->engine->keeptmp))
                                     cli_unlink(tempfile);
+                                cli_scan_release_temporary(ctx, temporary_reserved);
                                 free(tempfile);
+                                cli_mark_scan_incomplete(ctx, "MSXML base64 temporary output could not be written completely");
                                 return CL_EWRITE;
                             }
                             free(decoded);
 
                             cli_dbgmsg("msxml_parse_element: extracted binary data to %s\n", tempfile);
 
-                            ret = cli_magic_scan_desc(of, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+                            ret = cli_magic_scan_desc_type_reserved(of, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
                             close(of);
                             if (!(ctx->engine->keeptmp))
                                 cli_unlink(tempfile);
+                            cli_scan_release_temporary(ctx, temporary_reserved);
                             free(tempfile);
                             if (ret != CL_SUCCESS) {
                                 return ret;
@@ -885,20 +907,17 @@ static cl_error_t msxml_stream_finish_frame(struct msxml_stream_state *state, st
         }
 
         if (frame->b64_saw_data) {
-            cli_scan_release_temporary(state->ctx, frame->b64_reserved);
-            frame->b64_reserved = 0;
             if (state->mxctx->decoded_cb)
                 ret = state->mxctx->decoded_cb(frame->b64_fd, frame->b64_name, state->ctx, state->mxctx->scan_data);
             else
-                ret = cli_magic_scan_desc(frame->b64_fd, frame->b64_name, state->ctx, NULL, LAYER_ATTRIBUTES_NONE);
+                ret = cli_magic_scan_desc_type_reserved(frame->b64_fd, frame->b64_name, state->ctx, CL_TYPE_ANY, NULL,
+                                                        LAYER_ATTRIBUTES_NONE);
             if (ret != CL_SUCCESS)
                 return ret;
         }
     }
 
     if (frame->cb_fd >= 0 && frame->cb_saw_data && state->mxctx->scan_cb) {
-        cli_scan_release_temporary(state->ctx, frame->cb_reserved);
-        frame->cb_reserved = 0;
         ret                = state->mxctx->scan_cb(frame->cb_fd, frame->cb_name, state->ctx, frame->num_attribs,
                                                    frame->attribs, state->mxctx->scan_data);
         if (ret != CL_SUCCESS)
