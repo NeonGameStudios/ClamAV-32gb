@@ -30,6 +30,9 @@
 - AC exact-tail matching now has a >4 GiB offset regression that verifies the
   returned match coordinate remains 64-bit; production-signature qualification
   is still open.
+- BM offset admission now rejects checked-addition wraparound before building
+  its offset table; the >4 GiB match and near-`UINT64_MAX` regression paths
+  are both covered.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

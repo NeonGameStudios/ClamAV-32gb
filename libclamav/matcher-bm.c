@@ -52,6 +52,15 @@ static int cli_bm_uint64_cmp(const void *a, const void *b)
     return 0;
 }
 
+static bool cli_bm_add_u64(uint64_t left, uint64_t right, uint64_t *result)
+{
+    if (result == NULL || left > UINT64_MAX - right)
+        return false;
+
+    *result = left + right;
+    return true;
+}
+
 cl_error_t cli_bm_addpatt(struct cli_matcher *root, struct cli_bm_patt *pattern, const char *offset)
 {
     uint16_t idx, i;
@@ -172,6 +181,7 @@ cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *dat
     cl_error_t ret;
     unsigned int i;
     struct cli_bm_patt *patt;
+    uint64_t match_offset;
 
     if (!root->bm_patterns) {
         data->offtab = data->offset = NULL;
@@ -194,18 +204,20 @@ cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *dat
     for (i = 0; i < root->bm_patterns; i++) {
         patt = root->bm_pattab[i];
         if (patt->offdata[0] == CLI_OFF_ABSOLUTE) {
-            data->offtab[data->cnt] = patt->offset_min + patt->prefix_length;
-            if (data->offtab[data->cnt] >= info->fsize)
+            if (!cli_bm_add_u64(patt->offset_min, patt->prefix_length, &match_offset) ||
+                match_offset >= (uint64_t)info->fsize)
                 continue;
+            data->offtab[data->cnt] = match_offset;
             data->cnt++;
         } else if (CL_SUCCESS != (ret = cli_caloff(NULL, info, root->type, patt->offdata, &data->offset[patt->offset_min], NULL))) {
             cli_errmsg("cli_bm_initoff: Can't calculate relative offset in signature for %s\n", patt->virname);
-            free(data->offtab);
-            free(data->offset);
-            return ret;
-        } else if ((data->offset[patt->offset_min] != CLI_OFF_NONE64) && (data->offset[patt->offset_min] + patt->length <= info->fsize)) {
-            if (!data->cnt || (data->offset[patt->offset_min] + patt->prefix_length != data->offtab[data->cnt - 1])) {
-                data->offtab[data->cnt] = data->offset[patt->offset_min] + patt->prefix_length;
+            goto fail;
+        } else if ((data->offset[patt->offset_min] != CLI_OFF_NONE64) &&
+                   data->offset[patt->offset_min] <= (uint64_t)info->fsize &&
+                   patt->length <= (uint64_t)info->fsize - data->offset[patt->offset_min] &&
+                   cli_bm_add_u64(data->offset[patt->offset_min], patt->prefix_length, &match_offset)) {
+            if (!data->cnt || (match_offset != data->offtab[data->cnt - 1])) {
+                data->offtab[data->cnt] = match_offset;
                 if (data->offtab[data->cnt] >= info->fsize)
                     continue;
                 data->cnt++;
@@ -215,6 +227,13 @@ cl_error_t cli_bm_initoff(const struct cli_matcher *root, struct cli_bm_off *dat
 
     cli_qsort(data->offtab, data->cnt, sizeof(uint64_t), cli_bm_uint64_cmp);
     return CL_SUCCESS;
+
+fail:
+    free(data->offtab);
+    free(data->offset);
+    data->offtab = NULL;
+    data->offset = NULL;
+    return ret;
 }
 
 void cli_bm_freeoff(struct cli_bm_off *data)

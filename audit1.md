@@ -2634,3 +2634,13 @@ scans an exact four-byte tail at offset 5,000,000,000, and asserts both the
 signature identity and the returned `off_t` coordinate. The capability
 manifest records AC as bounded on this focused evidence while retaining the
 production-signature and full 32 GiB qualification gate.
+
+## BM offset-table overflow admission — 2026-08-20
+
+BM offset-mode initialization previously added a signature coordinate and its
+prefix/length before checking the containing file size. A near-`UINT64_MAX`
+coordinate could therefore wrap into a small offset and enter the scan table.
+The path now uses checked addition and subtraction-form range checks; invalid
+coordinates are ignored as non-applicable signatures, while a real allocation
+or offset-calculation failure still propagates. The focused matcher test keeps
+the valid 5,000,000,000-byte coordinate and rejects the wrapped coordinate.

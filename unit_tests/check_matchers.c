@@ -686,6 +686,46 @@ START_TEST(test_bm_offset_mode_matches_above_uint32)
 }
 END_TEST
 
+START_TEST(test_bm_initoff_rejects_coordinate_wrap)
+{
+    struct cli_matcher *root = ctx.engine->root[0];
+    struct cli_target_info info;
+    struct cli_bm_off offsets;
+    struct cli_bm_patt valid;
+    struct cli_bm_patt wrapped;
+    struct cli_bm_patt *patterns[2];
+
+    ck_assert_ptr_nonnull(root);
+    memset(&info, 0, sizeof(info));
+    memset(&offsets, 0, sizeof(offsets));
+    memset(&valid, 0, sizeof(valid));
+    memset(&wrapped, 0, sizeof(wrapped));
+    info.fsize = (off_t)34359738368ULL;
+
+    valid.offdata[0]      = CLI_OFF_ABSOLUTE;
+    valid.offset_min      = 5000000000ULL;
+    valid.length          = 4;
+    valid.virname         = "valid";
+    wrapped.offdata[0]    = CLI_OFF_ABSOLUTE;
+    wrapped.offset_min    = UINT64_MAX - 1;
+    wrapped.prefix_length = 4;
+    wrapped.length        = 4;
+    wrapped.virname       = "wrapped";
+    patterns[0]           = &valid;
+    patterns[1]           = &wrapped;
+    root->bm_pattab       = patterns;
+    root->bm_patterns     = 2;
+
+    ck_assert_int_eq(cli_bm_initoff(root, &offsets, &info), CL_SUCCESS);
+    ck_assert_uint_eq(offsets.cnt, 1);
+    ck_assert_uint_eq(offsets.offtab[0], 5000000000ULL);
+    cli_bm_freeoff(&offsets);
+
+    root->bm_pattab   = NULL;
+    root->bm_patterns = 0;
+}
+END_TEST
+
 START_TEST(test_ac_offset_mode_matches_above_uint32)
 {
 #if SIZE_MAX > UINT32_MAX
@@ -995,6 +1035,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_pcre_scanbuff_allscan);
     tcase_add_test(tc_matchers, test_large_file_offset_values);
     tcase_add_test(tc_matchers, test_bm_offset_mode_matches_above_uint32);
+    tcase_add_test(tc_matchers, test_bm_initoff_rejects_coordinate_wrap);
     tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
