@@ -94,7 +94,8 @@ static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
     return (written == (size_t)-1) ? 0 : written;
 }
 
-static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_error_t *status)
+static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_error_t *status,
+                                uint64_t temporary_reserved)
 {
     if (close(fd) == -1) {
         cli_mark_scan_incomplete(ctx, "7-Zip temporary output could not be closed");
@@ -106,6 +107,7 @@ static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_e
         if (CL_SUCCESS == *status || CL_VERIFIED == *status)
             *status = CL_EUNLINK;
     }
+    cli_scan_release_temporary(ctx, temporary_reserved);
 }
 
 static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
@@ -216,6 +218,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             cl_error_t limitret;
             cl_error_t metadata_status;
             CClamFileOutStream output;
+            uint64_t temporary_reserved = 0;
 
             // abort if we would exceed max files or max scan time.
             if ((found = cli_checklimits("7unz", ctx, 0, 0, 0)))
@@ -263,9 +266,20 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             name[j] = 0;
             cli_dbgmsg("cli_7unz: extracting %s\n", name);
 
+            if (f->Size > SIZE_MAX) {
+                cli_mark_scan_incomplete(ctx, "7-Zip member size could not be represented");
+                found = CL_ERESOURCE;
+                break;
+            }
+            found = cli_scan_reserve_temporary(ctx, f->Size);
+            if (found != CL_SUCCESS)
+                break;
+            temporary_reserved = f->Size;
+
             found = cli_gentempfd(ctx->this_layer_tmpdir, &tmp_name, &fd);
             if (found != CL_SUCCESS) {
                 cli_mark_scan_incomplete(ctx, "7-Zip temporary output could not be created");
+                cli_scan_release_temporary(ctx, temporary_reserved);
                 break;
             }
             output.s.Write = ClamFileOutStream_Write;
@@ -304,7 +318,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                     cli_dbgmsg("cli_7unz: Encrypted files found in archive.\n");
                     found = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.7Zip");
                     if (found != CL_SUCCESS) {
-                        cli_7z_cleanup_temp(ctx, fd, tmp_name, &found);
+                        cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                         free(tmp_name);
                         break;
                     }
@@ -315,7 +329,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 found = metadata_status;
                 if (metadata_status != CL_VIRUS && metadata_status != CL_VERIFIED && metadata_status != CL_BREAK)
                     cli_mark_scan_incomplete(ctx, "7-Zip member metadata matching did not complete");
-                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found);
+                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                 free(tmp_name);
                 break;
             }
@@ -326,12 +340,12 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                     if (found == CL_CLEAN)
                         found = CL_EPARSE;
                 }
-                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found);
+                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                 free(tmp_name);
                 continue;
             } else if (outSizeProcessed == 0) {
                 cli_dbgmsg("cli_unz: extracted empty file\n");
-                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found);
+                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                 free(tmp_name);
             } else {
                 cli_dbgmsg("cli_7unz: Saving to %s\n", tmp_name);
@@ -339,7 +353,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
 
                 if (found != CL_SUCCESS && found != CL_VIRUS && found != CL_VERIFIED && found != CL_BREAK)
                     cli_mark_scan_incomplete(ctx, "7-Zip extracted-file scan did not complete");
-                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found);
+                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
 
                 free(tmp_name);
                 if (found != CL_SUCCESS)

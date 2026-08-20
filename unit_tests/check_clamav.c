@@ -873,6 +873,26 @@ START_TEST(test_scan_report_operational_failure_is_resource_failure)
 }
 END_TEST
 
+START_TEST(test_scan_report_sticky_resource_failure_is_not_a_scan_limit)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete        = true;
+    ctx.limit_exceeded         = true;
+    ctx.limit_exceeded_result  = CL_ERESOURCE;
+    ctx.scan_incomplete_reason = "temporary storage exceeded the configured resource limit";
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    cli_scan_report_finish(report, &ctx, CL_SUCCESS, CL_VERDICT_NOTHING_FOUND, NULL);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_RESOURCE_FAILURE);
+    cl_scan_report_free(report);
+}
+END_TEST
+
 START_TEST(test_scan_report_counts_skipped_operations)
 {
     cl_scan_report_t *report = NULL;
@@ -10298,6 +10318,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_scan_report_break_is_application_abort);
     tcase_add_test(tc_cl, test_scan_report_operational_failure_is_resource_failure);
+    tcase_add_test(tc_cl, test_scan_report_sticky_resource_failure_is_not_a_scan_limit);
     tcase_add_test(tc_cl, test_scan_report_counts_skipped_operations);
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);

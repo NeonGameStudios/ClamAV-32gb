@@ -350,10 +350,12 @@ void cli_scan_report_finish(
     } else if ((status == CL_BREAK) || ((NULL != ctx) && ctx->abort_scan)) {
         report->completion = CL_SCAN_COMPLETION_APPLICATION_ABORT;
     } else if ((NULL != ctx) && ctx->scan_incomplete) {
-        if ((status == CL_EMAXSIZE) ||
-            (status == CL_EMAXFILES) ||
-            (status == CL_EMAXREC) ||
-            (ctx->limit_exceeded)) {
+        if (ctx->limit_exceeded_result == CL_ERESOURCE) {
+            report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
+        } else if ((status == CL_EMAXSIZE) ||
+                   (status == CL_EMAXFILES) ||
+                   (status == CL_EMAXREC) ||
+                   (ctx->limit_exceeded)) {
             report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
         } else if (report_status_is_operational_failure(status)) {
             report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;

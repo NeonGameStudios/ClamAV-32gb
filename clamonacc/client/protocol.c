@@ -82,6 +82,12 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     uint64_t bytesRead     = 0;
     const char zINSTREAM[] = "zINSTREAMREPORT";
 
+    /* The public option contract maps zero to the bounded 32-GiB ceiling.
+     * Keep this boundary defensive for callers that construct the on-access
+     * context directly instead of going through optparser. */
+    if (maxstream == 0)
+        maxstream = CLI_MAX_LARGE_FILESIZE;
+
     if (-1 == fd) {
         if (NULL == filename) {
             logg(LOGG_ERROR, "onas_send_stream: Invalid args, a filename or file descriptor must be provided.\n");

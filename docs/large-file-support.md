@@ -2021,6 +2021,15 @@ gaps, but it does not claim that the legacy `OnAccessMaxFileSize` default has
 been raised to 32 GiB. That default remains a separate release qualification
 decision.
 
+## 7-Zip temporary-output admission — 2026-08-20
+
+The 7-Zip streaming member path now reserves each declared member size against
+the shared `MaxTemporarySize` budget before creating its temporary output and
+holds that reservation through extraction and nested scanning. Every cleanup
+path releases the reservation, and an unrepresentable member size fails closed
+as a resource failure. This closes an accounting gap; decoder, filesystem, and
+Linux/Sonic1 runtime qualification remain open.
+
 ## Embedded 7-Zip candidate admission — 2026-08-19
 
 Embedded 7-Zip SFX matches now require the complete 32-byte start header and
