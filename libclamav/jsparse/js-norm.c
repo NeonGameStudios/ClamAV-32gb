@@ -285,7 +285,12 @@ static cl_error_t tokens_ensure_capacity(struct tokens *tokens, size_t cap)
 {
     if (tokens->capacity < cap) {
         yystype *data;
+
+        if (cap > (size_t)-1 - 1024)
+            return CL_EMEM;
         cap += 1024;
+        if (cap > (size_t)-1 / sizeof(*data))
+            return CL_EMEM;
         /* Keep old data if OOM */
         data = cli_max_realloc(tokens->data, cap * sizeof(*tokens->data));
         if (!data)
@@ -298,6 +303,8 @@ static cl_error_t tokens_ensure_capacity(struct tokens *tokens, size_t cap)
 
 static int add_token(struct parser_state *state, const yystype *token)
 {
+    if (state->tokens.cnt == (size_t)-1)
+        return -1;
     if (tokens_ensure_capacity(&state->tokens, state->tokens.cnt + 1))
         return -1;
     state->tokens.data[state->tokens.cnt++] = *token;
@@ -571,21 +578,27 @@ static void free_token(yystype *token)
 static cl_error_t replace_token_range(struct tokens *dst, size_t start, size_t end, const struct tokens *with)
 {
     const size_t len = with ? with->cnt : 0;
+    size_t remaining;
+    size_t new_count;
     size_t i;
     cli_dbgmsg(MODULE "Replacing tokens %lu - %lu with %lu tokens\n", (unsigned long)start,
                (unsigned long)end, (unsigned long)len);
-    if (start >= dst->cnt || end > dst->cnt)
+    if (end < start || start >= dst->cnt || end > dst->cnt)
         return CL_EARG;
+    remaining = dst->cnt - (end - start);
+    if (len > (size_t)-1 - remaining)
+        return CL_EMEM;
+    new_count = remaining + len;
+    if (tokens_ensure_capacity(dst, new_count))
+        return CL_EMEM;
     for (i = start; i < end; i++) {
         free_token(&dst->data[i]);
     }
-    if (tokens_ensure_capacity(dst, dst->cnt - (end - start) + len))
-        return CL_EMEM;
     memmove(&dst->data[start + len], &dst->data[end], (dst->cnt - end) * sizeof(dst->data[0]));
     if (with && len > 0) {
         memcpy(&dst->data[start], with->data, len * sizeof(dst->data[0]));
     }
-    dst->cnt = dst->cnt - (end - start) + len;
+    dst->cnt = new_count;
     return CL_SUCCESS;
 }
 
@@ -593,6 +606,8 @@ static cl_error_t append_tokens(struct tokens *dst, const struct tokens *src)
 {
     if (!dst || !src)
         return CL_ENULLARG;
+    if (src->cnt > (size_t)-1 - dst->cnt)
+        return CL_EMEM;
     if (tokens_ensure_capacity(dst, dst->cnt + src->cnt))
         return CL_EMEM;
     cli_dbgmsg(MODULE "Appending %lu tokens\n", (unsigned long)(src->cnt));
@@ -1226,12 +1241,16 @@ void cli_js_process_buffer(struct parser_state *state, const char *buf, size_t n
                         text = yyget_text(state->scanner);
                         leng = yyget_leng(state->scanner);
 
-                        /* delete TOK_PLUS */
-                        free_token(&state->tokens.data[--state->tokens.cnt]);
-
-                        str = cli_max_realloc(str, str_len + leng + 1);
-                        if (!str)
+                        if (str_len > (size_t)-1 - 1 || leng > (size_t)-1 - str_len - 1)
                             break;
+                        {
+                            char *joined = cli_max_realloc(str, str_len + leng + 1);
+                            if (!joined)
+                                break;
+                            /* delete TOK_PLUS only after the joined string is ready */
+                            free_token(&state->tokens.data[--state->tokens.cnt]);
+                            str = joined;
+                        }
                         strncpy(str + str_len, text, leng);
                         str[str_len + leng] = '\0';
                         TOKEN_SET(prev_string, string, str);

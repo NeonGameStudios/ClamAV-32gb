@@ -2695,3 +2695,17 @@ and returns failure before any allocation when the request cannot be
 represented. A focused test exercises the overflow path without allocating;
 the deliberate legacy matcher boundary for normalized output above 4 GiB
 remains an explicit unsupported/incomplete result.
+
+## JavaScript normalization token-growth arithmetic — 2026-08-20
+
+The JavaScript normalizer's token vector previously grew by adding a fixed
+slack amount and multiplying the resulting element count without checking
+native-width overflow. Token-range replacement and token appending also formed
+new counts without checked addition, while adjacent string-literal folding
+could wrap `str_len + leng + 1` before reallocating. These paths now reject
+unrepresentable capacity/count/byte-size requests before allocation; token
+replacement validates capacity before freeing the old range so an admission
+failure preserves the existing token payloads. The tokenizer suite's existing
+adjacent-string regression continues to cover the normal folding path. Full
+large-script, sanitizer, parser-corpus, and supported-build qualification
+remain open.

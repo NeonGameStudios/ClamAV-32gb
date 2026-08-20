@@ -43,6 +43,10 @@
   bounds, including a regression for a wrapping caller length.
 - JavaScript normalization text-buffer growth now uses native-width checked
   capacity arithmetic instead of an `unsigned` capacity.
+- JavaScript token-vector growth, token-range replacement, token appending, and
+  adjacent string-literal folding now reject native-size arithmetic overflow
+  before allocation or mutation; the existing concatenation regression remains
+  covered by the tokenizer suite.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
