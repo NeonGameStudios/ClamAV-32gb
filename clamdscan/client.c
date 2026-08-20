@@ -527,7 +527,9 @@ int client(const struct optstruct *opts, int *infected, int *err)
     else {
         errors = client_scan("", scantype, infected, err, maxrec, session, flags, report_stream);
     }
-    if (report_stream)
-        fclose(report_stream);
+    if (report_stream && fclose(report_stream) != 0) {
+        logg(LOGG_ERROR, "Can't close structured scan report: %s\n", strerror(errno));
+        errors = 1;
+    }
     return *infected ? 1 : (errors ? 2 : 0);
 }

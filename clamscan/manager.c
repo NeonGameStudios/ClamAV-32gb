@@ -327,7 +327,11 @@ static int write_structured_scan_report(const struct optstruct *opts, const cl_s
         return -1;
     }
 
-    fclose(stream);
+    if (fclose(stream) != 0) {
+        logg(LOGG_ERROR, "Can't close structured scan report %s: %s\n", opt->strarg, strerror(errno));
+        free(json);
+        return -1;
+    }
     free(json);
     return 0;
 }

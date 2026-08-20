@@ -3622,3 +3622,16 @@ and whitespace checks pass. The local offline Cargo test cannot resolve the
 pinned `clam-sigutil` Git dependency, so dependency-complete Rust compilation,
 sanitizer execution, and supported-build Sonic1 parser qualification remain
 open release gates.
+
+## Structured report close-error propagation — 2026-08-20
+
+`clamscan --report-json` and `clamdscan --report-json` now treat a failure to
+close the JSONL output as an error. A buffered write can succeed while the
+filesystem reports a delayed failure during close; ignoring that result could
+leave the scan evidence incomplete while returning success. The front ends
+now log the close failure and return an error status while preserving the
+existing scan verdict handling.
+
+Source guards and `git diff --check` pass. Fault-injected front-end execution,
+dependency-complete builds, and supported-build Sonic1 service qualification
+remain release gates.

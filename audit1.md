@@ -2116,6 +2116,17 @@ unsupported materialization cases. Dependency-complete C/CTest, sanitizer,
 broad MIME corpus, and supported-build Sonic1 qualification remain open release
 gates.
 
+## Structured report close-error propagation — 2026-08-20
+
+The CLI JSONL writers previously ignored `fclose()` failures after writing a
+structured report. They now log a close failure and propagate it as a front-end
+error in both `clamscan` and `clamdscan`, so a delayed filesystem failure cannot
+leave incomplete evidence attached to an otherwise successful invocation.
+
+The source guards and `git diff --check` pass. Dependency-complete front-end
+builds, fault-injected report-output coverage, and supported-build Sonic1
+service qualification remain open release gates.
+
 ## Rust parser failure accounting — 2026-08-20
 
 Rust-backed parser failures previously set only the Rust-side sticky
