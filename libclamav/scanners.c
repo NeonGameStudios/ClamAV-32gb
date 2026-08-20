@@ -3760,6 +3760,7 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
 {
     char *tempname;
     cl_error_t ret = CL_SUCCESS;
+    uint64_t temporary_reserved = 0;
 
     cli_dbgmsg("in cli_scanscrenc()\n");
 
@@ -3772,8 +3773,17 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
         return CL_ETMPDIR;
     }
 
-    if (html_screnc_decode(ctx->fmap, tempname))
+    if (!html_screnc_decode_ctx(ctx, ctx->fmap, tempname, &temporary_reserved)) {
+        cli_mark_scan_incomplete(ctx, "HTML script-encoded content could not be decoded completely");
+        ret = CL_EPARSE;
+    } else {
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        temporary_reserved = 0;
         ret = cli_magic_scan_dir(tempname, ctx, LAYER_ATTRIBUTES_NONE);
+    }
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     if (!ctx->engine->keeptmp)
         cli_rmdirs(tempname);

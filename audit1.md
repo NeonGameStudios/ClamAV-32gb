@@ -1888,3 +1888,19 @@ releases it after cleanup.
 Source guards and `git diff --check` pass. Dependency-complete HWP/HWPML corpus
 execution, sanitizer and fault-injected cleanup coverage, and supported-build
 Sonic1 qualification remain open release gates.
+
+## Script-encoded HTML staging — 2026-08-20
+
+The script-encoded HTML decoder previously ignored temporary-output write
+failures and returned success when the encoded payload ended before the
+declared decoded length. Its generated file also bypassed the shared
+`MaxTemporarySize` accounting. The decoder now reserves each emitted chunk,
+requires complete writes and close, treats incomplete input or decoding as a
+sticky incomplete result, and retains the reservation until the completed
+child directory scan takes ownership. A unit regression verifies that a
+one-byte temporary budget fails visibly without leaving a reservation behind.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete HTML/script build, fault-injected write/read/close
+coverage, sanitizer run, large HTML corpus, and supported-build Sonic1
+qualification remain open release gates.

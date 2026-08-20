@@ -2134,7 +2134,36 @@ bool html_normalise_map_form_data(cli_ctx *ctx, fmap_t *map, const char *dirname
     return retval;
 }
 
-bool html_screnc_decode(fmap_t *map, const char *dirname)
+static bool html_screnc_write(cli_ctx *ctx, int fd, const void *data, size_t len,
+                              uint64_t *temporary_reserved)
+{
+    if (len == 0)
+        return true;
+
+    if (ctx == NULL && temporary_reserved == NULL) {
+        return cli_writen(fd, data, len) == len;
+    }
+
+    if (ctx == NULL || temporary_reserved == NULL || UINT64_MAX - *temporary_reserved < (uint64_t)len ||
+        cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML script-encoded output exceeds temporary storage limits");
+        return false;
+    }
+
+    *temporary_reserved += (uint64_t)len;
+    if (cli_writen(fd, data, len) != len) {
+        cli_scan_release_temporary(ctx, (uint64_t)len);
+        *temporary_reserved -= (uint64_t)len;
+        cli_mark_scan_incomplete(ctx, "HTML script-encoded output could not be written completely");
+        return false;
+    }
+
+    return true;
+}
+
+static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirname,
+                                    uint64_t *temporary_reserved)
 {
     int count;
     bool retval         = false;
@@ -2144,10 +2173,17 @@ bool html_screnc_decode(fmap_t *map, const char *dirname)
     struct screnc_state screnc_state;
     m_area_t m_area;
 
+    if (map == NULL || dirname == NULL || (ctx == NULL) != (temporary_reserved == NULL))
+        return false;
+
+    if (temporary_reserved)
+        *temporary_reserved = 0;
+
     memset(&m_area, 0, sizeof(m_area));
     m_area.length = map->len;
     m_area.offset = 0;
     m_area.map    = map;
+    m_area.read_error = false;
 
     snprintf((char *)filename, 1024, "%s" PATHSEP "screnc.html", dirname);
     ofd = open((const char *)filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IWUSR | S_IRUSR);
@@ -2195,25 +2231,51 @@ bool html_screnc_decode(fmap_t *map, const char *dirname)
     screnc_state.length += base64_chars[tmpstr[3]] < 0 ? 0 : base64_chars[tmpstr[3]] << 16;
     screnc_state.length += (base64_chars[tmpstr[4]] < 0 ? 0 : base64_chars[tmpstr[4]] << 2) << 24;
     screnc_state.length += ((base64_chars[tmpstr[5]] >> 4) < 0 ? 0 : (base64_chars[tmpstr[5]] >> 4)) << 24;
-    cli_writen(ofd, "<script>", strlen("<script>"));
+    if (!html_screnc_write(ctx, ofd, "<script>", strlen("<script>"), temporary_reserved))
+        goto done;
     while (screnc_state.length && line) {
         screnc_decode(ptr, &screnc_state);
-        cli_writen(ofd, ptr, strlen((const char *)ptr));
+        if (!html_screnc_write(ctx, ofd, ptr, strlen((const char *)ptr), temporary_reserved))
+            goto done;
         free(line);
         line = NULL;
         if (screnc_state.length) {
             ptr = line = cli_readchunk(NULL, &m_area, 8192);
         }
     }
-    cli_writen(ofd, "</script>", strlen("</script>"));
-    if (screnc_state.length)
+    if (screnc_state.length) {
         cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML script-encoded content was not decoded completely");
+        goto done;
+    }
+    if (!html_screnc_write(ctx, ofd, "</script>", strlen("</script>"), temporary_reserved))
+        goto done;
     retval = true;
 
 done:
-    close(ofd);
+    if (m_area.read_error) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML script-encoded input could not be read completely");
+        retval = false;
+    }
+    if (close(ofd) != 0) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "HTML script-encoded output could not be closed");
+        retval = false;
+    }
     if (line) {
         free(line);
     }
     return retval;
+}
+
+bool html_screnc_decode(fmap_t *map, const char *dirname)
+{
+    return html_screnc_decode_impl(NULL, map, dirname, NULL);
+}
+
+bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname, uint64_t *temporary_reserved)
+{
+    return html_screnc_decode_impl(ctx, map, dirname, temporary_reserved);
 }

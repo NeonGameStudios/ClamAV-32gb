@@ -206,14 +206,52 @@ START_TEST(test_screnc_nullterminate)
 {
     int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
     fmap_t *map;
+    cli_ctx ctx;
+    struct cl_engine *engine;
+    uint64_t temporary_reserved = 0;
 
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = engine;
     ck_assert_msg(mkdir(dir, 0700) == 0, "mkdir failed");
     map = fmap_new(fd, 0, 0, "screnc_test", NULL);
     ck_assert_msg(!!map, "fmap failed");
-    ck_assert_msg(html_screnc_decode(map, dir) == 1, "html_screnc_decode failed");
+    ck_assert_msg(html_screnc_decode_ctx(&ctx, map, dir, &temporary_reserved) == 1, "html_screnc_decode failed");
+    ck_assert(temporary_reserved > 0);
+    cli_scan_release_temporary(&ctx, temporary_reserved);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
     fmap_free(map);
     ck_assert_msg(cli_rmdirs(dir) == 0, "rmdirs failed");
     close(fd);
+    cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_screnc_temporary_limit_is_fail_visible)
+{
+    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+    fmap_t *map;
+    cli_ctx ctx;
+    struct cl_engine *engine;
+    uint64_t temporary_reserved = 0;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = engine;
+    ck_assert_msg(mkdir(dir, 0700) == 0, "mkdir failed");
+    map = fmap_new(fd, 0, 0, "screnc_test", NULL);
+    ck_assert_ptr_nonnull(map);
+    ck_assert(!html_screnc_decode_ctx(&ctx, map, dir, &temporary_reserved));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    fmap_free(map);
+    ck_assert_msg(cli_rmdirs(dir) == 0, "rmdirs failed");
+    close(fd);
+    cl_engine_free(engine);
 }
 END_TEST
 
@@ -231,6 +269,7 @@ Suite *test_htmlnorm_suite(void)
                                 htmlnorm_setup, htmlnorm_teardown);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_mapped_read_failure_is_fail_visible);
     tcase_add_test(tc_htmlnorm_api, test_screnc_nullterminate);
+    tcase_add_test(tc_htmlnorm_api, test_screnc_temporary_limit_is_fail_visible);
 
     return s;
 }
