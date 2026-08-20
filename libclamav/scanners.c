@@ -1970,7 +1970,7 @@ cl_error_t find_file(const char *filename, const char *dir, char *result, size_t
     DIR *dd;
     struct dirent *dent;
     char fullname[PATH_MAX];
-    cl_error_t ret;
+    cl_error_t ret = CL_EOPEN;
     size_t len;
     STATBUF statbuf;
 
@@ -1979,7 +1979,15 @@ cl_error_t find_file(const char *filename, const char *dir, char *result, size_t
     }
 
     if ((dd = opendir(dir)) != NULL) {
-        while ((dent = readdir(dd))) {
+        for (;;) {
+            errno = 0;
+            dent  = readdir(dd);
+            if (NULL == dent) {
+                if (errno != 0)
+                    ret = CL_EREAD;
+                break;
+            }
+
             if (dent->d_ino) {
                 if (strcmp(dent->d_name, ".") != 0 && strcmp(dent->d_name, "..") != 0) {
 
@@ -1991,26 +1999,36 @@ cl_error_t find_file(const char *filename, const char *dir, char *result, size_t
                         if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
                             ret = find_file(filename, fullname, result, result_size);
                             if (ret == CL_SUCCESS) {
-                                closedir(dd);
-                                return ret;
+                                goto done;
+                            } else if (ret != CL_EOPEN) {
+                                goto done;
                             }
                         } else if (S_ISREG(statbuf.st_mode)) {
                             if (strcmp(dent->d_name, filename) == 0) {
                                 len = MIN(strlen(dir) + 1, result_size);
                                 memcpy(result, dir, len);
                                 result[len - 1] = '\0';
-                                closedir(dd);
-                                return CL_SUCCESS;
+                                ret = CL_SUCCESS;
+                                goto done;
                             }
                         }
+                    } else {
+                        ret = CL_ESTAT;
+                        goto done;
                     }
                 }
             }
         }
-        closedir(dd);
+    } else {
+        ret = (errno == ENOENT) ? CL_EOPEN : CL_ESTAT;
     }
 
-    return CL_EOPEN;
+done:
+    if (dd != NULL && closedir(dd) != 0) {
+        ret = CL_EREAD;
+    }
+
+    return ret;
 }
 
 static void cli_ole2_note_vba_cleanup_failure(cli_ctx *ctx, cl_error_t *status, const char *reason)
@@ -2051,7 +2069,8 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
         snprintf(filename, sizeof(filename), "%s_%u", hash, hashcnt);
         filename[sizeof(filename) - 1] = '\0';
 
-        if (CL_SUCCESS == find_file(filename, dir, path, sizeof(path))) {
+        ret = find_file(filename, dir, path, sizeof(path));
+        if (CL_SUCCESS == ret) {
             found_dir_file = true;
             cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: Found dir file: %s\n", path);
             if ((ret = cli_vba_readdir_new(ctx, path, U, hash, hashcnt, &tempfd, has_macros, &tempfile,
@@ -2137,6 +2156,11 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                 cli_scan_release_temporary(ctx, temporary_reserved);
                 temporary_reserved = 0;
             }
+        } else if (ret != CL_EOPEN) {
+            cli_mark_scan_incomplete(ctx, "OLE2 temporary directory search did not complete");
+            if (CL_SUCCESS == first_candidate_error)
+                first_candidate_error = ret;
+            ret = CL_SUCCESS;
         }
 
         hashcnt--;
@@ -2163,7 +2187,10 @@ done:
         temporary_reserved = 0;
     }
 
-    if (CL_SUCCESS == ret && found_dir_file && !candidate_succeeded) {
+    if (CL_SUCCESS == ret && first_candidate_error != CL_SUCCESS && !candidate_succeeded) {
+        cli_mark_scan_incomplete(ctx, "OLE2 VBA project search did not complete");
+        ret = first_candidate_error;
+    } else if (CL_SUCCESS == ret && found_dir_file && !candidate_succeeded) {
         cli_mark_scan_incomplete(ctx, "OLE2 VBA project directory could not be parsed");
         ret = (CL_SUCCESS == first_candidate_error) ? CL_EPARSE : first_candidate_error;
     }

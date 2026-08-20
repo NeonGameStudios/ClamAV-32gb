@@ -2183,6 +2183,17 @@ Source guards and `git diff --check` are the current local evidence.
 Fault-injected service traversal, dependency-complete builds, and supported-
 build Sonic1 qualification remain release gates.
 
+## OLE/VBA temporary-directory search failures — 2026-08-20
+
+The OLE/VBA directory-file search now distinguishes an ordinary no-match from
+an incomplete traversal. Failed `LSTAT()`, `readdir()`, `closedir()`, or
+temporary-directory opening operations mark the scan incomplete instead of
+silently omitting the VBA project.
+
+Source guards and `git diff --check` are the current local evidence.
+Fault-injected OLE/VBA traversal, dependency-complete builds, and supported-
+build Sonic1 qualification remain release gates.
+
 ## Shared temporary-directory cleanup closeout — 2026-08-20
 
 The shared `cli_rmdirs()` cleanup helper now fails closed when directory

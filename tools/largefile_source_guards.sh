@@ -1535,6 +1535,8 @@ contains libclamav/others_common.c 'readdir_failed = true;'
 contains libclamav/others_common.c 'walk_status = (ret == CL_SUCCESS) ? CL_EREAD : ret;'
 contains libclamav/others_common.c 'new_entries = cli_max_realloc(entries'
 contains libclamav/others_common.c 'if (closedir(dd) != 0)'
+contains libclamav/scanners.c 'OLE2 temporary directory search did not complete'
+contains libclamav/scanners.c 'if (dd != NULL && closedir(dd) != 0)'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2
