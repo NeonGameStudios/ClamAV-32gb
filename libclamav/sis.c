@@ -68,6 +68,17 @@ sis_incomplete(cli_ctx *ctx, const char *reason)
     return CL_EPARSE;
 }
 
+static void
+sis_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
+{
+    if (!failed)
+        return;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    if (*status == CL_SUCCESS || *status == CL_CLEAN || *status == CL_BREAK)
+        *status = CL_EUNLINK;
+}
+
 #define SIS_STREAM_CHUNK (64U * 1024U)
 
 /* Copy or inflate one SIS member into a caller-owned temporary descriptor.
@@ -250,7 +261,8 @@ cl_error_t cli_scansis(cli_ctx *ctx)
 
     if (fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS) != SIZEOF_HEADER_UUIDS) {
         cli_dbgmsg("SIS: unable to read UIDs\n");
-        cli_rmdirs(tmpd);
+        if (cli_rmdirs(tmpd) != 0)
+            cli_mark_scan_incomplete(ctx, "SIS temporary directory could not be removed");
         free(tmpd);
         return CL_EREAD;
     }
@@ -265,8 +277,11 @@ cl_error_t cli_scansis(cli_ctx *ctx)
         i = CL_EFORMAT;
     }
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(tmpd);
+    if (!ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0) {
+        cli_mark_scan_incomplete(ctx, "SIS temporary directory could not be removed");
+        if (i == CL_SUCCESS || i == CL_CLEAN || i == CL_BREAK)
+            i = CL_EUNLINK;
+    }
 
     free(tmpd);
     return i;
@@ -672,7 +687,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
                         status = sis_stream_member_to_fd(ctx, map, ptrs[j], lens[j], member_output_size, compd, fd);
                         if (status != CL_SUCCESS) {
-                            close(fd);
+                            sis_note_cleanup_failure(ctx, &status, close(fd) != 0,
+                                                     "SIS temporary output could not be closed");
                             fd = -1;
                             cli_scan_release_temporary(ctx, member_output_size);
                             if (limit_status == CL_CLEAN)
@@ -682,8 +698,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
                         status = cli_magic_scan_desc_type_reserved(fd, ofn, ctx, CL_TYPE_ANY, original_filepath,
                                                                    LAYER_ATTRIBUTES_NONE);
-                        if (close(fd) != 0 && status == CL_SUCCESS)
-                            status = CL_EWRITE;
+                        sis_note_cleanup_failure(ctx, &status, close(fd) != 0,
+                                                 "SIS temporary output could not be closed");
                         fd = -1;
                         if (temporary_reserved) {
                             cli_scan_release_temporary(ctx, member_output_size);
@@ -735,7 +751,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
 done:
     if (-1 != fd) {
-        close(fd);
+        sis_note_cleanup_failure(ctx, &status, close(fd) != 0,
+                                 "SIS temporary output could not be closed");
     }
     CLI_FREE_AND_SET_NULL(original_filepath);
     CLI_FREE_AND_SET_NULL(ptrs);
@@ -1036,7 +1053,8 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
                                 s->incomplete = 1;
                                 if (s->failure == CL_CLEAN)
                                     s->failure = ret;
-                                close(fd);
+                                sis_note_cleanup_failure(ctx, &ret, close(fd) != 0,
+                                                         "SIS 9.x temporary output could not be closed");
                                 fd = -1;
                                 cli_scan_release_temporary(ctx, member_output_size);
                                 temporary_reserved = false;
@@ -1045,8 +1063,8 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
 
                             ret = cli_magic_scan_desc_type_reserved(fd, tempf, ctx, CL_TYPE_ANY, NULL,
                                                                     LAYER_ATTRIBUTES_NONE);
-                            if (close(fd) != 0 && ret == CL_SUCCESS)
-                                ret = CL_EWRITE;
+                            sis_note_cleanup_failure(ctx, &ret, close(fd) != 0,
+                                                     "SIS 9.x temporary output could not be closed");
                             fd = -1;
                             if (temporary_reserved) {
                                 cli_scan_release_temporary(ctx, member_output_size);

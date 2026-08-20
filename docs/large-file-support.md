@@ -2534,6 +2534,14 @@ time-limit failures mark the scan incomplete rather than scanning a partial
 member. SIS parser corpus, sanitizer, and large-payload qualification remain
 open.
 
+## SIS temporary cleanup propagation — 2026-08-20
+
+Legacy and 9.x SIS extraction now treats temporary descriptor close failures
+and top-level temporary-directory removal failures as incomplete results. A
+cleanup error cannot replace an earlier detection, while an otherwise-clean
+member or archive becomes non-clean. SIS parser corpus, sanitizer, and
+supported-build Sonic1 qualification remain release gates.
+
 ## NSIS solid bounded input — 2026-08-19
 
 The stateful solid NSIS path no longer maps the complete compressed archive or
