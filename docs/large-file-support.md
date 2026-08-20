@@ -3755,6 +3755,15 @@ A focused APM zero-limit regression and source guards cover the APM path;
 compiled GPT/partition corpus, sanitizer, and supported-build Sonic1
 qualification remain open.
 
+## UDF file-list completeness — 2026-08-20
+
+UDF no longer scans the smaller of its file-identifier and file-entry lists.
+When the descriptor counts differ, unmatched content is now treated as a
+confirmed structural failure and returns `CL_EPARSE` with a non-cacheable
+incomplete scan. A focused synthetic descriptor-sequence regression and source
+guard cover the boundary; full UDF corpus, sanitizer, and supported-build
+Sonic1 qualification remain open.
+
 The focused policy regression and source guards pass. Full C/CTest execution,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.

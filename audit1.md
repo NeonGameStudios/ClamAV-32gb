@@ -2280,6 +2280,13 @@ parser errors and detections remain stronger outcomes. A focused APM
 zero-limit regression and source guards cover the APM boundary; compiled GPT
 and partition-corpus qualification remain open.
 
+## UDF file-list completeness — 2026-08-20
+
+UDF now fails closed when the file-identifier and file-entry descriptor lists
+have different lengths instead of silently dropping unmatched entries. The
+new path returns `CL_EPARSE`, marks the scan non-cacheable, and has a focused
+synthetic descriptor-sequence regression; full UDF qualification remains open.
+
 ## OLE2 temporary-tree error propagation — 2026-08-20
 
 Recursive OLE2 scans now preserve the distinction between a globally indexed

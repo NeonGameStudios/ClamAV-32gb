@@ -1080,15 +1080,17 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
                 cli_dbgmsg("cli_scanudf: Parsing %d file entries.\n", fileEntryList.cnt);
 
+                /* Every file identifier must have a corresponding file entry.
+                 * Scanning only the smaller list silently drops a required
+                 * layer and can turn a malformed volume into a clean result. */
+                if (fileEntryList.cnt != fileIdentifierList.cnt) {
+                    cli_mark_scan_incomplete(ctx, "UDF file identifier and file entry counts do not match");
+                    ret = CL_EPARSE;
+                    goto done;
+                }
+
                 /* Dump all the files here. */
                 size_t cnt = fileIdentifierList.cnt;
-
-                /* The number of file entries should match the number of file identifiers, but in the
-                 * case that the file is malformed, we are going to do the best we can to extract as much as we can.
-                 */
-                if (fileEntryList.cnt < cnt) {
-                    cnt = fileEntryList.cnt;
-                }
 
                 for (i = 0; i < cnt; i++) {
                     ret = parseFileEntryDescriptor(ctx,
