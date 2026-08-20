@@ -7552,6 +7552,17 @@ static cl_error_t scan_common(
 
 done:
 
+    if ((NULL != ctx.engine) &&
+        (ctx.engine->engine_options & ENGINE_OPTIONS_TMPDIR_RECURSION) &&
+        (NULL != ctx.this_layer_tmpdir)) {
+
+        if (!ctx.engine->keeptmp && cli_rmdirs(ctx.this_layer_tmpdir) != 0) {
+            cli_mark_scan_incomplete(&ctx, "scan-level temporary directory could not be removed");
+            if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_VERIFIED || status == CL_BREAK)
+                status = CL_EUNLINK;
+        }
+    }
+
     if (NULL != ctx.report) {
         cli_scan_report_finish(
             ctx.report,
@@ -7572,10 +7583,6 @@ done:
     if ((NULL != ctx.engine) &&
         (ctx.engine->engine_options & ENGINE_OPTIONS_TMPDIR_RECURSION) &&
         (NULL != ctx.this_layer_tmpdir)) {
-
-        if (!ctx.engine->keeptmp) {
-            (void)cli_rmdirs(ctx.this_layer_tmpdir);
-        }
         free(ctx.this_layer_tmpdir);
     } else {
         // If we didn't create a temp directory, we don't need to free it,

@@ -2171,6 +2171,18 @@ failures preserve an earlier detection and make an otherwise-clean generated
 member non-clean. Valid large-member, malformed-decoder, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+## Scan-level temporary-directory cleanup propagation — 2026-08-20
+
+When recursive temporary-directory mode is enabled, scan-level directory
+removal now occurs before structured-report finalization. A removal failure is
+marked incomplete and becomes `CL_EUNLINK` when no stronger result exists, so
+the public status and structured completion report cannot disagree about a
+cleanup failure.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+fault-injected scan-level cleanup, sanitizer execution, and supported-build
+Sonic1 qualification remain release gates.
+
 ## ZIP temporary-directory cleanup propagation — 2026-08-20
 
 The ZIP outer extraction directory now checks removal after member processing.

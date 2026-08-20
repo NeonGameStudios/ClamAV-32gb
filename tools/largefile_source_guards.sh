@@ -306,6 +306,7 @@ contains libclamav/ole2_extract.c 'OLE2 sector chain exceeds the deep-parser ABI
 contains libclamav/scanners.c 'OLE2 VBA project directory could not be parsed'
 contains libclamav/scanners.c 'directory entry could not be inspected'
 contains libclamav/scanners.c 'directory enumeration ended before every entry was inspected'
+contains libclamav/scanners.c 'scan-level temporary directory could not be removed'
 contains libclamav/scanners.c 'temporary scan directory could not be closed'
 contains libclamav/scanners.c 'OLE2 temporary directory entry could not be inspected'
 contains libclamav/scanners.c 'OLE2 temporary directory enumeration ended early'
