@@ -1980,8 +1980,15 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
     }
 
 done:
-    if (input)
-        fclose(input);
+    if (input) {
+        if (fclose(input) != 0) {
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     "Multipart body spool could not be closed completely");
+            if (result == OK)
+                result = FAIL;
+        }
+        input = NULL;
+    }
     if (headers)
         messageDestroy(headers);
     if (part)

@@ -168,6 +168,7 @@ contains libclamav/message.c 'MIME message line could not be materialized comple
 contains libclamav/message.c 'MIME message string could not be materialized completely'
 contains libclamav/message.c 'messageCopyBodySpool'
 contains unit_tests/check_str.c 'test_message_export_rejects_truncated_materialization'
+contains libclamav/mbox.c 'Multipart body spool could not be closed completely'
 contains libclamav/7z_iface.c 'written == (size_t)-1'
 contains libclamav/7z_iface.c 'prevents signed overflow'
 contains libclamav/7z/7zIn.c 'nextHeaderSize > (UInt64)-1 - k7zStartHeaderSize - nextHeaderOffset'

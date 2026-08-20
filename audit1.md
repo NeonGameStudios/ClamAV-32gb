@@ -2376,3 +2376,14 @@ Source guards and `git diff --check` are the current local evidence. Compiled
 inotify/fanotify fault-injected traversal, dependency-complete front-end
 builds, sanitizer coverage, and supported-build Sonic1 qualification remain
 release gates.
+
+## Streamed multipart spool close propagation — 2026-08-20
+
+The disk-backed multipart MIME walker checked read errors but ignored the
+source `fclose()` result. It now marks the mail scan incomplete when the source
+descriptor cannot be closed cleanly and changes only an otherwise-successful
+result to failure, preserving detections and earlier parser/resource results.
+
+The source guard and `git diff --check` are the current local evidence.
+Fault-injected mail-spool cleanup, dependency-complete C/CTest, sanitizer
+coverage, and supported-build Sonic1 qualification remain release gates.
