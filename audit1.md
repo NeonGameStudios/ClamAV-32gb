@@ -2055,3 +2055,12 @@ preserving the heuristic alert and any stronger result.
 
 Compiled encrypted 7-Zip fixtures, sanitizer coverage, and supported-build
 Sonic1 qualification remain open release gates.
+
+## Structured unsupported-result classification — 2026-08-20
+
+Structured reports now classify encrypted, unavailable, unimplemented, legacy
+ABI, and unrepresentable parser paths as `UNSUPPORTED` even when the parser
+returns `CL_EPARSE`. This prevents an encrypted 7-Zip layer from being
+misreported as confirmed malformed content. A focused report regression covers
+the encrypted-header reason; compiled current-head and service qualification
+remain release gates.

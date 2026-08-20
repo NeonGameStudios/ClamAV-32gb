@@ -89,6 +89,19 @@ static bool report_reason_contains(const char *reason, const char *needle)
     return (NULL != reason) && (NULL != needle) && (NULL != strstr(reason, needle));
 }
 
+static bool report_reason_is_unsupported(const char *reason)
+{
+    return report_reason_contains(reason, "unsupported") ||
+           report_reason_contains(reason, "not implemented") ||
+           report_reason_contains(reason, "requires") ||
+           report_reason_contains(reason, "unavailable") ||
+           report_reason_contains(reason, "encrypted") ||
+           report_reason_contains(reason, "encryption") ||
+           report_reason_contains(reason, "ciphertext") ||
+           report_reason_contains(reason, "legacy ABI") ||
+           report_reason_contains(reason, "cannot represent");
+}
+
 static bool report_status_is_operational_failure(cl_error_t status)
 {
     switch (status) {
@@ -359,9 +372,7 @@ void cli_scan_report_finish(
             report->completion = CL_SCAN_COMPLETION_LIMIT_INCOMPLETE;
         } else if (report_status_is_operational_failure(status)) {
             report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
-        } else if (report_reason_contains(reason, "unsupported") ||
-                   report_reason_contains(reason, "not implemented") ||
-                   report_reason_contains(reason, "requires")) {
+        } else if (report_reason_is_unsupported(reason)) {
             report->completion = CL_SCAN_COMPLETION_UNSUPPORTED;
         } else if (report_reason_contains(reason, "malformed") ||
                    report_reason_contains(reason, "truncated") ||

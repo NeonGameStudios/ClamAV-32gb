@@ -840,6 +840,25 @@ START_TEST(test_scan_report_detection_precedes_incomplete_state)
 }
 END_TEST
 
+START_TEST(test_scan_report_unsupported_encryption_is_not_malformed)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "7-Zip encrypted archive header prevents inspection";
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    cli_scan_report_finish(report, &ctx, CL_EPARSE, CL_VERDICT_NOTHING_FOUND, NULL);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_UNSUPPORTED);
+    cl_scan_report_free(report);
+}
+END_TEST
+
 START_TEST(test_scan_report_break_is_application_abort)
 {
     cl_scan_report_t *report = NULL;
@@ -11095,6 +11114,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
+    tcase_add_test(tc_cl, test_scan_report_unsupported_encryption_is_not_malformed);
     tcase_add_test(tc_cl, test_scan_report_break_is_application_abort);
     tcase_add_test(tc_cl, test_scan_report_operational_failure_is_resource_failure);
     tcase_add_test(tc_cl, test_scan_report_sticky_resource_failure_is_not_a_scan_limit);
