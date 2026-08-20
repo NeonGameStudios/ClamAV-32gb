@@ -3475,3 +3475,15 @@ results.
 Source guards and `git diff --check` are the current local evidence. A
 dependency-complete CryptFF corpus, sanitizer/fault-injected cleanup run, and
 supported-build Sonic1 qualification remain release gates.
+
+## Scanner temporary-directory cleanup propagation — 2026-08-20
+
+The shared scanner wrappers now check removal of their parser-owned temporary
+directories for OLE2, TAR, script-encoded HTML, PDF, TNEF, UUEncode, and mail
+scans. A removal failure marks the scan incomplete and changes only an
+otherwise-successful result to `CL_EUNLINK`, preserving detections and prior
+parser/resource failures.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+fault-injected directory-cleanup coverage, sanitizer execution, and supported
+build Sonic1 qualification remain release gates.

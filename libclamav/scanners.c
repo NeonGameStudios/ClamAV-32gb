@@ -3749,6 +3749,20 @@ done:
     return status;
 }
 
+static cl_error_t cli_cleanup_scan_tempdir(cli_ctx *ctx, char *dir, cl_error_t status, const char *reason)
+{
+    if (ctx == NULL || dir == NULL || ctx->engine == NULL || ctx->engine->keeptmp)
+        return status;
+
+    if (cli_rmdirs(dir) != 0) {
+        cli_mark_scan_incomplete(ctx, reason);
+        if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_VERIFIED || status == CL_BREAK)
+            status = CL_EUNLINK;
+    }
+
+    return status;
+}
+
 static cl_error_t cli_scanole2(cli_ctx *ctx)
 {
     char *dir          = NULL;
@@ -3805,9 +3819,7 @@ done:
     }
 
     if (NULL != dir) {
-        if (!ctx->engine->keeptmp) {
-            cli_rmdirs(dir);
-        }
+        ret = cli_cleanup_scan_tempdir(ctx, dir, ret, "OLE2 temporary directory could not be removed");
         free(dir);
     }
 
@@ -3833,8 +3845,7 @@ static cl_error_t cli_scantar(cli_ctx *ctx, unsigned int posix)
 
     ret = cli_untar(dir, posix, ctx);
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(dir);
+    ret = cli_cleanup_scan_tempdir(ctx, dir, ret, "TAR temporary directory could not be removed");
 
     free(dir);
     return ret;
@@ -3869,8 +3880,7 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
     if (temporary_reserved)
         cli_scan_release_temporary(ctx, temporary_reserved);
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(tempname);
+    ret = cli_cleanup_scan_tempdir(ctx, tempname, ret, "HTML script-encoded temporary directory could not be removed");
 
     free(tempname);
     return ret;
@@ -4004,8 +4014,7 @@ static cl_error_t cli_scanpdf(cli_ctx *ctx, off_t offset)
 
     ret = cli_pdf(dir, ctx, offset);
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(dir);
+    ret = cli_cleanup_scan_tempdir(ctx, dir, ret, "PDF temporary directory could not be removed");
 
     free(dir);
     return ret;
@@ -4030,8 +4039,7 @@ static cl_error_t cli_scantnef(cli_ctx *ctx)
     if (ret == CL_SUCCESS)
         ret = cli_magic_scan_dir(dir, ctx, LAYER_ATTRIBUTES_NONE);
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(dir);
+    ret = cli_cleanup_scan_tempdir(ctx, dir, ret, "TNEF temporary directory could not be removed");
 
     free(dir);
     return ret;
@@ -4059,8 +4067,7 @@ static cl_error_t cli_scanuuencoded(cli_ctx *ctx)
     if (ret == CL_SUCCESS)
         ret = cli_magic_scan_dir(dir, ctx, LAYER_ATTRIBUTES_NONE);
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(dir);
+    ret = cli_cleanup_scan_tempdir(ctx, dir, ret, "UUEncode temporary directory could not be removed");
 
     free(dir);
     return ret;
@@ -4100,9 +4107,7 @@ static cl_error_t cli_scanmail(cli_ctx *ctx)
 
 done:
     if (NULL != dir) {
-        if (!ctx->engine->keeptmp) {
-            cli_rmdirs(dir);
-        }
+        ret = cli_cleanup_scan_tempdir(ctx, dir, ret, "mail temporary directory could not be removed");
 
         free(dir);
     }
