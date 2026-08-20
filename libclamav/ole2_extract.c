@@ -1797,6 +1797,7 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
     char *tmpname;
     uint32_t prefix;
     unsigned char inbuf[FILEBUFF], outbuf[FILEBUFF];
+    uint64_t temporary_reserved = 0;
 
     /* fmap the input file for easier manipulation */
     if (fd < 0) {
@@ -1880,11 +1881,17 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
         if (count) {
             cl_error_t limitret = cli_checklimits("MSO", ctx, outsize + count, 0, 0);
             if (limitret != CL_SUCCESS) {
-                if (limitret != CL_ETIMEOUT)
+            if (limitret != CL_ETIMEOUT)
                     cli_mark_scan_incomplete(ctx, "MSO stream output exceeded configured scan limits");
                 ret = limitret;
                 goto mso_end;
             }
+            if (cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "MSO stream output exceeds temporary storage limits");
+                ret = CL_ERESOURCE;
+                goto mso_end;
+            }
+            temporary_reserved += (uint64_t)count;
             if (cli_writen(ofd, outbuf, count) != count) {
                 cli_errmsg("scan_mso_stream: Can't write to file %s\n", tmpname);
                 ret = CL_EWRITE;
@@ -1913,7 +1920,7 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
     }
 
     /* scanning inflated stream */
-    ret = cli_magic_scan_desc(ofd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_magic_scan_desc_type_reserved(ofd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
 
     /* clean-up */
 mso_end:
@@ -1925,6 +1932,7 @@ mso_end:
     if (!ctx->engine->keeptmp)
         if (cli_unlink(tmpname))
             ole2_note_cleanup_failure(ctx, &ret, CL_EUNLINK, "MSO temporary output could not be removed");
+    cli_scan_release_temporary(ctx, temporary_reserved);
     free(tmpname);
     fmap_free(input);
     return ret;
@@ -1941,6 +1949,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
     int ofd              = -1;
     int is_mso           = 0;
     bitset_t *blk_bitset = NULL;
+    uint64_t temporary_reserved = 0;
 
     UNUSEDPARAM(dir);
     UNUSEDPARAM(handler_ctx);
@@ -1951,6 +1960,13 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
         goto done;
     }
     print_ole2_property(prop);
+
+    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded stream exceeds temporary storage limits");
+        goto done;
+    }
+    temporary_reserved = (uint64_t)prop->size;
 
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
         ret = CL_EMEM;
@@ -2090,7 +2106,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
         ret = scan_mso_stream(ofd, tempfile, ctx);
     } else {
         /* Normal File Scan */
-        ret = cli_magic_scan_desc(ofd, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        ret = cli_magic_scan_desc_type_reserved(ofd, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     }
 
     if (ret != CL_SUCCESS && ret != CL_VIRUS) {
@@ -2100,6 +2116,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
     ret = ret == CL_VIRUS ? CL_VIRUS : CL_SUCCESS;
 
 done:
+    cli_scan_release_temporary(ctx, temporary_reserved);
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
         if (close(ofd) == -1)
@@ -2157,6 +2174,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     size_t stream_bytes_read = 0;
     uint32_t leftover        = 0;
     uint32_t readIdx         = 0;
+    uint64_t temporary_reserved = 0;
 
     UNUSEDPARAM(dir);
 
@@ -2175,6 +2193,13 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
 
     print_ole2_property(prop);
+
+    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "OLE2 encrypted stream exceeds temporary storage limits");
+        goto done;
+    }
+    temporary_reserved = (uint64_t)prop->size;
 
     nrounds = rijndaelSetupDecrypt(rk, key->key, key->key_length_bits);
 
@@ -2361,7 +2386,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
         ret = scan_mso_stream(ofd, tempfile, ctx);
     } else {
         /* Normal File Scan */
-        ret = cli_magic_scan_desc(ofd, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+        ret = cli_magic_scan_desc_type_reserved(ofd, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     }
 
     if (ret != CL_SUCCESS && ret != CL_VIRUS) {
@@ -2371,6 +2396,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     ret = ret == CL_VIRUS ? CL_VIRUS : CL_SUCCESS;
 
 done:
+    cli_scan_release_temporary(ctx, temporary_reserved);
     CLI_FREE_AND_SET_NULL(name);
     if (-1 != ofd) {
         if (close(ofd) == -1)

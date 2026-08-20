@@ -2757,11 +2757,14 @@ sanitizer coverage remain release gates.
 ## OLE2 temporary-stream cleanup — 2026-08-19
 
 OLE2 VBA, ordinary embedded streams, encrypted streams, and MSO decompression
-now treat output close, zlib finalization, and temporary removal failures as
-sticky incomplete states. A cleanup failure after a detection preserves the
-detection, while a nominal clean/`CL_BREAK` result becomes non-clean. The
-Linux static test shape adds a close-fault regression; compiled execution,
-sanitizer coverage, and broader OLE2 corpus qualification remain release gates.
+now admit declared or incrementally produced temporary output against
+`MaxTemporarySize`, retain the reservation through the nested scan, and use
+the reservation-aware descriptor path. Output close, zlib finalization, and
+temporary removal failures remain sticky incomplete states. A cleanup failure
+after a detection preserves the detection, while a nominal clean/`CL_BREAK`
+result becomes non-clean. The focused temporary-limit and Linux static
+close-fault regressions are registered; compiled execution, sanitizer
+coverage, and broader OLE2 corpus qualification remain release gates.
 
 ## BinHex temporary-stream cleanup — 2026-08-19
 

@@ -8516,6 +8516,43 @@ START_TEST(test_ole2_vba_materialization_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_temporary_limit_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    struct uniq *files = NULL;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/has_png_and_jpeg.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+
+    map = fmap_new(fd, 0, 0, file_path, NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxtemporarysize = 1;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, &files, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_ptr_null(files);
+
+    cl_fmap_close(map);
+    close(fd);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_ole2_output_close_failure_is_fail_visible)
 {
@@ -10574,6 +10611,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_xlm_missing_input_is_fail_visible);
     tcase_add_test(tc_cl, test_xlm_truncated_record_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_vba_materialization_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_ole2_temporary_limit_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_ole2_output_close_failure_is_fail_visible);
 #endif
