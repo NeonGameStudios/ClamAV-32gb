@@ -543,7 +543,12 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                      */
                     cli_dbgmsg("RAR: Extraction complete.  Scanning now...\n");
                     extracted_file_exists = (access(extract_fullpath, F_OK) == 0);
-                    status                = cli_magic_scan_file(extract_fullpath, ctx, filename_base, LAYER_ATTRIBUTES_NONE);
+                    if (temporary_reserved) {
+                        status = cli_magic_scan_file_reserved(extract_fullpath, ctx, filename_base,
+                                                              LAYER_ATTRIBUTES_NONE);
+                    } else {
+                        status = cli_magic_scan_file(extract_fullpath, ctx, filename_base, LAYER_ATTRIBUTES_NONE);
+                    }
                     if (CL_EOPEN == status && !extracted_file_exists) {
                         /* A successful extractor may report no output for an
                          * empty or unsupported member. Only that no-file case

@@ -2043,7 +2043,8 @@ parser, sanitizer, and Linux/Sonic1 qualification remain open.
 
 The enabled RAR extraction path now reserves each unencrypted member's
 declared unpacked size against `MaxTemporarySize` before creating output and
-holds the reservation through extraction and nested scanning. Extracted-file
+holds the reservation through extraction and the reservation-aware nested
+scan, avoiding a second charge for the same materialized child. Extracted-file
 removal failures are now incomplete/non-cacheable instead of diagnostic-only.
 RAR extraction remains subject to the optional UnRAR build and separate
 dependency-complete runtime qualification.

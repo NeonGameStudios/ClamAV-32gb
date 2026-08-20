@@ -873,6 +873,7 @@ contains libclamav/scanners.c 'RAR SFX candidate rejected before layer admission
 contains libclamav/scanners.c 'RAR SFX main header is malformed or truncated'
 contains libclamav/scanners.c 'RAR encrypted member contents were not inspected'
 contains libclamav/scanners.c 'cli_scan_reserve_temporary(ctx, metadata.unpack_size)'
+contains libclamav/scanners.c 'cli_magic_scan_file_reserved(extract_fullpath, ctx, filename_base'
 contains libclamav/scanners.c 'RAR extracted member could not be removed'
 contains libclamav/scanners.c 'RAR extracted member could not be opened'
 contains libclamav/scanners.c 'RAR temporary input could not be closed'
