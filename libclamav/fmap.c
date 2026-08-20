@@ -1962,7 +1962,7 @@ extern cl_error_t cl_fmap_get_data(const cl_fmap_t *map, size_t offset, size_t l
         len = map->len - offset;
     }
 
-    if (offset + len > map->len) {
+    if (len > map->len - offset) {
         // Adjust len to read only to the end of the file if they asked for too much.
         len = map->len - offset;
     }

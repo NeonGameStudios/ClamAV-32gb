@@ -39,6 +39,8 @@
   purposes; parser and fuzzy-image qualification remains open.
 - PCRE subject admission now tests the lower `MaxContiguousSize` override;
   full-size execution and RSS qualification remains open.
+- The public `cl_fmap_get_data()` range clamp now uses subtraction-form
+  bounds, including a regression for a wrapping caller length.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

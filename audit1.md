@@ -2672,6 +2672,15 @@ The PCRE admission helper clamps the configured PCRE subject limit to the
 certified large-file ceiling and then applies the engine's lower
 `MaxContiguousSize` resource limit. The existing boundary regression now also
 sets that resource limit to 4 KiB, accepts an exact 4 KiB subject, rejects 4 KiB
-plus 1 bytes, and verifies sticky incomplete/non-cacheable state. This qualifies the
+plus 1 byte, and verifies sticky incomplete/non-cacheable state. This qualifies the
 admission policy only; full-size PCRE matching, sanitizer, and RSS evidence
 remain open.
+
+## Public fmap range-clamp overflow — 2026-08-20
+
+`cl_fmap_get_data()` previously tested `offset + len > map->len` before
+clamping an oversized caller request. On a 64-bit API caller, a `SIZE_MAX`
+length could wrap that addition and reach the fmap reader without the intended
+end-of-map clamp. The check now compares `len` with the already validated
+`map->len - offset`, and a public API regression verifies that a wrapping
+length returns exactly the remaining tail bytes.

@@ -160,6 +160,23 @@ START_TEST(test_cl_fmap_set_hash_accepts_full_hash)
 }
 END_TEST
 
+START_TEST(test_cl_fmap_get_data_clamps_wrapped_length)
+{
+    static const unsigned char data[] = "public fmap range API regression";
+    const uint8_t *view = NULL;
+    size_t view_length = 0;
+    cl_fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(cl_fmap_get_data(map, 1, SIZE_MAX, &view, &view_length), CL_SUCCESS);
+    ck_assert_ptr_nonnull(view);
+    ck_assert_uint_eq(view_length, sizeof(data) - 2U);
+    ck_assert_mem_eq(view, data + 1, view_length);
+    cl_fmap_close(map);
+}
+END_TEST
+
 /* extern void cl_free(struct cl_engine *engine); */
 START_TEST(test_cl_free)
 {
@@ -11927,6 +11944,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_retdbdir);
 #endif
     tcase_add_test(tc_cl, test_cl_fmap_set_hash_accepts_full_hash);
+    tcase_add_test(tc_cl, test_cl_fmap_get_data_clamps_wrapped_length);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
     tcase_add_test(tc_cl, test_html_normalize_cap_does_not_skip_raw_matching);
