@@ -2178,6 +2178,12 @@ OLE2 temporary-directory scanner instead of being discarded after metadata
 inspection. VBA module and project-directory input descriptor close failures
 are also marked incomplete and preserve a prior parser failure or detection.
 
+The ordinary and encrypted OLE2 embedded-stream handlers and the HWP5 summary
+handler now apply the same rule: any non-success summary-property result marks
+the layer incomplete and stops the nested scan, instead of propagating only a
+timeout. This prevents malformed summary metadata from being reported as a
+fully inspected clean layer.
+
 Source guards and `git diff --check` are the current local evidence. Compiled
 fault-injected OLE/VBA cleanup coverage, sanitizer execution, and supported
 build Sonic1 qualification remain release gates.

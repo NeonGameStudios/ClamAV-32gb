@@ -2075,19 +2075,25 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
         }
         if (name) {
             if (!strncmp(name, "_5_summaryinformation", 21)) {
+                cl_error_t summary_status;
+
                 cli_dbgmsg("OLE2: detected a '_5_summaryinformation' stream\n");
-                /* JSONOLE2 - what to do if something breaks? */
-                if (cli_ole2_summary_json(ctx, ofd, 0, tempfile) == CL_ETIMEOUT) {
-                    ret = CL_ETIMEOUT;
+                summary_status = cli_ole2_summary_json(ctx, ofd, 0, tempfile);
+                if (summary_status != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "OLE2 embedded summary information could not be inspected completely");
+                    ret = summary_status;
                     goto done;
                 }
             }
 
             if (!strncmp(name, "_5_documentsummaryinformation", 29)) {
+                cl_error_t summary_status;
+
                 cli_dbgmsg("OLE2: detected a '_5_documentsummaryinformation' stream\n");
-                /* JSONOLE2 - what to do if something breaks? */
-                if (cli_ole2_summary_json(ctx, ofd, 1, tempfile) == CL_ETIMEOUT) {
-                    ret = CL_ETIMEOUT;
+                summary_status = cli_ole2_summary_json(ctx, ofd, 1, tempfile);
+                if (summary_status != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "OLE2 embedded document summary information could not be inspected completely");
+                    ret = summary_status;
                     goto done;
                 }
             }
@@ -2355,19 +2361,25 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
         }
         if (name) {
             if (!strncmp(name, "_5_summaryinformation", 21)) {
+                cl_error_t summary_status;
+
                 cli_dbgmsg("OLE2: detected a '_5_summaryinformation' stream\n");
-                /* JSONOLE2 - what to do if something breaks? */
-                if (cli_ole2_summary_json(ctx, ofd, 0, tempfile) == CL_ETIMEOUT) {
-                    ret = CL_ETIMEOUT;
+                summary_status = cli_ole2_summary_json(ctx, ofd, 0, tempfile);
+                if (summary_status != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "OLE2 embedded encrypted summary information could not be inspected completely");
+                    ret = summary_status;
                     goto done;
                 }
             }
 
             if (!strncmp(name, "_5_documentsummaryinformation", 29)) {
+                cl_error_t summary_status;
+
                 cli_dbgmsg("OLE2: detected a '_5_documentsummaryinformation' stream\n");
-                /* JSONOLE2 - what to do if something breaks? */
-                if (cli_ole2_summary_json(ctx, ofd, 1, tempfile) == CL_ETIMEOUT) {
-                    ret = CL_ETIMEOUT;
+                summary_status = cli_ole2_summary_json(ctx, ofd, 1, tempfile);
+                if (summary_status != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "OLE2 embedded encrypted document summary information could not be inspected completely");
+                    ret = summary_status;
                     goto done;
                 }
             }

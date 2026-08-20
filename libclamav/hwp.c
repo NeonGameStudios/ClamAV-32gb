@@ -460,10 +460,14 @@ cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, in
         /* JSON Output Summary Information */
         if (SCAN_COLLECT_METADATA && ctx->metadata_json != NULL) {
             if (name && !strncmp(name, "_5_hwpsummaryinformation", 24)) {
+                cl_error_t summary_status;
+
                 cli_dbgmsg("HWP5.x: Detected a '_5_hwpsummaryinformation' stream\n");
-                /* JSONOLE2 - what to do if something breaks? */
-                if (cli_ole2_summary_json(ctx, fd, 2, filepath) == CL_ETIMEOUT)
-                    return CL_ETIMEOUT;
+                summary_status = cli_ole2_summary_json(ctx, fd, 2, filepath);
+                if (summary_status != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "HWP5 summary information could not be inspected completely");
+                    return summary_status;
+                }
             }
         }
     }
