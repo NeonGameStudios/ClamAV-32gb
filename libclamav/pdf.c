@@ -128,6 +128,31 @@ static const char *pdf_getdict(const char *q0, int *len, const char *key);
 static char *pdf_readval(const char *q, int len, const char *key);
 static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape);
 
+static cl_error_t pdf_cleanup_temp_output(cli_ctx *ctx, int *fd, const char *filename, cl_error_t status,
+                                          bool remove_file, uint64_t temporary_reserved,
+                                          const char *close_reason, const char *remove_reason)
+{
+    if (fd != NULL && *fd >= 0) {
+        if (close(*fd) != 0) {
+            cli_mark_scan_incomplete(ctx, close_reason);
+            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                status = CL_EWRITE;
+        }
+        *fd = -1;
+    }
+
+    if (remove_file && filename != NULL && cli_unlink(filename) != 0) {
+        cli_mark_scan_incomplete(ctx, remove_reason);
+        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+            status = CL_EUNLINK;
+    }
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
+
+    return status;
+}
+
 static int xrefCheck(const char *xref, const char *eof)
 {
     const char *q;
@@ -1526,13 +1551,11 @@ static int pdf_scan_contents(int fd, struct pdf_struct *pdf, struct pdf_obj *obj
     rc = cli_magic_scan_desc_type_reserved(fout, fullname, pdf->ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
 
 done:
-    close(fout);
-
-    if (!pdf->ctx->engine->keeptmp || (s.out_pos == 0))
-        if (cli_unlink(fullname) && rc != CL_VIRUS)
-            rc = CL_EUNLINK;
-
-    cli_scan_release_temporary(pdf->ctx, temporary_reserved);
+    rc = pdf_cleanup_temp_output(pdf->ctx, &fout, fullname, rc,
+                                 !pdf->ctx->engine->keeptmp || (s.out_pos == 0), temporary_reserved,
+                                 "PDF normalized contents could not be closed",
+                                 "PDF normalized contents could not be removed");
+    temporary_reserved = 0;
 
     return rc;
 }
@@ -2000,22 +2023,13 @@ done:
         pdf_free_dict(dparams);
     }
 
-    if (-1 != fout) {
-        close(fout);
-    }
-
-    if (extracted_an_object && (flags & PDF_EXTRACT_OBJ_SCAN) && !pdf->ctx->engine->keeptmp) {
-        /*
-         * When PDF_EXTRACT_OBJ_SCAN is set, the goal is to extract, scan, and delete it.
-         * If it was not set, we would keep it and the path is passed back obj->path for the caller to use.
-         * That's why we wouldn't unlink it here.
-         */
-        if (cli_unlink(fullname) && status != CL_VIRUS) {
-            status = CL_EUNLINK;
-        }
-    }
-
-    cli_scan_release_temporary(pdf->ctx, temporary_reserved);
+    status = pdf_cleanup_temp_output(pdf->ctx, &fout, fullname, status,
+                                     extracted_an_object && (flags & PDF_EXTRACT_OBJ_SCAN) &&
+                                         !pdf->ctx->engine->keeptmp,
+                                     temporary_reserved,
+                                     "PDF extracted object could not be closed",
+                                     "PDF extracted object could not be removed");
+    temporary_reserved = 0;
 
     return status;
 }
@@ -4213,19 +4227,14 @@ err:
     free(pdf_input);
 #endif
     pdf_input = NULL;
-    if (pdf_tempfd >= 0) {
-        close(pdf_tempfd);
-        pdf_tempfd = -1;
-    }
+    rc = pdf_cleanup_temp_output(ctx, &pdf_tempfd, pdf_tempfile, rc, !ctx->engine->keeptmp,
+                                 pdf_input_reserved,
+                                 "PDF parser staging tempfile could not be closed",
+                                 "PDF parser staging tempfile could not be removed");
+    pdf_input_reserved = 0;
     if (pdf_tempfile) {
-        if (!ctx->engine->keeptmp)
-            cli_unlink(pdf_tempfile);
         free(pdf_tempfile);
         pdf_tempfile = NULL;
-    }
-    if (pdf_input_reserved) {
-        cli_scan_release_temporary(ctx, pdf_input_reserved);
-        pdf_input_reserved = 0;
     }
 
     /* PDF hooks may abort, don't return CL_BREAK to caller! */

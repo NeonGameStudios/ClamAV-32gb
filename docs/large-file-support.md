@@ -2969,6 +2969,18 @@ This is fail-visible unsupported-feature handling; it does not claim that
 these image/document filters have been converted to bounded streaming
 decoders or qualified on Linux/Sonic1.
 
+## PDF temporary-output cleanup propagation — 2026-08-20
+
+PDF normalized-object output, extracted-object output, and file-backed parser
+staging now share a cleanup contract that checks descriptor close and required
+temporary-file removal. Cleanup failures mark the scan incomplete while
+preserving an earlier detection, parser error, or configured limit result, and
+release any held temporary-space reservation on every unwind path.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+PDF corpus, sanitizer/fault-injected cleanup, and supported-build Sonic1
+qualification remain release gates.
+
 ## CryptFF staging completion — 2026-08-19
 
 CryptFF decryption now requires the complete fixed header, detects source-map
