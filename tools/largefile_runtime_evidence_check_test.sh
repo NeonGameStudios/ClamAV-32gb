@@ -48,8 +48,16 @@ printf 'synthetic source manifest\n' > "$out/provenance/source-manifest.txt"
 cp "$out/provenance/source-manifest.txt" "$out/provenance/build-source-manifest.txt"
 source_manifest_hash=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
 source_commit=$source_manifest_hash
-printf 'synthetic scanner\n' > "$out/artifacts/clamscan"
-printf 'synthetic sanitizer scanner\n' > "$out/artifacts/clamscan-sanitizer"
+write_synthetic_elf()
+{
+    printf '\177ELF\002\001\001' > "$1"
+    dd if=/dev/zero bs=1 count=9 >> "$1" 2>/dev/null
+    printf '\003\000\076\000\001\000\000\000' >> "$1"
+    dd if=/dev/zero bs=1 count=48 >> "$1" 2>/dev/null
+    chmod 755 "$1"
+}
+write_synthetic_elf "$out/artifacts/clamscan"
+write_synthetic_elf "$out/artifacts/clamscan-sanitizer"
 printf 'synthetic runtime component\n' > "$out/artifacts/runtime-components/libclamav.so"
 printf 'synthetic sanitizer runtime component\n' > "$out/artifacts/runtime-components-sanitizer/libclamav.so"
 printf 'synthetic Rust archive\n' > "$out/artifacts/clamav_rust.a"

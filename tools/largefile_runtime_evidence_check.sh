@@ -129,6 +129,10 @@ if ! command -v sha256sum >/dev/null 2>&1; then
     echo 'sha256sum is required to verify runtime evidence' >&2
     exit 2
 fi
+if ! command -v file >/dev/null 2>&1; then
+    echo 'file is required to verify the scanner artifact type' >&2
+    exit 2
+fi
 (
     cd "$out"
     sha256sum -c SHA256SUMS >/dev/null
@@ -368,6 +372,18 @@ grep -Fx 'scanner_path=artifacts/clamscan' "$metadata" >/dev/null 2>&1 || {
     exit 1
 }
 scanner_sha256=$(sha256sum "$scanner_copy" | awk '{ print $1 }')
+scanner_type=$(file -b "$scanner_copy")
+case "$scanner_type" in
+    ELF\ 64-bit\ LSB*x86-64*) ;;
+    *)
+        echo "copied release scanner is not an executable x86-64 ELF: $scanner_type" >&2
+        exit 1
+        ;;
+esac
+if [ ! -x "$scanner_copy" ]; then
+    echo 'copied release scanner is not executable' >&2
+    exit 1
+fi
 cargo_lock_sha256=$(sha256sum "$cargo_lock" | awk '{ print $1 }')
 cmake_cache_sha256=$(sha256sum "$cmake_cache" | awk '{ print $1 }')
 compile_commands_sha256=$(sha256sum "$compile_commands" | awk '{ print $1 }')
@@ -642,6 +658,18 @@ if [ "$require_sanitizer" = yes ]; then
     sanitizer_scanner_copy=$out/artifacts/clamscan-sanitizer
     if [ ! -s "$sanitizer_scanner_copy" ]; then
         echo 'copied sanitizer scanner is missing' >&2
+        exit 1
+    fi
+    sanitizer_scanner_type=$(file -b "$sanitizer_scanner_copy")
+    case "$sanitizer_scanner_type" in
+        ELF\ 64-bit\ LSB*x86-64*) ;;
+        *)
+            echo "copied sanitizer scanner is not an executable x86-64 ELF: $sanitizer_scanner_type" >&2
+            exit 1
+            ;;
+    esac
+    if [ ! -x "$sanitizer_scanner_copy" ]; then
+        echo 'copied sanitizer scanner is not executable' >&2
         exit 1
     fi
     grep -Fx 'sanitizer_scanner_path=artifacts/clamscan-sanitizer' "$metadata" >/dev/null 2>&1 || {
