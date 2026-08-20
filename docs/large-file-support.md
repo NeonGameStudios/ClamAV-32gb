@@ -2507,6 +2507,9 @@ unit tests and callers that explicitly request it. Temporary admission,
 decoder completion, short reads, member limits, unrepresentable declared
 sizes, and nested scan failures are fail-visible; the scanner never silently
 skips an ALZ member's metadata because a platform-width conversion failed.
+The bounded parser also requires the ALZ end-of-central-directory marker;
+physical EOF before that marker is now an incomplete archive rather than a
+successful prefix scan.
 
 This closes the ALZ whole-root and whole-member materialization path. ALZ
 third-party-equivalent corpus, sanitizer, and concurrent-RSS qualification

@@ -168,6 +168,8 @@ contains libclamav_rust/src/scanners.rs 'from_reader_with_filter_stream(FMapRead
 contains libclamav_rust/src/alz.rs 'pub trait ExtractSink'
 contains libclamav_rust/src/alz.rs 'pub fn from_reader_with_filter_stream'
 contains libclamav_rust/src/alz.rs 'reader_stream_path_preserves_member_output'
+contains libclamav_rust/src/alz.rs 'reader_stream_path_requires_end_marker'
+contains libclamav_rust/src/alz.rs 'saw_end_marker'
 contains libclamav_rust/src/alz.rs 'reader.take(self.compressed_size)'
 contains libclamav_rust/src/scanners.rs 'member metadata size for'
 contains libclamav_rust/src/scanners.rs 'is not representable on this platform'

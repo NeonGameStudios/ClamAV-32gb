@@ -947,6 +947,8 @@ impl<'aa> Alz {
 
         let mut alz: Self = Self::new();
         let mut filepos: usize = 1;
+        let mut saw_end_marker = false;
+        let mut stopped_early = false;
 
         if !alz.is_alz(&mut reader) {
             return Err(Error::Parse("No ALZ file header"));
@@ -959,8 +961,14 @@ impl<'aa> Alz {
         }
 
         loop {
-            let Ok(sig) = reader.read_u32::<LittleEndian>() else {
-                break;
+            let sig = match reader.read_u32::<LittleEndian>() {
+                Ok(sig) => sig,
+                Err(_) => {
+                    if !stopped_early {
+                        alz.parse_error = true;
+                    }
+                    break;
+                }
             };
 
             match sig {
@@ -973,7 +981,10 @@ impl<'aa> Alz {
                         sink,
                     ) {
                         Ok(()) => {}
-                        Err(Error::Stop) => break,
+                        Err(Error::Stop) => {
+                            stopped_early = true;
+                            break;
+                        }
                         Err(Error::Alloc) => return Err(Error::Alloc),
                         Err(err) => {
                             if filepos == 1 {
@@ -993,6 +1004,7 @@ impl<'aa> Alz {
                     }
                 }
                 ALZ_END_OF_CENTRAL_DIRECTORY_HEADER => {
+                    saw_end_marker = true;
                     break;
                     /*This is the end, nothing really to do here.*/
                 }
@@ -1008,6 +1020,10 @@ impl<'aa> Alz {
                     break;
                 }
             }
+        }
+
+        if !saw_end_marker && !stopped_early {
+            alz.parse_error = true;
         }
 
         Ok(alz)
@@ -1123,6 +1139,23 @@ mod tests {
         assert_eq!(files[0].data, b"read");
         assert_eq!(files[1].name.as_deref(), Some("reader-2.txt"));
         assert_eq!(files[1].data, b"again");
+    }
+
+    #[test]
+    fn reader_stream_path_requires_end_marker() {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+
+        let mut files = Vec::new();
+        let alz = Alz::from_reader_with_filter_stream(
+            Cursor::new(bytes),
+            |_| AlzExtractionDecision::Extract(extraction_limits()),
+            &mut files,
+        )
+        .unwrap();
+
+        assert!(alz.has_parse_error());
     }
 
     fn raw_deflate(data: &[u8]) -> Vec<u8> {
