@@ -237,8 +237,21 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
         }
     }
 
-    if (prtncount >= ctx->engine->maxpartitions) {
-        cli_dbgmsg("cli_scanmbr: maximum partitions reached\n");
+    if (i < MBR_MAX_PARTITION_ENTRIES && prtncount >= ctx->engine->maxpartitions) {
+        unsigned remaining;
+
+        /* The loop stopped at the configured ceiling. Only make this
+         * incomplete when a later non-empty table entry remains; a table
+         * whose remaining entries are empty was fully inspected. */
+        for (remaining = i; remaining < MBR_MAX_PARTITION_ENTRIES; remaining++) {
+            if (mbr.entries[remaining].type != MBR_EMPTY) {
+                cli_dbgmsg("cli_scanmbr: maximum partitions reached\n");
+                cli_mark_scan_incomplete(ctx, "MBR partition count limit left a partition uninspected");
+                if (status == CL_SUCCESS || status == CL_CLEAN)
+                    status = CL_EMAXFILES;
+                break;
+            }
+        }
     }
 
 done:
@@ -397,6 +410,13 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
             }
         }
     } while (logiclba != 0 && (*prtncount) < ctx->engine->maxpartitions);
+
+    if (logiclba != 0 && ctx->engine->maxpartitions &&
+        *prtncount >= ctx->engine->maxpartitions) {
+        cli_dbgmsg("cli_scanebr: maximum partitions reached\n");
+        cli_mark_scan_incomplete(ctx, "MBR logical partition count limit left a partition uninspected");
+        status = CL_EMAXFILES;
+    }
 
     cli_dbgmsg("cli_scanmbr: examined %u logical partitions\n", i);
 

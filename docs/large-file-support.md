@@ -3735,6 +3735,16 @@ returns `CL_EPARSE` when no stronger result exists. A focused public-map
 regression and source guard cover the boundary; dependency-complete SIS
 corpus, sanitizer, and supported-build Sonic1 qualification remain open.
 
+## MBR partition-limit propagation — 2026-08-20
+
+MBR scanning now distinguishes a partition-count limit from a fully inspected
+table. If a non-empty primary or logical partition remains beyond
+`MaxPartitions`, the scan is marked incomplete and returns `CL_EMAXFILES` when
+no stronger result exists; empty trailing table entries do not create a false
+limit. A focused zero-limit public-map regression and source guards cover the
+primary-table boundary. Compiled extended-partition, sanitizer, and
+supported-build Sonic1 qualification remain open.
+
 The focused policy regression and source guards pass. Full C/CTest execution,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.

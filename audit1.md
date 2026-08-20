@@ -2262,6 +2262,16 @@ valid sibling members. A focused public-map regression and source guard cover
 the boundary; compiled SIS corpus and sanitizer qualification remain release
 gates.
 
+## MBR partition-limit propagation — 2026-08-20
+
+MBR partition scanning previously stopped at `MaxPartitions` while returning
+success, even when a non-empty primary or logical partition remained
+uninspected. The primary and extended-partition paths now mark that omission
+incomplete and preserve `CL_EMAXFILES`; empty trailing primary entries are
+recognized as fully inspected. A focused zero-limit public-map regression and
+source guards cover the primary boundary; extended-partition execution remains
+a compiled qualification gate.
+
 ## OLE2 temporary-tree error propagation — 2026-08-20
 
 Recursive OLE2 scans now preserve the distinction between a globally indexed
