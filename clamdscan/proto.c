@@ -179,7 +179,7 @@ static int ftw_chkpath(const char *path, struct cli_ftw_cbdata *data)
     return client_path_excluded(path, policy);
 }
 
-static int write_client_failure_report(FILE *stream, const char *target, cl_error_t status)
+int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_error_t status)
 {
     cl_scan_report_t *report = NULL;
     char *json              = NULL;
@@ -354,7 +354,7 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
     status = CL_SUCCESS;
 done:
     if (c->report_stream && report_target && !report_written &&
-        write_client_failure_report(c->report_stream, f, report_status) != 0)
+        clamdscan_write_client_failure_report(c->report_stream, f, report_status) != 0)
         c->errors++;
     if (have_action_source) {
         action_source_close(&action_source);
@@ -599,7 +599,7 @@ static void free_scanids(struct client_parallel_data *c)
         c->ids = id->next;
 
         if (c->report_stream &&
-            write_client_failure_report(c->report_stream, id->file, CL_ERROR) != 0)
+            clamdscan_write_client_failure_report(c->report_stream, id->file, CL_ERROR) != 0)
             c->errors++;
         free((void *)id->file);
         if (NULL != id->action_source) {
@@ -786,7 +786,7 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
 
 done:
     if (c->report_stream && report_target && NULL == cid &&
-        write_client_failure_report(c->report_stream, filename, report_status) != 0)
+        clamdscan_write_client_failure_report(c->report_stream, filename, report_status) != 0)
         c->errors++;
     if (NULL != action_source) {
         action_source_close(action_source);
@@ -811,10 +811,15 @@ int parallel_client_scan(char *file, int scantype, int *infected, int *err, int 
     const char zIDSESSION[] = "zIDSESSION";
     const char zEND[]       = "zEND";
 
-    if ((cdata.sockd = dconnect(clamdopts)) < 0)
+    if ((cdata.sockd = dconnect(clamdopts)) < 0) {
+        if (report_stream && clamdscan_write_client_failure_report(report_stream, file, CL_EOPEN) != 0)
+            logg(LOGG_ERROR, "Can't write structured scan report for %s\n", file);
         return 1;
+    }
 
     if (sendln(cdata.sockd, zIDSESSION, sizeof(zIDSESSION))) {
+        if (report_stream && clamdscan_write_client_failure_report(report_stream, file, CL_ERROR) != 0)
+            logg(LOGG_ERROR, "Can't write structured scan report for %s\n", file);
         closesocket(cdata.sockd);
         return 1;
     }

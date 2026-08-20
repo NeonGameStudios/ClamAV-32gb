@@ -22,8 +22,10 @@
 #ifndef PROTO_H
 #define PROTO_H
 #include <stdio.h>
+#include "clamav.h"
 #include "misc.h"
 
+int clamdscan_write_client_failure_report(FILE *stream, const char *target, cl_error_t status);
 int serial_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream);
 int parallel_client_scan(char *file, int scantype, int *infected, int *err, int maxlevel, int flags, FILE *report_stream);
 #endif

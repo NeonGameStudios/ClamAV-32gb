@@ -897,6 +897,14 @@ stronger result, preventing a successful archive scan from hiding cleanup
 failure. Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification
 remain open.
 
+## clamdscan wrapper/session failure reports — 2026-08-20
+
+`clamdscan --report-json` now emits a structured fallback for path
+canonicalization allocation failure and for parallel connection or IDSESSION
+handshake failure. The fallback preserves the requested target and maps the
+failure to a non-clean status; source guards cover all three boundaries.
+Compiled fault injection and supported-build Sonic1 evidence remain open.
+
 ## Force-to-disk nested fmap accounting — 2026-08-19
 
 Nested fmap scans forced to disk now reserve the complete staged range against

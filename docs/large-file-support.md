@@ -3950,3 +3950,11 @@ pending when the session aborts or clamd disconnects. Successfully completed
 IDs retain their daemon-owned framed reports. This closes the client-side
 JSONL omission for parallel pre-dispatch failures; compiled IDSESSION fault
 injection and supported-build Sonic1 qualification remain release gates.
+
+## clamdscan wrapper/session failure reports — 2026-08-20
+
+The structured-report path now emits a bounded fallback object when path
+canonicalization fails, or when a parallel session cannot connect or accept
+the IDSESSION handshake. This prevents wrapper and whole-session failures from
+silently producing no JSONL row; compiled fault injection and supported-build
+Sonic1 qualification remain release gates.

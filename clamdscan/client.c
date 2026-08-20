@@ -319,8 +319,11 @@ static int client_scan(const char *file, int scantype, int *infected, int *err, 
     /* Convert relative path to fullpath without resolving symlinks. */
     fullpath = makeabs(file);
 
-    if (!fullpath)
-        return 0;
+    if (!fullpath) {
+        if (report_stream && clamdscan_write_client_failure_report(report_stream, file, CL_EMEM) != 0)
+            logg(LOGG_ERROR, "Can't write structured scan report for %s\n", file);
+        return 1;
+    }
     if (!session)
         ret = serial_client_scan(fullpath, scantype, infected, err, maxlevel, flags, report_stream);
     else
