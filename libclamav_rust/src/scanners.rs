@@ -905,10 +905,11 @@ fn handle_alz_metadata_scan_result(
         ret if ret == cl_error_t_CL_SUCCESS => true,
         ret if ret == cl_error_t_CL_EFORMAT => {
             debug!(
-                "ALZ file {:?} metadata scan failed with {}. Continuing extraction.",
+                "ALZ file {:?} metadata scan failed with {}. Aborting extraction.",
                 file_name, metadata_ret
             );
-            true
+            *alz_metadata_ret = ret;
+            false
         }
         ret if ret == cl_error_t_CL_VIRUS => {
             *alz_metadata_ret = metadata_ret;
@@ -1122,15 +1123,15 @@ mod tests {
     }
 
     #[test]
-    fn alz_metadata_scan_format_error_continues() {
+    fn alz_metadata_scan_format_error_stops() {
         let mut alz_metadata_ret = cl_error_t_CL_SUCCESS;
 
-        assert!(handle_alz_metadata_scan_result(
+        assert!(!handle_alz_metadata_scan_result(
             "entry",
             cl_error_t_CL_EFORMAT,
             &mut alz_metadata_ret,
         ));
-        assert_eq!(alz_metadata_ret, cl_error_t_CL_SUCCESS);
+        assert_eq!(alz_metadata_ret, cl_error_t_CL_EFORMAT);
     }
 
     #[test]

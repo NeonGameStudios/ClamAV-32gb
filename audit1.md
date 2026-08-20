@@ -2287,6 +2287,19 @@ have different lengths instead of silently dropping unmatched entries. The
 new path returns `CL_EPARSE`, marks the scan non-cacheable, and has a focused
 synthetic descriptor-sequence regression; full UDF qualification remains open.
 
+## ALZ metadata failure propagation — 2026-08-20
+
+The Rust ALZ callback previously continued extraction when its required
+`cli_matchmeta()` metadata operation returned `CL_EFORMAT`. The C metadata
+matcher returns success, detection, or an operational status; `CL_EFORMAT` is
+therefore not a normal “no metadata match” result. The callback now stops and
+preserves that parser status, so a metadata-inspection failure cannot be
+overwritten by a later clean member scan.
+
+A focused Rust helper regression and source guards cover the boundary.
+Dependency-complete Rust/CTest, malformed-metadata corpus, sanitizer, and
+supported-build Sonic1 qualification remain open release gates.
+
 ## OLE2 temporary-tree error propagation — 2026-08-20
 
 Recursive OLE2 scans now preserve the distinction between a globally indexed

@@ -3768,6 +3768,18 @@ The focused policy regression and source guards pass. Full C/CTest execution,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.
 
+## ALZ metadata failure propagation — 2026-08-20
+
+The bounded Rust ALZ scanner no longer treats a `CL_EFORMAT` returned by the
+archive metadata matcher as a recoverable condition. Metadata inspection is a
+required operation for each recognized member; a format failure now stops that
+member's extraction and preserves the non-clean result instead of allowing the
+decoder to continue as though the metadata pass completed.
+
+The focused Rust helper regression and source guards cover this boundary.
+Dependency-complete Rust/CTest, malformed-metadata corpus, sanitizer, and
+supported-build Sonic1 qualification remain release gates.
+
 ## Stdin over-limit staging closeout — 2026-08-20
 
 The `clamscan` stdin path now initializes the over-limit result before trying
