@@ -2235,3 +2235,15 @@ clean or cacheable.
 The focused policy regression, source guards, capability manifest, runtime
 evidence verifier, and `git diff --check` pass. Dependency-complete C/CTest,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
+
+## OLE2 temporary-tree error propagation — 2026-08-20
+
+Recursive OLE2 scans now preserve the distinction between a globally indexed
+stream that belongs to another subtree and an existing OLE10/XLM/image stream
+that cannot be inspected, opened, or closed. Confirmed temporary-directory open
+failures are also incomplete, so extracted embedded content cannot disappear
+silently from an otherwise clean result.
+
+The source guards and `git diff --check` pass. Fault-injected OLE2 tree
+execution, dependency-complete builds, sanitizer coverage, and supported-build
+Sonic1 qualification remain release gates.

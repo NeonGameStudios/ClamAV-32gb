@@ -2296,6 +2296,7 @@ static cl_error_t cli_ole2_tempdir_scan_embedded_ole10(const char *dir, cli_ctx 
     char ole10_filename[1024];
     char *hash;
     uint32_t hashcnt = 0;
+    STATBUF statbuf;
 
     int fd = -1;
 
@@ -2309,10 +2310,25 @@ static cl_error_t cli_ole2_tempdir_scan_embedded_ole10(const char *dir, cli_ctx 
         snprintf(ole10_filename, sizeof(ole10_filename), "%s" PATHSEP "%s_%u", dir, hash, hashcnt);
         ole10_filename[sizeof(ole10_filename) - 1] = '\0';
 
+        /* The unique-name table spans the complete extraction tree, so a
+         * missing path in this recursive directory is normal. Once the path
+         * exists, however, every open/scan/close failure is a missed embedded
+         * object and must remain visible. */
+        if (LSTAT(ole10_filename, &statbuf) == -1) {
+            if (errno == ENOENT) {
+                hashcnt--;
+                continue;
+            }
+            cli_mark_scan_incomplete(ctx, "OLE2 embedded OLE10 stream could not be inspected");
+            status = CL_ESTAT;
+            goto done;
+        }
+
         fd = open(ole10_filename, O_RDONLY | O_BINARY);
         if (fd < 0) {
-            hashcnt--;
-            continue;
+            cli_mark_scan_incomplete(ctx, "OLE2 embedded OLE10 stream could not be opened");
+            status = CL_EOPEN;
+            goto done;
         }
 
         ret = cli_scan_ole10(fd, ctx);
@@ -2321,7 +2337,12 @@ static cl_error_t cli_ole2_tempdir_scan_embedded_ole10(const char *dir, cli_ctx 
             goto done;
         }
 
-        close(fd);
+        if (close(fd) != 0) {
+            fd = -1;
+            cli_mark_scan_incomplete(ctx, "OLE2 embedded OLE10 stream could not be closed");
+            status = CL_EREAD;
+            goto done;
+        }
         fd = -1;
 
         hashcnt--;
@@ -2330,7 +2351,11 @@ static cl_error_t cli_ole2_tempdir_scan_embedded_ole10(const char *dir, cli_ctx 
 done:
 
     if (fd >= 0) {
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "OLE2 embedded OLE10 stream could not be closed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                status = CL_EREAD;
+        }
     }
 
     return status;
@@ -2613,8 +2638,14 @@ static cl_error_t cli_ole2_tempdir_scan_for_xlm_and_images(const char *dir, cli_
         /* The unique-name table covers the whole OLE2 extraction tree, while
          * this function is called once per directory. A stream that is not in
          * this subtree is normal and must not be reported as a failed parser. */
-        if (LSTAT(fullname, &statbuf) == -1)
+        if (LSTAT(fullname, &statbuf) == -1) {
+            if (errno == ENOENT)
+                continue;
+            cli_mark_scan_incomplete(ctx, "OLE2 XLM/image stream could not be inspected");
+            if (CL_SUCCESS == deferred_failure)
+                deferred_failure = CL_ESTAT;
             continue;
+        }
 
         if (CL_SUCCESS != (ret = cli_extract_xlm_macros_and_images(dir, ctx, hash, hashcnt))) {
             switch (ret) {
@@ -3777,6 +3808,7 @@ static cl_error_t cli_ole2_scan_tempdir(
         }
     } else {
         cli_dbgmsg("VBADir: Can't open directory %s.\n", dir);
+        cli_mark_scan_incomplete(ctx, "OLE2 temporary directory could not be opened");
         status = CL_EOPEN;
         goto done;
     }

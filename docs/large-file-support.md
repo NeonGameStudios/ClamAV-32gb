@@ -3009,6 +3009,12 @@ on both successful scans and early copy/rewind exits, preserving earlier
 detections or parser errors while keeping the temporary reservation lifecycle
 balanced.
 
+Recursive OLE2 temporary-tree scans now distinguish a stream that belongs to a
+different subtree from an existing stream that cannot be inspected, opened, or
+closed. OLE10 and XLM/image failures, as well as failure to open a confirmed
+temporary directory, are therefore explicit incomplete results instead of
+silent omissions.
+
 ## BinHex temporary-stream cleanup — 2026-08-19
 
 BinHex data/resource temporary descriptor close failures and temporary-file
