@@ -3973,6 +3973,15 @@ connection, and structured-response failures, so `clamdscan -` also retains a
 bounded non-clean JSONL row. Compiled stdin fault injection and supported-build
 Sonic1 qualification remain release gates.
 
+## clamdscan recursion-limit report completion — 2026-08-20
+
+When the client-side directory walker reaches its recursion limit, both serial
+and parallel `clamdscan --report-json` modes now emit a bounded
+`LIMIT_INCOMPLETE` fallback row for the skipped directory. The event also
+counts as an error and suppresses an overall clean `OK` result, while ordinary
+symlink exclusion remains unchanged. Compiled traversal fault injection and
+supported-build Sonic1 qualification remain release gates.
+
 ## clamscan requested-path report completion — 2026-08-20
 
 The `clamscan --report-json` ingress now emits a bounded non-clean fallback row

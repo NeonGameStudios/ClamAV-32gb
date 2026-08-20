@@ -2521,3 +2521,12 @@ Legacy error accounting and ordinary symlink exclusion behavior remain
 unchanged; the previously omitted pre-scan failures are now represented in
 JSONL evidence. Compiled filesystem-fault injection and supported-build
 qualification remain open.
+
+## clamdscan recursion-limit report completion — 2026-08-20
+
+When the client-side directory walker reaches its recursion limit, serial and
+parallel `clamdscan --report-json` modes now emit a bounded `LIMIT_INCOMPLETE`
+fallback row for the skipped directory. The event counts as an error and
+suppresses an overall clean `OK` result; ordinary symlink exclusion remains
+unchanged. Compiled traversal fault injection and supported-build
+qualification remain open.

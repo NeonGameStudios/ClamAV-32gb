@@ -269,11 +269,13 @@ static cl_error_t serial_callback(STATBUF *sb, char *filename, const char *path,
             goto done;
         case warning_skipped_dir:
             logg(LOGG_WARNING, "Directory recursion limit reached\n");
+            c->errors++;
+            c->printok      = 0;
             report_target = true;
-            report_status = CL_ERROR;
-            /* fall-through */
+            report_status = CL_EMAXREC;
+            status = CL_SUCCESS;
+            goto done;
         case warning_skipped_link:
-            report_status = CL_ERROR;
             status = CL_SUCCESS;
             goto done;
         case warning_skipped_special:
@@ -660,6 +662,10 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
             goto done;
         case warning_skipped_dir:
             logg(LOGG_WARNING, "Directory recursion limit reached\n");
+            c->errors++;
+            c->printok      = 0;
+            report_target   = true;
+            report_status   = CL_EMAXREC;
             status = CL_SUCCESS;
             goto done;
         case warning_skipped_special:

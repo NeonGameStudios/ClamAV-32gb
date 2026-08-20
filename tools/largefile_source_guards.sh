@@ -149,6 +149,8 @@ contains clamdscan/proto.c 'exactly one report object followed by the zero-lengt
 contains clamdscan/proto.c 'int clamdscan_write_client_failure_report('
 contains clamdscan/proto.c 'report_status = CL_ESTAT;'
 contains clamdscan/proto.c 'report_status = CL_EOPEN;'
+contains clamdscan/proto.c 'report_status = CL_EMAXREC;'
+contains clamdscan/proto.c 'Directory recursion limit reached'
 contains clamdscan/proto.c 'report_target && !report_written'
 contains clamdscan/proto.c 'write_client_failure_report(c->report_stream, id->file, CL_ERROR)'
 contains clamdscan/proto.c 'NULL == cid'
