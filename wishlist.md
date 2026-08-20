@@ -25,6 +25,8 @@
   and validates the import-directory range without 32-bit addition wraparound.
 - The PE resource-string heuristic now borrows at most the 8 KiB prefix its
   detector consumes, with subtraction-form resource range validation.
+- EGG metadata extra fields now reject sizes above the individual-allocation
+  ceiling explicitly, and encryption-header size subtraction is underflow-safe.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

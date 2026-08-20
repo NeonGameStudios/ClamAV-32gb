@@ -853,6 +853,12 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
 
     cli_dbgmsg("egg_parse_archive_extra_field: extra_field->size:     %u\n", size);
 
+    if (size > CLI_MAX_ALLOCATION) {
+        cli_warnmsg("egg_parse_archive_extra_field: extra field exceeds bounded metadata limit\n");
+        status = CL_EMAXSIZE;
+        goto done;
+    }
+
     magic = le32_to_host(extraField->magic);
 
     switch (magic) {
@@ -928,6 +934,11 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
              * The documentation is hazy about how the encrypt header works.
              * From testing, it seems that for encrypted files, the size in the extra_field includes the size OF the extra field.
              */
+            if (size < sizeof(extra_field) + sizeof(uint16_t)) {
+                cli_warnmsg("egg_parse_archive_extra_field: encryption header size underflow\n");
+                status = CL_EFORMAT;
+                goto done;
+            }
             size -= sizeof(extra_field) + sizeof(uint16_t);
 
             index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
@@ -1093,6 +1104,12 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
 
     cli_dbgmsg("egg_parse_file_extra_field: extra_field->size:     %u\n", size);
 
+    if (size > CLI_MAX_ALLOCATION) {
+        cli_warnmsg("egg_parse_file_extra_field: extra field exceeds bounded metadata limit\n");
+        status = CL_EMAXSIZE;
+        goto done;
+    }
+
     magic = le32_to_host(extraField->magic);
 
     switch (magic) {
@@ -1253,6 +1270,11 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
              * The documentation is hazy about how the encrypt header works.
              * From testing, it seems that for encrypted files, the size in the extra_field includes the size OF the extra field.
              */
+            if (size < sizeof(extra_field) + sizeof(uint16_t)) {
+                cli_warnmsg("egg_parse_file_extra_field: encryption header size underflow\n");
+                status = CL_EFORMAT;
+                goto done;
+            }
             size -= sizeof(extra_field) + sizeof(uint16_t);
 
             index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
@@ -1839,6 +1861,12 @@ cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t
             }
 
             cli_dbgmsg("cli_egg_open: archive comment extra_field->size:     %u\n", size);
+
+            if (size > CLI_MAX_ALLOCATION) {
+                cli_warnmsg("cli_egg_open: archive comment exceeds bounded metadata limit\n");
+                status = CL_EMAXSIZE;
+                goto done;
+            }
 
             index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
             if (!index) {

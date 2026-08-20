@@ -898,6 +898,20 @@ stronger result, preventing a successful archive scan from hiding cleanup
 failure. Compiled RAR/fault-injected cleanup and Linux/Sonic1 qualification
 remain open.
 
+## EGG metadata-size admission — 2026-08-20
+
+EGG archive and file extra-field handlers accepted attacker-controlled
+32-bit metadata sizes and could request multi-gigabyte contiguous fmap
+windows. The encryption-header compatibility adjustment also subtracted its
+fixed overhead without first proving that the declared size contained it.
+
+The handlers now return an explicit `CL_EMAXSIZE` result above the global
+individual-allocation ceiling, and both encryption paths reject undersized
+headers before subtraction. The new
+`egg-extra-field-over-1g` capability entry records this deliberate
+parser-specific unsupported boundary. Compiled EGG, sanitizer, parser-corpus,
+and supported-build qualification remain open.
+
 ## clamdscan wrapper/session failure reports — 2026-08-20
 
 `clamdscan --report-json` now emits a structured fallback for path
