@@ -326,6 +326,15 @@ static cl_error_t zip_write_output(int out_file, const void *buffer, size_t leng
     return CL_SUCCESS;
 }
 
+static cl_error_t zip_scan_output(int fd, const char *filepath, cli_ctx *ctx, const char *name,
+                                  uint32_t attributes, zip_cb zcb)
+{
+    if (zcb == cli_magic_scan_desc)
+        return cli_magic_scan_desc_type_reserved(fd, filepath, ctx, CL_TYPE_ANY, name, attributes);
+
+    return zcb(fd, filepath, ctx, name, attributes);
+}
+
 static bool zip_extraction_error_is_incomplete(cl_error_t ret)
 {
     switch (ret) {
@@ -375,8 +384,10 @@ static cl_error_t unz_stream(
     uint8_t obuf[BUFSIZ];
     char *tempfile        = NULL;
     int out_file          = -1;
-    uint64_t written      = 0;
-    uint32_t output_crc32 = 0;
+    uint64_t written            = 0;
+    uint32_t output_crc32       = 0;
+    uint64_t temporary_reserved = 0;
+    uint64_t temporary_size     = 0;
     cl_error_t ret;
     bool complete = false;
 
@@ -403,6 +414,14 @@ static cl_error_t unz_stream(
     if (CL_SUCCESS != ret)
         return ret;
 
+    temporary_size = ALG_STORED == method ? csize : usize;
+    ret = cli_scan_reserve_temporary(ctx, temporary_size);
+    if (CL_SUCCESS != ret) {
+        cli_mark_scan_incomplete(ctx, "ZIP member temporary output exceeded the configured limit");
+        return ret;
+    }
+    temporary_reserved = temporary_size;
+
     if (tmpd) {
         if (ctx->engine->keeptmp && (NULL != original_filename)) {
             tempfile = cli_gentemp_with_prefix(tmpd, original_filename);
@@ -418,6 +437,8 @@ static cl_error_t unz_stream(
     }
     if (NULL == tempfile) {
         cli_mark_scan_incomplete(ctx, "ZIP member temporary output could not be allocated");
+        if (temporary_reserved)
+            cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_EMEM;
     }
 
@@ -426,6 +447,8 @@ static cl_error_t unz_stream(
         cli_warnmsg("cli_unzip: failed to create temporary file %s\n", tempfile);
         cli_mark_scan_incomplete(ctx, "ZIP member temporary output could not be opened");
         free(tempfile);
+        if (temporary_reserved)
+            cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_ETMPFILE;
     }
 
@@ -769,7 +792,7 @@ static cl_error_t unz_stream(
             cli_mark_scan_incomplete(ctx, "ZIP member temporary output could not be rewound");
             ret = CL_ESEEK;
         } else {
-            ret = zcb(out_file, tempfile, ctx, original_filename, decrypted);
+            ret = zip_scan_output(out_file, tempfile, ctx, original_filename, decrypted, zcb);
         }
     } else if (zip_extraction_error_is_incomplete(ret)) {
         cli_mark_scan_incomplete(ctx, "ZIP member did not reach a complete extraction state");
@@ -785,6 +808,8 @@ static cl_error_t unz_stream(
         if (CL_SUCCESS == ret || CL_VERIFIED == ret)
             ret = CL_EUNLINK;
     }
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
     free(tempfile);
     return ret;
 }
@@ -820,7 +845,9 @@ static cl_error_t unz_legacy(
     char *tempfile    = NULL;
     int out_file, ret = CL_EUNPACK;
     int res          = 1;
-    uint64_t written = 0;
+    uint64_t written            = 0;
+    uint64_t temporary_reserved = 0;
+    uint64_t temporary_size     = 0;
 
     if (NULL == src || NULL == num_files_unzipped || NULL == ctx || NULL == ctx->engine || NULL == zcb)
         return CL_ENULLARG;
@@ -828,17 +855,28 @@ static cl_error_t unz_legacy(
     ret = zip_check_output_limit(ctx, ALG_STORED == method ? csize : usize);
     if (CL_SUCCESS != ret)
         return ret;
+    temporary_size = ALG_STORED == method ? csize : usize;
+    ret = cli_scan_reserve_temporary(ctx, temporary_size);
+    if (CL_SUCCESS != ret) {
+        cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output exceeded the configured limit");
+        return ret;
+    }
+    temporary_reserved = temporary_size;
     ret = CL_EUNPACK;
 
     if (tmpd) {
         if (ctx->engine->keeptmp && (NULL != original_filename)) {
             if (!(tempfile = cli_gentemp_with_prefix(tmpd, original_filename))) {
                 cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be allocated");
+                if (temporary_reserved)
+                    cli_scan_release_temporary(ctx, temporary_reserved);
                 return CL_EMEM;
             }
         } else {
             if (!(tempfile = cli_gentemp(tmpd))) {
                 cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be allocated");
+                if (temporary_reserved)
+                    cli_scan_release_temporary(ctx, temporary_reserved);
                 return CL_EMEM;
             }
         }
@@ -846,11 +884,15 @@ static cl_error_t unz_legacy(
         if (ctx->engine->keeptmp && (NULL != original_filename)) {
             if (!(tempfile = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, original_filename))) {
                 cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be allocated");
+                if (temporary_reserved)
+                    cli_scan_release_temporary(ctx, temporary_reserved);
                 return CL_EMEM;
             }
         } else {
             if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
                 cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be allocated");
+                if (temporary_reserved)
+                    cli_scan_release_temporary(ctx, temporary_reserved);
                 return CL_EMEM;
             }
         }
@@ -859,6 +901,8 @@ static cl_error_t unz_legacy(
         cli_warnmsg("cli_unzip: failed to create temporary file %s\n", tempfile);
         cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be opened");
         free(tempfile);
+        if (temporary_reserved)
+            cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_ETMPFILE;
     }
     switch (method) {
@@ -1058,9 +1102,11 @@ static cl_error_t unz_legacy(
             cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be rewound");
             free(tempfile);
             close(out_file);
+            if (temporary_reserved)
+                cli_scan_release_temporary(ctx, temporary_reserved);
             return CL_ESEEK;
         }
-        ret = zcb(out_file, tempfile, ctx, original_filename, decrypted);
+        ret = zip_scan_output(out_file, tempfile, ctx, original_filename, decrypted, zcb);
         if (close(out_file) == -1) {
             cli_mark_scan_incomplete(ctx, "ZIP legacy member temporary output could not be closed");
             if (CL_SUCCESS == ret || CL_VERIFIED == ret)
@@ -1072,6 +1118,8 @@ static cl_error_t unz_legacy(
                 ret = CL_EUNLINK;
         }
         free(tempfile);
+        if (temporary_reserved)
+            cli_scan_release_temporary(ctx, temporary_reserved);
         return ret;
     }
 
@@ -1089,6 +1137,8 @@ static cl_error_t unz_legacy(
             ret = CL_EUNLINK;
     }
     free(tempfile);
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
     cli_dbgmsg("cli_unzip: extraction failed\n");
     if (zip_extraction_error_is_incomplete(ret))
         cli_mark_scan_incomplete(ctx, "ZIP legacy member did not reach a complete extraction state");
@@ -1248,6 +1298,7 @@ static cl_error_t zdecrypt_from_fmap(
             char obuf[BUFSIZ];
             char *tempfile          = name;
             bool allocated_tempfile = false;
+            uint64_t temporary_reserved = 0;
             size_t buffered         = 0;
             uint64_t total          = 0;
             unsigned int input_pos  = SIZEOF_ENCRYPTION_HEADER;
@@ -1256,6 +1307,13 @@ static cl_error_t zdecrypt_from_fmap(
 
             cli_dbgmsg("cli_unzip: ZipCrypto password [%s] matches\n", password->name ? password->name : "(unnamed)");
 
+            ret = cli_scan_reserve_temporary(ctx, csize - SIZEOF_ENCRYPTION_HEADER);
+            if (CL_SUCCESS != ret) {
+                cli_mark_scan_incomplete(ctx, "ZIP encrypted member temporary output exceeded the configured limit");
+                return ret;
+            }
+            temporary_reserved = csize - SIZEOF_ENCRYPTION_HEADER;
+
             if (tmpd) {
                 snprintf(name, sizeof(name), "%s" PATHSEP "zip.decrypt.%03zu", tmpd, *num_files_unzipped);
                 name[sizeof(name) - 1] = '\0';
@@ -1263,6 +1321,8 @@ static cl_error_t zdecrypt_from_fmap(
                 tempfile = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "zip-decrypt");
                 if (!tempfile) {
                     cli_mark_scan_incomplete(ctx, "ZIP encrypted member temporary output could not be allocated");
+                    if (temporary_reserved)
+                        cli_scan_release_temporary(ctx, temporary_reserved);
                     return CL_EMEM;
                 }
                 allocated_tempfile = true;
@@ -1274,6 +1334,8 @@ static cl_error_t zdecrypt_from_fmap(
                 cli_mark_scan_incomplete(ctx, "ZIP encrypted member temporary output could not be opened");
                 if (allocated_tempfile)
                     free(tempfile);
+                if (temporary_reserved)
+                    cli_scan_release_temporary(ctx, temporary_reserved);
                 return CL_ETMPFILE;
             }
 
@@ -1366,6 +1428,9 @@ static cl_error_t zdecrypt_from_fmap(
             }
             if (allocated_tempfile)
                 free(tempfile);
+
+            if (temporary_reserved)
+                cli_scan_release_temporary(ctx, temporary_reserved);
 
             if (zip_extraction_error_is_incomplete(ret))
                 cli_mark_scan_incomplete(ctx, "ZIP encrypted member did not reach a complete extraction state");

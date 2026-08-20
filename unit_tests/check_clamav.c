@@ -2968,6 +2968,7 @@ static const uint8_t *zip_stream_expected;
 static size_t zip_stream_expected_length;
 static unsigned int zip_stream_callback_calls;
 static cl_error_t zip_stream_callback_result;
+static uint64_t zip_stream_temporary_limit;
 
 static cl_error_t zip_stream_test_cb(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes)
 {
@@ -3615,7 +3616,8 @@ static cl_error_t zip_stream_run(
     map = cl_fmap_open_handle(&state, 0, archive_length, zip_stream_pread_cb, 1);
     ck_assert_ptr_nonnull(map);
 
-    engine.maxfilesize    = maxfilesize;
+    engine.maxfilesize      = maxfilesize;
+    engine.maxtemporarysize = zip_stream_temporary_limit;
     ctx.engine            = &engine;
     ctx.options           = &options;
     ctx.fmap              = map;
@@ -3724,6 +3726,27 @@ START_TEST(test_zip_stream_stored_refill_bound_and_tail)
     ck_assert_msg(max_read <= CLI_ZIP_INPUT_CHUNK_SIZE + (size_t)cli_getpagesize(),
                   "stored ZIP requested %zu bytes in one fmap read", max_read);
     free(input);
+}
+END_TEST
+
+START_TEST(test_zip_temporary_limit_is_fail_visible)
+{
+    static const uint8_t input[] = "ZIP temporary quota";
+    size_t max_read;
+    size_t files_unzipped;
+    bool incomplete;
+    cl_error_t ret;
+
+    zip_stream_temporary_limit = sizeof(input) - 2U;
+    ret = zip_stream_run(input, sizeof(input) - 1U, sizeof(input) - 1U,
+                         ZIP_TEST_METHOD_STORED, sizeof(input) - 1U,
+                         input, sizeof(input) - 1U, CL_SUCCESS, &max_read,
+                         &incomplete, &files_unzipped);
+    zip_stream_temporary_limit = 0;
+
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert_uint_eq(files_unzipped, 0);
+    ck_assert(incomplete);
 }
 END_TEST
 
@@ -10434,6 +10457,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
     tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);

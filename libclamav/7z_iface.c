@@ -349,7 +349,8 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 free(tmp_name);
             } else {
                 cli_dbgmsg("cli_7unz: Saving to %s\n", tmp_name);
-                found = cli_magic_scan_desc(fd, tmp_name, ctx, name, LAYER_ATTRIBUTES_NONE);
+                found = cli_magic_scan_desc_type_reserved(fd, tmp_name, ctx, CL_TYPE_ANY, name,
+                                                          LAYER_ATTRIBUTES_NONE);
 
                 if (found != CL_SUCCESS && found != CL_VIRUS && found != CL_VERIFIED && found != CL_BREAK)
                     cli_mark_scan_incomplete(ctx, "7-Zip extracted-file scan did not complete");

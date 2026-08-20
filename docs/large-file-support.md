@@ -2025,10 +2025,10 @@ decision.
 
 The 7-Zip streaming member path now reserves each declared member size against
 the shared `MaxTemporarySize` budget before creating its temporary output and
-holds that reservation through extraction and nested scanning. Every cleanup
-path releases the reservation, and an unrepresentable member size fails closed
-as a resource failure. This closes an accounting gap; decoder, filesystem, and
-Linux/Sonic1 runtime qualification remain open.
+holds that reservation through extraction and the reservation-aware nested
+scan. Every cleanup path releases the reservation, and an unrepresentable
+member size fails closed as a resource failure. This closes an accounting gap;
+decoder, filesystem, and Linux/Sonic1 runtime qualification remain open.
 
 ## CAB/CHM temporary-output admission — 2026-08-20
 
@@ -2056,6 +2056,15 @@ holds that reservation through the nested descriptor scan. Encrypted members
 are explicitly reported as uninspected rather than being treated as clean.
 ARJ temporary-limit and encrypted-member behavior still require a
 dependency-complete runtime qualification.
+
+## ZIP temporary-output admission — 2026-08-20
+
+The bounded ZIP readers now reserve the declared output size against
+`MaxTemporarySize` before staging a member and retain the reservation through
+the nested scan. The default ZIP callback uses the reservation-aware descriptor
+scanner, and ZipCrypto's intermediate decrypted stream is accounted for while
+its decompressed child is scanned. ZIP compression, encryption, filesystem,
+and Linux/Sonic1 runtime qualification remain open.
 
 ## Embedded 7-Zip candidate admission — 2026-08-19
 
