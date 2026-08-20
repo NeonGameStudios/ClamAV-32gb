@@ -8435,6 +8435,47 @@ START_TEST(test_tnef_short_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_attachment_temporary_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x02,                   /* attachment level */
+        0x0f, 0x80, 0x00, 0x00, /* attachment data tag */
+        0x05, 0x00, 0x00, 0x00, /* five-byte attachment */
+        0x01, 0x02, 0x03, 0x04, 0x05,
+        0x00, 0x00 /* checksum */
+    };
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 4), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse         = CL_SCAN_PARSE_MAIL;
+    ctx.engine             = engine;
+    ctx.options            = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+    map                     = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_tnef(tmpdir, &ctx);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_ole2_truncated_property_tree_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -10762,6 +10803,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_short_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_tnef_attachment_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_truncated_attachment_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_truncated_uuencode_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_truncated_binhex_is_fail_visible);

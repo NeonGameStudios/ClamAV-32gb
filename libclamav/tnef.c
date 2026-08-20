@@ -40,7 +40,7 @@
 #include "tnef.h"
 
 static int tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize);
-static int tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, fileblob **fbref, off_t fsize);
+static cl_error_t tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize);
 static int tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length);
 
 #define TNEF_SIGNATURE 0x223E9f78
@@ -66,7 +66,8 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
     uint32_t i32;
     uint16_t i16;
     fileblob *fb;
-    int ret, alldone;
+    cl_error_t ret;
+    int alldone;
     off_t fsize, pos = 0;
 
     fsize = ctx->fmap->len;
@@ -138,8 +139,17 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                     fb = NULL;
                 }
                 fb = fileblobCreate();
-                if (fb)
-                    fileblobSetCTX(fb, ctx);
+                if (fb == NULL) {
+                    ret     = CL_EMEM;
+                    alldone = 1;
+                    break;
+                }
+                fileblobSetCTX(fb, ctx);
+                if (fb->isIncomplete) {
+                    ret     = CL_ERESOURCE;
+                    alldone = 1;
+                    break;
+                }
                 if (tnef_message(ctx->fmap, &pos, type, tag, length, fsize) != 0) {
                     cli_dbgmsg("TNEF: Error reading TNEF message\n");
                     ret     = CL_EFORMAT;
@@ -148,9 +158,9 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                 break;
             case LVL_ATTACHMENT:
                 cli_dbgmsg("TNEF - found attachment\n");
-                if (tnef_attachment(ctx->fmap, &pos, type, tag, length, dir, &fb, fsize) != 0) {
+                ret = tnef_attachment(ctx->fmap, &pos, type, tag, length, dir, ctx, &fb, fsize);
+                if (ret != CL_SUCCESS) {
                     cli_dbgmsg("TNEF: Error reading TNEF attachment\n");
-                    ret     = CL_EFORMAT;
                     alldone = 1;
                 }
                 if (fb)
@@ -288,8 +298,8 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
     return 0;
 }
 
-static int
-tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, fileblob **fbref, off_t fsize)
+static cl_error_t
+tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize)
 {
     uint32_t todo;
     off_t offset;
@@ -303,15 +313,16 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
     switch (tag) {
         case attATTACHTITLE:
             if (length <= 0)
-                return -1;
+                return CL_EFORMAT;
             string = cli_max_malloc(length + 1);
             if (string == NULL) {
                 cli_errmsg("tnef_attachment: Unable to allocate memory for string\n");
-                return -1;
+                return CL_EMEM;
             }
             if ((uint32_t)fmap_readn(map, string, *pos, (uint32_t)length) != (uint32_t)length) {
                 free(string);
-                return -1;
+                cli_mark_scan_incomplete(ctx, "TNEF attachment title could not be read completely");
+                return CL_EREAD;
             }
             (*pos) += (uint32_t)length;
             string[length] = '\0';
@@ -320,27 +331,48 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
                 *fbref = fileblobCreate();
                 if (*fbref == NULL) {
                     free(string);
-                    return -1;
+                    return CL_EMEM;
+                }
+                fileblobSetCTX(*fbref, ctx);
+                if ((*fbref)->isIncomplete) {
+                    free(string);
+                    return CL_ERESOURCE;
                 }
             }
             fileblobSetFilename(*fbref, dir, string);
+            if ((*fbref)->isIncomplete) {
+                free(string);
+                return CL_ETMPFILE;
+            }
             free(string);
             break;
         case attATTACHDATA:
             if (*fbref == NULL) {
                 *fbref = fileblobCreate();
                 if (*fbref == NULL)
-                    return -1;
+                    return CL_EMEM;
+            }
+            fileblobSetCTX(*fbref, ctx);
+            if ((*fbref)->isIncomplete)
+                return CL_ERESOURCE;
+            if (fileblobGetFilename(*fbref) == NULL) {
+                fileblobSetFilename(*fbref, dir, "tnef");
+                if ((*fbref)->isIncomplete)
+                    return CL_ETMPFILE;
             }
             todo = length;
             while (todo) {
                 unsigned char buf[BUFSIZ];
-                size_t got = fmap_readn(map, buf, *pos, MIN(sizeof(buf), todo));
-                if (got == 0 || got == (size_t)-1)
-                    break;
+                size_t wanted = MIN(sizeof(buf), todo);
+                size_t got    = fmap_readn(map, buf, *pos, wanted);
+                if (got != wanted) {
+                    cli_mark_scan_incomplete(ctx, "TNEF attachment data could not be read completely");
+                    return CL_EREAD;
+                }
                 (*pos) += (off_t)got;
 
-                fileblobAddData(*fbref, buf, got);
+                if (fileblobAddData(*fbref, buf, got) < 0)
+                    return CL_ERESOURCE;
                 todo -= (uint32_t)got;
             }
             break;
@@ -354,13 +386,14 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
 
     if (!CLI_ISCONTAINED_2_0_TO(fsize, offset, length)) {
         cli_dbgmsg("TNEF: Incorrect length field in tnef_attachment\n");
-        return -1;
+        cli_mark_scan_incomplete(ctx, "TNEF attachment length is outside the input");
+        return CL_EFORMAT;
     }
     (*pos) = offset + (off_t)length; /* shouldn't be needed */
 
     (*pos) += 2;
 
-    return 0;
+    return CL_SUCCESS;
 }
 
 static int

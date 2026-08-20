@@ -2292,6 +2292,11 @@ multipart bodies now use disk-backed spools, while compatibility-only bounce
 heuristics and a few unsupported nested encodings continue to use explicit
 fail-closed fallbacks.
 
+TNEF now binds the scan context before attachment data is appended and creates
+a disk spool for unnamed attachments, so data is admitted incrementally rather
+than accumulating in memory. Short attachment reads and fileblob write or
+resource failures are fail-visible and preserve an explicit non-clean result.
+
 ## Disk-backed MIME body spooling — 2026-08-19
 
 Single-part text/application bodies and multipart bodies in both direct-message
