@@ -70,7 +70,11 @@ if(ENABLE_APP)
     # check_clamd is used by the clamd tests
     add_executable(check_clamd)
     target_sources(check_clamd
-        PRIVATE   check_clamd.c checks.h)
+        PRIVATE
+            check_clamd.c
+            checks.h
+            ${PROJECT_SOURCE_DIR}/clamd/largefile_admission.c
+            ${PROJECT_SOURCE_DIR}/clamd/largefile_admission.h)
     target_link_libraries(check_clamd
         PRIVATE
             ClamAV::libclamav
@@ -91,7 +95,7 @@ if(ENABLE_APP)
         target_link_directories( check_clamd PUBLIC ${LLVM_LIBRARY_DIRS} )
         target_link_libraries( check_clamd PUBLIC ${LLVM_LIBRARIES} )
     endif()
-    target_include_directories(check_clamd PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/libclamav ${CMAKE_BINARY_DIR})
+    target_include_directories(check_clamd PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/libclamav ${PROJECT_SOURCE_DIR}/clamd ${CMAKE_BINARY_DIR})
     target_compile_definitions(check_clamd PUBLIC OBJDIR="${OBJDIR}" SRCDIR="${SRCDIR}")
 endif()
 

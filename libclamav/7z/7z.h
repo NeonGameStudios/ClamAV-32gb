@@ -85,9 +85,9 @@ SRes SzFolder_Decode(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *stream, UInt64 startPos,
     Byte *outBuffer, size_t outSize, ISzAlloc *allocMain);
 
-/* Decode a single-coder folder directly to a sequential output stream.
-   This is the large-file path: output is emitted in bounded chunks and is
-   never materialized as a complete solid-folder buffer. */
+/* Decode a supported one- or two-coder folder directly to a sequential output
+   stream. This is the large-file path: output is emitted in bounded chunks and
+   is never materialized as a complete solid-folder buffer. */
 SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *stream, UInt64 startPos,
     ISeqOutStream *outStream, ISzAlloc *allocMain);

@@ -127,7 +127,8 @@
 #include <string.h>
 
 static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempfile,
-                                              cl_error_t status, const char *close_reason,
+                                              cl_error_t status, uint64_t temporary_reserved,
+                                              const char *close_reason,
                                               const char *remove_reason);
 
 cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes)
@@ -628,10 +629,9 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
 done:
     if (tmpfd != -1)
         status = cli_cleanup_compressed_temp(ctx, &tmpfd, tmpname, status,
+                                             temporary_reserved ? temporary_size : 0,
                                              "RAR temporary input could not be closed",
                                              "RAR temporary input could not be removed");
-    if (temporary_reserved)
-        cli_scan_release_temporary(ctx, temporary_size);
 
     if (tmpname != NULL) {
         free(tmpname);
@@ -1161,7 +1161,8 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
 }
 
 static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempfile, cl_error_t status,
-                                              const char *close_reason, const char *remove_reason)
+                                              uint64_t temporary_reserved, const char *close_reason,
+                                              const char *remove_reason)
 {
     if (fd && *fd >= 0) {
         if (close(*fd) != 0) {
@@ -1178,7 +1179,32 @@ static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempf
             status = CL_EUNLINK;
     }
 
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
+
     return status;
+}
+
+static cl_error_t cli_reserve_temp_output(cli_ctx *ctx, uint64_t *reserved, uint64_t bytes,
+                                          const char *reason)
+{
+    cl_error_t status;
+
+    if (bytes == 0)
+        return CL_SUCCESS;
+    if (NULL == reserved || UINT64_MAX - *reserved < bytes) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_ERESOURCE;
+    }
+
+    status = cli_scan_reserve_temporary(ctx, bytes);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return status;
+    }
+
+    *reserved += bytes;
+    return CL_SUCCESS;
 }
 
 static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char *buff)
@@ -1188,8 +1214,9 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     int gzclose_ret;
     int gzerr = Z_OK;
     cl_error_t ret;
-    cl_error_t decode_status = CL_SUCCESS;
-    size_t outsize           = 0;
+    cl_error_t decode_status    = CL_SUCCESS;
+    uint64_t outsize            = 0;
+    uint64_t temporary_reserved = 0;
     int bytes;
     bool stream_complete = false;
     fmap_t *map          = ctx->fmap;
@@ -1222,8 +1249,17 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     }
 
     while ((bytes = gzread(gz, buff, FILEBUFF)) > 0) {
+        if (outsize > UINT64_MAX - (uint64_t)bytes) {
+            cli_mark_scan_incomplete(ctx, "GZip legacy output size overflowed");
+            decode_status = CL_EPARSE;
+            break;
+        }
         outsize += bytes;
         if ((decode_status = cli_checklimits("GZip", ctx, outsize, 0, 0)) != CL_SUCCESS)
+            break;
+        if ((decode_status = cli_reserve_temp_output(
+                 ctx, &temporary_reserved, (uint64_t)bytes,
+                 "GZip legacy output exceeds temporary storage limits")) != CL_SUCCESS)
             break;
         if (cli_writen(fd, buff, (size_t)bytes) != (size_t)bytes) {
             cli_mark_scan_incomplete(ctx, "GZip legacy output could not be written completely");
@@ -1257,14 +1293,16 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
             decode_status = CL_EUNPACK;
         }
         decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                    temporary_reserved,
                                                     "GZip legacy temporary output could not be closed",
                                                     "GZip legacy temporary output could not be removed");
         free(tmpname);
         return decode_status;
     }
 
-    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      temporary_reserved,
                                       "GZip legacy temporary output could not be closed",
                                       "GZip legacy temporary output could not be removed");
     free(tmpname);
@@ -1279,9 +1317,11 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
     unsigned char buff[FILEBUFF];
     char *tmpname;
     z_stream z;
-    size_t at = 0, outsize = 0;
-    fmap_t *map          = ctx->fmap;
-    bool stream_complete = false;
+    size_t at                   = 0;
+    uint64_t outsize            = 0;
+    uint64_t temporary_reserved = 0;
+    fmap_t *map                 = ctx->fmap;
+    bool stream_complete        = false;
 
     cli_dbgmsg("in cli_scangzip()\n");
 
@@ -1306,6 +1346,7 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "GZip compressed input could not be read completely");
             inflateEnd(&z);
             ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, CL_EREAD,
+                                              temporary_reserved,
                                               "GZip temporary output could not be closed",
                                               "GZip temporary output could not be removed");
             free(tmpname);
@@ -1315,6 +1356,8 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
         z.avail_in = bytes;
         do {
             int inf;
+            size_t produced;
+            uint64_t next_outsize;
             z.avail_out = sizeof(buff);
             z.next_out  = buff;
             inf         = inflate(&z, Z_NO_FLUSH);
@@ -1325,20 +1368,35 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
                 at            = map->len;
                 break;
             }
-            if (cli_writen(fd, buff, sizeof(buff) - z.avail_out) != sizeof(buff) - z.avail_out) {
+            produced = sizeof(buff) - z.avail_out;
+            if (UINT64_MAX - outsize < (uint64_t)produced) {
+                cli_mark_scan_incomplete(ctx, "GZip decompressed output size overflowed");
+                decode_status = CL_EPARSE;
+                at            = map->len;
+                break;
+            }
+            next_outsize = outsize + (uint64_t)produced;
+            if ((decode_status = cli_checklimits("GZip", ctx, next_outsize, 0, 0)) != CL_SUCCESS) {
+                at = map->len;
+                break;
+            }
+            if ((decode_status = cli_reserve_temp_output(
+                     ctx, &temporary_reserved, (uint64_t)produced,
+                     "GZip output exceeds temporary storage limits")) != CL_SUCCESS) {
+                at = map->len;
+                break;
+            }
+            if (cli_writen(fd, buff, produced) != produced) {
                 cli_mark_scan_incomplete(ctx, "GZip output could not be written completely");
                 inflateEnd(&z);
                 ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, CL_EWRITE,
+                                                  temporary_reserved,
                                                   "GZip temporary output could not be closed",
                                                   "GZip temporary output could not be removed");
                 free(tmpname);
                 return ret;
             }
-            outsize += sizeof(buff) - z.avail_out;
-            if ((decode_status = cli_checklimits("GZip", ctx, outsize, 0, 0)) != CL_SUCCESS) {
-                at = map->len;
-                break;
-            }
+            outsize = next_outsize;
             if (inf == Z_STREAM_END) {
                 stream_complete = true;
                 at -= z.avail_in;
@@ -1365,14 +1423,16 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
             decode_status = CL_EUNPACK;
         }
         decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                    temporary_reserved,
                                                     "GZip temporary output could not be closed",
                                                     "GZip temporary output could not be removed");
         free(tmpname);
         return decode_status;
     }
 
-    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      temporary_reserved,
                                       "GZip temporary output could not be closed",
                                       "GZip temporary output could not be removed");
     free(tmpname);
@@ -1397,7 +1457,8 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
     size_t off = 0;
     size_t avail;
     char buf[FILEBUFF];
-    bool stream_complete = false;
+    bool stream_complete        = false;
+    uint64_t temporary_reserved = 0;
 
     memset(&strm, 0, sizeof(strm));
     strm.next_out  = buf;
@@ -1439,23 +1500,35 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
         }
 
         if (!strm.avail_out || BZ_STREAM_END == rc) {
+            size_t produced = sizeof(buf) - strm.avail_out;
+            uint64_t next_size;
 
-            size += sizeof(buf) - strm.avail_out;
+            if (UINT64_MAX - size < (uint64_t)produced) {
+                cli_mark_scan_incomplete(ctx, "Bzip decompressed output size overflowed");
+                decode_status = CL_EPARSE;
+                break;
+            }
+            next_size = size + (uint64_t)produced;
+            if ((decode_status = cli_checklimits("Bzip", ctx, next_size, 0, 0)) != CL_SUCCESS)
+                break;
+            if ((decode_status = cli_reserve_temp_output(
+                     ctx, &temporary_reserved, (uint64_t)produced,
+                     "Bzip output exceeds temporary storage limits")) != CL_SUCCESS)
+                break;
 
-            if (cli_writen(fd, buf, sizeof(buf) - strm.avail_out) != sizeof(buf) - strm.avail_out) {
+            if (cli_writen(fd, buf, produced) != produced) {
                 cli_dbgmsg("Bzip: Can't write to file.\n");
                 cli_mark_scan_incomplete(ctx, "Bzip output could not be written completely");
                 decode_status = CL_EWRITE;
                 BZ2_bzDecompressEnd(&strm);
                 decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                            temporary_reserved,
                                                             "Bzip temporary output could not be closed",
                                                             "Bzip temporary output could not be removed");
                 free(tmpname);
                 return decode_status;
             }
-
-            if ((decode_status = cli_checklimits("Bzip", ctx, size, 0, 0)) != CL_SUCCESS)
-                break;
+            size = next_size;
 
             strm.next_out  = buf;
             strm.avail_out = sizeof(buf);
@@ -1474,14 +1547,16 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
             decode_status = CL_EUNPACK;
         }
         decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
+                                                    temporary_reserved,
                                                     "Bzip temporary output could not be closed",
                                                     "Bzip temporary output could not be removed");
         free(tmpname);
         return decode_status;
     }
 
-    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      temporary_reserved,
                                       "Bzip temporary output could not be closed",
                                       "Bzip temporary output could not be removed");
     free(tmpname);
@@ -1499,6 +1574,7 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
     size_t off = 0;
     size_t avail;
     unsigned char *buf;
+    uint64_t temporary_reserved = 0;
 
     buf = malloc(CLI_XZ_OBUF_SIZE);
     if (buf == NULL) {
@@ -1554,12 +1630,26 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
         /* write decompress buffer */
         if (!strm.avail_out || rc == XZ_STREAM_END) {
             size_t towrite = CLI_XZ_OBUF_SIZE - strm.avail_out;
+            uint64_t next_size;
             if (size > UINT64_MAX - towrite) {
                 cli_mark_scan_incomplete(ctx, "XZ decompressed output size overflowed");
                 ret = CL_EPARSE;
                 goto xz_exit;
             }
-            size += towrite;
+            next_size = size + (uint64_t)towrite;
+
+            ret = cli_checklimits("cli_scanxz", ctx, next_size, 0, 0);
+            if (ret != CL_SUCCESS) {
+                cli_warnmsg("cli_scanxz: decompress file size exceeds limits - "
+                            "refusing to scan partial output at " STDu64 " bytes\n",
+                            next_size);
+                cli_mark_scan_incomplete(ctx, "XZ decompressed output exceeds configured scan limits");
+                goto xz_exit;
+            }
+            ret = cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)towrite,
+                                          "XZ output exceeds temporary storage limits");
+            if (ret != CL_SUCCESS)
+                goto xz_exit;
 
             // cli_dbgmsg("Writing %li bytes to XZ decompress temp file(%li byte total)\n",
             //            towrite, size);
@@ -1570,25 +1660,19 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
                 ret = CL_EWRITE;
                 goto xz_exit;
             }
-            ret = cli_checklimits("cli_scanxz", ctx, size, 0, 0);
-            if (ret != CL_SUCCESS) {
-                cli_warnmsg("cli_scanxz: decompress file size exceeds limits - "
-                            "refusing to scan partial output at " STDu64 " bytes\n",
-                            size);
-                cli_mark_scan_incomplete(ctx, "XZ decompressed output exceeds configured scan limits");
-                goto xz_exit;
-            }
+            size           = next_size;
             strm.next_out  = buf;
             strm.avail_out = CLI_XZ_OBUF_SIZE;
         }
     } while (XZ_STREAM_END != rc);
 
-    /* scan decompressed file */
-    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    /* scan decompressed file; the output quota is already held by this layer */
+    ret = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
 
 xz_exit:
     cli_XzShutdown(&strm);
     ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, ret,
+                                      temporary_reserved,
                                       "XZ temporary output could not be closed",
                                       "XZ temporary output could not be removed");
     free(tmpname);
@@ -1601,6 +1685,7 @@ static cl_error_t cli_scanszdd(cli_ctx *ctx)
     int ofd;
     cl_error_t ret;
     char *tmpname;
+    uint64_t temporary_reserved = 0;
 
     cli_dbgmsg("in cli_scanszdd()\n");
 
@@ -1610,12 +1695,13 @@ static cl_error_t cli_scanszdd(cli_ctx *ctx)
         return ret;
     }
 
-    ret = cli_msexpand(ctx, ofd);
+    ret = cli_msexpand(ctx, ofd, &temporary_reserved);
 
     if (ret != CL_SUCCESS) { /* CL_VIRUS or some error */
         if (ret != CL_VIRUS && ret != CL_BREAK && !ctx->scan_incomplete)
             cli_mark_scan_incomplete(ctx, "SZDD decompression did not complete");
         ret = cli_cleanup_compressed_temp(ctx, &ofd, tmpname, ret,
+                                          temporary_reserved,
                                           "SZDD temporary output could not be closed",
                                           "SZDD temporary output could not be removed");
         free(tmpname);
@@ -1623,8 +1709,9 @@ static cl_error_t cli_scanszdd(cli_ctx *ctx)
     }
 
     cli_dbgmsg("MSEXPAND: Decompressed into %s\n", tmpname);
-    ret = cli_magic_scan_desc(ofd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = cli_magic_scan_desc_type_reserved(ofd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     ret = cli_cleanup_compressed_temp(ctx, &ofd, tmpname, ret,
+                                      temporary_reserved,
                                       "SZDD temporary output could not be closed",
                                       "SZDD temporary output could not be removed");
     free(tmpname);
@@ -1793,6 +1880,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
     char filename[PATH_MAX];
     int tempfd     = -1;
     char *tempfile = NULL;
+    uint64_t temporary_reserved = 0;
 
     if (CL_SUCCESS != (ret = uniq_get(U, "dir", 3, &hash, &hashcnt))) {
         cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: uniq_get('dir') failed with ret code (%d)!\n", ret);
@@ -1810,7 +1898,8 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
         if (CL_SUCCESS == find_file(filename, dir, path, sizeof(path))) {
             found_dir_file = true;
             cli_dbgmsg("cli_ole2_tempdir_scan_vba_new: Found dir file: %s\n", path);
-            if ((ret = cli_vba_readdir_new(ctx, path, U, hash, hashcnt, &tempfd, has_macros, &tempfile)) != CL_SUCCESS) {
+            if ((ret = cli_vba_readdir_new(ctx, path, U, hash, hashcnt, &tempfd, has_macros, &tempfile,
+                                           &temporary_reserved)) != CL_SUCCESS) {
                 // FIXME: Since we only know the stream name of the OLE2 stream, but not its path inside the
                 //        OLE2 archive, we don't know if we have the right file. The only thing we can do is
                 //        iterate all of them until one succeeds.
@@ -1833,6 +1922,10 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                     if (close(tempfd) == -1)
                         cli_ole2_note_vba_cleanup_failure(ctx, &ret, "VBA project temporary output could not be closed");
                     tempfd = -1;
+                }
+                if (temporary_reserved) {
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
                 }
                 hashcnt--;
                 continue;
@@ -1866,7 +1959,8 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                 goto done;
             }
 
-            ret = cli_scan_desc(tempfd, ctx, CL_TYPE_SCRIPT, false, NULL, AC_SCAN_VIR, NULL, "extracted-vba-project", tempfile, LAYER_ATTRIBUTES_NONE);
+            ret = cli_magic_scan_desc_type_reserved(tempfd, tempfile, ctx, CL_TYPE_SCRIPT,
+                                                    "extracted-vba-project", LAYER_ATTRIBUTES_NONE);
             if (CL_SUCCESS != ret) {
                 goto done;
             }
@@ -1882,6 +1976,10 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
                 }
                 free(tempfile);
                 tempfile = NULL;
+            }
+            if (temporary_reserved) {
+                cli_scan_release_temporary(ctx, temporary_reserved);
+                temporary_reserved = 0;
             }
         }
 
@@ -1902,6 +2000,11 @@ done:
         }
         free(tempfile);
         tempfile = NULL;
+    }
+
+    if (temporary_reserved) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        temporary_reserved = 0;
     }
 
     if (CL_SUCCESS == ret && found_dir_file && !candidate_succeeded) {
@@ -2961,6 +3064,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
     fmap_t *map;
     size_t at = 0;
     uint64_t curr_len;
+    uint64_t temporary_reserved = 0;
     struct cli_target_info info;
 
     if (!ctx || !ctx->engine->root)
@@ -3028,6 +3132,11 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
                 break;
             map_off += written;
 
+            if (cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)state.out_pos,
+                                        "Script normalized output exceeds temporary storage limits") != CL_SUCCESS) {
+                ret = CL_ERESOURCE;
+                goto done;
+            }
             if (write(ofd, state.out, state.out_pos) != (ssize_t)state.out_pos) {
                 cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
                 cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
@@ -3090,14 +3199,22 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
             at += len;
             if (!buff || !len || state.out_pos + len > state.out_len) {
                 /* flush if error/EOF, or too little buffer space left */
-                if ((ofd != -1) && (write(ofd, state.out, state.out_pos) != (ssize_t)state.out_pos)) {
-                    cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
-                    cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
-                    if (close(ofd) != 0)
-                        cli_mark_scan_incomplete(ctx, "Script normalized output could not be closed");
-                    ofd = -1;
-                    ret = CL_EWRITE;
-                    goto done;
+                if (ofd != -1) {
+                    if (cli_reserve_temp_output(
+                            ctx, &temporary_reserved, (uint64_t)state.out_pos,
+                            "Script normalized output exceeds temporary storage limits") != CL_SUCCESS) {
+                        ret = CL_ERESOURCE;
+                        goto done;
+                    }
+                    if (write(ofd, state.out, state.out_pos) != (ssize_t)state.out_pos) {
+                        cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
+                        cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
+                        if (close(ofd) != 0)
+                            cli_mark_scan_incomplete(ctx, "Script normalized output could not be closed");
+                        ofd = -1;
+                        ret = CL_EWRITE;
+                        goto done;
+                    }
                 }
                 /* when we flush the buffer also scan */
                 if (state.out_pos > UINT32_MAX) {
@@ -3185,6 +3302,9 @@ done:
         }
         free(tmpname);
     }
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     return ret;
 }
@@ -4525,7 +4645,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                             break;
 
                         case CL_TYPE_NULSFT:
-                            // Note: CL_TYPE_NULSFT is special, because the file actually starts 4 bytes before the start of the signature match
+                            // The parser header begins four bytes before the NSIS marker.
                             if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_NSIS)) &&
                                 (type == CL_TYPE_MSEXE && fpt->offset >= 4)) {
                                 off_t archive_offset = fpt->offset - 4;
@@ -6434,6 +6554,27 @@ early_ret:
     return status;
 }
 
+static cl_error_t cli_preflight_child_size(cli_ctx *ctx, uint64_t size, uint32_t attributes, const char *who)
+{
+    cl_error_t status;
+
+    /* Normalized and handler-retyped layers are alternate views of the
+     * current logical object. Match cli_recursion_stack_push(): they only
+     * need a time check here, while extracted/decompressed children must be
+     * admitted against the shared logical-size and file-count limits. */
+    if (attributes & (LAYER_ATTRIBUTES_NORMALIZED | LAYER_ATTRIBUTES_RETYPED))
+        status = cli_checktimelimit(ctx);
+    else
+        status = cli_checklimits(who, ctx, size, 0, 0);
+
+    if (status != CL_SUCCESS) {
+        cli_dbgmsg("%s: child content was rejected before fmap creation\n", who);
+        emax_reached(ctx);
+    }
+
+    return status;
+}
+
 static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepath, cli_ctx *ctx, cli_file_t type,
                                                     const char *name, uint32_t attributes,
                                                     bool temporary_already_reserved)
@@ -6442,6 +6583,7 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     cl_error_t status       = CL_SUCCESS;
     fmap_t *new_map         = NULL;
     bool temporary_reserved = false;
+    uint64_t child_size     = 0;
 
     if (!ctx) {
         return CL_EARG;
@@ -6454,6 +6596,20 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
         status = CL_ESTAT;
         goto done;
     }
+    if (sb.st_size < 0) {
+        cli_errmsg("cli_magic_scan_desc_type: Descriptor %d has an invalid negative size\n", desc);
+        status = CL_ESTAT;
+        goto done;
+    }
+    child_size = (uint64_t)sb.st_size;
+
+    /* Apply known-size child limits before fmap_new() allocates its page
+     * bitmap or reserves address space. The push below repeats the check as
+     * an invariant, but it is deliberately too late to be the first gate. */
+    status = cli_preflight_child_size(ctx, child_size, attributes, "cli_magic_scan_desc_type");
+    if (status != CL_SUCCESS)
+        goto done;
+
     if (sb.st_size <= 5) {
         cli_dbgmsg("cli_magic_scan_desc_type: Small data (%u bytes)\n", (unsigned int)sb.st_size);
         status = CL_SUCCESS;
@@ -6461,7 +6617,7 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     }
 
     if (!temporary_already_reserved) {
-        status = cli_scan_reserve_temporary(ctx, (uint64_t)sb.st_size);
+        status = cli_scan_reserve_temporary(ctx, child_size);
         if (status != CL_SUCCESS)
             goto done;
         temporary_reserved = true;
@@ -6488,7 +6644,7 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
 
 done:
     if (temporary_reserved)
-        cli_scan_release_temporary(ctx, (uint64_t)sb.st_size);
+        cli_scan_release_temporary(ctx, child_size);
     if (NULL != new_map) {
         fmap_free(new_map);
     }
@@ -6589,6 +6745,13 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
     if (!explicit_length)
         length = map->len - offset;
 
+    /* The nested range has a known size. Preflight it before fmap_duplicate()
+     * allocates a child page bitmap; the recursion push below repeats the
+     * policy check after the map exists. */
+    ret = cli_preflight_child_size(ctx, (uint64_t)length, attributes, "cli_magic_scan_nested_fmap_type");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     if (length <= 5) {
         cli_dbgmsg("cli_magic_scan_nested_fmap_type: Small data (%zu bytes)\n", length);
         return CL_SUCCESS;
@@ -6650,10 +6813,9 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         }
 
         ret = cli_cleanup_compressed_temp(ctx, &fd, tempfile, ret,
+                                          temporary_reserved ? temporary_size : 0,
                                           "nested fmap temporary output could not be closed",
                                           "nested fmap temporary output could not be removed");
-        if (temporary_reserved)
-            cli_scan_release_temporary(ctx, temporary_size);
         free(tempfile);
     } else {
         /*
@@ -7361,6 +7523,7 @@ cl_error_t cl_scandesc_ex2(
     STATBUF sb;
     char *filename_base      = NULL;
     cl_scan_report_t *report = NULL;
+    uint64_t root_size;
 
     if (NULL != report_out) {
         status = cli_scan_report_create(&report, engine);
@@ -7390,7 +7553,49 @@ cl_error_t cl_scandesc_ex2(
         status = CL_ESTAT;
         goto done;
     }
-    cli_scan_report_set_root_size(report, (uint64_t)sb.st_size);
+    if (sb.st_size < 0) {
+        cli_errmsg("cl_scandesc_callback: Descriptor %d has an invalid negative size\n", desc);
+        status = CL_ESTAT;
+        goto done;
+    }
+    root_size = (uint64_t)sb.st_size;
+    cli_scan_report_set_root_size(report, root_size);
+
+    /* Reject a known-size root before fmap_new() allocates its page bitmap or
+     * reserves address space. Use the normal scan path with a metadata-only
+     * fmap so AlertExceedsMax, callbacks, reports, and the legacy result
+     * contract remain identical to an ordinary limit rejection. */
+    if ((engine->maxfilesize != 0 && root_size > engine->maxfilesize) ||
+        (engine->maxscansize != 0 && root_size > engine->maxscansize)) {
+        fmap_t preflight_map = {0};
+
+        if (root_size > SIZE_MAX) {
+            status = CL_ERESOURCE;
+            goto done;
+        }
+
+        preflight_map.handle       = (void *)(ptrdiff_t)desc;
+        preflight_map.handle_is_fd = true;
+        preflight_map.len          = (size_t)root_size;
+        preflight_map.real_len     = preflight_map.len;
+        status                     = scan_common(
+            &preflight_map,
+            filename,
+            verdict_out,
+            last_alert_out,
+            scanned_out,
+            engine,
+            scanoptions,
+            context,
+            hash_hint,
+            NULL,
+            hash_alg,
+            file_type_hint,
+            NULL,
+            report);
+        goto done;
+    }
+
     if (sb.st_size <= 5) {
         cli_dbgmsg("cl_scandesc_callback: File too small (" STDu64 " bytes), ignoring\n", (uint64_t)sb.st_size);
         status = CL_SUCCESS;

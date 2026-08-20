@@ -1461,7 +1461,9 @@ static cl_error_t parse_local_file_header(
     size_t after_data_offset = 0;
     size_t descriptor_size   = 0;
     bool zip64_sizes         = false;
+    bool masked_local_values = false;
     uint32_t expected_crc32  = 0;
+    uint32_t metadata_crc32  = 0;
 
     if (NULL != file_record_size) {
         *file_record_size = 0;
@@ -1478,7 +1480,8 @@ static cl_error_t parse_local_file_header(
         status = CL_EFORMAT;
         goto done;
     }
-    bytes_remaining = ctx->fmap->len - loff;
+    masked_local_values = (LOCAL_HEADER_flags & F_MSKED) != 0;
+    bytes_remaining     = ctx->fmap->len - loff;
 
     zip = local_header + SIZEOF_LOCAL_HEADER;
     bytes_remaining -= SIZEOF_LOCAL_HEADER;
@@ -1511,7 +1514,7 @@ static cl_error_t parse_local_file_header(
             goto done;
         }
 
-        if (!(LOCAL_HEADER_flags & F_USEDD)) {
+        if (!(LOCAL_HEADER_flags & F_USEDD) && !masked_local_values) {
             uint64_t local_csize = LOCAL_HEADER_csize;
             uint64_t local_usize = LOCAL_HEADER_usize;
 
@@ -1581,9 +1584,20 @@ static cl_error_t parse_local_file_header(
         }
     }
 
+    if (masked_local_values && (!central_header || !central_values)) {
+        /* A standalone local header cannot establish the member extent when
+         * bit 13 masks its CRC and size fields.  It remains fail-visible
+         * rather than treating the masked prefix as a complete archive. */
+        cli_mark_scan_incomplete(ctx, "ZIP masked local-header values require a central directory");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    metadata_crc32 = central_header && central_values ? CENTRAL_HEADER_crc32 : LOCAL_HEADER_crc32;
+
     /* Print ZMD container metadata signature and try matching the metadata AFTER we have all the metadata. */
     cli_dbgmsg("cli_unzip: local header - ZMDNAME:%d:%s:" STDu64 ":" STDu64 ":%x:%u:%zu:%u\n",
-               ((LOCAL_HEADER_flags & F_ENCR) != 0), name, usize, csize, LOCAL_HEADER_crc32, LOCAL_HEADER_method, file_count, ctx->recursion_level);
+               ((LOCAL_HEADER_flags & F_ENCR) != 0), name, usize, csize, metadata_crc32, LOCAL_HEADER_method, file_count, ctx->recursion_level);
     /* ZMDfmt virname:encrypted(0-1):filename(exact|*):usize(exact|*):csize(exact|*):crc32(exact|*):method(exact|*):fileno(exact|*):maxdepth(exact|*) */
 
     /* Scan file header metadata. */
@@ -1593,16 +1607,9 @@ static cl_error_t parse_local_file_header(
         goto done;
     }
     ret = cli_matchmeta(ctx, name, (size_t)csize, (size_t)usize,
-                        (LOCAL_HEADER_flags & F_ENCR) != 0, file_count, LOCAL_HEADER_crc32);
+                        (LOCAL_HEADER_flags & F_ENCR) != 0, file_count, metadata_crc32);
     if (ret != CL_SUCCESS) {
         status = ret;
-        goto done;
-    }
-
-    if (LOCAL_HEADER_flags & F_MSKED) {
-        cli_dbgmsg("cli_unzip: local header - header has got unusable masked data\n");
-        cli_mark_scan_incomplete(ctx, "ZIP masked local-header values are unsupported");
-        status = CL_EPARSE;
         goto done;
     }
 
@@ -1768,6 +1775,26 @@ cl_error_t cli_unzip_single_header_check(
     cl_error_t status             = CL_ERROR;
     struct zip_record file_record = {0};
     cl_error_t ret;
+    const uint8_t *local_header;
+
+    if (NULL == ctx || NULL == ctx->fmap)
+        return CL_ENULLARG;
+
+    local_header = fmap_need_off(ctx->fmap, offset, SIZEOF_LOCAL_HEADER);
+    if (NULL == local_header) {
+        cli_dbgmsg("cli_unzip: single header check - local header is truncated\n");
+        return CL_EPARSE;
+    }
+    if (LOCAL_HEADER_flags & F_MSKED) {
+        /* A SFX admission probe has no central directory to supply the
+         * masked extent.  Reject this weak candidate without marking the
+         * containing file incomplete; ordinary local-only scanning goes
+         * through parse_local_file_header() and remains fail-visible. */
+        fmap_unneed_off(ctx->fmap, offset, SIZEOF_LOCAL_HEADER);
+        cli_dbgmsg("cli_unzip: single header check - masked local header is not a confirmed ZIP candidate\n");
+        return CL_EFORMAT;
+    }
+    fmap_unneed_off(ctx->fmap, offset, SIZEOF_LOCAL_HEADER);
 
     ret = parse_local_file_header(
         ctx,

@@ -51,7 +51,7 @@ static cl_error_t hfsplus_volumeheader(cli_ctx *, hfsPlusVolumeHeader **);
 static cl_error_t hfsplus_readheader(cli_ctx *, hfsPlusVolumeHeader *, hfsNodeDescriptor *,
                                      hfsHeaderRecord *, int, const char *);
 static cl_error_t hfsplus_scanfile(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
-                                   hfsPlusForkData *, const char *, char **, char *);
+                                   hfsPlusForkData *, const char *, char **, uint64_t *, char *);
 static cl_error_t hfsplus_validate_catalog(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *);
 static cl_error_t hfsplus_fetch_node(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
                                      hfsHeaderRecord *, hfsPlusForkData *, uint32_t, uint8_t *,
@@ -327,7 +327,8 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
  * @return cl_error_t
  */
 static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *extHeader,
-                                   hfsPlusForkData *fork, const char *dirname, char **filename, char *orig_filename)
+                                   hfsPlusForkData *fork, const char *dirname, char **filename,
+                                   uint64_t *temporary_reserved_out, char *orig_filename)
 {
     cl_error_t status = CL_SUCCESS;
     hfsPlusExtentDescriptor *currExt;
@@ -335,8 +336,14 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
     char *tmpname       = NULL;
     int ofd             = -1;
     uint64_t targetSize;
+    uint64_t temporary_reserved = 0;
     uint32_t outputBlocks = 0;
     uint8_t ext;
+
+    if (filename)
+        *filename = NULL;
+    if (temporary_reserved_out)
+        *temporary_reserved_out = 0;
 
     UNUSEDPARAM(extHeader);
 
@@ -359,6 +366,13 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
     if (status != CL_SUCCESS) {
         goto done;
     }
+
+    if (targetSize > SIZE_MAX || cli_scan_reserve_temporary(ctx, targetSize) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "HFS+ extracted fork exceeds temporary storage limits");
+        status = CL_ERESOURCE;
+        goto done;
+    }
+    temporary_reserved = targetSize;
 
     /* open file */
     status = cli_gentempfd(dirname, &tmpname, &ofd);
@@ -415,7 +429,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
 
         /* Write the blocks, walking the map */
         while (currBlock <= endBlock) {
-            size_t to_write = MIN(targetSize, volHeader->blockSize);
+            size_t to_write = (targetSize < (uint64_t)volHeader->blockSize) ? (size_t)targetSize : (size_t)volHeader->blockSize;
             size_t written;
             uint64_t blockOffset = (uint64_t)currBlock * volHeader->blockSize;
 
@@ -459,15 +473,29 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
         ext++;
     } while (status == CL_SUCCESS);
 
+    if (targetSize != 0) {
+        cli_mark_scan_incomplete(ctx, "HFS+ fork ended before its declared size");
+        status = CL_EFORMAT;
+        goto done;
+    }
+
     /* Now that we're done, ...
      *  A) if filename output param is provided, just pass back the filename.
      *  B) otherwise scan the file.
      */
     if (filename) {
+        if (NULL == temporary_reserved_out) {
+            cli_mark_scan_incomplete(ctx, "HFS+ temporary reservation ownership was not provided");
+            status = CL_EARG;
+            goto done;
+        }
         *filename = tmpname;
+        *temporary_reserved_out = temporary_reserved;
+        temporary_reserved = 0;
 
     } else {
-        status = cli_magic_scan_desc(ofd, tmpname, ctx, orig_filename, LAYER_ATTRIBUTES_NONE);
+        status = cli_magic_scan_desc_type_reserved(ofd, tmpname, ctx, CL_TYPE_ANY, orig_filename,
+                                                   LAYER_ATTRIBUTES_NONE);
         if (status != CL_SUCCESS) {
             goto done;
         }
@@ -478,18 +506,29 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
 done:
 
     if (ofd >= 0) {
-        close(ofd);
+        if (close(ofd) != 0) {
+            cli_mark_scan_incomplete(ctx, "HFS+ temporary output could not be closed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED)
+                status = CL_EWRITE;
+        }
     }
     if ((NULL == filename) ||     // output param not provided, which means we should clean up the temp file,
         (status != CL_SUCCESS)) { // or we failed, so we should clean up the temp file.
 
         if (tmpname) {
             if (!ctx->engine->keeptmp) {
-                (void)cli_unlink(tmpname);
+                if (cli_unlink(tmpname)) {
+                    cli_mark_scan_incomplete(ctx, "HFS+ temporary output could not be removed");
+                    if (status == CL_SUCCESS || status == CL_VERIFIED)
+                        status = CL_EUNLINK;
+                }
             }
             free(tmpname);
         }
     }
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     return status;
 }
@@ -973,6 +1012,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
     int ofd                         = -1;
     char *name_utf8                 = NULL;
     size_t name_utf8_size           = 0;
+    uint64_t resource_reserved      = 0;
+    uint64_t output_reserved        = 0;
     bool extracted_file             = false;
 
     hfsPlusResourceBlockTable *table = NULL;
@@ -1112,6 +1153,9 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                 if (compressed) {
                     hfsPlusCompressionHeader header;
+                    extracted_file    = false;
+                    output_reserved   = 0;
+                    resource_reserved = 0;
                     cli_dbgmsg("hfsplus_walk_catalog: File is compressed\n");
 
                     if (attributeSize < sizeof(header)) {
@@ -1135,6 +1179,20 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                         status = CL_EFORMAT;
                         goto done;
                     }
+
+                    if (header.fileSize > SIZE_MAX) {
+                        cli_mark_scan_incomplete(ctx, "HFS+ compressed file size cannot be represented");
+                        status = CL_ERESOURCE;
+                        goto done;
+                    }
+                    if ((status = cli_checklimits("hfsplus compressed file", ctx, header.fileSize, 0, 0)) != CL_SUCCESS)
+                        goto done;
+                    if (cli_scan_reserve_temporary(ctx, header.fileSize) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "HFS+ compressed output exceeds temporary storage limits");
+                        status = CL_ERESOURCE;
+                        goto done;
+                    }
+                    output_reserved = header.fileSize;
 
                     /* open file */
                     status = cli_gentempfd(dirname, &tmpname, &ofd);
@@ -1160,7 +1218,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                     goto done;
                                 }
 
-                                written = cli_writen(ofd, &attribute[sizeof(header) + 1], header.fileSize);
+                                written = cli_writen(ofd, &attribute[sizeof(header) + 1], (size_t)header.fileSize);
                             } else {
                                 z_stream stream;
                                 int z_ret;
@@ -1208,8 +1266,9 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 }
 
                                 z_ret = inflate(&stream, Z_NO_FLUSH);
-                                if (z_ret != Z_OK && z_ret != Z_STREAM_END) {
+                                if (z_ret != Z_STREAM_END || stream.total_out != header.fileSize || stream.avail_in != 0) {
                                     cli_dbgmsg("hfsplus_walk_catalog: inflateSync failed to extract compressed stream (%d)\n", z_ret);
+                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed file ended before its declared size");
                                     status = CL_EFORMAT;
                                     goto done;
                                 }
@@ -1219,7 +1278,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                     cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
                                 }
 
-                                written = cli_writen(ofd, uncompressed, header.fileSize);
+                                written = cli_writen(ofd, uncompressed, (size_t)header.fileSize);
 
                                 extracted_file = true;
 
@@ -1232,6 +1291,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 goto done;
                             }
 
+                            extracted_file = true;
+
                             break;
                         }
                         case HFSPLUS_COMPRESSION_RESOURCE: {
@@ -1241,7 +1302,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             // Ideally we should check that there is only one
                             // resource, that its type is correct, and that its
                             // name is cmpf.
-                            size_t written = 0;
+                            uint64_t written = 0;
 
                             // 4096 is an approximative value, there should be
                             // at least 16 (resource header) + 30 (map header) +
@@ -1253,7 +1314,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 goto done;
                             }
 
-                            if ((status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.resourceFork), dirname, &resourceFile, name_utf8)) != CL_SUCCESS) {
+                            if ((status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.resourceFork), dirname,
+                                                           &resourceFile, &resource_reserved, name_utf8)) != CL_SUCCESS) {
                                 cli_dbgmsg("hfsplus_walk_catalog: Error while extracting the resource fork\n");
                                 goto done;
                             }
@@ -1297,6 +1359,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                             z_stream stream;
                                             int streamBeginning  = 1;
                                             int streamCompressed = 0;
+                                            bool stream_initialized = false;
+                                            bool stream_complete    = false;
 
                                             cli_dbgmsg("Handling block %u of %" PRIu32 " at offset %" PRIi64 " (size %u)\n", curBlock, numBlocks, (int64_t)blockOffset, table[curBlock].length);
 
@@ -1336,6 +1400,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                             status = CL_EFORMAT;
                                                             goto done;
                                                         }
+                                                        stream_initialized = true;
                                                     }
                                                 }
 
@@ -1352,30 +1417,39 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                             status = CL_EFORMAT;
                                                             goto done;
                                                         }
+                                                        if (z_ret == Z_STREAM_END)
+                                                            stream_complete = true;
 
-                                                        if (cli_writen(ofd, &uncompressed_block, sizeof(uncompressed_block) - stream.avail_out) != sizeof(uncompressed_block) - stream.avail_out) {
+                                                        size_t produced = sizeof(uncompressed_block) - stream.avail_out;
+                                                        if ((uint64_t)produced > header.fileSize - written ||
+                                                            cli_writen(ofd, uncompressed_block, produced) != produced) {
                                                             cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
+                                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed output exceeded its declared size");
                                                             status = CL_EWRITE;
                                                             goto done;
                                                         }
-                                                        written += sizeof(uncompressed_block) - stream.avail_out;
+                                                        written += produced;
                                                         stream.avail_out = sizeof(uncompressed_block);
                                                         stream.next_out  = uncompressed_block;
 
                                                         extracted_file = true;
 
                                                         if (stream.avail_in > 0 && Z_STREAM_END == z_ret) {
-                                                            cli_dbgmsg("hfsplus_walk_catalog: Reached end of stream even though there's still some available bytes left!\n");
-                                                            break;
+                                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource contains trailing data");
+                                                            status = CL_EFORMAT;
+                                                            goto done;
                                                         }
                                                     }
                                                 } else {
-                                                    if (cli_writen(ofd, &block[streamBeginning ? 1 : 0], readLen - (streamBeginning ? 1 : 0)) != readLen - (streamBeginning ? 1 : 0)) {
+                                                    size_t produced = readLen - (streamBeginning ? 1 : 0);
+                                                    if ((uint64_t)produced > header.fileSize - written ||
+                                                        cli_writen(ofd, &block[streamBeginning ? 1 : 0], produced) != produced) {
                                                         cli_dbgmsg("hfsplus_walk_catalog: Failed to write to temporary file\n");
+                                                        cli_mark_scan_incomplete(ctx, "HFS+ compressed output exceeded its declared size");
                                                         status = CL_EWRITE;
                                                         goto done;
                                                     }
-                                                    written += readLen - (streamBeginning ? 1 : 0);
+                                                    written += produced;
 
                                                     extracted_file = true;
                                                 }
@@ -1384,14 +1458,27 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                 streamBeginning = 0;
                                             }
 
-                                            if (Z_OK != (z_ret = inflateEnd(&stream))) {
-                                                cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
-                                                status = CL_EFORMAT;
-                                                goto done;
+                                            if (streamCompressed) {
+                                                if (!stream_complete) {
+                                                    cli_mark_scan_incomplete(ctx, "HFS+ compressed resource ended before the decoder completed");
+                                                    status = CL_EFORMAT;
+                                                    goto done;
+                                                }
+                                                if (stream_initialized && Z_OK != (z_ret = inflateEnd(&stream))) {
+                                                    cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
+                                                    status = CL_EFORMAT;
+                                                    goto done;
+                                                }
                                             }
                                         }
 
-                                        cli_dbgmsg("hfsplus_walk_catalog: Extracted compressed file from resource fork to %s (size %zu)\n", tmpname, written);
+                                        if (written != header.fileSize) {
+                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource ended before its declared size");
+                                            status = CL_EFORMAT;
+                                            goto done;
+                                        }
+
+                                        cli_dbgmsg("hfsplus_walk_catalog: Extracted compressed file from resource fork to %s (size " STDu64 ")\n", tmpname, written);
 
                                         if (table) {
                                             free(table);
@@ -1399,6 +1486,16 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                         }
                                     }
                                 }
+                            }
+
+                            if (ifd >= 0) {
+                                if (close(ifd) != 0) {
+                                    cli_mark_scan_incomplete(ctx, "HFS+ resource temporary input could not be closed");
+                                    if (status == CL_SUCCESS || status == CL_VERIFIED)
+                                        status = CL_EWRITE;
+                                    goto done;
+                                }
+                                ifd = -1;
                             }
 
                             if (!ctx->engine->keeptmp) {
@@ -1409,12 +1506,18 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             }
                             free(resourceFile);
                             resourceFile = NULL;
+                            if (resource_reserved) {
+                                cli_scan_release_temporary(ctx, resource_reserved);
+                                resource_reserved = 0;
+                            }
 
                             cli_dbgmsg("hfsplus_walk_catalog: Resource compression not implemented\n");
                             break;
                         }
                         default:
                             cli_dbgmsg("hfsplus_walk_catalog: Unknown compression type %u\n", header.compressionType);
+                            cli_mark_scan_incomplete(ctx, "HFS+ compressed file uses an unsupported compression type");
+                            status = CL_EFORMAT;
                             break;
                     }
 
@@ -1423,7 +1526,8 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             cli_dbgmsg("hfsplus_walk_catalog: Extracted to %s\n", tmpname);
 
                             /* Scan the extracted file */
-                            status = cli_magic_scan_desc(ofd, tmpname, ctx, name_utf8, LAYER_ATTRIBUTES_NONE);
+                            status = cli_magic_scan_desc_type_reserved(ofd, tmpname, ctx, CL_TYPE_ANY, name_utf8,
+                                                                       LAYER_ATTRIBUTES_NONE);
                             if (status != CL_SUCCESS) {
                                 goto done;
                             }
@@ -1441,14 +1545,26 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                     }
 
                     if (ofd >= 0) {
-                        close(ofd);
+                        if (close(ofd) != 0) {
+                            cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be closed");
+                            if (status == CL_SUCCESS || status == CL_VERIFIED)
+                                status = CL_EWRITE;
+                            goto done;
+                        }
                         ofd = -1;
+                    }
+
+                    if (status != CL_SUCCESS)
+                        goto done;
+                    if (output_reserved) {
+                        cli_scan_release_temporary(ctx, output_reserved);
+                        output_reserved = 0;
                     }
                 }
 
                 /* Scan data fork */
                 if (fileRec.dataFork.logicalSize) {
-                    status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.dataFork), dirname, NULL, name_utf8);
+                    status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.dataFork), dirname, NULL, NULL, name_utf8);
                     if (status != CL_SUCCESS) {
                         cli_dbgmsg("hfsplus_walk_catalog: data fork retcode %d\n", status);
                         goto done;
@@ -1456,7 +1572,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                 }
                 /* Scan resource fork */
                 if (fileRec.resourceFork.logicalSize) {
-                    status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.resourceFork), dirname, NULL, name_utf8);
+                    status = hfsplus_scanfile(ctx, volHeader, extHeader, &(fileRec.resourceFork), dirname, NULL, NULL, name_utf8);
                     if (status != CL_SUCCESS) {
                         cli_dbgmsg("hfsplus_walk_catalog: resource fork retcode %d", status);
                         goto done;
@@ -1488,25 +1604,47 @@ done:
         free(table);
     }
     if (-1 != ifd) {
-        close(ifd);
+        if (close(ifd) != 0) {
+            cli_mark_scan_incomplete(ctx, "HFS+ resource temporary input could not be closed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED)
+                status = CL_EWRITE;
+        }
     }
     if (-1 != ofd) {
-        close(ofd);
+        if (close(ofd) != 0) {
+            cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be closed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED)
+                status = CL_EWRITE;
+        }
     }
     if (NULL != resourceFile) {
         if (!ctx->engine->keeptmp) {
-            (void)cli_unlink(resourceFile);
+            if (cli_unlink(resourceFile)) {
+                cli_mark_scan_incomplete(ctx, "HFS+ resource temporary output could not be removed");
+                if (status == CL_SUCCESS || status == CL_VERIFIED)
+                    status = CL_EUNLINK;
+            }
         }
         free(resourceFile);
+        resourceFile = NULL;
+    }
+    if (resource_reserved) {
+        cli_scan_release_temporary(ctx, resource_reserved);
+        resource_reserved = 0;
     }
     if (NULL != tmpname) {
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tmpname)) {
+                cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be removed");
                 status = CL_EUNLINK;
-                goto done;
             }
         }
         free(tmpname);
+        tmpname = NULL;
+    }
+    if (output_reserved) {
+        cli_scan_release_temporary(ctx, output_reserved);
+        output_reserved = 0;
     }
     if (NULL != nodeBuf) {
         free(nodeBuf);

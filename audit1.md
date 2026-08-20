@@ -836,6 +836,40 @@ The change is source-guarded, but the local macOS environment still lacks the
 OpenSSL development headers needed for a C syntax/build check. Linux compile
 and fanotify runtime verification remain release-gate work on Sonic1.
 
+## AutoIt bounded encrypted input and EA05 output — 2026-08-20
+
+EA05 and EA06 compressed members decrypt their fmap input through a bounded
+64 KiB window with preserved MT/LAME keystream state. EA05 decoded output now
+uses a 32 KiB back-reference history window and a 64 KiB pending-write buffer
+to stream into a temporary file; stored EA05 members are decrypted in chunks
+and use the same quota-accounted temporary path. The EA05 format still has
+32-bit size fields, so output above 4 GiB remains an explicit unsupported
+boundary. EA06 script decompilation still retains a random-access decoded
+buffer and remains unsupported above the individual-allocation ceiling.
+
+The source guards and capability manifest record those two deliberate limits.
+This closes the EA05 contiguous-allocation implementation item but does not
+claim parser-family qualification: valid EA05 fixtures above 1 GiB, malformed
+decoder states, temporary-quota exhaustion, sanitizer execution, and
+supported-build Sonic1 evidence remain open release gates.
+
+The pinned Sonic1 Release build completed without compiler warnings. The
+existing `clam.ea05.exe` fixture returned the same explicit incomplete result
+with the pre-change and current sources. Reproducible 85-byte stored and
+95-byte literal-only compressed EA05 fixtures both returned `OK` with the
+current scanner; these are regression checks only and do not qualify large
+valid members or the parser family.
+
+The scanner-facing EGG spool now also streams LZMA blocks through the bounded
+decoder interface, checking the LZMA header size, terminal marker, trailing
+input, and exact block output length. The legacy byte-buffer compatibility API,
+solid EGG, and AZO remain explicit boundaries. A focused unit fixture covers a
+valid LZMA member; corpus, sanitizer, and large-member qualification remain
+open. The pinned Sonic1 Release overlay built successfully, and its rebuilt
+`clamscan` returned `OK` for the 118-byte fixture from
+`tools/largefile_egg_lzma_fixture.py`; this is focused regression evidence, not
+full parser-family qualification.
+
 ## Embedded 7-Zip candidate admission — 2026-08-19
 
 The embedded 7-Zip SFX path previously treated the six-byte file-type magic as
@@ -1040,6 +1074,59 @@ meaningful result. The focused GZip write/close wrapper regression is
 registered; Linux/Sonic1, sanitizer, and broad compressed-family corpus
 qualification remain open.
 
+## Compressed-output temporary quota — 2026-08-20
+
+GZip (main and legacy fallback), BZip2, and XZ now reserve decoded output
+chunks against the shared `MaxTemporarySize` budget before writing temporary
+data. Overflow, scan-limit, and temporary-quota failures leave the scan
+incomplete/non-cacheable; cleanup releases only the bytes actually reserved.
+Successful nested scans use `cli_magic_scan_desc_type_reserved()` to avoid
+double-counting the same spool. A focused three-family one-byte-quota
+regression and source guards were added. This is source-level evidence in the
+current canonical worktree; compiled Linux/Sonic1 execution and broad
+compressed-family qualification remain open release gates.
+
+The same audit found that SZDD/MSEXPAND checked the declared output against
+`MaxScanSize` but did not charge its temporary output to `MaxTemporarySize`.
+MSEXPAND now reserves the declared size before decoding, and the completed
+temporary member uses `cli_magic_scan_desc_type_reserved()` so it is not
+charged twice. Cleanup releases the reservation on success and failure. The
+focused MSEXPAND one-byte-quota regression and source guards pass; compiled
+Sonic1 execution and broad compressed-family qualification remain open.
+
+The same temporary-output audit found that script normalization's
+relative-offset disk view wrote generated chunks without charging them to the
+shared quota. `cli_scanscript()` now reserves each chunk before writing and
+releases the aggregate reservation after child scanning and cleanup. This is
+source-level evidence; compiled script execution and broad parser qualification
+remain open.
+
+The temporary-output audit also found that SWF CWS/ZWS decompression staged a
+temporary member without charging `MaxTemporarySize`. Both paths now reserve
+the output header and decoded chunks before writing, retain the reservation
+through nested scanning, and use the reserved descriptor entry point. The
+focused CWS quota regression and source guards pass; compiled SWF and broad
+parser qualification remain open.
+
+BinHex was the next declared-output path found outside the shared temporary
+budget. Its data and resource fork sizes are now reserved before decoding,
+held through nested scans, and released during final cleanup; reserved-child
+descriptor scans prevent double accounting. The focused one-byte-quota
+regression and source guards pass. Compiled and broad parser qualification
+remain open.
+
+ISO and UDF extent extraction were also writing known-size files outside the
+shared temporary budget. Both paths now reserve their extent length before
+materialization, use reserved-child scans, and release the bytes after cleanup.
+Source guards pass; compiled filesystem-parser and broad corpus qualification
+remain open.
+
+The RTF embedded-object spool also bypassed `MaxTemporarySize`. Its declared
+payload plus the OLE10 bridge header is now reserved before creating the temp
+file, held through nested scanning, and released during complete or truncated
+cleanup. Ordinary objects use reserved-child descriptor scans; OLE10 retains
+its specialized bridge. Compiled RTF/OLE qualification remains open.
+
 ## Script-normalization temporary cleanup — 2026-08-19
 
 `cli_scanscript()` previously returned allocation or temporary-file creation
@@ -1158,3 +1245,646 @@ full synthetic verifier regression pass locally.
 These controls strengthen evidence integrity but do not convert synthetic
 runtime evidence into parser-family, service, production-CVD, or current-head
 Sonic1 qualification. Those release gates remain open.
+
+## Fresh clang-format 16 and Sonic1 qualification evidence — 2026-08-19
+
+The repository's clang-format workflow matrix was rerun locally with the
+existing `ghcr.io/jidicula/clang-format:16` container, reporting Ubuntu
+clang-format 16.0.6. It checked 413 unique C/C++ files (420 matrix
+occurrences because `libfreshclam` is listed twice) and produced no formatting
+diagnostics. The formatting backlog is therefore resolved for every file
+covered by `.github/workflows/clang-format.yml`.
+
+On Sonic1, the current-source Release build completed after the verified milter
+protocol and ALZ accounting fixes. The focused `clamav_milter_protocol` and
+`libclamav_rust` CTest targets each passed. The broader current-source
+qualification remains open: `clamscan` passed 118 tests with 1 skipped and 5
+failures, while `clamd` passed 13 tests with 2 failures. The remaining failures
+are concentrated in fail-closed parser expectations for malformed fixtures,
+the webapp-export OneNote fixture not producing a detection, and OLE/XLM
+metadata cases returning a parser-incomplete error. These results are retained
+as qualification findings, not treated as clean production acceptance.
+
+## Certificate verifier no-CN panic qualification — 2026-08-19
+
+Sonic1's valid `/etc/ssl/certs` scan exposed an abort in
+`libclamav_rust/src/codesign.rs` when a trust anchor lacked a Common Name. The
+verifier now retains such certificates, limits duplicate-name checks to valid
+Common Names, and uses an unnamed-signer fallback during verification. Sonic1
+rebuilt the full Release target successfully, and the focused
+`libclamav_rust` target passed 1/1. Re-running with the system certificate
+directory no longer aborts at the missing-Common-Name certificate; it reaches
+the existing duplicate-Common-Name trust-store policy error, which remains a
+normal initialization failure. This is not a full digital-signature or
+OneNote acceptance result.
+
+The OneNote parser probe on the pinned Sonic1 build parsed the 52,297-byte
+webapp fixture and extracted a `clam.exe` attachment of 544 bytes. Its SHA-256
+exactly matched the repository's `unit_tests/input/clamav.hdb` signature
+fixture. The scanner-level webapp test still returned `OK`, so nested scan
+propagation remains an open qualification item despite parser extraction
+working in isolation.
+
+## Latest Sonic1 parser-contract qualification — 2026-08-19
+
+The OneNote dispatch fix and encrypted-OLE2 fail-closed behavior were rebuilt
+in the pinned Sonic1 qualification container. The webapp-export OneNote fixture
+now extracts and scans its nested `clam.exe` payload: with the HDB test
+signature loaded it returns exit 1 and `ClamAV-Test-File.UNOFFICIAL FOUND`; the
+modern and legacy fixture set detects all three files when enabled and returns
+clean only when OneNote scanning is disabled.
+
+The encrypted OLE2 fixtures are now handled without interpreting ciphertext as
+BIFF or OfficeArt. Metadata is retained, the optional
+`Heuristics.Encrypted.OLE2` alert is retained, and encrypted content without a
+usable key returns an explicit incomplete result (CLI exit 2) instead of clean.
+All encrypted OLE2 alert and metadata cases passed in the focused clamscan
+run. The final Sonic1 clamscan CTest run collected 124 cases, passed every
+non-skipped case, and retained one intentional platform-specific skip.
+
+The aggregate fail-closed expectations were synchronized for clamscan and
+clamd to cover all nine known incomplete fixtures: the two malformed AutoIt
+files, three InstallShield files, the encrypted OLE document, the truncated
+UUencoded mailbox, the malformed NSIS file, and the malformed WWPack file.
+After that correction, the clamscan CTest target passed and the clamd CTest
+target passed all 15 service tests. The clamd and clamdscan targets also built
+successfully without new compiler errors.
+
+The local source guards, fail-closed POC regression, runtime-evidence verifier,
+and `git diff --check` all pass. The previously recorded exact clang-format 16
+matrix run remains clean for 413 unique files (420 matrix occurrences); this
+machine has no local clang-format 16 executable, and the sandbox blocked a
+fresh source transfer into the third-party formatter image, so no new
+formatter result is claimed beyond that recorded matrix evidence.
+
+## Final Sonic1 non-valgrind qualification after mailbox fixes — 2026-08-19
+
+The final current-source Release build was run in the pinned Sonic1 container
+`868b213e31020ca243d3c33df5904b26586615005fbae1abf04772f5294f8be1`, using
+`/work/build-current-044db34-release`. The mailbox fixes now preserve the
+legacy materialization path for `message/*` and `multipart/related`, retain
+MHTML preclassification errors, and prevent a child parser's incomplete state
+from unwinding as a clean mailbox result. The repaired NSIS fixture is now
+detected as expected, so its former stale fail-closed test expectation was
+removed from clamscan and clamd.
+
+The complete non-valgrind CTest gate passed 11/11 in 107.58 seconds:
+`libclamav`, the three large-file guards/evidence tests, both milter tests,
+`libclamav_rust`, `clamscan`, `clamd`, `freshclam`, and `sigtool`. The focused
+mailbox CTest target also passed 1/1, and Sonic1 source inspection confirms no
+temporary diagnostics remain. Local source guards, the fail-closed regression,
+the runtime-evidence verifier, and `git diff --check` pass as well.
+
+The exact clang-format 16 CI matrix remains clean for all 413 unique covered
+files (420 matrix occurrences); no additional formatter violations were found
+and no formatting-only changes are needed. Valgrind-specific CTest cases were
+excluded from the 11/11 gate and remain a separate release qualification item.
+
+## Corrected current-source ASan qualification — 2026-08-19
+
+The current-source Sonic1 build was rebuilt with GCC 12.2 C/C++ AddressSanitizer
+flags (`-fsanitize=address -fno-omit-frame-pointer`) in
+`/work/build-current-044db34-asan`. The first combined ASan/UBSan attempt
+exposed a test-integration issue: the C sanitizer flags were inherited by the
+Rust test link without Rust's nightly sanitizer mode, producing undefined
+`__asan_*` and `__ubsan_*` symbols. No production-code failure was observed.
+
+The project-supported Rust sanitizer path was then used with nightly Rust
+1.100.0 and `RUSTFLAGS=-Zsanitizer=address`. The complete corrected build
+passed, the isolated `libclamav_rust` target passed 1/1 in 19.50 seconds, and
+the full non-Valgrind CTest suite passed 11/11 in 135.44 seconds. This included
+the large-file guards and evidence verifier, both milter tests, Rust, clamscan,
+clamd, freshclam, and sigtool.
+
+This closes the current-source ASan application/test gate. Valgrind-specific
+CTest cases, production CVD/service qualification, and broad parser-corpus
+acceptance remain separate release gates.
+
+## Current-source Release Valgrind qualification — 2026-08-19
+
+The pinned Sonic1 current-source Release build
+`/work/build-current-044db34-release` completed the full CTest suite with
+Valgrind enabled. All 16/16 targets passed in 1121.83 seconds: the normal
+libclamav, large-file, milter, Rust, clamscan, clamd, freshclam, and sigtool
+targets plus `libclamav_valgrind`, `clamscan_valgrind`, `clamd_valgrind`,
+`freshclam_valgrind`, and `sigtool_valgrind`.
+
+This closes the current-source Release sanitizer/memory-check qualification
+gate on Sonic1. Production CVD/service qualification and broad parser-corpus
+acceptance remain open plan gates.
+
+## Real production-CVD smoke qualification — 2026-08-19
+
+Sonic1 has an authorized real database set under
+`/work/usb-scan-20260818-current/db`: `main.cvd` (89,072,577 bytes),
+`daily.cvd` (23,426,416 bytes), and `bytecode.cvd` (281,702 bytes). The
+recorded SHA-256 values are `0b2182d229f46981ec8f535382222f7c9dfdd656b250ad47988b910a8d302365`,
+`09571f432efc1cc88bfff594768f880ed5abf4b9913e97e5f9c0a98a7a4bed70`, and
+`6d4aa01f219e988060fc419f495d07f27e0cdf1a2cccc065971da922c76f7ffb`,
+respectively. The pinned image ID was
+`sha256:b90407897efdb47b8986a4ae7f259b5ee2c53ab1a497d6c10f5abc1256da1d8f`.
+
+The current-source Release `clamscan` loaded that CVD set when given the
+repository's `/work/clamav-current-source-v5/certs` directory and scanned the
+authorized 1,529,898,209-byte USB file. With the default PCRE admission it
+returned exit 2 and explicitly reported that PCRE signatures require an
+oversized contiguous subject. With `--pcre-max-filesize=32G`, it returned exit
+2 with the parser-specific diagnostic that ZIP masked local-header values are
+unsupported. These are fail-visible parser/feature results, not a CVD
+certificate initialization failure.
+
+The five-file USB database runs remain non-acceptance evidence: the prior CVD
+and PCRE result tables recorded `LIMIT_OR_INCOMPLETE`/exit 2 for the 1.53 GiB,
+2.31 GiB, 3.27 GiB, 4.7 GiB, and 50 GB files. Production-CVD initialization
+is therefore demonstrated, but clean production-file/service acceptance and
+the parser-family corpus gate remain open.
+
+## Real production-CVD clamd service smoke — 2026-08-19
+
+The current-source Release `clamd` was also started in the pinned Sonic1
+image with a temporary Unix socket, the same production CVD directory, the
+repository certificate directory, and explicit 32 GiB file, scan, and PCRE
+limits. The daemon loaded 3,628,010 signatures, created the socket, and
+reported the expected large-file limits before accepting the `clamdscan`
+request. The 1,529,898,209-byte authorized USB file then returned exit 2 with
+`Can't parse data ERROR`; the daemon log records the same parser diagnostic:
+`Scan incomplete: ZIP masked local-header values are unsupported`.
+
+This confirms the production database and large-file configuration through the
+service interface, but it is not a clean-file acceptance result. The service
+and parser-corpus gates therefore remain open until the authorized real-file
+set can complete without an incomplete parser result, or each intentional
+format limitation is separately classified and accepted.
+
+## Corrected production-CVD ZIP qualification — 2026-08-19
+
+The earlier production-CVD result was repeated with the canonical ZIP parser
+overlaid into the actual Sonic1 build source identified by the CMake dependency
+file (`/work/clamav-32gb-044db34`), then rebuilt with an explicit
+`unzip.c` recompilation. The canonical source hash was
+`5779273c6302f7dcc7ab11d4022d3f163c2edfae918b398c20849153928a4076`.
+
+With 3,628,010 production signatures, the authorized 1,529,898,209-byte USB
+file returned `OK` and exit 0 using `--max-filesize=32G`,
+`--max-scansize=64G`, `--pcre-max-filesize=32G`, the repository CVD
+certificate directory, and `--max-scantime=14400000` (four hours). No ZIP
+parser warning was emitted; the scan read 1.42 GiB, accounted for 3.03 GiB of
+logical data, and completed in 182.932 seconds. With the default scan-time
+budget, the same corrected binary reached the file but returned exit 2 only
+for `Heuristics.Limits.Exceeded.MaxScanTime` at 131.166 seconds, confirming
+that the earlier ZIP failure was removed and the remaining short-budget result
+is a resource-policy outcome.
+
+The actual build source was restored to its pre-test hash
+`9a06260112b0a46fc3108e5ba74d9662fe14d7b37b8c48004cc3daf10ac72da8`, the
+separate current-source checkout was restored to
+`a75e7e57ba7e83467dfcaa7d422dd131c0fe067634ccf8a3d11f11fd7ec799b6`, and all
+temporary staging, backup, copied-input, and scan-temp paths were verified
+absent. This remains focused mixed-source production evidence; full
+current-head, service, 50 GB, and broad parser-corpus acceptance remain open.
+
+## Corrected production-CVD clamd service qualification — 2026-08-19
+
+The same canonical ZIP parser was then overlaid into the actual Sonic1 build
+source, and `clamd` plus `clamdscan` rebuilt with an explicit `unzip.c`
+compilation. The foreground daemon used the authorized production CVD set,
+the repository CVD certificate directory, and explicit limits of 32 GiB
+`MaxFileSize`, 64 GiB `MaxScanSize`, 32 GiB `PCREMaxFileSize`, 256 GiB
+`MaxMatcherWork`, 64 GiB `MaxTemporarySize`, 32 GiB `MaxContiguousSize`, and
+14,400,000 ms `MaxScanTime`. Its startup log recorded the expected byte
+values for the file, global-size, PCRE, and time limits.
+
+`clamdscan --fdpass --report-json` scanned the authorized 1,529,898,209-byte
+USB file through the Unix socket and returned exit 0/`OK` in 171.946 seconds.
+The structured report was `COMPLETE`, `status=0`, `CL_TYPE_BINARY_DATA`,
+`root_size=logical_bytes=1529898209`, `matcher_bytes=3258676418`,
+`contiguous_bytes=1529898209`, `temporary_bytes=0`, `parser_operations=1`,
+`detector_operations=2`, and `skipped_operations=0`; it emitted no ZIP
+masked-header diagnostic. The service therefore now has clean production-file
+acceptance for this authorized input, while the 50 GB service run and broad
+parser-corpus gate remain open.
+
+The daemon was stopped, the build source was restored to hash
+`9a06260112b0a46fc3108e5ba74d9662fe14d7b37b8c48004cc3daf10ac72da8`, all
+temporary service configuration, socket, pid, log, report, copied-input, and
+temporary-storage paths were verified absent, and no clamd process remained in
+the pinned container.
+
+## Checked fmap nested-coordinate hardening — 2026-08-19
+
+The shared fmap reader and nested-view layer now checks every
+`nested_offset + caller_offset` and `nested_offset + length` addition before
+using the result. The handle-backed and memory-backed `need`, string, and
+line-reading accessors reject wrapped ranges before pointer arithmetic, and
+`fmap_duplicate()` rejects nested-offset and real-length overflow instead of
+constructing a wrapped view. The line-reader path also rejects a zero-sized
+destination capacity before subtracting one from it.
+
+`test_fmap_rejects_wrapped_nested_ranges` covers the memory-backed accessors
+and nested-view constructor; the source guard suite now requires both checked
+helpers and the regression. The local source guards, shell syntax checks, and
+`git diff --check` pass. A focused Sonic1 CTest run did include the canonical
+unit-test translation unit, but Sonic1's `fmap.c` hash did not match the
+canonical worktree, so that result is not claimed as compiled verification of
+the new fmap implementation. Full current-source compilation remains an open
+gate because this macOS workspace has no CMake installation or OpenSSL
+development headers.
+
+## ZIP masked local-header handling — 2026-08-19
+
+The ZIP parser now treats general-purpose bit 13 as a masked local CRC/size
+field when an authoritative central-directory record is available. Member
+metadata, CRC validation, and extraction use the central values, while method,
+flags, filename, and local extra-field bounds are still checked against the
+local header. A standalone local-only scan remains explicitly incomplete
+because it cannot establish the member extent; the embedded SFX admission probe
+returns a recoverable format rejection instead, so an isolated masked magic
+sequence does not taint an otherwise unrelated containing file.
+
+The focused unit coverage includes a central-directory archive whose local
+CRC/sizes are zeroed, a masked SFX candidate with no central directory, and a
+local-only masked header that must remain fail-visible. The canonical `unzip.c`
+and test translation unit were staged temporarily on Sonic1, rebuilt in the
+pinned Release container, and the `libclamav` CTest target passed 1/1 in 30.52
+seconds. Because the rest of that remote checkout was stale and unchanged,
+this is focused mixed-source verification rather than full current-head
+qualification. The authorized production-CVD rescan and broad ZIP corpus
+qualification remain open release gates.
+
+## Sonic1 clamscan parser-regression matrix — 2026-08-20
+
+The repository's complete `unit_tests/clamscan` collection was counted and
+executed in the pinned Sonic1 container `868b213e31020ca243d3c33df5904b26586615005fbae1abf04772f5294f8be1`,
+using the Release build `/work/build-current-044db34-release` and source
+`/work/clamav-32gb-044db34`. The invocation supplied the same CTest runtime
+environment, including the build library search path and static libmspack/
+libunrar bindings; an initial direct-module attempt without those bindings
+returned false clean results for RAR and was discarded as invalid evidence.
+
+The collection contained 124 tests across the basic, all-match, ALZ,
+assorted, bytecode, container-signature, embedded-file, fuzzy-image, hash,
+heuristic, image-extraction, InstallShield, LHA/LZH, offset, OLE2, phishing,
+quarantine, regex, HTML-URI, and PDF-URI modules. The final module-level run
+returned 123 passed and one intentional platform-specific skip; no test
+failed. This is useful parser/detector and fail-closed regression evidence,
+but the fixtures are repository-sized and use test signatures. A source-hash
+comparison found that the build source is not byte-identical to this
+worktree in `libclamav/fmap.c`, `libclamav/unzip.c`,
+`libclamav_rust/src/codesign.rs`, and `unit_tests/check_clamav.c`; those
+differences were preserved and the run is therefore not current-head compile
+qualification. It does not close the production-CVD, exact-large-fixture,
+broad parser-family, RSS, or current-head Sonic1 qualification gates.
+
+## Current-head parser-sensitive rerun — 2026-08-20
+
+To remove the four source mismatches above, the canonical worktree versions of
+`fmap.c`, `unzip.c`, `codesign.rs`, and `check_clamav.c` were staged into the
+Sonic1 build source, hash-verified, and rebuilt in Release. The matching
+current-head test sources were used from the build source itself; running the
+tests from Sonic1's separate `/workspace/ClamAV` checkout was rejected as
+stale-source evidence.
+
+The current-head-sensitive rerun passed the all-match, ALZ, LHA/LZH,
+InstallShield, OLE2, assorted, and clamscan basic modules. The clamscan basic
+module passed 3/3, and the clamd service all-testfiles case passed 1/1. The
+WWPack fixture legitimately reports `ClamAV-Test-File.UNOFFICIAL FOUND` under
+the hardened engine; the Python clamscan/clamd expectations now accept that
+detection while retaining fail-closed expectations for malformed fixtures.
+The C `check_clamav` contract already permits that detection precedence.
+
+After verification, all six temporary source/test overlays and their exact
+backups were removed. Sonic1 hashes confirmed that the four restored build
+files matched their pre-test hashes, the release targets rebuilt successfully,
+and no temporary overlay artifacts remained. This closes the identified
+source-selection and WWPack expectation issues, but it is still a focused
+current-head rerun rather than full current-head CTest, 50 GB, broad
+production-CVD, parser-family, or resource-qualification evidence.
+
+## Explicit PCRE fmap eviction — 2026-08-20
+
+The full-map PCRE matcher now calls `fmap_release_unlocked()` immediately
+after the PCRE subject scan, and also on failed full-map acquisition, after
+releasing the contiguous-subject reservation. The helper scans the owner
+bitmap and evicts only pages that are not locked; locked caller windows remain
+governed by their corresponding `fmap_unneed` call. This directly enforces the
+roadmap's requirement to release all unlocked fmap pages after a bounded
+whole-subject consumer rather than waiting for ordinary aging.
+
+The regression `test_fmap_release_unlocked_evicts_whole_subject_pages` pages a
+16 MiB handle-backed subject, verifies that all unlocked pages are released,
+then verifies that a subsequent read re-enters the read callback. The
+canonical `fmap.c`, `fmap.h`, `matcher.c`, and `check_clamav.c` were compiled in
+the pinned Sonic1 Release build; the isolated Check case passed with
+`Checks: 1, Failures: 0, Errors: 0`. The temporary remote overlay was restored
+from hash-verified backups, the Release targets rebuilt successfully, and all
+temporary files were removed. This is focused implementation evidence; the
+required RSS-before-deep-parse measurement and full PCRE 32 GiB production
+qualification remain open.
+
+## Service database provenance binding — 2026-08-20
+
+The strict service qualification gate now snapshots both the production and
+edge signature directories before starting clamd. Each snapshot records sorted
+relative paths, exact byte counts, and SHA-256 hashes for every regular file;
+symlinks, empty databases, and using the same directory for production and edge
+roles are rejected. The manifests and their hashes are recorded in
+`oracle-binding.txt`, then recomputed after the final workload and compared
+byte-for-byte. A database replacement or mutation during qualification now
+fails the gate instead of allowing a result to be attributed to an unbound
+signature set.
+
+Shell syntax, the source-guard manifest, the synthetic fail-closed POC control,
+the runtime-evidence verifier regression, and `git diff --check` pass. This
+hardens evidence integrity but does not close the still-missing authorized
+production-file, parser-expansion, cold-cache, or full service qualification
+workloads.
+
+## Sonic1 service-gate preflight — 2026-08-20
+
+The pinned Sonic1 container currently has the required Release service
+binaries for the pinned `044db34` build and the authorized production CVD directory, with the
+recorded `main.cvd`, `daily.cvd`, and `bytecode.cvd` files. It also has the
+existing exact 32-GiB synthetic boundary corpus and approximately 151 GB free
+on `/work`; the container runs as root and can access the kernel cache-drop
+control required by the strict cold-cache gate.
+
+The previously mounted USB directory is not present in the current container,
+and no copies of the five authorized real files were found under `/work` or
+`/mnt`. The strict service qualification was therefore not started: substituting
+the synthetic sparse corpus for the missing real production-file role would not
+prove the requested production-CVD workload. Once the real files are mounted or
+transferred again, the gate now additionally binds both signature directories
+with the database-manifest checks recorded above.
+
+## Current-source Release CTest gate — 2026-08-20
+
+The complete CTest inventory for the current-source Release build
+`/work/build-current-044db34-release` passed in the pinned Sonic1 container
+`868b213e31020ca243d3c33df5904b26586615005fbae1abf04772f5294f8be1`. The
+invocation was `ctest --test-dir /work/build-current-044db34-release
+--output-on-failure -j2`; all 16/16 tests passed in 573.04 seconds. This
+included the regular and Valgrind libclamav, clamscan, clamd, freshclam, and
+sigtool suites; Rust; milter protocol and quota; and the large-file source,
+POC fail-closed, and runtime-evidence controls. No CTest failure output or
+sanitizer/Valgrind failure was reported.
+
+This closes the current-source Release CTest gate and strengthens the
+implementation baseline for the production roadmap. It does not substitute
+for the still-open authorized real-file/production-CVD service qualification,
+exact-edge parser-family qualification, cold-cache service measurements, or
+RSS/temporary-space/latency evidence required before release readiness.
+
+## 7-Zip bounded two-coder output — 2026-08-20
+
+The streaming 7-Zip folder decoder previously accepted only one-coder folders.
+Common folders containing a decompressor followed by a BCJ or ARM branch
+converter therefore could not use the sequential bounded-output path and could
+fall back to whole-folder materialization only when the legacy allocation guard
+allowed it. The decoder now accepts those two-coder shapes and routes decoder
+output through a bounded 256 KiB branch-filter buffer. BCJ/ARM state,
+alignment/look-ahead tails, output CRC, and downstream short writes are
+preserved; unsupported graphs such as BCJ2 remain fail-visible on the streaming
+path.
+
+The modified `libclamav/7z/7zDec.c` compiled in the pinned Sonic1 Release
+build `/work/build-current-044db34-release`, and the full 16-test Release CTest
+gate passed after the rebuild in 561.21 seconds. A direct scan of the existing
+`clam.7z` fixture returned the expected
+`ClamAV-Test-File.UNOFFICIAL FOUND` result. Existing fixtures cover 7-Zip
+scanning and the truncated-header control, but no separately identified
+two-coder BCJ/ARM archive fixture is currently available in the corpus.
+Accordingly, this closes the implementation/build regression for the supported
+folder shape but does not claim exact parser-family runtime qualification; a
+real two-coder fixture and the broader production-CVD/resource gates remain
+open.
+
+## Current-source ASan/UBSan CTest gate — 2026-08-20
+
+The pinned Sonic1 `RelWithDebInfo` sanitizer build initially exposed a real
+build-integrity defect: Rust unit-test binaries linked C archives compiled
+with `-fsanitize=address,undefined`, but Cargo did not receive the C sanitizer
+link runtime. The failure appeared as unresolved `__asan_*` and `__ubsan_*`
+symbols in `libclamav_rust`.
+
+`cmake/FindRust.cmake` now derives a test-only `RUST_TESTFLAGS` value from
+the configured CMake executable sanitizer flags and passes the corresponding
+`-C link-arg` through Cargo. The corrected build reconfigured and rebuilt
+successfully in the pinned Sonic1 container
+`868b213e31020ca243d3c33df5904b26586615005fbae1abf04772f5294f8be1`.
+
+The exact workflow command, `ctest -C RelWithDebInfo -V -E '_valgrind$'`,
+then passed all 11/11 non-Valgrind tests in 254.09 seconds. This included 73
+passing Rust tests, libclamav, clamscan, clamd, freshclam, sigtool, milter,
+and the large-file source, fail-closed, and runtime-evidence controls. The
+temporary remote source overlay was restored to its pre-test hash and its
+staging files were removed.
+
+This closes the valid ASan/UBSan CTest gate. It does not replace the still-
+open authorized real-file/production-CVD service qualification, exact-edge
+parser-family qualification, cold-cache service measurements, or
+RSS/temporary-space/latency evidence required before release readiness.
+
+## LHA/LZH declared-output admission — 2026-08-20
+
+The Rust LHA/LZH scanner already used the bounded `FMapReader` and a
+quota-accounted temporary spool, but it could write decoder output beyond the
+member's declared size and only reject it after the decoder reached EOF. The
+scanner now checks each 64 KiB output chunk before writing, uses checked native
+size conversions for compressed and uncompressed metadata, and validates CRCs
+for empty members as well. The focused Rust regression covers exact-fit,
+overrun, and declared-size underflow cases. Compilation, Sonic1 execution,
+corpus, sanitizer, RSS, and large-member qualification remain to be run for
+this current change.
+
+## Nested RFC822 mail body spooling — 2026-08-20
+
+The remaining large-mail materialization exception for complete nested
+messages is now narrowed. `message/rfc822` and `message/delivery-status`
+bodies enter the existing quota-accounted file-backed spool and are returned to
+the normal scanner as completed nested input. The legacy line-list state
+machine remains for `message/partial`, `external-body`, disposition-notification,
+and unknown message subtypes, where a raw nested scan would change semantics or
+hide an unsupported feature. A new C regression crosses the former 64 MiB
+materialization boundary with a nested RFC822 body; source guards cover both
+the policy and the regression registration.
+
+Local shell syntax, the capability manifest, source guards, and `git diff
+--check` pass. The local macOS host lacks the OpenSSL development headers for a
+C syntax/build check. MCP-SSH rejected exporting the complete current private
+worktree archive to Sonic1, so compiled current-source and memory-qualification
+evidence for this change remains open and no remote result is attributed to it.
+
+## Daemon admission capability enforcement — 2026-08-20
+
+The large-file `clamd` startup admission now enforces the certified
+large-file build definition and the FILDES descriptor-passing capability,
+rather than merely reporting them in the startup manifest. Its scaled memory
+requirement also includes the configured `MaxContiguousSize`, ensuring that a
+retained 32 GiB contiguous matcher subject cannot be under-admitted when only
+the file and logical-scan limits are lowered. The source-guard suite, capability
+manifest, and `git diff --check` pass. A compiled current-source Sonic1 result
+remains open because the current private worktree export is not permitted by
+MCP-SSH.
+
+The same gate now rejects large-file `clamd` admission on non-Linux-x86-64
+targets. This preserves the plan's first-release boundary: CMake may still
+build other 64-bit targets for development, but no unqualified AArch64 or
+macOS daemon can present the certified production envelope.
+
+The admission call was moved into `recvloop()` immediately after all
+configured scan, temporary, contiguous, and PCRE limits are applied. The
+previous ordering checked the engine's historical defaults before applying the
+configuration file, which could bypass the resource gate for a requested 32
+GiB daemon. The corrected path frees the engine and returns before creating the
+worker pool when admission fails.
+
+The production daemon admission also rejects `MaxScanSize=0`, which retains
+legacy unlimited behavior for library callers but cannot be used for the
+certified daemon envelope. This prevents the 64 GiB logical budget and its
+memory admission calculation from being bypassed by an unbounded setting.
+
+The dependency-limited macOS host could not compile the full tree because its
+OpenSSL headers are absent. A temporary, non-repository header shim was used
+only to syntax-check the changed Linux-style `clamd/largefile_admission.c` and
+the complete `clamd/server-th.c` translation units; both passed. The shim was
+removed immediately afterward. This is source syntax evidence, not a
+dependency-complete or runtime qualification result.
+
+`check_clamd` now links the production admission translation unit and covers
+both deterministic boundaries: historical defaults accept without probing a
+host path, while `MaxScanSize=0` is rejected with the certified-budget reason.
+The tests are registered in the clamd parser case and source-guarded.
+
+## Parallel MULTISCANREPORT aggregation — 2026-08-20
+
+The structured `MULTISCANREPORT` command now dispatches through the normal
+`MULTISCAN` path instead of unconditionally degrading to `CONTSCAN`. The
+one-worker fallback remains sequential, while multi-worker directory scans
+retain parallelism. Child workers run the structured library scan path,
+merge reports into the parent under the multiscan group mutex, and parent-side
+skip/error reports use the same lock. Child workers suppress their own
+transport frames; the parent emits one aggregate report frame after all
+children finish. This prevents both the previous loss of child reports and
+interleaved response frames. Terminated groups suppress late child
+report/status updates before the parent connection can be released during
+daemon shutdown.
+
+This is source-level contract evidence only. Dependency-complete compiled
+protocol tests, report parity, production-CVD coverage, sanitizer runs, and
+resource measurements remain open release gates.
+
+## YARA-compatible exact-tail reads — 2026-08-20
+
+The built-in YARA-compatible executor had an exact-boundary defect: its
+non-external fmap integer reader rejected a value when
+`offset + sizeof(type) == fmap->len`. It now uses subtraction-based checked
+bounds, accepting the valid exact-tail read while rejecting an out-of-range
+offset without arithmetic wraparound. `check_matchers` contains a focused
+four-byte exact-tail regression.
+
+This is a targeted correctness fix, not a claim of full YARA or production
+signature qualification; those parser/matcher and resource gates remain open.
+
+## Nonzero fmap source offsets — 2026-08-20
+
+The handle-backed fmap constructor incorrectly compared the absolute source
+offset with the exposed window length. A valid tail window near the end of a
+large file could therefore be rejected when `offset >= len`, even though the
+requested source range was valid. The constructor now checks only for
+`offset + len` arithmetic overflow, and a callback-backed regression reads a
+window at source offset 4096 whose length is smaller than that offset.
+
+This is a targeted fmap range correction. Descriptor-backed large-file,
+nested-window, sanitizer, and supported Linux/Sonic1 qualification remain
+release gates.
+
+## Descriptor root-size preflight — 2026-08-20
+
+`cl_scandesc_ex2()` previously called `fmap_new()` before applying the root
+`MaxFileSize` and `MaxScanSize` limits. That could allocate the large-file
+page bitmap and reserve address space for an input that was already known to
+be over policy, and its `st_size <= 5` fast path could bypass a configured
+limit entirely. The descriptor path now rejects negative sizes, records the
+root size, and runs a metadata-only limit preflight before fmap creation. The
+preflight uses the normal scan reconciliation path so `AlertExceedsMax`,
+callbacks, reports, and legacy result semantics are retained; a forced
+`fmap_new()` failure regression confirms that an over-limit descriptor returns
+`CL_EMAXSIZE` without constructing the full map.
+
+This closes the known-size descriptor admission ordering defect. Path/fd
+front-end parity, unknown-length stream enforcement, parser-family execution,
+and resource qualification remain release gates.
+
+## Nested child-size preflight — 2026-08-20
+
+The same ordering defect existed below the root: extracted descriptor scans
+and nested fmap windows could reserve temporary space or create a child fmap
+before `cli_recursion_stack_push()` applied the logical-size and file-count
+limits. A shared child-size preflight now runs before those allocations. It
+uses time-only admission for normalized or handler-retyped views, matching the
+existing logical-object accounting contract, and full shared admission for
+real extracted children. Force-to-disk nested scans are rejected before their
+temporary copy is staged. The recursion push retains its duplicate check as a
+defensive invariant. The force-to-disk nested-range regression verifies that
+an over-limit child returns `CL_EMAXSIZE` without reading source bytes.
+
+This closes nested child-map admission ordering at the source level. Compiled
+parser execution, report parity, production CVD coverage, sanitizer/resource
+qualification, and exact-size runtime evidence remain release gates.
+
+## HFS+ temporary-fork accounting — 2026-08-20
+
+The HFS+ extractor previously materialized declared data/resource forks and
+compressed decmpfs output without charging those temporary files to the
+shared `MaxTemporarySize` budget. Fork extraction now reserves its declared
+size before staging, keeps the reservation through the reserved-child scan,
+and transfers ownership explicitly when a compressed resource fork is handed
+to the decmpfs path. Compressed output is checked against its declared size
+and configured scan limits; unsupported compression, incomplete extents,
+short output, and cleanup failures mark the scan incomplete and non-cacheable.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete HFS+ build, corpus/fault-injection regression, sanitizer
+run, and supported-build Sonic1 qualification remain open release gates.
+
+## VBA project temporary-spool accounting — 2026-08-20
+
+The modern VBA project-directory extractor previously wrote generated script
+output without charging those bytes to the shared `MaxTemporarySize` budget,
+then scanned the resulting descriptor through the legacy non-reserved path.
+Each generated write now reserves its bytes before writing; ownership is
+transferred to the OLE caller and held through the reserved child scan, then
+released on success, candidate retry, and cleanup. Existing macro metadata and
+candidate-selection behavior are preserved.
+
+Source guards and `git diff --check` pass. Dependency-complete Office/VBA
+corpus execution, sanitizer coverage, and supported-build Sonic1 qualification
+remain open release gates.
+
+## InstallShield temporary-output accounting — 2026-08-20
+
+InstallShield MSI, legacy embedded-file, and CAB extraction paths previously
+created temporary output without charging the shared `MaxTemporarySize` budget
+and scanned completed members through the legacy descriptor path. The three
+paths now reserve output before or during staging, require complete writes,
+check declared CAB output before each write, and use reserved-child scans while
+the reservation is held. Close/removal failures remain sticky incomplete
+results and cannot replace an earlier detection or parser failure.
+
+Source guards and `git diff --check` pass. Dependency-complete InstallShield
+corpus execution, sanitizer and fault-injected cleanup coverage, and
+supported-build Sonic1 qualification remain open release gates.
+
+## HWP temporary-output accounting — 2026-08-20
+
+The shared HWP3/HWP5/HWPML raw-deflate helper previously wrote decompressed
+temporary output without charging the shared `MaxTemporarySize` budget, and
+its HWP5/HWPML callbacks used the legacy child descriptor path. It now reserves
+each output chunk, holds that ownership through the callback, uses the
+reserved-child scan, and checks temporary close/removal failures. HWPML
+base64-decoded input keeps its reservation through the direct child scan and
+releases it after cleanup.
+
+Source guards and `git diff --check` pass. Dependency-complete HWP/HWPML corpus
+execution, sanitizer and fault-injected cleanup coverage, and supported-build
+Sonic1 qualification remain open release gates.

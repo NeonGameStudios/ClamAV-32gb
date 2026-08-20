@@ -68,7 +68,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -107,7 +107,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -147,7 +147,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -186,7 +186,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -225,7 +225,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -264,7 +264,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -303,7 +303,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -342,7 +342,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -381,7 +381,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -420,7 +420,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -459,7 +459,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted workbook content is incomplete
 
         expected_strings = [ '"Encrypted":"RC4"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -498,7 +498,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted workbook content is incomplete
 
         expected_strings = [ '"Encrypted":"RC4"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -537,7 +537,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)
@@ -576,7 +576,7 @@ class TC(testcase.TestCase):
         )
         output = self.execute_command(command)
 
-        assert output.ec == 0  # clean
+        assert output.ec == 2  # encrypted document content is incomplete
 
         expected_strings = [ '"Encrypted":"ENCRYPTION_TYPE_UNKNOWN"' ]
         self.verify_metadata_json(tempdir, expected_strings)

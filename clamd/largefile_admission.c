@@ -57,6 +57,12 @@
 #define LARGEFILE_FD_PASSING 0
 #endif
 
+#if defined(C_LINUX) && (defined(__x86_64__) || defined(_M_X64))
+#define LARGEFILE_CERTIFIED_PLATFORM 1
+#else
+#define LARGEFILE_CERTIFIED_PLATFORM 0
+#endif
+
 static void set_reason(char *reason, size_t reason_size, const char *message)
 {
     if ((NULL != reason) && (reason_size > 0))
@@ -321,11 +327,31 @@ int clamd_largefile_admission_check(
         return 0;
     }
 
+    if (max_scan_size == 0) {
+        set_reason(reason, reason_size, "MaxScanSize=0 disables the certified 64 GiB logical scan budget");
+        return 0;
+    }
+
     /* Ordinary ClamAV configurations retain their historical startup path.
      * The admission contract applies when a caller actually enables the
      * large-file scan envelope. */
     if (max_file_size <= legacy_file_size && max_scan_size <= legacy_scan_size)
         return 1;
+
+    if (!LARGEFILE_BUILD_SUPPORT) {
+        set_reason(reason, reason_size, "build does not provide certified large-file support");
+        return 0;
+    }
+
+    if (!LARGEFILE_CERTIFIED_PLATFORM) {
+        set_reason(reason, reason_size, "certified large-file daemon admission is limited to Linux x86-64");
+        return 0;
+    }
+
+    if (!LARGEFILE_FD_PASSING) {
+        set_reason(reason, reason_size, "build does not provide the certified FILDES descriptor-passing path");
+        return 0;
+    }
 
     if ((sizeof(void *) < 8) || (sizeof(size_t) < 8) ||
 #if !defined(_WIN32)
@@ -342,6 +368,8 @@ int clamd_largefile_admission_check(
     memory_basis = max_file_size;
     if (max_scan_size / 2 > memory_basis)
         memory_basis = max_scan_size / 2;
+    if (max_contiguous_size > memory_basis)
+        memory_basis = max_contiguous_size;
     if (memory_basis > LARGEFILE_MIN_AVAILABLE - LARGEFILE_MEMORY_HEADROOM)
         required_memory = LARGEFILE_MIN_AVAILABLE;
     else

@@ -215,6 +215,31 @@ static int count_quotes(const char *buf);
 static bool next_is_folded_header(const text *t);
 static bool newline_in_header(const char *line);
 
+static bool messageNeedsMaterializedBody(const message *m)
+{
+    const char *subtype;
+
+    if (m == NULL)
+        return false;
+
+    if (messageGetMimeType(m) == MESSAGE) {
+        subtype = messageGetMimeSubtype(m);
+
+        /* RFC822 and delivery-status bodies are complete nested messages.
+         * They can be staged and handed back to the normal scanner without
+         * retaining every body line in the parent message. Keep the legacy
+         * in-memory state machine for partial messages, external-body
+         * references, disposition notifications, and unknown message types,
+         * whose parser semantics are not equivalent to a nested scan. */
+        return (strcasecmp(subtype, "rfc822") != 0) &&
+               (strcasecmp(subtype, "delivery-status") != 0);
+    }
+
+    subtype = messageGetMimeSubtype(m);
+    return (messageGetMimeType(m) == MULTIPART) && subtype &&
+           (strcasecmp(subtype, "related") == 0);
+}
+
 static blob *getHrefs(cli_ctx *, message *m, tag_arguments_t *hrefs, bool *incomplete);
 static void hrefs_done(blob *b, tag_arguments_t *hrefs);
 static void checkURLs(message *m, mbox_ctx *mctx, mbox_status *rc, int is_html);
@@ -568,7 +593,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                 m             = body;
                 headersParsed = true;
 
-                if (messageBeginBodySpool(m) < 0) {
+                if (!messageNeedsMaterializedBody(m) && messageBeginBodySpool(m) < 0) {
                     m->isTruncated = true;
                     break;
                 }
@@ -694,6 +719,12 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
          */
         messageDestroy(body);
     }
+
+    /* A parser may have already scanned a child successfully after skipping
+     * required input. Do not allow that sticky state to collapse into a
+     * clean mailbox result while unwinding to cli_scanmail(). */
+    if ((retcode == CL_SUCCESS) && ctx->scan_incomplete)
+        retcode = CL_EPARSE;
 
     cli_dbgmsg("cli_mbox returning %d\n", retcode);
 
@@ -1053,7 +1084,7 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                  * legacy boundary/header state machine. Ordinary text and
                  * application parts can be consumed incrementally into the
                  * shared disk-backed spool instead of retaining every line. */
-                if (messageBeginBodySpool(ret) < 0) {
+                if (!messageNeedsMaterializedBody(ret) && messageBeginBodySpool(ret) < 0) {
                     ret->isTruncated = true;
                     break;
                 }
@@ -1883,7 +1914,7 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
                     break;
                 }
                 messageSetCTX(parsed, mctx->ctx);
-                if (messageBeginBodySpool(parsed) < 0) {
+                if (!messageNeedsMaterializedBody(parsed) && messageBeginBodySpool(parsed) < 0) {
                     messageDestroy(parsed);
                     result = FAIL;
                     break;
@@ -2022,6 +2053,11 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
 
             fb = messageToFileblob(mainMessage, mctx->dir, 1);
             if (fb == NULL) {
+                rc = FAIL;
+            } else if (streamed_type == MESSAGE && !fb->isNotEmpty) {
+                cli_mark_scan_incomplete(mctx->ctx,
+                                         "Encapsulated MIME message has no body to inspect");
+                fileblobDestroy(fb);
                 rc = FAIL;
             } else {
                 const int scan_rc = scanFileblob(mctx, fb);
@@ -2666,11 +2702,19 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                         if (htmltextPart == -1) {
                             cli_dbgmsg("No HTML code found to be scanned\n");
                         } else {
+                            mbox_status mhtml_rc = OK;
+
                             /* Send root HTML file for preclassification */
                             if (mctx->ctx->this_layer_metadata_json)
-                                (void)parseRootMHTML(mctx, messages[htmltextPart], aText);
+                                mhtml_rc = parseRootMHTML(mctx, messages[htmltextPart], aText);
 
-                            rc = parseEmailBody(messages[htmltextPart], aText, mctx, recursion_level + 1);
+                            {
+                                mbox_status body_rc = parseEmailBody(messages[htmltextPart], aText, mctx, recursion_level + 1);
+                                if (body_rc != OK)
+                                    rc = body_rc;
+                                else if ((mhtml_rc != OK) && (rc == OK))
+                                    rc = mhtml_rc;
+                            }
                             if ((rc == OK) && messages[htmltextPart]) {
                                 messageDestroy(messages[htmltextPart]);
                                 messages[htmltextPart] = NULL;

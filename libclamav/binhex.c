@@ -67,6 +67,8 @@ int cli_binhex(cli_ctx *ctx)
     size_t enc_done = 0, enc_todo = map->len;
     unsigned int dec_done = 0, chunksz = 0, chunkoff = 0;
     uint32_t datalen = 0, reslen = 0;
+    uint64_t data_size = 0, resource_size = 0;
+    uint64_t data_reserved = 0, resource_reserved = 0;
     int in_data = 0, in_run = 0, datafd, resfd, ret = CL_CLEAN;
     enum binhex_phase { IN_BANNER,
                         IN_HEADER,
@@ -108,6 +110,8 @@ int cli_binhex(cli_ctx *ctx)
                 hdrlen += 4;
                 reslen = (decoded[hdrlen] << 24) | (decoded[hdrlen + 1] << 16) | (decoded[hdrlen + 2] << 8) | decoded[hdrlen + 3];
                 hdrlen += 4 + 2;
+                data_size            = datalen;
+                resource_size        = reslen;
                 decoded[namelen + 1] = 0;
                 if (dec_done <= hdrlen) {
                     cli_dbgmsg("cli_binhex: file too short for header\n");
@@ -119,6 +123,16 @@ int cli_binhex(cli_ctx *ctx)
                     break;
                 if ((ret = cli_checklimits("cli_binhex(resources)", ctx, reslen, 0, 0)) != CL_CLEAN)
                     break;
+                if ((ret = cli_scan_reserve_temporary(ctx, data_size)) != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "BinHex data fork exceeds temporary storage limits");
+                    break;
+                }
+                data_reserved = data_size;
+                if ((ret = cli_scan_reserve_temporary(ctx, resource_size)) != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "BinHex resource fork exceeds temporary storage limits");
+                    break;
+                }
+                resource_reserved = resource_size;
                 cli_dbgmsg("cli_binhex: decoding '%s' - %u bytes of data to %s - %u bytes or resources to %s\n", decoded + 1, datalen, dname, reslen, rname);
                 memmove(decoded, &decoded[hdrlen], dec_done - hdrlen);
                 dec_done -= hdrlen;
@@ -140,7 +154,7 @@ int cli_binhex(cli_ctx *ctx)
                         break;
                     }
                     {
-                        cl_error_t scan_ret = cli_magic_scan_desc(datafd, dname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+                        cl_error_t scan_ret = cli_magic_scan_desc_type_reserved(datafd, dname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
                         if (scan_ret != CL_SUCCESS)
                             ret = scan_ret;
                     }
@@ -192,7 +206,7 @@ int cli_binhex(cli_ctx *ctx)
                         break;
                     }
                     {
-                        cl_error_t scan_ret = cli_magic_scan_desc(resfd, rname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+                        cl_error_t scan_ret = cli_magic_scan_desc_type_reserved(resfd, rname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
                         if (scan_ret != CL_SUCCESS)
                             ret = scan_ret;
                     }
@@ -300,6 +314,10 @@ int cli_binhex(cli_ctx *ctx)
         if (cli_unlink(rname))
             binhex_note_cleanup_failure(ctx, &ret, "BinHex resource temporary output could not be removed");
     }
+    if (data_reserved)
+        cli_scan_release_temporary(ctx, data_reserved);
+    if (resource_reserved)
+        cli_scan_release_temporary(ctx, resource_reserved);
     free(dname);
     free(rname);
     return ret;

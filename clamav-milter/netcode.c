@@ -464,14 +464,14 @@ int nc_connect_rand(int *main, int *alt, int *local)
         }
         unlink(unlinkme);
         free(unlinkme);
-        if (nc_send(*main, "zFILDESREPORT\n", sizeof("zFILDESREPORT\n") - 1)) {
+        if (nc_send(*main, "zFILDESREPORT", sizeof("zFILDESREPORT"))) {
             logg(LOGG_ERROR, "FD scan request failed\n");
             close(*alt);
             close(*main);
             return 1;
         }
     } else {
-        if (nc_send(*main, "zINSTREAMREPORT\n", sizeof("zINSTREAMREPORT\n") - 1)) {
+        if (nc_send(*main, "zINSTREAMREPORT", sizeof("zINSTREAMREPORT"))) {
             logg(LOGG_ERROR, "Failed to communicate with clamd\n");
             close(*main);
             return 1;

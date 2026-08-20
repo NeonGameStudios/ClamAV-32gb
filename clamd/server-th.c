@@ -63,6 +63,7 @@
 #include "session.h"
 #include "clamd_others.h"
 #include "shared.h"
+#include "largefile_admission.h"
 
 #define BUFFSIZE 1024
 
@@ -133,7 +134,7 @@ static void scanner_thread(void *arg)
     } else
         errors = ret;
 
-    if (conn->structured_report) {
+    if (conn->structured_report && !conn->structured_report_owner) {
         cl_error_t report_status = conn->structured_status;
         if (report_status == CL_SUCCESS && virus)
             report_status = CL_VIRUS;
@@ -1224,6 +1225,22 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
     }
     val = cl_engine_get_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, NULL);
     logg(LOGG_INFO, "Limits: PCREMaxFileSize limit set to %llu.\n", val);
+
+    {
+        char admission_reason[256];
+        int admission_status            = CL_ERROR;
+        const char *temporary_directory = cl_engine_get_str(engine, CL_ENGINE_TMPDIR, &admission_status);
+
+        if ((admission_status != CL_SUCCESS) || (NULL == temporary_directory) || (temporary_directory[0] == '\0'))
+            temporary_directory = "/tmp";
+
+        clamd_largefile_log_capabilities(engine);
+        if (!clamd_largefile_admission_check(engine, temporary_directory, admission_reason, sizeof(admission_reason))) {
+            logg(LOGG_ERROR, "Large-file daemon admission failed: %s\n", admission_reason[0] ? admission_reason : "unknown reason");
+            cl_engine_free(engine);
+            return 1;
+        }
+    }
 
     if (optget(opts, "ScanArchive")->enabled) {
         logg(LOGG_INFO, "Archive support enabled.\n");

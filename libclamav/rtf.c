@@ -114,6 +114,7 @@ struct rtf_object_data {
     cli_ctx* ctx;
     size_t desc_len;
     size_t bread;
+    uint64_t temporary_reserved;
 };
 
 #define BUFF_SIZE 8192
@@ -223,15 +224,16 @@ static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* t
         cli_errmsg("rtf_object_begin: Unable to allocate memory for object data\n");
         return CL_EMEM;
     }
-    data->fd             = -1;
-    data->partial        = 0;
-    data->has_partial    = 0;
-    data->bread          = 0;
-    data->internal_state = WAIT_MAGIC;
-    data->tmpdir         = tmpdir;
-    data->ctx            = ctx;
-    data->name           = NULL;
-    data->desc_name      = NULL;
+    data->fd                 = -1;
+    data->partial            = 0;
+    data->has_partial        = 0;
+    data->bread              = 0;
+    data->internal_state     = WAIT_MAGIC;
+    data->tmpdir             = tmpdir;
+    data->ctx                = ctx;
+    data->name               = NULL;
+    data->desc_name          = NULL;
+    data->temporary_reserved = 0;
 
     state->cb_data = data;
     return 0;
@@ -249,7 +251,7 @@ static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
 
             ret = cli_scan_ole10(data->fd, ctx);
         } else {
-            ret = cli_magic_scan_desc(data->fd, data->name, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            ret = cli_magic_scan_desc_type_reserved(data->fd, data->name, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
         }
 
         close(data->fd);
@@ -261,6 +263,11 @@ static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
             if (cli_unlink(data->name)) ret = CL_EUNLINK;
         free(data->name);
         data->name = NULL;
+    }
+
+    if (data->temporary_reserved) {
+        cli_scan_release_temporary(ctx, data->temporary_reserved);
+        data->temporary_reserved = 0;
     }
 
     return ret;
@@ -400,8 +407,17 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                     out_data += i;
                     data->bread = 0;
                     cli_dbgmsg("Dumping rtf embedded object of size:%lu\n", (unsigned long int)data->desc_len);
-                    if ((ret = cli_gentempfd(data->tmpdir, &data->name, &data->fd)))
+                    if (data->desc_len > UINT64_MAX - sizeof(uint32_t) ||
+                        cli_scan_reserve_temporary(data->ctx, (uint64_t)data->desc_len + sizeof(uint32_t)) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(data->ctx, "RTF embedded object exceeds temporary storage limits");
+                        return CL_ERESOURCE;
+                    }
+                    data->temporary_reserved = (uint64_t)data->desc_len + sizeof(uint32_t);
+                    if ((ret = cli_gentempfd(data->tmpdir, &data->name, &data->fd))) {
+                        cli_scan_release_temporary(data->ctx, data->temporary_reserved);
+                        data->temporary_reserved = 0;
                         return ret;
+                    }
                     data->internal_state = DUMP_DATA;
                     cli_dbgmsg("RTF: next state: DUMP_DATA\n");
                 }
@@ -468,6 +484,10 @@ static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
                 cli_unlink(data->name);
             free(data->name);
             data->name = NULL;
+        }
+        if (data->temporary_reserved) {
+            cli_scan_release_temporary(ctx, data->temporary_reserved);
+            data->temporary_reserved = 0;
         }
         rc = CL_EPARSE;
     } else if (data->fd > 0) {

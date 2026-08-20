@@ -70,7 +70,7 @@
 #define hwpml_debug(...) {};
 #endif
 
-typedef cl_error_t (*hwp_cb)(void *cbdata, int fd, const char *filepath, cli_ctx *ctx);
+typedef cl_error_t (*hwp_cb)(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved);
 
 static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at, size_t len, const char *parent, hwp_cb cb, void *cbdata)
 {
@@ -79,6 +79,7 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
     size_t in;
     size_t off_in = at;
     size_t count, remain = 1, outsize = 0;
+    uint64_t temporary_reserved = 0;
     z_stream zstrm;
     char *tmpname;
     unsigned char inbuf[FILEBUFF], outbuf[FILEBUFF];
@@ -137,11 +138,24 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
         zret  = inflate(&zstrm, Z_SYNC_FLUSH);
         count = FILEBUFF - zstrm.avail_out;
         if (count) {
+            if (outsize > SIZE_MAX - count) {
+                cli_mark_scan_incomplete(ctx, "HWP decompressed output size overflowed");
+                ret = CL_ERESOURCE;
+                goto dc_end;
+            }
             if ((ret = cli_checklimits("HWP", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
                 break;
 
+            if (UINT64_MAX - temporary_reserved < (uint64_t)count ||
+                cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "HWP decompressed output exceeds temporary storage limits");
+                ret = CL_ERESOURCE;
+                goto dc_end;
+            }
+            temporary_reserved += (uint64_t)count;
             if (cli_writen(ofd, outbuf, count) != count) {
                 cli_errmsg("%s: Can't write to file %s\n", parent, tmpname);
+                cli_mark_scan_incomplete(ctx, "HWP decompressed temporary output could not be written completely");
                 ret = CL_EWRITE;
                 goto dc_end;
             }
@@ -165,7 +179,7 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
     }
 
     if (ret == CL_SUCCESS)
-        ret = cb(cbdata, ofd, tmpname, ctx);
+        ret = cb(cbdata, ofd, tmpname, ctx, temporary_reserved);
 
     /* clean-up */
 dc_end:
@@ -175,11 +189,21 @@ dc_end:
         if (ret == CL_SUCCESS)
             ret = CL_EUNPACK;
     }
-    close(ofd);
-    if (!ctx->engine->keeptmp)
-        if (cli_unlink(tmpname))
-            ret = CL_EUNLINK;
+    if (close(ofd) != 0) {
+        cli_mark_scan_incomplete(ctx, "HWP decompressed temporary output could not be closed");
+        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+            ret = CL_EWRITE;
+    }
+    if (!ctx->engine->keeptmp) {
+        if (cli_unlink(tmpname)) {
+            cli_mark_scan_incomplete(ctx, "HWP decompressed temporary output could not be removed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+                ret = CL_EUNLINK;
+        }
+    }
     free(tmpname);
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
     return ret;
 }
 
@@ -377,14 +401,15 @@ cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
     return CL_SUCCESS;
 }
 
-static cl_error_t hwp5_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx)
+static cl_error_t hwp5_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
 {
     UNUSEDPARAM(cbdata);
+    UNUSEDPARAM(temporary_reserved);
 
     if (fd < 0 || !ctx)
         return CL_ENULLARG;
 
-    return cli_magic_scan_desc(fd, filepath, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    return cli_magic_scan_desc_type_reserved(fd, filepath, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
 }
 
 cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, int fd, const char *filepath)
@@ -1745,7 +1770,7 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
     return ret;
 }
 
-static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx)
+static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
 {
     cl_error_t ret = CL_SUCCESS;
     fmap_t *map, *dmap;
@@ -1753,6 +1778,8 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
     int i, p = 0, last = 0;
     uint16_t nstyles;
     json_object *fonts = NULL;
+
+    UNUSEDPARAM(temporary_reserved);
 
     UNUSEDPARAM(filepath);
 
@@ -1908,7 +1935,7 @@ cl_error_t cli_scanhwp3(cli_ctx *ctx)
     if (docinfo.di_compressed)
         ret = decompress_and_callback(ctx, ctx->fmap, offset, 0, "HWP3.x", hwp3_cb, NULL);
     else
-        ret = hwp3_cb(&offset, 0, ctx->fmap->path, ctx);
+        ret = hwp3_cb(&offset, 0, ctx->fmap->path, ctx, 0);
 
     if (ret != CL_SUCCESS)
         goto done;
@@ -1959,14 +1986,15 @@ static const struct key_entry hwpml_keys[] = {
 static size_t num_hwpml_keys = sizeof(hwpml_keys) / sizeof(struct key_entry);
 
 /* binary streams needs to be base64-decoded then decompressed if fields are set */
-static cl_error_t hwpml_scan_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx)
+static cl_error_t hwpml_scan_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
 {
     UNUSEDPARAM(cbdata);
+    UNUSEDPARAM(temporary_reserved);
 
     if (fd < 0 || !ctx)
         return CL_ENULLARG;
 
-    return cli_magic_scan_desc(fd, filepath, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+    return cli_magic_scan_desc_type_reserved(fd, filepath, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
 }
 
 static int hwpml_base64_value(unsigned char value)
@@ -2185,11 +2213,6 @@ static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, in
             goto hwpml_end;
         }
 
-        /* The nested descriptor scan reserves the completed decoded child
-         * itself. Do not count the same bytes a second time. */
-        cli_scan_release_temporary(ctx, decoded_reserved);
-        decoded_reserved = 0;
-
         /* keeps the later logic simpler */
         fd = df;
 
@@ -2220,9 +2243,9 @@ static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, in
         fmap_free(input);
     } else {
         if (fd == df) { /* fd is a decoded tempfile */
-            ret = hwpml_scan_cb(NULL, fd, tempfile, ctx);
+            ret = hwpml_scan_cb(NULL, fd, tempfile, ctx, decoded_reserved);
         } else { /* fd is the original filepath, no decoding necessary */
-            ret = hwpml_scan_cb(NULL, fd, filepath, ctx);
+            ret = hwpml_scan_cb(NULL, fd, filepath, ctx, 0);
         }
     }
 
@@ -2231,9 +2254,16 @@ hwpml_end:
     if (decoded_reserved)
         cli_scan_release_temporary(ctx, decoded_reserved);
     if (df >= 0) {
-        close(df);
-        if (!(ctx->engine->keeptmp))
-            cli_unlink(tempfile);
+        if (close(df) != 0) {
+            cli_mark_scan_incomplete(ctx, "HWPML decoded temporary output could not be closed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+                ret = CL_EWRITE;
+        }
+        if (!(ctx->engine->keeptmp) && cli_unlink(tempfile)) {
+            cli_mark_scan_incomplete(ctx, "HWPML decoded temporary output could not be removed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+                ret = CL_EUNLINK;
+        }
         free(tempfile);
     }
     return ret;

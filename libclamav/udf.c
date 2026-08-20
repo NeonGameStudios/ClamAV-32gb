@@ -61,7 +61,8 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
     int fd     = -1;
     char *tmpf = NULL;
     uint8_t buffer[UDF_COPY_CHUNK_SIZE];
-    size_t copied = 0;
+    size_t copied               = 0;
+    uint64_t temporary_reserved = 0;
 
     cl_error_t status = CL_ETMPFILE;
 
@@ -70,6 +71,13 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
         status = CL_EARG;
         goto done;
     }
+
+    if (cli_scan_reserve_temporary(ctx, (uint64_t)dataLen) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "UDF file extent exceeds temporary storage limits");
+        status = CL_ERESOURCE;
+        goto done;
+    }
+    temporary_reserved = (uint64_t)dataLen;
 
     /* Not sure if I care about the name that is actually created. */
     if (cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, fileName, &tmpf, &fd) != CL_SUCCESS) {
@@ -95,7 +103,7 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
         copied += chunk;
     }
 
-    status = cli_magic_scan_desc(fd, tmpf, ctx, fileName, LAYER_ATTRIBUTES_NONE);
+    status = cli_magic_scan_desc_type_reserved(fd, tmpf, ctx, CL_TYPE_ANY, fileName, LAYER_ATTRIBUTES_NONE);
 
 done:
     if (-1 != fd) {
@@ -115,6 +123,9 @@ done:
     }
 
     CLI_FREE_AND_SET_NULL(tmpf);
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     return status;
 }

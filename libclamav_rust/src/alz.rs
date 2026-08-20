@@ -820,10 +820,13 @@ impl<'aa> Alz {
 
     fn account_extracted<S: ExtractSink>(&mut self, sink: &S) {
         let size = sink.last_size();
-        if size > 0 {
-            if size > MIN_SCANNED_FILE_SIZE as u64 {
-                self.scan_counted_files = self.scan_counted_files.saturating_add(1);
-            }
+        if size > MIN_SCANNED_FILE_SIZE as u64 {
+            /* Tiny members are deliberately exempt from both the extracted
+             * file count and the shared logical-content budget. Keep this
+             * consistent with is_known_scan_limit_exempt(), so a sequence of
+             * tiny metadata members cannot consume the budget needed for a
+             * substantive member later in the archive. */
+            self.scan_counted_files = self.scan_counted_files.saturating_add(1);
             self.extracted_size = self.extracted_size.saturating_add(size);
         }
     }

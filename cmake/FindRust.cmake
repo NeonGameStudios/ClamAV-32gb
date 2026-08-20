@@ -377,8 +377,22 @@ function(add_rust_test)
     list(APPEND MY_CARGO_ARGS "--target-dir" ${ARGS_BINARY_DIRECTORY})
     list(JOIN MY_CARGO_ARGS " " MY_CARGO_ARGS_STRING)
 
+    # Rust unit-test binaries link C archives directly. When those archives
+    # were compiled with C/C++ sanitizer instrumentation, Cargo must also be
+    # given the C sanitizer linker runtime; CMAKE_EXE_LINKER_FLAGS does not
+    # propagate through Cargo automatically. Keep the normal Rust sanitizer
+    # flags and add the configured C sanitizer runtime only for test links.
+    set(RUST_TESTFLAGS "${RUSTFLAGS}")
+    string(REGEX MATCH "-fsanitize=[^ ]+" RUST_C_SANITIZER_FLAG "${CMAKE_EXE_LINKER_FLAGS}")
+    if(RUST_C_SANITIZER_FLAG)
+        string(APPEND RUST_TESTFLAGS " -C link-arg=${RUST_C_SANITIZER_FLAG}")
+    endif()
+
     if(ARGS_PRECOMPILE_TESTS)
-        list(APPEND ARGS_PRECOMPILE_ENVIRONMENT "CARGO_CMD=test" "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}")
+        list(APPEND ARGS_PRECOMPILE_ENVIRONMENT
+            "CARGO_CMD=test"
+            "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}"
+            "RUSTFLAGS=${RUST_TESTFLAGS}")
         add_custom_target(${ARGS_NAME}_tests ALL
             COMMAND ${CMAKE_COMMAND} -E env ${ARGS_PRECOMPILE_ENVIRONMENT} "RUSTC=${rustc_EXECUTABLE}" ${cargo_EXECUTABLE} ${MY_CARGO_ARGS} --color always --no-run
             DEPENDS ${ARGS_PRECOMPILE_DEPENDS}
@@ -388,7 +402,7 @@ function(add_rust_test)
 
     add_test(
         NAME ${ARGS_NAME}
-        COMMAND ${CMAKE_COMMAND} -E env "CARGO_CMD=test" "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" "RUSTFLAGS=${RUSTFLAGS}" "RUSTC=${rustc_EXECUTABLE}" ${cargo_EXECUTABLE} ${MY_CARGO_ARGS} --color always
+        COMMAND ${CMAKE_COMMAND} -E env "CARGO_CMD=test" "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" "RUSTFLAGS=${RUST_TESTFLAGS}" "RUSTC=${rustc_EXECUTABLE}" ${cargo_EXECUTABLE} ${MY_CARGO_ARGS} --color always
         WORKING_DIRECTORY ${ARGS_SOURCE_DIRECTORY}
     )
 endfunction()

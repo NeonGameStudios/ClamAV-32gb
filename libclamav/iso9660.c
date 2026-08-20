@@ -63,13 +63,21 @@ static const void *needblock(const iso9660_t *iso, unsigned int block, int temp)
 static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsigned int len)
 {
     char *tmpf;
-    int fd         = -1;
-    cl_error_t ret = CL_SUCCESS;
+    int fd                      = -1;
+    cl_error_t ret              = CL_SUCCESS;
+    uint64_t temporary_reserved = 0;
 
     if (cli_gentempfd(iso->ctx->this_layer_tmpdir, &tmpf, &fd) != CL_SUCCESS) {
         cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be created");
         return CL_ETMPFILE;
     }
+
+    if (cli_scan_reserve_temporary(iso->ctx, (uint64_t)len) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(iso->ctx, "ISO file extent exceeds temporary storage limits");
+        ret = CL_ERESOURCE;
+        goto cleanup;
+    }
+    temporary_reserved = (uint64_t)len;
 
     cli_dbgmsg("iso_scan_file: dumping to %s\n", tmpf);
     while (len) {
@@ -92,11 +100,12 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
     }
 
     if (!len) {
-        ret = cli_magic_scan_desc(fd, tmpf, iso->ctx, iso->buf, LAYER_ATTRIBUTES_NONE);
+        ret = cli_magic_scan_desc_type_reserved(fd, tmpf, iso->ctx, CL_TYPE_ANY, iso->buf, LAYER_ATTRIBUTES_NONE);
         if (ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK)
             cli_mark_scan_incomplete(iso->ctx, "ISO extracted-file scan did not complete");
     }
 
+cleanup:
     if (close(fd) == -1) {
         cli_mark_scan_incomplete(iso->ctx, "ISO temporary output could not be closed");
         if (CL_SUCCESS == ret || CL_VERIFIED == ret)
@@ -109,6 +118,8 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
     }
 
     free(tmpf);
+    if (temporary_reserved)
+        cli_scan_release_temporary(iso->ctx, temporary_reserved);
     return ret;
 }
 

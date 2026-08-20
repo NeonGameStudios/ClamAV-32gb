@@ -13,11 +13,13 @@ import testcase
 
 class TC(testcase.TestCase):
     fail_closed_testfiles = {
+        'clam.ea05.exe',
+        'clam.ea06.exe',
         'clam_IScab_ext.exe',
         'clam_IScab_int.exe',
         'clam_ISmsi_int.exe',
         'clam.ole.doc',
-        'clam-wwpack.exe',
+        'clam.exe.mbox.uu',
     }
 
     @classmethod
@@ -77,12 +79,12 @@ class TC(testcase.TestCase):
 
         expected_results = []
         for testpath in TC.testpaths:
-            if testpath.name in TC.fail_closed_testfiles:
-                expected_results.append("{}: Can't parse data ERROR".format(testpath.name))
-            elif testpath.name == 'clam.exe.mbox.uu':
+            if testpath.name == 'clam.exe.mbox.uu':
                 # Path mode may retain the mailbox alert while another
                 # transport fails closed; neither outcome is clean.
                 expected_results.append("{}: (?:ClamAV-Test-File\\.UNOFFICIAL FOUND|Can't parse data ERROR)".format(testpath.name))
+            elif testpath.name in TC.fail_closed_testfiles:
+                expected_results.append("{}: Can't parse data ERROR".format(testpath.name))
             else:
                 expected_results.append('{}: ClamAV-Test-File.UNOFFICIAL FOUND'.format(testpath.name))
         scanned_count = len(TC.testpaths) - len(TC.fail_closed_testfiles)

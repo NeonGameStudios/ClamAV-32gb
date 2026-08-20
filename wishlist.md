@@ -11,6 +11,8 @@
 - Parser-specific limitations remain explicit unsupported results where a
   legacy ABI still requires a contiguous member or has an inherent format
   width. These are tracked in `docs/largefile-capabilities.tsv`.
+- AutoIt EA05 decoded and stored members now use bounded output/temp spooling;
+  EA06 script decompilation remains an explicit random-access boundary.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

@@ -356,7 +356,8 @@ static size_t vba_normalize(unsigned char *buffer, size_t size)
  * Read a VBA project in an OLE directory.
  * Contrary to cli_vba_readdir, this function uses the dir file to locate VBA modules.
  */
-cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, const char *hash, uint32_t which, int *tempfd, int *has_macros, char **tempfile)
+cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, const char *hash, uint32_t which,
+                               int *tempfd, int *has_macros, char **tempfile, uint64_t *temporary_reserved_out)
 {
     cl_error_t ret              = CL_SUCCESS;
     cl_error_t deferred_failure = CL_SUCCESS;
@@ -372,10 +373,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
     size_t mbcs_name_size = 0, utf16_name_size = 0;
     unsigned char *module_data = NULL, *module_data_utf8 = NULL;
     size_t module_data_size = 0, module_data_utf8_size = 0;
+    uint64_t temporary_reserved = 0;
 
-    if (dir == NULL || hash == NULL || tempfd == NULL || has_macros == NULL || tempfile == NULL) {
+    if (dir == NULL || hash == NULL || tempfd == NULL || has_macros == NULL || tempfile == NULL || temporary_reserved_out == NULL) {
         return CL_EARG;
     }
+
+    *temporary_reserved_out = 0;
 
     cli_dbgmsg("vba_readdir_new: Scanning directory %s for VBA project\n", dir);
 
@@ -406,8 +410,17 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
 #define CLI_WRITEN(msg, size)                                                 \
     do {                                                                      \
+        uint64_t write_size = (uint64_t)(size);                               \
+        if (write_size > UINT64_MAX - temporary_reserved ||                  \
+            cli_scan_reserve_temporary(ctx, write_size) != CL_SUCCESS) {     \
+            cli_mark_scan_incomplete(ctx, "VBA project temporary output exceeds temporary storage limits"); \
+            ret = CL_ERESOURCE;                                               \
+            goto done;                                                        \
+        }                                                                     \
+        temporary_reserved += write_size;                                     \
         if (cli_writen(*tempfd, msg, size) != size) {                         \
             cli_warnmsg("vba_readdir_new: Failed to write to output file\n"); \
+            cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be written completely"); \
             ret = CL_EWRITE;                                                  \
             goto done;                                                        \
         }                                                                     \
@@ -1384,6 +1397,13 @@ done:
         free(module_data_utf8);
         module_data_utf8 = NULL;
     }
+
+    if (ret == CL_SUCCESS) {
+        *temporary_reserved_out = temporary_reserved;
+        temporary_reserved = 0;
+    }
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     return ret;
 }

@@ -43,6 +43,10 @@
 
 #include "checks.h"
 
+extern int64_t read_uint32_t(fmap_t *fmap, size_t offset);
+
+#define TEST_YARA_UNDEFINED ((int64_t)0xFFFABADAFABADAFF)
+
 static const struct ac_testdata_s {
     const char *data;
     const char *hexsig;
@@ -715,6 +719,21 @@ START_TEST(test_bytecode_offset_compatibility)
 }
 END_TEST
 
+START_TEST(test_yara_uint32_read_accepts_exact_tail)
+{
+    static const unsigned char bytes[] = {0x78, 0x56, 0x34, 0x12};
+    uint32_t expected;
+    fmap_t *map;
+
+    memcpy(&expected, bytes, sizeof(expected));
+    map = cl_fmap_open_memory(bytes, sizeof(bytes));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(read_uint32_t(map, 0), (int64_t)expected);
+    ck_assert_int_eq(read_uint32_t(map, 1), TEST_YARA_UNDEFINED);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_byte_compare_overlap_dedup)
 {
     struct cli_matcher root;
@@ -939,6 +958,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
+    tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
 #ifndef _WIN32
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);

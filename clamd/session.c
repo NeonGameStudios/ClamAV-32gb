@@ -400,6 +400,8 @@ int command(client_conn_t *conn, int *virus)
                 else
                     return 1;
             }
+            if (conn->structured_report)
+                conn->structured_report_group = group;
             break;
         }
         case COMMAND_MULTISCANFILE: {
@@ -519,6 +521,7 @@ int command(client_conn_t *conn, int *virus)
     }
     if (scandata.group && type == TYPE_MULTISCAN) {
         thrmgr_group_waitforall(group, &ok, &error, &total);
+        conn->structured_report_group = NULL;
         pthread_mutex_lock(&conn->thrpool->pool_mutex);
         conn->thrpool->thr_multiscan--;
         pthread_mutex_unlock(&conn->thrpool->pool_mutex);
@@ -699,11 +702,12 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
             conn->structured_report = 1;
             return dispatch_command(conn, COMMAND_CONTSCAN, argument);
         case COMMAND_MULTISCANREPORT:
-            /* Keep one report frame per request.  The sequential CONTSCAN
-             * path is the same semantics used when MaxThreads is one and
-             * avoids interleaving child responses on the socket. */
+            /* Keep one report frame per request.  COMMAND_MULTISCAN uses its
+             * existing sequential fallback when MaxThreads is one, while
+             * preserving parallel directory scans when workers are available.
+             * Child reports are merged by the owning scan worker. */
             conn->structured_report = 1;
-            return dispatch_command(conn, COMMAND_CONTSCAN, argument);
+            return dispatch_command(conn, COMMAND_MULTISCAN, argument);
         case COMMAND_ALLMATCHSCANREPORT:
             conn->structured_report = 1;
             return dispatch_command(conn, COMMAND_ALLMATCHSCAN, argument);

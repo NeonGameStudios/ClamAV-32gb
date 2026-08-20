@@ -23,6 +23,14 @@ code cannot be presented as production evidence. The gate's
 `oracle-binding.txt` records the expected status, completion, signature,
 offset, and type alongside each verified size and hash.
 
+The service gate also snapshots every regular file in the production and edge
+database directories as a sorted relative-path/size/SHA-256 manifest before
+starting clamd. The directories must be distinct, symlink-free, and non-empty;
+the manifests are recorded with their hashes in `oracle-binding.txt` and are
+recomputed after the final workload. A database replacement or mutation during
+qualification fails the gate rather than leaving the workload associated with
+an unrecorded signature set.
+
 Large-file `clamd` configurations now perform the same admission decision at
 startup on Linux: effective `/proc/meminfo` and cgroup headroom must meet the
 scaled memory requirement, the configured temporary directory must have the
@@ -2057,18 +2065,33 @@ reported as incomplete. The checks do not claim that these parser families
 have been converted to 32 GiB deep streaming; their existing parser-specific
 allocation, format, and qualification limits remain separate release gates.
 
-## AutoIt bounded encrypted input — 2026-08-19
+## AutoIt bounded encrypted input and EA05 output — 2026-08-20
 
-EA05 and EA06 compressed members now decrypt their fmap input through a
-64 KiB window instead of materializing the complete encrypted member. The
-stream reader checks the declared range, preserves MT/LAME keystream state
-across refills, and makes short input or decoder-header failures incomplete.
-Decoded output and stored-member paths still use the legacy contiguous
-allocation ceiling, so AutoIt is not yet a 32 GiB deep-parser qualification;
-allocation failures are explicit non-clean results and remain a release gate.
-The capability manifest records this deliberate boundary as
-`autoit-member-over-1g`; converting the decoder’s output and back-reference
-state to bounded disk-backed processing remains a release item.
+EA05 and EA06 compressed members decrypt their fmap input through a 64 KiB
+window instead of materializing the complete encrypted member. The stream
+reader checks the declared range, preserves MT/LAME keystream state across
+refills, and makes short input or decoder-header failures incomplete.
+
+EA05 decoded output now goes directly to a quota-accounted temporary file. Its
+15-bit back-reference decoder retains only a 32 KiB history window plus a 64
+KiB write buffer, and stored EA05 members are decrypted and written in 64 KiB
+chunks. This removes the former 1 GiB individual-allocation dependency for
+EA05 members; the format’s 32-bit size fields remain an explicit 4 GiB output
+boundary. EA06 script decompilation still requires random access to its
+decoded member and remains an explicit unsupported-over-1-GiB capability.
+
+This is an implementation improvement, not parser-family qualification: valid
+EA05 compressed/stored fixtures above 1 GiB, malformed decoder states,
+temporary-quota exhaustion, sanitizer execution, and supported-build Sonic1
+evidence remain release gates. The reproducible small stored/compressed
+regression fixture generator is `tools/largefile_autoit_stored_fixture.py`.
+
+The pinned Sonic1 Release build completed without compiler warnings. The
+existing `clam.ea05.exe` fixture returned the same explicit incomplete result
+with the pre-change and current sources. Reproducible 85-byte stored and
+95-byte literal-only compressed EA05 fixtures both returned `OK` with the
+current scanner; these are regression checks only and do not qualify large
+valid members or the parser family.
 
 ## Legacy PE unpacker contiguous admission — 2026-08-19
 
@@ -2299,6 +2322,17 @@ This closes the ALZ whole-root and whole-member materialization path. ALZ
 third-party-equivalent corpus, sanitizer, and concurrent-RSS qualification
 remain release gates.
 
+## LHA/LZH declared-output admission — 2026-08-20
+
+The bounded LHA/LZH scanner now converts decoder size fields to `size_t` with
+checked overflow handling, consumes decoder output in 64 KiB chunks, and rejects
+the next chunk before writing it when it would exceed the member's declared
+uncompressed size. This prevents malformed output from temporarily extending a
+quota reservation before the final size comparison. Empty members now undergo
+the same CRC validation as non-empty members. The focused Rust regression covers
+exact-fit, overrun, and accounting-underflow cases; corpus, sanitizer, RSS, and
+large-member qualification remain release gates.
+
 ## Rust temporary-spool ownership — 2026-08-19
 
 Rust ALZ/OneNote temporary spools now release their shared temporary-space
@@ -2439,19 +2473,26 @@ allowing a failed optional detector to look like a complete image scan.
 ## EGG bounded member extraction — 2026-08-19
 
 The scanner-facing EGG path no longer maps a complete compressed block or
-retains a complete decoded member before scanning it. Stored, Deflate, and
-BZIP2 blocks are read from the fmap in 64 KiB windows, decoded into 64 KiB
-buffers, and written directly to a temporary descriptor. The declared member
-size is reserved against `MaxTemporarySize` before extraction, and the
-reserved descriptor scan avoids double-counting that spool. Short reads,
-decoder termination failures, trailing compressed bytes, output-size
-disagreements, deadline crossings, write failures, unsupported codecs, and
-solid EGG remain explicit incomplete results.
+retains a complete decoded member before scanning it. Stored, Deflate, BZIP2,
+and LZMA blocks are read from the fmap in 64 KiB windows, decoded into 64 KiB
+buffers, and written directly to a temporary descriptor. The LZMA path
+preserves decoder state across refills and checks its declared output size and
+terminal marker. The declared member size is reserved against
+`MaxTemporarySize` before extraction, and the reserved descriptor scan avoids
+double-counting that spool. Short reads, decoder termination failures,
+trailing compressed bytes, output-size disagreements, deadline crossings,
+write failures, unsupported AZO, and solid EGG remain explicit incomplete
+results.
 
 The legacy `cli_egg_extract_file()` byte-buffer API remains available for
 compatibility callers and retains the global individual-allocation guard; it
 is not used by the production scanner. EGG corpus, sanitizer, and supported
 Linux x86-64 Sonic1 qualification remain release gates.
+The pinned Sonic1 Release overlay built successfully after the LZMA change, and
+the 118-byte fixture generated by `tools/largefile_egg_lzma_fixture.py` returned
+`OK` from the rebuilt `clamscan` against the test database. This is focused
+regression evidence only; malformed, large-member, corpus, sanitizer, and
+service qualification remain open.
 The compatibility limitation is recorded as
 `egg-compat-member-over-1g`; it does not constrain the scanner-facing
 streaming path.
@@ -2802,6 +2843,57 @@ static-library wrapper regression covers GZip write and close faults. Compiled
 execution, sanitizer coverage, and broad compressed-container qualification
 remain release gates.
 
+## Compressed-output temporary quota — 2026-08-20
+
+GZip, including its legacy compatibility fallback, BZip2, and XZ now reserve
+each decoded output chunk against `MaxTemporarySize` before writing it to the
+temporary spool. Output-size arithmetic and scan-limit failures are fail-closed;
+cleanup releases the bytes reserved by the decoder, and successful nested scans
+use the reserved descriptor path so the same spool is not charged twice. The
+focused regression covers all three decoder families with a one-byte temporary
+budget. Compiled execution on the supported Linux/Sonic1 build and broad
+compressed-family qualification remain release gates.
+
+SZDD/MSEXPAND now reserves its declared decompressed size against
+`MaxTemporarySize` before reading output and scans the completed spool through
+the reserved-child path. The reservation is released on every close/removal
+path, and a one-byte quota regression verifies that an oversized declared
+output fails before partial staging. Compiled execution and broad
+compressed-family qualification remain release gates.
+
+Script normalization that requires a disk-backed relative-offset view now
+reserves each generated output chunk against `MaxTemporarySize` before writing
+it, and releases the reservation after the normalized scan and cleanup. This
+prevents the legacy normalized-file path from bypassing the shared temporary
+budget; compiled execution and broad script qualification remain release gates.
+
+SWF CWS and ZWS decompression now reserve the output header and each decoded
+chunk against `MaxTemporarySize` before writing, retain that reservation through
+the nested scan, and release it during cleanup. Successful scans use the
+reserved-child descriptor path, while quota and decoder failures remain
+fail-closed. A focused CWS one-byte-quota regression was added; compiled SWF
+and broad parser qualification remain release gates.
+
+BinHex now reserves the declared data and resource fork sizes against
+`MaxTemporarySize` before decoding, keeps both reservations through their
+nested scans, and uses reserved-child descriptor scans to avoid double charging.
+Reservation failures are fail-visible and all successful or failed cleanup
+paths release the held bytes. A focused BinHex one-byte-quota regression was
+added; compiled and broad parser qualification remain release gates.
+
+ISO and UDF extracted-file extent materialization now reserves the known extent
+length against `MaxTemporarySize` before writing and scans the completed file
+through the reserved-child descriptor path. Cleanup releases the reservation
+on both parser failure and successful child scans; extent quota failures are
+fail-visible. Compiled filesystem-parser and broad corpus qualification remain
+release gates.
+
+RTF embedded objects now reserve their declared payload plus the OLE10 bridge
+header before staging, retain that reservation through nested scanning, and
+release it on both complete and truncated-object cleanup. Ordinary embedded
+objects use the reserved-child descriptor path; the existing OLE10 bridge keeps
+its specialized scanner. Compiled RTF/OLE qualification remains a release gate.
+
 ## Script-normalization temporary cleanup — 2026-08-19
 
 Script normalization now marks normalization-buffer allocation and temporary
@@ -2835,3 +2927,222 @@ SOVERSION 14. The symbol name remains stable within that new SONAME, but
 binaries built against the prior scalar-argument ABI must not be loaded
 against this release and require the old shared object or a rebuild. No old-
 ABI compatibility claim is made.
+
+The complete current-source Release CTest gate subsequently passed on the
+pinned Sonic1 container `868b213e31020ca243d3c33df5904b26586615005fbae1abf04772f5294f8be1`
+using `/work/build-current-044db34-release`: 16/16 tests passed in 573.04
+seconds, including Valgrind, Rust, clamd/clamscan, milter, and all large-file
+regression controls. This is full Release regression evidence, not a substitute
+for the still-missing production-CVD real-file service canary and resource
+qualification measurements.
+
+The matching current-source ASan/UBSan gate also passes on Sonic1. A Rust
+test-link defect was found and fixed in `cmake/FindRust.cmake`: Cargo now
+receives the C sanitizer linker runtime when the CMake executable linker flags
+enable ASan/UBSan instrumentation. After rebuilding the pinned
+`RelWithDebInfo` tree, the exact CI command `ctest -C RelWithDebInfo -V
+-E '_valgrind$'` passed 11/11 tests in 254.09 seconds, including all 73 Rust
+tests. This is sanitizer qualification evidence; production-CVD real-file
+service qualification and RSS/temporary-space/latency measurements remain
+release gates.
+
+## 7-Zip bounded two-coder output — 2026-08-20
+
+The 7-Zip sequential extraction path now also handles the common two-coder
+folder shape in which a decompressor is followed by a BCJ or ARM branch
+converter. Decoder output passes through a bounded 256 KiB staging buffer;
+converter state, 64-bit folder/member accounting, alignment look-ahead, output
+CRC, and downstream short-write failures remain visible. This removes the
+previous need to fall back to whole-folder materialization for those supported
+filter folders. Other folder graphs, including BCJ2, remain explicitly
+unsupported on this streaming path and must fail visibly or use the guarded
+legacy path where its allocation limit permits.
+
+The changed source compiled successfully in the pinned Sonic1 Release build,
+and the complete 16-test Release CTest gate passed after the rebuild in 561.21
+seconds. A direct scan of the existing `clam.7z` fixture also returned the
+expected `ClamAV-Test-File.UNOFFICIAL FOUND` result. The existing corpus and
+truncated-header regression do not provide a separately identified two-coder
+BCJ/ARM archive fixture; that parser-family runtime qualification remains open
+rather than being claimed by the build and general regression evidence.
+
+## Nested RFC822 mail body spooling — 2026-08-20
+
+The mail parser now stages `message/rfc822` and `message/delivery-status`
+bodies through the shared disk-backed, temporary-quota spool instead of
+retaining every body line in the parent message. The completed spool is handed
+back to the normal scanner, preserving nested mail dispatch while removing the
+former 64 MiB in-memory materialization boundary for these complete nested
+message types. `message/partial`, `external-body`, disposition notifications,
+and unknown message subtypes remain on the legacy state machine because their
+special semantics cannot be replaced by a raw nested scan without changing
+coverage; unsupported or incomplete results remain fail-visible.
+
+`check_clamav` now includes a nested RFC822 fixture whose body crosses the
+former materialization limit, and the source-guard suite requires the new
+dispatch policy. Local shell/source guards and whitespace checks pass. A
+compiled current-source Linux/Sonic1 result is still required because the
+current worktree transfer was not permitted by the MCP-SSH export policy.
+
+## Daemon admission capability enforcement — 2026-08-20
+
+The large-file `clamd` startup admission now enforces the certified
+large-file build definition and the FILDES descriptor-passing capability,
+rather than merely reporting them in the startup manifest. Its scaled memory
+requirement also includes the configured `MaxContiguousSize`, ensuring that a
+retained 32 GiB contiguous matcher subject cannot be under-admitted when only
+the file and logical-scan limits are lowered. Local source guards, the
+capability manifest, and `git diff --check` pass. Compiled current-source
+Sonic1 verification remains open because MCP-SSH did not permit exporting the
+current private worktree.
+
+The same admission gate rejects the large-file daemon envelope on non-Linux-
+x86-64 targets. Other 64-bit targets may still build for development, but the
+first production release does not claim AArch64 or macOS daemon qualification.
+
+The admission call now runs inside `recvloop()` immediately after all
+configured scan, temporary, contiguous, and PCRE limits are applied. This
+prevents the daemon from checking historical engine defaults before reading the
+large-file configuration. A failed admission frees the engine and returns
+before the worker pool is created or requests are accepted.
+
+For the same reason, the production daemon rejects `MaxScanSize=0`: legacy
+library callers retain the historical unlimited setting, but the certified
+daemon envelope requires the shared bounded 64 GiB logical budget.
+
+The macOS host lacks the OpenSSL headers needed for a dependency-complete
+build. A temporary non-repository header shim allowed syntax-only checking of
+the changed Linux-style `clamd/largefile_admission.c` and complete
+`clamd/server-th.c` translation units; both passed, and the shim was removed.
+This does not substitute for the required dependency-complete Sonic1 build or
+runtime qualification.
+
+`check_clamd` now compiles the production admission translation unit and
+covers both deterministic boundaries: historical defaults accept without
+probing a host path, while `MaxScanSize=0` is rejected with the certified
+budget reason. The tests are registered in the clamd parser case and covered
+by source guards.
+
+## Parallel MULTISCANREPORT aggregation — 2026-08-20
+
+`MULTISCANREPORT` now retains the normal `MULTISCAN` dispatcher. With more
+than one worker, directory children scan in parallel; with one worker, the
+existing sequential fallback remains in effect. Each child uses the
+structured library report path but contributes to the parent report under the
+multiscan group lock; parent-side skip/error reports use that lock as well.
+Child workers do not emit transport frames. The request therefore produces
+one aggregate length-prefixed JSON response without interleaving child
+frames. Source guards cover the dispatcher, ownership, lock, and no-child-
+frame contract. Terminated groups suppress late child report/status updates
+before the parent connection can be released during daemon shutdown.
+
+This closes the front-end contract in source. Compiled protocol execution,
+report-parity checks against path/descriptor/stream forms, production CVD
+coverage, and sanitizer/resource qualification remain release gates.
+
+## YARA-compatible exact-tail reads — 2026-08-20
+
+The built-in YARA-compatible executor now accepts integer reads whose final
+byte ends exactly at the fmap boundary. The previous `offset +
+sizeof(type) >= length` check rejected those valid reads and could miss an
+exact-tail logical/YARA condition. The replacement uses subtraction-based
+bounds checking, so it also avoids offset-addition overflow. A focused
+`check_matchers` regression covers an exact four-byte tail and an
+out-of-range one-byte-shifted read.
+
+This closes the identified boundary defect only. Full YARA evaluation,
+matcher-work accounting, production signature, sanitizer, and large-file
+qualification remain pending.
+
+## Nonzero fmap source offsets — 2026-08-20
+
+The handle-backed fmap constructor now treats `offset` as a source-file
+coordinate and `len` as the exposed window length. It no longer rejects a
+valid tail window merely because the source offset is greater than or equal to
+the window length; it rejects only source-range arithmetic overflow. A focused
+callback-backed regression covers a small window beginning at a page-aligned
+offset beyond its own length. This improves descriptor/nested-window
+correctness but does not replace supported-build or large-file runtime
+qualification.
+
+## Descriptor root-size preflight — 2026-08-20
+
+Known-size descriptor scans now enforce the root `MaxFileSize` and
+`MaxScanSize` limits before creating the full fmap. Over-limit inputs use the
+normal limit-result path with a metadata-only fmap, preserving
+`AlertExceedsMax`, callbacks, structured reports, and legacy result behavior
+without allocating the large-file page bitmap or reserving the scan mapping.
+Negative descriptor sizes are rejected, and the small-file fast path is now
+reached only after the root limit check. A Linux fault-injected regression
+confirms that an over-limit descriptor returns `CL_EMAXSIZE` even when
+`fmap_new()` is forced to fail.
+
+## Nested child-size preflight — 2026-08-20
+
+Known-size extracted descriptors and nested fmap windows now use the same
+admission policy before reserving temporary space or creating a child fmap.
+This prevents an over-limit child from allocating a page bitmap, mapping a
+descriptor, or staging a force-to-disk copy. Normalized and handler-retyped
+views continue to perform only the time check used by the recursion-stack
+invariant, so they do not consume logical scan size twice. The recursion push
+still repeats the policy check after successful map creation as a defensive
+invariant. The existing force-to-disk nested-range regression now also sets a
+smaller `MaxFileSize` and verifies that no source bytes are read before the
+limit result is returned.
+
+## HFS+ temporary-fork accounting — 2026-08-20
+
+HFS+ data and resource forks now reserve their declared logical size against
+`MaxTemporarySize` before extraction, retain that reservation through the
+reserved-child scan, and release it after close and cleanup. Compressed
+decmpfs output is admitted against both its declared scan limits and the
+temporary quota before staging; output overrun, short output, unsupported
+compression, incomplete extents, and temporary cleanup failures are
+fail-visible. The compressed resource-fork staging reservation is transferred
+explicitly across its intermediate file lifetime so it cannot bypass the
+shared quota.
+
+Source guards and `git diff --check` remain the available local evidence. A
+dependency-complete compiled HFS+ corpus, sanitizer run, and supported-build
+Sonic1 qualification remain release gates.
+
+## VBA project temporary-spool accounting — 2026-08-20
+
+The modern VBA project-directory extractor now reserves each generated script
+output write against `MaxTemporarySize` before writing it. The reservation is
+transferred to the OLE caller and held through the reserved child scan, then
+released across successful, failed-candidate, and cleanup paths. This removes
+the generated-project path's temporary-quota bypass while preserving its
+existing candidate retry and macro metadata behavior.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete Office/VBA corpus, sanitizer run, and supported-build
+Sonic1 qualification remain release gates.
+
+## InstallShield temporary-output accounting — 2026-08-20
+
+InstallShield MSI, legacy embedded-file, and CAB extraction paths now charge
+temporary output against `MaxTemporarySize` before or during staging, require
+complete temporary writes, and retain the reservation through the nested scan.
+Successful nested scans use the reserved-child descriptor path so the same
+spool is not charged twice. Declared CAB output is checked before each write,
+and descriptor close/removal failures remain explicit incomplete results while
+preserving an earlier detection or parser error.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete InstallShield corpus, sanitizer run, fault-injected
+temporary cleanup, and supported-build Sonic1 qualification remain open
+release gates.
+
+## HWP temporary-output accounting — 2026-08-20
+
+The shared HWP3/HWP5/HWPML raw-deflate helper now reserves each decompressed
+output chunk against `MaxTemporarySize`, keeps the reservation through the
+callback, and scans the completed temporary child through the reserved
+descriptor path. HWPML base64-decoded temporary input remains reserved through
+its direct child scan, while cleanup checks close/removal failures and releases
+the owned bytes on every path.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete HWP/HWPML corpus, sanitizer and fault-injected cleanup
+coverage, and supported-build Sonic1 qualification remain open release gates.

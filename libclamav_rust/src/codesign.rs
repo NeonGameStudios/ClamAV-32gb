@@ -33,7 +33,7 @@ use openssl::{
     stack::{self, Stack},
     x509::{
         store::{X509Store, X509StoreBuilder},
-        X509,
+        X509, X509Ref,
     },
 };
 
@@ -563,6 +563,14 @@ pub struct Verifier {
     certs_directory: PathBuf,
 }
 
+fn certificate_common_name(cert: &X509Ref) -> Option<String> {
+    cert.subject_name()
+        .entries()
+        .find(|name_entry| name_entry.object().nid() == openssl::nid::Nid::COMMONNAME)
+        .and_then(|name_entry| name_entry.data().as_utf8().ok())
+        .map(|name| name.to_string())
+}
+
 impl Verifier {
     pub fn new(certs_directory: &Path) -> Result<Self, Error> {
         // create store with root CA
@@ -584,21 +592,19 @@ impl Verifier {
                     let certs_in_file = X509::stack_from_pem(&read_result.unwrap())?;
 
                     for cert in certs_in_file {
-                        // get cert common name
-                        let common_name = cert
-                            .subject_name()
-                            .entries()
-                            .find(|name_entry| {
-                                name_entry.object().nid() == openssl::nid::Nid::COMMONNAME
-                            })
-                            .map(|name_entry| name_entry.data().as_utf8().unwrap().to_string())
-                            .unwrap();
-
-                        if root_common_names.contains(&common_name) {
-                            return Err(Error::CertificateStore(format!(
-                                "More than one certificate with the same common name '{}' found in the certs directory. Ref: https://github.com/openssl/openssl/issues/16304", common_name)));
+                        // Some valid trust anchors do not carry a Common Name.
+                        // They still belong in the verification store; only use
+                        // the name for the duplicate-name workaround when it is
+                        // present and valid UTF-8.
+                        if let Some(common_name) = certificate_common_name(&cert) {
+                            if root_common_names.contains(&common_name) {
+                                return Err(Error::CertificateStore(format!(
+                                    "More than one certificate with the same common name '{}' found in the certs directory. Ref: https://github.com/openssl/openssl/issues/16304", common_name)));
+                            }
+                            root_common_names.push(common_name);
+                        } else {
+                            debug!("Certificate {:?} has no valid Common Name; skipping duplicate-name check", path);
                         }
-                        root_common_names.push(common_name.clone());
 
                         debug!("Adding certificate to verifier store: {:?}", cert);
                         store_builder.add_cert(cert.clone())?;
@@ -628,13 +634,7 @@ impl Verifier {
             let signers: Vec<String> = signer
                 .iter()
                 .map(|cert| {
-                    cert.subject_name()
-                        .entries()
-                        .find(|name_entry| {
-                            name_entry.object().nid() == openssl::nid::Nid::COMMONNAME
-                        })
-                        .map(|name_entry| name_entry.data().as_utf8().unwrap().to_string())
-                        .unwrap()
+                    certificate_common_name(cert).unwrap_or_else(|| "<unnamed signer>".to_string())
                 })
                 .collect();
 

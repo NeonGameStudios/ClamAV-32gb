@@ -260,10 +260,43 @@ fmap_t *fmap_check_empty(int fd, off_t offset, size_t len, int *empty, const cha
 
 /* vvvvv SHARED STUFF BELOW vvvvv */
 
+static bool fmap_add_size(size_t left, size_t right, size_t *result)
+{
+    if (NULL == result || right > SIZE_MAX - left)
+        return false;
+
+    *result = left + right;
+    return true;
+}
+
+static bool fmap_range_contained(
+    size_t base,
+    size_t extent,
+    size_t sub,
+    size_t length,
+    bool allow_empty)
+{
+    size_t end;
+
+    if (extent == 0 || sub < base || base > SIZE_MAX - extent)
+        return false;
+
+    end = base + extent;
+    if (length == 0)
+        return allow_empty && sub <= end;
+
+    if (length > extent || sub > SIZE_MAX - length)
+        return false;
+
+    return sub - base <= extent - length;
+}
+
 fmap_t *fmap_duplicate(cl_fmap_t *map, size_t offset, size_t length, const char *name)
 {
     cl_error_t status        = CL_ERROR;
     cl_fmap_t *duplicate_map = NULL;
+    size_t nested_offset;
+    size_t real_len;
 
     if (NULL == map) {
         cli_warnmsg("fmap_duplicate: map is NULL!\n");
@@ -290,6 +323,12 @@ fmap_t *fmap_duplicate(cl_fmap_t *map, size_t offset, size_t length, const char 
         goto done;
     }
 
+    if (!fmap_add_size(map->nested_offset, map->len, &real_len)) {
+        cli_warnmsg("fmap_duplicate: source nested length overflow\n");
+        goto done;
+    }
+    duplicate_map->real_len = real_len;
+
     if (offset > 0 || length < map->len) {
         /*
          * Caller requested a window into the current map, not the whole map.
@@ -298,22 +337,27 @@ fmap_t *fmap_duplicate(cl_fmap_t *map, size_t offset, size_t length, const char 
         /* Set the new nested offset and (nested) length for the new map */
         /* Note: We can't change offset because then we'd have to discard/move cached
          * data, instead use nested_offset to reuse the already cached data */
-        duplicate_map->nested_offset += offset;
-        duplicate_map->len = MIN(length, map->len - offset);
+        if (!fmap_add_size(duplicate_map->nested_offset, offset, &nested_offset)) {
+            cli_warnmsg("fmap_duplicate: nested offset overflow\n");
+            goto done;
+        }
+        duplicate_map->nested_offset = nested_offset;
+        duplicate_map->len           = MIN(length, map->len - offset);
 
         /* The real_len is the nested_offset + the len of the nested fmap.
            real_len is mostly just a shorthand for when doing bounds checking.
            We do not need to keep track of the original length of the OG fmap */
-        duplicate_map->real_len = duplicate_map->nested_offset + duplicate_map->len;
+        if (!fmap_add_size(duplicate_map->nested_offset, duplicate_map->len, &real_len)) {
+            cli_warnmsg("fmap_duplicate: nested length overflow\n");
+            goto done;
+        }
+        duplicate_map->real_len = real_len;
 
-        if (!CLI_ISCONTAINED_2(map->nested_offset, map->len,
-                               duplicate_map->nested_offset, duplicate_map->len)) {
-            size_t len1, len2;
-            len1 = map->nested_offset + map->len;
-            len2 = duplicate_map->nested_offset + duplicate_map->len;
+        if (!fmap_range_contained(map->nested_offset, map->len,
+                                  duplicate_map->nested_offset, duplicate_map->len, true)) {
             cli_warnmsg("fmap_duplicate: internal map error: %zu, %zu; %zu, %zu\n",
-                        map->nested_offset, len1,
-                        duplicate_map->nested_offset, len2);
+                        map->nested_offset, map->real_len,
+                        duplicate_map->nested_offset, duplicate_map->real_len);
         }
 
         /* This also means the hash will be different.
@@ -422,8 +466,12 @@ cl_fmap_t *fmap_open_handle(void *handle, size_t offset, size_t len,
         cli_dbgmsg("fmap: attempted void mapping\n");
         goto done;
     }
-    if (offset >= len) {
-        cli_warnmsg("fmap: attempted oof mapping\n");
+    /* offset is the source-file position, while len is the amount exposed
+     * through this fmap.  A valid tail window can therefore have
+     * offset >= len (for example, a 4 KiB map at a 32 GiB source offset).
+     * Only reject arithmetic that would make the source range wrap. */
+    if (len > SIZE_MAX - offset) {
+        cli_warnmsg("fmap: mapping range arithmetic overflow\n");
         goto done;
     }
 
@@ -682,6 +730,30 @@ static void fmap_aging(fmap_t *m)
 #endif
 }
 
+void fmap_release_unlocked(fmap_t *m)
+{
+#ifdef ANONYMOUS_MAP
+    fmap_t *owner;
+
+    if (NULL == m) {
+        return;
+    }
+
+    owner = fmap_aging_owner(m);
+    if (!owner->aging || owner->pages == 0) {
+        return;
+    }
+
+    /* Unlike normal aging, this pass intentionally scans the complete
+     * bitmap. It is called only after a whole-subject consumer has released
+     * its pointer, so retaining those unlocked pages would defeat the
+     * contiguous-subject residency contract. */
+    fmap_release_gets_pages(owner, 0, owner->pages - 1);
+#else
+    UNUSEDPARAM(m);
+#endif
+}
+
 static void fmap_readpage_rollback(fmap_t *owner, uint64_t first_page, uint64_t end_page)
 {
     uint64_t page_count;
@@ -869,14 +941,14 @@ static const void *handle_need(fmap_t *m, size_t at, size_t len, int lock)
     if (!len)
         return NULL;
 
-    at += m->nested_offset;
-    if (!CLI_ISCONTAINED(m->nested_offset, m->len, at, len))
+    if (!fmap_add_size(at, m->nested_offset, &at) ||
+        !fmap_range_contained(m->nested_offset, m->len, at, len, false))
         return NULL;
 
     fmap_aging(m);
 
     first_page = fmap_which_page(m, at);
-    last_page  = fmap_which_page(m, at + len - 1);
+    last_page  = fmap_which_page(m, at + (len - 1));
     lock_count = (lock != 0) * (last_page - first_page + 1);
 #ifdef READAHED_PAGES
     last_page += READAHED_PAGES;
@@ -918,14 +990,14 @@ static void handle_unneed_off(fmap_t *m, size_t at, size_t len)
         return;
     }
 
-    at += m->nested_offset;
-    if (!CLI_ISCONTAINED(m->nested_offset, m->len, at, len)) {
+    if (!fmap_add_size(at, m->nested_offset, &at) ||
+        !fmap_range_contained(m->nested_offset, m->len, at, len, false)) {
         cli_warnmsg("fmap: attempted oof unneed\n");
         return;
     }
 
     first_page = fmap_which_page(m, at);
-    last_page  = fmap_which_page(m, at + len - 1);
+    last_page  = fmap_which_page(m, at + (len - 1));
 
     for (i = first_page; i <= last_page; i++) {
         fmap_unneed_page(m, i);
@@ -963,19 +1035,21 @@ static const void *handle_need_offstr(fmap_t *m, size_t at, size_t len_hint)
     uint64_t i, first_page, last_page;
     void *ptr;
 
-    at += m->nested_offset;
-    ptr = (void *)((char *)m->data + at);
+    if (!fmap_add_size(at, m->nested_offset, &at) || at > m->real_len)
+        return NULL;
 
     if (!len_hint || len_hint > m->real_len - at)
         len_hint = m->real_len - at;
 
-    if (!CLI_ISCONTAINED(m->nested_offset, m->len, at, len_hint))
+    if (!fmap_range_contained(m->nested_offset, m->len, at, len_hint, false))
         return NULL;
+
+    ptr = (void *)((char *)m->data + at);
 
     fmap_aging(m);
 
     first_page = fmap_which_page(m, at);
-    last_page  = fmap_which_page(m, at + len_hint - 1);
+    last_page  = fmap_which_page(m, at + (len_hint - 1));
 
     for (i = first_page; i <= last_page; i++) {
         char *thispage = (char *)m->data + i * m->pgsz;
@@ -1004,19 +1078,30 @@ static const void *handle_need_offstr(fmap_t *m, size_t at, size_t len_hint)
 static const void *handle_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
 {
     uint64_t i, first_page, last_page;
-    size_t start_at = *at;
-    char *src       = (char *)m->data + m->nested_offset + *at;
-    char *endptr    = NULL;
-    size_t len      = MIN(max_len - 1, m->len - *at);
-    size_t fullen   = len;
+    size_t start_at;
+    size_t real_start;
+    char *src;
+    char *endptr = NULL;
+    size_t len;
+    size_t fullen;
 
-    if (!len || !CLI_ISCONTAINED_0_TO(m->len, *at, len))
+    if (NULL == m || NULL == dst || NULL == at || max_len == 0 ||
+        *at > m->len || *at == m->len ||
+        !fmap_add_size(*at, m->nested_offset, &real_start))
         return NULL;
+
+    len = MIN(max_len - 1, m->len - *at);
+    if (!fmap_range_contained(m->nested_offset, m->len, real_start, len, false))
+        return NULL;
+
+    start_at = *at;
+    fullen   = len;
+    src      = (char *)m->data + real_start;
 
     fmap_aging(m);
 
-    first_page = fmap_which_page(m, m->nested_offset + *at);
-    last_page  = fmap_which_page(m, m->nested_offset + *at + len - 1);
+    first_page = fmap_which_page(m, real_start);
+    last_page  = fmap_which_page(m, real_start + (len - 1));
 
     for (i = first_page; i <= last_page; i++) {
         char *thispage = (char *)m->data + i * m->pgsz;
@@ -1026,7 +1111,7 @@ static const void *handle_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
             return NULL;
 
         if (i == first_page) {
-            scanat = (m->nested_offset + *at) % m->pgsz;
+            scanat = real_start % m->pgsz;
             scansz = MIN(len, m->pgsz - scanat);
         } else {
             scanat = 0;
@@ -1051,10 +1136,16 @@ static const void *handle_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
 
 #ifdef ANONYMOUS_MAP
     if (m->aging && *at > start_at) {
-        uint64_t release_first = fmap_which_page(m, m->nested_offset + start_at);
-        uint64_t release_last  = fmap_which_page(m, m->nested_offset + *at - 1);
+        size_t release_start;
+        size_t release_end;
 
-        fmap_release_gets_pages(m, release_first, release_last);
+        if (fmap_add_size(start_at, m->nested_offset, &release_start) &&
+            fmap_add_size(*at, m->nested_offset, &release_end)) {
+            uint64_t release_first = fmap_which_page(m, release_start);
+            uint64_t release_last  = fmap_which_page(m, release_end - 1);
+
+            fmap_release_gets_pages(m, release_first, release_last);
+        }
     }
 #endif
 
@@ -1121,8 +1212,8 @@ static const void *mem_need(fmap_t *m, size_t at, size_t len, int lock)
     if (!len) {
         return NULL;
     }
-    at += m->nested_offset;
-    if (!CLI_ISCONTAINED(m->nested_offset, m->len, at, len)) {
+    if (!fmap_add_size(at, m->nested_offset, &at) ||
+        !fmap_range_contained(m->nested_offset, m->len, at, len, false)) {
         return NULL;
     }
 
@@ -1140,14 +1231,16 @@ static const void *mem_need_offstr(fmap_t *m, size_t at, size_t len_hint)
 {
     char *ptr;
 
-    at += m->nested_offset;
-    ptr = (char *)m->data + at;
+    if (!fmap_add_size(at, m->nested_offset, &at) || at > m->real_len)
+        return NULL;
 
     if (!len_hint || len_hint > m->real_len - at)
         len_hint = m->real_len - at;
 
-    if (!CLI_ISCONTAINED(m->nested_offset, m->len, at, len_hint))
+    if (!fmap_range_contained(m->nested_offset, m->len, at, len_hint, false))
         return NULL;
+
+    ptr = (char *)m->data + at;
 
     if (memchr(ptr, 0, len_hint))
         return (void *)ptr;
@@ -1156,12 +1249,21 @@ static const void *mem_need_offstr(fmap_t *m, size_t at, size_t len_hint)
 
 static const void *mem_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
 {
-    char *src    = (char *)m->data + m->nested_offset + *at;
+    size_t real_start;
+    char *src;
     char *endptr = NULL;
-    size_t len   = MIN(max_len - 1, m->len - *at);
+    size_t len;
 
-    if (!len || !CLI_ISCONTAINED_0_TO(m->len, *at, len))
+    if (NULL == m || NULL == dst || NULL == at || max_len == 0 ||
+        *at > m->len || *at == m->len ||
+        !fmap_add_size(*at, m->nested_offset, &real_start))
         return NULL;
+
+    len = MIN(max_len - 1, m->len - *at);
+    if (!fmap_range_contained(m->nested_offset, m->len, real_start, len, false))
+        return NULL;
+
+    src = (char *)m->data + real_start;
 
     if ((endptr = memchr(src, '\n', len))) {
         endptr++;
@@ -1403,7 +1505,10 @@ cl_error_t fmap_get_hash(fmap_t *map, unsigned char **hash, cli_hash_type_t type
     void *hashctx[CLI_HASH_AVAIL_TYPES] = {NULL};
     cli_hash_type_t hash_type;
 
-    todo = map->len;
+    if (NULL == map || NULL == hash) {
+        cli_errmsg("fmap_get_hash: NULL argument\n");
+        return CL_ENULLARG;
+    }
 
     if (type >= CLI_HASH_AVAIL_TYPES) {
         cli_errmsg("fmap_get_hash: Unsupported hash type %u\n", type);
@@ -1415,6 +1520,16 @@ cl_error_t fmap_get_hash(fmap_t *map, unsigned char **hash, cli_hash_type_t type
     if (map->have_hash[type]) {
         goto complete;
     }
+
+    /* Metadata-only maps are used for fail-closed preflight results. They
+     * carry the subject size but intentionally have no data-access callback,
+     * so hashing them would otherwise call through a NULL function pointer. */
+    if (NULL == map->need) {
+        cli_dbgmsg("fmap_get_hash: map has no data-access callback\n");
+        return CL_EREAD;
+    }
+
+    todo = map->len;
 
     map->will_need_hash[type] = true;
 

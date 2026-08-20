@@ -297,6 +297,18 @@ static inline void fmap_unneed_ptr(fmap_t *m, const void *ptr, size_t len)
 }
 
 /**
+ * @brief Release all unlocked, resident pages owned by an fmap.
+ *
+ * This is used after a bounded whole-subject consumer, such as PCRE2, has
+ * finished with a large fmap. Locked windows remain resident until their
+ * corresponding fmap_unneed call; unlocked pages are immediately eligible
+ * for eviction.
+ *
+ * @param m The fmap whose unlocked resident pages should be released.
+ */
+void fmap_release_unlocked(fmap_t *m);
+
+/**
  * @brief Read bytes from fmap at offset into destination buffer.
  *
  * @param m         fmap

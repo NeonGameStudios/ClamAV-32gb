@@ -73,8 +73,58 @@ extern int progexit;
 extern time_t reloaded_time;
 extern pthread_mutex_t reload_mutex;
 
+static client_conn_t *structured_report_target(client_conn_t *conn)
+{
+    if (NULL == conn)
+        return NULL;
+
+    return (NULL != conn->structured_report_owner) ? conn->structured_report_owner : conn;
+}
+
+static int structured_report_enabled(const client_conn_t *conn)
+{
+    return (NULL != conn) && (conn->structured_report || (NULL != conn->structured_report_owner));
+}
+
+static void structured_report_note_status(client_conn_t *conn, cl_error_t status)
+{
+    client_conn_t *target;
+    jobgroup_t *report_group;
+    int terminated = 0;
+
+    if ((NULL == conn) || (CL_SUCCESS == status))
+        return;
+
+    report_group = conn->structured_report_group;
+    if (NULL != report_group) {
+        pthread_mutex_lock(&report_group->mutex);
+        terminated = report_group->force_exit;
+        pthread_mutex_lock(&exit_mutex);
+        terminated |= progexit;
+        pthread_mutex_unlock(&exit_mutex);
+        if (terminated)
+            goto done;
+    }
+
+    target = structured_report_target(conn);
+    if (NULL == target)
+        goto done;
+
+    if ((CL_SUCCESS == target->structured_status) || (CL_VIRUS == status))
+        target->structured_status = status;
+
+done:
+    if (NULL != report_group)
+        pthread_mutex_unlock(&report_group->mutex);
+}
+
 static cl_error_t record_structured_scan_report(client_conn_t *conn, cl_scan_report_t *report)
 {
+    client_conn_t *target;
+    jobgroup_t *report_group = NULL;
+    cl_error_t status        = CL_SUCCESS;
+    int terminated           = 0;
+
     if (NULL == conn) {
         cl_scan_report_free(report);
         return CL_ENULLARG;
@@ -83,31 +133,54 @@ static cl_error_t record_structured_scan_report(client_conn_t *conn, cl_scan_rep
     if (NULL == report)
         return CL_SUCCESS;
 
-    if (NULL == conn->structured_scan_report) {
-        conn->structured_scan_report           = report;
-        conn->structured_scan_report_aggregate = 0;
-        return CL_SUCCESS;
+    target = structured_report_target(conn);
+    if (NULL == target) {
+        cl_scan_report_free(report);
+        return CL_ENULLARG;
     }
 
-    if (!conn->structured_scan_report_aggregate) {
-        cl_error_t status;
+    report_group = conn->structured_report_group;
+    if (NULL != report_group) {
+        pthread_mutex_lock(&report_group->mutex);
+        terminated = report_group->force_exit;
+        pthread_mutex_lock(&exit_mutex);
+        terminated |= progexit;
+        pthread_mutex_unlock(&exit_mutex);
+        if (terminated) {
+            cl_scan_report_free(report);
+            status = CL_BREAK;
+            goto done;
+        }
+    }
+
+    if (NULL == target->structured_scan_report) {
+        target->structured_scan_report           = report;
+        target->structured_scan_report_aggregate = 0;
+        goto done;
+    }
+
+    if (!target->structured_scan_report_aggregate) {
         cl_scan_report_t *aggregate = NULL;
 
-        status = cli_scan_report_create(&aggregate, conn->engine);
+        status = cli_scan_report_create(&aggregate, target->engine);
         if (status != CL_SUCCESS) {
             cl_scan_report_free(report);
-            return status;
+            goto done;
         }
-        cli_scan_report_set_target(aggregate, conn->filename);
-        cli_scan_report_merge(aggregate, conn->structured_scan_report);
-        cl_scan_report_free(conn->structured_scan_report);
-        conn->structured_scan_report           = aggregate;
-        conn->structured_scan_report_aggregate = 1;
+        cli_scan_report_set_target(aggregate, target->filename);
+        cli_scan_report_merge(aggregate, target->structured_scan_report);
+        cl_scan_report_free(target->structured_scan_report);
+        target->structured_scan_report           = aggregate;
+        target->structured_scan_report_aggregate = 1;
     }
 
-    cli_scan_report_merge(conn->structured_scan_report, report);
+    cli_scan_report_merge(target->structured_scan_report, report);
     cl_scan_report_free(report);
-    return CL_SUCCESS;
+
+done:
+    if (NULL != report_group)
+        pthread_mutex_unlock(&report_group->mutex);
+    return status;
 }
 
 static void record_structured_scan_skip(struct scan_cb_data *scandata,
@@ -118,11 +191,11 @@ static void record_structured_scan_skip(struct scan_cb_data *scandata,
     cli_ctx context;
 
     if ((NULL == scandata) || (NULL == scandata->conn) ||
-        !scandata->conn->structured_report)
+        !structured_report_enabled(scandata->conn))
         return;
 
     if (cli_scan_report_create(&report, scandata->engine) != CL_SUCCESS) {
-        scandata->conn->structured_status = CL_EMEM;
+        structured_report_note_status(scandata->conn, CL_EMEM);
         return;
     }
 
@@ -333,13 +406,15 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
                 client_conn->display_filename = filename;
                 scan_filename                 = NULL;
             }
-            filename                       = NULL;
-            client_conn->cmdtype           = COMMAND_MULTISCANFILE;
-            client_conn->structured_report = 0;
-            client_conn->term              = scandata->conn->term;
-            client_conn->options           = scandata->options;
-            client_conn->opts              = scandata->opts;
-            client_conn->group             = scandata->group;
+            filename                             = NULL;
+            client_conn->cmdtype                 = COMMAND_MULTISCANFILE;
+            client_conn->structured_report       = scandata->conn->structured_report;
+            client_conn->structured_report_owner = scandata->conn->structured_report ? scandata->conn : NULL;
+            client_conn->structured_report_group = scandata->conn->structured_report ? scandata->group : NULL;
+            client_conn->term                    = scandata->conn->term;
+            client_conn->options                 = scandata->options;
+            client_conn->opts                    = scandata->opts;
+            client_conn->group                   = scandata->group;
             if (cl_engine_addref(scandata->engine)) {
                 logg(LOGG_ERROR, "cl_engine_addref() failed\n");
                 free(client_conn->filename);
@@ -374,7 +449,7 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
     context.filename = filename;
     context.virsize  = 0;
     context.scandata = scandata;
-    if (scandata->conn->structured_report) {
+    if (structured_report_enabled(scandata->conn)) {
         cl_error_t report_status;
         cl_scan_report_t *report = NULL;
         cl_verdict_t verdict     = CL_VERDICT_NOTHING_FOUND;
@@ -410,6 +485,7 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
         } else if (ret != CL_SUCCESS && scandata->conn->structured_status == CL_SUCCESS) {
             scandata->conn->structured_status = ret;
         }
+        structured_report_note_status(scandata->conn, scandata->conn->structured_status);
     } else {
         ret = cl_scanfile_callback(scan_path, &virname, &scandata->scanned, scandata->engine, scandata->options, &context);
     }
@@ -584,7 +660,7 @@ cl_error_t scanfd(
     context.filename = fdstr;
     context.virsize  = 0;
     context.scandata = NULL;
-    if (conn->structured_report) {
+    if (structured_report_enabled(conn)) {
         cl_error_t report_status;
         cl_scan_report_t *report = NULL;
         cl_verdict_t verdict     = CL_VERDICT_NOTHING_FOUND;
@@ -621,6 +697,7 @@ cl_error_t scanfd(
         } else if (ret != CL_SUCCESS && conn->structured_status == CL_SUCCESS) {
             conn->structured_status = ret;
         }
+        structured_report_note_status(conn, conn->structured_status);
     } else {
         ret = cl_scandesc_callback(fd, log_filename, &virname, scanned, engine, options, &context);
     }

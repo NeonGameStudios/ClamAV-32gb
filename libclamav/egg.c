@@ -2239,6 +2239,93 @@ done:
     return status;
 }
 
+static cl_error_t egg_stream_lzma(const egg_handle* handle, const egg_block* block,
+                                  egg_stream_output* output)
+{
+    unsigned char input[EGG_STREAM_CHUNK];
+    unsigned char decoded[EGG_STREAM_CHUNK];
+    size_t input_offset = 0;
+    size_t input_length = 0;
+    size_t produced;
+    struct CLI_LZMA stream;
+    uint64_t declared_size = UINT64_MAX;
+    bool decoder_ready     = false;
+    int lzmastat;
+    cl_error_t status = CL_EUNPACK;
+
+    memset(&stream, 0, sizeof(stream));
+
+    for (;;) {
+        if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
+            status = egg_stream_read(handle, block, &input_offset, input, &input_length);
+            if (status != CL_SUCCESS)
+                goto done;
+            stream.next_in  = input;
+            stream.avail_in = input_length;
+        }
+
+        if (!decoder_ready) {
+            lzmastat = cli_LzmaInit(&stream, 0);
+            if (lzmastat != LZMA_RESULT_OK) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+            if (!stream.freeme) {
+                if (stream.avail_in == 0 && input_offset >= (size_t)block->compressedSize) {
+                    status = CL_EUNPACK;
+                    goto done;
+                }
+                continue;
+            }
+
+            decoder_ready = true;
+            declared_size = stream.usize;
+            if (declared_size != UINT64_MAX && declared_size != block->uncompressedSize) {
+                status = CL_EFORMAT;
+                goto done;
+            }
+        }
+
+        stream.next_out  = decoded;
+        stream.avail_out = sizeof(decoded);
+        {
+            SizeT before_in  = stream.avail_in;
+            SizeT before_out = stream.avail_out;
+
+            lzmastat = cli_LzmaDecode(&stream);
+            produced = sizeof(decoded) - stream.avail_out;
+
+            status = egg_stream_emit(output, decoded, produced);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (lzmastat == LZMA_STREAM_END) {
+                if (stream.avail_in != 0 || input_offset < (size_t)block->compressedSize) {
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                status = (output->written == output->expected) ? CL_SUCCESS : CL_EFORMAT;
+                goto done;
+            }
+
+            if (lzmastat != LZMA_RESULT_OK) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+
+            if (before_in == stream.avail_in && before_out == stream.avail_out &&
+                input_offset >= (size_t)block->compressedSize) {
+                status = CL_EUNPACK;
+                goto done;
+            }
+        }
+    }
+
+done:
+    cli_LzmaShutdown(&stream);
+    return status;
+}
+
 static cl_error_t egg_stream_block(const egg_handle* handle, const egg_block* block,
                                    egg_stream_output* output)
 {
@@ -2253,8 +2340,9 @@ static cl_error_t egg_stream_block(const egg_handle* handle, const egg_block* bl
             return egg_stream_deflate(handle, block, output);
         case BLOCK_HEADER_COMPRESS_ALGORITHM_BZIP2:
             return egg_stream_bzip2(handle, block, output);
-        case BLOCK_HEADER_COMPRESS_ALGORITHM_AZO:
         case BLOCK_HEADER_COMPRESS_ALGORITHM_LZMA:
+            return egg_stream_lzma(handle, block, output);
+        case BLOCK_HEADER_COMPRESS_ALGORITHM_AZO:
             return CL_EUNPACK;
         default:
             return CL_EFORMAT;

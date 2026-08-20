@@ -43,11 +43,13 @@ class TC(testcase.TestCase):
     # These malformed fixtures now fail closed when a decompressor or nested
     # fmap staging operation cannot produce a trustworthy scan result.
     fail_closed_testfiles = {
+        'clam.ea05.exe',
+        'clam.ea06.exe',
         'clam_IScab_ext.exe',
         'clam_IScab_int.exe',
         'clam_ISmsi_int.exe',
         'clam.ole.doc',
-        'clam-wwpack.exe',
+        'clam.exe.mbox.uu',
     }
 
     @classmethod
@@ -392,12 +394,12 @@ class TC(testcase.TestCase):
         testfiles = ' '.join([str(testpath) for testpath in TC.testpaths])
         expected_results = []
         for testpath in TC.testpaths:
-            if testpath.name in TC.fail_closed_testfiles:
-                expected_results.append("{}: Can't parse data ERROR".format(testpath.name))
-            elif testpath.name == 'clam.exe.mbox.uu':
+            if testpath.name == 'clam.exe.mbox.uu':
                 # The mailbox wrapper is detected in path mode and can fail
                 # closed in stream/fdpass mode; both outcomes are non-clean.
                 expected_results.append("{}: (?:ClamAV-Test-File\\.UNOFFICIAL FOUND|Can't parse data ERROR)".format(testpath.name))
+            elif testpath.name in TC.fail_closed_testfiles:
+                expected_results.append("{}: Can't parse data ERROR".format(testpath.name))
             else:
                 expected_results.append('{}: ClamAV-Test-File.UNOFFICIAL FOUND'.format(testpath.name))
         infected_count = len(TC.testpaths) - len(TC.fail_closed_testfiles)

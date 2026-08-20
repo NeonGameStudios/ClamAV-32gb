@@ -97,7 +97,7 @@ struct msexp_hdr {
         return CL_SUCCESS;                                                                \
     w = 0;
 
-cl_error_t cli_msexpand(cli_ctx *ctx, int ofd)
+cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
 {
     const struct msexp_hdr *hdr;
     uint8_t i, mask, bits;
@@ -126,6 +126,16 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd)
 
     if ((status = cli_checklimits("MSEXPAND", ctx, fsize, 0, 0)) != CL_CLEAN)
         return status;
+
+    if (NULL == temporary_reserved) {
+        cli_mark_scan_incomplete(ctx, "MSEXPAND temporary quota state was not provided");
+        return CL_ENULLARG;
+    }
+    if ((status = cli_scan_reserve_temporary(ctx, (uint64_t)fsize)) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "MSEXPAND output exceeds temporary storage limits");
+        return status;
+    }
+    *temporary_reserved = (uint64_t)fsize;
 
     memset(buff, 0, B_SIZE);
     while (1) {

@@ -513,6 +513,36 @@ static char *create_streaming_multipart_fixture(void)
     return path;
 }
 
+static char *create_streaming_nested_message_fixture(void)
+{
+    static const char header[] =
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "Content-Type: message/rfc822\n"
+        "Content-Transfer-Encoding: 8bit\n"
+        "\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "Content-Type: text/plain\n"
+        "\n";
+    char block[64000];
+    char *path = NULL;
+    int fd     = -1;
+    size_t body_bytes = 0;
+    const size_t materialization_limit = 64U * 1024U * 1024U;
+
+    memset(block, 'C', sizeof(block));
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, header, sizeof(header) - 1),
+                     (ssize_t)(sizeof(header) - 1));
+    while (body_bytes <= materialization_limit) {
+        ck_assert_int_eq(write(fd, block, sizeof(block)), (ssize_t)sizeof(block));
+        body_bytes += sizeof(block);
+    }
+    ck_assert_int_eq(close(fd), 0);
+
+    return path;
+}
+
 static void assert_large_mail_body_streams(const char *path, int alert_limits,
                                            uint64_t minimum_scanned)
 {
@@ -578,6 +608,8 @@ static char *create_nested_maxfiles_fixture(void)
 static char *create_mhtml_unterminated_comment_fixture(void)
 {
     static const char fixture[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
         "MIME-Version: 1.0\n"
         "Content-Type: multipart/related; boundary=mhtml-regression\n"
         "\n"
@@ -603,6 +635,8 @@ static char *create_mhtml_unterminated_comment_fixture(void)
 static char *create_partial_message_missing_fragment_fixture(void)
 {
     static const char fixture[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
         "MIME-Version: 1.0\n"
         "Content-Type: message/partial; id=missing-fragment-regression; number=2; total=2\n"
         "\n"
@@ -1088,6 +1122,15 @@ START_TEST(test_multipart_body_uses_streaming_spool)
     char *path = create_streaming_multipart_fixture();
 
     assert_large_mail_body_streams(path, 0, 1024U * 1024U);
+    free(path);
+}
+END_TEST
+
+START_TEST(test_nested_rfc822_body_uses_streaming_spool)
+{
+    char *path = create_streaming_nested_message_fixture();
+
+    assert_large_mail_body_streams(path, 0, 64U * 1024U * 1024U);
     free(path);
 }
 END_TEST
@@ -2249,6 +2292,12 @@ static void engine_setup(void)
     ck_assert_int_eq(mkdir(tmpdir, 0700), 0);
     ck_assert_msg(cl_load(hdb, g_engine, &sigs, CL_DB_STDOPT) == 0, "cl_load %s", hdb);
     ck_assert_msg(sigs == 1, "sigs");
+    /* Keep the scan-API fixture independent of any process-level dynamic
+     * configuration state. Its embedded OneNote signature is a required
+     * qualification path, so explicitly enable the document parser on the
+     * fresh test engine. */
+    g_engine->dconf->doc  |= DOC_CONF_ONENOTE;
+    g_engine->dconf->mail |= MAIL_CONF_MBOX;
     /* The scan-API qualification fixture exercises the planned large-file
      * parser gates without activating those defaults before release
      * qualification is complete. Keep the legacy top-level MaxFileSize and
@@ -2372,6 +2421,49 @@ static off_t pread_cb(void *handle, void *buf, size_t count, off_t offset)
 {
     return pread(*((int *)handle), buf, count, offset);
 }
+
+struct offset_pread_state {
+    const unsigned char *data;
+    size_t length;
+    off_t source_offset;
+};
+
+static off_t offset_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct offset_pread_state *state = handle;
+    size_t relative;
+
+    if (offset < state->source_offset ||
+        (uint64_t)(offset - state->source_offset) >= state->length)
+        return 0;
+
+    relative = (size_t)(offset - state->source_offset);
+    if (count > state->length - relative)
+        count = state->length - relative;
+    memcpy(buf, state->data + relative, count);
+    return (off_t)count;
+}
+
+START_TEST(test_fmap_handle_accepts_tail_window_at_large_source_offset)
+{
+    static const unsigned char data[] = "tail-window";
+    struct offset_pread_state state;
+    cl_fmap_t *map;
+    const unsigned char *window;
+
+    state.data          = data;
+    state.length        = sizeof(data) - 1U;
+    state.source_offset = (off_t)4096;
+
+    map = cl_fmap_open_handle(&state, (size_t)state.source_offset, state.length,
+                              offset_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    window = fmap_need_off_once(map, 0, state.length);
+    ck_assert_ptr_nonnull(window);
+    ck_assert_int_eq(memcmp(window, data, state.length), 0);
+    cl_fmap_close(map);
+}
+END_TEST
 
 #ifdef ANONYMOUS_MAP
 #define TEST_FM_MASK_PAGED 0x40000000U
@@ -2540,6 +2632,39 @@ START_TEST(test_fmap_gets_releases_read_pages)
     }
 
     ck_assert_msg(max_paged <= 2, "fmap_gets retained %llu pages", (unsigned long long)max_paged);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_fmap_release_unlocked_evicts_whole_subject_pages)
+{
+    struct synthetic_pread_state state;
+    cl_fmap_t *map;
+    const unsigned char *data;
+    unsigned int reads_before;
+    size_t length = 16 * 1024 * 1024;
+
+    memset(&state, 0, sizeof(state));
+    state.length  = length;
+    state.fail_at = -1;
+    map = cl_fmap_open_handle(&state, 0, length, synthetic_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    data = fmap_need_off_once(map, 0, length);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_uint_eq(data[0], synthetic_byte_at(0));
+    ck_assert_msg(map->paged > 0, "whole-subject request did not page input");
+
+    fmap_release_unlocked(map);
+    ck_assert_uint_eq(map->paged, 0);
+    ck_assert_uint_eq(synthetic_count_paged(map), 0);
+
+    reads_before = state.reads;
+    data         = fmap_need_off_once(map, 0, 4096);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_uint_eq(data[0], synthetic_byte_at(0));
+    ck_assert_msg(state.reads > reads_before, "evicted pages were not re-read");
+
     cl_fmap_close(map);
 }
 END_TEST
@@ -3215,6 +3340,33 @@ static uint8_t *zip_stream_central_archive(
     zip_stream_write_u16(end + 10, 1U);
     zip_stream_write_u32(end + 12, (uint32_t)central_length);
     zip_stream_write_u32(end + 16, (uint32_t)local_length);
+    return archive;
+}
+
+static uint8_t *zip_stream_central_masked_archive(
+    const uint8_t *compressed,
+    size_t compressed_length,
+    uint32_t advertised_size,
+    uint16_t method,
+    uint32_t crc,
+    size_t *archive_length)
+{
+    static const size_t local_header_length = 30U;
+    static const size_t filename_length     = sizeof("stream-test.bin") - 1U;
+    const size_t local_length = local_header_length + filename_length + compressed_length;
+    uint8_t *archive;
+
+    archive = zip_stream_central_archive(compressed, compressed_length, advertised_size,
+                                         method, crc, archive_length);
+    ck_assert_msg(local_length <= *archive_length, "masked ZIP fixture is unexpectedly short");
+
+    /* Bit 13 masks only the local CRC and size fields.  The central
+     * directory remains authoritative for those values. */
+    zip_stream_write_u16(archive + 6, ZIP_TEST_FLAG_MASKED_HEADER);
+    zip_stream_write_u32(archive + 14, 0U);
+    zip_stream_write_u32(archive + 18, 0U);
+    zip_stream_write_u32(archive + 22, 0U);
+    zip_stream_write_u16(archive + local_length + 8, ZIP_TEST_FLAG_MASKED_HEADER);
     return archive;
 }
 
@@ -3958,6 +4110,7 @@ START_TEST(test_cryptff_staging_failures_are_fail_visible)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+
 }
 END_TEST
 
@@ -4172,11 +4325,11 @@ START_TEST(test_xz_limit_is_fail_visible)
 {
     static const uint8_t archive[] = {
         0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0x00, 0x04,
-        0xe6, 0x6d, 0x6b, 0x44, 0x60, 0x20, 0x02, 0x10,
-        0x11, 0x60, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
+        0xe6, 0xd6, 0xb4, 0x46, 0x02, 0x00, 0x21, 0x01,
+        0x16, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
         0xa3, 0x01, 0x00, 0x0c, 0x78, 0x7a, 0x2d, 0x6c,
         0x69, 0x6d, 0x69, 0x74, 0x2d, 0x74, 0x65, 0x73,
-        0x74, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
+        0x74, 0x00, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
         0xa5, 0x44, 0x03, 0x64, 0x00, 0x01, 0x25, 0x0d,
         0x71, 0x19, 0xc4, 0xb6, 0x1f, 0xb6, 0xf3, 0x7d,
         0x01, 0x00, 0x00, 0x00, 0x04, 0x59, 0x5a};
@@ -4218,11 +4371,11 @@ START_TEST(test_xz_truncated_stream_is_fail_visible)
 {
     static const uint8_t archive[] = {
         0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0x00, 0x04,
-        0xe6, 0x6d, 0x6b, 0x44, 0x60, 0x20, 0x02, 0x10,
-        0x11, 0x60, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
+        0xe6, 0xd6, 0xb4, 0x46, 0x02, 0x00, 0x21, 0x01,
+        0x16, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
         0xa3, 0x01, 0x00, 0x0c, 0x78, 0x7a, 0x2d, 0x6c,
         0x69, 0x6d, 0x69, 0x74, 0x2d, 0x74, 0x65, 0x73,
-        0x74, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
+        0x74, 0x00, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
         0xa5, 0x44, 0x03, 0x64, 0x00, 0x01, 0x25, 0x0d,
         0x71, 0x19, 0xc4, 0xb6, 0x1f, 0xb6, 0xf3, 0x7d,
         0x01, 0x00, 0x00, 0x00, 0x04, 0x59, 0x5a};
@@ -4258,6 +4411,82 @@ START_TEST(test_xz_truncated_stream_is_fail_visible)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_compressed_output_temporary_limit_is_fail_visible)
+{
+    static const uint8_t xz_archive[] = {
+        0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0x00, 0x04,
+        0xe6, 0xd6, 0xb4, 0x46, 0x02, 0x00, 0x21, 0x01,
+        0x16, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
+        0xa3, 0x01, 0x00, 0x0c, 0x78, 0x7a, 0x2d, 0x6c,
+        0x69, 0x6d, 0x69, 0x74, 0x2d, 0x74, 0x65, 0x73,
+        0x74, 0x00, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
+        0xa5, 0x44, 0x03, 0x64, 0x00, 0x01, 0x25, 0x0d,
+        0x71, 0x19, 0xc4, 0xb6, 0x1f, 0xb6, 0xf3, 0x7d,
+        0x01, 0x00, 0x00, 0x00, 0x04, 0x59, 0x5a};
+    static const char *const types[] = {"CL_TYPE_GZ", "CL_TYPE_BZ", "CL_TYPE_XZ"};
+    static const uint8_t *const static_archives[] = {NULL, NULL, xz_archive};
+    static const size_t static_lengths[] = {0, 0, sizeof(xz_archive)};
+    static const uint8_t input[] = "compressed temporary quota";
+    uint8_t *gzip;
+    uint8_t *bzip;
+    const uint8_t *archives[3];
+    size_t lengths[3];
+    size_t i;
+
+    gzip      = gzip_stream(input, sizeof(input) - 1U, &lengths[0]);
+    bzip      = zip_stream_bzip2(input, sizeof(input) - 1U, &lengths[1]);
+    archives[0] = gzip;
+    archives[1] = bzip;
+    archives[2] = static_archives[2];
+    lengths[2]  = static_lengths[2];
+
+    ck_assert_ptr_nonnull(gzip);
+    ck_assert_ptr_nonnull(bzip);
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+
+    for (i = 0; i < 3; i++) {
+        struct cl_scan_options options;
+        struct cl_engine *scan_engine;
+        cl_verdict_t verdict;
+        const char *last_alert;
+        uint64_t scanned;
+        fmap_t *map;
+        cl_error_t ret;
+
+        memset(&options, 0, sizeof(options));
+        options.parse = CL_SCAN_PARSE_ARCHIVE;
+        scan_engine = cl_engine_new();
+        ck_assert_ptr_nonnull(scan_engine);
+        ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+        ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+        map = cl_fmap_open_memory(archives[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        verdict    = CL_VERDICT_STRONG_INDICATOR;
+        last_alert = "stale";
+        scanned    = UINT64_MAX;
+
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            types[i], NULL);
+        /* The XZ wrapper may normalize a sticky incomplete scan to
+         * CL_EPARSE while preserving the fail-closed verdict and cache
+         * state. The resource-limit paths must never look clean. */
+        ck_assert_msg(ret == CL_ERESOURCE || (i == 2 && ret == CL_EPARSE),
+                      "%s temporary limit returned %s (%d)", types[i],
+                      cl_strerror(ret), ret);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert(last_alert == NULL);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        cl_engine_free(scan_engine);
+    }
+
+    free(gzip);
+    free(bzip);
 }
 END_TEST
 
@@ -4605,6 +4834,49 @@ START_TEST(test_swf_zlib_truncated_stream_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_output_temporary_limit_is_fail_visible)
+{
+    static const uint8_t body[6] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    cl_error_t ret;
+
+    archive = swf_cws_stream(body, sizeof(body), &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_SWF", NULL);
+    ck_assert_msg(ret == CL_ERESOURCE,
+                  "SWF temporary limit returned %s (%d)", cl_strerror(ret), ret);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(archive);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_swf_cleanup_close_failure_is_fail_visible)
 {
@@ -4717,6 +4989,155 @@ START_TEST(test_zip_unsupported_flags_and_method_are_fail_visible)
     ck_assert(incomplete);
     ck_assert_msg(max_read <= CLI_ZIP_INPUT_CHUNK_SIZE + (size_t)cli_getpagesize(),
                   "unsupported ZIP method requested %zu bytes in one fmap read", max_read);
+}
+END_TEST
+
+START_TEST(test_zip_central_directory_resolves_masked_local_values)
+{
+    static const uint8_t input[] = "masked-central-values";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    size_t archive_length;
+    uint8_t *archive;
+    cl_error_t ret;
+
+    archive = zip_stream_central_masked_archive(input, sizeof(input) - 1U,
+                                                sizeof(input) - 1U,
+                                                ZIP_TEST_METHOD_STORED,
+                                                (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                                &archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine               = engine;
+    ctx.options              = &options;
+    ctx.dconf                = engine->dconf;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_ZIP;
+    layers[0].size           = archive_length;
+    layers[0].fmap           = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(archive);
+}
+END_TEST
+
+START_TEST(test_zip_masked_sfx_candidate_is_not_confirmed)
+{
+    static const uint8_t input[] = "masked-sfx-candidate";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    size_t archive_length;
+    size_t zip_size = 0;
+    uint8_t *archive;
+    cl_error_t ret;
+
+    archive = zip_stream_local_archive_flags(input, sizeof(input) - 1U,
+                                              sizeof(input) - 1U,
+                                              ZIP_TEST_METHOD_STORED,
+                                              ZIP_TEST_FLAG_MASKED_HEADER,
+                                              (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                              &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    zip_stream_write_u32(archive + 14, 0U);
+    zip_stream_write_u32(archive + 18, 0U);
+    zip_stream_write_u32(archive + 22, 0U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIPSFX;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_uint_eq(zip_size, 0U);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(archive);
+}
+END_TEST
+
+START_TEST(test_zip_local_only_masked_header_is_fail_visible)
+{
+    static const uint8_t input[] = "masked-local-only";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    size_t archive_length;
+    uint8_t *archive;
+    cl_error_t ret;
+
+    archive = zip_stream_local_archive_flags(input, sizeof(input) - 1U,
+                                              sizeof(input) - 1U,
+                                              ZIP_TEST_METHOD_STORED,
+                                              ZIP_TEST_FLAG_MASKED_HEADER,
+                                              (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                              &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    zip_stream_write_u32(archive + 14, 0U);
+    zip_stream_write_u32(archive + 18, 0U);
+    zip_stream_write_u32(archive + 22, 0U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(archive);
 }
 END_TEST
 
@@ -5486,6 +5907,35 @@ static void fmap_api_tests(cl_fmap_t *map, const char *map_data, size_t map_data
 
     free(tmp);
 }
+
+START_TEST(test_fmap_rejects_wrapped_nested_ranges)
+{
+    cl_fmap_t *map;
+    char output[8];
+    size_t at;
+
+    map = cl_fmap_open_memory("01234567", 8);
+    ck_assert_ptr_nonnull(map);
+
+    /* A nested offset plus a caller offset must never wrap back into the
+     * beginning of the original map. */
+    map->nested_offset = SIZE_MAX - 3;
+    map->len           = 8;
+    map->real_len      = SIZE_MAX;
+
+    ck_assert_ptr_null(fmap_need_off_once(map, 4, 1));
+    ck_assert_ptr_null(fmap_need_offstr(map, 4, 1));
+
+    at = 4;
+    ck_assert_ptr_null(fmap_gets(map, output, &at, sizeof(output)));
+
+    /* The same checked addition protects construction of nested views. */
+    ck_assert_ptr_null(fmap_duplicate(map, 0, map->len, NULL));
+    ck_assert_ptr_null(fmap_duplicate(map, 4, 1, NULL));
+
+    cl_fmap_close(map);
+}
+END_TEST
 
 START_TEST(test_fmap_assorted_api)
 {
@@ -6393,6 +6843,26 @@ START_TEST(test_msexpand_truncated_output_is_fail_visible)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_MSSZDD", NULL);
+    ck_assert_msg(ret == CL_ERESOURCE,
+                  "MSEXPAND temporary limit returned %s (%d)", cl_strerror(ret), ret);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 
@@ -6494,6 +6964,45 @@ START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_BINHEX", NULL);
     ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_binhex_output_temporary_limit_is_fail_visible)
+{
+    static const uint8_t data[] =
+        "(This file must be converted with BinHex 4.0)\r\n:!8%!9&P3480548%!!!!!!!)!!!!!!!!!";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_BINHEX", NULL);
+    ck_assert_msg(ret == CL_ERESOURCE,
+                  "BinHex temporary limit returned %s (%d)", cl_strerror(ret), ret);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
@@ -7322,6 +7831,111 @@ START_TEST(test_egg_sfx_header_admission)
 }
 END_TEST
 
+typedef struct {
+    uint8_t *buffer;
+    size_t capacity;
+    size_t length;
+} egg_test_output;
+
+static cl_error_t egg_test_capture(void *opaque, const void *data, size_t length)
+{
+    egg_test_output *output = (egg_test_output *)opaque;
+
+    if (output == NULL || data == NULL || output->length > output->capacity ||
+        length > output->capacity - output->length)
+        return CL_EWRITE;
+
+    memcpy(output->buffer + output->length, data, length);
+    output->length += length;
+    return CL_SUCCESS;
+}
+
+START_TEST(test_egg_lzma_stream_extracts_bounded_member)
+{
+    static const uint8_t lzma_data[] = {
+        0x5d, 0x00, 0x00, 0x01, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x22, 0x91, 0xec, 0x40, 0x4c, 0x2e,
+        0x68, 0xa0, 0x4e, 0x9c, 0x2a, 0x28, 0xa5, 0x56, 0xcc, 0x2d,
+        0x60, 0xcd, 0x9e, 0xff, 0xff, 0xb6, 0x74, 0x00, 0x00};
+    static const uint8_t expected[] = "EGG LZMA stream";
+    uint8_t archive[128];
+    uint8_t decoded[sizeof(expected) - 1U];
+    egg_test_output output;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    const char *filename = NULL;
+    uint64_t output_length = 0;
+    size_t offset = 0;
+
+    memset(archive, 0, sizeof(archive));
+    zip_stream_write_u32(archive + offset, 0x41474745U);
+    offset += 4;
+    zip_stream_write_u16(archive + offset, 0x0100U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, sizeof(expected) - 1U);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU);
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, 8U);
+    offset += 2;
+    memcpy(archive + offset, "test.txt", 8);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+
+    zip_stream_write_u32(archive + offset, 0x02B50C13U);
+    offset += 4;
+    archive[offset++] = 4;
+    archive[offset++] = 0;
+    zip_stream_write_u32(archive + offset, sizeof(expected) - 1U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, sizeof(lzma_data));
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    memcpy(archive + offset, lzma_data, sizeof(lzma_data));
+    offset += sizeof(lzma_data);
+    zip_stream_write_u32(archive + offset, 0x08E28222U);
+    offset += 4;
+    ck_assert(offset <= sizeof(archive));
+
+    memset(&output, 0, sizeof(output));
+    output.buffer   = decoded;
+    output.capacity = sizeof(decoded);
+    map             = cl_fmap_open_memory(archive, offset);
+    ck_assert_ptr_nonnull(map);
+
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_int_eq(cli_egg_extract_file_stream(handle, egg_test_capture, &output,
+                                                 &filename, &output_length),
+                     CL_SUCCESS);
+    ck_assert_str_eq(filename, "test.txt");
+    ck_assert_uint_eq(output_length, sizeof(expected) - 1U);
+    ck_assert_uint_eq(output.length, sizeof(expected) - 1U);
+    ck_assert_mem_eq(output.buffer, expected, sizeof(expected) - 1U);
+
+    free((void *)filename);
+    cli_egg_close(handle);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_embedded_candidate_admission_headers)
 {
     static const uint8_t autoit_prefix[] = {
@@ -7357,7 +7971,7 @@ START_TEST(test_embedded_candidate_admission_headers)
     ck_assert_int_eq(cli_nulsft_header_check(&ctx, 0), CL_SUCCESS);
     cl_fmap_close(map);
 
-    nsis[0x18] = sizeof(nsis) + 1;
+    cli_writeint32(nsis + 0x18, sizeof(nsis) + 1);
     map        = cl_fmap_open_memory(nsis, sizeof(nsis));
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
@@ -8220,6 +8834,21 @@ START_TEST(test_nested_fmap_ranges_and_force_to_disk_are_fail_visible)
     ck_assert_msg(state.successful_reads != 0,
                   "force-to-disk copy attempted to materialize the entire nested range at once");
 
+    /* Logical child admission must happen before a force-to-disk copy. */
+    state.fail_at          = sizeof(state.data);
+    state.successful_reads = 0;
+    engine.maxfilesize     = sizeof(state.data) - 1U;
+    ctx.scan_incomplete     = false;
+    map->dont_cache_flag    = false;
+    ret = cli_magic_scan_nested_fmap_type(map, 0, sizeof(state.data), &ctx,
+                                          CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(state.successful_reads, 0);
+
+    engine.maxfilesize = 0;
+
     /* Temporary admission must happen before the force-to-disk copy. */
     state.fail_at             = sizeof(state.data);
     state.successful_reads    = 0;
@@ -8908,6 +9537,46 @@ START_TEST(test_normalized_script_map_failure_is_fail_visible)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_descriptor_limit_preflight_precedes_fmap_creation)
+{
+    static const char data[11] = "0123456789";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    char *path = NULL;
+    int fd     = -1;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    engine->maxfilesize = 10;
+    engine->maxscansize = 10;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, data, sizeof(data)), (ssize_t)sizeof(data));
+
+    fmap_new_test_fail = 1;
+    ret = cl_scandesc_ex(fd, path, &verdict, &last_alert, &scanned,
+                         engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    fmap_new_test_fail = 0;
+
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert_uint_eq(scanned, 0);
+
+    close(fd);
+    free(path);
+    cl_engine_free(engine);
 }
 END_TEST
 #endif
@@ -9632,6 +10301,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_truncated_binhex_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
+    tcase_add_test(tc_cl, test_binhex_output_temporary_limit_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_binhex_cleanup_close_failure_is_fail_visible);
 #endif
@@ -9652,6 +10322,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
+    tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
     tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
@@ -9695,6 +10366,7 @@ static Suite *test_cl_suite(void)
 #endif
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP
     tcase_add_test(tc_cl, test_normalized_script_map_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_descriptor_limit_preflight_precedes_fmap_creation);
 #endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_script_normalization_cleanup_close_failure_is_fail_visible);
@@ -9741,7 +10413,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
     tcase_add_test(tc_cl, test_xz_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_xz_truncated_stream_is_fail_visible);
+    tcase_add_test(tc_cl, test_compressed_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_zlib_truncated_stream_is_fail_visible);
+    tcase_add_test(tc_cl, test_swf_output_temporary_limit_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_swf_cleanup_close_failure_is_fail_visible);
 #endif
@@ -9751,6 +10425,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
+    tcase_add_test(tc_cl, test_zip_central_directory_resolves_masked_local_values);
+    tcase_add_test(tc_cl, test_zip_masked_sfx_candidate_is_not_confirmed);
+    tcase_add_test(tc_cl, test_zip_local_only_masked_header_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
     tcase_add_test(tc_cl, test_zip_central_index_propagates_callback_status);
     tcase_add_test(tc_cl, test_zip_maxfiles_is_inclusive_and_detection_precedes_limit);
@@ -9773,6 +10450,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_streams_without_alert);
     tcase_add_test(tc_cl_scan, test_multipart_body_uses_streaming_spool);
+    tcase_add_test(tc_cl_scan, test_nested_rfc822_body_uses_streaming_spool);
     tcase_add_loop_test(tc_cl_scan, test_cl_scandesc_callback, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scandesc_callback_allscan, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_cl_scanfile_callback, 0, expect);
@@ -9791,11 +10469,14 @@ static Suite *test_cl_suite(void)
     tcase_add_loop_test(tc_cl_scan, test_fmap_duplicate, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_fmap_duplicate_out_of_bounds, 0, expect);
     tcase_add_loop_test(tc_cl_scan, test_fmap_assorted_api, 0, expect);
+    tcase_add_test(tc_cl_scan, test_fmap_rejects_wrapped_nested_ranges);
     tcase_add_test(tc_cl_scan, test_clean_cache_distinguishes_large_sizes);
     tcase_add_test(tc_cl_scan, test_stats_preserves_large_sample_size);
 #if !defined(_WIN32) && defined(ANONYMOUS_MAP)
     tcase_add_test(tc_cl_scan, test_fmap_aging_is_bounded_and_wraps);
+    tcase_add_test(tc_cl_scan, test_fmap_handle_accepts_tail_window_at_large_source_offset);
     tcase_add_test(tc_cl_scan, test_fmap_gets_releases_read_pages);
+    tcase_add_test(tc_cl_scan, test_fmap_release_unlocked_evicts_whole_subject_pages);
     tcase_add_test(tc_cl_scan, test_metadata_hash_read_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl_scan, test_authenticode_hash_regions_are_native_and_bounded);

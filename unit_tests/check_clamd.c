@@ -65,6 +65,7 @@
 #include "clamdcom.h"
 #include "fdpassing.h"
 #include "getopt.h"
+#include "largefile_admission.h"
 #include "optparser.h"
 
 static int conn_tcp(int port)
@@ -323,6 +324,33 @@ START_TEST(test_size_parser_rejects_negative_values)
         unlink(config_path);
     }
 #endif
+}
+END_TEST
+
+START_TEST(test_largefile_admission_accepts_historical_defaults)
+{
+    struct cl_engine *engine = cl_engine_new();
+    char reason[256];
+
+    ck_assert_ptr_nonnull(engine);
+    memset(reason, 0, sizeof(reason));
+    ck_assert_int_eq(clamd_largefile_admission_check(engine, "/path/that/does/not/exist", reason, sizeof(reason)), 1);
+    ck_assert_str_eq(reason, "");
+    cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_largefile_admission_rejects_unbounded_logical_budget)
+{
+    struct cl_engine *engine = cl_engine_new();
+    char reason[256];
+
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, 0), CL_SUCCESS);
+    memset(reason, 0, sizeof(reason));
+    ck_assert_int_eq(clamd_largefile_admission_check(engine, "/tmp", reason, sizeof(reason)), 0);
+    ck_assert_str_eq(reason, "MaxScanSize=0 disables the certified 64 GiB logical scan budget");
+    cl_engine_free(engine);
 }
 END_TEST
 
@@ -1227,6 +1255,8 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
     tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
+    tcase_add_test(tc_parser, test_largefile_admission_accepts_historical_defaults);
+    tcase_add_test(tc_parser, test_largefile_admission_rejects_unbounded_logical_budget);
 #ifndef _WIN32
     TCase *tc_client;
 

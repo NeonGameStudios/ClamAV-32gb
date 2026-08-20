@@ -271,12 +271,14 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
                 buffer = fmap_need_off_once(map, 0, map->len);
                 if (!buffer) {
                     cli_scan_release_contiguous(ctx, map->len);
+                    fmap_release_unlocked(map);
                     return CL_EMEM;
                 }
 
                 /* scan the full buffer */
                 ret = cli_pcre_scanbuf(buffer, map->len, virname, acres, root, mdata, poffdata, ctx);
                 cli_scan_release_contiguous(ctx, map->len);
+                fmap_release_unlocked(map);
             }
         } else if (pcremode == PCRE_SCAN_BUFF) {
             /* check that scanned buffer does not exceed pcre maxfilesize limit */

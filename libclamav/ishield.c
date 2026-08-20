@@ -252,9 +252,10 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
         char *tempfile;
         unsigned int i, lameidx = 0, keylen;
         int ofd;
-        uint64_t csize;
-        uint64_t outsize     = 0;
-        bool stream_complete = false;
+        uint64_t csize                = 0;
+        uint64_t outsize              = 0;
+        uint64_t temporary_reserved   = 0;
+        bool stream_complete          = false;
         z_stream z;
 
         if (ctx->engine->maxfiles && scanned >= ctx->engine->maxfiles) {
@@ -377,9 +378,19 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
                         cli_mark_scan_incomplete(ctx, "InstallShield MSI member output exceeds configured scan limits");
                     break;
                 }
-                if (produced && cli_writen(ofd, obuf, produced) != produced) {
-                    ret = CL_EWRITE;
-                    break;
+                if (produced) {
+                    if (UINT64_MAX - temporary_reserved < (uint64_t)produced ||
+                        cli_scan_reserve_temporary(ctx, (uint64_t)produced) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output exceeds storage limits");
+                        ret = CL_ERESOURCE;
+                        break;
+                    }
+                    temporary_reserved += (uint64_t)produced;
+                    if (cli_writen(ofd, obuf, produced) != produced) {
+                        cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be written completely");
+                        ret = CL_EWRITE;
+                        break;
+                    }
                 }
                 outsize += produced;
 
@@ -416,17 +427,25 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
                 ret = CL_ESEEK;
             }
             if (ret == CL_SUCCESS)
-                ret = cli_magic_scan_desc(ofd, tempfile, ctx, filename, LAYER_ATTRIBUTES_NONE);
+                ret = cli_magic_scan_desc_type_reserved(ofd, tempfile, ctx, CL_TYPE_ANY, filename,
+                                                         LAYER_ATTRIBUTES_NONE);
         }
-        close(ofd);
+        if (close(ofd) != 0) {
+            cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be closed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+                ret = CL_EWRITE;
+        }
 
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempfile)) {
-                if (ret == CL_SUCCESS)
+                cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be removed");
+                if (ret == CL_SUCCESS || ret == CL_VERIFIED)
                     ret = CL_EUNLINK;
             }
         }
         free(tempfile);
+        if (temporary_reserved)
+            cli_scan_release_temporary(ctx, temporary_reserved);
 
         if (NULL != filename) {
             free(filename);
@@ -601,7 +620,9 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
 {
     char *fname;
     const char *buf;
-    cl_error_t ofd, ret = CL_SUCCESS;
+    int ofd;
+    cl_error_t ret = CL_SUCCESS;
+    uint64_t temporary_reserved;
     fmap_t *map = ctx->fmap;
 
     if (!fsize) {
@@ -621,13 +642,21 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
         return ret;
     }
 
+    temporary_reserved = (uint64_t)fsize;
+    if (cli_scan_reserve_temporary(ctx, temporary_reserved) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "InstallShield embedded file exceeds temporary storage limits");
+        return CL_ERESOURCE;
+    }
+
     if (!(fname = cli_gentemp(ctx->this_layer_tmpdir))) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_EMEM;
     }
 
     if ((ofd = open(fname, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
         cli_errmsg("ishield: failed to create file %s\n", fname);
         free(fname);
+        cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_ECREAT;
     }
 
@@ -643,6 +672,7 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
             break;
         }
         if (cli_writen(ofd, buf, rd) != rd) {
+            cli_mark_scan_incomplete(ctx, "InstallShield embedded file temporary output could not be written completely");
             ret = CL_EWRITE;
             break;
         }
@@ -657,19 +687,25 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
             ret = CL_ESEEK;
         }
         if (ret == CL_SUCCESS)
-            ret = cli_magic_scan_desc(ofd, fname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            ret = cli_magic_scan_desc_type_reserved(ofd, fname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     }
 
-    close(ofd);
+    if (close(ofd) != 0) {
+        cli_mark_scan_incomplete(ctx, "InstallShield embedded file temporary output could not be closed");
+        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+            ret = CL_EWRITE;
+    }
 
     if (!ctx->engine->keeptmp) {
         if (cli_unlink(fname)) {
-            if (ret == CL_SUCCESS)
+            cli_mark_scan_incomplete(ctx, "InstallShield embedded file temporary output could not be removed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
                 ret = CL_EUNLINK;
         }
     }
 
     free(fname);
+    cli_scan_release_temporary(ctx, temporary_reserved);
     return ret;
 }
 
@@ -942,8 +978,9 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
     char *tempfile;
     int ofd;
     z_stream z;
-    uint64_t outsz           = 0;
-    bool extraction_complete = false;
+    uint64_t outsz             = 0;
+    uint64_t temporary_reserved = 0;
+    bool extraction_complete   = false;
     fmap_t *map              = ctx->fmap;
 
     if (!(outbuf = malloc(IS_CABBUFSZ))) {
@@ -951,7 +988,22 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
         return CL_EMEM;
     }
 
+    ret = cli_checklimits("InstallShield", ctx, size, 0, 0);
+    if (ret != CL_SUCCESS) {
+        if (ret != CL_ETIMEOUT)
+            cli_mark_scan_incomplete(ctx, "InstallShield CAB output exceeds configured scan limits");
+        free(outbuf);
+        return ret;
+    }
+    if (cli_scan_reserve_temporary(ctx, size) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "InstallShield CAB output exceeds temporary storage limits");
+        free(outbuf);
+        return CL_ERESOURCE;
+    }
+    temporary_reserved = size;
+
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
         free(outbuf);
         return CL_EMEM;
     }
@@ -959,6 +1011,7 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
         cli_errmsg("is_extract_cab: failed to create file %s\n", tempfile);
         free(tempfile);
         free(outbuf);
+        cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_ECREAT;
     }
 
@@ -1035,7 +1088,14 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
                     break;
                 }
 
+                if (outsz > size || writelen > size - outsz) {
+                    cli_mark_scan_incomplete(ctx, "InstallShield CAB output exceeds declared member size");
+                    ret = CL_EFORMAT;
+                    break;
+                }
+
                 if (writelen && cli_writen(ofd, outbuf, writelen) != writelen) {
+                    cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be written completely");
                     ret = CL_EWRITE;
                     break;
                 }
@@ -1085,14 +1145,22 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
             ret = CL_ESEEK;
         }
         if (ret == CL_SUCCESS)
-            ret = cli_magic_scan_desc(ofd, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
+            ret = cli_magic_scan_desc_type_reserved(ofd, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     }
 
-    close(ofd);
+    if (close(ofd) != 0) {
+        cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be closed");
+        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+            ret = CL_EWRITE;
+    }
     if (!ctx->engine->keeptmp) {
-        if (cli_unlink(tempfile) && ret == CL_SUCCESS)
-            ret = CL_EUNLINK;
+        if (cli_unlink(tempfile)) {
+            cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be removed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+                ret = CL_EUNLINK;
+        }
     }
     free(tempfile);
+    cli_scan_release_temporary(ctx, temporary_reserved);
     return ret;
 }

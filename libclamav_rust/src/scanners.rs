@@ -68,6 +68,18 @@ unsafe fn parser_input_failure(ctx: *mut cli_ctx, parser: &str, err: impl std::f
     parser_failure(ctx, parser, cl_error_t_CL_EPARSE, err)
 }
 
+fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
+    let chunk_len = match u64::try_from(chunk_len) {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+    let remaining = match declared.checked_sub(written) {
+        Some(value) => value,
+        None => return false,
+    };
+    chunk_len <= remaining
+}
+
 /// Rust wrapper of libclamav's cli_magic_scan_buff() function.
 /// Use magic sigs to identify the file type and then scan it.
 ///
@@ -339,6 +351,7 @@ struct OneNoteScanSink {
     ctx: *mut cli_ctx,
     spool: Option<TempSpool>,
     scan_result: cl_error_t,
+    attachments_seen: bool,
 }
 
 impl OneNoteScanSink {
@@ -347,6 +360,7 @@ impl OneNoteScanSink {
             ctx,
             spool: None,
             scan_result: cl_error_t_CL_SUCCESS,
+            attachments_seen: false,
         }
     }
 
@@ -360,6 +374,7 @@ impl OneNoteScanSink {
 impl onenote::LegacyAttachmentSink for OneNoteScanSink {
     fn begin(&mut self) -> Result<(), onenote::Error> {
         self.abort();
+        self.attachments_seen = true;
         self.spool = match unsafe { TempSpool::new(self.ctx, 0) } {
             Ok(spool) => Some(spool),
             Err(status) => {
@@ -530,10 +545,19 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         if sink.scan_result != cl_error_t_CL_SUCCESS {
             return sink.scan_result;
         }
-        return match parse_result {
-            Ok(()) => cl_error_t_CL_SUCCESS,
-            Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
-        };
+        if sink.attachments_seen {
+            return match parse_result {
+                Ok(()) => cl_error_t_CL_SUCCESS,
+                Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
+            };
+        }
+        if let Err(err) = parse_result {
+            return parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err);
+        }
+        /* The legacy magic is shared by newer section files. If no legacy
+         * attachment record was found, let the modern parser inspect the
+         * complete root instead of treating the input as an empty legacy
+         * document. */
     }
 
     let root_spool = match spool_fmap(ctx, &fmap) {
@@ -661,12 +685,35 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
         } else {
             debug!("Found file in LHA archive: {filename}");
 
+            let compressed_size = match usize::try_from(header.compressed_size) {
+                Ok(size) => size,
+                Err(_) => {
+                    return parser_failure(
+                        ctx,
+                        "LHA/LZH",
+                        cl_error_t_CL_ERESOURCE,
+                        "compressed member size is not representable on this platform",
+                    );
+                }
+            };
+            let original_size = match usize::try_from(header.original_size) {
+                Ok(size) => size,
+                Err(_) => {
+                    return parser_failure(
+                        ctx,
+                        "LHA/LZH",
+                        cl_error_t_CL_ERESOURCE,
+                        "uncompressed member size is not representable on this platform",
+                    );
+                }
+            };
+
             // Scan the archive metadata first.
             if scan_archive_metadata(
                 ctx,
                 &filename,
-                header.compressed_size as usize,
-                header.original_size as usize,
+                compressed_size,
+                original_size,
                 false,
                 index,
                 header.file_crc as i32,
@@ -693,15 +740,44 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
                         Err(status) => return parser_failure(ctx, "LHA/LZH", status, "member spool reservation failed"),
                     };
                     let mut bytes_read = 0u64;
-                    let mut buffer = [0u8; 1024 * 1024];
+                    let mut buffer = [0u8; 64 * 1024];
                     loop {
                         match decoder.read(&mut buffer) {
                             Ok(0) => break,
                             Ok(read) => {
+                                if !lha_output_chunk_fits(bytes_read, expected_size, read) {
+                                    return parser_failure(
+                                        ctx,
+                                        "LHA/LZH",
+                                        cl_error_t_CL_EFORMAT,
+                                        "member decoder exceeded its declared output size",
+                                    );
+                                }
+                                let read_u64 = match u64::try_from(read) {
+                                    Ok(value) => value,
+                                    Err(_) => {
+                                        return parser_failure(
+                                            ctx,
+                                            "LHA/LZH",
+                                            cl_error_t_CL_ERESOURCE,
+                                            "member decoder output size is not representable",
+                                        );
+                                    }
+                                };
                                 if let Err(status) = spool.write_all(&buffer[..read]) {
                                     return parser_failure(ctx, "LHA/LZH", status, "member output exceeded its declared size or could not be written");
                                 }
-                                bytes_read = bytes_read.saturating_add(read as u64);
+                                bytes_read = match bytes_read.checked_add(read_u64) {
+                                    Some(value) => value,
+                                    None => {
+                                        return parser_failure(
+                                            ctx,
+                                            "LHA/LZH",
+                                            cl_error_t_CL_ERESOURCE,
+                                            "member output size accounting overflowed",
+                                        );
+                                    }
+                                };
                             }
                             Err(err) => {
                                 return parser_failure(
@@ -723,21 +799,20 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
                         );
                     }
 
+                    match decoder.crc_check() {
+                        Ok(crc) => debug!("CRC check passed for LHA/LZH member; CRC: {crc}"),
+                        Err(err) => {
+                            return parser_failure(
+                                ctx,
+                                "LHA/LZH",
+                                cl_error_t_CL_EFORMAT,
+                                format!("member CRC check failed: {err}"),
+                            );
+                        }
+                    }
+
                     if bytes_read > 0 {
                         debug!("Read {bytes_read} bytes from file {filename} in the LHA archive.");
-
-                        // Verify the CRC check *after* reading the file.
-                        match decoder.crc_check() {
-                            Ok(crc) => debug!("CRC check passed for LHA/LZH member; CRC: {crc}"),
-                            Err(err) => {
-                                return parser_failure(
-                                    ctx,
-                                    "LHA/LZH",
-                                    cl_error_t_CL_EFORMAT,
-                                    format!("member CRC check failed: {err}"),
-                                );
-                            }
-                        }
 
                         let ret = spool.scan(Some(&filename));
                         if ret != cl_error_t_CL_SUCCESS {
@@ -1122,5 +1197,14 @@ mod tests {
 
         #[cfg(target_pointer_width = "64")]
         assert_eq!(alz_metadata_size(u64::MAX), Some(usize::MAX));
+    }
+
+    #[test]
+    fn lha_output_chunk_rejects_decoder_overflow() {
+        assert!(lha_output_chunk_fits(0, 64, 64));
+        assert!(lha_output_chunk_fits(32, 64, 32));
+        assert!(!lha_output_chunk_fits(65, 64, 0));
+        assert!(!lha_output_chunk_fits(64, 64, 1));
+        assert!(!lha_output_chunk_fits(u64::MAX, u64::MAX, 1));
     }
 }

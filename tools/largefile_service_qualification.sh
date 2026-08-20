@@ -53,6 +53,12 @@ for required in "$production_db" "$edge_db"; do
         exit 2
     fi
 done
+production_db_real=$(CDPATH= cd -- "$production_db" && pwd)
+edge_db_real=$(CDPATH= cd -- "$edge_db" && pwd)
+if [ "$production_db_real" = "$edge_db_real" ]; then
+    echo 'production and edge qualification databases must be separate directories' >&2
+    exit 2
+fi
 if [ ! -f "$oracle_manifest" ]; then
     echo "missing qualification oracle manifest: $oracle_manifest" >&2
     exit 2
@@ -112,6 +118,58 @@ fi
 file_size()
 {
     stat -c '%s' "$1" 2>/dev/null || stat -f '%z' "$1"
+}
+
+write_database_manifest()
+{
+    database_role=$1
+    database_dir=$2
+    database_manifest_file=$3
+    database_files=$(find "$database_dir" -type f -print | LC_ALL=C sort)
+    if [ -z "$database_files" ]; then
+        echo "$database_role qualification database contains no regular files" >&2
+        return 1
+    fi
+    if find "$database_dir" -type l -print -quit | grep . >/dev/null 2>&1; then
+        echo "$database_role qualification database contains symlinks" >&2
+        return 1
+    fi
+    : > "$database_manifest_file"
+    while IFS= read -r database_file; do
+        [ -n "$database_file" ] || continue
+        database_relative=${database_file#"$database_dir"/}
+        database_size=$(file_size "$database_file")
+        case "$database_size" in
+            ''|*[!0-9]*)
+                echo "$database_role qualification database has an invalid size: $database_file" >&2
+                return 1
+                ;;
+        esac
+        database_sha256=$(sha256sum "$database_file" | awk '{ print $1 }')
+        case "$database_sha256" in
+            ''|*[!0-9a-fA-F]*)
+                echo "$database_role qualification database hash failed: $database_file" >&2
+                return 1
+                ;;
+        esac
+        printf '%s\t%s\t%s\n' "$database_relative" "$database_size" "$database_sha256" >> "$database_manifest_file"
+    done <<EOF
+$database_files
+EOF
+}
+
+verify_database_manifest()
+{
+    database_role=$1
+    database_dir=$2
+    database_before=$3
+    database_after=$out/database-manifest-$database_role-after.txt
+    write_database_manifest "$database_role" "$database_dir" "$database_after"
+    if ! cmp -s "$database_before" "$database_after"; then
+        echo "$database_role qualification database changed during the gate" >&2
+        return 1
+    fi
+    printf '%s_database_unchanged=pass\n' "$database_role" >> "$out/service-summary.txt"
 }
 
 oracle_load()
@@ -357,6 +415,13 @@ oracle_edge_signature=$expected_signature
 oracle_edge_offset=$expected_offset
 oracle_edge_type=$expected_type
 
+production_database_manifest=$out/database-manifest-production-before.txt
+edge_database_manifest=$out/database-manifest-edge-before.txt
+write_database_manifest production "$production_db" "$production_database_manifest"
+write_database_manifest edge "$edge_db" "$edge_database_manifest"
+production_database_manifest_sha256=$(sha256sum "$production_database_manifest" | awk '{ print $1 }')
+edge_database_manifest_sha256=$(sha256sum "$edge_database_manifest" | awk '{ print $1 }')
+
 {
     printf 'oracle_manifest=%s\n' "$oracle_manifest"
     printf 'oracle_production_size=%s\n' "$oracle_production_size"
@@ -387,6 +452,10 @@ oracle_edge_type=$expected_type
     printf 'oracle_edge_signature=%s\n' "$oracle_edge_signature"
     printf 'oracle_edge_offset=%s\n' "$oracle_edge_offset"
     printf 'oracle_edge_type=%s\n' "$oracle_edge_type"
+    printf 'production_database_manifest=%s\n' "$(basename "$production_database_manifest")"
+    printf 'production_database_manifest_sha256=%s\n' "$production_database_manifest_sha256"
+    printf 'edge_database_manifest=%s\n' "$(basename "$edge_database_manifest")"
+    printf 'edge_database_manifest_sha256=%s\n' "$edge_database_manifest_sha256"
 } > "$out/oracle-binding.txt"
 
 {
@@ -721,6 +790,8 @@ if [ "$milter_rss" -gt "$rss_budget_kb" ]; then
     exit 1
 fi
 measure_service_resources
+verify_database_manifest production "$production_db" "$production_database_manifest"
+verify_database_manifest edge "$edge_db" "$edge_database_manifest"
 if [ "$service_peak_temp_bytes" -gt "$temporary_budget_bytes" ]; then
     echo "service temporary storage exceeded budget: $service_peak_temp_bytes > $temporary_budget_bytes" >&2
     exit 1

@@ -123,7 +123,8 @@ struct swf_file_hdr {
     uint32_t filesize;
 };
 
-static cl_error_t swf_cleanup_temp(cli_ctx *ctx, int fd, char *tmpname, cl_error_t status)
+static cl_error_t swf_cleanup_temp(cli_ctx *ctx, int fd, char *tmpname, cl_error_t status,
+                                   uint64_t temporary_reserved)
 {
     if (close(fd) == -1) {
         cli_mark_scan_incomplete(ctx, "SWF temporary output could not be closed");
@@ -135,8 +136,29 @@ static cl_error_t swf_cleanup_temp(cli_ctx *ctx, int fd, char *tmpname, cl_error
         if ((status == CL_SUCCESS) || (status == CL_BREAK))
             status = CL_EUNLINK;
     }
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
     free(tmpname);
     return status;
+}
+
+static cl_error_t swf_reserve_output(cli_ctx *ctx, uint64_t *reserved, size_t bytes)
+{
+    cl_error_t status;
+
+    if (bytes == 0)
+        return CL_SUCCESS;
+    if (NULL == reserved || UINT64_MAX - *reserved < (uint64_t)bytes) {
+        cli_mark_scan_incomplete(ctx, "SWF output size overflowed temporary quota accounting");
+        return CL_ERESOURCE;
+    }
+    status = cli_scan_reserve_temporary(ctx, (uint64_t)bytes);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "SWF output exceeds temporary storage limits");
+        return status;
+    }
+    *reserved += (uint64_t)bytes;
+    return CL_SUCCESS;
 }
 
 static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
@@ -155,22 +177,27 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     char *tmpname;
     int fd;
     size_t n_read;
+    uint64_t temporary_reserved = 0;
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_errmsg("scanzws: Can't generate temporary file\n");
         return ret;
     }
 
+    if ((ret = swf_reserve_output(ctx, &temporary_reserved, sizeof(struct swf_file_hdr))) != CL_SUCCESS) {
+        return swf_cleanup_temp(ctx, fd, tmpname, ret, 0);
+    }
+
     hdr->signature[0] = 'F';
     if (cli_writen(fd, hdr, sizeof(struct swf_file_hdr)) != sizeof(struct swf_file_hdr)) {
         cli_errmsg("scanzws: Can't write to file %s\n", tmpname);
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
     }
 
     /* read 4 bytes (for compressed 32-bit filesize) [not used for LZMA] */
     if (fmap_readn(map, &d_insize, offset, sizeof(d_insize)) != sizeof(d_insize)) {
         cli_errmsg("scanzws: Error reading SWF file\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EREAD);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EREAD, temporary_reserved);
     }
     offset += sizeof(d_insize);
 
@@ -188,12 +215,12 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     n_read = fmap_readn(map, inbuff, offset, FILEBUFF);
     if (n_read == (size_t)-1) {
         cli_errmsg("scanzws: Error reading SWF file\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
     }
     /* nothing written, likely truncated */
     if (0 == n_read) {
         cli_errmsg("scanzws: possibly truncated file\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EFORMAT);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EFORMAT, temporary_reserved);
     }
     offset += n_read;
 
@@ -206,7 +233,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     lret = cli_LzmaInit(&lz, hdr->filesize);
     if (lret != LZMA_RESULT_OK) {
         cli_errmsg("scanzws: LzmaInit() failed\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
     }
 
     while (lret == LZMA_RESULT_OK) {
@@ -217,7 +244,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
             if ((size_t)-1 == n_read) {
                 cli_errmsg("scanzws: Error reading SWF file\n");
                 cli_LzmaShutdown(&lz);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK);
+                return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
             }
             if (0 == n_read)
                 break;
@@ -229,12 +256,14 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         if (count) {
             if ((decode_status = cli_checklimits("SWF", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
                 break;
+            if ((decode_status = swf_reserve_output(ctx, &temporary_reserved, count)) != CL_SUCCESS)
+                break;
             if (cli_writen(fd, outbuff, count) != count) {
                 cli_errmsg("scanzws: Can't write to file %s\n", tmpname);
                 cli_mark_scan_incomplete(ctx, "SWF LZMA output could not be written completely");
                 decode_status = CL_EWRITE;
                 cli_LzmaShutdown(&lz);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE);
+                return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
             }
             outsize += count;
         }
@@ -252,7 +281,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
             cli_mark_scan_incomplete(ctx, "SWF LZMA stream ended before decompression completed");
             decode_status = CL_EUNPACK;
         }
-        return swf_cleanup_temp(ctx, fd, tmpname, decode_status);
+        return swf_cleanup_temp(ctx, fd, tmpname, decode_status, temporary_reserved);
     }
     cli_dbgmsg("SWF: Decompressed[LZMA] to %s, size %llu\n", tmpname, (long long unsigned)outsize);
 
@@ -261,13 +290,13 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         cli_warnmsg("SWF: declared output length != inflated stream size, %u != %llu\n",
                     hdr->filesize, (long long unsigned)outsize);
         cli_mark_scan_incomplete(ctx, "SWF LZMA output length disagrees with its header");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EPARSE);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EPARSE, temporary_reserved);
     }
     cli_dbgmsg("SWF: declared output length == inflated stream size, %u == %llu\n",
                hdr->filesize, (long long unsigned)outsize);
 
-    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
-    return swf_cleanup_temp(ctx, fd, tmpname, ret);
+    ret = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
 }
 
 static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
@@ -284,16 +313,21 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     size_t n_read;
     char *tmpname;
     int fd;
+    uint64_t temporary_reserved = 0;
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_errmsg("scancws: Can't generate temporary file\n");
         return ret;
     }
 
+    if ((ret = swf_reserve_output(ctx, &temporary_reserved, sizeof(struct swf_file_hdr))) != CL_SUCCESS) {
+        return swf_cleanup_temp(ctx, fd, tmpname, ret, 0);
+    }
+
     hdr->signature[0] = 'F';
     if (cli_writen(fd, hdr, sizeof(struct swf_file_hdr)) != sizeof(struct swf_file_hdr)) {
         cli_errmsg("scancws: Can't write to file %s\n", tmpname);
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
     }
 
     stream.avail_in  = 0;
@@ -307,7 +341,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     zret = inflateInit(&stream);
     if (zret != Z_OK) {
         cli_errmsg("scancws: inflateInit() failed\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
     }
 
     do {
@@ -317,7 +351,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
             if (n_read == (size_t)-1) {
                 cli_errmsg("scancws: Error reading SWF file\n");
                 inflateEnd(&stream);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK);
+                return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
             }
             if (0 == n_read)
                 break;
@@ -329,12 +363,14 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         if (count) {
             if ((decode_status = cli_checklimits("SWF", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
                 break;
+            if ((decode_status = swf_reserve_output(ctx, &temporary_reserved, count)) != CL_SUCCESS)
+                break;
             if (cli_writen(fd, outbuff, count) != count) {
                 cli_errmsg("scancws: Can't write to file %s\n", tmpname);
                 cli_mark_scan_incomplete(ctx, "SWF zlib output could not be written completely");
                 decode_status = CL_EWRITE;
                 inflateEnd(&stream);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE);
+                return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
             }
             outsize += count;
         }
@@ -352,7 +388,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
             cli_mark_scan_incomplete(ctx, "SWF zlib stream ended before decompression completed");
             decode_status = CL_EUNPACK;
         }
-        return swf_cleanup_temp(ctx, fd, tmpname, decode_status);
+        return swf_cleanup_temp(ctx, fd, tmpname, decode_status, temporary_reserved);
     }
     cli_dbgmsg("SWF: Decompressed[zlib] to %s, size %zu\n", tmpname, outsize);
 
@@ -361,13 +397,13 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         cli_warnmsg("SWF: declared output length != inflated stream size, %u != %zu\n",
                     hdr->filesize, outsize);
         cli_mark_scan_incomplete(ctx, "SWF zlib output length disagrees with its header");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EPARSE);
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EPARSE, temporary_reserved);
     }
     cli_dbgmsg("SWF: declared output length == inflated stream size, %u == %zu\n",
                hdr->filesize, outsize);
 
-    ret = cli_magic_scan_desc(fd, tmpname, ctx, NULL, LAYER_ATTRIBUTES_NONE);
-    return swf_cleanup_temp(ctx, fd, tmpname, ret);
+    ret = cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
 }
 
 static const char *tagname(tag_id id)

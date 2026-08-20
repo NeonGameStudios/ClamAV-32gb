@@ -97,7 +97,7 @@ typedef struct _YR_MATCH
     int64_t read_##type(fmap_t * fmap, size_t offset) \
     { \
       const void *data;                                         \
-      if (offset + sizeof(type) >= fmap->len)                   \
+      if (offset > fmap->len || sizeof(type) > fmap->len - offset) \
           return UNDEFINED;                                     \
       data = fmap_need_off_once(fmap, offset, sizeof(type));    \
       if (!data)                                                \

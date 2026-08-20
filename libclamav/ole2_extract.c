@@ -1631,7 +1631,7 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
     json_object *arrobj  = NULL;
     json_object *strmobj = NULL;
 
-    UNUSEDPARAM(handler_ctx);
+    encryption_status_t *pEncryptionStatus = (encryption_status_t *)handler_ctx;
     UNUSEDPARAM(dir);
 
     name = cli_ole2_get_property_name2(prop->name, prop->name_size);
@@ -1730,7 +1730,7 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
     /* If we've already found a macro and an image, we can skip this initial check.
        This scan step is to save a little time so we don't have to fully parse it
        later if never find anything.. */
-    if (!hdr->has_xlm || !hdr->has_image) {
+    if (!pEncryptionStatus->encrypted && (!hdr->has_xlm || !hdr->has_image)) {
         if (!name) {
             name = cli_ole2_get_property_name2(prop->name, prop->name_size);
         }
@@ -3150,12 +3150,43 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     hdr.has_vba   = false;
     hdr.has_xlm   = false;
     hdr.has_image = false;
-    ret           = ole2_walk_property_tree(&hdr, NULL, 0, handler_enum, 0, &file_count, ctx, &scansize, &deferred_limit, NULL, &encryption_status);
+    ret           = ole2_walk_property_tree(&hdr, NULL, 0, handler_enum, 0, &file_count, ctx, &scansize, &deferred_limit, &encryption_status, &encryption_status);
     cli_bitset_free(hdr.bitset);
     hdr.bitset = NULL;
     if (ret != CL_SUCCESS) {
         goto done;
     }
+
+    if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
+        if (encryption_status.encrypted) {
+            if (encryption_status.encryption_type) {
+                cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, encryption_status.encryption_type);
+            } else {
+                cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, GENERIC_ENCRYPTED);
+            }
+        }
+    }
+
+    if (SCAN_HEURISTIC_ENCRYPTED_DOC && encryption_status.encrypted && (!encryption_status.velvet_sweatshop)) {
+        cl_error_t status = cli_append_potentially_unwanted(ctx, OLE2_HEURISTIC_ENCRYPTED_WARNING);
+        if (CL_SUCCESS != status) {
+            cli_errmsg("OLE2 : Unable to warn potentially unwanted signature '%s'\n", "Heuristics.Encrypted.OLE2");
+            ret = status;
+            goto done;
+        }
+    }
+
+    /* The workbook stream is ciphertext until a usable key has been
+     * established. Do not interpret it as BIFF or OfficeArt while encrypted,
+     * because random ciphertext can manufacture false macro/image records.
+     * If the key is unavailable, preserve the metadata and report the
+     * encrypted content as incomplete rather than allowing a clean result. */
+    if (encryption_status.encrypted && !bEncrypted) {
+        cli_mark_scan_incomplete(ctx, "OLE2 encrypted content could not be inspected without a usable key");
+        ret = CL_EUNPACK;
+        goto done;
+    }
+
     if (!file_count) {
         goto done;
     }
@@ -3209,24 +3240,6 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
             ret = ole2_walk_property_tree(&hdr, NULL, 0, handler_otf_encrypted, 0, &file_count, ctx, &scansize2, &deferred_limit, &key, &encryption_status);
         } else {
             ret = ole2_walk_property_tree(&hdr, NULL, 0, handler_otf, 0, &file_count, ctx, &scansize2, &deferred_limit, NULL, &encryption_status);
-        }
-    }
-
-    if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
-        if (encryption_status.encrypted) {
-            if (encryption_status.encryption_type) {
-                cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, encryption_status.encryption_type);
-            } else {
-                cli_jsonstr(ctx->this_layer_metadata_json, ENCRYPTED_JSON_KEY, GENERIC_ENCRYPTED);
-            }
-        }
-    }
-
-    if (SCAN_HEURISTIC_ENCRYPTED_DOC && encryption_status.encrypted && (!encryption_status.velvet_sweatshop)) {
-        cl_error_t status = cli_append_potentially_unwanted(ctx, OLE2_HEURISTIC_ENCRYPTED_WARNING);
-        if (CL_SUCCESS != status) {
-            cli_errmsg("OLE2 : Unable to warn potentially unwanted signature '%s'\n", "Heuristics.Encrypted.OLE2");
-            ret = status;
         }
     }
 

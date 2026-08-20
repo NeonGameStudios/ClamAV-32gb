@@ -599,11 +599,17 @@ static void MT_decrypt(uint8_t *buf, unsigned int size, uint32_t seed)
 *********************/
 
 #define AUTOIT_INPUT_CHUNK (64U * 1024U)
+#define AUTOIT_OUTPUT_CHUNK (64U * 1024U)
+#define AUTOIT_OUTPUT_HISTORY (1U << 15)
 
 typedef uint8_t (*autoit_input_key_next)(void *opaque);
 
 struct UNP {
     uint8_t *outputbuf;
+    uint8_t *output_history;
+    uint8_t *output_pending;
+    size_t output_pending_length;
+    int output_fd;
     uint8_t *inputbuf;
     size_t input_capacity;
     size_t input_window_pos;
@@ -633,6 +639,67 @@ struct UNP {
     } bitmap;
     uint32_t error;
 };
+
+static void autoit_output_destroy(struct UNP *UNP)
+{
+    free(UNP->output_history);
+    free(UNP->output_pending);
+    UNP->output_history        = NULL;
+    UNP->output_pending        = NULL;
+    UNP->output_pending_length = 0;
+}
+
+static cl_error_t autoit_output_flush(struct UNP *UNP)
+{
+    if (UNP->output_pending_length == 0)
+        return CL_SUCCESS;
+
+    if (cli_writen(UNP->output_fd, UNP->output_pending, UNP->output_pending_length) != UNP->output_pending_length) {
+        cli_mark_scan_incomplete(UNP->ctx, "AutoIt expanded member temporary output could not be written completely");
+        UNP->error = 1;
+        return CL_EWRITE;
+    }
+
+    UNP->output_pending_length = 0;
+    return CL_SUCCESS;
+}
+
+static cl_error_t autoit_output_init(struct UNP *UNP, int output_fd)
+{
+    UNP->output_history = cli_max_malloc(AUTOIT_OUTPUT_HISTORY);
+    UNP->output_pending = cli_max_malloc(AUTOIT_OUTPUT_CHUNK);
+    if (UNP->output_history == NULL || UNP->output_pending == NULL) {
+        cli_mark_scan_incomplete(UNP->ctx, "AutoIt expanded member output window could not be allocated");
+        autoit_output_destroy(UNP);
+        return CL_EMEM;
+    }
+
+    UNP->output_fd             = output_fd;
+    UNP->output_pending_length = 0;
+    return CL_SUCCESS;
+}
+
+static uint8_t autoit_output_history_byte(const struct UNP *UNP, uint32_t distance)
+{
+    return UNP->output_history[(UNP->cur_output - distance) % AUTOIT_OUTPUT_HISTORY];
+}
+
+static cl_error_t autoit_output_byte(struct UNP *UNP, uint8_t value)
+{
+    if (UNP->cur_output >= UNP->usize) {
+        cli_mark_scan_incomplete(UNP->ctx, "AutoIt expanded member exceeded its declared output size");
+        UNP->error = 1;
+        return CL_EFORMAT;
+    }
+
+    UNP->output_history[UNP->cur_output % AUTOIT_OUTPUT_HISTORY] = value;
+    UNP->output_pending[UNP->output_pending_length++]            = value;
+    UNP->cur_output++;
+
+    if (UNP->output_pending_length == AUTOIT_OUTPUT_CHUNK)
+        return autoit_output_flush(UNP);
+    return CL_SUCCESS;
+}
 
 static bool autoit_require_range(cli_ctx *ctx, fmap_t *map, const uint8_t *cursor, size_t length, const char *reason)
 {
@@ -861,7 +928,7 @@ static uint32_t getbits(struct UNP *UNP, uint32_t size)
  autoit3 EA05 handler
 *********************/
 
-static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
+static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
 {
     cl_error_t status = CL_SUCCESS;
     cl_error_t ret;
@@ -869,17 +936,20 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
     uint8_t comp;
     uint32_t s, m4sum = 0;
     int i;
-    unsigned int files  = 0;
-    char tempfile[1024] = {0};
-    int tempfd          = -1;
-    struct UNP UNP      = {0};
+    unsigned int files          = 0;
+    char *tempfile              = NULL;
+    int tempfd                  = -1;
+    uint64_t temporary_reserved = 0;
+    uint8_t stored_buffer[AUTOIT_INPUT_CHUNK];
+    struct UNP UNP = {0};
     struct MT input_mt;
     size_t input_offset;
     size_t next_offset;
     uint8_t decoded_header[8];
     fmap_t *map = ctx->fmap;
 
-    UNP.ctx = ctx;
+    UNP.ctx       = ctx;
+    UNP.output_fd = -1;
 
     if (!autoit_require_range(ctx, map, base, 16, "AutoIt EA05 header is truncated")) {
         status = CL_EREAD;
@@ -984,6 +1054,13 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             goto done;
         }
 
+        files++;
+        status = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "autoit", &tempfile, &tempfd);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "AutoIt EA05 member temporary output could not be created");
+            goto done;
+        }
+
         if (comp == 1) {
             /*
              * File is compressed. Decompress!
@@ -1035,17 +1112,19 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             status = cli_checklimits("autoit", ctx, UNP.usize, 0, 0);
             if (status != CL_CLEAN) {
                 cli_mark_scan_incomplete(ctx, "AutoIt EA05 expanded member exceeds configured scan limits");
-                // Free this inputbuf and set back to NULL.
-                free(UNP.inputbuf);
-                UNP.inputbuf = NULL;
                 goto done;
             }
 
-            if (!(UNP.outputbuf = cli_max_malloc(UNP.usize))) {
-                cli_mark_scan_incomplete(ctx, "AutoIt EA05 expanded member could not be allocated");
-                status = CL_EMEM;
+            status = cli_scan_reserve_temporary(ctx, UNP.usize);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 expanded member exceeds temporary storage limits");
                 goto done;
             }
+            temporary_reserved = UNP.usize;
+
+            status = autoit_output_init(&UNP, tempfd);
+            if (status != CL_SUCCESS)
+                goto done;
 
             cli_dbgmsg("autoit: uncompressed size again: %x\n", UNP.usize);
 
@@ -1056,6 +1135,11 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             UNP.error       = 0;
 
             while (!UNP.error && UNP.cur_output < UNP.usize) {
+                if ((UNP.cur_output % AUTOIT_OUTPUT_CHUNK) == 0 &&
+                    CL_SUCCESS != (status = cli_checktimelimit(ctx))) {
+                    UNP.error = 1;
+                    break;
+                }
                 if (getbits(&UNP, 1)) {
                     uint32_t bb, bs, addme = 0;
                     bb = getbits(&UNP, 15);
@@ -1091,25 +1175,34 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         break;
                     }
 
-                    if (bb == 0 || bb > UNP.cur_output || bs > UNP.usize - UNP.cur_output) {
+                    if (bb == 0 || bb > AUTOIT_OUTPUT_HISTORY || bb > UNP.cur_output || bs > UNP.usize - UNP.cur_output) {
                         UNP.error = 1;
                         break;
                     }
                     while (bs--) {
-                        UNP.outputbuf[UNP.cur_output] = UNP.outputbuf[UNP.cur_output - bb];
-                        UNP.cur_output++;
+                        status = autoit_output_byte(&UNP, autoit_output_history_byte(&UNP, bb));
+                        if (status != CL_SUCCESS)
+                            break;
                     }
                 } else {
                     uint32_t literal = getbits(&UNP, 8);
                     if (UNP.error)
                         break;
-                    UNP.outputbuf[UNP.cur_output] = (uint8_t)literal;
-                    UNP.cur_output++;
+                    status = autoit_output_byte(&UNP, (uint8_t)literal);
                 }
             }
 
+            if (!UNP.error && UNP.cur_output != UNP.usize) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 compressed member ended before its declared output size");
+                status    = CL_EFORMAT;
+                UNP.error = 1;
+            }
+            if (!UNP.error && status == CL_SUCCESS)
+                status = autoit_output_flush(&UNP);
+
             free(UNP.inputbuf);
             UNP.inputbuf = NULL;
+            autoit_output_destroy(&UNP);
 
             /* Sometimes the autoit exe is in turn packed/lamed with a runtime compressor and similar shit.
              * However, since the autoit script doesn't compress a second time very well, chances are we're
@@ -1121,7 +1214,8 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             if (UNP.error) {
                 cli_dbgmsg("autoit: decompression error after %u bytes  - partial file may exist\n", UNP.cur_output);
                 cli_mark_scan_incomplete(ctx, "AutoIt EA05 member decompression was incomplete");
-                status = CL_EFORMAT;
+                if (status == CL_SUCCESS)
+                    status = CL_EFORMAT;
                 goto done;
             }
         } else {
@@ -1148,54 +1242,43 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                 status = CL_EREAD;
                 goto done;
             }
-            if (!(UNP.inputbuf = cli_max_malloc(UNP.csize))) {
-                cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member could not be allocated");
-                status = CL_EMEM;
+            status = cli_scan_reserve_temporary(ctx, UNP.csize);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member exceeds temporary storage limits");
                 goto done;
             }
-            if (fmap_readn(map, UNP.inputbuf, input_offset, UNP.csize) != UNP.csize) {
-                cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member could not be read completely");
-                status = CL_EREAD;
-                goto done;
-            }
-            MT_decrypt(UNP.inputbuf, UNP.csize, 0x22af + m4sum);
-            UNP.outputbuf = UNP.inputbuf;
-            UNP.inputbuf  = NULL;
+            temporary_reserved = UNP.csize;
 
+            MT_init(&input_mt, 0x22af + m4sum);
+            while (input_offset < next_offset) {
+                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
+                size_t j;
+
+                if (CL_SUCCESS != (status = cli_checktimelimit(ctx)))
+                    goto done;
+                if (fmap_readn(map, stored_buffer, input_offset, chunk) != chunk) {
+                    cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member could not be read completely");
+                    status = CL_EREAD;
+                    goto done;
+                }
+                for (j = 0; j < chunk; j++)
+                    stored_buffer[j] ^= MT_getnext(&input_mt);
+                if (cli_writen(tempfd, stored_buffer, chunk) != chunk) {
+                    cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member temporary output could not be written completely");
+                    status = CL_EWRITE;
+                    goto done;
+                }
+                input_offset += chunk;
+            }
             UNP.usize = UNP.csize;
         }
 
         if (UNP.usize < 4) {
             cli_dbgmsg("autoit: file is too short\n");
-            free(UNP.outputbuf);
-            UNP.outputbuf = NULL;
-
-            continue;
-        }
-
-        files++;
-
-        /* FIXME: REGRESSION NEEDED! */
-        /* UNP.usize = u2a(UNP.outputbuf, UNP.usize); */
-
-        snprintf(tempfile, 1023, "%s" PATHSEP "autoit.%.3u", tmpd, files);
-        tempfile[1023] = '\0';
-
-        tempfd = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
-        if (tempfd < 0) {
-            cli_dbgmsg("autoit: Can't create file %s\n", tempfile);
-            status = CL_ECREAT;
+            cli_mark_scan_incomplete(ctx, "AutoIt EA05 extracted member is too short to inspect");
+            status = CL_EFORMAT;
             goto done;
         }
-
-        if (cli_writen(tempfd, UNP.outputbuf, UNP.usize) != UNP.usize) {
-            cli_dbgmsg("autoit: cannot write %d bytes\n", UNP.usize);
-            status = CL_EWRITE;
-            goto done;
-        }
-
-        free(UNP.outputbuf);
-        UNP.outputbuf = NULL;
 
         if (ctx->engine->keeptmp) {
             cli_dbgmsg("autoit: file extracted to %s\n", tempfile);
@@ -1215,11 +1298,22 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             goto done;
         }
 
-        close(tempfd);
-        tempfd = -1;
-        if (!ctx->engine->keeptmp) {
-            (void)cli_unlink(tempfile);
+        if (close(tempfd) == -1) {
+            cli_mark_scan_incomplete(ctx, "AutoIt EA05 member temporary output could not be closed");
+            status = CL_EWRITE;
         }
+        tempfd = -1;
+        if (!ctx->engine->keeptmp && cli_unlink(tempfile)) {
+            cli_mark_scan_incomplete(ctx, "AutoIt EA05 member temporary output could not be removed");
+            if (status == CL_SUCCESS)
+                status = CL_EUNLINK;
+        }
+        free(tempfile);
+        tempfile = NULL;
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        temporary_reserved = 0;
+        if (status != CL_SUCCESS)
+            goto done;
     }
 
     if (status != CL_SUCCESS)
@@ -1229,6 +1323,7 @@ done:
     if (NULL != UNP.inputbuf) {
         free(UNP.inputbuf);
     }
+    autoit_output_destroy(&UNP);
     if (NULL != UNP.outputbuf) {
         free(UNP.outputbuf);
     }
@@ -1238,6 +1333,8 @@ done:
             (void)cli_unlink(tempfile);
         }
     }
+    free(tempfile);
+    cli_scan_release_temporary(ctx, temporary_reserved);
     return status;
 }
 
@@ -2010,7 +2107,7 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
 
     switch (*version) {
         case 0x35:
-            status = ea05(ctx, version + 1, tmpd);
+            status = ea05(ctx, version + 1);
             break;
         case 0x36:
             if (fpu_words == FPU_ENDIAN_INITME)

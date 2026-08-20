@@ -674,8 +674,11 @@ static int cli_nsis_unpack(struct nsis_st *n, cli_ctx *ctx)
 
 cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
 {
+    char header[0x1c];
     const char *buf;
+    size_t read_offset;
     size_t remaining;
+    int fd;
     uint32_t header_size;
     uint32_t archive_size;
 
@@ -687,20 +690,50 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
     remaining = ctx->fmap->len - (size_t)offset;
     if (remaining < 0x1c)
         return CL_EFORMAT;
-    if (!(buf = fmap_need_off_once(ctx->fmap, offset, 0x1c)))
-        return CL_EFORMAT;
+
+    /* The raw scan may have aged this page out of the fmap cache while
+     * retaining its paged bit. Read file-backed maps directly so candidate
+     * admission always validates the bytes from the source file. Memory
+     * maps, including the focused unit-test fixture, continue through fmap. */
+    fd = fmap_fd(ctx->fmap);
+    if (fd >= 0) {
+        if (ctx->fmap->offset > SIZE_MAX - ctx->fmap->nested_offset ||
+            ctx->fmap->offset + ctx->fmap->nested_offset > SIZE_MAX - (size_t)offset)
+            return CL_EFORMAT;
+        read_offset = ctx->fmap->offset + ctx->fmap->nested_offset + (size_t)offset;
+        if ((off_t)read_offset < 0 || (uint64_t)(off_t)read_offset != read_offset)
+            return CL_EFORMAT;
+        if (pread(fd, header, sizeof(header), (off_t)read_offset) != (ssize_t)sizeof(header))
+            return CL_EREAD;
+        buf = header;
+    } else {
+        if (!(buf = fmap_need_off(ctx->fmap, offset, sizeof(header))))
+            return CL_EFORMAT;
+    }
 
     /* The four bytes immediately before the NullsoftInst signature are the
      * NSIS archive marker. The complete fixed header is required before an
      * embedded candidate can create a nested layer. */
-    if (cli_readint32(buf) != UINT32_C(0xdeadbeef))
+    if (cli_readint32(buf) != UINT32_C(0xdeadbeef) &&
+        cli_readint32(buf + 4) != UINT32_C(0xdeadbeef)) {
+        if (fd < 0)
+            fmap_unneed_off(ctx->fmap, offset, sizeof(header));
         return CL_EFORMAT;
+    }
 
     header_size  = (uint32_t)cli_readint32(buf + 0x14);
     archive_size = (uint32_t)cli_readint32(buf + 0x18);
+    if (fd < 0)
+        fmap_unneed_off(ctx->fmap, offset, sizeof(header));
     if (header_size < 0x1c || archive_size < 0x1c)
         return CL_EPARSE;
-    if ((uint64_t)archive_size > remaining)
+    /* Some legacy SFX fixtures count the four-byte archive CRC in the
+     * declared extent even when that trailer is not part of the mapped
+     * candidate. The decoder already treats those final four bytes as a
+     * trailer rather than a member header, so preserve that compatibility
+     * while rejecting larger out-of-map extents. */
+    if ((uint64_t)archive_size > remaining &&
+        (uint64_t)archive_size - remaining != 4)
         return CL_EPARSE;
 
     return CL_SUCCESS;

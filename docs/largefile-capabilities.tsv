@@ -1,15 +1,21 @@
 kind	id	status	source	evidence_or_required_work
-library	path	bounded	libclamav/scanners.c	known-size preflight and structured report
-library	fd	bounded	libclamav/scanners.c	known-size preflight and structured report
-library	fmap	bounded	libclamav/scanners.c	map boundary preflight and structured report
+library	path	bounded	libclamav/scanners.c	checked known-size root and nested preflight before child-map creation and structured report
+library	fd	bounded	libclamav/scanners.c	checked known-size root and nested preflight before child-map creation and structured report
+library	fmap	bounded	libclamav/fmap.c	checked source offsets, map boundaries, and nested-range admission; structured report is covered by the scan API
 clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
 clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending
 clamd	FILDES	bounded	clamd/session.c	legacy command; structured parity pending
 clamd	INSTREAM	bounded	clamd/server-th.c	complete staging with stream/temp quota
+clamd	SCANREPORT	bounded	clamd/session.c	opt-in length-prefixed structured report; protocol qualification pending
+clamd	CONTSCANREPORT	bounded	clamd/session.c	opt-in length-prefixed structured report; protocol qualification pending
+clamd	MULTISCANREPORT	bounded	clamd/session.c	parallel aggregate structured report with one-worker sequential fallback
+clamd	ALLMATCHSCANREPORT	bounded	clamd/session.c	opt-in length-prefixed structured report; protocol qualification pending
+clamd	FILDESREPORT	bounded	clamd/session.c	opt-in descriptor report; protocol qualification pending
+clamd	INSTREAMREPORT	bounded	clamd/session.c	opt-in staged-stream report; protocol qualification pending
 clamdscan	fdpass	bounded	clamdscan/proto.c	known-size MaxFileSize preflight; service qualification pending
 clamdscan	stream	bounded	clamdscan/proto.c	legacy INSTREAM path; qualification pending
-clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback when MaxThreads is one
+clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback at MaxThreads=1; MULTISCANREPORT aggregates parallel child reports
 milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending
 on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies incomplete outcomes
 matcher	ac	pending	libclamav/matcher-ac.c	qualify exact-tail raw matching and 64-bit result offsets
@@ -18,7 +24,7 @@ matcher	byte-compare	pending	libclamav/matcher-byte-comp.c	qualify byte-compare 
 matcher	hash	pending	libclamav/matcher-hash.c	qualify file, section, import, and fuzzy-hash consumers with exact sizes
 matcher	pcre	pending	libclamav/matcher-pcre.c	qualify full-subject PCRE within the effective contiguous-subject ceiling
 matcher	logical	pending	libclamav/matcher.c	qualify logical-expression evaluation and incomplete propagation
-matcher	yara	pending	libclamav/yara_exec.c	qualify YARA evaluation and matcher-work accounting
+matcher	yara	pending	libclamav/yara_exec.c	exact-tail fmap read regression added; qualify YARA evaluation and matcher-work accounting
 matcher	bytecode	pending	libclamav/bytecode.c	ABI v2 coordinate APIs including PDF bridge; independently compiled fixture and interpreter/JIT qualification remain required
 matcher	fuzzy-image	pending	libclamav/scanners.c	qualify optional image fuzzy hashing or record its bounded rejection
 feature	BYTECODE_RUNTIME	pending	CMakeOptions.cmake	qualify interpreter, LLVM, and disabled runtime variants
@@ -50,7 +56,8 @@ feature	MAINTAINER_MODE	pending	CMakeOptions.cmake	qualify generated-source conf
 feature	OPTIMIZE	pending	CMakeOptions.cmake	qualify optimized and unoptimized large-file behavior
 unsupported	macos-first-release	unsupported	docs/large-file-support.md	macOS is outside the first Linux x86-64 production qualification target
 unsupported	aarch64-first-release	unsupported	docs/large-file-support.md	AArch64 is outside the first Linux x86-64 production qualification target
-unsupported	autoit-member-over-1g	unsupported	libclamav/autoit.c	AutoIt decoded and stored members still require a contiguous buffer and reject requests above the 1 GiB individual-allocation ceiling as incomplete
+unsupported	autoit-ea06-script-over-1g	unsupported	libclamav/autoit.c	EA06 script decompilation still requires random access to the decoded member and rejects requests above the 1 GiB individual-allocation ceiling as incomplete
+unsupported	autoit-ea05-output-over-4g	unsupported	libclamav/autoit.c	EA05 stores compressed and uncompressed sizes in 32-bit fields; output above the format-defined 4 GiB range remains incomplete
 unsupported	bytecode-v1-over-4g	unsupported	docs/bytecode-abi-v2.md	legacy bytecode ABI cannot represent applicable layers above 4 GiB
 unsupported	dmg-blkx-metadata-over-64m	unsupported	libclamav/dmg.c	one decoded DMG blkx metadata block has a deliberate 64 MiB cap and returns an explicit incomplete result above it
 unsupported	egg-compat-member-over-1g	unsupported	libclamav/egg.c	legacy cli_egg_extract_file compatibility callers require a contiguous buffer and retain the 1 GiB individual-allocation ceiling

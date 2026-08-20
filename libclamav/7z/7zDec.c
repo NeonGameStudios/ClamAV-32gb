@@ -784,20 +784,148 @@ static size_t SzCrcOutStream_Write(void *pp, const void *data, size_t size)
   return written;
 }
 
+#define SZ_BRANCH_BUFFER_SIZE (1 << 18)
+
+/* A two-coder 7-Zip folder is normally a decompressor followed by a branch
+   converter such as BCJ or ARM.  The legacy decoder applied that converter
+   in place to the complete solid-folder buffer.  Keep the converter state
+   and its small look-ahead window across decoder writes instead, so a large
+   solid folder can stay on the sequential bounded-output path. */
+typedef struct
+{
+  ISeqOutStream s;
+  ISeqOutStream *downstream;
+  UInt32 method;
+  UInt32 ip;
+  UInt32 x86State;
+  Byte *buf;
+  size_t capacity;
+  size_t bufPos;
+  size_t bufConv;
+  size_t bufTotal;
+} CSzBranchOutStream;
+
+static int SzBranchOutStream_Drain(CSzBranchOutStream *p)
+{
+  while (p->bufPos != p->bufConv) {
+    size_t remaining = p->bufConv - p->bufPos;
+    size_t written   = p->downstream->Write(p->downstream, p->buf + p->bufPos, remaining);
+    if (written != remaining)
+      return 0;
+    p->bufPos += written;
+  }
+  return 1;
+}
+
+static void SzBranchOutStream_Compact(CSzBranchOutStream *p)
+{
+  if (p->bufPos != 0) {
+    p->bufTotal -= p->bufPos;
+    if (p->bufTotal != 0)
+      memmove(p->buf, p->buf + p->bufPos, p->bufTotal);
+    p->bufPos  = 0;
+    p->bufConv = 0;
+  }
+}
+
+static size_t SzBranchOutStream_Convert(CSzBranchOutStream *p, int finished)
+{
+  size_t converted;
+
+  switch (p->method) {
+    case k_BCJ:
+      converted = x86_Convert(p->buf, p->bufTotal, p->ip, &p->x86State, 0);
+      break;
+    case k_ARM:
+      converted = ARM_Convert(p->buf, p->bufTotal, p->ip, 0);
+      break;
+    default:
+      return 0;
+  }
+
+  /* The converters intentionally keep their alignment/look-ahead tail for
+     the next call.  Once the decompressor has finished, those bytes are a
+     complete final block and must be emitted unchanged if no conversion is
+     possible. */
+  if (converted == 0 && finished)
+    converted = p->bufTotal;
+
+  p->bufConv = converted;
+  p->ip += (UInt32)converted;
+  return converted;
+}
+
+static size_t SzBranchOutStream_Write(void *pp, const void *data, size_t size)
+{
+  CSzBranchOutStream *p = (CSzBranchOutStream *)pp;
+  const Byte *src       = (const Byte *)data;
+  size_t consumed       = 0;
+
+  while (consumed < size) {
+    size_t available;
+    size_t copied;
+
+    if (!SzBranchOutStream_Drain(p))
+      return 0;
+    SzBranchOutStream_Compact(p);
+
+    if (p->bufTotal == p->capacity) {
+      if (SzBranchOutStream_Convert(p, 0) == 0)
+        return 0;
+      continue;
+    }
+
+    available = p->capacity - p->bufTotal;
+    copied    = size - consumed;
+    if (copied > available)
+      copied = available;
+    memcpy(p->buf + p->bufTotal, src + consumed, copied);
+    p->bufTotal += copied;
+    consumed += copied;
+
+    if (p->bufTotal != 0 && SzBranchOutStream_Convert(p, 0) != 0) {
+      if (!SzBranchOutStream_Drain(p))
+        return 0;
+      SzBranchOutStream_Compact(p);
+    }
+  }
+
+  return size;
+}
+
+static SRes SzBranchOutStream_Finish(CSzBranchOutStream *p)
+{
+  while (p->bufTotal != 0 || p->bufPos != p->bufConv) {
+    if (!SzBranchOutStream_Drain(p))
+      return SZ_ERROR_WRITE;
+    SzBranchOutStream_Compact(p);
+    if (p->bufTotal == 0)
+      break;
+    if (SzBranchOutStream_Convert(p, 1) == 0)
+      return SZ_ERROR_DATA;
+  }
+  return SZ_OK;
+}
+
 SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *inStream, UInt64 startPos,
     ISeqOutStream *outStream, ISzAlloc *allocMain)
 {
   CSzCrcOutStream crcStream;
+  CSzBranchOutStream branchStream;
   ISeqOutStream *target = outStream;
+  Byte *branchBuffer = NULL;
   UInt64 outSize;
   SRes res;
 
   if (!folder || !packSizes || !inStream || !outStream)
     return SZ_ERROR_PARAM;
-  if (folder->NumCoders != 1 || folder->NumPackStreams != 1)
+  if ((folder->NumCoders != 1 && folder->NumCoders != 2) ||
+      folder->NumPackStreams != 1)
     return SZ_ERROR_UNSUPPORTED;
-  RINOK(CheckSupportedFolder(folder));
+  res = CheckSupportedFolder(folder);
+  if (res != SZ_OK)
+    return res;
   outSize = SzFolder_GetUnpackSize((CSzFolder *)folder);
 
   memset(&crcStream, 0, sizeof(crcStream));
@@ -806,12 +934,29 @@ SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
   crcStream.crc     = CRC_INIT_VAL;
   target            = &crcStream.s;
 
-  RINOK(LookInStream_SeekTo(inStream, startPos));
+  memset(&branchStream, 0, sizeof(branchStream));
+  if (folder->NumCoders == 2) {
+    branchBuffer = (Byte *)IAlloc_Alloc(allocMain, SZ_BRANCH_BUFFER_SIZE);
+    if (branchBuffer == NULL)
+      return SZ_ERROR_MEM;
+    branchStream.s.Write = SzBranchOutStream_Write;
+    branchStream.downstream = target;
+    branchStream.method = (UInt32)folder->Coders[1].MethodID;
+    branchStream.buf = branchBuffer;
+    branchStream.capacity = SZ_BRANCH_BUFFER_SIZE;
+    x86_Convert_Init(branchStream.x86State);
+    target = &branchStream.s;
+  }
+
+  res = LookInStream_SeekTo(inStream, startPos);
+  if (res != SZ_OK)
+    goto done;
   switch ((UInt32)folder->Coders[0].MethodID) {
     case k_Copy:
       if (packSizes[0] != outSize)
-        return SZ_ERROR_DATA;
-      res = SzDecodeCopyToStream(packSizes[0], inStream, target);
+        res = SZ_ERROR_DATA;
+      else
+        res = SzDecodeCopyToStream(packSizes[0], inStream, target);
       break;
     case k_LZMA:
       res = SzDecodeLzmaToStream(&folder->Coders[0], packSizes[0], outSize,
@@ -831,11 +976,16 @@ SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
       res = SZ_ERROR_UNSUPPORTED;
       break;
   }
+  if (res == SZ_OK && folder->NumCoders == 2)
+    res = SzBranchOutStream_Finish(&branchStream);
   if (res == SZ_OK) {
     if (crcStream.written != outSize)
       res = SZ_ERROR_DATA;
     else if (folder->UnpackCRCDefined && CRC_GET_DIGEST(crcStream.crc) != folder->UnpackCRC)
       res = SZ_ERROR_CRC;
   }
+
+done:
+  IAlloc_Free(allocMain, branchBuffer);
   return res;
 }
