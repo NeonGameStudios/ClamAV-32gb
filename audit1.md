@@ -1890,6 +1890,20 @@ This is source-level evidence only. A dependency-complete HFS+ build, malformed
 attributes-tree regression, sanitizer run, and supported-build Sonic1
 qualification remain open release gates.
 
+## RAR staging cleanup propagation — 2026-08-20
+
+The RAR fallback staging helper already rejected a short mapped copy, but its
+write, short-read, and rewind failure paths used unchecked `close()` and
+`unlink()` calls. A cleanup failure could consequently leave a staged file
+behind without being represented by the helper's result. Those paths now use a
+shared cleanup routine, the portable `cli_unlink()` wrapper, and preserve the
+original staging error while surfacing cleanup failure when it is otherwise the
+only failure.
+
+This is source-level evidence only. Fault-injected RAR staging, dependency-
+complete build, sanitizer run, and supported-build Sonic1 qualification remain
+open release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script

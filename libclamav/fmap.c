@@ -1304,6 +1304,28 @@ static inline uint64_t fmap_which_page(fmap_t *m, size_t at)
     return at / m->pgsz;
 }
 
+static cl_error_t fmap_dump_cleanup(int *tmpfd, char **tmpname, cl_error_t status)
+{
+    cl_error_t cleanup_status = CL_SUCCESS;
+
+    if (tmpfd != NULL && *tmpfd >= 0) {
+        if (close(*tmpfd) == -1)
+            cleanup_status = CL_EWRITE;
+        *tmpfd = -1;
+    }
+
+    if (tmpname != NULL && *tmpname != NULL) {
+        if (cli_unlink(*tmpname) != 0 && cleanup_status == CL_SUCCESS)
+            cleanup_status = CL_EUNLINK;
+        free(*tmpname);
+        *tmpname = NULL;
+    }
+
+    if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+        return cleanup_status;
+    return status;
+}
+
 cl_error_t fmap_dump_to_file(fmap_t *map, const char *filepath, const char *tmpdir, char **outname, int *outfd, size_t start_offset, size_t end_offset)
 {
     cl_error_t ret = CL_EARG;
@@ -1381,10 +1403,7 @@ cl_error_t fmap_dump_to_file(fmap_t *map, const char *filepath, const char *tmpd
         if (b && (len > 0)) {
             if (cli_writen(tmpfd, b, len) != len) {
                 cli_warnmsg("fmap_dump_to_file: write failed to %s!\n", tmpname);
-                close(tmpfd);
-                unlink(tmpname);
-                free(tmpname);
-                return CL_EWRITE;
+                return fmap_dump_cleanup(&tmpfd, &tmpname, CL_EWRITE);
             }
         }
         if (len <= bytes_remaining) {
@@ -1396,18 +1415,12 @@ cl_error_t fmap_dump_to_file(fmap_t *map, const char *filepath, const char *tmpd
 
     if (bytes_remaining != 0) {
         cli_warnmsg("fmap_dump_to_file: mapped read ended before the requested range was copied\n");
-        close(tmpfd);
-        unlink(tmpname);
-        free(tmpname);
-        return CL_EREAD;
+        return fmap_dump_cleanup(&tmpfd, &tmpname, CL_EREAD);
     }
 
     if (lseek(tmpfd, 0, SEEK_SET) == -1) {
         cli_warnmsg("fmap_dump_to_file: lseek failed for staged fmap %s\n", tmpname);
-        close(tmpfd);
-        unlink(tmpname);
-        free(tmpname);
-        return CL_ESEEK;
+        return fmap_dump_cleanup(&tmpfd, &tmpname, CL_ESEEK);
     }
 
     *outname = tmpname;
