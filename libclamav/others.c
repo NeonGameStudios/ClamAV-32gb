@@ -2773,6 +2773,7 @@ size_t cli_recursion_stack_get_size(cli_ctx *ctx, int index)
 int cli_rmdirs(const char *dirname)
 {
     int rc;
+    bool readdir_failed = false;
     STATBUF statb;
     DIR *dd;
     struct dirent *dent;
@@ -2793,8 +2794,16 @@ int cli_rmdirs(const char *dirname)
 
     rc = 0;
 
-    while ((dent = readdir(dd)) != NULL) {
+    for (;;) {
         char *path;
+
+        errno = 0;
+        dent  = readdir(dd);
+        if (NULL == dent) {
+            if (errno != 0)
+                readdir_failed = true;
+            break;
+        }
 
         if (strcmp(dent->d_name, ".") == 0)
             continue;
@@ -2804,7 +2813,7 @@ int cli_rmdirs(const char *dirname)
         path = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
         if (path == NULL) {
             cli_errmsg("cli_rmdirs: Unable to allocate memory for path %u\n", strlen(dirname) + strlen(dent->d_name) + 2);
-            closedir(dd);
+            (void)closedir(dd);
             return -1;
         }
 
@@ -2815,7 +2824,17 @@ int cli_rmdirs(const char *dirname)
             break;
     }
 
-    closedir(dd);
+    if (readdir_failed) {
+        cli_warnmsg("cli_rmdirs: Directory enumeration failed for %s: %s\n", dirname, strerror(errno));
+        rc = -1;
+    }
+    if (closedir(dd) != 0) {
+        cli_warnmsg("cli_rmdirs: Could not close directory %s: %s\n", dirname, strerror(errno));
+        rc = -1;
+    }
+
+    if (rc != 0)
+        return -1;
 
     if (rmdir(dirname) < 0) {
         cli_errmsg("cli_rmdirs: Can't remove temporary directory %s: %s\n", dirname, cli_strerror(errno, err, sizeof(err)));
@@ -2827,6 +2846,7 @@ int cli_rmdirs(const char *dirname)
 #else
 int cli_rmdirs(const char *dirname)
 {
+    int rc = 0;
     DIR *dd;
     struct dirent *dent;
     STATBUF maind, statbuf;
@@ -2835,22 +2855,43 @@ int cli_rmdirs(const char *dirname)
 
     chmod(dirname, 0700);
     if ((dd = opendir(dirname)) != NULL) {
-        while (CLAMSTAT(dirname, &maind) != -1) {
-            if (!rmdir(dirname)) break;
-            if (errno != ENOTEMPTY && errno != EEXIST && errno != EBADF) {
-                cli_errmsg("cli_rmdirs: Can't remove temporary directory %s: %s\n", dirname, cli_strerror(errno, err, sizeof(err)));
-                closedir(dd);
-                return -1;
+        for (;;) {
+            errno = 0;
+            if (CLAMSTAT(dirname, &maind) == -1) {
+                if (errno == ENOENT)
+                    break;
+                cli_errmsg("cli_rmdirs: Can't locate %s: %s\n", dirname, cli_strerror(errno, err, sizeof(err)));
+                rc = -1;
+                break;
             }
 
-            while ((dent = readdir(dd))) {
+            if (!rmdir(dirname))
+                break;
+            if (errno != ENOTEMPTY && errno != EEXIST && errno != EBADF) {
+                cli_errmsg("cli_rmdirs: Can't remove temporary directory %s: %s\n", dirname, cli_strerror(errno, err, sizeof(err)));
+                rc = -1;
+                break;
+            }
+
+            for (;;) {
+                errno = 0;
+                dent  = readdir(dd);
+                if (NULL == dent) {
+                    if (errno != 0) {
+                        cli_errmsg("cli_rmdirs: Directory enumeration failed for %s: %s\n", dirname, cli_strerror(errno, err, sizeof(err)));
+                        rc = -1;
+                        goto done;
+                    }
+                    break;
+                }
+
                 if (dent->d_ino) {
                     if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..")) {
                         path = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
                         if (!path) {
                             cli_errmsg("cli_rmdirs: Unable to allocate memory for path %llu\n", (long long unsigned)(strlen(dirname) + strlen(dent->d_name) + 2));
-                            closedir(dd);
-                            return -1;
+                            rc = -1;
+                            goto done;
                         }
 
                         sprintf(path, "%s" PATHSEP "%s", dirname, dent->d_name);
@@ -2861,24 +2902,29 @@ int cli_rmdirs(const char *dirname)
                                 if (rmdir(path) == -1) { /* can't be deleted */
                                     if (errno == EACCES) {
                                         cli_errmsg("cli_rmdirs: Can't remove some temporary directories due to access problem.\n");
-                                        closedir(dd);
                                         free(path);
-                                        return -1;
+                                        rc = -1;
+                                        goto done;
                                     }
                                     if (cli_rmdirs(path)) {
                                         cli_warnmsg("cli_rmdirs: Can't remove nested directory %s\n", path);
                                         free(path);
-                                        closedir(dd);
-                                        return -1;
+                                        rc = -1;
+                                        goto done;
                                     }
                                 }
                             } else {
                                 if (cli_unlink(path)) {
                                     free(path);
-                                    closedir(dd);
-                                    return -1;
+                                    rc = -1;
+                                    goto done;
                                 }
                             }
+                        } else if (errno != ENOENT) {
+                            cli_errmsg("cli_rmdirs: Can't inspect temporary path %s: %s\n", path, cli_strerror(errno, err, sizeof(err)));
+                            free(path);
+                            rc = -1;
+                            goto done;
                         }
                         free(path);
                     }
@@ -2891,8 +2937,12 @@ int cli_rmdirs(const char *dirname)
         return -1;
     }
 
-    closedir(dd);
-    return 0;
+done:
+    if (closedir(dd) != 0) {
+        cli_errmsg("cli_rmdirs: Could not close directory %s: %s\n", dirname, cli_strerror(errno, err, sizeof(err)));
+        rc = -1;
+    }
+    return rc;
 }
 #endif
 

@@ -2171,6 +2171,30 @@ failures preserve an earlier detection and make an otherwise-clean generated
 member non-clean. Valid large-member, malformed-decoder, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+## Shared temporary-directory cleanup closeout — 2026-08-20
+
+The shared `cli_rmdirs()` cleanup helper now fails closed when directory
+enumeration, child inspection, or descriptor close operations fail. Parser
+cleanup callers that already propagate its return value therefore cannot
+report a clean, cacheable result while temporary output removal was
+uncertain.
+
+Source guards and `git diff --check` are the current local evidence.
+Fault-injected cleanup, dependency-complete builds, and supported-build
+Sonic1 qualification remain release gates.
+
+## Clamscan directory-entry inspection closeout — 2026-08-20
+
+Directory scans now count failed per-entry `LSTAT()` and symlink-follow
+`CLAMSTAT()` calls, as well as entry-name allocation failures, as errors. A
+vanished or inaccessible child is therefore not silently omitted from an
+otherwise clean directory result; symlinks deliberately excluded by policy
+remain normal exclusions.
+
+Source guards and `git diff --check` are the current local evidence.
+Fault-injected entry inspection, dependency-complete front-end builds, and
+supported-build Sonic1 qualification remain release gates.
+
 ## BinHex short resource-fork boundary — 2026-08-20
 
 BinHex no longer reports a clean result after silently abandoning a nonzero

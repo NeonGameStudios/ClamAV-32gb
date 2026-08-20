@@ -1526,6 +1526,11 @@ contains common/optparser.c 'CLI_DEFAULT_ONACCESS_MAXFILESIZE'
 contains unit_tests/check_clamav.c 'test_largefile_default_profile_values'
 contains clamscan/manager.c 'scandirs: directory enumeration failed:'
 contains clamscan/manager.c 'scandirs: directory could not be closed:'
+contains clamscan/manager.c 'scandirs: could not inspect %s:'
+contains clamscan/manager.c 'scandirs: could not inspect symbolic link %s:'
+contains libclamav/others.c 'Directory enumeration failed for %s:'
+contains libclamav/others.c 'Could not close directory %s:'
+contains libclamav/others.c "Can't inspect temporary path %s:"
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

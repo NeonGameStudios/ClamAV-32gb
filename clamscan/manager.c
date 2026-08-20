@@ -773,6 +773,7 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
             fname = malloc(strlen(dirname) + strlen(entries[entry_index]) + 2);
             if (fname == NULL) {
                 logg(LOGG_ERROR, "scandirs: Memory allocation failed for fname\n");
+                info.errors++;
                 continue;
             }
 
@@ -805,12 +806,18 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
                             if (!printinfected)
                                 logg(LOGG_INFO, "%s: Symbolic link\n", fname);
                         }
+                    } else {
+                        logg(LOGG_ERROR, "scandirs: could not inspect symbolic link %s: %s\n", fname, strerror(errno));
+                        info.errors++;
                     }
                 } else if (S_ISREG(sb.st_mode)) {
                     scanfile(fname, engine, opts, options);
                 } else if (S_ISDIR(sb.st_mode) && recursion) {
                     scandirs(fname, engine, opts, options, depth, dev);
                 }
+            } else {
+                logg(LOGG_ERROR, "scandirs: could not inspect %s: %s\n", fname, strerror(errno));
+                info.errors++;
             }
 
             free(fname);
@@ -836,6 +843,7 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
                     fname = malloc(strlen(dirname) + strlen(dent->d_name) + 2);
                     if (fname == NULL) { /* oops, malloc() failed, print warning and return */
                         logg(LOGG_ERROR, "scandirs: Memory allocation failed for fname\n");
+                        info.errors++;
                         break;
                     }
 
@@ -869,12 +877,18 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
                                     if (!printinfected)
                                         logg(LOGG_INFO, "%s: Symbolic link\n", fname);
                                 }
+                            } else {
+                                logg(LOGG_ERROR, "scandirs: could not inspect symbolic link %s: %s\n", fname, strerror(errno));
+                                info.errors++;
                             }
                         } else if (S_ISREG(sb.st_mode)) {
                             scanfile(fname, engine, opts, options);
                         } else if (S_ISDIR(sb.st_mode) && recursion) {
                             scandirs(fname, engine, opts, options, depth, dev);
                         }
+                    } else {
+                        logg(LOGG_ERROR, "scandirs: could not inspect %s: %s\n", fname, strerror(errno));
+                        info.errors++;
                     }
 
                     free(fname);
