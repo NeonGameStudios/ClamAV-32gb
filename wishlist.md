@@ -35,6 +35,8 @@
   are both covered.
 - Byte-compare logical-signature matching now has a >4 GiB window regression;
   production-signature qualification remains open.
+- Exact-size hash lookup now has a 5 GB regression across all four hash
+  purposes; parser and fuzzy-image qualification remains open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

@@ -960,6 +960,54 @@ START_TEST(test_exact_hash_at_uint32_max)
 }
 END_TEST
 
+START_TEST(test_exact_hash_at_large_size)
+{
+#if SIZE_MAX > UINT32_MAX
+    static const hash_purpose_t purposes[] = {
+        HASH_PURPOSE_WHOLE_FILE_DETECT,
+        HASH_PURPOSE_PE_SECTION_DETECT,
+        HASH_PURPOSE_WHOLE_FILE_FP_CHECK,
+        HASH_PURPOSE_PE_IMPORT_DETECT};
+    static const char *labels[] = {
+        "HashLargeWholeFile",
+        "HashLargeSection",
+        "HashLargeFalsePositive",
+        "HashLargeImport"};
+    struct cl_engine *engine = (struct cl_engine *)ctx.engine;
+    struct cli_matcher **roots[] = {
+        &engine->hm_hdb,
+        &engine->hm_mdb,
+        &engine->hm_fp,
+        &engine->hm_imp};
+    const uint64_t size = 5000000000ULL;
+    uint8_t digest[MD5_HASH_SIZE] = {0};
+    char *names[4];
+    const char *matched = NULL;
+    size_t i;
+
+    for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
+        names[i] = MPOOL_CALLOC(ctx.engine->mempool, strlen(labels[i]) + 1, 1);
+        ck_assert_ptr_nonnull(names[i]);
+        memcpy(names[i], labels[i], strlen(labels[i]));
+
+        digest[0] = (uint8_t)(i + 1);
+        ck_assert_int_eq(hm_addhash_bin(engine, purposes[i], digest, CLI_HASH_MD5,
+                                        size, names[i]),
+                         CL_SUCCESS);
+        ck_assert_ptr_nonnull(*roots[i]);
+        hm_flush(*roots[i]);
+        ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, size));
+        ck_assert_int_eq(cli_hm_scan(digest, size, &matched, *roots[i], CLI_HASH_MD5),
+                         CL_VIRUS);
+        ck_assert_str_eq(matched, labels[i]);
+        matched = NULL;
+    }
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 #ifndef _WIN32
 #define MATCHER_TEST_FM_MASK_PAGED 0x40000000U
 
@@ -1099,6 +1147,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_ac_offset_mode_matches_above_uint32);
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
+    tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);

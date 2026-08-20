@@ -21,7 +21,7 @@ on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies inco
 matcher	ac	bounded	libclamav/matcher-ac.c	test_ac_offset_mode_matches_above_uint32 verifies an exact-tail AC result and preserved 64-bit match offset; production-signature qualification remains open
 matcher	bm	bounded	libclamav/matcher-bm.c	test_bm_offset_mode_matches_above_uint32 covers an exact match above 4 GiB and test_bm_initoff_rejects_coordinate_wrap covers checked coordinate admission; production-signature qualification remains open
 matcher	byte-compare	bounded	libclamav/matcher-byte-comp.c	test_byte_compare_offset_above_uint32 verifies a logical byte-compare result and preserved comparison coordinate at 5,000,000,000; production-signature qualification remains open
-matcher	hash	pending	libclamav/matcher-hash.c	qualify file, section, import, and fuzzy-hash consumers with exact sizes
+matcher	hash	bounded	libclamav/matcher-hash.c	test_exact_hash_at_large_size exercises 64-bit exact-size table admission and lookup for whole-file, PE-section, false-positive, and PE-import purposes at 5,000,000,000; parser and fuzzy-image qualification remains open
 matcher	pcre	pending	libclamav/matcher-pcre.c	qualify full-subject PCRE within the effective contiguous-subject ceiling
 matcher	logical	pending	libclamav/matcher.c	qualify logical-expression evaluation and incomplete propagation
 matcher	yara	pending	libclamav/yara_exec.c	exact-tail fmap read regression added; qualify YARA evaluation and matcher-work accounting

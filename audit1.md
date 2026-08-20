@@ -2655,3 +2655,13 @@ starts at 5,000,000,000 and verifies that the dependent comparison is counted
 at 5,000,000,004. The capability manifest records this focused path as
 bounded; production-signature, parser-expansion, and full 32 GiB qualification
 remain open.
+
+## Exact-size hash side-table qualification slice — 2026-08-20
+
+The hash matcher keeps legacy sub-`UINT32_MAX` keys in its existing table and
+routes larger exact sizes through a 64-bit side table. `test_exact_hash_at_large_size`
+now inserts and looks up a 5,000,000,000-byte MD5 entry for each supported hash
+purpose: whole-file detection, PE-section detection, false-positive checking,
+and PE-import detection. This closes the shared table/admission/lookup slice;
+actual PE section/import materialization, production signatures, and fuzzy-image
+qualification remain open.
