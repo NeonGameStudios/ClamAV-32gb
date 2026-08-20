@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -57,14 +58,36 @@
 #define TARCHECKSUMLEN 8
 #define TARFILETYPEOFFSET 156
 
-static int
-octal(const char *str)
+static bool
+octal(const char *str, uint64_t *value)
 {
-    int ret;
+    uint64_t ret = 0;
+    bool saw_digit = false;
 
-    if (sscanf(str, "%o", (unsigned int *)&ret) != 1)
-        return -1;
-    return ret;
+    if (str == NULL || value == NULL)
+        return false;
+
+    while (*str == ' ')
+        str++;
+
+    while (*str >= '0' && *str <= '7') {
+        uint64_t digit = (uint64_t)(*str - '0');
+
+        if (ret > (UINT64_MAX - digit) / 8U)
+            return false;
+        ret = ret * 8U + digit;
+        saw_digit = true;
+        str++;
+    }
+
+    while (*str == ' ')
+        str++;
+
+    if (*str != '\0' || !saw_digit)
+        return false;
+
+    *value = ret;
+    return true;
 }
 
 /**
@@ -76,12 +99,50 @@ static int
 getchecksum(const char *header)
 {
     char ochecksum[TARCHECKSUMLEN + 1];
-    int checksum = -1;
+    uint64_t checksum;
 
     strncpy(ochecksum, header + TARCHECKSUMOFFSET, TARCHECKSUMLEN);
     ochecksum[TARCHECKSUMLEN] = '\0';
-    checksum                  = octal(ochecksum);
-    return checksum;
+    if (!octal(ochecksum, &checksum) || checksum > INT_MAX)
+        return -1;
+    return (int)checksum;
+}
+
+static cl_error_t cli_untar_finish_member(cli_ctx *ctx, int *fd, const char *fullname, const char *name,
+                                          bool scan, uint64_t temporary_reserved)
+{
+    cl_error_t ret = CL_SUCCESS;
+
+    if (fd == NULL || *fd < 0)
+        return ret;
+
+    if (scan) {
+        if (lseek(*fd, 0, SEEK_SET) == -1) {
+            cli_mark_scan_incomplete(ctx, "TAR temporary output could not be rewound");
+            ret = CL_ESEEK;
+        } else {
+            ret = cli_magic_scan_desc_type_reserved(*fd, fullname, ctx, CL_TYPE_ANY, name,
+                                                     LAYER_ATTRIBUTES_NONE);
+        }
+    }
+
+    if (close(*fd) == -1) {
+        cli_mark_scan_incomplete(ctx, "TAR temporary output could not be closed");
+        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+            ret = CL_EWRITE;
+    }
+    *fd = -1;
+
+    if (!ctx->engine->keeptmp && cli_unlink(fullname)) {
+        cli_mark_scan_incomplete(ctx, "TAR temporary output could not be removed");
+        if (ret == CL_SUCCESS || ret == CL_VERIFIED)
+            ret = CL_EUNLINK;
+    }
+
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
+
+    return ret;
 }
 
 /**
@@ -127,17 +188,17 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
 {
     cl_error_t ret;
     size_t size         = 0;
-    int size_int        = 0;
+    uint64_t size_value = 0;
     int fout            = -1;
     int in_block        = 0;
     int last_header_bad = 0;
-    int limitnear       = 0;
     bool incomplete     = false;
+    bool member_incomplete = false;
+    uint64_t temporary_reserved = 0;
     unsigned int files  = 0;
     char fullname[PATH_MAX + 1];
     char name[101];
     size_t pos      = 0;
-    size_t currsize = 0;
     char zero[BLOCKSIZE];
 
     cli_dbgmsg("In untar(%s)\n", dir);
@@ -157,8 +218,12 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             block = zero;
 
         if (!block) {
-            if (fout >= 0)
-                close(fout);
+            if (fout >= 0) {
+                ret = cli_untar_finish_member(ctx, &fout, fullname, name, false, temporary_reserved);
+                temporary_reserved = 0;
+                if (ret != CL_SUCCESS)
+                    return ret;
+            }
             cli_errmsg("cli_untar: block read error\n");
             return CL_EREAD;
         }
@@ -169,21 +234,15 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             int directory, skipEntry = 0;
             int checksum = -1;
             char magic[7], osize[TARSIZELEN + 1];
-            currsize = 0;
-
+            size = 0;
             if (fout >= 0) {
-                lseek(fout, 0, SEEK_SET);
-                ret = cli_magic_scan_desc(fout, fullname, ctx, name, LAYER_ATTRIBUTES_NONE);
-                close(fout);
-                if (!ctx->engine->keeptmp) {
-                    if (cli_unlink(fullname)) {
-                        return CL_EUNLINK;
-                    }
-                }
+                ret = cli_untar_finish_member(ctx, &fout, fullname, name, !member_incomplete,
+                                               temporary_reserved);
+                temporary_reserved = 0;
+                member_incomplete = false;
                 if (ret != CL_SUCCESS) {
                     return ret;
                 }
-                fout = -1;
             }
 
             if (block[0] == '\0') /* We're done */
@@ -269,40 +328,48 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
 
             strncpy(osize, block + TARSIZEOFFSET, TARSIZELEN);
             osize[TARSIZELEN] = '\0';
-            size_int          = octal(osize);
-            if (size_int < 0) {
+            if (!octal(osize, &size_value) || size_value > SIZE_MAX) {
                 cli_dbgmsg("cli_untar: Invalid size in tar header\n");
                 cli_mark_scan_incomplete(ctx, "TAR entry size was invalid");
                 incomplete = true;
                 skipEntry++;
             } else {
-                size = (size_t)size_int;
+                size = (size_t)size_value;
                 cli_dbgmsg("cli_untar: size = %zu\n", size);
                 ret = cli_checklimits("cli_untar", ctx, size, 0, 0);
-                switch (ret) {
-                    case CL_EMAXFILES: // Scan no more files
-                        skipEntry++;
-                        limitnear = 0;
-                        break;
-                    case CL_EMAXSIZE: // Either single file limit or total byte limit would be exceeded
-                        cli_dbgmsg("cli_untar: would exceed limit, will try up to max");
-                        limitnear = 1;
-                        break;
-                    default: // Ok based on reported content size
-                        limitnear = 0;
-                        break;
+                if (ret == CL_EMAXFILES) {
+                    /* Scan no more files. */
+                    skipEntry++;
+                } else if (ret == CL_EMAXSIZE) {
+                    /* Never scan a partial prefix of a member that exceeded
+                     * the configured logical/file-size budget. */
+                    cli_mark_scan_incomplete(ctx, "TAR member exceeded configured scan limits");
+                    incomplete = true;
+                    skipEntry++;
+                } else if (ret != CL_SUCCESS) {
+                    return ret;
                 }
             }
 
             if (skipEntry) {
-                const int nskip = (size % BLOCKSIZE || !size) ? size + BLOCKSIZE - (size % BLOCKSIZE) : size;
+                size_t nskip = size;
+                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
 
-                if (nskip < 0) {
-                    cli_dbgmsg("cli_untar: got negative skip size, giving up\n");
+                if (size == 0)
+                    nskip = BLOCKSIZE;
+                else if (padding && size > SIZE_MAX - padding) {
+                    cli_dbgmsg("cli_untar: got overflowing skip size, giving up\n");
                     cli_mark_scan_incomplete(ctx, "TAR entry skip size overflowed");
                     return CL_EPARSE;
+                } else {
+                    nskip += padding;
                 }
+
                 cli_dbgmsg("cli_untar: skipping entry\n");
+                if (nskip > SIZE_MAX - pos) {
+                    cli_mark_scan_incomplete(ctx, "TAR entry skip offset overflowed");
+                    return CL_EPARSE;
+                }
                 pos += nskip;
                 continue;
             }
@@ -313,6 +380,14 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 return CL_VIRUS;
             }
 
+            ret = cli_scan_reserve_temporary(ctx, (uint64_t)size);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "TAR member temporary output exceeded the configured limit");
+                return ret;
+            }
+            temporary_reserved = (uint64_t)size;
+            member_incomplete  = false;
+
             snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "tar%02u", dir, files);
             fullname[sizeof(fullname) - 1] = '\0';
             fout                           = open(fullname, O_RDWR | O_CREAT | O_EXCL | O_TRUNC | O_BINARY, 0600);
@@ -320,6 +395,9 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             if (fout < 0) {
                 char err[128];
                 cli_errmsg("cli_untar: Can't create temporary file %s: %s\n", fullname, cli_strerror(errno, err, sizeof(err)));
+                if (temporary_reserved)
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                temporary_reserved = 0;
                 return CL_ETMPFILE;
             }
 
@@ -328,32 +406,20 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             in_block = 1;
         } else { /* write or continue writing file contents */
             size_t nbytes, nwritten;
-            int skipwrite = 0;
             char err[128];
 
             nbytes = (size > 512) ? 512 : size;
             if (nread && (nread < nbytes))
                 nbytes = nread;
 
-            if (limitnear > 0) {
-                currsize += nbytes;
-                cli_dbgmsg("cli_untar: Approaching limit...\n");
-                if (cli_checklimits("cli_untar", ctx, (uint64_t)currsize, 0, 0) != CL_SUCCESS) {
-                    // Limit would be exceeded by this file, suppress writing beyond limit
-                    // Need to keep reading to get to end of file chunk
-                    skipwrite++;
-                }
-            }
+            nwritten = cli_writen(fout, block, nbytes);
 
-            if (skipwrite == 0) {
-                nwritten = cli_writen(fout, block, nbytes);
-
-                if (nwritten != nbytes) {
-                    cli_errmsg("cli_untar: only wrote %zu bytes to file %s (out of disc space?): %s\n",
-                               nwritten, fullname, cli_strerror(errno, err, sizeof(err)));
-                    close(fout);
-                    return CL_EWRITE;
-                }
+            if (nwritten != nbytes) {
+                cli_errmsg("cli_untar: only wrote %zu bytes to file %s (out of disc space?): %s\n",
+                           nwritten, fullname, cli_strerror(errno, err, sizeof(err)));
+                (void)cli_untar_finish_member(ctx, &fout, fullname, name, false, temporary_reserved);
+                temporary_reserved = 0;
+                return CL_EWRITE;
             }
             if (nbytes > size) {
                 cli_warnmsg("cli_untar: More bytes written than requested!\n");
@@ -366,6 +432,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 cli_dbgmsg("cli_untar: No bytes read! Forcing end of file content.\n");
                 cli_mark_scan_incomplete(ctx, "TAR entry ended before its declared content length");
                 incomplete = true;
+                member_incomplete = true;
                 size       = 0;
             }
         }
@@ -373,14 +440,8 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             in_block = 0;
     }
     if (fout >= 0) {
-        lseek(fout, 0, SEEK_SET);
-        ret = cli_magic_scan_desc(fout, fullname, ctx, name, LAYER_ATTRIBUTES_NONE);
-        close(fout);
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(fullname)) {
-                return CL_EUNLINK;
-            }
-        }
+        ret = cli_untar_finish_member(ctx, &fout, fullname, name, !member_incomplete, temporary_reserved);
+        temporary_reserved = 0;
         if (ret != CL_SUCCESS) {
             return ret;
         }
