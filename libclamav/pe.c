@@ -2445,17 +2445,15 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
     cl_error_t status = CL_ERROR;
     cl_error_t ret;
     struct pe_image_import_descriptor image = {0};
-    const struct pe_image_import_descriptor *impdes;
     fmap_t *map = ctx->fmap;
-    size_t left, fsize = map->len;
+    size_t descriptor_offset, left, fsize = map->len;
     uint32_t impoff, offset;
     const char *buffer;
     void *hashctx[CLI_HASH_AVAIL_TYPES] = {NULL};
     cli_hash_type_t type;
     int nimps = 0;
     unsigned int err;
-    int first          = 1;
-    bool needed_impoff = false;
+    int first = 1;
 
     /* If the PE doesn't have an import table then skip it. This is an
      * uncommon case but can happen. */
@@ -2467,23 +2465,16 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
 
     // TODO Add EC32 wrappers
     impoff = cli_rawaddr(peinfo->dirs[1].VirtualAddress, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
-    if (err || impoff + peinfo->dirs[1].Size > fsize) {
+    if (err || (size_t)impoff > fsize || (size_t)peinfo->dirs[1].Size > fsize - (size_t)impoff) {
         cli_dbgmsg("scan_pe: invalid rva for import table data\n");
         status = CL_BREAK;
         goto done;
     }
 
-    // TODO Add EC32 wrapper
-    impdes = (const struct pe_image_import_descriptor *)fmap_need_off(map, impoff, peinfo->dirs[1].Size);
-    if (impdes == NULL) {
-        cli_dbgmsg("scan_pe: failed to acquire fmap buffer\n");
-        status = CL_EREAD;
-        goto done;
-    }
-    needed_impoff = true;
-
-    /* Safety: We can trust peinfo->dirs[1].Size only because `fmap_need_off()` (above)
-     * would have failed if the size exceeds the end of the fmap. */
+    /* The import directory size is a 32-bit attacker-controlled range. Read
+     * only the fixed-size descriptors that are actually consumed instead of
+     * borrowing the complete directory as one contiguous fmap window. */
+    descriptor_offset = impoff;
     left = peinfo->dirs[1].Size;
 
     for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++) {
@@ -2497,14 +2488,19 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
         }
     }
 
-    while (left > sizeof(struct pe_image_import_descriptor) && nimps < PE_MAXIMPORTS) {
+    while (left >= sizeof(struct pe_image_import_descriptor) && nimps < PE_MAXIMPORTS) {
         char *dllname = NULL;
 
         // Temporary variable so we don't have overlapping writes with the EC32 reads.
         uint32_t temp;
 
         /* Get copy of image import descriptor to work with */
-        memcpy(&image, impdes, sizeof(struct pe_image_import_descriptor));
+        if (fmap_readn(map, &image, descriptor_offset, sizeof(image)) != sizeof(image)) {
+            cli_dbgmsg("scan_pe: failed to read import descriptor\n");
+            cli_mark_scan_incomplete(ctx, "PE import descriptor could not be read completely");
+            status = CL_EREAD;
+            goto done;
+        }
 
         if (image.Name == 0) {
             // Name RVA is 0, which doesn't seem right. I guess we skip the rest?
@@ -2514,8 +2510,8 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
 
         /* Prepare for next iteration, in case we need to `continue;` */
         left -= sizeof(struct pe_image_import_descriptor);
+        descriptor_offset += sizeof(struct pe_image_import_descriptor);
         nimps++;
-        impdes++;
 
         /* Endian Conversion */
         temp                       = EC32(image.u.OriginalFirstThunk);
@@ -2579,10 +2575,6 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
     status = CL_SUCCESS;
 
 done:
-    if (needed_impoff) {
-        fmap_unneed_off(map, impoff, peinfo->dirs[1].Size);
-    }
-
     for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++) {
         if (NULL != hashctx[type]) {
             cl_hash_destroy(hashctx[type]);

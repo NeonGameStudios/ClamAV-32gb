@@ -2583,3 +2583,17 @@ property remainder; wide-string length multiplication is overflow-checked.
 This preserves explicit malformed/truncated results without turning a large
 metadata declaration into an unbounded contiguous read. Compiled OLE2,
 sanitizer, parser-corpus, and supported-build qualification remain open.
+
+## PE import-directory bounded reads — 2026-08-20
+
+The PE import-hash path previously borrowed the complete import-directory
+range in one fmap request. Its size is a 32-bit PE data-directory field, so a
+large or malicious directory declaration could create a multi-gigabyte
+contiguous mapping even though the consumer processes fixed-size import
+descriptors sequentially.
+
+The path now validates the import range using subtraction-form bounds checks,
+reads one descriptor at a time, and marks a descriptor read failure
+incomplete. This also removes the old whole-directory fmap lifetime and keeps
+the raw matcher’s required PE import inspection fail-visible. Compiled PE,
+sanitizer, parser-corpus, and supported-build qualification remain open.

@@ -21,6 +21,8 @@
 - OLE2 summary-property metadata now reads only the bounded property table and
   bounded per-property windows instead of mapping the full attacker-declared
   property-set size; malformed/truncated windows remain fail-visible.
+- PE import-hash inspection now reads fixed-size import descriptors on demand
+  and validates the import-directory range without 32-bit addition wraparound.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

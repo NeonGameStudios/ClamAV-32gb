@@ -1673,6 +1673,9 @@ contains libclamav/msdoc.c 'OLE2_PROPERTY_READ_WINDOW'
 contains libclamav/msdoc.c 'property_len       = MIN(property_remaining'
 contains libclamav/msdoc.c 'ole2_process_property(sctx, property, 0, property_len, property_remaining)'
 not_contains libclamav/msdoc.c 'fmap_need_off_once(sctx->sfmap, foff, sctx->pssize)'
+contains libclamav/pe.c 'PE import descriptor could not be read completely'
+contains libclamav/pe.c 'descriptor_offset = impoff'
+not_contains libclamav/pe.c 'fmap_need_off(map, impoff, peinfo->dirs[1].Size)'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2
