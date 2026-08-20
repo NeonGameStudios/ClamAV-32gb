@@ -239,6 +239,16 @@ static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* t
     return 0;
 }
 
+static void rtf_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
+{
+    if (!failed)
+        return;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    if (*status == CL_SUCCESS || *status == CL_CLEAN || *status == CL_BREAK)
+        *status = CL_EUNLINK;
+}
+
 static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
 {
     cl_error_t ret = CL_CLEAN;
@@ -254,13 +264,15 @@ static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
             ret = cli_magic_scan_desc_type_reserved(data->fd, data->name, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
         }
 
-        close(data->fd);
+        rtf_note_cleanup_failure(ctx, &ret, close(data->fd) != 0,
+                                 "RTF embedded object temporary output could not be closed");
         data->fd = -1;
     }
 
     if (data->name) {
         if (!ctx->engine->keeptmp)
-            if (cli_unlink(data->name)) ret = CL_EUNLINK;
+            rtf_note_cleanup_failure(ctx, &ret, cli_unlink(data->name) != 0,
+                                     "RTF embedded object temporary output could not be removed");
         free(data->name);
         data->name = NULL;
     }
@@ -476,12 +488,14 @@ static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
     if (data->internal_state != WAIT_MAGIC || data->fd >= 0 || data->has_partial) {
         cli_mark_scan_incomplete(ctx, "RTF embedded object ended before its payload was complete");
         if (data->fd >= 0) {
-            close(data->fd);
+            if (close(data->fd) != 0)
+                cli_mark_scan_incomplete(ctx, "RTF embedded object temporary output could not be closed");
             data->fd = -1;
         }
         if (data->name) {
             if (!ctx->engine->keeptmp)
-                cli_unlink(data->name);
+                if (cli_unlink(data->name) != 0)
+                    cli_mark_scan_incomplete(ctx, "RTF embedded object temporary output could not be removed");
             free(data->name);
             data->name = NULL;
         }
@@ -529,6 +543,15 @@ static void cleanup_stack(struct stack* stack, struct rtf_state* state, cli_ctx*
     }
 }
 
+static void rtf_cleanup_tmpdir(cli_ctx *ctx, const char *tempname, cl_error_t *status)
+{
+    if (cli_rmdirs(tempname) != 0) {
+        cli_mark_scan_incomplete(ctx, "RTF temporary directory could not be removed");
+        if (*status == CL_SUCCESS || *status == CL_CLEAN || *status == CL_BREAK)
+            *status = CL_EUNLINK;
+    }
+}
+
 #define SCAN_CLEANUP                                                                  \
     if (state.cb_data && state.cb_end)                                                \
         ret = state.cb_end(&state, ctx);                                              \
@@ -540,7 +563,7 @@ static void cleanup_stack(struct stack* stack, struct rtf_state* state, cli_ctx*
     tableDestroy(actiontable);                                                        \
     cleanup_stack(&stack, &state, ctx);                                               \
     if (!ctx->engine->keeptmp)                                                        \
-        cli_rmdirs(tempname);                                                         \
+        rtf_cleanup_tmpdir(ctx, tempname, &ret);                                      \
     else                                                                              \
         rmdir(tempname);                                                              \
     free(tempname);                                                                   \
@@ -551,7 +574,7 @@ int cli_scanrtf(cli_ctx* ctx)
     char* tempname;
     const unsigned char* ptr;
     const unsigned char* ptr_end;
-    int ret = CL_CLEAN;
+    cl_error_t ret = CL_CLEAN;
     struct rtf_state state;
     struct stack stack;
     size_t bread;
@@ -593,8 +616,8 @@ int cli_scanrtf(cli_ctx* ctx)
     if ((ret = load_actions(actiontable))) {
         cli_dbgmsg("RTF: Unable to load rtf action table\n");
         free(stack.states);
-        if (!ctx->engine->keeptmp)
-            cli_rmdirs(tempname);
+        if (!ctx->engine->keeptmp && cli_rmdirs(tempname) != 0)
+            cli_mark_scan_incomplete(ctx, "RTF temporary directory could not be removed");
         free(tempname);
         tableDestroy(actiontable);
         return ret;

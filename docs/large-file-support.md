@@ -3023,6 +3023,14 @@ release it on both complete and truncated-object cleanup. Ordinary embedded
 objects use the reserved-child descriptor path; the existing OLE10 bridge keeps
 its specialized scanner. Compiled RTF/OLE qualification remains a release gate.
 
+## RTF temporary cleanup propagation — 2026-08-20
+
+RTF embedded-object close and removal failures, plus temporary-directory
+cleanup failures, now remain visible as incomplete results. Cleanup errors no
+longer overwrite an earlier detection, while otherwise-clean RTF inspection
+becomes non-clean when required output cleanup fails. Compiled RTF/OLE,
+sanitizer, and supported-build Sonic1 qualification remain release gates.
+
 ## Script-normalization temporary cleanup — 2026-08-19
 
 Script normalization now marks normalization-buffer allocation and temporary
