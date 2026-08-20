@@ -2211,7 +2211,7 @@ END_TEST
 
 START_TEST(test_parser_error_statuses_are_fail_closed)
 {
-    static const cl_error_t parser_errors[] = {CL_EFORMAT, CL_EPARSE, CL_EREAD, CL_EUNPACK};
+    static const cl_error_t parser_errors[] = {CL_ERROR, CL_EFORMAT, CL_EPARSE, CL_EREAD, CL_EUNPACK};
     cli_scan_layer_t layers[1];
     cli_ctx ctx;
     fmap_t map;

@@ -3711,6 +3711,10 @@ raw scan or sibling parser from turning a confirmed but partially inspected
 layer into a clean or cacheable result while preserving detection and stronger
 resource-error precedence.
 
+An unspecified `CL_ERROR` from the same parser/decoder boundary is now treated
+the same way and is preserved as the public result. It cannot be normalized to
+`CL_SUCCESS` after a later raw pass.
+
 The focused policy regression and source guards pass. Full C/CTest execution,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.

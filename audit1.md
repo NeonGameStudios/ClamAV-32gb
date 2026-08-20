@@ -2236,6 +2236,18 @@ The focused policy regression, source guards, capability manifest, runtime
 evidence verifier, and `git diff --check` pass. Dependency-complete C/CTest,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
 
+## Unspecified parser-error reconciliation — 2026-08-20
+
+The central result policy now treats an unspecified `CL_ERROR` returned by a
+parser or decoder as a sticky incomplete result and preserves that status
+through reconciliation. Previously it could be treated as advisory, allowing
+the later raw pass to overwrite it with `CL_SUCCESS` and making a partially
+inspected layer appear clean or cacheable.
+
+The focused parser-result regression and source guards are the current local
+evidence. Dependency-complete parser execution, sanitizer coverage, and
+supported-build Sonic1 qualification remain release gates.
+
 ## OLE2 temporary-tree error propagation — 2026-08-20
 
 Recursive OLE2 scans now preserve the distinction between a globally indexed
