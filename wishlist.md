@@ -16,6 +16,8 @@
 - HTML CSS data-URI images now decode through a 64 KiB reader into the shared
   temporary quota before nested scanning; oversized or incomplete extraction
   is fail-visible instead of using an unaccounted whole-image buffer.
+- PNG large ancillary and IDAT chunks now skip their payload without a whole-
+  chunk fmap mapping; only the fixed-size IHDR is borrowed.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

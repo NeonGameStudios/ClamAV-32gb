@@ -126,13 +126,6 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
         chunk_data_length = be32_to_host(chunk_data_length_u32);
         offset += PNG_CHUNK_LENGTH_SIZE;
 
-        if (chunk_data_length > (uint64_t)0x7fffffff) {
-            cli_dbgmsg("PNG: invalid chunk length (too large): 0x" STDx64 "\n", chunk_data_length);
-            status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidChunkLength");
-            parse_error = true;
-            goto scan_overlay;
-        }
-
         if (fmap_readn(map, chunk_type, offset, PNG_CHUNK_TYPE_SIZE) != PNG_CHUNK_TYPE_SIZE) {
             cli_dbgmsg("PNG: EOF while reading chunk type\n");
             status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunkType");
@@ -147,87 +140,101 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
 
         cli_dbgmsg("Chunk Type: %s, Data Length: " STDu64 " bytes\n", chunk_type, chunk_data_length);
 
-        if (chunk_data_length > 0) {
-            ptr = (uint8_t *)fmap_need_off_once(map, offset, chunk_data_length);
-            if (NULL == ptr) {
-                cli_dbgmsg("PNG: Unexpected early end-of-file.\n");
-                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunk");
-                parse_error = true;
-                goto scan_overlay;
-            }
-            offset += chunk_data_length;
+        /* Chunk lengths are 32-bit fields, but the payload is not required to
+         * fit in a contiguous fmap window. Validate the complete range before
+         * advancing, then only borrow the fixed-size IHDR bytes that this
+         * parser actually inspects. Large IDAT and ancillary chunks are
+         * intentionally skipped without making their whole payload resident. */
+        if ((offset > (uint64_t)map->len) ||
+            (chunk_data_length > (uint64_t)map->len - offset)) {
+            cli_dbgmsg("PNG: Unexpected early end-of-file in chunk payload.\n");
+            status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunk");
+            parse_error = true;
+            goto scan_overlay;
         }
 
+        ptr = NULL;
         if (strcmp(chunk_type, "IHDR") == 0) {
-            /*------*
-             | IHDR |
-             *------*/
             if (chunk_data_length != 13) {
                 cli_dbgmsg("PNG: invalid IHDR length: " STDu64 "\n", chunk_data_length);
                 status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidIHDRLength");
                 parse_error = true;
                 goto scan_overlay;
-            } else {
-                width  = be32_to_host(*(uint32_t *)ptr);
-                height = be32_to_host(*(uint32_t *)(ptr + 4));
-                if (width == 0 || height == 0 || width > (uint64_t)0x7fffffff || height > (uint64_t)0x7fffffff) {
-                    cli_dbgmsg("PNG: invalid image dimensions: width = " STDu64 ", height = " STDu64 "\n", width, height);
-                    status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidDimensions");
-                    parse_error = true;
-                    goto scan_overlay;
-                }
-                sample_depth = bit_depth = (uint32_t)ptr[8];
-                color_type               = (uint32_t)ptr[9];
-                compression_method       = (uint32_t)ptr[10];
-                filter_method            = (uint32_t)ptr[11];
-                interlace_method         = (uint32_t)ptr[12];
+            }
 
-                if (compression_method != 0) {
-                    cli_dbgmsg("PNG: invalid compression method (%u)\n", compression_method);
-                }
-                if (filter_method != 0) {
-                    cli_dbgmsg("PNG: invalid filter method (%u)\n", filter_method);
-                }
-                switch (bit_depth) {
-                    case 1:
-                    case 2:
-                    case 4:
-                        if (color_type == 2 || color_type == 4 || color_type == 6) { /* RGB or GA or RGBA */
-                            cli_dbgmsg("PNG: invalid sample depth (%u)\n", bit_depth);
-                            break;
-                        }
-                        break;
-                    case 8:
-                        break;
-                    case 16:
-                        if (color_type == 3) { /* palette */
-                            cli_dbgmsg("PNG: invalid sample depth (%u)\n", bit_depth);
-                            break;
-                        }
-                        break;
-                    default:
+            ptr = (uint8_t *)fmap_need_off_once(map, (size_t)offset, 13);
+            if (NULL == ptr) {
+                cli_dbgmsg("PNG: Unexpected early end-of-file reading IHDR.\n");
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunk");
+                parse_error = true;
+                goto scan_overlay;
+            }
+        }
+        offset += chunk_data_length;
+
+        if (strcmp(chunk_type, "IHDR") == 0) {
+            /*------*
+             | IHDR |
+             *------*/
+            width  = be32_to_host(*(uint32_t *)ptr);
+            height = be32_to_host(*(uint32_t *)(ptr + 4));
+            if (width == 0 || height == 0 || width > (uint64_t)0x7fffffff || height > (uint64_t)0x7fffffff) {
+                cli_dbgmsg("PNG: invalid image dimensions: width = " STDu64 ", height = " STDu64 "\n", width, height);
+                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.InvalidDimensions");
+                parse_error = true;
+                goto scan_overlay;
+            }
+            sample_depth = bit_depth = (uint32_t)ptr[8];
+            color_type               = (uint32_t)ptr[9];
+            compression_method       = (uint32_t)ptr[10];
+            filter_method            = (uint32_t)ptr[11];
+            interlace_method         = (uint32_t)ptr[12];
+
+            if (compression_method != 0) {
+                cli_dbgmsg("PNG: invalid compression method (%u)\n", compression_method);
+            }
+            if (filter_method != 0) {
+                cli_dbgmsg("PNG: invalid filter method (%u)\n", filter_method);
+            }
+            switch (bit_depth) {
+                case 1:
+                case 2:
+                case 4:
+                    if (color_type == 2 || color_type == 4 || color_type == 6) { /* RGB or GA or RGBA */
                         cli_dbgmsg("PNG: invalid sample depth (%u)\n", bit_depth);
                         break;
-                }
-                switch (color_type) {
-                    case 2:
-                        sample_depth = bit_depth * 3; /* RGB */
+                    }
+                    break;
+                case 8:
+                    break;
+                case 16:
+                    if (color_type == 3) { /* palette */
+                        cli_dbgmsg("PNG: invalid sample depth (%u)\n", bit_depth);
                         break;
-                    case 4:
-                        sample_depth = bit_depth * 2; /* gray+alpha */
-                        break;
-                    case 6:
-                        sample_depth = bit_depth * 4; /* RGBA */
-                        break;
-                }
-                cli_dbgmsg("  Width:                 " STDu64 "\n", width);
-                cli_dbgmsg("  Height:                " STDu64 "\n", height);
-                cli_dbgmsg("  Bit Depth:             " STDu32 " (Sample Depth: " STDu32 ")\n", bit_depth, sample_depth);
-                cli_dbgmsg("  Color Type:            " STDu32 "\n", color_type);
-                cli_dbgmsg("  Compression Method:    " STDu32 "\n", compression_method);
-                cli_dbgmsg("  Filter Method:         " STDu32 "\n", filter_method);
-                cli_dbgmsg("  Interlace Method:      " STDu32 "\n", interlace_method);
+                    }
+                    break;
+                default:
+                    cli_dbgmsg("PNG: invalid sample depth (%u)\n", bit_depth);
+                    break;
             }
+            switch (color_type) {
+                case 2:
+                    sample_depth = bit_depth * 3; /* RGB */
+                    break;
+                case 4:
+                    sample_depth = bit_depth * 2; /* gray+alpha */
+                    break;
+                case 6:
+                    sample_depth = bit_depth * 4; /* RGBA */
+                    break;
+            }
+            cli_dbgmsg("  Width:                 " STDu64 "\n", width);
+            cli_dbgmsg("  Height:                " STDu64 "\n", height);
+            cli_dbgmsg("  Bit Depth:             " STDu32 " (Sample Depth: " STDu32 ")\n", bit_depth, sample_depth);
+            cli_dbgmsg("  Color Type:            " STDu32 "\n", color_type);
+            cli_dbgmsg("  Compression Method:    " STDu32 "\n", compression_method);
+            cli_dbgmsg("  Filter Method:         " STDu32 "\n", filter_method);
+            cli_dbgmsg("  Interlace Method:      " STDu32 "\n", interlace_method);
         } else if (strcmp(chunk_type, "PLTE") == 0) {
             /*------*
              | PLTE |

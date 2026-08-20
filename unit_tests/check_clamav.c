@@ -11483,6 +11483,68 @@ START_TEST(test_png_truncated_chunks_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_png_large_ancillary_chunk_uses_bounded_mapping)
+{
+    /* This sparse fixture is deliberately larger than the historical 2 GiB
+     * chunk-length rejection. The parser should validate and skip the
+     * ancillary payload without borrowing it as one contiguous fmap window. */
+    const uint8_t prefix[] = {
+        0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a,
+        0, 0, 0, 13, 'I', 'H', 'D', 'R',
+        0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0,
+        0, 0, 0, 0,
+    };
+    const uint8_t large_chunk_header[] = {
+        0x80, 0, 0, 0, 't', 'E', 'X', 't',
+    };
+    const uint8_t crc[] = {0, 0, 0, 0};
+    const uint8_t iend[] = {
+        0, 0, 0, 0, 'I', 'E', 'N', 'D',
+        0, 0, 0, 0,
+    };
+    const uint64_t chunk_data_length = UINT64_C(0x80000000);
+    const uint64_t data_offset        = sizeof(prefix) + sizeof(large_chunk_header);
+    const uint64_t crc_offset         = data_offset + chunk_data_length;
+    const uint64_t iend_offset        = crc_offset + sizeof(crc);
+    const uint64_t file_size          = iend_offset + sizeof(iend);
+    char file_path[PATH_MAX];
+    cli_ctx ctx;
+    fmap_t *map;
+    int fd;
+
+    /* The first-release target is a 64-bit file/offset platform. Keep the
+     * regression harmless for legacy 32-bit unit-test builds. */
+    if (sizeof(size_t) <= 4 || sizeof(off_t) <= 4)
+        return;
+
+    snprintf(file_path, sizeof(file_path), "%s/png-large-ancillary-chunk", tmpdir);
+    fd = open(file_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(ftruncate(fd, (off_t)file_size), 0);
+
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_int_eq(write(fd, prefix, sizeof(prefix)), (ssize_t)sizeof(prefix));
+    ck_assert_int_eq(write(fd, large_chunk_header, sizeof(large_chunk_header)),
+                     (ssize_t)sizeof(large_chunk_header));
+    ck_assert_int_eq(lseek(fd, (off_t)crc_offset, SEEK_SET), (off_t)crc_offset);
+    ck_assert_int_eq(write(fd, crc, sizeof(crc)), (ssize_t)sizeof(crc));
+    ck_assert_int_eq(lseek(fd, (off_t)iend_offset, SEEK_SET), (off_t)iend_offset);
+    ck_assert_int_eq(write(fd, iend, sizeof(iend)), (ssize_t)sizeof(iend));
+
+    map = fmap_new(fd, 0, 0, file_path, NULL);
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_parsepng(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+    close(fd);
+    unlink(file_path);
+}
+END_TEST
+
 START_TEST(test_tiff_truncated_structures_are_fail_visible)
 {
     static const uint8_t truncated_first_ifd_offset[] = {
@@ -11926,6 +11988,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
+    tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);

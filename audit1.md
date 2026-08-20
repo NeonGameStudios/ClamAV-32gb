@@ -2556,3 +2556,14 @@ fallback row for the skipped directory. The event counts as an error and
 suppresses an overall clean `OK` result; ordinary symlink exclusion remains
 unchanged. Compiled traversal fault injection and supported-build
 qualification remain open.
+
+## PNG large-chunk bounded mapping — 2026-08-20
+
+The PNG parser previously rejected every chunk length above 2 GiB and mapped
+every non-empty chunk as one contiguous fmap window, even though it only
+inspects the fixed-size `IHDR` payload. It now validates the 64-bit containing
+range, borrows only the 13-byte `IHDR`, and skips large `IDAT`/ancillary
+payloads without making them resident. A sparse 2 GiB ancillary-chunk
+regression covers successful traversal through the following `IEND` chunk;
+compiled media-corpus, sanitizer, and supported-build qualification remain
+open release gates.
