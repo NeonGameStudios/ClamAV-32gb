@@ -2441,3 +2441,13 @@ failure) before closing the request. The same handling covers the final
 staged-stream dispatch. A focused fallback-parser regression and source guards
 cover the protocol contract; compiled failure injection and supported-build
 Sonic1 qualification remain open.
+
+## clamscan early-file report completion — 2026-08-20
+
+`clamscan --report-json` previously wrote a JSON object only after
+`cl_scandesc_ex2()` ran. Access-denied, allocation, and open failures therefore
+incremented the legacy error count while omitting the corresponding input from
+the JSONL evidence. The manager now creates a bounded fallback report for
+those early exits and writes all reports after completion enforcement. The
+source guards cover the fallback and error mappings; compiled failure
+injection and supported-build qualification remain open.

@@ -359,6 +359,31 @@ static void enforce_structured_completion(const cl_scan_report_t *report, cl_err
     }
 }
 
+static int ensure_structured_scan_report(
+    const struct optstruct *opts,
+    const struct cl_engine *engine,
+    const char *filename,
+    cl_error_t status,
+    cl_verdict_t verdict,
+    const char *alert_name,
+    cl_scan_report_t **report_out)
+{
+    const struct optstruct *report_opt;
+
+    if ((NULL == opts) || (NULL == report_out) || (NULL != *report_out))
+        return 0;
+
+    report_opt = optget(opts, "report-json");
+    if ((NULL == report_opt) || !report_opt->enabled)
+        return 0;
+
+    if (cli_scan_report_create(report_out, engine) != CL_SUCCESS)
+        return -1;
+    cli_scan_report_set_target(*report_out, filename);
+    cli_scan_report_finish(*report_out, NULL, status, verdict, alert_name);
+    return 0;
+}
+
 static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
 {
     cl_error_t ret = CL_SUCCESS;
@@ -493,6 +518,7 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
             if (!printinfected)
                 logg(LOGG_INFO, "%s: Access denied\n", filename);
 
+            ret = CL_EACCES;
             info.errors++;
             goto done;
         }
@@ -506,6 +532,7 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
             chain.chains[0] = strdup(filename);
             if (!chain.chains[0]) {
                 logg(LOGG_INFO, "Unable to allocate memory in scanfile()\n");
+                ret = CL_EMEM;
                 info.errors++;
                 goto done;
             }
@@ -533,6 +560,7 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
 
     if (!action && (fd = safe_open(scan_path, O_RDONLY | O_BINARY)) == -1) {
         logg(LOGG_WARNING, "Can't open file %s: %s\n", filename, strerror(errno));
+        ret = CL_EOPEN;
         info.errors++;
         goto done;
     }
@@ -554,9 +582,6 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
         file_type_hint,
         file_type_out,
         &report);
-
-    if (write_structured_scan_report(opts, report) != 0)
-        info.errors++;
 
     enforce_structured_completion(report, &ret);
 
@@ -623,6 +648,12 @@ static void scanfile(const char *filename, struct cl_engine *engine, const struc
     }
 
 done:
+    if (ensure_structured_scan_report(opts, engine, filename, ret, verdict, alert_name, &report) != 0)
+        info.errors++;
+    enforce_structured_completion(report, &ret);
+    if (write_structured_scan_report(opts, report) != 0)
+        info.errors++;
+
     /*
      * Run the action callback if the file was infected.
      */

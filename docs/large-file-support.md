@@ -3900,3 +3900,13 @@ length-prefixed report plus zero terminator required by the structured
 protocol. A focused client-parser regression and source guards cover the
 fallback shape; compiled dispatch-failure injection and supported-build
 Sonic1 protocol qualification remain release gates.
+
+## clamscan early-file report completion — 2026-08-20
+
+`clamscan --report-json` now emits a structured fallback object for file
+inputs that fail before `cl_scandesc_ex2()` creates a library report, including
+access, allocation, and open failures. Successful scan reports are written
+after completion enforcement, so the JSONL artifact cannot omit an errored
+input or publish an incomplete result as clean. Legacy console and exit
+behavior is preserved; compiled early-failure injection and supported-build
+Sonic1 qualification remain release gates.
