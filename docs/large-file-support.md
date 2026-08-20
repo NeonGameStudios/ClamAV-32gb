@@ -2825,6 +2825,11 @@ result becomes non-clean. The focused temporary-limit and Linux static
 close-fault regressions are registered; compiled execution, sanitizer
 coverage, and broader OLE2 corpus qualification remain release gates.
 
+The OLE10 embedded-object handoff now checks output close and removal failures
+on both successful scans and early copy/rewind exits, preserving earlier
+detections or parser errors while keeping the temporary reservation lifecycle
+balanced.
+
 ## BinHex temporary-stream cleanup — 2026-08-19
 
 BinHex data/resource temporary descriptor close failures and temporary-file

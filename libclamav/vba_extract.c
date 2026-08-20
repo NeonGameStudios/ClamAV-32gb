@@ -1751,6 +1751,25 @@ ole_copy_file_data(int s, int d, uint32_t len)
     return CL_SUCCESS;
 }
 
+static void
+ole10_cleanup_output(cli_ctx *ctx, int *ofd, const char *fullname, cl_error_t *status)
+{
+    if (ofd != NULL && *ofd >= 0) {
+        if (close(*ofd) != 0) {
+            cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be closed");
+            if (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK)
+                *status = CL_EWRITE;
+        }
+        *ofd = -1;
+    }
+
+    if (ctx && !ctx->engine->keeptmp && fullname && cli_unlink(fullname)) {
+        cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be removed");
+        if (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK)
+            *status = CL_EUNLINK;
+    }
+}
+
 int cli_scan_ole10(int fd, cli_ctx *ctx)
 {
     int ofd;
@@ -1855,9 +1874,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     ret = ole_copy_file_data(fd, ofd, object_size);
     if (ret != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload could not be copied completely");
-        close(ofd);
-        if (ctx && !ctx->engine->keeptmp)
-            cli_unlink(fullname);
+        ole10_cleanup_output(ctx, &ofd, fullname, &ret);
         cli_scan_release_temporary(ctx, temporary_reserved);
         free(fullname);
         return ret;
@@ -1865,9 +1882,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
 
     if (lseek(ofd, 0, SEEK_SET) == (off_t)-1) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object output could not be rewound");
-        close(ofd);
-        if (ctx && !ctx->engine->keeptmp)
-            cli_unlink(fullname);
+        ole10_cleanup_output(ctx, &ofd, fullname, &ret);
         cli_scan_release_temporary(ctx, temporary_reserved);
         free(fullname);
         return CL_ESEEK;
@@ -1877,16 +1892,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     if (ret != CL_SUCCESS && ret != CL_VIRUS)
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object scan did not complete");
 
-    close(ofd);
-
-    if (ctx && !ctx->engine->keeptmp) {
-        if (cli_unlink(fullname)) {
-            cli_dbgmsg("cli_decode_ole_object: Failed to remove temp file: %s\n", fullname);
-            cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be removed");
-            if (ret == CL_SUCCESS)
-                ret = CL_EUNLINK;
-        }
-    }
+    ole10_cleanup_output(ctx, &ofd, fullname, &ret);
 
     cli_scan_release_temporary(ctx, temporary_reserved);
     free(fullname);
