@@ -3745,6 +3745,16 @@ limit. A focused zero-limit public-map regression and source guards cover the
 primary-table boundary. Compiled extended-partition, sanitizer, and
 supported-build Sonic1 qualification remain open.
 
+## APM/GPT partition-limit propagation — 2026-08-20
+
+APM and GPT scanning now preserve a specific `CL_EMAXFILES` result when their
+declared partition tables exceed `MaxPartitions`, rather than returning clean
+after scanning only the permitted prefix. The sticky incomplete state remains
+non-cacheable, while stronger parser errors or detections retain precedence.
+A focused APM zero-limit regression and source guards cover the APM path;
+compiled GPT/partition corpus, sanitizer, and supported-build Sonic1
+qualification remain open.
+
 The focused policy regression and source guards pass. Full C/CTest execution,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.

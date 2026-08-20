@@ -323,9 +323,6 @@ static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_
     } else {
         max_prtns = ctx->engine->maxpartitions;
     }
-    if (max_prtns < hdr.tableNumEntries)
-        cli_mark_scan_incomplete(ctx, "GPT partition count exceeds the configured inspection limit");
-
     /* use the partition tables to pass partitions to cli_magic_scan_nested_fmap_type */
     if (hdr.tableStartLBA > SIZE_MAX / sectorsize) {
         cli_dbgmsg("cli_scangpt: partition table offset exceeds native fmap range\n");
@@ -400,8 +397,11 @@ static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_
         pos += hdr.tableEntrySize;
     }
 
-    if (i >= ctx->engine->maxpartitions) {
+    if (max_prtns < hdr.tableNumEntries) {
         cli_dbgmsg("cli_scangpt: max partitions reached\n");
+        cli_mark_scan_incomplete(ctx, "GPT partition count limit left a partition uninspected");
+        if (status == CL_SUCCESS || status == CL_CLEAN)
+            status = CL_EMAXFILES;
     }
 
 done:

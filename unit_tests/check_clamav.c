@@ -8194,6 +8194,61 @@ START_TEST(test_mbr_partition_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_apm_partition_limit_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A valid two-block Apple partition map, while MaxPartitions=0, must not
+     * report success after skipping the declared partition entries. */
+    data[0] = 0x45;
+    data[1] = 0x52; /* DDM signature: "ER". */
+    data[2] = 0x02;
+    data[3] = 0x00; /* 512-byte blocks. */
+    data[4] = 0x00;
+    data[5] = 0x00;
+    data[6] = 0x00;
+    data[7] = 0x02; /* two blocks in the image. */
+    data[512] = 0x50;
+    data[513] = 0x4d; /* APM signature: "PM". */
+    data[516] = 0x00;
+    data[517] = 0x00;
+    data[518] = 0x00;
+    data[519] = 0x02; /* partition map plus one declared partition. */
+    memcpy(data + 512 + 48, "Apple_partition_map", 19);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions     = 0;
+    options.parse             = CL_SCAN_PARSE_ARCHIVE;
+    map                       = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                = &engine;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.this_layer_tmpdir     = tmpdir;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    layer.type                = CL_TYPE_APM;
+    layer.size                = sizeof(data);
+    layer.fmap                = map;
+
+    ret = cli_scanapm(&ctx);
+    ck_assert_int_eq(ret, CL_EMAXFILES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwp3_parser_errors_are_fail_visible)
 {
     uint8_t data[1000] = {0};
@@ -11453,6 +11508,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
     tcase_add_test(tc_cl, test_partition_parser_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_mbr_partition_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_apm_partition_limit_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_parser_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_onenote_dispatch_honors_document_dconf);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);

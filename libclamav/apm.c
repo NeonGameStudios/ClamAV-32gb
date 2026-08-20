@@ -237,8 +237,11 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         }
     }
 
-    if (i >= ctx->engine->maxpartitions) {
+    if (max_prtns < aptable.numPartitions) {
         cli_dbgmsg("cli_scanapm: max partitions reached\n");
+        cli_mark_scan_incomplete(ctx, "APM partition count limit left a partition uninspected");
+        if (status == CL_SUCCESS || status == CL_CLEAN)
+            status = CL_EMAXFILES;
     }
 
 done:

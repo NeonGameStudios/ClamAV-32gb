@@ -2272,6 +2272,14 @@ recognized as fully inspected. A focused zero-limit public-map regression and
 source guards cover the primary boundary; extended-partition execution remains
 a compiled qualification gate.
 
+## APM/GPT partition-limit propagation — 2026-08-20
+
+APM and GPT partition tables now return `CL_EMAXFILES` and mark the scan
+incomplete when `MaxPartitions` leaves declared entries uninspected. Existing
+parser errors and detections remain stronger outcomes. A focused APM
+zero-limit regression and source guards cover the APM boundary; compiled GPT
+and partition-corpus qualification remain open.
+
 ## OLE2 temporary-tree error propagation — 2026-08-20
 
 Recursive OLE2 scans now preserve the distinction between a globally indexed
