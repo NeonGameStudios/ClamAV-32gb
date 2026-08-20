@@ -2481,3 +2481,13 @@ non-clean fallback for stat, allocation, quarantine-open, connection, and
 protocol failures, preserving the existing error counters and exits. The
 parallel IDSESSION path still needs its own fallback/ordering qualification;
 fault-injected and supported-build Sonic1 evidence remain open.
+
+## clamdscan parallel pre-dispatch report completion — 2026-08-20
+
+The parallel `clamdscan --report-json` walker now writes a structured
+resource-failure fallback when an input fails before an IDSESSION request is
+registered, and drains pending IDs into fallback rows after session abort or
+daemon disconnect. Successfully completed IDs continue to use the daemon's
+framed reports. Source guards cover the pending-ID cleanup and pre-dispatch
+status mapping; compiled fault injection and supported-build Sonic1 evidence
+remain open.

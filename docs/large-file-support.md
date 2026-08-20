@@ -3941,3 +3941,12 @@ failures. Successful daemon reports remain unchanged, while a client-side
 error can no longer silently omit its input from the JSONL artifact. Parallel
 IDSESSION fallback coverage, fault injection, and supported-build Sonic1
 qualification remain release gates.
+
+## clamdscan parallel pre-dispatch report completion — 2026-08-20
+
+The IDSESSION walker now emits structured fallback objects for parallel inputs
+that fail before a request ID is registered, and for registered IDs left
+pending when the session aborts or clamd disconnects. Successfully completed
+IDs retain their daemon-owned framed reports. This closes the client-side
+JSONL omission for parallel pre-dispatch failures; compiled IDSESSION fault
+injection and supported-build Sonic1 qualification remain release gates.

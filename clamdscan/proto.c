@@ -598,6 +598,9 @@ static void free_scanids(struct client_parallel_data *c)
         id     = c->ids;
         c->ids = id->next;
 
+        if (c->report_stream &&
+            write_client_failure_report(c->report_stream, id->file, CL_ERROR) != 0)
+            c->errors++;
         free((void *)id->file);
         if (NULL != id->action_source) {
             action_source_close(id->action_source);
@@ -622,6 +625,8 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     action_source_t *action_source = NULL;
     const char *scan_path          = filename;
     char *real_filter_path         = NULL;
+    bool report_target             = (reason == visit_file);
+    cl_error_t report_status       = CL_SUCCESS;
 
     UNUSEDPARAM(sb);
     UNUSEDPARAM(path);
@@ -642,11 +647,15 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
         case error_stat:
             logg(LOGG_ERROR, "Can't access file %s\n", filename);
             c->errors++;
+            report_target = true;
+            report_status = CL_ESTAT;
             status = CL_SUCCESS;
             goto done;
         case error_mem:
             logg(LOGG_ERROR, "Memory allocation failed in ftw\n");
             c->errors++;
+            report_target = true;
+            report_status = CL_EMEM;
             status = CL_EMEM;
             goto done;
         case warning_skipped_dir:
@@ -656,6 +665,8 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
         case warning_skipped_special:
             logg(LOGG_WARNING, "%s: Not supported file type\n", filename);
             c->errors++;
+            report_target = true;
+            report_status = CL_ERROR;
             /* fall-through */
         case warning_skipped_link:
         case visit_directory_toplev:
@@ -668,6 +679,7 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     if (action) {
         while (c->action_sources >= c->max_action_sources) {
             if (dspresult(c)) {
+                report_status = CL_ERROR;
                 status = CL_BREAK;
                 goto done;
             }
@@ -677,14 +689,19 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
         if (NULL == action_source) {
             logg(LOGG_ERROR, "Failed to allocate action source: %s\n", strerror(errno));
             c->errors++;
+            report_status = CL_EMEM;
             status = CL_EMEM;
             goto done;
         }
-        if (CL_SUCCESS != action_source_open_path(filename, scan_path, action_source)) {
-            logg(LOGG_WARNING, "Can't open file %s for safe quarantine action.\n", filename);
-            c->errors++;
-            status = CL_SUCCESS;
-            goto done;
+        {
+            cl_error_t action_status = action_source_open_path(filename, scan_path, action_source);
+            if (CL_SUCCESS != action_status) {
+                logg(LOGG_WARNING, "Can't open file %s for safe quarantine action.\n", filename);
+                c->errors++;
+                report_status = action_status;
+                status = CL_SUCCESS;
+                goto done;
+            }
         }
     }
 
@@ -705,6 +722,7 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
         }
         if (FD_ISSET(c->sockd, &rfds)) {
             if (dspresult(c)) {
+                report_status = CL_ERROR;
                 status = CL_BREAK;
                 goto done;
             } else
@@ -738,6 +756,7 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     if (res <= 0) {
         c->printok = 0;
         c->errors++;
+        report_status = res ? CL_ERROR : CL_EOPEN;
         status = res ? CL_BREAK : CL_SUCCESS;
         goto done;
     }
@@ -745,6 +764,7 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     cid = (struct SCANID *)malloc(sizeof(struct SCANID));
     if (!cid) {
         logg(LOGG_ERROR, "Failed to allocate scanid entry: %s\n", strerror(errno));
+        report_status = CL_EMEM;
         status = CL_BREAK;
         goto done;
     }
@@ -765,6 +785,9 @@ static cl_error_t parallel_callback(STATBUF *sb, char *filename, const char *pat
     status = CL_SUCCESS;
 
 done:
+    if (c->report_stream && report_target && NULL == cid &&
+        write_client_failure_report(c->report_stream, filename, report_status) != 0)
+        c->errors++;
     if (NULL != action_source) {
         action_source_close(action_source);
         free(action_source);
@@ -812,9 +835,9 @@ int parallel_client_scan(char *file, int scantype, int *infected, int *err, int 
     ftw = cli_ftw(file, flags, maxlevel ? maxlevel : INT_MAX, parallel_callback, &data, ftw_chkpath);
 
     if (ftw != CL_SUCCESS) {
+        free_scanids(&cdata);
         *err += cdata.errors;
         *infected += cdata.infected;
-        free_scanids(&cdata);
         closesocket(cdata.sockd);
         return 1;
     }
@@ -823,14 +846,16 @@ int parallel_client_scan(char *file, int scantype, int *infected, int *err, int 
     while (cdata.ids && !dspresult(&cdata)) continue;
     closesocket(cdata.sockd);
 
-    *infected += cdata.infected;
-    *err += cdata.errors;
-
     if (cdata.ids) {
         logg(LOGG_ERROR, "Clamd closed the connection before scanning all files.\n");
         free_scanids(&cdata);
+        *infected += cdata.infected;
+        *err += cdata.errors;
         return 1;
     }
+    *infected += cdata.infected;
+    *err += cdata.errors;
+
     if (cdata.errors)
         return 1;
 
