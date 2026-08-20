@@ -2462,3 +2462,13 @@ clean-result output, records a post-scan failure in the report, and preserves
 detections as authoritative. A focused invalid-descriptor regression and
 source guards cover the change; fault-injected cleanup and supported-build
 qualification remain open.
+
+## clamscan stdin structured staging failures — 2026-08-20
+
+`clamscan --report-json` previously had no per-input object when stdin staging
+failed before `cl_scanfile_ex2()`, including temporary-file creation, writes,
+reads, closeout, and failed over-limit sentinel materialization. The stdin
+path now emits a bounded fallback report for those exits and publishes normal
+and sentinel reports only after completion enforcement. Legacy return values
+remain unchanged; source guards cover the failure mapping and compiled fault
+injection plus supported-build qualification remain open.

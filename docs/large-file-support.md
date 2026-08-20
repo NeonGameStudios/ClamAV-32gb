@@ -3921,3 +3921,13 @@ internal action-source close API returns the failure while preserving the
 existing reset semantics; a focused invalid-descriptor regression covers the
 contract. Fault-injected clamscan cleanup and supported-build Sonic1
 qualification remain release gates.
+
+## clamscan stdin structured staging failures — 2026-08-20
+
+The stdin staging path now emits a per-input structured fallback report when
+temporary-directory access, temporary-file creation, writes, reads, closes, or
+the over-limit sentinel fails before a scanner report exists. Normal and
+sentinel scan reports are published only after completion enforcement, so
+`--report-json` cannot silently omit a failed stdin input. Legacy exit behavior
+is preserved; compiled fault injection and supported-build Sonic1 qualification
+remain release gates.

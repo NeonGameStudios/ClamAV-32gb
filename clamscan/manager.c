@@ -384,6 +384,25 @@ static int ensure_structured_scan_report(
     return 0;
 }
 
+static int write_stdin_failure_report(
+    const struct optstruct *opts,
+    const struct cl_engine *engine,
+    cl_error_t status)
+{
+    cl_scan_report_t *report = NULL;
+    int result              = 0;
+
+    if (ensure_structured_scan_report(opts, engine, "stdin", status,
+                                      CL_VERDICT_NOTHING_FOUND, NULL,
+                                      &report) != 0)
+        result = -1;
+    enforce_structured_completion(report, &status);
+    if (write_structured_scan_report(opts, report) != 0)
+        result = -1;
+    cl_scan_report_free(report);
+    return result;
+}
+
 static void scanfile(const char *filename, struct cl_engine *engine, const struct optstruct *opts, struct cl_scan_options *options)
 {
     cl_error_t ret = CL_SUCCESS;
@@ -999,6 +1018,8 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
     if (access(tmpdir, R_OK | W_OK) == -1) {
         logg(LOGG_ERROR, "Can't write to temporary directory\n");
+        if (write_stdin_failure_report(opts, engine, CL_EACCES) != 0)
+            info.errors++;
         return 2;
     }
 
@@ -1006,11 +1027,15 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
     if (!(filename = cli_gentemp(tmpdir))) {
         logg(LOGG_ERROR, "Can't generate tempfile name\n");
+        if (write_stdin_failure_report(opts, engine, CL_EMEM) != 0)
+            info.errors++;
         return 2;
     }
 
     if (!(fs = fopen(filename, "wb"))) {
         logg(LOGG_ERROR, "Can't open %s for writing\n", filename);
+        if (write_stdin_failure_report(opts, engine, CL_ECREAT) != 0)
+            info.errors++;
         free(filename);
         return 2;
     }
@@ -1028,6 +1053,8 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
             }
             if (fclose(fs) != 0) {
                 logg(LOGG_ERROR, "Can't close stdin temporary file: %s\n", strerror(errno));
+                if (write_stdin_failure_report(opts, engine, CL_EREAD) != 0)
+                    info.errors++;
                 unlink(filename);
                 free(filename);
                 return 2;
@@ -1047,9 +1074,15 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
                     file_type_hint,
                     file_type_out,
                     &report);
+                enforce_structured_completion(report, &ret);
+                if (ensure_structured_scan_report(opts, engine, "stdin", ret, verdict, alert_name, &report) != 0)
+                    info.errors++;
+                enforce_structured_completion(report, &ret);
                 if (write_structured_scan_report(opts, report) != 0)
                     info.errors++;
                 cl_scan_report_free(report);
+            } else if (write_stdin_failure_report(opts, engine, ret) != 0) {
+                info.errors++;
             }
             unlink(filename);
             free(filename);
@@ -1058,15 +1091,24 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         fsize += bread;
         if (fwrite(buff, 1, bread, fs) < bread) {
             logg(LOGG_ERROR, "Can't write to %s\n", filename);
+            ret = CL_EWRITE;
+            if (fclose(fs) != 0)
+                ret = CL_EREAD;
+            if (write_stdin_failure_report(opts, engine, ret) != 0)
+                info.errors++;
+            unlink(filename);
             free(filename);
-            fclose(fs);
             return 2;
         }
     }
 
     if (ferror(stdin)) {
         logg(LOGG_ERROR, "Error reading stdin\n");
-        fclose(fs);
+        ret = CL_EREAD;
+        if (fclose(fs) != 0)
+            ret = CL_EREAD;
+        if (write_stdin_failure_report(opts, engine, ret) != 0)
+            info.errors++;
         unlink(filename);
         free(filename);
         return 2;
@@ -1074,6 +1116,8 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
     if (fclose(fs) != 0) {
         logg(LOGG_ERROR, "Can't close stdin temporary file: %s\n", strerror(errno));
+        if (write_stdin_failure_report(opts, engine, CL_EREAD) != 0)
+            info.errors++;
         unlink(filename);
         free(filename);
         return 2;
@@ -1115,10 +1159,12 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         file_type_out,
         &report);
 
+    enforce_structured_completion(report, &ret);
+    if (ensure_structured_scan_report(opts, engine, "stdin", ret, verdict, alert_name, &report) != 0)
+        info.errors++;
+    enforce_structured_completion(report, &ret);
     if (write_structured_scan_report(opts, report) != 0)
         info.errors++;
-
-    enforce_structured_completion(report, &ret);
 
     switch (verdict) {
         case CL_VERDICT_NOTHING_FOUND: {
