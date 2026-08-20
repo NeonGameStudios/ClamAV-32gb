@@ -671,6 +671,7 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
     size_t entry_index;
 #endif
     int included;
+    bool readdir_failed = false;
     const struct optstruct *opt;
     unsigned int dirlnk, filelnk;
 
@@ -716,9 +717,17 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
         info.dirs++;
         depth++;
 #ifdef _WIN32
-        while ((dent = readdir(dd))) {
+        for (;;) {
             char **new_entries;
             char *entry_name;
+
+            errno = 0;
+            dent  = readdir(dd);
+            if (NULL == dent) {
+                if (errno != 0)
+                    readdir_failed = true;
+                break;
+            }
 
             if (!dent->d_ino) {
                 continue;
@@ -730,6 +739,7 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
             entry_name = strdup(dent->d_name);
             if (NULL == entry_name) {
                 logg(LOGG_ERROR, "scandirs: Memory allocation failed for entry name\n");
+                info.errors++;
                 break;
             }
 
@@ -739,6 +749,7 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
                 if (NULL == new_entries) {
                     logg(LOGG_ERROR, "scandirs: Memory allocation failed for entries list\n");
                     free(entry_name);
+                    info.errors++;
                     break;
                 }
                 entries          = new_entries;
@@ -747,7 +758,14 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
 
             entries[entries_count++] = entry_name;
         }
-        closedir(dd);
+        if (readdir_failed)
+            logg(LOGG_ERROR, "scandirs: directory enumeration failed: %s\n", strerror(errno));
+        if (closedir(dd) != 0) {
+            logg(LOGG_ERROR, "scandirs: directory could not be closed: %s\n", strerror(errno));
+            info.errors++;
+        }
+        if (readdir_failed)
+            info.errors++;
         dd = NULL;
 
         for (entry_index = 0; entry_index < entries_count; entry_index++) {
@@ -803,7 +821,15 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
         }
         free(entries);
 #else
-        while ((dent = readdir(dd))) {
+        for (;;) {
+            errno = 0;
+            dent  = readdir(dd);
+            if (NULL == dent) {
+                if (errno != 0)
+                    readdir_failed = true;
+                break;
+            }
+
             if (dent->d_ino) {
                 if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..")) {
                     /* build the full name */
@@ -855,7 +881,14 @@ static void scandirs(const char *dirname, struct cl_engine *engine, const struct
                 }
             }
         }
-        closedir(dd);
+        if (readdir_failed)
+            logg(LOGG_ERROR, "scandirs: directory enumeration failed: %s\n", strerror(errno));
+        if (closedir(dd) != 0) {
+            logg(LOGG_ERROR, "scandirs: directory could not be closed: %s\n", strerror(errno));
+            info.errors++;
+        }
+        if (readdir_failed)
+            info.errors++;
 #endif
     } else {
         if (!printinfected)

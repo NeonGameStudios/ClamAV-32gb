@@ -2154,3 +2154,14 @@ and `git diff --check` pass. `cargo test --offline --lib` could not start
 because the pinned `clam-sigutil` Git dependency is not present in the local
 Cargo cache. Dependency-complete Rust/CTest, sanitizer, and supported-build
 Sonic1 qualification therefore remain open release gates.
+
+## Clamscan directory enumeration closeout — 2026-08-20
+
+The `clamscan` directory walker now treats `readdir()` and `closedir()` errors
+as scan errors. A directory that can only be partially enumerated, or whose
+descriptor cannot be closed cleanly, can no longer silently produce a clean
+result after scanning the entries that happened to be visible.
+
+Source guards and `git diff --check` are the current local evidence.
+Fault-injected directory traversal, dependency-complete front-end builds, and
+supported-build Sonic1 qualification remain release gates.
