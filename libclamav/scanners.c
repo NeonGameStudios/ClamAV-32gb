@@ -139,8 +139,15 @@ cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes
     STATBUF statbuf;
     char *fname = NULL;
 
+    if (dir == NULL || ctx == NULL)
+        return CL_ENULLARG;
+
     if ((dd = opendir(dir)) != NULL) {
-        while ((dent = readdir(dd))) {
+        while (1) {
+            errno = 0;
+            dent  = readdir(dd);
+            if (dent == NULL)
+                break;
             if (dent->d_ino) {
                 if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..")) {
                     /* build the full name */
@@ -154,18 +161,21 @@ cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes
                     sprintf(fname, "%s" PATHSEP "%s", dir, dent->d_name);
 
                     /* stat the file */
-                    if (LSTAT(fname, &statbuf) != -1) {
-                        if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
-                            status = cli_magic_scan_dir(fname, ctx, attributes);
+                    if (LSTAT(fname, &statbuf) == -1) {
+                        cli_mark_scan_incomplete(ctx, "directory entry could not be inspected");
+                        status = CL_ESTAT;
+                        goto done;
+                    }
+                    if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
+                        status = cli_magic_scan_dir(fname, ctx, attributes);
+                        if (CL_SUCCESS != status) {
+                            goto done;
+                        }
+                    } else {
+                        if (S_ISREG(statbuf.st_mode)) {
+                            status = cli_magic_scan_file(fname, ctx, dent->d_name, attributes);
                             if (CL_SUCCESS != status) {
                                 goto done;
-                            }
-                        } else {
-                            if (S_ISREG(statbuf.st_mode)) {
-                                status = cli_magic_scan_file(fname, ctx, dent->d_name, attributes);
-                                if (CL_SUCCESS != status) {
-                                    goto done;
-                                }
                             }
                         }
                     }
@@ -173,6 +183,11 @@ cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes
                     fname = NULL;
                 }
             }
+        }
+        if (errno != 0) {
+            cli_mark_scan_incomplete(ctx, "directory enumeration ended before every entry was inspected");
+            status = CL_EREAD;
+            goto done;
         }
     } else {
         cli_dbgmsg("cli_magic_scan_dir: Can't open directory %s.\n", dir);
@@ -182,7 +197,11 @@ cl_error_t cli_magic_scan_dir(const char *dir, cli_ctx *ctx, uint32_t attributes
 
 done:
     if (NULL != dd) {
-        closedir(dd);
+        if (closedir(dd) != 0) {
+            cli_mark_scan_incomplete(ctx, "temporary scan directory could not be closed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                status = CL_EREAD;
+        }
     }
     if (NULL != fname) {
         free(fname);
@@ -3578,7 +3597,11 @@ static cl_error_t cli_ole2_scan_tempdir(
      * flattening the paths in ole2_walk_property_tree (case 1) */
 
     if ((dd = opendir(dir)) != NULL) {
-        while ((dent = readdir(dd))) {
+        while (1) {
+            errno = 0;
+            dent  = readdir(dd);
+            if (dent == NULL)
+                break;
             if (dent->d_ino) {
                 if (strcmp(dent->d_name, ".") && strcmp(dent->d_name, "..")) {
                     /* build the full name */
@@ -3591,27 +3614,35 @@ static cl_error_t cli_ole2_scan_tempdir(
                     sprintf(subdirectory, "%s" PATHSEP "%s", dir, dent->d_name);
 
                     /* stat the file */
-                    if (LSTAT(subdirectory, &statbuf) != -1) {
-                        if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
-                            /*
-                             * Process subdirectory
-                             */
-                            status = cli_ole2_scan_tempdir(
-                                ctx,
-                                subdirectory,
-                                files,
-                                has_vba,
-                                has_xlm,
-                                has_image);
-                            if (CL_SUCCESS != status) {
-                                goto done;
-                            }
+                    if (LSTAT(subdirectory, &statbuf) == -1) {
+                        cli_mark_scan_incomplete(ctx, "OLE2 temporary directory entry could not be inspected");
+                        status = CL_ESTAT;
+                        goto done;
+                    }
+                    if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
+                        /*
+                         * Process subdirectory
+                         */
+                        status = cli_ole2_scan_tempdir(
+                            ctx,
+                            subdirectory,
+                            files,
+                            has_vba,
+                            has_xlm,
+                            has_image);
+                        if (CL_SUCCESS != status) {
+                            goto done;
                         }
                     }
                     free(subdirectory);
                     subdirectory = NULL;
                 }
             }
+        }
+        if (errno != 0) {
+            cli_mark_scan_incomplete(ctx, "OLE2 temporary directory enumeration ended early");
+            status = CL_EREAD;
+            goto done;
         }
     } else {
         cli_dbgmsg("VBADir: Can't open directory %s.\n", dir);
@@ -3621,7 +3652,11 @@ static cl_error_t cli_ole2_scan_tempdir(
 
 done:
     if (NULL != dd) {
-        closedir(dd);
+        if (closedir(dd) != 0) {
+            cli_mark_scan_incomplete(ctx, "OLE2 temporary directory could not be closed");
+            if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                status = CL_EREAD;
+        }
     }
     if (NULL != subdirectory) {
         free(subdirectory);

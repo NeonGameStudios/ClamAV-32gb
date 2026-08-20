@@ -3301,6 +3301,21 @@ Source guards and `git diff --check` are the current local evidence. Legacy
 packer fixture, sanitizer/fault-injected cleanup, and supported-build Sonic1
 qualification remain release gates.
 
+## Extracted-directory traversal failure propagation — 2026-08-20
+
+The shared extracted-directory walker now rejects null inputs and treats
+`LSTAT`, `readdir`, and `closedir` failures as incomplete, non-clean results.
+Previously an entry that could not be inspected could be skipped while the
+containing parser continued as if every extracted member had been scanned.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+fault-injected directory traversal and parser-family qualification remain
+release gates.
+
+The OLE2 temporary-directory recursion now applies the same rule to nested
+VBA/XLM/image directories, so a vanished or unreadable directory entry cannot
+be treated as an empty subtree.
+
 ## CryptFF temporary-output accounting — 2026-08-20
 
 CryptFF decryption now checks its growing logical output with 64-bit
