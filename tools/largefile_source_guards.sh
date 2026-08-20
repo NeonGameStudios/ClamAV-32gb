@@ -387,6 +387,8 @@ contains docs/large-file-support.md 'UDF extended file-entry descriptors are a s
 contains unit_tests/check_clamav.c 'test_udf_truncated_descriptor_area_is_fail_visible'
 contains libclamav/hfsplus.c 'HFS+ volume header is incomplete'
 contains libclamav/hfsplus.c 'HFS+ inspection ended before completion'
+contains libclamav/hfsplus.c 'HFS+ fork requires unsupported ExtentOverflow records'
+contains libclamav/hfsplus.c 'Resource compression processing complete'
 contains unit_tests/check_clamav.c 'test_hfsplus_declared_attributes_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_truncated_header_is_fail_visible'
 contains libclammspack/mspack/cabd.c 'report an error even in salvage mode'

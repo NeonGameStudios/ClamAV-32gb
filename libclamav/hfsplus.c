@@ -401,8 +401,12 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
             cli_dbgmsg("hfsplus_scanfile: extent %u\n", ext);
         } else {
             cli_dbgmsg("hfsplus_scanfile: need next extent from ExtentOverflow\n");
-            /* Not implemented yet */
-            status = CL_EFORMAT;
+            /* The inline fork record is exhausted.  ExtentOverflow records
+             * are a valid HFS+ representation, but this parser does not yet
+             * implement their B-tree lookup.  Never scan the prefix as a
+             * complete fork or let the containing layer report clean. */
+            cli_mark_scan_incomplete(ctx, "HFS+ fork requires unsupported ExtentOverflow records");
+            status = CL_EUNPACK;
             goto done;
         }
 
@@ -1511,7 +1515,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 resource_reserved = 0;
                             }
 
-                            cli_dbgmsg("hfsplus_walk_catalog: Resource compression not implemented\n");
+                            cli_dbgmsg("hfsplus_walk_catalog: Resource compression processing complete\n");
                             break;
                         }
                         default:

@@ -2220,6 +2220,13 @@ boundary. Because the parser does not implement their allocation and
 extended-attribute semantics, encountering one marks the layer incomplete and
 returns an explicit unsupported result; it is never silently skipped.
 
+HFS+ fork records that exhaust their eight inline extents are another explicit
+unsupported boundary. The parser does not yet perform the required
+`ExtentOverflow` B-tree lookup, so it marks the containing layer incomplete and
+returns an unsupported result instead of scanning only the inline prefix. HFS+
+resource compression is implemented through the bounded temporary-fork path;
+its completion diagnostic is not an unsupported-feature indication.
+
 ## Scan-level temporary-directory cleanup propagation — 2026-08-20
 
 When recursive temporary-directory mode is enabled, scan-level directory

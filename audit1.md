@@ -1920,6 +1920,21 @@ This is source-level evidence only. A compiled UDF fixture containing an
 extended file entry, sanitizer execution, and supported-build Sonic1
 qualification remain open release gates.
 
+## HFS+ ExtentOverflow boundary — 2026-08-20
+
+HFS+ data and resource forks expose eight inline extent descriptors. A fork
+that needs additional descriptors stores them in the ExtentOverflow B-tree,
+which this parser does not yet implement. The previous branch returned a
+format error after the inline prefix without identifying the unsupported
+feature. It now marks the layer incomplete and returns `CL_EUNPACK` before any
+partial fork is scanned as complete. The resource-compression completion log
+was also corrected because that path is implemented through the bounded
+temporary-fork and decoder flow.
+
+This is source-level evidence only. A compiled HFS+ ExtentOverflow fixture,
+sanitizer execution, and supported-build Sonic1 qualification remain open
+release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script
