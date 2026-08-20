@@ -2031,3 +2031,15 @@ non-cacheable, fail-visible result, and source guards cover the new boundary.
 
 Compiled BinHex execution, legacy-mail corpus coverage, sanitizer execution,
 and supported-build Sonic1 qualification remain open release gates.
+
+## Word macro-directory truncation — 2026-08-20
+
+The legacy Word macro-directory reader treated a truncated or unknown record
+stream as “no macros” and allowed the OLE scan to continue without a sticky
+incomplete result. It now validates the declared directory range, reports
+position/read/record failures through the scan context, and rejects the
+recognized document as incomplete before any partial macro project is used.
+A direct truncated-directory regression and source guards cover the boundary.
+
+Compiled legacy-Word/OLE execution, sanitizer and allocation-fault coverage,
+and supported-build Sonic1 qualification remain open release gates.

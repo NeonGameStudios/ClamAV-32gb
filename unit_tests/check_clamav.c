@@ -8979,6 +8979,43 @@ START_TEST(test_vba_inflate_seek_failure_is_fail_visible)
     ck_assert_uint_eq(size, 0);
 }
 END_TEST
+
+START_TEST(test_word_macro_directory_truncation_is_fail_visible)
+{
+    char path[PATH_MAX];
+    unsigned char fib[8] = {0x20, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    int fd;
+    static const uint8_t map_data[] = {0};
+
+    snprintf(path, sizeof(path), "%s/word-macro-truncated", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_int_eq(ftruncate(fd, 0x121), 0);
+    ck_assert_int_eq(pwrite(fd, fib, sizeof(fib), 0x118), (ssize_t)sizeof(fib));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    ck_assert_ptr_null(cli_wm_readdir_ex(fd, &ctx));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    close(fd);
+    unlink(path);
+}
+END_TEST
 #endif
 
 static void dmg_test_write_be32(uint8_t *dst, uint32_t value)
@@ -11135,6 +11172,7 @@ static Suite *test_cl_suite(void)
 #endif
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
 #endif
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_pdf_stream_limit_is_fail_visible);

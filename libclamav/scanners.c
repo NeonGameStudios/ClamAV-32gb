@@ -2458,7 +2458,7 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
             continue;
         }
 
-        if (!(vba_project = (vba_project_t *)cli_wm_readdir(fd))) {
+        if (!(vba_project = (vba_project_t *)cli_wm_readdir_ex(fd, ctx))) {
             close(fd);
             fd = -1;
             hashcnt--;

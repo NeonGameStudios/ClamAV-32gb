@@ -2181,6 +2181,14 @@ guards cover the boundary. Compiled parser execution, legacy-mail corpus,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.
 
+## Word macro-directory truncation — 2026-08-20
+
+The legacy Word macro-directory reader now validates its declared range and
+marks truncated, unreadable, unknown, or unallocatable macro metadata as an
+incomplete result instead of treating it as “no macros.” A direct regression
+and source guards cover the fail-closed boundary. Compiled legacy-Word/OLE,
+sanitizer, and supported-build Sonic1 qualification remain release gates.
+
 ## OLE metadata and VBA input cleanup propagation — 2026-08-20
 
 OLE summary-property parser errors and close failures are now retained by the
