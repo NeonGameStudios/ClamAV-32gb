@@ -2280,6 +2280,10 @@ scan's sticky incomplete state. Those paths now mark the scan incomplete and
 preserve an explicit open/access result, while an optional absent normalized
 directory remains a normal no-op.
 
+The shared non-reserved extracted-directory path now applies the same rule to
+confirmed child-file open/close failures and to child descriptor inspection or
+map-creation failures.
+
 Source guards and `git diff --check` are the current local evidence.
 Fault-injected OLE2 temporary-child open coverage, dependency-complete builds,
 sanitizers, and supported-build Sonic1 qualification remain release gates.

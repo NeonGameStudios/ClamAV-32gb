@@ -3026,6 +3026,11 @@ extracted children. An indexed summary stream or child file that cannot be
 opened marks the containing layer incomplete; an optional normalized directory
 that is simply absent remains a normal no-op.
 
+The shared extracted-directory scanner also now treats a confirmed child-file
+open/close failure, child descriptor inspection failure, or child fmap creation
+failure as incomplete. A file found during enumeration can no longer vanish
+from the scan contract after enumeration succeeds.
+
 ## BinHex temporary-stream cleanup — 2026-08-19
 
 BinHex data/resource temporary descriptor close failures and temporary-file

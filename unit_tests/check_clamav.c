@@ -10469,6 +10469,35 @@ START_TEST(test_descriptor_limit_preflight_precedes_fmap_creation)
     cl_engine_free(engine);
 }
 END_TEST
+
+START_TEST(test_child_descriptor_inspection_failure_is_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&map, 0, sizeof(map));
+
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = &map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = &map;
+
+    ret = cli_magic_scan_desc_type(-1, NULL, &ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    ck_assert_int_eq(ret, CL_ESTAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map.dont_cache_flag);
+}
+END_TEST
 #endif
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
@@ -11384,6 +11413,7 @@ static Suite *test_cl_suite(void)
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP
     tcase_add_test(tc_cl, test_normalized_script_map_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_descriptor_limit_preflight_precedes_fmap_creation);
+    tcase_add_test(tc_cl, test_child_descriptor_inspection_failure_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_script_normalization_cleanup_close_failure_is_fail_visible);

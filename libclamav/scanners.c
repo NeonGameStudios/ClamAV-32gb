@@ -7005,11 +7005,13 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
 
     if (FSTAT(desc, &sb) == -1) {
         cli_errmsg("cli_magic_scan_desc_type: Can't fstat descriptor %d\n", desc);
+        cli_mark_scan_incomplete(ctx, "child descriptor could not be inspected");
         status = CL_ESTAT;
         goto done;
     }
     if (sb.st_size < 0) {
         cli_errmsg("cli_magic_scan_desc_type: Descriptor %d has an invalid negative size\n", desc);
+        cli_mark_scan_incomplete(ctx, "child descriptor has an invalid size");
         status = CL_ESTAT;
         goto done;
     }
@@ -7040,6 +7042,7 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     perf_stop(ctx, PERFT_MAP);
     if (NULL == new_map) {
         cli_errmsg("cli_magic_scan_desc_type: CRITICAL: fmap_new() failed\n");
+        cli_mark_scan_incomplete(ctx, "child descriptor map could not be created");
         status = CL_EMEM;
         goto done;
     }
@@ -8244,6 +8247,7 @@ cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *o
     /* internal version of cl_scanfile with arec/mrec preserved */
     fd = safe_open(filename, O_RDONLY | O_BINARY);
     if (fd < 0) {
+        cli_mark_scan_incomplete(ctx, "temporary scan directory file could not be opened");
         goto done;
     }
 
@@ -8251,7 +8255,11 @@ cl_error_t cli_magic_scan_file(const char *filename, cli_ctx *ctx, const char *o
 
 done:
     if (fd >= 0) {
-        close(fd);
+        if (close(fd) != 0) {
+            cli_mark_scan_incomplete(ctx, "temporary scan directory file could not be closed");
+            if (ret == CL_SUCCESS || ret == CL_VERIFIED || ret == CL_BREAK)
+                ret = CL_EREAD;
+        }
     }
 
     return ret;
