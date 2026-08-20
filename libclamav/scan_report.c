@@ -395,6 +395,37 @@ void cli_scan_report_finish(
     report->has_result = true;
 }
 
+void cli_scan_report_note_post_scan_failure(
+    cl_scan_report_t *report,
+    cl_error_t status,
+    const char *reason)
+{
+    if ((NULL == report) || (CL_SUCCESS == status))
+        return;
+
+    /* A detection remains authoritative. The caller still receives the
+     * detection, while the public return path can preserve the stronger
+     * virus result instead of replacing it with a cleanup error. */
+    if ((report->verdict == CL_VERDICT_STRONG_INDICATOR) ||
+        (report->verdict == CL_VERDICT_POTENTIALLY_UNWANTED) ||
+        (report->status == CL_VIRUS) ||
+        (report->completion == CL_SCAN_COMPLETION_DETECTION_TERMINATED))
+        return;
+
+    /* Preserve a more specific failure already produced by the scan. */
+    if (report->completion != CL_SCAN_COMPLETION_COMPLETE)
+        return;
+
+    if (report->metrics.skipped_operations != UINT64_MAX)
+        report->metrics.skipped_operations++;
+    report->status     = status;
+    report_replace_string(&report->reason, reason);
+    report->completion = (status == CL_BREAK) ? CL_SCAN_COMPLETION_APPLICATION_ABORT
+                                              : CL_SCAN_COMPLETION_RESOURCE_FAILURE;
+    report->finalized  = true;
+    report->has_result = true;
+}
+
 void cli_scan_report_merge(
     cl_scan_report_t *destination,
     const cl_scan_report_t *source)

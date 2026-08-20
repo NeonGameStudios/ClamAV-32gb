@@ -1027,6 +1027,32 @@ START_TEST(test_scan_report_counts_skipped_operations)
 }
 END_TEST
 
+START_TEST(test_scan_report_post_scan_failure_is_fail_visible)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_scan_completion_t completion;
+    cl_error_t status;
+    const char *reason = NULL;
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    cli_scan_report_finish(report, NULL, CL_SUCCESS, CL_VERDICT_NOTHING_FOUND, NULL);
+    cli_scan_report_note_post_scan_failure(report, CL_EREAD,
+                                           "input descriptor could not be closed");
+
+    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
+    ck_assert_int_eq(status, CL_EREAD);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_RESOURCE_FAILURE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "input descriptor could not be closed");
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.skipped_operations, 1);
+
+    cl_scan_report_free(report);
+}
+END_TEST
+
 START_TEST(test_scan_report_merge_preserves_detection_and_peaks)
 {
     cl_scan_report_t *aggregate = NULL;
@@ -11694,6 +11720,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_operational_failure_is_resource_failure);
     tcase_add_test(tc_cl, test_scan_report_sticky_resource_failure_is_not_a_scan_limit);
     tcase_add_test(tc_cl, test_scan_report_counts_skipped_operations);
+    tcase_add_test(tc_cl, test_scan_report_post_scan_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_largefile_default_profile_values);

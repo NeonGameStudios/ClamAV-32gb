@@ -3877,3 +3877,15 @@ candidate as unrelated magic. A focused injected-read regression covers PDF
 and ARJ, with source guards covering the helper family. Full fault-injected
 parser, sanitizer, and supported-build Sonic1 qualification remain release
 gates.
+
+## Public scan-file close-error propagation — 2026-08-20
+
+The public `cl_scanfile_ex2()` convenience API now checks the close of the
+descriptor it owns. A close failure after an otherwise clean or trusted scan
+is returned as `CL_EREAD` and changes the structured report to
+`RESOURCE_FAILURE` with a skipped-operation count, so a delayed descriptor
+I/O error cannot be published as clean evidence. Detection remains the
+authoritative result when a virus was already found. The focused report
+regression and source guards cover the post-scan transition; injected close,
+sanitizer, dependency-complete, and supported-build Sonic1 qualification
+remain release gates.

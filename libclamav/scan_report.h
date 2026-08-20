@@ -74,6 +74,13 @@ void cli_scan_report_finish(
     cl_verdict_t verdict,
     const char *last_alert);
 
+/* Record an I/O failure discovered after the scan itself finalized, such as
+ * failure closing a descriptor owned by a public convenience API. */
+void cli_scan_report_note_post_scan_failure(
+    cl_scan_report_t *report,
+    cl_error_t status,
+    const char *reason);
+
 /* Combine finalized child reports for front ends that walk a directory.  The
  * destination remains mutable and is finalized by the owning front end when
  * the request ends. */

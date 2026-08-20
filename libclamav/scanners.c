@@ -8428,7 +8428,14 @@ cl_error_t cl_scanfile_ex2(
         file_type_out,
         report_out);
 
-    close(fd);
+    if (close(fd) != 0) {
+        cli_scan_report_note_post_scan_failure(
+            (NULL != report_out) ? *report_out : NULL,
+            CL_EREAD,
+            "input descriptor could not be closed");
+        if ((ret == CL_SUCCESS) || (ret == CL_VERIFIED))
+            ret = CL_EREAD;
+    }
 
     return ret;
 }
