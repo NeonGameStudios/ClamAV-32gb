@@ -712,6 +712,16 @@ static bool autoit_require_range(cli_ctx *ctx, fmap_t *map, const uint8_t *curso
     return false;
 }
 
+static void autoit_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
+{
+    if (!failed)
+        return;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    if (*status == CL_SUCCESS || *status == CL_CLEAN || *status == CL_BREAK)
+        *status = CL_EUNLINK;
+}
+
 static cl_error_t autoit_reserve_output(uint8_t **buffer, uint32_t *capacity, uint32_t used, size_t additional)
 {
     uint64_t required = (uint64_t)used + additional;
@@ -1330,10 +1340,11 @@ done:
         free(UNP.outputbuf);
     }
     if (tempfd >= 0) {
-        close(tempfd);
-        if (!ctx->engine->keeptmp) {
-            (void)cli_unlink(tempfile);
-        }
+        autoit_note_cleanup_failure(ctx, &status, close(tempfd) != 0,
+                                    "AutoIt EA05 member temporary output could not be closed");
+        if (!ctx->engine->keeptmp)
+            autoit_note_cleanup_failure(ctx, &status, cli_unlink(tempfile) != 0,
+                                        "AutoIt EA05 member temporary output could not be removed");
     }
     free(tempfile);
     cli_scan_release_temporary(ctx, temporary_reserved);
@@ -2044,12 +2055,14 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
         }
         if (cli_writen(i, buf, UNP.cur_output) != UNP.cur_output) {
             cli_dbgmsg("autoit: cannot write %d bytes\n", UNP.usize);
-            close(i);
+            ret = CL_EWRITE;
+            autoit_note_cleanup_failure(ctx, &ret, close(i) != 0,
+                                        "AutoIt EA06 script output could not be closed");
             cli_scan_release_temporary(ctx, temporary_reserved);
             temporary_reserved = 0;
             free(buf);
             cli_mark_scan_incomplete(ctx, "AutoIt EA06 script output could not be written completely");
-            return CL_EWRITE;
+            return ret;
         }
 
         free(buf);
@@ -2062,36 +2075,34 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
         if (lseek(i, 0, SEEK_SET) == -1) {
             cli_dbgmsg("autoit: call to lseek() has failed\n");
-            close(i);
-            cli_scan_release_temporary(ctx, temporary_reserved);
-            temporary_reserved = 0;
-            return CL_ESEEK;
-        }
-
-        ret = cli_magic_scan_desc_type_reserved(i, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
-        if (CL_SUCCESS != ret) {
-            close(i);
-            if (!ctx->engine->keeptmp) {
-                if (cli_unlink(tempfile)) {
-                    cli_scan_release_temporary(ctx, temporary_reserved);
-                    temporary_reserved = 0;
-                    return CL_EUNLINK;
-                }
-            }
+            ret = CL_ESEEK;
+            autoit_note_cleanup_failure(ctx, &ret, close(i) != 0,
+                                        "AutoIt EA06 script output could not be closed");
+            if (!ctx->engine->keeptmp)
+                autoit_note_cleanup_failure(ctx, &ret, cli_unlink(tempfile) != 0,
+                                            "AutoIt EA06 script output could not be removed");
             cli_scan_release_temporary(ctx, temporary_reserved);
             temporary_reserved = 0;
             return ret;
         }
 
-        close(i);
-
-        if (!ctx->engine->keeptmp) {
-            if (cli_unlink(tempfile)) {
-                cli_scan_release_temporary(ctx, temporary_reserved);
-                temporary_reserved = 0;
-                return CL_EUNLINK;
-            }
+        ret = cli_magic_scan_desc_type_reserved(i, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+        if (CL_SUCCESS != ret) {
+            autoit_note_cleanup_failure(ctx, &ret, close(i) != 0,
+                                        "AutoIt EA06 script output could not be closed");
+            if (!ctx->engine->keeptmp)
+                autoit_note_cleanup_failure(ctx, &ret, cli_unlink(tempfile) != 0,
+                                            "AutoIt EA06 script output could not be removed");
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
+            return ret;
         }
+
+        autoit_note_cleanup_failure(ctx, &ret, close(i) != 0,
+                                    "AutoIt EA06 script output could not be closed");
+        if (!ctx->engine->keeptmp)
+            autoit_note_cleanup_failure(ctx, &ret, cli_unlink(tempfile) != 0,
+                                        "AutoIt EA06 script output could not be removed");
         cli_scan_release_temporary(ctx, temporary_reserved);
         temporary_reserved = 0;
     }
@@ -2152,8 +2163,11 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
             status = CL_EFORMAT;
     }
 
-    if (!ctx->engine->keeptmp)
-        cli_rmdirs(tmpd);
+    if (!ctx->engine->keeptmp && cli_rmdirs(tmpd) != 0) {
+        cli_mark_scan_incomplete(ctx, "AutoIt temporary directory could not be removed");
+        if (status == CL_SUCCESS || status == CL_CLEAN || status == CL_BREAK)
+            status = CL_EUNLINK;
+    }
 
     free(tmpd);
     return status;

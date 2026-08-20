@@ -2158,6 +2158,14 @@ with the pre-change and current sources. Reproducible 85-byte stored and
 current scanner; these are regression checks only and do not qualify large
 valid members or the parser family.
 
+## AutoIt temporary cleanup propagation — 2026-08-20
+
+AutoIt EA05 and EA06 now treat generated-output close, temporary-file removal,
+and extraction-directory removal failures as incomplete results. Cleanup
+failures preserve an earlier detection and make an otherwise-clean generated
+member non-clean. Valid large-member, malformed-decoder, sanitizer, and
+supported-build Sonic1 qualification remain release gates.
+
 ## Legacy PE unpacker contiguous admission — 2026-08-19
 
 Recognized legacy PE unpackers now pass their requested working size through a
