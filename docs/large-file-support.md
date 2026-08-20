@@ -3275,3 +3275,17 @@ Source guards and `git diff --check` are the current local evidence. A
 dependency-complete bytecode-v2 fixture exercising multi-gigabyte repeated
 writes, interpreter/JIT behavior, sanitizer/fault-injected cleanup, and
 supported-build Sonic1 qualification remain release gates.
+
+## CryptFF temporary-output accounting — 2026-08-20
+
+CryptFF decryption now checks its growing logical output with 64-bit
+arithmetic, reserves each output chunk against `MaxTemporarySize`, requires a
+complete write, and scans the completed temporary file through the
+reservation-aware descriptor path. Shared cleanup now releases the reservation
+and preserves explicit close/removal failures. The regression suite covers
+write, close, and temporary-quota failures as incomplete, non-cacheable
+results.
+
+Source guards and `git diff --check` are the current local evidence. A
+dependency-complete CryptFF corpus, sanitizer/fault-injected cleanup run, and
+supported-build Sonic1 qualification remain release gates.

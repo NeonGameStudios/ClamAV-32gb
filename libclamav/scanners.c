@@ -3764,13 +3764,16 @@ static cl_error_t cli_scanriff(cli_ctx *ctx)
 
 static cl_error_t cli_scancryptff(cli_ctx *ctx)
 {
-    cl_error_t ret = CL_SUCCESS, ndesc;
+    cl_error_t ret = CL_SUCCESS;
+    int ndesc;
     unsigned int i;
     const unsigned char *src;
     unsigned char *dest = NULL;
     char *tempfile;
     size_t pos;
     size_t bread;
+    uint64_t outsize            = 0;
+    uint64_t temporary_reserved = 0;
 
     /* Skip the CryptFF file header */
     pos = 0x10;
@@ -3811,6 +3814,16 @@ static cl_error_t cli_scancryptff(cli_ctx *ctx)
 
         for (i = 0; i < bread; i++)
             dest[i] = src[i] ^ (unsigned char)0xff;
+        if (outsize > UINT64_MAX - (uint64_t)bread) {
+            cli_mark_scan_incomplete(ctx, "CryptFF output size overflowed");
+            ret = CL_EPARSE;
+            break;
+        }
+        if ((ret = cli_checklimits("CryptFF", ctx, outsize + (uint64_t)bread, 0, 0)) != CL_SUCCESS)
+            break;
+        if ((ret = cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)bread,
+                                           "CryptFF temporary output exceeds temporary storage limits")) != CL_SUCCESS)
+            break;
         if (cli_writen(ndesc, dest, bread) != bread) {
             cli_dbgmsg("CryptFF: Can't write to descriptor %d\n", ndesc);
             cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be written completely");
@@ -3818,40 +3831,30 @@ static cl_error_t cli_scancryptff(cli_ctx *ctx)
             break;
         }
 
+        outsize += (uint64_t)bread;
         pos += bread;
     }
 
     free(dest);
 
     if (ret != CL_SUCCESS) {
-        if (close(ndesc) != 0)
-            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be closed");
-        if (!ctx->engine->keeptmp && CL_SUCCESS != cli_unlink(tempfile))
-            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be removed");
+        ret = cli_cleanup_compressed_temp(ctx, &ndesc, tempfile, ret,
+                                          temporary_reserved,
+                                          "CryptFF temporary output could not be closed",
+                                          "CryptFF temporary output could not be removed");
         free(tempfile);
         return ret;
     }
 
     cli_dbgmsg("CryptFF: Scanning decrypted data\n");
 
-    ret = cli_magic_scan_desc(ndesc, tempfile, ctx, NULL, LAYER_ATTRIBUTES_NONE);
-
-    if (close(ndesc) != 0) {
-        cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be closed");
-        if (ret == CL_SUCCESS)
-            ret = CL_EWRITE;
-    }
-
-    if (ctx->engine->keeptmp) {
+    ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    if (ctx->engine->keeptmp)
         cli_dbgmsg("CryptFF: Decompressed data saved in %s\n", tempfile);
-    } else {
-        if (CL_SUCCESS != cli_unlink(tempfile)) {
-            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be removed");
-            if (ret == CL_SUCCESS)
-                ret = CL_EUNLINK;
-        }
-    }
-
+    ret = cli_cleanup_compressed_temp(ctx, &ndesc, tempfile, ret,
+                                      temporary_reserved,
+                                      "CryptFF temporary output could not be closed",
+                                      "CryptFF temporary output could not be removed");
     free(tempfile);
     return ret;
 }
