@@ -224,38 +224,109 @@ static cl_error_t onas_scan_thread_handle_dir(struct onas_scan_event *event_data
     int32_t err         = 0;
     cl_error_t ret_code = CL_SUCCESS;
     cl_error_t ret      = CL_SUCCESS;
+    cl_error_t scan_ret = CL_SUCCESS;
 
     int32_t fres = 0;
     STATBUF sb;
 
     char *const pathargv[] = {(char *)pathname, NULL};
 
+    if (NULL == event_data || NULL == pathname) {
+        return CL_ENULLARG;
+    }
+
     if (!(ftsp = _priv_fts_open(pathargv, ftspopts, NULL))) {
         ret = CL_EOPEN;
         goto out;
     }
 
-    while ((curr = _priv_fts_read(ftsp))) {
-        if (curr->fts_info != FTS_D) {
-
-            fres = CLAMSTAT(curr->fts_path, &sb);
-
-            if (event_data->sizelimit) {
-                if (fres != 0 || (uint64_t)sb.st_size > event_data->sizelimit) {
-                    /* okay to skip w/o allow/deny since dir comes from inotify
-                     * events and (probably) won't block w/ protection enabled */
-                    event_data->bool_opts &= ((uint16_t)~ONAS_SCTH_B_SCAN);
-                    logg(LOGG_DEBUG, "ClamWorker: size limit surpassed while doing extra scanning ... skipping object ...\n");
+    while (1) {
+        /* fts_read() reports an unrecoverable walk failure as NULL with errno
+         * set.  Reset errno for each call so a previous scan operation cannot
+         * be mistaken for a traversal failure at end of walk. */
+        errno = 0;
+        curr  = _priv_fts_read(ftsp);
+        if (NULL == curr) {
+            if (errno != 0) {
+                logg(LOGG_ERROR, "ClamWorker: directory traversal of '%s' failed at end of walk (errno %d)\n", pathname, errno);
+                if (CL_SUCCESS == ret) {
+                    ret = CL_ESTAT;
                 }
             }
+            break;
+        }
 
-            ret = onas_scan_thread_scanfile(event_data, curr->fts_path, sb, &infected, &err, &ret_code);
+        switch (curr->fts_info) {
+            case FTS_D:
+            case FTS_DP:
+            case FTS_DC:
+            case FTS_DOT:
+            case FTS_W:
+                /* Directories are traversed, not submitted as scan files. */
+                continue;
+            case FTS_F:
+            case FTS_SL:
+            case FTS_SLNONE:
+                break;
+            case FTS_DNR:
+            case FTS_ERR:
+            case FTS_NS:
+                logg(LOGG_ERROR, "ClamWorker: incomplete directory traversal of '%s' (FTS status %d, errno %d)\n",
+                     curr->fts_path ? curr->fts_path : pathname, curr->fts_info, curr->fts_errno);
+                if (CL_SUCCESS == ret) {
+                    ret = CL_ESTAT;
+                }
+                continue;
+            default:
+                logg(LOGG_ERROR, "ClamWorker: unknown FTS status %d for '%s'; refusing to treat the directory as complete\n",
+                     curr->fts_info, curr->fts_path ? curr->fts_path : pathname);
+                if (CL_SUCCESS == ret) {
+                    ret = CL_ESTAT;
+                }
+                continue;
+        }
+
+        fres = CLAMSTAT(curr->fts_path, &sb);
+        if (fres != 0) {
+            logg(LOGG_ERROR, "ClamWorker: unable to stat '%s' during directory traversal; treating the extra scan as incomplete\n",
+                 curr->fts_path);
+            if (CL_SUCCESS == ret) {
+                ret = CL_ESTAT;
+            }
+            continue;
+        }
+
+        if (event_data->sizelimit && (uint64_t)sb.st_size > event_data->sizelimit) {
+            /* Inotify extra scans have no permission response to deny.  Skip
+             * only this object, keep scanning independent siblings, and
+             * return a non-clean status so the omission is observable. */
+            logg(LOGG_DEBUG, "ClamWorker: size limit surpassed while doing extra scanning; skipping '%s'\n", curr->fts_path);
+            if (CL_SUCCESS == ret) {
+                ret = CL_EMAXSIZE;
+            }
+            continue;
+        }
+
+        infected = 0;
+        err      = 0;
+        ret_code = CL_SUCCESS;
+        scan_ret = onas_scan_thread_scanfile(event_data, curr->fts_path, sb, &infected, &err, &ret_code);
+        if (CL_SUCCESS == ret && CL_SUCCESS != scan_ret) {
+            ret = scan_ret;
+        }
+        if (err && CL_SUCCESS == ret && CL_SUCCESS != ret_code && CL_VIRUS != ret_code) {
+            ret = ret_code;
         }
     }
 
 out:
     if (ftsp) {
-        _priv_fts_close(ftsp);
+        if (_priv_fts_close(ftsp) != 0) {
+            logg(LOGG_ERROR, "ClamWorker: could not close directory traversal of '%s'; treating the extra scan as incomplete\n", pathname);
+            if (CL_SUCCESS == ret) {
+                ret = CL_ESTAT;
+            }
+        }
     }
 
     return ret;
@@ -350,7 +421,10 @@ void *onas_scan_worker(void *arg)
 
         if (b_dir) {
             logg(LOGG_DEBUG, "ClamWorker: performing (extra) scanning on directory '%s'\n", event_data->pathname);
-            onas_scan_thread_handle_dir(event_data, event_data->pathname);
+            cl_error_t dir_ret = onas_scan_thread_handle_dir(event_data, event_data->pathname);
+            if (CL_SUCCESS != dir_ret) {
+                logg(LOGG_INFO, "ClamWorker: extra directory scan of '%s' was incomplete (status %d)\n", event_data->pathname, dir_ret);
+            }
         } else if (b_file) {
             logg(LOGG_DEBUG, "ClamWorker: performing (extra) scanning on file '%s'\n", event_data->pathname);
             onas_scan_thread_handle_file(event_data, event_data->pathname);

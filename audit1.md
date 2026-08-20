@@ -2355,3 +2355,24 @@ state remains attached to the containing fmap and disables clean caching. A
 focused malformed-Flate extraction regression covers the full caller path;
 compiled PDF corpus, sanitizer, and supported-build Sonic1 qualification
 remain release gates.
+
+## On-access FTS traversal completeness — 2026-08-20
+
+The inotify extra-directory scanner previously submitted every non-preorder
+FTS record to the file scan path, including unreadable directories and entries
+whose `stat()` operation had failed. It also discarded end-of-walk and
+`fts_close()` failures, so a partial walk could be logged as if it had
+completed. It now scans only recognized file/symlink records, preserves
+detected results, and returns an incomplete status for FTS error records,
+unknown records, failed child inspection, walk termination, or close failure.
+Size-limited children are skipped individually so one oversized sibling does
+not suppress independent files.
+
+The inotify hierarchy builder now rejects FTS error records and child-list
+enumeration failures, checks the traversal end state, and preserves close
+failures instead of installing or returning a partial hierarchy as success.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+inotify/fanotify fault-injected traversal, dependency-complete front-end
+builds, sanitizer coverage, and supported-build Sonic1 qualification remain
+release gates.

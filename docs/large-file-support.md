@@ -3816,3 +3816,20 @@ non-clean aggregate result after the failed object is counted.
 The focused malformed-Flate extraction regression and source guards cover the
 boundary. Dependency-complete PDF corpus, sanitizer, and supported-build
 Sonic1 qualification remain release gates.
+
+## On-access FTS traversal completeness — 2026-08-20
+
+The inotify extra-directory scan now distinguishes directories from scanable
+file entries and treats `FTS_DNR`, `FTS_ERR`, `FTS_NS`, unknown FTS records,
+failed `stat()` calls, end-of-walk errors, and `fts_close()` failures as
+incomplete results. A size-limited child is skipped without disabling scans of
+independent siblings, while the worker logs the non-clean aggregate status.
+
+The inotify hierarchy hash builder applies the same fail-closed policy to FTS
+records, child enumeration, end-of-walk errors, and traversal close failures;
+it can no longer install a partial directory hierarchy and report success.
+
+Source guards and `git diff --check` are the current local evidence. Compiled
+inotify/fanotify traversal fault injection, dependency-complete front-end
+builds, sanitizer coverage, and supported-build Sonic1 qualification remain
+release gates.

@@ -712,7 +712,18 @@ int onas_ht_add_hierarchy(struct onas_ht *ht, const char *pathname)
         goto out;
     }
 
-    while ((curr = _priv_fts_read(ftsp))) {
+    while (1) {
+        errno = 0;
+        curr  = _priv_fts_read(ftsp);
+        if (NULL == curr) {
+            if (errno != 0) {
+                logg(LOGG_ERROR, "ClamHash: hierarchy traversal of '%s' failed at end of walk (errno %d)\n", pathname, errno);
+                if (ret == 0) {
+                    ret = CL_ESTAT;
+                }
+            }
+            break;
+        }
 
         struct onas_hnode *hnode = NULL;
 
@@ -734,10 +745,20 @@ int onas_ht_add_hierarchy(struct onas_ht *ht, const char *pathname)
                 else
                     hnode->prnt_pathlen = 0;
                 break;
+            case FTS_DNR:
+            case FTS_ERR:
+            case FTS_NS:
+                logg(LOGG_ERROR, "ClamHash: incomplete hierarchy traversal of '%s' (FTS status %d, errno %d)\n",
+                     curr->fts_path ? curr->fts_path : pathname, curr->fts_info, curr->fts_errno);
+                if (ret == 0) {
+                    ret = CL_ESTAT;
+                }
+                goto out;
             default:
                 continue;
         }
 
+        errno = 0;
         if ((childlist = _priv_fts_children(ftsp, 0))) {
             do {
                 if (childlist->fts_info == FTS_D) {
@@ -747,8 +768,23 @@ int onas_ht_add_hierarchy(struct onas_ht *ht, const char *pathname)
                         onas_free_hashnode(hnode);
                         goto out;
                     }
+                } else if (childlist->fts_info == FTS_DNR || childlist->fts_info == FTS_ERR || childlist->fts_info == FTS_NS) {
+                    logg(LOGG_ERROR, "ClamHash: incomplete child hierarchy under '%s' (FTS status %d, errno %d)\n",
+                         childlist->fts_path ? childlist->fts_path : pathname, childlist->fts_info, childlist->fts_errno);
+                    if (ret == 0) {
+                        ret = CL_ESTAT;
+                    }
+                    onas_free_hashnode(hnode);
+                    goto out;
                 }
             } while ((childlist = childlist->fts_link));
+        } else if (errno != 0) {
+            logg(LOGG_ERROR, "ClamHash: could not enumerate children under '%s' (errno %d)\n", curr->fts_path, errno);
+            if (ret == 0) {
+                ret = CL_ESTAT;
+            }
+            onas_free_hashnode(hnode);
+            goto out;
         }
 
         struct onas_element *elem = onas_element_init(hnode, hnode->pathname, hnode->pathlen);
@@ -769,7 +805,12 @@ int onas_ht_add_hierarchy(struct onas_ht *ht, const char *pathname)
 
 out:
     if (ftsp) {
-        _priv_fts_close(ftsp);
+        if (_priv_fts_close(ftsp) != 0) {
+            logg(LOGG_ERROR, "ClamHash: could not close hierarchy traversal of '%s'\n", pathname);
+            if (ret == 0) {
+                ret = CL_ESTAT;
+            }
+        }
     }
 
     if (ret) {
