@@ -167,8 +167,10 @@ int cli_binhex(cli_ctx *ctx)
             }
             if (dec_done && write_phase == IN_LIMBO1) {
                 if (dec_done > 1) {
-                    if (reslen < 5) {
-                        cli_dbgmsg("cli_binhex: skipping resources (too small)\n");
+                    if (reslen != 0 && reslen < 5) {
+                        cli_dbgmsg("cli_binhex: resource fork is too small\n");
+                        cli_mark_scan_incomplete(ctx, "BinHex resource fork is too short to be inspected");
+                        ret = CL_EPARSE;
                         break;
                     }
                     dec_done -= 2;
@@ -183,8 +185,10 @@ int cli_binhex(cli_ctx *ctx)
                 }
             }
             if (dec_done && write_phase == IN_LIMBO2) {
-                if (reslen < 5) {
-                    cli_dbgmsg("cli_binhex: skipping resources (too small)\n");
+                if (reslen != 0 && reslen < 5) {
+                    cli_dbgmsg("cli_binhex: resource fork is too small\n");
+                    cli_mark_scan_incomplete(ctx, "BinHex resource fork is too short to be inspected");
+                    ret = CL_EPARSE;
                     break;
                 }
                 write_phase++;

@@ -2019,3 +2019,15 @@ Source guards and `git diff --check` are the current local evidence. A
 dependency-complete HTML/script build, fault-injected write/read/close
 coverage, sanitizer run, large HTML corpus, and supported-build Sonic1
 qualification remain open release gates.
+
+## BinHex short resource-fork omission — 2026-08-20
+
+BinHex previously logged and abandoned a nonzero resource fork shorter than the
+minimum resource-stream boundary, which could leave required resource content
+uninspected while the enclosing scan remained clean. The parser now marks that
+case incomplete and returns `CL_EPARSE`; a zero-length resource fork remains an
+allowed empty fork. A focused encoded BinHex regression requires the
+non-cacheable, fail-visible result, and source guards cover the new boundary.
+
+Compiled BinHex execution, legacy-mail corpus coverage, sanitizer execution,
+and supported-build Sonic1 qualification remain open release gates.

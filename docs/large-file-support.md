@@ -2171,6 +2171,16 @@ failures preserve an earlier detection and make an otherwise-clean generated
 member non-clean. Valid large-member, malformed-decoder, sanitizer, and
 supported-build Sonic1 qualification remain release gates.
 
+## BinHex short resource-fork boundary — 2026-08-20
+
+BinHex no longer reports a clean result after silently abandoning a nonzero
+resource fork shorter than the minimum resource-stream boundary. That path now
+marks the scan incomplete and returns `CL_EPARSE`; a declared zero-length
+resource fork remains valid. A focused encoded BinHex regression and source
+guards cover the boundary. Compiled parser execution, legacy-mail corpus,
+sanitizer coverage, and supported-build Sonic1 qualification remain release
+gates.
+
 ## OLE metadata and VBA input cleanup propagation — 2026-08-20
 
 OLE summary-property parser errors and close failures are now retained by the
