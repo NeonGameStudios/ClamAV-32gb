@@ -382,12 +382,17 @@ static void mspack_cleanup_temp(cli_ctx *ctx, char **tmp_fname, bool *tempfile_e
 
 cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
 {
+    static const size_t cab_header_size = 36;
     cl_error_t status = CL_EFORMAT;
 
     struct mscab_decompressor *cab_d = NULL;
     struct mscabd_cabinet *cab_h     = NULL;
     struct mspack_name mspack_fmap   = {0};
     struct mspack_system_ex ops_ex   = {0};
+    unsigned char header[36];
+    uint64_t remaining;
+    uint32_t cabinet_size;
+    uint32_t files_offset;
 
     if (NULL == ctx || NULL == size) {
         cli_dbgmsg("%s() invalid argument\n", __func__);
@@ -397,6 +402,29 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
 
     *size            = 0;
     mspack_fmap.fmap = ctx->fmap;
+
+    /* File-type recognition proves only the four-byte MSCF marker. Require
+     * the complete fixed CAB header before treating a candidate as a
+     * confirmed archive. A complete header whose declared extent is outside
+     * the containing map is malformed/truncated, not a disproven signature. */
+    remaining = (offset <= ctx->fmap->len) ? (uint64_t)(ctx->fmap->len - offset) : 0;
+    if (remaining < cab_header_size)
+        goto done;
+    if (fmap_readn(ctx->fmap, header, offset, cab_header_size) != cab_header_size) {
+        status = CL_EREAD;
+        goto done;
+    }
+    if (memcmp(header, "MSCF", 4) != 0)
+        goto done;
+
+    cabinet_size = cli_readint32(header + 8);
+    files_offset = cli_readint32(header + 16);
+    if (cabinet_size < cab_header_size || (uint64_t)cabinet_size > remaining ||
+        files_offset < cab_header_size || files_offset > cabinet_size) {
+        cli_mark_scan_incomplete(ctx, "CAB fixed header is malformed or truncated");
+        status = CL_EPARSE;
+        goto done;
+    }
 
     if ((off_t)offset < 0 || (uint64_t)(off_t)offset != (uint64_t)offset) {
         cli_dbgmsg("%s() offset cannot be represented by off_t: %zu\n", __func__, offset);
@@ -419,7 +447,8 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     cab_h = cab_d->open(cab_d, (char *)&mspack_fmap);
     if (NULL == cab_h) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
-        status = CL_EFORMAT;
+        cli_mark_scan_incomplete(ctx, "CAB archive header could not be inspected completely");
+        status = CL_EPARSE;
         goto done;
     }
 

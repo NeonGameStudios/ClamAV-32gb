@@ -3854,3 +3854,14 @@ treated as `CL_EFORMAT` and silently discarded by the raw embedded-candidate
 path. A focused four-byte public-map regression and source guards cover this
 boundary. Full ARJ corpus, sanitizer, and supported-build Sonic1 qualification
 remain release gates.
+
+## CAB SFX fixed-header admission — 2026-08-20
+
+CAB SFX admission now requires the complete fixed 36-byte header before
+creating a nested layer. A short `MSCF` hit remains a disproven weak candidate,
+while a complete header whose declared cabinet or file-table extent exceeds
+the containing map is confirmed malformed/truncated and returns `CL_EPARSE`
+with sticky incomplete state. A later libmspack open failure after fixed-header
+admission is also fail-visible. A focused synthetic public-map regression and
+source guards cover the boundary. Full CAB corpus, sanitizer, and supported-
+build Sonic1 qualification remain release gates.
