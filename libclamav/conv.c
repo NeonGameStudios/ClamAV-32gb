@@ -40,6 +40,7 @@
 // libclamav
 #include "clamav.h"
 #include "conv.h"
+#include "others.h"
 
 /** Get the expected decoded length of a base64-encoded string
  * @param[in] data Base64-encoded string
@@ -72,7 +73,7 @@ void *cl_base64_decode(char *data, size_t len, void *obuf, size_t *olen, int one
     BIO *bio, *b64;
     void *buf;
 
-    buf = (obuf) ? obuf : malloc(base64_len(data, len) + 1);
+    buf = (obuf) ? obuf : cli_max_malloc(base64_len(data, len) + 1);
     if (!(buf))
         return NULL;
 
@@ -131,7 +132,7 @@ char *cl_base64_encode(void *data, size_t len)
     elen = (size_t)BIO_get_mem_data(bio, &buf);
 
     /* Ensure we're dealing with a NULL-terminated string */
-    p = (char *)malloc(elen + 1);
+    p = (char *)cli_max_malloc(elen + 1);
     if (NULL == p) {
         BIO_free(b64);
         return NULL;

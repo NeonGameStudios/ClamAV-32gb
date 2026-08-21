@@ -3108,3 +3108,12 @@ ceiling for BIFF data and drawing-group storage, checks cumulative growth before
 addition, and marks allocation or ceiling failures incomplete while preserving
 raw matching. Static guards and whitespace validation pass; compiled XLM/OLE
 corpus, sanitizer, and production qualification remain open.
+
+## Shared base64 allocation bound — 2026-08-21
+
+The shared base64 helpers used raw `malloc()` for decoded and encoded buffers.
+They now use `cli_max_malloc()`, so MSXML embedded binaries and HWP, OLE, or
+PDF metadata fallback paths cannot create a contiguous buffer above the
+individual-allocation ceiling before their caller can reserve temporary
+storage. Static guards and whitespace validation pass; compiled parser corpus,
+sanitizer, and production qualification remain open.
