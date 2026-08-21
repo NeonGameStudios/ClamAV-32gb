@@ -99,6 +99,8 @@
   oracle; full release qualification remains open.
 - ARJ header admission now validates the starting offset before subtraction-form
   range checks; parser-family and production-corpus qualification remain open.
+- HTML normalized no-comment, no-tags, and JavaScript output open failures now
+  remain fail-visible; parser-family and production-corpus qualification remain open.
 
 ## Large-file validation and expansion progression
 

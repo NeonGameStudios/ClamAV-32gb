@@ -2213,3 +2213,13 @@ from turning the remaining-length calculation into an underflow. Source guards
 and the existing truncated-main-header regression record the invariant;
 compiled Linux/Sonic1, sanitizer, and broader ARJ corpus qualification remain
 open.
+
+## HTML normalized-output open failures — 2026-08-21
+
+HTML normalization intentionally permits an individual normalized output to be
+absent when the source contains no corresponding content, but failures other
+than `ENOENT` now mark the HTML layer incomplete and return an open/access
+error. The no-comment, no-tags, and JavaScript normalized views therefore
+cannot disappear silently after successful normalization. Source guards record
+the three paths; compiled Linux/Sonic1, sanitizer, and broader HTML corpus
+qualification remain open.

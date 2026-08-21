@@ -3300,6 +3300,13 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
 
     snprintf(fullname, 1024, "%s" PATHSEP "nocomment.html", tempname);
     fd = open(fullname, O_RDONLY | O_BINARY);
+    if (fd < 0 && errno != ENOENT) {
+        int open_errno = errno;
+
+        cli_mark_scan_incomplete(ctx, "HTML normalized no-comment output could not be opened");
+        status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
+        goto done;
+    }
     if (fd >= 0) {
         // nocomment.html file exists, so lets scan it.
 
@@ -3331,6 +3338,13 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
         snprintf(fullname, 1024, "%s" PATHSEP "notags.html", tempname);
 
         fd = open(fullname, O_RDONLY | O_BINARY);
+        if (fd < 0 && errno != ENOENT) {
+            int open_errno = errno;
+
+            cli_mark_scan_incomplete(ctx, "HTML normalized no-tags output could not be opened");
+            status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
+            goto done;
+        }
         if (fd >= 0) {
             // notags.html file exists, so lets scan it.
 
@@ -3351,6 +3365,13 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
 
     snprintf(fullname, 1024, "%s" PATHSEP "javascript", tempname);
     fd = open(fullname, O_RDONLY | O_BINARY);
+    if (fd < 0 && errno != ENOENT) {
+        int open_errno = errno;
+
+        cli_mark_scan_incomplete(ctx, "HTML normalized JavaScript output could not be opened");
+        status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
+        goto done;
+    }
     if (fd >= 0) {
         // javascript file exists, so lets scan it (twice, as different types).
 
