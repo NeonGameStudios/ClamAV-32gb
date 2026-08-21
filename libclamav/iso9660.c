@@ -317,6 +317,9 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
 cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
 {
     const uint8_t *privol, *next;
+    const uint8_t *primary_map;
+    uint8_t primary_descriptor[2448 + 6];
+    uint8_t joliet_descriptor[2048];
     iso9660_t iso;
     int i;
     cl_error_t status   = CL_SUCCESS;
@@ -328,33 +331,33 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         return iso_incomplete(ctx, "ISO volume descriptor started before the required system area");
     }
 
-    if (offset > ctx->fmap->len || 2448 + 6 > ctx->fmap->len - offset)
+    if (offset > ctx->fmap->len || sizeof(primary_descriptor) > ctx->fmap->len - offset)
         return iso_incomplete(ctx, "ISO volume descriptor was truncated");
 
-    privol = fmap_need_off(ctx->fmap, offset, 2448 + 6);
-    if (!privol) {
+    primary_map = fmap_need_off(ctx->fmap, offset, sizeof(primary_descriptor));
+    if (!primary_map) {
         cli_mark_scan_incomplete(ctx, "ISO volume descriptor could not be read completely");
         return CL_EREAD;
     }
 
-    next = (uint8_t *)cli_memstr((char *)privol + 2049, 2448 + 6 - 2049, "CD001", 5);
+    next = (uint8_t *)cli_memstr((char *)primary_map + 2049, sizeof(primary_descriptor) - 2049, "CD001", 5);
     if (!next) {
         /* Find next volume descriptor */
-        fmap_unneed_off(ctx->fmap, offset, 2448);
+        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
         return iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
     }
 
-    iso.sectsz = (next - privol) - 1;
+    iso.sectsz = (next - primary_map) - 1;
     if (iso.sectsz * 16 > offset) {
         /* Need room for 16 system sectors */
-        fmap_unneed_off(ctx->fmap, offset, 2448);
+        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
         return iso_incomplete(ctx, "ISO volume descriptor had an invalid sector layout");
     }
 
-    iso.blocksz = cli_readint32(privol + 128) & 0xffff;
+    iso.blocksz = cli_readint32(primary_map + 128) & 0xffff;
     if (iso.blocksz != 512 && iso.blocksz != 1024 && iso.blocksz != 2048) {
         /* Likely not a cdrom image */
-        fmap_unneed_off(ctx->fmap, offset, 2448);
+        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
         return iso_incomplete(ctx, "ISO volume descriptor had an invalid block size");
     }
 
@@ -371,7 +374,7 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         next             = fmap_need_off_once(ctx->fmap, descriptor_offset, 2048);
         if (!next) {
             if (descriptor_offset <= ctx->fmap->len && 2048 <= ctx->fmap->len - descriptor_offset) {
-                fmap_unneed_off(ctx->fmap, offset, 2448);
+                fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
                 cli_mark_scan_incomplete(ctx, "ISO secondary volume descriptor could not be read completely");
                 status = CL_EREAD;
                 goto done;
@@ -399,16 +402,22 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
             default: /* Not Joliet */
                 continue;
         }
+        memcpy(joliet_descriptor, next, sizeof(joliet_descriptor));
         break;
     }
 
     /* TODO rr, el torito, udf ? */
 
-    /* NOTE: freeing sector now. it is still safe to access as we don't alloc anymore */
-    fmap_unneed_off(ctx->fmap, offset, 2448);
+    /* The directory walk allocates and reads other fmap pages. Snapshot both
+     * descriptors before releasing the primary locked window so later debug
+     * and root-directory reads never use an unlocked mapped pointer. */
+    memcpy(primary_descriptor, primary_map, sizeof(primary_descriptor));
+    fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+    privol = primary_descriptor;
     if (!iso.joliet) {
         next = NULL;
-    }
+    } else
+        next = joliet_descriptor;
 
     nextJoliet = iso.joliet;
     iso.joliet = 0;

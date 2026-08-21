@@ -4460,6 +4460,15 @@ already-computed unpack result so its direct-return branches cannot bypass
 cleanup. Static guards and whitespace validation pass; compiled PE corpus,
 sanitizer, and large-file qualification remain release gates.
 
+## ISO9660 descriptor-window lifetime — 2026-08-21
+
+ISO9660 now snapshots the bounded primary volume descriptor and selected Joliet
+descriptor before releasing the fmap window. The later debug and directory
+walk therefore use local descriptor bytes even while nested block reads and
+allocations can evict unlocked map pages. Static guards and whitespace
+validation pass; compiled ISO corpus, sanitizer, and large-file qualification
+remain release gates.
+
 ## HFS+ file-tree header fmap failure — 2026-08-21
 
 HFS+ confirmed tree-header windows that fail in the fmap now mark the layer

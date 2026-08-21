@@ -2999,3 +2999,13 @@ could leak the lock entirely. It now holds the bounded window through
 the resource-address and OEP-read failures. Static guards and whitespace
 validation pass; compiled PE corpus, sanitizer, and large-file qualification
 remain release gates.
+
+## ISO9660 descriptor-window lifetime — 2026-08-21
+
+ISO9660 previously released the primary volume-descriptor lock before using its
+fields for debug output and root-directory traversal; a selected Joliet
+descriptor was also carried as an unlocked fmap pointer across nested work.
+Both bounded descriptors are now copied while readable, and all primary-window
+error paths release the exact requested range. Static guards and whitespace
+validation pass; compiled ISO corpus, sanitizer, and large-file qualification
+remain release gates.
