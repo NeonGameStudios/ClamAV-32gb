@@ -4451,6 +4451,15 @@ operations. This removes a page lock that previously had no matching
 `fmap_unneed` call. The source guard covers the lifetime rule; compiled GIF
 corpus, sanitizer, and large-file qualification remain open.
 
+## NsPack source-window lifetime — 2026-08-21
+
+The legacy NsPack PE unpacker now keeps its bounded compressed-source fmap
+window locked until `unspack()` has consumed it. Error exits release the window
+before leaving the heuristic, and the result-handling macro receives the
+already-computed unpack result so its direct-return branches cannot bypass
+cleanup. Static guards and whitespace validation pass; compiled PE corpus,
+sanitizer, and large-file qualification remain release gates.
+
 ## HFS+ file-tree header fmap failure — 2026-08-21
 
 HFS+ confirmed tree-header windows that fail in the fmap now mark the layer

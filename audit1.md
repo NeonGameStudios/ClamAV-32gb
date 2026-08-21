@@ -2989,3 +2989,13 @@ The GIF parser’s immediate three-byte signature probe now uses
 `fmap_need_off_once()` instead of retaining a locked window without a matching
 release. Static guards and whitespace validation pass; compiled GIF corpus,
 sanitizer, and large-file qualification remain release gates.
+
+## NsPack source-window lifetime — 2026-08-21
+
+The legacy NsPack PE unpacker previously released its locked compressed-source
+window before passing the pointer to `unspack()`, and two later error exits
+could leak the lock entirely. It now holds the bounded window through
+`unspack()`, releases it before the result macro can return, and releases it on
+the resource-address and OEP-read failures. Static guards and whitespace
+validation pass; compiled PE corpus, sanitizer, and large-file qualification
+remain release gates.

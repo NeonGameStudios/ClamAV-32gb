@@ -4524,6 +4524,7 @@ int cli_scanpe(cli_ctx *ctx)
     while (DCONF & PE_CONF_NSPACK) {
         uint32_t eprva = peinfo->vep;
         uint32_t start_of_stuff, rep = peinfo->ep;
+        uint32_t unpack_result;
         unsigned int nowinldr;
         const char *nbuff;
 
@@ -4580,16 +4581,17 @@ int cli_scanpe(cli_ctx *ctx)
 
         eprva += 0x27a;
         if (!(rep = cli_rawaddr(eprva, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size)) && err) {
+            fmap_unneed_off(map, start_of_stuff, ssize);
             free(dest);
             break;
         }
 
         if (!(nbuff = fmap_need_off_once(map, rep, 5))) {
+            fmap_unneed_off(map, start_of_stuff, ssize);
             free(dest);
             break;
         }
 
-        fmap_unneed_off(map, start_of_stuff, ssize);
         eprva = eprva + 5 + cli_readint32(nbuff + 1);
         cli_dbgmsg("cli_scanpe: NsPack: OEP = %08x\n", eprva);
 
@@ -4597,7 +4599,12 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "NsPack");
 
         CLI_UNPTEMP("cli_scanpe: NsPack", (dest, 0));
-        CLI_UNPRESULTS("cli_scanpe: NsPack", (unspack(src, dest, ctx, peinfo->sections[0].rva, EC32(peinfo->pe_opt.opt32.ImageBase), eprva, ndesc)), 0, (dest, 0));
+        /* Keep the bounded source window locked until unspack() has consumed
+         * it. Release it before the result macro because that macro may
+         * return directly on every unpacking outcome. */
+        unpack_result = unspack(src, dest, ctx, peinfo->sections[0].rva, EC32(peinfo->pe_opt.opt32.ImageBase), eprva, ndesc);
+        fmap_unneed_off(map, start_of_stuff, ssize);
+        CLI_UNPRESULTS("cli_scanpe: NsPack", unpack_result, 0, (dest, 0));
         break;
     }
 
