@@ -4359,6 +4359,14 @@ result. A synthetic root-resource fault-injection regression, source guards,
 and the PE capability entry are registered. Compiled Linux/Sonic1, sanitizer,
 and broader PE/resource corpus qualification remain open.
 
+## Forced nested-fmap read failures — 2026-08-21
+
+After a nested range passes bounds and resource admission, a source-window
+failure while materializing it to disk now returns `CL_EREAD` instead of the
+generic map error. The path remains incomplete and non-cacheable, and the
+fault-injected nested-range regression checks the status and reason. Compiled
+Linux/Sonic1, sanitizer, and broad nested-parser qualification remain open.
+
 ## HWP3 document metadata fmap failures — 2026-08-21
 
 HWP3 required document-info and metadata-enabled document-summary reads now

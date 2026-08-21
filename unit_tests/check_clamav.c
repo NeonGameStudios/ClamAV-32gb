@@ -11054,8 +11054,9 @@ START_TEST(test_nested_fmap_ranges_and_force_to_disk_are_fail_visible)
     map->dont_cache_flag = false;
     ret = cli_magic_scan_nested_fmap_type(map, 0, sizeof(state.data), &ctx,
                                           CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
-    ck_assert_int_eq(ret, CL_EMAP);
+    ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "nested fmap could not be read completely while forcing it to disk");
     ck_assert(map->dont_cache_flag);
     ck_assert_msg(state.successful_reads != 0,
                   "force-to-disk copy attempted to materialize the entire nested range at once");

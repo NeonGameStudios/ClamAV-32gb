@@ -7224,7 +7224,10 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
             if (nread != chunk) {
                 cli_errmsg("cli_magic_scan_nested_fmap_type: could not read complete nested fmap range\n");
                 cli_mark_scan_incomplete(ctx, "nested fmap could not be read completely while forcing it to disk");
-                ret = CL_EMAP;
+                /* The explicit range was admitted against the containing
+                 * map above, so a failed window is an operational read
+                 * failure rather than a malformed nested range. */
+                ret = CL_EREAD;
                 break;
             }
             if (cli_writen(fd, copybuf, chunk) != chunk) {

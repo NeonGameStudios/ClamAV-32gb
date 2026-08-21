@@ -2037,6 +2037,15 @@ regression, source guards, and the PE capability entry record the contract.
 Compiled Linux/Sonic1, sanitizer, and broader PE/resource corpus
 qualification remain open.
 
+## Forced nested-fmap read failures — 2026-08-21
+
+The force-to-disk nested-fmap path now classifies a failed in-range source
+window as `CL_EREAD` after the explicit nested range has already passed bounds
+and resource admission. It still marks the layer incomplete and non-cacheable,
+and its existing fault-injected regression now asserts the operational status
+and reason. Compiled Linux/Sonic1, sanitizer, and broad nested-parser
+qualification remain open.
+
 ## HWP3 document metadata fmap failures — 2026-08-21
 
 HWP3 required document-info and metadata-enabled document-summary windows now
