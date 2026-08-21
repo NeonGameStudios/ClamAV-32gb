@@ -2477,3 +2477,14 @@ non-success error below `CL_TYPENO`, while allowing file-type result codes to
 continue through the intended type-detection path. Source guards record the
 invariant; compiled Linux/Sonic1, resource/callback fault injection, sanitizer,
 and production signature-corpus qualification remain open.
+
+## PDF extracted-object hook result propagation — 2026-08-21
+
+The PDF post-dump bytecode hook previously fell back to the parent PDF fmap
+when mapping the extracted object failed, allowing the hook to inspect the
+wrong bytes. It also ignored post-hook errors other than `CL_VIRUS`. The hook
+now marks the layer incomplete and returns `CL_EREAD` when the extracted fmap
+cannot be created, and propagates every non-success hook result except the
+existing intentional `CL_BREAK` continuation. Source guards record both
+invariants; compiled Linux/Sonic1, bytecode fault injection, sanitizer, and
+production PDF/bytecode corpus qualification remain open.

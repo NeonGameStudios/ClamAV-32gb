@@ -167,6 +167,9 @@
   `CL_TYPENO` instead of allowing a later matcher pass to hide resource,
   timeout, callback, or read failures; add matcher fault-injection and
   production signature-corpus coverage.
+- PDF extracted-object bytecode hooks now fail closed when their fmap cannot
+  be created and preserve post-dump hook errors; add bytecode fault injection
+  and production PDF/bytecode corpus coverage.
 
 ## Large-file validation and expansion progression
 

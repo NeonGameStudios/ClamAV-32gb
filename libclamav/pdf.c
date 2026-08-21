@@ -1162,8 +1162,9 @@ static int run_pdf_hooks(struct pdf_struct *pdf, enum pdf_phase phase, int fd, c
         map = fmap_new(fd, 0, 0, NULL, filepath);
         if (!map) {
             cli_dbgmsg("run_pdf_hooks: can't mmap pdf extracted obj\n");
-            map = ctx->fmap;
-            fd  = -1;
+            cli_mark_scan_incomplete(ctx, "PDF extracted object could not be mapped for bytecode hook");
+            cli_bytecode_context_destroy(bc_ctx);
+            return CL_EREAD;
         }
     }
 
@@ -1999,7 +2000,7 @@ scan_extracted_objects:
 
         if ((status == CL_CLEAN) || (status == CL_VIRUS)) {
             ret = run_pdf_hooks(pdf, PDF_PHASE_POSTDUMP, fout, fullname);
-            if (ret == CL_VIRUS) {
+            if (ret != CL_SUCCESS && ret != CL_BREAK) {
                 status = ret;
                 goto done;
             }
