@@ -1213,6 +1213,12 @@ static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
 
     rc = yr_execute_code(ac_lsig, acdata, &context, 0, 0);
 
+    if (rc == CL_EREAD) {
+        cli_mark_scan_incomplete(ctx, "YARA matcher fmap read failed");
+        if (ctx->fmap != NULL)
+            ctx->fmap->dont_cache_flag = 1;
+    }
+
     if (rc == CL_VIRUS) {
         if (ac_lsig->flag & CLI_LSIG_FLAG_PRIVATE) {
             rc = CL_CLEAN;

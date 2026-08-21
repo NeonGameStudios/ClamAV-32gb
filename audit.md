@@ -1889,6 +1889,16 @@ an incomplete, non-cacheable `CL_EFORMAT` result; source guards are
 registered. Compiled Linux/Sonic1 execution, sanitizer coverage, and broader
 PE corpus qualification remain open.
 
+## YARA fmap read-failure propagation — 2026-08-20
+
+YARA integer reads now distinguish a valid out-of-range `UNDEFINED` value from
+an in-range fmap window that could not be read. The latter returns `CL_EREAD`,
+marks the scan incomplete and non-cacheable, and prevents a required YARA
+matcher from turning an operational failure into a clean result. A focused
+fault-injected matcher regression and source guards are registered. Compiled
+Linux/Sonic1 execution, sanitizer coverage, and full YARA qualification remain
+open.
+
 ## PE import-function name termination — 2026-08-20
 
 PE32 and PE32+ import-thunk inspection now requires imported function names to

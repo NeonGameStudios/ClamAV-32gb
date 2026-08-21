@@ -4112,6 +4112,15 @@ The focused matcher regression covers both the successful charge and the
 fail-closed limit path. Full YARA rule evaluation, production signatures,
 sanitizer, and large-file qualification remain release gates.
 
+## YARA fmap read-failure propagation — 2026-08-20
+
+YARA integer reads now distinguish a valid out-of-range `UNDEFINED` value from
+an in-range fmap window that failed to load. An operational read returns
+`CL_EREAD`, marks the scan incomplete and non-cacheable, and cannot be
+converted into a clean result by the YARA executor. The focused regression
+injects the fmap failure; compiled Linux/Sonic1, sanitizer, and full YARA
+qualification remain release gates.
+
 ## Logical bytecode-reference admission — 2026-08-20
 
 The logical-signature evaluator now validates the referenced bytecode table and

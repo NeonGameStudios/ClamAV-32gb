@@ -857,6 +857,59 @@ START_TEST(test_yara_uint32_read_accepts_exact_tail)
 }
 END_TEST
 
+#ifdef HAVE_YARA
+static const void *yara_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0 && len == sizeof(uint32_t))
+        return NULL;
+    if (at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+#endif
+
+START_TEST(test_yara_map_read_failure_is_fail_visible)
+{
+#ifdef HAVE_YARA
+    static const unsigned char bytes[] = {0x78, 0x56, 0x34, 0x12};
+    uint64_t offset = 0;
+    uint8_t code[]  = {OP_PUSH, 0, 0, 0, 0, 0, 0, 0, 0, OP_UINT32, OP_POP, OP_HALT};
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memcpy(code + 1, &offset, sizeof(offset));
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id             = 0;
+    lsig.type           = CLI_YARA_NORMAL;
+    lsig.u.code_start   = code;
+    lsig.virname        = (char *)"YaraMapReadFailure";
+    lsigtable[0]        = &lsig;
+    root.ac_lsigs       = 1;
+    root.ac_lsigtable   = lsigtable;
+
+    map = cl_fmap_open_memory(bytes, sizeof(bytes));
+    ck_assert_ptr_nonnull(map);
+    map->need = yara_map_read_failure;
+    ctx.fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ctx.fmap = &thefmap;
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_yara_evaluation_accounts_matcher_work)
 {
 #ifdef HAVE_YARA
@@ -1251,6 +1304,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
+    tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
     tcase_add_test(tc_matchers, test_byte_compare_offset_above_uint32);

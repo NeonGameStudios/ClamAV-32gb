@@ -93,16 +93,46 @@ typedef struct _YR_MATCH
       return UNDEFINED; \
     };
 #else
+#define YARA_READ_ERROR ((int64_t)0xFFFABADAFABADAFE)
+
+static const void *yara_need_value(fmap_t *fmap, size_t offset, size_t length, int *read_error)
+{
+    const void *data;
+
+    if (fmap == NULL || fmap->need == NULL) {
+        if (read_error != NULL)
+            *read_error = 1;
+        return NULL;
+    }
+    if (offset > fmap->len || length > fmap->len - offset)
+        return NULL;
+
+    data = fmap_need_off_once(fmap, offset, length);
+    if (data == NULL && read_error != NULL)
+        *read_error = 1;
+    return data;
+}
+
 #define function_read(type) \
     int64_t read_##type(fmap_t * fmap, size_t offset) \
     { \
-      const void *data;                                         \
-      if (offset > fmap->len || sizeof(type) > fmap->len - offset) \
-          return UNDEFINED;                                     \
-      data = fmap_need_off_once(fmap, offset, sizeof(type));    \
-      if (!data)                                                \
-          return UNDEFINED;                                     \
-      return *((type *) data);                                  \
+      const void *data = yara_need_value(fmap, offset, sizeof(type), NULL); \
+      if (!data)                                                           \
+          return UNDEFINED;                                                \
+      return *((type *) data);                                             \
+    }                                                                      \
+    static int64_t read_##type##_context(YR_SCAN_CONTEXT * context, size_t offset) \
+    {                                                                       \
+      int read_error = 0;                                                   \
+      const void *data;                                                      \
+      if (context == NULL)                                                   \
+          return YARA_READ_ERROR;                                           \
+      data = yara_need_value(context->fmap, offset, sizeof(type), &read_error); \
+      if (read_error)                                                        \
+          return YARA_READ_ERROR;                                           \
+      if (!data)                                                             \
+          return UNDEFINED;                                                  \
+      return *((type *) data);                                               \
     };
 #endif
 
@@ -821,32 +851,50 @@ int yr_execute_code(
 #else
       case OP_INT8:
         pop(r1);
-        push(read_int8_t(context->fmap, r1));
+        r1 = read_int8_t_context(context, r1);
+        if (r1 == YARA_READ_ERROR)
+          return CL_EREAD;
+        push(r1);
         break;
 
       case OP_INT16:
         pop(r1);
-        push(read_int16_t(context->fmap, r1));
+        r1 = read_int16_t_context(context, r1);
+        if (r1 == YARA_READ_ERROR)
+          return CL_EREAD;
+        push(r1);
         break;
 
       case OP_INT32:
         pop(r1);
-        push(read_int32_t(context->fmap, r1));
+        r1 = read_int32_t_context(context, r1);
+        if (r1 == YARA_READ_ERROR)
+          return CL_EREAD;
+        push(r1);
         break;
 
       case OP_UINT8:
         pop(r1);
-        push(read_uint8_t(context->fmap, r1));
+        r1 = read_uint8_t_context(context, r1);
+        if (r1 == YARA_READ_ERROR)
+          return CL_EREAD;
+        push(r1);
         break;
 
       case OP_UINT16:
         pop(r1);
-        push(read_uint16_t(context->fmap, r1));
+        r1 = read_uint16_t_context(context, r1);
+        if (r1 == YARA_READ_ERROR)
+          return CL_EREAD;
+        push(r1);
         break;
 
       case OP_UINT32:
         pop(r1);
-        push(read_uint32_t(context->fmap, r1));
+        r1 = read_uint32_t_context(context, r1);
+        if (r1 == YARA_READ_ERROR)
+          return CL_EREAD;
+        push(r1);
         break;
 #endif
 
