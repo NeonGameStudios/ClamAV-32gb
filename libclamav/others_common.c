@@ -240,6 +240,7 @@ void *cli_max_malloc(size_t size)
 void *cli_max_calloc(size_t nmemb, size_t size)
 {
     void *alloc;
+    size_t total_size;
 
     if (!nmemb || 0 == size || size > CLI_MAX_ALLOCATION || nmemb > CLI_MAX_ALLOCATION ||
         nmemb > CLI_MAX_ALLOCATION / size) {
@@ -248,11 +249,12 @@ void *cli_max_calloc(size_t nmemb, size_t size)
         return NULL;
     }
 
+    total_size = nmemb * size;
     alloc = calloc(nmemb, size);
 
     if (!alloc) {
         perror("calloc_problem");
-        cli_errmsg("cli_max_calloc(): Can't allocate memory (%lu bytes).\n", (unsigned long int)(nmemb * size));
+        cli_errmsg("cli_max_calloc(): Can't allocate memory (%zu bytes).\n", total_size);
         return NULL;
     } else {
         return alloc;

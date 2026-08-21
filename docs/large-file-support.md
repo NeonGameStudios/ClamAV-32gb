@@ -1308,7 +1308,7 @@ or waive them.
 - The shared individual-allocation `calloc` wrapper admits `nmemb * size`
   through division-form arithmetic before multiplication. This keeps the
   1 GiB guard fail-closed on platforms whose native `size_t` can wrap the
-  product; callers still receive the normal explicit allocation failure.
+  product; the checked product is reused for allocation-failure diagnostics.
 
 - PCRE full-map matching now uses the 64-bit-capable PCRE2 wrapper, but PCRE2
   still requires one contiguous subject. On qualifying 64-bit anonymous-map

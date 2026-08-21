@@ -388,7 +388,8 @@
   interpreter/JIT qualification.
 - The shared individual-allocation `calloc` guard now uses division-form
   admission before multiplication, so narrower `size_t` builds cannot wrap
-  the requested element count into an apparently safe allocation size.
+  the requested element count into an apparently safe allocation size; the
+  checked product is also reused for allocation-failure diagnostics.
 - Legacy MSXML base64 embedded-data failures now fail closed as incomplete and
   non-cacheable instead of skipping the element; add compiled XML/OOXML corpus
   and sanitizer qualification.

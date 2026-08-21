@@ -2390,6 +2390,7 @@ contains libclamav/egg.c 'extra field exceeds bounded metadata limit'
 contains libclamav/egg.c 'encryption header size underflow'
 contains docs/largefile-capabilities.tsv 'egg-extra-field-over-1g'
 contains libclamav/others_common.c 'nmemb > CLI_MAX_ALLOCATION / size'
+contains libclamav/others_common.c 'total_size = nmemb * size;'
 not_contains libclamav/others_common.c '(nmemb * size > CLI_MAX_ALLOCATION)'
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
