@@ -2291,6 +2291,15 @@ Source guards and `git diff --check` are the current local evidence. Compiled
 malformed-UDF fixtures, sanitizer execution, and supported-build Sonic1
 qualification remain release gates.
 
+## AutoIt EA06 member admission — 2026-08-20
+
+After an EA06 header is admitted, the parser now requires the next member
+record to begin with the format-defined `FILE` marker. A missing marker is
+reported as malformed and incomplete instead of returning clean after
+silently abandoning the EA06 layer. The focused public-scan regression is
+registered in `check_clamav`; full AutoIt corpus, sanitizer, and
+supported-build Sonic1 qualification remain release gates.
+
 UDF extended file-entry descriptors are a separate intentional unsupported
 boundary. Because the parser does not implement their allocation and
 extended-attribute semantics, encountering one marks the layer incomplete and

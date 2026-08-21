@@ -1486,7 +1486,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
         /*     LAME_decrypt(buf, 4, 0x18ee); waste of time */
         if (cli_readint32(base) != 0x52ca436b) {
             cli_dbgmsg("autoit: no FILE magic found, giving up (got 0x%08x)\n", cli_readint32(base));
-            return CL_SUCCESS;
+            cli_mark_scan_incomplete(ctx, "AutoIt EA06 member header has invalid magic");
+            return CL_EFORMAT;
         }
 
         s = cli_readint32(base + 4) ^ 0xadbc;

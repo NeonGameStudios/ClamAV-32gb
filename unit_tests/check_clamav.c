@@ -9220,6 +9220,35 @@ START_TEST(test_egg_extra_field_admission_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_autoit_ea06_missing_member_is_fail_visible)
+{
+    uint8_t data[25];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    data[0] = 0x36;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanautoit(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "AutoIt EA06 member header has invalid magic");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_embedded_candidate_admission_headers)
 {
     static const uint8_t autoit_prefix[] = {
@@ -12951,6 +12980,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
+    tcase_add_test(tc_cl, test_autoit_ea06_missing_member_is_fail_visible);
     tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);
     tcase_add_test(tc_cl, test_embedded_header_read_failures_are_fail_visible);
 #if HAVE_UNRAR
