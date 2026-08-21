@@ -4145,8 +4145,8 @@ static cl_error_t cli_scanriff(cli_ctx *ctx)
     int check;
 
     check = cli_check_riff_exploit(ctx);
-    if (check == CL_EPARSE)
-        return CL_EPARSE;
+    if (check == CL_EPARSE || check == CL_EREAD)
+        return check;
 
     if (check == 2)
         ret = cli_append_potentially_unwanted(ctx, "Heuristics.Exploit.W32.MS05-002");

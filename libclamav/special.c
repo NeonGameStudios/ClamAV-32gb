@@ -113,7 +113,26 @@ static uint32_t riff_endian_convert_32(uint32_t value, int big_endian)
         return le32_to_host(value);
 }
 
-static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_level)
+/* fmap_need_off_once() uses NULL for both an unavailable range and a failed
+ * backing read. Keep those cases distinct while the RIFF exploit detector
+ * walks a structurally confirmed file. */
+static const void *riff_need_off(cli_ctx *ctx, off_t offset, size_t length, cl_error_t *read_status)
+{
+    fmap_t *map = ctx->fmap;
+    const void *ptr;
+
+    if (offset < 0 || (uint64_t)offset > (uint64_t)map->len ||
+        length > map->len - (size_t)offset)
+        return NULL;
+
+    ptr = fmap_need_off_once(map, (size_t)offset, length);
+    if (NULL == ptr)
+        *read_status = CL_EREAD;
+
+    return ptr;
+}
+
+static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_level, cl_error_t *read_status)
 {
     uint32_t cache_buf;
     char *buffer;
@@ -129,8 +148,10 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
         return CL_EPARSE;
     }
 
-    if (!(buf = fmap_need_off_once(map, cur_offset, 4 * 2)))
-        return (cli_mark_scan_incomplete(ctx, "RIFF chunk header was truncated"), CL_EPARSE);
+    if (!(buf = riff_need_off(ctx, cur_offset, 4 * 2, read_status))) {
+        cli_mark_scan_incomplete(ctx, "RIFF chunk header was truncated");
+        return (*read_status == CL_EREAD) ? CL_EREAD : CL_EPARSE;
+    }
     cur_offset += 4 * 2;
 
     buffer = (char *)buf;
@@ -165,13 +186,13 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
         (memcmp(buf, "PROP", 4) == 0) ||
         (memcmp(buf, "FORM", 4) == 0) ||
         (memcmp(buf, "CAT ", 4) == 0)) {
-        if (chunk_size < 4 || !fmap_need_ptr_once(map, buf + 2, 4)) {
+        if (chunk_size < 4 || !riff_need_off(ctx, cur_offset, 4, read_status)) {
             cli_dbgmsg("riff_read_chunk: read list type failed\n");
             cli_mark_scan_incomplete(ctx, "RIFF list type was truncated");
-            return CL_EPARSE;
+            return (*read_status == CL_EREAD) ? CL_EREAD : CL_EPARSE;
         }
         *offset = cur_offset + 4;
-        return riff_read_chunk(ctx, offset, big_endian, ++rec_level);
+        return riff_read_chunk(ctx, offset, big_endian, ++rec_level, read_status);
     }
 
     /* FIXME: WTF!?
@@ -186,6 +207,7 @@ int cli_check_riff_exploit(cli_ctx *ctx)
 {
     const uint32_t *buf;
     int big_endian, retval;
+    cl_error_t read_status = CL_SUCCESS;
     off_t offset;
     fmap_t *map = ctx->fmap;
 
@@ -196,9 +218,9 @@ int cli_check_riff_exploit(cli_ctx *ctx)
      * failure and must not be reduced to a clean non-RIFF result. */
     if (map->len < 4 * 3)
         return 0;
-    if (!(buf = fmap_need_off_once(map, 0, 4 * 3))) {
+    if (!(buf = riff_need_off(ctx, 0, 4 * 3, &read_status))) {
         cli_mark_scan_incomplete(ctx, "RIFF header could not be read completely");
-        return CL_EPARSE;
+        return (read_status == CL_EREAD) ? CL_EREAD : CL_EPARSE;
     }
 
     if (memcmp(buf, "RIFF", 4) == 0) {
@@ -218,7 +240,7 @@ int cli_check_riff_exploit(cli_ctx *ctx)
 
     offset = 4 * 3;
     do {
-        retval = riff_read_chunk(ctx, &offset, big_endian, 1);
+        retval = riff_read_chunk(ctx, &offset, big_endian, 1, &read_status);
     } while (retval == 1);
 
     return retval;

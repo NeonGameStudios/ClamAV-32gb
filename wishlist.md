@@ -317,6 +317,9 @@
 - Add standalone post-run verification for service evidence: recheck the
   checksum manifest, source/build identity, service binaries, and runtime
   dependency hashes after the workload.
+- RIFF header and chunk callback failures now preserve `CL_EREAD` instead of
+  being flattened into truncation; add compiled callback-fault and production
+  RIFF corpus qualification.
 
 ## Large-file validation and expansion progression
 

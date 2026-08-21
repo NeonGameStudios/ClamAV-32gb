@@ -2925,3 +2925,14 @@ host files. The workflow runs this verifier after creating `SHA256SUMS`, so a
 later evidence mutation or build/runtime substitution cannot pass solely on
 the qualification script's in-process checks. Supported-Linux execution and
 full service qualification remain release gates.
+
+## RIFF callback read status — 2026-08-21
+
+RIFF exploit inspection now distinguishes an in-range fmap callback failure
+from a range that is genuinely unavailable. Header, chunk-header, and nested
+list-type callback failures return `CL_EREAD`, retain the incomplete and
+non-cacheable state, and propagate through the RIFF scanner wrapper; truncated
+coordinates remain `CL_EPARSE`. Focused header and chunk fault-injection
+regressions, source guards, and capability evidence record the distinction.
+Compiled Linux/Sonic1, sanitizer, callback-fault, and production RIFF corpus
+qualification remain open.
