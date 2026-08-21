@@ -466,6 +466,20 @@ START_TEST(test_maxscantime_cli_boundaries)
 }
 END_TEST
 
+START_TEST(test_stream_limit_zero_selects_large_file_ceiling)
+{
+    struct optstruct stream_limit;
+
+    memset(&stream_limit, 0, sizeof(stream_limit));
+    stream_limit.name   = "StreamMaxLength";
+    stream_limit.numarg = 0;
+    ck_assert_uint_eq(clamd_stream_limit(&stream_limit), CLI_MAX_LARGE_FILESIZE);
+
+    stream_limit.numarg = 4096;
+    ck_assert_uint_eq(clamd_stream_limit(&stream_limit), 4096);
+}
+END_TEST
+
 static int sockd;
 #ifndef _WIN32
 START_TEST(test_stream_client_rejects_over_limit)
@@ -1373,6 +1387,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_scan_report_frames_are_bounded_and_fragment_safe);
 #endif
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
+    tcase_add_test(tc_parser, test_stream_limit_zero_selects_large_file_ceiling);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
     tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
     tcase_add_test(tc_parser, test_largefile_admission_accepts_historical_defaults);

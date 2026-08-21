@@ -40,6 +40,10 @@ struct action_source;
 
 #define CLAMD_SCAN_REPORT_MAX_FRAME (16U * 1024U * 1024U)
 
+/* Return the bounded stream ceiling used by both clamd and its clients.
+ * A zero-valued StreamMaxLength selects the fork's 32-GiB ceiling. */
+uint64_t clamd_stream_limit(const struct optstruct *clamdopts);
+
 enum {
     CONT,
     MULTI,

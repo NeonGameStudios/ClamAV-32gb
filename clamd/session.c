@@ -771,7 +771,7 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
                     (void)conn_reply_scan_report(conn, CL_ETMPFILE, 0);
                 return 1;
             }
-            stream_limit       = (uint64_t)optget(conn->opts, "StreamMaxLength")->numarg;
+            stream_limit       = clamd_stream_limit(conn->opts);
             temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
             conn->quota_source = CLAMD_QUOTA_SOURCE_STREAM;
             conn->quota        = stream_limit;

@@ -164,6 +164,11 @@ The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.
 
+The clamd INSTREAM admission path now shares the client-side stream-limit
+normalizer. A zero-valued `StreamMaxLength` therefore selects the bounded
+32-GiB ceiling at the daemon staging boundary instead of becoming a zero-byte
+quota; a focused unit regression covers both zero and explicit limits.
+
 clamd directory scans now add an incomplete child report for recursion-limit,
 unsupported-special-file, stat, allocation, and realpath skips. Intentional
 symlink exclusions remain policy skips, but required paths that the walker

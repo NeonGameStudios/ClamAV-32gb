@@ -58,6 +58,20 @@ struct sockaddr_un nixsock;
 
 static const char *scancmd[] = {"CONTSCAN", "MULTISCAN", "INSTREAM", "FILDES", "ALLMATCHSCAN"};
 
+uint64_t clamd_stream_limit(const struct optstruct *clamdopts)
+{
+    const struct optstruct *stream_limit;
+
+    if (!clamdopts)
+        return CLI_MAX_LARGE_FILESIZE;
+
+    stream_limit = optget(clamdopts, "StreamMaxLength");
+    if (!stream_limit || stream_limit->numarg <= 0)
+        return CLI_MAX_LARGE_FILESIZE;
+
+    return (uint64_t)stream_limit->numarg;
+}
+
 /* Sends bytes over a socket
  * Returns 0 on success */
 int sendln(int sockd, const char *line, unsigned int len)
@@ -401,7 +415,7 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
     /* The public option contract treats zero as the bounded 32-GiB ceiling,
      * not as an unbounded or zero-byte stream. Keep the client-side
      * preflight identical to clamd's engine validation. */
-    todo = (stream_limit->numarg > 0) ? (uint64_t)stream_limit->numarg : CLI_MAX_LARGE_FILESIZE;
+    todo = clamd_stream_limit(clamdopts);
 
     if (reject_over_limit &&
         (0 == FSTAT(fd, &sb)) &&

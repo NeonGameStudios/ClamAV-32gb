@@ -75,6 +75,9 @@
 - Align the active release, sanitizer, service, and macOS qualification gates
   on the roadmap's four-hour `MaxScanTime` deadline; preserve historical run
   records with their original configured deadlines.
+- Keep the clamd INSTREAM quota boundary and its clients on one policy helper;
+  zero `StreamMaxLength` now selects the bounded 32-GiB ceiling at both ends,
+  with the daemon-side unit regression covered locally.
 - HFS+ catalog node-size validation and catalog block coordinates now retain
   64-bit arithmetic through fmap admission; large-volume corpus qualification
   remains open.
