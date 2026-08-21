@@ -284,10 +284,11 @@ rss_budget_kb=${CLAMAV_SERVICE_MAX_RSS_KB:-33554432}
 case "$rss_budget_kb" in
     ''|*[!0-9]*) echo 'CLAMAV_SERVICE_MAX_RSS_KB must be numeric' >&2; exit 2 ;;
 esac
-latency_budget_s=${CLAMAV_SERVICE_MAX_LATENCY_S:-900}
+latency_budget_s=${CLAMAV_SERVICE_MAX_LATENCY_S:-14400}
 case "$latency_budget_s" in
     ''|*[!0-9]*) echo 'CLAMAV_SERVICE_MAX_LATENCY_S must be an integer number of seconds' >&2; exit 2 ;;
 esac
+service_timeout_s=${CLAMAV_SERVICE_TIMEOUT_S:-14400}
 temporary_budget_bytes=68719476736
 mkdir -p "$out" "$out/logs" "$out/tmp"
 config=$out/clamd.conf
@@ -299,6 +300,17 @@ service_peak_temp_bytes=0
 service_rss_samples=0
 service_temp_samples=0
 service_resource_measurement_failed=0
+
+case "$service_timeout_s" in
+    ''|*[!0-9]*|0*)
+        echo 'CLAMAV_SERVICE_TIMEOUT_S must be a positive integer' >&2
+        exit 2
+        ;;
+esac
+if [ "$service_timeout_s" -lt 14400 ]; then
+    echo 'CLAMAV_SERVICE_TIMEOUT_S must cover the four-hour MaxScanTime deadline' >&2
+    exit 2
+fi
 
 measure_service_resources()
 {
@@ -366,7 +378,7 @@ write_config()
         printf 'MaxContiguousSize 32G\n'
         printf 'PCREMaxFileSize 32G\n'
         printf 'StreamMaxLength 32G\n'
-        printf 'MaxScanTime 900000\n'
+        printf 'MaxScanTime 14400000\n'
         printf 'MaxRecursion 17\n'
         printf 'MaxFiles 10000\n'
         # Keep worker contention visible in the daemon log. The serial queue
@@ -493,7 +505,7 @@ run_service_scan()
     scan_report=$out/reports/$scan_label.jsonl
     scan_status=0
     "/usr/bin/time" -f '%e' -o "$out/logs/$scan_label.elapsed" \
-        timeout --signal=TERM --kill-after=5 900 \
+        timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
         "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$scan_report" "$@" -c "$config" "$scan_file" > "$scan_log" 2>&1 &
     scan_pid=$!
     while kill -0 "$scan_pid" 2>/dev/null; do
@@ -520,7 +532,7 @@ run_direct_production()
     oracle_load production "$production_file"
     direct_status=0
     report="$out/reports/production-clamscan.jsonl"
-    timeout --signal=TERM --kill-after=5 900 \
+    timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
         "$build_dir/clamscan/clamscan" --database="$production_db" --no-summary --debug --report-json="$report" "$production_file" \
         > "$out/logs/production-clamscan.log" 2>&1 || direct_status=$?
     oracle_status=$direct_status
@@ -542,7 +554,7 @@ run_serial_queue()
         queue_status_file="$queue_dir/worker-$worker.status"
         (
             status=0
-            timeout --signal=TERM --kill-after=5 900 \
+            timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
                 "$build_dir/clamdscan/clamdscan" --no-summary \
                 --report-json="$queue_report" -c "$config" "$materialized_file" \
                 > "$queue_log" 2>&1 || status=$?
@@ -650,7 +662,7 @@ run_service_scan expansion parser_expansion "$expansion_file"
 edge_status=0
 oracle_load edge "$edge_file"
 edge_report="$out/reports/edge-clamscan.jsonl"
-timeout --signal=TERM --kill-after=5 900 \
+timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
     "$build_dir/clamscan/clamscan" --database="$edge_db" --no-summary --debug --report-json="$edge_report" "$edge_file" \
     > "$out/logs/edge-clamscan.log" 2>&1 || edge_status=$?
 oracle_status=$edge_status
@@ -690,7 +702,7 @@ while [ "$worker" -le 4 ]; do
         (
             status=0
             "/usr/bin/time" -f '%e %M' -o "$multi_time" \
-                timeout --signal=TERM --kill-after=5 900 \
+                timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
             "$build_dir/clamdscan/clamdscan" --no-summary --report-json="$multi_report" -c "$config" "$edge_file" \
                 > "$multi_log" 2>&1 || status=$?
         printf '%s\n' "$status" > "$multi_status_file"
@@ -798,7 +810,7 @@ milter_status=0
         MILTER_EXTRA_DATABASE="$edge_db" \
         MILTER_TEST_ROOT="$out/tmp" \
         "/usr/bin/time" -f '%e %M' -o "$milter_time_file" \
-        timeout --signal=TERM --kill-after=10 900 \
+        timeout --signal=TERM --kill-after=10 "$service_timeout_s" \
         python3 "$root/unit_tests/milter_protocol_test.py" > "$out/logs/milter-exact-edge.log" 2>&1 || exit $?
 ) &
 milter_pid=$!

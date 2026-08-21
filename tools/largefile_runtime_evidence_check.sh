@@ -20,8 +20,8 @@ rss_budget_kb=$4
 fixed_rss_budget_kb=33554432
 fixed_min_available_kb=50331648
 fixed_max_temp_bytes=68719476736
-fixed_release_scan_time_ms=900000
-fixed_sanitizer_scan_time_ms=3600000
+fixed_release_scan_time_ms=14400000
+fixed_sanitizer_scan_time_ms=14400000
 
 if [ "$rss_budget_kb" != "$fixed_rss_budget_kb" ]; then
     echo "runtime evidence requires the fixed RSS budget of $fixed_rss_budget_kb KiB" >&2

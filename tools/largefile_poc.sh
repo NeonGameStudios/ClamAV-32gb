@@ -19,7 +19,7 @@ sigdb=$sigdir/largefile-poc.ndb
 logs=$out/logs
 tmp=$out/tmp
 results=$out/results.tsv
-max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-900000}
+max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-14400000}
 cert_arg=
 if [ -n "${CLAMAV_CVD_CERTS_DIR:-}" ]; then
     cert_arg="--cvdcertsdir=$CLAMAV_CVD_CERTS_DIR"

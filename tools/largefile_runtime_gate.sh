@@ -14,7 +14,7 @@
 #   CLAMAV_MAX_TEMP_BYTES      fail if a POC case exceeds this temp footprint
 #   CLAMAV_RUN_CANCELLATION    run the one-second TERM cancellation gate (default 1)
 #   CLAMAV_MIN_AVAILABLE_KB    require this much effective host/cgroup headroom
-#   CLAMAV_MAX_SCAN_TIME_MS    uint32 per-file deadline in milliseconds (default 900000)
+#   CLAMAV_MAX_SCAN_TIME_MS    uint32 per-file deadline in milliseconds (default 14400000)
 #   CLAMAV_SANITIZER_MAX_SCAN_TIME_MS
 #                              sanitizer-only deadline; defaults to the release deadline
 #   CLAMAV_SANITIZER_TOOLCHAIN  sanitizer Rust toolchain (must be nightly)
@@ -39,7 +39,7 @@ concurrency_levels=${CLAMAV_CONCURRENCY_LEVELS:-"1 2 4"}
 concurrency_file=${CLAMAV_CONCURRENCY_FILE:-32g-edge.bin}
 run_cancellation=${CLAMAV_RUN_CANCELLATION:-1}
 min_available_kb=${CLAMAV_MIN_AVAILABLE_KB:-0}
-max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-900000}
+max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-14400000}
 sanitizer_max_scan_time_ms=${CLAMAV_SANITIZER_MAX_SCAN_TIME_MS:-$max_scan_time_ms}
 sanitizer_rust_suite=${CLAMAV_SANITIZER_RUST_SUITE:-not-run}
 sanitizer_toolchain=${CLAMAV_SANITIZER_TOOLCHAIN:-not-set}

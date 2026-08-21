@@ -22,7 +22,7 @@ root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 clamscan=$1
 requested_out=$2
 min_available_kb=${CLAMAV_MACOS_MIN_AVAILABLE_KB:-50331648}
-max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-900000}
+max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-14400000}
 cert_arg=
 if [ -n "${CLAMAV_CVD_CERTS_DIR:-}" ]; then
     cert_arg="--cvdcertsdir=$CLAMAV_CVD_CERTS_DIR"

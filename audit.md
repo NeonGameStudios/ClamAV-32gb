@@ -272,6 +272,10 @@ not a cold-cache or production-workload certification.
 | clamdscan and milter | Source-fixed; quota test passes | Client-side stream truncation is rejected; milter totals and reservations are checked 64-bit values with exact-boundary and overflow tests. |
 | Runtime evidence | One-worker x86-64 gate passed; release matrix open | The gate binds results to source/scanner hashes, verifies exact engine offsets and worker RSS, excludes sparse corpus payloads, creates `SHA256SUMS`, and publishes attested success artifacts separately from failed diagnostics. Commit `bba68110e04f78504d2af389050c349e01861315` passed the one-worker gate on `sonic1`; sanitizer and multi-worker evidence remain outstanding. |
 
+The active release and sanitizer qualification gates now use the roadmap's
+four-hour `MaxScanTime` value of 14,400,000 ms. Historical evidence entries
+retain the deadlines that were actually used when those runs were recorded.
+
 ## Verification completed
 
 The following evidence was produced on the `sonic1` Ubuntu Linux x86-64 host

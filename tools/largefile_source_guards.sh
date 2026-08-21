@@ -959,6 +959,9 @@ contains tools/largefile_service_qualification.sh 'MaxMatcherWork 256G'
 contains tools/largefile_service_qualification.sh 'MaxTemporarySize 64G'
 contains tools/largefile_service_qualification.sh 'MaxContiguousSize 32G'
 contains tools/largefile_service_qualification.sh 'PCREMaxFileSize 32G'
+contains tools/largefile_service_qualification.sh 'MaxScanTime 14400000'
+contains tools/largefile_service_qualification.sh 'service_timeout_s=${CLAMAV_SERVICE_TIMEOUT_S:-14400}'
+contains tools/largefile_service_qualification.sh 'four-hour MaxScanTime deadline'
 contains tools/largefile_service_qualification.sh 'MaxThreads %s'
 contains tools/largefile_service_qualification.sh 'MaxQueue %s'
 contains tools/largefile_service_qualification.sh 'THRMGR: contended, sleeping'
@@ -983,7 +986,7 @@ contains tools/largefile_service_qualification.sh 'service temporary-space measu
 contains tools/largefile_service_qualification.sh 'database-manifest-production-before.txt'
 contains tools/largefile_service_qualification.sh 'verify_database_manifest production'
 contains tools/largefile_service_qualification.sh 'verify_database_manifest edge'
-contains .github/workflows/cmake.yml "CLAMAV_MAX_SCAN_TIME_MS: '900000'"
+contains .github/workflows/cmake.yml "CLAMAV_MAX_SCAN_TIME_MS: '14400000'"
 contains .github/workflows/cmake.yml 'Mandatory service and workload qualification'
 contains .github/workflows/cmake.yml 'clamav-largefile-service/SHA256SUMS'
 contains .github/workflows/cmake.yml 'edge_clamdscan_contscan=pass'
@@ -1880,7 +1883,7 @@ contains tools/largefile_macos_runtime_gate.sh 'peak_rss_kb'
 contains .github/workflows/cmake.yml "CLAMAV_MIN_AVAILABLE_KB: '50331648'"
 contains .github/workflows/cmake.yml "CLAMAV_MAX_TEMP_BYTES: '68719476736'"
 contains .github/workflows/cmake.yml 'CLAMAV_MAX_SCAN_TIME_MS'
-contains .github/workflows/cmake.yml "CLAMAV_SANITIZER_MAX_SCAN_TIME_MS: '3600000'"
+contains .github/workflows/cmake.yml "CLAMAV_SANITIZER_MAX_SCAN_TIME_MS: '14400000'"
 contains .github/workflows/cmake.yml "CLAMAV_SANITIZER_RUST_SUITE: 'pass'"
 contains .github/workflows/cmake.yml 'Install Rust sanitizer toolchain'
 contains .github/workflows/cmake.yml 'RUSTUP_TOOLCHAIN: nightly'

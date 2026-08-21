@@ -67,7 +67,7 @@ done
 
 for invalid_sanitizer_deadline in 0001 4294967296 999999999999999999999999; do
     if CLAMAV_SANITIZER_MAX_SCAN_TIME_MS=$invalid_sanitizer_deadline \
-        CLAMAV_MAX_SCAN_TIME_MS=900000 \
+        CLAMAV_MAX_SCAN_TIME_MS=14400000 \
         "$root/tools/largefile_runtime_gate.sh" "$root/tools/largefile_poc_test_scanner.sh" \
         "$tmp/invalid-sanitizer-gate-$invalid_sanitizer_deadline" 1234 >/dev/null 2>&1; then
         echo "largefile_runtime_gate.sh accepted invalid sanitizer deadline $invalid_sanitizer_deadline" >&2
@@ -75,8 +75,8 @@ for invalid_sanitizer_deadline in 0001 4294967296 999999999999999999999999; do
     fi
 done
 
-if CLAMAV_MAX_SCAN_TIME_MS=900000 \
-    CLAMAV_SANITIZER_MAX_SCAN_TIME_MS=899999 \
+if CLAMAV_MAX_SCAN_TIME_MS=14400000 \
+    CLAMAV_SANITIZER_MAX_SCAN_TIME_MS=14399999 \
     "$root/tools/largefile_runtime_gate.sh" "$root/tools/largefile_poc_test_scanner.sh" \
     "$tmp/short-sanitizer-deadline" 1234 >/dev/null 2>&1; then
     echo 'largefile_runtime_gate.sh accepted a sanitizer deadline below the release deadline' >&2

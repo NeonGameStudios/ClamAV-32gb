@@ -11,9 +11,9 @@ tmp=$(mktemp -d "${TMPDIR:-/tmp}/clamav-largefile-evidence.XXXXXX")
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 
 # Keep the workflow/verifier deadline contract executable. The release
-# deadline is intentionally independent from the longer sanitizer deadline.
-grep -F "CLAMAV_MAX_SCAN_TIME_MS: '900000'" "$root/.github/workflows/cmake.yml" >/dev/null
-grep -F "CLAMAV_SANITIZER_MAX_SCAN_TIME_MS: '3600000'" "$root/.github/workflows/cmake.yml" >/dev/null
+# deadline is shared by the release and sanitizer qualification profiles.
+grep -F "CLAMAV_MAX_SCAN_TIME_MS: '14400000'" "$root/.github/workflows/cmake.yml" >/dev/null
+grep -F "CLAMAV_SANITIZER_MAX_SCAN_TIME_MS: '14400000'" "$root/.github/workflows/cmake.yml" >/dev/null
 workflow_release_deadlines=$(grep -F 'CLAMAV_MAX_SCAN_TIME_MS:' "$root/.github/workflows/cmake.yml" |
     sed -n "s/.*: '\([0-9][0-9]*\)'.*/\1/p" | sort -u)
 workflow_sanitizer_deadlines=$(grep -F 'CLAMAV_SANITIZER_MAX_SCAN_TIME_MS:' "$root/.github/workflows/cmake.yml" |
@@ -117,8 +117,8 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'rss_budget_kb=33554432\n'
     printf 'min_available_kb=50331648\n'
     printf 'max_temp_bytes=68719476736\n'
-    printf 'max_scan_time_ms=900000\n'
-    printf 'sanitizer_max_scan_time_ms=3600000\n'
+    printf 'max_scan_time_ms=14400000\n'
+    printf 'sanitizer_max_scan_time_ms=14400000\n'
     printf 'sanitizer_rust_suite=pass\n'
     printf 'sanitizer_toolchain=nightly\n'
     printf 'sanitizer_rustflags=-Zsanitizer=address\n'
@@ -301,7 +301,7 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
 fi
 cp "$out/build-identity.good" "$out/build-identity.txt"
 
-sed 's/^max_scan_time_ms=900000$/max_scan_time_ms=0/' \
+sed 's/^max_scan_time_ms=14400000$/max_scan_time_ms=0/' \
     "$out/build-identity.good" > "$out/build-identity.txt"
 refresh_manifest
 if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
@@ -310,7 +310,7 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
 fi
 cp "$out/build-identity.good" "$out/build-identity.txt"
 
-sed 's/^sanitizer_max_scan_time_ms=3600000$/sanitizer_max_scan_time_ms=0/' \
+sed 's/^sanitizer_max_scan_time_ms=14400000$/sanitizer_max_scan_time_ms=0/' \
     "$out/build-identity.good" > "$out/build-identity.txt"
 refresh_manifest
 if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
@@ -319,7 +319,7 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
 fi
 cp "$out/build-identity.good" "$out/build-identity.txt"
 
-sed 's/^sanitizer_max_scan_time_ms=3600000$/sanitizer_max_scan_time_ms=899999/' \
+sed 's/^sanitizer_max_scan_time_ms=14400000$/sanitizer_max_scan_time_ms=14399999/' \
     "$out/build-identity.good" > "$out/build-identity.txt"
 refresh_manifest
 if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then

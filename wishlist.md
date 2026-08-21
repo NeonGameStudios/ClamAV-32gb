@@ -72,6 +72,9 @@
 - UDF generic volume descriptor identifiers now use equality checks and reject
   unsupported identifiers as incomplete; add valid/invalid descriptor corpus
   coverage and supported-build qualification.
+- Align the active release, sanitizer, service, and macOS qualification gates
+  on the roadmap's four-hour `MaxScanTime` deadline; preserve historical run
+  records with their original configured deadlines.
 - HFS+ catalog node-size validation and catalog block coordinates now retain
   64-bit arithmetic through fmap admission; large-volume corpus qualification
   remains open.
