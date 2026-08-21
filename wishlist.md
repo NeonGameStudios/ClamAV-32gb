@@ -426,8 +426,10 @@
 ## Large-file validation and expansion progression
 
 1. **Validate the current 32 GiB raw path on the local macOS host**
-   - **In progress:** native macOS host-preflight capture added; local build
-     tool availability and memory telemetry are being qualified.
+   - **Host preflight remains open:** the latest Darwin arm64 capture had
+     6,038,704 KiB available against the 48 GiB minimum and no CMake binary;
+     it is not large-file qualification evidence. Repeat on the 64 GB bare
+     metal host after the build toolchain is available.
    - Use the bare-metal 64 GB machine with one worker first.
    - Exercise sparse boundary fixtures and materialized inputs where practical.
    - Verify exact tail-marker detection, 32 GiB + 1 rejection, and the absence of

@@ -4831,3 +4831,12 @@ unsupported optional ingress from being counted as a successful worker or
 `IDSESSION` aggregate. Certified Linux x86-64 builds still require descriptor
 passing and need compiled no-feature integration coverage before that variant
 can be claimed.
+
+## Local macOS qualification preflight — 2026-08-21
+
+The native macOS host-preflight was rerun on Darwin arm64. It recorded
+`memory_available_kb=6038704` against the required `minimum_available_kb=50331648`
+and therefore failed the host-resource gate. The same capture reports no CMake
+binary. This is an environment limitation, not a scan result or a qualification
+claim; the 64 GB bare-metal host and a dependency-complete build remain required
+for the planned macOS raw-path run.
