@@ -68,7 +68,7 @@
 #include "thrmgr.h"
 #include "clamdcom.h"
 
-#ifndef HAVE_FDPASSING
+#ifndef HAVE_FD_PASSING
 #define FEATURE_FDPASSING 0
 #else
 #define FEATURE_FDPASSING 1
@@ -465,7 +465,10 @@ int command(client_conn_t *conn, int *virus)
 #else
             conn_reply_error(conn, "FILDES support not compiled in.");
             close(conn->scanfd);
-            return 0;
+            /* The wire error is not a successful scan. Keep the worker and
+             * IDSESSION aggregate fail-visible when this optional ingress is
+             * unavailable in the build. */
+            return 1;
 #endif
         case COMMAND_STATS:
             thrmgr_setactivetask(NULL, "STATS");

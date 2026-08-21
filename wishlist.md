@@ -419,6 +419,10 @@
   signature evaluation, preventing duplicate detector work after the
   SDB-enabled outer raw pass.
 
+- clamd FILDES now returns a non-clean worker result when descriptor passing is
+  unavailable after sending its explicit wire error; add a compiled
+  no-FD-passing integration fixture before claiming that build variant.
+
 ## Large-file validation and expansion progression
 
 1. **Validate the current 32 GiB raw path on the local macOS host**

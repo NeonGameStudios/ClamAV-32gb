@@ -1116,6 +1116,19 @@ contains clamd/server-th.c 'clamd_largefile_admission_check'
 ordered_after clamd/server-th.c 'PCREMaxFileSize' 'clamd_largefile_admission_check'
 contains clamd/session.c 'if (ret == CL_EMEM && optget(opts, "ExitOnOOM")->enabled)'
 contains clamd/session.c 'if (ret != CL_SUCCESS && ret != CL_VIRUS && scandata.errors == 0)'
+contains clamd/session.c '#ifndef HAVE_FD_PASSING'
+not_contains clamd/session.c '#ifndef HAVE_FDPASSING'
+contains docs/large-file-support.md 'FILDES unavailable-build failure semantics'
+contains wishlist.md 'no-FD-passing integration fixture'
+if ! awk '
+    /conn_reply_error\(conn, "FILDES support not compiled in\."/ { in_branch = 1 }
+    in_branch && /return 1;/ { found = 1 }
+    in_branch && /#endif/ { exit !found }
+    END { exit !found }
+' "$root/clamd/session.c"; then
+    echo 'large-file source guard failed: unavailable FILDES branch is not fail-visible' >&2
+    exit 1
+fi
 contains clamd/CMakeLists.txt 'largefile_admission.c'
 contains clamd/largefile_admission.c 'LARGEFILE_MIN_AVAILABLE'
 contains clamd/largefile_admission.c 'LARGEFILE_LEGACY_MAX_FILE_SIZE'

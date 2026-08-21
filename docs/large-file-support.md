@@ -4821,3 +4821,13 @@ revalidates report schema, completion, type, root size, counters,
 status, signature/offset, and the milter rejection marker. Missing, duplicate,
 or unexpected workload records fail the evidence gate. Production CVD and
 Sonic1 qualification remain release gates.
+
+## FILDES unavailable-build failure semantics — 2026-08-21
+
+The legacy clamd `FILDES` worker now returns a non-clean completion when the
+binary was built without descriptor-passing support, after sending its
+explicit `FILDES support not compiled in` wire error. This prevents an
+unsupported optional ingress from being counted as a successful worker or
+`IDSESSION` aggregate. Certified Linux x86-64 builds still require descriptor
+passing and need compiled no-feature integration coverage before that variant
+can be claimed.
