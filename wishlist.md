@@ -385,6 +385,9 @@
   returns a nonzero process status when bytecode execution fails, so an
   independently compiled ABI-v2 fixture cannot be reported as a successful
   run after a tool/runtime error; retain interpreter/JIT qualification.
+- The shared individual-allocation `calloc` guard now uses division-form
+  admission before multiplication, so narrower `size_t` builds cannot wrap
+  the requested element count into an apparently safe allocation size.
 - Legacy MSXML base64 embedded-data failures now fail closed as incomplete and
   non-cacheable instead of skipping the element; add compiled XML/OOXML corpus
   and sanitizer qualification.

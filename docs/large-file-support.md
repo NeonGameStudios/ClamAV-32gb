@@ -1305,6 +1305,11 @@ or waive them.
 
 ## Remaining bounded paths
 
+- The shared individual-allocation `calloc` wrapper admits `nmemb * size`
+  through division-form arithmetic before multiplication. This keeps the
+  1 GiB guard fail-closed on platforms whose native `size_t` can wrap the
+  product; callers still receive the normal explicit allocation failure.
+
 - PCRE full-map matching now uses the 64-bit-capable PCRE2 wrapper, but PCRE2
   still requires one contiguous subject. On qualifying 64-bit anonymous-map
   builds, `PCREMaxFileSize` is bounded by the 32 GiB large-file ceiling; other
