@@ -898,6 +898,17 @@ START_TEST(test_bytecode_lsig_execution_failure_is_fail_visible)
     ck_assert(cctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
+    /* A required logical bytecode entry must not look clean when its runtime
+     * was disabled during preparation. */
+    cctx.scan_incomplete = false;
+    map->dont_cache_flag  = false;
+    bc.state               = bc_disabled;
+    ret = cli_bytecode_runlsig(&cctx, NULL, &bcs, 1, lsigcnt, lsigoff, map);
+    ck_assert_int_eq(ret, CL_EBYTECODE);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    bc.state = bc_loaded;
+
     /* The same invariant applies to an applicable hook. A production hook
      * execution failure must not be hidden by the hook loop's clean fallback. */
     cctx.scan_incomplete = false;
@@ -924,6 +935,16 @@ START_TEST(test_bytecode_lsig_execution_failure_is_fail_visible)
     ck_assert_int_eq(ret, CL_EARG);
     ck_assert(cctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
+
+    /* The hook path must fail closed for the same disabled-runtime boundary. */
+    cctx.scan_incomplete = false;
+    map->dont_cache_flag  = false;
+    hook_bc->state         = bc_disabled;
+    ret = cli_bytecode_runhook(&cctx, engine, bcctx, BC_PRECLASS, map);
+    ck_assert_int_eq(ret, CL_EBYTECODE);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
     cli_bytecode_context_destroy(bcctx);
 
     cl_fmap_close(map);

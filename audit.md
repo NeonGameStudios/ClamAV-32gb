@@ -2983,3 +2983,13 @@ the same fail-visible treatment. A synthetic name-table truncation regression,
 source guards, and capability evidence cover the boundary; compiled
 Linux/Sonic1, sanitizer, callback-fault, and production SIS corpus
 qualification remain open.
+
+## Disabled bytecode runtime status — 2026-08-21
+
+An applicable bytecode entry in `bc_disabled` state previously returned
+`CL_SUCCESS`, allowing a logical or hook signature to appear clean even
+though its required execution was skipped. The runtime now marks the scan
+incomplete/non-cacheable and returns `CL_EBYTECODE`; focused logical/hook
+regressions and a source guard cover the boundary. Interpreter, LLVM,
+disabled-runtime, and independently compiled fixture qualification remain
+open.

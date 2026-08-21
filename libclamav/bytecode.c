@@ -1915,7 +1915,12 @@ cl_error_t cli_bytecode_run(const struct cli_all_bc *bcs, const struct cli_bc *b
     }
     if (bc->state == bc_disabled) {
         cli_dbgmsg("bytecode triggered but running bytecodes is disabled\n");
-        return CL_SUCCESS;
+        if (cctx) {
+            cli_mark_scan_incomplete(cctx, "bytecode runtime is unavailable");
+            if (cctx->fmap)
+                cctx->fmap->dont_cache_flag = 1;
+        }
+        return CL_EBYTECODE;
     }
     if (cctx)
         cli_event_time_start(cctx->perf, PERFT_BYTECODE);
