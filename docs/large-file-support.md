@@ -2665,7 +2665,7 @@ incrementally against `MaxTemporarySize` and retain their reservations through
 the reservation-aware nested scans. Read, write, quota, rewind, and cleanup
 failures remain fail-visible. This closes the temporary-spool accounting gap
 without changing the deliberate legacy PDF filter boundary recorded as
-`pdf-stream-over-4g`; parser-family and large-PDF qualification remain open.
+`pdf-stream-over-1g`; parser-family and large-PDF qualification remain open.
 
 ## ALZ bounded reader and member streaming — 2026-08-19
 
@@ -2765,13 +2765,15 @@ open.
 
 The PDF stream decoder API now carries the source stream length as `size_t`
 through the caller instead of narrowing it to `uint32_t` at the object
-boundary. The legacy filter implementations still use 32-bit input lengths,
-so a stream larger than `UINT32_MAX` is rejected before decoding with
-`CL_ERESOURCE`, marks the containing scan incomplete, and cannot be treated as
-a scanned prefix. The focused boundary regression covers the status and
-non-cacheability state. Converting the remaining PDF filters to a fully
-streaming reader remains a release gate; this change closes the silent
-wraparound path.
+boundary. The token buffer is also subject to the shared 1 GiB individual
+allocation ceiling, so a stream larger than `CLI_MAX_ALLOCATION` is rejected
+before decoding with `CL_ERESOURCE`. The legacy filter implementations still
+use 32-bit input lengths, so a stream larger than `UINT32_MAX` is likewise
+rejected before decoding. Both paths mark the containing scan incomplete and
+cannot be treated as scanned prefixes. The focused boundary regression covers
+the status and non-cacheability state. Converting the remaining PDF filters to
+a fully streaming reader remains a release gate; this change closes the
+silent-wraparound path and makes the earlier 1 GiB boundary explicit.
 
 PDF object and object-stream positions are also native-width now. The
 object-stream pair cursor and parsed object start no longer narrow to
@@ -2782,13 +2784,13 @@ Object-stream containment now uses subtraction-based checked bounds for both
 the current and next object offsets, so malformed large values cannot wrap the
 first-plus-offset calculation before the parser rejects them.
 
-The capability manifest records `pdf-stream-over-4g` as deliberately
-unsupported. This is a filter-ABI boundary, not an outer-file limit: a PDF
-may still contain other inspectable objects, but a legacy filter stream above
-4 GiB, or a Flate/RunLength/LZW decoder output above 4 GiB, makes the
-containing scan incomplete rather than allowing a truncated or wrapped prefix
-to be treated as complete. The focused decoder paths now retain native-width
-output accounting until this explicit boundary check.
+The capability manifest records `pdf-stream-over-1g` as deliberately
+unsupported. This is a legacy contiguous-buffer boundary, not an outer-file
+limit: a PDF may still contain other inspectable objects, but a legacy filter
+stream above 1 GiB, or a Flate/RunLength/LZW decoder output above 4 GiB, makes
+the containing scan incomplete rather than allowing a truncated or wrapped
+prefix to be treated as complete. The focused decoder paths now retain
+native-width output accounting until these explicit boundary checks.
 
 ## TIFF IFD cursor width — 2026-08-20
 

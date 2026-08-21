@@ -148,6 +148,12 @@ size_t pdf_decodestream(
         goto done;
     }
 
+    if (streamlen > CLI_MAX_ALLOCATION) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF stream exceeds the individual allocation boundary");
+        *status = CL_ERESOURCE;
+        goto done;
+    }
+
     *status = CL_SUCCESS;
 
 #if 0
@@ -441,6 +447,7 @@ static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *o
 {
     uint8_t *decoded, *dptr;
     size_t declen = 0;
+    size_t decoded_size;
 
     const uint8_t *ptr = (uint8_t *)token->content;
     size_t remaining   = token->length;
@@ -448,13 +455,18 @@ static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *o
     uint64_t sum = 0;
 
     /* Check for overflow */
-    if (remaining > (SIZE_MAX / 4)) {
+    if (remaining > (SIZE_MAX - 1) / 4) {
         cli_dbgmsg("cli_pdf: ascii85decode: overflow detected\n");
         return CL_EFORMAT;
     }
 
     /* 5:4 decoding ratio, with 1:4 expansion sequences => (4*length)+1 */
-    if (!(dptr = decoded = (uint8_t *)cli_max_malloc((4 * remaining) + 1))) {
+    decoded_size = (4 * remaining) + 1;
+    if (decoded_size > CLI_MAX_ALLOCATION) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF ASCII85 decoded output exceeds the individual allocation boundary");
+        return CL_ERESOURCE;
+    }
+    if (!(dptr = decoded = (uint8_t *)cli_max_malloc(decoded_size))) {
         cli_errmsg("cli_pdf: cannot allocate memory for decoded output\n");
         return CL_EMEM;
     }
