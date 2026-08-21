@@ -7981,6 +7981,64 @@ START_TEST(test_pdf_unsupported_filter_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_unsupported_encryption_is_fail_visible)
+{
+    static const uint8_t encrypted_stream[] = "encrypted PDF stream";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status;
+    size_t written;
+
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(encrypted_stream, sizeof(encrypted_stream) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    pdf.ctx               = &ctx;
+    pdf.flags             = 1U << DECRYPTABLE_PDF;
+    obj.id                = 8U << 8;
+    obj.flags             = 1U << OBJ_FILTER_CRYPT;
+    obj.numfilters        = 1;
+    obj.filterlist[0]     = OBJ_FILTER_CRYPT;
+
+    status  = CL_SUCCESS;
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)encrypted_stream,
+                               sizeof(encrypted_stream) - 1U, 0, fd, &status, NULL);
+    ck_assert_uint_eq(written, sizeof(encrypted_stream) - 1U);
+    ck_assert_int_eq(status, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PDF encrypted stream uses unsupported encryption or has no usable key");
+    ck_assert(map->dont_cache_flag);
+
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pdf_truncated_flate_after_prefix_is_fail_visible)
 {
     enum { DECODED_LENGTH = 16384 };
@@ -16397,6 +16455,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_decode_error_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_empty_flate_stream_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_unsupported_filter_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_unsupported_encryption_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
     tcase_add_test(tc_cl, test_hwpml_base64_decoder_is_bounded_and_fail_visible);

@@ -1134,6 +1134,16 @@ sticky state, non-cacheability, and raw-byte count. This closes unsupported
 filter result propagation, not the remaining streaming-decoder and
 production-corpus qualification gates.
 
+## PDF unsupported encryption classification — 2026-08-21
+
+When a recognized encrypted PDF had no usable key or an unsupported encryption
+method, the decoder returned a generic parse failure and lost the reason that
+deep inspection was unavailable. The raw stream fallback remains available for
+matching, but the layer now records an explicit unsupported-encryption reason,
+stays non-cacheable, and is classified as unsupported by the structured report.
+A focused decoder regression covers the no-key path; encrypted PDF corpus,
+sanitizer, and supported-build Sonic1 qualification remain open.
+
 ## CryptFF staging completion — 2026-08-19
 
 The CryptFF temporary-decryption path previously accepted an incomplete

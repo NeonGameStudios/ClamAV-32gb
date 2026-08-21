@@ -14,6 +14,9 @@
 - InstallShield MSI layers with unsupported control metadata now fail closed as
   non-cacheable `CL_EUNPACK`; valid-parser corpus and supported-build
   qualification remain open.
+- Encrypted PDF streams without a usable key or supported method now retain an
+  explicit unsupported completion reason while raw matching continues; valid
+  encrypted-PDF corpus and qualification remain open.
 - AutoIt EA05 decoded and stored members now use bounded output/temp spooling;
   EA06 script decompilation remains an explicit random-access boundary.
 - 7-Zip fmap input-read, output-write, and allocation failures now preserve

@@ -941,6 +941,13 @@ static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, st
     decrypted = decrypt_any(pdf, obj->id, (const char *)token->content, &length, enc);
     if (!decrypted) {
         cli_dbgmsg("cli_pdf: failed to decrypt stream\n");
+        if ((pdf->key == NULL) || (pdf->keylen == 0) ||
+            (enc == ENC_NONE) || (enc == ENC_UNKNOWN)) {
+            cli_mark_scan_incomplete(pdf->ctx,
+                                     "PDF encrypted stream uses unsupported encryption or has no usable key");
+        } else {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF encrypted stream could not be decrypted completely");
+        }
         return CL_EPARSE; /* TODO: what should this value be? CL_SUCCESS would mirror previous behavior */
     }
 
