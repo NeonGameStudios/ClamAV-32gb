@@ -2923,7 +2923,12 @@ static cl_error_t find_central_directory_header(
                     goto next_eocd;
 
                 locator = fmap_need_off_once(map, eocoff - ZIP64_LOCATOR_SIZE, ZIP64_LOCATOR_SIZE);
-                if (!locator || cli_readint32(locator) != ZIP_MAGIC_ZIP64_LOCATOR)
+                if (!locator) {
+                    if (ctx)
+                        cli_mark_scan_incomplete(ctx, "ZIP64 locator could not be read completely");
+                    return CL_EREAD;
+                }
+                if (cli_readint32(locator) != ZIP_MAGIC_ZIP64_LOCATOR)
                     goto next_eocd;
 
                 zip64_offset = cli_readint64(locator + 8);
@@ -2931,7 +2936,12 @@ static cl_error_t find_central_directory_header(
                     goto next_eocd;
 
                 zip64_eocd = fmap_need_off_once(map, (size_t)zip64_offset, ZIP64_END_RECORD_SIZE);
-                if (!zip64_eocd || cli_readint32(zip64_eocd) != ZIP_MAGIC_ZIP64_END)
+                if (!zip64_eocd) {
+                    if (ctx)
+                        cli_mark_scan_incomplete(ctx, "ZIP64 end-of-central-directory record could not be read completely");
+                    return CL_EREAD;
+                }
+                if (cli_readint32(zip64_eocd) != ZIP_MAGIC_ZIP64_END)
                     goto next_eocd;
 
                 cd_size   = cli_readint64(zip64_eocd + 40);

@@ -5889,6 +5889,77 @@ START_TEST(test_zip_eocd_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_zip64_metadata_read_failures_are_fail_visible)
+{
+    uint8_t locator_archive[42] = {0};
+    uint8_t eocd_archive[98]    = {0};
+    const uint8_t *fixtures[]   = {locator_archive, eocd_archive};
+    const size_t lengths[]      = {sizeof(locator_archive), sizeof(eocd_archive)};
+    const size_t failure_offsets[] = {0U, 20U};
+    const char *reasons[] = {
+        "ZIP64 locator could not be read completely",
+        "ZIP64 end-of-central-directory record could not be read completely"};
+    size_t i;
+
+    /* The classic EOCD advertises ZIP64 metadata. The first fixture fails
+     * while reading the locator immediately before it. */
+    zip_stream_write_u32(locator_archive + 20, 0x06054b50U);
+    zip_stream_write_u16(locator_archive + 30, UINT16_MAX);
+    zip_stream_write_u32(locator_archive + 32, UINT32_MAX);
+    zip_stream_write_u32(locator_archive + 36, UINT32_MAX);
+
+    /* The second fixture has a readable locator that points at an in-range
+     * ZIP64 EOCD window, which is the injected failure point. */
+    zip_stream_write_u32(eocd_archive + 20, 0x06064b50U);
+    zip_stream_write_u32(eocd_archive + 56, 0x07064b50U);
+    zip_stream_write_u64(eocd_archive + 64, 20U);
+    zip_stream_write_u32(eocd_archive + 76, 0x06054b50U);
+    zip_stream_write_u16(eocd_archive + 86, UINT16_MAX);
+    zip_stream_write_u32(eocd_archive + 88, UINT32_MAX);
+    zip_stream_write_u32(eocd_archive + 92, UINT32_MAX);
+
+    for (i = 0; i < sizeof(fixtures) / sizeof(fixtures[0]); i++) {
+        struct cl_engine *engine;
+        struct cl_scan_options options;
+        cli_scan_layer_t layer;
+        cli_ctx ctx;
+        fmap_t *map;
+        cl_error_t ret;
+
+        zip_central_filename_read_failure_offset = failure_offsets[i];
+        engine = cl_engine_new();
+        ck_assert_ptr_nonnull(engine);
+        ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+        memset(&options, 0, sizeof(options));
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(fixtures[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        map->need                = zip_central_filename_read_failure;
+        ctx.engine               = engine;
+        ctx.options              = &options;
+        ctx.dconf                = engine->dconf;
+        ctx.fmap                 = map;
+        ctx.this_layer_tmpdir    = tmpdir;
+        ctx.recursion_stack      = &layer;
+        ctx.recursion_stack_size = 1;
+        layer.type               = CL_TYPE_ZIP;
+        layer.size               = lengths[i];
+        layer.fmap               = map;
+
+        ret = cli_unzip(&ctx);
+        ck_assert_int_eq(ret, CL_EREAD);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        cl_engine_free(engine);
+    }
+    zip_central_filename_read_failure_offset = 0;
+}
+END_TEST
+
 START_TEST(test_zip_masked_sfx_candidate_is_not_confirmed)
 {
     static const uint8_t input[] = "masked-sfx-candidate";
@@ -15150,6 +15221,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_central_directory_resolves_masked_local_values);
     tcase_add_test(tc_cl, test_zip_central_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_eocd_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_zip64_metadata_read_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_masked_sfx_candidate_is_not_confirmed);
     tcase_add_test(tc_cl, test_zip_local_only_masked_header_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
