@@ -14,6 +14,9 @@
 - InstallShield MSI layers with unsupported control metadata now fail closed as
   non-cacheable `CL_EUNPACK`; valid-parser corpus and supported-build
   qualification remain open.
+- InstallShield file records and resolved names are now released before nested
+  CAB extraction, avoiding metadata fmap windows that span recursive scans;
+  valid-parser corpus and supported-build qualification remain open.
 - Encrypted PDF streams without a usable key or supported method now retain an
   explicit unsupported completion reason while raw matching continues; valid
   encrypted-PDF corpus and qualification remain open.

@@ -823,13 +823,22 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
         struct IS_FILEITEM *file = (struct IS_FILEITEM *)fmap_need_off(map, c->hdr + off, sizeof(*file));
 
         if (file) {
+            struct IS_FILEITEM file_snapshot;
             const char *emptyname = "", *dir_name = emptyname, *file_name = emptyname;
-            uint64_t dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file->dir_id); /* rel off of dir entry from array of rel ptrs */
-            uint64_t file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file->str_name_off);  /* rel off of fname */
+            uint64_t dir_rel, file_rel;
             uint64_t file_stream_off, file_size, file_csize;
-            uint16_t cabno;
+            uint16_t cabno, file_flags;
 
-            memcpy(hash, file->md5, 16);
+            /* Snapshot fixed metadata before any name lookup or nested CAB scan.
+             * The file-record window must not span recursive parser work. */
+            memcpy(&file_snapshot, file, sizeof(file_snapshot));
+            fmap_unneed_ptr(map, file, sizeof(*file));
+            file = NULL;
+
+            dir_rel  = (uint64_t)h1_data_off + objs_dirs_off + 4ULL * le32_to_host(file_snapshot.dir_id); /* rel off of dir entry from array of rel ptrs */
+            file_rel = (uint64_t)objs_dirs_off + h1_data_off + le32_to_host(file_snapshot.str_name_off);  /* rel off of fname */
+
+            memcpy(hash, file_snapshot.md5, 16);
             md5str((uint8_t *)hash);
             if (dir_rel <= c->hdrsz && 4 <= c->hdrsz - dir_rel &&
                 fmap_need_ptr_once(map, &hdr[(size_t)dir_rel], 4)) {
@@ -845,12 +854,13 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                 fmap_need_str(map, &hdr[(size_t)file_rel], MIN((size_t)4096, c->hdrsz - (size_t)file_rel)))
                 file_name = &hdr[(size_t)file_rel];
 
-            file_stream_off = le64_to_host(file->stream_off);
-            file_size       = le64_to_host(file->size);
-            file_csize      = le64_to_host(file->csize);
-            cabno           = le16_to_host(file->datafile_id);
+            file_stream_off = le64_to_host(file_snapshot.stream_off);
+            file_size       = le64_to_host(file_snapshot.size);
+            file_csize      = le64_to_host(file_snapshot.csize);
+            cabno           = le16_to_host(file_snapshot.datafile_id);
+            file_flags      = le16_to_host(file_snapshot.flags);
 
-            switch (le16_to_host(file->flags)) {
+            switch (file_flags) {
                 case 0:
                 case 8:
                     /* FIXMEISHIELD: for FS scan ? */
@@ -865,8 +875,18 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                dir_name,
                                file_name,
                                (long long)file_size, (long long)file_csize, hash, (long long)file_stream_off,
-                               cabno, file->unk13, file->unk14, file->unk15);
-                    if (file->flag_has_dup & 1)
+                               cabno, file_snapshot.unk13, file_snapshot.unk14, file_snapshot.unk15);
+                    /* Names are useful for diagnostics, but must be released
+                     * before is_extract_cab() starts recursive fmap work. */
+                    if (file_name != emptyname) {
+                        fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
+                        file_name = emptyname;
+                    }
+                    if (dir_name != emptyname) {
+                        fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
+                        dir_name = emptyname;
+                    }
+                    if (file_snapshot.flag_has_dup & 1)
                         cli_dbgmsg("is_parse_hdr: not scanned (dup)\n");
                     else {
                         if (file_size) {
@@ -878,11 +898,6 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                             if (limitret != CL_SUCCESS) {
                                 if (limitret != CL_ETIMEOUT)
                                     cli_mark_scan_incomplete(ctx, "InstallShield member exceeds configured scan limits");
-                                if (file_name != emptyname)
-                                    fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
-                                if (dir_name != emptyname)
-                                    fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
-                                fmap_unneed_ptr(map, file, sizeof(*file));
                                 return limitret;
                             }
 
@@ -903,11 +918,6 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                     if (ctx->engine->maxfiles && scanned >= ctx->engine->maxfiles) {
                                         cli_dbgmsg("is_parse_hdr: File limit reached (max: %u)\n", ctx->engine->maxfiles);
                                         cli_mark_scan_incomplete(ctx, "InstallShield CAB member count exceeds configured scan limits");
-                                        if (file_name != emptyname)
-                                            fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
-                                        if (dir_name != emptyname)
-                                            fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
-                                        fmap_unneed_ptr(map, file, sizeof(*file));
                                         return CL_EMAXFILES;
                                     }
                                     scanned++;
@@ -923,11 +933,6 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                 cabret = CL_EPARSE;
                             }
                             if (cabret != CL_SUCCESS) {
-                                if (file_name != emptyname)
-                                    fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
-                                if (dir_name != emptyname)
-                                    fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
-                                fmap_unneed_ptr(map, file, sizeof(*file));
                                 return cabret;
                             }
                         } else {
@@ -943,7 +948,6 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                 fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
             if (dir_name != emptyname)
                 fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
-            fmap_unneed_ptr(map, file, sizeof(*file));
             /*
              * Keep walking after an unsupported record. Remember the parse
              * error and mark it incomplete after the member walk so a virus

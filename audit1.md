@@ -2983,6 +2983,16 @@ the normal member-walk cleanup. Static guards and whitespace validation pass;
 compiled InstallShield corpus, sanitizer, and large-file qualification remain
 release gates.
 
+## InstallShield recursive metadata lifetime — 2026-08-21
+
+InstallShield file records were still held as locked fmap windows while the
+corresponding CAB member was recursively decompressed and scanned. The parser
+now copies each fixed record to a local snapshot and releases it before name
+resolution; resolved directory and file-name windows are released before the
+nested CAB scan as well. Static guards and whitespace validation pass; compiled
+InstallShield corpus, sanitizer, and large-file qualification remain release
+gates.
+
 ## GIF signature-probe fmap lifetime — 2026-08-21
 
 The GIF parser’s immediate three-byte signature probe now uses
