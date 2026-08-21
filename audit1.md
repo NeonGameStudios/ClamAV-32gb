@@ -3099,6 +3099,14 @@ cleans up the temporary object, and uses `cli_max_calloc()` for accepted sizes.
 Static guards and whitespace validation pass; full PDF parser, sanitizer, and
 production qualification remain open.
 
+## Bundled CAB/CHM allocation bound — 2026-08-21
+
+The libmspack callback used by CAB and CHM parsing previously allocated
+decoder-requested buffers with raw `malloc()`. It now uses `cli_max_malloc()`,
+so an attacker-controlled decoder allocation request fails closed at the
+individual-allocation ceiling. Static guards and whitespace validation pass;
+compiled CAB/CHM corpus, sanitizer, and production qualification remain open.
+
 ## XLM drawing-group allocation bound — 2026-08-21
 
 XLM BIFF extraction previously used an unbounded raw allocation for the first

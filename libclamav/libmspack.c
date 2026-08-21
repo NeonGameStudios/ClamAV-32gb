@@ -375,7 +375,7 @@ static void mspack_fmap_message(struct mspack_file *file, const char *fmt, ...)
 static void *mspack_fmap_alloc(struct mspack_system *self, size_t num)
 {
     UNUSEDPARAM(self);
-    void *addr = malloc(num);
+    void *addr = cli_max_malloc(num);
     if (addr) {
         memset(addr, 0, num);
     }
