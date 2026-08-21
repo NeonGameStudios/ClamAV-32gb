@@ -498,13 +498,10 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
         pt = tagname(tag_type);
         cli_dbgmsg("SWF: %s\n", pt ? pt : "UNKNOWN TAG");
         cli_dbgmsg("SWF: Tag length: %u\n", tag_len);
-        if (tag_len > map->len) {
-            cli_dbgmsg("SWF: Invalid tag length.\n");
-            return CL_EFORMAT;
-        }
-        if (tag_len > SIZE_MAX - offset) {
-            cli_warnmsg("SWF: Tag length too large.\n");
-            break;
+        if ((size_t)tag_len > map->len - offset) {
+            cli_warnmsg("SWF: Tag payload is truncated or its length is too large.\n");
+            cli_mark_scan_incomplete(ctx, "SWF tag payload was truncated");
+            return CL_EPARSE;
         }
         if (!pt) {
             offset += tag_len;

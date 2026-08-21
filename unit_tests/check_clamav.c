@@ -4926,6 +4926,41 @@ START_TEST(test_swf_truncated_frame_metadata_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_truncated_tag_payload_is_fail_visible)
+{
+    static const uint8_t archive[] = {
+        'F', 'W', 'S', 9U, 16U, 0U, 0U, 0U,
+        0U, 0U, 0U, 0U, 0U,
+        0x4aU, 0x00U, 0U};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t old_debug;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    old_debug = cli_set_debug_flag(1);
+    ret       = cli_scanswf(&ctx);
+    (void)cli_set_debug_flag(old_debug);
+
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_msxml_truncated_document_is_fail_visible)
 {
     static const uint8_t document[] = "<worddocument><author>truncated";
@@ -12681,6 +12716,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_swf_truncated_uncompressed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_truncated_frame_metadata_is_fail_visible);
+    tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_split_object_data_header_is_fail_visible);

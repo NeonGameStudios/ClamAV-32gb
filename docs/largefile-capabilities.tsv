@@ -137,7 +137,7 @@ parser	CL_TYPE_RTF	pending	libclamav/scanners.c	dispatch branch requires parser-
 parser	CL_TYPE_SCRENC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_SCRIPT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_SIS	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_SWF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_SWF	pending	libclamav/scanners.c	bounded decompressor output and checked debug tag-payload bounds; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_TEXT_ASCII	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_TEXT_UTF16BE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_TEXT_UTF16LE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

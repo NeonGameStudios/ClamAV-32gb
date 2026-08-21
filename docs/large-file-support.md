@@ -4122,3 +4122,13 @@ decoded byte no longer causes an out-of-bounds probe; truncated payloads remain
 incomplete and non-cacheable. The focused regression is registered in
 `check_clamav`; compiled sanitizer and broad RTF/OLE corpus qualification
 remain release gates.
+
+## SWF tag-payload boundary — 2026-08-20
+
+The debug SWF tag walk now checks each declared tag payload against the
+remaining fmap range before advancing or inspecting it. A tag that extends
+beyond EOF, or whose length cannot fit the remaining coordinate range, marks
+the layer incomplete and returns `CL_EPARSE` instead of advancing past the map
+and returning clean. The focused regression exercises a truncated `SHOWFRAME`
+payload; compressed-output, sanitizer, and full SWF corpus qualification remain
+release gates.
