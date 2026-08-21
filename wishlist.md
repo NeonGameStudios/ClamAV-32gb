@@ -137,6 +137,10 @@
   failures (`CL_EREAD`) from genuine premature EOF/decode failures; add
   compiled callback-fault, sanitizer, and production compressed-stream corpus
   qualification.
+- Script normalization now carries the text normalizer's specific fmap read
+  status, preserving in-range callback failures as `CL_EREAD` instead of
+  generic parse errors; add compiled scanner-level callback-fault and
+  production script corpus qualification.
 - ELF64 entrypoint and section coordinates now retain a native-width matcher
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the

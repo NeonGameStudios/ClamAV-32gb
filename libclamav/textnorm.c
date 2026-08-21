@@ -41,6 +41,7 @@ int text_normalize_init(struct text_norm_state *state, unsigned char *out, size_
     state->out_pos       = 0;
     state->space_written = 0;
     state->read_error    = false;
+    state->read_status   = CL_SUCCESS;
     return CL_SUCCESS;
 }
 
@@ -146,12 +147,19 @@ size_t text_normalize_map(struct text_norm_state *state, fmap_t *map, size_t off
     acc       = 0;
 
     while (1) {
+        if (offset > map->len) {
+            state->read_error = true;
+            state->read_status = CL_EPARSE;
+            break;
+        }
+
         /* Break out if we've reached the end of the map or our buffer. */
         if (!(acc_len = MIN_3(map_pgsz, map_len - offset, buff_len - acc_total))) break;
 
         /* If map_loc is NULL, then there's nothing left to do but recover. */
         if (!(map_loc = fmap_need_off_once(map, offset, acc_len))) {
             state->read_error = true;
+            state->read_status = (offset < map->len) ? CL_EREAD : CL_EPARSE;
             break;
         }
         offset += acc_len;

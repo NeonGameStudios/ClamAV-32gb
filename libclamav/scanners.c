@@ -3566,7 +3566,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
 
         if (state.read_error) {
             cli_mark_scan_incomplete(ctx, "Script normalization could not read the complete input map");
-            ret = CL_EPARSE;
+            ret = (state.read_status == CL_SUCCESS) ? CL_EPARSE : state.read_status;
             goto done;
         }
 
@@ -3611,7 +3611,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
             buff       = fmap_need_off_once(map, at, len);
             if (len && !buff) {
                 cli_mark_scan_incomplete(ctx, "Script normalization could not read the complete input map");
-                ret = CL_EPARSE;
+                ret = (at < map->len) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
             at += len;

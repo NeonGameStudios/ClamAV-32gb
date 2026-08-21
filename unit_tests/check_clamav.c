@@ -15580,6 +15580,13 @@ START_TEST(test_text_normalize_map_read_failure_is_fail_visible)
     written = text_normalize_map(&state, map, 0);
     ck_assert_uint_eq(written, 4096);
     ck_assert(state.read_error);
+    ck_assert_int_eq(state.read_status, CL_EREAD);
+
+    ck_assert_int_eq(text_normalize_init(&state, normalized, sizeof(normalized)), CL_SUCCESS);
+    written = text_normalize_map(&state, map, pread_state.length + 1U);
+    ck_assert_uint_eq(written, 0U);
+    ck_assert(state.read_error);
+    ck_assert_int_eq(state.read_status, CL_EPARSE);
 
     cl_fmap_close(map);
 }

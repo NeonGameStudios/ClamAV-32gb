@@ -32,6 +32,7 @@ struct text_norm_state {
     size_t out_pos;
     int space_written;
     bool read_error;
+    cl_error_t read_status;
 };
 
 #define ASCII_FILE_BUFF_LENGTH 131072

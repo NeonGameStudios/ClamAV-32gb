@@ -4093,6 +4093,15 @@ existing reset semantics; a focused invalid-descriptor regression covers the
 contract. Fault-injected clamscan cleanup and supported-build Sonic1
 qualification remain release gates.
 
+## Script-normalization read status — 2026-08-21
+
+Script normalization now carries the specific fmap read result through the
+shared text-normalizer state. An in-range callback failure remains `CL_EREAD`,
+while an impossible offset remains `CL_EPARSE`; the normalized layer is still
+marked incomplete and non-cacheable. The focused normalizer regression covers
+the operational read status; compiled scanner-level, sanitizer, callback-fault,
+and supported-build Sonic1 qualification remain release gates.
+
 ## clamscan stdin structured staging failures — 2026-08-20
 
 The stdin staging path now emits a per-input structured fallback report when

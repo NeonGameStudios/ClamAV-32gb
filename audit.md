@@ -2893,3 +2893,13 @@ state, while exact EOF still follows each decoder's existing premature-end
 status. A focused callback-fault regression covers all three streaming paths;
 compiled Linux/Sonic1, sanitizer, callback-fault, and production compressed
 corpus qualification remain open.
+
+## Script-normalization read status — 2026-08-21
+
+The shared text normalizer previously exposed only a boolean read-failure flag,
+so `cli_scanscript()` converted an in-range fmap callback failure into
+`CL_EPARSE`. The normalizer now carries `CL_EREAD` for a failed in-range
+window, treats an impossible offset as `CL_EPARSE`, and the scanner preserves
+that status through its cleanup path. The focused normalizer regression now
+asserts `CL_EREAD`; compiled scanner-level, sanitizer, callback-fault, and
+production script-corpus qualification remain open.
