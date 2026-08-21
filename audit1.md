@@ -3068,3 +3068,14 @@ locked fmap windows from the nested extent-scan lifetime while preserving the
 descriptor values required by the extractor. Static guards and whitespace
 validation pass; compiled UDF corpus, sanitizer, and production qualification
 remain open.
+
+## ZIP header-window lifetime — 2026-08-21
+
+ZIP local-header parsing previously kept its fixed header mapped through member
+decompression, and the central-directory walker passed a locked central header
+into that nested scan. The local parser now snapshots the decryptor header or
+copies scalar decoder fields before releasing the local window; the central
+parser snapshots its fixed metadata before invoking local-member parsing, and
+the catalogue ZipCrypto path follows the same rule. Static guards and
+whitespace validation pass; compiled ZIP corpus, sanitizer, and production
+qualification remain open.

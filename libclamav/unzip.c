@@ -1521,6 +1521,7 @@ static cl_error_t parse_local_file_header(
     cl_error_t status = CL_ERROR;
     cl_error_t ret;
     const uint8_t *local_header = NULL;
+    uint8_t local_header_copy[SIZEOF_LOCAL_HEADER];
     char name[256]              = {0};
     char *original_filename     = NULL;
     uint64_t csize = 0, usize = 0;
@@ -1796,18 +1797,31 @@ static cl_error_t parse_local_file_header(
             }
             cli_dbgmsg("cli_unzip: local header - skipping empty file\n");
         } else {
+            uint16_t local_flags  = LOCAL_HEADER_flags;
+            uint16_t local_method = LOCAL_HEADER_method;
+
             if (LOCAL_HEADER_flags & F_ENCR) {
+                /* The decryptor needs a few fixed-header fields while it
+                 * performs bounded recursive work. Give it a snapshot rather
+                 * than retaining the archive fmap window. */
+                memcpy(local_header_copy, local_header, sizeof(local_header_copy));
+                fmap_unneed_off(ctx->fmap, loff, SIZEOF_LOCAL_HEADER);
+                local_header = local_header_copy;
                 ret = zdecrypt_from_fmap(ctx->fmap, data_offset, csize, usize,
                                          expected_crc32, local_header,
                                          num_files_unzipped, ctx, tmpd, zcb, original_filename);
+                local_header = NULL;
                 if (ret != CL_SUCCESS) {
                     cli_dbgmsg("cli_unzip: local header - zdecrypt failed with %d\n", ret);
                     status = ret;
                     goto done;
                 }
             } else {
-                ret = unz_from_fmap(ctx->fmap, data_offset, csize, usize, LOCAL_HEADER_method,
-                                    LOCAL_HEADER_flags, expected_crc32,
+                /* The ordinary decoder needs only scalar header fields. */
+                fmap_unneed_off(ctx->fmap, loff, SIZEOF_LOCAL_HEADER);
+                local_header = NULL;
+                ret = unz_from_fmap(ctx->fmap, data_offset, csize, usize, local_method,
+                                    local_flags, expected_crc32,
                                     num_files_unzipped, ctx, tmpd, zcb,
                                     original_filename, false);
                 if (ret != CL_SUCCESS) {
@@ -1942,6 +1956,7 @@ static cl_error_t parse_central_directory_file_header(
     const uint8_t *central_header = NULL;
     const uint8_t *central_magic  = NULL;
     const uint8_t *central_extra  = NULL;
+    uint8_t central_header_copy[SIZEOF_CENTRAL_HEADER];
     struct zip_central_values central_values;
     size_t index;
     uint32_t magic;
@@ -1983,6 +1998,12 @@ static cl_error_t parse_central_directory_file_header(
         status = CL_EPARSE;
         goto done;
     }
+
+    /* Keep the fixed central metadata available to the catalogue pass without
+     * retaining a locked archive window across the nested local-member scan. */
+    memcpy(central_header_copy, central_header, sizeof(central_header_copy));
+    fmap_unneed_off(ctx->fmap, central_file_header_offset, SIZEOF_CENTRAL_HEADER);
+    central_header = central_header_copy;
 
     if (central_file_header_offset > ctx->fmap->len ||
         SIZEOF_CENTRAL_HEADER > ctx->fmap->len - central_file_header_offset) {
@@ -2100,10 +2121,6 @@ static cl_error_t parse_central_directory_file_header(
     }
 
 done:
-    if (NULL != central_header) {
-        fmap_unneed_ptr(ctx->fmap, central_header, SIZEOF_CENTRAL_HEADER);
-    }
-
     return status;
 }
 
@@ -3142,6 +3159,7 @@ scan_catalogue:
      */
     for (i = 0; i < records_count; i++) {
         const uint8_t *local_header = NULL;
+        uint8_t local_header_copy[SIZEOF_LOCAL_HEADER];
         size_t data_offset;
 
         if ((i > 0) &&
@@ -3172,14 +3190,18 @@ scan_catalogue:
 
         if (zip_catalogue[i].encrypted) {
             /* ZipCrypto still consumes local-header fields through macros.
-             * Keep this small view locked while bounded streaming may age
-             * other fmap pages, then release it immediately. */
+             * Snapshot the fixed header before bounded streaming ages other
+             * fmap pages, then release the archive view. */
             local_header = fmap_need_off(map, zip_catalogue[i].local_header_offset, SIZEOF_LOCAL_HEADER);
             if (NULL == local_header) {
                 cli_mark_scan_incomplete(ctx, "ZIP local header could not be mapped for decryption");
                 status = CL_EPARSE;
                 goto done;
             }
+
+            memcpy(local_header_copy, local_header, sizeof(local_header_copy));
+            fmap_unneed_off(map, zip_catalogue[i].local_header_offset, SIZEOF_LOCAL_HEADER);
+            local_header = local_header_copy;
 
             status = zdecrypt_from_fmap(
                 map,
@@ -3193,7 +3215,6 @@ scan_catalogue:
                 tmpd,
                 zip_scan_cb,
                 zip_catalogue[i].original_filename);
-            fmap_unneed_off(map, zip_catalogue[i].local_header_offset, SIZEOF_LOCAL_HEADER);
             local_header = NULL;
         } else {
             status = unz_from_fmap(

@@ -200,6 +200,10 @@
   data-descriptor read failures now remain `CL_EREAD` and non-cacheable instead
   of becoming clean members or triggering incomplete local-header fallback; add
   compiled archive-corpus coverage.
+- ZIP local and central fixed-header views are now copied or reduced to scalar
+  metadata before recursive decompression, so archive fmap locks do not span
+  child scans; compiled ZIP corpus and supported-build qualification remain
+  open.
 - Windows memory scans no longer turn a failed descriptor scan into `OK`; the
   native Windows memory ingress remains outside the certified first-release
   platform boundary.
