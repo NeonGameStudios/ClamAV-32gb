@@ -454,6 +454,67 @@ START_TEST(test_legacy_callback_errors_are_fail_visible)
 }
 END_TEST
 
+static cl_error_t unexpected_scan_callback_status(cl_scan_layer_t *layer, void *context)
+{
+    (void)layer;
+    (void)context;
+    return CL_EREAD;
+}
+
+static void assert_scan_callback_status_is_fail_visible(cl_scan_callback_t location, unsigned int suffix)
+{
+    uint8_t input[64];
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_scan_report_t *report = NULL;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert    = NULL;
+    uint64_t scanned          = 0;
+    cl_error_t report_status = CL_SUCCESS;
+    cl_scan_completion_t completion;
+    cl_error_t ret;
+
+    (void)snprintf((char *)input, sizeof(input), "modern callback status regression %u", suffix);
+    memset(&options, 0, sizeof(options));
+    map = cl_fmap_open_memory(input, strlen((char *)input));
+    ck_assert_ptr_nonnull(map);
+
+    cl_engine_set_scan_callback(g_engine, unexpected_scan_callback_status, location);
+    ret = cl_scanmap_ex2(map,
+                         "modern-callback-status",
+                         &verdict,
+                         &last_alert,
+                         &scanned,
+                         g_engine,
+                         &options,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         &report);
+    cl_engine_set_scan_callback(g_engine, NULL, location);
+
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EREAD);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+}
+
+START_TEST(test_scan_callback_errors_are_fail_visible)
+{
+    assert_scan_callback_status_is_fail_visible(CL_SCAN_CALLBACK_PRE_HASH, 1);
+    assert_scan_callback_status_is_fail_visible(CL_SCAN_CALLBACK_PRE_SCAN, 2);
+    assert_scan_callback_status_is_fail_visible(CL_SCAN_CALLBACK_POST_SCAN, 3);
+}
+END_TEST
+
 /* These historical fixtures deliberately contain malformed embedded layers.
  * With fail-closed parser propagation they are no longer allowed to look
  * clean when the embedded test signature cannot be reached. Keep complete
@@ -16645,6 +16706,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
     tcase_add_test(tc_cl, test_legacy_callback_errors_are_fail_visible);
+    tcase_add_test(tc_cl, test_scan_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);

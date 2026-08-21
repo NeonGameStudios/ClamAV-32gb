@@ -2,6 +2,7 @@ kind	id	status	source	evidence_or_required_work
 library	path	bounded	libclamav/scanners.c	checked root/type-detection and nested preflight before child-map creation; structured report remains covered by the scan API
 library	fd	bounded	libclamav/scanners.c	checked root/type-detection and nested preflight before child-map creation; structured report remains covered by the scan API
 library	fmap	bounded	libclamav_rust/src/fmap.rs	checked source offsets, map boundaries, nested-range admission, and type-detection/forced-staging read failures; Rust FMap::need_off preflights native-size ranges before callback or slice formation; operational nested reads return CL_EREAD and structured report is covered by the scan API
+library	callback	bounded	libclamav/others.c	modern scan-layer callbacks preserve unexpected CL_E* returns as incomplete, non-cacheable results; pre-hash, pre-scan, and post-scan paths are covered by the public scan-map regression
 clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
 clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix; summary counts clean, trusted, and detected stdin inputs once
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending; mandatory service qualification now binds daemon/client/milter binaries and runtime dependencies to the audited build

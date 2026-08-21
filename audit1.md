@@ -3187,6 +3187,15 @@ allocation for an empty output.
 Static guards and whitespace validation pass; compiled HFS+ corpus, sanitizer,
 and production qualification remain open.
 
+## Modern scan-layer callback error propagation — 2026-08-21
+
+The modern scan-layer callback dispatcher previously normalized an unexpected
+`cl_error_t` into continued scanning (or an accepted alert). It now marks the
+layer incomplete and preserves the callback error. Public pre-hash, pre-scan,
+and post-scan map-scan regressions cover the corrected behavior. Static guards
+and whitespace validation pass; compiled Linux/Sonic1 and broader callback
+fault-injection qualification remain open.
+
 ## Legacy callback error propagation — 2026-08-21
 
 Deprecated pre-cache, file-inspection, pre-scan, and post-scan callbacks now

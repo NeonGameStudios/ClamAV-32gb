@@ -3204,14 +3204,8 @@ cl_error_t cli_dispatch_scan_callback(cli_ctx *ctx, cl_scan_callback_t location)
         } break;
 
         default: {
-            cli_warnmsg("dispatch_scan_callback: Ignoring bad return code from callback\n");
-            if (location == CL_SCAN_CALLBACK_ALERT) {
-                // Accept the alert.
-                status = CL_VIRUS;
-            } else {
-                // Keep scanning.
-                status = CL_SUCCESS;
-            }
+            cli_mark_scan_incomplete(ctx, "scan callback returned an unexpected status");
+            cli_warnmsg("dispatch_scan_callback: preserving callback return code %d\n", status);
         }
     }
 

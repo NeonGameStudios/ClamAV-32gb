@@ -1040,6 +1040,11 @@ typedef enum scan_callback {
  *         You might want to do this if you trust the hash or verified a digital signature.
  *         The rest of the scan will be skipped FOR THIS layer.
  *         For contained files, this does NOT mean that the parent or adjacent layers are trusted.
+ *
+ * @return Other CL_E* values
+ *
+ *         Callback failure. The scan is marked incomplete and the error is
+ *         propagated to the caller; it is not treated as a clean result.
  */
 typedef cl_error_t (*clcb_scan)(cl_scan_layer_t *layer, void *context);
 /**
@@ -1112,6 +1117,9 @@ extern void cl_engine_set_clcb_pre_cache(struct cl_engine *engine, clcb_pre_cach
  * @return                    CL_BREAK = Whitelisted by callback - file is skipped and marked as clean.
  * @return                    CL_VIRUS = Blacklisted by callback - file is skipped and marked as infected.
  *
+ * Any other CL_E* return is treated as a callback failure and propagated as a
+ * non-clean, incomplete scan result.
+ *
  * This deprecated callback requires one contiguous buffer for the complete
  * layer. Layers larger than ClamAV's bounded single-allocation limit are not
  * dispatched to it; the scan returns an explicit incomplete/error result.
@@ -1161,6 +1169,9 @@ extern void cl_engine_set_clcb_file_inspection(struct cl_engine *engine, clcb_fi
  * @return          CL_SUCCESS = File is scanned.
  * @return          CL_BREAK = Allowed by callback - file is skipped and marked as clean.
  * @return          CL_VIRUS = Blocked by callback - file is skipped and marked as infected.
+ *
+ * Any other CL_E* return is treated as a callback failure and propagated as a
+ * non-clean, incomplete scan result.
  */
 typedef cl_error_t (*clcb_pre_scan)(int fd, const char *type, void *context);
 /**
@@ -1192,6 +1203,9 @@ extern void cl_engine_set_clcb_pre_scan(struct cl_engine *engine, clcb_pre_scan 
  * @return          CL_SUCCESS = File is scanned.
  * @return          CL_BREAK = Allowed by callback - file is skipped and marked as clean.
  * @return          CL_VIRUS = Blocked by callback - file is skipped and marked as infected.
+ *
+ * Any other CL_E* return is treated as a callback failure and propagated as a
+ * non-clean, incomplete scan result.
  */
 typedef cl_error_t (*clcb_post_scan)(int fd, int result, const char *virname, void *context);
 /**

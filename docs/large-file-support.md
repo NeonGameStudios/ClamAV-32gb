@@ -4797,3 +4797,13 @@ warning or allowing a clean result. A public `cl_scanmap_ex2` regression covers
 all four callback entry points and verifies both the returned status and the
 structured report status. Compiled Linux/Sonic1 and broader callback
 fault-injection qualification remain open.
+
+## Modern callback error propagation — 2026-08-21
+
+The scan-layer callback dispatcher no longer converts an unexpected callback
+error into continued scanning or an accepted alert. Pre-hash, pre-scan, and
+post-scan callback errors now mark the layer incomplete, preserve the callback
+status, and prevent a clean cache result. The public `cl_scanmap_ex2`
+regression covers all three locations and verifies the structured report.
+Compiled Linux/Sonic1 and broader callback fault-injection qualification remain
+open.

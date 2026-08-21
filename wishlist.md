@@ -304,6 +304,9 @@
   post-scan callbacks now remain fail-visible and non-cacheable instead of being
   normalized to a clean result; the public scan-map regression covers all four
   callback entry points.
+- Modern pre-hash, pre-scan, and post-scan callbacks now preserve unexpected
+  `CL_E*` returns as incomplete, non-cacheable results instead of continuing as
+  clean; the public scan-map regression covers all three locations.
 - OLE2 VBA macro and encrypted-RAR heuristic alert results now propagate; add
   heuristic callback/resource fault injection and malformed OLE/RAR corpus
   coverage.
