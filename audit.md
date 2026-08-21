@@ -53,6 +53,16 @@ sticky incomplete parser state. Focused unit tests and shell source guards are r
 produced a supported Linux compile, sanitizer run, or new Sonic1 qualification
 for this follow-up.
 
+## Current source-hardening follow-up — 2026-08-20
+
+The enabled Mydoom-log detector previously treated failure to obtain its
+required fmap window as `CL_CLEAN`. That could silently skip the detector
+after an injected read/map failure and let the outer raw pass appear clean.
+The detector now marks the scan incomplete, returns `CL_EREAD`, and prevents
+the affected fmap from being cached as clean. A focused unit regression and
+the source guard cover the failure path; supported-Linux compilation and
+runtime qualification remain open.
+
 The opt-in clamd report commands now serialize the public `_ex2` report,
 including aggregated logical/parser/detector counters and request-level peak
 resources for multi-file walks, rather than reducing those results to a status

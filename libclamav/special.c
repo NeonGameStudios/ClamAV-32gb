@@ -66,8 +66,10 @@ int cli_check_mydoom_log(cli_ctx *ctx)
      * while reading the uint32_t.
      */
     ptr = fmap_need_off_once(map, 0, 8 * 4 * blocks);
-    if (!ptr)
-        return CL_CLEAN;
+    if (!ptr) {
+        cli_mark_scan_incomplete(ctx, "Mydoom log detector input window could not be read completely");
+        return CL_EREAD;
+    }
 
     while (blocks) { /* This wasn't probably intended but that's what the current code does anyway */
         const uint32_t marker_ff = 0xffffffff;
