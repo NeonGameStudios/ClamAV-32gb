@@ -5722,6 +5722,55 @@ END_TEST
 
 #endif
 
+START_TEST(test_rar_without_backend_is_explicitly_unsupported)
+{
+    static const uint8_t data[] = {0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00, 0x00};
+    static const char *const types[] = {"CL_TYPE_RAR", "CL_TYPE_RARSFX"};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_error_t results[2];
+    cl_verdict_t verdicts[2];
+    const char *alerts[2];
+    int cache_flags[2];
+    int saved_have_rar;
+    unsigned int i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    saved_have_rar = have_rar;
+    have_rar       = 0;
+    for (i = 0; i < sizeof(types) / sizeof(types[0]); i++) {
+        fmap_t *map = cl_fmap_open_memory(data, sizeof(data));
+        uint64_t scanned;
+
+        ck_assert_ptr_nonnull(map);
+        verdicts[i] = CL_VERDICT_STRONG_INDICATOR;
+        alerts[i]   = "stale";
+        scanned     = UINT64_MAX;
+        results[i]  = cl_scanmap_ex(map, NULL, &verdicts[i], &alerts[i], &scanned,
+                                    scan_engine, &options, NULL, NULL, NULL, NULL,
+                                    types[i], NULL);
+        cache_flags[i] = map->dont_cache_flag;
+        cl_fmap_close(map);
+    }
+    have_rar = saved_have_rar;
+
+    for (i = 0; i < sizeof(types) / sizeof(types[0]); i++) {
+        ck_assert_int_eq(results[i], CL_EPARSE);
+        ck_assert_int_eq(verdicts[i], CL_VERDICT_NOTHING_FOUND);
+        ck_assert(alerts[i] == NULL);
+        ck_assert(cache_flags[i]);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_swf_zlib_truncated_stream_is_fail_visible)
 {
     static const uint8_t body[6] = {0};
@@ -16083,6 +16132,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_rar_nested_stage_read_failure_is_publicly_fail_visible);
 #endif
 #endif
+    tcase_add_test(tc_cl, test_rar_without_backend_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_invalid_block_geometry_is_fail_visible);

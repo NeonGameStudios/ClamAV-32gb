@@ -110,6 +110,15 @@ model scans. A focused public-map regression, source guard, and capability
 manifest entry cover the invariant; model-parser implementation and
 production model corpus qualification remain open.
 
+## UnRAR backend unsupported boundary — 2026-08-21
+
+RAR and RAR SFX signatures can remain recognized when the optional UnRAR
+backend is not built or cannot be loaded. Their dispatch paths now record
+that capability boundary as an incomplete, non-cacheable result before the
+mandatory outer raw matcher, rather than allowing a raw-only clean result.
+Backend-enabled RAR parser qualification and production corpus coverage
+remain open.
+
 ## OLE2 summary metadata result propagation — 2026-08-21
 
 When metadata collection was enabled, `cli_ole2_scan_tempdir()` discarded the

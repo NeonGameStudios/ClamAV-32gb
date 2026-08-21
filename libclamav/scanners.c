@@ -6258,6 +6258,10 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         cli_mark_scan_incomplete(ctx, "AI model parser is unsupported");
         status = CL_EPARSE;
     }
+    if ((type == CL_TYPE_RAR || type == CL_TYPE_RARSFX) && !have_rar) {
+        cli_mark_scan_incomplete(ctx, "RAR parser backend is unavailable");
+        status = CL_EPARSE;
+    }
 
     /* set current layer to the type we found */
     ret = cli_recursion_stack_change_type(ctx, type, true /* ? */);
