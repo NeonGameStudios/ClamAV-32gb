@@ -2371,6 +2371,16 @@ append failures mark the scan incomplete before returning. Source guards record
 the two detectors; compiled Linux/Sonic1, fault injection, sanitizer, and
 production structured-data corpus qualification remain open.
 
+## Legacy callback alert-result propagation — 2026-08-21
+
+Legacy file-inspection, pre-scan, and post-scan callback paths previously kept
+the callback’s `CL_VIRUS` status even when recording the callback alert returned
+`CL_VERIFIED`, `CL_BREAK`, or an operational failure. They now preserve the
+append result, mark operational recording failures incomplete, and retain the
+normal callback-block behavior when the append succeeds. Source guards record
+all three paths; compiled Linux/Sonic1, callback fault injection, sanitizer,
+and API/front-end qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success

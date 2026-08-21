@@ -5466,8 +5466,11 @@ static cl_error_t dispatch_file_inspection_callback(clcb_file_inspection cb, cli
         case CL_VIRUS:
             cli_dbgmsg("dispatch_file_inspection_callback: file blocked by callback\n");
             append_ret = cli_append_virus(ctx, "Detected.By.Callback.Inspection");
-            if (append_ret == CL_VIRUS) {
-                status = CL_VIRUS;
+            if (append_ret != CL_SUCCESS) {
+                if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
+                    cli_mark_scan_incomplete(ctx, "file-inspection callback alert could not be recorded");
+                }
+                status = append_ret;
             }
             break;
         case CL_SUCCESS:
@@ -5513,8 +5516,11 @@ static cl_error_t dispatch_prescan_callback(clcb_pre_scan cb, cli_ctx *ctx, cons
                 cli_dbgmsg("dispatch_prescan_callback: file blocked by callback\n");
 
                 append_ret = cli_append_virus(ctx, alert_name);
-                if (append_ret == CL_VIRUS) {
-                    status = CL_VIRUS;
+                if (append_ret != CL_SUCCESS) {
+                    if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
+                        cli_mark_scan_incomplete(ctx, "pre-scan callback alert could not be recorded");
+                    }
+                    status = append_ret;
                 }
             } break;
             case CL_SUCCESS:
@@ -6961,8 +6967,11 @@ done:
             case CL_VIRUS:
                 cli_dbgmsg("cli_magic_scan: file blocked by post_scan callback\n");
                 append_ret = cli_append_virus(ctx, "Detected.By.Callback");
-                if (append_ret == CL_VIRUS) {
-                    status = CL_VIRUS;
+                if (append_ret != CL_SUCCESS) {
+                    if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
+                        cli_mark_scan_incomplete(ctx, "post-scan callback alert could not be recorded");
+                    }
+                    status = append_ret;
                 }
                 break;
             case CL_SUCCESS:

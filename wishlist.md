@@ -139,6 +139,9 @@
 - Structured credit-card and SSN heuristic alert-append failures now remain
   fail-visible; add detector callback/resource fault injection and production
   structured-data corpus coverage.
+- Legacy file-inspection, pre-scan, and post-scan callback alert results now
+  propagate; add callback fault-injection coverage across library and front-end
+  APIs.
 
 ## Large-file validation and expansion progression
 
