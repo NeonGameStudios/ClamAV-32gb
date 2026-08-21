@@ -97,6 +97,8 @@
 - The service gate now directly exercises `SCANREPORT` through a Unix-socket
   length-prefixed protocol probe and validates its report against the fixture
   oracle; full release qualification remains open.
+- ARJ header admission now validates the starting offset before subtraction-form
+  range checks; parser-family and production-corpus qualification remain open.
 
 ## Large-file validation and expansion progression
 

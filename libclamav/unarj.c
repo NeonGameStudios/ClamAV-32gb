@@ -80,6 +80,11 @@
 
 #define GARBLE_FLAG 0x01
 
+static bool arj_range_within_map(const fmap_t *map, size_t offset, size_t length)
+{
+    return map != NULL && offset <= map->len && length <= map->len - offset;
+}
+
 #ifndef HAVE_ATTRIB_PACKED
 #define __attribute__(x)
 #endif
@@ -885,7 +890,8 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
         ret = false;
         goto done;
     }
-    if ((header_size + sizeof(header_size)) > (metadata->map->len - metadata->offset)) {
+    if (!arj_range_within_map(metadata->map, metadata->offset,
+                              sizeof(header_size) + (size_t)header_size)) {
         cli_dbgmsg("arj_read_header: invalid header_size: %u, exceeds length of file.\n", header_size);
         ret = false;
         goto done;
@@ -1023,7 +1029,8 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
         ret = CL_EFORMAT;
         goto done;
     }
-    if ((header_size + sizeof(header_size)) > (metadata->map->len - metadata->offset)) {
+    if (!arj_range_within_map(metadata->map, metadata->offset,
+                              sizeof(header_size) + (size_t)header_size)) {
         cli_dbgmsg("arj_read_file_header: invalid header_size: %u, exceeds length of file.\n", header_size);
         ret = CL_EFORMAT;
         goto done;

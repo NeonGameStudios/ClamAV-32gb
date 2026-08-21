@@ -2202,3 +2202,14 @@ metrics, and oracle-bound detection, and writes the validated report into the
 attested service evidence. The service workflow now requires this pass;
 compiled Linux/Sonic1 execution and the remaining production gates remain
 open.
+
+## ARJ header range admission — 2026-08-21
+
+ARJ main and member header admission now validates the starting offset before
+subtracting it from the fmap length, then checks the complete length-prefixed
+header range with native-size arithmetic. This preserves the existing
+fail-visible result for truncated input while preventing an invalid offset
+from turning the remaining-length calculation into an underflow. Source guards
+and the existing truncated-main-header regression record the invariant;
+compiled Linux/Sonic1, sanitizer, and broader ARJ corpus qualification remain
+open.

@@ -79,7 +79,7 @@ parser	CL_TYPE_7ZSFX	pending	libclamav/scanners.c	dispatch branch requires parse
 parser	CL_TYPE_AI_MODEL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_ALZ	pending	libclamav_rust/src/scanners.rs	bounded Rust reader/spool path now reports encrypted, data-descriptor, and unsupported-compression members as explicit incomplete results; parser-family and production qualification remain open
 parser	CL_TYPE_APM	pending	libclamav/apm.c	in-range DDM, fallback, table, entry, and intersection fmap failures now return CL_EREAD and mark the layer incomplete; parser-family qualification and complete corpus evidence remain required
-parser	CL_TYPE_ARJ	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_ARJ	pending	libclamav/unarj.c	ARJ header/member range and extraction/limit failures are fail-visible; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_ARJSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_AUTOIT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_BINARY_DATA	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
