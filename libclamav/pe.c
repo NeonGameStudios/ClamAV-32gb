@@ -285,6 +285,14 @@ cl_error_t cli_pe_unpack_size_check(cli_ctx *ctx, const char *who, uint64_t size
     return cli_checklimits(who, ctx, size, 0, 0);
 }
 
+static int cli_pe_add_u32(uint32_t left, uint32_t right, uint32_t *result)
+{
+    if (result == NULL || UINT32_MAX - left < right)
+        return -1;
+    *result = left + right;
+    return 0;
+}
+
 struct offset_list {
     uint32_t offset;
     struct offset_list *next;
@@ -3551,7 +3559,7 @@ int cli_scanpe(cli_ctx *ctx)
         fileoffset = (peinfo->vep + cli_readint32(epbuff + 1) + 5);
         while (fileoffset == 0x154 || fileoffset == 0x158) {
             char *src;
-            uint32_t offdiff, uselzma;
+            uint32_t offdiff, uselzma, combined_size;
 
             cli_dbgmsg("cli_scanpe: MEW: found MEW characteristics %08X + %08X + 5 = %08X\n",
                        cli_readint32(epbuff + 1), peinfo->vep, cli_readint32(epbuff + 1) + peinfo->vep + 5);
@@ -3581,30 +3589,30 @@ int cli_scanpe(cli_ctx *ctx)
             ssize = peinfo->sections[i + 1].vsz;
             dsize = peinfo->sections[i].vsz;
 
-            /* Guard against integer overflow */
-            if ((ssize + dsize < ssize) || (ssize + dsize < dsize)) {
+            if (cli_pe_add_u32(ssize, dsize, &combined_size) < 0) {
                 cli_dbgmsg("cli_scanpe: MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n", ssize, dsize, UINT32_MAX);
+                cli_mark_scan_incomplete(ctx, "PE MEW unpacker size arithmetic overflowed");
                 break;
             }
 
             /* Verify that offdiff does not exceed the ssize + sdiff */
-            if (offdiff >= ssize + dsize) {
-                cli_dbgmsg("cli_scanpe: MEW: offdiff (%08x) exceeds section size + diff size (%08x)\n", offdiff, ssize + dsize);
+            if (offdiff >= combined_size) {
+                cli_dbgmsg("cli_scanpe: MEW: offdiff (%08x) exceeds section size + diff size (%08x)\n", offdiff, combined_size);
                 break;
             }
 
             cli_dbgmsg("cli_scanpe: MEW: ssize %08x dsize %08x offdiff: %08x\n", ssize, dsize, offdiff);
 
             CLI_UNPSIZELIMITS("cli_scanpe: MEW", MAX(ssize, dsize));
-            CLI_UNPSIZELIMITS("cli_scanpe: MEW", MAX((uint64_t)ssize + (uint64_t)dsize, (uint64_t)peinfo->sections[i + 1].rsz));
+            CLI_UNPSIZELIMITS("cli_scanpe: MEW", MAX((uint64_t)combined_size, (uint64_t)peinfo->sections[i + 1].rsz));
 
-            if (peinfo->sections[i + 1].rsz < offdiff + 12 || peinfo->sections[i + 1].rsz > ssize) {
+            if (offdiff > UINT32_MAX - 12 || peinfo->sections[i + 1].rsz < offdiff + 12 || peinfo->sections[i + 1].rsz > ssize) {
                 cli_dbgmsg("cli_scanpe: MEW: Size mismatch: %08x\n", peinfo->sections[i + 1].rsz);
                 break;
             }
 
             /* allocate needed buffer */
-            if (!(src = cli_max_calloc(ssize + dsize, sizeof(char)))) {
+            if (!(src = cli_max_calloc(combined_size, sizeof(char)))) {
                 cli_exe_info_destroy(peinfo);
                 return CL_EMEM;
             }
@@ -3689,7 +3697,7 @@ int cli_scanpe(cli_ctx *ctx)
                   epbuff[5] == '\xad' && epbuff[6] == '\x8b' && epbuff[7] == '\xf8' /* loads;  mov edi, eax */
                   )))) {
             uint32_t vma, off;
-            int a, b, c;
+            uint32_t a, b, c;
 
             cli_dbgmsg("cli_scanpe: Upack characteristics found.\n");
             a = peinfo->sections[0].vsz;
@@ -3697,8 +3705,11 @@ int cli_scanpe(cli_ctx *ctx)
             if (upack) {
                 cli_dbgmsg("cli_scanpe: Upack: var set\n");
 
-                c     = peinfo->sections[2].vsz;
-                ssize = peinfo->sections[0].ursz + peinfo->sections[0].uraw;
+                c = peinfo->sections[2].vsz;
+                if (cli_pe_add_u32(peinfo->sections[0].ursz, peinfo->sections[0].uraw, &ssize) < 0) {
+                    cli_mark_scan_incomplete(ctx, "PE Upack source size arithmetic overflowed");
+                    break;
+                }
                 off   = peinfo->sections[0].rva;
                 vma   = EC32(peinfo->pe_opt.opt32.ImageBase) + peinfo->sections[0].rva;
             } else {
@@ -3709,7 +3720,10 @@ int cli_scanpe(cli_ctx *ctx)
                 vma   = peinfo->sections[1].rva - peinfo->sections[1].uraw;
             }
 
-            dsize = a + b + c;
+            if (cli_pe_add_u32(a, b, &dsize) < 0 || cli_pe_add_u32(dsize, c, &dsize) < 0) {
+                cli_mark_scan_incomplete(ctx, "PE Upack output size arithmetic overflowed");
+                break;
+            }
 
             CLI_UNPSIZELIMITS("cli_scanpe: Upack", MAX(MAX(dsize, ssize), peinfo->sections[1].ursz));
 
@@ -3750,7 +3764,7 @@ int cli_scanpe(cli_ctx *ctx)
 
     while (found && (DCONF & PE_CONF_FSG) && epbuff[0] == '\x87' && epbuff[1] == '\x25') {
         const char *dst;
-        uint32_t newesi, newedi, newebx, newedx;
+        uint32_t newesi, newedi, newebx, newedx, fsg_input_size;
 
         /* FSG v2.0 support - thanks to aCaB ! */
 
@@ -3818,6 +3832,12 @@ int cli_scanpe(cli_ctx *ctx)
         newedx = cli_readint32(newebx + 12 - peinfo->sections[i + 1].rva + src) - EC32(peinfo->pe_opt.opt32.ImageBase);
         cli_dbgmsg("cli_scanpe: FSG: found old EP @%x\n", newedx);
 
+        if (cli_pe_add_u32(ssize, peinfo->sections[i + 1].rva, &fsg_input_size) < 0 || fsg_input_size < newesi) {
+            cli_mark_scan_incomplete(ctx, "PE FSG input coordinate arithmetic overflowed");
+            break;
+        }
+        fsg_input_size -= newesi;
+
         if ((dest = (char *)cli_max_calloc(dsize, sizeof(char))) == NULL) {
             cli_exe_info_destroy(peinfo);
             return CL_EMEM;
@@ -3827,14 +3847,14 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "FSG");
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, 0));
-        CLI_UNPRESULTSFSG2("cli_scanpe: FSG", (unfsg_200(newesi - peinfo->sections[i + 1].rva + src, dest, ssize + peinfo->sections[i + 1].rva - newesi, dsize, newedi, EC32(peinfo->pe_opt.opt32.ImageBase), newedx, ndesc)), 1, (dest, 0));
+        CLI_UNPRESULTSFSG2("cli_scanpe: FSG", (unfsg_200(newesi - peinfo->sections[i + 1].rva + src, dest, fsg_input_size, dsize, newedi, EC32(peinfo->pe_opt.opt32.ImageBase), newedx, ndesc)), 1, (dest, 0));
         break;
     }
 
     while (found && (DCONF & PE_CONF_FSG) && epbuff[0] == '\xbe' && cli_readint32(epbuff + 1) - EC32(peinfo->pe_opt.opt32.ImageBase) < peinfo->min) {
         int sectcnt = 0;
         const char *support;
-        uint32_t newesi, newedi, oldep, gp, t;
+        uint32_t newesi, newedi, oldep, gp, t, fsg_input_size;
         struct cli_exe_section *sections;
 
         /* FSG support - v. 1.33 (thx trog for the many samples) */
@@ -3928,17 +3948,25 @@ int cli_scanpe(cli_ctx *ctx)
         oldep = peinfo->vep + 161 + 6 + cli_readint32(epbuff + 163);
         cli_dbgmsg("cli_scanpe: FSG: found old EP @%x\n", oldep);
 
+        if (cli_pe_add_u32(ssize, peinfo->sections[i + 1].rva, &fsg_input_size) < 0 || fsg_input_size < newesi) {
+            cli_mark_scan_incomplete(ctx, "PE FSG input coordinate arithmetic overflowed");
+            free(sections);
+            break;
+        }
+        fsg_input_size -= newesi;
+
         if (pe_json != NULL)
             cli_jsonstr(pe_json, "Packer", "FSG");
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
-        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, ssize + peinfo->sections[i + 1].rva - newesi, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc)), 1, (dest, sections, 0));
+        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc)), 1, (dest, sections, 0));
         break; /* were done with 1.33 */
     }
 
     while (found && (DCONF & PE_CONF_FSG) && epbuff[0] == '\xbb' && cli_readint32(epbuff + 1) - EC32(peinfo->pe_opt.opt32.ImageBase) < peinfo->min && epbuff[5] == '\xbf' && epbuff[10] == '\xbe' && peinfo->vep >= peinfo->sections[i + 1].rva && peinfo->vep - peinfo->sections[i + 1].rva > peinfo->sections[i + 1].rva - 0xe0) {
         int sectcnt = 0;
         uint32_t gp, t = cli_rawaddr(cli_readint32(epbuff + 1) - EC32(peinfo->pe_opt.opt32.ImageBase), NULL, 0, &err, fsize, peinfo->hdr_size);
+        uint32_t fsg_input_size;
         const char *support;
         uint32_t newesi = cli_readint32(epbuff + 11) - EC32(peinfo->pe_opt.opt32.ImageBase);
         uint32_t newedi = cli_readint32(epbuff + 6) - EC32(peinfo->pe_opt.opt32.ImageBase);
@@ -4029,18 +4057,29 @@ int cli_scanpe(cli_ctx *ctx)
         oldep = peinfo->vep + gp + 6 + cli_readint32(src + gp + 2 + oldep);
         cli_dbgmsg("cli_scanpe: FSG: found old EP @%x\n", oldep);
 
+        if (cli_pe_add_u32(ssize, peinfo->sections[i + 1].rva, &fsg_input_size) < 0 || fsg_input_size < newesi) {
+            cli_mark_scan_incomplete(ctx, "PE FSG input coordinate arithmetic overflowed");
+            free(sections);
+            break;
+        }
+        fsg_input_size -= newesi;
+
         if (pe_json != NULL)
             cli_jsonstr(pe_json, "Packer", "FSG");
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
-        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, ssize + peinfo->sections[i + 1].rva - newesi, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc)), 1, (dest, sections, 0));
+        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc)), 1, (dest, sections, 0));
 
         break; /* were done with 1.31 */
     }
 
     if (found && (DCONF & PE_CONF_UPX)) {
         ssize = peinfo->sections[i + 1].rsz;
-        dsize = peinfo->sections[i].vsz + peinfo->sections[i + 1].vsz;
+        if (cli_pe_add_u32(peinfo->sections[i].vsz, peinfo->sections[i + 1].vsz, &dsize) < 0) {
+            cli_mark_scan_incomplete(ctx, "PE UPX output size arithmetic overflowed");
+            cli_exe_info_destroy(peinfo);
+            return CL_EPARSE;
+        }
 
         /*
          * UPX support
@@ -4431,8 +4470,16 @@ int cli_scanpe(cli_ctx *ctx)
             if (i + 1 == peinfo->nsections)
                 break;
 
-            if (ssize < peinfo->sections[i].rva + peinfo->sections[i].vsz)
-                ssize = peinfo->sections[i].rva + peinfo->sections[i].vsz;
+            {
+                uint32_t section_end;
+                if (cli_pe_add_u32(peinfo->sections[i].rva, peinfo->sections[i].vsz, &section_end) < 0) {
+                    cli_mark_scan_incomplete(ctx, "PE WWPack coordinate arithmetic overflowed");
+                    ssize = 0;
+                    break;
+                }
+                if (ssize < section_end)
+                    ssize = section_end;
+            }
         }
 
         if (!head || !ssize || head > ssize)
@@ -4513,9 +4560,16 @@ int cli_scanpe(cli_ctx *ctx)
             break;
         }
         ssize = 0;
-        for (i = 0; i < peinfo->nsections; i++)
-            if (ssize < peinfo->sections[i].rva + peinfo->sections[i].vsz)
-                ssize = peinfo->sections[i].rva + peinfo->sections[i].vsz;
+        for (i = 0; i < peinfo->nsections; i++) {
+            uint32_t section_end;
+            if (cli_pe_add_u32(peinfo->sections[i].rva, peinfo->sections[i].vsz, &section_end) < 0) {
+                cli_mark_scan_incomplete(ctx, "PE Aspack coordinate arithmetic overflowed");
+                ssize = 0;
+                break;
+            }
+            if (ssize < section_end)
+                ssize = section_end;
+        }
 
         if (!ssize)
             break;

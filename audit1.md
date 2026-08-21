@@ -3163,3 +3163,15 @@ members and uses checked alignment for old/newc member boundaries. A maximum
 format field can no longer wrap its padding into a smaller coordinate.
 Static guards and whitespace validation pass; compiled CPIO corpus, sanitizer,
 and production qualification remain open.
+
+## PE32 unpacker coordinate arithmetic — 2026-08-21
+
+Recognized PE32 MEW, Upack, FSG, UPX, WWPack, and Aspack paths formed section
+size or RVA sums in 32-bit arithmetic before the shared allocation and
+temporary limits. A wrapped sum could admit a smaller buffer or pass a wrapped
+input length to the unpacker. The paths now use checked `uint32_t` additions,
+reject overflow as an incomplete recognized layer, and pass validated sums into
+the existing bounded allocation/spool paths. PE32+ PE-specific analysis remains
+an explicit unsupported/incomplete result.
+Static guards and whitespace validation pass; compiled PE corpus, sanitizer,
+and production qualification remain open.

@@ -36,6 +36,9 @@
   maximum positive signed length.
 - CPIO member sizes and name padding now use native-width checked alignment;
   32-bit format fields cannot wrap archive coordinates at their padding edge.
+- PE32 MEW, Upack, FSG, UPX, WWPack, and Aspack paths now reject checked
+  32-bit size/coordinate additions that would wrap before allocation or
+  unpacked scanning.
 - The bundled CAB/CHM adapter now bounds decoder-requested allocations with the
   shared individual-allocation ceiling.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
