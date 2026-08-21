@@ -168,14 +168,19 @@ static cl_error_t zip_validate_data_descriptor(
 
     descriptor = fmap_need_off_once(ctx->fmap, descriptor_offset, 4U);
     if (!descriptor) {
-        cli_mark_scan_incomplete(ctx, "ZIP data descriptor is outside the archive map");
-        return CL_EPARSE;
+        cli_mark_scan_incomplete(ctx, "ZIP data descriptor could not be read completely");
+        return CL_EREAD;
     }
 
     if (cli_readint32(descriptor) == ZIP_MAGIC_FILE_BEGIN_SPLIT_OR_SPANNED &&
         available >= payload_size + 4U) {
         const uint8_t *signed_payload = fmap_need_off_once(
             ctx->fmap, descriptor_offset + 4U, payload_size);
+
+        if (!signed_payload) {
+            cli_mark_scan_incomplete(ctx, "ZIP data descriptor payload could not be read completely");
+            return CL_EREAD;
+        }
 
         /* The optional signature is numerically indistinguishable from a
          * CRC32 with the same value.  Treat it as a signature only when the
@@ -193,6 +198,10 @@ static cl_error_t zip_validate_data_descriptor(
         return CL_EPARSE;
     }
     descriptor = fmap_need_off_once(ctx->fmap, descriptor_offset, payload_size);
+    if (!descriptor) {
+        cli_mark_scan_incomplete(ctx, "ZIP data descriptor payload could not be read completely");
+        return CL_EREAD;
+    }
     if (!zip_data_descriptor_matches(descriptor, zip64_sizes,
                                      CENTRAL_HEADER_crc32, csize, usize)) {
         cli_mark_scan_incomplete(ctx, "ZIP data descriptor disagrees with the central directory");

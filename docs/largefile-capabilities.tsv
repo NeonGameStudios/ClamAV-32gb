@@ -153,5 +153,5 @@ parser	CL_TYPE_XML_HWP	pending	libclamav/scanners.c	dispatch branch requires par
 parser	CL_TYPE_XML_WORD	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_XML_XL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_XZ	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_ZIP	pending	libclamav/scanners.c	local/central filename, local-header discovery, EOCD, and ZIP64 metadata fmap read failures remain incomplete and non-cacheable; dispatch branch still requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_ZIP	pending	libclamav/scanners.c	local/central filename, local-header discovery, EOCD, ZIP64 metadata, and data-descriptor fmap read failures remain incomplete and non-cacheable; dispatch branch still requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_ZIPSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

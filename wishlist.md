@@ -118,10 +118,10 @@
 - On-access regular-file streams now reject post-stat growth in both ordinary
   and quarantine modes, preventing a clean prefix from being reported; add
   compiled file-mutation and monitoring-mode coverage.
-- ZIP local/central filename, local-header discovery, EOCD, and ZIP64 metadata
-  read failures now remain `CL_EREAD` and non-cacheable instead of becoming
-  clean members or triggering incomplete local-header fallback; add compiled
-  archive-corpus coverage.
+- ZIP local/central filename, local-header discovery, EOCD, ZIP64 metadata, and
+  data-descriptor read failures now remain `CL_EREAD` and non-cacheable instead
+  of becoming clean members or triggering incomplete local-header fallback; add
+  compiled archive-corpus coverage.
 - Windows memory scans no longer turn a failed descriptor scan into `OK`; the
   native Windows memory ingress remains outside the certified first-release
   platform boundary.

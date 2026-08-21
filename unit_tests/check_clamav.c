@@ -3707,6 +3707,72 @@ static uint8_t *zip_stream_central_archive(
     return archive;
 }
 
+static uint8_t *zip_stream_central_data_descriptor_archive(
+    const uint8_t *input,
+    size_t input_length,
+    size_t *archive_length,
+    size_t *descriptor_offset)
+{
+    static const char filename[] = "descriptor.bin";
+    const size_t local_header_length = 30U;
+    const size_t filename_length     = sizeof(filename) - 1U;
+    const size_t descriptor_length   = 16U;
+    const size_t central_length     = 46U + filename_length;
+    const size_t end_length         = 22U;
+    const size_t local_data_offset  = local_header_length + filename_length;
+    const uint32_t crc              = (uint32_t)crc32(0L, input, (uInt)input_length);
+    size_t central_offset;
+    uint8_t *archive;
+    uint8_t *central;
+    uint8_t *end;
+
+    ck_assert_msg(input_length <= UINT32_MAX, "test ZIP member is too large");
+    ck_assert_msg(input_length <= SIZE_MAX - local_data_offset - descriptor_length,
+                  "test ZIP descriptor offset overflows");
+    central_offset = local_data_offset + input_length + descriptor_length;
+    ck_assert_msg(central_offset <= SIZE_MAX - central_length - end_length,
+                  "test ZIP catalogue length overflows");
+    ck_assert_msg(central_offset <= UINT32_MAX && central_length <= UINT32_MAX,
+                  "test ZIP catalogue offsets exceed 32 bits");
+
+    *archive_length    = central_offset + central_length + end_length;
+    *descriptor_offset = local_data_offset + input_length;
+    archive            = calloc(1, *archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    zip_stream_write_u32(archive, 0x04034b50U);
+    zip_stream_write_u16(archive + 4, 20U);
+    zip_stream_write_u16(archive + 6, ZIP_TEST_FLAG_DATA_DESCRIPTOR);
+    zip_stream_write_u16(archive + 8, ZIP_TEST_METHOD_STORED);
+    zip_stream_write_u16(archive + 26, (uint16_t)filename_length);
+    memcpy(archive + local_header_length, filename, filename_length);
+    memcpy(archive + local_data_offset, input, input_length);
+    zip_stream_write_u32(archive + *descriptor_offset, 0x08074b50U);
+    zip_stream_write_u32(archive + *descriptor_offset + 4U, crc);
+    zip_stream_write_u32(archive + *descriptor_offset + 8U, (uint32_t)input_length);
+    zip_stream_write_u32(archive + *descriptor_offset + 12U, (uint32_t)input_length);
+
+    central = archive + central_offset;
+    zip_stream_write_u32(central, 0x02014b50U);
+    zip_stream_write_u16(central + 4, 20U);
+    zip_stream_write_u16(central + 6, 20U);
+    zip_stream_write_u16(central + 8, ZIP_TEST_FLAG_DATA_DESCRIPTOR);
+    zip_stream_write_u16(central + 10, ZIP_TEST_METHOD_STORED);
+    zip_stream_write_u32(central + 16, crc);
+    zip_stream_write_u32(central + 20, (uint32_t)input_length);
+    zip_stream_write_u32(central + 24, (uint32_t)input_length);
+    zip_stream_write_u16(central + 28, (uint16_t)filename_length);
+    memcpy(central + 46, filename, filename_length);
+
+    end = central + central_length;
+    zip_stream_write_u32(end, 0x06054b50U);
+    zip_stream_write_u16(end + 8, 1U);
+    zip_stream_write_u16(end + 10, 1U);
+    zip_stream_write_u32(end + 12, (uint32_t)central_length);
+    zip_stream_write_u32(end + 16, (uint32_t)central_offset);
+    return archive;
+}
+
 static uint8_t *zip_stream_central_masked_archive(
     const uint8_t *compressed,
     size_t compressed_length,
@@ -5991,6 +6057,67 @@ START_TEST(test_zip64_metadata_read_failures_are_fail_visible)
         cl_fmap_close(map);
         cl_engine_free(engine);
     }
+    zip_targeted_read_failure_offset = 0;
+}
+END_TEST
+
+START_TEST(test_zip_data_descriptor_read_failures_are_fail_visible)
+{
+    static const uint8_t input[] = "descriptor-read-failure";
+    const size_t failure_delta[] = {0U, 4U};
+    const char *reasons[] = {
+        "ZIP data descriptor could not be read completely",
+        "ZIP data descriptor payload could not be read completely"};
+    uint8_t *archive;
+    size_t archive_length;
+    size_t descriptor_offset;
+    size_t i;
+
+    archive = zip_stream_central_data_descriptor_archive(input, sizeof(input) - 1U,
+                                                         &archive_length,
+                                                         &descriptor_offset);
+    ck_assert_ptr_nonnull(archive);
+
+    for (i = 0; i < sizeof(failure_delta) / sizeof(failure_delta[0]); i++) {
+        struct cl_engine *engine;
+        struct cl_scan_options options;
+        cli_scan_layer_t layer;
+        cli_ctx ctx;
+        fmap_t *map;
+        cl_error_t ret;
+
+        zip_targeted_read_failure_offset = descriptor_offset + failure_delta[i];
+        engine = cl_engine_new();
+        ck_assert_ptr_nonnull(engine);
+        ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+        memset(&options, 0, sizeof(options));
+        memset(&layer, 0, sizeof(layer));
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(archive, archive_length);
+        ck_assert_ptr_nonnull(map);
+        map->need                = zip_targeted_read_failure;
+        ctx.engine               = engine;
+        ctx.options              = &options;
+        ctx.dconf                = engine->dconf;
+        ctx.fmap                 = map;
+        ctx.this_layer_tmpdir    = tmpdir;
+        ctx.recursion_stack      = &layer;
+        ctx.recursion_stack_size = 1;
+        layer.type               = CL_TYPE_ZIP;
+        layer.size               = archive_length;
+        layer.fmap               = map;
+
+        ret = cli_unzip(&ctx);
+        ck_assert_int_eq(ret, CL_EREAD);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        cl_engine_free(engine);
+    }
+
+    free(archive);
     zip_targeted_read_failure_offset = 0;
 }
 END_TEST
@@ -15258,6 +15385,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_central_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_eocd_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip64_metadata_read_failures_are_fail_visible);
+    tcase_add_test(tc_cl, test_zip_data_descriptor_read_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_masked_sfx_candidate_is_not_confirmed);
     tcase_add_test(tc_cl, test_zip_local_only_masked_header_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
