@@ -4350,6 +4350,14 @@ fault-injection regression, source guard, and capability-manifest entry are
 registered; compiled Linux/Sonic1, sanitizer, and broader HFS+ corpus
 qualification remain open.
 
+## HFS+ fork-content fmap failure — 2026-08-21
+
+HFS+ data/resource-fork windows that fail in the fmap now mark the layer
+incomplete and non-cacheable and return `CL_EREAD` instead of exposing only a
+generic map error. A synthetic fork-content fault-injection regression, source
+guard, and capability-manifest entry are registered; compiled Linux/Sonic1,
+sanitizer, and broader HFS+ corpus qualification remain open.
+
 ## RTF in-range fmap read failure — 2026-08-21
 
 The RTF bounded reader now distinguishes exact end-of-map from an in-range

@@ -453,7 +453,8 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
             mPtr = fmap_need_off_once(ctx->fmap, (size_t)blockOffset, volHeader->blockSize);
             if (!mPtr) {
                 cli_errmsg("hfsplus_scanfile: map error\n");
-                status = CL_EMAP;
+                cli_mark_scan_incomplete(ctx, "HFS+ fork contents could not be read completely");
+                status = CL_EREAD;
                 goto done;
             }
 

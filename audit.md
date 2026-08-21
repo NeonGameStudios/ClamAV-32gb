@@ -2013,6 +2013,15 @@ tree was merely malformed. A synthetic catalog-tree fault-injection regression,
 source guard, and capability-manifest entry record the invariant. Compiled
 Linux/Sonic1, sanitizer, and broader HFS+ corpus qualification remain open.
 
+## HFS+ fork-content fmap failure — 2026-08-21
+
+HFS+ data/resource-fork windows that fail in the fmap previously returned a
+generic map error without a direct incomplete-result contract. The path now
+marks the layer incomplete and non-cacheable and returns `CL_EREAD`. A
+synthetic fork-content fault-injection regression, source guard, and
+capability-manifest entry record the invariant. Compiled Linux/Sonic1,
+sanitizer, and broader HFS+ corpus qualification remain open.
+
 ## RTF in-range fmap read failure — 2026-08-21
 
 The RTF bounded reader previously treated an in-range `fmap` callback failure
