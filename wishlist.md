@@ -151,6 +151,9 @@
 - Mach-O and universal-binary broken-executable heuristic alert results now
   propagate callback, trusted, and operational statuses; add Mach-O heuristic
   fault-injection and malformed-corpus coverage.
+- Encrypted EGG heuristic alert results now propagate callback, trusted, and
+  operational statuses; add EGG heuristic fault-injection and malformed-corpus
+  coverage.
 
 ## Large-file validation and expansion progression
 

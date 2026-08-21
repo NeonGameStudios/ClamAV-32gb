@@ -1145,8 +1145,12 @@ done:
     if ((CL_VIRUS != status) && (nEncryptedFilesFound > 0)) {
         /* If user requests enabled the Heuristic for encrypted archives... */
         if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
-            if (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.EGG")) {
-                status = CL_VIRUS;
+            cl_error_t append_ret = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.EGG");
+            if (append_ret != CL_SUCCESS) {
+                if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
+                    cli_mark_scan_incomplete(ctx, "encrypted EGG alert could not be recorded");
+                }
+                status = append_ret;
             }
         }
     }

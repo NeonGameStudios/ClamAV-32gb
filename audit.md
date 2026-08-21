@@ -2414,6 +2414,16 @@ incomplete. The source guard and capability manifest record the invariant;
 compiled Linux/Sonic1, callback/resource fault injection, sanitizer, and broader
 Mach-O corpus qualification remain open.
 
+## Encrypted EGG heuristic result propagation — 2026-08-21
+
+The EGG scanner’s encrypted-member heuristic previously promoted only
+`CL_VIRUS`; trusted, callback-break, and operational alert-recording results
+were discarded. It now preserves every non-success result and marks an
+operational alert-recording failure incomplete before returning it. The source
+guard and capability manifest record the invariant; compiled Linux/Sonic1,
+callback/resource fault injection, sanitizer, and broader EGG corpus
+qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success
