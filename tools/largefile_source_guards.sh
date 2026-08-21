@@ -98,6 +98,8 @@ contains unit_tests/check_clamav.c 'test_child_descriptor_inspection_failure_is_
 contains unit_tests/check_clamav.c 'test_file_type_detection_read_failure_is_fail_visible'
 contains libclamav/apm.c 'APM partition entry could not be read completely'
 contains unit_tests/check_clamav.c 'test_apm_partition_read_failure_is_fail_visible'
+contains libclamav/elf.c 'ELF metadata parsing ended before inspection completed'
+contains unit_tests/check_clamav.c 'test_elf_metadata_read_failure_is_fail_visible'
 contains libclamav/scanners.c 'cli_preflight_child_size'
 contains libclamav/scanners.c 'before fmap_duplicate()'
 contains libclamav/scanners.c 'child content was rejected before fmap creation'

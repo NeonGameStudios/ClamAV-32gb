@@ -912,6 +912,9 @@ cl_error_t cli_elfheader(cli_ctx *ctx, struct cli_exe_info *elfinfo)
 
 done:
 
+    if (ctx && ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_VERIFIED)
+        cli_mark_scan_incomplete(ctx, "ELF metadata parsing ended before inspection completed");
+
     return ret;
 }
 

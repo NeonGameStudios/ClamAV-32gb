@@ -9586,6 +9586,16 @@ static const void *apm_partition_read_failure(fmap_t *map, size_t at, size_t len
     return (const uint8_t *)map->data + at;
 }
 
+static const void *elf_program_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 64U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 /* The checked-in PE fixture's first import thunk is at this raw file offset.
  * Allow every other memory window so the scan reaches the thunk-table read. */
 #define PE_TEST_IMPORT_DESCRIPTOR_OFFSET 0x126e00U
@@ -12486,6 +12496,51 @@ START_TEST(test_elf_truncated_header_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_elf_metadata_read_failure_is_fail_visible)
+{
+    uint8_t data[64 + 56] = {0};
+    struct cli_exe_info exeinfo;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A confirmed ELF64 header points at a required program header whose
+     * in-range fmap window fails. Metadata-only parsing must not stay clean. */
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 2; /* ELFCLASS64. */
+    data[5] = 1; /* ELFDATA2LSB. */
+    data[6] = 1;
+    zip_stream_write_u16(data + 16, 2);
+    zip_stream_write_u16(data + 18, 62);
+    zip_stream_write_u32(data + 20, 1);
+    zip_stream_write_u64(data + 24, 0x400000U);
+    zip_stream_write_u64(data + 32, 64U);
+    zip_stream_write_u16(data + 52, sizeof(struct elf_file_hdr64));
+    zip_stream_write_u16(data + 54, sizeof(struct elf_program_hdr64));
+    zip_stream_write_u16(data + 56, 1);
+    zip_stream_write_u16(data + 58, sizeof(struct elf_section_hdr64));
+
+    memset(&ctx, 0, sizeof(ctx));
+    cli_exe_info_init(&exeinfo, 0);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = elf_program_header_read_failure;
+    ctx.fmap = map;
+
+    ret = cli_elfheader(&ctx, &exeinfo);
+    ck_assert_int_eq(ret, CL_BREAK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF metadata parsing ended before inspection completed");
+    ck_assert(map->dont_cache_flag);
+
+    cli_exe_info_destroy(&exeinfo);
     cl_fmap_close(map);
 }
 END_TEST
