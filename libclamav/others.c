@@ -2005,8 +2005,8 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
         //       context doesn't even have an fmap.
 
         status = cli_check_fp(ctx, virname);
-        if (CL_VERIFIED == status) {
-            // FP signature found for one of the layers. Ignore indicator.
+        if (CL_VERIFIED == status || CL_VIRUS != status) {
+            // Ignore a verified indicator, or preserve a required hash failure.
             goto done;
         }
     }

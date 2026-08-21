@@ -769,7 +769,8 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
                 ret = fmap_will_need_hash_later(map, hash_type);
                 if (CL_SUCCESS != ret) {
                     cli_dbgmsg("cli_check_fp: Failed to set fmap to need MD5 hash later\n");
-                    status = CL_VIRUS;
+                    cli_mark_scan_incomplete(ctx, "false-positive hash preparation failed");
+                    status = ret;
                     goto done;
                 }
             }
@@ -783,7 +784,8 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
                 ret = fmap_get_hash(map, &hash, hash_type);
                 if (CL_SUCCESS != ret) {
                     cli_dbgmsg("cli_check_fp: Failed to get hash for the map at stack index # %u\n", stack_index);
-                    status = CL_VIRUS;
+                    cli_mark_scan_incomplete(ctx, "false-positive hash could not be read");
+                    status = ret;
                     goto done;
                 }
 

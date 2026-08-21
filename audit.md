@@ -2509,3 +2509,15 @@ now proceeds only for `CL_SUCCESS`, and the import pass preserves its invalid
 invocation result. Source guards record both boundaries; compiled
 Linux/Sonic1, fault injection, sanitizer, and production PE corpus
 qualification remain open.
+
+## False-positive hash failure propagation — 2026-08-21
+
+The false-positive hash checker previously converted fmap hash preparation or
+read failures to `CL_VIRUS`, and its alert caller then continued as though no
+false-positive hash check had failed. Required hash failures now preserve the
+underlying error, mark the scan incomplete/non-cacheable, and stop the alert
+append path; the normal no-match (`CL_VIRUS`) and trusted
+(`CL_VERIFIED`) semantics are unchanged. A focused metadata-only-fmap
+regression and source guards are registered. Compiled Linux/Sonic1, sanitizer,
+callback/resource fault injection, and production signature-corpus
+qualification remain open.

@@ -88,6 +88,9 @@
   qualification on Sonic1.
 - Public large-file limit setters now reject negative values without silently
   replacing the caller's resource policy with a default.
+- False-positive hash preparation and fmap read failures now preserve their
+  underlying error through alert append, mark the scan incomplete, and prevent
+  a required hash check from being treated as an ordinary detection path.
 - TIFF IFD type-width multiplication and external-value range checks now use
   checked native-size arithmetic and remain fail-visible.
 - GIF block, color-table, and extension range admission now uses checked

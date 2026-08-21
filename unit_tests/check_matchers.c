@@ -1198,6 +1198,27 @@ START_TEST(test_exact_hash_at_large_size)
 }
 END_TEST
 
+START_TEST(test_fp_hash_read_failure_is_fail_visible)
+{
+    static const uint8_t digest[MD5_HASH_SIZE] = {0};
+    cl_error_t ret;
+
+    thefmap.len = 1;
+    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine,
+                                    HASH_PURPOSE_WHOLE_FILE_FP_CHECK,
+                                    digest, CLI_HASH_MD5, thefmap.len,
+                                    "FalsePositiveHashReadFailure"),
+                     CL_SUCCESS);
+    hm_flush(ctx.engine->hm_fp);
+
+    ret = cli_append_virus(&ctx, "FP.Hash.Read.Failure");
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "false-positive hash could not be read");
+    ck_assert(thefmap.dont_cache_flag);
+}
+END_TEST
+
 #ifndef _WIN32
 #define MATCHER_TEST_FM_MASK_PAGED 0x40000000U
 
@@ -1428,6 +1449,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_pcre_full_map_range_arithmetic);
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
+    tcase_add_test(tc_matchers, test_fp_hash_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
