@@ -122,6 +122,7 @@ int cli_scanicon(icon_groupset *set, cli_ctx *ctx, struct cli_exe_info *peinfo)
     struct ICON_ENV icon_env;
     fmap_t *map        = ctx->fmap;
     uint32_t err_total = 0;
+    cl_error_t status;
 
     icon_env.ctx    = ctx;
     icon_env.gcnt   = 0;
@@ -142,7 +143,14 @@ int cli_scanicon(icon_groupset *set, cli_ctx *ctx, struct cli_exe_info *peinfo)
     icon_env.err_insl  = 0;
 
     /* icon group scan callback --> groupicon_scan_cb() */
-    findres(14, 0xffffffff, map, peinfo, groupicon_scan_cb, &icon_env);
+    status = findres_ex(14, 0xffffffff, map, peinfo, groupicon_scan_cb, &icon_env);
+    if (status != CL_SUCCESS) {
+        if (status == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "PE icon resource tree could not be read completely");
+        else
+            cli_mark_scan_incomplete(ctx, "PE icon resource tree could not be parsed completely");
+        return status;
+    }
 
     /* CL_EMAXSIZE is used to track the icon limit */
     if (icon_env.result == CL_EMAXSIZE)
@@ -188,6 +196,7 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
     struct cli_exe_info *peinfo = icon_env->peinfo;
 
     int err            = 0;
+    cl_error_t status;
     fmap_t *map        = ctx->fmap;
     const uint8_t *grp = fmap_need_off_once(map, cli_rawaddr(rva, peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size), 16);
 
@@ -218,7 +227,14 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
                     cli_dbgmsg("cli_scanicon: Icongrp @%x - %ux%ux%u - (id=%x, rsvd=%u, planes=%u, palcnt=%u, sz=%x)\n", rva, grp[0], grp[1], depth, id, planes, grp[2], grp[3], icon_size);
 
                     /* icon scan callback --> icon_scan_cb() */
-                    findres(3, id, map, peinfo, icon_scan_cb, icon_env);
+                    status = findres_ex(3, id, map, peinfo, icon_scan_cb, icon_env);
+                    if (status != CL_SUCCESS) {
+                        if (status == CL_EREAD) {
+                            cli_mark_scan_incomplete(ctx, "PE icon resource tree could not be read completely");
+                            return CL_EREAD;
+                        }
+                        return icon_parse_error(icon_env, NULL, "PE icon resource tree could not be parsed completely");
+                    }
                     if (icon_env->result != CL_CLEAN)
                         return icon_env->result;
 

@@ -387,9 +387,47 @@ uint32_t cli_rawaddr(uint32_t rva, const struct cli_exe_section *shp, uint16_t n
     return ret;
 }
 
+static cl_error_t findres_map_window(fmap_t *map, size_t offset, size_t length, const uint8_t **window)
+{
+    if (NULL == map || NULL == window || offset > map->len || length > map->len - offset)
+        return CL_EFORMAT;
+
+    *window = fmap_need_off_once(map, offset, length);
+    return *window ? CL_SUCCESS : CL_EREAD;
+}
+
+static cl_error_t findres_rva_to_raw(uint32_t base_rva, uint32_t delta, fmap_t *map,
+                                     struct cli_exe_info *peinfo, uint32_t *rawaddr)
+{
+    unsigned int err = 0;
+
+    if (NULL == rawaddr || delta > UINT32_MAX - base_rva)
+        return CL_EFORMAT;
+
+    *rawaddr = cli_rawaddr(base_rva + delta, peinfo->sections, peinfo->nsections, &err,
+                           map->len, peinfo->hdr_size);
+    return err ? CL_EFORMAT : CL_SUCCESS;
+}
+
+static cl_error_t findres_advance(size_t base, uint32_t count, size_t *result)
+{
+    size_t bytes;
+
+    if (NULL == result || (size_t)count > SIZE_MAX / 8)
+        return CL_EFORMAT;
+    bytes = (size_t)count * 8;
+    if (base > SIZE_MAX - bytes)
+        return CL_EFORMAT;
+
+    *result = base + bytes;
+    return CL_SUCCESS;
+}
+
 /*
-   void findres(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo, int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
-   callback based res lookup
+   cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map,
+   struct cli_exe_info *peinfo, int (*cb)(void *, uint32_t, uint32_t,
+   uint32_t, uint32_t), void *opaque)
+   callback based res lookup with explicit structural and fmap errors
 
    by_type: lookup type
    by_name: lookup name or (unsigned)-1 to look for any name
@@ -402,82 +440,125 @@ uint32_t cli_rawaddr(uint32_t rva, const struct cli_exe_section *shp, uint16_t n
    int pe_res_cballback (void *opaque, uint32_t type, uint32_t name, uint32_t lang, uint32_t rva);
    the callback shall return 0 to continue the lookup or 1 to abort
 */
-void findres(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo, int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
+cl_error_t findres_ex(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo,
+                      int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
 {
-    unsigned int err = 0;
     uint32_t type, type_offs, name, name_offs, lang, lang_offs;
-    const uint8_t *resdir, *type_entry, *name_entry, *lang_entry;
-    uint16_t type_cnt, name_cnt, lang_cnt;
-    uint32_t res_rva;
+    uint32_t type_cnt, name_cnt, lang_cnt;
+    uint32_t res_rva, rawaddr;
+    const uint8_t *resdir, *entry;
+    size_t type_entry_offset, name_entry_offset, lang_entry_offset;
+    cl_error_t status;
 
-    if (NULL == peinfo || peinfo->ndatadirs < 3) {
-        return;
-    }
+    if (NULL == map || NULL == peinfo || NULL == cb)
+        return CL_EARG;
+    if (peinfo->ndatadirs < 3)
+        return CL_SUCCESS;
 
     if (0 != peinfo->offset) {
-        cli_dbgmsg("findres: Assumption Violated: Looking for version info when peinfo->offset != 0\n");
+        cli_dbgmsg("findres_ex: Assumption Violated: Looking for version info when peinfo->offset != 0\n");
     }
 
     res_rva = peinfo->dirs[2].VirtualAddress;
+    status  = findres_rva_to_raw(res_rva, 0, map, peinfo, &rawaddr);
+    if (status != CL_SUCCESS)
+        return status;
+    status = findres_map_window(map, rawaddr, 16, &resdir);
+    if (status != CL_SUCCESS)
+        return status;
 
-    if (!(resdir = fmap_need_off_once(map, cli_rawaddr(res_rva, peinfo->sections, peinfo->nsections, &err, map->len, peinfo->hdr_size), 16)) || err)
-        return;
-
-    type_cnt   = (uint16_t)cli_readint16(resdir + 12);
-    type_entry = resdir + 16;
+    type_cnt = cli_readint16(resdir + 12);
+    status   = findres_advance((size_t)rawaddr, 2, &type_entry_offset);
+    if (status != CL_SUCCESS)
+        return status;
     if (!(by_type >> 31)) {
-        type_entry += type_cnt * 8;
-        type_cnt = (uint16_t)cli_readint16(resdir + 14);
+        status = findres_advance(type_entry_offset, type_cnt, &type_entry_offset);
+        if (status != CL_SUCCESS)
+            return status;
+        type_cnt = cli_readint16(resdir + 14);
     }
 
     while (type_cnt--) {
-        if (!fmap_need_ptr_once(map, type_entry, 8))
-            return;
-        type      = cli_readint32(type_entry);
-        type_offs = cli_readint32(type_entry + 4);
+        status = findres_map_window(map, type_entry_offset, 8, &entry);
+        if (status != CL_SUCCESS)
+            return status;
+        type      = cli_readint32(entry);
+        type_offs = cli_readint32(entry + 4);
         if (type == by_type && (type_offs >> 31)) {
             type_offs &= 0x7fffffff;
-            if (!(resdir = fmap_need_off_once(map, cli_rawaddr(res_rva + type_offs, peinfo->sections, peinfo->nsections, &err, map->len, peinfo->hdr_size), 16)) || err)
-                return;
+            status = findres_rva_to_raw(res_rva, type_offs, map, peinfo, &rawaddr);
+            if (status != CL_SUCCESS)
+                return status;
+            status = findres_map_window(map, rawaddr, 16, &resdir);
+            if (status != CL_SUCCESS)
+                return status;
 
-            name_cnt   = (uint16_t)cli_readint16(resdir + 12);
-            name_entry = resdir + 16;
+            name_cnt = cli_readint16(resdir + 12);
+            status   = findres_advance((size_t)rawaddr, 2, &name_entry_offset);
+            if (status != CL_SUCCESS)
+                return status;
             if (by_name == 0xffffffff)
-                name_cnt += (uint16_t)cli_readint16(resdir + 14);
+                name_cnt += cli_readint16(resdir + 14);
             else if (!(by_name >> 31)) {
-                name_entry += name_cnt * 8;
-                name_cnt = (uint16_t)cli_readint16(resdir + 14);
+                status = findres_advance(name_entry_offset, name_cnt, &name_entry_offset);
+                if (status != CL_SUCCESS)
+                    return status;
+                name_cnt = cli_readint16(resdir + 14);
             }
             while (name_cnt--) {
-                if (!fmap_need_ptr_once(map, name_entry, 8))
-                    return;
-                name      = cli_readint32(name_entry);
-                name_offs = cli_readint32(name_entry + 4);
+                status = findres_map_window(map, name_entry_offset, 8, &entry);
+                if (status != CL_SUCCESS)
+                    return status;
+                name      = cli_readint32(entry);
+                name_offs = cli_readint32(entry + 4);
                 if ((by_name == 0xffffffff || name == by_name) && (name_offs >> 31)) {
                     name_offs &= 0x7fffffff;
-                    if (!(resdir = fmap_need_off_once(map, cli_rawaddr(res_rva + name_offs, peinfo->sections, peinfo->nsections, &err, map->len, peinfo->hdr_size), 16)) || err)
-                        return;
+                    status = findres_rva_to_raw(res_rva, name_offs, map, peinfo, &rawaddr);
+                    if (status != CL_SUCCESS)
+                        return status;
+                    status = findres_map_window(map, rawaddr, 16, &resdir);
+                    if (status != CL_SUCCESS)
+                        return status;
 
-                    lang_cnt   = (uint16_t)cli_readint16(resdir + 12) + (uint16_t)cli_readint16(resdir + 14);
-                    lang_entry = resdir + 16;
+                    lang_cnt = cli_readint16(resdir + 12) + cli_readint16(resdir + 14);
+                    status   = findres_advance((size_t)rawaddr, 2, &lang_entry_offset);
+                    if (status != CL_SUCCESS)
+                        return status;
                     while (lang_cnt--) {
-                        if (!fmap_need_ptr_once(map, lang_entry, 8))
-                            return;
-                        lang      = cli_readint32(lang_entry);
-                        lang_offs = cli_readint32(lang_entry + 4);
+                        status = findres_map_window(map, lang_entry_offset, 8, &entry);
+                        if (status != CL_SUCCESS)
+                            return status;
+                        lang      = cli_readint32(entry);
+                        lang_offs = cli_readint32(entry + 4);
                         if (!(lang_offs >> 31)) {
+                            if (lang_offs > UINT32_MAX - res_rva)
+                                return CL_EFORMAT;
                             if (cb(opaque, type, name, lang, res_rva + lang_offs))
-                                return;
+                                return CL_SUCCESS;
                         }
-                        lang_entry += 8;
+                        if (lang_cnt && lang_entry_offset > SIZE_MAX - 8)
+                            return CL_EFORMAT;
+                        lang_entry_offset += 8;
                     }
                 }
-                name_entry += 8;
+                if (name_cnt && name_entry_offset > SIZE_MAX - 8)
+                    return CL_EFORMAT;
+                name_entry_offset += 8;
             }
-            return; /* FIXME: unless we want to find ALL types */
+            return CL_SUCCESS; /* FIXME: unless we want to find ALL types */
         }
-        type_entry += 8;
+        if (type_cnt && type_entry_offset > SIZE_MAX - 8)
+            return CL_EFORMAT;
+        type_entry_offset += 8;
     }
+
+    return CL_SUCCESS;
+}
+
+void findres(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_info *peinfo,
+             int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
+{
+    (void)findres_ex(by_type, by_name, map, peinfo, cb, opaque);
 }
 
 static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struct cli_exe_info *peinfo, size_t fsize, unsigned int level, uint32_t type, unsigned int *maxres, struct swizz_stats *stats)

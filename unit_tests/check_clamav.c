@@ -13681,6 +13681,15 @@ static void pe_icon_test_write_u32(uint8_t *dst, uint32_t value)
     dst[3] = (uint8_t)(value >> 24);
 }
 
+static const void *pe_icon_resource_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
 START_TEST(test_pe_icon_truncated_resource_is_fail_visible)
 {
     uint8_t data[256];
@@ -13748,6 +13757,48 @@ START_TEST(test_pe_icon_truncated_resource_is_fail_visible)
 
     ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_pe_icon_resource_tree_read_failure_is_fail_visible)
+{
+    uint8_t data[256] = {0};
+    struct cl_engine engine;
+    struct icon_matcher matcher;
+    struct cli_exe_section section;
+    struct cli_exe_info peinfo;
+    icon_groupset iconset;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&matcher, 0, sizeof(matcher));
+    memset(&section, 0, sizeof(section));
+    memset(&peinfo, 0, sizeof(peinfo));
+    memset(&ctx, 0, sizeof(ctx));
+
+    section.rsz                   = sizeof(data);
+    peinfo.sections               = &section;
+    peinfo.nsections              = 1;
+    peinfo.ndatadirs              = 3;
+    peinfo.dirs[2].VirtualAddress = 0;
+    peinfo.hdr_size               = 0;
+    engine.maxiconspe             = 100;
+    engine.iconcheck              = &matcher;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need  = pe_icon_resource_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    cli_icongroupset_init(&iconset);
+
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE icon resource tree could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -13948,6 +13999,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_icon_resource_tree_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);

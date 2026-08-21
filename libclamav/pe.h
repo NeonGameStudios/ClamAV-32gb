@@ -102,6 +102,8 @@ cl_error_t cli_pe_calculate_overlay_range(const struct cli_exe_section *sections
 cl_error_t cli_genhash_pe(cli_ctx *ctx, unsigned int class, cli_hash_type_t type, stats_section_t *hashes);
 
 uint32_t cli_rawaddr(uint32_t, const struct cli_exe_section *, uint16_t, unsigned int *, size_t, uint32_t);
+cl_error_t findres_ex(uint32_t, uint32_t, fmap_t *map, struct cli_exe_info *,
+                      int (*)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *);
 void findres(uint32_t, uint32_t, fmap_t *map, struct cli_exe_info *, int (*)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *);
 
 #endif

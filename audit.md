@@ -2023,3 +2023,16 @@ returns `CL_EREAD` unless a stronger detection or application result already
 has precedence. A direct fault-injected RTF regression, source guard, and
 capability-manifest entry record the contract. Compiled Linux/Sonic1,
 sanitizer, and broader RTF/OLE corpus qualification remain open.
+
+## PE icon resource-tree fmap failure — 2026-08-21
+
+The PE resource lookup used by icon matching previously returned `void` and
+silently stopped when a resource-directory fmap window was unavailable. A
+declared resource tree could therefore leave the optional icon matcher with a
+clean-compatible result despite not being inspected. The icon path now uses a
+status-returning lookup that distinguishes structural ranges from in-range
+fmap failures, marks the layer incomplete/non-cacheable, and returns
+`CL_EREAD` for operational reads. A synthetic root-resource fault-injection
+regression, source guards, and the PE capability entry record the contract.
+Compiled Linux/Sonic1, sanitizer, and broader PE/resource corpus
+qualification remain open.

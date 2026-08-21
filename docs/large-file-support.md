@@ -4348,3 +4348,13 @@ existing stronger detection or application results retain precedence. A direct
 fault-injected regression, source guard, and capability-manifest entry are
 registered. Compiled Linux/Sonic1, sanitizer, and broader RTF/OLE corpus
 qualification remain open.
+
+## PE icon resource-tree fmap failure — 2026-08-21
+
+PE icon matching now uses a status-returning resource lookup. A declared
+resource tree whose directory window is structurally outside the map returns a
+format error; an in-range fmap failure returns `CL_EREAD` and marks the layer
+incomplete/non-cacheable instead of silently exposing a clean-compatible icon
+result. A synthetic root-resource fault-injection regression, source guards,
+and the PE capability entry are registered. Compiled Linux/Sonic1, sanitizer,
+and broader PE/resource corpus qualification remain open.
