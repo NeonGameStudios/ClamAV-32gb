@@ -4637,3 +4637,9 @@ zero report status, while `2` requires a nonzero status) and must carry the
 exact expected alert, with only the `.UNOFFICIAL` suffix permitted for an
 unsigned local signature. This closes a remaining acceptance-harness gap;
 compiled Linux/Sonic1 production qualification remains open.
+
+The exact-edge milter subprocess is bound to the same service timeout and
+per-file scan deadline through `MILTER_WIRE_TIMEOUT_S` and
+`MILTER_MAX_SCAN_TIME_MS`. This removes the harness's former fixed
+600-second wire wait and 600,000-millisecond clamd scan limit from the
+four-hour qualification path.

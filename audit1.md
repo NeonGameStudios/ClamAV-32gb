@@ -2941,3 +2941,8 @@ status/error consistency with the oracle exit (`0`/`1` require `status=0`,
 documented `.UNOFFICIAL` suffix for unsigned local signatures. Static guards,
 shell syntax, and Python parsing pass; compiled Linux/Sonic1 production
 qualification remains open.
+
+The exact-edge milter harness now receives the same service timeout and
+per-file scan deadline through `MILTER_WIRE_TIMEOUT_S` and
+`MILTER_MAX_SCAN_TIME_MS`; its internal 600-second/600,000-millisecond
+defaults no longer terminate a valid four-hour qualification early.

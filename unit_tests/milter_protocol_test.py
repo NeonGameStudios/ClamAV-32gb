@@ -269,12 +269,18 @@ def main():
     fill_byte = int(os.environ.get("MILTER_WIRE_FILL_BYTE", "90"), 0)
     if fill_byte < 0 or fill_byte > 255:
         raise RuntimeError("MILTER_WIRE_FILL_BYTE must be between 0 and 255")
+    wire_timeout = int(os.environ.get("MILTER_WIRE_TIMEOUT_S", "600"))
+    if wire_timeout <= 0:
+        raise RuntimeError("MILTER_WIRE_TIMEOUT_S must be positive")
+    max_scan_time_ms = int(os.environ.get("MILTER_MAX_SCAN_TIME_MS", "600000"))
+    if max_scan_time_ms <= 0 or max_scan_time_ms > 4294967295:
+        raise RuntimeError("MILTER_MAX_SCAN_TIME_MS must be between 1 and 4294967295")
     test_root = os.environ.get("MILTER_TEST_ROOT", "/tmp")
     Path(test_root).mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="clamav-milter-", dir=test_root))
     preserve_root = os.environ.get("MILTER_PRESERVE_ROOT") == "1"
-    read_timeout = 600 if manual_wire else 60
-    command_read_timeout = 600 if manual_wire else 30
+    read_timeout = wire_timeout if manual_wire else 60
+    command_read_timeout = wire_timeout if manual_wire else 30
     db = root / "db"
     tmp = root / "tmp"
     logs = root / "logs"
@@ -318,7 +324,7 @@ def main():
                 "MaxQueue 4",
                 "ReadTimeout {}".format(read_timeout),
                 "CommandReadTimeout {}".format(command_read_timeout),
-                "MaxScanTime 600000",
+                "MaxScanTime {}".format(max_scan_time_ms),
                 "MaxFileSize 32G",
                 "MaxScanSize 32G",
                 "StreamMaxLength 32G",

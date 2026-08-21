@@ -977,8 +977,10 @@ milter_time_file="$out/logs/milter-exact-edge.time"
 milter_status=0
 (
     CLAMD="$build_dir/clamd/clamd" \
-        CLAMAV_MILTER="$build_dir/clamav-milter/clamav-milter" \
-        CVD_CERTS_DIR="${CLAMAV_CVD_CERTS_DIR:-}" \
+    CLAMAV_MILTER="$build_dir/clamav-milter/clamav-milter" \
+    CVD_CERTS_DIR="${CLAMAV_CVD_CERTS_DIR:-}" \
+        MILTER_WIRE_TIMEOUT_S="$service_timeout_s" \
+        MILTER_MAX_SCAN_TIME_MS="$max_scan_time_ms" \
         MILTER_EXACT_EDGE=1 \
         MILTER_EXTRA_DATABASE="$edge_db" \
         MILTER_TEST_ROOT="$out/tmp" \
