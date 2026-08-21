@@ -88,6 +88,16 @@ still inspected, and it is returned if no later status supersedes it. Source
 guards cover the propagation; compiled Linux fault-injection and Office corpus
 qualification remain open.
 
+## Sequential parser status preservation — 2026-08-21
+
+OOXML metadata parsing could return a specific error and then have the
+following ZIP pass replace it with `CL_SUCCESS`; text/script mail handling had
+the same overwrite pattern. Sequential parser passes now merge results so a
+later detection or critical resource failure wins, while a later clean result
+cannot erase the first specific parser error. The focused merge regression and
+source guards are registered; compiled Linux/Sonic1 mixed-parser fault
+injection and broader parser-corpus qualification remain open.
+
 
 The shared mbox line reader now receives the scan context and marks failed
 fmap windows or invalid line ranges incomplete instead of treating them as

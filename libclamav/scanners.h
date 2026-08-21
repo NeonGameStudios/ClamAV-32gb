@@ -93,6 +93,11 @@ cl_error_t cli_scan_structured(cli_ctx *ctx);
 bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t *result_out);
 
 /**
+ * @brief   Preserve a prior parser result while merging sequential passes.
+ */
+cl_error_t cli_merge_scan_status(cl_error_t prior, cl_error_t current);
+
+/**
  * @brief   Scan an offset/length into a file map.
  *
  * Useful for scanning files or other type-able data embedded plainly in an existing fmap.

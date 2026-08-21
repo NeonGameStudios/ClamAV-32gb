@@ -221,6 +221,9 @@
 - OLE2 summary metadata failures now remain attached to the parser result
   instead of being discarded while embedded streams continue scanning; add
   metadata fault-injection coverage during Office-parser qualification.
+- Sequential OOXML ZIP, script, and mail parser passes now preserve a specific
+  earlier parser error while allowing later detection results; add compiled
+  mixed-parser fault-injection coverage during parser qualification.
 
 ## Large-file validation and expansion progression
 

@@ -5702,6 +5702,48 @@ static bool configured_limit_alert_is_visible(const cli_ctx *ctx)
            (CL_VERDICT_POTENTIALLY_UNWANTED == verdict);
 }
 
+static bool cli_scan_status_is_critical(cl_error_t status)
+{
+    switch (status) {
+        case CL_VIRUS:
+        case CL_ETIMEOUT:
+        case CL_EUNLINK:
+        case CL_ESTAT:
+        case CL_ESEEK:
+        case CL_EWRITE:
+        case CL_EDUP:
+        case CL_ETMPFILE:
+        case CL_ETMPDIR:
+        case CL_ERESOURCE:
+        case CL_EMEM:
+            return true;
+        default:
+            return false;
+    }
+}
+
+/* Sequential parser passes must not replace a specific earlier parser error
+ * with a later clean result. A later detection or critical resource failure
+ * remains stronger than an earlier format/read error. */
+cl_error_t cli_merge_scan_status(cl_error_t prior, cl_error_t current)
+{
+    if (prior == CL_VIRUS || current == CL_VIRUS)
+        return CL_VIRUS;
+
+    if (cli_scan_status_is_critical(current))
+        return current;
+    if (cli_scan_status_is_critical(prior))
+        return prior;
+
+    if (prior == CL_SUCCESS || prior == CL_VERIFIED || prior == CL_BREAK)
+        return current;
+    if (current == CL_SUCCESS || current == CL_VERIFIED || current == CL_BREAK)
+        return prior;
+
+    /* Preserve the first specific non-critical parser/decoder status. */
+    return prior;
+}
+
 bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t *result_out)
 {
     bool halt_scan = false;
@@ -6108,6 +6150,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 {
     cl_error_t status = CL_SUCCESS;
     cl_error_t ret;
+    cl_error_t normalized_status = CL_SUCCESS;
 
     cl_error_t cache_check_result      = CL_VIRUS;
     cl_verdict_t verdict_at_this_level = CL_VERDICT_NOTHING_FOUND;
@@ -6427,29 +6470,35 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         case CL_TYPE_OOXML_PPT:
         case CL_TYPE_OOXML_XL:
         case CL_TYPE_OOXML_HWP:
+        {
+            cl_error_t ooxml_status = CL_SUCCESS;
+
             if (SCAN_PARSE_XMLDOCS && (DCONF_DOC & DOC_CONF_OOXML)) {
                 if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
-                    ret = cli_process_ooxml(ctx, type);
+                    ooxml_status = cli_process_ooxml(ctx, type);
+                    ret          = ooxml_status;
 
                     if (ret == CL_EMEM || ret == CL_ENULLARG) {
                         /* critical error */
                         break;
-                    } else if (ret != CL_SUCCESS) {
-                        /*
-                         * non-critical return => allow for the CL_TYPE_ZIP scan to occur
-                         * cli_process_ooxml other possible returns:
-                         *   CL_ETIMEOUT, CL_EMAXSIZE, CL_EMAXFILES, CL_EPARSE,
-                         *   CL_EFORMAT, CL_BREAK, CL_ESTAT
-                         */
-                        ret = CL_SUCCESS;
                     }
+                    /*
+                     * Non-critical returns are retained while the ZIP pass
+                     * runs. cli_process_ooxml may return CL_ETIMEOUT,
+                     * CL_EMAXSIZE, CL_EMAXFILES, CL_EPARSE, CL_EFORMAT,
+                     * CL_BREAK, or CL_ESTAT here.
+                     */
                 }
             }
 
             /* Extract the OOXML contents */
-            if (SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_ZIP))
-                ret = cli_unzip(ctx);
+            if (SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_ZIP)) {
+                ret = cli_merge_scan_status(ooxml_status, cli_unzip(ctx));
+            } else {
+                ret = ooxml_status;
+            }
             break;
+        }
 
         case CL_TYPE_ZIP:
             if (SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_ZIP)) {
@@ -6791,13 +6840,16 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     // a raw signature can still identify the file as infected, while the
     // sticky incomplete state remains available to make a non-detecting scan
     // fail visible after the raw pass.
+    status = cli_merge_scan_status(status, ret);
     if (!(ctx->scan_incomplete &&
           (ret == CL_SUCCESS || ret == CL_EFORMAT || ret == CL_EPARSE ||
            ret == CL_EREAD || ret == CL_EUNPACK || ret == CL_EMAXREC ||
            ret == CL_EMAXSIZE || ret == CL_EMAXFILES)) &&
-        cli_scan_result_should_halt(ctx, ret, &status)) {
+        cli_scan_result_should_halt(ctx, ret, &normalized_status)) {
+        status = cli_merge_scan_status(status, normalized_status);
         goto done;
     }
+    status = cli_merge_scan_status(status, normalized_status);
 
     /*
      * Perform the raw scan, which may include file type recognition signatures.
@@ -6830,9 +6882,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 
         // Evaluate the result from the scan to see if it end the scan of this layer early,
         // and to decid if we should propagate an error or not.
-        if (cli_scan_result_should_halt(ctx, ret, &status)) {
+        normalized_status = CL_SUCCESS;
+        if (cli_scan_result_should_halt(ctx, ret, &normalized_status)) {
+            status = cli_merge_scan_status(status, normalized_status);
             goto done;
         }
+        status = cli_merge_scan_status(status, normalized_status);
     }
 
     /*
@@ -6848,12 +6903,12 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
             perf_nested_start(ctx, PERFT_SCRIPT, PERFT_SCAN);
             if ((dettype != CL_TYPE_HTML) &&
                 SCAN_PARSE_HTML && (DCONF_DOC & DOC_CONF_SCRIPT) && (ret != CL_VIRUS)) {
-                ret = cli_scanscript(ctx);
+                ret = cli_merge_scan_status(ret, cli_scanscript(ctx));
             }
             if (((dettype == CL_TYPE_MAIL) || (cli_recursion_stack_get_type(ctx, -1) == CL_TYPE_MAIL)) &&
                 SCAN_PARSE_MAIL && (DCONF_MAIL & MAIL_CONF_MBOX) && (ret != CL_VIRUS)) {
 
-                ret = cli_scan_fmap(ctx, CL_TYPE_MAIL, false, NULL, AC_SCAN_VIR, NULL);
+                ret = cli_merge_scan_status(ret, cli_scan_fmap(ctx, CL_TYPE_MAIL, false, NULL, AC_SCAN_VIR, NULL));
             }
             perf_nested_stop(ctx, PERFT_SCRIPT, PERFT_SCAN);
             break;
@@ -6904,9 +6959,13 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 
     // Evaluate the result from the parsers to see if it end the scan of this layer early,
     // and to decide if we should propagate an error or not.
-    if (cli_scan_result_should_halt(ctx, ret, &status)) {
+    status = cli_merge_scan_status(status, ret);
+    normalized_status = CL_SUCCESS;
+    if (cli_scan_result_should_halt(ctx, ret, &normalized_status)) {
+        status = cli_merge_scan_status(status, normalized_status);
         goto done;
     }
+    status = cli_merge_scan_status(status, normalized_status);
 
 done:
 

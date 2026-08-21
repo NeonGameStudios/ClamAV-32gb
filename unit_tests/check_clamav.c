@@ -217,6 +217,17 @@ START_TEST(test_cl_debug)
 }
 END_TEST
 
+START_TEST(test_sequential_parser_status_merge_is_fail_closed)
+{
+    ck_assert_int_eq(cli_merge_scan_status(CL_SUCCESS, CL_EPARSE), CL_EPARSE);
+    ck_assert_int_eq(cli_merge_scan_status(CL_EPARSE, CL_SUCCESS), CL_EPARSE);
+    ck_assert_int_eq(cli_merge_scan_status(CL_EFORMAT, CL_EREAD), CL_EFORMAT);
+    ck_assert_int_eq(cli_merge_scan_status(CL_EFORMAT, CL_EMEM), CL_EMEM);
+    ck_assert_int_eq(cli_merge_scan_status(CL_EPARSE, CL_VIRUS), CL_VIRUS);
+    ck_assert_int_eq(cli_merge_scan_status(CL_VIRUS, CL_EPARSE), CL_VIRUS);
+}
+END_TEST
+
 #ifndef _WIN32
 /* extern const char *cl_retdbdir(void); */
 START_TEST(test_cl_retdbdir)
@@ -14688,6 +14699,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);
+    tcase_add_test(tc_cl, test_sequential_parser_status_merge_is_fail_closed);
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
     tcase_add_test(tc_cl, test_format_width_limits_are_fail_visible);
     tcase_add_test(tc_cl, test_hwpole2_declared_size_mismatch_is_fail_visible);

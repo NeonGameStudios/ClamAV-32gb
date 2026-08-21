@@ -111,7 +111,7 @@ parser	CL_TYPE_JPEG	pending	libclamav/scanners.c	checked JPEG segment and Photos
 parser	CL_TYPE_LHA_LZH	pending	libclamav/scanners.c	bounded Rust reader/spool with checked output admission and fail-closed decoder panic boundary; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_MACHO	pending	libclamav/macho.c	metadata-only Mach-O parsing now marks required header/load-command/section read failures incomplete, and broken-executable heuristic alert-recording failures remain fail-visible; native-width and parser-family qualification remain required
 parser	CL_TYPE_MACHO_UNIBIN	pending	libclamav/macho.c	checked 64-bit universal-binary member-range arithmetic and fail-visible broken-executable heuristic alert results; parser-family qualification and complete corpus evidence remain required
-parser	CL_TYPE_MAIL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_MAIL	pending	libclamav/scanners.c	sequential script/mail parser passes preserve the first specific non-clean result while allowing later detections; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_MBR	pending	libclamav/mbr.c	in-range master/extended boot-record fmap failures and extended-partition intersection alert results remain fail-visible; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_MHTML	pending	libclamav/mbox.c	multipart/related HTML roots now remain file-backed through root selection and preclassification; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_MSCAB	pending	libclamav/libmspack.c	CAB fmap callback coordinates, fixed-header reads, and decoder read/seek failures are bounded and fail-visible; parser-family qualification and complete corpus evidence remain required
@@ -122,10 +122,10 @@ parser	CL_TYPE_MSSZDD	pending	libclamav/scanners.c	dispatch branch requires pars
 parser	CL_TYPE_NULSFT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_OLD_TAR	pending	libclamav/scanners.c	bounded member staging and fail-visible TAR entry errors; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_ONENOTE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_OOXML_HWP	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_OOXML_PPT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_OOXML_WORD	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_OOXML_XL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_OOXML_HWP	pending	libclamav/scanners.c	OOXML metadata-parser errors are retained when ZIP extraction follows; parser-family qualification and explicit completion evidence remain required
+parser	CL_TYPE_OOXML_PPT	pending	libclamav/scanners.c	OOXML metadata-parser errors are retained when ZIP extraction follows; parser-family qualification and explicit completion evidence remain required
+parser	CL_TYPE_OOXML_WORD	pending	libclamav/scanners.c	OOXML metadata-parser errors are retained when ZIP extraction follows; parser-family qualification and explicit completion evidence remain required
+parser	CL_TYPE_OOXML_XL	pending	libclamav/scanners.c	OOXML metadata-parser errors are retained when ZIP extraction follows; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_PART_HFSPLUS	pending	libclamav/hfsplus.c	HFS+ volume, tree-header, and data/resource-fork read failures remain incomplete and non-cacheable; focused tree-header and fork fault injection are covered, while parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_PDF	pending	libclamav/pdf.c	confirmed version/trailer/object inspection failures return a non-clean incomplete result; extracted-object bytecode fmap creation and post-dump hook failures remain fail-visible; native-width object coordinates and explicit decoder boundary remain, with parser-family qualification required
 parser	CL_TYPE_PNG	pending	libclamav/png.c	confirmed chunk-length, chunk-type, IHDR, and CRC fmap callback failures return CL_EREAD and mark the layer incomplete; parser-family qualification and complete corpus evidence remain required
