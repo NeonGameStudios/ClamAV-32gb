@@ -14848,8 +14848,9 @@ START_TEST(test_tiff_initial_read_failure_is_fail_visible)
     map->need = embedded_header_read_failure;
     ctx.fmap   = map;
 
-    ck_assert_int_eq(cli_parsetiff(&ctx), CL_EPARSE);
+    ck_assert_int_eq(cli_parsetiff(&ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "TIFF magic could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);

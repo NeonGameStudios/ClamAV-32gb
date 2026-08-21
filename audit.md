@@ -2113,6 +2113,16 @@ tree was merely malformed. A synthetic catalog-tree fault-injection regression,
 source guard, and capability-manifest entry record the invariant. Compiled
 Linux/Sonic1, sanitizer, and broader HFS+ corpus qualification remain open.
 
+## TIFF fmap read failure — 2026-08-21
+
+TIFF header, IFD, entry, and next-IFD `fmap_readn()` failures previously all
+used the malformed/truncated heuristic path. The parser now distinguishes an
+in-range fmap callback failure as `CL_EREAD` and keeps a genuinely short
+structure as the existing parser error. The initial-header fault-injection
+regression now asserts the operational status, reason, and non-cacheable
+state; source guards record all read boundaries. Compiled Linux/Sonic1,
+sanitizer, and broader TIFF corpus qualification remain open.
+
 ## HFS+ fork-content fmap failure — 2026-08-21
 
 HFS+ data/resource-fork windows that fail in the fmap previously returned a

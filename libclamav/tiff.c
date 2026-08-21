@@ -48,6 +48,22 @@ static cl_error_t tiff_parse_error(cli_ctx *ctx, const char *reason)
     return cli_append_potentially_unwanted(ctx, reason);
 }
 
+static cl_error_t tiff_read_error(cli_ctx *ctx, const char *reason)
+{
+    cli_mark_scan_incomplete(ctx, reason);
+    return CL_EREAD;
+}
+
+static size_t tiff_readn(fmap_t *map, void *dst, size_t at, size_t len)
+{
+    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
+     * beyond the map. Keep an impossible TIFF coordinate as a parser error;
+     * only an in-range callback failure is an operational read error. */
+    if (at > map->len)
+        return 0;
+    return fmap_readn(map, dst, at, len);
+}
+
 static int tiff_value_size(uint32_t count, size_t width, size_t *value_size)
 {
     if (NULL == value_size)
@@ -91,9 +107,15 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
         status = CL_CLEAN;
         goto done;
     }
-    if (fmap_readn(map, magic, offset, sizeof(magic)) != sizeof(magic)) {
-        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingMagic");
-        goto done;
+    {
+        size_t bytes_read = tiff_readn(map, magic, offset, sizeof(magic));
+
+        if (bytes_read != sizeof(magic)) {
+            status = (bytes_read == (size_t)-1)
+                         ? tiff_read_error(ctx, "TIFF magic could not be read completely")
+                         : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingMagic");
+            goto done;
+        }
     }
     offset += 4;
 
@@ -109,10 +131,16 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     cli_dbgmsg("cli_parsetiff: %s-endian tiff file\n", big_endian ? "big" : "little");
 
     /* acquire offset of first IFD */
-    if (fmap_readn(map, &offset32, offset, 4) != 4) {
-        cli_dbgmsg("cli_parsetiff: Failed to acquire offset of first IFD, file appears to be truncated.\n");
-        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingFirstIFDOffset");
-        goto done;
+    {
+        size_t bytes_read = tiff_readn(map, &offset32, offset, 4);
+
+        if (bytes_read != 4) {
+            cli_dbgmsg("cli_parsetiff: Failed to acquire offset of first IFD, file appears to be truncated.\n");
+            status = (bytes_read == (size_t)-1)
+                         ? tiff_read_error(ctx, "TIFF first IFD offset could not be read completely")
+                         : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingFirstIFDOffset");
+            goto done;
+        }
     }
     /* offset of the first IFD */
     offset = (size_t)tiff32_to_host(big_endian, offset32);
@@ -128,10 +156,16 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     /* each IFD represents a subfile, though only the first one normally matters */
     do {
         /* acquire number of directory entries in current IFD */
-        if (fmap_readn(map, &num_entries, offset, 2) != 2) {
-            cli_dbgmsg("cli_parsetiff: Failed to acquire number of directory entries in current IFD, file appears to be truncated.\n");
-            status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingNumIFDDirectoryEntries");
-            goto done;
+        {
+            size_t bytes_read = tiff_readn(map, &num_entries, offset, 2);
+
+            if (bytes_read != 2) {
+                cli_dbgmsg("cli_parsetiff: Failed to acquire number of directory entries in current IFD, file appears to be truncated.\n");
+                status = (bytes_read == (size_t)-1)
+                             ? tiff_read_error(ctx, "TIFF directory-entry count could not be read completely")
+                             : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingNumIFDDirectoryEntries");
+                goto done;
+            }
         }
         offset += 2;
         num_entries = tiff16_to_host(big_endian, num_entries);
@@ -140,10 +174,16 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
         /* transverse IFD entries */
         for (i = 0; i < num_entries; i++) {
-            if (fmap_readn(map, &entry, offset, sizeof(entry)) != sizeof(entry)) {
-                cli_dbgmsg("cli_parsetiff: Failed to read next IFD entry, file appears to be truncated.\n");
-                status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingIFDEntry");
-                goto done;
+            {
+                size_t bytes_read = tiff_readn(map, &entry, offset, sizeof(entry));
+
+                if (bytes_read != sizeof(entry)) {
+                    cli_dbgmsg("cli_parsetiff: Failed to read next IFD entry, file appears to be truncated.\n");
+                    status = (bytes_read == (size_t)-1)
+                                 ? tiff_read_error(ctx, "TIFF IFD entry could not be read completely")
+                                 : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingIFDEntry");
+                    goto done;
+                }
             }
             offset += sizeof(entry);
 
@@ -221,10 +261,16 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
         last_offset = offset;
 
         /* acquire next IFD location, gets 0 if last IFD */
-        if (fmap_readn(map, &next_offset32, offset, sizeof(next_offset32)) != sizeof(next_offset32)) {
-            cli_dbgmsg("cli_parsetiff: Failed to acquire next IFD location, file appears to be truncated.\n");
-            status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingChunkCRC");
-            goto done;
+        {
+            size_t bytes_read = tiff_readn(map, &next_offset32, offset, sizeof(next_offset32));
+
+            if (bytes_read != sizeof(next_offset32)) {
+                cli_dbgmsg("cli_parsetiff: Failed to acquire next IFD location, file appears to be truncated.\n");
+                status = (bytes_read == (size_t)-1)
+                             ? tiff_read_error(ctx, "TIFF next IFD offset could not be read completely")
+                             : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingChunkCRC");
+                goto done;
+            }
         }
         offset = (size_t)tiff32_to_host(big_endian, next_offset32);
 
