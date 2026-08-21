@@ -13,6 +13,9 @@
   width. These are tracked in `docs/largefile-capabilities.tsv`.
 - AutoIt EA05 decoded and stored members now use bounded output/temp spooling;
   EA06 script decompilation remains an explicit random-access boundary.
+- 7-Zip fmap input-read, output-write, and allocation failures now preserve
+  their operational status instead of becoming generic parse errors; add
+  compiled malformed/archive-corpus and sanitizer qualification.
 - HTML CSS data-URI images now decode through a 64 KiB reader into the shared
   temporary quota before nested scanning; oversized or incomplete extraction
   is fail-visible instead of using an unaccounted whole-image buffer.

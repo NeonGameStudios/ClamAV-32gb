@@ -174,6 +174,12 @@ The packed-stream position checks also include the current data base when
 validating each pack-size increment, so the final cumulative position cannot
 wrap after an individually representable member size.
 
+The 7-Zip adapter now preserves SDK input-read, output-write, and allocation
+failures as `CL_EREAD`, `CL_EWRITE`, and `CL_EMEM` rather than collapsing them
+into generic parse status. A valid empty archive with an injected next-header
+read failure verifies the `CL_EREAD` path and cache suppression; broader
+compiled archive-corpus and sanitizer qualification remain open.
+
 The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.

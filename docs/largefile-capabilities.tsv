@@ -75,7 +75,7 @@ unsupported	pe-unpacker-over-1g	unsupported	libclamav/pe.c	legacy PE unpackers r
 unsupported	pdf-stream-over-4g	unsupported	libclamav/pdfdecode.c	legacy PDF filter ABI cannot accept stream input or decoded output above 4 GiB; the decoder returns an explicit incomplete result
 unsupported	script-normalization-over-4g	unsupported	libclamav/scanners.c	legacy script matcher ABI cannot accept normalized output above 4 GiB; the scanner returns an explicit incomplete result
 unsupported	vba-over-4g	unsupported	libclamav/scanners.c	legacy VBA matcher/data ABI cannot inspect decompressed layers above 4 GiB; the engine returns an explicit incomplete result
-parser	CL_TYPE_7Z	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_7Z	pending	libclamav/scanners.c	7-Zip fmap input, output, allocation, and coordinate failures remain non-clean; dispatch branch still requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_7ZSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_AI_MODEL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_ALZ	pending	libclamav_rust/src/scanners.rs	bounded Rust reader/spool path now reports encrypted, data-descriptor, unsupported-compression, malformed, and quota-truncated members as explicit incomplete results without scanning partial output; parser-family and production qualification remain open

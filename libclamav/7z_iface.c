@@ -96,6 +96,20 @@ static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
     return (written == (size_t)-1) ? 0 : written;
 }
 
+static cl_error_t cli_7z_error_status(SRes res)
+{
+    switch (res) {
+        case SZ_ERROR_READ:
+            return CL_EREAD;
+        case SZ_ERROR_WRITE:
+            return CL_EWRITE;
+        case SZ_ERROR_MEM:
+            return CL_EMEM;
+        default:
+            return CL_EPARSE;
+    }
+}
+
 static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_error_t *status,
                                 uint64_t temporary_reserved)
 {
@@ -346,7 +360,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 if (res != SZ_ERROR_ENCRYPTED || !SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
                     cli_mark_scan_incomplete(ctx, "7-Zip member extraction was incomplete");
                     if (found == CL_CLEAN)
-                        found = CL_EPARSE;
+                        found = cli_7z_error_status(res);
                 }
                 cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                 free(tmp_name);
@@ -370,9 +384,15 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             }
         }
         IAlloc_Free(&allocImp, outBuffer);
+    } else if (res == SZ_ERROR_READ) {
+        cli_mark_scan_incomplete(ctx, "7-Zip archive could not be read completely");
+        found = CL_EREAD;
+    } else if (res == SZ_ERROR_MEM) {
+        cli_mark_scan_incomplete(ctx, "7-Zip archive could not be allocated");
+        found = CL_EMEM;
     } else if (res != SZ_ERROR_ENCRYPTED) {
         cli_mark_scan_incomplete(ctx, "7-Zip archive header could not be parsed completely");
-        found = CL_EPARSE;
+        found = cli_7z_error_status(res);
     } else {
         cli_mark_scan_incomplete(ctx, "7-Zip encrypted archive header prevents inspection");
         found = CL_EPARSE;
