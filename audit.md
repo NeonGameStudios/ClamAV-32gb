@@ -2273,3 +2273,12 @@ The decoder now checks the pending write against that declaration before every
 temporary-spool write and only completes on an exact size match. A focused
 `CL_TYPE_MSSZDD` regression covers overproduced literal output; compiled
 Linux/Sonic1, sanitizer, and broader SZDD corpus qualification remain open.
+
+## OLE2/MSO declared-output admission — 2026-08-21
+
+The MSO zlib stream path already required a terminal decoder state, but only
+warned when its declared uncompressed-size prefix disagreed with the produced
+byte count. It now marks that confirmed layer incomplete and returns
+`CL_EFORMAT` before nested scanning. Source guards record the invariant;
+compiled Linux/Sonic1, sanitizer, and broader OLE2 corpus qualification remain
+open.

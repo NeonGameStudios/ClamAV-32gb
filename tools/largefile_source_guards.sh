@@ -1321,6 +1321,7 @@ contains unit_tests/check_clamav.c 'test_binhex_encoded_read_failure_is_fail_vis
 contains unit_tests/check_clamav.c 'test_binhex_cleanup_close_failure_is_fail_visible'
 contains libclamav/ole2_extract.c 'ole2_walk_property_tree(&hdr, dirname, 0, handler_writefile'
 contains libclamav/ole2_extract.c 'MSO stream output exceeded configured scan limits'
+contains libclamav/ole2_extract.c 'MSO stream output disagreed with its declared size'
 contains libclamav/ole2_extract.c 'MSO stream did not reach a complete zlib terminal state'
 contains libclamav/ole2_extract.c 'OLE2 header was truncated'
 contains libclamav/ole2_extract.c 'OLE2 header could not be read completely'

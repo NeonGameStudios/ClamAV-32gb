@@ -1914,10 +1914,12 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
     if (outsize != prefix) {
         cli_warnmsg("scan_mso_stream: declared prefix != inflated stream size, %llu != %llu\n",
                     (long long unsigned)prefix, (long long unsigned)outsize);
-    } else {
-        cli_dbgmsg("scan_mso_stream: declared prefix == inflated stream size, %llu == %llu\n",
-                   (long long unsigned)prefix, (long long unsigned)outsize);
+        cli_mark_scan_incomplete(ctx, "MSO stream output disagreed with its declared size");
+        ret = CL_EFORMAT;
+        goto mso_end;
     }
+    cli_dbgmsg("scan_mso_stream: declared prefix == inflated stream size, %llu == %llu\n",
+               (long long unsigned)prefix, (long long unsigned)outsize);
 
     /* scanning inflated stream */
     ret = cli_magic_scan_desc_type_reserved(ofd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);

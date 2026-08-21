@@ -113,6 +113,8 @@
   the archive remains explicitly incomplete when a limit or decoder error occurs.
 - MSEXPAND now rejects decoder output that exceeds its declared decompressed size;
   add broader malformed-SZDD corpus coverage during parser qualification.
+- OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed
+  MSO stream corpus coverage during Office-parser qualification.
 
 ## Large-file validation and expansion progression
 
