@@ -4235,3 +4235,13 @@ the cap.
 The focused malformed-attribute-tree regression is registered in
 `check_clamav`; full HFS+ corpus, sanitizer, and supported-build Sonic1
 qualification remain release gates.
+
+## TNEF attribute-header fmap failure — 2026-08-20
+
+The TNEF attribute-list reader now distinguishes an exact end-of-map from an
+in-range fmap failure. Exact EOF remains the valid end of a TNEF attribute
+list; a failed in-range read marks the layer incomplete and returns
+`CL_EPARSE`, preventing a direct parser caller from treating a partially
+inspected container as clean. The focused fault-injection regression and
+source guard are registered; compiled Linux/Sonic1, sanitizer, and broader
+TNEF corpus qualification remain release gates.

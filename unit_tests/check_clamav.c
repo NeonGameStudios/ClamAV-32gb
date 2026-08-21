@@ -9457,6 +9457,16 @@ static const void *cpio_member_name_read_failure(fmap_t *map, size_t at, size_t 
     return (const uint8_t *)map->data + at;
 }
 
+static const void *tnef_attribute_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == sizeof(uint32_t) + sizeof(uint16_t))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_embedded_header_read_failures_are_fail_visible)
 {
     static const uint8_t pdf[] = "%PDF-1.7";
@@ -9567,6 +9577,37 @@ START_TEST(test_tnef_initial_read_failure_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "TNEF signature could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_tnef_attribute_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x01                    /* attribute level read is fault-injected */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need = tnef_attribute_read_failure;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "TNEF attribute header could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -13393,6 +13434,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_tnef_attribute_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_line_read_failure_is_fail_visible);

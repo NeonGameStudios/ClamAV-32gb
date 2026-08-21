@@ -1846,10 +1846,15 @@ open.
 ## TNEF initial header read failure — 2026-08-20
 
 TNEF now marks a failed signature or attribute-level read incomplete before
-returning `CL_EREAD`, so direct parser callers cannot mistake an operational
-read failure for a completed container. A focused fault-injection regression
-and source guard are registered. Compiled Linux/Sonic1 execution, sanitizer
-coverage, and broader TNEF corpus qualification remain open.
+returning a non-clean result, so direct parser callers cannot mistake an
+operational read failure for a completed container. A focused fault-injection
+regression and source guard are registered. Compiled Linux/Sonic1 execution,
+sanitizer coverage, and broader TNEF corpus qualification remain open.
+
+The follow-up also separates exact end-of-map from an in-range attribute-level
+fmap failure. The former remains the valid end of the attribute list; the
+latter now returns `CL_EPARSE`, marks the layer incomplete, and disables clean
+result caching.
 
 ## PE import-thunk completion — 2026-08-20
 

@@ -116,7 +116,7 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                  * parse into a clean result.
                  */
                 cli_warnmsg("cli_tnef: file truncated\n");
-                cli_mark_scan_incomplete(ctx, "TNEF attribute header was truncated");
+                cli_mark_scan_incomplete(ctx, "TNEF attribute header could not be read completely");
                 ret     = CL_EPARSE;
                 alldone = 1;
                 break;
@@ -411,8 +411,15 @@ tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *ta
     uint32_t i32;
     int rc;
 
-    if (fmap_readn(map, part, *pos, 1) != 1)
+    /* An exact end-of-map is the normal end of a TNEF attribute list. An
+     * in-range fmap failure is different: treating it as EOF would allow a
+     * direct parser caller to report a clean, partially inspected container. */
+    if (*pos < 0 || (uint64_t)*pos > (uint64_t)map->len)
+        return -1;
+    if ((uint64_t)*pos == (uint64_t)map->len)
         return 0;
+    if (fmap_readn(map, part, *pos, 1) != 1)
+        return -1;
     (*pos)++;
 
     if (*part == (uint8_t)0)
