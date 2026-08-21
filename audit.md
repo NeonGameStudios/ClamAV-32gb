@@ -2301,3 +2301,13 @@ layer incomplete and returns `CL_EPARSE` before nested scanning. A focused
 regression and source guard record the non-cacheable fail-closed result;
 compiled Linux/Sonic1, sanitizer, and broader HWP corpus qualification remain
 open.
+
+## LHA limit and metadata-result propagation — 2026-08-21
+
+The Rust LHA/LZH scanner previously treated every non-success archive-metadata
+result as a size-limit skip and skipped members that `check_scan_limits()` could
+not admit, allowing the archive to finish as clean without inspecting required
+content. It now propagates detection/cancellation, converts callback failures
+and limit admission failures into sticky incomplete results, and stops before
+member extraction. Source guards record both fail-visible branches; compiled
+Rust/Linux/Sonic1, sanitizer, and broader LHA corpus qualification remain open.

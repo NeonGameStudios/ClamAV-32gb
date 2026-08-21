@@ -119,6 +119,9 @@
   broader malformed ZWS corpus coverage during media-parser qualification.
 - HWPOLE2 declared payload length mismatches are now fail-closed; add malformed
   embedded-OLE2 corpus coverage during document-parser qualification.
+- LHA/LZH member-limit and metadata callback failures now stop fail-closed;
+  add malformed, oversized, callback, and multi-member corpus coverage during
+  Rust-parser qualification.
 
 ## Large-file validation and expansion progression
 

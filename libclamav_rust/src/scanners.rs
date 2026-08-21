@@ -44,7 +44,7 @@ use crate::{
         cl_error_t_CL_ERESOURCE,
         cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNPACK, cl_error_t_CL_EUNLINK,
         cl_error_t_CL_EWRITE,
-        cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
+        cl_error_t_CL_BREAK, cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
     },
     util::{
         append_potentially_unwanted_if_heur_exceedsmax, check_scan_limits, check_scan_time_limit,
@@ -781,8 +781,10 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 }
             };
 
-            // Scan the archive metadata first.
-            if scan_archive_metadata(
+            // Scan the archive metadata first. A callback result is not a
+            // size-limit hint: propagate detections, cancellation, and
+            // callback failures instead of silently skipping the member.
+            let metadata_status = scan_archive_metadata(
                 ctx,
                 &filename,
                 compressed_size,
@@ -790,112 +792,128 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 false,
                 index,
                 header.file_crc as i32,
-            ) != cl_error_t_CL_SUCCESS
-            {
-                debug!("Extracted file '{filename}' would exceed size limits. Skipping.");
-            } else {
-                // Check if scanning the next file would exceed the limits and should be skipped.
-                if check_scan_limits("LHA", ctx, header.original_size, 0, 0)
-                    != cl_error_t_CL_SUCCESS
-                {
-                    debug!("Extracted file '{filename}' would exceed size limits. Skipping.");
-                } else if !decoder.is_decoder_supported() {
-                    return parser_failure(
-                        ctx,
-                        "LHA/LZH",
-                        cl_error_t_CL_EFORMAT,
-                        "member compression method is unsupported",
-                    );
-                } else {
-                    let expected_size = header.original_size;
-                    let mut spool = match TempSpool::new(ctx, expected_size) {
-                        Ok(spool) => spool,
-                        Err(status) => return parser_failure(ctx, "LHA/LZH", status, "member spool reservation failed"),
-                    };
-                    let mut bytes_read = 0u64;
-                    let mut buffer = [0u8; 64 * 1024];
-                    loop {
-                        match decoder.read(&mut buffer) {
-                            Ok(0) => break,
-                            Ok(read) => {
-                                if !lha_output_chunk_fits(bytes_read, expected_size, read) {
-                                    return parser_failure(
-                                        ctx,
-                                        "LHA/LZH",
-                                        cl_error_t_CL_EFORMAT,
-                                        "member decoder exceeded its declared output size",
-                                    );
-                                }
-                                let read_u64 = match u64::try_from(read) {
-                                    Ok(value) => value,
-                                    Err(_) => {
-                                        return parser_failure(
-                                            ctx,
-                                            "LHA/LZH",
-                                            cl_error_t_CL_ERESOURCE,
-                                            "member decoder output size is not representable",
-                                        );
-                                    }
-                                };
-                                if let Err(status) = spool.write_all(&buffer[..read]) {
-                                    return parser_failure(ctx, "LHA/LZH", status, "member output exceeded its declared size or could not be written");
-                                }
-                                bytes_read = match bytes_read.checked_add(read_u64) {
-                                    Some(value) => value,
-                                    None => {
-                                        return parser_failure(
-                                            ctx,
-                                            "LHA/LZH",
-                                            cl_error_t_CL_ERESOURCE,
-                                            "member output size accounting overflowed",
-                                        );
-                                    }
-                                };
-                            }
-                            Err(err) => {
-                                return parser_failure(
-                                    ctx,
-                                    "LHA/LZH",
-                                    cl_error_t_CL_EFORMAT,
-                                    format!("member read failed: {err}"),
-                                );
-                            }
-                        }
-                    }
+            );
+            if metadata_status != cl_error_t_CL_SUCCESS {
+                if metadata_status == cl_error_t_CL_VIRUS || metadata_status == cl_error_t_CL_BREAK {
+                    return metadata_status;
+                }
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    metadata_status,
+                    format!("archive metadata scan failed with status {metadata_status}"),
+                );
+            }
 
-                    if bytes_read != expected_size {
-                        return parser_failure(
-                            ctx,
-                            "LHA/LZH",
-                            cl_error_t_CL_EFORMAT,
-                            format!("member decoder returned {bytes_read} bytes for a declared size of {expected_size} bytes"),
-                        );
-                    }
+            // A member that cannot be admitted is required content that was
+            // not inspected. Do not skip it and let the archive normalize to
+            // a clean result.
+            let limit_status = check_scan_limits("LHA", ctx, header.original_size, 0, 0);
+            if limit_status != cl_error_t_CL_SUCCESS {
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    limit_status,
+                    format!("LHA member exceeds configured scan limits with status {limit_status}"),
+                );
+            }
 
-                    match decoder.crc_check() {
-                        Ok(crc) => debug!("CRC check passed for LHA/LZH member; CRC: {crc}"),
-                        Err(err) => {
+            if !decoder.is_decoder_supported() {
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    cl_error_t_CL_EFORMAT,
+                    "member compression method is unsupported",
+                );
+            }
+
+            let expected_size = header.original_size;
+            let mut spool = match TempSpool::new(ctx, expected_size) {
+                Ok(spool) => spool,
+                Err(status) => return parser_failure(ctx, "LHA/LZH", status, "member spool reservation failed"),
+            };
+            let mut bytes_read = 0u64;
+            let mut buffer = [0u8; 64 * 1024];
+            loop {
+                match decoder.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(read) => {
+                        if !lha_output_chunk_fits(bytes_read, expected_size, read) {
                             return parser_failure(
                                 ctx,
                                 "LHA/LZH",
                                 cl_error_t_CL_EFORMAT,
-                                format!("member CRC check failed: {err}"),
+                                "member decoder exceeded its declared output size",
                             );
                         }
-                    }
-
-                    if bytes_read > 0 {
-                        debug!("Read {bytes_read} bytes from file {filename} in the LHA archive.");
-
-                        let ret = spool.scan(Some(&filename));
-                        if ret != cl_error_t_CL_SUCCESS {
-                            debug!("spooled LHA member scan returned error: {}", ret);
-                            return ret;
+                        let read_u64 = match u64::try_from(read) {
+                            Ok(value) => value,
+                            Err(_) => {
+                                return parser_failure(
+                                    ctx,
+                                    "LHA/LZH",
+                                    cl_error_t_CL_ERESOURCE,
+                                    "member decoder output size is not representable",
+                                );
+                            }
+                        };
+                        if let Err(status) = spool.write_all(&buffer[..read]) {
+                            return parser_failure(ctx, "LHA/LZH", status, "member output exceeded its declared size or could not be written");
                         }
-                    } else {
-                        debug!("Read zero-byte file.");
+                        bytes_read = match bytes_read.checked_add(read_u64) {
+                            Some(value) => value,
+                            None => {
+                                return parser_failure(
+                                    ctx,
+                                    "LHA/LZH",
+                                    cl_error_t_CL_ERESOURCE,
+                                    "member output size accounting overflowed",
+                                );
+                            }
+                        };
+                    }
+                    Err(err) => {
+                        return parser_failure(
+                            ctx,
+                            "LHA/LZH",
+                            cl_error_t_CL_EFORMAT,
+                            format!("member read failed: {err}"),
+                        );
                     }
                 }
+            }
+
+            if bytes_read != expected_size {
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    cl_error_t_CL_EFORMAT,
+                    format!("member decoder returned {bytes_read} bytes for a declared size of {expected_size} bytes"),
+                );
+            }
+
+            match decoder.crc_check() {
+                Ok(crc) => debug!("CRC check passed for LHA/LZH member; CRC: {crc}"),
+                Err(err) => {
+                    return parser_failure(
+                        ctx,
+                        "LHA/LZH",
+                        cl_error_t_CL_EFORMAT,
+                        format!("member CRC check failed: {err}"),
+                    );
+                }
+            }
+
+            if bytes_read > 0 {
+                debug!("Read {bytes_read} bytes from file {filename} in the LHA archive.");
+
+                let ret = spool.scan(Some(&filename));
+                if ret != cl_error_t_CL_SUCCESS {
+                    debug!("spooled LHA member scan returned error: {}", ret);
+                    return ret;
+                }
+            } else {
+                debug!("Read zero-byte file.");
             }
 
             index += 1;
