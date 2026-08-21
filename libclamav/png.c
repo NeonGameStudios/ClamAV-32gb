@@ -89,6 +89,12 @@ static cl_error_t png_parse_error(cli_ctx *ctx, const char *reason)
     return cli_append_potentially_unwanted(ctx, reason);
 }
 
+static cl_error_t png_read_error(cli_ctx *ctx, const char *reason)
+{
+    cli_mark_scan_incomplete(ctx, reason);
+    return CL_EREAD;
+}
+
 cl_error_t cli_parsepng(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -112,6 +118,7 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
     uint8_t *ptr                 = NULL;
     uint64_t offset              = 8;
     fmap_t *map                  = NULL;
+    size_t bytes_read            = 0;
 
     cli_dbgmsg("in cli_parsepng()\n");
 
@@ -122,13 +129,25 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
     }
     map = ctx->fmap;
 
-    while (fmap_readn(map, (void *)&chunk_data_length_u32, offset, PNG_CHUNK_LENGTH_SIZE) == PNG_CHUNK_LENGTH_SIZE) {
+    while (1) {
+        bytes_read = fmap_readn(map, (void *)&chunk_data_length_u32, offset, PNG_CHUNK_LENGTH_SIZE);
+        if (bytes_read == (size_t)-1) {
+            cli_dbgmsg("PNG: read failure while reading chunk length\n");
+            status = png_read_error(ctx, "PNG chunk length could not be read completely");
+            goto scan_overlay;
+        }
+        if (bytes_read != PNG_CHUNK_LENGTH_SIZE)
+            break;
+
         chunk_data_length = be32_to_host(chunk_data_length_u32);
         offset += PNG_CHUNK_LENGTH_SIZE;
 
-        if (fmap_readn(map, chunk_type, offset, PNG_CHUNK_TYPE_SIZE) != PNG_CHUNK_TYPE_SIZE) {
+        bytes_read = fmap_readn(map, chunk_type, offset, PNG_CHUNK_TYPE_SIZE);
+        if (bytes_read != PNG_CHUNK_TYPE_SIZE) {
             cli_dbgmsg("PNG: EOF while reading chunk type\n");
-            status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunkType");
+            status = (bytes_read == (size_t)-1)
+                         ? png_read_error(ctx, "PNG chunk type could not be read completely")
+                         : png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunkType");
             parse_error = true;
             goto scan_overlay;
         }
@@ -165,7 +184,7 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
             ptr = (uint8_t *)fmap_need_off_once(map, (size_t)offset, 13);
             if (NULL == ptr) {
                 cli_dbgmsg("PNG: Unexpected early end-of-file reading IHDR.\n");
-                status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunk");
+                status      = png_read_error(ctx, "PNG IHDR could not be read completely");
                 parse_error = true;
                 goto scan_overlay;
             }
@@ -287,9 +306,12 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
              *------*/
         }
 
-        if (fmap_readn(map, &chunk_crc, offset, PNG_CHUNK_CRC_SIZE) != PNG_CHUNK_CRC_SIZE) {
+        bytes_read = fmap_readn(map, &chunk_crc, offset, PNG_CHUNK_CRC_SIZE);
+        if (bytes_read != PNG_CHUNK_CRC_SIZE) {
             cli_dbgmsg("PNG: EOF while reading chunk crc\n");
-            status      = png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunkCRC");
+            status = (bytes_read == (size_t)-1)
+                         ? png_read_error(ctx, "PNG chunk CRC could not be read completely")
+                         : png_parse_error(ctx, "Heuristics.Broken.Media.PNG.EOFReadingChunkCRC");
             parse_error = true;
             goto scan_overlay;
         }

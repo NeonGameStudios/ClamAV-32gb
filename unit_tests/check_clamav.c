@@ -13472,6 +13472,30 @@ START_TEST(test_png_truncated_chunks_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_png_chunk_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a,
+        0x00, 0x00, 0x00, 0x0d,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_parsepng(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PNG chunk length could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_png_large_ancillary_chunk_uses_bounded_mapping)
 {
     /* This sparse fixture is deliberately larger than the historical 2 GiB
@@ -14181,6 +14205,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
+    tcase_add_test(tc_png, test_png_chunk_read_failure_is_fail_visible);
     tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_initial_read_failure_is_fail_visible);

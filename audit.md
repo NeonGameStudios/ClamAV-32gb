@@ -2022,6 +2022,16 @@ synthetic fork-content fault-injection regression, source guard, and
 capability-manifest entry record the invariant. Compiled Linux/Sonic1,
 sanitizer, and broader HFS+ corpus qualification remain open.
 
+## PNG chunk fmap read failure — 2026-08-21
+
+PNG chunk-length, chunk-type, IHDR, and CRC windows that fail in the fmap were
+previously collapsed into the same path as ordinary short input. The parser
+now marks an in-range callback failure incomplete and returns `CL_EREAD`, while
+ordinary short input remains a parser error. A focused chunk-boundary
+fault-injection regression, source guard, and capability-manifest entry record
+the invariant. Compiled Linux/Sonic1, sanitizer, and broader PNG corpus
+qualification remain open.
+
 ## RTF in-range fmap read failure — 2026-08-21
 
 The RTF bounded reader previously treated an in-range `fmap` callback failure

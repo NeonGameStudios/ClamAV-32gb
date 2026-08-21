@@ -4358,6 +4358,14 @@ generic map error. A synthetic fork-content fault-injection regression, source
 guard, and capability-manifest entry are registered; compiled Linux/Sonic1,
 sanitizer, and broader HFS+ corpus qualification remain open.
 
+## PNG chunk fmap read failure — 2026-08-21
+
+PNG chunk-length, chunk-type, IHDR, and CRC windows that fail in the fmap now
+mark the layer incomplete and return `CL_EREAD`; ordinary short input remains
+a parser error. A focused chunk-boundary fault-injection regression, source
+guard, and capability-manifest entry are registered. Compiled Linux/Sonic1,
+sanitizer, and broader PNG corpus qualification remain open.
+
 ## RTF in-range fmap read failure — 2026-08-21
 
 The RTF bounded reader now distinguishes exact end-of-map from an in-range
