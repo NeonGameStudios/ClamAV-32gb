@@ -2402,6 +2402,18 @@ other result is propagated and operational failures mark the scan incomplete.
 The source guard records the invariant; compiled Linux/Sonic1, callback/resource
 fault injection, sanitizer, and broader ELF corpus qualification remain open.
 
+## Mach-O broken-executable heuristic result propagation — 2026-08-21
+
+Mach-O and universal-binary malformed-metadata macros previously retained only
+`CL_VIRUS` from the `Heuristics.Broken.Executable` alert recorder. Callback
+breaks, trusted results, and operational recording failures could therefore be
+discarded or replaced by the parser’s generic `CL_EPARSE`. Both paths now share
+a helper that preserves the normal parser result after successful recording and
+propagates every other alert result, marking operational recording failures
+incomplete. The source guard and capability manifest record the invariant;
+compiled Linux/Sonic1, callback/resource fault injection, sanitizer, and broader
+Mach-O corpus qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success
