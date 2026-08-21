@@ -2886,18 +2886,14 @@ release gates.
 
 ## INSTREAM queue admission remains a release gate — 2026-08-21
 
-The current clamd receive path creates the INSTREAM temporary file and stages
+The pre-`7aff518` receive path created the INSTREAM temporary file and staged
 the complete request before dispatching the descriptor scan to the worker
-pool. The stream and shared temporary quotas therefore remain bounded, but
-`MaxQueue` currently limits scan jobs after staging rather than preventing a
-queued request from consuming temporary storage. This does not satisfy the
-acceptance requirement that a second simultaneous request remain queued
-without staging or reserving resources while the single worker is occupied.
-
-The capability manifest records this as an explicit release qualification
-gate. A deferred admission/state-machine change requires compiled daemon and
-Sonic1 runtime validation and is intentionally not included in this bounded
-documentation update.
+pool. That behavior is superseded: the current admission state machine puts a
+request in `MODE_WAITQUEUE`, stops polling its body, and creates no temporary
+file or staging reservation until a worker slot is admitted. The remaining
+release gate is compiled daemon/Sonic1 concurrency qualification proving that
+the second simultaneous request stays unstaged while the single worker is
+occupied.
 
 ## INSTREAM client descriptor rewind — 2026-08-21
 
