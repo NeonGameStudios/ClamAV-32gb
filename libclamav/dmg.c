@@ -97,10 +97,13 @@ static int dmg_cleanup_temp_dir(cli_ctx *ctx, char **dirname, int status)
     return status;
 }
 
-static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t remaining, size_t *window_len)
+static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t remaining,
+                                     size_t *window_len, int *read_failed)
 {
     const uint8_t *window;
 
+    if (read_failed)
+        *read_failed = 0;
     if (!ctx || !ctx->fmap || !window_len || remaining == 0 || offset > (uint64_t)SIZE_MAX) {
         if (window_len)
             *window_len = 0;
@@ -108,9 +111,16 @@ static const uint8_t *dmg_map_window(cli_ctx *ctx, uint64_t offset, uint64_t rem
     }
 
     *window_len = (size_t)MIN(remaining, (uint64_t)DMG_STREAM_CHUNK_SIZE);
-    window      = fmap_need_off_once(ctx->fmap, (size_t)offset, *window_len);
-    if (!window)
+    if ((size_t)offset > ctx->fmap->len || *window_len > ctx->fmap->len - (size_t)offset) {
         *window_len = 0;
+        return NULL;
+    }
+    window      = fmap_need_off_once(ctx->fmap, (size_t)offset, *window_len);
+    if (!window) {
+        if (read_failed)
+            *read_failed = 1;
+        *window_len = 0;
+    }
     return window;
 }
 
@@ -151,6 +161,7 @@ int cli_scandmg(cli_ctx *ctx)
     int ret;
     size_t maplen;
     size_t pos = 0;
+    size_t trailer_read;
     char *dirname;
     unsigned int file = 0;
     struct dmg_mish_with_stripes *mish_list;
@@ -171,10 +182,11 @@ int cli_scandmg(cli_ctx *ctx)
     pos = maplen - 512;
 
     /* Grab koly block. */
-    if (fmap_readn(ctx->fmap, &hdr, pos, sizeof(hdr)) != sizeof(hdr)) {
+    trailer_read = fmap_readn(ctx->fmap, &hdr, pos, sizeof(hdr));
+    if (trailer_read != sizeof(hdr)) {
         cli_dbgmsg("cli_scandmg: Invalid DMG trailer block\n");
         cli_mark_scan_incomplete(ctx, "DMG trailer block is incomplete");
-        return CL_EPARSE;
+        return trailer_read == (size_t)-1 ? CL_EREAD : CL_EPARSE;
     }
 
     hdr.magic = be32_to_host(hdr.magic);
@@ -549,6 +561,7 @@ static int dmg_stripe_zeroes(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mi
     int ret;
     uint64_t expected;
     uint64_t written = 0;
+    int read_failed;
     uint8_t obuf[BUFSIZ];
 
     cli_dbgmsg("dmg_stripe_zeroes: stripe " STDu32 "\n", index);
@@ -603,10 +616,10 @@ static int dmg_stripe_store(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mis
             return ret;
         }
 
-        input = dmg_map_window(ctx, off, remaining, &window_len);
+        input = dmg_map_window(ctx, off, remaining, &window_len, &read_failed);
         if (!input || window_len == 0) {
             cli_mark_scan_incomplete(ctx, "DMG stored stripe could not be read completely");
-            return CL_EPARSE;
+            return read_failed ? CL_EREAD : CL_EPARSE;
         }
 
         ret = dmg_write_checked(ctx, fd, input, window_len, &written, expected,
@@ -633,6 +646,7 @@ static int dmg_stripe_adc(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_
     uint64_t expected_len;
     uint64_t size_so_far = 0;
     uint8_t obuf[BUFSIZ];
+    int read_failed;
 
     ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected_len);
     if (ret != CL_CLEAN)
@@ -670,10 +684,10 @@ static int dmg_stripe_adc(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_
 
         if (strm.avail_in == 0 && remaining != 0) {
             size_t window_len;
-            const uint8_t *input = dmg_map_window(ctx, off, remaining, &window_len);
+            const uint8_t *input = dmg_map_window(ctx, off, remaining, &window_len, &read_failed);
             if (!input || window_len == 0) {
                 cli_mark_scan_incomplete(ctx, "DMG ADC compressed stream could not be read completely");
-                ret = CL_EPARSE;
+                ret = read_failed ? CL_EREAD : CL_EPARSE;
                 break;
             }
             strm.next_in  = (uint8_t *)input;
@@ -740,6 +754,7 @@ static int dmg_stripe_inflate(cli_ctx *ctx, int fd, uint32_t index, struct dmg_m
     uint64_t size_so_far = 0;
     uint64_t expected_len;
     uint8_t obuf[BUFSIZ];
+    int read_failed;
 
     cli_dbgmsg("dmg_stripe_inflate: stripe " STDu32 "\n", index);
     ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected_len);
@@ -775,10 +790,10 @@ static int dmg_stripe_inflate(cli_ctx *ctx, int fd, uint32_t index, struct dmg_m
 
         if (strm.avail_in == 0 && remaining != 0) {
             size_t window_len;
-            const uint8_t *input = dmg_map_window(ctx, off, remaining, &window_len);
+            const uint8_t *input = dmg_map_window(ctx, off, remaining, &window_len, &read_failed);
             if (!input || window_len == 0) {
                 cli_mark_scan_incomplete(ctx, "DMG deflate stream could not be read completely");
-                ret = CL_EPARSE;
+                ret = read_failed ? CL_EREAD : CL_EPARSE;
                 break;
             }
             strm.next_in  = (Bytef *)input;
@@ -846,6 +861,7 @@ static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish
     int rc;
     bz_stream strm;
     uint8_t obuf[BUFSIZ];
+    int read_failed;
 
     ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected_len);
     if (ret != CL_CLEAN)
@@ -882,10 +898,10 @@ static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish
 
         if (strm.avail_in == 0 && remaining != 0) {
             size_t window_len;
-            const uint8_t *input = dmg_map_window(ctx, off, remaining, &window_len);
+            const uint8_t *input = dmg_map_window(ctx, off, remaining, &window_len, &read_failed);
             if (!input || window_len == 0) {
                 cli_mark_scan_incomplete(ctx, "DMG bzip2 stream could not be read completely");
-                ret = CL_EPARSE;
+                ret = read_failed ? CL_EREAD : CL_EPARSE;
                 break;
             }
             strm.next_in  = (char *)input;
@@ -1122,6 +1138,7 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
     uint64_t offset, remaining;
     size_t namelen;
     int ofd;
+    size_t read_result;
 
     namelen = strlen(dir) + 1 + 7 + 1;
     if (!(xmlfile = cli_max_malloc(namelen))) {
@@ -1145,12 +1162,15 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
     remaining = hdr->xmlLength;
     while (remaining != 0) {
         size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
-        if (offset > (uint64_t)SIZE_MAX || fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted) != wanted) {
+        read_result = offset > (uint64_t)SIZE_MAX
+                          ? (size_t)-1
+                          : fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted);
+        if (read_result != wanted) {
             cli_errmsg("cli_scandmg: Failed reading XML at offset " STDu64 "\n", offset);
             close(ofd);
             free(xmlfile);
             cli_mark_scan_incomplete(ctx, "DMG XML resource fork could not be read completely");
-            return CL_EPARSE;
+            return read_result == (size_t)-1 ? CL_EREAD : CL_EPARSE;
         }
         if (cli_scan_reserve_temporary(ctx, (uint64_t)wanted) != CL_SUCCESS) {
             close(ofd);

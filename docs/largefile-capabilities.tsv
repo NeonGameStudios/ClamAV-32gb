@@ -92,7 +92,7 @@ parser	CL_TYPE_CPIO_NEWC	pending	libclamav/scanners.c	dispatch branch requires p
 parser	CL_TYPE_CPIO_ODC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_CPIO_OLD	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_CRYPTFF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_DMG	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_DMG	pending	libclamav/scanners.c	DMG trailer, XML, and streamed stripe fmap read failures remain `CL_EREAD` and non-cacheable; dispatch branch still requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_EGG	pending	libclamav/scanners.c	encrypted-member heuristic alert-recording failures remain fail-visible; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_EGGSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_ELF	pending	libclamav/elf.c	metadata-only ELF parsing now marks required header/program/section read failures incomplete, and broken-executable heuristic alert-recording failures remain fail-visible; native-width and parser-family qualification remain required

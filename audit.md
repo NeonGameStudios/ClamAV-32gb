@@ -180,6 +180,12 @@ into generic parse status. A valid empty archive with an injected next-header
 read failure verifies the `CL_EREAD` path and cache suppression; broader
 compiled archive-corpus and sanitizer qualification remain open.
 
+DMG trailer, XML-spool, and streamed stripe fmap failures now distinguish an
+in-range read failure (`CL_EREAD`) from an out-of-range or malformed window
+(`CL_EPARSE`) while retaining the sticky incomplete/non-cacheable state. The
+trailer fault-injection regression covers the first boundary; compiled DMG
+corpus and sanitizer qualification remain open.
+
 The `clamscan` file and stdin front ends now enforce report completion before
 publishing a clean or trusted `OK`; a non-detection incomplete report is
 converted to an error instead of being counted as clean.

@@ -11931,6 +11931,40 @@ START_TEST(test_dmg_malformed_metadata_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_dmg_trailer_read_failure_is_fail_visible)
+{
+    static const char xml[] = "<plist/>";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *image;
+    size_t image_length;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    image = dmg_test_image(xml, &image_length);
+    map = cl_fmap_open_memory(image, image_length);
+    ck_assert_ptr_nonnull(map);
+    zip_targeted_read_failure_offset = image_length - sizeof(struct dmg_koly_block);
+    map->need = zip_targeted_read_failure;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    ret = cli_scandmg(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(image);
+    zip_targeted_read_failure_offset = 0;
+}
+END_TEST
+
 START_TEST(test_dmg_invalid_trailer_is_fail_visible)
 {
     static const uint8_t data[1024] = {0};
@@ -15146,6 +15180,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_hwpml, cl_setup, cl_teardown);
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg, test_dmg_malformed_metadata_is_fail_visible);
+    tcase_add_test(tc_dmg, test_dmg_trailer_read_failure_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_invalid_trailer_is_fail_visible);
     tcase_add_test(tc_cl, test_cl_free);
     tcase_add_test(tc_cl, test_cl_build);

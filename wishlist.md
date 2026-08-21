@@ -16,6 +16,9 @@
 - 7-Zip fmap input-read, output-write, and allocation failures now preserve
   their operational status instead of becoming generic parse errors; add
   compiled malformed/archive-corpus and sanitizer qualification.
+- DMG trailer, XML, and streamed stripe fmap read failures now preserve
+  `CL_EREAD` instead of becoming generic parse errors; add compiled DMG corpus
+  and sanitizer qualification.
 - HTML CSS data-URI images now decode through a 64 KiB reader into the shared
   temporary quota before nested scanning; oversized or incomplete extraction
   is fail-visible instead of using an unaccounted whole-image buffer.
