@@ -551,7 +551,8 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
     // TODO: use fmap_readn?
     if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCINFO_SIZE))) {
         cli_errmsg("HWP3.x: Failed to read fmap for hwp docinfo\n");
-        return CL_EMAP;
+        cli_mark_scan_incomplete(ctx, "HWP3 document-info could not be read completely");
+        return CL_EREAD;
     }
 
     memcpy(&(docinfo->di_writeprot), hwp3_ptr + DI_WRITEPROT, sizeof(docinfo->di_writeprot));
@@ -641,8 +642,9 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
         return CL_SUCCESS;
 
     if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCSUMMARY_SIZE))) {
-        cli_errmsg("HWP3.x: Failed to read fmap for hwp docinfo\n");
-        return CL_EMAP;
+        cli_errmsg("HWP3.x: Failed to read fmap for hwp docsummary\n");
+        cli_mark_scan_incomplete(ctx, "HWP3 document-summary could not be read completely");
+        return CL_EREAD;
     }
 
     summary = cli_jsonobj(ctx->this_layer_metadata_json, "Hwp3SummaryInfo");

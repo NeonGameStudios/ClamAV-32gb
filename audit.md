@@ -2036,3 +2036,12 @@ fmap failures, marks the layer incomplete/non-cacheable, and returns
 regression, source guards, and the PE capability entry record the contract.
 Compiled Linux/Sonic1, sanitizer, and broader PE/resource corpus
 qualification remain open.
+
+## HWP3 document metadata fmap failures — 2026-08-21
+
+HWP3 required document-info and metadata-enabled document-summary windows now
+mark the layer incomplete and non-cacheable and return `CL_EREAD` when an
+in-range fmap read fails. A direct document-info fault-injection regression,
+source guards, and the HWP3 capability entry record the contract. Compiled
+Linux/Sonic1 execution, sanitizer coverage, and broader HWP3 corpus
+qualification remain open.
