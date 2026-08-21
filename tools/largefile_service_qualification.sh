@@ -50,6 +50,13 @@ for required in \
         exit 2
     fi
 done
+
+# Record stable absolute input names in the workload manifest. The oracle
+# hashes, rather than the names, remain the authoritative input binding.
+production_file=$(CDPATH= cd -- "$(dirname "$production_file")" && pwd)/$(basename "$production_file")
+materialized_file=$(CDPATH= cd -- "$(dirname "$materialized_file")" && pwd)/$(basename "$materialized_file")
+expansion_file=$(CDPATH= cd -- "$(dirname "$expansion_file")" && pwd)/$(basename "$expansion_file")
+edge_file=$(CDPATH= cd -- "$(dirname "$edge_file")" && pwd)/$(basename "$edge_file")
 if [ ! -x "$build_dir/clamav-milter/clamav-milter" ]; then
     echo "missing qualification executable: $build_dir/clamav-milter/clamav-milter" >&2
     exit 2
@@ -83,6 +90,12 @@ if ! command -v timeout >/dev/null 2>&1 || ! command -v awk >/dev/null 2>&1 ||
 fi
 
 mkdir -p "$out/provenance"
+
+service_oracle_copy=$out/provenance/qualification-oracle.tsv
+service_workload_results=$out/provenance/service-workload-results.tsv
+cp "$oracle_manifest" "$service_oracle_copy"
+printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > \
+    "$service_workload_results"
 
 # Bind every service process to the same immutable source/build identity as
 # the clamscan runtime gate. The service gate executes build-tree binaries
@@ -315,6 +328,40 @@ EOF
     fi
 }
 
+workload_evidence_path()
+{
+    workload_path=$1
+    case "$workload_path" in
+        "$out"/*) printf '%s\n' "${workload_path#"$out"/}" ;;
+        *)
+            echo "workload evidence path is outside the service output: $workload_path" >&2
+            return 1
+            ;;
+    esac
+}
+
+record_workload()
+{
+    workload_label=$1
+    workload_kind=$2
+    workload_role=$3
+    workload_input=$4
+    workload_log=$5
+    workload_report=$6
+    workload_status=$7
+    workload_check_offset=$8
+    workload_log_relative=$(workload_evidence_path "$workload_log")
+    if [ "$workload_report" = - ]; then
+        workload_report_relative=-
+    else
+        workload_report_relative=$(workload_evidence_path "$workload_report")
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$workload_label" "$workload_kind" "$workload_role" "$workload_input" \
+        "$workload_log_relative" "$workload_report_relative" "$workload_status" \
+        "$workload_check_offset" >> "$service_workload_results"
+}
+
 check_oracle_output()
 {
     oracle_label=$1
@@ -322,6 +369,8 @@ check_oracle_output()
     oracle_report=${3:-}
     oracle_check_report=${4:-no}
     oracle_check_offset=${5:-no}
+    workload_kind=${6:-}
+    workload_input=${7:-}
 
     case "$expected_exit" in
         0|1|2) ;;
@@ -421,6 +470,11 @@ PY
             echo "$oracle_label structured report did not match its oracle" >&2
             return 1
         fi
+    fi
+    if [ -n "$workload_kind" ]; then
+        record_workload "$oracle_label" "$workload_kind" "$oracle_role" \
+            "$workload_input" "$oracle_log" "$oracle_report" "$oracle_status" \
+            "$oracle_check_offset"
     fi
 }
 
@@ -683,7 +737,7 @@ run_service_scan()
         return 1
     fi
     oracle_status=$scan_status
-    check_oracle_output "$scan_label" "$scan_log" "$scan_report" yes no
+    check_oracle_output "$scan_label" "$scan_log" "$scan_report" yes no service "$scan_file"
     printf '%s_status=%s\n' "$scan_label" "$scan_status" >> "$out/service-summary.txt"
     return 0
 }
@@ -702,7 +756,7 @@ run_direct_production()
         --no-summary --debug --report-json="$report" "$production_file" \
         > "$out/logs/production-clamscan.log" 2>&1 || direct_status=$?
     oracle_status=$direct_status
-    if ! check_oracle_output production-clamscan "$out/logs/production-clamscan.log" "$report" yes yes; then
+    if ! check_oracle_output production-clamscan "$out/logs/production-clamscan.log" "$report" yes yes cli "$production_file"; then
         return 1
     fi
     printf 'production_cvd_clamscan=pass\n' >> "$out/service-summary.txt"
@@ -771,8 +825,8 @@ run_serial_queue()
         fi
         oracle_load materialized "$materialized_file"
         oracle_status=$(sed -n '1p' "$queue_status_file")
-        check_oracle_output "serial clamd queue request $worker" \
-            "$queue_log" "$queue_report" yes no
+        check_oracle_output "clamd-serial-queue-$worker" \
+            "$queue_log" "$queue_report" yes no service "$materialized_file"
         worker=$((worker + 1))
     done
 
@@ -797,11 +851,21 @@ run_direct_report()
 {
     report_label=$1
     report_mode=$2
+    oracle_load production "$production_file"
+    report_log="$out/logs/production_cvd_${report_label}.log"
+    report_path="$out/reports/production_cvd_${report_label}.jsonl"
+    report_status=0
     "/usr/bin/time" -f '%e' -o "$out/logs/production_cvd_${report_label}.elapsed" \
         timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
         python3 "$root/tools/largefile_clamd_report_protocol.py" \
         "$socket" "$production_file" "$oracle_manifest" production "$report_mode" \
-        "$out/reports/production_cvd_${report_label}.jsonl" "$service_timeout_s"
+        "$report_path" "$service_timeout_s" > "$report_log" 2>&1 || report_status=$?
+    if [ "$report_status" -ne 0 ]; then
+        cat "$report_log" >&2
+        return 1
+    fi
+    record_workload "production_cvd_${report_label}" report production "$production_file" \
+        "$report_log" "$report_path" "$report_status" no
     printf 'production_cvd_clamdscan_%s=pass\n' "$report_label" >> "$out/service-summary.txt"
 }
 
@@ -846,7 +910,7 @@ edge_report="$out/reports/edge-clamscan.jsonl"
     --no-summary --debug --report-json="$edge_report" "$edge_file" \
     > "$out/logs/edge-clamscan.log" 2>&1 || edge_status=$?
 oracle_status=$edge_status
-if ! check_oracle_output edge-clamscan "$out/logs/edge-clamscan.log" "$edge_report" yes yes; then
+if ! check_oracle_output edge-clamscan "$out/logs/edge-clamscan.log" "$edge_report" yes yes cli "$edge_file"; then
     echo 'edge clamscan oracle failed' >&2
     exit 1
 fi
@@ -917,7 +981,7 @@ while [ "$worker" -le 4 ]; do
     multi_status=$(sed -n '1p' "$multi_status_file" 2>/dev/null || true)
     oracle_load edge "$edge_file"
     oracle_status=$multi_status
-    if ! check_oracle_output "clamd multi-worker request $worker" "$multi_log" "$multi_report" yes no; then
+    if ! check_oracle_output "clamd-multiworker-$worker" "$multi_log" "$multi_report" yes no service "$edge_file"; then
         echo "clamd multi-worker request $worker failed" >&2
         exit 1
     fi
@@ -1005,6 +1069,8 @@ if [ "$milter_status" -ne 0 ]; then
     echo 'milter exact-edge integration gate failed' >&2
     exit 1
 fi
+record_workload milter-exact-edge milter - - "$out/logs/milter-exact-edge.log" - \
+    "$milter_status" no
 milter_elapsed=$(awk 'NF == 2 && $1 ~ /^[0-9]+([.][0-9]+)?$/ && $2 ~ /^[0-9]+$/ { print $1 }' "$milter_time_file")
 milter_rss=$(awk 'NF == 2 && $1 ~ /^[0-9]+([.][0-9]+)?$/ && $2 ~ /^[0-9]+$/ { print $2 }' "$milter_time_file")
 if [ -z "$milter_elapsed" ] || [ -z "$milter_rss" ]; then
@@ -1043,4 +1109,10 @@ if ! cmp -s "$service_binary_hashes_before" "$service_binary_hashes_after"; then
 fi
 printf 'service_build_identity=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"
+printf 'qualification_oracle=provenance/qualification-oracle.tsv\n' >> "$out/oracle-binding.txt"
+printf 'qualification_oracle_sha256=%s\n' \
+    "$(sha256sum "$service_oracle_copy" | awk '{ print $1 }')" >> "$out/oracle-binding.txt"
+printf 'workload_results=provenance/service-workload-results.tsv\n' >> "$out/oracle-binding.txt"
+printf 'workload_results_sha256=%s\n' \
+    "$(sha256sum "$service_workload_results" | awk '{ print $1 }')" >> "$out/oracle-binding.txt"
 echo "service qualification passed; evidence is in $out"

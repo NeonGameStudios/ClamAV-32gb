@@ -117,6 +117,7 @@ jobs:
           ./tools/largefile_source_guards.sh
           ./tools/largefile_poc_fail_closed_test.sh
           ./tools/largefile_runtime_evidence_check_test.sh
+          sh ./tools/largefile_service_evidence_check_test.sh
 
   build-ubuntu-sanitizer:
     if: github.event_name == 'workflow_dispatch' && inputs.run_largefile_sanitizer
@@ -196,6 +197,7 @@ jobs:
           ./tools/largefile_source_guards.sh
           ./tools/largefile_poc_fail_closed_test.sh
           ./tools/largefile_runtime_evidence_check_test.sh
+          sh ./tools/largefile_service_evidence_check_test.sh
 
       - name: Large-file sanitizer release gate
         working-directory: ${{runner.workspace}}/clamav
@@ -309,6 +311,7 @@ jobs:
           ./tools/largefile_source_guards.sh
           ./tools/largefile_poc_fail_closed_test.sh
           ./tools/largefile_runtime_evidence_check_test.sh
+          sh ./tools/largefile_service_evidence_check_test.sh
 
 
   build-ubuntu-largefile:
@@ -372,6 +375,7 @@ jobs:
           ./tools/largefile_source_guards.sh
           ./tools/largefile_poc_fail_closed_test.sh
           ./tools/largefile_runtime_evidence_check_test.sh
+          sh ./tools/largefile_service_evidence_check_test.sh
 
       - name: Large-file runtime release gate
         working-directory: ${{runner.workspace}}/clamav

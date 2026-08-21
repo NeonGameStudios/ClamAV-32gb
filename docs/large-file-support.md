@@ -4807,3 +4807,17 @@ status, and prevent a clean cache result. The public `cl_scanmap_ex2`
 regression covers all three locations and verifies the structured report.
 Compiled Linux/Sonic1 and broader callback fault-injection qualification remain
 open.
+
+## Service workload semantic post-run verification — 2026-08-21
+
+The service qualification output now copies the caller-supplied eight-column
+oracle and records every workload accepted by the gate: direct `clamscan`,
+clamdscan path/FD/stream scans, structured report probes, the serial queue, the
+four-worker profile, parser-expansion and cold-cache runs, and the exact-edge
+milter test. `largefile_service_evidence_check.sh` invokes a separate
+standard-library verifier after checksum, provenance, executable, and
+dependency checks. It independently re-hashes each recorded input and
+revalidates report schema, completion, type, root size, counters,
+status, signature/offset, and the milter rejection marker. Missing, duplicate,
+or unexpected workload records fail the evidence gate. Production CVD and
+Sonic1 qualification remain release gates.

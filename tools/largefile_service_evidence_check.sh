@@ -35,13 +35,17 @@ fail()
 if ! command -v sha256sum >/dev/null 2>&1 ||
     ! command -v awk >/dev/null 2>&1 ||
     ! command -v find >/dev/null 2>&1 ||
-    ! command -v cmp >/dev/null 2>&1; then
-    echo 'sha256sum, awk, find, and cmp are required to verify service evidence' >&2
+    ! command -v cmp >/dev/null 2>&1 ||
+    ! command -v python3 >/dev/null 2>&1; then
+    echo 'sha256sum, awk, find, cmp, and python3 are required to verify service evidence' >&2
     exit 2
 fi
 
 summary=$out/service-summary.txt
+oracle_binding=$out/oracle-binding.txt
 identity=$out/provenance/service-build-identity.txt
+qualification_oracle=$out/provenance/qualification-oracle.tsv
+workload_results=$out/provenance/service-workload-results.tsv
 config=$out/clamd.conf
 source_manifest=$out/provenance/source-manifest.txt
 cmake_cache=$out/provenance/CMakeCache.txt
@@ -51,7 +55,8 @@ binary_after=$out/provenance/service-binary-hashes-after.txt
 dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 checksum_manifest=$out/SHA256SUMS
 
-for required in "$summary" "$identity" "$config" "$source_manifest" "$cmake_cache" \
+for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" \
+    "$identity" "$config" "$source_manifest" "$cmake_cache" \
     "$compile_commands" "$binary_before" "$binary_after" \
     "$dependency_hashes" "$checksum_manifest"; do
     [ -s "$required" ] || fail "missing service evidence: $required"
@@ -208,5 +213,8 @@ while IFS="$(printf '\t')" read -r dependency expected_hash; do
     [ "$actual_hash" = "$expected_hash" ] ||
         fail "service runtime dependency hash does not match evidence: $dependency"
 done < "$dependency_hashes"
+
+python3 "$root/tools/largefile_service_workload_check.py" "$out" ||
+    fail 'service workload oracle/report verification failed'
 
 echo 'service runtime evidence passed'

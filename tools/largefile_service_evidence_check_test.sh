@@ -12,7 +12,7 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 out=$tmp/service
 build=$tmp/build
 mkdir -p "$out/provenance" "$build/clamscan" "$build/clamd" \
-    "$build/clamdscan" "$build/clamav-milter"
+    "$build/clamdscan" "$build/clamav-milter" "$out/logs" "$out/reports"
 
 for relative_binary in \
     clamscan/clamscan clamd/clamd clamdscan/clamdscan clamav-milter/clamav-milter; do
@@ -44,6 +44,74 @@ dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 printf '%s\t%s\n' "$tmp/libclamav.so" \
     "$(sha256sum "$tmp/libclamav.so" | awk '{ print $1 }')" > "$dependency_hashes"
 
+workload_input=$tmp/workload-input.bin
+printf 'synthetic workload input\n' > "$workload_input"
+workload_size=$(stat -c '%s' "$workload_input" 2>/dev/null || stat -f '%z' "$workload_input")
+workload_hash=$(sha256sum "$workload_input" | awk '{ print $1 }')
+qualification_oracle=$out/provenance/qualification-oracle.tsv
+printf 'role\texpected_size\texpected_sha256\texpected_exit\texpected_completion\texpected_signature\texpected_offset\texpected_type\n' > "$qualification_oracle"
+for role in production materialized expansion edge; do
+    printf '%s\t%s\t%s\t0\tCOMPLETE\t-\t-\tCL_TYPE_DATA\n' \
+        "$role" "$workload_size" "$workload_hash" >> "$qualification_oracle"
+done
+workload_results=$out/provenance/service-workload-results.tsv
+printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > "$workload_results"
+report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
+workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-multiworker-1 clamd-multiworker-2 clamd-multiworker-3 clamd-multiworker-4'
+for label in $workload_labels; do
+    case "$label" in
+        production_cvd_scanreport|production_cvd_contscanreport|production_cvd_multiscanreport|production_cvd_allmatchscan|production_cvd_fildesreport|production_cvd_instreamreport)
+            kind=report
+            role=production
+            check_offset=no
+            ;;
+        production-clamscan)
+            kind=cli
+            role=production
+            check_offset=yes
+            ;;
+        clamd-serial-queue-*)
+            kind=service
+            role=materialized
+            check_offset=no
+            ;;
+        materialized_warm|materialized_cold)
+            kind=service
+            role=materialized
+            check_offset=no
+            ;;
+        parser_expansion)
+            kind=service
+            role=expansion
+            check_offset=no
+            ;;
+        production_cvd|production_cvd_fildes|production_cvd_instream)
+            kind=service
+            role=production
+            check_offset=no
+            ;;
+        edge-clamscan)
+            kind=cli
+            role=edge
+            check_offset=yes
+            ;;
+        *)
+            kind=service
+            role=edge
+            check_offset=no
+            ;;
+    esac
+    log_rel="logs/$label.log"
+    report_rel="reports/$label.jsonl"
+    printf 'clean\n' > "$out/$log_rel"
+    printf '%s' "$report_json" > "$out/$report_rel"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t0\t%s\n' \
+        "$label" "$kind" "$role" "$workload_input" "$log_rel" "$report_rel" "$check_offset" >> "$workload_results"
+done
+printf 'milter manual wire: body_bytes=1 message_bytes=1 limit_bytes=34359738368 result=r chunk_bytes=1 fill_byte=65\n' > \
+    "$out/logs/milter-exact-edge.log"
+printf 'milter-exact-edge\tmilter\t-\t-\tlogs/milter-exact-edge.log\t-\t0\tno\n' >> "$workload_results"
+
 cmake_cache_sha256=$(sha256sum "$out/provenance/CMakeCache.txt" | awk '{ print $1 }')
 compile_commands_sha256=$(sha256sum "$out/provenance/compile_commands.json" | awk '{ print $1 }')
 binary_hashes_sha256=$(sha256sum "$binary_list" | awk '{ print $1 }')
@@ -66,6 +134,14 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
     printf 'service_build_identity=pass\n'
     printf 'service_qualification=pass\n'
 } > "$out/service-summary.txt"
+oracle_hash=$(sha256sum "$qualification_oracle" | awk '{ print $1 }')
+workload_hash_manifest=$(sha256sum "$workload_results" | awk '{ print $1 }')
+{
+    printf 'qualification_oracle=provenance/qualification-oracle.tsv\n'
+    printf 'qualification_oracle_sha256=%s\n' "$oracle_hash"
+    printf 'workload_results=provenance/service-workload-results.tsv\n'
+    printf 'workload_results_sha256=%s\n' "$workload_hash_manifest"
+} > "$out/oracle-binding.txt"
 (
     cd "$out"
     find . -type f ! -name SHA256SUMS -print | LC_ALL=C sort |
@@ -75,6 +151,19 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
 ) > "$out/SHA256SUMS"
 
 sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null
+
+printf '%s' "$report_json" > "$out/reports/production_cvd_scanreport.jsonl"
+printf 'mutated structured report\n' >> "$out/reports/production_cvd_scanreport.jsonl"
+if python3 "$root/tools/largefile_service_workload_check.py" "$out" >/dev/null 2>&1; then
+    echo 'service workload verifier accepted a mutated structured report' >&2
+    exit 1
+fi
+printf '%s' "$report_json" > "$out/reports/production_cvd_scanreport.jsonl"
+printf 'mutated workload input\n' >> "$workload_input"
+if python3 "$root/tools/largefile_service_workload_check.py" "$out" >/dev/null 2>&1; then
+    echo 'service workload verifier accepted a mutated input' >&2
+    exit 1
+fi
 
 printf 'mutated after qualification\n' >> "$build/clamscan/clamscan"
 if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then

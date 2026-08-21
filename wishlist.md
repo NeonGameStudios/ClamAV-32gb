@@ -389,9 +389,10 @@
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.
-- Add standalone post-run verification for service evidence: recheck the
-  checksum manifest, source/build identity, service binaries, and runtime
-  dependency hashes after the workload.
+- Extend the standalone service-evidence verifier to recheck the copied oracle
+  and every recorded workload input, structured report, process status, match
+  signature/offset, and exact-edge milter outcome after the workload; compiled
+  Linux/Sonic1 evidence remains required.
 - RIFF header and chunk callback failures now preserve `CL_EREAD` instead of
   being flattened into truncation; add compiled callback-fault and production
   RIFF corpus qualification.
