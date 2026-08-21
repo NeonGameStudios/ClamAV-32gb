@@ -206,17 +206,19 @@ int conn_reply_errno(const client_conn_t *conn, const char *path,
  * one JSON object, then a zero-length terminator frame. */
 int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int infected)
 {
-    char fallback[320];
+    char fallback[1024];
     char id_prefix[64];
     char *serialized = NULL;
     char *json       = NULL;
     const char *payload;
+    cl_error_t fallback_status;
     uint32_t length;
     uint32_t network_length;
     uint32_t terminator = 0;
     int json_length;
     int use_fallback    = 1;
-    const char *verdict = (infected || status == CL_VIRUS) ? "infected" : (status == CL_SUCCESS ? "clean" : "incomplete");
+    int fallback_infected;
+    int fallback_verdict;
 
     if (!conn)
         return -1;
@@ -249,11 +251,31 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
     }
 
     if (use_fallback) {
+        /* A missing report is itself an incomplete result. Never turn a
+         * successful scan into a clean answer merely because report
+         * serialization or its transport buffer could not be allocated. */
+        fallback_infected = infected || status == CL_VIRUS;
+        fallback_status   = status;
+        if (fallback_infected && fallback_status == CL_SUCCESS)
+            fallback_status = CL_VIRUS;
+        else if (!fallback_infected && fallback_status == CL_SUCCESS)
+            fallback_status = CL_EMEM;
+        fallback_verdict = fallback_infected ? CL_VERDICT_STRONG_INDICATOR
+                                              : CL_VERDICT_NOTHING_FOUND;
         free(json);
         json        = NULL;
         json_length = snprintf(fallback, sizeof(fallback),
-                               "{\"version\":1,\"id\":%u,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
-                               conn->id, (int)status, verdict, clamd_scan_report_completion(status, infected));
+                               "{\"version\":1,\"id\":%u,\"status\":%d,\"verdict\":%d,\"completion\":\"%s\","
+                               "\"file_type\":\"CL_TYPE_BINARY_DATA\",\"root_size\":0,\"logical_bytes\":0,"
+                               "\"matcher_bytes\":0,\"contiguous_bytes\":0,\"temporary_bytes\":0,"
+                               "\"files_scanned\":0,\"max_recursion_depth\":0,\"elapsed_ms\":0,"
+                               "\"parser_operations\":0,\"detector_operations\":0,\"skipped_operations\":1,"
+                               "\"max_file_size\":0,\"max_scan_size\":0,\"max_pcre_file_size\":0,"
+                               "\"max_matcher_work\":0,\"max_temporary_size\":0,\"max_contiguous_size\":0,"
+                               "\"max_scan_time\":0,\"max_files\":0,\"max_recursion\":0,"
+                               "\"reason\":\"structured scan report unavailable\"}",
+                               conn->id, (int)fallback_status, fallback_verdict,
+                               clamd_scan_report_completion(fallback_status, fallback_infected));
         if (json_length < 0 || (size_t)json_length >= sizeof(fallback))
             goto done;
         payload = fallback;

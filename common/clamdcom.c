@@ -885,13 +885,12 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
         if (strcmp(completion, "COMPLETE") == 0) {
             if (verdict != CL_VERDICT_NOTHING_FOUND && verdict != CL_VERDICT_TRUSTED)
                 goto invalid;
-            if (json_object_object_get_ex(object, "status", &status_object)) {
-                if (!json_object_is_type(status_object, json_type_int))
-                    goto invalid;
-                status = json_object_get_int(status_object);
-                if (status != CL_SUCCESS)
-                    goto invalid;
-            }
+            if (!json_object_object_get_ex(object, "status", &status_object) ||
+                !json_object_is_type(status_object, json_type_int))
+                goto invalid;
+            status = json_object_get_int(status_object);
+            if (status != CL_SUCCESS)
+                goto invalid;
             *infected   = 0;
             *incomplete = 0;
             json_object_put(object);
@@ -928,18 +927,9 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
         json_object_put(object);
         return 0;
     }
-    if (strcmp(json_object_get_string(verdict_object), "clean") == 0 &&
-        completion && strcmp(completion, "COMPLETE") == 0) {
-        if (json_object_object_get_ex(object, "status", &status_object)) {
-            if (!json_object_is_type(status_object, json_type_int) ||
-                json_object_get_int(status_object) != CL_SUCCESS)
-                goto invalid;
-        }
-        *infected   = 0;
-        *incomplete = 0;
-        json_object_put(object);
-        return 0;
-    }
+    /* A string-valued clean verdict is not a versioned structured report.
+     * In particular, do not accept the historical compact fallback as a
+     * successful clean result when its report body is unavailable. */
 
 invalid:
     json_object_put(object);

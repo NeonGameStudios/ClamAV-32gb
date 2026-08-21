@@ -132,9 +132,11 @@ path; supported-Linux compilation and runtime qualification remain open.
 The opt-in clamd report commands now serialize the public `_ex2` report,
 including aggregated logical/parser/detector counters and request-level peak
 resources for multi-file walks, rather than reducing those results to a status
-code and two strings. The transport parser accepts both the numeric library
-verdict representation and the compact legacy fallback frame. Runtime daemon
-qualification remains an open release gate.
+code and two strings. If report serialization or its transport allocation
+fails, clamd emits a schema-shaped `RESOURCE_FAILURE` report with a skipped
+operation instead of a compact clean fallback; clients reject the historical
+string-valued clean fallback and require a successful status on `COMPLETE`.
+Runtime daemon qualification remains an open release gate.
 
 The structured report's `skipped_operations` metric now counts repeated
 required parser/matcher skips with saturating arithmetic and is summed across

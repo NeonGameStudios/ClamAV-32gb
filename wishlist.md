@@ -273,6 +273,10 @@
   failures instead of labeling every non-detection error unsupported; the
   shared classifier unit test covers each fallback class, with compiled
   protocol execution still required.
+- Structured clamd report serialization failures now emit a schema-shaped,
+  explicitly incomplete resource report rather than a compact clean fallback;
+  clients require a numeric verdict and successful status for `COMPLETE`, with
+  the historical string-valued clean fallback rejected.
 - The public structured report now classifies unsupported decoder and bytecode
   statuses consistently with clamd fallback reports; the library unit test
   covers all three statuses, with compiled execution still required.

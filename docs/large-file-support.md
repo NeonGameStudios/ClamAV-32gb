@@ -40,9 +40,11 @@ startup path. A failed admission is logged and the daemon does not open its
 scan sockets.
 
 Structured clamd report producers and consumers now share a 16 MiB payload
-ceiling. If report serialization would exceed that bound, clamd sends its
-small bounded status fallback instead of allocating and narrowing an
-oversized JSON frame; clients reject any larger received frame.
+ceiling. If report serialization would exceed that bound or its transport
+buffer cannot be allocated, clamd sends a small schema-shaped
+`RESOURCE_FAILURE` report with `skipped_operations` set instead of a clean
+fallback; clients reject any larger received frame and require a successful
+status on `COMPLETE`.
 
 The clamd INSTREAM receiver also fails closed on staging writes: a failed
 temporary-file write stops the stream immediately, emits one protocol-matched

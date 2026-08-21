@@ -186,7 +186,11 @@ END_TEST
 START_TEST(test_scan_report_json_status_accepts_dispatch_failure_fallback)
 {
     static const char fallback[] =
-        "{\"version\":1,\"id\":7,\"status_code\":35,\"verdict\":\"incomplete\",\"completion\":\"RESOURCE_FAILURE\"}";
+        "{\"version\":1,\"id\":7,\"status\":35,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\","
+        "\"file_type\":\"CL_TYPE_BINARY_DATA\",\"root_size\":0,\"logical_bytes\":0,"
+        "\"matcher_bytes\":0,\"contiguous_bytes\":0,\"temporary_bytes\":0,\"files_scanned\":0,"
+        "\"max_recursion_depth\":0,\"elapsed_ms\":0,\"parser_operations\":0,\"detector_operations\":0,"
+        "\"skipped_operations\":1}";
     int infected = -1;
     int incomplete = -1;
 
@@ -195,6 +199,17 @@ START_TEST(test_scan_report_json_status_accepts_dispatch_failure_fallback)
                      0);
     ck_assert_int_eq(infected, 0);
     ck_assert_int_eq(incomplete, 1);
+}
+END_TEST
+
+START_TEST(test_scan_report_json_status_rejects_legacy_clean_fallback)
+{
+    static const char fallback[] =
+        "{\"version\":1,\"id\":7,\"status_code\":0,\"verdict\":\"clean\",\"completion\":\"COMPLETE\"}";
+    int infected = -1;
+    int incomplete = -1;
+
+    ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback), &infected, &incomplete), -1);
 }
 END_TEST
 
@@ -220,11 +235,13 @@ START_TEST(test_scan_report_json_status_rejects_contradictory_reports)
         "{\"metadata\":{\"completion\":\"COMPLETE\"},\"verdict\":0}";
     static const char clean_error[] =
         "{\"status\":35,\"verdict\":0,\"completion\":\"COMPLETE\"}";
+    static const char clean_missing_status[] =
+        "{\"verdict\":0,\"completion\":\"COMPLETE\"}";
     static const char clean_detection[] =
         "{\"status\":0,\"verdict\":0,\"completion\":\"DETECTION_TERMINATED\"}";
     static const char detected_complete[] =
         "{\"status\":0,\"verdict\":2,\"completion\":\"COMPLETE\"}";
-    const char *reports[] = {nested, clean_error, clean_detection, detected_complete};
+    const char *reports[] = {nested, clean_error, clean_missing_status, clean_detection, detected_complete};
     size_t i;
 
     for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
@@ -1389,6 +1406,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_dispatch_failure_fallback);
+    tcase_add_test(tc_parser, test_scan_report_json_status_rejects_legacy_clean_fallback);
     tcase_add_test(tc_parser, test_scan_report_fallback_completion_classes);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_contradictory_reports);
     tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
