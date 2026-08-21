@@ -2264,3 +2264,12 @@ marks the layer incomplete/non-cacheable and returns a non-clean format result.
 A focused truncated-object regression and source guards record the invariant;
 compiled Linux/Sonic1, sanitizer, and broader PDF corpus qualification remain
 open.
+
+## MSEXPAND declared-output admission — 2026-08-21
+
+MSEXPAND already rejected truncated input, but its fixed-size output macro
+accepted a write that exceeded the declared decompressed size and returned clean.
+The decoder now checks the pending write against that declaration before every
+temporary-spool write and only completes on an exact size match. A focused
+`CL_TYPE_MSSZDD` regression covers overproduced literal output; compiled
+Linux/Sonic1, sanitizer, and broader SZDD corpus qualification remain open.

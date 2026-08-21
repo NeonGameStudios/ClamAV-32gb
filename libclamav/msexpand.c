@@ -86,15 +86,19 @@ struct msexp_hdr {
     cur_off += rbytes;                                                                \
     r = 0;
 
-#define WRITEBYTES                                                                        \
-    ret = cli_writen(ofd, wbuff, w);                                                      \
-    if (ret == (size_t)-1 || (unsigned int)ret != w) {                                    \
-        cli_mark_scan_incomplete(ctx, "MSEXPAND output could not be written completely"); \
-        return CL_EWRITE;                                                                 \
-    }                                                                                     \
-    wbytes += w;                                                                          \
-    if (wbytes >= fsize)                                                                  \
-        return CL_SUCCESS;                                                                \
+#define WRITEBYTES                                                                            \
+    if ((uint64_t)wbytes > (uint64_t)fsize || (uint64_t)w > (uint64_t)fsize - (uint64_t)wbytes) { \
+        cli_mark_scan_incomplete(ctx, "MSEXPAND output exceeded its declared size");          \
+        return CL_EFORMAT;                                                                     \
+    }                                                                                         \
+    ret = cli_writen(ofd, wbuff, w);                                                          \
+    if (ret == (size_t)-1 || (unsigned int)ret != w) {                                        \
+        cli_mark_scan_incomplete(ctx, "MSEXPAND output could not be written completely");     \
+        return CL_EWRITE;                                                                     \
+    }                                                                                         \
+    wbytes += w;                                                                              \
+    if (wbytes == fsize)                                                                      \
+        return CL_SUCCESS;                                                                    \
     w = 0;
 
 cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)

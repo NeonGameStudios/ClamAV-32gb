@@ -111,6 +111,8 @@
 - ALZ quota crossings and decoder failures now discard partial member output
   before nested scanning; only complete extracted members are dispatched, while
   the archive remains explicitly incomplete when a limit or decoder error occurs.
+- MSEXPAND now rejects decoder output that exceeds its declared decompressed size;
+  add broader malformed-SZDD corpus coverage during parser qualification.
 
 ## Large-file validation and expansion progression
 
