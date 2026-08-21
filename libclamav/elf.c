@@ -58,6 +58,23 @@
 
 static void cli_elf_sectionlog(uint32_t sh_type, uint32_t sh_flags);
 
+static cl_error_t cli_elf_broken_result(cli_ctx *ctx, cl_error_t fallback)
+{
+    cl_error_t ret;
+
+    if (!ctx || !SCAN_HEURISTIC_BROKEN)
+        return fallback;
+
+    ret = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable");
+    if (ret == CL_SUCCESS)
+        return fallback;
+
+    if (ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK)
+        cli_mark_scan_incomplete(ctx, "ELF broken-executable heuristic alert could not be recorded");
+
+    return ret;
+}
+
 static uint32_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 {
     uint16_t i, found = 0;
@@ -145,10 +162,7 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
             break;
         default:
             cli_dbgmsg("ELF: Unknown ELF class (%u)\n", file_hdr->hdr64.e_ident[4]);
-            if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                return CL_VIRUS;
-            }
-            return CL_BREAK;
+            return cli_elf_broken_result(ctx, CL_BREAK);
     }
 
     /* Need to know to endian convert */
@@ -238,10 +252,7 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     cli_dbgmsg("ELF: Number of program headers: %d\n", phnum);
     if (phnum > 128) {
         cli_dbgmsg("ELF: Suspicious number of program headers\n");
-        if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-            return CL_VIRUS;
-        }
-        return CL_EFORMAT;
+        return cli_elf_broken_result(ctx, CL_EFORMAT);
     }
     entry = file_hdr->e_entry;
 
@@ -250,10 +261,7 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         /* Sanity check */
         if (phentsize != sizeof(struct elf_program_hdr32)) {
             cli_dbgmsg("ELF: phentsize != sizeof(struct elf_program_hdr32)\n");
-            if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                return CL_VIRUS;
-            }
-            return CL_EFORMAT;
+            return cli_elf_broken_result(ctx, CL_EFORMAT);
         }
 
         phoff = file_hdr->e_phoff;
@@ -284,10 +292,7 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
                     cli_dbgmsg("ELF: Possibly broken ELF file\n");
                 }
                 free(program_hdr);
-                if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                    return CL_VIRUS;
-                }
-                return CL_BREAK;
+                return cli_elf_broken_result(ctx, CL_BREAK);
             }
 
             if (ctx) {
@@ -305,10 +310,7 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         free(program_hdr);
         if (err) {
             cli_dbgmsg("ELF: Can't calculate file offset of entry point\n");
-            if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                return CL_VIRUS;
-            }
-            return CL_EFORMAT;
+            return cli_elf_broken_result(ctx, CL_EFORMAT);
         }
         if (ctx) {
             cli_dbgmsg("ELF: Entry point address: 0x%.8x\n", entry);
@@ -345,10 +347,7 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
     cli_dbgmsg("ELF: Number of program headers: %d\n", phnum);
     if (phnum > 128) {
         cli_dbgmsg("ELF: Suspicious number of program headers\n");
-        if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-            return CL_VIRUS;
-        }
-        return CL_EFORMAT;
+        return cli_elf_broken_result(ctx, CL_EFORMAT);
     }
     entry = file_hdr->e_entry;
 
@@ -357,10 +356,7 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
         /* Sanity check */
         if (phentsize != sizeof(struct elf_program_hdr64)) {
             cli_dbgmsg("ELF: phentsize != sizeof(struct elf_program_hdr64)\n");
-            if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                return CL_VIRUS;
-            }
-            return CL_EFORMAT;
+            return cli_elf_broken_result(ctx, CL_EFORMAT);
         }
 
         phoff = file_hdr->e_phoff;
@@ -391,10 +387,7 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
                     cli_dbgmsg("ELF: Possibly broken ELF file\n");
                 }
                 free(program_hdr);
-                if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                    return CL_VIRUS;
-                }
-                return CL_BREAK;
+                return cli_elf_broken_result(ctx, CL_BREAK);
             }
 
             if (ctx) {
@@ -412,10 +405,7 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
         free(program_hdr);
         if (err) {
             cli_dbgmsg("ELF: Can't calculate file offset of entry point\n");
-            if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                return CL_VIRUS;
-            }
-            return CL_EFORMAT;
+            return cli_elf_broken_result(ctx, CL_EFORMAT);
         }
         if (ctx) {
             cli_dbgmsg("ELF: Entry point address: 0x%.16" PRIx64 "\n", entry);
@@ -462,10 +452,7 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     /* Sanity check */
     if (shentsize != sizeof(struct elf_section_hdr32)) {
         cli_dbgmsg("ELF: shentsize != sizeof(struct elf_section_hdr32)\n");
-        if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-            return CL_VIRUS;
-        }
-        return CL_EFORMAT;
+        return cli_elf_broken_result(ctx, CL_EFORMAT);
     }
 
     if (elfinfo && !shnum) {
@@ -510,10 +497,7 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
                 cli_dbgmsg("ELF: Possibly broken ELF file\n");
             }
             free(section_hdr);
-            if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                return CL_VIRUS;
-            }
-            return CL_BREAK;
+            return cli_elf_broken_result(ctx, CL_BREAK);
         }
 
         shoff += sizeof(struct elf_section_hdr32);
@@ -574,10 +558,7 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     /* Sanity check */
     if (shentsize != sizeof(struct elf_section_hdr64)) {
         cli_dbgmsg("ELF: shentsize != sizeof(struct elf_section_hdr64)\n");
-        if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-            return CL_VIRUS;
-        }
-        return CL_EFORMAT;
+        return cli_elf_broken_result(ctx, CL_EFORMAT);
     }
 
     if (elfinfo && !shnum) {
@@ -623,10 +604,7 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
                 cli_dbgmsg("ELF: Possibly broken ELF file\n");
             }
             free(section_hdr);
-            if (ctx && SCAN_HEURISTIC_BROKEN && (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable"))) {
-                return CL_VIRUS;
-            }
-            return CL_BREAK;
+            return cli_elf_broken_result(ctx, CL_BREAK);
         }
 
         shoff += sizeof(struct elf_section_hdr64);

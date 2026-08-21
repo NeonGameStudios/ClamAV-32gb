@@ -2391,6 +2391,17 @@ failures incomplete. Source guards record the parser branches; compiled
 Linux/Sonic1, callback/resource fault injection, sanitizer, and OLE/RAR corpus
 qualification remain open.
 
+## ELF broken-executable heuristic result propagation — 2026-08-21
+
+ELF metadata-error branches previously retained only `CL_VIRUS` from the
+`Heuristics.Broken.Executable` alert recorder. Callback breaks, trusted results,
+and operational recording failures could be discarded while the parser returned
+its ordinary format/read status. The branches now share a fail-visible helper:
+successful alert recording preserves the original parser status, while every
+other result is propagated and operational failures mark the scan incomplete.
+The source guard records the invariant; compiled Linux/Sonic1, callback/resource
+fault injection, sanitizer, and broader ELF corpus qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success

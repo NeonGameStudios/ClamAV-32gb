@@ -145,6 +145,9 @@
 - OLE2 VBA macro and encrypted-RAR heuristic alert results now propagate; add
   heuristic callback/resource fault injection and malformed OLE/RAR corpus
   coverage.
+- ELF broken-executable heuristic alert results now propagate callback,
+  trusted, and operational statuses instead of preserving only `CL_VIRUS`; add
+  ELF heuristic fault-injection and malformed-corpus coverage.
 
 ## Large-file validation and expansion progression
 
