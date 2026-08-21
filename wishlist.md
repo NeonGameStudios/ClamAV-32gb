@@ -136,6 +136,9 @@
 - BM all-matches signature alert-append failures now remain fail-visible; add
   callback/resource fault injection and production all-matches signature
   corpus coverage.
+- Structured credit-card and SSN heuristic alert-append failures now remain
+  fail-visible; add detector callback/resource fault injection and production
+  structured-data corpus coverage.
 
 ## Large-file validation and expansion progression
 

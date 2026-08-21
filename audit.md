@@ -2361,6 +2361,16 @@ failures incomplete before returning them. Source guards record both branches;
 compiled Linux/Sonic1, callback/resource fault injection, sanitizer, and
 production signature-corpus qualification remain open.
 
+## Structured-detector alert-result propagation — 2026-08-21
+
+The structured credit-card and SSN detectors previously returned only
+`CL_VIRUS` from their heuristic alert append calls. Evidence-storage failures
+and callback control results could therefore be discarded. Both paths now
+preserve trusted, detection, callback, and operational results; operational
+append failures mark the scan incomplete before returning. Source guards record
+the two detectors; compiled Linux/Sonic1, fault injection, sanitizer, and
+production structured-data corpus qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success

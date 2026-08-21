@@ -4400,16 +4400,28 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
     }
 
     if (cc_count != 0 && cc_count >= ctx->engine->min_cc_count) {
+        cl_error_t append_ret;
+
         cli_dbgmsg("cli_scan_structured: %u credit card numbers detected\n", cc_count);
-        if (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Structured.CreditCardNumber")) {
-            return CL_VIRUS;
+        append_ret = cli_append_potentially_unwanted(ctx, "Heuristics.Structured.CreditCardNumber");
+        if (append_ret != CL_SUCCESS) {
+            if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
+                cli_mark_scan_incomplete(ctx, "Structured credit-card alert could not be recorded");
+            }
+            return append_ret;
         }
     }
 
     if (ssn_count != 0 && ssn_count >= ctx->engine->min_ssn_count) {
+        cl_error_t append_ret;
+
         cli_dbgmsg("cli_scan_structured: %u social security numbers detected\n", ssn_count);
-        if (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Structured.SSN")) {
-            return CL_VIRUS;
+        append_ret = cli_append_potentially_unwanted(ctx, "Heuristics.Structured.SSN");
+        if (append_ret != CL_SUCCESS) {
+            if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
+                cli_mark_scan_incomplete(ctx, "Structured SSN alert could not be recorded");
+            }
+            return append_ret;
         }
     }
 
