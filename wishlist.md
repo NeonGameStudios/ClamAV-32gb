@@ -31,6 +31,9 @@
   temporary staging begins.
 - Bundled 7-Zip and NSIS decoder allocation callbacks now use checked shared
   allocation, including multiplication overflow checks for NSIS zlib state.
+- TNEF attribute-string lengths now convert to `size_t` before the terminating
+  byte, allocation, and read-coordinate arithmetic; the parser cannot wrap a
+  maximum positive signed length.
 - The bundled CAB/CHM adapter now bounds decoder-requested allocations with the
   shared individual-allocation ceiling.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the

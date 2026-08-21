@@ -3144,3 +3144,12 @@ checks `offset` and `2 * length` against the containing line before forming the
 new coordinate. Static guards and whitespace validation pass; independently
 compiled ABI-v2 fixture, interpreter/JIT, sanitizer, and production-signature
 qualification remain open.
+
+## TNEF attribute-string length bounds — 2026-08-21
+
+TNEF's debug message-class and attachment-title paths used signed 32-bit
+attribute lengths in `length + 1` before conversion to `size_t`. They now
+convert first and perform native-width allocation, read, and position updates,
+preserving fail-visible behavior at the largest representable positive length.
+Static guards and whitespace validation pass; compiled TNEF corpus, sanitizer,
+and production qualification remain open.

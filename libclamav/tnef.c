@@ -244,6 +244,7 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
 #ifdef CL_DEBUG
     uint32_t i32;
     char *string;
+    size_t string_len;
 #else
     UNUSEDPARAM(map);
 #endif
@@ -284,17 +285,20 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
         case attMSGCLASS:
             if (length <= 0)
                 return -1;
-            string = cli_max_malloc(length + 1);
+            string_len = (size_t)length;
+            if (string_len == SIZE_MAX)
+                return -1;
+            string = cli_max_malloc(string_len + 1);
             if (string == NULL) {
                 cli_errmsg("tnef_message: Unable to allocate memory for string\n");
                 return -1;
             }
-            if ((uint32_t)fmap_readn(map, string, *pos, (uint32_t)length) != (uint32_t)length) {
+            if (fmap_readn(map, string, *pos, string_len) != string_len) {
                 free(string);
                 return -1;
             }
-            (*pos) += (uint32_t)length;
-            string[length] = '\0';
+            (*pos) += (off_t)string_len;
+            string[string_len] = '\0';
             cli_dbgmsg("TNEF class %s\n", string);
             free(string);
             break;
@@ -324,6 +328,7 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
     uint32_t todo;
     off_t offset;
     char *string;
+    size_t string_len;
 
     cli_dbgmsg("attachment tag 0x%x, type 0x%x, length %d\n", tag, type,
                (int)length);
@@ -334,18 +339,21 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
         case attATTACHTITLE:
             if (length <= 0)
                 return CL_EFORMAT;
-            string = cli_max_malloc(length + 1);
+            string_len = (size_t)length;
+            if (string_len == SIZE_MAX)
+                return CL_EFORMAT;
+            string = cli_max_malloc(string_len + 1);
             if (string == NULL) {
                 cli_errmsg("tnef_attachment: Unable to allocate memory for string\n");
                 return CL_EMEM;
             }
-            if ((uint32_t)fmap_readn(map, string, *pos, (uint32_t)length) != (uint32_t)length) {
+            if (fmap_readn(map, string, *pos, string_len) != string_len) {
                 free(string);
                 cli_mark_scan_incomplete(ctx, "TNEF attachment title could not be read completely");
                 return CL_EREAD;
             }
-            (*pos) += (uint32_t)length;
-            string[length] = '\0';
+            (*pos) += (off_t)string_len;
+            string[string_len] = '\0';
             cli_dbgmsg("TNEF filename %s\n", string);
             if (*fbref == NULL) {
                 *fbref = fileblobCreate();
