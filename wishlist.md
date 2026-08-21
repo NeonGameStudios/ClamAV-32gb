@@ -231,6 +231,9 @@
 - Sequential OOXML ZIP, script, and mail parser passes now preserve a specific
   earlier parser error while allowing later detection results; add compiled
   mixed-parser fault-injection coverage during parser qualification.
+- TAR initial-header fmap read failures now remain fail-visible instead of
+  being mistaken for exact EOF; add compiled TAR fault-injection and corpus
+  coverage during parser qualification.
 
 ## Large-file validation and expansion progression
 

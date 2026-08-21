@@ -211,8 +211,13 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
         block = fmap_need_off_once_len(ctx->fmap, pos, BLOCKSIZE, &nread);
         cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
 
-        if (!in_block && !nread)
+        if (!in_block && !nread) {
+            if (pos < ctx->fmap->len) {
+                cli_mark_scan_incomplete(ctx, "TAR header could not be read completely");
+                return CL_EREAD;
+            }
             break;
+        }
 
         if (!nread)
             block = zero;

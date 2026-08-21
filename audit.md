@@ -2683,3 +2683,15 @@ reads the selected child from a file-backed source. A 65 MiB related-body
 regression fixture and source guards were added. Supported-Linux compilation,
 libxml2 memory/RSS behavior, sanitizer execution, and full MHTML corpus
 qualification remain open.
+
+## TAR initial-header read completion — 2026-08-21
+
+The TAR reader previously treated a zero-length result from its first fmap
+window as normal end-of-file, even when the requested header offset was still
+inside the mapped input. A failed initial header read could therefore return
+clean for a TAR input that had not been inspected. The reader now distinguishes
+exact EOF from an in-range failed read, marks the scan incomplete, and returns
+`CL_EREAD`; a focused fault-injection regression also verifies the result is
+non-cacheable and cannot leave a clean verdict. Supported-Linux compilation,
+fault-injection execution, sanitizer, and complete TAR corpus qualification
+remain open.
