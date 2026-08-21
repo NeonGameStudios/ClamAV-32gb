@@ -6977,6 +6977,42 @@ START_TEST(test_pdf_truncated_trailer_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_truncated_object_is_fail_visible)
+{
+    static const uint8_t truncated_object[] =
+        "%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\n%%EOF\n";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(truncated_object, sizeof(truncated_object) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ck_assert_int_eq(cli_pdf(tmpdir, &ctx, 0), CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PDF object parsing ended before inspection completed");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pdf_decode_error_is_fail_visible)
 {
     static const uint8_t malformed_flate[] = {0x78, 0x9c, 0xff, 0xff, 0xff, 0xff};
@@ -14605,6 +14641,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_text_normalize_map_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_parser_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_trailer_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_truncated_object_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_decode_error_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_empty_flate_stream_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_unsupported_filter_is_fail_visible);

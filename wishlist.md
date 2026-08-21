@@ -105,6 +105,9 @@
   six structured clamd command families; full production qualification remains open.
 - CAB/CHM fmap callbacks now reject unrepresentable or wrapping origin/seek
   coordinates before decoder reads; parser-family and production-corpus qualification remain open.
+- PDF objects that have a confirmed header but no terminating `endobj` now
+  increment invalid-object accounting and mark the scan incomplete/non-cacheable
+  instead of allowing the retained truncated object to produce a clean result.
 
 ## Large-file validation and expansion progression
 

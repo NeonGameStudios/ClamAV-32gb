@@ -746,6 +746,7 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf)
         obj->flags |= 1 << OBJ_TRUNCATED;
         obj->size   = (pdf->map + pdf->size) - obj_end;
         pdf->offset = pdf->size;
+        pdf->stats.ninvalidobjs++;
 
         /* Truncated "object" found! */
         status = CL_SUCCESS;
@@ -4171,8 +4172,10 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     }
 
 done:
-    if (CL_SUCCESS == rc && pdf.stats.ninvalidobjs > 0) {
-        rc = CL_EFORMAT;
+    if (pdf.stats.ninvalidobjs > 0) {
+        cli_mark_scan_incomplete(ctx, "PDF object parsing ended before inspection completed");
+        if (CL_SUCCESS == rc)
+            rc = CL_EFORMAT;
     }
 
     if (parse_error_reason != NULL) {

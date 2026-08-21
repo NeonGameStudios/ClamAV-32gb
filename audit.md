@@ -2243,3 +2243,13 @@ Decoder read failures, including fixed-header fmap callback failures, therefore
 remain errors instead of reaching fmap through wrapped coordinates. Source
 guards record the bridge invariant; compiled
 Linux/Sonic1, sanitizer, and broader CAB/CHM corpus qualification remain open.
+
+## PDF truncated-object admission — 2026-08-21
+
+PDF object discovery already retained a confirmed object when its `endobj`
+terminator was absent, but only exposed that condition in metadata. The
+truncated object now increments invalid-object accounting, and PDF finalization
+marks the layer incomplete/non-cacheable and returns a non-clean format result.
+A focused truncated-object regression and source guards record the invariant;
+compiled Linux/Sonic1, sanitizer, and broader PDF corpus qualification remain
+open.
