@@ -103,6 +103,10 @@
   match arrays, and fmap before indexed pointer formation; a focused malformed
   dispatch regression is covered, while v1/v2 fixture and interpreter/JIT
   qualification remains open.
+- Bytecode loader, interpreter, and VM buffers now use the shared
+  individual-allocation ceiling, and hex-data decoding rejects checked-offset
+  overflow before allocation or input traversal; ABI fixture and runtime
+  qualification remain open.
 - YARA-compatible logical roots now charge one bounded fmap pass to shared
   matcher-work accounting and fail closed when that budget is exhausted; full
   production-rule and large-file qualification remains open.

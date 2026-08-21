@@ -3134,3 +3134,13 @@ route through `cli_max_malloc()` with checked multiplication, so decoder
 internal buffers fail closed at the individual-allocation ceiling. Static
 guards and whitespace validation pass; compiled archive corpus, sanitizer, and
 production qualification remain open.
+
+## Bytecode allocation and hex-data bounds — 2026-08-21
+
+Bytecode loader, interpreter, and VM paths still used raw allocations for
+untrusted line lengths, data literals, type/count tables, and execution state.
+They now use the shared individual-allocation ceiling. The hex-data reader also
+checks `offset` and `2 * length` against the containing line before forming the
+new coordinate. Static guards and whitespace validation pass; independently
+compiled ABI-v2 fixture, interpreter/JIT, sanitizer, and production-signature
+qualification remain open.

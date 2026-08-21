@@ -1881,7 +1881,10 @@ uint32_t cli_bcapi_engine_scan_options_ex(struct cli_bc_ctx *ctx, const uint8_t 
         goto done;
     }
 
-    option_name_l = malloc(name_len + 1);
+    if (name_len == SIZE_MAX)
+        goto done;
+
+    option_name_l = cli_max_malloc(name_len + 1);
     if (NULL == option_name_l) {
         cli_warnmsg("Failed to allocate memory for option name.\n");
         goto done;
