@@ -468,7 +468,7 @@ int client(const struct optstruct *opts, int *infected, int *err)
     }
 
     if (scandash) {
-        int sockd, ret;
+        int sockd, ret, printok = 1;
         STATBUF sb;
         if (FSTAT(0, &sb) < 0) {
             logg(LOGG_INFO, "client.c: fstat failed for file name \"%s\", with %s\n",
@@ -492,7 +492,7 @@ int client(const struct optstruct *opts, int *infected, int *err)
                         logg(LOGG_ERROR, "Can't write structured scan report for stdin\n");
                 } else
                     errors += report_errors;
-            } else if ((ret = dsresult(sockd, scantype, NULL, NULL, false, &ret, NULL, clamdopts)) >= 0) {
+            } else if ((ret = dsresult(sockd, scantype, NULL, NULL, false, &printok, &errors, clamdopts)) >= 0) {
                 *infected = ret;
             } else {
                 errors = 1;

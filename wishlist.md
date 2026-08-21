@@ -192,6 +192,9 @@
 - The public structured report now classifies unsupported decoder and bytecode
   statuses consistently with clamd fallback reports; the library unit test
   covers all three statuses, with compiled execution still required.
+- clamdscan stdin legacy results now keep `dsresult()`'s print status separate
+  from its infection count and propagate daemon `ERROR` replies into the exit
+  status; add compiled stdin/INSTREAM service coverage.
 - Buffer and fmap matcher callers now preserve every matcher error below
   `CL_TYPENO` instead of allowing a later matcher pass to hide resource,
   timeout, callback, or read failures; add matcher fault-injection and

@@ -562,6 +562,29 @@ START_TEST(test_fildes_client_rejects_over_limit)
 END_TEST
 #endif
 #ifndef _WIN32
+START_TEST(test_dsresult_error_updates_error_counter)
+{
+    int sockets[2];
+    int printok = 1;
+    int errors   = 0;
+    int infected;
+    static const char response[] = "input: ERROR";
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    ck_assert_int_eq((int)send(sockets[1], response, sizeof(response), 0), (int)sizeof(response));
+    ck_assert_int_eq(shutdown(sockets[1], SHUT_WR), 0);
+
+    infected = dsresult(sockets[0], CONT, "input", NULL, false, &printok, &errors, NULL);
+
+    ck_assert_int_eq(infected, 0);
+    ck_assert_int_eq(printok, 0);
+    ck_assert_int_eq(errors, 1);
+    close(sockets[0]);
+    close(sockets[1]);
+}
+END_TEST
+#endif
+#ifndef _WIN32
 #define SOCKET "clamd-test.socket"
 static void conn_setup_mayfail(int may)
 {
@@ -1360,6 +1383,9 @@ static Suite *test_clamd_suite(void)
 
     tc_client = tcase_create("clamd client stream accounting");
     suite_add_tcase(s, tc_client);
+#ifndef _WIN32
+    tcase_add_test(tc_client, test_dsresult_error_updates_error_counter);
+#endif
     tcase_add_test(tc_client, test_stream_client_rejects_over_limit);
 #if defined(HAVE_FD_PASSING)
     tcase_add_test(tc_client, test_fildes_client_rejects_over_limit);

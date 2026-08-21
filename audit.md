@@ -2622,3 +2622,13 @@ specific parser reason is available. This prevents the library `_ex2` API from
 disagreeing with clamd fallback reports about an unsupported decoder/runtime
 boundary. A focused library unit test covers all three statuses; compiled
 Linux/Sonic1 and full service qualification remain open.
+
+## clamdscan stdin legacy error propagation — 2026-08-21
+
+The no-`--report-json` stdin path passed the infection-count return variable as
+`dsresult()`'s `printok` output and supplied no error counter. A legacy clamd
+`ERROR` response could therefore leave the outer error count at zero and be
+returned as a clean result. The client now uses a separate print-status value
+and propagates daemon errors into the client result; a socket-level regression
+proves that an `ERROR` response increments the error counter. Compiled
+Linux/Sonic1 and full clamdscan service qualification remain open.
