@@ -53,7 +53,7 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     struct apm_driver_desc_map ddm;
     struct apm_partition_info aptable, apentry;
     bool old_school = false;
-    size_t sectorsize, maplen, partsize;
+    size_t sectorsize, maplen, partsize, described_size;
     size_t pos = 0, partoff = 0;
     unsigned i;
     uint32_t max_prtns = 0;
@@ -86,11 +86,18 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     /* sector size is determined by the ddm */
     sectorsize = ddm.blockSize;
 
-    /* size of total file must be described by the ddm */
+    /* size of total file must be described by the ddm. Promote before
+     * multiplying so a 32-bit field product cannot wrap on a large image. */
     maplen = ctx->fmap->len;
-    if ((ddm.blockSize * ddm.blockCount) != maplen) {
-        cli_dbgmsg("cli_scanapm: File described %u size does not match %lu actual size\n",
-                   (ddm.blockSize * ddm.blockCount), (unsigned long)maplen);
+    if (ddm.blockSize != 0 && ddm.blockCount > SIZE_MAX / ddm.blockSize) {
+        cli_mark_scan_incomplete(ctx, "APM declared image size overflowed");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    described_size = (size_t)ddm.blockSize * ddm.blockCount;
+    if (described_size != maplen) {
+        cli_dbgmsg("cli_scanapm: File described %zu size does not match %lu actual size\n",
+                   described_size, (unsigned long)maplen);
         status = CL_EFORMAT;
         goto done;
     }
@@ -185,7 +192,7 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         apentry.pBlockCount   = be32_to_host(apentry.pBlockCount);
 
         /* check the partition entry signature */
-        if (aptable.signature != APM_SIGNATURE) {
+        if (apentry.signature != APM_SIGNATURE) {
             cli_dbgmsg("cli_scanapm: Apple partition entry signature mismatch\n");
             status = CL_EFORMAT;
             goto done;
@@ -211,14 +218,16 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
                 !strncmp((char *)apentry.type, "Apple_Driver_ATAPI", 32) ||
                 !strncmp((char *)apentry.type, "Apple_Patches", 32)) {
 
-                partsize = apentry.pBlockCount * 2048;
+                partsize = (size_t)apentry.pBlockCount * 2048U;
             }
         }
 
         /* check if invalid partition */
-        if ((partoff == 0) || (partoff + partsize > maplen)) {
+        if ((partoff == 0) || (partoff > maplen) || (partsize > maplen - partoff)) {
             cli_dbgmsg("cli_scanapm: Detected invalid Apple partition entry\n");
-            continue;
+            cli_mark_scan_incomplete(ctx, "APM partition entry is outside the input map");
+            status = CL_EFORMAT;
+            goto done;
         }
 
         /* print debugging info on partition */

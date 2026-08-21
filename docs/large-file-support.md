@@ -3849,6 +3849,16 @@ A focused APM zero-limit regression and source guards cover the APM path;
 compiled GPT/partition corpus, sanitizer, and supported-build Sonic1
 qualification remain open.
 
+## APM partition-entry range validation — 2026-08-20
+
+APM now promotes declared image-size arithmetic to the native fmap width,
+validates each entry signature, and treats an out-of-range partition as an
+incomplete `CL_EFORMAT` result instead of logging it and continuing as clean.
+This prevents malformed APM metadata from silently skipping a nested scan; a
+focused direct-parser regression and source guards cover the boundary. Full
+partition corpus, sanitizer, and supported-build Sonic1 qualification remain
+release gates.
+
 ## UDF file-list completeness — 2026-08-20
 
 UDF no longer scans the smaller of its file-identifier and file-entry lists.
