@@ -2424,6 +2424,16 @@ guard and capability manifest record the invariant; compiled Linux/Sonic1,
 callback/resource fault injection, sanitizer, and broader EGG corpus
 qualification remain open.
 
+## PE broken-executable heuristic result propagation — 2026-08-21
+
+The malformed-PE header path previously retained only `CL_VIRUS` from the
+`Heuristics.Broken.Executable` alert recorder, discarding trusted, callback-break,
+and operational recording results. It now propagates every non-success result
+and marks operational alert-recording failures incomplete before returning. The
+source guard and capability manifest record the invariant; compiled
+Linux/Sonic1, callback/resource fault injection, sanitizer, and broader PE
+corpus qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success

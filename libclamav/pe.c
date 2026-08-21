@@ -3017,8 +3017,12 @@ int cli_scanpe(cli_ctx *ctx)
             ret = CL_EFORMAT;
             if (DETECT_BROKEN_PE) {
                 cl_error_t heuristic_ret = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Executable");
-                if (heuristic_ret == CL_VIRUS)
+                if (heuristic_ret != CL_SUCCESS) {
+                    if (heuristic_ret != CL_VIRUS && heuristic_ret != CL_VERIFIED && heuristic_ret != CL_BREAK) {
+                        cli_mark_scan_incomplete(ctx, "PE broken-executable heuristic alert could not be recorded");
+                    }
                     ret = heuristic_ret;
+                }
             }
             cli_dbgmsg("cli_scanpe: PE header appears broken - won't attempt .mdb / .imp / PE-specific BC rule matching or exe unpacking\n");
             cli_exe_info_destroy(peinfo);

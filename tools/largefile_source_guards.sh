@@ -110,6 +110,8 @@ not_contains libclamav/macho.c 'CL_VIRUS == cli_append_potentially_unwanted(ctx,
 contains unit_tests/check_clamav.c 'test_macho_metadata_read_failure_is_fail_visible'
 contains libclamav/matcher.c 'Executable metadata parsing ended before inspection completed'
 contains unit_tests/check_clamav.c 'test_executable_metadata_targetinfo_failure_is_fail_visible'
+contains libclamav/pe.c 'PE broken-executable heuristic alert could not be recorded'
+not_contains libclamav/pe.c 'if (heuristic_ret == CL_VIRUS)'
 contains libclamav/others.c 'static cl_error_t cli_validate_32g_nonnegative'
 contains libclamav/others.c 'MaxFileSize: negative values are not allowed'
 contains unit_tests/check_clamav.c 'maxfilesize_before ='
