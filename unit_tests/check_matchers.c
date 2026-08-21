@@ -1378,6 +1378,27 @@ START_TEST(test_pcre_full_map_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_scan_fmap_without_generic_root_is_safe)
+{
+    struct cli_matcher *generic_root = ctx.engine->root[0];
+    struct cli_matcher *target_root;
+
+    target_root = (struct cli_matcher *)MPOOL_CALLOC(ctx.engine->mempool, 1, sizeof(struct cli_matcher));
+    ck_assert_ptr_nonnull(target_root);
+    target_root->type                         = TARGET_PE;
+    ctx.engine->root[0]                       = NULL;
+    ctx.engine->root[1]                       = target_root;
+    thefmap.len                               = 0;
+    ctx.fmap                                   = &thefmap;
+    ctx.recursion_stack[ctx.recursion_level].fmap = &thefmap;
+
+    ck_assert_int_eq(cli_scan_fmap(&ctx, CL_TYPE_MSEXE, false, NULL, AC_SCAN_VIR, NULL), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+
+    ctx.engine->root[0] = generic_root;
+}
+END_TEST
+
 START_TEST(test_pcre_matcher_limit_is_preserved_by_fmap)
 {
     static char pcre_signature[] = PCRE_BYPASS "/00/";
@@ -1523,6 +1544,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);
 #endif
     tcase_add_test(tc_matchers, test_pcre_full_map_read_failure_is_fail_visible);
+    tcase_add_test(tc_matchers, test_scan_fmap_without_generic_root_is_safe);
     tcase_add_test(tc_matchers, test_pcre_matcher_limit_is_preserved_by_fmap);
     tcase_add_test(tc_matchers, test_pcre_subject_limit_is_fail_visible);
     return s;

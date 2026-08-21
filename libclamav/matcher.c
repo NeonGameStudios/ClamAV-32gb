@@ -383,21 +383,25 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
         virname = NULL;
     }
 
-    if (!acdata) {
-        // no ac matcher data was provided, so we need to initialize our own.
-        ret = cli_ac_initdata(&matcher_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
-        if (CL_SUCCESS != ret) {
-            return ret;
+    if (generic_ac_root) {
+        if (!acdata) {
+            // no ac matcher data was provided, so we need to initialize our own.
+            ret = cli_ac_initdata(&matcher_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
+            if (CL_SUCCESS != ret) {
+                return ret;
+            }
         }
-    }
 
-    ret = matcher_run(generic_ac_root, buffer, length, &virname,
-                      acdata ? (acdata[1]) : (&matcher_data),
-                      offset, NULL, ftype, NULL, AC_SCAN_VIR, PCRE_SCAN_BUFF, NULL, ctx->fmap, NULL, NULL, ctx);
+        ret = matcher_run(generic_ac_root, buffer, length, &virname,
+                          acdata ? (acdata[1]) : (&matcher_data),
+                          offset, NULL, ftype, NULL, AC_SCAN_VIR, PCRE_SCAN_BUFF, NULL, ctx->fmap, NULL, NULL, ctx);
 
-    if (!acdata) {
-        // no longer need our AC local matcher data (if using)
-        cli_ac_freedata(&matcher_data);
+        if (!acdata) {
+            // no longer need our AC local matcher data (if using)
+            cli_ac_freedata(&matcher_data);
+        }
+    } else {
+        ret = CL_SUCCESS;
     }
 
     return ret;
@@ -1453,25 +1457,27 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         /* If we're not doing a filetype-only scan, so we definitely need to include generic signatures.
            So initialize the ac data for the generic signatures root. */
 
-        ret = cli_ac_initdata(&generic_ac_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
-        if (CL_SUCCESS != ret) {
-            goto done;
-        }
-        gdata_initialized = true;
+        if (generic_ac_root) {
+            ret = cli_ac_initdata(&generic_ac_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
+            if (CL_SUCCESS != ret) {
+                goto done;
+            }
+            gdata_initialized = true;
 
-        /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
-        ret = cli_ac_caloff(generic_ac_root, &generic_ac_data, &info);
-        if (CL_SUCCESS != ret) {
-            goto done;
-        }
+            /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
+            ret = cli_ac_caloff(generic_ac_root, &generic_ac_data, &info);
+            if (CL_SUCCESS != ret) {
+                goto done;
+            }
 
-        /* Recalculate the pcre offsets.
-           This does an allocation, that we will need to free later. */
-        ret = cli_pcre_recaloff(generic_ac_root, &generic_pcre_offsets_table, &info, ctx);
-        if (CL_SUCCESS != ret) {
-            goto done;
+            /* Recalculate the pcre offsets.
+               This does an allocation, that we will need to free later. */
+            ret = cli_pcre_recaloff(generic_ac_root, &generic_pcre_offsets_table, &info, ctx);
+            if (CL_SUCCESS != ret) {
+                goto done;
+            }
+            generic_pcre_offsets_table_initialized = true;
         }
-        generic_pcre_offsets_table_initialized = true;
     }
 
     if (target_ac_root) {
@@ -1587,7 +1593,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             }
         }
 
-        if (!filetype_only) {
+        if (!filetype_only && generic_ac_root) {
             const char *virname = NULL;
 
             ret = matcher_run(generic_ac_root, buff, bytes, &virname, &generic_ac_data, offset,

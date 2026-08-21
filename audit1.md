@@ -2830,3 +2830,12 @@ PCRE and matcher limits are also checked for native-size representability, and
 the PCRE subject participates in the memory-basis calculation. A focused clamd
 regression covers the bypass case. Compiled runtime and Sonic1 resource
 qualification remain release gates.
+
+## Matcher root absence — 2026-08-21
+
+The lower-level buffer and fmap matcher paths now treat an absent generic
+matcher root as an empty root when target-specific signatures are present.
+They no longer initialize or invoke generic matcher state through a null
+pointer, while target-specific matching and logical evaluation remain active.
+A focused fmap regression covers the target-only-root shape. Full database,
+compiled, sanitizer, and production-signature qualification remain open.
