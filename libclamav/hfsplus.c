@@ -604,10 +604,13 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
             cli_dbgmsg("hfsplus_check_attribute: reached end of leaf nodes.\n");
             break;
         }
-        if (nodesScanned++ > nodeLimit) {
+        if (nodesScanned >= nodeLimit) {
             cli_dbgmsg("hfsplus_check_attribute: node scan limit reached.\n");
-            break;
+            cli_mark_scan_incomplete(ctx, "HFS+ attributes tree node scan limit reached");
+            status = CL_EMAXFILES;
+            goto done;
         }
+        nodesScanned++;
 
         /* fetch node into buffer */
         status = hfsplus_fetch_node(ctx, volHeader, attrHeader, NULL, &(volHeader->attributesFile), thisNode, nodeBuf, nodeSize);
@@ -1047,10 +1050,13 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
             cli_dbgmsg("hfsplus_walk_catalog: reached end of leaf nodes.\n");
             goto done;
         }
-        if (nodesScanned++ > nodeLimit) {
+        if (nodesScanned >= nodeLimit) {
             cli_dbgmsg("hfsplus_walk_catalog: node scan limit reached.\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ catalog node scan limit reached");
+            status = CL_EMAXFILES;
             goto done;
         }
+        nodesScanned++;
 
         /* fetch node into buffer */
         status = hfsplus_fetch_node(ctx, volHeader, catHeader, extHeader, &(volHeader->catalogFile), thisNode, nodeBuf, nodeSize);
@@ -1154,8 +1160,16 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                 forkdata_to_host(&(fileRec.resourceFork));
                 forkdata_print("resource fork:", &(fileRec.resourceFork));
 
-                if (hfsplus_check_attribute(ctx, volHeader, attrHeader, fileRec.fileID, COMPRESSED_ATTR, sizeof(COMPRESSED_ATTR), &compressed, attribute, &attributeSize) != CL_SUCCESS) {
-                    cli_dbgmsg("hfsplus_walk_catalog: Failed to check compressed attribute, assuming no compression\n");
+                if (attrHeader != NULL) {
+                    cl_error_t attribute_status = hfsplus_check_attribute(ctx, volHeader, attrHeader, fileRec.fileID,
+                                                                          COMPRESSED_ATTR, sizeof(COMPRESSED_ATTR), &compressed,
+                                                                          attribute, &attributeSize);
+                    if (attribute_status != CL_SUCCESS) {
+                        cli_dbgmsg("hfsplus_walk_catalog: Failed to inspect compressed-file attributes\n");
+                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file attributes could not be inspected");
+                        status = attribute_status;
+                        goto done;
+                    }
                 }
 
                 if (compressed) {

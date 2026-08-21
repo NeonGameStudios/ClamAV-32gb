@@ -4193,3 +4193,17 @@ uses subtraction-based range checks and checked native arithmetic. A sparse
 64-bit section regression covers the preservation and legacy-boundary behavior;
 full Mach-O, bytecode, sanitizer, and supported-build Sonic1 qualification
 remain release gates.
+
+## HFS+ compressed-attribute lookup completeness — 2026-08-20
+
+When an HFS+ volume declares an attributes B-tree, failure to inspect that
+tree can hide `decmpfs` metadata needed to recover a compressed file. The
+catalog walker now preserves that parser error and marks the layer incomplete
+instead of assuming that the file is uncompressed. A genuinely empty,
+undeclared attributes fork remains the supported “no attributes tree” case.
+The bounded catalog and attributes-tree node caps also return explicit
+`CL_EMAXFILES` incomplete results when a valid chain does not terminate within
+the cap.
+The focused malformed-attribute-tree regression is registered in
+`check_clamav`; full HFS+ corpus, sanitizer, and supported-build Sonic1
+qualification remain release gates.

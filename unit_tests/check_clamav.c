@@ -12120,6 +12120,32 @@ static void test_hfsplus_tree_header(uint8_t *data, size_t offset, uint16_t node
     test_hfsplus_put_be32(record + offsetof(hfsHeaderRecord, totalNodes), 1);
 }
 
+static void test_hfsplus_catalog_file_leaf(uint8_t *data, size_t offset)
+{
+    size_t record_offset = offset + sizeof(hfsNodeDescriptor);
+    size_t file_offset   = record_offset + 6 + 2;
+
+    memset(data + offset, 0, 4096);
+    data[offset + offsetof(hfsNodeDescriptor, kind)]   = HFS_NODEKIND_LEAF;
+    data[offset + offsetof(hfsNodeDescriptor, height)] = 1;
+    test_hfsplus_put_be16(data + offset + offsetof(hfsNodeDescriptor, numRecords), 1);
+    test_hfsplus_put_be16(data + record_offset, 6);
+    test_hfsplus_put_be16(data + file_offset + offsetof(hfsPlusCatalogFile, recordType), HFSPLUS_RECTYPE_FILE);
+    test_hfsplus_put_be32(data + file_offset + offsetof(hfsPlusCatalogFile, fileID), hfsFirstUserCatalogNodeID);
+    test_hfsplus_put_be16(data + file_offset + offsetof(hfsPlusCatalogFile, permissions) + offsetof(hfsPlusBSDInfo, fileMode), HFS_MODE_FILE);
+    test_hfsplus_put_be16(data + offset + 4096 - 2, (uint16_t)(record_offset - offset));
+}
+
+static void test_hfsplus_invalid_leaf(uint8_t *data, size_t offset)
+{
+    memset(data + offset, 0, 4096);
+    data[offset + offsetof(hfsNodeDescriptor, kind)]   = HFS_NODEKIND_LEAF;
+    data[offset + offsetof(hfsNodeDescriptor, height)] = 1;
+    test_hfsplus_put_be16(data + offset + offsetof(hfsNodeDescriptor, numRecords), 1);
+    /* A zero record offset is before the node descriptor and must fail. */
+    test_hfsplus_put_be16(data + offset + 4096 - 2, 0);
+}
+
 START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
 {
     uint8_t data[1024 + (32 * 512)];
@@ -12169,6 +12195,69 @@ START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_hfsplus_attribute_tree_failure_is_fail_visible)
+{
+    uint8_t data[1024 + (40 * 512)];
+    uint8_t *volume;
+    uint8_t *fork;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    volume = data + 1024;
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, signature), 0x482b);
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, version), 4);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, blockSize), 512);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, totalBlocks), 40);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, extentsFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 4);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, catalogFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 8192);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 16);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 16);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, attributesFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 8192);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 16);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 24);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 16);
+
+    test_hfsplus_tree_header(data, 4 * 512, 512, 10);
+    test_hfsplus_tree_header(data, 8 * 512, 4096, 6);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, firstLeafNode), 1);
+    test_hfsplus_put_be32(data + (8 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, totalNodes), 2);
+    test_hfsplus_tree_header(data, 24 * 512, 4096, 0);
+    test_hfsplus_put_be32(data + (24 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, firstLeafNode), 1);
+    test_hfsplus_put_be32(data + (24 * 512) + sizeof(hfsNodeDescriptor) + offsetof(hfsHeaderRecord, totalNodes), 2);
+    test_hfsplus_catalog_file_leaf(data, 16 * 512);
+    test_hfsplus_invalid_leaf(data, 32 * 512);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ compressed-file attributes could not be inspected");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -12937,6 +13026,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
     tcase_add_test(tc_cl, test_udf_allocation_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_hfsplus_attribute_tree_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_catalog_size_accounting_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
