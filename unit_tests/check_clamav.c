@@ -11960,6 +11960,64 @@ START_TEST(test_tiff_truncated_structures_are_fail_visible)
 }
 END_TEST
 
+#if SIZE_MAX > UINT32_MAX
+struct tiff_large_cursor_state {
+    size_t length;
+    size_t max_offset;
+    unsigned int header_reads;
+};
+
+static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    static const uint8_t prefix[] = {
+        'I', 'I', 0x2a, 0x00,
+        0xfe, 0xff, 0xff, 0xff,
+    };
+    struct tiff_large_cursor_state *state = handle;
+    size_t copy_length;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+
+    if ((size_t)offset > state->max_offset)
+        state->max_offset = (size_t)offset;
+
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+    memset(buf, 0, count);
+
+    if ((offset == 0 && state->header_reads++ == 0) ||
+        (offset > 0 && (size_t)offset < sizeof(prefix))) {
+        copy_length = MIN(count, sizeof(prefix) - (size_t)offset);
+        memcpy(buf, prefix + (size_t)offset, copy_length);
+    }
+
+    return (off_t)count;
+}
+
+START_TEST(test_tiff_ifd_cursor_does_not_wrap_above_uint32)
+{
+    struct tiff_large_cursor_state state;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&state, 0, sizeof(state));
+    state.length = (size_t)UINT32_MAX + 8U;
+    memset(&ctx, 0, sizeof(ctx));
+
+    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_parsetiff(&ctx), CL_CLEAN);
+    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
+                  "TIFF IFD cursor wrapped below the 4 GiB boundary");
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_jpeg_truncated_structures_are_fail_visible)
 {
     static const uint8_t truncated_header[] = {
@@ -12354,6 +12412,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
     tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_tiff, test_tiff_ifd_cursor_does_not_wrap_above_uint32);
+#endif
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);
     tcase_add_test(tc_cl, test_text_normalize_map_read_failure_is_fail_visible);

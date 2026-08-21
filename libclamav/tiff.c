@@ -55,11 +55,12 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     fmap_t *map = NULL;
     unsigned char magic[4];
     int big_endian;
-    uint32_t offset = 0, ifd_count = 0;
+    size_t offset = 0;
+    uint32_t ifd_count = 0, offset32 = 0, next_offset32 = 0;
     uint16_t i, num_entries;
     struct tiff_ifd entry;
     size_t value_size;
-    uint32_t last_offset = 0;
+    size_t last_offset = 0;
 
     cli_dbgmsg("in cli_parsetiff()\n");
 
@@ -89,15 +90,15 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     cli_dbgmsg("cli_parsetiff: %s-endian tiff file\n", big_endian ? "big" : "little");
 
     /* acquire offset of first IFD */
-    if (fmap_readn(map, &offset, offset, 4) != 4) {
+    if (fmap_readn(map, &offset32, offset, 4) != 4) {
         cli_dbgmsg("cli_parsetiff: Failed to acquire offset of first IFD, file appears to be truncated.\n");
         status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingFirstIFDOffset");
         goto done;
     }
     /* offset of the first IFD */
-    offset = tiff32_to_host(big_endian, offset);
+    offset = (size_t)tiff32_to_host(big_endian, offset32);
 
-    cli_dbgmsg("cli_parsetiff: first IFD located @ offset %u\n", offset);
+    cli_dbgmsg("cli_parsetiff: first IFD located @ offset %zu\n", offset);
 
     if (!offset) {
         cli_errmsg("cli_parsetiff: Invalid offset for first IFD\n");
@@ -195,12 +196,12 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
         last_offset = offset;
 
         /* acquire next IFD location, gets 0 if last IFD */
-        if (fmap_readn(map, &offset, offset, sizeof(offset)) != sizeof(offset)) {
+        if (fmap_readn(map, &next_offset32, offset, sizeof(next_offset32)) != sizeof(next_offset32)) {
             cli_dbgmsg("cli_parsetiff: Failed to acquire next IFD location, file appears to be truncated.\n");
             status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingChunkCRC");
             goto done;
         }
-        offset = tiff32_to_host(big_endian, offset);
+        offset = (size_t)tiff32_to_host(big_endian, next_offset32);
 
         if (offset) {
             /*If the offsets are not in order, that is suspicious.*/

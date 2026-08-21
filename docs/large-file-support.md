@@ -2724,6 +2724,15 @@ containing scan incomplete rather than allowing a truncated or wrapped prefix
 to be treated as complete. The focused decoder paths now retain native-width
 output accounting until this explicit boundary check.
 
+## TIFF IFD cursor width — 2026-08-20
+
+Classic TIFF on-disk offsets remain 32-bit, but the parser's working IFD
+cursor is now `size_t`. Advancing a malformed IFD located near `UINT32_MAX`
+therefore cannot wrap back to the beginning of a larger map. The focused
+regression uses a sparse logical map above 4 GiB and records the post-IFD
+read coordinate; TIFF parser-family and complete corpus qualification remain
+open.
+
 ## Script normalization matcher boundary — 2026-08-19
 
 Normalized script output above 4 GiB cannot be passed to the legacy 32-bit

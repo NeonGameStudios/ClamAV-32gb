@@ -141,7 +141,7 @@ parser	CL_TYPE_TEXT_ASCII	pending	libclamav/scanners.c	dispatch branch requires 
 parser	CL_TYPE_TEXT_UTF16BE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_TEXT_UTF16LE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_TEXT_UTF8	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_TIFF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_TIFF	pending	libclamav/scanners.c	native-width IFD cursor prevents >4 GiB working-offset wrap; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_TNEF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_UDF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_UUENCODED	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
