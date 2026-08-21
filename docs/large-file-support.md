@@ -4005,6 +4005,16 @@ logical-signature regression covers the fail-visible path. Full logical
 expression, mixed ABI, production-signature, and supported-build qualification
 remain release gates.
 
+## ISO9660 checked block coordinates — 2026-08-20
+
+ISO9660 block reads now validate the fmap base window before subtraction, use
+64-bit logical and absolute offsets, and reject impossible block-size/range
+arithmetic before passing a coordinate to fmap. Directory-record block plus
+extended-attribute additions are checked against the 32-bit ISO coordinate
+field and mark the layer incomplete on overflow. Existing truncated-directory
+and unsupported-layout regressions remain applicable; full ISO corpus,
+sanitizer, and supported-build qualification remain release gates.
+
 ## clamscan directory and symlink report completion — 2026-08-20
 
 The clamscan walker now emits bounded non-clean fallback rows when an explicit

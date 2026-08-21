@@ -48,16 +48,41 @@ static cl_error_t iso_incomplete(cli_ctx *ctx, const char *reason)
 
 static const void *needblock(const iso9660_t *iso, unsigned int block, int temp)
 {
-    cli_ctx *ctx = iso->ctx;
-    size_t loff;
-    unsigned int blocks_per_sect = (2048 / iso->blocksz);
-    if (block >= ((ctx->fmap->len - iso->base_offset) / iso->sectsz) * blocks_per_sect)
+    cli_ctx *ctx;
+    uint64_t available;
+    uint64_t logical_offset;
+    uint64_t block_offset;
+    uint64_t absolute_offset;
+    unsigned int blocks_per_sect;
+
+    if (!iso || !iso->ctx || !iso->ctx->fmap || !iso->sectsz || !iso->blocksz ||
+        iso->blocksz > iso->sectsz)
+        return NULL;
+
+    ctx = iso->ctx;
+    if (iso->base_offset > ctx->fmap->len)
+        return NULL;
+
+    available       = (uint64_t)(ctx->fmap->len - iso->base_offset);
+    blocks_per_sect = 2048 / iso->blocksz;
+    if (!blocks_per_sect || (uint64_t)block >= (available / iso->sectsz) * blocks_per_sect)
         return NULL;                                  /* Block is out of file */
-    loff = (block / blocks_per_sect) * iso->sectsz;   /* logical sector */
-    loff += (block % blocks_per_sect) * iso->blocksz; /* logical block within the sector */
+
+    logical_offset = (uint64_t)(block / blocks_per_sect) * iso->sectsz;   /* logical sector */
+    block_offset   = (uint64_t)(block % blocks_per_sect) * iso->blocksz; /* logical block within the sector */
+    if (logical_offset > UINT64_MAX - block_offset)
+        return NULL;
+    logical_offset += block_offset;
+    if (logical_offset > available || (uint64_t)iso->blocksz > available - logical_offset)
+        return NULL;
+
+    absolute_offset = (uint64_t)iso->base_offset + logical_offset;
+    if (absolute_offset > SIZE_MAX)
+        return NULL;
+
     if (temp)
-        return fmap_need_off_once(ctx->fmap, iso->base_offset + loff, iso->blocksz);
-    return fmap_need_off(ctx->fmap, iso->base_offset + loff, iso->blocksz);
+        return fmap_need_off_once(ctx->fmap, (size_t)absolute_offset, iso->blocksz);
+    return fmap_need_off(ctx->fmap, (size_t)absolute_offset, iso->blocksz);
 }
 
 static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsigned int len)
@@ -218,8 +243,14 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
                 *sep = '\0';
             else
                 iso->buf[filesz] = '\0';
-            fileoff = cli_readint32(dir + 2);
-            fileoff += dir[1];
+            {
+                uint64_t fileoff64 = (uint64_t)cli_readint32(dir + 2) + dir[1];
+                if (fileoff64 > UINT32_MAX) {
+                    ret = iso_incomplete(ctx, "ISO directory block coordinate overflowed");
+                    break;
+                }
+                fileoff = (unsigned int)fileoff64;
+            }
             filesz = cli_readint32(dir + 10);
 
             cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);

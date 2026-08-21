@@ -29,6 +29,13 @@ and returns `CL_EPARSE`; the malformed logical-signature regression covers this
 fail-visible path. Full logical-expression, mixed-ABI, production-signature,
 and supported-build qualification remain open.
 
+**ISO9660 block-coordinate arithmetic.** The ISO block reader now validates
+its fmap base window, computes logical/absolute offsets in 64-bit arithmetic,
+and rejects directory-record block-coordinate overflow before reading. The
+existing truncated-directory and unsupported-layout regressions continue to
+cover the fail-visible reader path; full ISO corpus, sanitizer, and
+supported-build qualification remain open.
+
 ## Verdict
 
 The conservative headline in audit.md — production release remains blocked — is correct. Many of its narrower raw-matcher, cache-width, fmap-aging, exact-boundary, and limit-propagation findings are also supported by the current source.
