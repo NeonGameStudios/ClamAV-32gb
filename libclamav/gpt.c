@@ -357,10 +357,14 @@ static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_
             cli_dbgmsg("cli_scangpt: GPT partition exists outside specified bounds\n");
             gpt_parsemsg("%llu < %llu, %llu > %llu\n", gpe.firstLBA, hdr.firstUsableLBA,
                          gpe.lastLBA, hdr.lastUsableLBA);
-            /* partition exists outside bounds specified by header or invalid */
+            cli_mark_scan_incomplete(ctx, "GPT partition entry is outside the usable range");
+            status = CL_EFORMAT;
+            goto done;
         } else if (gpe.lastLBA == UINT64_MAX ||
                    gpe.lastLBA + 1 > (uint64_t)maplen / sectorsize) {
-            /* partition exists outside bounds of the file map */
+            cli_mark_scan_incomplete(ctx, "GPT partition entry is outside the input map");
+            status = CL_EFORMAT;
+            goto done;
         } else {
             namestr = (char *)cli_utf16toascii((char *)gpe.name, 72);
             // It's okay if namestr is NULL.

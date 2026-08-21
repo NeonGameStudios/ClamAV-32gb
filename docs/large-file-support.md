@@ -3859,6 +3859,15 @@ focused direct-parser regression and source guards cover the boundary. Full
 partition corpus, sanitizer, and supported-build Sonic1 qualification remain
 release gates.
 
+## GPT partition-entry range validation — 2026-08-20
+
+GPT now treats a non-empty partition outside the header-defined usable range
+or the input fmap as an incomplete `CL_EFORMAT` result instead of skipping the
+entry and continuing as clean. A CRC-valid synthetic GPT regression exercises
+the public scanner path, with source guards covering both boundaries. Full
+partition corpus, sanitizer, and supported-build Sonic1 qualification remain
+release gates.
+
 ## UDF file-list completeness — 2026-08-20
 
 UDF no longer scans the smaller of its file-identifier and file-entry lists.
