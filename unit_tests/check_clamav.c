@@ -13781,12 +13781,44 @@ START_TEST(test_macho_metadata_read_failure_is_fail_visible)
     ctx.fmap = map;
 
     ret = cli_machoheader(&ctx, &info);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O metadata parsing ended before inspection completed");
     ck_assert(map->dont_cache_flag);
 
     cli_exe_info_destroy(&info);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_macho_scan_load_command_read_failure_is_fail_visible)
+{
+    uint8_t data[32 + 8] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    macho_test_write_u32(data + 0, 0xfeedfacfU);
+    macho_test_write_u32(data + 4, 0x01000007U); /* CPU_TYPE_X86_64. */
+    macho_test_write_u32(data + 12, 2U);         /* MH_EXECUTE. */
+    macho_test_write_u32(data + 16, 1U);         /* one load command. */
+    macho_test_write_u32(data + 20, 8U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = macho_load_command_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho(&ctx, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O load command could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
     cl_fmap_close(map);
 }
 END_TEST
@@ -15520,6 +15552,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_metadata_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_scan_load_command_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_native_metadata_preserves_64bit_sections);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_macho_unibin_member_range_is_fail_visible);

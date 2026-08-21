@@ -2249,13 +2249,16 @@ sanitizer, and broader ELF corpus qualification remain open.
 
 ## Mach-O metadata read failure — 2026-08-21
 
-Metadata-only Mach-O parsing, used to calculate executable-relative signature
-coordinates, now marks any required header, load-command, section, or thread
-state failure incomplete before returning the parser error. This prevents raw
-signature analysis from continuing with skipped executable metadata while
-leaving the existing raw matcher behavior intact. A focused load-command fmap
-fault-injection regression, source guard, and capability-manifest entry record
-the invariant. Compiled Linux/Sonic1, sanitizer, and broader Mach-O corpus
+Mach-O metadata parsing, used to calculate executable-relative signature
+coordinates, now distinguishes in-range fmap callback failures from genuinely
+short input for required headers, load commands, sections, and thread state.
+Callback failures return `CL_EREAD` and mark the scan incomplete; short input
+retains the existing `CL_EPARSE` path. This prevents raw signature analysis
+from continuing with skipped executable metadata while leaving the existing
+raw matcher behavior intact. Universal-binary header and architecture-table
+reads follow the same distinction. Focused load-command fault-injection
+regressions, source guards, and capability-manifest entries record the
+invariant. Compiled Linux/Sonic1, sanitizer, and broader Mach-O corpus
 qualification remain open.
 
 ## Executable target-metadata failure — 2026-08-21

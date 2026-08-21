@@ -168,6 +168,25 @@ struct macho_fat_arch {
     uint32_t align;
 };
 
+static size_t cli_macho_readn(fmap_t *map, uint64_t at, void *dst, size_t len)
+{
+    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
+     * beyond the map. Preserve an impossible Mach-O coordinate as short
+     * input; only an in-range callback failure is an operational read error. */
+    if (at > (uint64_t)map->len)
+        return 0;
+    return fmap_readn(map, dst, (size_t)at, len);
+}
+
+static cl_error_t cli_macho_read_status(size_t bytes_read, size_t expected)
+{
+    if (bytes_read == expected)
+        return CL_SUCCESS;
+    if (bytes_read == (size_t)-1)
+        return CL_EREAD;
+    return CL_BREAK;
+}
+
 static cl_error_t cli_macho_broken_result(cli_ctx *ctx, cl_error_t fallback, const char *incomplete_reason)
 {
     cl_error_t ret;
@@ -248,7 +267,8 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     struct cli_exe_section64 *sections64 = NULL;
     char name[16];
     fmap_t *map = ctx->fmap;
-    ssize_t at;
+    uint64_t at;
+    cl_error_t read_status;
 
     if (fileinfo) {
         get_fileinfo = true;
@@ -260,8 +280,14 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
         }
     }
 
-    if (fmap_readn(map, &hdr, 0, sizeof(hdr)) != sizeof(hdr)) {
+    read_status = cli_macho_read_status(cli_macho_readn(map, 0, &hdr, sizeof(hdr)), sizeof(hdr));
+    if (read_status != CL_SUCCESS) {
         cli_dbgmsg("cli_scanmacho: Can't read header\n");
+        if (read_status == CL_EREAD) {
+            if (!get_fileinfo)
+                cli_mark_scan_incomplete(ctx, "Mach-O header could not be read completely");
+            return CL_EREAD;
+        }
         if (!get_fileinfo)
             cli_mark_scan_incomplete(ctx, "Mach-O header parsing ended before inspection completed");
         return get_fileinfo ? CL_EFORMAT : CL_EPARSE;
@@ -368,10 +394,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     }
 
     for (i = 0; i < hdr.ncmds; i++) {
-        if (fmap_readn(map, &load_cmd, at, sizeof(load_cmd)) != sizeof(load_cmd)) {
+        read_status = cli_macho_read_status(cli_macho_readn(map, at, &load_cmd, sizeof(load_cmd)), sizeof(load_cmd));
+        if (read_status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanmacho: Can't read load command\n");
             free(sections);
             free(sections64);
+            if (read_status == CL_EREAD) {
+                if (!get_fileinfo)
+                    cli_mark_scan_incomplete(ctx, "Mach-O load command could not be read completely");
+                return CL_EREAD;
+            }
             RETURN_MACHO_BROKEN;
         }
         at += sizeof(load_cmd);
@@ -385,10 +417,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
         load_cmd.cmd = EC32(load_cmd.cmd, conv);
         if ((m64 && load_cmd.cmd == 0x19) || (!m64 && load_cmd.cmd == 0x01)) { /* LC_SEGMENT */
             if (m64) {
-                if (fmap_readn(map, &segment_cmd64, at, sizeof(segment_cmd64)) != sizeof(segment_cmd64)) {
+                read_status = cli_macho_read_status(cli_macho_readn(map, at, &segment_cmd64, sizeof(segment_cmd64)), sizeof(segment_cmd64));
+                if (read_status != CL_SUCCESS) {
                     cli_dbgmsg("cli_scanmacho: Can't read segment command\n");
                     free(sections);
                     free(sections64);
+                    if (read_status == CL_EREAD) {
+                        if (!get_fileinfo)
+                            cli_mark_scan_incomplete(ctx, "Mach-O 64-bit segment command could not be read completely");
+                        return CL_EREAD;
+                    }
                     RETURN_MACHO_BROKEN;
                 }
                 at += sizeof(segment_cmd64);
@@ -396,10 +434,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 strncpy(name, segment_cmd64.segname, sizeof(name));
                 name[sizeof(name) - 1] = '\0';
             } else {
-                if (fmap_readn(map, &segment_cmd, at, sizeof(segment_cmd)) != sizeof(segment_cmd)) {
+                read_status = cli_macho_read_status(cli_macho_readn(map, at, &segment_cmd, sizeof(segment_cmd)), sizeof(segment_cmd));
+                if (read_status != CL_SUCCESS) {
                     cli_dbgmsg("cli_scanmacho: Can't read segment command\n");
                     free(sections);
                     free(sections64);
+                    if (read_status == CL_EREAD) {
+                        if (!get_fileinfo)
+                            cli_mark_scan_incomplete(ctx, "Mach-O segment command could not be read completely");
+                        return CL_EREAD;
+                    }
                     RETURN_MACHO_BROKEN;
                 }
                 at += sizeof(segment_cmd);
@@ -440,10 +484,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 
             for (j = 0; j < nsects; j++) {
                 if (m64) {
-                    if (fmap_readn(map, &section64, at, sizeof(section64)) != sizeof(section64)) {
+                    read_status = cli_macho_read_status(cli_macho_readn(map, at, &section64, sizeof(section64)), sizeof(section64));
+                    if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read section\n");
                         free(sections);
                         free(sections64);
+                        if (read_status == CL_EREAD) {
+                            if (!get_fileinfo)
+                                cli_mark_scan_incomplete(ctx, "Mach-O 64-bit section could not be read completely");
+                            return CL_EREAD;
+                        }
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(section64);
@@ -485,10 +535,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     strncpy(name, section64.sectname, sizeof(name));
                     name[sizeof(name) - 1] = '\0';
                 } else {
-                    if (fmap_readn(map, &section, at, sizeof(section)) != sizeof(section)) {
+                    read_status = cli_macho_read_status(cli_macho_readn(map, at, &section, sizeof(section)), sizeof(section));
+                    if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read section\n");
                         free(sections);
                         free(sections64);
+                        if (read_status == CL_EREAD) {
+                            if (!get_fileinfo)
+                                cli_mark_scan_incomplete(ctx, "Mach-O section could not be read completely");
+                            return CL_EREAD;
+                        }
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(section);
@@ -527,10 +583,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 {
                     struct macho_thread_state_x86 thread_state_x86;
 
-                    if (fmap_readn(map, &thread_state_x86, at, sizeof(thread_state_x86)) != sizeof(thread_state_x86)) {
+                    read_status = cli_macho_read_status(cli_macho_readn(map, at, &thread_state_x86, sizeof(thread_state_x86)), sizeof(thread_state_x86));
+                    if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_x86\n");
                         free(sections);
                         free(sections64);
+                        if (read_status == CL_EREAD) {
+                            if (!get_fileinfo)
+                                cli_mark_scan_incomplete(ctx, "Mach-O x86 thread state could not be read completely");
+                            return CL_EREAD;
+                        }
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(thread_state_x86);
@@ -541,10 +603,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 {
                     struct macho_thread_state_ppc thread_state_ppc;
 
-                    if (fmap_readn(map, &thread_state_ppc, at, sizeof(thread_state_ppc)) != sizeof(thread_state_ppc)) {
+                    read_status = cli_macho_read_status(cli_macho_readn(map, at, &thread_state_ppc, sizeof(thread_state_ppc)), sizeof(thread_state_ppc));
+                    if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_ppc\n");
                         free(sections);
                         free(sections64);
+                        if (read_status == CL_EREAD) {
+                            if (!get_fileinfo)
+                                cli_mark_scan_incomplete(ctx, "Mach-O PPC thread state could not be read completely");
+                            return CL_EREAD;
+                        }
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(thread_state_ppc);
@@ -556,10 +624,16 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 {
                     struct macho_thread_state_ppc64 thread_state_ppc64;
 
-                    if (fmap_readn(map, &thread_state_ppc64, at, sizeof(thread_state_ppc64)) != sizeof(thread_state_ppc64)) {
+                    read_status = cli_macho_read_status(cli_macho_readn(map, at, &thread_state_ppc64, sizeof(thread_state_ppc64)), sizeof(thread_state_ppc64));
+                    if (read_status != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_ppc64\n");
                         free(sections);
                         free(sections64);
+                        if (read_status == CL_EREAD) {
+                            if (!get_fileinfo)
+                                cli_mark_scan_incomplete(ctx, "Mach-O PPC64 thread state could not be read completely");
+                            return CL_EREAD;
+                        }
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(thread_state_ppc64);
@@ -644,11 +718,17 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     struct macho_fat_arch fat_arch;
     unsigned int conv, i;
     cl_error_t ret = CL_SUCCESS;
+    cl_error_t read_status;
     fmap_t *map    = ctx->fmap;
-    ssize_t at;
+    uint64_t at;
 
-    if (fmap_readn(map, &fat_header, 0, sizeof(fat_header)) != sizeof(fat_header)) {
+    read_status = cli_macho_read_status(cli_macho_readn(map, 0, &fat_header, sizeof(fat_header)), sizeof(fat_header));
+    if (read_status != CL_SUCCESS) {
         cli_dbgmsg("cli_scanmacho_unibin: Can't read fat_header\n");
+        if (read_status == CL_EREAD) {
+            cli_mark_scan_incomplete(ctx, "Mach-O universal-binary header could not be read completely");
+            return CL_EREAD;
+        }
         cli_mark_scan_incomplete(ctx, "Mach-O universal-binary header parsing ended before inspection completed");
         return CL_EPARSE;
     }
@@ -677,8 +757,13 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     for (i = 0; i < fat_header.nfats; i++) {
         uint64_t member_end;
 
-        if (fmap_readn(map, &fat_arch, at, sizeof(fat_arch)) != sizeof(fat_arch)) {
+        read_status = cli_macho_read_status(cli_macho_readn(map, at, &fat_arch, sizeof(fat_arch)), sizeof(fat_arch));
+        if (read_status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanmacho_unibin: Can't read fat_arch\n");
+            if (read_status == CL_EREAD) {
+                cli_mark_scan_incomplete(ctx, "Mach-O universal-binary architecture header could not be read completely");
+                return CL_EREAD;
+            }
             RETURN_BROKEN;
         }
         at += sizeof(fat_arch);
