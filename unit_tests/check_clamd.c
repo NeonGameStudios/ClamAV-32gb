@@ -385,6 +385,24 @@ START_TEST(test_largefile_admission_accepts_historical_defaults)
 }
 END_TEST
 
+START_TEST(test_largefile_admission_does_not_bypass_large_limits)
+{
+    struct cl_engine *engine = cl_engine_new();
+    char reason[256];
+
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, (long long)CLI_MAX_LARGE_FILESIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, (long long)CLI_MAX_LOGICAL_SCAN_SIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, (long long)CLI_MAX_TEMPORARY_SIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, (long long)CLI_MAX_CONTIGUOUS_SIZE), CL_SUCCESS);
+
+    memset(reason, 0, sizeof(reason));
+    ck_assert_int_eq(clamd_largefile_admission_check(engine, "/path/that/does/not/exist", reason, sizeof(reason)), 0);
+    ck_assert(reason[0] != '\0');
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_largefile_admission_rejects_unbounded_logical_budget)
 {
     struct cl_engine *engine = cl_engine_new();
@@ -1317,6 +1335,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
     tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
     tcase_add_test(tc_parser, test_largefile_admission_accepts_historical_defaults);
+    tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_limits);
     tcase_add_test(tc_parser, test_largefile_admission_rejects_unbounded_logical_budget);
 #ifndef _WIN32
     TCase *tc_client;

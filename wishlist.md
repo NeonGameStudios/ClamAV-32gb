@@ -113,6 +113,9 @@
 - The service gate now directly exercises `SCANREPORT` through a Unix-socket
   length-prefixed protocol probe and validates its report against the fixture
   oracle; full release qualification remains open.
+- clamd large-file startup admission now compares against fixed historical
+  100 MiB/400 MiB bypass thresholds, so enabling the 32/64 GiB defaults cannot
+  skip the Linux x86-64 memory and temporary-space checks.
 - ARJ header admission now validates the starting offset before subtraction-form
   range checks; parser-family and production-corpus qualification remain open.
 - HTML normalized no-comment, no-tags, and JavaScript output open failures now

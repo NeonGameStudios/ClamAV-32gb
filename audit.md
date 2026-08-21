@@ -2577,3 +2577,15 @@ incomplete/non-cacheable, and stops before hash-signature lookup. The source
 guard and capability manifest record the invariant; compiled Linux/Sonic1,
 fault injection, sanitizer, and production signature-corpus qualification
 remain open.
+
+## clamd large-file admission threshold correction — 2026-08-21
+
+The daemon admission check used `CLI_DEFAULT_MAXFILESIZE` and
+`CLI_DEFAULT_MAXSCANSIZE` as the thresholds for its historical, low-resource
+startup bypass. When the gated 32/64 GiB defaults were enabled, those values
+became the large-file defaults themselves, so clamd could skip the required
+Linux x86-64 platform, effective-memory, and temporary-space checks. The
+bypass now uses fixed historical 100 MiB/400 MiB thresholds, and a focused
+regression proves that a 32/64 GiB configuration is admitted to the checks and
+cannot succeed with an invalid temporary directory. Full supported-Linux
+startup, workload, sanitizer, and resource qualification remain open.

@@ -28,6 +28,8 @@
 #endif
 
 #define LARGEFILE_GIB (1024ULL * 1024ULL * 1024ULL)
+#define LARGEFILE_LEGACY_MAX_FILE_SIZE (100ULL * 1024ULL * 1024ULL)
+#define LARGEFILE_LEGACY_MAX_SCAN_SIZE (400ULL * 1024ULL * 1024ULL)
 #define LARGEFILE_MIN_AVAILABLE (48ULL * LARGEFILE_GIB)
 #define LARGEFILE_MIN_TEMPORARY (68ULL * LARGEFILE_GIB)
 #define LARGEFILE_MEMORY_HEADROOM (16ULL * LARGEFILE_GIB)
@@ -313,8 +315,8 @@ int clamd_largefile_admission_check(
     uint64_t free_temporary;
     uint64_t memory_basis;
     uint64_t temporary_basis;
-    const uint64_t legacy_file_size = (uint64_t)CLI_DEFAULT_MAXFILESIZE;
-    const uint64_t legacy_scan_size = (uint64_t)CLI_DEFAULT_MAXSCANSIZE;
+    const uint64_t legacy_file_size = LARGEFILE_LEGACY_MAX_FILE_SIZE;
+    const uint64_t legacy_scan_size = LARGEFILE_LEGACY_MAX_SCAN_SIZE;
 
     if (NULL != reason && reason_size > 0)
         reason[0] = '\0';
