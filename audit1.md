@@ -2820,3 +2820,13 @@ remain release gates.
 The recognition-only matcher mode also suppresses hash and logical-signature
 evaluation; only AC file-type signatures run in that pass, so SDB-enabled scans
 do not duplicate detector work or alerts.
+
+## PCRE admission coverage — 2026-08-21
+
+The clamd startup gate now reads `PCREMaxFileSize` and `MaxMatcherWork` as part
+of the engine limit set. A large PCRE contiguous-subject request can no longer
+take the historical file/logical default fast path without host admission;
+PCRE and matcher limits are also checked for native-size representability, and
+the PCRE subject participates in the memory-basis calculation. A focused clamd
+regression covers the bypass case. Compiled runtime and Sonic1 resource
+qualification remain release gates.

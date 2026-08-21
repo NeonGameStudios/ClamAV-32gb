@@ -307,8 +307,10 @@ int clamd_largefile_admission_check(
 {
     uint64_t max_file_size;
     uint64_t max_scan_size;
+    uint64_t max_matcher_work;
     uint64_t max_temporary_size;
     uint64_t max_contiguous_size;
+    uint64_t pcre_max_file_size;
     uint64_t required_memory;
     uint64_t required_temporary;
     uint64_t available_memory;
@@ -323,8 +325,10 @@ int clamd_largefile_admission_check(
 
     if (!engine_u64(engine, CL_ENGINE_MAX_FILESIZE, &max_file_size) ||
         !engine_u64(engine, CL_ENGINE_MAX_SCANSIZE, &max_scan_size) ||
+        !engine_u64(engine, CL_ENGINE_MAX_MATCHER_WORK, &max_matcher_work) ||
         !engine_u64(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, &max_temporary_size) ||
-        !engine_u64(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, &max_contiguous_size)) {
+        !engine_u64(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, &max_contiguous_size) ||
+        !engine_u64(engine, CL_ENGINE_PCRE_MAX_FILESIZE, &pcre_max_file_size)) {
         set_reason(reason, reason_size, "large-file engine limits could not be read");
         return 0;
     }
@@ -337,7 +341,8 @@ int clamd_largefile_admission_check(
     /* Ordinary ClamAV configurations retain their historical startup path.
      * The admission contract applies when a caller actually enables the
      * large-file scan envelope. */
-    if (max_file_size <= legacy_file_size && max_scan_size <= legacy_scan_size)
+    if (max_file_size <= legacy_file_size && max_scan_size <= legacy_scan_size &&
+        pcre_max_file_size <= legacy_file_size)
         return 1;
 
     if (!LARGEFILE_BUILD_SUPPORT) {
@@ -361,8 +366,10 @@ int clamd_largefile_admission_check(
 #endif
         (max_file_size > (uint64_t)SIZE_MAX) ||
         (max_scan_size > (uint64_t)SIZE_MAX) ||
+        (max_matcher_work > (uint64_t)SIZE_MAX) ||
         (max_temporary_size > (uint64_t)SIZE_MAX) ||
-        (max_contiguous_size > (uint64_t)SIZE_MAX)) {
+        (max_contiguous_size > (uint64_t)SIZE_MAX) ||
+        (pcre_max_file_size > (uint64_t)SIZE_MAX)) {
         set_reason(reason, reason_size, "large-file configuration requires 64-bit address and file-size types");
         return 0;
     }
@@ -372,6 +379,8 @@ int clamd_largefile_admission_check(
         memory_basis = max_scan_size / 2;
     if (max_contiguous_size > memory_basis)
         memory_basis = max_contiguous_size;
+    if (pcre_max_file_size > memory_basis)
+        memory_basis = pcre_max_file_size;
     if (memory_basis > LARGEFILE_MIN_AVAILABLE - LARGEFILE_MEMORY_HEADROOM)
         required_memory = LARGEFILE_MIN_AVAILABLE;
     else
