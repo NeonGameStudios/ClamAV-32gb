@@ -1277,7 +1277,8 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
         ret = cli_unarj_extract_file(dir, &metadata);
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("ARJ: cli_unarj_extract_file Error: %s; refusing to scan partial output\n", cl_strerror(ret));
-            cli_mark_scan_incomplete(ctx, "ARJ member extraction was incomplete");
+            cli_mark_scan_incomplete(ctx, ret == CL_EREAD ? "ARJ member data could not be read completely"
+                                                           : "ARJ member extraction was incomplete");
             if (metadata.ofd >= 0) {
                 cli_arj_close_output(ctx, &metadata.ofd, &ret);
             }

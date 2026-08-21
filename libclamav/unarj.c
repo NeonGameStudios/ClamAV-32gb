@@ -85,6 +85,21 @@ static bool arj_range_within_map(const fmap_t *map, size_t offset, size_t length
     return map != NULL && offset <= map->len && length <= map->len - offset;
 }
 
+static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
+                                           cl_error_t *read_status)
+{
+    const void *data = fmap_need_off_once_len(map, offset, length, length_out);
+
+    if (data != NULL) {
+        *read_status = CL_SUCCESS;
+    } else if (offset < map->len) {
+        *read_status = CL_EREAD;
+    } else {
+        *read_status = CL_EFORMAT;
+    }
+    return data;
+}
+
 #ifndef HAVE_ATTRIB_PACKED
 #define __attribute__(x)
 #endif
@@ -164,8 +179,8 @@ typedef struct arj_decode_tag {
 
 static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
 {
-    if (decode_data->status == CL_EFORMAT)
-        return CL_EFORMAT;
+    if (decode_data->status != CL_SUCCESS)
+        return decode_data->status;
     if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX)
         return CL_EFORMAT;
     decode_data->bit_buf = (((uint64_t)decode_data->bit_buf) << n) & 0xFFFF;
@@ -175,13 +190,13 @@ static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
             decode_data->comp_size--;
             if (decode_data->buf == decode_data->bufend) {
                 size_t len;
-                decode_data->buf = fmap_need_off_once_len(decode_data->map, decode_data->offset, 8192, &len);
+                cl_error_t read_status;
+
+                decode_data->buf = unarj_need_off_once_len(decode_data->map, decode_data->offset, 8192, &len,
+                                                          &read_status);
                 if (!decode_data->buf || !len) {
-                    /* the file is most likely corrupted, so
-                     * we return CL_EFORMAT instead of CL_EREAD
-                     */
-                    decode_data->status = CL_EFORMAT;
-                    return CL_EFORMAT;
+                    decode_data->status = read_status;
+                    return read_status;
                 }
                 decode_data->bufend = decode_data->buf + len;
             }
@@ -824,10 +839,11 @@ static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
 
     while (rem > 0) {
         todo = (unsigned int)MIN(8192, rem);
-        data = fmap_need_off_once_len(metadata->map, metadata->offset, todo, &count);
+        cl_error_t read_status;
+
+        data = unarj_need_off_once_len(metadata->map, metadata->offset, todo, &count, &read_status);
         if (!data || !count) {
-            /* Truncated file, not enough bytes available */
-            return CL_EFORMAT;
+            return read_status;
         }
         metadata->offset += count;
         if (cli_writen(ofd, data, count) != count) {

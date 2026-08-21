@@ -2859,3 +2859,15 @@ failure path. A focused header and frame-metadata callback regression, source
 guards, and capability-manifest evidence record the distinction. Compiled
 Linux/Sonic1, sanitizer, callback-fault, and production SWF corpus
 qualification remain open.
+
+## ARJ extraction read status — 2026-08-21
+
+ARJ compressed bit-window refills and stored-member copies previously treated
+an in-range fmap callback failure as a corrupted/truncated file and returned
+`CL_EFORMAT`. A shared bounded-window helper now distinguishes exact EOF or
+out-of-map input from callback failure, preserving `CL_EREAD` through the
+decoder and stored extractor; `cli_scanarj()` records the specific incomplete
+read reason and refuses to scan partial output. A focused stored-member
+fault-injection regression, source guards, and capability-manifest evidence
+record the invariant. Compiled Linux/Sonic1, sanitizer, callback-fault, and
+production ARJ corpus qualification remain open.

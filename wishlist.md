@@ -126,6 +126,9 @@
 - SWF fixed metadata and compressed-input reads now distinguish in-range fmap
   callback failures (`CL_EREAD`) from short input/format errors; add callback-
   fault, sanitizer, and production SWF corpus qualification.
+- ARJ compressed bit-window refills and stored-member reads now preserve
+  in-range fmap callback failures as `CL_EREAD` instead of `CL_EFORMAT`; add
+  callback-fault, sanitizer, and production ARJ corpus qualification.
 - ELF64 entrypoint and section coordinates now retain a native-width matcher
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the

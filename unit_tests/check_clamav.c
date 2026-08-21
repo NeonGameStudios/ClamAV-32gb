@@ -12526,6 +12526,74 @@ static void arj_test_write_u32(uint8_t *dst, uint32_t value)
         dst[i] = (uint8_t)(value >> (8U * i));
 }
 
+static size_t arj_read_failure_offset = SIZE_MAX;
+
+static const void *arj_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == arj_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_arj_stored_member_read_failure_is_fail_visible)
+{
+    uint8_t data[87];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    fmap_t *map;
+
+    memset(data, 0, sizeof(data));
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 34);
+    data[4]  = 30;
+    data[34] = 'a';
+
+    data[43] = 0x60;
+    data[44] = 0xea;
+    arj_test_write_u16(data + 45, 35);
+    data[47] = 30;
+    data[52] = 0;
+    arj_test_write_u32(data + 59, 2);
+    arj_test_write_u32(data + 63, 2);
+    data[77] = 'f';
+    data[86] = 'x';
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    arj_read_failure_offset = 86U;
+    map->need            = arj_targeted_read_failure;
+    verdict              = CL_VERDICT_STRONG_INDICATOR;
+    last_alert           = "stale";
+    scanned              = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ARJ", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    arj_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_arj_truncated_main_header_is_fail_visible)
 {
     uint8_t data[4];
@@ -15711,6 +15779,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ishield_truncated_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_main_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_arj_stored_member_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_member_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_member_extraction_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_member_limit_is_fail_visible);

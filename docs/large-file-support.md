@@ -3998,6 +3998,16 @@ path. A focused four-byte public-map regression and source guards cover this
 boundary. Full ARJ corpus, sanitizer, and supported-build Sonic1 qualification
 remain release gates.
 
+## ARJ extraction read status — 2026-08-21
+
+ARJ compressed bit-window refills and stored-member copies now distinguish an
+in-range fmap callback failure from exact EOF or an out-of-map range. Callback
+failures preserve `CL_EREAD` through the decoder and stored extractor, and
+the scanner refuses to inspect partial output. A focused stored-member
+fault-injection regression and source guards cover the boundary. Compiled ARJ
+corpus, sanitizer, callback-fault, and supported-build Sonic1 qualification
+remain release gates.
+
 ## CAB SFX fixed-header admission — 2026-08-20
 
 CAB SFX admission now requires the complete fixed 36-byte header before
