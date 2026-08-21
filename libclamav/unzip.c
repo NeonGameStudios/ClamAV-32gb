@@ -1561,8 +1561,13 @@ static cl_error_t parse_local_file_header(
     name_size = LOCAL_HEADER_flen >= (sizeof(name) - 1) ? sizeof(name) - 1 : LOCAL_HEADER_flen;
     cli_dbgmsg("cli_unzip: name_size %u\n", name_size);
     src = fmap_need_ptr_once(ctx->fmap, zip, name_size);
-    if (name_size && (NULL != src)) {
-        memcpy(name, zip, name_size);
+    if (name_size && (NULL == src)) {
+        cli_mark_scan_incomplete(ctx, "ZIP local filename field could not be read completely");
+        status = CL_EREAD;
+        goto done;
+    }
+    if (name_size) {
+        memcpy(name, src, name_size);
         if (CL_SUCCESS != cli_basename(name, name_size, &original_filename, true /* posix_support_backslash_pathsep */)) {
             original_filename = NULL;
         }

@@ -4732,6 +4732,58 @@ START_TEST(test_zip_truncated_entry_paths_are_fail_visible)
 }
 END_TEST
 
+static const void *zip_local_filename_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 30U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_zip_local_filename_read_failure_is_fail_visible)
+{
+    uint8_t archive[31] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    cli_scan_layer_t layer;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A complete empty stored member reaches the filename window without
+     * needing a decoder or nested scan callback. */
+    archive[0]  = 0x50;
+    archive[1]  = 0x4b;
+    archive[2]  = 0x03;
+    archive[3]  = 0x04;
+    archive[4]  = 20U;
+    archive[26] = 1U;
+    archive[30] = 'x';
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&layer, 0, sizeof(layer));
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    map->need             = zip_local_filename_read_failure;
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+    ctx.recursion_stack   = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap            = map;
+
+    ret = unzip_single_internal(&ctx, 0, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP local filename field could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_gzip_bzip_truncated_streams_are_fail_visible)
 {
     static const uint8_t input[] = "large-file compressed stream boundary";
@@ -14949,6 +15001,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_gzip_staging_failures_are_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_zip_truncated_entry_paths_are_fail_visible);
+    tcase_add_test(tc_cl, test_zip_local_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
     tcase_add_test(tc_cl, test_xz_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_xz_truncated_stream_is_fail_visible);

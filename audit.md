@@ -90,6 +90,12 @@ qualification remain open.
 
 ## Sequential parser status preservation — 2026-08-21
 
+ZIP local-header parsing now treats an in-range fmap callback failure while
+reading the member filename as `CL_EREAD` instead of silently continuing as if
+the name were absent. It also copies from the callback's returned window, not
+the original map pointer. A focused regression covers the clean-empty-member
+false-clean boundary; compiled Linux archive-corpus qualification remains open.
+
 OOXML metadata parsing could return a specific error and then have the
 following ZIP pass replace it with `CL_SUCCESS`; text/script mail handling had
 the same overwrite pattern. Sequential parser passes now merge results so a
