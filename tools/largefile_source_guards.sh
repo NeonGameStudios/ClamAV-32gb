@@ -869,6 +869,7 @@ contains libclamav/scanners.c 'HTML normalized no-tags output could not be close
 contains libclamav/scanners.c 'HTML normalized JavaScript output could not be closed'
 contains libclamav/scanners.c 'HTML normalized no-comment output could not be opened'
 contains libclamav/scanners.c 'HTML normalized no-tags output could not be opened'
+contains libclamav/scanners.c 'HTML normalized no-comment output could not be opened'
 contains libclamav/scanners.c 'HTML normalized JavaScript output could not be opened'
 contains libclamav/scanners.c 'HTML normalization temporary directory could not be removed'
 contains libclamav/htmlnorm.c 'HTML normalization input could not be closed'

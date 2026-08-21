@@ -2728,7 +2728,8 @@ supported Linux compile and runtime execution remain open.
 
 ## HTML normalized-view size admission — 2026-08-21
 
-The HTML scanner now opens and sizes the generated `notags.html` view before
+The HTML scanner now requires its generated `nocomment.html` and opens and
+sizes the generated `notags.html` view before
 dispatching it to the nested scanner. `MaxHTMLNoTags` therefore applies to the
 view it names, while an input whose markup is larger but whose normalized text
 fits is no longer rejected solely because of its source length. File-stat

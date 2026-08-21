@@ -3339,7 +3339,7 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
 
     snprintf(fullname, 1024, "%s" PATHSEP "nocomment.html", tempname);
     fd = open(fullname, O_RDONLY | O_BINARY);
-    if (fd < 0 && errno != ENOENT) {
+    if (fd < 0) {
         int open_errno = errno;
 
         cli_mark_scan_incomplete(ctx, "HTML normalized no-comment output could not be opened");
