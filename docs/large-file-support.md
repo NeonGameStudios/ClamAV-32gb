@@ -4615,3 +4615,12 @@ clears it only after the terminating zero chunk dispatches the scan. This
 keeps quota, write, scan, and completion failures on the length-prefixed JSON
 protocol. A clamd regression verifies the detected-stream JSON completion and
 zero terminator; compiled daemon and Sonic1 qualification remain open.
+
+## clamd structured empty-file parity — 2026-08-21
+
+The clamd directory walker now records an explicit `COMPLETE` structured
+report for zero-byte regular files. Previously those files returned before
+the structured callback, which could produce a fallback `RESOURCE_FAILURE`
+report even though the input was valid and `clamscan` treated it as a clean
+completed scan. The report records one zero-byte logical object and no
+skipped operation. Compiled daemon and Sonic1 qualification remain open.

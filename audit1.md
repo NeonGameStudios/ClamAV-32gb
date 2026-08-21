@@ -2917,3 +2917,13 @@ length-prefixed JSON report path rather than silently reverting to legacy text.
 A clamd regression sends a detected stream and verifies the JSON completion
 frame and zero terminator. Compiled daemon and Sonic1 qualification remain
 open.
+
+## clamd structured empty-file parity — 2026-08-21
+
+The clamd directory-walk callback previously returned early for zero-byte
+regular files without recording a structured result. A `SCANREPORT` or
+`CONTSCANREPORT` request could therefore fall through to the serialization
+fallback and classify a valid empty input as `RESOURCE_FAILURE`, while
+`clamscan` reported it as a completed clean input. The callback now emits an
+explicit `COMPLETE` report with a zero-byte logical object and no skipped
+operations. Compiled daemon and Sonic1 qualification remain open.

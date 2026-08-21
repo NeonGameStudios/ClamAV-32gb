@@ -212,6 +212,30 @@ static void record_structured_scan_skip(struct scan_cb_data *scandata,
         scandata->conn->structured_status = CL_EMEM;
 }
 
+static void record_structured_empty_scan(struct scan_cb_data *scandata,
+                                         const char *target)
+{
+    cl_scan_report_t *report = NULL;
+
+    if ((NULL == scandata) || (NULL == scandata->conn) ||
+        !structured_report_enabled(scandata->conn))
+        return;
+
+    if (cli_scan_report_create(&report, scandata->engine) != CL_SUCCESS) {
+        structured_report_note_status(scandata->conn, CL_EMEM);
+        return;
+    }
+
+    cli_scan_report_set_target(report, target ? target : scandata->toplevel_path);
+    cli_scan_report_set_root_size(report, 0);
+    cli_scan_report_note_logical(report, 0, 0);
+    cli_scan_report_finish(report, NULL, CL_SUCCESS,
+                           CL_VERDICT_NOTHING_FOUND, NULL);
+
+    if (record_structured_scan_report(scandata->conn, report) != CL_SUCCESS)
+        scandata->conn->structured_status = CL_EMEM;
+}
+
 static void publish_scanned_bytes(unsigned long int *destination, uint64_t scanned_bytes)
 {
     uint64_t scaled = scanned_bytes / CL_COUNT_PRECISION;
@@ -372,6 +396,7 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
     if (sb && sb->st_size == 0) { /* empty file */
         if (msg == scandata->toplevel_path)
             conn_reply_single(scandata->conn, filename, "Empty file");
+        record_structured_empty_scan(scandata, filename);
         free(filename);
         return CL_SUCCESS;
     }

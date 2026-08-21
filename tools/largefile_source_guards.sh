@@ -232,6 +232,8 @@ contains unit_tests/check_clamd.c 'test_scan_report_frames_are_bounded_and_fragm
 contains unit_tests/check_clamav.c 'test_scan_report_merge_preserves_detection_and_peaks'
 contains clamd/server-th.c 'cmd + strlen(cmd) + 1'
 contains clamd/scanner.c 'record_structured_scan_skip'
+contains clamd/scanner.c 'record_structured_empty_scan'
+contains clamd/scanner.c 'cli_scan_report_note_logical(report, 0, 0);'
 contains clamd/scanner.c 'directory recursion limit skipped a required path'
 contains clamav-milter/netcode.c 'zINSTREAMREPORT'
 contains clamav-milter/netcode.c 'nc_recv_scan_report'
