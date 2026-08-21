@@ -58,6 +58,28 @@
 
 static void cli_elf_sectionlog(uint32_t sh_type, uint32_t sh_flags);
 
+static size_t cli_elf_readn(fmap_t *map, void *dst, uint64_t at, size_t len)
+{
+    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
+     * beyond the map. Preserve an impossible ELF coordinate as short input;
+     * only an in-range callback failure is an operational read error. */
+    if (at > (uint64_t)map->len)
+        return 0;
+    return fmap_readn(map, dst, (size_t)at, len);
+}
+
+static cl_error_t cli_elf_read_status(cli_ctx *ctx, size_t bytes_read, size_t expected, const char *reason)
+{
+    if (bytes_read == expected)
+        return CL_SUCCESS;
+    if (bytes_read == (size_t)-1) {
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, reason);
+        return CL_EREAD;
+    }
+    return CL_BREAK;
+}
+
 static cl_error_t cli_elf_broken_result(cli_ctx *ctx, cl_error_t fallback)
 {
     cl_error_t ret;
@@ -138,12 +160,17 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
                                      uint8_t *do_convert, uint8_t *is64)
 {
     uint8_t format64, conv;
+    cl_error_t read_status;
+    size_t bytes_read;
 
     /* Load enough for smaller header first */
-    if (fmap_readn(map, file_hdr, 0, sizeof(struct elf_file_hdr32)) != sizeof(struct elf_file_hdr32)) {
+    bytes_read  = cli_elf_readn(map, file_hdr, 0, sizeof(struct elf_file_hdr32));
+    read_status = cli_elf_read_status(ctx, bytes_read, sizeof(struct elf_file_hdr32),
+                                      "ELF file header could not be read completely");
+    if (read_status != CL_SUCCESS) {
         /* Not an ELF file? */
         cli_dbgmsg("ELF: Can't read file header\n");
-        return CL_BREAK;
+        return read_status;
     }
 
     if (memcmp(file_hdr->hdr64.e_ident, "\x7f\x45\x4c\x46", 4)) {
@@ -198,10 +225,13 @@ static cl_error_t cli_elf_fileheader(cli_ctx *ctx, fmap_t *map, union elf_file_h
 
     if (format64) {
         /* Read rest of 64-bit header */
-        if (fmap_readn(map, file_hdr->hdr32.pad, sizeof(struct elf_file_hdr32), ELF_HDR_SIZEDIFF) != ELF_HDR_SIZEDIFF) {
+        bytes_read  = cli_elf_readn(map, file_hdr->hdr32.pad, sizeof(struct elf_file_hdr32), ELF_HDR_SIZEDIFF);
+        read_status = cli_elf_read_status(ctx, bytes_read, ELF_HDR_SIZEDIFF,
+                                          "ELF 64-bit file header could not be read completely");
+        if (read_status != CL_SUCCESS) {
             /* Not an ELF file? */
             cli_dbgmsg("ELF: Can't read file header\n");
-            return CL_BREAK;
+            return read_status;
         }
         /* Now endian convert, if needed */
         if (conv) {
@@ -281,8 +311,18 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         }
 
         for (i = 0; i < phnum; i++) {
+            cl_error_t read_status;
+
             err = 0;
-            if (fmap_readn(map, &program_hdr[i], phoff, sizeof(struct elf_program_hdr32)) != sizeof(struct elf_program_hdr32))
+            read_status = cli_elf_read_status(ctx,
+                                               cli_elf_readn(map, &program_hdr[i], phoff, sizeof(struct elf_program_hdr32)),
+                                               sizeof(struct elf_program_hdr32),
+                                               "ELF program header could not be read completely");
+            if (read_status == CL_EREAD) {
+                free(program_hdr);
+                return CL_EREAD;
+            }
+            if (read_status != CL_SUCCESS)
                 err = 1;
             phoff += sizeof(struct elf_program_hdr32);
 
@@ -376,8 +416,18 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
         }
 
         for (i = 0; i < phnum; i++) {
+            cl_error_t read_status;
+
             err = 0;
-            if (fmap_readn(map, &program_hdr[i], phoff, sizeof(struct elf_program_hdr64)) != sizeof(struct elf_program_hdr64))
+            read_status = cli_elf_read_status(ctx,
+                                               cli_elf_readn(map, &program_hdr[i], phoff, sizeof(struct elf_program_hdr64)),
+                                               sizeof(struct elf_program_hdr64),
+                                               "ELF program header could not be read completely");
+            if (read_status == CL_EREAD) {
+                free(program_hdr);
+                return CL_EREAD;
+            }
+            if (read_status != CL_SUCCESS)
                 err = 1;
             phoff += sizeof(struct elf_program_hdr64);
 
@@ -490,9 +540,18 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     /* Loop over section headers */
     for (i = 0; i < shnum; i++) {
         uint32_t sh_type, sh_flags;
+        cl_error_t read_status;
 
-        if (fmap_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr32)) != sizeof(struct elf_section_hdr32)) {
+        read_status = cli_elf_read_status(ctx,
+                                           cli_elf_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr32)),
+                                           sizeof(struct elf_section_hdr32),
+                                           "ELF section header could not be read completely");
+        if (read_status != CL_SUCCESS) {
             cli_dbgmsg("ELF: Can't read section header\n");
+            if (read_status == CL_EREAD) {
+                free(section_hdr);
+                return CL_EREAD;
+            }
             if (ctx) {
                 cli_dbgmsg("ELF: Possibly broken ELF file\n");
             }
@@ -597,9 +656,18 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     for (i = 0; i < shnum; i++) {
         uint32_t sh_type, sh_flags;
         uint64_t section_addr, section_offset, section_size;
+        cl_error_t read_status;
 
-        if (fmap_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr64)) != sizeof(struct elf_section_hdr64)) {
+        read_status = cli_elf_read_status(ctx,
+                                           cli_elf_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr64)),
+                                           sizeof(struct elf_section_hdr64),
+                                           "ELF section header could not be read completely");
+        if (read_status != CL_SUCCESS) {
             cli_dbgmsg("ELF: Can't read section header\n");
+            if (read_status == CL_EREAD) {
+                free(section_hdr);
+                return CL_EREAD;
+            }
             if (ctx) {
                 cli_dbgmsg("ELF: Possibly broken ELF file\n");
             }

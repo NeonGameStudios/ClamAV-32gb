@@ -13470,6 +13470,52 @@ START_TEST(test_elf_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_scan_program_header_read_failure_is_fail_visible)
+{
+    uint8_t data[64 + 56] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 2; /* ELFCLASS64. */
+    data[5] = 1; /* ELFDATA2LSB. */
+    data[6] = 1;
+    zip_stream_write_u16(data + 16, 2);
+    zip_stream_write_u16(data + 18, 62);
+    zip_stream_write_u32(data + 20, 1);
+    zip_stream_write_u64(data + 24, 0x400000U);
+    zip_stream_write_u64(data + 32, 64U);
+    zip_stream_write_u16(data + 52, sizeof(struct elf_file_hdr64));
+    zip_stream_write_u16(data + 54, sizeof(struct elf_program_hdr64));
+    zip_stream_write_u16(data + 56, 1);
+    zip_stream_write_u16(data + 58, sizeof(struct elf_section_hdr64));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need   = elf_program_header_read_failure;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    ret = cli_scanelf(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF program header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_elf_metadata_read_failure_is_fail_visible)
 {
     uint8_t data[64 + 56] = {0};
@@ -13505,7 +13551,7 @@ START_TEST(test_elf_metadata_read_failure_is_fail_visible)
     ctx.fmap = map;
 
     ret = cli_elfheader(&ctx, &exeinfo);
-    ck_assert_int_eq(ret, CL_BREAK);
+    ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF metadata parsing ended before inspection completed");
     ck_assert(map->dont_cache_flag);
@@ -15466,6 +15512,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_elf_scan_program_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_elf_metadata_read_failure_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_elf64_metadata_preserves_native_coordinates);
     tcase_add_test(tc_cl, test_elf64_entry_offset_overflow_is_fail_visible);

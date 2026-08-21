@@ -111,6 +111,9 @@
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the
   boundary.
+- ELF required metadata reads now distinguish in-range fmap callback failures
+  (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add direct scanner,
+  sanitizer, and production ELF corpus qualification.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

@@ -2238,13 +2238,14 @@ qualification remain open.
 ## ELF metadata read failure — 2026-08-21
 
 Metadata-only ELF parsing, used to calculate executable-relative signature
-coordinates, now marks any required header, program-header, or section-header
-failure incomplete before returning the parser error. This prevents raw
-signature analysis from continuing with skipped executable metadata while
-leaving the existing raw matcher behavior intact. A focused program-header
-fmap fault-injection regression, source guard, and capability-manifest entry
-record the invariant. Compiled Linux/Sonic1, sanitizer, and broader ELF
-corpus qualification remain open.
+coordinates, now distinguishes in-range fmap callback failures from genuinely
+short metadata. Callback failures return `CL_EREAD` and mark the scan
+incomplete; short headers retain the parser's `CL_BREAK`/`CL_EPARSE` path. This
+prevents raw signature analysis from continuing with skipped executable
+metadata while leaving the existing raw matcher behavior intact. The focused
+program-header fmap fault-injection regression now asserts `CL_EREAD`, with
+source guards and capability evidence registered. Compiled Linux/Sonic1,
+sanitizer, and broader ELF corpus qualification remain open.
 
 ## Mach-O metadata read failure — 2026-08-21
 
