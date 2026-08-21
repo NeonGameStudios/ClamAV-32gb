@@ -3106,6 +3106,8 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         memcpy(&hdr, phdr, hdr_size);
     } else {
         cli_dbgmsg("cli_ole2_extract: failed to read header\n");
+        cli_mark_scan_incomplete(ctx, "OLE2 header could not be read completely");
+        ret = CL_EREAD;
         goto done;
     }
 
@@ -3141,10 +3143,14 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         //  - TBD for Major Version 5?
         // To allow for future changes, and prevent overflowing an int32_t, we're limiting to 28.
         cli_dbgmsg("CAN'T PARSE: Invalid big block size (2^%u)\n", hdr.log2_big_block_size);
+        cli_mark_scan_incomplete(ctx, "OLE2 big-block size exponent is invalid");
+        ret = CL_EFORMAT;
         goto done;
     }
     if (!hdr.log2_small_block_size || hdr.log2_small_block_size > hdr.log2_big_block_size) {
         cli_dbgmsg("CAN'T PARSE: Invalid small block size (2^%u)\n", hdr.log2_small_block_size);
+        cli_mark_scan_incomplete(ctx, "OLE2 small-block size exponent is invalid");
+        ret = CL_EFORMAT;
         goto done;
     }
     if (hdr.sbat_cutoff != 4096) {

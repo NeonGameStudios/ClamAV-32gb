@@ -1954,3 +1954,13 @@ non-cacheable, returning `CL_EFORMAT` for structural failures and `CL_EREAD`
 for fmap failures. A checked-in PE fixture regression injects the Petite
 section read failure; compiled Linux/Sonic1 execution, sanitizer coverage, and
 broader PE unpacker corpus qualification remain open.
+
+## OLE2 fixed-header fmap failure — 2026-08-21
+
+The OLE2 extractor previously left its default `CL_CLEAN` status intact when a
+valid-sized input failed the fixed-header fmap read or contained invalid
+block-size exponents. It now marks the layer incomplete and non-cacheable and
+returns `CL_EREAD` or `CL_EFORMAT` respectively. Fault-injected Office and
+malformed-header regressions plus source guards are registered; compiled
+Linux/Sonic1, sanitizer, and broader OLE2/Office corpus qualification remain
+open.
