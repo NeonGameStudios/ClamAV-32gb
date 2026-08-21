@@ -115,6 +115,9 @@
   visible through the client return value instead of becoming clean or generic
   connection failures; add compiled fanotify and monitoring-mode integration
   coverage.
+- On-access regular-file streams now reject post-stat growth in both ordinary
+  and quarantine modes, preventing a clean prefix from being reported; add
+  compiled file-mutation and monitoring-mode coverage.
 - Windows memory scans no longer turn a failed descriptor scan into `OK`; the
   native Windows memory ingress remains outside the certified first-release
   platform boundary.

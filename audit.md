@@ -206,6 +206,12 @@ On-access prevention now denies permission events after stat or size-limit
 preflight failures even when the worker correctly avoids submitting a partial
 object; monitoring-only events continue to allow and log.
 
+The on-access INSTREAM sender now checks for post-stat growth on every regular
+file stream, not only quarantine/action streams. A changed file is rejected as
+`CL_EREAD` when it grows below the stream ceiling, while growth at the ceiling
+remains `CL_EMAXSIZE`; neither path can publish a clean prefix. Compiled
+fanotify and monitoring-mode qualification remain open.
+
 ## On-access report-status propagation — 2026-08-21
 
 The on-access client parsed incomplete structured reports into `ret_code`, but

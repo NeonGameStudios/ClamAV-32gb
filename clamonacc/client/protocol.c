@@ -165,7 +165,11 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         goto strm_out;
     }
 
-    if (action_stream && S_ISREG(statbuf.st_mode) && (bytesRead == len)) {
+    /* A regular file may grow after the initial stat. Do not terminate an
+     * ordinary on-access stream after the original length and report a clean
+     * prefix; quarantine/action streams already used this check, but the
+     * completeness invariant applies to every stream. */
+    if (S_ISREG(statbuf.st_mode) && (bytesRead == len)) {
         ssize_t bytes = read(fd, buf, 1);
 
         if (bytes < 0) {
@@ -173,10 +177,18 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
             ret = -1;
             goto strm_out;
         } else if (bytes > 0) {
-            logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated quarantine stream. ERROR\n",
-                 filename ? filename : "FD");
-            if (ret_code) {
-                *ret_code = CL_EMAXSIZE;
+            if (bytesRead >= maxstream) {
+                logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated %s stream. ERROR\n",
+                     filename ? filename : "FD", action_stream ? "quarantine" : "scan");
+                if (ret_code) {
+                    *ret_code = CL_EMAXSIZE;
+                }
+            } else {
+                logg(LOGG_ERROR, "%s: File grew while streaming; refusing to send a partial %s stream. ERROR\n",
+                     filename ? filename : "FD", action_stream ? "quarantine" : "scan");
+                if (ret_code) {
+                    *ret_code = CL_EREAD;
+                }
             }
             ret = -1;
             goto strm_out;
