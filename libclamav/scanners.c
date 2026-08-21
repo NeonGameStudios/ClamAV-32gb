@@ -662,8 +662,12 @@ done:
     if ((CL_VIRUS != status) && (nEncryptedFilesFound > 0)) {
         /* If user requests enabled the Heuristic for encrypted archives... */
         if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
-            if (CL_VIRUS == cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.RAR")) {
-                status = CL_VIRUS;
+            cl_error_t append_ret = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.RAR");
+            if (append_ret != CL_SUCCESS) {
+                if (append_ret != CL_VIRUS && append_ret != CL_VERIFIED && append_ret != CL_BREAK) {
+                    cli_mark_scan_incomplete(ctx, "encrypted RAR alert could not be recorded");
+                }
+                status = append_ret;
             }
         }
     }
@@ -2141,7 +2145,10 @@ static cl_error_t cli_ole2_tempdir_scan_vba_new(const char *dir, cli_ctx *ctx, s
 
             if (SCAN_HEURISTIC_MACROS && *has_macros) {
                 ret = cli_append_potentially_unwanted(ctx, "Heuristics.OLE2.ContainsMacros.VBA");
-                if (ret == CL_VIRUS) {
+                if (ret != CL_SUCCESS) {
+                    if (ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK) {
+                        cli_mark_scan_incomplete(ctx, "VBA macro alert could not be recorded");
+                    }
                     goto done;
                 }
             }
@@ -2681,7 +2688,10 @@ done:
 
         if (SCAN_HEURISTIC_MACROS) {
             ret = cli_append_potentially_unwanted(ctx, "Heuristics.OLE2.ContainsMacros.VBA");
-            if (ret == CL_VIRUS) {
+            if (ret != CL_SUCCESS) {
+                if (ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK) {
+                    cli_mark_scan_incomplete(ctx, "VBA macro alert could not be recorded");
+                }
                 status = ret;
             }
         }

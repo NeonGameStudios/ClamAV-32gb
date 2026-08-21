@@ -2381,6 +2381,16 @@ normal callback-block behavior when the append succeeds. Source guards record
 all three paths; compiled Linux/Sonic1, callback fault injection, sanitizer,
 and API/front-end qualification remain open.
 
+## OLE2/RAR heuristic alert-result propagation — 2026-08-21
+
+Both OLE2 VBA macro-presence paths and the encrypted-RAR heuristic previously
+only promoted `CL_VIRUS` from `cli_append_potentially_unwanted()`. Trusted,
+callback-break, and operational recording results could be discarded. These
+paths now preserve every non-success result and mark operational alert-recording
+failures incomplete. Source guards record the parser branches; compiled
+Linux/Sonic1, callback/resource fault injection, sanitizer, and OLE/RAR corpus
+qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success

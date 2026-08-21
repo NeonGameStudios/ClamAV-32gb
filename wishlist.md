@@ -142,6 +142,9 @@
 - Legacy file-inspection, pre-scan, and post-scan callback alert results now
   propagate; add callback fault-injection coverage across library and front-end
   APIs.
+- OLE2 VBA macro and encrypted-RAR heuristic alert results now propagate; add
+  heuristic callback/resource fault injection and malformed OLE/RAR corpus
+  coverage.
 
 ## Large-file validation and expansion progression
 
