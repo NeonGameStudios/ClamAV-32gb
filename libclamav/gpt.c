@@ -43,6 +43,23 @@
 
 #define GPT_CRC_CHUNK_SIZE (64U * 1024U)
 
+static cl_error_t gpt_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
+{
+    size_t got;
+
+    if (at > ctx->fmap->len || len > ctx->fmap->len - at)
+        return CL_EFORMAT;
+
+    got = fmap_readn(ctx->fmap, dst, at, len);
+    if (got == len)
+        return CL_SUCCESS;
+    if (got == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_EREAD;
+    }
+    return CL_EFORMAT;
+}
+
 static cl_error_t gpt_crc32_fmap(cli_ctx *ctx, size_t offset, size_t length, uint32_t *result)
 {
     unsigned char buffer[GPT_CRC_CHUNK_SIZE];
@@ -129,6 +146,7 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
     cl_error_t status = CL_SUCCESS;
     struct gpt_header phdr, shdr;
     enum GPT_SCANSTATE state = INVALID;
+    cl_error_t secondary_status;
     size_t maplen;
     off_t pos = 0;
 
@@ -176,9 +194,9 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
 
     /* read primary gpt header */
     cli_dbgmsg("cli_scangpt: Using primary GPT header\n");
-    if (fmap_readn(ctx->fmap, &phdr, pos, sizeof(phdr)) != sizeof(phdr)) {
+    status = gpt_read(ctx, &phdr, pos, sizeof(phdr), "GPT primary header could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("cli_scangpt: Invalid primary GPT header\n");
-        status = CL_EFORMAT;
         goto done;
     }
 
@@ -191,9 +209,9 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
         state = SECONDARY_ONLY;
 
         /* read secondary gpt header */
-        if (fmap_readn(ctx->fmap, &shdr, pos, sizeof(shdr)) != sizeof(shdr)) {
+        status = gpt_read(ctx, &shdr, pos, sizeof(shdr), "GPT secondary header could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scangpt: Invalid secondary GPT header\n");
-            status = CL_EFORMAT;
             goto done;
         }
 
@@ -209,8 +227,13 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
         state = PRIMARY_ONLY;
 
         /* check validity of secondary header; still using the primary */
-        if (fmap_readn(ctx->fmap, &shdr, pos, sizeof(shdr)) != sizeof(shdr)) {
+        secondary_status = gpt_read(ctx, &shdr, pos, sizeof(shdr), "GPT secondary header could not be read completely");
+        if (secondary_status != CL_SUCCESS) {
             cli_dbgmsg("cli_scangpt: Invalid secondary GPT header\n");
+            if (secondary_status == CL_EREAD) {
+                status = secondary_status;
+                goto done;
+            }
         } else if (gpt_validate_header(ctx, shdr, sectorsize)) {
             cli_dbgmsg("cli_scangpt: Secondary GPT header is invalid\n");
         }
@@ -335,9 +358,9 @@ static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_
     }
     for (i = 0; i < max_prtns; ++i) {
         /* read in partition entry */
-        if (fmap_readn(ctx->fmap, &gpe, pos, sizeof(gpe)) != sizeof(gpe)) {
+        status = gpt_read(ctx, &gpe, pos, sizeof(gpe), "GPT partition entry could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scangpt: Invalid GPT partition entry\n");
-            status = CL_EFORMAT;
             goto done;
         }
 
@@ -562,9 +585,9 @@ static cl_error_t gpt_check_mbr(cli_ctx *ctx, size_t sectorsize)
     mbr_base = sectorsize - sizeof(struct mbr_boot_record);
     pos      = (MBR_SECTOR * sectorsize) + mbr_base;
 
-    if (fmap_readn(ctx->fmap, &pmbr, pos, sizeof(pmbr)) != sizeof(pmbr)) {
+    status = gpt_read(ctx, &pmbr, pos, sizeof(pmbr), "GPT protective MBR could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("cli_scangpt: Invalid primary MBR header\n");
-        status = CL_EFORMAT;
         goto done;
     }
 
@@ -698,9 +721,9 @@ static cl_error_t gpt_partition_intersection(cli_ctx *ctx, struct gpt_header hdr
     }
     for (i = 0; i < max_prtns; ++i) {
         /* read in partition entry */
-        if (fmap_readn(ctx->fmap, &gpe, pos, sizeof(gpe)) != sizeof(gpe)) {
+        status = gpt_read(ctx, &gpe, pos, sizeof(gpe), "GPT intersection entry could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scangpt: Invalid GPT partition entry\n");
-            status = CL_EFORMAT;
             goto done;
         }
 

@@ -67,6 +67,23 @@ static cl_error_t mbr_check_ebr(struct mbr_boot_record *record);
 static cl_error_t mbr_primary_partition_intersection(cli_ctx *ctx, struct mbr_boot_record mbr, size_t sectorsize);
 static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize);
 
+static cl_error_t mbr_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
+{
+    size_t got;
+
+    if (at > ctx->fmap->len || len > ctx->fmap->len - at)
+        return CL_EFORMAT;
+
+    got = fmap_readn(ctx->fmap, dst, at, len);
+    if (got == len)
+        return CL_SUCCESS;
+    if (got == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_EREAD;
+    }
+    return CL_EFORMAT;
+}
+
 cl_error_t cli_mbr_check(const unsigned char *buff, size_t len, size_t maplen)
 {
     struct mbr_boot_record mbr;
@@ -90,6 +107,7 @@ cl_error_t cli_mbr_check(const unsigned char *buff, size_t len, size_t maplen)
 cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
 {
     struct mbr_boot_record mbr;
+    cl_error_t read_status;
     size_t pos = 0, mbr_base = 0;
     size_t maplen;
 
@@ -116,9 +134,10 @@ cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
     pos = (MBR_SECTOR * sectorsize) + mbr_base;
 
     /* read the master boot record */
-    if (fmap_readn(ctx->fmap, &mbr, pos, sizeof(mbr)) != sizeof(mbr)) {
+    read_status = mbr_read(ctx, &mbr, pos, sizeof(mbr), "MBR master boot record could not be read completely");
+    if (read_status != CL_SUCCESS) {
         cli_dbgmsg("cli_scanmbr: Invalid master boot record\n");
-        return CL_EFORMAT;
+        return read_status;
     }
 
     /* convert the little endian to host, include the internal  */
@@ -167,9 +186,9 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
     pos = (MBR_SECTOR * sectorsize) + mbr_base;
 
     /* read the master boot record */
-    if (fmap_readn(ctx->fmap, &mbr, pos, sizeof(mbr)) != sizeof(mbr)) {
+    status = mbr_read(ctx, &mbr, pos, sizeof(mbr), "MBR master boot record could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("cli_scanmbr: Invalid master boot record\n");
-        status = CL_EFORMAT;
         goto done;
     }
 
@@ -283,9 +302,9 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
 
         /* read the extended boot record */
         pos += (logiclba * sectorsize) + mbr_base;
-        if (fmap_readn(ctx->fmap, &ebr, pos, sizeof(ebr)) != sizeof(ebr)) {
+        status = mbr_read(ctx, &ebr, pos, sizeof(ebr), "MBR extended boot record could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanebr: Invalid extended boot record\n");
-            status = CL_EFORMAT;
             goto done;
         }
 
@@ -583,10 +602,10 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
 
         /* read the extended boot record */
         pos += (logiclba * sectorsize) + mbr_base;
-        if (fmap_readn(ctx->fmap, &ebr, pos, sizeof(ebr)) != sizeof(ebr)) {
+        status = mbr_read(ctx, &ebr, pos, sizeof(ebr), "MBR extended intersection record could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanebr: Invalid extended boot record\n");
             partition_intersection_list_free(&prtncheck);
-            status = CL_EFORMAT;
             goto done;
         }
 

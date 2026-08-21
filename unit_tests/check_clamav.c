@@ -8597,6 +8597,84 @@ START_TEST(test_partition_parser_errors_are_fail_visible)
 }
 END_TEST
 
+static const void *partition_boot_record_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+
+START_TEST(test_mbr_partition_read_failure_is_fail_visible)
+{
+    uint8_t data[1024] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions    = 1;
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    map                      = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need                = partition_boot_record_read_failure;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_MBR;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scanmbr(&ctx, 512);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MBR master boot record could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_gpt_partition_read_failure_is_fail_visible)
+{
+    uint8_t data[6 * 512] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions    = 1;
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    map                      = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need                = partition_boot_record_read_failure;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_GPT;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scangpt(&ctx, 512);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "GPT protective MBR could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbr_partition_limit_is_fail_visible)
 {
     uint8_t data[1024] = {0};
@@ -9580,6 +9658,16 @@ static const void *apm_partition_read_failure(fmap_t *map, size_t at, size_t len
 {
     (void)lock;
     if (at == 1024U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *partition_boot_record_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 446U)
         return NULL;
     if (len == 0 || at > map->len || len > map->len - at)
         return NULL;
@@ -14288,6 +14376,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_subdocument_temporary_quota_is_fail_visible);
     tcase_add_test(tc_cl, test_partition_parser_errors_are_fail_visible);
+    tcase_add_test(tc_cl, test_mbr_partition_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_gpt_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_invalid_partition_is_fail_visible);

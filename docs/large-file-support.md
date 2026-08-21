@@ -4452,3 +4452,14 @@ parse could disable PE-relative signatures while leaving the outer raw scan
 eligible for a clean result. A focused PE target-info regression, source guard,
 and capability-manifest entry record the invariant. Compiled Linux/Sonic1,
 sanitizer, and full executable-signature qualification remain open.
+
+## MBR/GPT partition fmap read failures — 2026-08-21
+
+The MBR and GPT partition scanners now distinguish an in-range fmap callback
+failure from a partition record that is simply outside a short input map.
+Required master/extended boot records, protective and GPT headers, partition
+entries, and intersection-table entries return `CL_EREAD` and mark the layer
+incomplete when their backing window fails. A focused MBR/GPT boot-record
+fault-injection regression, source guards, and capability-manifest entries
+record the invariant. Compiled Linux/Sonic1, sanitizer, and broader partition
+corpus qualification remain open.
