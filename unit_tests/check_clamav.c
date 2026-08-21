@@ -5774,6 +5774,7 @@ START_TEST(test_rar_without_backend_is_explicitly_unsupported)
     cl_verdict_t embedded_verdict;
     const char *embedded_alert;
     int embedded_cache_flag;
+    int saved_sdb;
     int saved_have_rar;
     unsigned int i;
 
@@ -5806,11 +5807,14 @@ START_TEST(test_rar_without_backend_is_explicitly_unsupported)
         uint64_t scanned = UINT64_MAX;
 
         ck_assert_ptr_nonnull(map);
-        embedded_verdict = CL_VERDICT_STRONG_INDICATOR;
-        embedded_alert   = "stale";
-        embedded_result  = cl_scanmap_ex(map, NULL, &embedded_verdict, &embedded_alert, &scanned,
-                                         scan_engine, &options, NULL, NULL, NULL, NULL,
-                                         "CL_TYPE_TEXT_ASCII", NULL);
+        saved_sdb           = scan_engine->sdb;
+        scan_engine->sdb    = 1;
+        embedded_verdict    = CL_VERDICT_STRONG_INDICATOR;
+        embedded_alert      = "stale";
+        embedded_result     = cl_scanmap_ex(map, NULL, &embedded_verdict, &embedded_alert, &scanned,
+                                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                                            "CL_TYPE_TEXT_ASCII", NULL);
+        scan_engine->sdb    = saved_sdb;
         embedded_cache_flag = map->dont_cache_flag;
         cl_fmap_close(map);
     }

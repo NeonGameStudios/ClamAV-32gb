@@ -2804,3 +2804,15 @@ terminal matcher results but marks a non-detecting layer incomplete with an
 explicit unsupported-parser reason. A focused scan-map regression verifies the
 non-clean, non-cacheable result; bounded parser implementation and production
 graphics corpus qualification remain open.
+
+## SDB type-recognition pass — 2026-08-21
+
+When SDB signatures were loaded, `cli_magic_scan()` ran the outer raw matcher
+before the parser but skipped the later raw pass entirely. Because that later
+pass also performs embedded file-type recognition, confirmed SFX/archive
+candidates could be omitted from the scan without a parser or incomplete
+result explaining the omission. The scan now performs that type-recognition
+work after parsing with `AC_SCAN_FT` only; the outer virus-signature pass is not
+duplicated. The embedded RAR-SFX unavailable-backend regression now exercises
+the SDB-enabled path as well. Compiled parser-family and Sonic1 qualification
+remain release gates.

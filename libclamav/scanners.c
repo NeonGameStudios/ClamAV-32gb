@@ -4665,6 +4665,10 @@ static cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
     return CL_SUCCESS;
 }
 
+/* scanraw() mode that performs file-type recognition without repeating the
+ * outer virus-signature pass already completed for SDB-enabled engines. */
+#define SCANRAW_TYPE_RECOGNITION_ONLY 2
+
 /**
  * @brief Perform raw scan of current fmap.
  *
@@ -4680,7 +4684,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
 {
     cl_error_t ret = CL_SUCCESS, nret = CL_SUCCESS;
     struct cli_matched_type *ftoffset = NULL, *fpt;
-    unsigned int acmode               = AC_SCAN_VIR;
+    unsigned int acmode               = (typercg == SCANRAW_TYPE_RECOGNITION_ONLY) ? AC_SCAN_FT : AC_SCAN_VIR;
 
     cli_file_t found_type;
 
@@ -6923,11 +6927,18 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
      * legacy HTMLSKIPRAW configuration could otherwise suppress this pass
      * after an enabled HTML parser had skipped or partially normalized the
      * input, violating the fail-closed large-file scan contract. */
-    if ((type != CL_TYPE_IGNORED) && (!ctx->engine->sdb)) {
+    if ((type != CL_TYPE_IGNORED) && (!ctx->engine->sdb || typercg)) {
+        uint8_t raw_typercg = typercg;
+
+        /* SDB-enabled engines already performed the outer raw virus scan
+         * before parsing. Preserve embedded type recognition without
+         * running those virus signatures a second time. */
+        if (ctx->engine->sdb && raw_typercg)
+            raw_typercg = SCANRAW_TYPE_RECOGNITION_ONLY;
 
         cli_dbgmsg("cli_magic_scan: Performing raw scan to pattern match and/or detect embedded files\n");
 
-        ret = scanraw(ctx, type, typercg, &dettype);
+        ret = scanraw(ctx, type, raw_typercg, &dettype);
 
         // Evaluate the result from the scan to see if it end the scan of this layer early,
         // and to decid if we should propagate an error or not.

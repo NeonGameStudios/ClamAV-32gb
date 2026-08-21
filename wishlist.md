@@ -364,6 +364,10 @@
   now fails closed when the optional UnRAR backend is unavailable; complete
   backend-enabled parser and production corpus qualification remains
   required.
+- SDB-enabled scans now retain the mandatory outer raw pass while performing
+  a separate type-recognition-only pass after parsing; embedded SFX/archive
+  candidates are no longer skipped merely because SDB signatures are loaded.
+  Compiled embedded-SFX and production parser qualification remain open.
 
 ## Large-file validation and expansion progression
 
