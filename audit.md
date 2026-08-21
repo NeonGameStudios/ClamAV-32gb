@@ -1090,6 +1090,12 @@ outer scan apparently clean. Structural icon failures now mark the scan
 incomplete and non-cacheable and return `CL_EPARSE`; a configured icon-count
 limit likewise remains fail-visible as `CL_EMAXSIZE`. Valid icons outside the
 matcher’s intentional dimension/shape range remain optional and unchanged.
+The remaining PE icon materialization, scaling, and metrics-allocation
+failures now also mark the containing scan incomplete and return the resource
+error instead of allowing the parser to continue with a missing or
+uninitialized image representation. The existing structural icon regression
+and source guards remain registered; allocator fault-injection execution is
+still a supported-Linux qualification item.
 
 The new `test_pe_icon_truncated_resource_is_fail_visible` regression passed.
 The disposable Debug build rebuilt `check_clamav`, and the focused

@@ -1474,7 +1474,8 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
     if (!(imagedata = cli_max_malloc((size_t)width * (size_t)height * sizeof(*imagedata)))) {
         if (palette)
             fmap_unneed_ptr(map, palette, (1 << depth) * sizeof(int));
-        return CL_SUCCESS;
+        cli_mark_scan_incomplete(ctx, "PE icon image buffer could not be allocated");
+        return CL_EMEM;
     }
 
     /* decode the image to an RGBA array */
@@ -1617,6 +1618,8 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
                 scaley = (double)height / newsize;
                 if (!(newdata = cli_max_malloc(newsize * newsize * sizeof(*newdata)))) {
                     cli_errmsg("parseicon: Unable to allocate memory for scaling image\n");
+                    free(imagedata);
+                    cli_mark_scan_incomplete(ctx, "PE icon scaling buffer could not be allocated");
                     return CL_EMEM;
                 }
                 cli_dbgmsg("parseicon: Slow scaling to %ux%u (%f, %f)\n", newsize, newsize, scalex, scaley);
@@ -1633,7 +1636,14 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
     }
     makebmp("2-alpha-blend", tempd, width, height, imagedata);
 
-    getmetrics(width, imagedata, &metrics, tempd);
+    {
+        int metrics_status = getmetrics(width, imagedata, &metrics, tempd);
+        if (metrics_status != CL_CLEAN) {
+            free(imagedata);
+            cli_mark_scan_incomplete(ctx, "PE icon metrics could not be calculated");
+            return metrics_status;
+        }
+    }
     free(imagedata);
 
     enginesize = (width >> 3) - 2;
