@@ -176,6 +176,19 @@ impl<'a> FMap {
 
     /// Simple wrapper around C FMAP module's fmap.need() method.
     pub fn need_off(&'a self, at: usize, len: usize) -> Result<&'a [u8], Error> {
+        let fmap_size = unsafe { *self.fmap_ptr }.len;
+
+        if at > fmap_size || len > fmap_size - at {
+            debug!(
+                "need_off at {:?} len {:?} is outside fmap size {:?}",
+                at, len, fmap_size
+            );
+            return Err(Error::NotContained(at, len, fmap_size));
+        }
+        if len == 0 {
+            return Ok(&[]);
+        }
+
         // Get the need() method function pointer from the fmap.
         let need_fn = match unsafe { *self.fmap_ptr }.need {
             Some(ptr) => ptr,
@@ -185,7 +198,6 @@ impl<'a> FMap {
         let ptr: *const u8 = unsafe { need_fn(self.fmap_ptr, at, len, 1) } as *const u8;
 
         if ptr.is_null() {
-            let fmap_size = unsafe { *self.fmap_ptr }.len;
             debug!(
                 "need_off at {:?} len {:?} for fmap size {:?} returned NULL",
                 at, len, fmap_size
@@ -288,6 +300,21 @@ mod tests {
 
         assert!(matches!(map.need_off(128, 64), Err(Error::NotContained(128, 64, 4096))));
         assert_eq!(NEED_CALLS.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn need_off_rejects_out_of_bounds_before_callback() {
+        let _guard = NEED_TEST_LOCK.lock().expect("need test lock");
+        NEED_CALLS.store(0, Ordering::Relaxed);
+        let mut raw: sys::cl_fmap_t = unsafe { std::mem::zeroed() };
+        raw.len = 4096;
+        raw.need = Some(null_need);
+        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+
+        assert!(matches!(map.need_off(4097, 0), Err(Error::NotContained(4097, 0, 4096))));
+        assert!(matches!(map.need_off(4090, 7), Err(Error::NotContained(4090, 7, 4096))));
+        assert!(map.need_off(4096, 0).expect("empty fmap window").is_empty());
+        assert_eq!(NEED_CALLS.load(Ordering::Relaxed), 0);
     }
 
     #[test]

@@ -53,6 +53,12 @@ sticky incomplete parser state. Focused unit tests and shell source guards are r
 produced a supported Linux compile, sanitizer run, or new Sonic1 qualification
 for this follow-up.
 
+The Rust `FMap::need_off()` adapter now rejects out-of-range native-size
+windows before invoking the C `need()` callback or forming a slice, including
+zero-length requests at the exact end of the map. Its focused Rust tests verify
+the boundary and callback suppression; compiled Rust/layout qualification
+remains open.
+
 ## Current source-hardening follow-up — 2026-08-20
 
 The enabled Mydoom-log detector previously treated failure to obtain its
