@@ -608,10 +608,22 @@ run_serial_queue()
 }
 
 : > "$out/service-summary.txt"
-python3 "$root/tools/largefile_clamd_report_protocol.py" \
-    "$socket" "$production_file" "$oracle_manifest" production scan \
-    "$out/reports/production_cvd_scanreport.jsonl"
-printf 'production_cvd_clamdscan_scanreport=pass\n' >> "$out/service-summary.txt"
+run_direct_report()
+{
+    report_label=$1
+    report_mode=$2
+    python3 "$root/tools/largefile_clamd_report_protocol.py" \
+        "$socket" "$production_file" "$oracle_manifest" production "$report_mode" \
+        "$out/reports/production_cvd_${report_label}.jsonl"
+    printf 'production_cvd_clamdscan_%s=pass\n' "$report_label" >> "$out/service-summary.txt"
+}
+
+run_direct_report scanreport scan
+run_direct_report contscanreport contscan
+run_direct_report multiscanreport multiscan
+run_direct_report allmatchscanreport allmatchscan
+run_direct_report fildesreport fildes
+run_direct_report instreamreport instream
 run_direct_production
 run_serial_queue
 run_service_scan production production_cvd "$production_file"

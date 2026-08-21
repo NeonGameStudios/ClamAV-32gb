@@ -2223,3 +2223,13 @@ error. The no-comment, no-tags, and JavaScript normalized views therefore
 cannot disappear silently after successful normalization. Source guards record
 the three paths; compiled Linux/Sonic1, sanitizer, and broader HTML corpus
 qualification remain open.
+
+## Direct structured clamd command-family gate — 2026-08-21
+
+The direct Unix-socket report probe now runs every structured command family:
+`SCANREPORT`, `CONTSCANREPORT`, `MULTISCANREPORT`, `ALLMATCHSCANREPORT`,
+`FILDESREPORT`, and `INSTREAMREPORT`. Each request validates the framed JSON,
+zero terminator, input oracle, completion state, verdict, metrics, file type,
+and skipped-operation count before writing evidence; the workflow requires all
+six pass markers. Compiled Linux/Sonic1 execution and full production
+qualification remain open.

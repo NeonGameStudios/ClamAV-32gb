@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Exercise one length-prefixed clamd structured-report command.
 
-The service qualification shell harness already validates the same oracle for
-the clamdscan client paths. This small probe covers the direct SCANREPORT
-wire path so a green service gate cannot accidentally omit that command
-family. It deliberately uses only Python's standard library.
+The service qualification shell harness also validates the same oracle for
+the clamdscan client paths. This small probe covers the direct wire paths so
+a green service gate cannot accidentally omit a structured command family. It
+deliberately uses only Python's standard library.
 """
 
 import csv

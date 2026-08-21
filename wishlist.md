@@ -101,6 +101,8 @@
   range checks; parser-family and production-corpus qualification remain open.
 - HTML normalized no-comment, no-tags, and JavaScript output open failures now
   remain fail-visible; parser-family and production-corpus qualification remain open.
+- The mandatory service gate now directly exercises and oracle-validates all
+  six structured clamd command families; full production qualification remains open.
 
 ## Large-file validation and expansion progression
 
