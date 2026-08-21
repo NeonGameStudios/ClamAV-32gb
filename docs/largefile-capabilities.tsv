@@ -4,7 +4,7 @@ library	fd	bounded	libclamav/scanners.c	checked root/type-detection and nested p
 library	fmap	bounded	libclamav_rust/src/fmap.rs	checked source offsets, map boundaries, nested-range admission, and type-detection/forced-staging read failures; Rust FMap::need_off preflights native-size ranges before callback or slice formation; operational nested reads return CL_EREAD and structured report is covered by the scan API
 clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
 clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix
-clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending
+clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending; mandatory service qualification now binds daemon/client/milter binaries and runtime dependencies to the audited build
 clamd	FILDES	bounded	clamd/session.c	legacy command preserves non-clean descriptor results for worker and IDSESSION status; structured parity pending
 clamd	INSTREAM	bounded	clamd/server-th.c	complete staging with stream/temp quota; shared zero-value policy selects the 32-GiB ceiling and buffered chunk arithmetic is wrap-safe
 clamd	SCANREPORT	bounded	clamd/session.c	direct length-prefixed protocol probe validates the path command and fallback report classification; broader production qualification remains required
@@ -16,7 +16,7 @@ clamd	INSTREAMREPORT	bounded	clamd/session.c	direct staged-stream protocol probe
 clamdscan	fdpass	bounded	clamdscan/proto.c	known-size MaxFileSize preflight and daemon-error propagation on stdin legacy results; service qualification pending
 clamdscan	stream	bounded	clamdscan/proto.c	legacy INSTREAM path and daemon-error propagation on stdin legacy results; qualification pending
 clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback at MaxThreads=1; parallel child reports aggregate; per-file worker OOM and unexpected non-success results remain fail-visible
-milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending
+milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending; service evidence now binds the milter executable and resolved runtime dependencies to the audited build
 on-access	permission	bounded	clamonacc/scan/thread.c	structured report and client status propagation preserve parser, limit, timeout, resource, and transport failures; prevention mode denies incomplete outcomes, file preflight failures remain visible, and ordinary streams reject post-stat growth
 unsupported	native-windows-memory-scan	unsupported	CMakeLists.txt	native Windows and its memory-scan ingress are outside the certified Linux x86-64 first-release target; memory-scan errors remain fail-visible when built
 matcher	ac	bounded	libclamav/matcher-ac.c	AC matcher errors from buffer and fmap target/generic passes remain fail-visible while file-type results continue through type detection; test_ac_offset_mode_matches_above_uint32 verifies an exact-tail AC result and preserved 64-bit match offset; production-signature qualification remains open

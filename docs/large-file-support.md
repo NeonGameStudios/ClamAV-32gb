@@ -4102,6 +4102,16 @@ marked incomplete and non-cacheable. The focused normalizer regression covers
 the operational read status; compiled scanner-level, sanitizer, callback-fault,
 and supported-build Sonic1 qualification remain release gates.
 
+## Service-build provenance binding — 2026-08-21
+
+The mandatory service qualification now binds its `clamd`, `clamdscan`,
+`clamscan`, and milter workload to the audited source root, configure-time
+source commit/manifest, CMake cache, compile-command graph, executable hashes,
+and resolved runtime dependency hashes. Service binaries are re-hashed after
+the workload and the gate fails if any changes. This closes the evidence gap
+between the standalone runtime gate and the daemon/client/milter workload;
+supported-Linux execution and full service qualification remain release gates.
+
 ## clamscan stdin structured staging failures — 2026-08-20
 
 The stdin staging path now emits a per-input structured fallback report when

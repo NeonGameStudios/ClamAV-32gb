@@ -2903,3 +2903,14 @@ window, treats an impossible offset as `CL_EPARSE`, and the scanner preserves
 that status through its cleanup path. The focused normalizer regression now
 asserts `CL_EREAD`; compiled scanner-level, sanitizer, callback-fault, and
 production script-corpus qualification remain open.
+
+## Service-build provenance binding — 2026-08-21
+
+The mandatory service qualification now verifies that its build was configured
+from the audited source root and the same immutable source commit/manifest as
+the runtime gate. It records the CMake cache, compile-command graph, hashes of
+`clamscan`, `clamd`, `clamdscan`, and `clamav-milter`, and the hashes of their
+resolved runtime dependencies; the service executables are re-hashed after the
+workload to detect mutation during qualification. The service evidence now
+cannot claim a production workload for an unbound or substituted build.
+Supported-Linux execution and full service qualification remain release gates.

@@ -19,7 +19,7 @@ if [ "$#" -ne 9 ]; then
     exit 2
 fi
 
-build_dir=$1
+build_dir=$(CDPATH= cd -- "$1" && pwd)
 out=$2
 production_db=$3
 production_file=$4
@@ -28,6 +28,17 @@ expansion_file=$6
 edge_file=$7
 edge_db=$8
 oracle_manifest=$9
+
+case "$out" in
+    /*) ;;
+    *) out=$(CDPATH= cd -- "$(dirname "$out")" && pwd)/$(basename "$out") ;;
+esac
+case "$out" in
+    "$root"|"$root"/*)
+        echo "service qualification output must be outside the source tree: $out" >&2
+        exit 2
+        ;;
+esac
 
 for required in \
     "$build_dir/clamscan/clamscan" \
@@ -70,6 +81,121 @@ if ! command -v timeout >/dev/null 2>&1 || ! command -v awk >/dev/null 2>&1 ||
     echo 'timeout, awk, python3, sha256sum, du, and GNU /usr/bin/time are required' >&2
     exit 2
 fi
+
+mkdir -p "$out/provenance"
+
+# Bind every service process to the same immutable source/build identity as
+# the clamscan runtime gate. The service gate executes build-tree binaries
+# directly, so recording only their paths is insufficient: a stale binary or
+# shared library with the same basename could otherwise satisfy the workload
+# checks while the evidence describes a different revision.
+service_cmake_cache=$build_dir/CMakeCache.txt
+service_compile_commands=$build_dir/compile_commands.json
+service_source_manifest=$out/provenance/source-manifest.txt
+service_binary_hashes_before=$out/provenance/service-binary-hashes-before.txt
+service_binary_hashes_after=$out/provenance/service-binary-hashes-after.txt
+service_dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
+service_build_identity=$out/provenance/service-build-identity.txt
+
+if [ ! -s "$service_cmake_cache" ] || [ ! -s "$service_compile_commands" ]; then
+    echo "service qualification requires CMakeCache.txt and compile_commands.json in $build_dir" >&2
+    exit 2
+fi
+service_cmake_source=$(sed -n 's#^CMAKE_HOME_DIRECTORY:INTERNAL=##p' "$service_cmake_cache")
+if [ "$service_cmake_source" != "$root" ]; then
+    echo "service build was configured from $service_cmake_source, not the audited source root $root" >&2
+    exit 2
+fi
+
+service_git_checkout=no
+if command -v git >/dev/null 2>&1 &&
+    [ "$(git -C "$root" rev-parse --is-inside-work-tree 2>/dev/null || true)" = true ] &&
+    [ "$(git -C "$root" rev-parse --show-toplevel 2>/dev/null || true)" = "$root" ]; then
+    service_git_checkout=yes
+    if [ -n "$(git -C "$root" status --porcelain --untracked-files=normal)" ]; then
+        echo 'service qualification refuses a dirty source tree' >&2
+        exit 2
+    fi
+    service_source_commit=$(git -C "$root" rev-parse --verify HEAD)
+    service_source_tree=$(git -C "$root" rev-parse --verify "$service_source_commit^{tree}")
+else
+    service_source_commit=content-manifest
+    service_source_tree=content-manifest
+fi
+"$root/tools/largefile_source_manifest.sh" "$root" "$service_source_manifest"
+service_source_manifest_sha256=$(sha256sum "$service_source_manifest" | awk '{ print $1 }')
+if [ "$service_git_checkout" = no ]; then
+    service_source_commit=$service_source_manifest_sha256
+    service_source_tree=$service_source_manifest_sha256
+fi
+service_cmake_commit=$(sed -n 's/^CLAMAV_SOURCE_COMMIT:INTERNAL=//p' "$service_cmake_cache")
+service_cmake_manifest=$(sed -n 's/^CLAMAV_SOURCE_MANIFEST_SHA256:INTERNAL=//p' "$service_cmake_cache")
+if [ "$service_cmake_commit" != "$service_source_commit" ] ||
+    [ "$service_cmake_manifest" != "$service_source_manifest_sha256" ]; then
+    echo 'service build provenance does not match the immutable source revision' >&2
+    exit 2
+fi
+service_cmake_hash=$(sha256sum "$service_cmake_cache" | awk '{ print $1 }')
+service_compile_commands_hash=$(sha256sum "$service_compile_commands" | awk '{ print $1 }')
+cp "$service_cmake_cache" "$out/provenance/CMakeCache.txt"
+cp "$service_compile_commands" "$out/provenance/compile_commands.json"
+
+service_binaries="clamscan/clamscan clamd/clamd clamdscan/clamdscan clamav-milter/clamav-milter"
+record_service_binary_hashes()
+{
+    destination=$1
+    : > "$destination"
+    for relative_binary in $service_binaries; do
+        service_binary="$build_dir/$relative_binary"
+        if [ ! -x "$service_binary" ]; then
+            echo "service qualification executable is not executable: $service_binary" >&2
+            return 1
+        fi
+        service_binary_real=$(CDPATH= cd -- "$(dirname "$service_binary")" && pwd)/$(basename "$service_binary")
+        case "$service_binary_real" in
+            "$build_dir"/*) ;;
+            *)
+                echo "service executable escaped the configured build tree: $service_binary_real" >&2
+                return 1
+                ;;
+        esac
+        printf '%s\t%s\n' "$relative_binary" "$(sha256sum "$service_binary" | awk '{ print $1 }')" >> "$destination"
+    done
+}
+
+record_service_binary_hashes "$service_binary_hashes_before"
+
+: > "$service_dependency_hashes"
+for relative_binary in $service_binaries; do
+    service_binary="$build_dir/$relative_binary"
+    service_ldd="$out/provenance/ldd-${relative_binary%%/*}.txt"
+    ldd "$service_binary" > "$service_ldd" 2>&1
+    if grep -F 'not found' "$service_ldd" >/dev/null 2>&1; then
+        echo "service executable has unresolved runtime dependencies: $service_binary" >&2
+        exit 2
+    fi
+    awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' "$service_ldd" |
+        LC_ALL=C sort -u | while IFS= read -r dependency; do
+            [ -f "$dependency" ] || {
+                echo "service runtime dependency is not a regular file: $dependency" >&2
+                exit 1
+            }
+            printf '%s\t%s\n' "$dependency" "$(sha256sum "$dependency" | awk '{ print $1 }')" >> "$service_dependency_hashes"
+        done
+done
+LC_ALL=C sort -u "$service_dependency_hashes" -o "$service_dependency_hashes"
+service_dependency_hashes_sha256=$(sha256sum "$service_dependency_hashes" | awk '{ print $1 }')
+{
+    printf 'source_commit=%s\n' "$service_source_commit"
+    printf 'source_tree=%s\n' "$service_source_tree"
+    printf 'source_manifest_sha256=%s\n' "$service_source_manifest_sha256"
+    printf 'cmake_cache_sha256=%s\n' "$service_cmake_hash"
+    printf 'compile_commands_sha256=%s\n' "$service_compile_commands_hash"
+    printf 'service_binary_hashes=provenance/service-binary-hashes-before.txt\n'
+    printf 'service_binary_hashes_sha256=%s\n' "$(sha256sum "$service_binary_hashes_before" | awk '{ print $1 }')"
+    printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
+    printf 'service_runtime_dependency_hashes_sha256=%s\n' "$service_dependency_hashes_sha256"
+} > "$service_build_identity"
 
 # The oracle is deliberately separate from the source tree. It binds every
 # materialized input to its expected size/hash/status/completion/type and, for
@@ -850,5 +976,11 @@ printf 'milter_exact_edge_peak_rss_kb=%s\n' "$milter_rss" >> "$out/service-summa
 printf 'service_temp_peak_bytes=%s\n' "$service_peak_temp_bytes" >> "$out/service-summary.txt"
 printf 'service_temp_budget_bytes=%s\n' "$temporary_budget_bytes" >> "$out/service-summary.txt"
 printf 'service_temp_budget=pass\n' >> "$out/service-summary.txt"
+record_service_binary_hashes "$service_binary_hashes_after"
+if ! cmp -s "$service_binary_hashes_before" "$service_binary_hashes_after"; then
+    echo 'service executable changed during qualification' >&2
+    exit 1
+fi
+printf 'service_build_identity=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"
 echo "service qualification passed; evidence is in $out"
