@@ -138,7 +138,7 @@ parser	CL_TYPE_RTF	pending	libclamav/rtf.c	RTF in-range fmap read failures now r
 parser	CL_TYPE_SCRENC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_SCRIPT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_SIS	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_SWF	pending	libclamav/scanners.c	bounded decompressor output and checked debug tag-payload bounds; parser-family qualification and complete corpus evidence remain required
+parser	CL_TYPE_SWF	pending	libclamav/swf.c	SWF fixed metadata and compressed-input callback failures now preserve CL_EREAD while short input remains a format error; bounded decompressor output and checked debug tag-payload bounds remain fail-visible; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_TEXT_ASCII	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_TEXT_UTF16BE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_TEXT_UTF16LE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

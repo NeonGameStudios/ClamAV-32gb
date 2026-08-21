@@ -5169,6 +5169,60 @@ START_TEST(test_swf_truncated_uncompressed_header_is_fail_visible)
 }
 END_TEST
 
+static size_t swf_read_failure_offset = SIZE_MAX;
+
+static const void *swf_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == swf_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_swf_required_read_failure_is_fail_visible)
+{
+    static const uint8_t archive[] = {'F', 'W', 'S', 9U, 9U, 0U, 0U, 0U, 0U};
+    static const size_t failure_offsets[] = {0U, 8U};
+    static const char *const reasons[] = {
+        "SWF file header could not be read completely",
+        "SWF frame metadata could not be read completely"};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+
+    for (i = 0; i < sizeof(failure_offsets) / sizeof(failure_offsets[0]); i++) {
+        fmap_t *map;
+        cl_error_t ret;
+
+        map = cl_fmap_open_memory(archive, sizeof(archive));
+        ck_assert_ptr_nonnull(map);
+        swf_read_failure_offset = failure_offsets[i];
+        map->need                       = swf_targeted_read_failure;
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine            = &engine;
+        ctx.options           = &options;
+        ctx.fmap              = map;
+        ctx.this_layer_tmpdir = tmpdir;
+
+        ret = cli_scanswf(&ctx);
+        ck_assert_int_eq(ret, CL_EREAD);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+    swf_read_failure_offset = SIZE_MAX;
+}
+END_TEST
+
 START_TEST(test_swf_truncated_frame_metadata_is_fail_visible)
 {
     static const uint8_t archive[] = {'F', 'W', 'S', 9U, 9U, 0U, 0U, 0U, 0U};
@@ -15767,6 +15821,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_zlib_truncated_stream_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_lzma_declared_input_size_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_output_temporary_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_swf_required_read_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_swf_cleanup_close_failure_is_fail_visible);
 #endif

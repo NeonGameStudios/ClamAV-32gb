@@ -123,6 +123,9 @@
   fmap callback failures (`CL_EREAD`) from short or out-of-map descriptors
   (`CL_EPARSE`); add callback-fault, sanitizer, and production UDF corpus
   qualification.
+- SWF fixed metadata and compressed-input reads now distinguish in-range fmap
+  callback failures (`CL_EREAD`) from short input/format errors; add callback-
+  fault, sanitizer, and production SWF corpus qualification.
 - ELF64 entrypoint and section coordinates now retain a native-width matcher
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the

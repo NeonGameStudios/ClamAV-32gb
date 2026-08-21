@@ -4232,6 +4232,16 @@ and returning clean. The focused regression exercises a truncated `SHOWFRAME`
 payload; compressed-output, sanitizer, and full SWF corpus qualification remain
 release gates.
 
+## SWF required read status — 2026-08-21
+
+SWF fixed frame-metadata reads and CWS/ZWS compressed-input reads now
+distinguish an in-range fmap callback failure from genuinely short or
+out-of-map input. Callback failures preserve `CL_EREAD`; short input retains
+the format/decompression failure path, and partial decompressor output is
+still never scanned. A focused header and frame-metadata callback regression
+and source guards cover the boundary. Compiled SWF corpus, sanitizer,
+callback-fault, and supported-build Sonic1 qualification remain release gates.
+
 ## Mach-O native section metadata — 2026-08-20
 
 64-bit Mach-O section virtual addresses, sizes, aligned raw sizes, and entry

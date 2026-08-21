@@ -53,16 +53,43 @@
 #define EC16(v) le16_to_host(v)
 #define EC32(v) le32_to_host(v)
 
+static cl_error_t swf_read_exact(fmap_t *map, void *dst, size_t offset, size_t length)
+{
+    size_t nread = fmap_readn(map, dst, offset, length);
+
+    if (nread == length)
+        return CL_SUCCESS;
+    if (nread == (size_t)-1 && offset <= map->len && length <= map->len - offset)
+        return CL_EREAD;
+    return CL_EFORMAT;
+}
+
+static cl_error_t swf_read_chunk(fmap_t *map, void *dst, size_t offset, size_t length, size_t *nread)
+{
+    *nread = fmap_readn(map, dst, offset, length);
+    if (*nread != (size_t)-1)
+        return CL_SUCCESS;
+    return offset < map->len ? CL_EREAD : CL_EFORMAT;
+}
+
+static cl_error_t swf_read_failure(cli_ctx *ctx, cl_error_t status, const char *truncated_reason,
+                                   const char *read_failure_reason)
+{
+    cli_mark_scan_incomplete(ctx, status == CL_EREAD ? read_failure_reason : truncated_reason);
+    return status;
+}
+
 #define INITBITS                                                                       \
     {                                                                                  \
-        if (fmap_readn(map, &get_c, offset, sizeof(get_c)) == sizeof(get_c)) {         \
+        cl_error_t read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));    \
+        if (read_status == CL_SUCCESS) {                                               \
             bitpos = 8;                                                                \
             bitbuf = (unsigned int)get_c;                                              \
             offset += sizeof(get_c);                                                   \
         } else {                                                                       \
             cli_warnmsg("cli_scanswf: INITBITS: Can't read file or file truncated\n"); \
-            cli_mark_scan_incomplete(ctx, "SWF frame metadata was truncated");         \
-            return CL_EFORMAT;                                                         \
+            return swf_read_failure(ctx, read_status, "SWF frame metadata was truncated", \
+                                    "SWF frame metadata could not be read completely"); \
         }                                                                              \
     }
 
@@ -73,14 +100,15 @@
         while (getbits_n > bitpos) {                                                      \
             getbits_n -= bitpos;                                                          \
             bits |= bitbuf << getbits_n;                                                  \
-            if (fmap_readn(map, &get_c, offset, sizeof(get_c)) == sizeof(get_c)) {        \
+            read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));             \
+            if (read_status == CL_SUCCESS) {                                             \
                 bitbuf = (unsigned int)get_c;                                             \
                 bitpos = 8;                                                               \
                 offset += sizeof(get_c);                                                  \
             } else {                                                                      \
                 cli_warnmsg("cli_scanswf: GETBITS: Can't read file or file truncated\n"); \
-                cli_mark_scan_incomplete(ctx, "SWF frame metadata was truncated");        \
-                return CL_EFORMAT;                                                        \
+                return swf_read_failure(ctx, read_status, "SWF frame metadata was truncated", \
+                                        "SWF frame metadata could not be read completely"); \
             }                                                                             \
         }                                                                                 \
         bitpos -= getbits_n;                                                              \
@@ -91,21 +119,23 @@
 
 #define GETWORD(v)                                                                    \
     {                                                                                 \
-        if (fmap_readn(map, &get_c, offset, sizeof(get_c)) == sizeof(get_c)) {        \
+        read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));              \
+        if (read_status == CL_SUCCESS) {                                              \
             getword_1 = (unsigned int)get_c;                                          \
             offset += sizeof(get_c);                                                  \
         } else {                                                                      \
             cli_warnmsg("cli_scanswf: GETWORD: Can't read file or file truncated\n"); \
-            cli_mark_scan_incomplete(ctx, "SWF frame metadata was truncated");        \
-            return CL_EFORMAT;                                                        \
+            return swf_read_failure(ctx, read_status, "SWF frame metadata was truncated", \
+                                    "SWF frame metadata could not be read completely"); \
         }                                                                             \
-        if (fmap_readn(map, &get_c, offset, sizeof(get_c)) == sizeof(get_c)) {        \
+        read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));              \
+        if (read_status == CL_SUCCESS) {                                              \
             getword_2 = (unsigned int)get_c;                                          \
             offset += sizeof(get_c);                                                  \
         } else {                                                                      \
             cli_warnmsg("cli_scanswf: GETWORD: Can't read file or file truncated\n"); \
-            cli_mark_scan_incomplete(ctx, "SWF frame metadata was truncated");        \
-            return CL_EFORMAT;                                                        \
+            return swf_read_failure(ctx, read_status, "SWF frame metadata was truncated", \
+                                    "SWF frame metadata could not be read completely"); \
         }                                                                             \
         v = (uint16_t)(getword_1 & 0xff) | ((getword_2 & 0xff) << 8);                 \
     }
@@ -195,9 +225,12 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     }
 
     /* read 4 bytes (for compressed 32-bit filesize) [not used for LZMA] */
-    if (fmap_readn(map, &d_insize, offset, sizeof(d_insize)) != sizeof(d_insize)) {
+    ret = swf_read_exact(map, &d_insize, offset, sizeof(d_insize));
+    if (ret != CL_SUCCESS) {
         cli_errmsg("scanzws: Error reading SWF file\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EREAD, temporary_reserved);
+        ret = swf_read_failure(ctx, ret, "SWF LZMA input-length field was truncated",
+                               "SWF LZMA input-length field could not be read completely");
+        return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
     }
     offset += sizeof(d_insize);
 
@@ -216,15 +249,19 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
                d_insize, (long long unsigned)(map->len - 17));
 
     /* first buffer required for initializing LZMA */
-    n_read = fmap_readn(map, inbuff, offset, FILEBUFF);
-    if (n_read == (size_t)-1) {
+    ret = swf_read_chunk(map, inbuff, offset, FILEBUFF, &n_read);
+    if (ret != CL_SUCCESS) {
         cli_errmsg("scanzws: Error reading SWF file\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
+        ret = swf_read_failure(ctx, ret, "SWF LZMA compressed input was truncated",
+                               "SWF LZMA compressed input could not be read completely");
+        return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
     }
     /* nothing written, likely truncated */
     if (0 == n_read) {
         cli_errmsg("scanzws: possibly truncated file\n");
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EFORMAT, temporary_reserved);
+        ret = swf_read_failure(ctx, CL_EFORMAT, "SWF LZMA compressed input was truncated",
+                               "SWF LZMA compressed input could not be read completely");
+        return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
     }
     offset += n_read;
 
@@ -244,11 +281,13 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         if (lz.avail_in == 0) {
             lz.next_in = inbuff;
 
-            n_read = fmap_readn(map, inbuff, offset, FILEBUFF);
-            if ((size_t)-1 == n_read) {
+            ret = swf_read_chunk(map, inbuff, offset, FILEBUFF, &n_read);
+            if (ret != CL_SUCCESS) {
                 cli_errmsg("scanzws: Error reading SWF file\n");
                 cli_LzmaShutdown(&lz);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
+                ret = swf_read_failure(ctx, ret, "SWF LZMA compressed input was truncated",
+                                       "SWF LZMA compressed input could not be read completely");
+                return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
             }
             if (0 == n_read)
                 break;
@@ -351,11 +390,13 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     do {
         if (stream.avail_in == 0) {
             stream.next_in = (Bytef *)inbuff;
-            n_read         = fmap_readn(map, inbuff, offset, FILEBUFF);
-            if (n_read == (size_t)-1) {
+            ret = swf_read_chunk(map, inbuff, offset, FILEBUFF, &n_read);
+            if (ret != CL_SUCCESS) {
                 cli_errmsg("scancws: Error reading SWF file\n");
                 inflateEnd(&stream);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EUNPACK, temporary_reserved);
+                ret = swf_read_failure(ctx, ret, "SWF zlib compressed input was truncated",
+                                       "SWF zlib compressed input could not be read completely");
+                return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
             }
             if (0 == n_read)
                 break;
@@ -430,13 +471,19 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
     size_t offset = 0;
     unsigned int val, foo, tag_hdr, tag_type, tag_len;
     unsigned long int bits;
+    cl_error_t read_status;
 
     cli_dbgmsg("in cli_scanswf()\n");
 
-    if (fmap_readn(map, &file_hdr, offset, sizeof(file_hdr)) != sizeof(file_hdr)) {
-        cli_mark_scan_incomplete(ctx, "SWF file header was truncated");
+    read_status = swf_read_exact(map, &file_hdr, offset, sizeof(file_hdr));
+    if (read_status != CL_SUCCESS) {
         cli_dbgmsg("SWF: Can't read file header\n");
-        return CL_EPARSE;
+        if (read_status != CL_EREAD) {
+            cli_mark_scan_incomplete(ctx, "SWF file header was truncated");
+            return CL_EPARSE;
+        }
+        return swf_read_failure(ctx, read_status, "SWF file header was truncated",
+                                "SWF file header could not be read completely");
     }
     offset += sizeof(file_hdr);
     /*

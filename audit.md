@@ -2847,3 +2847,15 @@ incomplete and non-cacheable. A focused generic-descriptor fault-injection
 regression, source guards, and capability-manifest evidence record the
 distinction. Compiled Linux/Sonic1, sanitizer, callback-fault, and production
 UDF corpus qualification remain open.
+
+## SWF required read status — 2026-08-21
+
+SWF fixed frame metadata reads previously returned truncation/format statuses
+for both an in-range fmap callback failure and genuinely short input;
+compressed CWS/ZWS input failures could also be normalized to `CL_EUNPACK`.
+Shared exact and chunk readers now preserve in-range callback failures as
+`CL_EREAD`, while short or out-of-map input retains the format/decompression
+failure path. A focused header and frame-metadata callback regression, source
+guards, and capability-manifest evidence record the distinction. Compiled
+Linux/Sonic1, sanitizer, callback-fault, and production SWF corpus
+qualification remain open.
