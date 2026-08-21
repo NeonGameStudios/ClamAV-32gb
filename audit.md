@@ -1872,6 +1872,11 @@ reads: short non-candidates remain clean, while an in-range mapping failure or
 a confirmed `GIF` prefix without a complete version marks the layer incomplete
 and returns a non-clean parse result.
 
+The RIFF/ANI exploit heuristic now applies the same distinction to its fixed
+12-byte RIFF/ACON probe. A genuinely short input remains a non-candidate, but
+an in-range fmap failure marks the layer incomplete and returns `CL_EPARSE`
+instead of becoming a clean non-RIFF result.
+
 ## PE import-thunk completion — 2026-08-20
 
 PE import-hash inspection now requires each thunk table to reach its explicit

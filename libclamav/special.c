@@ -191,8 +191,15 @@ int cli_check_riff_exploit(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_check_riff_exploit()\n");
 
-    if (!(buf = fmap_need_off_once(map, 0, 4 * 3)))
+    /* A map shorter than the fixed RIFF/ACON probe is not a candidate. Once
+     * the complete probe range exists, a failed fmap read is an operational
+     * failure and must not be reduced to a clean non-RIFF result. */
+    if (map->len < 4 * 3)
         return 0;
+    if (!(buf = fmap_need_off_once(map, 0, 4 * 3))) {
+        cli_mark_scan_incomplete(ctx, "RIFF header could not be read completely");
+        return CL_EPARSE;
+    }
 
     if (memcmp(buf, "RIFF", 4) == 0) {
         big_endian = FALSE;

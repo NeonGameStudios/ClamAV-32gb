@@ -4272,3 +4272,12 @@ when its confirmed signature or version range cannot be read. These paths mark
 the layer incomplete and return `CL_EPARSE`; focused fault-injection coverage
 and source guards are registered. Compiled GIF, sanitizer, and broader media
 corpus qualification remain release gates.
+
+## RIFF header read failures — 2026-08-20
+
+The RIFF/ANI heuristic now keeps inputs shorter than its fixed 12-byte probe as
+non-candidates but fails closed when that complete range cannot be read from
+the fmap. The failure marks the layer incomplete and returns `CL_EPARSE`;
+focused fault-injection coverage and source guards are registered. Compiled
+RIFF/ANI, sanitizer, and broader media-corpus qualification remain release
+gates.

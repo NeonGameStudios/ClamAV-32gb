@@ -132,7 +132,7 @@ parser	CL_TYPE_POSIX_TAR	pending	libclamav/scanners.c	bounded member staging, ch
 parser	CL_TYPE_PYTHON_COMPILED	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_RAR	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_RARSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_RIFF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_RIFF	pending	libclamav/scanners.c	RIFF header fmap failures remain incomplete; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_RTF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_SCRENC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_SCRIPT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
