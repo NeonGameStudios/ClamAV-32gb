@@ -2362,27 +2362,51 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
     if (!peinfo->is_pe32plus) {
         struct pe_image_thunk32 thunk32;
 
-        while ((num_fns < PE_MAXIMPORTS) && (fmap_readn(map, &thunk32, thuoff, sizeof(struct pe_image_thunk32)) == sizeof(struct pe_image_thunk32)) && (thunk32.u.Ordinal != 0)) {
+        while (1) {
             char *funcname = NULL;
             uint32_t temp;
+            size_t name_offset;
+            size_t nread = fmap_readn(map, &thunk32, thuoff, sizeof(struct pe_image_thunk32));
 
-            thuoff += sizeof(struct pe_image_thunk32);
+            if (nread != sizeof(struct pe_image_thunk32)) {
+                cli_mark_scan_incomplete(ctx, "PE import thunk table could not be read completely");
+                return (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+            }
 
             temp              = EC32(thunk32.u.Ordinal);
             thunk32.u.Ordinal = temp;
+            if (thunk32.u.Ordinal == 0)
+                break;
+            if (num_fns >= PE_MAXIMPORTS) {
+                cli_mark_scan_incomplete(ctx, "PE import thunk table exceeded its inspection limit");
+                return CL_EPARSE;
+            }
+            if (thuoff > UINT32_MAX - sizeof(struct pe_image_thunk32)) {
+                cli_mark_scan_incomplete(ctx, "PE import thunk table offset overflowed");
+                return CL_EFORMAT;
+            }
+
+            thuoff += sizeof(struct pe_image_thunk32);
 
             if (!(thunk32.u.Ordinal & PE_IMAGEDIR_ORDINAL_FLAG32)) {
                 offset = cli_rawaddr(thunk32.u.Function, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
 
-                if (!ret) {
-                    /* Hint field is a uint16_t and precedes the Name field */
-                    if ((buffer = fmap_need_off_once(map, offset + sizeof(uint16_t), MIN(PE_MAXNAMESIZE, fsize - offset))) != NULL) {
-                        funcname = CLI_STRNDUP(buffer, MIN(PE_MAXNAMESIZE, fsize - offset));
-                        if (funcname == NULL) {
-                            cli_dbgmsg("scan_pe: cannot duplicate function name\n");
-                            return CL_EMEM;
-                        }
-                    }
+                if (err || (size_t)offset > fsize || fsize - (size_t)offset <= sizeof(uint16_t)) {
+                    cli_mark_scan_incomplete(ctx, "PE imported function name RVA is invalid");
+                    return CL_EFORMAT;
+                }
+
+                /* Hint field is a uint16_t and precedes the Name field. */
+                name_offset = (size_t)offset + sizeof(uint16_t);
+                buffer      = fmap_need_off_once(map, name_offset, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                if (buffer == NULL) {
+                    cli_mark_scan_incomplete(ctx, "PE imported function name could not be read completely");
+                    return CL_EREAD;
+                }
+                funcname = CLI_STRNDUP(buffer, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                if (funcname == NULL) {
+                    cli_dbgmsg("scan_pe: cannot duplicate function name\n");
+                    return CL_EMEM;
                 }
             } else {
                 /* ordinal lookup */
@@ -2397,33 +2421,58 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
             free(funcname);
             if (ret != CL_SUCCESS)
                 return ret;
+            num_fns++;
         }
     } else {
         struct pe_image_thunk64 thunk64;
 
-        while ((num_fns < PE_MAXIMPORTS) && (fmap_readn(map, &thunk64, thuoff, sizeof(struct pe_image_thunk64)) == sizeof(struct pe_image_thunk64)) && (thunk64.u.Ordinal != 0)) {
+        while (1) {
             char *funcname = NULL;
+            size_t name_offset;
+            size_t nread = fmap_readn(map, &thunk64, thuoff, sizeof(struct pe_image_thunk64));
 
             // Temporary variable so we don't have overlapping writes with the EC32 reads.
             uint64_t temp;
 
-            thuoff += sizeof(struct pe_image_thunk64);
+            if (nread != sizeof(struct pe_image_thunk64)) {
+                cli_mark_scan_incomplete(ctx, "PE import thunk table could not be read completely");
+                return (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+            }
 
             temp              = EC64(thunk64.u.Ordinal);
             thunk64.u.Ordinal = temp;
+            if (thunk64.u.Ordinal == 0)
+                break;
+            if (num_fns >= PE_MAXIMPORTS) {
+                cli_mark_scan_incomplete(ctx, "PE import thunk table exceeded its inspection limit");
+                return CL_EPARSE;
+            }
+            if (thuoff > UINT32_MAX - sizeof(struct pe_image_thunk64)) {
+                cli_mark_scan_incomplete(ctx, "PE import thunk table offset overflowed");
+                return CL_EFORMAT;
+            }
+
+            thuoff += sizeof(struct pe_image_thunk64);
 
             if (!(thunk64.u.Ordinal & PE_IMAGEDIR_ORDINAL_FLAG64)) {
                 offset = cli_rawaddr(thunk64.u.Function, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
 
-                if (!err) {
-                    /* Hint field is a uint16_t and precedes the Name field */
-                    if ((buffer = fmap_need_off_once(map, offset + sizeof(uint16_t), MIN(PE_MAXNAMESIZE, fsize - offset))) != NULL) {
-                        funcname = CLI_STRNDUP(buffer, MIN(PE_MAXNAMESIZE, fsize - offset));
-                        if (funcname == NULL) {
-                            cli_dbgmsg("scan_pe: cannot duplicate function name\n");
-                            return CL_EMEM;
-                        }
-                    }
+                if (err || (size_t)offset > fsize || fsize - (size_t)offset <= sizeof(uint16_t)) {
+                    cli_mark_scan_incomplete(ctx, "PE imported function name RVA is invalid");
+                    return CL_EFORMAT;
+                }
+
+                /* Hint field is a uint16_t and precedes the Name field. */
+                name_offset = (size_t)offset + sizeof(uint16_t);
+                buffer      = fmap_need_off_once(map, name_offset, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                if (buffer == NULL) {
+                    cli_mark_scan_incomplete(ctx, "PE imported function name could not be read completely");
+                    return CL_EREAD;
+                }
+                funcname = CLI_STRNDUP(buffer, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                if (funcname == NULL) {
+                    cli_dbgmsg("scan_pe: cannot duplicate function name\n");
+                    return CL_EMEM;
                 }
             } else {
                 /* ordinal lookup */
@@ -2438,6 +2487,7 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
             free(funcname);
             if (ret != CL_SUCCESS)
                 return ret;
+            num_fns++;
         }
     }
 

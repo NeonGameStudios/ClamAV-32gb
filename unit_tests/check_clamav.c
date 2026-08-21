@@ -9382,6 +9382,20 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
     return NULL;
 }
 
+/* The checked-in PE fixture's first import thunk is at this raw file offset.
+ * Allow every other memory window so the scan reaches the thunk-table read. */
+#define PE_TEST_IMPORT_THUNK_OFFSET 0x126e3cU
+
+static const void *pe_import_thunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == PE_TEST_IMPORT_THUNK_OFFSET)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *fmap_gets_read_failure(fmap_t *map, char *dst, size_t *at, size_t max_len)
 {
     (void)map;
@@ -11208,6 +11222,64 @@ START_TEST(test_pe_truncated_header_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct stat st;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    fmap_t *map;
+    uint8_t *data;
+    size_t offset = 0;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg(FSTAT(fd, &st) == 0, "fstat(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg(st.st_size > PE_TEST_IMPORT_THUNK_OFFSET + sizeof(uint32_t), "PE fixture is unexpectedly short");
+
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    map->need = pe_import_thunk_read_failure;
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_MSEXE", NULL);
+    ck_assert_msg(ret != CL_SUCCESS, "PE import thunk read failure returned clean");
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
 }
 END_TEST
 
@@ -13247,6 +13319,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_arj_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_temporary_limit_is_fail_visible);

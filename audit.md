@@ -1850,3 +1850,12 @@ returning `CL_EREAD`, so direct parser callers cannot mistake an operational
 read failure for a completed container. A focused fault-injection regression
 and source guard are registered. Compiled Linux/Sonic1 execution, sanitizer
 coverage, and broader TNEF corpus qualification remain open.
+
+## PE import-thunk completion — 2026-08-20
+
+PE import-hash inspection now requires each thunk table to reach its explicit
+terminator, enforces the `PE_MAXIMPORTS` bound, and treats invalid or unreadable
+non-ordinal import names as incomplete instead of silently omitting them. A
+fault-injected checked-in PE fixture regression and source guards are
+registered. Compiled Linux/Sonic1 execution, sanitizer coverage, and broader
+PE/import corpus qualification remain open.
