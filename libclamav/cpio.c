@@ -133,9 +133,11 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
         if (hdr_old.namesize) {
             hdr_namesize = EC16(hdr_old.namesize, conv);
             namesize     = MIN(sizeof(name), hdr_namesize);
-            if (fmap_readn(ctx->fmap, &name, pos, namesize) != namesize) {
+            hdr_read = fmap_readn(ctx->fmap, &name, pos, namesize);
+            if (hdr_read != namesize) {
                 cli_dbgmsg("cli_scancpio_old: Can't read file name\n");
-                status = CL_EFORMAT;
+                cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
+                status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
             pos += namesize;
@@ -237,9 +239,11 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
         }
         if (hdr_namesize) {
             namesize = MIN(sizeof(name), hdr_namesize);
-            if (fmap_readn(ctx->fmap, &name, pos, namesize) != namesize) {
+            hdr_read = fmap_readn(ctx->fmap, &name, pos, namesize);
+            if (hdr_read != namesize) {
                 cli_dbgmsg("cli_scancpio_odc: Can't read file name\n");
-                status = CL_EFORMAT;
+                cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
+                status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
             pos += namesize;
@@ -334,9 +338,11 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
         }
         if (hdr_namesize) {
             namesize = MIN(sizeof(name), hdr_namesize);
-            if (fmap_readn(ctx->fmap, &name, pos, namesize) != namesize) {
+            hdr_read = fmap_readn(ctx->fmap, &name, pos, namesize);
+            if (hdr_read != namesize) {
                 cli_dbgmsg("cli_scancpio_newc: Can't read file name\n");
-                status = CL_EFORMAT;
+                cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
+                status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
             pos += namesize;

@@ -1869,3 +1869,12 @@ zero descriptor terminator, rejects malformed terminators, and enforces the
 malformed terminator, with source guards registered. Compiled Linux/Sonic1
 execution, sanitizer coverage, and broader PE/import corpus qualification
 remain open.
+
+## CPIO member-name read completion — 2026-08-20
+
+All four CPIO readers now distinguish a failed member-name read from a short
+truncated read, mark the layer incomplete and non-cacheable, and return the
+specific read or parse status instead of silently reducing the result to a
+generic format failure. A fault-injected newc regression and source guards
+are registered. Compiled Linux/Sonic1 execution, sanitizer coverage, and
+broader CPIO corpus qualification remain open.

@@ -8082,6 +8082,45 @@ START_TEST(test_cpio_truncated_header_is_fail_visible)
 }
 END_TEST
 
+static const void *cpio_member_name_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+
+START_TEST(test_cpio_member_name_read_failure_is_fail_visible)
+{
+    static const uint8_t data[118] = {
+        [0] = '0', [1] = '7', [2] = '0', [3] = '7', [4] = '0', [5] = '1',
+        [94] = '0', [95] = '0', [96] = '0', [97] = '0', [98] = '0', [99] = '0', [100] = '0', [101] = '8',
+        [110] = 'p', [111] = 'a', [112] = 'y', [113] = 'l', [114] = 'o', [115] = 'a', [116] = 'd', [117] = '\0'};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = cpio_member_name_read_failure;
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_CPIO_NEWC", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_iso_truncated_directory_is_fail_visible)
 {
     enum { ISO_OFFSET = 32768, ISO_DESCRIPTOR_BYTES = 2454 };
@@ -9404,6 +9443,16 @@ static const void *fmap_gets_read_failure(fmap_t *map, char *dst, size_t *at, si
     (void)at;
     (void)max_len;
     return NULL;
+}
+
+static const void *cpio_member_name_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 110U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
 }
 
 START_TEST(test_embedded_header_read_failures_are_fail_visible)
@@ -13268,6 +13317,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_cpio_member_name_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_temporary_directory_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
