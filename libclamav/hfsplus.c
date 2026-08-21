@@ -256,10 +256,15 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
         return CL_EFORMAT;
     }
     offset = (size_t)offset64;
+    if (offset > ctx->fmap->len || volHeader->blockSize > ctx->fmap->len - offset) {
+        cli_dbgmsg("hfsplus_readheader: %s: headerNode is out-of-range\n", name);
+        return CL_EFORMAT;
+    }
     mPtr   = fmap_need_off_once(ctx->fmap, offset, volHeader->blockSize);
     if (!mPtr) {
         cli_dbgmsg("hfsplus_readheader: %s: headerNode is out-of-range\n", name);
-        return CL_EFORMAT;
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header could not be read completely");
+        return CL_EREAD;
     }
 
     /* Node descriptor first */

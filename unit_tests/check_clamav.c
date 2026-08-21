@@ -9421,6 +9421,16 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
     return NULL;
 }
 
+static const void *hfsplus_catalog_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == (8U * 512U))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 /* The checked-in PE fixture's first import thunk is at this raw file offset.
  * Allow every other memory window so the scan reaches the thunk-table read. */
 #define PE_TEST_IMPORT_DESCRIPTOR_OFFSET 0x126e00U
@@ -12954,6 +12964,56 @@ START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hfsplus_tree_header_read_failure_is_fail_visible)
+{
+    uint8_t data[1024 + (40 * 512)];
+    uint8_t *volume;
+    uint8_t *fork;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    volume = data + 1024;
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, signature), 0x482b);
+    test_hfsplus_put_be16(volume + offsetof(hfsPlusVolumeHeader, version), 4);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, blockSize), 512);
+    test_hfsplus_put_be32(volume + offsetof(hfsPlusVolumeHeader, totalBlocks), 40);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, extentsFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 4);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
+
+    fork = volume + offsetof(hfsPlusVolumeHeader, catalogFile);
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 8192);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 16);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 8);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 16);
+
+    test_hfsplus_tree_header(data, 4 * 512, 512, 10);
+    test_hfsplus_tree_header(data, 8 * 512, 4096, 6);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = hfsplus_catalog_header_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ file-tree header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hfsplus_attribute_tree_failure_is_fail_visible)
 {
     uint8_t data[1024 + (40 * 512)];
@@ -13881,6 +13941,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
     tcase_add_test(tc_cl, test_udf_allocation_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_hfsplus_tree_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_attribute_tree_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_catalog_size_accounting_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);

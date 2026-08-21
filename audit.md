@@ -2002,3 +2002,13 @@ full-map callback regression checks the return status, sticky reason, and
 non-cacheable map; source guards and the PCRE capability row record the
 contract. Compiled Linux/Sonic1, sanitizer, full-size PCRE, and RSS
 qualification remain open.
+
+## HFS+ file-tree header fmap failure — 2026-08-21
+
+The HFS+ tree-header reader previously returned a generic format error when a
+confirmed tree header was in range but its fmap window could not be read. The
+path now marks the layer incomplete and returns `CL_EREAD`, preserving the
+direct parser contract and preventing callers from inferring that the missing
+tree was merely malformed. A synthetic catalog-tree fault-injection regression,
+source guard, and capability-manifest entry record the invariant. Compiled
+Linux/Sonic1, sanitizer, and broader HFS+ corpus qualification remain open.

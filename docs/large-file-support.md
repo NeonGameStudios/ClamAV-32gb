@@ -4328,3 +4328,13 @@ and target matcher loops stop on that status instead of continuing into later
 logical work. The focused synthetic regression and source guard are
 registered. Compiled Linux/Sonic1, sanitizer, full-size PCRE, and RSS
 qualification remain open.
+
+## HFS+ file-tree header fmap failure — 2026-08-21
+
+HFS+ confirmed tree-header windows that fail in the fmap now mark the layer
+incomplete and return `CL_EREAD` instead of exposing only a generic format
+error. This preserves the direct parser contract and prevents an unreadable
+tree from being treated as merely malformed. A synthetic catalog-tree
+fault-injection regression, source guard, and capability-manifest entry are
+registered; compiled Linux/Sonic1, sanitizer, and broader HFS+ corpus
+qualification remain open.
