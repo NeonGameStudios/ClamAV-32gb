@@ -424,6 +424,12 @@ cl_error_t cli_bm_scanbuff(const unsigned char *buffer, uint32_t length, const c
                         *virname = p->virname;
                         if (ctx != NULL && SCAN_ALLMATCHES) {
                             ret = cli_append_virus(ctx, *virname);
+                            if (ret != CL_SUCCESS && ret != CL_VERIFIED && ret != CL_VIRUS) {
+                                if (ret != CL_BREAK) {
+                                    cli_mark_scan_incomplete(ctx, "BM signature alert could not be recorded");
+                                }
+                                return ret;
+                            }
                             if (ret == CL_CLEAN && viruses_found > 0) {
                                 viruses_found -= 1;
                             }

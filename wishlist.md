@@ -133,6 +133,9 @@
 - AC all-matches signature alert-append failures now remain fail-visible; add
   callback/resource fault injection and production all-matches signature
   corpus coverage.
+- BM all-matches signature alert-append failures now remain fail-visible; add
+  callback/resource fault injection and production all-matches signature
+  corpus coverage.
 
 ## Large-file validation and expansion progression
 

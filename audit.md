@@ -2360,3 +2360,14 @@ detection results, returns callback breaks, and marks operational append
 failures incomplete before returning them. Source guards record both branches;
 compiled Linux/Sonic1, callback/resource fault injection, sanitizer, and
 production signature-corpus qualification remain open.
+
+## BM all-matches alert-result propagation — 2026-08-21
+
+The Boyer–Moore matcher’s all-matches branch previously ignored non-success
+results from `cli_append_virus()`. Evidence-storage failures or callback
+breaks could therefore be lost while the matcher continued. The branch now
+preserves expected trusted and detection results, returns callback breaks, and
+marks operational append failures incomplete before returning them. Source
+guards record the invariant; compiled Linux/Sonic1, callback/resource fault
+injection, sanitizer, and production signature-corpus qualification remain
+open.
