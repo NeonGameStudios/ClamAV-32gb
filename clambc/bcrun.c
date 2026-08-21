@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
     struct cli_bc *bc;
     struct cli_bc_ctx *ctx;
     int rc, dbgargc, bc_stats = 0;
+    int exit_status = 0;
     struct optstruct *opts;
     const struct optstruct *opt;
     unsigned funcid = 0, i;
@@ -423,7 +424,12 @@ int main(int argc, char *argv[])
         if (opts->filename[1]) {
             funcid = atoi(opts->filename[1]);
         }
-        cli_bytecode_context_setfuncid(ctx, bc, funcid);
+        rc = cli_bytecode_context_setfuncid(ctx, bc, funcid);
+        if (rc != CL_SUCCESS) {
+            fprintf(stderr, "Unable to select bytecode function %u: %s\n", funcid, cl_strerror(rc));
+            optfree(opts);
+            exit(5);
+        }
         if (debug_flag)
             printf("[clambc] Running bytecode function :%u\n", funcid);
 
@@ -433,6 +439,8 @@ int main(int argc, char *argv[])
                 rc = cli_bytecode_context_setparam_int(ctx, i - 2, atoi(opts->filename[i]));
                 if (rc != CL_SUCCESS) {
                     fprintf(stderr, "Unable to set param %u: %s\n", i - 2, cl_strerror(rc));
+                    optfree(opts);
+                    exit(5);
                 }
                 i++;
             }
@@ -475,6 +483,7 @@ int main(int argc, char *argv[])
         rc = cli_bytecode_run(&bcs, bc, ctx);
         if (rc != CL_SUCCESS) {
             fprintf(stderr, "Unable to run bytecode: %s\n", cl_strerror(rc));
+            exit_status = 1;
         } else {
             uint64_t v;
             if (debug_flag)
@@ -502,5 +511,5 @@ int main(int argc, char *argv[])
     if (debug_flag)
         printf("[clambc] Exiting\n");
 
-    return 0;
+    return exit_status;
 }

@@ -381,6 +381,10 @@
 - Mixed v1/v2 hook tables now skip only the incompatible legacy entry on
   >4-GiB layers so a later v2 hook can still run; retain mixed-ABI execution,
   detection, and incomplete-result qualification as a release gate.
+- `clambc` now fails closed for invalid function selection/parameters and
+  returns a nonzero process status when bytecode execution fails, so an
+  independently compiled ABI-v2 fixture cannot be reported as a successful
+  run after a tool/runtime error; retain interpreter/JIT qualification.
 - Legacy MSXML base64 embedded-data failures now fail closed as incomplete and
   non-cacheable instead of skipping the element; add compiled XML/OOXML corpus
   and sanitizer qualification.

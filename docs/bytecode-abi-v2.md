@@ -71,6 +71,8 @@ Qualification requires an independently compiled format-8 fixture.
 The repository does not contain the external bytecode compiler. A release
 qualification run must therefore include at least one independently compiled
 format-8 fixture exercising the v2 globals, a cross-4-GiB read/seek/search,
-and both interpreter and JIT execution. The in-tree unit test verifies the
-host API boundary with a synthetic 4-GiB-plus map; it is not a substitute for
-that compiler-produced fixture.
+and both interpreter and JIT execution. `clambc` rejects invalid function or
+parameter setup and returns nonzero when the selected runtime fails, so the
+fixture harness cannot mistake a failed execution for a passing qualification.
+The in-tree unit test verifies the host API boundary with a synthetic
+4-GiB-plus map; it is not a substitute for that compiler-produced fixture.
