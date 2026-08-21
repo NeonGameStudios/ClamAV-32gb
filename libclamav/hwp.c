@@ -323,10 +323,12 @@ cl_error_t cli_scanhwpole2(cli_ctx *ctx)
         return CL_EREAD;
     }
 
-    if (usize != asize)
+    if (usize != asize) {
         cli_warnmsg("HWPOLE2: Mismatched uncompressed prefix and size: %u != %u\n", usize, asize);
-    else
-        cli_dbgmsg("HWPOLE2: Matched uncompressed prefix and size: %u == %u\n", usize, asize);
+        cli_mark_scan_incomplete(ctx, "HWPOLE2 uncompressed prefix disagreed with payload size");
+        return CL_EPARSE;
+    }
+    cli_dbgmsg("HWPOLE2: Matched uncompressed prefix and size: %u == %u\n", usize, asize);
 
     return cli_magic_scan_nested_fmap_type(map, 4, 0, ctx,
                                            CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);

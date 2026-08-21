@@ -2291,3 +2291,13 @@ path now rejects truncated or mismatched length fields before decoder setup and
 marks the layer incomplete; a focused public SWF regression covers the exact
 boundary. Compiled Linux/Sonic1, sanitizer, and broader SWF corpus
 qualification remain open.
+
+## HWPOLE2 declared-payload admission — 2026-08-21
+
+The HWP embedded-OLE2 wrapper previously warned when its 32-bit declared
+uncompressed payload size disagreed with the bytes present after the prefix,
+then dispatched the nested scan anyway. The confirmed wrapper now marks that
+layer incomplete and returns `CL_EPARSE` before nested scanning. A focused
+regression and source guard record the non-cacheable fail-closed result;
+compiled Linux/Sonic1, sanitizer, and broader HWP corpus qualification remain
+open.

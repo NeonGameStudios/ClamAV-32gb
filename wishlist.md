@@ -117,6 +117,8 @@
   MSO stream corpus coverage during Office-parser qualification.
 - ZWS/SWF compressed-input length fields are now enforced before LZMA setup; add
   broader malformed ZWS corpus coverage during media-parser qualification.
+- HWPOLE2 declared payload length mismatches are now fail-closed; add malformed
+  embedded-OLE2 corpus coverage during document-parser qualification.
 
 ## Large-file validation and expansion progression
 

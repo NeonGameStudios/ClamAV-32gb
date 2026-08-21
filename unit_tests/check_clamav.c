@@ -6685,6 +6685,27 @@ START_TEST(test_format_width_limits_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwpole2_declared_size_mismatch_is_fail_visible)
+{
+    static const uint8_t hwpole2_data[] = {1, 0, 0, 0, 0};
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    map = cl_fmap_open_memory(hwpole2_data, sizeof(hwpole2_data));
+    ck_assert_ptr_nonnull(map);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+
+    ret = cli_scanhwpole2(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwpml_truncated_document_is_fail_visible)
 {
     static const uint8_t malformed_hwpml[] =
@@ -14536,6 +14557,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
     tcase_add_test(tc_cl, test_format_width_limits_are_fail_visible);
+    tcase_add_test(tc_cl, test_hwpole2_declared_size_mismatch_is_fail_visible);
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
