@@ -48,6 +48,18 @@ static cl_error_t tiff_parse_error(cli_ctx *ctx, const char *reason)
     return cli_append_potentially_unwanted(ctx, reason);
 }
 
+static int tiff_value_size(uint32_t count, size_t width, size_t *value_size)
+{
+    if (NULL == value_size)
+        return 0;
+
+    if (width != 0 && (uint64_t)count > (uint64_t)(SIZE_MAX / width))
+        return 0;
+
+    *value_size = (size_t)count * width;
+    return 1;
+}
+
 cl_error_t cli_parsetiff(cli_ctx *ctx)
 {
     cl_error_t status = CL_ERROR;
@@ -60,6 +72,7 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     uint16_t i, num_entries;
     struct tiff_ifd entry;
     size_t value_size;
+    size_t value_width;
     size_t last_offset = 0;
 
     cli_dbgmsg("in cli_parsetiff()\n");
@@ -141,56 +154,62 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
             // cli_dbgmsg("%02u: %u %u %u %u\n", i, entry.tag, entry.type, entry.numval, entry.value);
 
-            value_size = entry.numval;
             switch (entry.type) {
                 case 1: /* BYTE */
-                    value_size *= 1;
+                    value_width = 1;
                     break;
                 case 2: /* ASCII */
-                    value_size *= 1;
+                    value_width = 1;
                     break;
                 case 3: /* SHORT */
-                    value_size *= 2;
+                    value_width = 2;
                     break;
                 case 4: /* LONG */
-                    value_size *= 4;
+                    value_width = 4;
                     break;
                 case 5: /* RATIONAL (LONG/LONG) */
-                    value_size *= 8;
+                    value_width = 8;
                     break;
 
                     /* TIFF 6.0 Types */
                 case 6: /* SBYTE */
-                    value_size *= 1;
+                    value_width = 1;
                     break;
                 case 7: /* UNDEFINED */
-                    value_size *= 1;
+                    value_width = 1;
                     break;
                 case 8: /* SSHORT */
-                    value_size *= 2;
+                    value_width = 2;
                     break;
                 case 9: /* SLONG */
-                    value_size *= 4;
+                    value_width = 4;
                     break;
                 case 10: /* SRATIONAL (SLONG/SLONG) */
-                    value_size *= 8;
+                    value_width = 8;
                     break;
                 case 11: /* FLOAT */
-                    value_size *= 4;
+                    value_width = 4;
                     break;
                 case 12: /* DOUBLE */
-                    value_size *= 8;
+                    value_width = 8;
                     break;
 
                 default: /* INVALID or NEW Type */
-                    value_size *= 0;
+                    value_width = 0;
                     break;
             }
 
+            if (!tiff_value_size(entry.numval, value_width, &value_size)) {
+                cli_warnmsg("cli_parsetiff: TFD entry field %u has an unrepresentable value size\n", i);
+                status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.ValueSizeOverflow");
+                goto done;
+            }
+
             if (value_size > sizeof(entry.value)) {
-                if (entry.value + value_size > map->len) {
-                    cli_warnmsg("cli_parsetiff: TFD entry field %u exceeds bounds of TIFF file [%llu > %llu]\n",
-                                i, (long long unsigned)(entry.value + value_size), (long long unsigned)map->len);
+                if ((uint64_t)entry.value > (uint64_t)map->len ||
+                    value_size > map->len - (size_t)entry.value) {
+                    cli_warnmsg("cli_parsetiff: TFD entry field %u exceeds bounds of TIFF file [offset=%u size=%zu map=%zu]\n",
+                                i, entry.value, value_size, map->len);
                     status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.OutOfBoundsAccess");
                     goto done;
                 }

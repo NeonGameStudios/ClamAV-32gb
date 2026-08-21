@@ -2158,3 +2158,13 @@ mutating the engine; valid zero and positive values retain their existing
 semantics. The focused setter regression also verifies that a failed negative
 update leaves the prior `MaxFileSize` unchanged. Compiled Linux/Sonic1
 execution and full API compatibility qualification remain open.
+
+## TIFF IFD value-size arithmetic — 2026-08-21
+
+TIFF IFD entries now calculate type-width multiplication through checked
+native-size arithmetic and validate external value ranges with subtraction
+form before any map-dependent interpretation. An unrepresentable value size
+or out-of-map external value is marked incomplete and non-cacheable rather
+than relying on wrapping addition. A focused malformed IFD regression and
+source guards record the invariant; compiled Linux/Sonic1, sanitizer, and
+broader TIFF corpus qualification remain open.

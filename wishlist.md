@@ -88,6 +88,8 @@
   qualification on Sonic1.
 - Public large-file limit setters now reject negative values without silently
   replacing the caller's resource policy with a default.
+- TIFF IFD type-width multiplication and external-value range checks now use
+  checked native-size arithmetic and remain fail-visible.
 
 ## Large-file validation and expansion progression
 
