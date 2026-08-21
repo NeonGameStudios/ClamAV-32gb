@@ -174,6 +174,11 @@ static cl_error_t gif_parse_error(cli_ctx *ctx, const char *reason)
     return cli_append_potentially_unwanted(ctx, reason);
 }
 
+static bool gif_range_within_map(const fmap_t *map, size_t offset, size_t length)
+{
+    return map != NULL && offset <= map->len && length <= map->len - offset;
+}
+
 cl_error_t cli_parsegif(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -215,7 +220,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
         goto done;
     }
 
-    if (map->len - offset < strlen("89a") ||
+    if (!gif_range_within_map(map, offset, strlen("89a")) ||
         3 != fmap_readn(map, &version, offset, strlen("89a"))) {
         cli_dbgmsg("GIF: Can't read GIF format version completely\n");
         status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedVersion");
@@ -246,7 +251,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
         global_color_table_size = 3 * (1 << ((screen_desc.flags & GIF_SCREEN_DESC_FLAGS_MASK_SIZE_OF_GLOBAL_COLOR_TABLE) + 1));
         cli_dbgmsg("GIF: Global Color Table size: %zu\n", global_color_table_size);
 
-        if (offset + (size_t)global_color_table_size > map->len) {
+        if (!gif_range_within_map(map, offset, global_color_table_size)) {
             cli_errmsg("GIF: EOF in the middle of the global color table, file truncated?\n");
             status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedGlobalColorTable");
             parse_error = true;
@@ -345,7 +350,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                             cli_dbgmsg("GIF:     Found sub-block of size %d\n", extension_block_size);
                         }
 
-                        if (offset + (size_t)extension_block_size > map->len) {
+                        if (!gif_range_within_map(map, offset, extension_block_size)) {
                             cli_errmsg("GIF: EOF in the middle of a graphic control extension sub-block, file truncated?\n");
                             status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedExtensionSubBlock");
                             parse_error = true;
@@ -378,7 +383,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                 if (image_desc.flags & GIF_IMAGE_DESC_FLAGS_MASK_HAVE_LOCAL_COLOR_TABLE) {
                     local_color_table_size = 3 * (1 << ((image_desc.flags & GIF_IMAGE_DESC_FLAGS_MASK_SIZE_OF_LOCAL_COLOR_TABLE) + 1));
                     cli_dbgmsg("GIF:     Found a Local Color Table (size: %zu)\n", local_color_table_size);
-                    if (offset + local_color_table_size > map->len) {
+                    if (!gif_range_within_map(map, offset, local_color_table_size)) {
                         cli_errmsg("GIF: EOF in the middle of the local color table, file truncated?\n");
                         status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedLocalColorTable");
                         parse_error = true;
@@ -421,7 +426,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                         cli_dbgmsg("GIF:     Found a sub-block of size %d\n", image_data_block_size);
                     }
 
-                    if (offset + (size_t)image_data_block_size > map->len) {
+                    if (!gif_range_within_map(map, offset, image_data_block_size)) {
                         cli_errmsg("GIF: EOF in the middle of an image data sub-block, file truncated?\n");
                         status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedImageDataBlock");
                         parse_error = true;

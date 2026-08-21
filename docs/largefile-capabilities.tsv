@@ -95,7 +95,7 @@ parser	CL_TYPE_DMG	pending	libclamav/scanners.c	dispatch branch requires parser-
 parser	CL_TYPE_EGG	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_EGGSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_ELF	pending	libclamav/elf.c	metadata-only ELF parsing now marks required header/program/section read failures incomplete instead of allowing target-signature analysis to stay clean; native-width and parser-family qualification remain required
-parser	CL_TYPE_GIF	pending	libclamav/scanners.c	GIF signature/version fmap failures remain incomplete; parser-family qualification and explicit completion evidence remain required
+parser	CL_TYPE_GIF	pending	libclamav/gif.c	GIF signature/version and block-range admission use checked subtraction-form fmap bounds; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_GPT	pending	libclamav/gpt.c	in-range protective-MBR, GPT-header, partition-entry, and intersection-table fmap failures now return CL_EREAD and mark the layer incomplete; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_GRAPHICS	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_GZ	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

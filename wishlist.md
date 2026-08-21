@@ -90,6 +90,8 @@
   replacing the caller's resource policy with a default.
 - TIFF IFD type-width multiplication and external-value range checks now use
   checked native-size arithmetic and remain fail-visible.
+- GIF block, color-table, and extension range admission now uses checked
+  subtraction-form bounds rather than wrapping offset-plus-length comparisons.
 
 ## Large-file validation and expansion progression
 

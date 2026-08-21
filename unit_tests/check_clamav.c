@@ -13631,6 +13631,15 @@ START_TEST(test_gif_truncated_blocks_are_fail_visible)
         0, 0, 0, 0, 0, 0, 0,
         0x21, 0xf9, 0x04, 0
     };
+    static const uint8_t truncated_global_color_table[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0, 0, 0, 0, 0, 0x80, 0
+    };
+    static const uint8_t truncated_extension_sub_block[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0, 0, 0, 0, 0, 0, 0,
+        0x21, 0xfe, 0x04, 0
+    };
     static const uint8_t truncated_local_color_table[] = {
         'G', 'I', 'F', '8', '9', 'a',
         0, 0, 0, 0, 0, 0, 0,
@@ -13649,12 +13658,16 @@ START_TEST(test_gif_truncated_blocks_are_fail_visible)
     };
     const uint8_t *cases[] = {
         truncated_graphic_control_extension,
+        truncated_global_color_table,
+        truncated_extension_sub_block,
         truncated_local_color_table,
         truncated_lzw_minimum_code_size,
         missing_image_trailer,
     };
     const size_t lengths[] = {
         sizeof(truncated_graphic_control_extension),
+        sizeof(truncated_global_color_table),
+        sizeof(truncated_extension_sub_block),
         sizeof(truncated_local_color_table),
         sizeof(truncated_lzw_minimum_code_size),
         sizeof(missing_image_trailer),

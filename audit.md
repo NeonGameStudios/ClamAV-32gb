@@ -2168,3 +2168,14 @@ or out-of-map external value is marked incomplete and non-cacheable rather
 than relying on wrapping addition. A focused malformed IFD regression and
 source guards record the invariant; compiled Linux/Sonic1, sanitizer, and
 broader TIFF corpus qualification remain open.
+
+## GIF block-range arithmetic — 2026-08-21
+
+GIF version, global/local color-table, extension-sub-block, and image-data
+range checks now use a shared subtraction-form helper that first verifies the
+starting offset is within the fmap. This prevents a wrapping `offset +
+length` comparison from admitting an out-of-range block on a large map.
+The focused truncated-block regression now covers global-table and extension
+sub-block admission as well as the existing image paths; source guards and
+capability evidence record the invariant. Compiled Linux/Sonic1, sanitizer,
+and broader GIF corpus qualification remain open.
