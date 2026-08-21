@@ -9438,6 +9438,18 @@ static const void *pe_import_thunk_read_failure(fmap_t *map, size_t at, size_t l
     return (const uint8_t *)map->data + at;
 }
 
+static size_t pe_petite_section_read_offset;
+
+static const void *pe_petite_section_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == pe_petite_section_read_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *fmap_gets_read_failure(fmap_t *map, char *dst, size_t *at, size_t max_len)
 {
     (void)map;
@@ -11466,6 +11478,88 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
+START_TEST(test_pe_petite_section_read_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx header_ctx;
+    cli_ctx ctx;
+    struct cli_exe_info peinfo;
+    struct stat st;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t *data;
+    size_t offset = 0;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg(FSTAT(fd, &st) == 0, "fstat(%s) failed: %s", file_path, strerror(errno));
+
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&options, 0, sizeof(options));
+    memset(&header_ctx, 0, sizeof(header_ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    header_ctx.engine            = scan_engine;
+    header_ctx.dconf             = scan_engine->dconf;
+    header_ctx.options           = &options;
+    header_ctx.fmap              = map;
+    header_ctx.this_layer_tmpdir = tmpdir;
+    cli_exe_info_init(&peinfo, 0);
+    ck_assert_int_eq(cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE), CL_SUCCESS);
+    ck_assert_msg(peinfo.nsections > 1, "PE fixture has too few sections for Petite regression");
+    ck_assert_msg(peinfo.ep <= (size_t)st.st_size - 5U, "PE fixture entrypoint is unexpectedly close to EOF");
+    pe_petite_section_read_offset = peinfo.sections[peinfo.nsections - 1].raw;
+    ck_assert_msg(pe_petite_section_read_offset < (size_t)st.st_size,
+                  "PE fixture Petite section is outside the input map");
+
+    data[peinfo.ep] = '\xb8';
+    cli_writeint32(data + peinfo.ep + 1,
+                   peinfo.sections[peinfo.nsections - 1].rva + cli_readint32(&peinfo.pe_opt.opt32.ImageBase));
+    cli_exe_info_destroy(&peinfo);
+
+    map->need = pe_petite_section_read_failure;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_msg(ret != CL_SUCCESS, "PE Petite section read failure returned clean");
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE Petite section could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);

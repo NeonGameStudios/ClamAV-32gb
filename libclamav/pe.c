@@ -4119,24 +4119,32 @@ int cli_scanpe(cli_ctx *ctx)
 
             for (i = 0; i < peinfo->nsections; i++) {
                 if (peinfo->sections[i].raw) {
-                    unsigned int r_ret;
+                    size_t r_ret;
 
-                    if (!peinfo->sections[i].rsz)
-                        goto out_no_petite;
+                    if (!peinfo->sections[i].rsz) {
+                        cli_mark_scan_incomplete(ctx, "PE Petite section has no raw data");
+                        cli_exe_info_destroy(peinfo);
+                        free(dest);
+                        return CL_EFORMAT;
+                    }
 
                     if (!CLI_ISCONTAINED(dest, dsize,
                                          dest + peinfo->sections[i].rva - peinfo->min,
-                                         peinfo->sections[i].ursz))
-                        goto out_no_petite;
+                                         peinfo->sections[i].ursz)) {
+                        cli_mark_scan_incomplete(ctx, "PE Petite section output range is invalid");
+                        cli_exe_info_destroy(peinfo);
+                        free(dest);
+                        return CL_EFORMAT;
+                    }
 
                     r_ret = fmap_readn(map, dest + peinfo->sections[i].rva - peinfo->min,
                                        peinfo->sections[i].raw,
                                        peinfo->sections[i].ursz);
                     if (r_ret != peinfo->sections[i].ursz) {
-                    out_no_petite:
+                        cli_mark_scan_incomplete(ctx, "PE Petite section could not be read completely");
                         cli_exe_info_destroy(peinfo);
                         free(dest);
-                        return CL_CLEAN;
+                        return CL_EREAD;
                     }
                 }
             }

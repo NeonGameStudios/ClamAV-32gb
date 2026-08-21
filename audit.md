@@ -1944,3 +1944,13 @@ same policy while preserving a later malware detection. A focused unprepared
 logical-and-hook-bytecode regression and source guards are registered. Compiled
 Linux/Sonic1 interpreter/JIT execution, sanitizer coverage, and official
 bytecode qualification remain open.
+
+## PE Petite reconstruction read failures — 2026-08-20
+
+The legacy Petite unpacker previously normalized a detected candidate's missing
+raw section, invalid reconstruction range, or failed section read to `CL_CLEAN`.
+Those required reconstruction failures now mark the layer incomplete and
+non-cacheable, returning `CL_EFORMAT` for structural failures and `CL_EREAD`
+for fmap failures. A checked-in PE fixture regression injects the Petite
+section read failure; compiled Linux/Sonic1 execution, sanitizer coverage, and
+broader PE unpacker corpus qualification remain open.
