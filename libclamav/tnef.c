@@ -42,10 +42,16 @@
 static int tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize);
 static cl_error_t tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize);
 static int tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length);
+static size_t tnef_readn(fmap_t *map, void *dst, off_t at, size_t len);
 
 #define TNEF_SIGNATURE 0x223E9f78
 #define LVL_MESSAGE 0x01
 #define LVL_ATTACHMENT 0x02
+
+#define TNEF_HEADER_EOF         0
+#define TNEF_HEADER_SUCCESS     1
+#define TNEF_HEADER_TRUNCATED  -1
+#define TNEF_HEADER_READ_ERROR -2
 
 #define attMSGCLASS 0x8008
 #define attBODY 0x800c
@@ -104,10 +110,15 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         int32_t length = 0;
 
         switch (tnef_header(ctx->fmap, &pos, &part, &type, &tag, &length)) {
-            case 0:
+            case TNEF_HEADER_EOF:
                 alldone = 1;
                 break;
-            case 1:
+            case TNEF_HEADER_SUCCESS:
+                break;
+            case TNEF_HEADER_READ_ERROR:
+                cli_mark_scan_incomplete(ctx, "TNEF attribute header could not be read completely");
+                ret     = CL_EREAD;
+                alldone = 1;
                 break;
             default:
                 /*
@@ -121,6 +132,8 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                 alldone = 1;
                 break;
         }
+        if (alldone)
+            break;
         if (length == 0)
             continue;
         if (length < 0) {
@@ -129,8 +142,6 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
             ret = CL_EFORMAT;
             break;
         }
-        if (alldone)
-            break;
         switch (part) {
             case LVL_MESSAGE:
                 cli_dbgmsg("TNEF - found message\n");
@@ -409,23 +420,24 @@ static int
 tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length)
 {
     uint32_t i32;
-    int rc;
+    size_t rc;
 
     /* An exact end-of-map is the normal end of a TNEF attribute list. An
      * in-range fmap failure is different: treating it as EOF would allow a
      * direct parser caller to report a clean, partially inspected container. */
     if (*pos < 0 || (uint64_t)*pos > (uint64_t)map->len)
-        return -1;
+        return TNEF_HEADER_TRUNCATED;
     if ((uint64_t)*pos == (uint64_t)map->len)
-        return 0;
-    if (fmap_readn(map, part, *pos, 1) != 1)
-        return -1;
+        return TNEF_HEADER_EOF;
+    rc = tnef_readn(map, part, *pos, 1);
+    if (rc != 1)
+        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
     (*pos)++;
 
     if (*part == (uint8_t)0)
-        return 0;
+        return TNEF_HEADER_EOF;
 
-    rc = fmap_readn(map, &i32, *pos, sizeof(uint32_t));
+    rc = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
     if (rc != sizeof(uint32_t)) {
         if (((*part == '\n') || (*part == '\r')) && (rc == 0)) {
             /*
@@ -434,9 +446,9 @@ tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *ta
              * message missing a final '='
              */
             cli_dbgmsg("tnef_header: ignoring trailing newline\n");
-            return 0;
+            return TNEF_HEADER_EOF;
         }
-        return -1;
+        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
     }
     (*pos) += sizeof(uint32_t);
 
@@ -444,13 +456,25 @@ tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *ta
     *tag  = (uint16_t)(i32 & 0xFFFF);
     *type = (uint16_t)((i32 & 0xFFFF0000) >> 16);
 
-    if (fmap_readn(map, &i32, *pos, sizeof(uint32_t)) != sizeof(uint32_t))
-        return -1;
+    rc = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
+    if (rc != sizeof(uint32_t))
+        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
     (*pos) += sizeof(uint32_t);
     *length = (int32_t)host32(i32);
 
     cli_dbgmsg("message tag 0x%x, type 0x%x, length %d\n",
                *tag, *type, (int)*length);
 
-    return 1;
+    return TNEF_HEADER_SUCCESS;
+}
+
+static size_t
+tnef_readn(fmap_t *map, void *dst, off_t at, size_t len)
+{
+    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
+     * beyond the map. Preserve impossible coordinates as short input so only
+     * an in-range callback failure becomes an operational read error. */
+    if (at < 0 || (uint64_t)at > (uint64_t)map->len)
+        return 0;
+    return fmap_readn(map, dst, (size_t)at, len);
 }

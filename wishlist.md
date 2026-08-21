@@ -266,6 +266,9 @@
 - Bytecode VM watchdogs now clamp to a shorter active `MaxScanTime`, and
   logical/hook paths re-check the deadline after successful execution; add
   compiled interpreter/JIT timeout and production bytecode coverage.
+- TNEF attribute headers now distinguish in-range fmap callback failures
+  (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
+  callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.
 
 ## Large-file validation and expansion progression
 

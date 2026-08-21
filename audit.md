@@ -1953,8 +1953,19 @@ sanitizer coverage, and broader TNEF corpus qualification remain open.
 
 The follow-up also separates exact end-of-map from an in-range attribute-level
 fmap failure. The former remains the valid end of the attribute list; the
-latter now returns `CL_EPARSE`, marks the layer incomplete, and disables clean
-result caching.
+latter is now classified as `CL_EREAD`, while genuinely short headers remain
+`CL_EPARSE`; both mark the layer incomplete and disable clean-result caching.
+
+## TNEF attribute-header read status — 2026-08-21
+
+TNEF attribute-header parsing now preserves the distinction between an
+in-range fmap callback failure and genuinely short input. The former returns
+`CL_EREAD`, marks the scan incomplete, and disables clean-result caching; the
+latter remains `CL_EPARSE`. Exact end-of-map and the accepted trailing-newline
+case remain normal attribute-list termination. The focused fault-injection
+regression now expects `CL_EREAD`, while the existing short-header regression
+continues to require `CL_EPARSE`; compiled Linux/Sonic1, sanitizer, and
+production TNEF corpus qualification remain open.
 
 The JPEG Photoshop APP13 helper had the same shape: an incomplete `8BIM`
 resource header or data range returned `CL_BREAK`, and the caller normalized

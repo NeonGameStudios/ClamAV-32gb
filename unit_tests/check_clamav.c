@@ -10758,6 +10758,33 @@ START_TEST(test_structured_detector_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_exact_eof_ends_attribute_list)
+{
+    static const uint8_t input[] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00              /* key, followed by exact EOF */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_CLEAN);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tnef_initial_read_failure_is_fail_visible)
 {
     static const uint8_t input[sizeof(uint32_t) + sizeof(uint16_t)] = {0};
@@ -10806,7 +10833,7 @@ START_TEST(test_tnef_attribute_read_failure_is_fail_visible)
     map->need = tnef_attribute_read_failure;
     ctx.fmap   = map;
 
-    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EPARSE);
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "TNEF attribute header could not be read completely");
@@ -15369,6 +15396,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_tnef_exact_eof_ends_attribute_list);
     tcase_add_test(tc_cl, test_tnef_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_attribute_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
