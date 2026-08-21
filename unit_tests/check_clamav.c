@@ -11737,6 +11737,30 @@ START_TEST(test_pe_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_executable_metadata_targetinfo_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {'M', 'Z'};
+    struct cli_target_info info;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    cli_targetinfo_init(&info);
+    cli_targetinfo(&info, TARGET_PE, &ctx);
+    ck_assert_int_eq(info.status, -1);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Executable metadata parsing ended before inspection completed");
+    ck_assert(map->dont_cache_flag);
+
+    cli_targetinfo_destroy(&info);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -14333,6 +14357,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_arj_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_executable_metadata_targetinfo_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_resource_tree_read_failure_is_fail_visible);

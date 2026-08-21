@@ -102,6 +102,8 @@ contains libclamav/elf.c 'ELF metadata parsing ended before inspection completed
 contains unit_tests/check_clamav.c 'test_elf_metadata_read_failure_is_fail_visible'
 contains libclamav/macho.c 'Mach-O metadata parsing ended before inspection completed'
 contains unit_tests/check_clamav.c 'test_macho_metadata_read_failure_is_fail_visible'
+contains libclamav/matcher.c 'Executable metadata parsing ended before inspection completed'
+contains unit_tests/check_clamav.c 'test_executable_metadata_targetinfo_failure_is_fail_visible'
 contains libclamav/scanners.c 'cli_preflight_child_size'
 contains libclamav/scanners.c 'before fmap_duplicate()'
 contains libclamav/scanners.c 'child content was rejected before fmap creation'

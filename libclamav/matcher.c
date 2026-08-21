@@ -681,6 +681,7 @@ void cli_targetinfo_init(struct cli_target_info *info)
 void cli_targetinfo(struct cli_target_info *info, cli_target_t target, cli_ctx *ctx)
 {
     cl_error_t (*einfo)(cli_ctx *, struct cli_exe_info *) = NULL;
+    cl_error_t ret;
 
     info->fsize = ctx->fmap->len;
 
@@ -698,10 +699,14 @@ void cli_targetinfo(struct cli_target_info *info, cli_target_t target, cli_ctx *
             return;
     }
 
-    if (CL_SUCCESS != einfo(ctx, &info->exeinfo))
+    ret = einfo(ctx, &info->exeinfo);
+    if (CL_SUCCESS != ret) {
         info->status = -1;
-    else
+        if (ret != CL_VIRUS && ret != CL_VERIFIED)
+            cli_mark_scan_incomplete(ctx, "Executable metadata parsing ended before inspection completed");
+    } else {
         info->status = 1;
+    }
 }
 
 void cli_targetinfo_destroy(struct cli_target_info *info)

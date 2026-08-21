@@ -4442,3 +4442,13 @@ leaving the existing raw matcher behavior intact. A focused load-command fmap
 fault-injection regression, source guard, and capability-manifest entry record
 the invariant. Compiled Linux/Sonic1, sanitizer, and broader Mach-O corpus
 qualification remain open.
+
+## Executable target-metadata failure — 2026-08-21
+
+The shared executable-target metadata bridge now marks a failed PE, ELF, or
+Mach-O metadata parse incomplete before relative-signature analysis continues.
+This closes the remaining PE target-info path where a failed optional metadata
+parse could disable PE-relative signatures while leaving the outer raw scan
+eligible for a clean result. A focused PE target-info regression, source guard,
+and capability-manifest entry record the invariant. Compiled Linux/Sonic1,
+sanitizer, and full executable-signature qualification remain open.
