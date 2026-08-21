@@ -1994,7 +1994,12 @@ static cl_error_t parse_central_directory_file_header(
 
     size_t size     = (CENTRAL_HEADER_flen >= sizeof(name)) ? sizeof(name) - 1 : CENTRAL_HEADER_flen;
     const char *src = fmap_need_off_once(ctx->fmap, index, size);
-    if (src) {
+    if (size && (NULL == src)) {
+        cli_mark_scan_incomplete(ctx, "ZIP central filename field could not be read completely");
+        status = CL_EREAD;
+        goto done;
+    }
+    if (size) {
         memcpy(name, src, size);
         name[size] = '\0';
         cli_dbgmsg("cli_unzip: central header - fname: %s\n", name);

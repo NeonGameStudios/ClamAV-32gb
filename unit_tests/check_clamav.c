@@ -4742,6 +4742,18 @@ static const void *zip_local_filename_read_failure(fmap_t *map, size_t at, size_
     return (const uint8_t *)map->data + at;
 }
 
+static size_t zip_central_filename_read_failure_offset;
+
+static const void *zip_central_filename_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == zip_central_filename_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_zip_local_filename_read_failure_is_fail_visible)
 {
     uint8_t archive[31] = {0};
@@ -5761,6 +5773,64 @@ START_TEST(test_zip_central_directory_resolves_masked_local_values)
     cl_fmap_close(map);
     cl_engine_free(engine);
     free(archive);
+}
+END_TEST
+
+START_TEST(test_zip_central_filename_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "central-directory-member";
+    static const char member_name[] = "stream-test.bin";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_length;
+    size_t local_length;
+    uint8_t *archive;
+    cl_error_t ret;
+
+    archive = zip_stream_central_archive(input, sizeof(input) - 1U,
+                                         sizeof(input) - 1U,
+                                         ZIP_TEST_METHOD_STORED,
+                                         (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                         &archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    local_length = 30U + (sizeof(member_name) - 1U) + (sizeof(input) - 1U);
+    zip_central_filename_read_failure_offset = local_length + 46U;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    map->need                = zip_central_filename_read_failure;
+    ctx.engine               = engine;
+    ctx.options              = &options;
+    ctx.dconf                = engine->dconf;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP central filename field could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(archive);
+    zip_central_filename_read_failure_offset = 0;
 }
 END_TEST
 
@@ -15023,6 +15093,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole10_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_central_directory_resolves_masked_local_values);
+    tcase_add_test(tc_cl, test_zip_central_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_masked_sfx_candidate_is_not_confirmed);
     tcase_add_test(tc_cl, test_zip_local_only_masked_header_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);
