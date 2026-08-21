@@ -1842,3 +1842,11 @@ end-of-map EOF remains a normal completed scan. The focused fault-injection
 regression and source guard are registered. Compiled Linux/Sonic1 execution,
 sanitizer coverage, and production structured-data corpus qualification remain
 open.
+
+## TNEF initial header read failure — 2026-08-20
+
+TNEF now marks a failed signature or attribute-level read incomplete before
+returning `CL_EREAD`, so direct parser callers cannot mistake an operational
+read failure for a completed container. A focused fault-injection regression
+and source guard are registered. Compiled Linux/Sonic1 execution, sanitizer
+coverage, and broader TNEF corpus qualification remain open.

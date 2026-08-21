@@ -79,7 +79,7 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
     }
 
     if (fmap_readn(ctx->fmap, &i32, pos, sizeof(uint32_t)) != sizeof(uint32_t)) {
-        /* The file is at least MIN_SIZE bytes, so it "can't" fail */
+        cli_mark_scan_incomplete(ctx, "TNEF signature could not be read completely");
         return CL_EREAD;
     }
     pos += sizeof(uint32_t);
@@ -89,7 +89,7 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
     }
 
     if (fmap_readn(ctx->fmap, &i16, pos, sizeof(uint16_t)) != sizeof(uint16_t)) {
-        /* The file is at least MIN_SIZE bytes, so it "can't" fail */
+        cli_mark_scan_incomplete(ctx, "TNEF attribute level could not be read completely");
         return CL_EREAD;
     }
     pos += sizeof(uint16_t);

@@ -257,6 +257,8 @@ contains libclamav/special.c 'Mydoom log detector input window could not be read
 contains unit_tests/check_clamav.c 'test_mydoom_detector_read_failure_is_fail_visible'
 contains libclamav/scanners.c 'Structured data detector input could not be read completely'
 contains unit_tests/check_clamav.c 'test_structured_detector_read_failure_is_fail_visible'
+contains libclamav/tnef.c 'TNEF signature could not be read completely'
+contains unit_tests/check_clamav.c 'test_tnef_initial_read_failure_is_fail_visible'
 contains libclamav/uuencode.c 'UUencoded input could not be read completely'
 contains unit_tests/check_clamav.c 'test_uuencode_initial_read_failure_is_fail_visible'
 contains libclamav/mbox.c 'MIME message input could not be read completely'
