@@ -125,6 +125,10 @@ struct bc_buffer {
     unsigned size;
     unsigned write_cursor;
     uint64_t read_cursor;
+    fmap_t *map_read_fmap;
+    uint64_t map_read_offset;
+    uint32_t map_read_length;
+    unsigned int map_read_locked : 1;
 };
 
 struct bc_inflate {

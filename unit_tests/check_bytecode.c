@@ -710,7 +710,52 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
     pipe_id = cli_bcapi_buffer_pipe_new_fromfile64(bcctx, boundary);
     ck_assert(pipe_id >= 0);
     ck_assert_uint_eq(cli_bcapi_buffer_pipe_read_avail64(bcctx, pipe_id), 1);
+    ck_assert_ptr_nonnull(cli_bcapi_buffer_pipe_read_get(bcctx, pipe_id, 1));
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_read_stopped(bcctx, pipe_id, 1), 0);
+    fmap_release_unlocked(map);
+    ck_assert_uint_eq(map->paged, 0);
     ck_assert_int_eq(cli_bcapi_buffer_pipe_done(bcctx, pipe_id), 0);
+
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_bytecode_pdf_object_access_does_not_retain_fmap_pages)
+{
+    struct bytecode_failing_pread_state pread_state;
+    struct cli_bc_ctx *bcctx;
+    struct cli_bc bc;
+    struct pdf_obj first;
+    struct pdf_obj second;
+    struct pdf_obj *objects[2];
+    fmap_t *map;
+
+    memset(&bc, 0, sizeof(bc));
+    memset(&first, 0, sizeof(first));
+    memset(&second, 0, sizeof(second));
+    pread_state.length  = 8192;
+    pread_state.fail_at = INT64_MAX;
+    map = cl_fmap_open_handle(&pread_state, 0, pread_state.length,
+                              bytecode_failing_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    bc.metadata.formatlevel = BC_FORMAT_LEVEL_V2;
+    first.start             = 0;
+    second.start            = 8;
+    objects[0]              = &first;
+    objects[1]              = &second;
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->bc = &bc;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+    ck_assert_int_eq(cli_bytecode_context_setpdf(bcctx, PDF_PHASE_PARSED, 2,
+                                                  objects, NULL, 16, 0),
+                     CL_SUCCESS);
+    ck_assert_ptr_nonnull(cli_bcapi_pdf_getobj(bcctx, 0, 4));
+    fmap_release_unlocked(map);
+    ck_assert_uint_eq(map->paged, 0);
 
     cli_bytecode_context_destroy(bcctx);
     cl_fmap_close(map);
@@ -1095,6 +1140,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_execution_failure_is_fail_visible);
     tcase_add_test(tc_cli_arith, test_bytecode_timeout_respects_scan_deadline);
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
+    tcase_add_test(tc_cli_read, test_bytecode_pdf_object_access_does_not_retain_fmap_pages);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);

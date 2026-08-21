@@ -47,6 +47,13 @@ The v2 PDF bridge also exposes native-width object size and offset accessors.
 The v1 PDF size and offset APIs remain unchanged; on a large PDF layer the v1
 offset accessor returns its existing invalid sentinel instead of silently
 wrapping.
+
+File-backed `buffer_pipe_read_get()` windows are borrowed until the matching
+`buffer_pipe_read_stopped()` call; the engine releases the fmap page locks at
+that boundary and again during buffer teardown. `pdf_getobj()` has no matching
+release entry in the historical ABI, so its returned object view is bounded
+and unlocked. Bytecode must consume that view during the hook and must not
+retain the pointer across later fmap operations.
 All read, seek, search, and byte-at operations reject offsets that cannot be
 represented by the host mapping or by the signed result type. A failed read
 or coordinate conversion is fail-visible through the scan-incomplete report.

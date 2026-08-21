@@ -2953,3 +2953,15 @@ The exact-edge milter harness now receives the same service timeout and
 per-file scan deadline through `MILTER_WIRE_TIMEOUT_S` and
 `MILTER_MAX_SCAN_TIME_MS`; its internal 600-second/600,000-millisecond
 defaults no longer terminate a valid four-hour qualification early.
+
+## Bytecode fmap-window lifetime — 2026-08-21
+
+File-backed bytecode buffer-pipe reads now release their locked fmap window at
+`buffer_pipe_read_stopped()`, before replacing a read window, and during
+buffer teardown. The historical `pdf_getobj()` API has no release operation,
+so it now uses a bounded unlocked fmap view and documents that the pointer is
+only valid during the hook's immediate consumption. Focused unit regressions
+verify that both paths leave resident pages evictable, and source guards plus
+whitespace validation pass. The C/Rust build, independently compiled ABI-v2
+fixture, interpreter/JIT, sanitizer, and production-signature qualification
+remain release gates; no compiled result is claimed here.

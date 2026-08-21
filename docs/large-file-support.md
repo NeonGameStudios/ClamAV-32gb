@@ -4414,6 +4414,17 @@ logical work. The focused synthetic regression and source guard are
 registered. Compiled Linux/Sonic1, sanitizer, full-size PCRE, and RSS
 qualification remain open.
 
+## Bytecode fmap-window lifetime — 2026-08-21
+
+File-backed bytecode buffer-pipe reads now retain a locked fmap window only
+until the matching `buffer_pipe_read_stopped()` call, and context teardown
+also releases any abandoned window. The PDF object accessor has no ABI
+release operation, so it now uses a bounded unlocked fmap view rather than
+leaking a page lock across the bytecode hook lifetime. Focused bytecode tests
+verify that both paths leave their resident pages evictable. Independently
+compiled ABI-v2, interpreter/JIT, sanitizer, and production-signature
+qualification remain open.
+
 ## HFS+ file-tree header fmap failure — 2026-08-21
 
 HFS+ confirmed tree-header windows that fail in the fmap now mark the layer

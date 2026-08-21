@@ -957,14 +957,45 @@ uint64_t cli_bcapi_buffer_pipe_read_avail64(struct cli_bc_ctx *ctx, int32_t id)
     return ctx->file_size64 - b->read_cursor;
 }
 
+static void cli_bcapi_buffer_pipe_release_map_read(struct bc_buffer *b)
+{
+    if (b == NULL || !b->map_read_locked)
+        return;
+
+    if (b->map_read_fmap != NULL && b->map_read_offset <= (uint64_t)SIZE_MAX)
+        fmap_unneed_off(b->map_read_fmap, (size_t)b->map_read_offset, b->map_read_length);
+
+    b->map_read_fmap   = NULL;
+    b->map_read_offset = 0;
+    b->map_read_length = 0;
+    b->map_read_locked = 0;
+}
+
 const uint8_t *cli_bcapi_buffer_pipe_read_get(struct cli_bc_ctx *ctx, int32_t id, uint32_t size)
 {
     struct bc_buffer *b = get_buffer(ctx, id);
+    const uint8_t *result;
+
     if (!b || size > cli_bcapi_buffer_pipe_read_avail(ctx, id) || !size)
         return NULL;
     if (b->data)
         return b->data + b->read_cursor;
-    return fmap_need_off(ctx->fmap, b->read_cursor, size);
+
+    /* A bytecode consumer owns the returned pointer until the matching
+     * read_stopped() call. Release a previous window before replacing it so
+     * an API consumer that retries a read cannot retain locked fmap pages. */
+    cli_bcapi_buffer_pipe_release_map_read(b);
+    if (ctx->fmap == NULL || b->read_cursor > (uint64_t)SIZE_MAX)
+        return NULL;
+
+    result = fmap_need_off(ctx->fmap, (size_t)b->read_cursor, size);
+    if (result != NULL) {
+        b->map_read_fmap   = ctx->fmap;
+        b->map_read_offset = b->read_cursor;
+        b->map_read_length = size;
+        b->map_read_locked = 1;
+    }
+    return result;
 }
 
 int32_t cli_bcapi_buffer_pipe_read_stopped(struct cli_bc_ctx *ctx, int32_t id, uint32_t amount)
@@ -984,6 +1015,14 @@ int32_t cli_bcapi_buffer_pipe_read_stopped(struct cli_bc_ctx *ctx, int32_t id, u
             b->read_cursor = b->write_cursor = 0;
         return 0;
     }
+
+    if (b->read_cursor > ctx->file_size64 || (uint64_t)amount > ctx->file_size64 - b->read_cursor) {
+        cli_bcapi_buffer_pipe_release_map_read(b);
+        b->read_cursor = ctx->file_size64;
+        return -1;
+    }
+
+    cli_bcapi_buffer_pipe_release_map_read(b);
     b->read_cursor += amount;
     return 0;
 }
@@ -1027,6 +1066,7 @@ int32_t cli_bcapi_buffer_pipe_done(struct cli_bc_ctx *ctx, int32_t id)
     struct bc_buffer *b = get_buffer(ctx, id);
     if (!b)
         return -1;
+    cli_bcapi_buffer_pipe_release_map_read(b);
     free(b->data);
     b->data = NULL;
     return -0;
@@ -2180,7 +2220,10 @@ const uint8_t *cli_bcapi_pdf_getobj(struct cli_bc_ctx *ctx, int32_t objidx, uint
     uint32_t size = cli_bcapi_pdf_getobjsize(ctx, objidx);
     if (amount > size)
         return NULL;
-    return fmap_need_off(ctx->fmap, ctx->pdf_objs[objidx]->start, amount);
+    /* The ABI has no matching release call for this borrowed pointer. Keep
+     * the access bounded and unlocked; the bytecode hook consumes it during
+     * the call and cannot safely retain a page lock across hooks. */
+    return fmap_need_off_once(ctx->fmap, ctx->pdf_objs[objidx]->start, amount);
 }
 
 int32_t cli_bcapi_pdf_getobjid(struct cli_bc_ctx *ctx, int32_t objidx)
