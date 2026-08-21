@@ -666,6 +666,8 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     }
     cli_dbgmsg("UNIBIN: Number of architectures: %u\n", (unsigned int)fat_header.nfats);
     for (i = 0; i < fat_header.nfats; i++) {
+        uint64_t member_end;
+
         if (fmap_readn(map, &fat_arch, at, sizeof(fat_arch)) != sizeof(fat_arch)) {
             cli_dbgmsg("cli_scanmacho_unibin: Can't read fat_arch\n");
             RETURN_BROKEN;
@@ -683,6 +685,14 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
         if (fat_arch.offset < at) {
             cli_dbgmsg("Invalid fat offset: %d\n", fat_arch.offset);
             RETURN_BROKEN;
+        }
+
+        member_end = (uint64_t)fat_arch.offset + (uint64_t)fat_arch.size;
+        if (member_end < fat_arch.offset || member_end > (uint64_t)map->len) {
+            cli_dbgmsg("cli_scanmacho_unibin: Architecture range is outside the input map\n");
+            cli_mark_scan_incomplete(ctx, "Mach-O universal-binary architecture range is outside the input map");
+            ret = CL_EPARSE;
+            break;
         }
 
         ret = cli_magic_scan_nested_fmap_type(map, fat_arch.offset, fat_arch.size, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);

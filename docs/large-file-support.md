@@ -2322,6 +2322,16 @@ validation, avoiding truncation for catalogs whose logical offsets exceed
 32-bit-product wrap; compiled large-volume corpus and Sonic1 qualification
 remain release gates.
 
+## Mach-O universal-binary member ranges — 2026-08-20
+
+Universal-binary architecture offsets and sizes remain their format-defined
+32-bit fields, but their containing range is now promoted before addition and
+checked against the full fmap length. A member whose end wraps or lies beyond
+the input is marked incomplete and returns `CL_EPARSE` before nested dispatch;
+the sparse regression exercises that boundary with a synthetic map at the
+4-GiB edge. Full universal-binary corpus, sanitizer, and supported-build
+Sonic1 qualification remain release gates.
+
 HFS+ fork records that exhaust their eight inline extents are another explicit
 unsupported boundary. The parser does not yet perform the required
 `ExtentOverflow` B-tree lookup, so it marks the containing layer incomplete and

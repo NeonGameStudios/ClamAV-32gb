@@ -11655,6 +11655,65 @@ START_TEST(test_macho_native_metadata_preserves_64bit_sections)
 }
 END_TEST
 
+#if SIZE_MAX > UINT32_MAX
+struct macho_unibin_range_state {
+    size_t length;
+    uint8_t data[8U + 20U]; /* fat_header plus one fat_arch */
+};
+
+static off_t macho_unibin_range_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct macho_unibin_range_state *state = handle;
+    size_t source_length;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+
+    memset(buf, 0, count);
+    if ((size_t)offset < sizeof(state->data)) {
+        source_length = sizeof(state->data) - (size_t)offset;
+        if (source_length > count)
+            source_length = count;
+        memcpy(buf, state->data + (size_t)offset, source_length);
+    }
+    return (off_t)count;
+}
+
+START_TEST(test_macho_unibin_member_range_is_fail_visible)
+{
+    struct macho_unibin_range_state state;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&state, 0, sizeof(state));
+    state.length = (size_t)UINT32_MAX;
+    macho_test_write_u32(state.data + 0, 0xcafebabeU);
+    macho_test_write_u32(state.data + 4, 1U);
+    macho_test_write_u32(state.data + 8 + 8, UINT32_MAX - 8U);
+    macho_test_write_u32(state.data + 8 + 12, 16U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_handle(&state, 0, state.length, macho_unibin_range_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho_unibin(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O universal-binary architecture range is outside the input map");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_macho_section_alignment_exponent_is_fail_visible)
 {
     enum {
@@ -12721,6 +12780,9 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_native_metadata_preserves_64bit_sections);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_cl, test_macho_unibin_member_range_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
