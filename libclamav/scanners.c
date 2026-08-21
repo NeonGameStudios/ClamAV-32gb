@@ -4304,7 +4304,7 @@ done:
     return ret;
 }
 
-static cl_error_t cli_scan_structured(cli_ctx *ctx)
+cl_error_t cli_scan_structured(cli_ctx *ctx)
 {
     char buf[8192];
     size_t result          = 0;
@@ -4362,6 +4362,11 @@ static cl_error_t cli_scan_structured(cli_ctx *ctx)
         if (ssnfunc && ((ssn_count += ssnfunc((const unsigned char *)buf, result)) >= ctx->engine->min_ssn_count)) {
             done = true;
         }
+    }
+
+    if (result == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, "Structured data detector input could not be read completely");
+        return CL_EREAD;
     }
 
     if (cc_count != 0 && cc_count >= ctx->engine->min_cc_count) {

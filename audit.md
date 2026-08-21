@@ -1832,3 +1832,13 @@ completion, type, signature, and status oracle as the path scan. The harness
 change closes a coverage omission in the acceptance workflow; no actual
 supported-Linux/Sonic1 run, sanitizer result, or 4-GiB/32-GiB service
 qualification is claimed by this source change.
+
+## Structured-data detector read failure — 2026-08-20
+
+The structured credit-card/SSN detector previously treated a backing-map
+`fmap_readn()` error like end-of-file and returned `CL_SUCCESS`. It now marks
+the scan incomplete, disables result caching, and returns `CL_EREAD`; exact
+end-of-map EOF remains a normal completed scan. The focused fault-injection
+regression and source guard are registered. Compiled Linux/Sonic1 execution,
+sanitizer coverage, and production structured-data corpus qualification remain
+open.

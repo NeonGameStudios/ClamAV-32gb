@@ -78,6 +78,13 @@ cl_error_t cli_magic_scan_desc(int desc, const char *filepath, cli_ctx *ctx,
 cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type);
 
 /**
+ * @brief Scan the current fmap for configured structured-data heuristics.
+ *
+ * A backing-map read failure is incomplete rather than a clean result.
+ */
+cl_error_t cli_scan_structured(cli_ctx *ctx);
+
+/**
  * Apply the central scan-result policy. Sticky timeout or incomplete state
  * must remain non-clean, while detections and critical failures retain
  * precedence. A visible AlertExceedsMax indicator represents a configured
