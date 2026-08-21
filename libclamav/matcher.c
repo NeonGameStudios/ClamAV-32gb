@@ -1405,6 +1405,13 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             goto done;
         }
 
+        /* No catalog match is the expected non-terminal result. Preserve
+         * every other Authenticode result so certificate-parser, callback,
+         * and resource failures cannot be normalized into a clean scan. */
+        if (ret != CL_EVERIFY) {
+            goto done;
+        }
+
         ret = CL_CLEAN;
     }
 

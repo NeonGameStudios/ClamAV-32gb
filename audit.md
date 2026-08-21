@@ -2334,3 +2334,18 @@ scan result to a boolean, and the no-body aggregation branch preserves
 `FAIL`. Source guards record the corrected paths;
 compiled Linux/Sonic1, fault-injection, sanitizer, and broader mail-corpus
 qualification remain open.
+
+## PE, Authenticode, and bytecode alert-result propagation — 2026-08-21
+
+PE import wildcard hash matches previously called `cli_append_virus()` without
+retaining its result, so a wildcard-only match or evidence-storage failure could
+leave the import scan clean. Authenticode certificate block-list matches had a
+similar gap: non-success alert-append results could be normalized to clean by
+the certificate parser and by the raw matcher wrapper. Applicable bytecode hooks
+also ignored alert-append errors and callback breaks after a bytecode reported an
+alert. These paths now preserve the append status, mark operational evidence
+failures incomplete, and allow only the expected no-catalog-match result to
+continue through the Authenticode raw-scan fallback. Source guards record the
+corrected branches; compiled Linux/Sonic1, signature/callback/resource fault
+injection, sanitizer, and production PE/bytecode corpus qualification remain
+open.

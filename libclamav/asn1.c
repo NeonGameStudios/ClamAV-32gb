@@ -1648,7 +1648,10 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
                         cli_dbgmsg("asn1_parse_mscat: Found Authenticode certificate blocked by %s\n", crt->name ? crt->name : "(unnamed CRB rule)");
                         if (NULL != ctx) {
                             ret = cli_append_virus(ctx, crt->name ? crt->name : "(unnamed CRB rule)");
-                            if (ret == CL_VIRUS) {
+                            if (ret != CL_SUCCESS) {
+                                if (ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK) {
+                                    cli_mark_scan_incomplete(ctx, "Authenticode certificate alert could not be recorded");
+                                }
                                 crtmgr_free(&newcerts);
                                 goto finish;
                             }

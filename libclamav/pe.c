@@ -2824,7 +2824,7 @@ static cl_error_t scan_pe_imp(cli_ctx *ctx, struct cli_exe_info *peinfo)
             }
         }
         if (cli_hm_scan_wild(hashset[type], &virname, imp, type) == CL_VIRUS) {
-            cli_append_virus(ctx, virname);
+            ret = cli_append_virus(ctx, virname);
             if (ret != CL_SUCCESS) {
                 break;
             }

@@ -3122,9 +3122,12 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
             } else {
                 ret = cli_append_virus(cctx, ctx->virname);
             }
-            if (ret == CL_VIRUS) {
+            if (ret != CL_SUCCESS && ret != CL_VERIFIED) {
+                if (ret != CL_VIRUS && ret != CL_BREAK) {
+                    cli_mark_scan_incomplete(cctx, "bytecode alert could not be recorded");
+                }
                 bytecode_context_reset(ctx);
-                return CL_VIRUS;
+                return ret;
             }
             bytecode_context_reset(ctx);
             continue;

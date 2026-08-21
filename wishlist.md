@@ -127,6 +127,9 @@
 - UNIX mbox bounce and BinHex attachment scans now propagate every non-clean
   result instead of checking only for `CL_VIRUS`; add mail-spool fault and
   malformed BinHex corpus coverage.
+- PE import wildcard matches, Authenticode certificate alerts, and bytecode
+  hook alert-append failures now remain fail-visible; add signature,
+  callback/resource fault-injection and production PE/bytecode corpus coverage.
 
 ## Large-file validation and expansion progression
 
