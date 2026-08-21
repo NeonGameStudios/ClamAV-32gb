@@ -6,7 +6,7 @@ clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
 clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending; mandatory service qualification now binds daemon/client/milter binaries and runtime dependencies to the audited build
 clamd	FILDES	bounded	clamd/session.c	legacy command preserves non-clean descriptor results for worker and IDSESSION status; structured parity pending
-clamd	INSTREAM	bounded	clamd/server-th.c	complete staging with stream/temp quota; shared zero-value policy selects the 32-GiB ceiling and buffered chunk arithmetic is wrap-safe
+clamd	INSTREAM	bounded	clamd/server-th.c	complete staging with stream/temp quota; shared zero-value policy selects the 32-GiB ceiling and buffered chunk arithmetic is wrap-safe; concurrent no-staging-before-queue-admission remains a release qualification gate
 clamd	SCANREPORT	bounded	clamd/session.c	direct length-prefixed protocol probe validates the path command and schema-shaped fallback; serialization failure is explicit RESOURCE_FAILURE rather than clean; broader production qualification remains required
 clamd	CONTSCANREPORT	bounded	clamd/session.c	direct length-prefixed protocol probe validates the command and schema-shaped fallback; serialization failure is explicit RESOURCE_FAILURE rather than clean; broader production qualification remains required
 clamd	MULTISCANREPORT	bounded	clamd/session.c	direct length-prefixed protocol probe validates the command, parallel aggregate/one-worker fallback, and schema-shaped fallback; serialization failure is explicit RESOURCE_FAILURE rather than clean; broader production qualification remains required

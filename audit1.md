@@ -2872,3 +2872,18 @@ input before staging. Both legacy and structured INSTREAM scans use the
 reservation-aware descriptor path. Static guards and whitespace validation
 pass; compiled daemon/protocol and concurrent production qualification remain
 release gates.
+
+## INSTREAM queue admission remains a release gate — 2026-08-21
+
+The current clamd receive path creates the INSTREAM temporary file and stages
+the complete request before dispatching the descriptor scan to the worker
+pool. The stream and shared temporary quotas therefore remain bounded, but
+`MaxQueue` currently limits scan jobs after staging rather than preventing a
+queued request from consuming temporary storage. This does not satisfy the
+acceptance requirement that a second simultaneous request remain queued
+without staging or reserving resources while the single worker is occupied.
+
+The capability manifest records this as an explicit release qualification
+gate. A deferred admission/state-machine change requires compiled daemon and
+Sonic1 runtime validation and is intentionally not included in this bounded
+documentation update.

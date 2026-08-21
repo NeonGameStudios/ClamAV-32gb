@@ -4575,3 +4575,17 @@ ceiling, while the existing stream quota rejects oversized input before
 staging. Both legacy and structured INSTREAM scans use the reservation-aware
 descriptor path. Compiled daemon/protocol and concurrent production
 qualification remain open.
+
+## INSTREAM queue admission remains a release gate — 2026-08-21
+
+The current clamd receive path creates the INSTREAM temporary file and stages
+the complete request before dispatching the descriptor scan to the worker
+pool. Stream and shared temporary quotas remain bounded, but `MaxQueue`
+currently limits scan jobs after staging rather than preventing a queued
+request from consuming temporary storage. The simultaneous-request acceptance
+criterion therefore remains open: a second request must stay queued without
+staging or reserving resources while the single worker is occupied.
+
+The capability manifest records this explicitly. A deferred admission/state
+machine requires compiled daemon and Sonic1 runtime validation and is not part
+of this bounded documentation update.
