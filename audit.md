@@ -1878,3 +1878,13 @@ specific read or parse status instead of silently reducing the result to a
 generic format failure. A fault-injected newc regression and source guards
 are registered. Compiled Linux/Sonic1 execution, sanitizer coverage, and
 broader CPIO corpus qualification remain open.
+
+## PE import-DLL name validation — 2026-08-20
+
+PE import-table validation now checks the mapped DLL-name bytes before copying
+them into the destination string. The previous call passed the still-NULL
+destination pointer, allowing invalid import names to bypass validation. The
+checked-in PE regression now corrupts the first imported DLL name and requires
+an incomplete, non-cacheable `CL_EFORMAT` result; source guards are
+registered. Compiled Linux/Sonic1 execution, sanitizer coverage, and broader
+PE corpus qualification remain open.

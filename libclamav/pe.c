@@ -2606,8 +2606,9 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
             goto done;
         }
 
-        if (validate_impname(dllname, MIN(PE_MAXNAMESIZE, fsize - offset), 1) == 0) {
+        if (validate_impname(buffer, MIN(PE_MAXNAMESIZE, fsize - offset), 1) == 0) {
             cli_dbgmsg("scan_pe: invalid name for imported dll\n");
+            cli_mark_scan_incomplete(ctx, "PE imported DLL name is invalid");
             status = CL_EFORMAT;
             goto done;
         }
