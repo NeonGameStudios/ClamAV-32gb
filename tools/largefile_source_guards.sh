@@ -479,6 +479,8 @@ contains libclamav/scanners.c 'OLE2 summary information could not be inspected c
 contains libclamav/scanners.c 'OLE2 document summary information could not be inspected completely'
 contains libclamav/scanners.c 'OLE2 summary information could not be closed'
 contains libclamav/scanners.c 'OLE2 document summary information could not be closed'
+contains libclamav/scanners.c 'deferred_failure = cli_ole2_tempdir_scan_summary'
+not_contains libclamav/scanners.c '(void)cli_ole2_tempdir_scan_summary'
 contains libclamav/scanners.c 'cli_ole2_note_vba_cleanup_failure'
 contains libclamav/scanners.c 'VBA project temporary output could not be closed'
 contains libclamav/scanners.c 'VBA project temporary output could not be removed'

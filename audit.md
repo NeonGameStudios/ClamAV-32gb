@@ -77,6 +77,17 @@ incomplete, and is not cacheable as clean. A focused regression and source
 guard cover the boundary; supported-Linux compilation and runtime
 qualification remain open.
 
+## OLE2 summary metadata result propagation — 2026-08-21
+
+When metadata collection was enabled, `cli_ole2_scan_tempdir()` discarded the
+return status from summary-property parsing. The parser did mark some local
+failures incomplete, but a lookup, allocation, or other summary failure could
+be lost while later embedded-stream work returned success. The summary result
+is now retained as a deferred failure while all remaining OLE2 content is
+still inspected, and it is returned if no later status supersedes it. Source
+guards cover the propagation; compiled Linux fault-injection and Office corpus
+qualification remain open.
+
 
 The shared mbox line reader now receives the scan context and marks failed
 fmap windows or invalid line ranges incomplete instead of treating them as

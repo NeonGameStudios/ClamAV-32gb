@@ -3852,6 +3852,7 @@ static cl_error_t cli_ole2_scan_tempdir(
     int has_image)
 {
     cl_error_t status = CL_SUCCESS;
+    cl_error_t deferred_failure = CL_SUCCESS;
     DIR *dd           = NULL;
     int has_macros    = 0;
 
@@ -3863,7 +3864,7 @@ static cl_error_t cli_ole2_scan_tempdir(
 
     /* Output JSON Summary Information */
     if (SCAN_COLLECT_METADATA && (ctx->this_layer_metadata_json != NULL)) {
-        (void)cli_ole2_tempdir_scan_summary(dir, ctx, files);
+        deferred_failure = cli_ole2_tempdir_scan_summary(dir, ctx, files);
     }
 
     status = cli_ole2_tempdir_scan_embedded_ole10(dir, ctx, files);
@@ -3968,6 +3969,9 @@ static cl_error_t cli_ole2_scan_tempdir(
     }
 
 done:
+    if (status == CL_SUCCESS && deferred_failure != CL_SUCCESS)
+        status = deferred_failure;
+
     if (NULL != dd) {
         if (closedir(dd) != 0) {
             cli_mark_scan_incomplete(ctx, "OLE2 temporary directory could not be closed");

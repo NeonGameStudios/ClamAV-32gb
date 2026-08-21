@@ -212,6 +212,9 @@
   HTML-first/text-fallback root selection and MHTML preclassification path;
   run the 65 MiB regression, sanitizer/RSS checks, and full MHTML corpus on
   supported Linux.
+- OLE2 summary metadata failures now remain attached to the parser result
+  instead of being discarded while embedded streams continue scanning; add
+  metadata fault-injection coverage during Office-parser qualification.
 
 ## Large-file validation and expansion progression
 
