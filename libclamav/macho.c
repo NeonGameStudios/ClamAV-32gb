@@ -190,7 +190,7 @@ static uint32_t cli_rawaddr(uint32_t vaddr, struct cli_exe_section *sects, uint1
     unsigned int i, found = 0;
 
     for (i = 0; i < nsects; i++) {
-        if (sects[i].rva <= vaddr && sects[i].rva + sects[i].vsz > vaddr) {
+        if (sects[i].rva <= vaddr && vaddr - sects[i].rva < sects[i].vsz) {
             found = 1;
             break;
         }
@@ -205,6 +205,26 @@ static uint32_t cli_rawaddr(uint32_t vaddr, struct cli_exe_section *sects, uint1
     return vaddr - sects[i].rva + sects[i].raw;
 }
 
+static uint64_t cli_rawaddr64(uint64_t vaddr, struct cli_exe_section64 *sects, uint16_t nsects, unsigned int *err)
+{
+    unsigned int i, found = 0;
+
+    for (i = 0; i < nsects; i++) {
+        if (sects[i].rva <= vaddr && vaddr - sects[i].rva < sects[i].vsz) {
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found || UINT64_MAX - sects[i].raw < vaddr - sects[i].rva) {
+        *err = 1;
+        return 0;
+    }
+
+    *err = 0;
+    return sects[i].raw + vaddr - sects[i].rva;
+}
+
 cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 {
     struct macho_hdr hdr;
@@ -215,8 +235,10 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     struct macho_section64 section64;
     unsigned int i, j, sect = 0, conv, m64, nsects;
     bool get_fileinfo = false;
-    unsigned int arch = 0, ep = 0, err;
+    unsigned int arch = 0, err;
+    uint64_t ep = 0;
     struct cli_exe_section *sections = NULL;
+    struct cli_exe_section64 *sections64 = NULL;
     char name[16];
     fmap_t *map = ctx->fmap;
     ssize_t at;
@@ -342,6 +364,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
         if (fmap_readn(map, &load_cmd, at, sizeof(load_cmd)) != sizeof(load_cmd)) {
             cli_dbgmsg("cli_scanmacho: Can't read load command\n");
             free(sections);
+            free(sections64);
             RETURN_MACHO_BROKEN;
         }
         at += sizeof(load_cmd);
@@ -358,6 +381,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 if (fmap_readn(map, &segment_cmd64, at, sizeof(segment_cmd64)) != sizeof(segment_cmd64)) {
                     cli_dbgmsg("cli_scanmacho: Can't read segment command\n");
                     free(sections);
+                    free(sections64);
                     RETURN_MACHO_BROKEN;
                 }
                 at += sizeof(segment_cmd64);
@@ -368,6 +392,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 if (fmap_readn(map, &segment_cmd, at, sizeof(segment_cmd)) != sizeof(segment_cmd)) {
                     cli_dbgmsg("cli_scanmacho: Can't read segment command\n");
                     free(sections);
+                    free(sections64);
                     RETURN_MACHO_BROKEN;
                 }
                 at += sizeof(segment_cmd);
@@ -382,6 +407,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             if (nsects > 255) {
                 cli_dbgmsg("cli_scanmacho: Invalid number of sections\n");
                 free(sections);
+                free(sections64);
                 RETURN_MACHO_BROKEN;
             }
             if (!nsects) {
@@ -392,7 +418,17 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             sections = (struct cli_exe_section *)cli_max_realloc_or_free(sections, (sect + nsects) * sizeof(struct cli_exe_section));
             if (!sections) {
                 cli_errmsg("cli_scanmacho: Can't allocate memory for 'sections'\n");
+                free(sections64);
                 return CL_EMEM;
+            }
+            if (m64) {
+                sections64 = (struct cli_exe_section64 *)cli_max_realloc_or_free(
+                    sections64, (sect + nsects) * sizeof(struct cli_exe_section64));
+                if (!sections64) {
+                    cli_errmsg("cli_scanmacho: Can't allocate memory for native-width sections\n");
+                    free(sections);
+                    return CL_EMEM;
+                }
             }
 
             for (j = 0; j < nsects; j++) {
@@ -400,25 +436,52 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     if (fmap_readn(map, &section64, at, sizeof(section64)) != sizeof(section64)) {
                         cli_dbgmsg("cli_scanmacho: Can't read section\n");
                         free(sections);
+                        free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(section64);
-                    sections[sect].rva = EC64(section64.addr, conv);
-                    sections[sect].vsz = EC64(section64.size, conv);
-                    sections[sect].raw = EC32(section64.offset, conv);
+                    sections64[sect].rva = EC64(section64.addr, conv);
+                    sections64[sect].vsz = EC64(section64.size, conv);
+                    sections64[sect].raw = EC32(section64.offset, conv);
                     if (EC32(section64.align, conv) >= 32) {
                         cli_dbgmsg("cli_scanmacho: Section alignment exponent is malformed\n");
                         free(sections);
+                        free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
-                    section64.align    = 1U << EC32(section64.align, conv);
-                    sections[sect].rsz = sections[sect].vsz + (section64.align - (sections[sect].vsz % section64.align)) % section64.align; /* most likely we can assume it's the same as .vsz */
+                    {
+                        uint64_t align = UINT64_C(1) << EC32(section64.align, conv);
+                        uint64_t padding = (align - (sections64[sect].vsz % align)) % align;
+                        if (UINT64_MAX - sections64[sect].vsz < padding) {
+                            cli_dbgmsg("cli_scanmacho: Section size alignment overflowed\n");
+                            free(sections);
+                            free(sections64);
+                            RETURN_MACHO_BROKEN;
+                        }
+                        sections64[sect].rsz = sections64[sect].vsz + padding;
+                    }
+                    sections64[sect].urva = sections64[sect].rva;
+                    sections64[sect].uvsz = sections64[sect].vsz;
+                    sections64[sect].uraw = sections64[sect].raw;
+                    sections64[sect].ursz = sections64[sect].rsz;
+                    if (sections64[sect].rva > UINT32_MAX || sections64[sect].vsz > UINT32_MAX ||
+                        sections64[sect].raw > UINT32_MAX || sections64[sect].rsz > UINT32_MAX) {
+                        memset(&sections[sect], 0, sizeof(sections[sect]));
+                        if (get_fileinfo)
+                            fileinfo->legacy_metadata_incomplete = 1;
+                    } else {
+                        sections[sect].rva = (uint32_t)sections64[sect].rva;
+                        sections[sect].vsz = (uint32_t)sections64[sect].vsz;
+                        sections[sect].raw = (uint32_t)sections64[sect].raw;
+                        sections[sect].rsz = (uint32_t)sections64[sect].rsz;
+                    }
                     strncpy(name, section64.sectname, sizeof(name));
                     name[sizeof(name) - 1] = '\0';
                 } else {
                     if (fmap_readn(map, &section, at, sizeof(section)) != sizeof(section)) {
                         cli_dbgmsg("cli_scanmacho: Can't read section\n");
                         free(sections);
+                        free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(section);
@@ -428,6 +491,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     if (EC32(section.align, conv) >= 32) {
                         cli_dbgmsg("cli_scanmacho: Section aligned is malformed\n");
                         free(sections);
+                        free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
                     section.align      = 1U << EC32(section.align, conv);
@@ -438,7 +502,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 if (!get_fileinfo) {
                     cli_dbgmsg("MACHO: --- Section %u ---\n", sect);
                     cli_dbgmsg("MACHO: Name: %s\n", name);
-                    cli_dbgmsg("MACHO: Virtual address: 0x%x\n", (unsigned int)sections[sect].rva);
+                    cli_dbgmsg("MACHO: Virtual address: 0x" STDx64 "\n", sections64 ? sections64[sect].rva : (uint64_t)sections[sect].rva);
                     cli_dbgmsg("MACHO: Virtual size: %u\n", (unsigned int)sections[sect].vsz);
                     cli_dbgmsg("MACHO: Raw size: %u\n", (unsigned int)sections[sect].rsz);
                     if (sections[sect].raw)
@@ -459,6 +523,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     if (fmap_readn(map, &thread_state_x86, at, sizeof(thread_state_x86)) != sizeof(thread_state_x86)) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_x86\n");
                         free(sections);
+                        free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(thread_state_x86);
@@ -472,6 +537,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     if (fmap_readn(map, &thread_state_ppc, at, sizeof(thread_state_ppc)) != sizeof(thread_state_ppc)) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_ppc\n");
                         free(sections);
+                        free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(thread_state_ppc);
@@ -486,6 +552,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     if (fmap_readn(map, &thread_state_ppc64, at, sizeof(thread_state_ppc64)) != sizeof(thread_state_ppc64)) {
                         cli_dbgmsg("cli_scanmacho: Can't read thread_state_ppc64\n");
                         free(sections);
+                        free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
                     at += sizeof(thread_state_ppc64);
@@ -495,6 +562,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                 default:
                     cli_errmsg("cli_scanmacho: Invalid arch setting!\n");
                     free(sections);
+                    free(sections64);
                     return CL_EARG;
             }
         } else {
@@ -505,27 +573,47 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 
     if (ep) {
         if (!get_fileinfo)
-            cli_dbgmsg("Entry Point: 0x%x\n", ep);
+            cli_dbgmsg("Entry Point: 0x" STDx64 "\n", ep);
         if (sections) {
-            ep = cli_rawaddr(ep, sections, sect, &err);
+            if (m64)
+                ep = cli_rawaddr64(ep, sections64, sect, &err);
+            else if (ep <= UINT32_MAX)
+                ep = cli_rawaddr((uint32_t)ep, sections, sect, &err);
+            else
+                err = 1;
             if (err) {
                 cli_dbgmsg("cli_scanmacho: Can't calculate EP offset\n");
                 free(sections);
+                free(sections64);
                 if (!get_fileinfo)
                     cli_mark_scan_incomplete(ctx, "Mach-O entry-point mapping ended before inspection completed");
                 return get_fileinfo ? CL_EFORMAT : CL_EPARSE;
             }
             if (!get_fileinfo)
-                cli_dbgmsg("Entry Point file offset: %u\n", ep);
+                cli_dbgmsg("Entry Point file offset: " STDu64 "\n", ep);
         }
     }
 
     if (get_fileinfo) {
-        fileinfo->ep        = ep;
+        if (m64) {
+            fileinfo->ep64 = ep;
+            fileinfo->has_native_coordinates = 1;
+            if (ep <= UINT32_MAX)
+                fileinfo->ep = (uint32_t)ep;
+            else {
+                fileinfo->ep = 0;
+                fileinfo->legacy_metadata_incomplete = 1;
+            }
+            fileinfo->sections64 = sections64;
+            sections64 = NULL;
+        } else {
+            fileinfo->ep = (uint32_t)ep;
+        }
         fileinfo->nsections = sect;
         fileinfo->sections  = sections;
     } else {
         free(sections);
+        free(sections64);
     }
 
     return CL_SUCCESS;
@@ -533,7 +621,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 
 cl_error_t cli_machoheader(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 {
-    return cli_scanmacho(ctx, fileinfo);
+    cl_error_t ret = cli_scanmacho(ctx, fileinfo);
+
+    if (ret == CL_SUCCESS && fileinfo && fileinfo->legacy_metadata_incomplete)
+        cli_mark_scan_incomplete(ctx, "Mach-O coordinates exceed the legacy 32-bit metadata ABI");
+
+    return ret;
 }
 
 cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)

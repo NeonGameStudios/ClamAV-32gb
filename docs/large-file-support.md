@@ -4132,3 +4132,15 @@ the layer incomplete and returns `CL_EPARSE` instead of advancing past the map
 and returning clean. The focused regression exercises a truncated `SHOWFRAME`
 payload; compressed-output, sanitizer, and full SWF corpus qualification remain
 release gates.
+
+## Mach-O native section metadata — 2026-08-20
+
+64-bit Mach-O section virtual addresses, sizes, aligned raw sizes, and entry
+point mapping now retain native-width coordinates in `cli_exe_section64`.
+Values that cannot cross the legacy bytecode section ABI are no longer exposed
+as narrowed metadata; the legacy view is zeroed and marked incomplete while
+native matcher consumers retain the complete coordinates. Entry-point mapping
+uses subtraction-based range checks and checked native arithmetic. A sparse
+64-bit section regression covers the preservation and legacy-boundary behavior;
+full Mach-O, bytecode, sanitizer, and supported-build Sonic1 qualification
+remain release gates.

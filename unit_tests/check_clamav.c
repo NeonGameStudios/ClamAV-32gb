@@ -11594,6 +11594,67 @@ static void macho_test_write_u32(uint8_t *dst, uint32_t value)
     dst[3] = (uint8_t)(value >> 24);
 }
 
+static void macho_test_write_u64(uint8_t *dst, uint64_t value)
+{
+    macho_test_write_u32(dst, (uint32_t)value);
+    macho_test_write_u32(dst + 4, (uint32_t)(value >> 32));
+}
+
+START_TEST(test_macho_native_metadata_preserves_64bit_sections)
+{
+    enum {
+        MACHO_HEADER_SIZE  = 32,
+        LOAD_COMMAND_SIZE  = 8,
+        SEGMENT64_SIZE     = 64,
+        SECTION64_SIZE     = 80,
+        ARCHIVE_SIZE       = MACHO_HEADER_SIZE + LOAD_COMMAND_SIZE + SEGMENT64_SIZE + SECTION64_SIZE
+    };
+    uint8_t data[ARCHIVE_SIZE] = {0};
+    struct cli_exe_info info;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    size_t section_offset = MACHO_HEADER_SIZE + LOAD_COMMAND_SIZE + SEGMENT64_SIZE;
+
+    macho_test_write_u32(data + 0, 0xfeedfacfU);
+    macho_test_write_u32(data + 4, 0x01000007U); /* CPU_TYPE_X86_64 */
+    macho_test_write_u32(data + 12, 2U);         /* MH_EXECUTE */
+    macho_test_write_u32(data + 16, 1U);         /* one load command */
+    macho_test_write_u32(data + 20, LOAD_COMMAND_SIZE + SEGMENT64_SIZE + SECTION64_SIZE);
+    macho_test_write_u32(data + MACHO_HEADER_SIZE, 0x19U); /* LC_SEGMENT_64 */
+    macho_test_write_u32(data + MACHO_HEADER_SIZE + 4, LOAD_COMMAND_SIZE + SEGMENT64_SIZE + SECTION64_SIZE);
+    macho_test_write_u32(data + MACHO_HEADER_SIZE + LOAD_COMMAND_SIZE + 56, 1U); /* nsects */
+    macho_test_write_u64(data + section_offset + 16, UINT64_C(0x100000000)); /* addr */
+    macho_test_write_u64(data + section_offset + 24, UINT64_C(0x100000000)); /* size */
+    macho_test_write_u32(data + section_offset + 48, 0x200U);                 /* file offset */
+
+    memset(&info, 0, sizeof(info));
+    cli_exe_info_init(&info, 0);
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_machoheader(&ctx, &info);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(info.has_native_coordinates);
+    ck_assert_ptr_nonnull(info.sections64);
+    ck_assert_uint_eq(info.sections64[0].rva, UINT64_C(0x100000000));
+    ck_assert_uint_eq(info.sections64[0].vsz, UINT64_C(0x100000000));
+    ck_assert(info.legacy_metadata_incomplete);
+    ck_assert_uint_eq(info.sections[0].rva, 0);
+    ck_assert_uint_eq(info.sections[0].vsz, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cli_exe_info_destroy(&info);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_macho_section_alignment_exponent_is_fail_visible)
 {
     enum {
@@ -12659,6 +12720,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_elf64_entry_offset_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_native_metadata_preserves_64bit_sections);
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
