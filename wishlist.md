@@ -335,9 +335,10 @@
   unsupported parser boundary with raw matching preserved; add a bounded
   model parser and production corpus qualification before enabling deep
   model inspection.
-- RAR and RAR SFX recognition now fail closed when the optional UnRAR backend
-  is unavailable; complete backend-enabled parser and production corpus
-  qualification remains required.
+- RAR and RAR SFX recognition, including confirmed embedded SFX candidates,
+  now fails closed when the optional UnRAR backend is unavailable; complete
+  backend-enabled parser and production corpus qualification remains
+  required.
 
 ## Large-file validation and expansion progression
 

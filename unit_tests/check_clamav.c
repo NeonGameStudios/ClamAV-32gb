@@ -5724,7 +5724,12 @@ END_TEST
 
 START_TEST(test_rar_without_backend_is_explicitly_unsupported)
 {
-    static const uint8_t data[] = {0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00, 0x00};
+    static const uint8_t data[] = {
+        0x58,                                      /* parent payload prefix */
+        0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00, /* RAR signature */
+        0x00, 0x00,                               /* header CRC16 */
+        0x73, 0x00, 0x00,                         /* RAR4 main header */
+        0x07, 0x00};                               /* header size */
     static const char *const types[] = {"CL_TYPE_RAR", "CL_TYPE_RARSFX"};
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
@@ -5732,6 +5737,10 @@ START_TEST(test_rar_without_backend_is_explicitly_unsupported)
     cl_verdict_t verdicts[2];
     const char *alerts[2];
     int cache_flags[2];
+    cl_error_t embedded_result;
+    cl_verdict_t embedded_verdict;
+    const char *embedded_alert;
+    int embedded_cache_flag;
     int saved_have_rar;
     unsigned int i;
 
@@ -5758,6 +5767,20 @@ START_TEST(test_rar_without_backend_is_explicitly_unsupported)
         cache_flags[i] = map->dont_cache_flag;
         cl_fmap_close(map);
     }
+
+    {
+        fmap_t *map = cl_fmap_open_memory(data, sizeof(data));
+        uint64_t scanned = UINT64_MAX;
+
+        ck_assert_ptr_nonnull(map);
+        embedded_verdict = CL_VERDICT_STRONG_INDICATOR;
+        embedded_alert   = "stale";
+        embedded_result  = cl_scanmap_ex(map, NULL, &embedded_verdict, &embedded_alert, &scanned,
+                                         scan_engine, &options, NULL, NULL, NULL, NULL,
+                                         "CL_TYPE_TEXT_ASCII", NULL);
+        embedded_cache_flag = map->dont_cache_flag;
+        cl_fmap_close(map);
+    }
     have_rar = saved_have_rar;
 
     for (i = 0; i < sizeof(types) / sizeof(types[0]); i++) {
@@ -5766,6 +5789,10 @@ START_TEST(test_rar_without_backend_is_explicitly_unsupported)
         ck_assert(alerts[i] == NULL);
         ck_assert(cache_flags[i]);
     }
+    ck_assert_int_eq(embedded_result, CL_EPARSE);
+    ck_assert_int_eq(embedded_verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(embedded_alert == NULL);
+    ck_assert(embedded_cache_flag);
 
     cl_engine_free(scan_engine);
 }

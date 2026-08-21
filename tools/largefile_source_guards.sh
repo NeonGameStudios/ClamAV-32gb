@@ -109,6 +109,7 @@ contains libclamav/scanners.c 'file type detection could not read the input comp
 contains libclamav/scanners.c 'Python compiled bytecode parser is unsupported'
 contains libclamav/scanners.c 'AI model parser is unsupported'
 contains libclamav/scanners.c 'RAR parser backend is unavailable'
+contains libclamav/scanners.c 'RAR parser backend is unavailable for embedded SFX'
 contains libclamav/unzip.c 'ZIP local filename field could not be read completely'
 contains libclamav/unzip.c 'ZIP central filename field could not be read completely'
 contains libclamav/unzip.c 'ZIP end-of-central-directory record could not be read completely'

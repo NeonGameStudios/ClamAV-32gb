@@ -113,11 +113,11 @@ production model corpus qualification remain open.
 ## UnRAR backend unsupported boundary — 2026-08-21
 
 RAR and RAR SFX signatures can remain recognized when the optional UnRAR
-backend is not built or cannot be loaded. Their dispatch paths now record
-that capability boundary as an incomplete, non-cacheable result before the
-mandatory outer raw matcher, rather than allowing a raw-only clean result.
-Backend-enabled RAR parser qualification and production corpus coverage
-remain open.
+backend is not built or cannot be loaded. Their direct and embedded dispatch
+paths now confirm the minimum RAR SFX header first, reject weak candidates as
+non-layers, and record confirmed backend absence as an incomplete,
+non-cacheable result before the mandatory outer raw matcher. Backend-enabled
+RAR parser qualification and production corpus coverage remain open.
 
 ## OLE2 summary metadata result propagation — 2026-08-21
 

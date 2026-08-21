@@ -4943,7 +4943,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
 
                     switch (fpt->type) {
                         case CL_TYPE_RARSFX:
-                            if ((have_rar && SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_RAR)) &&
+                            if ((SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_RAR)) &&
                                 (type != CL_TYPE_RAR)) {
                                 ret = cli_rar_sfx_header_check(ctx, fpt->offset);
                                 if (ret == CL_EFORMAT) {
@@ -4954,6 +4954,12 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     cli_mark_scan_incomplete(ctx, "RAR SFX main header is malformed or truncated");
                                     if (nret == CL_SUCCESS)
                                         nret = ret;
+                                    break;
+                                }
+                                if (!have_rar) {
+                                    cli_mark_scan_incomplete(ctx, "RAR parser backend is unavailable for embedded SFX");
+                                    if (nret == CL_SUCCESS)
+                                        nret = CL_EPARSE;
                                     break;
                                 }
                                 nret = cli_magic_scan_nested_fmap_type(
