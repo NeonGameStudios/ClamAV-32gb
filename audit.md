@@ -1856,6 +1856,12 @@ fmap failure. The former remains the valid end of the attribute list; the
 latter now returns `CL_EPARSE`, marks the layer incomplete, and disables clean
 result caching.
 
+The JPEG Photoshop APP13 helper had the same shape: an incomplete `8BIM`
+resource header or data range returned `CL_BREAK`, and the caller normalized
+that status to clean. It now reserves `CL_BREAK` for an exact end-of-map and
+returns an incomplete parse result for truncated names, sizes, data ranges, or
+fmap reads. A focused regression covers a truncated Photoshop resource.
+
 ## PE import-thunk completion — 2026-08-20
 
 PE import-hash inspection now requires each thunk table to reach its explicit

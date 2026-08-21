@@ -252,19 +252,33 @@ typedef enum {
 
 // clang-format on
 
+static cl_error_t jpeg_parse_error(cli_ctx *ctx, const char *reason);
+
 static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
 {
     cl_error_t retval;
     const unsigned char *buf;
     uint16_t ntmp;
     uint8_t nlength, id[2];
-    uint32_t size;
+    uint32_t raw_size;
+    uint64_t size;
     size_t offset = *off;
     fmap_t *map   = ctx->fmap;
 
+    /* Reaching the exact end means that the resource list has ended. Any
+     * bytes still inside the map must contain a complete resource header; a
+     * failed fmap read here is not an ordinary end-of-list condition. */
+    if (offset > map->len || offset == map->len) {
+        return (offset == map->len)
+                   ? CL_BREAK
+                   : jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceHeader");
+    }
+    if (map->len - offset < 4 + 2 + 1)
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceHeader");
+
     if (!(buf = fmap_need_off_once(map, offset, 4 + 2 + 1))) {
         cli_dbgmsg("read bim failed\n");
-        return CL_BREAK;
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceRead");
     }
     if (memcmp(buf, "8BIM", 4) != 0) {
         cli_dbgmsg("missed 8bim\n");
@@ -276,12 +290,15 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
     cli_dbgmsg("ID: 0x%.2x%.2x\n", id[0], id[1]);
     nlength = buf[6];
     ntmp    = nlength + ((((uint16_t)nlength) + 1) & 0x01);
+    if ((size_t)ntmp > map->len - offset - (4 + 2 + 1))
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceName");
     offset += 4 + 2 + 1 + ntmp;
 
-    if (fmap_readn(map, &size, offset, 4) != 4) {
-        return CL_BREAK;
+    if (offset > map->len || map->len - offset < sizeof(raw_size) ||
+        fmap_readn(map, &raw_size, offset, sizeof(raw_size)) != sizeof(raw_size)) {
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceSize");
     }
-    size = be32_to_host(size);
+    size = (uint64_t)be32_to_host(raw_size);
     if (size == 0) {
         return CL_BREAK;
     }
@@ -289,7 +306,11 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
         size++;
     }
 
-    *off = offset + 4 + size;
+    if (offset > map->len || map->len - offset < sizeof(raw_size) ||
+        size > (uint64_t)(map->len - offset - sizeof(raw_size)))
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceData");
+
+    *off = offset + sizeof(raw_size) + (size_t)size;
     /* Is it a thumbnail image: 0x0409 or 0x040c */
     if ((id[0] == 0x04) && ((id[1] == 0x09) || (id[1] == 0x0c))) {
         /* Yes */

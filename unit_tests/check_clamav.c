@@ -13110,13 +13110,21 @@ START_TEST(test_jpeg_truncated_structures_are_fail_visible)
     static const uint8_t truncated_segment_size[] = {
         0xff, 0xd8, 0xff, 0xe0, 0x00,
     };
+    static const uint8_t truncated_photoshop_resource[] = {
+        0xff, 0xd8, 0xff, 0xed, 0x00, 0x14,
+        'P',  'h',  'o',  't',  'o',  's',  'h',  'o',  'p',  ' ',
+        '3',  '.',  '0',  '\0',
+        '8',  'B',  'I',  'M',
+    };
     const uint8_t *cases[] = {
         truncated_header,
         truncated_segment_size,
+        truncated_photoshop_resource,
     };
     const size_t lengths[] = {
         sizeof(truncated_header),
         sizeof(truncated_segment_size),
+        sizeof(truncated_photoshop_resource),
     };
     cli_ctx ctx;
     fmap_t *map;
@@ -13134,6 +13142,29 @@ START_TEST(test_jpeg_truncated_structures_are_fail_visible)
 
         cl_fmap_close(map);
     }
+}
+END_TEST
+
+START_TEST(test_jpeg_photoshop_exact_eof_is_complete)
+{
+    static const uint8_t data[] = {
+        0xff, 0xd8, 0xff, 0xed, 0x00, 0x10,
+        'P',  'h',  'o',  't',  'o',  's',  'h',  'o',  'p',  ' ',
+        '3',  '.',  '0',  '\0',
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -13524,6 +13555,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);
+    tcase_add_test(tc_cl, test_jpeg_photoshop_exact_eof_is_complete);
     tcase_add_test(tc_cl, test_text_normalize_map_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_trailer_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_decode_error_is_fail_visible);

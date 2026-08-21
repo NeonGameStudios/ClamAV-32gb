@@ -4245,3 +4245,13 @@ list; a failed in-range read marks the layer incomplete and returns
 inspected container as clean. The focused fault-injection regression and
 source guard are registered; compiled Linux/Sonic1, sanitizer, and broader
 TNEF corpus qualification remain release gates.
+
+## JPEG Photoshop resource boundary — 2026-08-20
+
+The JPEG APP13 Photoshop-resource walk now treats exact end-of-map as the only
+normal end of its `8BIM` list. Truncated resource headers, names, size fields,
+data ranges, and mapped reads mark the layer incomplete and return `CL_EPARSE`
+to direct parser callers instead of being normalized from `CL_BREAK` to clean.
+The focused truncated-resource regression and source guard are registered;
+compiled JPEG, sanitizer, and broader media corpus qualification remain release
+gates.
