@@ -124,6 +124,9 @@
   Rust-parser qualification.
 - Legacy CPIO/TAR/RAR/EGG/ARJ/InstallShield metadata callback failures now
   propagate; add callback-fault and malformed archive corpus coverage.
+- UNIX mbox bounce and BinHex attachment scans now propagate every non-clean
+  result instead of checking only for `CL_VIRUS`; add mail-spool fault and
+  malformed BinHex corpus coverage.
 
 ## Large-file validation and expansion progression
 

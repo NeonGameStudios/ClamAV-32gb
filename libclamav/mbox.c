@@ -206,7 +206,7 @@ static int rfc1341(mbox_ctx *mctx, message *m);
 static bool usefulHeader(int commandNumber, const char *cmd);
 static char *getline_from_mbox(char *buffer, size_t len, fmap_t *map, size_t *at, cli_ctx *ctx);
 static bool isBounceStart(mbox_ctx *mctx, const char *line);
-static bool exportBinhexMessage(mbox_ctx *mctx, message *m);
+static mbox_status exportBinhexMessage(mbox_ctx *mctx, message *m);
 static int exportBounceMessage(mbox_ctx *ctx, text *start);
 static const char *getMimeTypeStr(mime_type mimetype);
 static const char *getEncTypeStr(encoding_type enctype);
@@ -2252,11 +2252,14 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                          * TODO: check yEnc
                          */
                         if (binhexBegin(mainMessage) == t_line) {
-                            if (exportBinhexMessage(mctx, mainMessage)) {
-                                /* virus found */
+                            const mbox_status binhex_rc = exportBinhexMessage(mctx, mainMessage);
+
+                            if (binhex_rc == VIRUS) {
                                 rc       = VIRUS;
                                 infected = true;
                                 break;
+                            } else if (binhex_rc != OK && rc == OK) {
+                                rc = FAIL;
                             }
                         } else if (t_line->t_next &&
                                    (encodingLine(mainMessage) == t_line->t_next)) {
@@ -2698,6 +2701,8 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                             return MAXREC;
                         case MAXFILES:
                             return MAXFILES;
+                        case FAIL:
+                            return FAIL;
                         default:
                             return OK_ATTACHMENTS_NOT_SAVED;
                     }
@@ -3194,8 +3199,14 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                 }
             } while (!fileblobInfected(fb));
 
-            if (scanFileblob(mctx, fb) == CL_VIRUS)
-                rc = VIRUS;
+            {
+                const int scan_rc = scanFileblob(mctx, fb);
+
+                if (scan_rc == CL_VIRUS)
+                    rc = VIRUS;
+                else if (scan_rc != CL_CLEAN && rc != VIRUS)
+                    rc = FAIL;
+            }
             mctx->files++;
 
             if (topofbounce)
@@ -3253,8 +3264,12 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                                     28);
 
                     fileblobSetCTX(fb, mctx->ctx);
-                    if (scanFileblob(mctx, textToFileblob(t_line, fb, 1)) == CL_VIRUS)
+                    const int scan_rc = scanFileblob(mctx, textToFileblob(t_line, fb, 1));
+
+                    if (scan_rc == CL_VIRUS)
                         rc = VIRUS;
+                    else if (scan_rc != CL_CLEAN && rc != VIRUS)
+                        rc = FAIL;
                     mctx->files++;
                 }
                 saveIt = false;
@@ -4811,13 +4826,12 @@ isBounceStart(mbox_ctx *mctx, const char *line)
 }
 
 /*
- * Extract a binhexEncoded message, return if it's found to be infected as we
- *    extract it
+ * Extract a binhexEncoded message and preserve the scan result for the mbox
+ *    caller.
  */
-static bool
+static mbox_status
 exportBinhexMessage(mbox_ctx *mctx, message *m)
 {
-    bool infected = false;
     fileblob *fb;
 
     if (messageGetEncoding(m) == NOENCODING)
@@ -4829,16 +4843,23 @@ exportBinhexMessage(mbox_ctx *mctx, message *m)
         cli_dbgmsg("Binhex file decoded to %s\n",
                    fileblobGetFilename(fb));
 
-        if (scanFileblob(mctx, fb) == CL_VIRUS)
-            infected = true;
+        {
+            const int scan_rc = scanFileblob(mctx, fb);
+
+            if (scan_rc == CL_VIRUS)
+                return VIRUS;
+            if (scan_rc != CL_CLEAN)
+                return FAIL;
+        }
         mctx->files++;
     } else {
         cli_errmsg("Couldn't decode binhex file to %s\n", mctx->dir);
         cli_mark_scan_incomplete(mctx->ctx,
                                  "BinHex mail attachment could not be materialized");
+        return FAIL;
     }
 
-    return infected;
+    return OK;
 }
 
 /*
@@ -5020,8 +5041,14 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
                 if (binhexBegin(aMessage)) {
                     cli_dbgmsg("Found binhex message in multipart/mixed mainMessage\n");
 
-                    if (exportBinhexMessage(mctx, mainMessage))
-                        *rc = VIRUS;
+                    {
+                        const mbox_status binhex_rc = exportBinhexMessage(mctx, mainMessage);
+
+                        if (binhex_rc == VIRUS)
+                            *rc = VIRUS;
+                        else if (binhex_rc != OK)
+                            *rc = FAIL;
+                    }
                 }
                 if (mainMessage != messageIn)
                     messageDestroy(mainMessage);
@@ -5029,8 +5056,14 @@ do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, m
             } else if (aMessage) {
                 if (binhexBegin(aMessage)) {
                     cli_dbgmsg("Found binhex message in multipart/mixed non mime part\n");
-                    if (exportBinhexMessage(mctx, aMessage))
-                        *rc = VIRUS;
+                    {
+                        const mbox_status binhex_rc = exportBinhexMessage(mctx, aMessage);
+
+                        if (binhex_rc == VIRUS)
+                            *rc = VIRUS;
+                        else if (binhex_rc != OK)
+                            *rc = FAIL;
+                    }
                     messageReset(messages[i]);
                 }
             }

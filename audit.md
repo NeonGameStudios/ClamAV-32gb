@@ -2322,3 +2322,15 @@ Non-detection callback statuses remain caller-visible, while ordinary clean
 metadata continues to permit extraction. Source guards record the corrected
 callers; compiled Linux/Sonic1, callback-fault injection, sanitizer, and wider
 archive-corpus qualification remain open.
+
+## UNIX mbox attachment scan-result propagation — 2026-08-21
+
+UNIX mbox bounce and BinHex attachment paths previously checked only for
+`CL_VIRUS`. A temporary-spool scan that returned an I/O, resource, parser, or
+cancellation result could therefore mark the context incomplete while the
+mbox parser continued with a clean internal status. Those callers now map
+every non-clean result to the mbox `FAIL` state, BinHex no longer reduces the
+scan result to a boolean, and the no-body aggregation branch preserves
+`FAIL`. Source guards record the corrected paths;
+compiled Linux/Sonic1, fault-injection, sanitizer, and broader mail-corpus
+qualification remain open.
