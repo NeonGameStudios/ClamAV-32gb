@@ -2189,3 +2189,16 @@ their fixed 32-byte and 324-byte headers before subtracting those headers for
 nested scanning. A focused malformed-information-block regression, source
 guards, and capability evidence record the invariant; compiled Linux/Sonic1,
 sanitizer, and broader HWP3 corpus qualification remain open.
+
+## Direct clamd SCANREPORT qualification path — 2026-08-21
+
+The mandatory service gate previously reached the structured `CONTSCANREPORT`,
+`MULTISCANREPORT`, `ALLMATCHSCANREPORT`, `FILDESREPORT`, and
+`INSTREAMREPORT` paths through `clamdscan`, but had no direct wire-level
+exercise of `SCANREPORT`. The new standard-library protocol probe sends a
+length-prefixed `zSCANREPORT` request over the running Unix socket, validates
+the JSON frame, zero terminator, root size, file type, completion, verdict,
+metrics, and oracle-bound detection, and writes the validated report into the
+attested service evidence. The service workflow now requires this pass;
+compiled Linux/Sonic1 execution and the remaining production gates remain
+open.

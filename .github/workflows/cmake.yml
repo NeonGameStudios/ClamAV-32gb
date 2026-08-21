@@ -433,6 +433,7 @@ jobs:
             "${RUNNER_TEMP}/clamav-largefile-runtime/poc/db" \
             "$CLAMAV_QUALIFICATION_ORACLE"
           grep -Fx 'production_cvd_clamscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'production_cvd_clamdscan_scanreport=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'production_cvd_clamdscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'serial_worker_count=1' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'serial_queue_count=2' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"

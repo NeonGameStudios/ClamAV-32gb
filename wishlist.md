@@ -94,6 +94,9 @@
   subtraction-form bounds rather than wrapping offset-plus-length comparisons.
 - HWP3 information-block bounds now use subtraction-form admission, and image
   payload headers reject short lengths before fixed-header subtraction.
+- The service gate now directly exercises `SCANREPORT` through a Unix-socket
+  length-prefixed protocol probe and validates its report against the fixture
+  oracle; full release qualification remains open.
 
 ## Large-file validation and expansion progression
 

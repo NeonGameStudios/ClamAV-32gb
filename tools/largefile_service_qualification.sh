@@ -608,6 +608,10 @@ run_serial_queue()
 }
 
 : > "$out/service-summary.txt"
+python3 "$root/tools/largefile_clamd_report_protocol.py" \
+    "$socket" "$production_file" "$oracle_manifest" production scan \
+    "$out/reports/production_cvd_scanreport.jsonl"
+printf 'production_cvd_clamdscan_scanreport=pass\n' >> "$out/service-summary.txt"
 run_direct_production
 run_serial_queue
 run_service_scan production production_cvd "$production_file"
