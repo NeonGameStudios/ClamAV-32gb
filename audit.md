@@ -196,6 +196,15 @@ On-access prevention now denies permission events after stat or size-limit
 preflight failures even when the worker correctly avoids submitting a partial
 object; monitoring-only events continue to allow and log.
 
+## On-access report-status propagation — 2026-08-21
+
+The on-access client parsed incomplete structured reports into `ret_code`, but
+then replaced every non-detection result with `CL_CLEAN` or generic
+`CL_ECREAT` after `onas_dsresult()` returned. The client now preserves the
+specific parser, limit, timeout, resource, or transport status while keeping a
+detection authoritative. Source guards cover the invariant; compiled
+fanotify, monitoring-mode, and end-to-end clamonacc qualification remain open.
+
 ## Executive summary
 
 The fork now has a coherent 64-bit raw-scan path and materially stronger

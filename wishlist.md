@@ -105,6 +105,10 @@
   succeeds.
 - On-access file preflight failures now remain visible to extra-scan callers;
   fanotify prevention still denies incomplete permission events.
+- On-access structured-report parser, limit, and resource statuses now remain
+  visible through the client return value instead of becoming clean or generic
+  connection failures; add compiled fanotify and monitoring-mode integration
+  coverage.
 - Windows memory scans no longer turn a failed descriptor scan into `OK`; the
   native Windows memory ingress remains outside the certified first-release
   platform boundary.

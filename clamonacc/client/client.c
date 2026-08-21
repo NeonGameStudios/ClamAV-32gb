@@ -71,6 +71,17 @@
 
 #include "../clamonacc.h"
 
+static cl_error_t onas_scan_status(int infected, int errors, cl_error_t report_status)
+{
+    /* A detection remains authoritative, but a non-detection report status
+     * must not be collapsed into a clean on-access result. */
+    if (infected > 0)
+        return CL_VIRUS;
+    if (report_status != CL_SUCCESS)
+        return report_status;
+    return errors ? CL_ECREAT : CL_CLEAN;
+}
+
 void onas_print_server_version(struct onas_context **ctx)
 {
     if (onas_get_clamd_version(ctx)) {
@@ -626,7 +637,7 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
         errors = 1;
     }
 
-    status = *infected ? CL_VIRUS : (errors ? CL_ECREAT : CL_CLEAN);
+    status = onas_scan_status(*infected, errors, ret_code ? *ret_code : CL_SUCCESS);
 
 done:
     if ((CL_CLEAN != status) && (CL_VIRUS != status)) {
