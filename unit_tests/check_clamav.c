@@ -9332,6 +9332,45 @@ START_TEST(test_embedded_candidate_admission_headers)
 }
 END_TEST
 
+START_TEST(test_parser_temporary_directory_failures_are_fail_visible)
+{
+    static const uint8_t input[] = {0x35};
+    char invalid_tmpdir[PATH_MAX];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/parser-temp-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
+                  "temporary directory test path was truncated");
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = invalid_tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scanautoit(&ctx, 0), CL_ETMPDIR);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "AutoIt temporary directory could not be created");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = invalid_tmpdir;
+    map                   = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scannulsft(&ctx, 0), CL_ETMPDIR);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "NSIS temporary directory could not be created");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)map;
@@ -12959,6 +12998,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_parser_temporary_directory_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);

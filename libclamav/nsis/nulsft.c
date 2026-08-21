@@ -767,10 +767,13 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
         return CL_EREAD;
     }
     nsist.off = (size_t)offset;
-    if (!(nsist.dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "nulsft-tmp")))
+    if (!(nsist.dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "nulsft-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "NSIS temporary directory could not be created");
         return CL_ETMPDIR;
+    }
     if (mkdir(nsist.dir, 0700)) {
         cli_dbgmsg("NSIS: Can't create temporary directory %s\n", nsist.dir);
+        cli_mark_scan_incomplete(ctx, "NSIS temporary directory could not be created");
         free(nsist.dir);
         return CL_ETMPDIR;
     }
