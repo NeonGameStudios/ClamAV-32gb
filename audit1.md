@@ -2816,3 +2816,7 @@ work after parsing with `AC_SCAN_FT` only; the outer virus-signature pass is not
 duplicated. The embedded RAR-SFX unavailable-backend regression now exercises
 the SDB-enabled path as well. Compiled parser-family and Sonic1 qualification
 remain release gates.
+
+The recognition-only matcher mode also suppresses hash and logical-signature
+evaluation; only AC file-type signatures run in that pass, so SDB-enabled scans
+do not duplicate detector work or alerts.

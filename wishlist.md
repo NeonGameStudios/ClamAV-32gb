@@ -368,6 +368,9 @@
   a separate type-recognition-only pass after parsing; embedded SFX/archive
   candidates are no longer skipped merely because SDB signatures are loaded.
   Compiled embedded-SFX and production parser qualification remain open.
+- File-type-recognition-only matcher passes now suppress hash and logical
+  signature evaluation, preventing duplicate detector work after the
+  SDB-enabled outer raw pass.
 
 ## Large-file validation and expansion progression
 

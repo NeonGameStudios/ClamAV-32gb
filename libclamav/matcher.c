@@ -1352,12 +1352,15 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
     bool info_initialized = false;
 
     struct cli_matcher *hdb, *fp;
+    bool scan_viruses;
 
     if (!ctx->engine) {
         cli_errmsg("cli_scan_fmap: engine == NULL\n");
         ret = CL_ENULLARG;
         goto done;
     }
+
+    scan_viruses = (acmode & AC_SCAN_VIR) != 0;
 
     if (!filetype_only) {
         generic_ac_root = ctx->engine->root[0]; /* generic signatures */
@@ -1510,7 +1513,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
     hdb = ctx->engine->hm_hdb;
     fp  = ctx->engine->hm_fp;
 
-    if (!filetype_only && hdb) {
+    if (!filetype_only && scan_viruses && hdb) {
         /* We're not just doing file typing, we're checking for viruses.
            So we need to compute the hash sigs, if there are any.
 
@@ -1602,7 +1605,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
 
             /* if (bytes <= (maxpatlen * (offset!=0))), it means the last window finished the file hashing *
              *   since the last window is responsible for adding intersection between windows (maxpatlen)  */
-            if (hdb && (bytes > (maxpatlen * (offset != 0)))) {
+            if (scan_viruses && hdb && (bytes > (maxpatlen * (offset != 0)))) {
                 const void *data  = buff + maxpatlen * (offset != 0);
                 uint32_t data_len = bytes - maxpatlen * (offset != 0);
 
@@ -1628,7 +1631,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         offset += bytes - maxpatlen;
     }
 
-    if (!filetype_only && hdb) {
+    if (!filetype_only && scan_viruses && hdb) {
         /* We're not just doing file typing, we're scanning for malware.
            So we need to check the hash sigs, if there are any. */
         for (hash_type = CLI_HASH_MD5; hash_type < CLI_HASH_AVAIL_TYPES; hash_type++) {
@@ -1694,14 +1697,14 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
      * Evaluate the logical expressions for clamav logical signatures and YARA rules.
      */
     // Evaluate for the target-specific signature AC matches.
-    if (NULL != target_ac_root) {
+    if (scan_viruses && NULL != target_ac_root) {
         if (ret != CL_VIRUS) {
             ret = cli_exp_eval(ctx, target_ac_root, &target_ac_data, &info);
         }
     }
 
     // Evaluate for the generic signature AC matches.
-    if (NULL != generic_ac_root) {
+    if (scan_viruses && NULL != generic_ac_root) {
         if (ret != CL_VIRUS) {
             ret = cli_exp_eval(ctx, generic_ac_root, &generic_ac_data, &info);
         }
