@@ -86,6 +86,17 @@ struct cpio_hdr_newc {
 
 #define EC16(v, conv) (conv ? cbswap16(v) : v)
 
+static size_t cpio_readn(fmap_t *map, void *dst, size_t at, size_t len)
+{
+    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
+     * beyond the map. A CPIO structure that extends past the input is a
+     * malformed/truncated archive, not an operational read failure; only a
+     * fully in-range callback failure should become CL_EREAD. */
+    if (map == NULL || at > map->len || len > map->len - at)
+        return 0;
+    return fmap_readn(map, dst, at, len);
+}
+
 static void sanitname(char *name)
 {
     while (*name) {
@@ -110,7 +121,7 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
 
     memset(name, 0, sizeof(name));
 
-    while ((hdr_read = fmap_readn(ctx->fmap, &hdr_old, pos, sizeof(hdr_old))) == sizeof(hdr_old)) {
+    while ((hdr_read = cpio_readn(ctx->fmap, &hdr_old, pos, sizeof(hdr_old))) == sizeof(hdr_old)) {
         pos += sizeof(hdr_old);
         if (!hdr_old.magic && trailer) {
             complete = 1;
@@ -133,7 +144,7 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
         if (hdr_old.namesize) {
             hdr_namesize = EC16(hdr_old.namesize, conv);
             namesize     = MIN(sizeof(name), hdr_namesize);
-            hdr_read = fmap_readn(ctx->fmap, &name, pos, namesize);
+            hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
             if (hdr_read != namesize) {
                 cli_dbgmsg("cli_scancpio_old: Can't read file name\n");
                 cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
@@ -214,7 +225,7 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
 
     memset(&hdr_odc, 0, sizeof(hdr_odc));
 
-    while ((hdr_read = fmap_readn(ctx->fmap, &hdr_odc, pos, sizeof(hdr_odc))) == sizeof(hdr_odc)) {
+    while ((hdr_read = cpio_readn(ctx->fmap, &hdr_odc, pos, sizeof(hdr_odc))) == sizeof(hdr_odc)) {
         pos += sizeof(hdr_odc);
         if (!hdr_odc.magic[0] && trailer) {
             complete = 1;
@@ -239,7 +250,7 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
         }
         if (hdr_namesize) {
             namesize = MIN(sizeof(name), hdr_namesize);
-            hdr_read = fmap_readn(ctx->fmap, &name, pos, namesize);
+            hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
             if (hdr_read != namesize) {
                 cli_dbgmsg("cli_scancpio_odc: Can't read file name\n");
                 cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");
@@ -313,7 +324,7 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
 
     memset(name, 0, 513);
 
-    while ((hdr_read = fmap_readn(ctx->fmap, &hdr_newc, pos, sizeof(hdr_newc))) == sizeof(hdr_newc)) {
+    while ((hdr_read = cpio_readn(ctx->fmap, &hdr_newc, pos, sizeof(hdr_newc))) == sizeof(hdr_newc)) {
         pos += sizeof(hdr_newc);
         if (!hdr_newc.magic[0] && trailer) {
             complete = 1;
@@ -338,7 +349,7 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
         }
         if (hdr_namesize) {
             namesize = MIN(sizeof(name), hdr_namesize);
-            hdr_read = fmap_readn(ctx->fmap, &name, pos, namesize);
+            hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
             if (hdr_read != namesize) {
                 cli_dbgmsg("cli_scancpio_newc: Can't read file name\n");
                 cli_mark_scan_incomplete(ctx, "CPIO member name could not be read completely");

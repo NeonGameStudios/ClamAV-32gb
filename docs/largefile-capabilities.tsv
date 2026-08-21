@@ -87,10 +87,10 @@ parser	CL_TYPE_BINARY_DATA	pending	libclamav/scanners.c	dispatch branch requires
 parser	CL_TYPE_BINHEX	pending	libclamav/scanners.c	encoded-input fmap failures now mark the layer incomplete and non-cacheable; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_BZ	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_CABSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_CPIO_CRC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_CPIO_NEWC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_CPIO_ODC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_CPIO_OLD	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_CPIO_CRC	pending	libclamav/cpio.c	CPIO fixed-header and member-name reads distinguish in-range fmap callback failures (CL_EREAD) from impossible/truncated coordinates (CL_EPARSE); parser-family qualification and complete corpus evidence remain required
+parser	CL_TYPE_CPIO_NEWC	pending	libclamav/cpio.c	CPIO fixed-header and member-name reads distinguish in-range fmap callback failures (CL_EREAD) from impossible/truncated coordinates (CL_EPARSE); parser-family qualification and complete corpus evidence remain required
+parser	CL_TYPE_CPIO_ODC	pending	libclamav/cpio.c	CPIO fixed-header and member-name reads distinguish in-range fmap callback failures (CL_EREAD) from impossible/truncated coordinates (CL_EPARSE); parser-family qualification and complete corpus evidence remain required
+parser	CL_TYPE_CPIO_OLD	pending	libclamav/cpio.c	CPIO fixed-header and member-name reads distinguish in-range fmap callback failures (CL_EREAD) from impossible/truncated coordinates (CL_EPARSE); parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_CRYPTFF	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_DMG	pending	libclamav/scanners.c	DMG trailer, XML, and streamed stripe fmap read failures remain `CL_EREAD` and non-cacheable; dispatch branch still requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_EGG	pending	libclamav/scanners.c	encrypted-member heuristic alert-recording failures remain fail-visible; parser-family qualification and explicit completion evidence remain required

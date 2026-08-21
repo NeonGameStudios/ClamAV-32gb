@@ -129,6 +129,10 @@
 - ARJ compressed bit-window refills and stored-member reads now preserve
   in-range fmap callback failures as `CL_EREAD` instead of `CL_EFORMAT`; add
   callback-fault, sanitizer, and production ARJ corpus qualification.
+- CPIO fixed-header and member-name reads now distinguish in-range fmap
+  callback failures (`CL_EREAD`) from impossible/truncated coordinates
+  (`CL_EPARSE`) across all four legacy variants; add compiled callback-fault,
+  sanitizer, and production CPIO corpus qualification.
 - ELF64 entrypoint and section coordinates now retain a native-width matcher
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the

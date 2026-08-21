@@ -2871,3 +2871,15 @@ read reason and refuses to scan partial output. A focused stored-member
 fault-injection regression, source guards, and capability-manifest evidence
 record the invariant. Compiled Linux/Sonic1, sanitizer, callback-fault, and
 production ARJ corpus qualification remain open.
+
+## CPIO coordinate read status — 2026-08-21
+
+The four CPIO readers used `fmap_readn()` directly, whose `(size_t)-1`
+sentinel represents both an in-range callback failure and an impossible offset.
+After a malformed member declaration advanced the parser beyond the input, the
+next header could therefore be reported as `CL_EREAD` instead of a truncated
+archive. A bounded `cpio_readn()` helper now classifies out-of-map or
+cross-boundary requests as short input (`CL_EPARSE`) while preserving
+in-range callback failures as `CL_EREAD` for fixed headers and member names.
+Focused regressions cover both cases; compiled Linux/Sonic1, sanitizer,
+callback-fault, and production CPIO corpus qualification remain open.

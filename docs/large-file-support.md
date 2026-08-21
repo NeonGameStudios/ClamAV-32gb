@@ -4008,6 +4008,15 @@ fault-injection regression and source guards cover the boundary. Compiled ARJ
 corpus, sanitizer, callback-fault, and supported-build Sonic1 qualification
 remain release gates.
 
+## CPIO coordinate read status — 2026-08-21
+
+The four CPIO readers now classify an out-of-map or cross-boundary structure
+as truncated input (`CL_EPARSE`) instead of mistaking `fmap_readn()`'s shared
+error sentinel for an operational callback failure. Fully in-range callback
+failures remain `CL_EREAD`, and focused regressions cover both boundaries.
+Compiled CPIO corpus, sanitizer, callback-fault, and supported-build Sonic1
+qualification remain release gates.
+
 ## CAB SFX fixed-header admission — 2026-08-20
 
 CAB SFX admission now requires the complete fixed 36-byte header before
