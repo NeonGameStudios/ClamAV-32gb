@@ -2545,3 +2545,14 @@ operation succeeds. Single-layer metadata trust also rejects a missing reason.
 Focused source guards and the matcher trust-reason regression are registered.
 Compiled Linux/Sonic1, sanitizer, allocation fault injection, and callback
 qualification remain open.
+
+## On-access file preflight propagation — 2026-08-21
+
+The on-access file handler previously used stat and size-limit failures to
+disable submission and deny fanotify permission events, but returned the
+success from the response helper to extra-scan callers. It now preserves the
+preflight error for file callers and logs incomplete inotify/fanotify file
+scans, matching the existing directory traversal behavior. Source guards and
+the capability manifest record the invariant; compiled Linux/Sonic1,
+fanotify/inotify integration, sanitizer, and resource-budget qualification
+remain open.

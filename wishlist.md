@@ -97,6 +97,8 @@
 - Modern and legacy callback trust-update failures now remain fail-visible and
   cannot be converted into `CL_VERIFIED` before evidence/metadata cleanup
   succeeds.
+- On-access file preflight failures now remain visible to extra-scan callers;
+  fanotify prevention still denies incomplete permission events.
 - TIFF IFD type-width multiplication and external-value range checks now use
   checked native-size arithmetic and remain fail-visible.
 - GIF block, color-table, and extension range admission now uses checked

@@ -78,6 +78,8 @@ contains clamonacc/client/client.c 'status = (CURLE_OPERATION_TIMEDOUT == curlco
 contains clamonacc/scan/thread.c 'Do not pass an uninitialized STATBUF to the client.'
 contains clamonacc/scan/thread.c 'Preflight failures (stat/size limits) deliberately clear b_scan'
 contains clamonacc/scan/thread.c 'if (b_fanotify && ((*err && b_deny_on_error) || *infected))'
+contains clamonacc/scan/thread.c 'if (CL_SUCCESS == ret && err && CL_SUCCESS != ret_code && CL_VIRUS != ret_code)'
+contains clamonacc/scan/thread.c 'extra file scan of'
 contains clamonacc/scan/thread.c 'case FTS_DNR:'
 contains clamonacc/scan/thread.c 'directory traversal of'
 contains clamonacc/scan/thread.c 'if (_priv_fts_close(ftsp) != 0)'

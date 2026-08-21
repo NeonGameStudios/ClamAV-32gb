@@ -372,6 +372,13 @@ static cl_error_t onas_scan_thread_handle_file(struct onas_scan_event *event_dat
 
     ret = onas_scan_thread_scanfile(event_data, pathname, sb, &infected, &err, &ret_code);
 
+    /* A preflight failure deliberately disables submission, so the scanfile
+     * helper can still return success after delivering a fanotify response.
+     * Preserve the skipped scan's status for inotify callers and diagnostics. */
+    if (CL_SUCCESS == ret && err && CL_SUCCESS != ret_code && CL_VIRUS != ret_code) {
+        ret = ret_code;
+    }
+
 #ifdef ONAS_DEBUG
     /* very noisy, debug only */
     if (event_data->bool_opts & ONAS_SCTH_B_INOTIFY) {
@@ -427,13 +434,19 @@ void *onas_scan_worker(void *arg)
             }
         } else if (b_file) {
             logg(LOGG_DEBUG, "ClamWorker: performing (extra) scanning on file '%s'\n", event_data->pathname);
-            onas_scan_thread_handle_file(event_data, event_data->pathname);
+            cl_error_t file_ret = onas_scan_thread_handle_file(event_data, event_data->pathname);
+            if (CL_SUCCESS != file_ret) {
+                logg(LOGG_INFO, "ClamWorker: extra file scan of '%s' was incomplete (status %d)\n", event_data->pathname, file_ret);
+            }
         }
 
     } else if (b_fanotify) {
 
         logg(LOGG_DEBUG, "ClamWorker: performing scanning on file '%s'\n", event_data->pathname);
-        onas_scan_thread_handle_file(event_data, event_data->pathname);
+        cl_error_t file_ret = onas_scan_thread_handle_file(event_data, event_data->pathname);
+        if (CL_SUCCESS != file_ret) {
+            logg(LOGG_INFO, "ClamWorker: permission scan of '%s' was incomplete (status %d)\n", event_data->pathname, file_ret);
+        }
     } else {
         /* something went very wrong, so check if we have an open fd,
          * try to close it to resolve any potential lingering permissions event,

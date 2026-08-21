@@ -17,7 +17,7 @@ clamdscan	fdpass	bounded	clamdscan/proto.c	known-size MaxFileSize preflight; ser
 clamdscan	stream	bounded	clamdscan/proto.c	legacy INSTREAM path; qualification pending
 clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback at MaxThreads=1; MULTISCANREPORT aggregates parallel child reports
 milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending
-on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies incomplete outcomes
+on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies incomplete outcomes and file preflight errors remain visible to extra-scan callers
 matcher	ac	bounded	libclamav/matcher-ac.c	AC matcher errors from buffer and fmap target/generic passes remain fail-visible while file-type results continue through type detection; test_ac_offset_mode_matches_above_uint32 verifies an exact-tail AC result and preserved 64-bit match offset; production-signature qualification remains open
 matcher	bm	bounded	libclamav/matcher-bm.c	BM matcher errors from buffer and fmap target/generic passes remain fail-visible while file-type results continue through type detection; test_bm_offset_mode_matches_above_uint32 covers an exact match above 4 GiB and test_bm_initoff_rejects_coordinate_wrap covers checked coordinate admission; production-signature qualification remains open
 matcher	byte-compare	bounded	libclamav/matcher-byte-comp.c	test_byte_compare_offset_above_uint32 verifies a logical byte-compare result and preserved comparison coordinate at 5,000,000,000; production-signature qualification remains open
