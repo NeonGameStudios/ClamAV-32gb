@@ -3480,7 +3480,8 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
     int ofd       = -1;
     struct cli_matcher *target_ac_root;
     uint32_t maxpatlen;
-    uint64_t offset = 0;
+    uint64_t normalized_offset = 0;
+    size_t carry_len            = 0;
     struct cli_matcher *generic_ac_root;
     struct cli_ac_data gmdata, tmdata;
     int gmdata_initialized = 0;
@@ -3624,15 +3625,33 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
             }
             at += len;
             if (!buff || !len || state.out_pos + len > state.out_len) {
+                size_t scan_len   = state.out_pos;
+                size_t scan_carry = carry_len;
+                size_t new_len;
+
+                if (scan_carry > scan_len ||
+                    normalized_offset < (uint64_t)scan_carry) {
+                    cli_mark_scan_incomplete(ctx, "Script normalization window overlap is invalid");
+                    ret = CL_EPARSE;
+                    goto done;
+                }
+
+                new_len = scan_len - scan_carry;
+                if ((uint64_t)new_len > UINT64_MAX - normalized_offset) {
+                    cli_mark_scan_incomplete(ctx, "script normalized offset overflowed");
+                    ret = CL_EPARSE;
+                    goto done;
+                }
+
                 /* flush if error/EOF, or too little buffer space left */
-                if (ofd != -1) {
+                if (ofd != -1 && new_len) {
                     if (cli_reserve_temp_output(
-                            ctx, &temporary_reserved, (uint64_t)state.out_pos,
+                            ctx, &temporary_reserved, (uint64_t)new_len,
                             "Script normalized output exceeds temporary storage limits") != CL_SUCCESS) {
                         ret = CL_ERESOURCE;
                         goto done;
                     }
-                    if (write(ofd, state.out, state.out_pos) != (ssize_t)state.out_pos) {
+                    if (write(ofd, state.out + scan_carry, new_len) != (ssize_t)new_len) {
                         cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
                         cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
                         if (close(ofd) != 0)
@@ -3643,31 +3662,36 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
                     }
                 }
                 /* when we flush the buffer also scan */
-                if (state.out_pos > UINT32_MAX) {
+                if (scan_len > UINT32_MAX) {
                     cli_dbgmsg("cli_scanscript: refusing to narrow normalized output larger than 4 GiB for the legacy matcher API\n");
                     cli_mark_scan_incomplete(ctx, "Script normalization exceeded the legacy matcher subject width");
                     ret = CL_EFORMAT;
                     goto done;
                 }
-                ret = cli_scan_buff(state.out, (uint32_t)state.out_pos, offset, ctx, CL_TYPE_TEXT_ASCII, mdata);
-                if (CL_SUCCESS != ret) {
-                    goto done;
+
+                if (new_len) {
+                    ret = cli_scan_buff(state.out, (uint32_t)scan_len,
+                                        normalized_offset - (uint64_t)scan_carry, ctx,
+                                        CL_TYPE_TEXT_ASCII, mdata);
+                    if (CL_SUCCESS != ret) {
+                        goto done;
+                    }
+
+                    if (ctx->scanned)
+                        *ctx->scanned += scan_len;
                 }
 
-                if (ctx->scanned)
-                    *ctx->scanned += state.out_pos;
-                if (offset > UINT64_MAX - state.out_pos) {
-                    cli_mark_scan_incomplete(ctx, "script normalized offset overflowed");
-                    ret = CL_EPARSE;
-                    goto done;
-                }
-                offset += (uint64_t)state.out_pos;
+                normalized_offset += (uint64_t)new_len;
 
-                /* carry over maxpatlen from previous buffer */
-                if (state.out_pos > maxpatlen)
-                    memmove(state.out, state.out + state.out_pos - maxpatlen, maxpatlen);
+                /* Carry only bytes that were actually produced. The carried
+                 * prefix was already written/scanned in the previous window,
+                 * so the next window starts at its logical, non-overlapping
+                 * offset while retaining the matcher boundary context. */
+                carry_len = MIN((size_t)maxpatlen, scan_len);
+                if (carry_len)
+                    memmove(state.out, state.out + scan_len - carry_len, carry_len);
                 text_normalize_reset(&state);
-                state.out_pos = maxpatlen;
+                state.out_pos = carry_len;
             }
             if (!len)
                 break;

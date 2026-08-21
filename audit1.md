@@ -3030,3 +3030,13 @@ larger than the cap can proceed when its generated no-tags view fits. Missing
 or stat failures and over-limit generated views remain sticky incomplete and
 non-cacheable. The focused unit regressions cover both outcomes; supported
 build and parser-corpus qualification remain open.
+
+## Script normalization window accounting — 2026-08-21
+
+The in-memory script-normalization path now advances its logical matcher
+coordinate by newly normalized bytes only. The overlap retained for boundary
+matching is not written or reserved a second time, and a short final window
+cannot restore bytes that were never produced. The focused absolute-offset
+regression covers a marker beyond the first normalized window. Static guards
+and whitespace validation pass; compiled scanner, sanitizer, and production
+signature qualification remain open.

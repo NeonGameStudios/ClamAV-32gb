@@ -34,6 +34,7 @@
 #include "clamav.h"
 #include "blob.h"
 #include "default.h"
+#include "readdb.h"
 #include "others.h"
 #include "matcher.h"
 #include "version.h"
@@ -14111,6 +14112,63 @@ START_TEST(test_mspack_constructor_failures_are_fail_visible)
 END_TEST
 #endif
 
+START_TEST(test_script_normalization_window_offset_is_stable)
+{
+    enum {
+        SCRIPT_SIZE   = 2U * 1024U * 1024U,
+        MARKER_OFFSET = 20000U,
+    };
+    static const unsigned char marker[] = "MARK";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    unsigned char *script;
+    cl_error_t ret;
+
+    script = malloc(SCRIPT_SIZE);
+    ck_assert_ptr_nonnull(script);
+    memset(script, 'a', SCRIPT_SIZE);
+    memcpy(script + MARKER_OFFSET, marker, sizeof(marker) - 1U);
+
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = ~0U;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(scan_engine->root[7],
+                                                   "ScriptWindowOffset",
+                                                   "6d61726b", 0, 0, 0,
+                                                   "20000", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(script, SCRIPT_SIZE);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_magic_scan(&ctx, CL_TYPE_SCRIPT);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(script);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP
 extern fmap_t *__real_fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path);
 
@@ -16598,6 +16656,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_unpack_contiguous_size_is_fail_visible);
     tcase_add_test(tc_cl, test_pespin_limit_accounting_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_member_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_script_normalization_window_offset_is_stable);
 #ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
     tcase_add_test(tc_cl, test_mspack_constructor_failures_are_fail_visible);
 #endif

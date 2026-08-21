@@ -2820,6 +2820,19 @@ explicit incomplete result; the capability manifest records this as
 this parser-specific boundary, and conversion to a streaming/native-width
 normalization matcher remains a release gate.
 
+## Script normalization window accounting — 2026-08-21
+
+The in-memory script normalizer now treats matcher overlap as window context
+rather than new output. Successive windows therefore use the non-overlapping
+normalized offset, write each normalized byte to the optional temporary file
+once, and retain only the bytes actually produced when a short final window is
+flushed. This prevents boundary signatures from receiving drifted coordinates,
+prevents temporary-space reservations from charging overlap twice, and avoids
+scanning uninitialized carry bytes. The focused regression
+`test_script_normalization_window_offset_is_stable` covers an absolute target
+signature beyond the first normalized window; compiled scanner, sanitizer, and
+production-signature qualification remain release gates.
+
 ## Bytecode v2 PDF coordinate bridge — 2026-08-19
 
 The internal PDF-hook context now retains native-width PDF size and start
