@@ -52,7 +52,13 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
     size_t at = 0;
 
     if (!fmap_gets(map, buffer, &at, sizeof(buffer) - 1)) {
-        /* empty message */
+        /* EOF at the end of the map is an empty message. A nonempty map that
+         * could not yield its first line indicates an incomplete read or
+         * invalid fmap range and must not be normalized to clean. */
+        if (at < map->len) {
+            cli_mark_scan_incomplete(ctx, "UUencoded input could not be read completely");
+            return CL_EREAD;
+        }
         return CL_CLEAN;
     }
     if (!isuuencodebegin(buffer)) {

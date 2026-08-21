@@ -418,7 +418,13 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
     cli_dbgmsg("in mbox()\n");
 
     if (!fmap_gets(map, buffer, &at, sizeof(buffer) - 1)) {
-        /* empty message */
+        /* EOF at the end of the map is an empty message. A nonempty map that
+         * could not yield its first line indicates an incomplete read or
+         * invalid fmap range and must remain fail-visible. */
+        if (at < map->len) {
+            cli_mark_scan_incomplete(ctx, "MIME message input could not be read completely");
+            return CL_EREAD;
+        }
         return CL_CLEAN;
     }
 

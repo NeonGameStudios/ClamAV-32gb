@@ -63,6 +63,20 @@ the affected fmap from being cached as clean. A focused unit regression and
 the source guard cover the failure path; supported-Linux compilation and
 runtime qualification remain open.
 
+The UUENCODE ingress now distinguishes an empty map from failure to read the
+first line of a nonempty map. The latter marks the scan incomplete and
+returns `CL_EREAD` instead of allowing a required encoded attachment path to
+be reported as clean. A focused fault-injection regression and source guard
+cover this boundary; supported-Linux compilation and runtime qualification
+remain open.
+
+The mbox dispatcher applies the same empty-input versus failed-first-line
+distinction as the standalone UUENCODE path. A nonempty fmap that cannot
+provide its initial MIME line now returns `CL_EREAD`, marks the scan
+incomplete, and is not cacheable as clean. A focused regression and source
+guard cover the boundary; supported-Linux compilation and runtime
+qualification remain open.
+
 The opt-in clamd report commands now serialize the public `_ex2` report,
 including aggregated logical/parser/detector counters and request-level peak
 resources for multi-file walks, rather than reducing those results to a status

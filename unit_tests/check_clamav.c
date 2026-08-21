@@ -80,6 +80,8 @@
 #include "png.h"
 #include "tiff.h"
 #include "jpeg.h"
+#include "mbox.h"
+#include "uuencode.h"
 #include "xar.h"
 #include "xlm_extract.h"
 #include "special.h"
@@ -9380,6 +9382,15 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
     return NULL;
 }
 
+static const void *fmap_gets_read_failure(fmap_t *map, char *dst, size_t *at, size_t max_len)
+{
+    (void)map;
+    (void)dst;
+    (void)at;
+    (void)max_len;
+    return NULL;
+}
+
 START_TEST(test_embedded_header_read_failures_are_fail_visible)
 {
     static const uint8_t pdf[] = "%PDF-1.7";
@@ -9432,6 +9443,58 @@ START_TEST(test_mydoom_detector_read_failure_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "Mydoom log detector input window could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_uuencode_initial_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "nonempty uuencode input";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->gets = fmap_gets_read_failure;
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_uuencode(&ctx, tmpdir, map), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "UUencoded input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_mbox_initial_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "nonempty MIME input";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->gets = fmap_gets_read_failure;
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MIME message input could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -13056,6 +13119,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);
     tcase_add_test(tc_cl, test_embedded_header_read_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
 #ifndef _WIN32
