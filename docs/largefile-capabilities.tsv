@@ -3,7 +3,7 @@ library	path	bounded	libclamav/scanners.c	checked root/type-detection and nested
 library	fd	bounded	libclamav/scanners.c	checked root/type-detection and nested preflight before child-map creation; structured report remains covered by the scan API
 library	fmap	bounded	libclamav_rust/src/fmap.rs	checked source offsets, map boundaries, nested-range admission, and type-detection/forced-staging read failures; Rust FMap::need_off preflights native-size ranges before callback or slice formation; operational nested reads return CL_EREAD and structured report is covered by the scan API
 clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
-clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix
+clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix; summary counts clean, trusted, and detected stdin inputs once
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending; mandatory service qualification now binds daemon/client/milter binaries and runtime dependencies to the audited build
 clamd	FILDES	bounded	clamd/session.c	legacy command preserves non-clean descriptor results for worker and IDSESSION status; structured parity pending
 clamd	INSTREAM	bounded	clamd/server-th.c	complete staging with stream/temp quota; shared zero-value policy selects the 32-GiB ceiling and buffered chunk arithmetic is wrap-safe; concurrent no-staging-before-queue-admission remains a release qualification gate

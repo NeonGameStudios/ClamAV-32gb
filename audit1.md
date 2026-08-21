@@ -2897,3 +2897,13 @@ non-regular descriptors remain streamable at their current position. Focused
 socket-level regressions cover complete regular-file rewinding and rejection
 of an invalid descriptor; compiled Linux/Sonic1 ingress qualification remains
 open.
+
+## clamscan stdin summary accounting — 2026-08-21
+
+The stdin path previously incremented `info.files` before scanning and again
+for a clean result, while infected and trusted results were counted through
+different paths. The speculative increment is removed and the trusted and
+detected branches now increment the count explicitly, matching ordinary file
+scans. A source guard requires five total completed/alerted-file increment
+sites in `clamscan/manager.c`. Compiled CLI and Sonic1 qualification remain
+open.

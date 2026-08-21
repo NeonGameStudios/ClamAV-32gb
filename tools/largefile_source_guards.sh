@@ -294,6 +294,10 @@ contains common/actions.c 'cl_error_t action_source_close(action_source_t *sourc
 contains common/actions.h 'CL_EREAD when a scan/action handle close fails'
 contains unit_tests/check_clamav.c 'test_action_source_close_reports_descriptor_failure'
 contains clamscan/manager.c 'CL_SCAN_COMPLETION_DETECTION_TERMINATED'
+if [ "$(grep -c -F 'info.files++;' "$root/clamscan/manager.c")" -ne 5 ]; then
+    echo 'large-file source guard failed: clamscan scan paths must count each completed/alerted file exactly once' >&2
+    exit 1
+fi
 contains libclamav/scan_report.c 'A detection is still the authoritative terminal outcome'
 contains unit_tests/check_clamav.c 'test_scan_report_detection_precedes_incomplete_state'
 contains libclamav/scan_report.c 'status == CL_BREAK'

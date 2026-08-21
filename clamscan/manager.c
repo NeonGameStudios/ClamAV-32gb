@@ -1152,7 +1152,6 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
     logg(LOGG_DEBUG, "Scanning %s\n", filename);
 
-    info.files++;
     info.bytes_read += fsize;
 
     ret = cl_scanfile_ex2(
@@ -1198,6 +1197,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
                 if (!printinfected) {
                     mprintf(LOGG_INFO, "stdin: OK\n");
                 }
+                info.files++;
             } else {
                 if (!printinfected)
                     logg(LOGG_INFO, "stdin: %s ERROR\n", cl_strerror(ret));
@@ -1207,6 +1207,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
         case CL_VERDICT_STRONG_INDICATOR:
         case CL_VERDICT_POTENTIALLY_UNWANTED: {
+            info.files++;
             info.ifiles++;
 
             if (bell) {

@@ -4599,3 +4599,11 @@ the command is sent. Pipes and other non-regular descriptors remain supported
 as streaming inputs. Focused socket-level regressions cover both the complete
 regular-file payload and invalid-descriptor rejection; compiled Linux/Sonic1
 qualification remains open.
+
+## clamscan stdin summary accounting — 2026-08-21
+
+The stdin front end now counts a successfully scanned input exactly once in
+the CLI summary. Clean, trusted, and detected stdin results each contribute
+one scanned file; errors do not get a speculative pre-count. This aligns
+stdin accounting with ordinary file scans and prevents a clean stdin input
+from being reported twice. Compiled CLI and Sonic1 qualification remain open.
