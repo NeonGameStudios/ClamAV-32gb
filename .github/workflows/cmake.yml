@@ -465,6 +465,9 @@ jobs:
             cd "${RUNNER_TEMP}/clamav-largefile-service"
             sha256sum -c SHA256SUMS
           )
+          sh ./tools/largefile_service_evidence_check.sh \
+            "${RUNNER_TEMP}/clamav-largefile-service" \
+            "${{runner.workspace}}/build-largefile"
 
       - name: Attest large-file runtime evidence manifest
         if: success()

@@ -4531,3 +4531,13 @@ incomplete when their backing window fails. A focused MBR/GPT boot-record
 fault-injection regression, source guards, and capability-manifest entries
 record the invariant. Compiled Linux/Sonic1, sanitizer, and broader partition
 corpus qualification remain open.
+
+## Service-evidence post-run verification — 2026-08-21
+
+The mandatory service workload now has a standalone post-run verifier. It
+rechecks the evidence checksum manifest, required pass markers, source/build
+identity, copied build-graph hashes, service executable hashes before and
+after the workload, and every recorded runtime-dependency hash. CI runs it
+after creating `SHA256SUMS`, making later evidence mutation or build/runtime
+substitution fail closed. Supported-Linux execution and full service
+qualification remain release gates.

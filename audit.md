@@ -2914,3 +2914,14 @@ resolved runtime dependencies; the service executables are re-hashed after the
 workload to detect mutation during qualification. The service evidence now
 cannot claim a production workload for an unbound or substituted build.
 Supported-Linux execution and full service qualification remain release gates.
+
+## Service-evidence post-run verification — 2026-08-21
+
+The service workload now has a standalone post-run verifier. It checks the
+evidence checksum manifest, required pass markers, source/build identity,
+copied CMake and compile-command hashes, both pre/post service executable
+hash lists, and every recorded runtime-dependency hash against the build and
+host files. The workflow runs this verifier after creating `SHA256SUMS`, so a
+later evidence mutation or build/runtime substitution cannot pass solely on
+the qualification script's in-process checks. Supported-Linux execution and
+full service qualification remain release gates.

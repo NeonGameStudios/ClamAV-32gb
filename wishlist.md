@@ -314,6 +314,9 @@
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.
+- Add standalone post-run verification for service evidence: recheck the
+  checksum manifest, source/build identity, service binaries, and runtime
+  dependency hashes after the workload.
 
 ## Large-file validation and expansion progression
 

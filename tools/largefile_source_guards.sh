@@ -993,6 +993,9 @@ contains tools/largefile_service_qualification.sh 'service-binary-hashes-before.
 contains tools/largefile_service_qualification.sh 'service-runtime-dependency-hashes.txt'
 contains tools/largefile_service_qualification.sh 'service build provenance does not match the immutable source revision'
 contains tools/largefile_service_qualification.sh 'service executable changed during qualification'
+contains tools/largefile_service_evidence_check.sh 'service runtime evidence passed'
+contains tools/largefile_service_evidence_check.sh 'service executable hash does not match evidence'
+contains tools/largefile_service_evidence_check.sh 'service runtime dependency hash does not match evidence'
 contains clamd/server-th.c 'clamd_largefile_admission_check'
 ordered_after clamd/server-th.c 'PCREMaxFileSize' 'clamd_largefile_admission_check'
 contains clamd/session.c 'if (ret == CL_EMEM && optget(opts, "ExitOnOOM")->enabled)'
@@ -1074,6 +1077,8 @@ contains tools/largefile_service_qualification.sh 'verify_database_manifest edge
 contains .github/workflows/cmake.yml "CLAMAV_MAX_SCAN_TIME_MS: '14400000'"
 contains .github/workflows/cmake.yml 'Mandatory service and workload qualification'
 contains .github/workflows/cmake.yml 'clamav-largefile-service/SHA256SUMS'
+contains .github/workflows/cmake.yml 'largefile_service_evidence_check.sh'
+contains tools/largefile_service_evidence_check_test.sh 'service runtime evidence verifier regression passed'
 contains .github/workflows/cmake.yml 'edge_clamdscan_contscan=pass'
 contains .github/workflows/cmake.yml 'edge_clamdscan_multiscan=pass'
 contains .github/workflows/cmake.yml 'edge_clamdscan_allmatchscan=pass'
