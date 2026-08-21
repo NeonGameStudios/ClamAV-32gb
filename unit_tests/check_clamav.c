@@ -9607,6 +9607,37 @@ START_TEST(test_embedded_header_read_failures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pdf_parser_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "%PDF-1.7\n";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap  = map;
+
+    ret = cli_pdf(tmpdir, &ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF parser version window could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_binhex_encoded_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "nonempty BinHex input";
@@ -14088,6 +14119,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_photoshop_exact_eof_is_complete);
     tcase_add_test(tc_cl, test_text_normalize_map_read_failure_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_parser_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_trailer_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_decode_error_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_empty_flate_stream_is_fail_visible);

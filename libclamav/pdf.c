@@ -3898,7 +3898,8 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     /* Check PDF version */
     if (!pdfver) {
         cli_errmsg("cli_pdf: mmap() failed (1)\n");
-        rc = CL_EMAP;
+        cli_mark_scan_incomplete(ctx, "PDF parser version window could not be read completely");
+        rc = CL_EREAD;
         goto done;
     }
 
@@ -3967,7 +3968,8 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     if (!eofmap) {
         cli_errmsg("cli_pdf: mmap() failed (2)\n");
 
-        rc = CL_EMAP;
+        cli_mark_scan_incomplete(ctx, "PDF parser trailer window could not be read completely");
+        rc = CL_EREAD;
         goto done;
     }
 

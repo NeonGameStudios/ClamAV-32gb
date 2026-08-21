@@ -4374,3 +4374,11 @@ mark the layer incomplete and non-cacheable and return `CL_EREAD` when an
 in-range fmap window cannot be read. A direct document-info fault-injection
 regression and source guards are registered; compiled Linux/Sonic1,
 sanitizer, and broader HWP3 corpus qualification remain open.
+
+## PDF parser input-window fmap failures — 2026-08-21
+
+Confirmed PDF scans now mark the layer incomplete and non-cacheable and return
+`CL_EREAD` when the bounded version or trailer fmap window fails in range. A
+direct parser fault-injection regression covers the version window, with
+source guards and capability evidence registered. Compiled Linux/Sonic1,
+sanitizer, and broader PDF corpus qualification remain open.

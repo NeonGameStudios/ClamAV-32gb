@@ -126,7 +126,7 @@ parser	CL_TYPE_OOXML_PPT	pending	libclamav/scanners.c	dispatch branch requires p
 parser	CL_TYPE_OOXML_WORD	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_OOXML_XL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_PART_HFSPLUS	pending	libclamav/hfsplus.c	HFS+ volume and tree-header read failures remain incomplete and non-cacheable; focused tree-header fault injection is covered, while parser-family qualification and complete corpus evidence remain required
-parser	CL_TYPE_PDF	pending	libclamav/scanners.c	native-width object coordinates and explicit decoder boundary; parser-family qualification remains required
+parser	CL_TYPE_PDF	pending	libclamav/pdf.c	confirmed version/trailer fmap failures return CL_EREAD and mark incomplete; native-width object coordinates and explicit decoder boundary remain, with parser-family qualification required
 parser	CL_TYPE_PNG	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_POSIX_TAR	pending	libclamav/scanners.c	bounded member staging, checked TAR coordinates, and fail-visible header/magic errors; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_PYTHON_COMPILED	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
