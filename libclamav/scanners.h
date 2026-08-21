@@ -54,6 +54,31 @@ cl_error_t cli_magic_scan_desc_type_reserved(int desc, const char *filepath, cli
                                              const char *name, uint32_t attributes);
 
 /**
+ * @brief Scan a descriptor while accounting for caller-owned staged bytes.
+ *
+ * The reservation remains charged to the scan's temporary-space budget for
+ * the duration of the scan. This is used by clamd after INSTREAM has staged
+ * the source on disk, so parser spools and the staged source share the same
+ * MaxTemporarySize ceiling.
+ */
+cl_error_t cli_scandesc_ex2_with_temporary_bytes(
+    int desc,
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    uint64_t temporary_bytes_reserved,
+    cl_scan_report_t **report_out);
+
+/**
  * @brief Scan a tempfile / sub-file of _any_ type, passing in the fd, filepath (if available), and the scanning context.
  *
  * @param desc          File descriptor

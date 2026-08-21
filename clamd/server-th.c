@@ -856,6 +856,7 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
     buf->id                = conn->id;
     buf->group             = conn->group;
     buf->quota             = conn->quota;
+    buf->stream_bytes      = conn->stream_bytes;
     buf->quota_source      = conn->quota_source;
     buf->structured_report = conn->structured_report;
     if (conn->scanfd != -1 && conn->scanfd != buf->dumpfd) {
@@ -915,6 +916,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                         buf->fd = -1;
                     logg(LOGG_DEBUG_NV, "Chunks complete\n");
                     buf->dumpname = NULL;
+                    conn->stream_bytes = buf->stream_bytes;
                     if ((rc = execute_or_dispatch_command(conn, COMMAND_INSTREAMSCAN, NULL)) < 0) {
                         logg(LOGG_ERROR, "Command dispatch failed\n");
                         reply_structured_dispatch_failure(conn, buf, rc);
@@ -951,6 +953,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                     *ppos              = pos;
                     return -1;
                 } else {
+                    buf->stream_bytes += buf->chunksize;
                     buf->quota -= buf->chunksize;
                 }
                 logg(LOGG_DEBUG_NV, "Quota Remaining: " STDu64 "\n", buf->quota);
@@ -1799,6 +1802,7 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                 conn.group             = buf->group;
                 conn.id                = buf->id;
                 conn.quota             = buf->quota;
+                conn.stream_bytes      = buf->stream_bytes;
                 conn.quota_source      = buf->quota_source;
                 conn.structured_report = buf->structured_report;
                 conn.structured_status = CL_SUCCESS;

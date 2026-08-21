@@ -1013,6 +1013,79 @@ START_TEST(test_scan_report_complete_and_json)
 }
 END_TEST
 
+START_TEST(test_descriptor_temporary_reservation_is_reported)
+{
+    static const char payload[] = "descriptor temporary reservation\n";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_error_t status;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    char *path = NULL;
+    int fd = -1;
+
+    memset(&options, 0, sizeof(options));
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 8), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_int_eq(write(fd, payload, sizeof(payload) - 1), (ssize_t)(sizeof(payload) - 1));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+
+    status = cli_scandesc_ex2_with_temporary_bytes(
+        fd,
+        path,
+        &verdict,
+        &last_alert,
+        NULL,
+        engine,
+        &options,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        8,
+        &report);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.temporary_bytes, 8);
+    cl_scan_report_free(report);
+    report = NULL;
+
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    status = cli_scandesc_ex2_with_temporary_bytes(
+        fd,
+        path,
+        &verdict,
+        &last_alert,
+        NULL,
+        engine,
+        &options,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        9,
+        &report);
+    ck_assert_int_eq(status, CL_ERESOURCE);
+    ck_assert_ptr_nonnull(report);
+
+    cl_scan_report_free(report);
+    close(fd);
+    cl_engine_free(engine);
+    cli_unlink(path);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_scan_report_detection_precedes_incomplete_state)
 {
     cl_scan_report_t *report = NULL;
@@ -16288,6 +16361,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_counts_skipped_operations);
     tcase_add_test(tc_cl, test_scan_report_post_scan_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
+    tcase_add_test(tc_cl, test_descriptor_temporary_reservation_is_reported);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_largefile_default_profile_values);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);

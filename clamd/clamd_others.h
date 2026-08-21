@@ -60,6 +60,7 @@ struct fd_buf {
     int dumpfd;
     uint32_t chunksize;
     uint64_t quota;
+    uint64_t stream_bytes;
     int quota_source;
     int structured_report;
     int response_sent;

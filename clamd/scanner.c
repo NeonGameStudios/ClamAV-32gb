@@ -667,7 +667,7 @@ cl_error_t scanfd(
         uint64_t scanned_bytes   = 0;
         cl_error_t record_status;
 
-        report_status = cl_scandesc_ex2(
+        report_status = cli_scandesc_ex2_with_temporary_bytes(
             fd,
             log_filename,
             &verdict,
@@ -681,6 +681,7 @@ cl_error_t scanfd(
             NULL,
             NULL,
             NULL,
+            stream ? conn->stream_bytes : 0,
             &report);
         record_status = record_structured_scan_report(conn, report);
         if (record_status != CL_SUCCESS) {
@@ -699,7 +700,31 @@ cl_error_t scanfd(
         }
         structured_report_note_status(conn, conn->structured_status);
     } else {
-        ret = cl_scandesc_callback(fd, log_filename, &virname, scanned, engine, options, &context);
+        cl_error_t report_status;
+        cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+        uint64_t scanned_bytes = 0;
+
+        report_status = cli_scandesc_ex2_with_temporary_bytes(
+            fd,
+            log_filename,
+            &verdict,
+            &virname,
+            &scanned_bytes,
+            engine,
+            options,
+            &context,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            NULL,
+            stream ? conn->stream_bytes : 0,
+            NULL);
+        publish_scanned_bytes(scanned, scanned_bytes);
+        ret = report_status;
+        if ((verdict == CL_VERDICT_STRONG_INDICATOR) ||
+            (verdict == CL_VERDICT_POTENTIALLY_UNWANTED))
+            ret = CL_VIRUS;
     }
     if (ret == CL_VIRUS)
         conn->structured_status = CL_VIRUS;

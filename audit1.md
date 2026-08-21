@@ -2850,3 +2850,25 @@ consumer correctly rejects as contradictory. The existing detection-precedence
 and aggregate-report regressions now cover the normalization. Source guards and
 whitespace validation pass; compiled daemon/library and production-signature
 qualification remain release gates.
+
+## Raw fallback after non-critical parser errors — 2026-08-21
+
+The pre-raw parser stage now treats generic and access/open/map/creation
+failures like the existing parse, read, decoder, and configured-limit errors:
+the root raw matcher still runs when the root fmap remains available, while
+the sticky incomplete state preserves a non-clean, non-cacheable result when
+no detection is found. Critical resource, timeout, seek, write, and terminal
+abort failures still stop the layer. Source guards and whitespace validation
+pass; compiled fault-injection and production-signature qualification remain
+release gates.
+
+## INSTREAM source bytes share the temporary budget — 2026-08-21
+
+The clamd INSTREAM receive path now carries the exact staged byte count into
+the library scan context. Parser, decoder, and matcher spools are therefore
+charged on top of the already-live disk-backed source against the same
+MaxTemporarySize ceiling; the existing stream quota still rejects oversized
+input before staging. Both legacy and structured INSTREAM scans use the
+reservation-aware descriptor path. Static guards and whitespace validation
+pass; compiled daemon/protocol and concurrent production qualification remain
+release gates.

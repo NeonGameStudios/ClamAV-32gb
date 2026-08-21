@@ -147,6 +147,7 @@ typedef struct client_conn_tag {
     threadpool_t *thrpool;
     int id;
     uint64_t quota;
+    uint64_t stream_bytes;
     int quota_source;
     int structured_report;
     struct client_conn_tag *structured_report_owner;

@@ -797,6 +797,7 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
             temporary_limit    = (uint64_t)cl_engine_get_num(conn->engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
             conn->quota_source = CLAMD_QUOTA_SOURCE_STREAM;
             conn->quota        = stream_limit;
+            conn->stream_bytes = 0;
             if (temporary_limit && (!stream_limit || temporary_limit < stream_limit)) {
                 conn->quota        = temporary_limit;
                 conn->quota_source = CLAMD_QUOTA_SOURCE_TEMPORARY;

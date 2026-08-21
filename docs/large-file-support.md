@@ -4554,3 +4554,24 @@ coordinates remain `CL_EPARSE`. Focused fault-injection regressions, source
 guards, and capability evidence record the invariant. Compiled Linux/Sonic1,
 sanitizer, callback-fault, and production RIFF corpus qualification remain
 open.
+
+## Raw fallback after non-critical parser errors — 2026-08-21
+
+The pre-raw parser stage now continues to the mandatory outer raw matcher for
+generic and access/open/map/creation failures, in addition to parse, read,
+decoder, and configured-limit results. The root fmap is still usable in these
+cases, so a raw signature can remain authoritative; if no detection occurs,
+the sticky incomplete state keeps the result non-clean and non-cacheable.
+Critical resource, timeout, seek, write, and terminal-abort failures continue
+to stop the layer. Compiled fault-injection and production-signature
+qualification remain open.
+
+## INSTREAM source bytes share the temporary budget — 2026-08-21
+
+The clamd INSTREAM receive path now carries the exact staged byte count into
+the library scan context. Parser, decoder, and matcher spools are charged on
+top of the already-live disk-backed source against the same MaxTemporarySize
+ceiling, while the existing stream quota rejects oversized input before
+staging. Both legacy and structured INSTREAM scans use the reservation-aware
+descriptor path. Compiled daemon/protocol and concurrent production
+qualification remain open.

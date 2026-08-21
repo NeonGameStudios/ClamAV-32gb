@@ -5728,6 +5728,28 @@ static bool configured_limit_alert_is_visible(const cli_ctx *ctx)
            (CL_VERDICT_POTENTIALLY_UNWANTED == verdict);
 }
 
+static bool cli_parser_result_allows_raw_fallback(cl_error_t result)
+{
+    switch (result) {
+        case CL_SUCCESS:
+        case CL_ERROR:
+        case CL_EOPEN:
+        case CL_ECREAT:
+        case CL_EACCES:
+        case CL_EMAP:
+        case CL_EFORMAT:
+        case CL_EPARSE:
+        case CL_EREAD:
+        case CL_EUNPACK:
+        case CL_EMAXREC:
+        case CL_EMAXSIZE:
+        case CL_EMAXFILES:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static bool cli_scan_status_is_critical(cl_error_t status)
 {
     switch (status) {
@@ -6894,10 +6916,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     // sticky incomplete state remains available to make a non-detecting scan
     // fail visible after the raw pass.
     status = cli_merge_scan_status(status, ret);
-    if (!(ctx->scan_incomplete &&
-          (ret == CL_SUCCESS || ret == CL_EFORMAT || ret == CL_EPARSE ||
-           ret == CL_EREAD || ret == CL_EUNPACK || ret == CL_EMAXREC ||
-           ret == CL_EMAXSIZE || ret == CL_EMAXFILES)) &&
+    if (!(ctx->scan_incomplete && cli_parser_result_allows_raw_fallback(ret)) &&
         cli_scan_result_should_halt(ctx, ret, &normalized_status)) {
         status = cli_merge_scan_status(status, normalized_status);
         goto done;
@@ -7532,7 +7551,8 @@ static cl_error_t scan_common(
     const char *hash_alg,
     const char *file_type_hint,
     char **file_type_out,
-    cl_scan_report_t *report)
+    cl_scan_report_t *report,
+    uint64_t temporary_bytes_reserved)
 {
     cl_error_t status = CL_SUCCESS;
     cl_error_t ret;
@@ -7631,6 +7651,13 @@ static cl_error_t scan_common(
 
     ctx.dconf  = (struct cli_dconf *)engine->dconf;
     ctx.cb_ctx = context;
+
+    /* A caller may already own disk-backed bytes that remain live for this
+     * scan, such as clamd's fully staged INSTREAM source. Charge them before
+     * any parser output is reserved so both pools share MaxTemporarySize. */
+    status = cli_scan_reserve_temporary(&ctx, temporary_bytes_reserved);
+    if (status != CL_SUCCESS)
+        goto done;
 
     if (!(ctx.hook_lsig_matches = cli_bitset_init())) {
         status = CL_EMEM;
@@ -8150,7 +8177,7 @@ cl_error_t cl_scandesc_callback(
     return status;
 }
 
-cl_error_t cl_scandesc_ex2(
+cl_error_t cli_scandesc_ex2_with_temporary_bytes(
     int desc,
     const char *filename,
     cl_verdict_t *verdict_out,
@@ -8164,6 +8191,7 @@ cl_error_t cl_scandesc_ex2(
     const char *hash_alg,
     const char *file_type_hint,
     char **file_type_out,
+    uint64_t temporary_bytes_reserved,
     cl_scan_report_t **report_out)
 {
     cl_error_t status = CL_SUCCESS;
@@ -8240,7 +8268,8 @@ cl_error_t cl_scandesc_ex2(
             hash_alg,
             file_type_hint,
             NULL,
-            report);
+            report,
+            temporary_bytes_reserved);
         goto done;
     }
 
@@ -8273,7 +8302,8 @@ cl_error_t cl_scandesc_ex2(
         hash_alg,
         file_type_hint,
         file_type_out,
-        report);
+        report,
+        temporary_bytes_reserved);
 
 done:
     cli_scan_report_finish(report, NULL, status, *verdict_out, *last_alert_out);
@@ -8286,6 +8316,40 @@ done:
     }
 
     return status;
+}
+
+cl_error_t cl_scandesc_ex2(
+    int desc,
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    cl_scan_report_t **report_out)
+{
+    return cli_scandesc_ex2_with_temporary_bytes(
+        desc,
+        filename,
+        verdict_out,
+        last_alert_out,
+        scanned_out,
+        engine,
+        scanoptions,
+        context,
+        hash_hint,
+        hash_out,
+        hash_alg,
+        file_type_hint,
+        file_type_out,
+        0,
+        report_out);
 }
 
 cl_error_t cl_scandesc_ex(
@@ -8430,7 +8494,8 @@ cl_error_t cl_scanmap_ex2(
         hash_alg,
         file_type_hint,
         file_type_out,
-        report);
+        report,
+        0);
 }
 
 cl_error_t cl_scanmap_ex(
