@@ -41,6 +41,7 @@
 #include "default.h"
 #include "clamav_rust.h"
 #include "yara_exec.h"
+#include "bytecode.h"
 
 #include "checks.h"
 
@@ -842,6 +843,55 @@ START_TEST(test_logical_bytecode_missing_entry_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_logical_bytecode_v1_large_file_is_fail_visible)
+{
+#if SIZE_MAX > UINT32_MAX
+    static char logic[] = "0";
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    struct cli_bc *bc;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id             = 0;
+    lsig.bc_idx         = 1;
+    lsig.type           = CLI_LSIG_NORMAL;
+    lsig.u.logic        = logic;
+    lsig.virname        = (char *)"LegacyLargeLogicalBytecode";
+    lsig.tdb.subsigs    = 1;
+    lsigtable[0]        = &lsig;
+    root.ac_lsigs       = 1;
+    root.ac_lsigtable   = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    thefmap.len         = (size_t)UINT32_MAX + 1U;
+    ctx.fmap             = &thefmap;
+    ctx.recursion_stack[ctx.recursion_level].fmap = &thefmap;
+
+    ctx.engine->bcs.all_bcs = calloc(1, sizeof(*ctx.engine->bcs.all_bcs));
+    ck_assert_ptr_nonnull(ctx.engine->bcs.all_bcs);
+    ctx.engine->bcs.count = 1;
+    bc = &ctx.engine->bcs.all_bcs[0];
+    bc->metadata.formatlevel = BC_FORMAT_LEVEL;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "logical signature requires a file size or offset outside the bytecode ABI");
+    ck_assert(thefmap.dont_cache_flag);
+
+    cli_ac_freedata(&mdata);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_yara_uint32_read_accepts_exact_tail)
 {
     static const unsigned char bytes[] = {0x78, 0x56, 0x34, 0x12};
@@ -1348,6 +1398,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);

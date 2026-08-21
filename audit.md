@@ -2062,3 +2062,14 @@ Confirmed PDF scans now mark the layer incomplete and non-cacheable and return
 A direct parser fault-injection regression covers the version window, with
 source guards and capability evidence registered. Compiled Linux/Sonic1,
 sanitizer, and broader PDF corpus qualification remain open.
+
+## Legacy bytecode ABI overflow — 2026-08-21
+
+An applicable legacy logical-bytecode signature above the 32-bit file-size or
+offset ABI was previously marked incomplete and non-cacheable but could still
+return the evaluator's default `CL_CLEAN` status. The dispatch path now returns
+`CL_EPARSE`, so an unsupported v1 bytecode layer cannot be reported as a clean
+logical evaluation. A synthetic >4 GiB logical-signature regression verifies
+the status, reason, and cache invariant without allocating the input size;
+compiled Linux/Sonic1, interpreter/JIT, sanitizer, production-bytecode, and
+mixed-ABI qualification remain open.

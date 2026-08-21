@@ -1172,6 +1172,7 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
                            ac_lsig->virname);
                 cli_mark_scan_incomplete(ctx, "logical signature requires a file size or offset outside the bytecode ABI");
                 ctx->fmap->dont_cache_flag = 1;
+                status = CL_EPARSE;
                 goto done;
             }
         }

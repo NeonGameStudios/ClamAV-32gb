@@ -4112,6 +4112,17 @@ and hook-bytecode regression covers both dispatch paths; interpreter/JIT,
 sanitizer, official bytecode, and supported-build Sonic1 qualification remain
 release gates.
 
+## Legacy bytecode ABI overflow — 2026-08-21
+
+An applicable v1 logical-bytecode signature cannot represent a file size or
+logical-signature offset above 4 GiB. That admission failure now returns
+`CL_EPARSE` as well as marking the layer incomplete and non-cacheable; it can no
+longer fall through as the evaluator's default clean result. A synthetic >4 GiB
+logical-signature regression covers the status, reason, and cache invariant
+without allocating a 4 GiB input. Compiled Linux/Sonic1, interpreter/JIT,
+sanitizer, production-bytecode, and mixed-ABI qualification remain release
+gates.
+
 ## YARA logical-pass matcher-work accounting — 2026-08-20
 
 YARA-compatible logical evaluation can read integer fields from the current
