@@ -3155,7 +3155,10 @@ int cli_scanpe(cli_ctx *ctx)
     switch (ret) {
         case CL_ENULLARG:
             cli_warnmsg("cli_scanpe: NULL argument supplied\n");
-            break;
+            /* A null hook context is also a non-clean hook failure. */
+            cli_exe_info_destroy(peinfo);
+            cli_bytecode_context_destroy(bc_ctx);
+            return ret;
         case CL_VIRUS:
         case CL_BREAK:
             cli_exe_info_destroy(peinfo);
