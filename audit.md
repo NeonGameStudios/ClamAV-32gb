@@ -2122,6 +2122,16 @@ synthetic fork-content fault-injection regression, source guard, and
 capability-manifest entry record the invariant. Compiled Linux/Sonic1,
 sanitizer, and broader HFS+ corpus qualification remain open.
 
+## HFS+ catalog-node fmap failure — 2026-08-21
+
+HFS+ catalog and attribute node-body reads previously collapsed an in-range
+fmap callback failure into `CL_EFORMAT`, making an operational read failure
+indistinguishable from malformed tree data. The node fetch path now marks the
+layer incomplete and returns `CL_EREAD` for the fmap error while retaining
+`CL_EFORMAT` for a genuinely short node. A synthetic catalog-node
+fault-injection regression and source guard record the distinction. Compiled
+Linux/Sonic1, sanitizer, and broader HFS+ corpus qualification remain open.
+
 ## PNG chunk fmap read failure — 2026-08-21
 
 PNG chunk-length, chunk-type, IHDR, and CRC windows that fail in the fmap were

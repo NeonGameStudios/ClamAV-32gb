@@ -24,6 +24,8 @@
 - DMG trailer, XML, and streamed stripe fmap read failures now preserve
   `CL_EREAD` instead of becoming generic parse errors; add compiled DMG corpus
   and sanitizer qualification.
+- HFS+ catalog-node fmap callback failures now preserve `CL_EREAD` and mark the
+  layer incomplete; add compiled HFS+ node-read and corpus qualification.
 - HTML CSS data-URI images now decode through a 64 KiB reader into the shared
   temporary quota before nested scanning; oversized or incomplete extraction
   is fail-visible instead of using an unaccounted whole-image buffer.

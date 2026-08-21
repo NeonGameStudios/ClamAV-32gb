@@ -837,9 +837,18 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
             return CL_EFORMAT;
         }
 
-        if (fmap_readn(ctx->fmap, buff + buffOffset, fileOffset, readSize) != readSize) {
-            cli_dbgmsg("hfsplus_fetch_node: not all bytes read\n");
-            return CL_EFORMAT;
+        {
+            size_t bytesRead = fmap_readn(ctx->fmap, buff + buffOffset, fileOffset, readSize);
+
+            if (bytesRead == (size_t)-1) {
+                cli_dbgmsg("hfsplus_fetch_node: node read failed\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ file-tree node could not be read completely");
+                return CL_EREAD;
+            }
+            if (bytesRead != readSize) {
+                cli_dbgmsg("hfsplus_fetch_node: not all bytes read\n");
+                return CL_EFORMAT;
+            }
         }
         buffOffset += readSize;
     }

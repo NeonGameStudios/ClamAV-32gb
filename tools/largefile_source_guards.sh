@@ -624,6 +624,8 @@ contains libclamav/hfsplus.c 'HFS+ fork requires unsupported ExtentOverflow reco
 contains libclamav/hfsplus.c 'Resource compression processing complete'
 contains unit_tests/check_clamav.c 'test_hfsplus_declared_attributes_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_tree_header_read_failure_is_fail_visible'
+contains libclamav/hfsplus.c 'HFS+ file-tree node could not be read completely'
+contains unit_tests/check_clamav.c 'test_hfsplus_catalog_node_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_fork_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_attribute_tree_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_catalog_size_accounting_is_fail_visible'
