@@ -703,6 +703,22 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
 /// Must be a valid ctx pointer.
 #[no_mangle]
 pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| unsafe {
+        scan_lha_lzh_inner(ctx)
+    }));
+
+    match result {
+        Ok(status) => status,
+        Err(_) => parser_failure(
+            ctx,
+            "LHA/LZH",
+            cl_error_t_CL_EFORMAT,
+            "decoder panicked while scanning the archive",
+        ),
+    }
+}
+
+unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
     let fmap = match ctx::current_fmap(ctx) {
         Ok(fmap) => fmap,
         Err(e) => {
@@ -713,26 +729,7 @@ pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
     // Try to parse the LHA/LZH file data using the delharc crate.
     debug!("Attempting to parse the LHA/LZH file data using the delharc crate.");
 
-    // Attempt to catch panics in case the parser encounter unexpected issues.
-    let result_result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-        LhaDecodeReader::new(FMapReader::new(&fmap))
-    }));
-
-    // Check if it panicked. If no panic, grab the parse result.
-    let result = match result_result {
-        Ok(result) => result,
-        Err(_) => {
-            return parser_failure(
-                ctx,
-                "LHA/LZH",
-                cl_error_t_CL_EFORMAT,
-                "decoder panicked while opening the archive",
-            );
-        }
-    };
-
-    // Check if any issue opening the archive.
-    let mut decoder = match result {
+    let mut decoder = match LhaDecodeReader::new(FMapReader::new(&fmap)) {
         Ok(result) => result,
         Err(err) => {
             return parser_failure(ctx, "LHA/LZH", cl_error_t_CL_EFORMAT, err);

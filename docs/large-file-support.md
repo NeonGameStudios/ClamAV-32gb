@@ -2648,7 +2648,11 @@ uncompressed size. This prevents malformed output from temporarily extending a
 quota reservation before the final size comparison. Empty members now undergo
 the same CRC validation as non-empty members. The focused Rust regression covers
 exact-fit, overrun, and accounting-underflow cases; corpus, sanitizer, RSS, and
-large-member qualification remain release gates.
+large-member qualification remain release gates. The public parser entry now
+also places the complete decoder lifecycle—construction, header access, member
+reads, CRC validation, and next-header traversal—inside one panic boundary;
+unexpected decoder panics become a sticky incomplete `CL_EFORMAT` result rather
+than escaping the scan callback.
 
 ## Rust temporary-spool ownership — 2026-08-19
 
