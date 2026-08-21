@@ -662,6 +662,10 @@ contains libclamav/pdfdecode.c 'PDF stream uses an unsupported filter and was no
 contains libclamav/pdfdecode.c 'PDF stream uses an unknown filter and was not decoded'
 contains libclamav/pdfdecode.c 'PDF LZW decoding is disabled and the stream was not inspected'
 contains libclamav/pdfdecode.c "PDF stream exceeds the decoder's 32-bit input boundary"
+contains libclamav/pdfdecode.c 'PDF decoder output exceeds the 32-bit decoder boundary'
+contains libclamav/pdfdecode.c 'PDF Flate decoder output exceeds the 32-bit decoder boundary'
+contains libclamav/pdfdecode.c 'PDF LZW decoder output exceeds the 32-bit decoder boundary'
+contains libclamav/pdfdecode.c 'case CL_ERESOURCE:'
 contains docs/largefile-capabilities.tsv 'pdf-stream-over-4g'
 contains libclamav/pdfdecode.h 'const char *stream, size_t streamlen'
 contains libclamav/pdf.h 'size_t start;'

@@ -72,6 +72,10 @@
 - HFS+ catalog node-size validation and catalog block coordinates now retain
   64-bit arithmetic through fmap admission; large-volume corpus qualification
   remains open.
+- PDF Flate, RunLength, and LZW decoder output now retains native-width
+  accounting and fails explicitly when the legacy 4 GiB decoder boundary is
+  exceeded, instead of wrapping the decoded length or exposing a partial
+  prefix.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

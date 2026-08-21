@@ -78,6 +78,16 @@ struct pdf_token {
     uint8_t *content; /* content stream */
 };
 
+static cl_error_t pdf_decoder_output_width_check(cli_ctx *ctx, size_t current, size_t additional)
+{
+    if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
+        cli_mark_scan_incomplete(ctx, "PDF decoder output exceeds the 32-bit decoder boundary");
+        return CL_ERESOURCE;
+    }
+
+    return CL_SUCCESS;
+}
+
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -351,8 +361,9 @@ static size_t pdf_decodestream_internal(
                 case CL_EMAXSIZE:
                 case CL_EMAXFILES:
                 case CL_ETIMEOUT:
+                case CL_ERESOURCE:
                     *status = retval;
-                    reason  = "configured limit";
+                    reason  = (retval == CL_ERESOURCE) ? "resource boundary" : "configured limit";
                     break;
                 default:
                     *status = CL_EPARSE;
@@ -429,7 +440,7 @@ done:
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token)
 {
     uint8_t *decoded, *dptr;
-    uint32_t declen = 0;
+    size_t declen = 0;
 
     const uint8_t *ptr = (uint8_t *)token->content;
     size_t remaining   = token->length;
@@ -517,7 +528,7 @@ static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *o
     if (rc == CL_SUCCESS) {
         free(token->content);
 
-        cli_dbgmsg("cli_pdf: deflated " STDu32 " bytes from %zu total bytes\n",
+        cli_dbgmsg("cli_pdf: deflated %zu bytes from %zu total bytes\n",
                    declen, token->length);
 
         token->content = decoded;
@@ -537,7 +548,7 @@ static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *o
 static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token)
 {
     uint8_t *decoded, *temp;
-    uint32_t declen = 0, capacity = 0;
+    size_t declen = 0, capacity = 0;
 
     uint8_t *content = (uint8_t *)token->content;
     uint32_t length  = token->length;
@@ -555,6 +566,8 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
     while (offset < length) {
         uint8_t srclen = content[offset++];
+        size_t output_length;
+
         if (srclen < 128) {
             /* direct copy of (srclen + 1) bytes */
             if (offset + srclen + 1 > length) {
@@ -563,7 +576,10 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 rc = CL_EFORMAT;
                 break;
             }
-            if (declen + srclen + 1 > capacity) {
+            output_length = (size_t)srclen + 1;
+            if ((rc = pdf_decoder_output_width_check(pdf->ctx, declen, output_length)) != CL_SUCCESS)
+                break;
+            if (declen + output_length > capacity) {
 
                 if ((rc = cli_checklimits("pdf", pdf->ctx, capacity + INFLATE_CHUNK_SIZE, 0, 0)) != CL_SUCCESS)
                     break;
@@ -577,9 +593,9 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 capacity += INFLATE_CHUNK_SIZE;
             }
 
-            memcpy(decoded + declen, content + offset, srclen + 1);
+            memcpy(decoded + declen, content + offset, output_length);
             offset += srclen + 1;
-            declen += srclen + 1;
+            declen += output_length;
         } else if (srclen > 128) {
             /* copy the next byte (257 - srclen) times */
             if (offset + 1 > length) {
@@ -588,9 +604,12 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 rc = CL_EFORMAT;
                 break;
             }
-            if (declen + (257 - srclen) + 1 > capacity) {
+            output_length = (size_t)(257 - srclen);
+            if ((rc = pdf_decoder_output_width_check(pdf->ctx, declen, output_length)) != CL_SUCCESS)
+                break;
+            if (declen + output_length > capacity) {
                 if ((rc = cli_checklimits("pdf", pdf->ctx, capacity + INFLATE_CHUNK_SIZE, 0, 0)) != CL_SUCCESS) {
-                    cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %u\n", capacity + INFLATE_CHUNK_SIZE);
+                    cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
                     break;
                 }
 
@@ -603,9 +622,9 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 capacity += INFLATE_CHUNK_SIZE;
             }
 
-            memset(decoded + declen, content[offset], 257 - srclen);
+            memset(decoded + declen, content[offset], output_length);
             offset++;
-            declen += 257 - srclen;
+            declen += output_length;
         } else { /* srclen == 128 */
             /* end of data */
             cli_dbgmsg("cli_pdf: end-of-stream marker @ offset " STDu32 " (%zu bytes remaining)\n",
@@ -630,13 +649,13 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
     if (rc == CL_SUCCESS || rc == CL_BREAK) {
         free(token->content);
 
-        cli_dbgmsg("cli_pdf: decoded " STDu32 " bytes from %zu total bytes\n",
+        cli_dbgmsg("cli_pdf: decoded %zu bytes from %zu total bytes\n",
                    declen, token->length);
 
         token->content = decoded;
         token->length  = declen;
     } else {
-        cli_dbgmsg("cli_pdf: error occurred parsing byte " STDu32 " of %zu\n",
+        cli_dbgmsg("cli_pdf: error occurred parsing byte %u of %zu\n",
                    offset, token->length);
         free(decoded);
     }
@@ -662,7 +681,7 @@ static uint8_t *decode_nextlinestart(uint8_t *content, uint32_t length)
 static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token)
 {
     uint8_t *decoded, *temp;
-    uint32_t declen = 0, capacity = 0;
+    size_t declen = 0, capacity = 0;
 
     uint8_t *content = (uint8_t *)token->content;
     uint32_t length  = token->length;
@@ -765,7 +784,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
     /* error handling */
     switch (zstat) {
         case Z_STREAM_END:
-            cli_dbgmsg("cli_pdf: inflated " STDu32 " bytes from %zu total bytes (%u bytes remaining)\n",
+            cli_dbgmsg("cli_pdf: inflated %zu bytes from %zu total bytes (%u bytes remaining)\n",
                        declen, token->length, stream.avail_in);
             break;
 
@@ -783,10 +802,10 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
         case Z_MEM_ERROR:
         default:
             if (stream.msg)
-                cli_dbgmsg("cli_pdf: after writing " STDu32 " bytes, got error \"%s\" inflating PDF stream in %u %u obj\n",
+                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error \"%s\" inflating PDF stream in %u %u obj\n",
                            declen, stream.msg, obj->id >> 8, obj->id & 0xff);
             else
-                cli_dbgmsg("cli_pdf: after writing " STDu32 " bytes, got error %d inflating PDF stream in %u %u obj\n",
+                cli_dbgmsg("cli_pdf: after writing %zu bytes, got error %d inflating PDF stream in %u %u obj\n",
                            declen, zstat, obj->id >> 8, obj->id & 0xff);
 
             cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder failed before the stream completed");
@@ -805,6 +824,11 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
     }
 
     (void)inflateEnd(&stream);
+
+    if (declen > (size_t)UINT32_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder output exceeds the 32-bit decoder boundary");
+        rc = CL_ERESOURCE;
+    }
 
     if (rc == CL_SUCCESS) {
         if (declen == 0) {
@@ -1073,8 +1097,8 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
     }
 
     if (declen > (UINT32_MAX - (INFLATE_CHUNK_SIZE - stream.avail_out))) {
-        cli_dbgmsg("cli_pdf: lzwdecode: overflow detected\n");
-        rc = CL_EFORMAT;
+        cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoder output exceeds the 32-bit decoder boundary");
+        rc = CL_ERESOURCE;
         goto done;
     }
 

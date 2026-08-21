@@ -2719,8 +2719,10 @@ first-plus-offset calculation before the parser rejects them.
 The capability manifest records `pdf-stream-over-4g` as deliberately
 unsupported. This is a filter-ABI boundary, not an outer-file limit: a PDF
 may still contain other inspectable objects, but a legacy filter stream above
-4 GiB makes the containing scan incomplete rather than allowing a truncated
-prefix to be treated as complete.
+4 GiB, or a Flate/RunLength/LZW decoder output above 4 GiB, makes the
+containing scan incomplete rather than allowing a truncated or wrapped prefix
+to be treated as complete. The focused decoder paths now retain native-width
+output accounting until this explicit boundary check.
 
 ## Script normalization matcher boundary — 2026-08-19
 
