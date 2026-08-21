@@ -973,6 +973,25 @@ START_TEST(test_scan_report_unsupported_encryption_is_not_malformed)
 }
 END_TEST
 
+START_TEST(test_scan_report_unsupported_decoder_statuses_are_unsupported)
+{
+    const cl_error_t statuses[] = {CL_EUNPACK, CL_EBYTECODE, CL_EBYTECODE_TESTFAIL};
+    size_t i;
+
+    for (i = 0; i < sizeof(statuses) / sizeof(statuses[0]); i++) {
+        cl_scan_report_t *report = NULL;
+        cl_scan_completion_t completion;
+
+        ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+        ck_assert_ptr_nonnull(report);
+        cli_scan_report_finish(report, NULL, statuses[i], CL_VERDICT_NOTHING_FOUND, NULL);
+        ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+        ck_assert_int_eq(completion, CL_SCAN_COMPLETION_UNSUPPORTED);
+        cl_scan_report_free(report);
+    }
+}
+END_TEST
+
 START_TEST(test_scan_report_break_is_application_abort)
 {
     cl_scan_report_t *report = NULL;
@@ -14538,6 +14557,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_scan_report_unsupported_encryption_is_not_malformed);
+    tcase_add_test(tc_cl, test_scan_report_unsupported_decoder_statuses_are_unsupported);
     tcase_add_test(tc_cl, test_scan_report_break_is_application_abort);
     tcase_add_test(tc_cl, test_scan_report_operational_failure_is_resource_failure);
     tcase_add_test(tc_cl, test_scan_report_sticky_resource_failure_is_not_a_scan_limit);

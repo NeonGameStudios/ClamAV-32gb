@@ -385,6 +385,12 @@ void cli_scan_report_finish(
         }
     } else if ((status == CL_EPARSE) || (status == CL_EFORMAT)) {
         report->completion = CL_SCAN_COMPLETION_MALFORMED_CONFIRMED;
+    } else if ((status == CL_EUNPACK) ||
+               (status == CL_EBYTECODE) ||
+               (status == CL_EBYTECODE_TESTFAIL)) {
+        /* These statuses identify an unsupported decoder/runtime boundary,
+         * matching the daemon's bounded fallback report classification. */
+        report->completion = CL_SCAN_COMPLETION_UNSUPPORTED;
     } else if (status != CL_SUCCESS) {
         report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
     } else {

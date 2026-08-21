@@ -189,6 +189,9 @@
   failures instead of labeling every non-detection error unsupported; the
   shared classifier unit test covers each fallback class, with compiled
   protocol execution still required.
+- The public structured report now classifies unsupported decoder and bytecode
+  statuses consistently with clamd fallback reports; the library unit test
+  covers all three statuses, with compiled execution still required.
 - Buffer and fmap matcher callers now preserve every matcher error below
   `CL_TYPENO` instead of allowing a later matcher pass to hide resource,
   timeout, callback, or read failures; add matcher fault-injection and

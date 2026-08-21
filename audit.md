@@ -2615,3 +2615,10 @@ matching the public report classification contract. Source guards and the
 capability manifest record the producer behavior, and the shared classifier
 unit test covers each fallback class; compiled protocol and Linux/Sonic1
 service qualification remain open.
+
+The public report finalizer now applies the same `UNSUPPORTED` classification
+to `CL_EUNPACK`, `CL_EBYTECODE`, and `CL_EBYTECODE_TESTFAIL` when no more
+specific parser reason is available. This prevents the library `_ex2` API from
+disagreeing with clamd fallback reports about an unsupported decoder/runtime
+boundary. A focused library unit test covers all three statuses; compiled
+Linux/Sonic1 and full service qualification remain open.

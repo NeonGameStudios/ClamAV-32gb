@@ -235,6 +235,8 @@ contains unit_tests/check_clamav.c 'test_scan_report_detection_precedes_incomple
 contains libclamav/scan_report.c 'status == CL_BREAK'
 contains unit_tests/check_clamav.c 'test_scan_report_break_is_application_abort'
 contains libclamav/scan_report.c 'report_status_is_operational_failure'
+contains libclamav/scan_report.c 'status == CL_EBYTECODE_TESTFAIL'
+contains libclamav/scan_report.c "matching the daemon's bounded fallback report classification"
 contains libclamav/scanners.c 'parser or decoder returned an operational or incomplete error'
 contains unit_tests/check_clamav.c 'test_scan_report_operational_failure_is_resource_failure'
 contains libclamav/others.h 'uint64_t skipped_operations;'
@@ -243,6 +245,7 @@ contains libclamav/scan_report.c 'report->metrics.skipped_operations = ctx->skip
 contains libclamav_rust/src/sys.rs 'pub skipped_operations: u64,'
 contains libclamav_rust/src/lib.rs 'assert_eq!(size_of::<sys::cli_ctx>(), 248);'
 contains unit_tests/check_clamav.c 'test_scan_report_counts_skipped_operations'
+contains unit_tests/check_clamav.c 'test_scan_report_unsupported_decoder_statuses_are_unsupported'
 contains unit_tests/check_clamav.c 'test_parser_error_statuses_are_fail_closed'
 contains libclamav/message.c 'refusing to export an incompletely materialized message'
 contains libclamav/message.c 'decoded message could not be materialized completely'
