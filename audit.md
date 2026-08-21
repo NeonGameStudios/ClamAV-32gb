@@ -2434,6 +2434,16 @@ source guard and capability manifest record the invariant; compiled
 Linux/Sonic1, callback/resource fault injection, sanitizer, and broader PE
 corpus qualification remain open.
 
+## Extended-MBR intersection result propagation — 2026-08-21
+
+The extended-MBR traversal previously stopped on an intersection only when the
+alert recorder returned `CL_VIRUS`; trusted, callback-break, and operational
+results could be overwritten by continued logical-partition traversal. The path
+now stops on every non-success alert result, preserving the result and its
+fail-visible scan state. The source guard and capability manifest record the
+invariant; compiled Linux/Sonic1, callback/resource fault injection, sanitizer,
+and broader partition-image corpus qualification remain open.
+
 ## BM all-matches alert-result propagation — 2026-08-21
 
 The Boyer–Moore matcher’s all-matches branch previously ignored non-success

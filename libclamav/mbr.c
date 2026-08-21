@@ -623,7 +623,9 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
                            "[%u, %u]\n",
                            pitxn, i);
                 status = cli_append_potentially_unwanted(ctx, "Heuristics.MBRPartitionnIntersect");
-                if (status == CL_VIRUS) {
+                /* Preserve every non-clean alert-recording result before
+                 * following the extended-partition chain. */
+                if (status != CL_SUCCESS) {
                     goto done;
                 }
             } else {

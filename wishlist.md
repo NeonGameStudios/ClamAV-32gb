@@ -157,6 +157,9 @@
 - Malformed-PE broken-executable heuristic alert results now propagate
   callback, trusted, and operational statuses; add PE heuristic fault-injection
   and malformed-corpus coverage.
+- Extended-MBR partition-intersection alert results now stop traversal on every
+  non-success status; add callback/resource fault-injection and malformed
+  partition-image coverage.
 
 ## Large-file validation and expansion progression
 
