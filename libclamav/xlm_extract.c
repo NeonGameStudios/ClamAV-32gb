@@ -4682,6 +4682,41 @@ done:
     return status;
 }
 
+static cl_error_t xlm_append_drawing_group(unsigned char **drawinggroup,
+                                           size_t *drawinggroup_len,
+                                           const unsigned char *data,
+                                           size_t data_len,
+                                           cli_ctx *ctx)
+{
+    size_t new_len;
+    unsigned char *new_group;
+
+    if (0 == data_len)
+        return CL_SUCCESS;
+
+    if (*drawinggroup_len > CLI_MAX_ALLOCATION || data_len > CLI_MAX_ALLOCATION - *drawinggroup_len) {
+        cli_mark_scan_incomplete(ctx, "XLM drawing-group data exceeds the contiguous parser allocation ceiling");
+        return CL_EMAXSIZE;
+    }
+
+    new_len = *drawinggroup_len + data_len;
+    if (NULL == *drawinggroup)
+        new_group = cli_max_malloc(new_len);
+    else
+        new_group = cli_max_realloc(*drawinggroup, new_len);
+
+    if (NULL == new_group) {
+        cli_mark_scan_incomplete(ctx, "XLM drawing-group data could not be allocated");
+        return CL_EMEM;
+    }
+
+    memcpy(new_group + *drawinggroup_len, data, data_len);
+    *drawinggroup     = new_group;
+    *drawinggroup_len = new_len;
+
+    return CL_SUCCESS;
+}
+
 cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char *hash, uint32_t which)
 {
     cl_error_t status = CL_SUCCESS;
@@ -4735,8 +4770,9 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
     output.file = out_file;
     output.ctx  = ctx;
 
-    if ((data = malloc(BIFF8_MAX_RECORD_LENGTH)) == NULL) {
+    if ((data = cli_max_malloc(BIFF8_MAX_RECORD_LENGTH)) == NULL) {
         cli_dbgmsg("[cli_extract_xlm_macros_and_images] Failed to allocate memory for BIFF data\n");
+        cli_mark_scan_incomplete(ctx, "XLM BIFF data could not be allocated");
         status = CL_EMEM;
         goto done;
     }
@@ -4863,21 +4899,18 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                  */
                 if (NULL == drawinggroup) {
                     /* Found beginning of a drawing group */
-                    drawinggroup_len = (size_t)biff_header.length;
-                    drawinggroup     = malloc(drawinggroup_len);
-                    if (NULL == drawinggroup) {
-                        cli_mark_scan_incomplete(ctx, "XLM drawing-group data could not be allocated");
-                        status = CL_EMEM;
+                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, data,
+                                                      (size_t)biff_header.length, ctx);
+                    if (CL_SUCCESS != status)
                         goto done;
-                    }
-                    memcpy(drawinggroup, data, drawinggroup_len);
                     // cli_dbgmsg("Collected %zu drawing group bytes\n", drawinggroup_len);
 
                 } else {
                     /* already found the beginning of a drawing group, extract the remaining chunks */
-                    drawinggroup_len += biff_header.length;
-                    CLI_MAX_REALLOC_OR_GOTO_DONE(drawinggroup, drawinggroup_len, status = CL_EMEM);
-                    memcpy(drawinggroup + (drawinggroup_len - biff_header.length), data, biff_header.length);
+                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, data,
+                                                      (size_t)biff_header.length, ctx);
+                    if (CL_SUCCESS != status)
+                        goto done;
                     // cli_dbgmsg("Collected %d drawing group bytes\n", biff_header.length);
                 }
                 break;
@@ -4886,9 +4919,10 @@ cl_error_t cli_extract_xlm_macros_and_images(const char *dir, cli_ctx *ctx, char
                 if ((OPC_MSODRAWINGGROUP == previous_biff8_opcode) &&
                     (NULL != drawinggroup)) {
                     /* already found the beginning of an image, extract the remaining chunks */
-                    drawinggroup_len += biff_header.length;
-                    CLI_MAX_REALLOC_OR_GOTO_DONE(drawinggroup, drawinggroup_len, status = CL_EMEM);
-                    memcpy(drawinggroup + (drawinggroup_len - biff_header.length), data, biff_header.length);
+                    status = xlm_append_drawing_group(&drawinggroup, &drawinggroup_len, data,
+                                                      (size_t)biff_header.length, ctx);
+                    if (CL_SUCCESS != status)
+                        goto done;
                     // cli_dbgmsg("Collected %d image bytes\n", biff_header.length);
                 }
                 break;

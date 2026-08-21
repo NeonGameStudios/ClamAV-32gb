@@ -3098,3 +3098,13 @@ guard. It now rejects objects at that ceiling, marks the PDF layer incomplete,
 cleans up the temporary object, and uses `cli_max_calloc()` for accepted sizes.
 Static guards and whitespace validation pass; full PDF parser, sanitizer, and
 production qualification remain open.
+
+## XLM drawing-group allocation bound — 2026-08-21
+
+XLM BIFF extraction previously used an unbounded raw allocation for the first
+drawing-group record and accumulated later `CONTINUE` records with unchecked
+native-size addition. The parser now uses the shared individual-allocation
+ceiling for BIFF data and drawing-group storage, checks cumulative growth before
+addition, and marks allocation or ceiling failures incomplete while preserving
+raw matching. Static guards and whitespace validation pass; compiled XLM/OLE
+corpus, sanitizer, and production qualification remain open.
