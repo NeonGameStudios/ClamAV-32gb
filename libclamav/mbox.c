@@ -420,7 +420,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
 
     cli_dbgmsg("in mbox()\n");
 
-    if (!fmap_gets(map, buffer, &at, sizeof(buffer) - 1)) {
+    if (!fmap_gets(map, buffer, &at, sizeof(buffer))) {
         /* EOF at the end of the map is an empty message. A nonempty map that
          * could not yield its first line indicates an incomplete read or
          * invalid fmap range and must remain fail-visible. */
@@ -636,7 +636,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                     break;
                 }
             }
-        } while (fmap_gets(map, buffer, &at, sizeof(buffer) - 1));
+        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx) != NULL);
 
         if (retcode == CL_SUCCESS) {
             cli_dbgmsg("Extract attachments from email %d\n", messagenumber);
@@ -664,7 +664,7 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
              * CommuniGate Pro format: ignore headers until
              * blank line
              */
-            while (fmap_gets(map, buffer, &at, sizeof(buffer) - 1) &&
+            while (fmap_gets(map, buffer, &at, sizeof(buffer)) &&
                    (strchr("\r\n", buffer[0]) == NULL)) {
                 ;
             }
@@ -2664,12 +2664,10 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
 
                             if (strlen(line) > RFC2821LENGTH) {
                                 cli_dbgmsg("parseEmailBody: line length exceeds RFC2821 maximum length (1000)\n");
-                                // We must skip this line because functions like rfc822comments() may accept output buffers
-                                // that [RFC2821LENGTH + 1] in and don't have any length checks to prevent exceeding that max.
-                                // E.g. See `boundaryStart()`.
-                                // TODO: A larger audit would be needed to remove this limitation, though frankly I recommend
-                                // fully re-writing the email parser (in Rust).
-                                continue;
+                                cli_mark_scan_incomplete(mctx->ctx,
+                                                         "MIME message line exceeds bounded parser representation");
+                                rc = FAIL;
+                                break;
                             }
 
                             fullline = rfc822comments(line, NULL);
@@ -4885,6 +4883,7 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
     const char *src, *cursrc;
     char *curbuf;
     size_t i;
+    bool line_terminated = false;
 
     if (map == NULL || at == NULL || *at > map->len) {
         cli_mark_scan_incomplete(ctx, "MIME message line input range is invalid");
@@ -4910,7 +4909,7 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
 
     curbuf = buffer;
 
-    for (i = 0; i < buffer_len - 1; i++) {
+    for (i = 0; i < buffer_len; i++) {
         char c;
 
         if (!input_len--) {
@@ -4926,6 +4925,7 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
                 continue;
             case '\n':
                 *curbuf++ = '\n';
+                line_terminated = true;
                 if (input_len && *cursrc == '\r') {
                     i++;
                     cursrc++;
@@ -4933,6 +4933,7 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
                 break;
             case '\r':
                 *curbuf++ = '\r';
+                line_terminated = true;
                 if (input_len && *cursrc == '\n') {
                     i++;
                     cursrc++;
@@ -4946,6 +4947,19 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
     }
     *at += cursrc - src;
     *curbuf = '\0';
+
+    if (!line_terminated && *at < map->len) {
+        const char *next = fmap_need_off_once(map, *at, 1);
+
+        if (!next) {
+            cli_mark_scan_incomplete(ctx, "MIME message line input could not be read completely");
+            return NULL;
+        }
+        if (*next != '\n' && *next != '\r') {
+            cli_mark_scan_incomplete(ctx, "MIME message line exceeds bounded parser representation");
+            return NULL;
+        }
+    }
 
     return buffer;
 }

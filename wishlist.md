@@ -323,6 +323,9 @@
   and sanitizer qualification.
 - Confirmed XAR `<data>`/`<ea>` entries with invalid metadata no longer end the
   TOC walk as clean; add compiled malformed-XAR and production corpus coverage.
+- Oversized MIME lines now fail closed instead of being split or skipped by the
+  bounded legacy parser; add compiled long-header/body and production mail
+  corpus coverage.
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.

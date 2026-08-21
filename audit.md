@@ -3014,3 +3014,15 @@ end-of-TOC condition and returns a fail-visible format error for malformed
 entries; a focused invalid-metadata regression and source guard cover it.
 Compiled Linux/Sonic1, sanitizer, and production XAR corpus qualification
 remain open.
+
+## MIME bounded-line status — 2026-08-21
+
+The legacy MIME reader previously filled a fixed 1000-byte line buffer and
+continued from the middle of an oversized line, while multipart header handling
+explicitly skipped lines beyond its safe representation. Required header or
+body content could therefore be omitted without a parser failure. The reader
+now detects an unterminated bounded window, marks the scan incomplete and
+non-cacheable, and the multipart path returns `FAIL` instead of skipping the
+line; a focused oversized-line regression and source guard cover the boundary.
+Compiled Linux/Sonic1, sanitizer, and production mail corpus qualification
+remain open.

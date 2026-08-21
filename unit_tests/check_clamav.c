@@ -11514,6 +11514,39 @@ START_TEST(test_mbox_line_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbox_oversized_line_is_fail_visible)
+{
+    static const uint8_t prefix[] = "Content-Type: text/plain\nSubject: ";
+    uint8_t input[2048];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t input_len = sizeof(prefix) - 1U;
+
+    memcpy(input, prefix, input_len);
+    memset(input + input_len, 'A', 1100U);
+    input_len += 1100U;
+    input[input_len++] = '\n';
+    input[input_len++] = '\n';
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, input_len);
+    ck_assert_ptr_nonnull(map);
+
+    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MIME message line exceeds bounded parser representation");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_truncated_uuencode_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -16231,6 +16264,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_line_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_mbox_oversized_line_is_fail_visible);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
 #ifndef _WIN32
