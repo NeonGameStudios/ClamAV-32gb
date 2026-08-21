@@ -237,6 +237,9 @@
 - ClamAV YARA rules now observe the active scan deadline during a single
   long-running logical rule; add compiled timeout, sanitizer, and production
   YARA corpus coverage.
+- Bytecode VM watchdogs now clamp to a shorter active `MaxScanTime`, and
+  logical/hook paths re-check the deadline after successful execution; add
+  compiled interpreter/JIT timeout and production bytecode coverage.
 
 ## Large-file validation and expansion progression
 

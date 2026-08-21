@@ -2706,3 +2706,14 @@ deadline every bounded instruction interval, returning `CL_ETIMEOUT` through
 the normal terminal-result path. A focused loop regression verifies the timeout
 and sticky abort state; supported-Linux compilation, sanitizer, and production
 YARA corpus qualification remain open.
+
+## Bytecode scan-deadline clamping — 2026-08-21
+
+The bytecode VM has an independent watchdog, but its configured timeout could
+exceed a caller's shorter `MaxScanTime`; successful logical or hook executions
+also did not re-check the scan deadline before continuing. Bytecode contexts now
+clamp their watchdog to the remaining scan deadline and both logical and hook
+dispatch paths perform an authoritative post-run check, while detections retain
+their normal precedence. A focused regression verifies the clamp and unlimited
+scan behavior; supported-Linux interpreter/JIT compilation, sanitizer, and
+production bytecode qualification remain open.

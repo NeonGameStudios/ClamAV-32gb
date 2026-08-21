@@ -3007,6 +3007,10 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
             cctx->fmap->dont_cache_flag = 1;
         return ret;
     }
+    if (!ctx.virname && cli_checktimelimit(cctx) != CL_SUCCESS) {
+        bytecode_context_reset(&ctx);
+        return CL_ETIMEOUT;
+    }
     if (ctx.virname) {
         cl_error_t rc;
         cli_dbgmsg("Bytecode found virus: %s\n", ctx.virname);
@@ -3112,7 +3116,13 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
                 error_ret = ret;
             errorflag = 1;
             bytecode_context_reset(ctx);
+            if (ret == CL_ETIMEOUT)
+                return CL_ETIMEOUT;
             continue;
+        }
+        if (!ctx->virname && cli_checktimelimit(cctx) != CL_SUCCESS) {
+            bytecode_context_reset(ctx);
+            return CL_ETIMEOUT;
         }
         if (ctx->virname) {
             cli_dbgmsg("Bytecode runhook found virus: %s\n", ctx->virname);
@@ -3245,8 +3255,47 @@ cl_error_t cli_bytecode_context_setpdf(struct cli_bc_ctx *ctx, unsigned phase,
 
 void cli_bytecode_context_setctx(struct cli_bc_ctx *ctx, void *cctx)
 {
-    ctx->ctx              = cctx;
-    ctx->bytecode_timeout = ((cli_ctx *)cctx)->engine->bytecode_timeout;
+    cli_ctx *scan_ctx = (cli_ctx *)cctx;
+    uint32_t timeout;
+
+    ctx->ctx = cctx;
+    timeout  = scan_ctx->engine->bytecode_timeout;
+
+    /* Bytecode has its own watchdog, but it must never outlive the scan's
+     * configured wall-clock deadline. Round the remaining time upward to the
+     * next millisecond because the VM timeout is expressed in milliseconds;
+     * the post-run callers still perform the authoritative deadline check. */
+    if (scan_ctx->time_limit.tv_sec != 0) {
+        struct timeval now;
+
+        if (gettimeofday(&now, NULL) == 0) {
+            uint64_t remaining_ms;
+
+            if ((now.tv_sec > scan_ctx->time_limit.tv_sec) ||
+                (now.tv_sec == scan_ctx->time_limit.tv_sec &&
+                 now.tv_usec >= scan_ctx->time_limit.tv_usec)) {
+                remaining_ms = 1;
+            } else {
+                uint64_t seconds = (uint64_t)(scan_ctx->time_limit.tv_sec - now.tv_sec);
+                int64_t useconds  = (int64_t)scan_ctx->time_limit.tv_usec - now.tv_usec;
+
+                if (useconds < 0) {
+                    seconds--;
+                    useconds += 1000000;
+                }
+                remaining_ms = seconds * 1000U + ((uint64_t)useconds + 999U) / 1000U;
+                if (remaining_ms == 0)
+                    remaining_ms = 1;
+            }
+
+            if (remaining_ms > UINT32_MAX)
+                remaining_ms = UINT32_MAX;
+            if (timeout == 0 || remaining_ms < timeout)
+                timeout = (uint32_t)remaining_ms;
+        }
+    }
+
+    ctx->bytecode_timeout = timeout;
 }
 
 void cli_bytecode_describe(const struct cli_bc *bc)

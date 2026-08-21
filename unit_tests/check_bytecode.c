@@ -983,6 +983,33 @@ START_TEST(test_parallel_load)
 END_TEST
 #endif
 
+START_TEST(test_bytecode_timeout_respects_scan_deadline)
+{
+    struct cl_engine engine;
+    cli_ctx scan_ctx;
+    struct cli_bc_ctx bytecode_ctx;
+    struct timeval now;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&scan_ctx, 0, sizeof(scan_ctx));
+    memset(&bytecode_ctx, 0, sizeof(bytecode_ctx));
+    engine.bytecode_timeout = 60000;
+    scan_ctx.engine          = &engine;
+    ck_assert_int_eq(gettimeofday(&now, NULL), 0);
+    scan_ctx.time_limit.tv_sec  = now.tv_sec + 1;
+    scan_ctx.time_limit.tv_usec = now.tv_usec;
+
+    cli_bytecode_context_setctx(&bytecode_ctx, &scan_ctx);
+    ck_assert_msg(bytecode_ctx.bytecode_timeout > 0, "bytecode timeout must remain positive");
+    ck_assert_msg(bytecode_ctx.bytecode_timeout <= 1000, "bytecode timeout must honor the one-second scan deadline");
+
+    memset(&bytecode_ctx, 0, sizeof(bytecode_ctx));
+    memset(&scan_ctx.time_limit, 0, sizeof(scan_ctx.time_limit));
+    cli_bytecode_context_setctx(&bytecode_ctx, &scan_ctx);
+    ck_assert_uint_eq(bytecode_ctx.bytecode_timeout, engine.bytecode_timeout);
+}
+END_TEST
+
 Suite *test_bytecode_suite(void)
 {
     Suite *s            = suite_create("bytecode");
@@ -1045,6 +1072,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_bytecode_large_map_hook_gates_only_applicable_bytecode);
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_rejects_invalid_dispatch_arguments);
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_execution_failure_is_fail_visible);
+    tcase_add_test(tc_cli_arith, test_bytecode_timeout_respects_scan_deadline);
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
