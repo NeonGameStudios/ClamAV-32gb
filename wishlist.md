@@ -160,6 +160,9 @@
 - Extended-MBR partition-intersection alert results now stop traversal on every
   non-success status; add callback/resource fault-injection and malformed
   partition-image coverage.
+- Legacy clamd FILDES and INSTREAM command workers now preserve parser, limit,
+  read, and format failures instead of normalizing them to successful command
+  completion; add daemon IDSESSION and malformed/limit integration coverage.
 
 ## Large-file validation and expansion progression
 

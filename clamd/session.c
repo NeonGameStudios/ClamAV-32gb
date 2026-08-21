@@ -445,6 +445,12 @@ int command(client_conn_t *conn, int *virus)
                 } else if (ret == CL_ETIMEOUT) {
                     thrmgr_group_terminate(conn->group);
                     ret = 1;
+                } else if (ret != CL_SUCCESS) {
+                    /* scanfd() has already emitted the legacy error reply.
+                     * Preserve the non-clean result for the command worker
+                     * and IDSESSION aggregate instead of turning parser,
+                     * limit, or I/O failures into successful completion. */
+                    ret = 1;
                 } else
                     ret = 0;
                 logg(LOGG_DEBUG_NV, "Closed fd %d\n", conn->scanfd);
@@ -475,6 +481,10 @@ int command(client_conn_t *conn, int *virus)
                     ret = 1;
             } else if (ret == CL_ETIMEOUT) {
                 thrmgr_group_terminate(conn->group);
+                ret = 1;
+            } else if (ret != CL_SUCCESS) {
+                /* Do not let a descriptor/stream parser failure disappear
+                 * after scanfd() has sent its error response. */
                 ret = 1;
             } else
                 ret = 0;

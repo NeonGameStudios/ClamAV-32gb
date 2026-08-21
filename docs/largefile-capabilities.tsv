@@ -5,7 +5,7 @@ library	fmap	bounded	libclamav/fmap.c	checked source offsets, map boundaries, ne
 clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
 clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending
-clamd	FILDES	bounded	clamd/session.c	legacy command; structured parity pending
+clamd	FILDES	bounded	clamd/session.c	legacy command preserves non-clean descriptor results for worker and IDSESSION status; structured parity pending
 clamd	INSTREAM	bounded	clamd/server-th.c	complete staging with stream/temp quota
 clamd	SCANREPORT	bounded	clamd/session.c	direct length-prefixed protocol probe validates the path command against the qualification oracle; broader production qualification remains required
 clamd	CONTSCANREPORT	bounded	clamd/session.c	direct length-prefixed protocol probe validates the command against the qualification oracle; broader production qualification remains required

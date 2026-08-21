@@ -2454,3 +2454,15 @@ marks operational append failures incomplete before returning them. Source
 guards record the invariant; compiled Linux/Sonic1, callback/resource fault
 injection, sanitizer, and production signature-corpus qualification remain
 open.
+
+## Legacy clamd descriptor/stream result preservation — 2026-08-21
+
+The legacy `FILDES` and staged `INSTREAM` command handlers previously converted
+every `scanfd()` result other than `CL_VIRUS`, `CL_EMEM`, and `CL_ETIMEOUT` to
+zero after the scanner had emitted its response. Parser, limit, read, format,
+and callback results could therefore disappear from the worker and IDSESSION
+completion status. The handlers now retain a non-success result as a command
+error while preserving the existing virus, OOM, timeout, and clean behavior.
+Source guards and the capability manifest record the correction; compiled
+Linux/Sonic1, malformed/limit integration, IDSESSION, sanitizer, and broader
+front-end parity qualification remain open.
