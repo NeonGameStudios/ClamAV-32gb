@@ -6720,6 +6720,16 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                     if (ret != CL_SUCCESS)
                         break;
                 }
+
+                /* CL_TYPE_GRAPHICS is the catch-all for recognized image
+                 * formats without a structural parser (for example BMP and
+                 * JPEG 2000). Raw matching and optional fuzzy matching do not
+                 * constitute complete inspection of the image layer. Keep a
+                 * detection/terminal matcher result, but make a non-detecting
+                 * scan explicitly incomplete instead of returning clean. */
+                cli_mark_scan_incomplete(ctx, "generic graphics parser is unsupported");
+                if (ret == CL_SUCCESS)
+                    ret = CL_EPARSE;
             }
             break;
         }

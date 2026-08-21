@@ -79,6 +79,10 @@
 - Optional fuzzy-image matching now has an explicit unsupported boundary for
   images above the individual-allocation ceiling; it cannot silently skip the
   detector and report a clean scan.
+- Generic recognized graphics formats without a structural parser now remain
+  raw-matchable but return an explicit incomplete result when image parsing is
+  enabled; add bounded BMP/JPEG 2000 parser coverage before enabling deep
+  inspection for those formats.
 - Logical bytecode dispatch now validates its context, table, one-based index,
   match arrays, and fmap before indexed pointer formation; a focused malformed
   dispatch regression is covered, while v1/v2 fixture and interpreter/JIT

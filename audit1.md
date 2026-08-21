@@ -2793,3 +2793,14 @@ the evidence verifier had selected. The metadata invocation now explicitly
 sets `LD_LIBRARY_PATH` to the copied sanitizer component directory first;
 the source guard prevents regression. Full sanitizer and supported-build
 qualification remain release gates.
+
+## Generic graphics parser boundary — 2026-08-21
+
+`CL_TYPE_GRAPHICS` is the recognized catch-all for formats such as BMP and
+JPEG 2000 that do not have a structural parser. Its dispatch branch previously
+performed only optional fuzzy-image matching and could return clean after raw
+matching when image parsing was enabled. The branch now retains detections and
+terminal matcher results but marks a non-detecting layer incomplete with an
+explicit unsupported-parser reason. A focused scan-map regression verifies the
+non-clean, non-cacheable result; bounded parser implementation and production
+graphics corpus qualification remain open.
