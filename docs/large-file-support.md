@@ -2833,6 +2833,16 @@ scanning uninitialized carry bytes. The focused regression
 signature beyond the first normalized window; compiled scanner, sanitizer, and
 production-signature qualification remain release gates.
 
+## PE resource-entry window bounds — 2026-08-21
+
+The PE Swizzor/resource heuristic now validates the named and unnamed entry
+array against the containing fmap and reads each 8-byte unnamed entry through
+an unlocked bounded view. It no longer retains an attacker-declared entry
+window while recursively inspecting child resources, and RVA additions are
+checked before recursion or translation. Static guards and whitespace
+validation pass; compiled PE corpus, sanitizer, and large-file qualification
+remain release gates.
+
 ## Bytecode v2 PDF coordinate bridge — 2026-08-19
 
 The internal PDF-hook context now retains native-width PDF size and start

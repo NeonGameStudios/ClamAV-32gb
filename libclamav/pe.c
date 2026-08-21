@@ -565,10 +565,12 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
 {
     unsigned int err = 0, i;
     const uint8_t *resdir;
-    const uint8_t *entry, *oentry;
+    const uint8_t *entry;
     uint16_t named, unnamed;
     uint32_t rawaddr = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
     uint32_t entries;
+    size_t entry_base;
+    size_t entry_bytes;
 
     if (level > 2 || !*maxres) return;
     *maxres -= 1;
@@ -580,13 +582,27 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
     entries = /*named+*/ unnamed;
     if (!entries)
         return;
-    rawaddr += named * 8; /* skip named */
-    /* this is just used in a heuristic detection, so don't give error on failure */
-    if (!(entry = fmap_need_off(map, rawaddr + 16, entries * 8))) {
-        cli_dbgmsg("cli_parseres_special: failed to read resource directory at:%lu\n", (unsigned long)rawaddr + 16);
+
+    /* The resource directory header is 16 bytes, followed by named and
+     * unnamed 8-byte entries. Read each unnamed entry independently so a
+     * recursive resource walk never retains a whole attacker-declared entry
+     * window across nested fmap operations. */
+    if ((size_t)rawaddr > fsize || fsize - (size_t)rawaddr < 16) {
+        cli_dbgmsg("cli_parseres_special: resource directory header coordinate is out of range\n");
         return;
     }
-    oentry = entry;
+    entry_base = (size_t)rawaddr + 16;
+    if ((size_t)named > (fsize - entry_base) / sizeof(uint32_t) / 2) {
+        cli_dbgmsg("cli_parseres_special: named resource entries exceed the containing map\n");
+        return;
+    }
+    entry_base += (size_t)named * sizeof(uint32_t) * 2;
+    entry_bytes = (size_t)entries * sizeof(uint32_t) * 2;
+    if (entry_bytes > fsize - entry_base) {
+        cli_dbgmsg("cli_parseres_special: unnamed resource entries exceed the containing map\n");
+        return;
+    }
+
     /*for (i=0; i<named; i++) {
         uint32_t id, offs;
         id = cli_readint32(entry);
@@ -595,12 +611,19 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
             cli_parseres( base, base + (offs&0x7fffffff), srcfd, peinfo, fsize, level+1, type, maxres, stats);
         entry+=8;
     }*/
-    for (i = 0; i < unnamed; i++, entry += 8) {
+    for (i = 0; i < unnamed; i++) {
         uint32_t id, offs;
+        size_t entry_offset = entry_base + (size_t)i * sizeof(uint32_t) * 2;
+
         if (stats->errors >= SWIZZ_MAXERRORS) {
             cli_dbgmsg("cli_parseres_special: resources broken, ignoring\n");
-            /* The entry window is locked because this heuristic walks it
-             * directly. Break so the common cleanup below releases it. */
+            break;
+        }
+
+        entry = fmap_need_off_once(map, entry_offset, sizeof(uint32_t) * 2);
+        if (!entry) {
+            cli_dbgmsg("cli_parseres_special: resource entry could not be read at:%zu\n", entry_offset);
+            stats->errors++;
             break;
         }
         id = cli_readint32(entry) & 0x7fffffff;
@@ -629,19 +652,29 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
             continue;
         }
         offs = cli_readint32(entry + 4);
-        if (offs >> 31)
-            cli_parseres_special(base, base + (offs & 0x7fffffff), map, peinfo, fsize, level + 1, type, maxres, stats);
-        else {
-            offs    = cli_readint32(entry + 4);
+        if (offs >> 31) {
+            uint32_t child_rva = offs & 0x7fffffff;
+
+            if (base > UINT32_MAX - child_rva) {
+                stats->errors++;
+                continue;
+            }
+            cli_parseres_special(base, base + child_rva, map, peinfo, fsize, level + 1, type, maxres, stats);
+        } else {
+            if (base > UINT32_MAX - offs) {
+                stats->errors++;
+                continue;
+            }
             rawaddr = cli_rawaddr(base + offs, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
             if (!err && (resdir = fmap_need_off_once(map, rawaddr, 16))) {
                 uint32_t isz = cli_readint32(resdir + 4);
                 const uint8_t *str;
-            rawaddr = cli_rawaddr(cli_readint32(resdir), peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
-            if (err || !isz || (size_t)rawaddr > fsize || (size_t)isz > fsize - (size_t)rawaddr) {
-                cli_dbgmsg("cli_parseres_special: invalid resource table entry: %lu + %lu\n",
-                           (unsigned long)rawaddr,
-                           (unsigned long)isz);
+
+                rawaddr = cli_rawaddr(cli_readint32(resdir), peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
+                if (err || !isz || (size_t)rawaddr > fsize || (size_t)isz > fsize - (size_t)rawaddr) {
+                    cli_dbgmsg("cli_parseres_special: invalid resource table entry: %lu + %lu\n",
+                               (unsigned long)rawaddr,
+                               (unsigned long)isz);
                     stats->errors++;
                     continue;
                 }
@@ -655,7 +688,6 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
             }
         }
     }
-    fmap_unneed_ptr(map, oentry, entries * 8);
 }
 
 static cl_error_t cli_hashsect(cli_ctx *ctx, const struct cli_exe_section *s, uint8_t **digest, const bool *generate)

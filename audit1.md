@@ -3040,3 +3040,12 @@ cannot restore bytes that were never produced. The focused absolute-offset
 regression covers a marker beyond the first normalized window. Static guards
 and whitespace validation pass; compiled scanner, sanitizer, and production
 signature qualification remain open.
+
+## PE resource-entry window bounds — 2026-08-21
+
+The PE resource heuristic now validates resource-entry coordinates with
+subtraction-form bounds, reads each fixed-size unnamed entry independently,
+and checks RVA additions before nested traversal. A recursive resource walk
+therefore no longer retains an attacker-declared fmap window across nested
+reads. Static guards and whitespace validation pass; compiled PE corpus,
+sanitizer, and production qualification remain open.
