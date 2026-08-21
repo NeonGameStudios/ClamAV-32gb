@@ -97,6 +97,19 @@ static size_t cpio_readn(fmap_t *map, void *dst, size_t at, size_t len)
     return fmap_readn(map, dst, at, len);
 }
 
+static int cpio_align_size(size_t value, size_t alignment, size_t *aligned)
+{
+    size_t padding;
+
+    if (!alignment)
+        return -1;
+    padding = (alignment - (value % alignment)) % alignment;
+    if (value > SIZE_MAX - padding)
+        return -1;
+    *aligned = value + padding;
+    return 0;
+}
+
 static void sanitname(char *name)
 {
     while (*name) {
@@ -113,7 +126,8 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
     char *fmap_name = NULL;
     char name[513];
     unsigned int file = 0, trailer = 0;
-    uint32_t filesize, namesize, hdr_namesize;
+    size_t filesize, namesize, hdr_namesize;
+    uint32_t parsed_filesize;
     int conv;
     int complete = 0;
     size_t hdr_read;
@@ -170,8 +184,9 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
 
             fmap_name = name;
         }
-        filesize = (uint32_t)((uint32_t)EC16(hdr_old.filesize[0], conv) << 16 | EC16(hdr_old.filesize[1], conv));
-        cli_dbgmsg("CPIO: Filesize: %u\n", filesize);
+        parsed_filesize = (uint32_t)((uint32_t)EC16(hdr_old.filesize[0], conv) << 16 | EC16(hdr_old.filesize[1], conv));
+        filesize        = (size_t)parsed_filesize;
+        cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
         if (!filesize) {
             if (trailer)
                 complete = 1;
@@ -191,8 +206,10 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
                 goto done;
             }
         }
-        if (filesize % 2) {
-            filesize++;
+        if (cpio_align_size(filesize, 2, &filesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO member size exceeds the coordinate range");
+            status = CL_EPARSE;
+            goto done;
         }
 
         pos += filesize;
@@ -218,7 +235,8 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
     struct cpio_hdr_odc hdr_odc;
     char name[513] = {0}, buff[12] = {0};
     unsigned int file = 0, trailer = 0;
-    uint32_t filesize = 0, namesize = 0, hdr_namesize = 0;
+    size_t filesize = 0, namesize = 0, hdr_namesize = 0;
+    uint32_t parsed_filesize = 0, parsed_namesize = 0;
     int complete = 0;
     size_t hdr_read;
     size_t pos = 0;
@@ -243,11 +261,12 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
 
         strncpy(buff, hdr_odc.namesize, 6);
         buff[6] = 0;
-        if (sscanf(buff, "%o", &hdr_namesize) != 1) {
+        if (sscanf(buff, "%o", &parsed_namesize) != 1) {
             cli_dbgmsg("cli_scancpio_odc: Can't convert name size\n");
             status = CL_EFORMAT;
             goto done;
         }
+        hdr_namesize = (size_t)parsed_namesize;
         if (hdr_namesize) {
             namesize = MIN(sizeof(name), hdr_namesize);
             hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
@@ -272,12 +291,13 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
 
         strncpy(buff, hdr_odc.filesize, 11);
         buff[11] = 0;
-        if (sscanf(buff, "%o", &filesize) != 1) {
+        if (sscanf(buff, "%o", &parsed_filesize) != 1) {
             cli_dbgmsg("cli_scancpio_odc: Can't convert file size\n");
             status = CL_EFORMAT;
             goto done;
         }
-        cli_dbgmsg("CPIO: Filesize: %u\n", filesize);
+        filesize = (size_t)parsed_filesize;
+        cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
         if (!filesize) {
             if (trailer)
                 complete = 1;
@@ -317,7 +337,8 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
     struct cpio_hdr_newc hdr_newc;
     char name[513], buff[9];
     unsigned int file = 0, trailer = 0;
-    uint32_t filesize, namesize, hdr_namesize, pad;
+    size_t filesize, namesize, hdr_namesize, pad;
+    uint32_t parsed_filesize, parsed_namesize;
     int complete = 0;
     size_t hdr_read;
     size_t pos = 0;
@@ -342,11 +363,12 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
 
         strncpy(buff, hdr_newc.namesize, 8);
         buff[8] = 0;
-        if (sscanf(buff, "%x", &hdr_namesize) != 1) {
+        if (sscanf(buff, "%x", &parsed_namesize) != 1) {
             cli_dbgmsg("cli_scancpio_newc: Can't convert name size\n");
             status = CL_EFORMAT;
             goto done;
         }
+        hdr_namesize = (size_t)parsed_namesize;
         if (hdr_namesize) {
             namesize = MIN(sizeof(name), hdr_namesize);
             hdr_read = cpio_readn(ctx->fmap, &name, pos, namesize);
@@ -364,10 +386,17 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
                 trailer = 1;
             }
 
+            if (hdr_namesize > SIZE_MAX - sizeof(hdr_newc)) {
+                cli_mark_scan_incomplete(ctx, "CPIO member name exceeds the coordinate range");
+                status = CL_EPARSE;
+                goto done;
+            }
             pad = (4 - (sizeof(hdr_newc) + hdr_namesize) % 4) % 4;
             if (namesize < hdr_namesize) {
-                if (pad) {
-                    hdr_namesize += pad;
+                if (cpio_align_size(hdr_namesize, 4, &hdr_namesize) < 0) {
+                    cli_mark_scan_incomplete(ctx, "CPIO member name exceeds the coordinate range");
+                    status = CL_EPARSE;
+                    goto done;
                 }
                 pos += hdr_namesize - namesize;
             } else if (pad) {
@@ -377,12 +406,13 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
 
         strncpy(buff, hdr_newc.filesize, 8);
         buff[8] = 0;
-        if (sscanf(buff, "%x", &filesize) != 1) {
+        if (sscanf(buff, "%x", &parsed_filesize) != 1) {
             cli_dbgmsg("cli_scancpio_newc: Can't convert file size\n");
             status = CL_EFORMAT;
             goto done;
         }
-        cli_dbgmsg("CPIO: Filesize: %u\n", filesize);
+        filesize = (size_t)parsed_filesize;
+        cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
         if (!filesize) {
             if (trailer)
                 complete = 1;
@@ -399,8 +429,10 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
             goto done;
         }
 
-        if ((pad = filesize % 4)) {
-            filesize += (4 - pad);
+        if (cpio_align_size(filesize, 4, &filesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO member size exceeds the coordinate range");
+            status = CL_EPARSE;
+            goto done;
         }
 
         pos += filesize;

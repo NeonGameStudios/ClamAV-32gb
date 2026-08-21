@@ -3153,3 +3153,13 @@ convert first and perform native-width allocation, read, and position updates,
 preserving fail-visible behavior at the largest representable positive length.
 Static guards and whitespace validation pass; compiled TNEF corpus, sanitizer,
 and production qualification remain open.
+
+## CPIO native-width member coordinates — 2026-08-21
+
+CPIO's on-disk namesize and filesize fields are 16- or 32-bit, but the parser
+used those narrow variables for archive-coordinate and alignment arithmetic.
+The parser now widens decoded values to `size_t` before advancing through
+members and uses checked alignment for old/newc member boundaries. A maximum
+format field can no longer wrap its padding into a smaller coordinate.
+Static guards and whitespace validation pass; compiled CPIO corpus, sanitizer,
+and production qualification remain open.

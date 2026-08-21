@@ -34,6 +34,8 @@
 - TNEF attribute-string lengths now convert to `size_t` before the terminating
   byte, allocation, and read-coordinate arithmetic; the parser cannot wrap a
   maximum positive signed length.
+- CPIO member sizes and name padding now use native-width checked alignment;
+  32-bit format fields cannot wrap archive coordinates at their padding edge.
 - The bundled CAB/CHM adapter now bounds decoder-requested allocations with the
   shared individual-allocation ceiling.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
