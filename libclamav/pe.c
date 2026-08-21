@@ -599,7 +599,9 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
         uint32_t id, offs;
         if (stats->errors >= SWIZZ_MAXERRORS) {
             cli_dbgmsg("cli_parseres_special: resources broken, ignoring\n");
-            return;
+            /* The entry window is locked because this heuristic walks it
+             * directly. Break so the common cleanup below releases it. */
+            break;
         }
         id = cli_readint32(entry) & 0x7fffffff;
         if (level == 0) {

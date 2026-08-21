@@ -2965,3 +2965,20 @@ verify that both paths leave resident pages evictable, and source guards plus
 whitespace validation pass. The C/Rust build, independently compiled ABI-v2
 fixture, interpreter/JIT, sanitizer, and production-signature qualification
 remain release gates; no compiled result is claimed here.
+
+## PE resource-heuristic fmap cleanup — 2026-08-21
+
+The Swizzor/resource heuristic previously returned immediately when its
+bounded resource-error budget was exhausted, bypassing the `fmap_unneed_ptr`
+cleanup for the locked entry window. That path now breaks to the common
+cleanup, preventing avoidable resident-page retention during PE inspection.
+Static guards and whitespace validation pass; compiled PE corpus, sanitizer,
+and large-file qualification remain release gates.
+
+## InstallShield file-window cleanup — 2026-08-21
+
+InstallShield header walking now releases the locked `IS_FILEITEM` window on
+its scan-limit, file-count, and CAB-extraction error exits, in addition to
+the normal member-walk cleanup. Static guards and whitespace validation pass;
+compiled InstallShield corpus, sanitizer, and large-file qualification remain
+release gates.

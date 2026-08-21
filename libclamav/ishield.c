@@ -882,6 +882,7 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                     fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
                                 if (dir_name != emptyname)
                                     fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
+                                fmap_unneed_ptr(map, file, sizeof(*file));
                                 return limitret;
                             }
 
@@ -906,6 +907,7 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                             fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
                                         if (dir_name != emptyname)
                                             fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
+                                        fmap_unneed_ptr(map, file, sizeof(*file));
                                         return CL_EMAXFILES;
                                     }
                                     scanned++;
@@ -925,6 +927,7 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
                                     fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
                                 if (dir_name != emptyname)
                                     fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
+                                fmap_unneed_ptr(map, file, sizeof(*file));
                                 return cabret;
                             }
                         } else {

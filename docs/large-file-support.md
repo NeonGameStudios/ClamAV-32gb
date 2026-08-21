@@ -4425,6 +4425,24 @@ verify that both paths leave their resident pages evictable. Independently
 compiled ABI-v2, interpreter/JIT, sanitizer, and production-signature
 qualification remain open.
 
+## PE resource-heuristic fmap cleanup — 2026-08-21
+
+The PE Swizzor/resource heuristic now exits its bounded error-budget path
+through the shared cleanup that releases the locked resource-entry fmap
+window. Previously that early return retained the page lock until the map was
+destroyed, which could keep resident input pages alive during later PE
+inspection. Source guards cover the cleanup invariant; compiled PE corpus,
+sanitizer, and large-file qualification remain open.
+
+## InstallShield file-window cleanup — 2026-08-21
+
+InstallShield header walking now releases each locked `IS_FILEITEM` fmap
+window before returning for a scan-limit, file-count, or CAB extraction
+failure. Those exits previously released borrowed names but could retain the
+file-record lock until map destruction. The cleanup is source-guarded;
+compiled InstallShield corpus, sanitizer, and large-file qualification remain
+open.
+
 ## HFS+ file-tree header fmap failure — 2026-08-21
 
 HFS+ confirmed tree-header windows that fail in the fmap now mark the layer
