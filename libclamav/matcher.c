@@ -371,7 +371,11 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
             cli_ac_freedata(&matcher_data);
         }
 
-        if (ret == CL_EMEM || ret == CL_VIRUS) {
+        /* Preserve matcher failures instead of allowing the generic root to
+         * turn a target-root resource, callback, timeout, or read failure
+         * into a clean buffer result. File-type results are not errors and
+         * may continue to the generic root. */
+        if (ret != CL_SUCCESS && ret < CL_TYPENO) {
             return ret;
         }
 
@@ -1546,7 +1550,9 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                               &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
                               bm_offsets_table_initialized ? &bm_offsets_table : NULL,
                               &target_pcre_offsets_table, ctx);
-            if (ret == CL_VIRUS || ret == CL_EMEM || ret == CL_EREAD) {
+            /* Matcher failures must remain visible; only file-type results
+             * are allowed to continue to the next matcher root. */
+            if (ret != CL_SUCCESS && ret < CL_TYPENO) {
                 goto done;
             }
         }
@@ -1558,7 +1564,9 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                               &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
                               NULL,
                               &generic_pcre_offsets_table, ctx);
-            if (ret == CL_VIRUS || ret == CL_EMEM || ret == CL_EREAD) {
+            /* Do not let a resource, callback, timeout, or parser failure
+             * disappear after the generic matcher has returned it. */
+            if (ret != CL_SUCCESS && ret < CL_TYPENO) {
                 goto done;
             } else if ((acmode & AC_SCAN_FT) && ((cli_file_t)ret >= CL_TYPENO)) {
                 if (ret > type)

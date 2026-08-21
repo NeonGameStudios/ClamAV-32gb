@@ -163,6 +163,10 @@
 - Legacy clamd FILDES and INSTREAM command workers now preserve parser, limit,
   read, and format failures instead of normalizing them to successful command
   completion; add daemon IDSESSION and malformed/limit integration coverage.
+- Buffer and fmap matcher callers now preserve every matcher error below
+  `CL_TYPENO` instead of allowing a later matcher pass to hide resource,
+  timeout, callback, or read failures; add matcher fault-injection and
+  production signature-corpus coverage.
 
 ## Large-file validation and expansion progression
 

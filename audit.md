@@ -2466,3 +2466,14 @@ error while preserving the existing virus, OOM, timeout, and clean behavior.
 Source guards and the capability manifest record the correction; compiled
 Linux/Sonic1, malformed/limit integration, IDSESSION, sanitizer, and broader
 front-end parity qualification remain open.
+
+## Matcher result propagation — 2026-08-21
+
+The buffer and fmap matcher callers previously stopped only for virus, memory,
+and one read result after each target or generic matcher pass. Resource,
+timeout, callback, and other matcher failures could therefore be replaced by
+the next matcher pass or by a clean result. Both callers now preserve every
+non-success error below `CL_TYPENO`, while allowing file-type result codes to
+continue through the intended type-detection path. Source guards record the
+invariant; compiled Linux/Sonic1, resource/callback fault injection, sanitizer,
+and production signature-corpus qualification remain open.

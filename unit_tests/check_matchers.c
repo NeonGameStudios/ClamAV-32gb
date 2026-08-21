@@ -1298,6 +1298,38 @@ START_TEST(test_pcre_full_map_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pcre_matcher_limit_is_preserved_by_fmap)
+{
+    static char pcre_signature[] = PCRE_BYPASS "/00/";
+    static const uint8_t input[2] = {0};
+    struct cli_matcher *root     = ctx.engine->root[0];
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_ptr_nonnull(root);
+    ck_assert_int_eq(readdb_parse_ldb_subsignature(root, "PcreFmapLimit",
+                                                   pcre_signature, "*", NULL, 0, 0, 0, NULL),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_pcre_build(root, CLI_DEFAULT_PCRE_MATCH_LIMIT,
+                                    CLI_DEFAULT_PCRE_RECMATCH_LIMIT, NULL),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(ctx.engine, CL_ENGINE_PCRE_MAX_FILESIZE, 1), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                                      = map;
+    ctx.recursion_stack[ctx.recursion_level].fmap = map;
+
+    ret = cli_scan_fmap(&ctx, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert(ctx.scan_incomplete);
+
+    ctx.fmap                                      = &thefmap;
+    ctx.recursion_stack[ctx.recursion_level].fmap = &thefmap;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pcre_subject_limit_is_fail_visible)
 {
     struct cl_engine *engine;
@@ -1408,6 +1440,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);
 #endif
     tcase_add_test(tc_matchers, test_pcre_full_map_read_failure_is_fail_visible);
+    tcase_add_test(tc_matchers, test_pcre_matcher_limit_is_preserved_by_fmap);
     tcase_add_test(tc_matchers, test_pcre_subject_limit_is_fail_visible);
     return s;
 }
