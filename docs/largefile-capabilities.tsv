@@ -15,7 +15,7 @@ clamd	FILDESREPORT	bounded	clamd/session.c	direct descriptor-passing protocol pr
 clamd	INSTREAMREPORT	bounded	clamd/session.c	direct staged-stream protocol probe validates the command against the qualification oracle; broader production qualification remains required
 clamdscan	fdpass	bounded	clamdscan/proto.c	known-size MaxFileSize preflight; service qualification pending
 clamdscan	stream	bounded	clamdscan/proto.c	legacy INSTREAM path; qualification pending
-clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback at MaxThreads=1; MULTISCANREPORT aggregates parallel child reports
+clamd	MULTISCAN	bounded	clamd/session.c	sequential fallback at MaxThreads=1; parallel child reports aggregate; per-file worker OOM and unexpected non-success results remain fail-visible
 milter	message	bounded	clamav-milter/clamfi.c	streaming temp quota; one-at-a-time qualification pending
 on-access	permission	bounded	clamonacc/scan/thread.c	prevention mode denies incomplete outcomes and file preflight errors remain visible to extra-scan callers
 unsupported	native-windows-memory-scan	unsupported	CMakeLists.txt	native Windows and its memory-scan ingress are outside the certified Linux x86-64 first-release target; memory-scan errors remain fail-visible when built

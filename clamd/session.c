@@ -420,10 +420,18 @@ int command(client_conn_t *conn, int *virus)
             conn->filename         = NULL;
             conn->display_filename = NULL;
             *virus                 = scandata.infected;
+            if (ret == CL_EMEM && optget(opts, "ExitOnOOM")->enabled)
+                return -1;
             if (ret == CL_BREAK) {
                 thrmgr_group_terminate(conn->group);
                 return 1;
             }
+            /* scan_callback records ordinary parser/limit/read failures in
+             * scandata.errors. Preserve an unexpected non-success result as
+             * an error too, rather than allowing a worker to report success
+             * with no infected file. */
+            if (ret != CL_SUCCESS && ret != CL_VIRUS && scandata.errors == 0)
+                scandata.errors++;
             return scandata.errors > 0 ? scandata.errors : 0;
         }
         case COMMAND_FILDES:

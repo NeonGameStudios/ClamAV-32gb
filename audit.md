@@ -2589,3 +2589,15 @@ bypass now uses fixed historical 100 MiB/400 MiB thresholds, and a focused
 regression proves that a 32/64 GiB configuration is admitted to the checks and
 cannot succeed with an invalid temporary directory. Full supported-Linux
 startup, workload, sanitizer, and resource qualification remain open.
+
+## MULTISCAN worker OOM/result propagation — 2026-08-21
+
+The per-file `COMMAND_MULTISCANFILE` worker path previously ignored the scan
+callback's direct result and returned only its accumulated error count. That
+could bypass `ExitOnOOM`, and an unexpected non-success callback result could
+be reduced to a successful worker completion when no counter had been updated.
+The worker now preserves fatal OOM termination and records any remaining
+unexpected non-success as an error while retaining the existing infected-file
+and structured-report aggregation behavior. Source guards and the capability
+manifest record the invariant; compiled Linux/Sonic1, allocation fault
+injection, sanitizer, and full parallel service qualification remain open.

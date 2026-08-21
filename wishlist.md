@@ -116,6 +116,8 @@
 - clamd large-file startup admission now compares against fixed historical
   100 MiB/400 MiB bypass thresholds, so enabling the 32/64 GiB defaults cannot
   skip the Linux x86-64 memory and temporary-space checks.
+- Parallel MULTISCAN file workers now preserve unexpected scan failures and
+  honor `ExitOnOOM` instead of reducing a fatal worker result to success.
 - ARJ header admission now validates the starting offset before subtraction-form
   range checks; parser-family and production-corpus qualification remain open.
 - HTML normalized no-comment, no-tags, and JavaScript output open failures now
