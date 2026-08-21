@@ -6254,6 +6254,10 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         cli_mark_scan_incomplete(ctx, "Python compiled bytecode parser is unsupported");
         status = CL_EPARSE;
     }
+    if (type == CL_TYPE_AI_MODEL) {
+        cli_mark_scan_incomplete(ctx, "AI model parser is unsupported");
+        status = CL_EPARSE;
+    }
 
     /* set current layer to the type we found */
     ret = cli_recursion_stack_change_type(ctx, type, true /* ? */);

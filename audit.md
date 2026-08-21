@@ -99,6 +99,17 @@ Python-bytecode scan. A focused public-map regression, source guard, and
 capability-manifest entry cover the invariant; a future bounded parser and
 production Python corpus remain outside the current release qualification.
 
+## AI-model parser unsupported boundary — 2026-08-21
+
+GGUF, ONNX, and TensorFlow Lite signatures are recognized by the type
+detector, but this fork does not have a bounded parser for their model
+formats. The AI-model dispatch path now records that deliberate unsupported
+boundary as incomplete and non-cacheable before the mandatory outer raw
+matcher, preventing raw-only clean results from being presented as complete
+model scans. A focused public-map regression, source guard, and capability
+manifest entry cover the invariant; model-parser implementation and
+production model corpus qualification remain open.
+
 ## OLE2 summary metadata result propagation — 2026-08-21
 
 When metadata collection was enabled, `cli_ole2_scan_tempdir()` discarded the

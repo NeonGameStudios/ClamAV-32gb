@@ -331,6 +331,10 @@
 - Python bytecode magic is now an explicit unsupported parser boundary:
   raw matching continues, but non-detection results are incomplete and
   non-cacheable until a bounded version-aware parser is implemented.
+- GGUF, ONNX, and TensorFlow Lite model recognition is now an explicit
+  unsupported parser boundary with raw matching preserved; add a bounded
+  model parser and production corpus qualification before enabling deep
+  model inspection.
 
 ## Large-file validation and expansion progression
 
