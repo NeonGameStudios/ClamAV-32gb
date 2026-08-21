@@ -323,6 +323,13 @@ check_oracle_output()
     oracle_check_report=${4:-no}
     oracle_check_offset=${5:-no}
 
+    case "$expected_exit" in
+        0|1|2) ;;
+        *)
+            echo "$oracle_label has an unsupported expected exit status: $expected_exit" >&2
+            return 1
+            ;;
+    esac
     if [ "$oracle_status" -ne "$expected_exit" ]; then
         echo "$oracle_label returned $oracle_status; expected $expected_exit" >&2
         return 1
@@ -360,11 +367,14 @@ check_oracle_output()
             echo "$oracle_label did not produce a structured report" >&2
             return 1
         fi
-        if ! python3 - "$oracle_report" "$expected_completion" "$expected_signature" "$expected_type" "$expected_size" <<'PY'
+        if ! python3 - "$oracle_report" "$expected_completion" "$expected_signature" "$expected_type" "$expected_size" "$expected_exit" <<'PY'
 import json
 import sys
 
-report_path, expected_completion, expected_signature, expected_type, expected_size = sys.argv[1:]
+report_path, expected_completion, expected_signature, expected_type, expected_size, expected_exit = sys.argv[1:]
+expected_exit = int(expected_exit)
+if expected_exit not in (0, 1, 2):
+    raise SystemExit("structured report oracle has an unsupported expected exit status")
 with open(report_path, "r", encoding="utf-8") as stream:
     rows = [json.loads(line) for line in stream if line.strip()]
 if len(rows) != 1:
@@ -387,10 +397,18 @@ for field in (
         raise SystemExit(f"structured report field {field} is not a non-negative integer")
 if report["root_size"] != int(expected_size):
     raise SystemExit("structured report root size does not match oracle")
-if expected_signature != "-" and expected_signature not in (report.get("last_alert") or ""):
-    raise SystemExit("structured report alert does not match oracle")
-if expected_signature == "-" and report.get("verdict") not in (0, 1):
-    raise SystemExit("structured report contains an unexpected verdict")
+last_alert = report.get("last_alert")
+if expected_signature == "-":
+    if last_alert not in (None, ""):
+        raise SystemExit("structured report contains an unexpected alert")
+    if report.get("verdict") not in (0, 1):
+        raise SystemExit("structured report contains an unexpected verdict")
+elif last_alert not in (expected_signature, expected_signature + ".UNOFFICIAL"):
+    raise SystemExit("structured report alert does not exactly match the oracle")
+if expected_exit in (0, 1) and report["status"] != 0:
+    raise SystemExit("structured report status is non-success for expected exit")
+if expected_exit == 2 and report["status"] == 0:
+    raise SystemExit("structured report status is clean for expected error exit")
 if expected_completion == "COMPLETE":
     if report["status"] != 0:
         raise SystemExit("complete structured report has a non-success status")
@@ -415,6 +433,7 @@ case "$latency_budget_s" in
     ''|*[!0-9]*) echo 'CLAMAV_SERVICE_MAX_LATENCY_S must be an integer number of seconds' >&2; exit 2 ;;
 esac
 service_timeout_s=${CLAMAV_SERVICE_TIMEOUT_S:-14400}
+max_scan_time_ms=${CLAMAV_MAX_SCAN_TIME_MS:-14400000}
 temporary_budget_bytes=68719476736
 mkdir -p "$out" "$out/logs" "$out/tmp"
 config=$out/clamd.conf
@@ -435,6 +454,22 @@ case "$service_timeout_s" in
 esac
 if [ "$service_timeout_s" -lt 14400 ]; then
     echo 'CLAMAV_SERVICE_TIMEOUT_S must cover the four-hour MaxScanTime deadline' >&2
+    exit 2
+fi
+case "$max_scan_time_ms" in
+    ''|*[!0-9]*|0*)
+        echo 'CLAMAV_MAX_SCAN_TIME_MS must be a canonical positive integer' >&2
+        exit 2
+        ;;
+esac
+if [ "${#max_scan_time_ms}" -gt 10 ] ||
+    { [ "${#max_scan_time_ms}" -eq 10 ] && [ "$max_scan_time_ms" -gt 4294967295 ]; }; then
+    echo 'CLAMAV_MAX_SCAN_TIME_MS must be a canonical integer from 1 through 4294967295' >&2
+    exit 2
+fi
+if ! awk -v timeout_s="$service_timeout_s" -v scan_time_ms="$max_scan_time_ms" \
+    'BEGIN { exit !((timeout_s * 1000) >= scan_time_ms) }'; then
+    echo 'CLAMAV_SERVICE_TIMEOUT_S is shorter than CLAMAV_MAX_SCAN_TIME_MS' >&2
     exit 2
 fi
 
@@ -504,7 +539,7 @@ write_config()
         printf 'MaxContiguousSize 32G\n'
         printf 'PCREMaxFileSize 32G\n'
         printf 'StreamMaxLength 32G\n'
-        printf 'MaxScanTime 14400000\n'
+        printf 'MaxScanTime %s\n' "$max_scan_time_ms"
         printf 'MaxRecursion 17\n'
         printf 'MaxFiles 10000\n'
         # Keep worker contention visible in the daemon log. The serial queue
@@ -658,8 +693,13 @@ run_direct_production()
     oracle_load production "$production_file"
     direct_status=0
     report="$out/reports/production-clamscan.jsonl"
-    timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-        "$build_dir/clamscan/clamscan" --database="$production_db" --no-summary --debug --report-json="$report" "$production_file" \
+    "/usr/bin/time" -f '%e' -o "$out/logs/production-clamscan.elapsed" \
+        timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+        "$build_dir/clamscan/clamscan" --database="$production_db" \
+        --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
+        --max-temporary-size=64G --max-contiguous-size=32G \
+        --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
+        --no-summary --debug --report-json="$report" "$production_file" \
         > "$out/logs/production-clamscan.log" 2>&1 || direct_status=$?
     oracle_status=$direct_status
     if ! check_oracle_output production-clamscan "$out/logs/production-clamscan.log" "$report" yes yes; then
@@ -750,9 +790,11 @@ run_direct_report()
 {
     report_label=$1
     report_mode=$2
-    python3 "$root/tools/largefile_clamd_report_protocol.py" \
+    "/usr/bin/time" -f '%e' -o "$out/logs/production_cvd_${report_label}.elapsed" \
+        timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+        python3 "$root/tools/largefile_clamd_report_protocol.py" \
         "$socket" "$production_file" "$oracle_manifest" production "$report_mode" \
-        "$out/reports/production_cvd_${report_label}.jsonl"
+        "$out/reports/production_cvd_${report_label}.jsonl" "$service_timeout_s"
     printf 'production_cvd_clamdscan_%s=pass\n' "$report_label" >> "$out/service-summary.txt"
 }
 
@@ -788,8 +830,13 @@ run_service_scan expansion parser_expansion "$expansion_file"
 edge_status=0
 oracle_load edge "$edge_file"
 edge_report="$out/reports/edge-clamscan.jsonl"
-timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
-    "$build_dir/clamscan/clamscan" --database="$edge_db" --no-summary --debug --report-json="$edge_report" "$edge_file" \
+"/usr/bin/time" -f '%e' -o "$out/logs/edge-clamscan.elapsed" \
+    timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+    "$build_dir/clamscan/clamscan" --database="$edge_db" \
+    --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
+    --max-temporary-size=64G --max-contiguous-size=32G \
+    --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
+    --no-summary --debug --report-json="$edge_report" "$edge_file" \
     > "$out/logs/edge-clamscan.log" 2>&1 || edge_status=$?
 oracle_status=$edge_status
 if ! check_oracle_output edge-clamscan "$out/logs/edge-clamscan.log" "$edge_report" yes yes; then
@@ -976,6 +1023,10 @@ printf 'milter_exact_edge_peak_rss_kb=%s\n' "$milter_rss" >> "$out/service-summa
 printf 'service_temp_peak_bytes=%s\n' "$service_peak_temp_bytes" >> "$out/service-summary.txt"
 printf 'service_temp_budget_bytes=%s\n' "$temporary_budget_bytes" >> "$out/service-summary.txt"
 printf 'service_temp_budget=pass\n' >> "$out/service-summary.txt"
+printf 'max_scan_time_ms=%s\n' "$max_scan_time_ms" >> "$service_build_identity"
+printf 'service_timeout_s=%s\n' "$service_timeout_s" >> "$service_build_identity"
+printf 'max_scan_time_ms=%s\n' "$max_scan_time_ms" >> "$out/service-summary.txt"
+printf 'service_timeout_s=%s\n' "$service_timeout_s" >> "$out/service-summary.txt"
 record_service_binary_hashes "$service_binary_hashes_after"
 if ! cmp -s "$service_binary_hashes_before" "$service_binary_hashes_after"; then
     echo 'service executable changed during qualification' >&2

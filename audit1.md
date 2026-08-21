@@ -2927,3 +2927,17 @@ fallback and classify a valid empty input as `RESOURCE_FAILURE`, while
 `clamscan` reported it as a completed clean input. The callback now emits an
 explicit `COMPLETE` report with a zero-byte logical object and no skipped
 operations. Compiled daemon and Sonic1 qualification remain open.
+
+## Service qualification deadline and oracle tightening — 2026-08-21
+
+The service qualification harness now applies the configured per-file
+`CLAMAV_MAX_SCAN_TIME_MS` to clamd, direct clamscan, and the direct structured
+report probes. It rejects an outer service timeout shorter than that deadline,
+wraps every direct probe in the same timeout, records elapsed evidence for
+those probes, and passes the configured deadline to the protocol helper instead
+of using a fixed 15-minute socket timeout. Structured reports now require
+status/error consistency with the oracle exit (`0`/`1` require `status=0`,
+`2` requires a nonzero status) and exact alert identity, allowing only the
+documented `.UNOFFICIAL` suffix for unsigned local signatures. Static guards,
+shell syntax, and Python parsing pass; compiled Linux/Sonic1 production
+qualification remains open.

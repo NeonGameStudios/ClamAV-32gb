@@ -42,6 +42,7 @@ fi
 
 summary=$out/service-summary.txt
 identity=$out/provenance/service-build-identity.txt
+config=$out/clamd.conf
 source_manifest=$out/provenance/source-manifest.txt
 cmake_cache=$out/provenance/CMakeCache.txt
 compile_commands=$out/provenance/compile_commands.json
@@ -50,7 +51,7 @@ binary_after=$out/provenance/service-binary-hashes-after.txt
 dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 checksum_manifest=$out/SHA256SUMS
 
-for required in "$summary" "$identity" "$source_manifest" "$cmake_cache" \
+for required in "$summary" "$identity" "$config" "$source_manifest" "$cmake_cache" \
     "$compile_commands" "$binary_before" "$binary_after" \
     "$dependency_hashes" "$checksum_manifest"; do
     [ -s "$required" ] || fail "missing service evidence: $required"
@@ -106,6 +107,30 @@ binary_reference=$(identity_field service_binary_hashes)
 binary_hashes_sha256=$(identity_field service_binary_hashes_sha256)
 dependency_reference=$(identity_field service_runtime_dependency_hashes)
 dependency_hashes_sha256=$(identity_field service_runtime_dependency_hashes_sha256)
+max_scan_time_ms=$(identity_field max_scan_time_ms)
+service_timeout_s=$(identity_field service_timeout_s)
+
+case "$max_scan_time_ms" in
+    ''|*[!0-9]*|0*) fail 'service MaxScanTime identity is not a positive integer' ;;
+esac
+if [ "${#max_scan_time_ms}" -gt 10 ] ||
+    { [ "${#max_scan_time_ms}" -eq 10 ] && [ "$max_scan_time_ms" -gt 4294967295 ]; }; then
+    fail 'service MaxScanTime identity exceeds the supported uint32 range'
+fi
+case "$service_timeout_s" in
+    ''|*[!0-9]*|0*) fail 'service timeout identity is not a positive integer' ;;
+esac
+if [ "$service_timeout_s" -lt 14400 ]; then
+    fail 'service timeout identity does not cover the four-hour deadline'
+fi
+if ! awk -v timeout_s="$service_timeout_s" -v scan_time_ms="$max_scan_time_ms" \
+    'BEGIN { exit !((timeout_s * 1000) >= scan_time_ms) }'; then
+    fail 'service timeout identity is shorter than the MaxScanTime identity'
+fi
+configured_max_scan_time=$(awk '$1 == "MaxScanTime" { count++; value = $2 } END { if (count != 1) exit 1; print value }' "$config") ||
+    fail 'service configuration has no unique MaxScanTime entry'
+[ "$configured_max_scan_time" = "$max_scan_time_ms" ] ||
+    fail 'service configuration MaxScanTime does not match service identity'
 
 is_hash "$source_commit" || fail 'service source commit is not a 40- or 64-character hash'
 is_hash "$source_tree" || fail 'service source tree is not a 40- or 64-character hash'

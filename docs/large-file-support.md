@@ -4624,3 +4624,16 @@ the structured callback, which could produce a fallback `RESOURCE_FAILURE`
 report even though the input was valid and `clamscan` treated it as a clean
 completed scan. The report records one zero-byte logical object and no
 skipped operation. Compiled daemon and Sonic1 qualification remain open.
+
+## Service qualification deadline and oracle tightening — 2026-08-21
+
+The service gate now applies `CLAMAV_MAX_SCAN_TIME_MS` consistently to clamd,
+direct `clamscan`, and all direct structured-report probes. Its outer service
+timeout must cover that deadline; each direct probe is timeout-wrapped,
+elapsed-time evidence is recorded, and the protocol helper receives the same
+deadline rather than relying on a fixed 15-minute socket timeout. Structured
+reports must also agree with the oracle's process result (`0`/`1` require a
+zero report status, while `2` requires a nonzero status) and must carry the
+exact expected alert, with only the `.UNOFFICIAL` suffix permitted for an
+unsigned local signature. This closes a remaining acceptance-harness gap;
+compiled Linux/Sonic1 production qualification remains open.

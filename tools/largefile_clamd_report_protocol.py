@@ -110,6 +110,8 @@ def validate_report(report, oracle, mode, expected_size):
     expected_completion = oracle[4]
     expected_signature = oracle[5]
     expected_type = oracle[7]
+    if expected_exit not in (0, 1, 2):
+        fail(f"{mode} oracle has an unsupported expected exit status")
     if report.get("version") != 1:
         fail(f"{mode} report schema version is not 1")
     if report.get("completion") != expected_completion:
@@ -122,11 +124,18 @@ def validate_report(report, oracle, mode, expected_size):
             fail(f"{mode} report field {field} is not a non-negative integer")
     if report["root_size"] != expected_size:
         fail(f"{mode} report root size does not match oracle")
+    last_alert = report.get("last_alert")
     if expected_signature == "-":
+        if last_alert not in (None, ""):
+            fail(f"{mode} clean oracle has an unexpected alert")
         if report.get("verdict") not in (0, 1):
             fail(f"{mode} clean oracle has an unexpected verdict")
-    elif expected_signature not in (report.get("last_alert") or ""):
-        fail(f"{mode} report alert does not match oracle")
+    elif last_alert not in (expected_signature, f"{expected_signature}.UNOFFICIAL"):
+        fail(f"{mode} report alert does not exactly match the oracle")
+    if expected_exit in (0, 1) and report["status"] != 0:
+        fail(f"{mode} report status is non-success for expected exit {expected_exit}")
+    if expected_exit == 2 and report["status"] == 0:
+        fail(f"{mode} report status is clean for expected error exit 2")
     if expected_completion == "COMPLETE":
         if report["status"] != 0 or report.get("verdict") not in (0, 1):
             fail(f"{mode} complete report is not clean and successful")
@@ -177,19 +186,22 @@ def send_instream_request(sock, path):
 
 
 def main(argv):
-    if len(argv) != 6:
+    if len(argv) not in (6, 7):
         print(
-            "usage: largefile_clamd_report_protocol.py SOCKET FILE ORACLE ROLE MODE OUTPUT_JSON",
+            "usage: largefile_clamd_report_protocol.py SOCKET FILE ORACLE ROLE MODE OUTPUT_JSON [TIMEOUT_SECONDS]",
             file=sys.stderr,
         )
         return 2
-    socket_path, scan_file, oracle_path, role, mode, output_path = argv
+    socket_path, scan_file, oracle_path, role, mode, output_path = argv[:6]
+    timeout_seconds = int(argv[6]) if len(argv) == 7 else 900
+    if timeout_seconds <= 0:
+        fail("protocol timeout must be positive")
     oracle = load_oracle(oracle_path, role)
     validate_input(scan_file, oracle)
     expected_size = int(oracle[1])
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
-        sock.settimeout(900)
+        sock.settimeout(timeout_seconds)
         sock.connect(socket_path)
         if mode in {"scan", "contscan", "multiscan", "allmatchscan"}:
             send_path_request(sock, mode, scan_file)
