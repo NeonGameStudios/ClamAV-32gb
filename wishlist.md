@@ -99,6 +99,10 @@
 - ISO9660 block and directory coordinates now use checked 64-bit arithmetic
   before fmap access, with overflow treated as incomplete; full ISO corpus and
   supported-build qualification remains open.
+- ISO9660 directory blocks are now copied into a bounded 2 KiB buffer and
+  released before recursive directory or file scans, preventing a directory
+  fmap window from spanning nested work; full ISO corpus qualification remains
+  open.
 - UDF file entries now support bounded lists of recorded allocation extents,
   aggregating their logical and temporary budgets before one child scan;
   fragmented UDF corpus qualification remains open.

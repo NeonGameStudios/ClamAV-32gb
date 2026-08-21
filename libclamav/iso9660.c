@@ -201,7 +201,8 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
     }
 
     for (; len && ret == CL_SUCCESS; block++, len -= MIN(len, iso->blocksz)) {
-        const uint8_t *dir, *dir_orig;
+        const uint8_t *dir;
+        uint8_t dir_block[2048];
         unsigned int dirsz;
 
         if (iso->dir_blocks.count > 1024) {
@@ -220,7 +221,7 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
 
         {
             cl_error_t read_status;
-            dir = dir_orig = needblock(iso, block, 0, &read_status);
+            dir = needblock(iso, block, 0, &read_status);
             if (!dir) {
                 if (read_status == CL_EREAD) {
                     cli_mark_scan_incomplete(ctx, "ISO directory block could not be read completely");
@@ -228,6 +229,12 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
                 }
                 return iso_incomplete(ctx, "ISO directory block was outside the available map");
             }
+            /* A directory entry may recurse into another directory or scan a
+             * file extent. Copy this bounded block before those nested reads so
+             * the directory fmap window never spans child work. */
+            memcpy(dir_block, dir, iso->blocksz);
+            fmap_unneed_ptr(ctx->fmap, (void *)dir, iso->blocksz);
+            dir = dir_block;
         }
 
         for (dirsz = MIN(iso->blocksz, len);;) {
@@ -308,7 +315,6 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
             dir += entrysz;
         }
 
-        fmap_unneed_ptr(ctx->fmap, dir_orig, iso->blocksz);
     }
 
     return ret;

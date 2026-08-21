@@ -3079,3 +3079,13 @@ parser snapshots its fixed metadata before invoking local-member parsing, and
 the catalogue ZipCrypto path follows the same rule. Static guards and
 whitespace validation pass; compiled ZIP corpus, sanitizer, and production
 qualification remain open.
+
+## ISO directory-window lifetime — 2026-08-21
+
+ISO9660 directory traversal previously held each mapped directory block while
+recursing into subdirectories or materializing and scanning file extents. The
+parser now copies the bounded block (at most 2 KiB) to a local buffer and
+releases the fmap view before processing entries, preserving the existing
+coordinate and parser-status checks without retaining archive pages across
+nested work. Static guards and whitespace validation pass; compiled ISO corpus,
+sanitizer, and production qualification remain open.
