@@ -9501,6 +9501,32 @@ START_TEST(test_mbox_initial_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbox_line_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "P I legacy message\n\nbody";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MIME message line input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_truncated_uuencode_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -13121,6 +13147,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_mbox_line_read_failure_is_fail_visible);
 #if HAVE_UNRAR
     tcase_add_test(tc_cl, test_rar_truncated_header_is_fail_visible);
 #ifndef _WIN32

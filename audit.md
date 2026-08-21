@@ -77,6 +77,11 @@ incomplete, and is not cacheable as clean. A focused regression and source
 guard cover the boundary; supported-Linux compilation and runtime
 qualification remain open.
 
+The shared mbox line reader now receives the scan context and marks failed
+fmap windows or invalid line ranges incomplete instead of treating them as
+ordinary end-of-message. A focused inner-reader fault injection covers this
+path; supported-Linux compilation and runtime qualification remain open.
+
 The opt-in clamd report commands now serialize the public `_ex2` report,
 including aggregated logical/parser/detector counters and request-level peak
 resources for multi-file walks, rather than reducing those results to a status
