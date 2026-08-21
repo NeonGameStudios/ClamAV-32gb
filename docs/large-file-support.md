@@ -4264,3 +4264,11 @@ read. The operational failure marks the layer incomplete and returns
 `CL_EPARSE` instead of being normalized to clean. The focused fault-injection
 regression and source guard are registered; compiled TIFF, sanitizer, and
 broader media corpus qualification remain release gates.
+
+## GIF header read failures — 2026-08-20
+
+The GIF parser now keeps genuinely short non-candidates clean but fails closed
+when its confirmed signature or version range cannot be read. These paths mark
+the layer incomplete and return `CL_EPARSE`; focused fault-injection coverage
+and source guards are registered. Compiled GIF, sanitizer, and broader media
+corpus qualification remain release gates.

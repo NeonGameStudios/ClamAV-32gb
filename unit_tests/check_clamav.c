@@ -9467,6 +9467,16 @@ static const void *tnef_attribute_read_failure(fmap_t *map, size_t at, size_t le
     return (const uint8_t *)map->data + at;
 }
 
+static const void *gif_version_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == strlen("GIF"))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_embedded_header_read_failures_are_fail_visible)
 {
     static const uint8_t pdf[] = "%PDF-1.7";
@@ -12862,6 +12872,35 @@ START_TEST(test_gif_truncated_blocks_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_header_read_failures_are_fail_visible)
+{
+    static const uint8_t magic_input[]   = {'G', 'I', 'F'};
+    static const uint8_t version_input[] = {'G', 'I', 'F', '8', '9', 'a'};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(magic_input, sizeof(magic_input));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(version_input, sizeof(version_input));
+    ck_assert_ptr_nonnull(map);
+    map->need = gif_version_read_failure;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_png_truncated_chunks_are_fail_visible)
 {
     static const uint8_t missing_iend[] = {
@@ -13567,6 +13606,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_hfsplus_catalog_size_accounting_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
+    tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
     tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);

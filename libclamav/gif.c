@@ -197,12 +197,16 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
     }
     map = ctx->fmap;
 
-    /*
-     * Skip the "GIF" Signature and "87a" or "89a" Version.
-     */
-    if (NULL == (signature = fmap_need_off(map, offset, strlen("GIF")))) {
-        cli_dbgmsg("GIF: Can't read GIF magic bytes, not a GIF\n");
+    /* A map shorter than the signature cannot be a confirmed GIF. Once the
+     * signature-sized range exists, a failed fmap read is an operational
+     * failure and must not become a clean non-GIF result. */
+    if (map->len < strlen("GIF"))
         goto done;
+    if (NULL == (signature = fmap_need_off(map, offset, strlen("GIF")))) {
+        cli_dbgmsg("GIF: Can't read GIF magic bytes completely\n");
+        status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.CantReadMagic");
+        parse_error = true;
+        goto scan_overlay;
     }
     offset += strlen("GIF");
 
@@ -211,9 +215,12 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
         goto done;
     }
 
-    if (3 != fmap_readn(map, &version, offset, strlen("89a"))) {
-        cli_dbgmsg("GIF: Can't read GIF format version, not a GIF\n");
-        goto done;
+    if (map->len - offset < strlen("89a") ||
+        3 != fmap_readn(map, &version, offset, strlen("89a"))) {
+        cli_dbgmsg("GIF: Can't read GIF format version completely\n");
+        status      = gif_parse_error(ctx, "Heuristics.Broken.Media.GIF.TruncatedVersion");
+        parse_error = true;
+        goto scan_overlay;
     }
     offset += strlen("89a");
 

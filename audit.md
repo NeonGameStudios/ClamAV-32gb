@@ -1867,6 +1867,11 @@ be a confirmed TIFF from an in-range fmap read failure. The former remains a
 normal non-TIFF result; the latter marks the layer incomplete and returns
 `CL_EPARSE`. A focused fault-injection regression is registered.
 
+GIF now applies the same distinction to its three-byte signature and version
+reads: short non-candidates remain clean, while an in-range mapping failure or
+a confirmed `GIF` prefix without a complete version marks the layer incomplete
+and returns a non-clean parse result.
+
 ## PE import-thunk completion — 2026-08-20
 
 PE import-hash inspection now requires each thunk table to reach its explicit
