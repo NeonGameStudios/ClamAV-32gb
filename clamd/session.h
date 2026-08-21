@@ -150,6 +150,7 @@ typedef struct client_conn_tag {
     uint64_t stream_bytes;
     int quota_source;
     int structured_report;
+    int stream_admission_reserved;
     struct client_conn_tag *structured_report_owner;
     jobgroup_t *structured_report_group;
     cl_error_t structured_status;

@@ -24,6 +24,7 @@ printf 'synthetic source manifest\n' > "$out/provenance/source-manifest.txt"
 source_manifest_sha256=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
 source_commit=$source_manifest_sha256
 source_tree=$source_manifest_sha256
+printf 'MaxScanTime 14400000\n' > "$out/clamd.conf"
 printf 'CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' "$root" > "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_COMMIT:INTERNAL=%s\n' "$source_commit" >> "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_MANIFEST_SHA256:INTERNAL=%s\n' "$source_manifest_sha256" >> "$out/provenance/CMakeCache.txt"
@@ -57,6 +58,8 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
     printf 'service_binary_hashes_sha256=%s\n' "$binary_hashes_sha256"
     printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$dependency_hashes_sha256"
+    printf 'max_scan_time_ms=14400000\n'
+    printf 'service_timeout_s=14400\n'
 } > "$out/provenance/service-build-identity.txt"
 {
     printf 'service_resource_measurement_failed=0\n'

@@ -48,6 +48,8 @@ typedef enum {
     POOL_EXIT
 } pool_state_t;
 
+typedef void (*thrmgr_wakeup_fn)(void *data);
+
 struct task_desc {
     const char *filename;
     const char *command;
@@ -72,8 +74,13 @@ typedef struct threadpool_tag {
     int thr_alive;
     int thr_idle;
     int thr_multiscan;
+    int reserved;
+    int reserved_bulk;
     int idle_timeout;
     struct task_desc *tasks;
+
+    thrmgr_wakeup_fn wakeup;
+    void *wakeup_data;
 
     void (*handler)(void *);
 
@@ -102,6 +109,10 @@ void thrmgr_destroy(threadpool_t *threadpool);
 void thrmgr_wait_for_threads(threadpool_t *threadpool);
 int thrmgr_dispatch(threadpool_t *threadpool, void *user_data);
 int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk);
+int thrmgr_group_dispatch_reserved(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk);
+int thrmgr_try_reserve(threadpool_t *threadpool);
+void thrmgr_release_reservation(threadpool_t *threadpool);
+void thrmgr_set_wakeup(threadpool_t *threadpool, thrmgr_wakeup_fn wakeup, void *data);
 void thrmgr_group_waitforall(jobgroup_t *group, unsigned *ok, unsigned *error, unsigned *total);
 int thrmgr_group_finished(jobgroup_t *group, enum thrmgr_exit exitc);
 int thrmgr_group_need_terminate(jobgroup_t *group);

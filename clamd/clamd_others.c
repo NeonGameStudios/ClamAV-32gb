@@ -378,6 +378,7 @@ buf_init(struct fd_buf *buf, int listen_only, int timeout)
     buf->quota_source      = CLAMD_QUOTA_SOURCE_NONE;
     buf->structured_report = 0;
     buf->response_sent     = 0;
+    buf->stream_admission_reserved = 0;
     buf->dumpname          = NULL;
     buf->group             = NULL;
     buf->term              = '\0';
@@ -540,7 +541,7 @@ int fds_poll_recv(struct fd_data *data, int timeout, int check_signals,
     }
     for (i = 0; i < data->nfds; i++) {
         data->poll_data[i].fd      = data->buf[i].fd;
-        data->poll_data[i].events  = POLLIN;
+        data->poll_data[i].events  = (data->buf[i].mode == MODE_WAITQUEUE) ? 0 : POLLIN;
         data->poll_data[i].revents = 0;
     }
     do {
@@ -626,7 +627,7 @@ int fds_poll_recv(struct fd_data *data, int timeout, int check_signals,
             FD_ZERO(&rfds);
             for (i = 0; i < data->nfds; i++) {
                 int fd = data->buf[i].fd;
-                if (fd >= 0)
+                if (fd >= 0 && data->buf[i].mode != MODE_WAITQUEUE)
                     FD_SET(fd, &rfds);
             }
             tv.tv_sec  = timeout;

@@ -442,6 +442,7 @@ jobs:
           grep -Fx 'production_cvd_clamdscan=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'serial_worker_count=1' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'serial_queue_count=2' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
+          grep -Fx 'serial_stream_admission=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'serial_queue=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'cold_cache_control=pass' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"
           grep -Fx 'clamd_multiworker_count=4' "${RUNNER_TEMP}/clamav-largefile-service/service-summary.txt"

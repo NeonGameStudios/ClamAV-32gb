@@ -99,6 +99,19 @@ static struct cl_stat dbstat;
 
 void *event_wake_recv   = NULL;
 void *event_wake_accept = NULL;
+static int syncpipe_wake_recv_w = -1;
+
+static void wake_recvloop(void *data)
+{
+    (void)data;
+#ifdef _WIN32
+    if (event_wake_recv)
+        SetEvent(event_wake_recv);
+#else
+    if (syncpipe_wake_recv_w != -1 && write(syncpipe_wake_recv_w, "", 1) != 1 && errno != EAGAIN && errno != EWOULDBLOCK)
+        logg(LOGG_DEBUG, "Failed to wake receive loop for queued stream admission\n");
+#endif
+}
 
 static void scanner_thread(void *arg)
 {
@@ -174,8 +187,6 @@ static void scanner_thread(void *arg)
     free(conn);
     return;
 }
-
-static int syncpipe_wake_recv_w = -1;
 
 void sighandler_th(int sig)
 {
@@ -722,6 +733,46 @@ static void reply_structured_dispatch_failure(client_conn_t *conn,
         buf->response_sent = 1;
 }
 
+static int is_stream_admission_command(enum commands cmd)
+{
+    return cmd == COMMAND_INSTREAM || cmd == COMMAND_INSTREAMREPORT;
+}
+
+static void defer_stream_until_admitted(client_conn_t *conn,
+                                        struct fd_buf *buf,
+                                        size_t *ppos,
+                                        size_t pos,
+                                        int readtimeout,
+                                        enum commands cmd)
+{
+    int already_waiting = (buf->mode == MODE_WAITQUEUE);
+
+    if (pos) {
+        memmove(buf->buffer, buf->buffer + pos, buf->off - pos);
+        buf->off -= pos;
+    }
+
+    *ppos                         = 0;
+    buf->mode                     = MODE_WAITQUEUE;
+    buf->id                       = conn->id;
+    buf->group                    = conn->group;
+    buf->term                     = conn->term;
+    buf->quota                    = conn->quota;
+    buf->stream_bytes             = conn->stream_bytes;
+    buf->quota_source             = conn->quota_source;
+    buf->structured_report        = (cmd == COMMAND_INSTREAMREPORT);
+    buf->stream_admission_reserved = 0;
+    if (!already_waiting) {
+        if (readtimeout) {
+            time(&buf->timeout_at);
+            buf->timeout_at += readtimeout;
+        } else {
+            buf->timeout_at = 0;
+        }
+    }
+    logg(LOGG_DEBUG_NV, "INSTREAM admission pending: waiting for an available scan worker\n");
+}
+
 static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, size_t *ppos, int *error, const struct optstruct *opts, int readtimeout)
 {
     const char *cmd = NULL;
@@ -774,6 +825,14 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
         if (!is_structured_report_command(cmdtype) &&
             (cmdtype != COMMAND_INSTREAMSCAN))
             conn->structured_report = 0;
+
+        if (is_stream_admission_command(cmdtype)) {
+            if (!thrmgr_try_reserve(conn->thrpool)) {
+                defer_stream_until_admitted(conn, buf, ppos, pos, readtimeout, cmdtype);
+                return NULL;
+            }
+            conn->stream_admission_reserved = 1;
+        }
 
         if ((rc = execute_or_dispatch_command(conn, cmdtype, argument)) < 0) {
             logg(LOGG_ERROR, "Command dispatch failed\n");
@@ -860,6 +919,7 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
     buf->stream_bytes      = conn->stream_bytes;
     buf->quota_source      = conn->quota_source;
     buf->structured_report = conn->structured_report;
+    buf->stream_admission_reserved = conn->stream_admission_reserved;
     if (conn->scanfd != -1 && conn->scanfd != buf->dumpfd) {
         logg(LOGG_DEBUG_NV, "Unclaimed file descriptor received, closing: %d\n", conn->scanfd);
         close(conn->scanfd);
@@ -919,6 +979,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                     buf->dumpname = NULL;
                     conn->stream_bytes = buf->stream_bytes;
                     if ((rc = execute_or_dispatch_command(conn, COMMAND_INSTREAMSCAN, NULL)) < 0) {
+                        buf->stream_admission_reserved = conn->stream_admission_reserved;
                         logg(LOGG_ERROR, "Command dispatch failed\n");
                         reply_structured_dispatch_failure(conn, buf, rc);
                         if (rc == -1 && optget(opts, "ExitOnOOM")->enabled) {
@@ -928,6 +989,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                         }
                         *error = 1;
                     } else {
+                        buf->stream_admission_reserved = conn->stream_admission_reserved;
                         memmove(buf->buffer, &buf->buffer[pos], buf->off - pos);
                         buf->off -= pos;
                         *ppos = 0;
@@ -1695,6 +1757,11 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
         exit(-1);
     }
     syncpipe_wake_recv_w = acceptdata.syncpipe_wake_recv[1];
+    {
+        int wake_flags = fcntl(syncpipe_wake_recv_w, F_GETFL, 0);
+        if (wake_flags == -1 || fcntl(syncpipe_wake_recv_w, F_SETFL, wake_flags | O_NONBLOCK) == -1)
+            logg(LOGG_WARNING, "Failed to make receive wake pipe nonblocking\n");
+    }
 
     if (fds_add(fds, acceptdata.syncpipe_wake_recv[0], 1, 0) == -1 ||
         fds_add(&acceptdata.fds, acceptdata.syncpipe_wake_accept[0], 1, 0)) {
@@ -1707,6 +1774,7 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
         logg(LOGG_ERROR, "thrmgr_new failed\n");
         exit(-1);
     }
+    thrmgr_set_wakeup(thr_pool, wake_recvloop, NULL);
 
     if (pthread_create(&accept_th, NULL, acceptloop_th, &acceptdata)) {
         logg(LOGG_ERROR, "pthread_create failed\n");
@@ -1744,6 +1812,14 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
             pthread_mutex_unlock(&exit_mutex);
         }
 
+        if (new_sd >= 0) {
+            for (j = 0; j < fds->nfds; j++) {
+                if (fds->buf[j].fd >= 0 && fds->buf[j].mode == MODE_WAITQUEUE &&
+                    fds->buf[j].got_newdata == 0)
+                    fds->buf[j].got_newdata = 1;
+            }
+        }
+
         if (fds->nfds) i = (rr_last + 1) % fds->nfds;
         for (j = 0; j < fds->nfds && new_sd >= 0; j++, i = (i + 1) % fds->nfds) {
             size_t pos         = 0;
@@ -1774,7 +1850,22 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                 }
             }
 
-            if (buf->fd != -1 && buf->got_newdata == -2) {
+            if (buf->fd != -1 && buf->got_newdata == -2 && buf->mode == MODE_WAITQUEUE) {
+                logg(LOGG_DEBUG_NV, "Queued INSTREAM request timed out before worker admission\n");
+                if (buf->structured_report) {
+                    client_conn_t timeout_conn;
+                    memset(&timeout_conn, 0, sizeof(timeout_conn));
+                    timeout_conn.sd                = buf->fd;
+                    timeout_conn.id                = buf->id;
+                    timeout_conn.term              = buf->term;
+                    timeout_conn.structured_report = 1;
+                    (void)conn_reply_scan_report(&timeout_conn, CL_ETIMEOUT, 0);
+                    buf->response_sent = 1;
+                } else {
+                    mdprintf(buf->fd, "COMMAND READ TIMED OUT%c", buf->term ? buf->term : '\n');
+                }
+                error = 1;
+            } else if (buf->fd != -1 && buf->got_newdata == -2) {
                 logg(LOGG_DEBUG_NV, "Client read timed out\n");
                 mdprintf(buf->fd, "COMMAND READ TIMED OUT\n");
                 error = 1;
@@ -1784,6 +1875,10 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
             if (buf->mode == MODE_WAITANCILL) {
                 buf->mode = MODE_COMMAND;
                 logg(LOGG_DEBUG_NV, "mode -> MODE_COMMAND\n");
+            }
+            if (!error && buf->mode == MODE_WAITQUEUE) {
+                buf->mode = MODE_COMMAND;
+                logg(LOGG_DEBUG_NV, "INSTREAM admission available: mode -> MODE_COMMAND\n");
             }
             while (!error && buf->fd != -1 && buf->buffer && pos < buf->off &&
                    buf->mode != MODE_WAITANCILL) {
@@ -1806,6 +1901,7 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                 conn.stream_bytes      = buf->stream_bytes;
                 conn.quota_source      = buf->quota_source;
                 conn.structured_report = buf->structured_report;
+                conn.stream_admission_reserved = buf->stream_admission_reserved;
                 conn.structured_status = CL_SUCCESS;
                 conn.filename          = buf->dumpname;
                 conn.mode              = buf->mode;
@@ -1814,6 +1910,8 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                 /* Parse & dispatch command */
                 cmd = parse_dispatch_cmd(&conn, buf, &pos, &error, opts, readtimeout);
 
+                if (conn.mode == MODE_WAITQUEUE)
+                    break;
                 if (conn.mode == MODE_COMMAND && !cmd)
                     break;
                 if (!error) {
@@ -1836,6 +1934,10 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                 }
             }
             if (error) {
+                if (buf->stream_admission_reserved) {
+                    thrmgr_release_reservation(thr_pool);
+                    buf->stream_admission_reserved = 0;
+                }
                 if (buf->dumpfd != -1) {
                     close(buf->dumpfd);
                     if (buf->dumpname) {
@@ -1871,6 +1973,10 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
                     if (fds->buf[i].fd == -1)
                         continue;
                     thrmgr_group_terminate(fds->buf[i].group);
+                    if (fds->buf[i].stream_admission_reserved) {
+                        thrmgr_release_reservation(thr_pool);
+                        fds->buf[i].stream_admission_reserved = 0;
+                    }
                     if (thrmgr_group_finished(fds->buf[i].group, EXIT_ERROR)) {
                         logg(LOGG_DEBUG_NV, "Shutdown closed fd %d\n", fds->buf[i].fd);
                         shutdown(fds->buf[i].fd, 2);

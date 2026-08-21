@@ -36,7 +36,8 @@ enum mode {
     MODE_STREAM,
     MODE_WAITREPLY,
     MODE_WAITANCILL,
-    MODE_HANDSHAKE
+    MODE_HANDSHAKE,
+    MODE_WAITQUEUE
 };
 
 /* The active INSTREAM quota may be limited by the protocol's stream cap or
@@ -64,6 +65,7 @@ struct fd_buf {
     int quota_source;
     int structured_report;
     int response_sent;
+    int stream_admission_reserved;
     char *dumpname;
     time_t timeout_at; /* 0 - no timeout */
     jobgroup_t *group;

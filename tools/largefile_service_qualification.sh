@@ -722,14 +722,15 @@ run_serial_queue()
             status=0
             timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
                 "$build_dir/clamdscan/clamdscan" --no-summary \
-                --report-json="$queue_report" -c "$config" "$materialized_file" \
+                --stream --report-json="$queue_report" -c "$config" "$materialized_file" \
                 > "$queue_log" 2>&1 || status=$?
             printf '%s\n' "$status" > "$queue_status_file"
         ) &
         queue_pids="$queue_pids $!"
         # Give the first request a chance to enter the sole worker before the
-        # second client is submitted. The daemon log remains the acceptance
-        # oracle, so a fast fixture cannot silently satisfy this gate.
+        # second streaming client is submitted. The daemon log remains the
+        # acceptance oracle, so a fast fixture cannot silently satisfy this
+        # gate.
         if [ "$worker" -eq 1 ]; then
             sleep 0.1
         fi
@@ -775,13 +776,19 @@ run_serial_queue()
         worker=$((worker + 1))
     done
 
-    if ! grep -F 'THRMGR: contended, sleeping' \
+    if ! grep -F 'INSTREAM admission pending: waiting for an available scan worker' \
         "$out/logs/clamd-$(basename "$production_db").log" >/dev/null 2>&1; then
-        echo 'serial clamd queue did not record worker contention' >&2
+        echo 'serial clamd stream queue did not defer staging before worker admission' >&2
+        return 1
+    fi
+    if ! grep -F 'INSTREAM admission available: mode -> MODE_COMMAND' \
+        "$out/logs/clamd-$(basename "$production_db").log" >/dev/null 2>&1; then
+        echo 'serial clamd stream queue did not resume after worker admission' >&2
         return 1
     fi
     printf 'serial_worker_count=1\n' >> "$out/service-summary.txt"
     printf 'serial_queue_count=2\n' >> "$out/service-summary.txt"
+    printf 'serial_stream_admission=pass\n' >> "$out/service-summary.txt"
     printf 'serial_queue=pass\n' >> "$out/service-summary.txt"
 }
 

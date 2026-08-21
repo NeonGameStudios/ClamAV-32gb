@@ -4578,17 +4578,12 @@ qualification remain open.
 
 ## INSTREAM queue admission remains a release gate — 2026-08-21
 
-The current clamd receive path creates the INSTREAM temporary file and stages
-the complete request before dispatching the descriptor scan to the worker
-pool. Stream and shared temporary quotas remain bounded, but `MaxQueue`
-currently limits scan jobs after staging rather than preventing a queued
-request from consuming temporary storage. The simultaneous-request acceptance
-criterion therefore remains open: a second request must stay queued without
-staging or reserving resources while the single worker is occupied.
-
-The capability manifest records this explicitly. A deferred admission/state
-machine requires compiled daemon and Sonic1 runtime validation and is not part
-of this bounded documentation update.
+The former receive path created the INSTREAM temporary file and staged the
+complete request before dispatching the descriptor scan to the worker pool.
+The admission state machine now keeps a queued request out of staging and
+temporary accounting until a worker slot is available. The capability
+manifest records the implementation; compiled daemon and Sonic1 runtime
+validation remain open.
 
 ## INSTREAM client descriptor rewind — 2026-08-21
 
@@ -4643,3 +4638,27 @@ per-file scan deadline through `MILTER_WIRE_TIMEOUT_S` and
 `MILTER_MAX_SCAN_TIME_MS`. This removes the harness's former fixed
 600-second wire wait and 600,000-millisecond clamd scan limit from the
 four-hour qualification path.
+
+## INSTREAM worker admission before staging — 2026-08-21
+
+The daemon no longer creates an INSTREAM temporary file merely because the
+client sent the command. When all certified worker slots are occupied, the
+receive loop places the request in `MODE_WAITQUEUE`, stops polling that socket
+for body data, and leaves the command/body bytes buffered in the kernel or the
+bounded command buffer. No temporary file, stream-byte reservation, or parser
+spool is created for the waiting request.
+
+When a worker completes, the thread manager wakes the receive loop. The
+pending command then acquires a bounded scan-admission reservation, creates its
+temporary file, and resumes normal INSTREAM staging. Reservation consumption is
+atomic with worker-queue insertion; allocation, temporary-file, disconnect,
+timeout, and shutdown paths release an unconsumed reservation. Admission
+retries preserve the original read deadline instead of extending it while the
+worker pool remains full. Structured `INSTREAMREPORT` requests retain their
+report mode while waiting and produce a bounded timeout report if admission
+itself expires.
+
+The service qualification harness now runs its two-request serial queue gate
+through `clamdscan --stream` and requires both the `INSTREAM admission pending`
+and resumed-admission daemon-log markers. Compiled Linux, sanitizer,
+production-database, and Sonic1 runs remain release gates.

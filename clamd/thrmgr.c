@@ -435,9 +435,13 @@ threadpool_t *thrmgr_new(int max_threads, int idle_timeout, int max_queue, void 
     threadpool->thr_alive     = 0;
     threadpool->thr_idle      = 0;
     threadpool->thr_multiscan = 0;
+    threadpool->reserved      = 0;
+    threadpool->reserved_bulk = 0;
     threadpool->idle_timeout  = idle_timeout;
     threadpool->handler       = handler;
     threadpool->tasks         = NULL;
+    threadpool->wakeup       = NULL;
+    threadpool->wakeup_data  = NULL;
 
     if (pthread_mutex_init(&(threadpool->pool_mutex), NULL)) {
         free(threadpool->single_queue);
@@ -606,9 +610,9 @@ static inline int thrmgr_contended(threadpool_t *pool, int bulk)
 {
     /* don't allow bulk items to exceed 50% of queue, so that
      * non-bulk items get a chance to be in the queue */
-    if (bulk && pool->bulk_queue->item_count >= pool->queue_max / 2)
+    if (bulk && pool->bulk_queue->item_count + pool->reserved_bulk >= pool->queue_max / 2)
         return 1;
-    return pool->bulk_queue->item_count + pool->single_queue->item_count + pool->thr_alive - pool->thr_idle >= pool->queue_max;
+    return pool->bulk_queue->item_count + pool->single_queue->item_count + pool->thr_alive - pool->thr_idle + pool->reserved >= pool->queue_max;
 }
 
 /* when both queues have tasks, it will pick 4 items from the single queue,
@@ -663,6 +667,7 @@ static void *thrmgr_worker(void *arg)
     threadpool_t *threadpool = (threadpool_t *)arg;
     void *job_data;
     int retval, must_exit = FALSE, stats_inited = FALSE;
+    int job_completed = FALSE;
     struct timespec timeout;
 
     /* loop looking for work */
@@ -677,9 +682,13 @@ static void *thrmgr_worker(void *arg)
         }
         thrmgr_setactiveengine(NULL);
         thrmgr_setactivetask(NULL, IDLE_TASK);
+        threadpool->thr_idle++;
+        if (job_completed && threadpool->wakeup) {
+            threadpool->wakeup(threadpool->wakeup_data);
+            job_completed = FALSE;
+        }
         timeout.tv_sec  = time(NULL) + threadpool->idle_timeout;
         timeout.tv_nsec = 0;
-        threadpool->thr_idle++;
         while (((job_data = thrmgr_pop(threadpool)) == NULL) && (threadpool->state != POOL_EXIT)) {
             /* Sleep, awaiting wakeup */
             pthread_cond_signal(&threadpool->idle_cond);
@@ -701,6 +710,7 @@ static void *thrmgr_worker(void *arg)
         }
         if (job_data) {
             threadpool->handler(job_data);
+            job_completed = TRUE;
         } else if (must_exit) {
             break;
         }
@@ -724,7 +734,7 @@ static void *thrmgr_worker(void *arg)
     return NULL;
 }
 
-static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, int bulk)
+static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, int bulk, int reserved)
 {
     int ret = TRUE;
     pthread_t thr_id;
@@ -744,6 +754,16 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
         pthread_cond_t *queueable_cond;
         int items;
 
+        if (reserved) {
+            if (threadpool->reserved <= 0) {
+                ret = FALSE;
+                break;
+            }
+            threadpool->reserved--;
+            if (threadpool->reserved_bulk > 0)
+                threadpool->reserved_bulk--;
+        }
+
         if (threadpool->state != POOL_VALID) {
             ret = FALSE;
             break;
@@ -757,7 +777,7 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
             queueable_cond = &threadpool->queueable_single_cond;
         }
 
-        while (thrmgr_contended(threadpool, bulk)) {
+        while (!reserved && thrmgr_contended(threadpool, bulk)) {
             logg(LOGG_DEBUG_NV, "THRMGR: contended, sleeping\n");
             pthread_cond_wait(queueable_cond, &threadpool->pool_mutex);
             logg(LOGG_DEBUG_NV, "THRMGR: contended, woken\n");
@@ -792,7 +812,7 @@ static int thrmgr_dispatch_internal(threadpool_t *threadpool, void *user_data, i
 
 int thrmgr_dispatch(threadpool_t *threadpool, void *user_data)
 {
-    return thrmgr_dispatch_internal(threadpool, user_data, 0);
+    return thrmgr_dispatch_internal(threadpool, user_data, 0, 0);
 }
 
 int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
@@ -804,13 +824,96 @@ int thrmgr_group_dispatch(threadpool_t *threadpool, jobgroup_t *group, void *use
         logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
         pthread_mutex_unlock(&group->mutex);
     }
-    if (!(ret = thrmgr_dispatch_internal(threadpool, user_data, bulk)) && group) {
+    if (!(ret = thrmgr_dispatch_internal(threadpool, user_data, bulk, 0)) && group) {
         pthread_mutex_lock(&group->mutex);
         group->jobs--;
         logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
         pthread_mutex_unlock(&group->mutex);
     }
     return ret;
+}
+
+int thrmgr_group_dispatch_reserved(threadpool_t *threadpool, jobgroup_t *group, void *user_data, int bulk)
+{
+    int ret;
+
+    if (group) {
+        pthread_mutex_lock(&group->mutex);
+        group->jobs++;
+        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+        pthread_mutex_unlock(&group->mutex);
+    }
+    if (!(ret = thrmgr_dispatch_internal(threadpool, user_data, bulk, 1)) && group) {
+        pthread_mutex_lock(&group->mutex);
+        group->jobs--;
+        logg(LOGG_DEBUG_NV, "THRMGR: active jobs for %p: %d\n", group, group->jobs);
+        pthread_mutex_unlock(&group->mutex);
+    }
+    return ret;
+}
+
+int thrmgr_try_reserve(threadpool_t *threadpool)
+{
+    int active;
+    int queued;
+    int ret = FALSE;
+
+    if (!threadpool)
+        return FALSE;
+
+    if (pthread_mutex_lock(&threadpool->pool_mutex) != 0)
+        return FALSE;
+
+    active = threadpool->thr_alive - threadpool->thr_idle;
+    if (active < 0)
+        active = 0;
+    queued = threadpool->single_queue->item_count + threadpool->bulk_queue->item_count;
+    if (threadpool->state == POOL_VALID && active + queued + threadpool->reserved < threadpool->thr_max &&
+        active + queued + threadpool->reserved < threadpool->queue_max) {
+        threadpool->reserved++;
+        threadpool->reserved_bulk++;
+        ret = TRUE;
+    }
+
+    pthread_mutex_unlock(&threadpool->pool_mutex);
+    return ret;
+}
+
+void thrmgr_release_reservation(threadpool_t *threadpool)
+{
+    thrmgr_wakeup_fn wakeup;
+    void *wakeup_data;
+    int released = FALSE;
+
+    if (!threadpool)
+        return;
+
+    if (pthread_mutex_lock(&threadpool->pool_mutex) != 0)
+        return;
+    if (threadpool->reserved > 0) {
+        released = TRUE;
+        threadpool->reserved--;
+        if (threadpool->reserved_bulk > 0)
+            threadpool->reserved_bulk--;
+        pthread_cond_signal(&threadpool->queueable_single_cond);
+        pthread_cond_signal(&threadpool->queueable_bulk_cond);
+    }
+    wakeup      = threadpool->wakeup;
+    wakeup_data = threadpool->wakeup_data;
+    pthread_mutex_unlock(&threadpool->pool_mutex);
+    if (released && wakeup)
+        wakeup(wakeup_data);
+}
+
+void thrmgr_set_wakeup(threadpool_t *threadpool, thrmgr_wakeup_fn wakeup, void *data)
+{
+    if (!threadpool)
+        return;
+    if (pthread_mutex_lock(&threadpool->pool_mutex) != 0)
+        return;
+    threadpool->wakeup      = wakeup;
+    threadpool->wakeup_data = data;
+    pthread_mutex_unlock(&threadpool->pool_mutex);
 }
 
 /* returns

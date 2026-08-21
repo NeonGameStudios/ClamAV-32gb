@@ -560,6 +560,8 @@ int command(client_conn_t *conn, int *virus)
 static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *argument)
 {
     int ret = 0;
+    int reserved = 0;
+    int dispatch_attempted = 0;
     int bulk;
     client_conn_t *dup_conn = (client_conn_t *)malloc(sizeof(struct client_conn_tag));
 
@@ -569,8 +571,12 @@ static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *
     }
     memcpy(dup_conn, conn, sizeof(*conn));
     dup_conn->cmdtype = cmd;
+    reserved = dup_conn->stream_admission_reserved;
+    conn->stream_admission_reserved = 0;
     if (cl_engine_addref(dup_conn->engine)) {
         logg(LOGG_ERROR, "cl_engine_addref() failed\n");
+        if (reserved)
+            thrmgr_release_reservation(dup_conn->thrpool);
         free(dup_conn);
         return -1;
     }
@@ -615,11 +621,17 @@ static int dispatch_command(client_conn_t *conn, enum commands cmd, const char *
     }
     if (!dup_conn->group)
         bulk = 0;
-    if (!ret && !thrmgr_group_dispatch(dup_conn->thrpool, dup_conn->group, dup_conn, bulk)) {
-        logg(LOGG_ERROR, "thread dispatch failed\n");
-        ret = -2;
+    if (!ret) {
+        dispatch_attempted = 1;
+        if (!(reserved ? thrmgr_group_dispatch_reserved(dup_conn->thrpool, dup_conn->group, dup_conn, bulk)
+                       : thrmgr_group_dispatch(dup_conn->thrpool, dup_conn->group, dup_conn, bulk))) {
+            logg(LOGG_ERROR, "thread dispatch failed\n");
+            ret = -2;
+        }
     }
     if (ret) {
+        if (reserved && !dispatch_attempted)
+            thrmgr_release_reservation(dup_conn->thrpool);
         cl_engine_free(dup_conn->engine);
         free(dup_conn);
     }
@@ -789,6 +801,10 @@ int execute_or_dispatch_command(client_conn_t *conn, enum commands cmd, const ch
                 conn->structured_report = 1;
             rc = cli_gentempfd(optget(conn->opts, "TemporaryDirectory")->strarg, &conn->filename, &conn->scanfd);
             if (rc != CL_SUCCESS) {
+                if (conn->stream_admission_reserved) {
+                    thrmgr_release_reservation(conn->thrpool);
+                    conn->stream_admission_reserved = 0;
+                }
                 if (conn->structured_report)
                     (void)conn_reply_scan_report(conn, CL_ETMPFILE, 0);
                 return 1;
