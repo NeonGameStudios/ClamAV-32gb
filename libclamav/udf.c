@@ -984,23 +984,26 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
         lastOffset = idx;
 
-        if (strncmp("BEA01", gvsd->standardIdentifier, 5)) {
+        if (0 == strncmp("BEA01", gvsd->standardIdentifier, 5)) {
             cli_dbgmsg("Found Standard Identifier '%s'\n", "BEA01");
-        } else if (strncmp("BOOT2", gvsd->standardIdentifier, 5)) {
+        } else if (0 == strncmp("BOOT2", gvsd->standardIdentifier, 5)) {
             cli_dbgmsg("Found Standard Identifier '%s'\n", "BOOT2");
-        } else if (strncmp("CD001", gvsd->standardIdentifier, 5)) {
+        } else if (0 == strncmp("CD001", gvsd->standardIdentifier, 5)) {
             cli_dbgmsg("Found Standard Identifier '%s'\n", "CD001");
-        } else if (strncmp("CDW02", gvsd->standardIdentifier, 5)) {
+        } else if (0 == strncmp("CDW02", gvsd->standardIdentifier, 5)) {
             cli_dbgmsg("Found Standard Identifier '%s'\n", "CDW02");
-        } else if (strncmp("NSR02", gvsd->standardIdentifier, 5)) {
+        } else if (0 == strncmp("NSR02", gvsd->standardIdentifier, 5)) {
             cli_dbgmsg("Found Standard Identifier '%s'\n", "NSR02");
-        } else if (strncmp("NSR03", gvsd->standardIdentifier, 5)) {
+        } else if (0 == strncmp("NSR03", gvsd->standardIdentifier, 5)) {
             cli_dbgmsg("Found Standard Identifier '%s'\n", "NSR03");
-        } else if (strncmp("TEA01", gvsd->standardIdentifier, 5)) {
+        } else if (0 == strncmp("TEA01", gvsd->standardIdentifier, 5)) {
             cli_dbgmsg("Found Standard Identifier '%s'\n", "TEA01");
         } else {
             cli_dbgmsg("Unknown Standard Identifier '%s'\n", gvsd->standardIdentifier);
-            break;
+            fmap_unneed_ptr(ctx->fmap, gvsd, sizeof(GenericVolumeStructureDescriptor));
+            cli_mark_scan_incomplete(ctx, "UDF generic volume descriptor identifier is unsupported");
+            ret = CL_EPARSE;
+            goto done;
         }
 
         fmap_unneed_ptr(ctx->fmap, gvsd, sizeof(GenericVolumeStructureDescriptor));

@@ -13359,6 +13359,51 @@ START_TEST(test_udf_truncated_descriptor_area_is_fail_visible)
 }
 END_TEST
 
+static void test_udf_set_generic_identifiers(uint8_t *data, size_t base)
+{
+    static const char identifiers[][5] = {"BEA01", "NSR02", "TEA01"};
+    size_t i;
+
+    for (i = 0; i < 3; i++) {
+        memcpy(data + base + (i * VOLUME_DESCRIPTOR_SIZE) + offsetof(GenericVolumeStructureDescriptor, standardIdentifier),
+               identifiers[i],
+               sizeof(identifiers[i]));
+    }
+}
+
+START_TEST(test_udf_unknown_generic_descriptor_is_fail_visible)
+{
+    enum {
+        UDF_TEST_SIZE = UDF_EMPTY_LEN + (3 * VOLUME_DESCRIPTOR_SIZE)
+    };
+    uint8_t *data;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = calloc(1, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + UDF_EMPTY_LEN + offsetof(GenericVolumeStructureDescriptor, standardIdentifier), "BAD00", 5);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF generic volume descriptor identifier is unsupported");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_udf_mismatched_file_lists_are_fail_visible)
 {
     enum {
@@ -13384,6 +13429,7 @@ START_TEST(test_udf_mismatched_file_lists_are_fail_visible)
 
     data = calloc(1, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(data);
+    test_udf_set_generic_identifiers(data, base);
 
     /* The first three blocks are generic volume descriptors. The following
      * sequence supplies the required descriptor tags, then one file
@@ -13459,6 +13505,7 @@ START_TEST(test_udf_allocation_descriptor_alignment_is_fail_visible)
 
     data = calloc(1, UDF_TEST_SIZE);
     ck_assert_ptr_nonnull(data);
+    test_udf_set_generic_identifiers(data, base);
 
     /* Supply the required descriptor sequence, one file identifier, one
      * file entry, and a non-descriptor marker that triggers file extraction. */
@@ -14789,6 +14836,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
+    tcase_add_test(tc_cl, test_udf_unknown_generic_descriptor_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
     tcase_add_test(tc_cl, test_udf_allocation_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);

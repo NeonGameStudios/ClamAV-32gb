@@ -69,6 +69,9 @@
 - UDF file entries now support bounded lists of recorded allocation extents,
   aggregating their logical and temporary budgets before one child scan;
   fragmented UDF corpus qualification remains open.
+- UDF generic volume descriptor identifiers now use equality checks and reject
+  unsupported identifiers as incomplete; add valid/invalid descriptor corpus
+  coverage and supported-build qualification.
 - HFS+ catalog node-size validation and catalog block coordinates now retain
   64-bit arithmetic through fmap admission; large-volume corpus qualification
   remains open.
