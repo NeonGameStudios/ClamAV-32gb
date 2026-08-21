@@ -3175,3 +3175,14 @@ the existing bounded allocation/spool paths. PE32+ PE-specific analysis remains
 an explicit unsupported/incomplete result.
 Static guards and whitespace validation pass; compiled PE corpus, sanitizer,
 and production qualification remain open.
+
+## HFS+ inline compressed-output admission — 2026-08-21
+
+The HFS+ inline decmpfs path intentionally limits its contiguous inflater
+buffer to 64 KiB, but an output above that boundary previously returned only a
+generic format result and the supported branch used a raw allocation. The
+boundary is now an explicit `CL_ERESOURCE` incomplete result, and the bounded
+branch uses the shared allocation wrapper, including a portable one-byte
+allocation for an empty output.
+Static guards and whitespace validation pass; compiled HFS+ corpus, sanitizer,
+and production qualification remain open.

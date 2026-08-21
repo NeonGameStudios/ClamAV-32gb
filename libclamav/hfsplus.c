@@ -1261,13 +1261,15 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                                 if (header.fileSize > 65536) {
                                     cli_dbgmsg("hfsplus_walk_catalog: Uncompressed file seems too big, something is probably wrong\n");
-                                    status = CL_EFORMAT;
+                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output exceeds the bounded decoder buffer");
+                                    status = CL_ERESOURCE;
                                     goto done;
                                 }
 
-                                uncompressed = malloc(header.fileSize);
+                                uncompressed = cli_max_malloc(header.fileSize ? (size_t)header.fileSize : 1);
                                 if (!uncompressed) {
                                     cli_dbgmsg("hfsplus_walk_catalog: Failed to allocate memory for the uncompressed file contents\n");
+                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output could not be allocated");
                                     status = CL_EMEM;
                                     goto done;
                                 }

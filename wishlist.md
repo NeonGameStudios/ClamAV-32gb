@@ -39,6 +39,9 @@
 - PE32 MEW, Upack, FSG, UPX, WWPack, and Aspack paths now reject checked
   32-bit size/coordinate additions that would wrap before allocation or
   unpacked scanning.
+- HFS+ inline compressed output above its 64 KiB decoder buffer is now an
+  explicit resource-incomplete result, and supported output uses the shared
+  allocation guard.
 - The bundled CAB/CHM adapter now bounds decoder-requested allocations with the
   shared individual-allocation ceiling.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
