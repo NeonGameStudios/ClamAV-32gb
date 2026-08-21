@@ -402,13 +402,10 @@ impl AlzLocalFileHeader {
                 .checked_add(u64::try_from(len).map_err(|_| Error::Extract)?)
                 .ok_or(Error::Extract)?;
             if needed > max_extracted_size {
-                let remaining = usize::try_from(max_extracted_size.saturating_sub(output_size))
-                    .unwrap_or(usize::MAX)
-                    .min(len);
-                if remaining > 0 {
-                    sink.write(&buffer[..remaining])?;
-                }
-                sink.finish()?;
+                /* A quota boundary is not a complete member boundary. Do not
+                 * dispatch the prefix to the scanner as though extraction
+                 * succeeded. */
+                sink.abort();
                 return Err(Error::ScanLimitExceeded(needed));
             }
 
@@ -466,13 +463,10 @@ impl AlzLocalFileHeader {
                 .checked_add(u64::try_from(len).map_err(|_| Error::Extract)?)
                 .ok_or(Error::Extract)?;
             if needed > max_extracted_size {
-                let remaining = usize::try_from(max_extracted_size.saturating_sub(output_size))
-                    .unwrap_or(usize::MAX)
-                    .min(len);
-                if remaining > 0 {
-                    sink.write(&buffer[..remaining])?;
-                }
-                sink.finish()?;
+                /* A quota boundary is not a complete member boundary. Do not
+                 * dispatch the prefix to the scanner as though extraction
+                 * succeeded. */
+                sink.abort();
                 return Err(Error::ScanLimitExceeded(needed));
             }
 
@@ -566,9 +560,7 @@ impl ExtractSink for Vec<ExtractedFile> {
     }
 
     fn abort(&mut self) {
-        if self.last().map_or(false, |file| file.data.is_empty()) {
-            self.pop();
-        }
+        self.pop();
     }
 }
 
@@ -781,9 +773,8 @@ impl<'aa> Alz {
             match extraction_result {
                 Ok(()) => self.account_extracted(sink),
                 Err(Error::ScanLimitExceeded(needed)) => {
-                    self.account_extracted(sink);
                     debug!(
-                        "ALZ file {:?} exceeded extraction size limits. Scanning truncated content.",
+                        "ALZ file {:?} exceeded extraction size limits; partial content was discarded.",
                         local_fileheader.file_name
                     );
                     if needed > limits.max_file_size
@@ -1204,7 +1195,7 @@ mod tests {
     }
 
     #[test]
-    fn bzip2_error_preserves_output_produced_before_error() {
+    fn bzip2_error_discards_output_produced_before_error() {
         const ALZ_COMP_BZIP2: u8 = 1;
 
         let mut bytes = Vec::new();
@@ -1224,13 +1215,11 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(alz.embedded_files.len(), 1);
-        assert_eq!(alz.embedded_files[0].name.as_deref(), Some("truncated.bz2"));
-        assert_eq!(alz.embedded_files[0].data, b"Eicar-Test-Payload");
+        assert!(alz.embedded_files.is_empty());
     }
 
     #[test]
-    fn deflate_error_preserves_output_produced_before_error() {
+    fn deflate_error_discards_output_produced_before_error() {
         struct ErrorAfterOutput {
             output: Option<Vec<u8>>,
         }
@@ -1269,9 +1258,7 @@ mod tests {
             Err(Error::Extract)
         ));
 
-        assert_eq!(files.len(), 1);
-        assert_eq!(files[0].name.as_deref(), Some("corrupt.deflate"));
-        assert_eq!(files[0].data, payload);
+        assert!(files.is_empty());
     }
 
     #[test]
@@ -1353,9 +1340,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(alz.file_limit_exceeded_size, Some(payload.len() as u64));
-        assert_eq!(alz.embedded_files.len(), 1);
-        assert_eq!(alz.embedded_files[0].name.as_deref(), Some("big.txt"));
-        assert_eq!(alz.embedded_files[0].data.as_slice(), &payload[..64]);
+        assert!(alz.embedded_files.is_empty());
     }
 
     #[test]
@@ -1393,9 +1378,8 @@ mod tests {
 
         assert_eq!(alz.file_limit_exceeded_size, None);
         assert_eq!(alz.total_limit_exceeded_size, Some(120));
-        assert_eq!(alz.embedded_files.len(), 2);
+        assert_eq!(alz.embedded_files.len(), 1);
         assert_eq!(alz.embedded_files[0].data.len(), 60);
-        assert_eq!(alz.embedded_files[1].data.len(), 40);
     }
 
     #[test]

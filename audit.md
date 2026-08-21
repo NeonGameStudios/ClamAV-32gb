@@ -789,6 +789,17 @@ XLM/image extraction failure. This is a local source change;
 compiled Linux/Sonic1, sanitizer, and broader XLM corpus qualification remain
 open.
 
+## ALZ partial-member limit handling — 2026-08-21
+
+ALZ stored, Deflate, and BZip2 extraction previously finalized the bytes
+already produced when a member crossed a per-file or aggregate quota, allowing
+the scanner sink to inspect a truncated prefix before the limit result was
+recorded. Quota and decoder-error paths now abort the active member and discard
+its partial output; only complete members reach nested scanning. Focused Rust
+regressions cover quota and decoder-error discard behavior, and source guards
+record the invariant. Compiled Linux/Sonic1, sanitizer, and broader ALZ corpus
+qualification remain open.
+
 ## Latest 7-Zip member-name width follow-up — 2026-08-19
 
 The 7-Zip SDK exposes member-name lengths as `size_t`, but the scanner stored

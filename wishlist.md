@@ -108,6 +108,9 @@
 - PDF objects that have a confirmed header but no terminating `endobj` now
   increment invalid-object accounting and mark the scan incomplete/non-cacheable
   instead of allowing the retained truncated object to produce a clean result.
+- ALZ quota crossings and decoder failures now discard partial member output
+  before nested scanning; only complete extracted members are dispatched, while
+  the archive remains explicitly incomplete when a limit or decoder error occurs.
 
 ## Large-file validation and expansion progression
 
