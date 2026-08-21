@@ -8761,6 +8761,65 @@ START_TEST(test_apm_invalid_partition_is_fail_visible)
 }
 END_TEST
 
+static const void *apm_partition_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+
+START_TEST(test_apm_partition_read_failure_is_fail_visible)
+{
+    uint8_t data[1536] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* The driver map and partition-map header are readable, but the first
+     * declared partition entry fails in-range in the fmap callback. */
+    data[0] = 0x45;
+    data[1] = 0x52; /* DDM signature: "ER". */
+    data[2] = 0x02;
+    data[3] = 0x00; /* 512-byte blocks. */
+    data[4] = 0x00;
+    data[5] = 0x00;
+    data[6] = 0x00;
+    data[7] = 0x03; /* three blocks in the image. */
+    data[512] = 0x50;
+    data[513] = 0x4d; /* APM signature: "PM". */
+    data[516] = 0x00;
+    data[517] = 0x00;
+    data[518] = 0x00;
+    data[519] = 0x02; /* partition map plus one declared partition. */
+    memcpy(data + 512 + 48, "Apple_partition_map", 19);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions    = 2;
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    map                      = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need                = apm_partition_read_failure;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_APM;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scanapm(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "APM partition entry could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static void write_test_le64(uint8_t *data, uint64_t value)
 {
     cli_writeint32(data, (uint32_t)value);
@@ -9511,6 +9570,16 @@ static const void *hfsplus_fork_read_failure(fmap_t *map, size_t at, size_t len,
 {
     (void)lock;
     if (at == (30U * 512U))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *apm_partition_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 1024U)
         return NULL;
     if (len == 0 || at > map->len || len > map->len - at)
         return NULL;
@@ -14096,6 +14165,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_invalid_partition_is_fail_visible);
+    tcase_add_test(tc_cl, test_apm_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_invalid_partition_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_parser_errors_are_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);

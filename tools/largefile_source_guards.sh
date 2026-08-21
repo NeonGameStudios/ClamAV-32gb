@@ -96,6 +96,8 @@ contains libclamav/scanners.c 'file type detection could not read the input comp
 contains unit_tests/check_clamav.c 'test_descriptor_limit_preflight_precedes_fmap_creation'
 contains unit_tests/check_clamav.c 'test_child_descriptor_inspection_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_file_type_detection_read_failure_is_fail_visible'
+contains libclamav/apm.c 'APM partition entry could not be read completely'
+contains unit_tests/check_clamav.c 'test_apm_partition_read_failure_is_fail_visible'
 contains libclamav/scanners.c 'cli_preflight_child_size'
 contains libclamav/scanners.c 'before fmap_duplicate()'
 contains libclamav/scanners.c 'child content was rejected before fmap creation'

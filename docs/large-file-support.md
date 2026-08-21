@@ -4409,3 +4409,14 @@ Confirmed PDF scans now mark the layer incomplete and non-cacheable and return
 direct parser fault-injection regression covers the version window, with
 source guards and capability evidence registered. Compiled Linux/Sonic1,
 sanitizer, and broader PDF corpus qualification remain open.
+
+## APM partition fmap read failure — 2026-08-21
+
+APM's required driver-map, fallback, partition-table, partition-entry, and
+intersection-table reads now distinguish an in-range fmap callback failure
+from an ordinary short map. The callback failure returns `CL_EREAD`, marks the
+layer incomplete, and disables clean-result caching; malformed or truncated
+input retains the parser's format error. A focused partition-entry
+fault-injection regression, source guard, and capability-manifest entry record
+the invariant. Compiled Linux/Sonic1, sanitizer, and broader APM corpus
+qualification remain open.

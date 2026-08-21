@@ -47,6 +47,19 @@
 
 static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize, bool old_school);
 
+static cl_error_t apm_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
+{
+    size_t got = fmap_readn(ctx->fmap, dst, at, len);
+
+    if (got == len)
+        return CL_SUCCESS;
+    if (got == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_EREAD;
+    }
+    return CL_EFORMAT;
+}
+
 cl_error_t cli_scanapm(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -65,9 +78,9 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     }
 
     /* read driver description map at sector 0  */
-    if (fmap_readn(ctx->fmap, &ddm, pos, sizeof(ddm)) != sizeof(ddm)) {
+    status = apm_read(ctx, &ddm, pos, sizeof(ddm), "APM driver description map could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("cli_scanapm: Invalid Apple driver description map\n");
-        status = CL_EFORMAT;
         goto done;
     }
 
@@ -104,9 +117,10 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
 
     /* check for old-school partition map */
     if (sectorsize == 2048) {
-        if (fmap_readn(ctx->fmap, &aptable, APM_FALLBACK_SECTOR_SIZE, sizeof(aptable)) != sizeof(aptable)) {
+        status = apm_read(ctx, &aptable, APM_FALLBACK_SECTOR_SIZE, sizeof(aptable),
+                          "APM fallback partition entry could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanapm: Invalid Apple partition entry\n");
-            status = CL_EFORMAT;
             goto done;
         }
 
@@ -120,9 +134,9 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     /* read partition table at sector 1 (or after the ddm if old-school) */
     pos = APM_PTABLE_BLOCK * sectorsize;
 
-    if (fmap_readn(ctx->fmap, &aptable, pos, sizeof(aptable)) != sizeof(aptable)) {
+    status = apm_read(ctx, &aptable, pos, sizeof(aptable), "APM partition table could not be read completely");
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("cli_scanapm: Invalid Apple partition table\n");
-        status = CL_EFORMAT;
         goto done;
     }
 
@@ -178,9 +192,9 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     for (i = 2; i <= max_prtns; ++i) {
         /* read partition table entry */
         pos = i * sectorsize;
-        if (fmap_readn(ctx->fmap, &apentry, pos, sizeof(apentry)) != sizeof(apentry)) {
+        status = apm_read(ctx, &apentry, pos, sizeof(apentry), "APM partition entry could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanapm: Invalid Apple partition entry\n");
-            status = CL_EFORMAT;
             goto done;
         }
 
@@ -283,10 +297,10 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
     for (i = 1; i <= max_prtns; ++i) {
         /* read partition table entry */
         pos = i * sectorsize;
-        if (fmap_readn(ctx->fmap, &apentry, pos, sizeof(apentry)) != sizeof(apentry)) {
+        status = apm_read(ctx, &apentry, pos, sizeof(apentry), "APM partition intersection entry could not be read completely");
+        if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanapm: Invalid Apple partition entry\n");
             partition_intersection_list_free(&prtncheck);
-            status = CL_EFORMAT;
             goto done;
         }
 
