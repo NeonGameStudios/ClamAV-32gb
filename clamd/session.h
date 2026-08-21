@@ -64,6 +64,42 @@
 #include "server.h"
 #include "clamd_others.h"
 
+/*
+ * Classify the bounded fallback used when a structured report object cannot
+ * be serialized. Keep this in the protocol header so the producer and its
+ * unit tests exercise the same status contract.
+ */
+static inline const char *clamd_scan_report_completion(cl_error_t status, int infected)
+{
+    if (infected || status == CL_VIRUS)
+        return "DETECTION_TERMINATED";
+
+    switch (status) {
+        case CL_SUCCESS:
+            return "COMPLETE";
+        case CL_EMAXSIZE:
+        case CL_EMAXFILES:
+        case CL_EMAXREC:
+        case CL_ETIMEOUT:
+            return "LIMIT_INCOMPLETE";
+        case CL_ERESOURCE:
+            return "RESOURCE_FAILURE";
+        case CL_EPARSE:
+        case CL_EFORMAT:
+            return "MALFORMED_CONFIRMED";
+        case CL_EUNPACK:
+        case CL_EBYTECODE:
+        case CL_EBYTECODE_TESTFAIL:
+            return "UNSUPPORTED";
+        case CL_BREAK:
+            return "APPLICATION_ABORT";
+        default:
+            /* Dispatch, transport, and allocation failures are not
+             * unsupported features. */
+            return "RESOURCE_FAILURE";
+    }
+}
+
 enum commands {
     COMMAND_UNKNOWN  = 0,
     COMMAND_SHUTDOWN = 1,

@@ -186,8 +186,9 @@
   completion; add daemon IDSESSION and malformed/limit integration coverage.
 - Structured clamd fallback reports now classify parser/format failures as
   malformed and dispatch, transport, and allocation failures as resource
-  failures instead of labeling every non-detection error unsupported; add
-  direct producer tests for each fallback class.
+  failures instead of labeling every non-detection error unsupported; the
+  shared classifier unit test covers each fallback class, with compiled
+  protocol execution still required.
 - Buffer and fmap matcher callers now preserve every matcher error below
   `CL_TYPENO` instead of allowing a later matcher pass to hide resource,
   timeout, callback, or read failures; add matcher fault-injection and

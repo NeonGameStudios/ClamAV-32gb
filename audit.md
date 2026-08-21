@@ -2612,5 +2612,6 @@ or format boundaries. The fallback now classifies `CL_EPARSE`/`CL_EFORMAT` as
 `MALFORMED_CONFIRMED`, the explicit unsupported decoder/bytecode statuses as
 `UNSUPPORTED`, and all other non-success statuses as `RESOURCE_FAILURE`,
 matching the public report classification contract. Source guards and the
-capability manifest record the producer behavior; compiled protocol and
-Linux/Sonic1 service qualification remain open.
+capability manifest record the producer behavior, and the shared classifier
+unit test covers each fallback class; compiled protocol and Linux/Sonic1
+service qualification remain open.

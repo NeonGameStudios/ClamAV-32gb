@@ -201,39 +201,6 @@ int conn_reply_errno(const client_conn_t *conn, const char *path,
     return conn_reply(conn, path, msg, err);
 }
 
-static const char *scan_report_completion(cl_error_t status, int infected)
-{
-    if (infected || status == CL_VIRUS)
-        return "DETECTION_TERMINATED";
-
-    switch (status) {
-        case CL_SUCCESS:
-            return "COMPLETE";
-        case CL_EMAXSIZE:
-        case CL_EMAXFILES:
-        case CL_EMAXREC:
-        case CL_ETIMEOUT:
-            return "LIMIT_INCOMPLETE";
-        case CL_ERESOURCE:
-            return "RESOURCE_FAILURE";
-        case CL_EPARSE:
-        case CL_EFORMAT:
-            return "MALFORMED_CONFIRMED";
-        case CL_EUNPACK:
-        case CL_EBYTECODE:
-        case CL_EBYTECODE_TESTFAIL:
-            return "UNSUPPORTED";
-        case CL_BREAK:
-            return "APPLICATION_ABORT";
-        default:
-            /* Dispatch, transport, and allocation failures are not
-             * unsupported features. Keep the fallback report aligned with
-             * cl_scan_report_finish(), so a client can distinguish a
-             * resource failure from a deliberate format boundary. */
-            return "RESOURCE_FAILURE";
-    }
-}
-
 /* Send only non-sensitive completion data.  The frame is deliberately
  * independent of the legacy text protocol: a 32-bit network-order length,
  * one JSON object, then a zero-length terminator frame. */
@@ -286,7 +253,7 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
         json        = NULL;
         json_length = snprintf(fallback, sizeof(fallback),
                                "{\"version\":1,\"id\":%u,\"status_code\":%d,\"verdict\":\"%s\",\"completion\":\"%s\"}",
-                               conn->id, (int)status, verdict, scan_report_completion(status, infected));
+                               conn->id, (int)status, verdict, clamd_scan_report_completion(status, infected));
         if (json_length < 0 || (size_t)json_length >= sizeof(fallback))
             goto done;
         payload = fallback;

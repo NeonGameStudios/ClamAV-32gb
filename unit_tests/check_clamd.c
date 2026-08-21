@@ -67,6 +67,7 @@
 #include "getopt.h"
 #include "largefile_admission.h"
 #include "optparser.h"
+#include "session.h"
 
 static int conn_tcp(int port)
 {
@@ -194,6 +195,22 @@ START_TEST(test_scan_report_json_status_accepts_dispatch_failure_fallback)
                      0);
     ck_assert_int_eq(infected, 0);
     ck_assert_int_eq(incomplete, 1);
+}
+END_TEST
+
+START_TEST(test_scan_report_fallback_completion_classes)
+{
+    ck_assert_str_eq(clamd_scan_report_completion(CL_SUCCESS, 0), "COMPLETE");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_VIRUS, 0), "DETECTION_TERMINATED");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_EMAXSIZE, 0), "LIMIT_INCOMPLETE");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_ERESOURCE, 0), "RESOURCE_FAILURE");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_EPARSE, 0), "MALFORMED_CONFIRMED");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_EFORMAT, 0), "MALFORMED_CONFIRMED");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_EUNPACK, 0), "UNSUPPORTED");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_EBYTECODE, 0), "UNSUPPORTED");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_BREAK, 0), "APPLICATION_ABORT");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_EOPEN, 0), "RESOURCE_FAILURE");
+    ck_assert_str_eq(clamd_scan_report_completion(CL_EMEM, 0), "RESOURCE_FAILURE");
 }
 END_TEST
 
@@ -1326,6 +1343,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_dispatch_failure_fallback);
+    tcase_add_test(tc_parser, test_scan_report_fallback_completion_classes);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_contradictory_reports);
     tcase_add_test(tc_parser, test_scan_report_json_alert_extracts_detection_name);
 #ifndef _WIN32
