@@ -1888,3 +1888,13 @@ checked-in PE regression now corrupts the first imported DLL name and requires
 an incomplete, non-cacheable `CL_EFORMAT` result; source guards are
 registered. Compiled Linux/Sonic1 execution, sanitizer coverage, and broader
 PE corpus qualification remain open.
+
+## PE import-function name termination — 2026-08-20
+
+PE32 and PE32+ import-thunk inspection now requires imported function names to
+contain a real NUL terminator within the bounded fmap window before copying
+them. This prevents `CLI_STRNDUP` from converting a truncated 256-byte name
+into a syntactically complete name. The checked-in PE regression corrupts the
+first function-name window and requires an incomplete, non-cacheable `CL_EFORMAT`
+result; source guards are registered. Compiled Linux/Sonic1 execution, sanitizer
+coverage, and broader PE corpus qualification remain open.

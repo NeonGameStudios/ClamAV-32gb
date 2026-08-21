@@ -2366,6 +2366,8 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
             char *funcname = NULL;
             uint32_t temp;
             size_t name_offset;
+            size_t name_window;
+            const char *name_end;
             size_t nread = fmap_readn(map, &thunk32, thuoff, sizeof(struct pe_image_thunk32));
 
             if (nread != sizeof(struct pe_image_thunk32)) {
@@ -2398,12 +2400,18 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
 
                 /* Hint field is a uint16_t and precedes the Name field. */
                 name_offset = (size_t)offset + sizeof(uint16_t);
-                buffer      = fmap_need_off_once(map, name_offset, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                name_window = MIN(PE_MAXNAMESIZE, fsize - name_offset);
+                buffer      = fmap_need_off_once(map, name_offset, name_window);
                 if (buffer == NULL) {
                     cli_mark_scan_incomplete(ctx, "PE imported function name could not be read completely");
                     return CL_EREAD;
                 }
-                funcname = CLI_STRNDUP(buffer, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                name_end = memchr(buffer, '\0', name_window);
+                if (name_end == NULL || name_end == buffer) {
+                    cli_mark_scan_incomplete(ctx, "PE imported function name is not terminated");
+                    return CL_EFORMAT;
+                }
+                funcname = CLI_STRNDUP(buffer, (size_t)(name_end - buffer));
                 if (funcname == NULL) {
                     cli_dbgmsg("scan_pe: cannot duplicate function name\n");
                     return CL_EMEM;
@@ -2429,6 +2437,8 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
         while (1) {
             char *funcname = NULL;
             size_t name_offset;
+            size_t name_window;
+            const char *name_end;
             size_t nread = fmap_readn(map, &thunk64, thuoff, sizeof(struct pe_image_thunk64));
 
             // Temporary variable so we don't have overlapping writes with the EC32 reads.
@@ -2464,12 +2474,18 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
 
                 /* Hint field is a uint16_t and precedes the Name field. */
                 name_offset = (size_t)offset + sizeof(uint16_t);
-                buffer      = fmap_need_off_once(map, name_offset, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                name_window = MIN(PE_MAXNAMESIZE, fsize - name_offset);
+                buffer      = fmap_need_off_once(map, name_offset, name_window);
                 if (buffer == NULL) {
                     cli_mark_scan_incomplete(ctx, "PE imported function name could not be read completely");
                     return CL_EREAD;
                 }
-                funcname = CLI_STRNDUP(buffer, MIN(PE_MAXNAMESIZE, fsize - name_offset));
+                name_end = memchr(buffer, '\0', name_window);
+                if (name_end == NULL || name_end == buffer) {
+                    cli_mark_scan_incomplete(ctx, "PE imported function name is not terminated");
+                    return CL_EFORMAT;
+                }
+                funcname = CLI_STRNDUP(buffer, (size_t)(name_end - buffer));
                 if (funcname == NULL) {
                     cli_dbgmsg("scan_pe: cannot duplicate function name\n");
                     return CL_EMEM;

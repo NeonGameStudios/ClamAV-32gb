@@ -9425,6 +9425,7 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
  * Allow every other memory window so the scan reaches the thunk-table read. */
 #define PE_TEST_IMPORT_DESCRIPTOR_OFFSET 0x126e00U
 #define PE_TEST_IMPORT_DLL_NAME_OFFSET   0x1274bcU
+#define PE_TEST_IMPORT_FUNCTION_OFFSET   0x127066U
 #define PE_TEST_IMPORT_THUNK_OFFSET      0x126e3cU
 
 static const void *pe_import_thunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -11298,6 +11299,8 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
     ck_assert_msg(FSTAT(fd, &st) == 0, "fstat(%s) failed: %s", file_path, strerror(errno));
     ck_assert_msg(st.st_size > PE_TEST_IMPORT_THUNK_OFFSET + sizeof(uint32_t), "PE fixture is unexpectedly short");
     ck_assert_msg(st.st_size > PE_TEST_IMPORT_DLL_NAME_OFFSET, "PE fixture lacks its imported DLL name");
+    ck_assert_msg(st.st_size > PE_TEST_IMPORT_FUNCTION_OFFSET + 256U,
+                  "PE fixture lacks its imported function name window");
 
     data = malloc((size_t)st.st_size);
     ck_assert_ptr_nonnull(data);
@@ -11356,6 +11359,26 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
      * has not yet been allocated. */
     memcpy(data + PE_TEST_IMPORT_DESCRIPTOR_OFFSET + 12, original_descriptor_name, sizeof(original_descriptor_name));
     data[PE_TEST_IMPORT_DLL_NAME_OFFSET] = '!';
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_MSEXE", NULL);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+
+    /* Restore the DLL name and remove the terminator from the first imported
+     * function name. CLI_STRNDUP must not turn this truncated name into a
+     * valid child. */
+    data[PE_TEST_IMPORT_DLL_NAME_OFFSET] = 'K';
+    memset(data + PE_TEST_IMPORT_FUNCTION_OFFSET, 'A', 256U);
     map = cl_fmap_open_memory(data, (size_t)st.st_size);
     ck_assert_ptr_nonnull(map);
     verdict    = CL_VERDICT_STRONG_INDICATOR;
