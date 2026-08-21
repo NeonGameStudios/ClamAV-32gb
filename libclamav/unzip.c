@@ -2444,9 +2444,14 @@ cl_error_t index_local_file_headers_within_bounds(
             }
         }
 
+        if (search_offset > fsize || SIZEOF_LOCAL_HEADER > fsize - search_offset)
+            break;
+
         const char *local_file_header = fmap_need_off_once(map, search_offset, SIZEOF_LOCAL_HEADER);
         if (NULL == local_file_header) {
-            break; // Reached the end of the file.
+            cli_mark_scan_incomplete(ctx, "ZIP local-header discovery window could not be read completely");
+            status = CL_EREAD;
+            goto done;
         }
 
         if (cli_readint32(local_file_header) == ZIP_MAGIC_LOCAL_FILE_HEADER) {
