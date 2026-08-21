@@ -9521,6 +9521,35 @@ START_TEST(test_embedded_header_read_failures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_binhex_encoded_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "nonempty BinHex input";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap  = map;
+
+    ret = cli_binhex(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "BinHex encoded input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mydoom_detector_read_failure_is_fail_visible)
 {
     static const uint8_t input[8 * 4 * 2] = {0};
@@ -13731,6 +13760,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_autoit_ea06_missing_member_is_fail_visible);
     tcase_add_test(tc_cl, test_embedded_candidate_admission_headers);
     tcase_add_test(tc_cl, test_embedded_header_read_failures_are_fail_visible);
+    tcase_add_test(tc_cl, test_binhex_encoded_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);

@@ -242,6 +242,7 @@ int cli_binhex(cli_ctx *ctx)
             chunksz = MIN(enc_todo, map->pgsz);
             encoded = fmap_need_off_once(map, enc_done, chunksz);
             if (!encoded) {
+                cli_mark_scan_incomplete(ctx, "BinHex encoded input could not be read completely");
                 ret = CL_EREAD;
                 break;
             }

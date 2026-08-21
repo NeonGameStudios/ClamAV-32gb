@@ -4301,3 +4301,12 @@ returns `CL_EREAD` or `CL_EFORMAT` respectively. Fault-injected Office and
 malformed-header regressions plus source guards are registered; compiled
 Linux/Sonic1, sanitizer, and broader OLE2/Office corpus qualification remain
 open.
+
+## BinHex encoded-input fmap failure — 2026-08-21
+
+The BinHex decoder now marks an in-range encoded-input fmap failure incomplete
+and non-cacheable before returning `CL_EREAD`. This closes the direct-parser
+state gap where callers could receive a read error without the shared
+completion marker. A fault-injected regression, source guard, and capability
+manifest entry are registered; compiled Linux/Sonic1, sanitizer, and broader
+BinHex corpus qualification remain open.

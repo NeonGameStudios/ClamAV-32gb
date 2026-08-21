@@ -1964,3 +1964,15 @@ returns `CL_EREAD` or `CL_EFORMAT` respectively. Fault-injected Office and
 malformed-header regressions plus source guards are registered; compiled
 Linux/Sonic1, sanitizer, and broader OLE2/Office corpus qualification remain
 open.
+
+## BinHex encoded-input fmap failure — 2026-08-21
+
+The BinHex decoder previously returned `CL_EREAD` when its first encoded-input
+window could not be mapped, but did not mark the layer incomplete. That left
+the parser's sticky completion and non-cacheable state dependent on a caller
+to infer the failure from the return code. The read-failure path now records
+`BinHex encoded input could not be read completely` through
+`cli_mark_scan_incomplete()`. A direct fault-injected parser regression checks
+the `CL_EREAD`, incomplete, reason, and non-cacheable invariants; the source
+guard and capability manifest record the same contract. Compiled Linux/Sonic1,
+sanitizer, and broader BinHex corpus qualification remain open.

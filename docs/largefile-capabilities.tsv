@@ -83,7 +83,7 @@ parser	CL_TYPE_ARJ	pending	libclamav/scanners.c	dispatch branch requires parser-
 parser	CL_TYPE_ARJSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_AUTOIT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_BINARY_DATA	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_BINHEX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_BINHEX	pending	libclamav/scanners.c	encoded-input fmap failures now mark the layer incomplete and non-cacheable; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_BZ	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_CABSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_CPIO_CRC	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
