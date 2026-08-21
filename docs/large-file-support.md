@@ -2322,6 +2322,16 @@ validation, avoiding truncation for catalogs whose logical offsets exceed
 32-bit-product wrap; compiled large-volume corpus and Sonic1 qualification
 remain release gates.
 
+## Structured service-oracle invariants — 2026-08-20
+
+The service qualification oracle now validates the report schema version,
+non-negative metric fields, root-size binding, and the complete-result contract.
+Any report claiming `COMPLETE` must carry status `CL_SUCCESS`, a clean or
+trusted verdict, and zero skipped operations. This prevents a contradictory
+structured report from passing the service gate merely because its completion
+string and alert text look correct; actual Linux, sanitizer, and Sonic1
+qualification remain release gates.
+
 ## Mach-O universal-binary member ranges — 2026-08-20
 
 Universal-binary architecture offsets and sizes remain their format-defined

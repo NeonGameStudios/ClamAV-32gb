@@ -234,24 +234,44 @@ check_oracle_output()
             echo "$oracle_label did not produce a structured report" >&2
             return 1
         fi
-        if ! python3 - "$oracle_report" "$expected_completion" "$expected_signature" "$expected_type" <<'PY'
+        if ! python3 - "$oracle_report" "$expected_completion" "$expected_signature" "$expected_type" "$expected_size" <<'PY'
 import json
 import sys
 
-report_path, expected_completion, expected_signature, expected_type = sys.argv[1:]
+report_path, expected_completion, expected_signature, expected_type, expected_size = sys.argv[1:]
 with open(report_path, "r", encoding="utf-8") as stream:
     rows = [json.loads(line) for line in stream if line.strip()]
 if len(rows) != 1:
     raise SystemExit("structured report must contain exactly one JSON object")
 report = rows[0]
+if report.get("version") != 1:
+    raise SystemExit("structured report schema version is not 1")
 if report.get("completion") != expected_completion:
     raise SystemExit("structured report completion does not match oracle")
 if report.get("file_type") != expected_type:
     raise SystemExit("structured report file type does not match oracle")
+for field in (
+    "status", "verdict", "root_size", "logical_bytes", "matcher_bytes",
+    "contiguous_bytes", "temporary_bytes", "files_scanned",
+    "max_recursion_depth", "elapsed_ms", "parser_operations",
+    "detector_operations", "skipped_operations",
+):
+    value = report.get(field)
+    if type(value) is not int or value < 0:
+        raise SystemExit(f"structured report field {field} is not a non-negative integer")
+if report["root_size"] != int(expected_size):
+    raise SystemExit("structured report root size does not match oracle")
 if expected_signature != "-" and expected_signature not in (report.get("last_alert") or ""):
     raise SystemExit("structured report alert does not match oracle")
-if expected_signature == "-" and report.get("verdict") not in (0, None):
+if expected_signature == "-" and report.get("verdict") not in (0, 1):
     raise SystemExit("structured report contains an unexpected verdict")
+if expected_completion == "COMPLETE":
+    if report["status"] != 0:
+        raise SystemExit("complete structured report has a non-success status")
+    if report["verdict"] not in (0, 1):
+        raise SystemExit("complete structured report has a non-clean verdict")
+    if report["skipped_operations"] != 0:
+        raise SystemExit("complete structured report contains skipped operations")
 PY
         then
             echo "$oracle_label structured report did not match its oracle" >&2
