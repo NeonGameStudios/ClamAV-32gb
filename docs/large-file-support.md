@@ -4102,6 +4102,16 @@ the v1/v2 coordinate admission checks. A focused regression covers null and
 zero-index dispatch; independently compiled fixture, interpreter/JIT, and
 supported-build Sonic1 qualification remain release gates.
 
+## Bytecode execution-failure propagation — 2026-08-20
+
+Required logical-signature bytecode execution failures now remain visible as a
+non-clean result instead of being normalized to `CL_SUCCESS`. Applicable hook
+bytecode failures mark the scan incomplete and non-cacheable while preserving
+any malware detection found by another hook. The focused unprepared logical
+and hook-bytecode regression covers both dispatch paths; interpreter/JIT,
+sanitizer, official bytecode, and supported-build Sonic1 qualification remain
+release gates.
+
 ## YARA logical-pass matcher-work accounting — 2026-08-20
 
 YARA-compatible logical evaluation can read integer fields from the current

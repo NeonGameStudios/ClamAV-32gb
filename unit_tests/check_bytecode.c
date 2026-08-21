@@ -846,6 +846,91 @@ START_TEST(test_bytecode_lsig_rejects_invalid_dispatch_arguments)
 }
 END_TEST
 
+START_TEST(test_bytecode_lsig_execution_failure_is_fail_visible)
+{
+    static const unsigned char bytes[] = {0x00};
+    struct cl_engine *engine;
+    struct cli_bc bc;
+    struct cli_bc_func func;
+    struct cli_all_bc bcs;
+    struct cli_bc_ctx *bcctx;
+    cli_scan_layer_t layer;
+    cli_ctx cctx;
+    fmap_t *map;
+    struct cli_bc *hook_bc;
+    uint32_t lsigcnt[64] = {0};
+    uint64_t lsigoff[64];
+    cl_error_t ret;
+    unsigned hook_slot = BC_PRECLASS - _BC_START_HOOKS;
+    unsigned i;
+
+    for (i = 0; i < 64; i++)
+        lsigoff[i] = CLI_OFF_NONE64;
+
+    memset(&bc, 0, sizeof(bc));
+    memset(&func, 0, sizeof(func));
+    memset(&bcs, 0, sizeof(bcs));
+    memset(&cctx, 0, sizeof(cctx));
+    memset(&layer, 0, sizeof(layer));
+    bc.id                  = 1;
+    bc.metadata.formatlevel = BC_FORMAT_LEVEL_V2;
+    bc.num_func            = 1;
+    bc.funcs               = &func;
+    bc.state               = bc_loaded;
+    bcs.all_bcs            = &bc;
+    bcs.count              = 1;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    map = cl_fmap_open_memory(bytes, sizeof(bytes));
+    ck_assert_ptr_nonnull(map);
+    layer.fmap               = map;
+    cctx.engine              = engine;
+    cctx.fmap                = map;
+    cctx.recursion_stack    = &layer;
+    cctx.recursion_stack_size = 1;
+
+    /* A loaded, unprepared bytecode entry makes cli_bytecode_run return an
+     * execution error. That required logical matcher failure must not become
+     * a clean result. */
+    ret = cli_bytecode_runlsig(&cctx, NULL, &bcs, 1, lsigcnt, lsigoff, map);
+    ck_assert_int_eq(ret, CL_EARG);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    /* The same invariant applies to an applicable hook. A production hook
+     * execution failure must not be hidden by the hook loop's clean fallback. */
+    cctx.scan_incomplete = false;
+    map->dont_cache_flag  = false;
+    engine->bcs.all_bcs   = calloc(1, sizeof(*engine->bcs.all_bcs));
+    engine->hooks[hook_slot] = calloc(1, sizeof(*engine->hooks[hook_slot]));
+    ck_assert_ptr_nonnull(engine->bcs.all_bcs);
+    ck_assert_ptr_nonnull(engine->hooks[hook_slot]);
+    engine->bcs.count          = 1;
+    engine->hooks_cnt[hook_slot] = 1;
+    engine->hooks[hook_slot][0]  = 0;
+    hook_bc                       = &engine->bcs.all_bcs[0];
+    hook_bc->id                   = 2;
+    hook_bc->metadata.formatlevel = BC_FORMAT_LEVEL_V2;
+    hook_bc->num_func             = 1;
+    hook_bc->funcs                = calloc(1, sizeof(*hook_bc->funcs));
+    hook_bc->state                = bc_loaded;
+    ck_assert_ptr_nonnull(hook_bc->funcs);
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ret        = cli_bytecode_runhook(&cctx, engine, bcctx, BC_PRECLASS, map);
+    ck_assert_int_eq(ret, CL_EARG);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    cli_bytecode_context_destroy(bcctx);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+
 #if defined(CL_THREAD_SAFE) && defined(C_LINUX) && ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= (2 << 16) + 4)
 #define DO_BARRIER
 #endif
@@ -959,6 +1044,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_load_bytecode_int);
     tcase_add_test(tc_cli_arith, test_bytecode_large_map_hook_gates_only_applicable_bytecode);
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_rejects_invalid_dispatch_arguments);
+    tcase_add_test(tc_cli_arith, test_bytecode_lsig_execution_failure_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);

@@ -2930,7 +2930,14 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
     }
 
     bytecode_context_initialize(&ctx);
-    cli_bytecode_context_setfuncid(&ctx, bc, 0);
+    ret = cli_bytecode_context_setfuncid(&ctx, bc, 0);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(cctx, "logical bytecode context could not be initialized");
+        if (cctx->fmap != NULL)
+            cctx->fmap->dont_cache_flag = 1;
+        bytecode_context_reset(&ctx);
+        return ret;
+    }
     ctx.hooks.match_counts    = lsigcnt;
     ctx.hooks.match_offsets64 = lsigsuboff;
     if (bytecode_uses_v2(bc)) {
@@ -2995,7 +3002,10 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
             return CL_ETIMEOUT;
         }
 
-        return CL_SUCCESS;
+        cli_mark_scan_incomplete(cctx, "logical bytecode execution failed");
+        if (cctx->fmap != NULL)
+            cctx->fmap->dont_cache_flag = 1;
+        return ret;
     }
     if (ctx.virname) {
         cl_error_t rc;
@@ -3018,6 +3028,7 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
     const unsigned *hooks;
     unsigned i, hooks_cnt;
     cl_error_t ret;
+    cl_error_t error_ret = CL_SUCCESS;
     unsigned executed = 0, breakflag = 0, errorflag = 0;
     bool applicable = false;
 
@@ -3064,11 +3075,20 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
                 continue;
             cli_dbgmsg("Bytecode: executing bytecode %u (lsig matched)\n", bc->id);
         }
-        cli_bytecode_context_setfuncid(ctx, bc, 0);
+        ret = cli_bytecode_context_setfuncid(ctx, bc, 0);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(cctx, "bytecode hook context could not be initialized");
+            if (error_ret == CL_SUCCESS)
+                error_ret = ret;
+            errorflag = 1;
+            bytecode_context_reset(ctx);
+            continue;
+        }
         ret = cli_bytecode_context_setfile(ctx, map);
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
             cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ? "bytecode v2 cannot represent the file coordinates" : "bytecode hook requires a 32-bit file size");
+            bytecode_context_reset(ctx);
             return ret;
         }
         ctx->hooks.match_offsets64 = bytecode_uses_v2(bc) ? ctx->lsigoff : nooffsets64;
@@ -3077,6 +3097,7 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
         } else {
             if (!bytecode_offsets_to_legacy(ctx->lsigoff, legacy_offsets)) {
                 cli_mark_scan_incomplete(cctx, "bytecode hook requires 64-bit matcher offsets");
+                bytecode_context_reset(ctx);
                 return CL_EMAXSIZE;
             }
             memcpy(ctx->lsigoff32, legacy_offsets, sizeof(ctx->lsigoff32));
@@ -3086,7 +3107,11 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
         executed++;
         if (ret != CL_SUCCESS) {
             cli_warnmsg("Bytecode %u failed to run: %s\n", bc->id, cl_strerror(ret));
+            cli_mark_scan_incomplete(cctx, "bytecode hook execution failed");
+            if (error_ret == CL_SUCCESS)
+                error_ret = ret;
             errorflag = 1;
+            bytecode_context_reset(ctx);
             continue;
         }
         if (ctx->virname) {
@@ -3185,8 +3210,11 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
     else
         cli_dbgmsg("Bytecode: no logical signature matched, no bytecode executed\n");
 
-    if (errorflag && cctx->engine->bytecode_mode == CL_BYTECODE_MODE_TEST)
-        return CL_EBYTECODE_TESTFAIL;
+    if (errorflag) {
+        if (cctx->engine->bytecode_mode == CL_BYTECODE_MODE_TEST)
+            return CL_EBYTECODE_TESTFAIL;
+        return error_ret == CL_SUCCESS ? CL_EBYTECODE : error_ret;
+    }
 
     return breakflag ? CL_BREAK : CL_CLEAN;
 }

@@ -1908,3 +1908,13 @@ into a syntactically complete name. The checked-in PE regression corrupts the
 first function-name window and requires an incomplete, non-cacheable `CL_EFORMAT`
 result; source guards are registered. Compiled Linux/Sonic1 execution, sanitizer
 coverage, and broader PE corpus qualification remain open.
+
+## Bytecode execution-failure propagation — 2026-08-20
+
+Required logical-signature bytecode failures no longer normalize to `CL_SUCCESS`;
+they mark the scan incomplete and non-cacheable and return the underlying
+execution error. Applicable production bytecode-hook failures now follow the
+same policy while preserving a later malware detection. A focused unprepared
+logical-and-hook-bytecode regression and source guards are registered. Compiled
+Linux/Sonic1 interpreter/JIT execution, sanitizer coverage, and official
+bytecode qualification remain open.
