@@ -4662,3 +4662,15 @@ The service qualification harness now runs its two-request serial queue gate
 through `clamdscan --stream` and requires both the `INSTREAM admission pending`
 and resumed-admission daemon-log markers. Compiled Linux, sanitizer,
 production-database, and Sonic1 runs remain release gates.
+
+## MIME unsupported-body spooling — 2026-08-21
+
+The remaining `message/*` MIME path no longer keeps an entire body in the
+legacy line list merely to reach an unsupported-format result. All MIME bodies
+now enter the shared disk-backed spool, including `external-body` and unknown
+message subtypes. Those subtypes still return an explicit incomplete result
+after bounded spooling; they are not reported clean and are not silently
+treated as nested scans. The former 64 MiB materialization cliff is therefore
+removed from this unsupported path while its format limitation remains
+documented. Focused source guards cover the dispatch and fail-closed result;
+compiled parser and Sonic1 qualification remain release gates.

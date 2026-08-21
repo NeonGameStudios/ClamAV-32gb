@@ -217,30 +217,13 @@ static bool newline_in_header(const char *line);
 
 static bool messageNeedsMaterializedBody(const message *m)
 {
-    const char *subtype;
-
     if (m == NULL)
         return false;
 
-    if (messageGetMimeType(m) == MESSAGE) {
-        subtype = messageGetMimeSubtype(m);
-
-        /* RFC822, delivery-status, partial, and disposition-notification
-         * bodies can be handled from a disk-backed representation. Keep the
-         * legacy in-memory state machine for external-body references and
-         * unknown message types, whose parser semantics are not equivalent
-         * to a nested scan. */
-        return (strcasecmp(subtype, "rfc822") != 0) &&
-               (strcasecmp(subtype, "delivery-status") != 0) &&
-               (strcasecmp(subtype, "partial") != 0) &&
-               (strcasecmp(subtype, "disposition-notification") != 0);
-    }
-
-    /* Multipart/related used to be retained as a line list because the
-     * legacy handler selected the HTML root only after all parts had been
-     * collected. The streaming handler now keeps the parts on disk until it
-     * can make the same HTML-first/text-fallback selection, so the parent
-     * body no longer needs a whole-message in-memory representation. */
+    /* Every MIME body now enters the disk-backed state machine. Unsupported
+     * message subtypes are rejected explicitly after their bounded spool is
+     * complete, rather than retaining an unbounded line list just to reach the
+     * legacy rejection branch. */
     return false;
 }
 
@@ -2235,11 +2218,12 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
      * ordinary and encapsulated bodies are scanned from their completed spool. */
     if (mainMessage && messageHasBodySpool(mainMessage)) {
         const mime_type streamed_type = messageGetMimeType(mainMessage);
+        const char *streamed_subtype  = messageGetMimeSubtype(mainMessage);
 
         if (streamed_type == MULTIPART) {
             rc = parseMultipartBodySpool(mainMessage, mctx, recursion_level);
         } else if (streamed_type == MESSAGE &&
-                   strcasecmp(messageGetMimeSubtype(mainMessage), "partial") == 0) {
+                   streamed_subtype && strcasecmp(streamed_subtype, "partial") == 0) {
             if (mctx->ctx->options->mail & CL_SCAN_MAIL_PARTIAL_MESSAGE) {
                 const int partial_rc = rfc1341(mctx, mainMessage);
 
@@ -2258,6 +2242,21 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                                          "Partial MIME message support is disabled");
                 rc = FAIL;
             }
+        } else if (streamed_type == MESSAGE &&
+                   (!streamed_subtype ||
+                    (strcasecmp(streamed_subtype, "rfc822") != 0 &&
+                     strcasecmp(streamed_subtype, "delivery-status") != 0 &&
+                     strcasecmp(streamed_subtype, "disposition-notification") != 0))) {
+            if (streamed_subtype && strcasecmp(streamed_subtype, "external-body") == 0)
+                cli_warnmsg("Attempt to send Content-type message/external-body trapped\n");
+            else
+                cli_warnmsg("Unsupported message format `%s' - if you believe this is an error, submit it to www.clamav.net\n",
+                            streamed_subtype ? streamed_subtype : "(missing subtype)");
+            cli_mark_scan_incomplete(mctx->ctx,
+                                     streamed_subtype && strcasecmp(streamed_subtype, "external-body") == 0
+                                         ? "External-body MIME content cannot be inspected locally"
+                                         : "Unsupported MIME message format could not be inspected");
+            rc = FAIL;
         } else {
             if (doPhishingScan && (streamed_type == NOMIME || streamed_type == TEXT))
                 checkURLs(mainMessage, mctx, &rc, streamed_type == TEXT);

@@ -723,6 +723,27 @@ static char *create_partial_message_missing_fragment_fixture(void)
     return path;
 }
 
+static char *create_unknown_message_subtype_fixture(void)
+{
+    static const char fixture[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: message/x-large-file-regression\n"
+        "Content-Transfer-Encoding: 8bit\n"
+        "\n"
+        "Unsupported message subtype must remain incomplete.\n";
+    char *path = NULL;
+    int fd     = -1;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, fixture, sizeof(fixture) - 1),
+                     (ssize_t)(sizeof(fixture) - 1));
+    ck_assert_int_eq(close(fd), 0);
+    return path;
+}
+
 static char *create_large_partial_message_fixture(void)
 {
     static const char header[] =
@@ -846,6 +867,29 @@ START_TEST(test_partial_message_missing_fragment_is_fail_visible)
                          NULL, NULL);
     ck_assert_msg(ret != CL_SUCCESS,
                   "missing RFC 1341 fragment returned clean");
+
+    free(path);
+}
+END_TEST
+
+START_TEST(test_unknown_message_subtype_is_fail_visible)
+{
+    struct cl_scan_options options;
+    cl_verdict_t verdict    = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert  = NULL;
+    uint64_t scanned        = 0;
+    char *path              = create_unknown_message_subtype_fixture();
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_engine_set_str(g_engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+
+    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL,
+                         NULL, NULL);
+    ck_assert_msg(ret != CL_SUCCESS,
+                  "unsupported message subtype returned clean");
 
     free(path);
 }
@@ -16649,6 +16693,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_mbox_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_mbox_large_body_streams_without_alert);
     tcase_add_test(tc_cl_scan, test_partial_message_missing_fragment_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_unknown_message_subtype_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_partial_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_disposition_notification_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_mhtml_unterminated_comment_is_fail_visible);
