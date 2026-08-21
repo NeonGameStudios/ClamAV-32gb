@@ -2732,7 +2732,7 @@ The HTML scanner now opens and sizes the generated `notags.html` view before
 dispatching it to the nested scanner. `MaxHTMLNoTags` therefore applies to the
 view it names, while an input whose markup is larger but whose normalized text
 fits is no longer rejected solely because of its source length. File-stat
-failures and generated views over the limit remain sticky incomplete results,
+missing/stat failures and generated views over the limit remain sticky incomplete results,
 non-cacheable, and visible to the caller. The focused unit regression covers
 both the over-limit failure and the input-versus-generated-size distinction;
 supported-build and parser-corpus qualification remain open.
