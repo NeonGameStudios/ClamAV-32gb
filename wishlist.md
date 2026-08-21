@@ -102,6 +102,8 @@
 - Windows memory scans no longer turn a failed descriptor scan into `OK`; the
   native Windows memory ingress remains outside the certified first-release
   platform boundary.
+- Raw matcher hash-cache failures now remain incomplete and non-cacheable
+  instead of being discarded after hash computation.
 - TIFF IFD type-width multiplication and external-value range checks now use
   checked native-size arithmetic and remain fail-visible.
 - GIF block, color-table, and extension range admission now uses checked

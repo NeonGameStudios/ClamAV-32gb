@@ -115,6 +115,7 @@ contains unit_tests/check_clamav.c 'test_macho_metadata_read_failure_is_fail_vis
 contains libclamav/matcher.c 'Executable metadata parsing ended before inspection completed'
 contains libclamav/matcher.c 'cli_mark_scan_incomplete(ctx, "false-positive hash preparation failed");'
 contains libclamav/matcher.c 'cli_mark_scan_incomplete(ctx, "false-positive hash could not be read");'
+contains libclamav/matcher.c 'cli_mark_scan_incomplete(ctx, "raw matcher hash could not be cached completely");'
 contains libclamav/matcher.c 'cli_check_fp_trust_layers'
 contains libclamav/matcher.c 'false-positive trust update failed'
 contains libclamav/others.c 'cli_trust_layers: missing trust reason'

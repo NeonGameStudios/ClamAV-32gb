@@ -1638,7 +1638,11 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                 cl_finish_hash(hashctx[hash_type], digest[hash_type]);
                 hashctx[hash_type] = NULL;
 
-                fmap_set_hash(ctx->fmap, digest[hash_type], hash_type);
+                ret = fmap_set_hash(ctx->fmap, digest[hash_type], hash_type);
+                if (CL_SUCCESS != ret) {
+                    cli_mark_scan_incomplete(ctx, "raw matcher hash could not be cached completely");
+                    goto done;
+                }
             }
         }
 

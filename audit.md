@@ -2566,3 +2566,14 @@ and be logged as `OK`. The helper now records the error and increments the
 memory-scan error count before any clean normalization. Native Windows remains
 explicitly outside the certified Linux x86-64 first-release target; source
 guards and the capability manifest record that boundary.
+
+## Raw matcher hash-cache failure propagation — 2026-08-21
+
+The raw matcher previously discarded the return value from `fmap_set_hash()`
+after finishing a required hash. A cache-insertion failure could therefore
+leave the hash-dependent stage incomplete while later logic continued toward a
+clean or cacheable result. The matcher now preserves the error, marks the scan
+incomplete/non-cacheable, and stops before hash-signature lookup. The source
+guard and capability manifest record the invariant; compiled Linux/Sonic1,
+fault injection, sanitizer, and production signature-corpus qualification
+remain open.
