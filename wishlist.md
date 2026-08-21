@@ -94,6 +94,9 @@
 - False-positive trust-update errors and missing metadata trust reasons now
   remain fail-visible instead of producing a trusted verdict after a failed
   metadata operation.
+- Modern and legacy callback trust-update failures now remain fail-visible and
+  cannot be converted into `CL_VERIFIED` before evidence/metadata cleanup
+  succeeds.
 - TIFF IFD type-width multiplication and external-value range checks now use
   checked native-size arithmetic and remain fail-visible.
 - GIF block, color-table, and extension range admission now uses checked

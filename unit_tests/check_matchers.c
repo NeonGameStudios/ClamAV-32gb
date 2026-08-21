@@ -1232,7 +1232,12 @@ START_TEST(test_trust_layers_rejects_missing_reason)
     ret = cli_trust_layers(&ctx, 0, 0, NULL);
     ck_assert_int_eq(ret, CL_ENULLARG);
 
+    ctx.this_layer_metadata_json = metadata;
+    ret = cli_trust_this_layer(&ctx, NULL);
+    ck_assert_int_eq(ret, CL_ENULLARG);
+
     ctx.recursion_stack[0].metadata_json = NULL;
+    ctx.this_layer_metadata_json = NULL;
     options.general &= ~CL_SCAN_GENERAL_COLLECT_METADATA;
     json_object_put(metadata);
 }

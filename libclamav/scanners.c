@@ -5470,13 +5470,20 @@ static cl_error_t dispatch_file_inspection_callback(clcb_file_inspection cb, cli
     perf_stop(ctx, PERFT_INSPECT);
 
     switch (status) {
-        case CL_BREAK:
+        case CL_BREAK: {
+            cl_error_t trust_ret;
+
             cli_dbgmsg("dispatch_file_inspection_callback: file trusted by callback\n");
 
             // Remove any evidence for this layer and set the verdict to trusted.
-            (void)cli_trust_this_layer(ctx, "legacy file-inspection application callback");
+            trust_ret = cli_trust_this_layer(ctx, "legacy file-inspection application callback");
+            if (CL_SUCCESS != trust_ret) {
+                cli_mark_scan_incomplete(ctx, "file-inspection callback trust update failed");
+                status = trust_ret;
+            }
 
             break;
+        }
         case CL_VIRUS:
             cli_dbgmsg("dispatch_file_inspection_callback: file blocked by callback\n");
             append_ret = cli_append_virus(ctx, "Detected.By.Callback.Inspection");
@@ -5519,9 +5526,16 @@ static cl_error_t dispatch_prescan_callback(clcb_pre_scan cb, cli_ctx *ctx, cons
                 cli_dbgmsg("dispatch_prescan_callback: file allowed by callback\n");
 
                 // Remove any evidence for this layer and set the verdict to trusted.
-                (void)cli_trust_this_layer(ctx, source);
+                {
+                    cl_error_t trust_ret = cli_trust_this_layer(ctx, source);
 
-                status = CL_VERIFIED;
+                    if (CL_SUCCESS != trust_ret) {
+                        cli_mark_scan_incomplete(ctx, "pre-scan callback trust update failed");
+                        status = trust_ret;
+                    } else {
+                        status = CL_VERIFIED;
+                    }
+                }
             } break;
             case CL_VIRUS: {
                 const char *alert_name = pre_cache ? "Detected.By.Callback.PreCache"
@@ -6969,15 +6983,22 @@ done:
         perf_stop(ctx, PERFT_POSTCB);
 
         switch (callback_ret) {
-            case CL_BREAK:
+            case CL_BREAK: {
+                cl_error_t trust_ret;
+
                 cli_dbgmsg("cli_magic_scan: file allowed by post_scan callback\n");
 
                 // Remove any evidence for this layer and set the verdict to trusted.
-                (void)cli_trust_this_layer(ctx, "legacy post-scan application callback");
+                trust_ret = cli_trust_this_layer(ctx, "legacy post-scan application callback");
+                if (CL_SUCCESS != trust_ret) {
+                    cli_mark_scan_incomplete(ctx, "post-scan callback trust update failed");
+                    status = trust_ret;
+                }
 
                 // status = CL_SUCCESS; // Do override the status here.
                 //  If status == CL_VIRUS, we'll fix when we look at the verdict.
                 break;
+            }
             case CL_VIRUS:
                 cli_dbgmsg("cli_magic_scan: file blocked by post_scan callback\n");
                 append_ret = cli_append_virus(ctx, "Detected.By.Callback");

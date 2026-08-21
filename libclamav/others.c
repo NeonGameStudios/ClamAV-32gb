@@ -3187,13 +3187,20 @@ cl_error_t cli_dispatch_scan_callback(cli_ctx *ctx, cl_scan_callback_t location)
         } break;
 
         case CL_VERIFIED: {
+            cl_error_t trust_ret;
+
             // An alert callback returning CL_VERIFIED means the application verified the current layer as clean.
             // So we need to remove any alerts for this layer and return CL_VERIFIED (will stop scanning this layer).
             cli_dbgmsg("dispatch_scan_callback: Layer trusted by callback\n");
 
             // Remove any evidence for this layer and set the verdict to trusted.
-            (void)cli_trust_this_layer(ctx, callback_name(location));
-            status = CL_VERIFIED;
+            trust_ret = cli_trust_this_layer(ctx, callback_name(location));
+            if (CL_SUCCESS != trust_ret) {
+                cli_mark_scan_incomplete(ctx, "callback trust update failed");
+                status = trust_ret;
+            } else {
+                status = CL_VERIFIED;
+            }
         } break;
 
         default: {
@@ -3404,6 +3411,11 @@ cl_error_t cli_trust_this_layer(cli_ctx *ctx, const char *source)
     ctx->recursion_stack[ctx->recursion_level].verdict = CL_VERDICT_TRUSTED;
 
     if (SCAN_COLLECT_METADATA && ctx->this_layer_metadata_json) {
+        if (NULL == source) {
+            cli_errmsg("cli_trust_this_layer: missing trust reason\n");
+            status = CL_ENULLARG;
+            goto done;
+        }
         reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
         reason     = malloc(reason_len);
         if (!reason) {

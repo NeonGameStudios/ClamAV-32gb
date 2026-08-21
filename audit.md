@@ -77,6 +77,7 @@ incomplete, and is not cacheable as clean. A focused regression and source
 guard cover the boundary; supported-Linux compilation and runtime
 qualification remain open.
 
+
 The shared mbox line reader now receives the scan context and marks failed
 fmap windows or invalid line ranges incomplete instead of treating them as
 ordinary end-of-message. A focused inner-reader fault injection covers this
@@ -799,6 +800,7 @@ its partial output; only complete members reach nested scanning. Focused Rust
 regressions cover quota and decoder-error discard behavior, and source guards
 record the invariant. Compiled Linux/Sonic1, sanitizer, and broader ALZ corpus
 qualification remain open.
+
 
 ## Latest 7-Zip member-name width follow-up — 2026-08-19
 
@@ -2531,4 +2533,15 @@ mark the scan incomplete/non-cacheable; metadata trust explicitly rejects a
 missing reason while non-metadata trust behavior remains unchanged. Focused
 matcher regressions and source guards are registered. Compiled Linux/Sonic1,
 sanitizer, allocation fault injection, and production signature-corpus
+qualification remain open.
+
+## Callback trust-update propagation — 2026-08-21
+
+Modern alert callbacks and legacy pre-scan, file-inspection, and post-scan
+callbacks previously ignored failures while removing evidence and updating
+trusted-layer metadata. They now preserve the trust-update error, mark the
+scan incomplete/non-cacheable, and only return `CL_VERIFIED` after the trust
+operation succeeds. Single-layer metadata trust also rejects a missing reason.
+Focused source guards and the matcher trust-reason regression are registered.
+Compiled Linux/Sonic1, sanitizer, allocation fault injection, and callback
 qualification remain open.
