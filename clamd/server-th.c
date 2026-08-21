@@ -845,9 +845,10 @@ static const char *parse_dispatch_cmd(client_conn_t *conn, struct fd_buf *buf, s
         }
 
         /* Path/FILDES report requests are complete protocol units once their
-         * worker has been queued. Keep the worker's copy set, but prevent the
-         * receive loop's next IDSESSION command from inheriting the flag. */
-        if (is_structured_report_command(cmdtype))
+         * worker has been queued. INSTREAMREPORT is different: its worker is
+         * not queued until the terminating zero chunk arrives, so preserve
+         * the flag through chunk staging and clear it after that scan. */
+        if (is_structured_report_command(cmdtype) && conn->mode != MODE_STREAM)
             conn->structured_report = 0;
         conn->id++;
     }

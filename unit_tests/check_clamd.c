@@ -1052,6 +1052,38 @@ START_TEST(test_instream)
 }
 END_TEST
 
+START_TEST(test_instream_report)
+{
+    char *recvdata;
+    char buf[4096] = "zINSTREAMREPORT";
+    size_t len;
+    size_t off = sizeof("zINSTREAMREPORT");
+    uint32_t frame_length;
+    uint32_t terminator;
+
+    off = prepare_instream(buf, off, sizeof(buf));
+
+    conn_setup();
+    ck_assert_msg((size_t)send(sockd, buf, off, 0) == off, "send() failed: %s\n", strerror(errno));
+
+    recvdata = (char *)recvfull(sockd, &len);
+    ck_assert_msg(len >= (sizeof(frame_length) + sizeof(terminator)),
+                  "Structured INSTREAM reply is shorter than its framing fields");
+    memcpy(&frame_length, recvdata, sizeof(frame_length));
+    frame_length = ntohl(frame_length);
+    ck_assert_msg((uint64_t)frame_length + sizeof(frame_length) + sizeof(terminator) == len,
+                  "Structured INSTREAM reply has an invalid frame length");
+    memcpy(&terminator, recvdata + sizeof(frame_length) + frame_length, sizeof(terminator));
+    ck_assert_uint_eq(terminator, 0);
+    ck_assert_ptr_nonnull(CLI_STRNSTR(recvdata + sizeof(frame_length),
+                                      "\"completion\":\"DETECTION_TERMINATED\"",
+                                      frame_length));
+
+    free(recvdata);
+    conn_teardown();
+}
+END_TEST
+
 #ifndef _WIN32
 static int sendmsg_fd(int sockd, const char *mesg, size_t msg_len, int fd, int singlemsg)
 {
@@ -1531,6 +1563,7 @@ static Suite *test_clamd_suite(void)
 
     tcase_add_test(tc_commands, test_stats);
     tcase_add_test(tc_commands, test_instream);
+    tcase_add_test(tc_commands, test_instream_report);
     tcase_add_test(tc_commands, test_idsession);
 
 #ifndef _WIN32 // Disabled because fd-passing not supported on Windows

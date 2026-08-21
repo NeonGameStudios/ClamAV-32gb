@@ -2907,3 +2907,13 @@ detected branches now increment the count explicitly, matching ordinary file
 scans. A source guard requires five total completed/alerted-file increment
 sites in `clamscan/manager.c`. Compiled CLI and Sonic1 qualification remain
 open.
+
+## INSTREAMREPORT preserves structured mode through staging — 2026-08-21
+
+`INSTREAMREPORT` now retains its structured-report flag while the receive loop
+stages chunks. The flag is cleared only after the terminating zero chunk has
+queued the scan, so quota, write, scan, and completion failures use the
+length-prefixed JSON report path rather than silently reverting to legacy text.
+A clamd regression sends a detected stream and verifies the JSON completion
+frame and zero terminator. Compiled daemon and Sonic1 qualification remain
+open.

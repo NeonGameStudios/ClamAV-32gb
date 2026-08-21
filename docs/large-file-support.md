@@ -4607,3 +4607,11 @@ the CLI summary. Clean, trusted, and detected stdin results each contribute
 one scanned file; errors do not get a speculative pre-count. This aligns
 stdin accounting with ordinary file scans and prevents a clean stdin input
 from being reported twice. Compiled CLI and Sonic1 qualification remain open.
+
+## INSTREAMREPORT preserves structured mode through staging — 2026-08-21
+
+`INSTREAMREPORT` now keeps structured mode active while chunks are staged and
+clears it only after the terminating zero chunk dispatches the scan. This
+keeps quota, write, scan, and completion failures on the length-prefixed JSON
+protocol. A clamd regression verifies the detected-stream JSON completion and
+zero terminator; compiled daemon and Sonic1 qualification remain open.
