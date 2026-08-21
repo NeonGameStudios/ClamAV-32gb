@@ -201,15 +201,19 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     }
     offset += sizeof(d_insize);
 
-    /* check if declared input size matches actual output size */
     /* map->len = header (8 bytes) + d_insize (4 bytes) + flags (5 bytes) + compressed stream */
-    if (d_insize != (map->len - 17)) {
+    if (map->len < 17) {
+        cli_mark_scan_incomplete(ctx, "SWF LZMA compressed length header was truncated");
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EPARSE, temporary_reserved);
+    }
+    if ((uint64_t)d_insize != (uint64_t)(map->len - 17)) {
         cli_warnmsg("SWF: declared input length != compressed stream size, %u != %llu\n",
                     d_insize, (long long unsigned)(map->len - 17));
-    } else {
-        cli_dbgmsg("SWF: declared input length == compressed stream size, %u == %llu\n",
-                   d_insize, (long long unsigned)(map->len - 17));
+        cli_mark_scan_incomplete(ctx, "SWF LZMA compressed length disagreed with input");
+        return swf_cleanup_temp(ctx, fd, tmpname, CL_EPARSE, temporary_reserved);
     }
+    cli_dbgmsg("SWF: declared input length == compressed stream size, %u == %llu\n",
+               d_insize, (long long unsigned)(map->len - 17));
 
     /* first buffer required for initializing LZMA */
     n_read = fmap_readn(map, inbuff, offset, FILEBUFF);

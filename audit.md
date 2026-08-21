@@ -2282,3 +2282,12 @@ byte count. It now marks that confirmed layer incomplete and returns
 `CL_EFORMAT` before nested scanning. Source guards record the invariant;
 compiled Linux/Sonic1, sanitizer, and broader OLE2 corpus qualification remain
 open.
+
+## ZWS/SWF declared-input admission — 2026-08-21
+
+ZWS previously logged a mismatch between its declared compressed-stream length
+and the bytes present in the fmap, then continued toward LZMA decoding. The
+path now rejects truncated or mismatched length fields before decoder setup and
+marks the layer incomplete; a focused public SWF regression covers the exact
+boundary. Compiled Linux/Sonic1, sanitizer, and broader SWF corpus
+qualification remain open.

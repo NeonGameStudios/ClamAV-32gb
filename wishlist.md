@@ -115,6 +115,8 @@
   add broader malformed-SZDD corpus coverage during parser qualification.
 - OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed
   MSO stream corpus coverage during Office-parser qualification.
+- ZWS/SWF compressed-input length fields are now enforced before LZMA setup; add
+  broader malformed ZWS corpus coverage during media-parser qualification.
 
 ## Large-file validation and expansion progression
 
