@@ -546,8 +546,10 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
         }
 
         cli_dbgmsg("ishield: @%lx found file %s (%s) - version %s - size %lu\n", (unsigned long int)coff, fname, path, version, (unsigned long int)fsize);
-        if (CL_SUCCESS != cli_matchmeta(ctx, fname, fsize, fsize, 0, fc++, 0)) {
-            ret = CL_VIRUS;
+        ret = cli_matchmeta(ctx, fname, fsize, fsize, 0, fc++, 0);
+        if (ret != CL_SUCCESS) {
+            if (ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK)
+                cli_mark_scan_incomplete(ctx, "InstallShield member metadata matching did not complete");
             break;
         }
 

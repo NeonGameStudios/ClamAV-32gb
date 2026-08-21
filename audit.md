@@ -2311,3 +2311,14 @@ content. It now propagates detection/cancellation, converts callback failures
 and limit admission failures into sticky incomplete results, and stops before
 member extraction. Source guards record both fail-visible branches; compiled
 Rust/Linux/Sonic1, sanitizer, and broader LHA corpus qualification remain open.
+
+## Legacy archive metadata-result propagation — 2026-08-21
+
+CPIO ODC/newc, TAR, RAR, EGG, ARJ, and InstallShield metadata callers now
+propagate every non-success result from `cli_matchmeta()`. Previously several
+paths only recognized `CL_VIRUS`, allowing callback/resource failures to
+continue into extraction, normalize to success, or be mislabeled as malware.
+Non-detection callback statuses remain caller-visible, while ordinary clean
+metadata continues to permit extraction. Source guards record the corrected
+callers; compiled Linux/Sonic1, callback-fault injection, sanitizer, and wider
+archive-corpus qualification remain open.

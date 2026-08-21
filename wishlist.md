@@ -122,6 +122,8 @@
 - LHA/LZH member-limit and metadata callback failures now stop fail-closed;
   add malformed, oversized, callback, and multi-member corpus coverage during
   Rust-parser qualification.
+- Legacy CPIO/TAR/RAR/EGG/ARJ/InstallShield metadata callback failures now
+  propagate; add callback-fault and malformed archive corpus coverage.
 
 ## Large-file validation and expansion progression
 

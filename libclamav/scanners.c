@@ -281,9 +281,12 @@ static cl_error_t cli_unrar_scanmetadata(unrar_metadata_t *metadata, cli_ctx *ct
                (unsigned int)metadata->unpack_size, metadata->method,
                metadata->pack_size ? (unsigned int)(metadata->unpack_size / metadata->pack_size) : 0);
 
-    if (CL_VIRUS == cli_matchmeta(ctx, metadata->filename, metadata->pack_size, metadata->unpack_size, metadata->encrypted, files, metadata->crc)) {
-        status = CL_VIRUS;
-    } else if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE && metadata->encrypted) {
+    status = cli_matchmeta(ctx, metadata->filename, metadata->pack_size, metadata->unpack_size,
+                           metadata->encrypted, files, metadata->crc);
+    if (status != CL_SUCCESS)
+        return status;
+
+    if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE && metadata->encrypted) {
         cli_dbgmsg("RAR: Encrypted files found in archive.\n");
         status = CL_EUNPACK;
     }
@@ -763,9 +766,12 @@ static cl_error_t cli_egg_scanmetadata(cl_egg_metadata *metadata, cli_ctx *ctx, 
                (unsigned int)metadata->unpack_size,
                metadata->pack_size ? (unsigned int)(metadata->unpack_size / metadata->pack_size) : 0);
 
-    if (CL_VIRUS == cli_matchmeta(ctx, metadata->filename, metadata->pack_size, metadata->unpack_size, metadata->encrypted, files, 0)) {
-        status = CL_VIRUS;
-    } else if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE && metadata->encrypted) {
+    status = cli_matchmeta(ctx, metadata->filename, metadata->pack_size, metadata->unpack_size,
+                           metadata->encrypted, files, 0);
+    if (status != CL_SUCCESS)
+        return status;
+
+    if (SCAN_HEURISTIC_ENCRYPTED_ARCHIVE && metadata->encrypted) {
         cli_dbgmsg("EGG: Encrypted files found in archive.\n");
         status = CL_EUNPACK;
     }
@@ -1219,12 +1225,15 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
 
         file++;
 
-        if (CL_VIRUS == cli_matchmeta(ctx, metadata.filename, metadata.comp_size, metadata.orig_size, metadata.encrypted, file, 0)) {
+        ret = cli_matchmeta(ctx, metadata.filename, metadata.comp_size, metadata.orig_size, metadata.encrypted, file, 0);
+        if (ret != CL_SUCCESS) {
+            if (ret != CL_VIRUS && ret != CL_VERIFIED && ret != CL_BREAK)
+                cli_mark_scan_incomplete(ctx, "ARJ member metadata matching did not complete");
             if (metadata.filename) {
                 free(metadata.filename);
                 metadata.filename = NULL;
             }
-            return cli_arj_cleanup_dir(ctx, &dir, CL_VIRUS);
+            break;
         }
 
         ret = cli_checklimits("ARJ", ctx, metadata.orig_size, metadata.comp_size, 0);

@@ -377,9 +377,9 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
 
             strncpy(name, block, 100);
             name[100] = '\0';
-            if (cli_matchmeta(ctx, name, size, size, 0, files, 0) == CL_VIRUS) {
-                return CL_VIRUS;
-            }
+            ret = cli_matchmeta(ctx, name, size, size, 0, files, 0);
+            if (ret != CL_SUCCESS)
+                return ret;
 
             ret = cli_scan_reserve_temporary(ctx, (uint64_t)size);
             if (ret != CL_SUCCESS) {

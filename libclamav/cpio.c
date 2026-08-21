@@ -274,7 +274,7 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
         }
 
         status = cli_matchmeta(ctx, name, filesize, filesize, 0, file, 0);
-        if (status == CL_VIRUS) {
+        if (status != CL_SUCCESS) {
             goto done;
         }
 
@@ -379,7 +379,7 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
         }
 
         status = cli_matchmeta(ctx, name, filesize, filesize, 0, file, 0);
-        if (status == CL_VIRUS) {
+        if (status != CL_SUCCESS) {
             goto done;
         }
 
