@@ -2179,3 +2179,13 @@ The focused truncated-block regression now covers global-table and extension
 sub-block admission as well as the existing image paths; source guards and
 capability evidence record the invariant. Compiled Linux/Sonic1, sanitizer,
 and broader GIF corpus qualification remain open.
+
+## HWP3 information-block arithmetic — 2026-08-21
+
+HWP3 information-block admission now verifies the starting offset and compares
+the declared length against the remaining fmap range without wrapping
+addition. Image and background-image blocks also reject lengths shorter than
+their fixed 32-byte and 324-byte headers before subtracting those headers for
+nested scanning. A focused malformed-information-block regression, source
+guards, and capability evidence record the invariant; compiled Linux/Sonic1,
+sanitizer, and broader HWP3 corpus qualification remain open.

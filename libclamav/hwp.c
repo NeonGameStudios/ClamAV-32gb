@@ -1627,8 +1627,10 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
     hwp3_debug("HWP3.x: Information Block[%llu]: LEN: %u\n", infoloc, infolen);
 
     /* check information block bounds */
-    if (*offset + infolen > map->len) {
-        cli_errmsg("HWP3.x: Information blocks length exceeds remaining map length, %zu > %zu\n", *offset + infolen, map->len);
+    if (*offset > map->len || (size_t)infolen > map->len - *offset) {
+        size_t remaining = (*offset <= map->len) ? map->len - *offset : 0;
+        cli_errmsg("HWP3.x: Information block length %u exceeds remaining map length %zu at offset %zu\n",
+                   infolen, remaining, *offset);
         return CL_EREAD;
     }
 
@@ -1652,6 +1654,11 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
 
             if (SCAN_COLLECT_METADATA)
                 cli_jsonstr(entry, "Type", "Image Data");
+
+            if (infolen < 32) {
+                cli_errmsg("HWP3.x: Image data information block is shorter than its 32-byte header\n");
+                return CL_EFORMAT;
+            }
 
 #if HWP3_DEBUG /* additional fields can be added */
             memset(field, 0, HWP3_FIELD_LENGTH);
@@ -1730,6 +1737,11 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
             break;
         case 6: /* Background Image Data */
             hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Background Image Data\n", infoloc);
+
+            if (infolen < 324) {
+                cli_errmsg("HWP3.x: Background image information block is shorter than its 324-byte header\n");
+                return CL_EFORMAT;
+            }
 
             if (SCAN_COLLECT_METADATA) {
                 cli_jsonstr(entry, "Type", "Background Image Data");

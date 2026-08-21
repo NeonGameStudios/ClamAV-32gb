@@ -92,6 +92,8 @@
   checked native-size arithmetic and remain fail-visible.
 - GIF block, color-table, and extension range admission now uses checked
   subtraction-form bounds rather than wrapping offset-plus-length comparisons.
+- HWP3 information-block bounds now use subtraction-form admission, and image
+  payload headers reject short lengths before fixed-header subtraction.
 
 ## Large-file validation and expansion progression
 

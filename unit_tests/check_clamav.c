@@ -9027,6 +9027,53 @@ START_TEST(test_hwp3_parser_errors_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp3_information_block_length_is_fail_visible)
+{
+    enum {
+        HWP3_INFO_OFFSET = 30 + 128 + 1008 + (7 * 2) + 2 + 43,
+        HWP3_IMAGE_INFO_LENGTH = 31,
+        HWP3_BACKGROUND_INFO_LENGTH = 323
+    };
+    static const uint8_t info_ids[]       = {1, 6};
+    static const uint32_t info_lengths[]  = {HWP3_IMAGE_INFO_LENGTH, HWP3_BACKGROUND_INFO_LENGTH};
+    uint8_t data[HWP3_INFO_OFFSET + 8 + HWP3_BACKGROUND_INFO_LENGTH] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    size_t i;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    engine.maxrechwp3 = 100;
+
+    /* A zeroed HWP3 content stream ends its paragraph list immediately. The
+     * following image-information blocks declare less than their fixed
+     * 32-byte and 324-byte preambles; no underflowed nested range may be
+     * attempted. */
+    for (i = 0; i < sizeof(info_ids) / sizeof(info_ids[0]); i++) {
+        memset(data, 0, sizeof(data));
+        memset(&ctx, 0, sizeof(ctx));
+        data[HWP3_INFO_OFFSET]     = info_ids[i];
+        data[HWP3_INFO_OFFSET + 4] = (uint8_t)info_lengths[i];
+
+        map = cl_fmap_open_memory(data, HWP3_INFO_OFFSET + 8 + info_lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        ctx.engine  = &engine;
+        ctx.options = &options;
+        ctx.fmap = map;
+
+        ret = cli_scanhwp3(&ctx);
+        ck_assert_int_eq(ret, CL_EFORMAT);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
 START_TEST(test_hwp3_document_info_read_failure_is_fail_visible)
 {
     uint8_t data[30 + 128 + 1008] = {0};
@@ -14434,6 +14481,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_apm_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_invalid_partition_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_parser_errors_are_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_onenote_dispatch_honors_document_dconf);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);
