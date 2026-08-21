@@ -2720,9 +2720,22 @@ explicit `unsupported` status.
 Public numeric engine setters now reject negative values and narrowing
 overflow for their 32-bit and 8-bit destinations, and settings-copy apply
 rejects AC depth values that cannot be represented by the matcher ABI. HTML
-no-tags normalization over `MaxHTMLNoTags` is fail-visible rather than a
-silent parser omission. The new unit regressions and source guards are
-registered, but a supported Linux compile and runtime execution remain open.
+no-tags normalization now measures the generated `notags.html` file against
+`MaxHTMLNoTags`, rather than applying that limit to the original input length;
+an over-limit required view remains fail-visible rather than a silent parser
+omission. The new unit regressions and source guards are registered, but a
+supported Linux compile and runtime execution remain open.
+
+## HTML normalized-view size admission — 2026-08-21
+
+The HTML scanner now opens and sizes the generated `notags.html` view before
+dispatching it to the nested scanner. `MaxHTMLNoTags` therefore applies to the
+view it names, while an input whose markup is larger but whose normalized text
+fits is no longer rejected solely because of its source length. File-stat
+failures and generated views over the limit remain sticky incomplete results,
+non-cacheable, and visible to the caller. The focused unit regression covers
+both the over-limit failure and the input-versus-generated-size distinction;
+supported-build and parser-corpus qualification remain open.
 
 ## OneNote bounded legacy extraction — 2026-08-19
 

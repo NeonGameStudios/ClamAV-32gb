@@ -1998,8 +1998,8 @@ START_TEST(test_html_notags_cap_is_fail_visible)
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
-    /* Let normalization complete, then force the required no-tags view over
-     * its independent cap. The scanner must not silently omit that view. */
+    /* Force the required no-tags view over its cap. The scanner must not
+     * silently omit that view. */
     engine->maxhtmlnormalize = 1024;
     engine->maxhtmlnotags   = 1;
 
@@ -2019,6 +2019,48 @@ START_TEST(test_html_notags_cap_is_fail_visible)
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_html_notags_cap_uses_generated_size)
+{
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    static const unsigned char data[] = "<html><body>normalized content</body></html>";
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    /* The input is larger than the no-tags cap, but its generated no-tags
+     * representation fits. The scanner must measure the generated view rather
+     * than incorrectly applying the cap to the original input. */
+    engine->maxhtmlnormalize = 1024;
+    engine->maxhtmlnotags   = 40;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_HTML", NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
     cl_engine_free(engine);
@@ -16374,6 +16416,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
     tcase_add_test(tc_cl, test_html_normalize_cap_does_not_skip_raw_matching);
     tcase_add_test(tc_cl, test_html_notags_cap_is_fail_visible);
+    tcase_add_test(tc_cl, test_html_notags_cap_uses_generated_size);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_html_normalize_cleanup_close_failure_is_fail_visible);
 #endif

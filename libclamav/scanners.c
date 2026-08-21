@@ -3364,42 +3364,50 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
     }
 
     /* CL_ENGINE_MAX_HTMLNOTAGS */
-    curr_len = map->len;
-    if (curr_len > ctx->engine->maxhtmlnotags) {
-        /* The no-tags representation is a required normalized view. Do not
-         * silently omit it: doing so would allow signatures that only match
-         * the normalized content to return a false clean result. */
-        cli_dbgmsg("cli_scanhtml: normalized no-tags view exceeds MaxHTMLNoTags\n");
-        cli_mark_scan_incomplete(ctx, "HTML no-tags normalization exceeds MaxHTMLNoTags");
-        status = CL_EPARSE;
+    snprintf(fullname, 1024, "%s" PATHSEP "notags.html", tempname);
+
+    fd = open(fullname, O_RDONLY | O_BINARY);
+    if (fd < 0 && errno != ENOENT) {
+        int open_errno = errno;
+
+        cli_mark_scan_incomplete(ctx, "HTML normalized no-tags output could not be opened");
+        status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
         goto done;
-    } else {
-        snprintf(fullname, 1024, "%s" PATHSEP "notags.html", tempname);
+    }
+    if (fd >= 0) {
+        struct stat no_tags_stat;
 
-        fd = open(fullname, O_RDONLY | O_BINARY);
-        if (fd < 0 && errno != ENOENT) {
-            int open_errno = errno;
-
-            cli_mark_scan_incomplete(ctx, "HTML normalized no-tags output could not be opened");
-            status = (open_errno == EACCES) ? CL_EACCES : CL_EOPEN;
+        if (fstat(fd, &no_tags_stat) != 0 || no_tags_stat.st_size < 0) {
+            cli_mark_scan_incomplete(ctx, "HTML normalized no-tags output could not be sized");
+            status = CL_EREAD;
             goto done;
         }
-        if (fd >= 0) {
-            // notags.html file exists, so lets scan it.
 
-            status = cli_scan_desc(fd, ctx, CL_TYPE_HTML, false, NULL, AC_SCAN_VIR, NULL, "no-tags", fullname, LAYER_ATTRIBUTES_NORMALIZED);
-            if (CL_SUCCESS != status) {
-                goto done;
-            }
-
-            if (close(fd) != 0) {
-                cli_scanhtml_note_cleanup_failure(ctx, &status, CL_EWRITE,
-                                                  "HTML normalized no-tags output could not be closed");
-                fd = -1;
-                goto done;
-            }
-            fd = -1;
+        /* The no-tags representation is a required normalized view. Do not
+         * silently omit it: doing so would allow signatures that only match
+         * the normalized content to return a false clean result. Measure the
+         * generated view itself rather than using the input length as a
+         * conservative proxy. */
+        if ((uint64_t)no_tags_stat.st_size > ctx->engine->maxhtmlnotags) {
+            cli_dbgmsg("cli_scanhtml: normalized no-tags view exceeds MaxHTMLNoTags\n");
+            cli_mark_scan_incomplete(ctx, "HTML no-tags normalization exceeds MaxHTMLNoTags");
+            status = CL_EPARSE;
+            goto done;
         }
+
+        // notags.html file exists, so lets scan it.
+        status = cli_scan_desc(fd, ctx, CL_TYPE_HTML, false, NULL, AC_SCAN_VIR, NULL, "no-tags", fullname, LAYER_ATTRIBUTES_NORMALIZED);
+        if (CL_SUCCESS != status) {
+            goto done;
+        }
+
+        if (close(fd) != 0) {
+            cli_scanhtml_note_cleanup_failure(ctx, &status, CL_EWRITE,
+                                              "HTML normalized no-tags output could not be closed");
+            fd = -1;
+            goto done;
+        }
+        fd = -1;
     }
 
     snprintf(fullname, 1024, "%s" PATHSEP "javascript", tempname);

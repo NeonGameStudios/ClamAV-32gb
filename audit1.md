@@ -3019,3 +3019,13 @@ Both bounded descriptors are now copied while readable, and all primary-window
 error paths release the exact requested range. Static guards and whitespace
 validation pass; compiled ISO corpus, sanitizer, and large-file qualification
 remain release gates.
+
+## HTML normalized-view size admission — 2026-08-21
+
+The HTML scanner now opens and sizes the generated `notags.html` view before
+scanning it. `MaxHTMLNoTags` therefore measures the normalized view named by
+the option instead of the original input length; a source file whose markup is
+larger than the cap can proceed when its generated no-tags view fits. Stat
+failures and over-limit generated views remain sticky incomplete and
+non-cacheable. The focused unit regressions cover both outcomes; supported
+build and parser-corpus qualification remain open.
