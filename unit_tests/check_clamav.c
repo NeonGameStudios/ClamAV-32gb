@@ -5020,6 +5020,46 @@ START_TEST(test_rtf_truncated_document_is_fail_visible)
 }
 END_TEST
 
+static const void *rtf_input_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
+START_TEST(test_rtf_input_read_failure_is_fail_visible)
+{
+    static const uint8_t document[] = {'{', '\\', 'r', 't', 'f', '1', ' '};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document));
+    ck_assert_ptr_nonnull(map);
+    map->need               = rtf_input_read_failure;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    ret = cli_scanrtf(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "RTF input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_rtf_split_object_data_header_is_fail_visible)
 {
     static const char object_prefix[] = "{\\object{\\objdata ";
@@ -14001,6 +14041,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
+    tcase_add_test(tc_cl, test_rtf_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_split_object_data_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_temporary_limit_is_fail_visible);

@@ -4338,3 +4338,13 @@ tree from being treated as merely malformed. A synthetic catalog-tree
 fault-injection regression, source guard, and capability-manifest entry are
 registered; compiled Linux/Sonic1, sanitizer, and broader HFS+ corpus
 qualification remain open.
+
+## RTF in-range fmap read failure — 2026-08-21
+
+The RTF bounded reader now distinguishes exact end-of-map from an in-range
+fmap callback failure. The latter marks the layer incomplete and returns
+`CL_EREAD` rather than allowing cleanup to expose the default clean result;
+existing stronger detection or application results retain precedence. A direct
+fault-injected regression, source guard, and capability-manifest entry are
+registered. Compiled Linux/Sonic1, sanitizer, and broader RTF/OLE corpus
+qualification remain open.

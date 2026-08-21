@@ -612,6 +612,7 @@ int cli_scanrtf(cli_ctx* ctx)
     table_t* actiontable;
     uint8_t main_symbols[256];
     size_t offset = 0;
+    int fmap_read_failed = 0;
 
     cli_dbgmsg("in cli_scanrtf()\n");
 
@@ -787,6 +788,17 @@ int cli_scanrtf(cli_ctx* ctx)
         }
     }
 
+    /* fmap_need_off_once_len() reports exact end-of-map as a normal zero-byte
+     * read, but an in-range callback failure also terminates the loop. Keep
+     * those cases distinct so an operational failure cannot look like clean
+     * EOF after the cleanup macro runs. */
+    if (offset < ctx->fmap->len) {
+        cli_mark_scan_incomplete(ctx, "RTF input could not be read completely");
+        fmap_read_failed = 1;
+    }
+
     SCAN_CLEANUP;
+    if (fmap_read_failed && ret == CL_CLEAN)
+        ret = CL_EREAD;
     return ret;
 }

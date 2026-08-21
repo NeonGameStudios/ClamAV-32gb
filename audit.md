@@ -2012,3 +2012,14 @@ direct parser contract and preventing callers from inferring that the missing
 tree was merely malformed. A synthetic catalog-tree fault-injection regression,
 source guard, and capability-manifest entry record the invariant. Compiled
 Linux/Sonic1, sanitizer, and broader HFS+ corpus qualification remain open.
+
+## RTF in-range fmap read failure — 2026-08-21
+
+The RTF bounded reader previously treated an in-range `fmap` callback failure
+like exact end-of-map: its loop stopped, cleanup ran, and the default result
+could remain `CL_CLEAN`. The parser now distinguishes exact EOF from an
+in-range read failure, marks the layer incomplete and non-cacheable, and
+returns `CL_EREAD` unless a stronger detection or application result already
+has precedence. A direct fault-injected RTF regression, source guard, and
+capability-manifest entry record the contract. Compiled Linux/Sonic1,
+sanitizer, and broader RTF/OLE corpus qualification remain open.
