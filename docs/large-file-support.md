@@ -4233,6 +4233,16 @@ without allocating a 4 GiB input. Compiled Linux/Sonic1, interpreter/JIT,
 sanitizer, production-bytecode, and mixed-ABI qualification remain release
 gates.
 
+## Mixed bytecode ABI hook continuation — 2026-08-21
+
+Hook tables can contain both legacy format-7 and format-8 bytecode. On a layer
+above 4 GiB, a v1 hook still produces an explicit incomplete, non-cacheable
+result, but its admission failure no longer aborts the hook loop before a later
+v2 hook is attempted. This preserves detections available through the widened
+ABI without misreporting the skipped legacy detector as complete. Mixed-ABI
+interpreter/JIT, sanitizer, production-bytecode, and supported-build Sonic1
+qualification remain release gates.
+
 ## YARA logical-pass matcher-work accounting — 2026-08-20
 
 YARA-compatible logical evaluation can read integer fields from the current

@@ -378,6 +378,9 @@
 - Applicable bytecode entries now fail closed when the runtime is disabled:
   `CL_EBYTECODE`, incomplete/non-cacheable; retain interpreter/LLVM and
   independently compiled fixture qualification as release gates.
+- Mixed v1/v2 hook tables now skip only the incompatible legacy entry on
+  >4-GiB layers so a later v2 hook can still run; retain mixed-ABI execution,
+  detection, and incomplete-result qualification as a release gate.
 - Legacy MSXML base64 embedded-data failures now fail closed as incomplete and
   non-cacheable instead of skipping the element; add compiled XML/OOXML corpus
   and sanitizer qualification.

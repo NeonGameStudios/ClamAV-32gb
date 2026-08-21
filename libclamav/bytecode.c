@@ -3097,8 +3097,14 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
             cli_mark_scan_incomplete(cctx, bytecode_uses_v2(bc) ? "bytecode v2 cannot represent the file coordinates" : "bytecode hook requires a 32-bit file size");
+            /* A large layer can contain both legacy and v2 hooks.  The
+             * legacy entry is incomplete, but returning here would also
+             * suppress a later v2 hook that can still inspect the layer. */
+            if (error_ret == CL_SUCCESS)
+                error_ret = ret;
+            errorflag = 1;
             bytecode_context_reset(ctx);
-            return ret;
+            continue;
         }
         ctx->hooks.match_offsets64 = bytecode_uses_v2(bc) ? ctx->lsigoff : nooffsets64;
         if (bytecode_uses_v2(bc)) {

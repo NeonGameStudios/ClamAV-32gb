@@ -58,6 +58,12 @@ All read, seek, search, and byte-at operations reject offsets that cannot be
 represented by the host mapping or by the signed result type. A failed read
 or coordinate conversion is fail-visible through the scan-incomplete report.
 
+When a hook table mixes ABI generations, a v1 hook that cannot represent the
+large layer is recorded as incomplete and skipped; later applicable v2 hooks
+still run. The final scan remains non-clean and non-cacheable because the v1
+detector was unavailable, but a compatible v2 detector cannot be suppressed by
+the legacy failure.
+
 ## Qualification requirement
 
 Qualification requires an independently compiled format-8 fixture.
