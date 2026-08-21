@@ -254,6 +254,17 @@ typedef enum {
 
 static cl_error_t jpeg_parse_error(cli_ctx *ctx, const char *reason);
 
+static cl_error_t jpeg_read_status(cli_ctx *ctx, size_t bytes_read, size_t expected, const char *reason)
+{
+    if (bytes_read == expected)
+        return CL_SUCCESS;
+    if (bytes_read == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return CL_EREAD;
+    }
+    return jpeg_parse_error(ctx, reason);
+}
+
 static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
 {
     cl_error_t retval;
@@ -294,9 +305,14 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
         return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceName");
     offset += 4 + 2 + 1 + ntmp;
 
-    if (offset > map->len || map->len - offset < sizeof(raw_size) ||
-        fmap_readn(map, &raw_size, offset, sizeof(raw_size)) != sizeof(raw_size)) {
+    if (offset > map->len || map->len - offset < sizeof(raw_size)) {
         return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceSize");
+    }
+    {
+        size_t bytes_read = fmap_readn(map, &raw_size, offset, sizeof(raw_size));
+        if (bytes_read != sizeof(raw_size))
+            return jpeg_read_status(ctx, bytes_read, sizeof(raw_size),
+                                    "Heuristics.Broken.Media.JPEG.PhotoshopResourceSize");
     }
     size = (uint64_t)be32_to_host(raw_size);
     if (size == 0) {
@@ -369,12 +385,20 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
     }
     map = ctx->fmap;
 
-    if (fmap_readn(map, buff, offset, 4) != 4) {
-        if ((map->len >= 3) && (fmap_readn(map, buff, offset, 3) == 3) &&
-            !memcmp(buff, "\xff\xd8\xff", 3)) {
-            status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.TruncatedHeader");
+    {
+        size_t bytes_read = fmap_readn(map, buff, offset, 4);
+        if (bytes_read != 4) {
+            if (bytes_read == (size_t)-1) {
+                status = jpeg_read_status(ctx, bytes_read, 4,
+                                           "Heuristics.Broken.Media.JPEG.CantReadHeader");
+                goto done;
+            }
+            if ((map->len >= 3) && (fmap_readn(map, buff, offset, 3) == 3) &&
+                !memcmp(buff, "\xff\xd8\xff", 3)) {
+                status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.TruncatedHeader");
+            }
+            goto done;
         }
-        goto done; /* Ignore */
     }
 
     if (!memcmp(buff, "\xff\xd8\xff", 3)) {
@@ -393,11 +417,13 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
         prev_marker = JPEG_MARKER_NOT_A_MARKER_0x00;
         for (i = 0; offset < map->len && i < 16; i++) {
             uint8_t marker_u8;
-            if (fmap_readn(map, &marker_u8, offset, sizeof(marker_u8)) == sizeof(marker_u8)) {
+            size_t bytes_read = fmap_readn(map, &marker_u8, offset, sizeof(marker_u8));
+            if (bytes_read == sizeof(marker_u8)) {
                 offset += sizeof(marker_u8);
             } else {
                 cli_errmsg("JPEG: Failed to read marker, file corrupted?\n");
-                status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.CantReadMarker");
+                status = jpeg_read_status(ctx, bytes_read, sizeof(marker_u8),
+                                           "Heuristics.Broken.Media.JPEG.CantReadMarker");
                 goto done;
             }
             marker = (jpeg_marker_t)marker_u8;
@@ -433,10 +459,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
             }
         }
 
-        if (fmap_readn(map, &len_u16, offset, sizeof(len_u16)) != sizeof(len_u16)) {
-            cli_errmsg("JPEG: Failed to read the segment size, file corrupted?\n");
-            status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.CantReadSegmentSize");
-            goto done;
+        {
+            size_t bytes_read = fmap_readn(map, &len_u16, offset, sizeof(len_u16));
+            if (bytes_read != sizeof(len_u16)) {
+                cli_errmsg("JPEG: Failed to read the segment size, file corrupted?\n");
+                status = jpeg_read_status(ctx, bytes_read, sizeof(len_u16),
+                                           "Heuristics.Broken.Media.JPEG.CantReadSegmentSize");
+                goto done;
+            }
         }
         len = (unsigned int)be16_to_host(len_u16);
         cli_dbgmsg("segment[%d] = 0x%02x, Length %u\n", segment, marker, len);

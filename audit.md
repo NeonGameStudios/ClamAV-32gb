@@ -2800,3 +2800,16 @@ dispatch paths perform an authoritative post-run check, while detections retain
 their normal precedence. A focused regression verifies the clamp and unlimited
 scan behavior; supported-Linux interpreter/JIT compilation, sanitizer, and
 production bytecode qualification remain open.
+
+## JPEG required read status — 2026-08-21
+
+The JPEG parser previously treated an operational fmap callback failure while
+reading the confirmed header, marker, segment-size, or Photoshop resource size
+as an ordinary short/missing structure; an initial header callback failure
+could therefore leave the parser's default clean result untouched. These
+required reads now distinguish in-range callback failure (`CL_EREAD`) from
+genuinely short input (`CL_EPARSE` or the existing exact-end behavior), mark
+the scan incomplete, and preserve the non-cacheable state. A focused header
+fault-injection regression, source guards, and capability-manifest evidence
+record the invariant. Compiled Linux/Sonic1, sanitizer, callback-fault, and
+production JPEG corpus qualification remain open.

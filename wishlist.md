@@ -107,6 +107,10 @@
 - TIFF IFD traversal now keeps its working cursor native-width, preventing a
   malformed IFD near the 4 GiB coordinate boundary from wrapping back to the
   beginning of a larger file; the on-disk TIFF offsets remain 32-bit.
+- JPEG required header, marker, segment-size, and Photoshop-resource reads now
+  distinguish in-range fmap callback failures (`CL_EREAD`) from genuinely short
+  structures; add callback-fault, sanitizer, and production JPEG corpus
+  qualification.
 - ELF64 entrypoint and section coordinates now retain a native-width matcher
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the
