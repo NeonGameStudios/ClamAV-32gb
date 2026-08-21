@@ -315,6 +315,14 @@ void cli_scan_report_finish(
     report->status  = status;
     report->verdict = verdict;
 
+    /* Older callers may provide the terminal virus status without updating
+     * the separate verdict field. Keep the versioned report self-consistent
+     * so aggregation cannot emit a detected completion with a clean verdict. */
+    if ((status == CL_VIRUS) &&
+        (verdict != CL_VERDICT_STRONG_INDICATOR) &&
+        (verdict != CL_VERDICT_POTENTIALLY_UNWANTED))
+        report->verdict = CL_VERDICT_STRONG_INDICATOR;
+
     if (NULL != ctx) {
         reason                             = ctx->scan_incomplete_reason;
         report->metrics.skipped_operations = ctx->skipped_operations;

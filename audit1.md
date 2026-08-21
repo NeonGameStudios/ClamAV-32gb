@@ -2839,3 +2839,14 @@ They no longer initialize or invoke generic matcher state through a null
 pointer, while target-specific matching and logical evaluation remain active.
 A focused fmap regression covers the target-only-root shape. Full database,
 compiled, sanitizer, and production-signature qualification remain open.
+
+## Structured detection verdict normalization — 2026-08-21
+
+The structured report finalizer now normalizes the legacy-compatible
+`CL_VIRUS` plus clean-verdict combination to `CL_VERDICT_STRONG_INDICATOR`.
+Without this, directory or MULTISCAN aggregation could produce a report with
+`DETECTION_TERMINATED` but a clean verdict, which the structured clamdscan
+consumer correctly rejects as contradictory. The existing detection-precedence
+and aggregate-report regressions now cover the normalization. Source guards and
+whitespace validation pass; compiled daemon/library and production-signature
+qualification remain release gates.
