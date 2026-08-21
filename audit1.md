@@ -2982,3 +2982,10 @@ its scan-limit, file-count, and CAB-extraction error exits, in addition to
 the normal member-walk cleanup. Static guards and whitespace validation pass;
 compiled InstallShield corpus, sanitizer, and large-file qualification remain
 release gates.
+
+## GIF signature-probe fmap lifetime — 2026-08-21
+
+The GIF parser’s immediate three-byte signature probe now uses
+`fmap_need_off_once()` instead of retaining a locked window without a matching
+release. Static guards and whitespace validation pass; compiled GIF corpus,
+sanitizer, and large-file qualification remain release gates.

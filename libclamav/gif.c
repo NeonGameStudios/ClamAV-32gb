@@ -218,7 +218,9 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
      * failure and must not become a clean non-GIF result. */
     if (map->len < strlen("GIF"))
         goto done;
-    if (NULL == (signature = fmap_need_off(map, offset, strlen("GIF")))) {
+    /* The signature is consumed immediately and is not retained across any
+     * later fmap operation, so do not pin its page for the whole parser. */
+    if (NULL == (signature = fmap_need_off_once(map, offset, strlen("GIF")))) {
         cli_dbgmsg("GIF: Can't read GIF magic bytes completely\n");
         status      = gif_read_status(ctx, (size_t)-1, strlen("GIF"), "Heuristics.Broken.Media.GIF.CantReadMagic");
         parse_error = true;

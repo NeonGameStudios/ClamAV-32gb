@@ -4443,6 +4443,14 @@ file-record lock until map destruction. The cleanup is source-guarded;
 compiled InstallShield corpus, sanitizer, and large-file qualification remain
 open.
 
+## GIF signature-probe fmap lifetime — 2026-08-21
+
+GIF signature recognition now uses an unlocked bounded fmap view because the
+three-byte probe is consumed immediately and is not retained across parser
+operations. This removes a page lock that previously had no matching
+`fmap_unneed` call. The source guard covers the lifetime rule; compiled GIF
+corpus, sanitizer, and large-file qualification remain open.
+
 ## HFS+ file-tree header fmap failure — 2026-08-21
 
 HFS+ confirmed tree-header windows that fail in the fmap now mark the layer
