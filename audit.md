@@ -2114,3 +2114,14 @@ leaving the existing raw matcher behavior intact. A focused program-header
 fmap fault-injection regression, source guard, and capability-manifest entry
 record the invariant. Compiled Linux/Sonic1, sanitizer, and broader ELF
 corpus qualification remain open.
+
+## Mach-O metadata read failure — 2026-08-21
+
+Metadata-only Mach-O parsing, used to calculate executable-relative signature
+coordinates, now marks any required header, load-command, section, or thread
+state failure incomplete before returning the parser error. This prevents raw
+signature analysis from continuing with skipped executable metadata while
+leaving the existing raw matcher behavior intact. A focused load-command fmap
+fault-injection regression, source guard, and capability-manifest entry record
+the invariant. Compiled Linux/Sonic1, sanitizer, and broader Mach-O corpus
+qualification remain open.

@@ -9596,6 +9596,16 @@ static const void *elf_program_header_read_failure(fmap_t *map, size_t at, size_
     return (const uint8_t *)map->data + at;
 }
 
+static const void *macho_load_command_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 32U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 /* The checked-in PE fixture's first import thunk is at this raw file offset.
  * Allow every other memory window so the scan reaches the thunk-table read. */
 #define PE_TEST_IMPORT_DESCRIPTOR_OFFSET 0x126e00U
@@ -12738,6 +12748,43 @@ START_TEST(test_macho_truncated_header_is_fail_visible)
 }
 END_TEST
 
+static void macho_test_write_u32(uint8_t *dst, uint32_t value);
+
+START_TEST(test_macho_metadata_read_failure_is_fail_visible)
+{
+    uint8_t data[32 + 8] = {0};
+    struct cli_exe_info info;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A confirmed Mach-O header points at a required load command whose
+     * in-range fmap window fails. Metadata-only parsing must not stay clean. */
+    macho_test_write_u32(data + 0, 0xfeedfacfU);
+    macho_test_write_u32(data + 4, 0x01000007U); /* CPU_TYPE_X86_64. */
+    macho_test_write_u32(data + 12, 2U);         /* MH_EXECUTE. */
+    macho_test_write_u32(data + 16, 1U);         /* one load command. */
+    macho_test_write_u32(data + 20, 8U);
+
+    memset(&info, 0, sizeof(info));
+    cli_exe_info_init(&info, 0);
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = macho_load_command_read_failure;
+    ctx.fmap = map;
+
+    ret = cli_machoheader(&ctx, &info);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O metadata parsing ended before inspection completed");
+    ck_assert(map->dont_cache_flag);
+
+    cli_exe_info_destroy(&info);
+    cl_fmap_close(map);
+}
+END_TEST
+
 static void macho_test_write_u32(uint8_t *dst, uint32_t value)
 {
     dst[0] = (uint8_t)value;
@@ -14313,6 +14360,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_elf64_entry_offset_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_metadata_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_native_metadata_preserves_64bit_sections);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_macho_unibin_member_range_is_fail_visible);

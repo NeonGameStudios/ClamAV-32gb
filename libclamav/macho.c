@@ -623,7 +623,9 @@ cl_error_t cli_machoheader(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 {
     cl_error_t ret = cli_scanmacho(ctx, fileinfo);
 
-    if (ret == CL_SUCCESS && fileinfo && fileinfo->legacy_metadata_incomplete)
+    if (ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_VERIFIED)
+        cli_mark_scan_incomplete(ctx, "Mach-O metadata parsing ended before inspection completed");
+    else if (ret == CL_SUCCESS && fileinfo && fileinfo->legacy_metadata_incomplete)
         cli_mark_scan_incomplete(ctx, "Mach-O coordinates exceed the legacy 32-bit metadata ABI");
 
     return ret;
