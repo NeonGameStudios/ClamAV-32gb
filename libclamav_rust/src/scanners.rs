@@ -588,8 +588,16 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
 
     let mut reader = FMapReader::new(&fmap);
     let mut prefix = [0u8; 16];
+    if fmap.len() < prefix.len() {
+        return parser_failure(
+            ctx,
+            "OneNote",
+            cl_error_t_CL_EPARSE,
+            "OneNote input ended before its fixed prefix was complete",
+        );
+    }
     if let Err(err) = reader.read_exact(&mut prefix) {
-        return parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err);
+        return parser_failure(ctx, "OneNote", cl_error_t_CL_EREAD, err);
     }
     if onenote::is_legacy_magic(&prefix) {
         let file_len = match u64::try_from(fmap.len()) {
@@ -1125,6 +1133,9 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
                 cl_error_t_CL_EMEM,
                 "archive parser allocation failed",
             );
+        }
+        Ok(Err(AlzError::Read(field))) => {
+            return parser_failure(ctx, "ALZ", cl_error_t_CL_EREAD, field);
         }
         Ok(Err(err)) => {
             return parser_failure(ctx, "ALZ", cl_error_t_CL_EFORMAT, err);

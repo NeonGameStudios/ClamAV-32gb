@@ -1,7 +1,7 @@
 kind	id	status	source	evidence_or_required_work
 library	path	bounded	libclamav/scanners.c	checked root/type-detection and nested preflight before child-map creation; structured report remains covered by the scan API
 library	fd	bounded	libclamav/scanners.c	checked root/type-detection and nested preflight before child-map creation; structured report remains covered by the scan API
-library	fmap	bounded	libclamav/fmap.c,libclamav_rust/src/fmap.rs	checked source offsets, map boundaries, nested-range admission, and type-detection/forced-staging read failures; Rust FMap::need_off preflights native-size ranges before callback or slice formation; operational nested reads return CL_EREAD and structured report is covered by the scan API
+library	fmap	bounded	libclamav_rust/src/fmap.rs	checked source offsets, map boundaries, nested-range admission, and type-detection/forced-staging read failures; Rust FMap::need_off preflights native-size ranges before callback or slice formation; operational nested reads return CL_EREAD and structured report is covered by the scan API
 clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
 clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending
@@ -78,7 +78,7 @@ unsupported	vba-over-4g	unsupported	libclamav/scanners.c	legacy VBA matcher/data
 parser	CL_TYPE_7Z	pending	libclamav/scanners.c	7-Zip fmap input, output, allocation, and coordinate failures remain non-clean; dispatch branch still requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_7ZSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_AI_MODEL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_ALZ	pending	libclamav_rust/src/scanners.rs	bounded Rust reader/spool path now reports encrypted, data-descriptor, unsupported-compression, malformed, and quota-truncated members as explicit incomplete results without scanning partial output; parser-family and production qualification remain open
+parser	CL_TYPE_ALZ	pending	libclamav_rust/src/scanners.rs	bounded Rust reader/spool path now preserves explicit ALZ field-read failures as CL_EREAD and reports encrypted, data-descriptor, unsupported-compression, malformed, and quota-truncated members as incomplete without scanning partial output; parser-family and production qualification remain open
 parser	CL_TYPE_APM	pending	libclamav/apm.c	in-range DDM, fallback, table, entry, and intersection fmap failures now return CL_EREAD and mark the layer incomplete; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_ARJ	pending	libclamav/unarj.c	ARJ header/member range and extraction/limit failures are fail-visible; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_ARJSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
@@ -121,7 +121,7 @@ parser	CL_TYPE_MSOLE2	pending	libclamav/scanners.c	OLE2 fixed-header, invalid bl
 parser	CL_TYPE_MSSZDD	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_NULSFT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_OLD_TAR	pending	libclamav/scanners.c	bounded member staging, fail-visible TAR header reads, and fail-visible TAR entry errors; parser-family qualification and complete corpus evidence remain required
-parser	CL_TYPE_ONENOTE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_ONENOTE	pending	libclamav/scanners.c	fixed-prefix truncation remains CL_EPARSE while in-range Rust fmap read failure is CL_EREAD; dispatch branch still requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_OOXML_HWP	pending	libclamav/scanners.c	OOXML metadata-parser errors are retained when ZIP extraction follows; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_OOXML_PPT	pending	libclamav/scanners.c	OOXML metadata-parser errors are retained when ZIP extraction follows; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_OOXML_WORD	pending	libclamav/scanners.c	OOXML metadata-parser errors are retained when ZIP extraction follows; parser-family qualification and explicit completion evidence remain required

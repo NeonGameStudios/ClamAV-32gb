@@ -18,6 +18,9 @@
   compiled malformed/archive-corpus and sanitizer qualification.
 - The Rust fmap adapter now rejects out-of-range `need_off()` windows before
   callback or slice formation; add compiled Rust/layout qualification.
+- Rust OneNote fixed-prefix truncation versus fmap read failure, and ALZ field
+  read failures, now retain distinct non-clean statuses; add compiled Rust and
+  parser-corpus qualification.
 - DMG trailer, XML, and streamed stripe fmap read failures now preserve
   `CL_EREAD` instead of becoming generic parse errors; add compiled DMG corpus
   and sanitizer qualification.

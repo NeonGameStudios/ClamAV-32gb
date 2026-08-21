@@ -59,6 +59,11 @@ zero-length requests at the exact end of the map. Its focused Rust tests verify
 the boundary and callback suppression; compiled Rust/layout qualification
 remains open.
 
+The Rust OneNote scanner now treats a short fixed prefix as malformed input but
+returns `CL_EREAD` when a callback fails for an in-range prefix. ALZ's existing
+field-read error is likewise preserved as `CL_EREAD` instead of generic parse
+status; compiled Rust and parser-corpus qualification remains open.
+
 ## Current source-hardening follow-up — 2026-08-20
 
 The enabled Mydoom-log detector previously treated failure to obtain its
