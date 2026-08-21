@@ -205,19 +205,41 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
         if (gsz >= 6) {
             uint32_t icnt, raddr;
             unsigned int piconcnt;
+            uint64_t entry_offset = 6;
 
             raddr = cli_rawaddr(cli_readint32(grp), peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size);
             cli_dbgmsg("cli_scanicon: icon group @%x\n", raddr);
-            grp = fmap_need_off_once(map, raddr, gsz);
-            if (grp && !err) {
+            if (err)
+                return icon_parse_error(icon_env, NULL, "PE icon group data offset was invalid");
+
+            grp = fmap_need_off_once(map, raddr, 6);
+            if (!grp) {
+                if ((uint64_t)raddr <= map->len && 6 <= map->len - (size_t)raddr) {
+                    cli_mark_scan_incomplete(ctx, "PE icon group header could not be read completely");
+                    return CL_EREAD;
+                }
+                return icon_parse_error(icon_env, NULL, "PE icon group data was outside the input map");
+            }
+            if (!err) {
                 icnt = cli_readint32(grp + 2) >> 16;
 
-                grp += 6;
                 gsz -= 6;
 
                 while (icnt && gsz >= 14 /* && (remaining amount of icons) */) {
                     uint16_t planes, depth, id;
                     uint32_t icon_size;
+                    size_t entry_at;
+
+                    if (entry_offset > UINT64_MAX - (uint64_t)raddr ||
+                        (entry_offset + (uint64_t)raddr) > map->len ||
+                        14 > map->len - (size_t)(entry_offset + (uint64_t)raddr))
+                        return icon_parse_error(icon_env, NULL, "PE icon group entry was truncated");
+                    entry_at = (size_t)(entry_offset + (uint64_t)raddr);
+                    grp      = fmap_need_off_once(map, entry_at, 14);
+                    if (!grp) {
+                        cli_mark_scan_incomplete(ctx, "PE icon group entry could not be read completely");
+                        return CL_EREAD;
+                    }
                     piconcnt = icon_env->hcnt;
 
                     planes    = cli_readint16(grp + 4);
@@ -251,7 +273,7 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
                         return icon_env->result;
                     }
 
-                    grp += 14;
+                    entry_offset += 14;
                     gsz -= 14;
                 }
 

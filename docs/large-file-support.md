@@ -4515,6 +4515,14 @@ result. A synthetic root-resource fault-injection regression, source guards,
 and the PE capability entry are registered. Compiled Linux/Sonic1, sanitizer,
 and broader PE/resource corpus qualification remain open.
 
+## PE icon-group entry lifetime — 2026-08-21
+
+PE icon-group scanning now rereads each bounded 14-byte entry immediately
+before decoding it. The entry pointer no longer crosses `findres_ex()` nested
+resource work, and attacker-declared group lengths are not mapped as one large
+contiguous window. Static guards and whitespace validation pass; compiled PE
+icon corpus, sanitizer, and large-file qualification remain release gates.
+
 ## Forced nested-fmap read failures — 2026-08-21
 
 After a nested range passes bounds and resource admission, a source-window

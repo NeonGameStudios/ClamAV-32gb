@@ -3000,6 +3000,16 @@ the resource-address and OEP-read failures. Static guards and whitespace
 validation pass; compiled PE corpus, sanitizer, and large-file qualification
 remain release gates.
 
+## PE icon-group entry lifetime — 2026-08-21
+
+PE icon-group scanning previously retained an unlocked group-entry pointer
+across `findres_ex()`, which performs nested resource-map reads. It now fetches
+each bounded 14-byte entry immediately before decoding it, checks the entry
+coordinate with subtraction-form bounds, and avoids mapping the full
+attacker-declared group length. Static guards and whitespace validation pass;
+compiled PE icon corpus, sanitizer, and large-file qualification remain
+release gates.
+
 ## ISO9660 descriptor-window lifetime — 2026-08-21
 
 ISO9660 previously released the primary volume-descriptor lock before using its
