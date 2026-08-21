@@ -1,6 +1,6 @@
 # Large-File Phase 0 Baseline
 
-Date: 2026-08-10
+Date: 2026-08-21
 
 ## Source and host
 
@@ -20,10 +20,10 @@ dedicated 64 GiB Ubuntu x86-64 host.
 
 - `docs/large-file-support.md`: specification, memory budget, workstreams, and
   acceptance criteria.
-- `docs/largefile-inventory.tsv`: regenerated inventory of 29,602 classified
+- `docs/largefile-inventory.tsv`: regenerated inventory of 31,665 classified
   source entries. A source line may appear in more than one classification;
   the current snapshot has SHA-256
-  `6997f5070b74e3cc9afaa9dd0df9a53a16c782664fd0f6a96bc719e0ec60f6a8`.
+  `85092cda4dad02ef371952ae9a469e5a536f86efffacab6c198cb4e6ea85b852`.
 - `tools/largefile_inventory.sh`: repeatable inventory generator.
 - `tools/largefile_boundary_corpus.sh`: sparse boundary-fixture generator,
   including a 32 GiB edge case.
@@ -41,14 +41,14 @@ The inventory currently reports:
 
 | Classification | Sites |
 |---|---:|
-| Native-width integer | 10,191 |
-| Offset/size arithmetic | 11,298 |
-| Fixed-width integer | 5,222 |
-| Format-width specifier | 2,413 |
-| Boundary constant | 217 |
+| Native-width integer | 10,903 |
+| Offset/size arithmetic | 12,004 |
+| Fixed-width integer | 5,746 |
+| Format-width specifier | 2,415 |
+| Boundary constant | 303 |
 | Quantity parser | 103 |
-| Narrowing cast | 61 |
-| Large-file option | 97 |
+| Narrowing cast | 67 |
+| Large-file option | 124 |
 
 These are review candidates, not automatic conversions. The classification
 is intentionally over-inclusive so format-defined fields can be separated
