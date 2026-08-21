@@ -2349,3 +2349,14 @@ continue through the Authenticode raw-scan fallback. Source guards record the
 corrected branches; compiled Linux/Sonic1, signature/callback/resource fault
 injection, sanitizer, and production PE/bytecode corpus qualification remain
 open.
+
+## AC all-matches alert-result propagation — 2026-08-21
+
+The AC matcher’s all-matches branches previously ignored non-success results
+from `cli_append_virus()`. Evidence-storage failures could therefore be lost
+while scanning continued, allowing a required signature result to disappear
+from the final verdict. The matcher now preserves expected trusted and
+detection results, returns callback breaks, and marks operational append
+failures incomplete before returning them. Source guards record both branches;
+compiled Linux/Sonic1, callback/resource fault injection, sanitizer, and
+production signature-corpus qualification remain open.

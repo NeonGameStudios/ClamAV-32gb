@@ -130,6 +130,9 @@
 - PE import wildcard matches, Authenticode certificate alerts, and bytecode
   hook alert-append failures now remain fail-visible; add signature,
   callback/resource fault-injection and production PE/bytecode corpus coverage.
+- AC all-matches signature alert-append failures now remain fail-visible; add
+  callback/resource fault injection and production all-matches signature
+  corpus coverage.
 
 ## Large-file validation and expansion progression
 
