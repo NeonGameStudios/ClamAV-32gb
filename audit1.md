@@ -1893,6 +1893,17 @@ the complete `clamd/server-th.c` translation units; both passed. The shim was
 removed immediately afterward. This is source syntax evidence, not a
 dependency-complete or runtime qualification result.
 
+## Front-end ingress admission parity — 2026-08-21
+
+The `clamd` startup resource gate previously inspected engine limits but not
+the front-end `StreamMaxLength` and `OnAccessMaxFileSize` options. An explicit
+32-GiB front-end limit could therefore retain the historical startup bypass
+when the engine's `MaxFileSize` remained at a legacy value, despite allowing
+large disk-backed or on-access inputs. Admission now considers the maximum of
+all three ingress limits, and a focused test covers both options. Source guards
+and whitespace validation remain the available local evidence; compiled
+daemon and Sonic1 qualification remain open.
+
 `check_clamd` now links the production admission translation unit and covers
 both deterministic boundaries: historical defaults accept without probing a
 host path, while `MaxScanSize=0` is rejected with the certified-budget reason.

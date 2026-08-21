@@ -12,6 +12,8 @@
 #include "default.h"
 
 // common
+#include "optparser.h"
+
 #include "output.h"
 
 #include <errno.h>
@@ -249,6 +251,21 @@ static int engine_u64(
     return 1;
 }
 
+static int option_u64(const struct optstruct *opts, const char *name, uint64_t *value)
+{
+    const struct optstruct *option;
+
+    if ((NULL == opts) || (NULL == name) || (NULL == value))
+        return 0;
+
+    option = optget(opts, name);
+    if ((NULL == option) || (option->numarg < 0))
+        return 0;
+
+    *value = (uint64_t)option->numarg;
+    return 1;
+}
+
 void clamd_largefile_log_capabilities(const struct cl_engine *engine)
 {
     uint64_t max_file_size       = 0;
@@ -301,6 +318,7 @@ void clamd_largefile_log_capabilities(const struct cl_engine *engine)
 
 int clamd_largefile_admission_check(
     const struct cl_engine *engine,
+    const struct optstruct *opts,
     const char *temporary_directory,
     char *reason,
     size_t reason_size)
@@ -311,6 +329,9 @@ int clamd_largefile_admission_check(
     uint64_t max_temporary_size;
     uint64_t max_contiguous_size;
     uint64_t pcre_max_file_size;
+    uint64_t stream_max_length = 0;
+    uint64_t onaccess_max_file_size = 0;
+    uint64_t max_ingress_size;
     uint64_t required_memory;
     uint64_t required_temporary;
     uint64_t available_memory;
@@ -333,6 +354,20 @@ int clamd_largefile_admission_check(
         return 0;
     }
 
+    /* Stream and on-access limits are front-end admission controls rather
+     * than engine fields. They can still authorize large disk-backed input,
+     * so they must participate in the daemon's large-file startup decision. */
+    if (!option_u64(opts, "StreamMaxLength", &stream_max_length))
+        stream_max_length = max_file_size;
+    if (!option_u64(opts, "OnAccessMaxFileSize", &onaccess_max_file_size))
+        onaccess_max_file_size = max_file_size;
+
+    max_ingress_size = max_file_size;
+    if (stream_max_length > max_ingress_size)
+        max_ingress_size = stream_max_length;
+    if (onaccess_max_file_size > max_ingress_size)
+        max_ingress_size = onaccess_max_file_size;
+
     if (max_scan_size == 0) {
         set_reason(reason, reason_size, "MaxScanSize=0 disables the certified 64 GiB logical scan budget");
         return 0;
@@ -341,7 +376,7 @@ int clamd_largefile_admission_check(
     /* Ordinary ClamAV configurations retain their historical startup path.
      * The admission contract applies when a caller actually enables the
      * large-file scan envelope. */
-    if (max_file_size <= legacy_file_size && max_scan_size <= legacy_scan_size &&
+    if (max_ingress_size <= legacy_file_size && max_scan_size <= legacy_scan_size &&
         pcre_max_file_size <= legacy_file_size)
         return 1;
 

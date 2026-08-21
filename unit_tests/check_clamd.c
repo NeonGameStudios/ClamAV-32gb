@@ -414,7 +414,7 @@ START_TEST(test_largefile_admission_accepts_historical_defaults)
 
     ck_assert_ptr_nonnull(engine);
     memset(reason, 0, sizeof(reason));
-    ck_assert_int_eq(clamd_largefile_admission_check(engine, "/path/that/does/not/exist", reason, sizeof(reason)), 1);
+    ck_assert_int_eq(clamd_largefile_admission_check(engine, NULL, "/path/that/does/not/exist", reason, sizeof(reason)), 1);
     ck_assert_str_eq(reason, "");
     cl_engine_free(engine);
 }
@@ -432,7 +432,7 @@ START_TEST(test_largefile_admission_does_not_bypass_large_limits)
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, (long long)CLI_MAX_CONTIGUOUS_SIZE), CL_SUCCESS);
 
     memset(reason, 0, sizeof(reason));
-    ck_assert_int_eq(clamd_largefile_admission_check(engine, "/path/that/does/not/exist", reason, sizeof(reason)), 0);
+    ck_assert_int_eq(clamd_largefile_admission_check(engine, NULL, "/path/that/does/not/exist", reason, sizeof(reason)), 0);
     ck_assert(reason[0] != '\0');
     cl_engine_free(engine);
 }
@@ -452,7 +452,7 @@ START_TEST(test_largefile_admission_does_not_bypass_large_pcre_subject)
                      CL_SUCCESS);
 
     memset(reason, 0, sizeof(reason));
-    ck_assert_int_eq(clamd_largefile_admission_check(engine, "/path/that/does/not/exist", reason, sizeof(reason)), 0);
+    ck_assert_int_eq(clamd_largefile_admission_check(engine, NULL, "/path/that/does/not/exist", reason, sizeof(reason)), 0);
     ck_assert(reason[0] != '\0');
     cl_engine_free(engine);
 }
@@ -466,8 +466,29 @@ START_TEST(test_largefile_admission_rejects_unbounded_logical_budget)
     ck_assert_ptr_nonnull(engine);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, 0), CL_SUCCESS);
     memset(reason, 0, sizeof(reason));
-    ck_assert_int_eq(clamd_largefile_admission_check(engine, "/tmp", reason, sizeof(reason)), 0);
+    ck_assert_int_eq(clamd_largefile_admission_check(engine, NULL, "/tmp", reason, sizeof(reason)), 0);
     ck_assert_str_eq(reason, "MaxScanSize=0 disables the certified 64 GiB logical scan budget");
+    cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_largefile_admission_does_not_bypass_large_frontend_ingress)
+{
+    static const char *const names[] = {"StreamMaxLength", "OnAccessMaxFileSize"};
+    struct cl_engine *engine = cl_engine_new();
+    size_t i;
+    char reason[256];
+
+    ck_assert_ptr_nonnull(engine);
+    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        struct optstruct *opts = optadditem(names[i], "32G", 1, OPT_CLAMD, 0, NULL);
+
+        ck_assert_ptr_nonnull(opts);
+        memset(reason, 0, sizeof(reason));
+        ck_assert_int_eq(clamd_largefile_admission_check(engine, opts, "/path/that/does/not/exist", reason, sizeof(reason)), 0);
+        ck_assert(reason[0] != '\0');
+        optfree(opts);
+    }
     cl_engine_free(engine);
 }
 END_TEST
@@ -1536,6 +1557,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_limits);
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_pcre_subject);
     tcase_add_test(tc_parser, test_largefile_admission_rejects_unbounded_logical_budget);
+    tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_frontend_ingress);
 #ifndef _WIN32
     TCase *tc_client;
 

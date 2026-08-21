@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 struct cl_engine;
+struct optstruct;
 
 /*
  * Return nonzero when the configured large-file daemon can safely start.
@@ -15,6 +16,7 @@ struct cl_engine;
  */
 int clamd_largefile_admission_check(
     const struct cl_engine *engine,
+    const struct optstruct *opts,
     const char *temporary_directory,
     char *reason,
     size_t reason_size);

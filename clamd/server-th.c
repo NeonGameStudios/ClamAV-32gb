@@ -1318,7 +1318,7 @@ int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigne
             temporary_directory = "/tmp";
 
         clamd_largefile_log_capabilities(engine);
-        if (!clamd_largefile_admission_check(engine, temporary_directory, admission_reason, sizeof(admission_reason))) {
+        if (!clamd_largefile_admission_check(engine, opts, temporary_directory, admission_reason, sizeof(admission_reason))) {
             logg(LOGG_ERROR, "Large-file daemon admission failed: %s\n", admission_reason[0] ? admission_reason : "unknown reason");
             cl_engine_free(engine);
             return 1;

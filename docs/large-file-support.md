@@ -2920,6 +2920,10 @@ engine limits; structured-report and bytecode-v2 support; fd-passing
 availability; and an explicit `parser_qualification=unclaimed` marker. This
 binds runtime logs to the actual binary/configuration without turning a
 startup capability description into parser or service qualification evidence.
+The startup admission check also reads the clamd front-end limits
+`StreamMaxLength` and `OnAccessMaxFileSize`; an explicitly enlarged stream or
+on-access ingress can no longer bypass the large-file host-resource gate just
+because the engine's `MaxFileSize` field remains at a historical value.
 
 ## Milter structured-report alert and nonblocking transport — 2026-08-19
 
