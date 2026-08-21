@@ -6100,6 +6100,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     perf_stop(ctx, PERFT_FT);
     if (type == CL_TYPE_ERROR) {
         status = CL_EREAD;
+        cli_mark_scan_incomplete(ctx, "file type detection could not read the input completely");
         cli_dbgmsg("cli_magic_scan: cli_determine_fmap_type returned CL_TYPE_ERROR\n");
         cli_dbgmsg("cli_magic_scan: returning %d %s (no post, no cache)\n", status, __AT__);
         goto early_ret;

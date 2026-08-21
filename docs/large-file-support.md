@@ -4310,3 +4310,12 @@ state gap where callers could receive a read error without the shared
 completion marker. A fault-injected regression, source guard, and capability
 manifest entry are registered; compiled Linux/Sonic1, sanitizer, and broader
 BinHex corpus qualification remain open.
+
+## File-type detection fmap failure — 2026-08-21
+
+Unknown-type scans now mark the root incomplete and non-cacheable when the
+initial or OOXML-probe fmap read fails, before returning `CL_EREAD` through the
+central `cli_magic_scan()` dispatch path. This prevents the early type-error
+return from bypassing the shared completion contract. A direct fault-injected
+regression and source guard are registered; compiled Linux/Sonic1, sanitizer,
+and full ingress qualification remain open.

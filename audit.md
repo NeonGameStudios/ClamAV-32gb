@@ -1976,3 +1976,16 @@ to infer the failure from the return code. The read-failure path now records
 the `CL_EREAD`, incomplete, reason, and non-cacheable invariants; the source
 guard and capability manifest record the same contract. Compiled Linux/Sonic1,
 sanitizer, and broader BinHex corpus qualification remain open.
+
+## File-type detection fmap failure — 2026-08-21
+
+The unknown-type dispatch path previously converted a failed initial or
+OOXML-probe fmap read into `CL_EREAD` and jumped directly to `early_ret`.
+Because that path did not pass through the normal result reconciliation, the
+root could lack the sticky incomplete marker and non-cacheable state. The
+central `cli_magic_scan()` type-error branch now records
+`file type detection could not read the input completely` before returning.
+A direct fault-injected `cli_magic_scan(CL_TYPE_ANY)` regression checks the
+status, completion reason, and cache invariant; the source guard and ingress
+capability rows record the contract. Compiled Linux/Sonic1, sanitizer, and
+full ingress qualification remain open.

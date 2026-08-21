@@ -1,7 +1,7 @@
 kind	id	status	source	evidence_or_required_work
-library	path	bounded	libclamav/scanners.c	checked known-size root and nested preflight before child-map creation and structured report
-library	fd	bounded	libclamav/scanners.c	checked known-size root and nested preflight before child-map creation and structured report
-library	fmap	bounded	libclamav/fmap.c	checked source offsets, map boundaries, and nested-range admission; structured report is covered by the scan API
+library	path	bounded	libclamav/scanners.c	checked root/type-detection and nested preflight before child-map creation; structured report remains covered by the scan API
+library	fd	bounded	libclamav/scanners.c	checked root/type-detection and nested preflight before child-map creation; structured report remains covered by the scan API
+library	fmap	bounded	libclamav/fmap.c	checked source offsets, map boundaries, nested-range admission, and type-detection read failures; structured report is covered by the scan API
 clamscan	file	bounded	clamscan/manager.c	file scan and JSON report path
 clamscan	stdin	bounded	clamscan/manager.c	over-limit input is not scanned as a partial prefix
 clamd	SCAN	bounded	clamd/session.c	legacy command; structured parity pending
