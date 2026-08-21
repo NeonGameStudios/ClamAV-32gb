@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #endif
 #include <stdlib.h>
+#include <stdint.h>
 
 // libclamav
 #include "clamav.h"
@@ -43,6 +44,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -249,6 +251,30 @@ static uint32_t deadbeefcounts[64] = {
     0xdeadbeef,
     0xdeadbeef,
 };
+
+static int parse_uint64_arg(const char *text, uint64_t *value)
+{
+    char *end = NULL;
+    unsigned long long parsed;
+    const unsigned char *cursor;
+
+    if (!text || !*text)
+        return 0;
+
+    for (cursor = (const unsigned char *)text; *cursor; cursor++) {
+        if (*cursor < '0' || *cursor > '9')
+            return 0;
+    }
+
+    errno  = 0;
+    parsed = strtoull(text, &end, 10);
+    if (errno == ERANGE || end == text || *end != '\0')
+        return 0;
+
+    *value = (uint64_t)parsed;
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
     FILE *f;
@@ -256,6 +282,7 @@ int main(int argc, char *argv[])
     struct cli_bc_ctx *ctx;
     int rc, dbgargc, bc_stats = 0;
     int exit_status = 0;
+    uint64_t parsed_arg;
     struct optstruct *opts;
     const struct optstruct *opt;
     unsigned funcid = 0, i;
@@ -422,7 +449,12 @@ int main(int argc, char *argv[])
                                        tracehook_ptr);
 
         if (opts->filename[1]) {
-            funcid = atoi(opts->filename[1]);
+            if (!parse_uint64_arg(opts->filename[1], &parsed_arg) || parsed_arg > UINT_MAX) {
+                fprintf(stderr, "Invalid bytecode function id '%s'\n", opts->filename[1]);
+                optfree(opts);
+                exit(5);
+            }
+            funcid = (unsigned)parsed_arg;
         }
         rc = cli_bytecode_context_setfuncid(ctx, bc, funcid);
         if (rc != CL_SUCCESS) {
@@ -436,7 +468,12 @@ int main(int argc, char *argv[])
         if (opts->filename[1]) {
             i = 2;
             while (opts->filename[i]) {
-                rc = cli_bytecode_context_setparam_int(ctx, i - 2, atoi(opts->filename[i]));
+                if (!parse_uint64_arg(opts->filename[i], &parsed_arg)) {
+                    fprintf(stderr, "Invalid bytecode parameter %u '%s'\n", i - 2, opts->filename[i]);
+                    optfree(opts);
+                    exit(5);
+                }
+                rc = cli_bytecode_context_setparam_int(ctx, i - 2, parsed_arg);
                 if (rc != CL_SUCCESS) {
                     fprintf(stderr, "Unable to set param %u: %s\n", i - 2, cl_strerror(rc));
                     optfree(opts);

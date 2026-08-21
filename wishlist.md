@@ -381,10 +381,11 @@
 - Mixed v1/v2 hook tables now skip only the incompatible legacy entry on
   >4-GiB layers so a later v2 hook can still run; retain mixed-ABI execution,
   detection, and incomplete-result qualification as a release gate.
-- `clambc` now fails closed for invalid function selection/parameters and
-  returns a nonzero process status when bytecode execution fails, so an
-  independently compiled ABI-v2 fixture cannot be reported as a successful
-  run after a tool/runtime error; retain interpreter/JIT qualification.
+- `clambc` now strictly parses numeric function/parameter arguments, fails
+  closed for malformed or overflowing setup and runtime failures, and returns
+  a nonzero process status so an independently compiled ABI-v2 fixture cannot
+  be reported as a successful run after a tool/runtime error; retain
+  interpreter/JIT qualification.
 - The shared individual-allocation `calloc` guard now uses division-form
   admission before multiplication, so narrower `size_t` builds cannot wrap
   the requested element count into an apparently safe allocation size.
