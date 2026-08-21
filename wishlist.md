@@ -99,6 +99,9 @@
   succeeds.
 - On-access file preflight failures now remain visible to extra-scan callers;
   fanotify prevention still denies incomplete permission events.
+- Windows memory scans no longer turn a failed descriptor scan into `OK`; the
+  native Windows memory ingress remains outside the certified first-release
+  platform boundary.
 - TIFF IFD type-width multiplication and external-value range checks now use
   checked native-size arithmetic and remain fail-visible.
 - GIF block, color-table, and extension range admission now uses checked

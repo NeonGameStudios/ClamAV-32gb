@@ -699,23 +699,30 @@ cl_error_t scanfile(
             NULL,  // const char *file_type_hint,
             NULL); // char **file_type_out);
 
-        switch (verdict) {
-            case CL_VERDICT_NOTHING_FOUND: {
-                logg(LOGG_INFO, "%s: OK    \n", filename);
-                status = CL_CLEAN;
-            } break;
-            case CL_VERDICT_TRUSTED: {
-                // TODO: Option to print "TRUSTED" verdict instead of "OK"?
-                logg(LOGG_INFO, "%s: OK    \n", filename);
-                status = CL_CLEAN;
-            } break;
-            case CL_VERDICT_STRONG_INDICATOR:
-            case CL_VERDICT_POTENTIALLY_UNWANTED: {
-                logg(LOGG_INFO, "%s: %s FOUND\n", filename, alert_name);
-                info->ifiles++;
-                status   = CL_VIRUS;
-                infected = 1;
-            } break;
+        if (CL_SUCCESS != status) {
+            /* A clean-looking verdict is not authoritative when the library
+             * returned an operational, parser, or limit failure. */
+            logg(LOGG_INFO, "%s: %s ERROR\n", filename, cl_strerror(status));
+            info->errors++;
+        } else {
+            switch (verdict) {
+                case CL_VERDICT_NOTHING_FOUND: {
+                    logg(LOGG_INFO, "%s: OK    \n", filename);
+                    status = CL_CLEAN;
+                } break;
+                case CL_VERDICT_TRUSTED: {
+                    // TODO: Option to print "TRUSTED" verdict instead of "OK"?
+                    logg(LOGG_INFO, "%s: OK    \n", filename);
+                    status = CL_CLEAN;
+                } break;
+                case CL_VERDICT_STRONG_INDICATOR:
+                case CL_VERDICT_POTENTIALLY_UNWANTED: {
+                    logg(LOGG_INFO, "%s: %s FOUND\n", filename, alert_name);
+                    info->ifiles++;
+                    status   = CL_VIRUS;
+                    infected = 1;
+                } break;
+            }
         }
     }
 

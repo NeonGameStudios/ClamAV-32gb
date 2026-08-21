@@ -2556,3 +2556,13 @@ scans, matching the existing directory traversal behavior. Source guards and
 the capability manifest record the invariant; compiled Linux/Sonic1,
 fanotify/inotify integration, sanitizer, and resource-budget qualification
 remain open.
+
+## Windows memory-scan result propagation — 2026-08-21
+
+The Windows-only memory-scan helper previously switched on the output verdict
+without checking the `cl_scandesc_ex()` return status. A parser, limit, or
+operational failure could therefore leave the default `NOTHING_FOUND` verdict
+and be logged as `OK`. The helper now records the error and increments the
+memory-scan error count before any clean normalization. Native Windows remains
+explicitly outside the certified Linux x86-64 first-release target; source
+guards and the capability manifest record that boundary.
