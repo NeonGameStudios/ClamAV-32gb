@@ -208,6 +208,10 @@
 - PE header and enabled import-table passes now stop on every non-success
   result instead of continuing with partial metadata; add PE read/memory fault
   injection and malformed production corpus coverage.
+- Multipart/related mail roots now stay file-backed while preserving the
+  HTML-first/text-fallback root selection and MHTML preclassification path;
+  run the 65 MiB regression, sanitizer/RSS checks, and full MHTML corpus on
+  supported Linux.
 
 ## Large-file validation and expansion progression
 

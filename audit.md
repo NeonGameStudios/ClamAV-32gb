@@ -2632,3 +2632,15 @@ returned as a clean result. The client now uses a separate print-status value
 and propagates daemon errors into the client result; a socket-level regression
 proves that an `ERROR` response increments the error counter. Compiled
 Linux/Sonic1 and full clamdscan service qualification remain open.
+
+## MHTML related-body streaming — 2026-08-21
+
+`multipart/related` was the remaining MIME path that forced the complete
+parent body into the 64 MiB materialization budget so the legacy handler could
+select its HTML root after collecting all parts. Related parents now use the
+disk-backed multipart path; child messages remain spooled until the same
+HTML-first/text-fallback selection is complete, and MHTML preclassification
+reads the selected child from a file-backed source. A 65 MiB related-body
+regression fixture and source guards were added. Supported-Linux compilation,
+libxml2 memory/RSS behavior, sanitizer execution, and full MHTML corpus
+qualification remain open.

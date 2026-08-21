@@ -651,6 +651,45 @@ static char *create_mhtml_unterminated_comment_fixture(void)
     return path;
 }
 
+static char *create_large_mhtml_fixture(void)
+{
+    static const char header[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: multipart/related; boundary=mhtml-large\n"
+        "\n"
+        "--mhtml-large\n"
+        "Content-Type: text/html; charset=UTF-8\n"
+        "Content-Location: https://example.invalid/large.html\n"
+        "\n"
+        "<html><body>\n";
+    static const char trailer[] =
+        "</body></html>\n"
+        "--mhtml-large--\n";
+    char block[64U * 1024U];
+    char *path = NULL;
+    const size_t target = 65U * 1024U * 1024U;
+    size_t body_bytes = 0;
+    int fd = -1;
+
+    memset(block, 'M', sizeof(block));
+    block[sizeof(block) - 1] = '\n';
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, header, sizeof(header) - 1), (ssize_t)(sizeof(header) - 1));
+    while (body_bytes < target) {
+        const size_t write_bytes = MIN(sizeof(block), target - body_bytes);
+
+        ck_assert_int_eq(write(fd, block, write_bytes), (ssize_t)write_bytes);
+        body_bytes += write_bytes;
+    }
+    ck_assert_int_eq(write(fd, trailer, sizeof(trailer) - 1), (ssize_t)(sizeof(trailer) - 1));
+    ck_assert_int_eq(close(fd), 0);
+
+    return path;
+}
+
 static char *create_partial_message_missing_fragment_fixture(void)
 {
     static const char fixture[] =
@@ -854,6 +893,33 @@ START_TEST(test_mhtml_unterminated_comment_is_fail_visible)
                          NULL, NULL);
     ck_assert_msg(ret != CL_SUCCESS,
                   "unterminated MHTML preclassification returned clean");
+
+    free(path);
+}
+END_TEST
+
+START_TEST(test_mhtml_large_body_uses_streaming_spool)
+{
+    struct cl_scan_options options;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    char *path;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse   = ~0U;
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    path            = create_large_mhtml_fixture();
+
+    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL, NULL,
+                         NULL);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert_msg(scanned > 65U * 1024U * 1024U,
+                  "large MHTML root was not fully scanned");
 
     free(path);
 }
@@ -14821,6 +14887,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_partial_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_disposition_notification_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_mhtml_unterminated_comment_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_mhtml_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_streams_without_alert);
     tcase_add_test(tc_cl_scan, test_multipart_body_uses_streaming_spool);

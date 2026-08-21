@@ -236,9 +236,12 @@ static bool messageNeedsMaterializedBody(const message *m)
                (strcasecmp(subtype, "disposition-notification") != 0);
     }
 
-    subtype = messageGetMimeSubtype(m);
-    return (messageGetMimeType(m) == MULTIPART) && subtype &&
-           (strcasecmp(subtype, "related") == 0);
+    /* Multipart/related used to be retained as a line list because the
+     * legacy handler selected the HTML root only after all parts had been
+     * collected. The streaming handler now keeps the parts on disk until it
+     * can make the same HTML-first/text-fallback selection, so the parent
+     * body no longer needs a whole-message in-memory representation. */
+    return false;
 }
 
 static blob *getHrefs(cli_ctx *, message *m, tag_arguments_t *hrefs, bool *incomplete);
@@ -1666,7 +1669,9 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
     cli_ctx *ctx = mctx->ctx;
 #ifdef LIBXML_HTML_ENABLED
     struct msxml_ctx mxctx;
-    blob *input = NULL;
+    fileblob *input_fb = NULL;
+    const char *input_path = NULL;
+    bool borrowed_input   = false;
     htmlDocPtr htmlDoc;
     xmlTextReaderPtr reader;
     int ret        = CL_SUCCESS;
@@ -1681,17 +1686,45 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
     if (m == NULL && t == NULL)
         return OK;
 
-    if (m != NULL)
-        input = messageToBlob(m, 0);
-    else /* t != NULL */
-        input = textToBlob(t, NULL, 0);
+    /* Prefer the completed raw body spool directly. Encoded spools and the
+     * legacy line-list representation are exported to a file-backed input,
+     * keeping the HTML preclassifier out of the bounded blob materialization
+     * path. */
+    if (m != NULL && m->body_spool &&
+        (messageGetEncoding(m) == NOENCODING || messageGetEncoding(m) == BINARY ||
+         messageGetEncoding(m) == EIGHTBIT)) {
+        input_fb       = m->body_spool;
+        borrowed_input = true;
+        if (input_fb->isIncomplete || input_fb->fp == NULL || input_fb->fullname == NULL ||
+            fflush(input_fb->fp) != 0)
+            input_fb = NULL;
+    } else if (m != NULL) {
+        input_fb = messageToFileblob(m, mctx->dir, 0);
+    } else { /* t != NULL */
+        input_fb = fileblobCreate();
+        if (input_fb != NULL) {
+            fileblobSetFilename(input_fb, mctx->dir, "mhtml-root");
+            if (input_fb->isIncomplete || input_fb->fp == NULL)
+                fileblobDestructiveDestroy(input_fb);
+            else {
+                input_fb = textToFileblob(t, input_fb, 0);
+                fileblobSetCTX(input_fb, ctx);
+            }
+        }
+    }
 
-    if (input == NULL) {
+    if (input_fb != NULL && !input_fb->isIncomplete && input_fb->fp != NULL &&
+        input_fb->fullname != NULL && fflush(input_fb->fp) == 0)
+        input_path = input_fb->fullname;
+
+    if (input_path == NULL) {
         cli_mark_scan_incomplete(ctx, "MHTML root HTML input could not be materialized completely");
+        if (!borrowed_input && input_fb)
+            fileblobDestructiveDestroy(input_fb);
         return FAIL;
     }
 
-    htmlDoc = htmlReadMemory((char *)input->data, input->len, "mhtml.html", NULL, CLAMAV_MIN_XMLREADER_FLAGS | HTML_PARSE_NOWARNING);
+    htmlDoc = htmlReadFile(input_path, NULL, CLAMAV_MIN_XMLREADER_FLAGS | HTML_PARSE_NOWARNING);
     if (htmlDoc == NULL) {
         cli_dbgmsg("parseRootMHTML: cannot initialize read html document\n");
 
@@ -1700,7 +1733,8 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
         if (ctx->this_layer_metadata_json != NULL)
             (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_HTML_READ");
 
-        blobDestroy(input);
+        if (!borrowed_input)
+            fileblobDestructiveDestroy(input_fb);
         return FAIL;
     }
 
@@ -1722,7 +1756,8 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
         if (ctx->this_layer_metadata_json != NULL)
             (void)cli_json_parse_error(ctx->this_layer_metadata_json, "MHTML_ERROR_XML_READER_IO");
 
-        blobDestroy(input);
+        if (!borrowed_input)
+            fileblobDestructiveDestroy(input_fb);
         return FAIL;
     }
 
@@ -1757,7 +1792,8 @@ parseRootMHTML(mbox_ctx *mctx, message *m, text *t)
     xmlTextReaderClose(reader);
     xmlFreeTextReader(reader);
     xmlFreeDoc(htmlDoc);
-    blobDestroy(input);
+    if (!borrowed_input)
+        fileblobDestructiveDestroy(input_fb);
     return rc;
 #else  /* LIBXML_HTML_ENABLED */
     UNUSEDPARAM(m);
@@ -1785,6 +1821,103 @@ static mbox_status finishStreamedMultipartPart(message **partp, mbox_ctx *mctx,
     return rc;
 }
 
+typedef struct streamed_mime_part {
+    message *part;
+    struct streamed_mime_part *next;
+} streamed_mime_part;
+
+static int queueStreamedMimePart(streamed_mime_part **head,
+                                 streamed_mime_part **tail, message **partp,
+                                 cli_ctx *ctx)
+{
+    streamed_mime_part *entry;
+
+    if (partp == NULL || *partp == NULL)
+        return 0;
+
+    entry = (streamed_mime_part *)calloc(1, sizeof(*entry));
+    if (entry == NULL) {
+        cli_mark_scan_incomplete(ctx,
+                                 "Multipart related part list could not be allocated");
+        return -1;
+    }
+
+    entry->part = *partp;
+    *partp     = NULL;
+    if (*tail)
+        (*tail)->next = entry;
+    else
+        *head = entry;
+    *tail = entry;
+    return 0;
+}
+
+static void destroyStreamedMimeParts(streamed_mime_part *parts)
+{
+    while (parts != NULL) {
+        streamed_mime_part *next = parts->next;
+
+        if (parts->part)
+            messageDestroy(parts->part);
+        free(parts);
+        parts = next;
+    }
+}
+
+static mbox_status
+scanStreamedRelatedParts(streamed_mime_part *parts, mbox_ctx *mctx,
+                         unsigned int recursion_level)
+{
+    streamed_mime_part *entry;
+    message *root = NULL;
+    mbox_status result = OK;
+
+    /* Match getTextPart(): prefer the first HTML part, otherwise retain the
+     * last text part as the root candidate. The parts remain disk-backed
+     * until this selection is complete. */
+    for (entry = parts; entry != NULL; entry = entry->next) {
+        const mime_type type = entry->part ? messageGetMimeType(entry->part) : NOMIME;
+        const char *subtype = entry->part ? messageGetMimeSubtype(entry->part) : NULL;
+
+        if (type == TEXT) {
+            if (subtype && strcasecmp(subtype, "html") == 0) {
+                root = entry->part;
+                break;
+            }
+            root = entry->part;
+        }
+    }
+
+    if (root != NULL && mctx->ctx->this_layer_metadata_json != NULL) {
+        const mbox_status root_rc = parseRootMHTML(mctx, root, NULL);
+
+        if (root_rc == VIRUS)
+            result = VIRUS;
+        else if (root_rc != OK)
+            result = root_rc;
+    }
+
+    for (entry = parts; entry != NULL; entry = entry->next) {
+        mbox_status part_rc;
+
+        if (entry->part == NULL)
+            continue;
+        part_rc = finishStreamedMultipartPart(&entry->part, mctx, recursion_level);
+        if (part_rc == VIRUS) {
+            result = VIRUS;
+            break;
+        }
+        if ((part_rc == MAXREC) || (part_rc == MAXFILES)) {
+            result = part_rc;
+            break;
+        }
+        if (part_rc != OK && result == OK)
+            result = part_rc;
+    }
+
+    return result;
+}
+
 /*
  * Consume a disk-backed multipart body one MIME part at a time. The parent
  * spool remains on disk while the current child owns its own bounded spool;
@@ -1799,13 +1932,20 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
     fileblob *source;
     message *headers   = NULL;
     message *part      = NULL;
+    streamed_mime_part *parts_head = NULL;
+    streamed_mime_part *parts_tail = NULL;
     mbox_status result = OK;
     bool saw_boundary  = false;
     bool closed        = false;
+    const char *main_subtype;
+    bool is_related;
     char line[4096];
 
     if (mainMessage == NULL || mctx == NULL || mainMessage->body_spool == NULL)
         return FAIL;
+
+    main_subtype = messageGetMimeSubtype(mainMessage);
+    is_related  = main_subtype && strcasecmp(main_subtype, "related") == 0;
 
     if ((messageGetEncoding(mainMessage) != NOENCODING) &&
         (messageGetEncoding(mainMessage) != BINARY) &&
@@ -1854,7 +1994,15 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
                 headers = NULL;
                 result  = FAIL;
             }
-            part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
+            if (is_related) {
+                if (queueStreamedMimePart(&parts_head, &parts_tail, &part, mctx->ctx) < 0) {
+                    result = FAIL;
+                    break;
+                }
+                part_rc = OK;
+            } else {
+                part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
+            }
             if (part_rc == VIRUS) {
                 result = VIRUS;
                 break;
@@ -1872,7 +2020,15 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
         if (boundaryStart(line, boundary)) {
             mbox_status part_rc;
 
-            part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
+            if (is_related) {
+                if (queueStreamedMimePart(&parts_head, &parts_tail, &part, mctx->ctx) < 0) {
+                    result = FAIL;
+                    break;
+                }
+                part_rc = OK;
+            } else {
+                part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
+            }
             if (part_rc == VIRUS) {
                 result = VIRUS;
                 break;
@@ -1968,7 +2124,18 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
             result = FAIL;
     }
 
-    if (part != NULL) {
+    if (is_related) {
+        if (queueStreamedMimePart(&parts_head, &parts_tail, &part, mctx->ctx) < 0)
+            result = FAIL;
+        {
+            const mbox_status parts_rc = scanStreamedRelatedParts(parts_head, mctx,
+                                                                   recursion_level);
+            if (parts_rc == VIRUS || parts_rc == MAXREC || parts_rc == MAXFILES)
+                result = parts_rc;
+            else if (parts_rc != OK && result == OK)
+                result = parts_rc;
+        }
+    } else if (part != NULL) {
         mbox_status part_rc = finishStreamedMultipartPart(&part, mctx, recursion_level);
         if (part_rc == VIRUS)
             result = VIRUS;
@@ -1999,6 +2166,7 @@ done:
         messageDestroy(headers);
     if (part)
         messageDestroy(part);
+    destroyStreamedMimeParts(parts_head);
     if (boundary)
         free(boundary);
     return result;
