@@ -318,6 +318,9 @@
 - Applicable bytecode entries now fail closed when the runtime is disabled:
   `CL_EBYTECODE`, incomplete/non-cacheable; retain interpreter/LLVM and
   independently compiled fixture qualification as release gates.
+- Legacy MSXML base64 embedded-data failures now fail closed as incomplete and
+  non-cacheable instead of skipping the element; add compiled XML/OOXML corpus
+  and sanitizer qualification.
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.

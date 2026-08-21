@@ -2993,3 +2993,13 @@ incomplete/non-cacheable and returns `CL_EBYTECODE`; focused logical/hook
 regressions and a source guard cover the boundary. Interpreter, LLVM,
 disabled-runtime, and independently compiled fixture qualification remain
 open.
+
+## MSXML base64 decode failure status — 2026-08-21
+
+The legacy MSXML `MSXML_SCAN_B64` path previously logged a failed decode and
+advanced past the element, allowing required embedded data to be skipped while
+returning success. It now validates the encoded value, marks the layer
+incomplete/non-cacheable, and returns `CL_EPARSE` for malformed or unavailable
+decoded data; a focused malformed-base64 regression and source guard cover the
+boundary. Compiled Linux/Sonic1, XML/OOXML corpus, sanitizer, and broader
+parser qualification remain open.

@@ -47,6 +47,7 @@
 #include "scanners.h"
 #include "dconf.h"
 #include "msxml.h"
+#include "msxml_parser.h"
 #include "rtf.h"
 #include "swf.h"
 #include "tnef.h"
@@ -5392,6 +5393,38 @@ START_TEST(test_msxml_truncated_document_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_msxml_base64_decode_failure_is_fail_visible)
+{
+    static const uint8_t document[] = "<chunk>QUJD$A==</chunk>";
+    static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_B64}};
+    struct cl_engine engine;
+    struct msxml_ctx mxctx;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    xmlTextReaderPtr reader;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&mxctx, 0, sizeof(mxctx));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    reader = xmlReaderForMemory((const char *)document, (int)(sizeof(document) - 1U), "msxml-base64.xml", NULL, 0);
+    ck_assert_ptr_nonnull(reader);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_msxml_parse_document(&ctx, reader, keys, sizeof(keys) / sizeof(keys[0]), MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML base64 data was malformed or could not be decoded completely");
+
+    xmlFreeTextReader(reader);
     cl_fmap_close(map);
 }
 END_TEST
@@ -16310,6 +16343,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_truncated_document_is_fail_visible);
+    tcase_add_test(tc_cl, test_msxml_base64_decode_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_split_object_data_header_is_fail_visible);

@@ -26,6 +26,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
 #include <fcntl.h>
 
 #include "clamav.h"
@@ -70,6 +71,45 @@ struct msxml_ictx {
 };
 
 struct key_entry blank_key = {NULL, NULL, 0};
+
+static int msxml_base64_is_valid(const unsigned char *data, size_t len)
+{
+    size_t compact_len = 0;
+    size_t padding     = 0;
+    size_t i;
+    int seen_padding = 0;
+
+    for (i = 0; i < len; ++i) {
+        unsigned char value = data[i];
+
+        if (isspace(value))
+            continue;
+
+        if (value == '=') {
+            seen_padding = 1;
+            if (++padding > 2)
+                return 0;
+            continue;
+        }
+
+        if (seen_padding || !((value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z') ||
+                              (value >= '0' && value <= '9') || value == '+' || value == '/'))
+            return 0;
+
+        compact_len++;
+    }
+
+    if (padding) {
+        if (((compact_len + padding) & 3U) != 0)
+            return 0;
+        if ((padding == 1 && (compact_len & 3U) != 3) || (padding == 2 && (compact_len & 3U) != 2))
+            return 0;
+    } else if ((compact_len & 3U) == 1) {
+        return 0;
+    }
+
+    return 1;
+}
 
 static const struct key_entry *msxml_check_key(struct msxml_ictx *ictx, const xmlChar *key, size_t keylen)
 {
@@ -432,6 +472,7 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                         if (keyinfo->type & MSXML_SCAN_B64) {
                             char name[1024];
                             char *decoded, *tempfile = name;
+                            size_t encodedlen;
                             size_t decodedlen;
                             int of;
                             int cleanup_failed = 0;
@@ -439,12 +480,18 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
 
                             cli_msxmlmsg("BINARY DATA!\n");
 
-                            decoded = (char *)cl_base64_decode((char *)node_value, strlen((const char *)node_value), NULL, &decodedlen, 0);
+                            encodedlen = strlen((const char *)node_value);
+                            if (!msxml_base64_is_valid(node_value, encodedlen)) {
+                                cli_warnmsg("msxml_parse_element: malformed base64-encoded binary data\n");
+                                cli_mark_scan_incomplete(ctx, "MSXML base64 data was malformed or could not be decoded completely");
+                                return CL_EPARSE;
+                            }
+
+                            decoded = (char *)cl_base64_decode((char *)node_value, encodedlen, NULL, &decodedlen, 0);
                             if (!decoded) {
                                 cli_warnmsg("msxml_parse_element: failed to decode base64-encoded binary data\n");
-                                state = xmlTextReaderRead(reader);
-                                check_state(state);
-                                break;
+                                cli_mark_scan_incomplete(ctx, "MSXML base64 data was malformed or could not be decoded completely");
+                                return CL_EPARSE;
                             }
 
                             temporary_reserved = (uint64_t)decodedlen;
