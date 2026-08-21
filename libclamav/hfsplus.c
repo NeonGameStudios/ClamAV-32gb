@@ -541,6 +541,7 @@ done:
 static cl_error_t hfsplus_validate_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader, hfsHeaderRecord *catHeader)
 {
     hfsPlusForkData *catFork;
+    uint64_t requiredSize;
 
     UNUSEDPARAM(ctx);
 
@@ -553,7 +554,8 @@ static cl_error_t hfsplus_validate_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *vo
         cli_dbgmsg("hfsplus_validate_catalog: catFork logicalSize too large!\n");
         return CL_EFORMAT;
     }
-    if (catFork->logicalSize < (catHeader->totalNodes * catHeader->nodeSize)) {
+    requiredSize = (uint64_t)catHeader->totalNodes * catHeader->nodeSize;
+    if (catFork->logicalSize < requiredSize) {
         cli_dbgmsg("hfsplus_validate_catalog: too many nodes for catFile\n");
         return CL_EFORMAT;
     }
@@ -723,13 +725,14 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
 {
     bool foundBlock = false;
     uint64_t catalogOffset;
-    uint32_t startBlock, startOffset;
-    uint32_t endBlock, endSize;
-    uint32_t curBlock;
-    uint32_t extentNum = 0, realFileBlock;
+    uint64_t startBlock, startOffset;
+    uint64_t endBlock, endSize;
+    uint64_t curBlock;
+    uint32_t extentNum = 0;
+    uint64_t realFileBlock;
     uint32_t readSize;
     size_t fileOffset = 0;
-    uint32_t searchBlock;
+    uint64_t searchBlock;
     uint32_t buffOffset = 0;
 
     UNUSEDPARAM(extHeader);
@@ -744,11 +747,11 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     /* First, calculate the node's offset within the catalog */
     catalogOffset = (uint64_t)node * catHeader->nodeSize;
     /* Determine which block of the catalog we need */
-    startBlock  = (uint32_t)(catalogOffset / volHeader->blockSize);
-    startOffset = (uint32_t)(catalogOffset % volHeader->blockSize);
-    endBlock    = (uint32_t)((catalogOffset + catHeader->nodeSize - 1) / volHeader->blockSize);
-    endSize     = (uint32_t)(((catalogOffset + catHeader->nodeSize - 1) % volHeader->blockSize) + 1);
-    cli_dbgmsg("hfsplus_fetch_node: need catalog block " STDu32 "\n", startBlock);
+    startBlock  = catalogOffset / volHeader->blockSize;
+    startOffset = catalogOffset % volHeader->blockSize;
+    endBlock    = (catalogOffset + catHeader->nodeSize - 1) / volHeader->blockSize;
+    endSize     = ((catalogOffset + catHeader->nodeSize - 1) % volHeader->blockSize) + 1;
+    cli_dbgmsg("hfsplus_fetch_node: need catalog block " STDu64 "\n", startBlock);
     if (startBlock >= catFork->totalBlocks || endBlock >= catFork->totalBlocks) {
         cli_dbgmsg("hfsplus_fetch_node: block number invalid!\n");
         return CL_EFORMAT;
@@ -815,9 +818,9 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
                 cli_dbgmsg("hfsplus_fetch_node: node offset exceeds the native fmap range\n");
                 return CL_EFORMAT;
             }
-            fileOffset += startOffset;
+            fileOffset += (size_t)startOffset;
         } else if (curBlock == endBlock) {
-            readSize = endSize;
+            readSize = (uint32_t)endSize;
         }
 
         if ((buffOffset + readSize) > buffSize) {

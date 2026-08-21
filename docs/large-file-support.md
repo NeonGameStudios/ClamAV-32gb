@@ -2310,6 +2310,17 @@ alignment/fail-closed boundary. Compiled multi-extent UDF corpus coverage,
 sanitizer execution, and supported-build Sonic1 qualification remain release
 gates.
 
+## HFS+ catalog coordinate and size arithmetic — 2026-08-20
+
+HFS+ catalog validation now computes the required node storage in 64-bit
+arithmetic, preventing a large node count multiplied by node size from
+wrapping to a small value and allowing a false clean walk. Catalog block
+coordinates are also retained as 64-bit values until native fmap-range
+validation, avoiding truncation for catalogs whose logical offsets exceed
+4 GiB. A focused synthetic catalog-size regression covers the former
+32-bit-product wrap; compiled large-volume corpus and Sonic1 qualification
+remain release gates.
+
 HFS+ fork records that exhaust their eight inline extents are another explicit
 unsupported boundary. The parser does not yet perform the required
 `ExtentOverflow` B-tree lookup, so it marks the containing layer incomplete and

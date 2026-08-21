@@ -69,6 +69,9 @@
 - UDF file entries now support bounded lists of recorded allocation extents,
   aggregating their logical and temporary budgets before one child scan;
   fragmented UDF corpus qualification remains open.
+- HFS+ catalog node-size validation and catalog block coordinates now retain
+  64-bit arithmetic through fmap admission; large-volume corpus qualification
+  remains open.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
