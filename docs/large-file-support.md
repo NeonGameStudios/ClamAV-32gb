@@ -2787,10 +2787,11 @@ first-plus-offset calculation before the parser rejects them.
 The capability manifest records `pdf-stream-over-1g` as deliberately
 unsupported. This is a legacy contiguous-buffer boundary, not an outer-file
 limit: a PDF may still contain other inspectable objects, but a legacy filter
-stream above 1 GiB, or a Flate/RunLength/LZW decoder output above 4 GiB, makes
-the containing scan incomplete rather than allowing a truncated or wrapped
-prefix to be treated as complete. The focused decoder paths now retain
-native-width output accounting until these explicit boundary checks.
+stream or Flate/RunLength/LZW decoder growth above 1 GiB makes the containing
+scan incomplete rather than allowing a truncated or wrapped prefix to be
+treated as complete. The legacy 4 GiB width check remains defense-in-depth,
+and the focused decoder paths retain native-width output accounting until
+these explicit boundary checks.
 
 ## TIFF IFD cursor width — 2026-08-20
 

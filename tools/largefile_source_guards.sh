@@ -994,6 +994,8 @@ contains libclamav/pdfdecode.c 'PDF LZW decoding is disabled and the stream was 
 contains libclamav/pdfdecode.c "PDF stream exceeds the decoder's 32-bit input boundary"
 contains libclamav/pdfdecode.c 'PDF stream exceeds the individual allocation boundary'
 contains libclamav/pdfdecode.c 'PDF ASCII85 decoded output exceeds the individual allocation boundary'
+contains libclamav/pdfdecode.c 'pdf_decoder_capacity_check'
+contains libclamav/pdfdecode.c 'PDF LZW decoder output size overflowed'
 contains libclamav/pdfdecode.c 'PDF decoder output exceeds the 32-bit decoder boundary'
 contains libclamav/pdfdecode.c 'PDF Flate decoder output exceeds the 32-bit decoder boundary'
 contains libclamav/pdfdecode.c 'PDF LZW decoder output exceeds the 32-bit decoder boundary'

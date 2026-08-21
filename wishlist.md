@@ -153,8 +153,8 @@
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial
   prefix.
-- PDF legacy filter input now rejects streams above the shared 1 GiB
-  individual-allocation ceiling with explicit `CL_ERESOURCE`, and ASCII85
+- PDF legacy filter input and Flate/RunLength/LZW growth now reject the shared
+  1 GiB individual-allocation ceiling with explicit `CL_ERESOURCE`, and ASCII85
   expansion checks its prospective contiguous output before allocation; the
   fully streaming PDF-filter conversion and large-corpus qualification remain
   open.

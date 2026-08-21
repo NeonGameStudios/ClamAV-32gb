@@ -88,6 +88,16 @@ static cl_error_t pdf_decoder_output_width_check(cli_ctx *ctx, size_t current, s
     return CL_SUCCESS;
 }
 
+static cl_error_t pdf_decoder_capacity_check(cli_ctx *ctx, size_t capacity)
+{
+    if (capacity > SIZE_MAX - INFLATE_CHUNK_SIZE || capacity > CLI_MAX_ALLOCATION - INFLATE_CHUNK_SIZE) {
+        cli_mark_scan_incomplete(ctx, "PDF decoder output exceeds the individual allocation boundary");
+        return CL_ERESOURCE;
+    }
+
+    return CL_SUCCESS;
+}
+
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -592,6 +602,8 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
             if ((rc = pdf_decoder_output_width_check(pdf->ctx, declen, output_length)) != CL_SUCCESS)
                 break;
             if (declen + output_length > capacity) {
+                if ((rc = pdf_decoder_capacity_check(pdf->ctx, capacity)) != CL_SUCCESS)
+                    break;
 
                 if ((rc = cli_checklimits("pdf", pdf->ctx, capacity + INFLATE_CHUNK_SIZE, 0, 0)) != CL_SUCCESS)
                     break;
@@ -620,6 +632,8 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
             if ((rc = pdf_decoder_output_width_check(pdf->ctx, declen, output_length)) != CL_SUCCESS)
                 break;
             if (declen + output_length > capacity) {
+                if ((rc = pdf_decoder_capacity_check(pdf->ctx, capacity)) != CL_SUCCESS)
+                    break;
                 if ((rc = cli_checklimits("pdf", pdf->ctx, capacity + INFLATE_CHUNK_SIZE, 0, 0)) != CL_SUCCESS) {
                     cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
                     break;
@@ -769,6 +783,8 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
     while (zstat == Z_OK && stream.avail_in) {
         /* extend output capacity if needed,*/
         if (stream.avail_out == 0) {
+            if ((rc = pdf_decoder_capacity_check(pdf->ctx, capacity)) != CL_SUCCESS)
+                break;
             if ((rc = cli_checklimits("pdf", pdf->ctx, capacity + INFLATE_CHUNK_SIZE, 0, 0)) != CL_SUCCESS) {
                 cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %u\n", capacity + INFLATE_CHUNK_SIZE);
                 break;
@@ -1084,6 +1100,13 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
     while (lzwstat == Z_OK && stream.avail_in) {
         /* extend output capacity if needed,*/
         if (stream.avail_out == 0) {
+            if ((rc = pdf_decoder_capacity_check(pdf->ctx, capacity)) != CL_SUCCESS)
+                goto done;
+            if (declen > SIZE_MAX - INFLATE_CHUNK_SIZE) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoder output size overflowed");
+                rc = CL_ERESOURCE;
+                goto done;
+            }
             if ((rc = cli_checklimits("pdf", pdf->ctx, capacity + INFLATE_CHUNK_SIZE, 0, 0)) != CL_SUCCESS) {
                 cli_dbgmsg("cli_pdf: required buffer size to inflate compressed filter exceeds maximum: %zu\n", capacity + INFLATE_CHUNK_SIZE);
                 break;
@@ -1097,17 +1120,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
             decoded          = temp;
             stream.next_out  = decoded + capacity;
             stream.avail_out = INFLATE_CHUNK_SIZE;
-            if (declen > (SIZE_MAX - INFLATE_CHUNK_SIZE)) {
-                cli_dbgmsg("cli_pdf: lzwdecode: overflow detected\n");
-                rc = CL_EFORMAT;
-                goto done;
-            }
             declen += INFLATE_CHUNK_SIZE;
-            if (capacity > (SIZE_MAX - INFLATE_CHUNK_SIZE)) {
-                cli_dbgmsg("cli_pdf: lzwdecode: overflow detected\n");
-                rc = CL_EFORMAT;
-                goto done;
-            }
             capacity += INFLATE_CHUNK_SIZE;
         }
 
