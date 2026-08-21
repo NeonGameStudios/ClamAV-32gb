@@ -3049,3 +3049,12 @@ and checks RVA additions before nested traversal. A recursive resource walk
 therefore no longer retains an attacker-declared fmap window across nested
 reads. Static guards and whitespace validation pass; compiled PE corpus,
 sanitizer, and production qualification remain open.
+
+## UDF descriptor-window lifetime — 2026-08-21
+
+UDF now releases descriptor views on tag mismatch and snapshots the logical
+volume and partition metadata before scanning extracted files. This removes
+locked fmap windows from the nested extent-scan lifetime while preserving the
+descriptor values required by the extractor. Static guards and whitespace
+validation pass; compiled UDF corpus, sanitizer, and production qualification
+remain open.

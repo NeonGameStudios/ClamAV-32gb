@@ -2843,6 +2843,15 @@ checked before recursion or translation. Static guards and whitespace
 validation pass; compiled PE corpus, sanitizer, and large-file qualification
 remain release gates.
 
+## UDF descriptor-window lifetime — 2026-08-21
+
+UDF descriptor helpers now release a locked view when the tag does not match
+the required descriptor type. Accepted logical-volume and partition
+descriptors are copied into bounded metadata snapshots before extracted-file
+traversal, so nested extent reads no longer retain their original fmap
+windows. Static guards and whitespace validation pass; compiled UDF corpus,
+sanitizer, and large-file qualification remain release gates.
+
 ## Bytecode v2 PDF coordinate bridge — 2026-08-19
 
 The internal PDF-hook context now retains native-width PDF size and start

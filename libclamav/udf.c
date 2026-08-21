@@ -514,6 +514,7 @@ static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t 
     lastOffset = idx;
 
     if (PRIMARY_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -552,6 +553,7 @@ static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(c
     lastOffset = idx;
 
     if (IMPLEMENTATION_USE_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -589,6 +591,7 @@ static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t 
     lastOffset = idx;
 
     if (LOGICAL_VOLUME_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -626,6 +629,7 @@ static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, s
     lastOffset = idx;
 
     if (PARTITION_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -663,6 +667,7 @@ static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, s
     lastOffset = idx;
 
     if (UNALLOCATED_SPACE_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -700,6 +705,7 @@ static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idx
     lastOffset = idx;
 
     if (TERMINATING_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -738,6 +744,7 @@ static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli
     lastOffset = idx;
 
     if (LOGICAL_VOLUME_INTEGRITY_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -775,6 +782,7 @@ static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *
     lastOffset = idx;
 
     if (ANCHOR_VOLUME_DESCRIPTOR_DESCRIPTOR_POINTER != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -811,6 +819,7 @@ static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_
     lastOffset = idx;
 
     if (FILE_SET_DESCRIPTOR != getDescriptorTagId(&test->tag)) {
+        fmap_unneed_ptr(ctx->fmap, test, VOLUME_DESCRIPTOR_SIZE);
         goto done;
     }
 
@@ -979,6 +988,8 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
     ImplementationUseVolumeDescriptor *iuvd = NULL;
     LogicalVolumeDescriptor *lvd            = NULL;
     PartitionDescriptor *pd                 = NULL;
+    LogicalVolumeDescriptor lvd_snapshot;
+    PartitionDescriptor pd_snapshot;
     UnallocatedSpaceDescriptor *usd         = NULL;
     TerminatingDescriptor *td               = NULL;
     LogicalVolumeIntegrityDescriptor *lvid  = NULL;
@@ -1081,8 +1092,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 }
                 goto done;
             }
-            // Hold on to this pointer, we'll use it later.
-            // We'll release it after `done`.
+            /* This descriptor is only validated here. Release its locked
+             * view before continuing to inspect the volume. */
+            fmap_unneed_ptr(ctx->fmap, iuvd, VOLUME_DESCRIPTOR_SIZE);
+            iuvd = NULL;
 
             if (NULL == (lvd = getLogicalVolumeDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Logical Volume Descriptor\n");
@@ -1095,8 +1108,11 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 }
                 goto done;
             }
-            // Hold on to this pointer, we'll use it later.
-            // We'll release it after `done`.
+            /* Snapshot metadata needed by extracted-file traversal, then
+             * release the locked fmap view before nested parsing begins. */
+            memcpy(&lvd_snapshot, lvd, sizeof(lvd_snapshot));
+            fmap_unneed_ptr(ctx->fmap, lvd, VOLUME_DESCRIPTOR_SIZE);
+            lvd = NULL;
 
             if (NULL == (pd = getPartitionDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Partition Descriptor\n");
@@ -1109,7 +1125,11 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 }
                 goto done;
             }
-            // Hold on to this pointer through extraction, just like lvd.
+            /* Snapshot metadata needed by extracted-file traversal, then
+             * release the locked fmap view before nested parsing begins. */
+            memcpy(&pd_snapshot, pd, sizeof(pd_snapshot));
+            fmap_unneed_ptr(ctx->fmap, pd, VOLUME_DESCRIPTOR_SIZE);
+            pd = NULL;
 
             if (NULL == (usd = getUnallocatedSpaceDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Unallocated Space Descriptor\n");
@@ -1281,7 +1301,8 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 for (i = 0; i < cnt; i++) {
                     ret = parseFileEntryDescriptor(ctx,
                                                    (FileEntryDescriptor *)fileEntryList.idxs[i],
-                                                   pd, lvd, (FileIdentifierDescriptor *)fileIdentifierList.idxs[i]);
+                                                   &pd_snapshot, &lvd_snapshot,
+                                                   (FileIdentifierDescriptor *)fileIdentifierList.idxs[i]);
                     if (CL_SUCCESS != ret) {
                         cli_dbgmsg("cli_scanudf: Failed to extract or scan file %zu: %s\n", i, cl_strerror(ret));
                         goto done;
@@ -1294,12 +1315,6 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                  */
                 freePointerList(&fileIdentifierList);
                 freePointerList(&fileEntryList);
-                fmap_unneed_ptr(ctx->fmap, iuvd, VOLUME_DESCRIPTOR_SIZE);
-                iuvd = NULL;
-                fmap_unneed_ptr(ctx->fmap, lvd, VOLUME_DESCRIPTOR_SIZE);
-                lvd = NULL;
-                fmap_unneed_ptr(ctx->fmap, pd, VOLUME_DESCRIPTOR_SIZE);
-                pd = NULL;
                 fmap_unneed_ptr(ctx->fmap, file_volume_tag, VOLUME_DESCRIPTOR_SIZE);
                 file_volume_tag = NULL;
 
