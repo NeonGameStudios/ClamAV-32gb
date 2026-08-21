@@ -88,6 +88,17 @@ incomplete, and is not cacheable as clean. A focused regression and source
 guard cover the boundary; supported-Linux compilation and runtime
 qualification remain open.
 
+## Python bytecode unsupported boundary — 2026-08-21
+
+Python bytecode magic is recognized by the type detector, but the fork does
+not have a bounded parser that can inspect the version-dependent code-object
+formats. The dispatch path now records that deliberate unsupported boundary
+as an incomplete, non-cacheable result before continuing the mandatory outer
+raw matcher, so a clean raw-only result cannot be mistaken for a complete
+Python-bytecode scan. A focused public-map regression, source guard, and
+capability-manifest entry cover the invariant; a future bounded parser and
+production Python corpus remain outside the current release qualification.
+
 ## OLE2 summary metadata result propagation — 2026-08-21
 
 When metadata collection was enabled, `cli_ole2_scan_tempdir()` discarded the

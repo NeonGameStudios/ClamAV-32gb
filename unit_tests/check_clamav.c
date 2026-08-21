@@ -8601,6 +8601,41 @@ START_TEST(test_sis_truncated_compressed_member_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_python_compiled_parser_is_explicitly_unsupported)
+{
+    static const uint8_t data[] = {0x42, 0x0d, 0x0d, 0x0a, 0, 0, 0, 0};
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_PYTHON_COMPILED", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_sis_compressed_member_streams_to_nested_scan)
 {
     static const uint8_t compressed[] = {
@@ -15949,6 +15984,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_sis_truncated_contents_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_name_table_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_python_compiled_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_compressed_member_streams_to_nested_scan);
     tcase_add_test(tc_cl, test_sis_member_limit_is_fail_visible);

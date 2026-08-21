@@ -328,6 +328,9 @@
   language-table failures now remain incomplete/non-cacheable with distinct
   `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and
   production SIS corpus qualification.
+- Python bytecode magic is now an explicit unsupported parser boundary:
+  raw matching continues, but non-detection results are incomplete and
+  non-cacheable until a bounded version-aware parser is implemented.
 
 ## Large-file validation and expansion progression
 

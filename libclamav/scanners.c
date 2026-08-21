@@ -6246,6 +6246,15 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     }
     filetype = cli_ftname(type);
 
+    /* Python bytecode is recognized by the magic table, but this fork has no
+     * bounded parser for its version-dependent code-object format. Keep raw
+     * matching available, while making a non-detecting result explicitly
+     * incomplete instead of presenting raw-only coverage as a clean deep scan. */
+    if (type == CL_TYPE_PYTHON_COMPILED) {
+        cli_mark_scan_incomplete(ctx, "Python compiled bytecode parser is unsupported");
+        status = CL_EPARSE;
+    }
+
     /* set current layer to the type we found */
     ret = cli_recursion_stack_change_type(ctx, type, true /* ? */);
     if (CL_SUCCESS != ret) {
