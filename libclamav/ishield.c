@@ -237,7 +237,9 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
 
     off += 0x20;
     if (cli_readint32(buf + 8) | cli_readint32(buf + 0xc) | cli_readint32(buf + 0x10) | cli_readint32(buf + 0x14) | cli_readint32(buf + 0x18) | cli_readint32(buf + 0x1c)) {
-        return CL_SUCCESS;
+        cli_dbgmsg("ishield-msi: control metadata layout is unsupported\n");
+        cli_mark_scan_incomplete(ctx, "InstallShield MSI control metadata is unsupported by the bounded parser");
+        return CL_EUNPACK;
     }
 
     if (!(fcount = cli_readint32(buf))) {

@@ -12820,10 +12820,28 @@ START_TEST(test_ishield_msi_partial_limit_and_decode_failures_are_visible)
     ctx.recursion_stack     = &layer;
     ctx.recursion_stack_size = 1;
 
-    map = cl_fmap_open_memory(data, ISHIELD_TEST_HEADER_SIZE);
+    data[8] = 1;
+    map     = cl_fmap_open_memory(data, ISHIELD_TEST_HEADER_SIZE);
     ck_assert_ptr_nonnull(map);
     ctx.fmap   = map;
     layer.fmap = map;
+    ret        = cli_scanishield_msi(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "InstallShield MSI control metadata is unsupported by the bounded parser");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    data[8]                   = 0;
+    ctx.scan_incomplete       = false;
+    ctx.scan_incomplete_reason = NULL;
+
+    map = cl_fmap_open_memory(data, ISHIELD_TEST_HEADER_SIZE);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap            = map;
+    layer.fmap          = map;
+    map->dont_cache_flag = false;
     ret = cli_scanishield_msi(&ctx, 0);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);

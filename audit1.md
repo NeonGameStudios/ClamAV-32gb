@@ -2094,6 +2094,17 @@ Source guards and `git diff --check` pass. Dependency-complete InstallShield
 corpus execution, sanitizer and fault-injected cleanup coverage, and
 supported-build Sonic1 qualification remain open release gates.
 
+## InstallShield unsupported control metadata — 2026-08-21
+
+The InstallShield MSI extractor previously returned `CL_SUCCESS` when any of
+its six control metadata fields were nonzero, even though that layout was not
+handled by the bounded parser. A confirmed layer could therefore skip MSI
+members and still look clean. The branch now records an explicit unsupported,
+non-cacheable result (`CL_EUNPACK`), while weak candidates are still rejected
+by the separate header-admission check. A focused regression covers the
+unsupported control layout and its sticky cache barrier. Full InstallShield
+corpus, sanitizer, and supported-build Sonic1 qualification remain open.
+
 ## HWP temporary-output accounting — 2026-08-20
 
 The shared HWP3/HWP5/HWPML raw-deflate helper previously wrote decompressed
