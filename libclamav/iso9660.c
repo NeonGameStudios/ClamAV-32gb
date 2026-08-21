@@ -46,7 +46,7 @@ static cl_error_t iso_incomplete(cli_ctx *ctx, const char *reason)
     return CL_EPARSE;
 }
 
-static const void *needblock(const iso9660_t *iso, unsigned int block, int temp)
+static const void *needblock(const iso9660_t *iso, unsigned int block, int temp, cl_error_t *read_status)
 {
     cli_ctx *ctx;
     uint64_t available;
@@ -54,6 +54,9 @@ static const void *needblock(const iso9660_t *iso, unsigned int block, int temp)
     uint64_t block_offset;
     uint64_t absolute_offset;
     unsigned int blocks_per_sect;
+
+    if (read_status)
+        *read_status = CL_EPARSE;
 
     if (!iso || !iso->ctx || !iso->ctx->fmap || !iso->sectsz || !iso->blocksz ||
         iso->blocksz > iso->sectsz)
@@ -80,9 +83,14 @@ static const void *needblock(const iso9660_t *iso, unsigned int block, int temp)
     if (absolute_offset > SIZE_MAX)
         return NULL;
 
-    if (temp)
-        return fmap_need_off_once(ctx->fmap, (size_t)absolute_offset, iso->blocksz);
-    return fmap_need_off(ctx->fmap, (size_t)absolute_offset, iso->blocksz);
+    {
+        const void *result = temp
+                                 ? fmap_need_off_once(ctx->fmap, (size_t)absolute_offset, iso->blocksz)
+                                 : fmap_need_off(ctx->fmap, (size_t)absolute_offset, iso->blocksz);
+        if (!result && read_status)
+            *read_status = CL_EREAD;
+        return result;
+    }
 }
 
 static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsigned int len)
@@ -106,12 +114,18 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
 
     cli_dbgmsg("iso_scan_file: dumping to %s\n", tmpf);
     while (len) {
-        const void *buf   = needblock(iso, block, 1);
+        cl_error_t read_status;
+        const void *buf   = needblock(iso, block, 1, &read_status);
         unsigned int todo = MIN(len, iso->blocksz);
         if (!buf) {
-            /* Block outside file */
-            cli_dbgmsg("iso_scan_file: cannot dump block outside file, ISO may be truncated\n");
-            ret = iso_incomplete(iso->ctx, "ISO file data block was outside the available map");
+            if (read_status == CL_EREAD) {
+                cli_dbgmsg("iso_scan_file: cannot read file data block\n");
+                cli_mark_scan_incomplete(iso->ctx, "ISO file data block could not be read completely");
+                ret = CL_EREAD;
+            } else {
+                cli_dbgmsg("iso_scan_file: cannot dump block outside file, ISO may be truncated\n");
+                ret = iso_incomplete(iso->ctx, "ISO file data block was outside the available map");
+            }
             break;
         }
         if (cli_writen(fd, buf, todo) != todo) {
@@ -204,9 +218,16 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
             return ret;
         }
 
-        dir = dir_orig = needblock(iso, block, 0);
-        if (!dir) {
-            return iso_incomplete(ctx, "ISO directory block could not be read");
+        {
+            cl_error_t read_status;
+            dir = dir_orig = needblock(iso, block, 0, &read_status);
+            if (!dir) {
+                if (read_status == CL_EREAD) {
+                    cli_mark_scan_incomplete(ctx, "ISO directory block could not be read completely");
+                    return CL_EREAD;
+                }
+                return iso_incomplete(ctx, "ISO directory block was outside the available map");
+            }
         }
 
         for (dirsz = MIN(iso->blocksz, len);;) {
@@ -307,9 +328,13 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
         return iso_incomplete(ctx, "ISO volume descriptor started before the required system area");
     }
 
+    if (offset > ctx->fmap->len || 2448 + 6 > ctx->fmap->len - offset)
+        return iso_incomplete(ctx, "ISO volume descriptor was truncated");
+
     privol = fmap_need_off(ctx->fmap, offset, 2448 + 6);
     if (!privol) {
-        return iso_incomplete(ctx, "ISO volume descriptor was truncated");
+        cli_mark_scan_incomplete(ctx, "ISO volume descriptor could not be read completely");
+        return CL_EREAD;
     }
 
     next = (uint8_t *)cli_memstr((char *)privol + 2049, 2448 + 6 - 2049, "CD001", 5);
@@ -337,9 +362,22 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     iso.joliet      = 0;
 
     for (i = 16; i < 32; i++) { /* scan for a joliet secondary volume descriptor */
-        next = fmap_need_off_once(ctx->fmap, iso.base_offset + i * iso.sectsz, 2048);
-        if (!next)
+        uint64_t descriptor_offset64 = (uint64_t)iso.base_offset + (uint64_t)i * iso.sectsz;
+        size_t descriptor_offset;
+
+        if (descriptor_offset64 > SIZE_MAX)
+            break;
+        descriptor_offset = (size_t)descriptor_offset64;
+        next             = fmap_need_off_once(ctx->fmap, descriptor_offset, 2048);
+        if (!next) {
+            if (descriptor_offset <= ctx->fmap->len && 2048 <= ctx->fmap->len - descriptor_offset) {
+                fmap_unneed_off(ctx->fmap, offset, 2448);
+                cli_mark_scan_incomplete(ctx, "ISO secondary volume descriptor could not be read completely");
+                status = CL_EREAD;
+                goto done;
+            }
             break; /* Out of disk */
+        }
         if (*next == 0xff || memcmp(next + 1, "CD001", 5))
             break; /* Not a volume descriptor */
         if (*next != 2)

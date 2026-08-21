@@ -8893,6 +8893,61 @@ START_TEST(test_iso_truncated_directory_is_fail_visible)
 }
 END_TEST
 
+struct iso_volume_read_failure_state {
+    const uint8_t *data;
+    size_t length;
+    off_t fail_offset;
+};
+
+static off_t iso_volume_read_failure_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct iso_volume_read_failure_state *state = handle;
+
+    if (offset >= 0 && (uint64_t)offset <= (uint64_t)state->fail_offset &&
+        count > (size_t)((uint64_t)state->fail_offset - (uint64_t)offset))
+        return -1;
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+    memcpy(buf, state->data + (size_t)offset, count);
+    return (off_t)count;
+}
+
+START_TEST(test_iso_volume_read_failure_is_fail_visible)
+{
+    enum { ISO_OFFSET = 32768, ISO_DESCRIPTOR_BYTES = 2454 };
+    uint8_t data[ISO_OFFSET + ISO_DESCRIPTOR_BYTES] = {0};
+    struct iso_volume_read_failure_state state;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08; /* 2048-byte logical blocks */
+
+    state.data        = data;
+    state.length      = sizeof(data);
+    state.fail_offset = ISO_OFFSET;
+    map                = cl_fmap_open_handle(&state, 0, state.length, iso_volume_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_scaniso(&ctx, ISO_OFFSET), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ISO volume descriptor could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_iso_unsupported_extent_layouts_are_fail_visible)
 {
     enum {
@@ -15473,6 +15528,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cpio_member_name_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_temporary_directory_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);
+    tcase_add_test(tc_cl, test_iso_volume_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);

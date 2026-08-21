@@ -2824,3 +2824,14 @@ the existing fail-visible behavior. The focused header fault-injection
 regression now asserts the operational status and reason; source guards and
 capability evidence record the invariant. Compiled Linux/Sonic1, sanitizer,
 callback-fault, and production GIF corpus qualification remain open.
+
+## ISO9660 required read status — 2026-08-21
+
+ISO9660 volume descriptors and data blocks previously returned the same parse
+status for an in-range fmap callback failure and a genuinely unavailable block.
+The volume descriptor, secondary-descriptor probe, directory-block, and
+file-data paths now preserve callback failures as `CL_EREAD`; arithmetic or
+out-of-map conditions retain `CL_EPARSE` and their existing incomplete reasons.
+A focused volume-descriptor fault-injection regression, source guards, and
+capability evidence record the distinction. Compiled Linux/Sonic1, sanitizer,
+callback-fault, and production ISO9660 corpus qualification remain open.
