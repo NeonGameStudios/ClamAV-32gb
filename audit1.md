@@ -2781,3 +2781,15 @@ failure preserves the existing token payloads. The tokenizer suite's existing
 adjacent-string regression continues to cover the normal folding path. Full
 large-script, sanitizer, parser-corpus, and supported-build qualification
 remain open.
+
+## Sanitizer metadata loader binding — 2026-08-21
+
+The runtime gate already bound the sanitizer workload and loader trace to the
+copied sanitizer dependency directory, but its metadata block invoked the
+copied sanitizer scanner's `--version` command without setting that same
+loader path. On a host with a same-basename build-tree library, this could
+make the recorded metadata command load a different component than the one
+the evidence verifier had selected. The metadata invocation now explicitly
+sets `LD_LIBRARY_PATH` to the copied sanitizer component directory first;
+the source guard prevents regression. Full sanitizer and supported-build
+qualification remain release gates.

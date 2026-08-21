@@ -598,7 +598,7 @@ metadata=$out/build-identity.txt
         printf 'sanitizer_scanner_path=artifacts/clamscan-sanitizer\n'
         printf 'sanitizer_scanner_sha256=%s\n' "$sanitizer_scanner_sha256"
         file "$artifacts/clamscan-sanitizer"
-        "$runtime_sanitizer_clamscan" --version
+        LD_LIBRARY_PATH="$sanitizer_loader_path" "$runtime_sanitizer_clamscan" --version
         printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
         printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
         printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'

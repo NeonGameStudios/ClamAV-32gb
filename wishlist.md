@@ -17,6 +17,10 @@
 - Encrypted PDF streams without a usable key or supported method now retain an
   explicit unsupported completion reason while raw matching continues; valid
   encrypted-PDF corpus and qualification remain open.
+- Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
+  copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
+  keeping provenance binding consistent with the actual workload; full
+  sanitizer qualification remains a release gate.
 - AutoIt EA05 decoded and stored members now use bounded output/temp spooling;
   EA06 script decompilation remains an explicit random-access boundary.
 - 7-Zip fmap input-read, output-write, and allocation failures now preserve
