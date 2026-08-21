@@ -119,7 +119,7 @@ parser	CL_TYPE_MSEXE	pending	libclamav/scanners.c	dispatch branch requires parse
 parser	CL_TYPE_MSOLE2	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_MSSZDD	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_NULSFT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_OLD_TAR	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_OLD_TAR	pending	libclamav/scanners.c	bounded member staging and fail-visible TAR entry errors; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_ONENOTE	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_OOXML_HWP	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_OOXML_PPT	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
@@ -128,7 +128,7 @@ parser	CL_TYPE_OOXML_XL	pending	libclamav/scanners.c	dispatch branch requires pa
 parser	CL_TYPE_PART_HFSPLUS	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_PDF	pending	libclamav/scanners.c	native-width object coordinates and explicit decoder boundary; parser-family qualification remains required
 parser	CL_TYPE_PNG	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_POSIX_TAR	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_POSIX_TAR	pending	libclamav/scanners.c	bounded member staging, checked TAR coordinates, and fail-visible header/magic errors; parser-family qualification and complete corpus evidence remain required
 parser	CL_TYPE_PYTHON_COMPILED	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_RAR	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_RARSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

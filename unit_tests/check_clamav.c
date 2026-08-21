@@ -7893,6 +7893,56 @@ START_TEST(test_tar_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tar_invalid_magic_is_fail_visible)
+{
+    uint8_t data[512] = {0};
+    unsigned int checksum = 0;
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t i;
+
+    memcpy(data, "invalid-magic", sizeof("invalid-magic") - 1U);
+    memcpy(data + 100, "0000777", 7);
+    memcpy(data + 124, "00000000000", 11);
+    data[156] = '0';
+    memcpy(data + 257, "xxxxx", 5);
+    memset(data + 148, ' ', 8);
+    for (i = 0; i < 512; i++)
+        checksum += data[i];
+    snprintf((char *)(data + 148), 8, "%06o", checksum);
+    data[154] = ' ';
+    data[155] = '\0';
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_POSIX_TAR", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tar_temporary_limit_is_fail_visible)
 {
     uint8_t data[2048] = {0};
@@ -12486,6 +12536,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_sis_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_member_header_offset_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_tar_invalid_magic_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cpio_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);

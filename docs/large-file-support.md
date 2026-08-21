@@ -2084,8 +2084,9 @@ The POSIX TAR member path now reserves each declared member size against
 `MaxTemporarySize` and keeps the reservation through the nested scan and
 cleanup. Members rejected by logical/file-size limits are skipped as complete
 units, and truncated members are cleaned up without being nested-scanned.
-TAR format-width, parser, filesystem, and Linux/Sonic1 runtime qualification
-remain open.
+Invalid POSIX `ustar` magic is now a sticky incomplete `CL_EPARSE` result after
+checksum validation, rather than an unmarked parser error. TAR format-width,
+parser, filesystem, and Linux/Sonic1 runtime qualification remain open.
 
 ## Embedded 7-Zip candidate admission — 2026-08-19
 

@@ -277,7 +277,8 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 magic[5] = '\0';
                 if (strcmp(magic, "ustar") != 0) {
                     cli_dbgmsg("cli_untar: Incorrect magic string '%s' in tar header\n", magic);
-                    return CL_EFORMAT;
+                    cli_mark_scan_incomplete(ctx, "TAR header magic was invalid");
+                    return CL_EPARSE;
                 }
             }
 
