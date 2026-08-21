@@ -2813,3 +2813,14 @@ the scan incomplete, and preserve the non-cacheable state. A focused header
 fault-injection regression, source guards, and capability-manifest evidence
 record the invariant. Compiled Linux/Sonic1, sanitizer, callback-fault, and
 production JPEG corpus qualification remain open.
+
+## GIF required read status — 2026-08-21
+
+The GIF parser previously routed in-range fmap callback failures through the
+same heuristic parse path as truncated structures. Required signature, version,
+descriptor, block-label, extension, and image-data reads now preserve callback
+failures as `CL_EREAD`, while genuinely short structures retain `CL_EPARSE` and
+the existing fail-visible behavior. The focused header fault-injection
+regression now asserts the operational status and reason; source guards and
+capability evidence record the invariant. Compiled Linux/Sonic1, sanitizer,
+callback-fault, and production GIF corpus qualification remain open.
