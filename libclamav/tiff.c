@@ -71,9 +71,15 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     }
     map = ctx->fmap;
 
-    /* check the magic */
-    if (fmap_readn(map, magic, offset, 4) != 4) {
+    /* A map shorter than the fixed magic cannot be a confirmed TIFF. Once
+     * those bytes are present, however, a failed fmap read is an operational
+     * error, not evidence that the file is simply another type. */
+    if (map->len < sizeof(magic)) {
         status = CL_CLEAN;
+        goto done;
+    }
+    if (fmap_readn(map, magic, offset, sizeof(magic)) != sizeof(magic)) {
+        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingMagic");
         goto done;
     }
     offset += 4;

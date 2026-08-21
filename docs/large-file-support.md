@@ -4255,3 +4255,12 @@ to direct parser callers instead of being normalized from `CL_BREAK` to clean.
 The focused truncated-resource regression and source guard are registered;
 compiled JPEG, sanitizer, and broader media corpus qualification remain release
 gates.
+
+## TIFF initial magic read failure — 2026-08-20
+
+The TIFF parser now keeps a genuinely short input as a non-TIFF result but
+fails closed when a map containing the complete four-byte magic field cannot be
+read. The operational failure marks the layer incomplete and returns
+`CL_EPARSE` instead of being normalized to clean. The focused fault-injection
+regression and source guard are registered; compiled TIFF, sanitizer, and
+broader media corpus qualification remain release gates.

@@ -1862,6 +1862,11 @@ that status to clean. It now reserves `CL_BREAK` for an exact end-of-map and
 returns an incomplete parse result for truncated names, sizes, data ranges, or
 fmap reads. A focused regression covers a truncated Photoshop resource.
 
+TIFF's initial magic probe also now distinguishes a map that is too short to
+be a confirmed TIFF from an in-range fmap read failure. The former remains a
+normal non-TIFF result; the latter marks the layer incomplete and returns
+`CL_EPARSE`. A focused fault-injection regression is registered.
+
 ## PE import-thunk completion — 2026-08-20
 
 PE import-hash inspection now requires each thunk table to reach its explicit
