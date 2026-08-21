@@ -29,6 +29,8 @@
 - Shared base64 encode/decode helpers now use the individual-allocation
   ceiling, covering embedded MSXML binaries and metadata fallback paths before
   temporary staging begins.
+- Bundled 7-Zip and NSIS decoder allocation callbacks now use checked shared
+  allocation, including multiplication overflow checks for NSIS zlib state.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
   copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
   keeping provenance binding consistent with the actual workload; full

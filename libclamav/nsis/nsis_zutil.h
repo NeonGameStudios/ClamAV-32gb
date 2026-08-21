@@ -27,6 +27,7 @@
 #define _Z_UTIL_H
 
 #include "nsis_zlib.h"
+#include "../others.h"
 
 #ifndef local
 #  define local static
@@ -66,7 +67,15 @@ typedef unsigned long  ulg;
 #define Tracec(c,x)
 #define Tracecv(c,x)
 
-#define ZALLOC(strm, items, size) malloc((items)*(size))
+static inline void *nsis_zalloc(size_t items, size_t size)
+{
+    if (0 == items || 0 == size || items > CLI_MAX_ALLOCATION / size)
+        return NULL;
+
+    return cli_max_malloc(items * size);
+}
+
+#define ZALLOC(strm, items, size) nsis_zalloc((size_t)(items), (size_t)(size))
 #define ZFREE(strm, addr)  { if (addr) free(addr); }
 #define TRY_FREE(s, p) { ZFREE(s, p); }
 #define ERR_RETURN(strm,err) return (err)

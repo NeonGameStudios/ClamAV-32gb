@@ -23,6 +23,7 @@ int g_allocCountTemp = 0;
 
 #endif
 #include "clamav.h"
+#include "others.h"
 
 void *SzAlloc(void *p, size_t size)
 {
@@ -33,7 +34,7 @@ void *SzAlloc(void *p, size_t size)
   fprintf(stderr, "\nAlloc %10d bytes; count = %10d", size, g_allocCount);
   g_allocCount++;
   #endif
-  return malloc(size);
+  return cli_max_malloc(size);
 }
 
 void SzFree(void *p, void *address)
@@ -61,7 +62,7 @@ void *SzAllocTemp(void *p, size_t size)
   return HeapAlloc(GetProcessHeap(), 0, size);
   #endif
   #endif
-  return malloc(size);
+  return cli_max_malloc(size);
 }
 
 void SzFreeTemp(void *p, void *address)

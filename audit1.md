@@ -3117,3 +3117,12 @@ PDF metadata fallback paths cannot create a contiguous buffer above the
 individual-allocation ceiling before their caller can reserve temporary
 storage. Static guards and whitespace validation pass; compiled parser corpus,
 sanitizer, and production qualification remain open.
+
+## Bundled decoder allocation bounds — 2026-08-21
+
+Bundled 7-Zip and NSIS zlib allocation callbacks previously called raw
+`malloc()`, and NSIS multiplied callback operands before allocation. They now
+route through `cli_max_malloc()` with checked multiplication, so decoder
+internal buffers fail closed at the individual-allocation ceiling. Static
+guards and whitespace validation pass; compiled archive corpus, sanitizer, and
+production qualification remain open.
