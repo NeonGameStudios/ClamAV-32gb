@@ -14086,6 +14086,58 @@ START_TEST(test_udf_truncated_descriptor_area_is_fail_visible)
 }
 END_TEST
 
+struct udf_descriptor_read_failure_state {
+    const uint8_t *data;
+    size_t length;
+    off_t fail_offset;
+};
+
+static off_t udf_descriptor_read_failure_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct udf_descriptor_read_failure_state *state = handle;
+
+    if (offset >= 0 && (uint64_t)offset <= (uint64_t)state->fail_offset &&
+        count > (size_t)((uint64_t)state->fail_offset - (uint64_t)offset))
+        return -1;
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+    memcpy(buf, state->data + (size_t)offset, count);
+    return (off_t)count;
+}
+
+START_TEST(test_udf_descriptor_read_failure_is_fail_visible)
+{
+    enum { UDF_TEST_SIZE = UDF_EMPTY_LEN + (3 * VOLUME_DESCRIPTOR_SIZE) };
+    static const uint8_t data[UDF_TEST_SIZE] = {0};
+    struct udf_descriptor_read_failure_state state;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    state.data        = data;
+    state.length      = sizeof(data);
+    state.fail_offset = UDF_EMPTY_LEN;
+    map                = cl_fmap_open_handle(&state, 0, state.length, udf_descriptor_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF generic volume descriptor area could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static void test_udf_set_generic_identifiers(uint8_t *data, size_t base)
 {
     static const char identifiers[][5] = {"BEA01", "NSR02", "TEA01"};
@@ -15648,6 +15700,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
+    tcase_add_test(tc_cl, test_udf_descriptor_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_unknown_generic_descriptor_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
     tcase_add_test(tc_cl, test_udf_allocation_descriptor_alignment_is_fail_visible);

@@ -433,8 +433,22 @@ static void dumpTag (DescriptorTag *dt)
 
 #define NUM_GENERIC_VOLUME_DESCRIPTORS 3
 
+/* fmap_need_off() uses NULL for both an unavailable range and a failed
+ * backing read.  Keep those cases distinct while the descriptor helpers walk
+ * a UDF volume so an operational failure cannot be reported as a malformed
+ * volume. */
+static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *read_status)
+{
+    const void *ptr = fmap_need_off(ctx->fmap, offset, length);
+
+    if (NULL == ptr && offset <= ctx->fmap->len && length <= ctx->fmap->len - offset)
+        *read_status = CL_EREAD;
+
+    return ptr;
+}
+
 /* If this function fails, idx will not be updated */
-static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
 {
     bool ret        = false;
     uint8_t *buffer = NULL;
@@ -443,7 +457,7 @@ static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp
     size_t i;
 
     while (1) {
-        buffer = (uint8_t *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+        buffer = (uint8_t *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
         if (NULL == buffer) {
             goto done;
         }
@@ -478,21 +492,22 @@ done:
 
 /* Skip past all the empty descriptors and find the PrimaryVolumeDescriptor.
  * Return error if the next non-empty descriptor is not a PrimaryVolumeDescriptor. */
-static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+                                                           cl_error_t *read_status)
 {
     PrimaryVolumeDescriptor *test = NULL;
     PrimaryVolumeDescriptor *ret  = NULL;
     size_t idx                    = *idxp;
     size_t lastOffset             = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (PrimaryVolumeDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (PrimaryVolumeDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -514,21 +529,23 @@ done:
 
 /* Skip past all the empty descriptors and find the ImplementationUseVolumeDescriptor.
  * Return error if the next non-empty descriptor is not an ImplementationUseVolumeDescriptor. */
-static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(cli_ctx *ctx, size_t *idxp,
+                                                                                 size_t *lastOffsetp,
+                                                                                 cl_error_t *read_status)
 {
     ImplementationUseVolumeDescriptor *test = NULL;
     ImplementationUseVolumeDescriptor *ret  = NULL;
     size_t idx                              = *idxp;
     size_t lastOffset                       = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (ImplementationUseVolumeDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (ImplementationUseVolumeDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -550,21 +567,22 @@ done:
 
 /* Skip past all the empty descriptors and find the LogicalVolumeDescriptor.
  * Return error if the next non-empty descriptor is not a LogicalVolumeDescriptor. */
-static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+                                                           cl_error_t *read_status)
 {
     LogicalVolumeDescriptor *ret  = NULL;
     LogicalVolumeDescriptor *test = NULL;
     size_t idx                    = *idxp;
     size_t lastOffset             = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (LogicalVolumeDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (LogicalVolumeDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -586,21 +604,22 @@ done:
 
 /* Skip past all the empty descriptors and find the PartitionDescriptor.
  * Return error if the next non-empty descriptor is not a PartitionDescriptor. */
-static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+                                                    cl_error_t *read_status)
 {
     PartitionDescriptor *ret  = NULL;
     PartitionDescriptor *test = NULL;
     size_t idx                = *idxp;
     size_t lastOffset         = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (PartitionDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (PartitionDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -622,21 +641,22 @@ done:
 
 /* Skip past all the empty descriptors and find the UnallocatedSpaceDescriptor.
  * Return error if the next non-empty descriptor is not a UnallocatedSpaceDescriptor. */
-static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+                                                                  cl_error_t *read_status)
 {
     UnallocatedSpaceDescriptor *ret  = NULL;
     UnallocatedSpaceDescriptor *test = NULL;
     size_t idx                       = *idxp;
     size_t lastOffset                = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (UnallocatedSpaceDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (UnallocatedSpaceDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -658,21 +678,22 @@ done:
 
 /* Skip past all the empty descriptors and find the TerminatingDescriptor.
  * Return error if the next non-empty descriptor is not a TerminatingDescriptor. */
-static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+                                                       cl_error_t *read_status)
 {
     TerminatingDescriptor *ret  = NULL;
     TerminatingDescriptor *test = NULL;
     size_t idx                  = *idxp;
     size_t lastOffset           = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (TerminatingDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (TerminatingDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -694,21 +715,23 @@ done:
 
 /* Skip past all the empty descriptors and find the LogicalVolumeIntegrityDescriptor.
  * Return error if the next non-empty descriptor is not a LogicalVolumeIntegrityDescriptor. */
-static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli_ctx *ctx, size_t *idxp,
+                                                                              size_t *lastOffsetp,
+                                                                              cl_error_t *read_status)
 {
     LogicalVolumeIntegrityDescriptor *ret  = NULL;
     LogicalVolumeIntegrityDescriptor *test = NULL;
     size_t idx                             = *idxp;
     size_t lastOffset                      = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (LogicalVolumeIntegrityDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (LogicalVolumeIntegrityDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -730,21 +753,22 @@ done:
 
 /* Skip past all the empty descriptors and find the AnchorVolumeDescriptor.
  * Return error if the next non-empty descriptor is not an AnchorVolumeDescriptor. */
-static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+                                                                        cl_error_t *read_status)
 {
     AnchorVolumeDescriptorPointer *ret  = NULL;
     AnchorVolumeDescriptorPointer *test = NULL;
     size_t idx                          = *idxp;
     size_t lastOffset                   = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (AnchorVolumeDescriptorPointer *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (AnchorVolumeDescriptorPointer *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -766,21 +790,21 @@ done:
 
 /* Skip past all the empty descriptors and find the FileSetDescriptor.
  * Return error if the next non-empty descriptor is not a FileSetDescriptor. */
-static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp)
+static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
 {
     FileSetDescriptor *ret  = NULL;
     FileSetDescriptor *test = NULL;
     size_t idx              = *idxp;
     size_t lastOffset       = *lastOffsetp;
 
-    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp)) {
+    if (!skipEmptyDescriptors(ctx, idxp, lastOffsetp, read_status)) {
         goto done;
     }
 
     idx        = *idxp;
     lastOffset = *lastOffsetp;
 
-    test = (FileSetDescriptor *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+    test = (FileSetDescriptor *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
     if (NULL == test) {
         goto done;
     }
@@ -961,6 +985,7 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
     AnchorVolumeDescriptorPointer *avdp     = NULL;
     FileSetDescriptor *fsd                  = NULL;
     DescriptorTag *file_volume_tag          = NULL;
+    cl_error_t read_status                  = CL_EPARSE;
 
     bool isInitialized             = false;
     PointerList fileIdentifierList = {0};
@@ -974,11 +999,16 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
     cli_dbgmsg("Scanning UDF file\n");
 
     for (i = 0; i < NUM_GENERIC_VOLUME_DESCRIPTORS; i++) {
-        gvsd = (GenericVolumeStructureDescriptor *)fmap_need_off(ctx->fmap, idx, sizeof(GenericVolumeStructureDescriptor));
+        gvsd = (GenericVolumeStructureDescriptor *)udf_need_off(ctx, idx, sizeof(GenericVolumeStructureDescriptor), &read_status);
         if (NULL == gvsd) {
-            // File isn't long enough to store the required generic volume structure descriptors at the given offset.
-            cli_mark_scan_incomplete(ctx, "UDF generic volume descriptor area is incomplete");
-            ret = CL_EPARSE;
+            if (CL_EREAD == read_status) {
+                cli_mark_scan_incomplete(ctx, "UDF generic volume descriptor area could not be read completely");
+                ret = CL_EREAD;
+            } else {
+                // File isn't long enough to store the required generic volume structure descriptors at the given offset.
+                cli_mark_scan_incomplete(ctx, "UDF generic volume descriptor area is incomplete");
+                ret = CL_EPARSE;
+            }
             goto done;
         }
 
@@ -1027,84 +1057,134 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 goto done;
             }
 
-            if (NULL == (pvd = getPrimaryVolumeDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (pvd = getPrimaryVolumeDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Primary Volume Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF primary volume descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF primary volume descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF primary volume descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             fmap_unneed_ptr(ctx->fmap, pvd, VOLUME_DESCRIPTOR_SIZE);
 
-            if (NULL == (iuvd = getImplementationUseVolumeDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (iuvd = getImplementationUseVolumeDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Implementation Use Volume Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF implementation-use descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF implementation-use descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF implementation-use descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             // Hold on to this pointer, we'll use it later.
             // We'll release it after `done`.
 
-            if (NULL == (lvd = getLogicalVolumeDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (lvd = getLogicalVolumeDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Logical Volume Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF logical volume descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF logical volume descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF logical volume descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             // Hold on to this pointer, we'll use it later.
             // We'll release it after `done`.
 
-            if (NULL == (pd = getPartitionDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (pd = getPartitionDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Partition Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF partition descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF partition descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF partition descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             // Hold on to this pointer through extraction, just like lvd.
 
-            if (NULL == (usd = getUnallocatedSpaceDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (usd = getUnallocatedSpaceDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Unallocated Space Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF unallocated-space descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF unallocated-space descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF unallocated-space descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             fmap_unneed_ptr(ctx->fmap, usd, VOLUME_DESCRIPTOR_SIZE);
 
-            if (NULL == (td = getTerminatingDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (td = getTerminatingDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Terminating Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF terminating descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF terminating descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF terminating descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             fmap_unneed_ptr(ctx->fmap, td, VOLUME_DESCRIPTOR_SIZE);
 
-            if (NULL == (lvid = getLogicalVolumeIntegrityDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (lvid = getLogicalVolumeIntegrityDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Logical Volume Integrity Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF logical-volume-integrity descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF logical-volume-integrity descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF logical-volume-integrity descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             fmap_unneed_ptr(ctx->fmap, lvid, VOLUME_DESCRIPTOR_SIZE);
 
-            if (NULL == (td = getTerminatingDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (td = getTerminatingDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Terminating Descriptor\n");
-                cli_mark_scan_incomplete(ctx, "UDF second terminating descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF second terminating descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF second terminating descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             fmap_unneed_ptr(ctx->fmap, td, VOLUME_DESCRIPTOR_SIZE);
 
-            if (NULL == (avdp = getAnchorVolumeDescriptorPointer(ctx, &idx, &lastOffset))) {
+            if (NULL == (avdp = getAnchorVolumeDescriptorPointer(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Anchor Volume Descriptor Pointer\n");
-                cli_mark_scan_incomplete(ctx, "UDF anchor volume descriptor is incomplete");
-                ret = CL_EPARSE;
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF anchor volume descriptor could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "UDF anchor volume descriptor is incomplete");
+                    ret = CL_EPARSE;
+                }
                 goto done;
             }
             fmap_unneed_ptr(ctx->fmap, avdp, VOLUME_DESCRIPTOR_SIZE);
 
-            if (NULL == (fsd = getFileSetDescriptor(ctx, &idx, &lastOffset))) {
+            if (NULL == (fsd = getFileSetDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get File Set Descriptor\n");
 
                 // The file set descriptor may come after an extended file entry descriptor.
+                if (CL_EREAD == read_status) {
+                    cli_mark_scan_incomplete(ctx, "UDF file set descriptor could not be read completely");
+                    ret = CL_EREAD;
+                    goto done;
+                }
                 idx = lastOffset;
             } else {
                 fmap_unneed_ptr(ctx->fmap, fsd, VOLUME_DESCRIPTOR_SIZE);
@@ -1118,11 +1198,16 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
          */
 
         // Need the entire volume descriptor. We'll un-need it at the end.
-        file_volume_tag = (DescriptorTag *)fmap_need_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+        file_volume_tag = (DescriptorTag *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, &read_status);
         if (NULL == file_volume_tag) {
             cli_dbgmsg("Failed to get File Volume Tag\n");
-            cli_mark_scan_incomplete(ctx, "UDF file volume descriptor is incomplete");
-            ret = CL_EPARSE;
+            if (CL_EREAD == read_status) {
+                cli_mark_scan_incomplete(ctx, "UDF file volume descriptor could not be read completely");
+                ret = CL_EREAD;
+            } else {
+                cli_mark_scan_incomplete(ctx, "UDF file volume descriptor is incomplete");
+                ret = CL_EPARSE;
+            }
             goto done;
         }
         lastOffset = idx;

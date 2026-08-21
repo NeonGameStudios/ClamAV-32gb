@@ -2320,6 +2320,17 @@ alignment/fail-closed boundary. Compiled multi-extent UDF corpus coverage,
 sanitizer execution, and supported-build Sonic1 qualification remain release
 gates.
 
+## UDF required descriptor read status — 2026-08-21
+
+UDF descriptor helpers now distinguish an in-range fmap callback failure from
+an actually short or out-of-map descriptor. The generic-volume, required
+volume, and file-volume descriptor walks preserve callback failures as
+`CL_EREAD` and retain `CL_EPARSE` for unavailable ranges; both outcomes mark
+the layer incomplete and non-cacheable. A focused generic-descriptor
+fault-injection regression and source guards cover the boundary. Compiled UDF
+corpus, sanitizer, callback-fault, and supported-build Sonic1 qualification
+remain release gates.
+
 ## HFS+ catalog coordinate and size arithmetic — 2026-08-20
 
 HFS+ catalog validation now computes the required node storage in 64-bit

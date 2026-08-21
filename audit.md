@@ -2835,3 +2835,15 @@ out-of-map conditions retain `CL_EPARSE` and their existing incomplete reasons.
 A focused volume-descriptor fault-injection regression, source guards, and
 capability evidence record the distinction. Compiled Linux/Sonic1, sanitizer,
 callback-fault, and production ISO9660 corpus qualification remain open.
+
+## UDF required descriptor read status — 2026-08-21
+
+UDF descriptor helpers previously treated an in-range fmap callback failure as
+the same condition as a short or out-of-map descriptor. Descriptor admission
+now carries the read status through generic-volume, required-volume, and file
+volume descriptor walks: callback failures return `CL_EREAD`, while genuinely
+unavailable ranges remain `CL_EPARSE`, with both paths marking the layer
+incomplete and non-cacheable. A focused generic-descriptor fault-injection
+regression, source guards, and capability-manifest evidence record the
+distinction. Compiled Linux/Sonic1, sanitizer, callback-fault, and production
+UDF corpus qualification remain open.
