@@ -2146,3 +2146,15 @@ incomplete when their backing window fails. A focused MBR/GPT boot-record
 fault-injection regression, source guards, and capability-manifest entries
 record the invariant. Compiled Linux/Sonic1, sanitizer, and broader partition
 corpus qualification remain open.
+
+## Public large-file setter negative values — 2026-08-21
+
+The public `cl_engine_set_num()` API previously replaced negative values for
+`MaxFileSize` and several 32-GiB parser gates with their defaults after a
+warning. That made an invalid caller request silently change the resource
+contract and could leave the caller believing its requested limit had been
+applied. These setters now reject negative values with `CL_EARG` before
+mutating the engine; valid zero and positive values retain their existing
+semantics. The focused setter regression also verifies that a failed negative
+update leaves the prior `MaxFileSize` unchanged. Compiled Linux/Sonic1
+execution and full API compatibility qualification remain open.

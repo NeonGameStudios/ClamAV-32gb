@@ -1273,8 +1273,18 @@ START_TEST(test_engine_set_num_rejects_narrowing_and_negative_values)
 {
     struct cl_engine *engine = cl_engine_new();
     struct cl_settings *settings;
+    uint64_t maxfilesize_before;
 
     ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, 4096), CL_SUCCESS);
+    maxfilesize_before = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, -1), CL_EARG);
+    ck_assert_uint_eq((uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL), maxfilesize_before);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_EMBEDDEDPE, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_HTMLNORMALIZE, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_HTMLNOTAGS, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCRIPTNORMALIZE, -1), CL_EARG);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_ZIPTYPERCG, -1), CL_EARG);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, -1), CL_EARG);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE,
                                        (long long)CLI_MAX_LOGICAL_SCAN_SIZE + 1), CL_EARG);

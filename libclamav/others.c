@@ -707,6 +707,22 @@ static cl_error_t cli_validate_32g_limit(const char *name, uint64_t requested)
     return CL_SUCCESS;
 }
 
+static cl_error_t cli_validate_32g_nonnegative(const char *name,
+                                               long long requested,
+                                               uint64_t *validated)
+{
+    if (!validated)
+        return CL_ENULLARG;
+
+    if (requested < 0 || (uint64_t)requested > CLI_MAX_LARGE_FILESIZE) {
+        cli_errmsg("%s: values must be between 0 and 32 GiB\n", name);
+        return CL_EARG;
+    }
+
+    *validated = (uint64_t)requested;
+    return CL_SUCCESS;
+}
+
 static cl_error_t cli_validate_resource_limit(const char *name,
                                               long long requested,
                                               uint64_t ceiling,
@@ -772,13 +788,12 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             break;
         case CL_ENGINE_MAX_FILESIZE:
             if (num < 0) {
-                cli_warnmsg("MaxFileSize: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXFILESIZE);
-                engine->maxfilesize = CLI_DEFAULT_MAXFILESIZE;
-            } else {
-                ret = cli_validate_maxfilesize((uint64_t)num, &engine->maxfilesize);
-                if (ret != CL_SUCCESS)
-                    return ret;
+                cli_errmsg("MaxFileSize: negative values are not allowed\n");
+                return CL_EARG;
             }
+            ret = cli_validate_maxfilesize((uint64_t)num, &engine->maxfilesize);
+            if (ret != CL_SUCCESS)
+                return ret;
             break;
         case CL_ENGINE_MAX_RECURSION:
             ret = cli_validate_u32_setting("MaxRecursion", num, &value32);
@@ -797,49 +812,29 @@ cl_error_t cl_engine_set_num(struct cl_engine *engine, enum cl_engine_field fiel
             engine->maxfiles = value32;
             break;
         case CL_ENGINE_MAX_EMBEDDEDPE:
-            if (num < 0) {
-                cli_warnmsg("MaxEmbeddedPE: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXEMBEDDEDPE);
-                engine->maxembeddedpe = CLI_DEFAULT_MAXEMBEDDEDPE;
-            } else if (cli_validate_32g_limit("MaxEmbeddedPE", (uint64_t)num) != CL_SUCCESS) {
-                return CL_EARG;
-            } else
-                engine->maxembeddedpe = num;
+            ret = cli_validate_32g_nonnegative("MaxEmbeddedPE", num, &engine->maxembeddedpe);
+            if (ret != CL_SUCCESS)
+                return ret;
             break;
         case CL_ENGINE_MAX_HTMLNORMALIZE:
-            if (num < 0) {
-                cli_warnmsg("MaxHTMLNormalize: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXHTMLNORMALIZE);
-                engine->maxhtmlnormalize = CLI_DEFAULT_MAXHTMLNORMALIZE;
-            } else if (cli_validate_32g_limit("MaxHTMLNormalize", (uint64_t)num) != CL_SUCCESS) {
-                return CL_EARG;
-            } else
-                engine->maxhtmlnormalize = num;
+            ret = cli_validate_32g_nonnegative("MaxHTMLNormalize", num, &engine->maxhtmlnormalize);
+            if (ret != CL_SUCCESS)
+                return ret;
             break;
         case CL_ENGINE_MAX_HTMLNOTAGS:
-            if (num < 0) {
-                cli_warnmsg("MaxHTMLNoTags: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXHTMLNOTAGS);
-                engine->maxhtmlnotags = CLI_DEFAULT_MAXHTMLNOTAGS;
-            } else if (cli_validate_32g_limit("MaxHTMLNoTags", (uint64_t)num) != CL_SUCCESS) {
-                return CL_EARG;
-            } else
-                engine->maxhtmlnotags = num;
+            ret = cli_validate_32g_nonnegative("MaxHTMLNoTags", num, &engine->maxhtmlnotags);
+            if (ret != CL_SUCCESS)
+                return ret;
             break;
         case CL_ENGINE_MAX_SCRIPTNORMALIZE:
-            if (num < 0) {
-                cli_warnmsg("MaxScriptNormalize: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXSCRIPTNORMALIZE);
-                engine->maxscriptnormalize = CLI_DEFAULT_MAXSCRIPTNORMALIZE;
-            } else if (cli_validate_32g_limit("MaxScriptNormalize", (uint64_t)num) != CL_SUCCESS) {
-                return CL_EARG;
-            } else
-                engine->maxscriptnormalize = num;
+            ret = cli_validate_32g_nonnegative("MaxScriptNormalize", num, &engine->maxscriptnormalize);
+            if (ret != CL_SUCCESS)
+                return ret;
             break;
         case CL_ENGINE_MAX_ZIPTYPERCG:
-            if (num < 0) {
-                cli_warnmsg("MaxZipTypeRcg: negative values are not allowed, using default: " STDu64 "\n", (uint64_t)CLI_DEFAULT_MAXZIPTYPERCG);
-                engine->maxziptypercg = CLI_DEFAULT_MAXZIPTYPERCG;
-            } else if (cli_validate_32g_limit("MaxZipTypeRcg", (uint64_t)num) != CL_SUCCESS) {
-                return CL_EARG;
-            } else
-                engine->maxziptypercg = num;
+            ret = cli_validate_32g_nonnegative("MaxZipTypeRcg", num, &engine->maxziptypercg);
+            if (ret != CL_SUCCESS)
+                return ret;
             break;
         case CL_ENGINE_MAX_MATCHER_WORK:
             ret = cli_validate_resource_limit("MaxMatcherWork", num, CLI_MAX_MATCHER_WORK,

@@ -86,6 +86,8 @@
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.
+- Public large-file limit setters now reject negative values without silently
+  replacing the caller's resource policy with a default.
 
 ## Large-file validation and expansion progression
 
