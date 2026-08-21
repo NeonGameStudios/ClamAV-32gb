@@ -324,6 +324,10 @@
 - RIFF header and chunk callback failures now preserve `CL_EREAD` instead of
   being flattened into truncation; add compiled callback-fault and production
   RIFF corpus qualification.
+- Old-format SIS metadata table, dependency-header, string, header, and
+  language-table failures now remain incomplete/non-cacheable with distinct
+  `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and
+  production SIS corpus qualification.
 
 ## Large-file validation and expansion progression
 

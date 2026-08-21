@@ -68,6 +68,18 @@ sis_incomplete(cli_ctx *ctx, const char *reason)
     return CL_EPARSE;
 }
 
+static cl_error_t
+sis_read_failure(cli_ctx *ctx, size_t nread, const char *read_reason, const char *short_reason)
+{
+    if (nread == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, read_reason);
+        return CL_EREAD;
+    }
+
+    cli_mark_scan_incomplete(ctx, short_reason);
+    return CL_EPARSE;
+}
+
 static void
 sis_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
 {
@@ -259,12 +271,20 @@ cl_error_t cli_scansis(cli_ctx *ctx)
     if (ctx->engine->keeptmp)
         cli_dbgmsg("SIS: Extracting files to %s\n", tmpd);
 
-    if (fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS) != SIZEOF_HEADER_UUIDS) {
-        cli_dbgmsg("SIS: unable to read UIDs\n");
-        if (cli_rmdirs(tmpd) != 0)
-            cli_mark_scan_incomplete(ctx, "SIS temporary directory could not be removed");
-        free(tmpd);
-        return CL_EREAD;
+    {
+        size_t nread = fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS);
+
+        if (nread != SIZEOF_HEADER_UUIDS) {
+            cl_error_t read_status = sis_read_failure(ctx, nread,
+                                                       "SIS UID header could not be read completely",
+                                                       "SIS UID header was truncated");
+
+            cli_dbgmsg("SIS: unable to read UIDs\n");
+            if (cli_rmdirs(tmpd) != 0)
+                cli_mark_scan_incomplete(ctx, "SIS temporary directory could not be removed");
+            free(tmpd);
+            return read_status;
+        }
     }
 
     cli_dbgmsg("SIS: UIDS %x %x %x - %x\n", EC32(uid[0]), EC32(uid[1]), EC32(uid[2]), EC32(uid[3]));
@@ -362,51 +382,87 @@ enum {
 const char *sislangs[] = {"UNKNOWN", "UK English", "French", "German", "Spanish", "Italian", "Swedish", "Danish", "Norwegian", "Finnish", "American", "Swiss French", "Swiss German", "Portuguese", "Turkish", "Icelandic", "Russian", "Hungarian", "Dutch", "Belgian Flemish", "Australian English", "Belgian French", "Austrian German", "New Zealand English", "International French", "Czech", "Slovak", "Polish", "Slovenian", "Taiwanese Chinese", "Hong Kong Chinese", "PRC Chinese", "Japanese", "Thai", "Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Tagalog", "Belarussian", "Bengali", "Bulgarian", "Burmese", "Catalan", "Croation", "Canadian English", "International English", "South African English", "Estonian", "Farsi", "Canadian French", "Gaelic", "Georgian", "Greek", "Cyprus Greek", "Gujarati", "Hebrew", "Hindi", "Indonesian", "Irish", "Swiss Italian", "Kannada", "Kazakh", "Kmer", "Korean", "Lao", "Latvian", "Lithuanian", "Macedonian", "Malay", "Malayalam", "Marathi", "Moldovian", "Mongolian", "Norwegian Nynorsk", "Brazilian Portuguese", "Punjabi", "Romanian", "Serbian", "Sinhalese", "Somali", "International Spanish", "American Spanish", "Swahili", "Finland Swedish", "Reserved", "Tamil", "Telugu", "Tibetan", "Tigrinya", "Cyprus Turkish", "Turkmen", "Ukrainian", "Urdu", "Reserved", "Vietnamese", "Welsh", "Zulu", "Other"};
 #define MAXLANG (sizeof(sislangs) / sizeof(sislangs[0]))
 
-static char *getsistring(fmap_t *map, uint32_t ptr, uint32_t len)
+static cl_error_t getsistring(cli_ctx *ctx, fmap_t *map, uint32_t ptr, uint32_t len, char **name_out)
 {
     char *name;
     uint32_t i;
 
-    if (!len) return NULL;
+    if (name_out == NULL)
+        return CL_ENULLARG;
+    *name_out = NULL;
+
+    if (!len)
+        return CL_SUCCESS;
     if (len > 400) len = 400;
     name = cli_max_malloc(len + 1);
     if (!name) {
         cli_dbgmsg("SIS: OOM\n");
-        return NULL;
+        cli_mark_scan_incomplete(ctx, "SIS string could not be allocated");
+        return CL_EMEM;
     }
-    if ((uint32_t)fmap_readn(map, name, ptr, len) != len) {
-        cli_dbgmsg("SIS: Unable to read string\n");
-        free(name);
-        return NULL;
+    {
+        size_t nread = fmap_readn(map, name, ptr, len);
+
+        if (nread != len) {
+            cl_error_t status = sis_read_failure(ctx, nread,
+                                                  "SIS string could not be read completely",
+                                                  "SIS string was truncated");
+
+            cli_dbgmsg("SIS: Unable to read string\n");
+            free(name);
+            return status;
+        }
     }
     for (i = 0; i < len; i += 2) name[i / 2] = name[i];
     name[i / 2] = '\0';
-    return name;
+    *name_out = name;
+    return CL_SUCCESS;
 }
 
-static int spamsisnames(fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
+static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
 {
-    const uint32_t *ptrs;
-    const uint32_t *lens;
+    uint32_t *values;
+    uint32_t *ptrs;
+    uint32_t *lens;
     unsigned int j;
+    size_t nread;
 
     const uint32_t len = sizeof(uint32_t) * langs * 2;
 
-    if (!(lens = fmap_need_off(map, pos, len))) {
-        cli_dbgmsg("SIS: Unable to read lengths and pointers\n");
-        return 1;
+    values = cli_max_malloc(len);
+    if (values == NULL) {
+        cli_mark_scan_incomplete(ctx, "SIS name table could not be allocated");
+        return CL_EMEM;
     }
+
+    nread = fmap_readn(map, values, pos, len);
+    if (nread != len) {
+        cl_error_t status = sis_read_failure(ctx, nread,
+                                             "SIS name table could not be read completely",
+                                             "SIS name table was truncated");
+
+        cli_dbgmsg("SIS: Unable to read lengths and pointers\n");
+        free(values);
+        return status;
+    }
+    lens = values;
     ptrs = &lens[langs];
 
     for (j = 0; j < langs; j++) {
-        char *name = getsistring(map, EC32(ptrs[j]), EC32(lens[j]));
-        if (name) {
+        char *name = NULL;
+        cl_error_t status = getsistring(ctx, map, EC32(ptrs[j]), EC32(lens[j]), &name);
+
+        if (status != CL_SUCCESS) {
+            free(values);
+            return status;
+        }
+        if (name != NULL) {
             cli_dbgmsg("\t%s (%s - @%x, len %d)\n", name, alangs[j], EC32(ptrs[j]), EC32(lens[j]));
             free(name);
         }
     }
-    fmap_unneed_off(map, pos, len);
-    return 1;
+    free(values);
+    return CL_SUCCESS;
 }
 
 static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
@@ -451,9 +507,16 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
     char *original_filepath = NULL;
     char *install_filepath  = NULL;
 
-    if (fmap_readn(map, &sis, SIZEOF_HEADER_UUIDS, sizeof(sis)) != sizeof(sis)) {
-        cli_dbgmsg("SIS: Unable to read header\n");
-        goto done;
+    {
+        size_t nread = fmap_readn(map, &sis, SIZEOF_HEADER_UUIDS, sizeof(sis));
+
+        if (nread != sizeof(sis)) {
+            status = sis_read_failure(ctx, nread,
+                                      "SIS header could not be read completely",
+                                      "SIS header was truncated");
+            cli_dbgmsg("SIS: Unable to read header\n");
+            goto done;
+        }
     }
     /*  cli_dbgmsg("SIS HEADER INFO: \nFile checksum: %x\nLangs: %d\nFiles: %d\nDeps: %d\nUsed langs: %d\nInstalled files: %d\nDest drive: %d\nCapabilities: %d\nSIS Version: %d\nFlags: %x\nType: %d\nVersion: %d.%d.%d\nLangs@: %x\nFiles@: %x\nDeps@: %x\nCerts@: %x\nName@: %x\nSig@: %x\nCaps@: %x\nUspace: %d\nNspace: %d\n\n", sis.filesum, sis.langs, sis.files, sis.deps, sis.ulangs, sis.instfiles, sis.drive, sis.caps, sis.version, sis.flags, sis.type, sis.verhi, sis.verlo, sis.versub, sis.plangs, sis.pfiles, sis.pdeps, sis.pcerts, sis.pnames, sis.psig, sis.pcaps, sis.uspace, sis.nspace);
      */
@@ -479,6 +542,7 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
     if (!(llangs = fmap_need_off_once(map, pos, sis.langs * sizeof(uint16_t)))) {
         cli_dbgmsg("SIS: Unable to read languages\n");
+        status = sis_incomplete(ctx, "SIS language table was truncated or unavailable");
         goto done;
     }
     pos += sis.langs * sizeof(uint16_t);
@@ -493,8 +557,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
         cli_dbgmsg("SIS: Application without a name?\n");
     } else {
         cli_dbgmsg("SIS: Application name:\n");
-        if (!spamsisnames(map, sis.pnames, sis.langs, alangs)) {
-            status = CL_EMEM;
+        status = spamsisnames(ctx, map, sis.pnames, sis.langs, alangs);
+        if (status != CL_SUCCESS) {
             goto done;
         }
     }
@@ -503,8 +567,8 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
         cli_dbgmsg("SIS: Application without capabilities?\n");
     } else {
         cli_dbgmsg("SIS: Provides:\n");
-        if (!spamsisnames(map, sis.pcaps, sis.langs, alangs)) {
-            status = CL_EMEM;
+        status = spamsisnames(ctx, map, sis.pcaps, sis.langs, alangs);
+        if (status != CL_SUCCESS) {
             goto done;
         }
     }
@@ -522,13 +586,25 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
             } dep;
 
             pos = sis.pdeps + i * (sizeof(dep) + sis.langs * 2 * sizeof(uint32_t));
-            if (fmap_readn(map, &dep, pos, sizeof(dep)) != sizeof(dep)) {
-                cli_dbgmsg("SIS: Unable to read dependencies\n");
-            } else {
+            {
+                size_t nread = fmap_readn(map, &dep, pos, sizeof(dep));
+
+                if (nread != sizeof(dep)) {
+                    status = sis_read_failure(ctx, nread,
+                                              "SIS dependency header could not be read completely",
+                                              "SIS dependency header was truncated");
+                    cli_dbgmsg("SIS: Unable to read dependencies\n");
+                    goto done;
+                }
+            }
+            {
+                cl_error_t names_status;
+
                 pos += sizeof(dep);
                 cli_dbgmsg("\tUID: %x v. %d.%d.%d\n\taka:\n", EC32(dep.uid), EC16(dep.verhi), EC16(dep.verlo), EC32(dep.versub));
-                if (!spamsisnames(map, pos, sis.langs, alangs)) {
-                    status = CL_EMEM;
+                names_status = spamsisnames(ctx, map, pos, sis.langs, alangs);
+                if (names_status != CL_SUCCESS) {
+                    status = names_status;
                     goto done;
                 }
             }
@@ -601,11 +677,17 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
                         sftype = "unknown";
                 }
                 cli_dbgmsg("SIS: File details:\n\tOptions: %d\n\tType: %s\n", options, sftype);
-                if ((original_filepath = getsistring(map, psname, ssname))) {
+                status = getsistring(ctx, map, psname, ssname, &original_filepath);
+                if (status != CL_SUCCESS)
+                    goto done;
+                if (original_filepath != NULL) {
                     cli_dbgmsg("\tOriginal filename: %s\n", original_filepath);
                     /* We'll keep the original filepath around to pass to the scan function */
                 }
-                if ((install_filepath = getsistring(map, pdname, sdname))) {
+                status = getsistring(ctx, map, pdname, sdname, &install_filepath);
+                if (status != CL_SUCCESS)
+                    goto done;
+                if (install_filepath != NULL) {
                     cli_dbgmsg("\tInstalled to: %s\n", install_filepath);
                     CLI_FREE_AND_SET_NULL(install_filepath);
                 }

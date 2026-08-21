@@ -2938,3 +2938,17 @@ coordinates remain `CL_EPARSE`. Focused header and chunk fault-injection
 regressions, source guards, and capability evidence record the distinction.
 Compiled Linux/Sonic1, sanitizer, callback-fault, and production RIFF corpus
 qualification remain open.
+
+## SIS metadata read status — 2026-08-21
+
+Old-format SIS metadata parsing previously ignored failures while reading the
+application name/capability tables and dependency headers. A failed
+`fmap_need_off()` or `getsistring()` path could therefore leave the parser's
+default clean status intact even though declared metadata was not inspected.
+The parser now uses bounded copies for those tables, preserves `CL_EREAD`
+versus truncated `CL_EPARSE`, marks the layer incomplete, and stops on failed
+metadata strings or dependencies. Header and language-table failures receive
+the same fail-visible treatment. A synthetic name-table truncation regression,
+source guards, and capability evidence cover the boundary; compiled
+Linux/Sonic1, sanitizer, callback-fault, and production SIS corpus
+qualification remain open.
