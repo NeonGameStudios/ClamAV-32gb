@@ -1081,6 +1081,11 @@ validation containers remain up on `clamav-32gb:test-tools-742a8a4`. Remote
 TIFF, test, and guard hashes differ from the current worktree. No remote
 rebuild or qualification claim is made.
 
+The zero first-IFD offset case now uses the same sticky parser-error helper as
+the other TIFF structural failures. This prevents optional heuristic
+configuration from converting a confirmed invalid TIFF structure into a clean
+result; the focused structural regression now includes that case.
+
 ## Latest PE icon structural-boundary follow-up — 2026-08-15
 
 The PE icon matcher previously discarded every non-virus return from its

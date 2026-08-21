@@ -102,7 +102,7 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
     if (!offset) {
         cli_errmsg("cli_parsetiff: Invalid offset for first IFD\n");
-        status = cli_append_potentially_unwanted(ctx, "Heuristics.Broken.Media.TIFF.InvalidIFDOffset");
+        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.InvalidIFDOffset");
         goto done;
     }
 

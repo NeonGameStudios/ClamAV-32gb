@@ -12587,6 +12587,10 @@ START_TEST(test_tiff_truncated_structures_are_fail_visible)
         'I', 'I', 0x2a, 0x00,
         0x08, 0x00, 0x00,
     };
+    static const uint8_t invalid_first_ifd_offset[] = {
+        'I', 'I', 0x2a, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    };
     static const uint8_t truncated_ifd_entry[] = {
         'I', 'I', 0x2a, 0x00,
         0x08, 0x00, 0x00, 0x00,
@@ -12608,12 +12612,14 @@ START_TEST(test_tiff_truncated_structures_are_fail_visible)
     };
     const uint8_t *cases[] = {
         truncated_first_ifd_offset,
+        invalid_first_ifd_offset,
         truncated_ifd_entry,
         truncated_next_ifd_offset,
         out_of_range_ifd_value,
     };
     const size_t lengths[] = {
         sizeof(truncated_first_ifd_offset),
+        sizeof(invalid_first_ifd_offset),
         sizeof(truncated_ifd_entry),
         sizeof(truncated_next_ifd_offset),
         sizeof(out_of_range_ifd_value),
