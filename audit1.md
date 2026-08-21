@@ -3089,3 +3089,12 @@ releases the fmap view before processing entries, preserving the existing
 coordinate and parser-status checks without retaining archive pages across
 nested work. Static guards and whitespace validation pass; compiled ISO corpus,
 sanitizer, and production qualification remain open.
+
+## PDFNG referenced-object allocation bound — 2026-08-21
+
+The PDFNG referenced-string path reloaded a dumped object with raw
+`calloc(sb.st_size + 1)`, bypassing the shared 1 GiB individual-allocation
+guard. It now rejects objects at that ceiling, marks the PDF layer incomplete,
+cleans up the temporary object, and uses `cli_max_calloc()` for accepted sizes.
+Static guards and whitespace validation pass; full PDF parser, sanitizer, and
+production qualification remain open.

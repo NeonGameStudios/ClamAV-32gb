@@ -20,6 +20,9 @@
 - Encrypted PDF streams without a usable key or supported method now retain an
   explicit unsupported completion reason while raw matching continues; valid
   encrypted-PDF corpus and qualification remain open.
+- PDFNG referenced-object reloads now reject objects at the individual
+  contiguous-allocation ceiling instead of using an unbounded `calloc`; the
+  parser marks the layer incomplete and raw matching remains authoritative.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
   copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
   keeping provenance binding consistent with the actual workload; full

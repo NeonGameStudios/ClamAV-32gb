@@ -566,7 +566,17 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
         }
 
         if (sb.st_size) {
-            begin = calloc(1, sb.st_size + 1);
+            if ((uint64_t)sb.st_size >= (uint64_t)CLI_MAX_ALLOCATION) {
+                if (pdf->ctx)
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF referenced object exceeds the contiguous parser allocation ceiling");
+                close(fd);
+                cli_unlink(newobj->path);
+                free(newobj->path);
+                newobj->path = NULL;
+                return NULL;
+            }
+
+            begin = cli_max_calloc(1, (size_t)sb.st_size + 1);
             if (!(begin)) {
                 close(fd);
                 cli_unlink(newobj->path);
