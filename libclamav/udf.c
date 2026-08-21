@@ -56,23 +56,29 @@ static bool isDirectory(FileIdentifierDescriptor *fid)
 
 #define UDF_COPY_CHUNK_SIZE (64U * 1024U)
 
-static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_t *map, size_t dataOffset, size_t dataLen)
+typedef struct {
+    size_t offset;
+    size_t length;
+} udf_extent;
+
+static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_t *map, const udf_extent *extents,
+                                 size_t extent_count, uint64_t dataLen)
 {
     int fd     = -1;
     char *tmpf = NULL;
     uint8_t buffer[UDF_COPY_CHUNK_SIZE];
-    size_t copied               = 0;
+    uint64_t copied             = 0;
     uint64_t temporary_reserved = 0;
 
     cl_error_t status = CL_ETMPFILE;
 
-    if (0 == dataLen || NULL == map || dataOffset > map->len || dataLen > map->len - dataOffset) {
+    if (0 == dataLen || NULL == map || NULL == extents || 0 == extent_count) {
         cli_warnmsg("writeWholeFile: Invalid arguments\n");
         status = CL_EARG;
         goto done;
     }
 
-    if (cli_scan_reserve_temporary(ctx, (uint64_t)dataLen) != CL_SUCCESS) {
+    if (cli_scan_reserve_temporary(ctx, dataLen) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "UDF file extent exceeds temporary storage limits");
         status = CL_ERESOURCE;
         goto done;
@@ -86,22 +92,46 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
         goto done;
     }
 
-    while (copied < dataLen) {
-        size_t chunk = MIN(sizeof(buffer), dataLen - copied);
+    for (size_t i = 0; i < extent_count; i++) {
+        size_t extent_copied = 0;
 
-        if (fmap_readn(map, buffer, dataOffset + copied, chunk) != chunk) {
-            cli_warnmsg("writeWholeFile: Can't read the complete UDF extent\n");
-            cli_mark_scan_incomplete(ctx, "UDF file extent could not be read completely");
-            status = CL_EREAD;
+        if (extents[i].offset > map->len || extents[i].length > map->len - extents[i].offset) {
+            cli_warnmsg("writeWholeFile: Invalid UDF extent range\n");
+            cli_mark_scan_incomplete(ctx, "UDF file extent is outside the input map");
+            status = CL_EPARSE;
             goto done;
         }
-        if (cli_writen(fd, buffer, chunk) != chunk) {
-            cli_warnmsg("writeWholeFile: Can't write to file %s\n", tmpf);
-            cli_mark_scan_incomplete(ctx, "UDF file extent could not be written completely");
-            status = CL_EWRITE;
-            goto done;
+
+        while (extent_copied < extents[i].length) {
+            size_t chunk = MIN(sizeof(buffer), extents[i].length - extent_copied);
+
+            status = cli_checktimelimit(ctx);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "UDF file extent scan timed out");
+                goto done;
+            }
+            if (fmap_readn(map, buffer, extents[i].offset + extent_copied, chunk) != chunk) {
+                cli_warnmsg("writeWholeFile: Can't read the complete UDF extent\n");
+                cli_mark_scan_incomplete(ctx, "UDF file extent could not be read completely");
+                status = CL_EREAD;
+                goto done;
+            }
+            if (cli_writen(fd, buffer, chunk) != chunk) {
+                cli_warnmsg("writeWholeFile: Can't write to file %s\n", tmpf);
+                cli_mark_scan_incomplete(ctx, "UDF file extent could not be written completely");
+                status = CL_EWRITE;
+                goto done;
+            }
+            extent_copied += chunk;
+            copied += chunk;
         }
-        copied += chunk;
+    }
+
+    if (copied != dataLen) {
+        cli_warnmsg("writeWholeFile: UDF extent lengths did not match the aggregate length\n");
+        cli_mark_scan_incomplete(ctx, "UDF extent length accounting failed");
+        status = CL_EPARSE;
+        goto done;
     }
 
     status = cli_magic_scan_desc_type_reserved(fd, tmpf, ctx, CL_TYPE_ANY, fileName, LAYER_ATTRIBUTES_NONE);
@@ -134,16 +164,13 @@ done:
     return status;
 }
 
-static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescriptor, LogicalVolumeDescriptor *pLogicalVolumeDescriptor,
-                              void *allocation_descriptor,
-                              size_t allocation_descriptor_len,
-                              uint16_t icbFlags, FileIdentifierDescriptor *fileIdentifierDescriptor)
+static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitionDescriptor,
+                                    LogicalVolumeDescriptor *pLogicalVolumeDescriptor, const void *allocation_descriptor,
+                                    uint16_t icbFlags, udf_extent *extent)
 {
-    cl_error_t ret                     = CL_EPARSE;
-    size_t offset                      = 0;
     size_t length                      = 0;
-    uint32_t partitionStartingLocation = le32_to_host(pPartitionDescriptor->partitionStartingLocation);
-    uint32_t logicalBlockSize          = le32_to_host(pLogicalVolumeDescriptor->logicalBlockSize);
+    uint32_t partitionStartingLocation = 0;
+    uint32_t logicalBlockSize          = 0;
     uint64_t offset64                  = 0;
     uint64_t partitionOffset           = 0;
     uint64_t extentOffset              = 0;
@@ -153,48 +180,35 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     uint32_t recordedLength            = 0;
     bool hasRecordedLength             = false;
 
-    if (isDirectory(fileIdentifierDescriptor)) {
-        cli_dbgmsg("extractFile: Skipping directory\n");
-        ret = CL_SUCCESS;
-        goto done;
+    if (NULL == ctx || NULL == ctx->fmap || NULL == pPartitionDescriptor || NULL == pLogicalVolumeDescriptor ||
+        NULL == allocation_descriptor || NULL == extent) {
+        return CL_EARG;
     }
+
+    partitionStartingLocation = le32_to_host(pPartitionDescriptor->partitionStartingLocation);
+    logicalBlockSize           = le32_to_host(pLogicalVolumeDescriptor->logicalBlockSize);
 
     switch (icbFlags & 3) {
         case 0: {
-            if (sizeof(short_ad) != allocation_descriptor_len) {
-                cli_warnmsg("extractFile: Short Allocation Descriptor length is incorrect.\n");
-                goto done;
-            }
-
-            short_ad *shortDesc = (short_ad *)allocation_descriptor;
+            const short_ad *shortDesc = (const short_ad *)allocation_descriptor;
 
             extentBlock = le32_to_host(shortDesc->position);
             rawLength   = le32_to_host(shortDesc->length);
-
         } break;
         case 1: {
-            if (sizeof(long_ad) != allocation_descriptor_len) {
-                cli_warnmsg("extractFile: Long Allocation Descriptor length is incorrect.\n");
-                goto done;
-            }
-
-            long_ad *longDesc = (long_ad *)allocation_descriptor;
+            const long_ad *longDesc = (const long_ad *)allocation_descriptor;
 
             extentBlock = le32_to_host(longDesc->extentLocation.blockNumber);
             rawLength   = le32_to_host(longDesc->length);
 
             if (le16_to_host(longDesc->extentLocation.partitionReferenceNumber) != le16_to_host(pPartitionDescriptor->partitionNumber)) {
                 cli_warnmsg("extractFile: Unable to extract the files because the Partition Descriptor Reference Numbers don't match\n");
-                goto done;
+                cli_mark_scan_incomplete(ctx, "UDF allocation descriptor partition reference does not match");
+                return CL_EPARSE;
             }
         } break;
         case 2: {
-            if (sizeof(ext_ad) != allocation_descriptor_len) {
-                cli_warnmsg("extractFile: Extended Allocation Descriptor length is incorrect.\n");
-                goto done;
-            }
-
-            ext_ad *extDesc = (ext_ad *)allocation_descriptor;
+            const ext_ad *extDesc = (const ext_ad *)allocation_descriptor;
 
             extentBlock       = le32_to_host(extDesc->extentLocation.blockNumber);
             rawLength         = le32_to_host(extDesc->extentLen);
@@ -203,13 +217,14 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
 
             if (le16_to_host(extDesc->extentLocation.partitionReferenceNumber) != le16_to_host(pPartitionDescriptor->partitionNumber)) {
                 cli_warnmsg("extractFile: Unable to extract the files because the Partition Descriptor Reference Numbers don't match\n");
-                goto done;
+                cli_mark_scan_incomplete(ctx, "UDF allocation descriptor partition reference does not match");
+                return CL_EPARSE;
             }
         } break;
         default:
             cli_warnmsg("extractFile: Embedded or unknown allocation descriptor type is unsupported.\n");
             cli_mark_scan_incomplete(ctx, "UDF allocation descriptor type is unsupported");
-            goto done;
+            return CL_EUNPACK;
     }
 
     extentType = rawLength >> 30;
@@ -217,25 +232,26 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     if (extentType != 0) {
         cli_warnmsg("extractFile: UDF extent is not recorded and allocated data.\n");
         cli_mark_scan_incomplete(ctx, "UDF non-recorded or continuation extent is unsupported");
-        goto done;
+        return CL_EUNPACK;
     }
     if (hasRecordedLength) {
         if (recordedLength > length) {
             cli_warnmsg("extractFile: Recorded length exceeds the UDF extent length.\n");
             cli_mark_scan_incomplete(ctx, "UDF recorded length exceeds its extent");
-            goto done;
+            return CL_EPARSE;
         }
         length = recordedLength;
     }
-    if (length == 0) {
-        ret = CL_SUCCESS;
-        goto done;
-    }
+
+    extent->offset = 0;
+    extent->length = length;
+    if (0 == length)
+        return CL_SUCCESS;
 
     if (logicalBlockSize == 0) {
         cli_warnmsg("extractFile: Logical block size is zero.\n");
         cli_mark_scan_incomplete(ctx, "UDF logical block size is invalid");
-        goto done;
+        return CL_EPARSE;
     }
 
     partitionOffset = (uint64_t)partitionStartingLocation * logicalBlockSize;
@@ -243,27 +259,109 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     if (UINT64_MAX - partitionOffset < extentOffset) {
         cli_warnmsg("extractFile: Allocation descriptor offset arithmetic overflowed.\n");
         cli_mark_scan_incomplete(ctx, "UDF file extent offset overflowed");
-        goto done;
+        return CL_EPARSE;
     }
     offset64 = partitionOffset + extentOffset;
 
     if (offset64 > SIZE_MAX || (size_t)offset64 > ctx->fmap->len || length > ctx->fmap->len - (size_t)offset64) {
         cli_warnmsg("extractFile: Allocation descriptor extent exceeds the fmap range.\n");
         cli_mark_scan_incomplete(ctx, "UDF file extent is outside the input map");
+        return CL_EPARSE;
+    }
+    extent->offset = (size_t)offset64;
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescriptor, LogicalVolumeDescriptor *pLogicalVolumeDescriptor,
+                              void *allocation_descriptor,
+                              size_t allocation_descriptor_len,
+                              uint16_t icbFlags, FileIdentifierDescriptor *fileIdentifierDescriptor)
+{
+    cl_error_t ret = CL_EPARSE;
+    udf_extent *extents = NULL;
+    size_t descriptor_size;
+    size_t extent_count;
+    uint64_t total_length = 0;
+
+    if (isDirectory(fileIdentifierDescriptor)) {
+        cli_dbgmsg("extractFile: Skipping directory\n");
+        ret = CL_SUCCESS;
         goto done;
     }
-    offset = (size_t)offset64;
 
-    ret = cli_checklimits("UDF", ctx, length, 0, 0);
+    switch (icbFlags & 3) {
+        case 0:
+            descriptor_size = sizeof(short_ad);
+            break;
+        case 1:
+            descriptor_size = sizeof(long_ad);
+            break;
+        case 2:
+            descriptor_size = sizeof(ext_ad);
+            break;
+        default:
+            cli_warnmsg("extractFile: Embedded or unknown allocation descriptor type is unsupported.\n");
+            cli_mark_scan_incomplete(ctx, "UDF allocation descriptor type is unsupported");
+            return CL_EUNPACK;
+    }
+
+    if (0 == allocation_descriptor_len) {
+        ret = CL_SUCCESS;
+        goto done;
+    }
+
+    if (allocation_descriptor_len % descriptor_size != 0) {
+        cli_warnmsg("extractFile: Allocation Descriptor Length is not aligned to its descriptor type.\n");
+        cli_mark_scan_incomplete(ctx, "UDF allocation descriptor length is not aligned");
+        ret = CL_EPARSE;
+        goto done;
+    }
+
+    extent_count = allocation_descriptor_len / descriptor_size;
+    if (extent_count > SIZE_MAX / sizeof(*extents)) {
+        cli_warnmsg("extractFile: Too many UDF allocation descriptors.\n");
+        cli_mark_scan_incomplete(ctx, "UDF allocation descriptor list is too large");
+        ret = CL_EMEM;
+        goto done;
+    }
+
+    extents = cli_max_calloc(extent_count, sizeof(*extents));
+    if (NULL == extents) {
+        cli_mark_scan_incomplete(ctx, "UDF allocation descriptor list could not be allocated");
+        ret = CL_EMEM;
+        goto done;
+    }
+
+    for (size_t i = 0; i < extent_count; i++) {
+        ret = getUDFExtentRange(ctx, pPartitionDescriptor, pLogicalVolumeDescriptor,
+                                (const uint8_t *)allocation_descriptor + (i * descriptor_size), icbFlags, &extents[i]);
+        if (ret != CL_SUCCESS)
+            goto done;
+        if (total_length > UINT64_MAX - extents[i].length) {
+            cli_warnmsg("extractFile: Aggregate UDF extent length overflowed.\n");
+            cli_mark_scan_incomplete(ctx, "UDF aggregate extent length overflowed");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        total_length += extents[i].length;
+    }
+
+    if (0 == total_length) {
+        ret = CL_SUCCESS;
+        goto done;
+    }
+
+    ret = cli_checklimits("UDF", ctx, total_length, 0, 0);
     if (ret != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "UDF file extent exceeds configured scan limits");
         goto done;
     }
 
-    ret = writeWholeFile(ctx, "", ctx->fmap, offset, length);
+    ret = writeWholeFile(ctx, "", ctx->fmap, extents, extent_count, total_length);
 
 done:
-
+    CLI_FREE_AND_SET_NULL(extents);
     return ret;
 }
 

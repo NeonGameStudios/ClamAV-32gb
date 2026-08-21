@@ -11483,6 +11483,85 @@ START_TEST(test_udf_mismatched_file_lists_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_udf_allocation_descriptor_alignment_is_fail_visible)
+{
+    enum {
+        UDF_TEST_VOLUME_BLOCKS       = 16,
+        UDF_TEST_SIZE                = UDF_EMPTY_LEN + (UDF_TEST_VOLUME_BLOCKS * VOLUME_DESCRIPTOR_SIZE),
+        UDF_TEST_PRIMARY             = 1,
+        UDF_TEST_IMPLEMENTATION_USE  = 4,
+        UDF_TEST_PARTITION           = 5,
+        UDF_TEST_LOGICAL             = 6,
+        UDF_TEST_UNALLOCATED         = 7,
+        UDF_TEST_TERMINATING         = 8,
+        UDF_TEST_LVID                = 9,
+        UDF_TEST_ANCHOR              = 2,
+        UDF_TEST_FILE_SET            = 256,
+        UDF_TEST_FILE_IDENTIFIER     = 257,
+        UDF_TEST_FILE_ENTRY          = 261,
+        UDF_TEST_MALFORMED_ALLOC_LEN = 17
+    };
+    uint8_t *data;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t base = UDF_EMPTY_LEN;
+    size_t fed_offset;
+    cl_error_t ret;
+
+    data = calloc(1, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(data);
+
+    /* Supply the required descriptor sequence, one file identifier, one
+     * file entry, and a non-descriptor marker that triggers file extraction. */
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_PRIMARY & 0xff;
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_PRIMARY >> 8;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_IMPLEMENTATION_USE & 0xff;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_IMPLEMENTATION_USE >> 8;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_LOGICAL & 0xff;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_LOGICAL >> 8;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_PARTITION & 0xff;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_PARTITION >> 8;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_UNALLOCATED & 0xff;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_UNALLOCATED >> 8;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_TERMINATING & 0xff;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_TERMINATING >> 8;
+    data[base + (9 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_LVID & 0xff;
+    data[base + (9 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_LVID >> 8;
+    data[base + (10 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_TERMINATING & 0xff;
+    data[base + (10 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_TERMINATING >> 8;
+    data[base + (11 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_ANCHOR & 0xff;
+    data[base + (11 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_ANCHOR >> 8;
+    data[base + (12 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_SET & 0xff;
+    data[base + (12 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_SET >> 8;
+    data[base + (13 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_IDENTIFIER & 0xff;
+    data[base + (13 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_IDENTIFIER >> 8;
+    data[base + (14 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_ENTRY & 0xff;
+    data[base + (14 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_ENTRY >> 8;
+    fed_offset = base + (14 * VOLUME_DESCRIPTOR_SIZE);
+    data[fed_offset + offsetof(FileEntryDescriptor, allocationDescLen)]     = UDF_TEST_MALFORMED_ALLOC_LEN;
+    data[fed_offset + offsetof(FileEntryDescriptor, allocationDescLen) + 1] = 0;
+    data[base + (15 * VOLUME_DESCRIPTOR_SIZE)] = 0xff;
+    data[base + (15 * VOLUME_DESCRIPTOR_SIZE) + 1] = 0x03;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF allocation descriptor length is not aligned");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 static void test_hfsplus_put_be16(uint8_t *dst, uint16_t value)
 {
     dst[0] = (uint8_t)(value >> 8);
@@ -12216,6 +12295,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
+    tcase_add_test(tc_cl, test_udf_allocation_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);

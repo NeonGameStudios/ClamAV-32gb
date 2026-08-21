@@ -2295,6 +2295,21 @@ boundary. Because the parser does not implement their allocation and
 extended-attribute semantics, encountering one marks the layer incomplete and
 returns an explicit unsupported result; it is never silently skipped.
 
+## UDF fragmented-file extraction — 2026-08-20
+
+UDF file entries may contain multiple short, long, or extended allocation
+descriptors. The extractor now validates the complete descriptor list, checks
+each extent against the input map, accounts for the aggregate logical and
+temporary size, and concatenates the recorded extents into one bounded child
+scan. This removes the former single-descriptor boundary that could reject
+valid fragmented files or inspect only one extent. Embedded, continuation, and
+other non-recorded extent forms remain explicit unsupported results.
+
+A focused malformed descriptor-list regression and source guards cover the
+alignment/fail-closed boundary. Compiled multi-extent UDF corpus coverage,
+sanitizer execution, and supported-build Sonic1 qualification remain release
+gates.
+
 HFS+ fork records that exhaust their eight inline extents are another explicit
 unsupported boundary. The parser does not yet perform the required
 `ExtentOverflow` B-tree lookup, so it marks the containing layer incomplete and
