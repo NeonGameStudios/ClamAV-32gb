@@ -93,9 +93,10 @@ qualification remain open.
 ZIP local- and central-header parsing now treats an in-range fmap callback
 failure while reading a member filename as `CL_EREAD` instead of silently
 continuing as if the name were absent. Local parsing also copies from the
-callback's returned window, not the original map pointer. Focused regressions
-cover both clean-member false-clean boundaries; compiled Linux archive-corpus
-qualification remains open.
+callback's returned window, not the original map pointer. EOCD search now
+distinguishes an unreadable in-range probe from an absent candidate instead of
+falling back to local-header discovery. Focused regressions cover all three
+boundaries; compiled Linux archive-corpus qualification remains open.
 
 OOXML metadata parsing could return a specific error and then have the
 following ZIP pass replace it with `CL_SUCCESS`; text/script mail handling had

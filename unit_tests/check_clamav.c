@@ -5834,6 +5834,61 @@ START_TEST(test_zip_central_filename_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_zip_eocd_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "eocd-read-failure";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_length;
+    uint8_t *archive;
+    cl_error_t ret;
+
+    archive = zip_stream_central_archive(input, sizeof(input) - 1U,
+                                         sizeof(input) - 1U,
+                                         ZIP_TEST_METHOD_STORED,
+                                         (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                         &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_msg(archive_length >= 22U, "ZIP fixture is missing its EOCD record");
+    zip_central_filename_read_failure_offset = archive_length - 22U;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    map->need                = zip_central_filename_read_failure;
+    ctx.engine               = engine;
+    ctx.options              = &options;
+    ctx.dconf                = engine->dconf;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP end-of-central-directory record could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(archive);
+    zip_central_filename_read_failure_offset = 0;
+}
+END_TEST
+
 START_TEST(test_zip_masked_sfx_candidate_is_not_confirmed)
 {
     static const uint8_t input[] = "masked-sfx-candidate";
@@ -15094,6 +15149,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_central_directory_resolves_masked_local_values);
     tcase_add_test(tc_cl, test_zip_central_filename_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_zip_eocd_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_masked_sfx_candidate_is_not_confirmed);
     tcase_add_test(tc_cl, test_zip_local_only_masked_header_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_index_propagates_callback_abort);

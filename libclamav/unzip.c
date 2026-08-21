@@ -2888,8 +2888,13 @@ static cl_error_t find_central_directory_header(
             eocoff,
             SIZEOF_END_OF_CENTRAL - 2 /* -2 because don't need to read the comment length */);
         if (!eocptr) {
-            // Failed to get a pointer within the file at that offset and size.
-            continue;
+            /* Every probe is in range by construction. A NULL window is
+             * therefore a read failure, not an absent EOCD candidate; do not
+             * fall back to local-header discovery after skipping unreadable
+             * archive metadata. */
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "ZIP end-of-central-directory record could not be read completely");
+            return CL_EREAD;
         }
 
         if (cli_readint32(eocptr) == ZIP_MAGIC_CENTRAL_DIRECTORY_RECORD_END) {
