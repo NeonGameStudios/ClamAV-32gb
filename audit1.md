@@ -2887,3 +2887,13 @@ The capability manifest records this as an explicit release qualification
 gate. A deferred admission/state-machine change requires compiled daemon and
 Sonic1 runtime validation and is intentionally not included in this bounded
 documentation update.
+
+## INSTREAM client descriptor rewind — 2026-08-21
+
+The clamd client now stats every non-stdin stream descriptor before beginning
+the protocol, rewinds regular files before sending the command, and fails
+without sending a partial protocol when stat or rewind fails. Pipes and other
+non-regular descriptors remain streamable at their current position. Focused
+socket-level regressions cover complete regular-file rewinding and rejection
+of an invalid descriptor; compiled Linux/Sonic1 ingress qualification remains
+open.

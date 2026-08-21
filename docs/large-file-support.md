@@ -4589,3 +4589,13 @@ staging or reserving resources while the single worker is occupied.
 The capability manifest records this explicitly. A deferred admission/state
 machine requires compiled daemon and Sonic1 runtime validation and is not part
 of this bounded documentation update.
+
+## INSTREAM client descriptor rewind — 2026-08-21
+
+The clamd client now validates every non-stdin stream descriptor before
+starting the protocol. Regular files are rewound first so an already-used
+descriptor cannot scan only a suffix, and stat or rewind failures return before
+the command is sent. Pipes and other non-regular descriptors remain supported
+as streaming inputs. Focused socket-level regressions cover both the complete
+regular-file payload and invalid-descriptor rejection; compiled Linux/Sonic1
+qualification remains open.

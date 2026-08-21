@@ -417,22 +417,36 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
      * preflight identical to clamd's engine validation. */
     todo = clamd_stream_limit(clamdopts);
 
-    if (reject_over_limit &&
-        (0 == FSTAT(fd, &sb)) &&
-        S_ISREG(sb.st_mode) &&
-        (sb.st_size > 0) &&
-        ((uint64_t)sb.st_size > (uint64_t)todo)) {
-        logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
-             display_filename ? display_filename : "STDIN");
-        return 0;
+    if (0 != fd) {
+        if (FSTAT(fd, &sb) != 0) {
+            logg(LOGG_ERROR, "%s: Failed to stat stream input: %s\n",
+                 display_filename ? display_filename : "STDIN", strerror(errno));
+            return -1;
+        }
+
+        if (reject_over_limit &&
+            S_ISREG(sb.st_mode) &&
+            (sb.st_size > 0) &&
+            ((uint64_t)sb.st_size > (uint64_t)todo)) {
+            logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
+                 display_filename ? display_filename : "STDIN");
+            return 0;
+        }
+
+        /* A descriptor supplied by a caller must represent the complete
+         * object.  Rewind regular files before starting the protocol, and
+         * fail before sending the command if the rewind is impossible.  Pipes
+         * and other streaming descriptors are intentionally left at their
+         * current position because they are not seekable. */
+        if (S_ISREG(sb.st_mode) && lseek(fd, 0, SEEK_SET) < 0) {
+            logg(LOGG_ERROR, "%s: Failed to rewind regular stream input: %s\n",
+                 display_filename ? display_filename : "STDIN", strerror(errno));
+            return -1;
+        }
     }
 
     if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
         return -1;
-    }
-
-    if (0 != fd) {
-        (void)lseek(fd, 0, SEEK_SET);
     }
 
     while ((len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t))) > 0) {

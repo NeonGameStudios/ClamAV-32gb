@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 #include <signal.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -581,6 +582,67 @@ START_TEST(test_stream_client_rejects_over_limit)
     ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
     ck_assert_int_eq(send_stream_fd(sockets[0], pipefd[0], "pipe-over-limit", &stream_limit), -1);
     close(pipefd[0]);
+    close(sockets[0]);
+    close(sockets[1]);
+}
+END_TEST
+
+START_TEST(test_stream_client_rewinds_regular_input)
+{
+    struct optstruct stream_limit;
+    int sockets[2];
+    FILE *regular;
+    const char payload[] = "stream-rewind-payload";
+    const size_t command_length = sizeof("zINSTREAM");
+    const size_t frame_length   = sizeof(payload) - 1;
+    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
+    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t) + sizeof(payload) - 1 + sizeof(uint32_t)];
+    uint32_t network_length;
+
+    memset(&stream_limit, 0, sizeof(stream_limit));
+    stream_limit.name   = "StreamMaxLength";
+    stream_limit.numarg = 1024;
+
+    regular = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq((int)fwrite(payload, 1, frame_length, regular), (int)frame_length);
+    ck_assert_int_eq(fflush(regular), 0);
+    ck_assert_int_eq(fseek(regular, 7, SEEK_SET), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "rewind", &stream_limit), 1);
+    ck_assert_int_eq((int)recv(sockets[1], wire, sizeof(wire), MSG_WAITALL), (int)wire_length);
+    ck_assert_mem_eq(wire, "zINSTREAM", command_length);
+
+    memcpy(&network_length, wire + command_length, sizeof(network_length));
+    ck_assert_uint_eq(ntohl(network_length), frame_length);
+    ck_assert_mem_eq(wire + command_length + sizeof(network_length), payload, frame_length);
+
+    memcpy(&network_length, wire + command_length + sizeof(network_length) + frame_length,
+           sizeof(network_length));
+    ck_assert_uint_eq(network_length, 0);
+
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+}
+END_TEST
+
+START_TEST(test_stream_client_rejects_invalid_descriptor_before_command)
+{
+    struct optstruct stream_limit;
+    int sockets[2];
+    unsigned char command;
+
+    memset(&stream_limit, 0, sizeof(stream_limit));
+    stream_limit.name   = "StreamMaxLength";
+    stream_limit.numarg = 1024;
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+    ck_assert_int_eq(send_stream_fd(sockets[0], INT_MAX, "invalid", &stream_limit), -1);
+    ck_assert_int_eq(recv(sockets[1], &command, sizeof(command), MSG_DONTWAIT), -1);
+    ck_assert(errno == EAGAIN || errno == EWOULDBLOCK);
+
     close(sockets[0]);
     close(sockets[1]);
 }
@@ -1451,6 +1513,8 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_client, test_dsresult_error_updates_error_counter);
 #endif
     tcase_add_test(tc_client, test_stream_client_rejects_over_limit);
+    tcase_add_test(tc_client, test_stream_client_rewinds_regular_input);
+    tcase_add_test(tc_client, test_stream_client_rejects_invalid_descriptor_before_command);
 #if defined(HAVE_FD_PASSING)
     tcase_add_test(tc_client, test_fildes_client_rejects_over_limit);
 #endif
