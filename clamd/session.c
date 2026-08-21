@@ -219,10 +219,18 @@ static const char *scan_report_completion(cl_error_t status, int infected)
         case CL_EPARSE:
         case CL_EFORMAT:
             return "MALFORMED_CONFIRMED";
+        case CL_EUNPACK:
+        case CL_EBYTECODE:
+        case CL_EBYTECODE_TESTFAIL:
+            return "UNSUPPORTED";
         case CL_BREAK:
             return "APPLICATION_ABORT";
         default:
-            return "UNSUPPORTED";
+            /* Dispatch, transport, and allocation failures are not
+             * unsupported features. Keep the fallback report aligned with
+             * cl_scan_report_finish(), so a client can distinguish a
+             * resource failure from a deliberate format boundary. */
+            return "RESOURCE_FAILURE";
     }
 }
 
