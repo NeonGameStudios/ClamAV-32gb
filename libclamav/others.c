@@ -3455,6 +3455,11 @@ cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_lay
         ctx->recursion_stack[i].verdict = CL_VERDICT_TRUSTED;
 
         if (SCAN_COLLECT_METADATA && ctx->recursion_stack[i].metadata_json) {
+            if (NULL == source) {
+                cli_errmsg("cli_trust_layers: missing trust reason\n");
+                status = CL_ENULLARG;
+                goto done;
+            }
             reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
             reason     = malloc(reason_len);
             if (!reason) {

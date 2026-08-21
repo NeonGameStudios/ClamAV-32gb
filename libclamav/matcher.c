@@ -724,6 +724,18 @@ void cli_targetinfo_destroy(struct cli_target_info *info)
     info->status = 0;
 }
 
+static cl_error_t cli_check_fp_trust_layers(cli_ctx *ctx, uint32_t start_layer, const char *source)
+{
+    cl_error_t ret;
+
+    ret = cli_trust_layers(ctx, start_layer, ctx->recursion_level, source);
+    if (CL_SUCCESS != ret) {
+        cli_mark_scan_incomplete(ctx, "false-positive trust update failed");
+    }
+
+    return ret;
+}
+
 cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
 {
     cl_error_t status = CL_VIRUS;
@@ -840,7 +852,11 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
                     }
 
                     // Remove any evidence and set the verdict to trusted for the layer where the FP hash matched, and for all contained layers.
-                    (void)cli_trust_layers(ctx, (uint32_t)stack_index, ctx->recursion_level, source);
+                    ret = cli_check_fp_trust_layers(ctx, (uint32_t)stack_index, source);
+                    if (CL_SUCCESS != ret) {
+                        status = ret;
+                        goto done;
+                    }
 
                     free(source);
                     source = NULL;
@@ -858,7 +874,11 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
                     }
 
                     // Remove any evidence and set the verdict to trusted for the layer where the FP hash matched, and for all contained layers.
-                    (void)cli_trust_layers(ctx, (uint32_t)stack_index, ctx->recursion_level, source);
+                    ret = cli_check_fp_trust_layers(ctx, (uint32_t)stack_index, source);
+                    if (CL_SUCCESS != ret) {
+                        status = ret;
+                        goto done;
+                    }
 
                     free(source);
                     source = NULL;
@@ -880,7 +900,11 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
                         }
 
                         // Remove any evidence and set the verdict to trusted for the layer where the FP hash matched, and for all contained layers.
-                        (void)cli_trust_layers(ctx, (uint32_t)stack_index, ctx->recursion_level, source);
+                        ret = cli_check_fp_trust_layers(ctx, (uint32_t)stack_index, source);
+                        if (CL_SUCCESS != ret) {
+                            status = ret;
+                            goto done;
+                        }
 
                         free(source);
                         source = NULL;

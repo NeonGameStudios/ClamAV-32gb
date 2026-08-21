@@ -1219,6 +1219,25 @@ START_TEST(test_fp_hash_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_trust_layers_rejects_missing_reason)
+{
+    json_object *metadata;
+    cl_error_t ret;
+
+    metadata = json_object_new_object();
+    ck_assert_ptr_nonnull(metadata);
+    options.general |= CL_SCAN_GENERAL_COLLECT_METADATA;
+    ctx.recursion_stack[0].metadata_json = metadata;
+
+    ret = cli_trust_layers(&ctx, 0, 0, NULL);
+    ck_assert_int_eq(ret, CL_ENULLARG);
+
+    ctx.recursion_stack[0].metadata_json = NULL;
+    options.general &= ~CL_SCAN_GENERAL_COLLECT_METADATA;
+    json_object_put(metadata);
+}
+END_TEST
+
 #ifndef _WIN32
 #define MATCHER_TEST_FM_MASK_PAGED 0x40000000U
 
@@ -1450,6 +1469,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_exact_hash_at_uint32_max);
     tcase_add_test(tc_matchers, test_exact_hash_at_large_size);
     tcase_add_test(tc_matchers, test_fp_hash_read_failure_is_fail_visible);
+    tcase_add_test(tc_matchers, test_trust_layers_rejects_missing_reason);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);

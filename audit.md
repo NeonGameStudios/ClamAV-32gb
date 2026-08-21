@@ -2521,3 +2521,14 @@ append path; the normal no-match (`CL_VIRUS`) and trusted
 regression and source guards are registered. Compiled Linux/Sonic1, sanitizer,
 callback/resource fault injection, and production signature-corpus
 qualification remain open.
+
+## False-positive trust-update propagation — 2026-08-21
+
+False-positive hash matches previously ignored `cli_trust_layers()` failures,
+and metadata collection could dereference a null trust reason after an
+allocation failure. The three FP branches now preserve trust-update errors and
+mark the scan incomplete/non-cacheable; metadata trust explicitly rejects a
+missing reason while non-metadata trust behavior remains unchanged. Focused
+matcher regressions and source guards are registered. Compiled Linux/Sonic1,
+sanitizer, allocation fault injection, and production signature-corpus
+qualification remain open.
