@@ -3162,7 +3162,11 @@ int cli_scanpe(cli_ctx *ctx)
             cli_bytecode_context_destroy(bc_ctx);
             return ret == CL_VIRUS ? CL_VIRUS : CL_CLEAN;
         default:
-            break;
+            /* An applicable PE hook that cannot initialize or execute did
+             * not complete required inspection; do not continue as clean. */
+            cli_exe_info_destroy(peinfo);
+            cli_bytecode_context_destroy(bc_ctx);
+            return ret;
     }
     cli_bytecode_context_destroy(bc_ctx);
 
@@ -4615,7 +4619,11 @@ int cli_scanpe(cli_ctx *ctx)
 
             break;
         default:
+            /* Preserve PE hook setup, execution, and unpacked-layer failures
+             * instead of normalizing them to a clean PE scan. */
             cli_bytecode_context_destroy(bc_ctx);
+            cli_exe_info_destroy(peinfo);
+            return ret;
     }
 
     cli_exe_info_destroy(peinfo);

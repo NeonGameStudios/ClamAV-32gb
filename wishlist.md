@@ -170,6 +170,9 @@
 - PDF extracted-object bytecode hooks now fail closed when their fmap cannot
   be created and preserve post-dump hook errors; add bytecode fault injection
   and production PDF/bytecode corpus coverage.
+- PE `BC_PE_ALL` and `BC_PE_UNPACKER` callers now preserve applicable hook
+  setup, execution, and unpacked-layer failures instead of returning clean;
+  add PE bytecode fault-injection and production corpus coverage.
 
 ## Large-file validation and expansion progression
 

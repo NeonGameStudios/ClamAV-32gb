@@ -2488,3 +2488,13 @@ cannot be created, and propagates every non-success hook result except the
 existing intentional `CL_BREAK` continuation. Source guards record both
 invariants; compiled Linux/Sonic1, bytecode fault injection, sanitizer, and
 production PDF/bytecode corpus qualification remain open.
+
+## PE bytecode hook failure propagation — 2026-08-21
+
+The PE `BC_PE_ALL` and `BC_PE_UNPACKER` callers previously discarded hook
+initialization, execution, and unpacked-layer errors after the hook returned,
+allowing the enclosing PE scan to continue and eventually report clean. They
+now destroy the PE/bytecode contexts and return every non-success result,
+while preserving the existing `CL_BREAK` clean-stop behavior. Source guards
+record both callers; compiled Linux/Sonic1, bytecode fault injection,
+sanitizer, and production PE/bytecode corpus qualification remain open.
