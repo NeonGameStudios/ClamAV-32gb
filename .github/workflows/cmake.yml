@@ -1,7 +1,7 @@
 name: CMake Build
 
-# Normal compile/test jobs run on pushes and pull requests. Exact 32 GiB and
-# sanitizer evidence gates are manual and require the dedicated 64 GiB runner.
+# All build/test jobs are manual. Exact 32 GiB and sanitizer evidence gates
+# require the dedicated 64 GiB runner.
 on:
   workflow_dispatch:
     inputs:
@@ -35,19 +35,6 @@ on:
         description: Absolute path to the hash-bound exact-outcome TSV for all qualification fixtures
         required: true
         type: string
-  push:
-    branches:
-      - codex/*
-      - rel/*
-      - dev/*
-      - main
-  pull_request:
-    branches:
-      - codex/*
-      - rel/*
-      - dev/*
-      - feature/*
-      - main
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
