@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <mspack.h>
 
@@ -49,6 +50,36 @@ struct mspack_handle {
     uint64_t max_size;
     bool limit_exceeded;
 };
+
+static int mspack_fmap_length(const fmap_t *map, off_t *length)
+{
+    off_t map_length;
+
+    if (map == NULL || length == NULL)
+        return -1;
+
+    map_length = (off_t)map->len;
+    if (map_length < 0 || (uintmax_t)map_length != (uintmax_t)map->len)
+        return -1;
+
+    *length = map_length;
+    return 0;
+}
+
+static int mspack_fmap_absolute_offset(const struct mspack_handle *handle, size_t *offset)
+{
+    off_t map_length;
+
+    if (handle == NULL || handle->fmap == NULL || offset == NULL ||
+        handle->org < 0 || handle->offset < 0 ||
+        mspack_fmap_length(handle->fmap, &map_length) != 0 ||
+        (uintmax_t)handle->org > (uintmax_t)map_length ||
+        (uintmax_t)handle->offset > (uintmax_t)map_length - (uintmax_t)handle->org)
+        return -1;
+
+    *offset = (size_t)handle->org + (size_t)handle->offset;
+    return 0;
+}
 
 static struct mspack_file *mspack_fmap_open(struct mspack_system *self,
                                             const char *filename, int mode)
@@ -149,7 +180,10 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
 
     if (mspack_handle->type == FILETYPE_FMAP) {
         /* Use fmap */
-        offset = mspack_handle->offset + mspack_handle->org;
+        if (mspack_fmap_absolute_offset(mspack_handle, &offset) != 0) {
+            cli_dbgmsg("%s() fmap offset could not be represented or remained within the input map\n", __func__);
+            return -1;
+        }
 
         count = fmap_readn(mspack_handle->fmap, buffer, offset, (size_t)bytes);
         if (count == (size_t)-1) {
@@ -239,25 +273,42 @@ static int mspack_fmap_seek(struct mspack_file *file, off_t offset, int mode)
     }
 
     if (mspack_handle->type == FILETYPE_FMAP) {
+        off_t base;
+        off_t map_length;
         off_t new_pos;
+        uintmax_t magnitude;
+
+        if (mspack_fmap_length(mspack_handle->fmap, &map_length) != 0 ||
+            mspack_handle->offset < 0 || mspack_handle->offset > map_length) {
+            cli_dbgmsg("%s() err %d\n", __func__, __LINE__);
+            return -1;
+        }
 
         switch (mode) {
             case MSPACK_SYS_SEEK_START:
-                new_pos = offset;
+                base = 0;
                 break;
             case MSPACK_SYS_SEEK_CUR:
-                new_pos = mspack_handle->offset + offset;
+                base = mspack_handle->offset;
                 break;
             case MSPACK_SYS_SEEK_END:
-                new_pos = mspack_handle->fmap->len + offset;
+                base = map_length;
                 break;
             default:
                 cli_dbgmsg("%s() err %d\n", __func__, __LINE__);
                 return -1;
         }
-        if (new_pos < 0 || new_pos > (off_t)mspack_handle->fmap->len) {
-            cli_dbgmsg("%s() err %d\n", __func__, __LINE__);
-            return -1;
+
+        if (offset >= 0) {
+            if (offset > map_length - base)
+                return -1;
+            new_pos = base + offset;
+        } else {
+            /* Avoid negating the minimum representable off_t. */
+            magnitude = (uintmax_t)(-(offset + 1)) + 1;
+            if ((uintmax_t)base < magnitude)
+                return -1;
+            new_pos = base - (off_t)magnitude;
         }
 
         mspack_handle->offset = new_pos;
@@ -411,6 +462,7 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     if (remaining < cab_header_size)
         goto done;
     if (fmap_readn(ctx->fmap, header, offset, cab_header_size) != cab_header_size) {
+        cli_mark_scan_incomplete(ctx, "CAB fixed header could not be read completely");
         status = CL_EREAD;
         goto done;
     }

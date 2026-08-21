@@ -103,6 +103,8 @@
   remain fail-visible; parser-family and production-corpus qualification remain open.
 - The mandatory service gate now directly exercises and oracle-validates all
   six structured clamd command families; full production qualification remains open.
+- CAB/CHM fmap callbacks now reject unrepresentable or wrapping origin/seek
+  coordinates before decoder reads; parser-family and production-corpus qualification remain open.
 
 ## Large-file validation and expansion progression
 

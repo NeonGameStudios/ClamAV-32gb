@@ -2233,3 +2233,13 @@ zero terminator, input oracle, completion state, verdict, metrics, file type,
 and skipped-operation count before writing evidence; the workflow requires all
 six pass markers. Compiled Linux/Sonic1 execution and full production
 qualification remain open.
+
+## CAB/CHM fmap coordinate admission — 2026-08-21
+
+The shared libmspack fmap bridge now validates that the containing-map length
+fits in `off_t`, that the SFX origin plus decoder-relative offset remains
+inside the map, and that start/current/end seeks cannot wrap or leave the map.
+Decoder read failures, including fixed-header fmap callback failures, therefore
+remain errors instead of reaching fmap through wrapped coordinates. Source
+guards record the bridge invariant; compiled
+Linux/Sonic1, sanitizer, and broader CAB/CHM corpus qualification remain open.
