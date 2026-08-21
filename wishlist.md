@@ -300,6 +300,10 @@
 - Legacy file-inspection, pre-scan, and post-scan callback alert results now
   propagate; add callback fault-injection coverage across library and front-end
   APIs.
+- Unexpected statuses from deprecated pre-cache, file-inspection, pre-scan, and
+  post-scan callbacks now remain fail-visible and non-cacheable instead of being
+  normalized to a clean result; the public scan-map regression covers all four
+  callback entry points.
 - OLE2 VBA macro and encrypted-RAR heuristic alert results now propagate; add
   heuristic callback/resource fault injection and malformed OLE/RAR corpus
   coverage.

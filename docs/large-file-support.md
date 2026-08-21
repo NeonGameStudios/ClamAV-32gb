@@ -4787,3 +4787,13 @@ treated as nested scans. The former 64 MiB materialization cliff is therefore
 removed from this unsupported path while its format limitation remains
 documented. Focused source guards cover the dispatch and fail-closed result;
 compiled parser and Sonic1 qualification remain release gates.
+
+## Legacy callback error propagation — 2026-08-21
+
+Deprecated pre-cache, file-inspection, pre-scan, and post-scan callbacks now
+preserve unexpected `cl_error_t` returns. Each such return marks the layer
+incomplete and prevents a clean cache entry, rather than being discarded as a
+warning or allowing a clean result. A public `cl_scanmap_ex2` regression covers
+all four callback entry points and verifies both the returned status and the
+structured report status. Compiled Linux/Sonic1 and broader callback
+fault-injection qualification remain open.

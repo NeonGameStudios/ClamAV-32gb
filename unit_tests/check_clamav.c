@@ -325,6 +325,135 @@ END_TEST
 static int get_test_file(int i, char *file, unsigned fsize, unsigned long *size);
 static struct cl_engine *g_engine;
 
+static cl_error_t unexpected_pre_cache_status(int fd, const char *type, void *context)
+{
+    (void)fd;
+    (void)type;
+    (void)context;
+    return CL_EREAD;
+}
+
+static cl_error_t unexpected_file_inspection_status(
+    int fd,
+    const char *type,
+    const char **ancestors,
+    size_t parent_file_size,
+    const char *file_name,
+    size_t file_size,
+    const char *file_buffer,
+    uint32_t recursion_level,
+    uint32_t layer_attributes,
+    void *context)
+{
+    (void)fd;
+    (void)type;
+    (void)ancestors;
+    (void)parent_file_size;
+    (void)file_name;
+    (void)file_size;
+    (void)file_buffer;
+    (void)recursion_level;
+    (void)layer_attributes;
+    (void)context;
+    return CL_EREAD;
+}
+
+static cl_error_t unexpected_pre_scan_status(int fd, const char *type, void *context)
+{
+    (void)fd;
+    (void)type;
+    (void)context;
+    return CL_EREAD;
+}
+
+static cl_error_t unexpected_post_scan_status(int fd, int result, const char *virname, void *context)
+{
+    (void)fd;
+    (void)result;
+    (void)virname;
+    (void)context;
+    return CL_EREAD;
+}
+
+enum legacy_callback_status_kind {
+    LEGACY_PRE_CACHE_STATUS,
+    LEGACY_FILE_INSPECTION_STATUS,
+    LEGACY_PRE_SCAN_STATUS,
+    LEGACY_POST_SCAN_STATUS
+};
+
+static void assert_legacy_callback_status_is_fail_visible(enum legacy_callback_status_kind kind)
+{
+    static const uint8_t input[] = "legacy callback status regression";
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_scan_report_t *report = NULL;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert    = NULL;
+    uint64_t scanned          = 0;
+    cl_error_t report_status = CL_SUCCESS;
+    cl_scan_completion_t completion;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    switch (kind) {
+        case LEGACY_PRE_CACHE_STATUS:
+            cl_engine_set_clcb_pre_cache(g_engine, unexpected_pre_cache_status);
+            break;
+        case LEGACY_FILE_INSPECTION_STATUS:
+            cl_engine_set_clcb_file_inspection(g_engine, unexpected_file_inspection_status);
+            break;
+        case LEGACY_PRE_SCAN_STATUS:
+            cl_engine_set_clcb_pre_scan(g_engine, unexpected_pre_scan_status);
+            break;
+        case LEGACY_POST_SCAN_STATUS:
+            cl_engine_set_clcb_post_scan(g_engine, unexpected_post_scan_status);
+            break;
+    }
+
+    ret = cl_scanmap_ex2(map,
+                         "legacy-callback-status",
+                         &verdict,
+                         &last_alert,
+                         &scanned,
+                         g_engine,
+                         &options,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         &report);
+
+    cl_engine_set_clcb_pre_cache(g_engine, NULL);
+    cl_engine_set_clcb_file_inspection(g_engine, NULL);
+    cl_engine_set_clcb_pre_scan(g_engine, NULL);
+    cl_engine_set_clcb_post_scan(g_engine, NULL);
+
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_EREAD);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_ne(completion, CL_SCAN_COMPLETION_COMPLETE);
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+}
+
+START_TEST(test_legacy_callback_errors_are_fail_visible)
+{
+    assert_legacy_callback_status_is_fail_visible(LEGACY_PRE_CACHE_STATUS);
+    assert_legacy_callback_status_is_fail_visible(LEGACY_FILE_INSPECTION_STATUS);
+    assert_legacy_callback_status_is_fail_visible(LEGACY_PRE_SCAN_STATUS);
+    assert_legacy_callback_status_is_fail_visible(LEGACY_POST_SCAN_STATUS);
+}
+END_TEST
+
 /* These historical fixtures deliberately contain malformed embedded layers.
  * With fail-closed parser propagation they are no longer allowed to look
  * clean when the embedded test signature cannot be reached. Keep complete
@@ -16515,6 +16644,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_engine_set_num_rejects_narrowing_and_negative_values);
     tcase_add_test(tc_cl, test_maxrecursion_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_configured_limit_result_precedence_and_alert_compatibility);
+    tcase_add_test(tc_cl, test_legacy_callback_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_callback_abort_is_not_reported_as_timeout);
     tcase_add_test(tc_cl, test_timeout_policy_is_fail_visible);
     tcase_add_test(tc_cl, test_parser_error_statuses_are_fail_closed);

@@ -5560,8 +5560,8 @@ static cl_error_t dispatch_file_inspection_callback(clcb_file_inspection cb, cli
             // No action requested by callback. Keep scanning.
             break;
         default:
-            status = CL_SUCCESS;
-            cli_warnmsg("dispatch_file_inspection_callback: ignoring bad return code from callback\n");
+            cli_mark_scan_incomplete(ctx, "file-inspection callback returned an unexpected status");
+            cli_warnmsg("dispatch_file_inspection_callback: preserving callback return code %d\n", status);
     }
 
 done:
@@ -5617,8 +5617,8 @@ static cl_error_t dispatch_prescan_callback(clcb_pre_scan cb, cli_ctx *ctx, cons
                 // No action requested by callback. Keep scanning.
                 break;
             default:
-                status = CL_SUCCESS;
-                cli_warnmsg("dispatch_prescan_callback: ignoring bad return code from callback\n");
+                cli_mark_scan_incomplete(ctx, "pre-scan callback returned an unexpected status");
+                cli_warnmsg("dispatch_prescan_callback: preserving callback return code %d\n", status);
         }
     }
 
@@ -6349,7 +6349,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
      * Run the deprecated pre_cache callback.
      */
     ret = dispatch_prescan_callback(ctx->engine->cb_pre_cache, ctx, filetype, true /* pre_cache */);
-    if (CL_VERIFIED == ret || CL_VIRUS == ret) {
+    if (CL_SUCCESS != ret) {
         status = ret;
         goto done;
     }
@@ -6460,7 +6460,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
      * Run the deprecated pre_scan callback.
      */
     ret = dispatch_prescan_callback(ctx->engine->cb_pre_scan, ctx, filetype, false /* pre_cache */);
-    if (CL_VERIFIED == ret || CL_VIRUS == ret) {
+    if (CL_SUCCESS != ret) {
         status = ret;
         goto done;
     }
@@ -7187,8 +7187,9 @@ done:
                 // No action requested by callback. Keep scanning.
                 break;
             default:
-                // status = CL_SUCCESS; // Do override the status here, just log a warning.
-                cli_warnmsg("cli_magic_scan: ignoring bad return code from post_scan callback\n");
+                cli_mark_scan_incomplete(ctx, "post-scan callback returned an unexpected status");
+                status = callback_ret;
+                cli_warnmsg("cli_magic_scan: preserving post-scan callback return code %d\n", callback_ret);
         }
     }
 

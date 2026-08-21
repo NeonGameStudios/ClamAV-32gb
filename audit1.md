@@ -3186,3 +3186,14 @@ branch uses the shared allocation wrapper, including a portable one-byte
 allocation for an empty output.
 Static guards and whitespace validation pass; compiled HFS+ corpus, sanitizer,
 and production qualification remain open.
+
+## Legacy callback error propagation — 2026-08-21
+
+Deprecated pre-cache, file-inspection, pre-scan, and post-scan callbacks now
+preserve unexpected `cl_error_t` returns. Each unexpected status marks the
+layer incomplete and prevents a clean cache result; the pre-cache and pre-scan
+call sites now stop instead of continuing after the error. A public
+`cl_scanmap_ex2` regression covers all four callback entry points and verifies
+the returned status and structured-report status. Static guards and whitespace
+validation pass; compiled Linux/Sonic1 and broader callback fault-injection
+qualification remain open.
