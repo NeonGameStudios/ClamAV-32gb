@@ -2498,3 +2498,14 @@ now destroy the PE/bytecode contexts and return every non-success result,
 while preserving the existing `CL_BREAK` clean-stop behavior. Source guards
 record both callers; compiled Linux/Sonic1, bytecode fault injection,
 sanitizer, and production PE/bytecode corpus qualification remain open.
+
+## PE header and import-pass result propagation — 2026-08-21
+
+The PE entry path previously continued into section, import, heuristic, and
+unpacker analysis for header results outside its small explicit switch, even
+though `cli_peheader()` can return read, memory, argument, and other failures.
+The import-table caller also logged `CL_ENULLARG` and continued. The entry path
+now proceeds only for `CL_SUCCESS`, and the import pass preserves its invalid
+invocation result. Source guards record both boundaries; compiled
+Linux/Sonic1, fault injection, sanitizer, and production PE corpus
+qualification remain open.

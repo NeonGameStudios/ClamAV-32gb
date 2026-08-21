@@ -173,6 +173,9 @@
 - PE `BC_PE_ALL` and `BC_PE_UNPACKER` callers now preserve applicable hook
   setup, execution, and unpacked-layer failures instead of returning clean;
   add PE bytecode fault-injection and production corpus coverage.
+- PE header and enabled import-table passes now stop on every non-success
+  result instead of continuing with partial metadata; add PE read/memory fault
+  injection and malformed production corpus coverage.
 
 ## Large-file validation and expansion progression
 

@@ -3041,8 +3041,14 @@ int cli_scanpe(cli_ctx *ctx)
             cli_exe_info_destroy(peinfo);
             return ret;
 
-        default:
+        case CL_SUCCESS:
             break;
+        default:
+            /* Any other header result means the PE-specific representation
+             * is incomplete; do not continue with partially initialized data. */
+            cli_mark_scan_incomplete(ctx, "PE header parsing returned a non-success result");
+            cli_exe_info_destroy(peinfo);
+            return peheader_ret;
     }
 
     if (!peinfo->is_pe32plus) { /* PE */
@@ -3182,7 +3188,10 @@ int cli_scanpe(cli_ctx *ctx)
                 break;
             case CL_ENULLARG:
                 cli_warnmsg("cli_scanpe: NULL argument supplied\n");
-                break;
+                /* The import-table pass is required when enabled; preserve
+                 * an invalid invocation instead of continuing as clean. */
+                cli_exe_info_destroy(peinfo);
+                return ret;
             case CL_VIRUS:
             case CL_BREAK:
                 cli_exe_info_destroy(peinfo);
