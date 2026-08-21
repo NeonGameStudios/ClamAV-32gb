@@ -61,9 +61,12 @@ static void cli_elf_sectionlog(uint32_t sh_type, uint32_t sh_flags);
 static uint32_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 {
     uint16_t i, found = 0;
+    uint32_t start, memsz, delta, file_offset;
 
     for (i = 0; i < phnum; i++) {
-        if (EC32(ph[i].p_vaddr, conv) <= vaddr && EC32(ph[i].p_vaddr, conv) + EC32(ph[i].p_memsz, conv) > vaddr) {
+        start = EC32(ph[i].p_vaddr, conv);
+        memsz = EC32(ph[i].p_memsz, conv);
+        if (vaddr >= start && vaddr - start < memsz) {
             found = 1;
             break;
         }
@@ -75,15 +78,24 @@ static uint32_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint
     }
 
     *err = 0;
-    return vaddr - EC32(ph[i].p_vaddr, conv) + EC32(ph[i].p_offset, conv);
+    delta       = vaddr - start;
+    file_offset = EC32(ph[i].p_offset, conv);
+    if (delta > UINT32_MAX - file_offset) {
+        *err = 1;
+        return 0;
+    }
+    return file_offset + delta;
 }
 
 static uint64_t cli_rawaddr64(uint64_t vaddr, struct elf_program_hdr64 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 {
     uint16_t i, found = 0;
+    uint64_t start, memsz, delta, file_offset;
 
     for (i = 0; i < phnum; i++) {
-        if (EC64(ph[i].p_vaddr, conv) <= vaddr && EC64(ph[i].p_vaddr, conv) + EC64(ph[i].p_memsz, conv) > vaddr) {
+        start = EC64(ph[i].p_vaddr, conv);
+        memsz = EC64(ph[i].p_memsz, conv);
+        if (vaddr >= start && vaddr - start < memsz) {
             found = 1;
             break;
         }
@@ -95,7 +107,13 @@ static uint64_t cli_rawaddr64(uint64_t vaddr, struct elf_program_hdr64 *ph, uint
     }
 
     *err = 0;
-    return vaddr - EC64(ph[i].p_vaddr, conv) + EC64(ph[i].p_offset, conv);
+    delta       = vaddr - start;
+    file_offset = EC64(ph[i].p_offset, conv);
+    if (delta > UINT64_MAX - file_offset) {
+        *err = 1;
+        return 0;
+    }
+    return file_offset + delta;
 }
 
 /* Return converted endian-fixed header, or error code */
@@ -299,7 +317,14 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     }
 
     if (elfinfo) {
-        elfinfo->ep = fentry;
+        elfinfo->ep64                 = fentry;
+        elfinfo->has_native_coordinates = 1;
+        if (fentry <= UINT32_MAX) {
+            elfinfo->ep = (uint32_t)fentry;
+        } else {
+            elfinfo->ep                       = 0;
+            elfinfo->legacy_metadata_incomplete = 1;
+        }
     }
 
     return CL_CLEAN;
@@ -399,7 +424,14 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
     }
 
     if (elfinfo) {
-        elfinfo->ep = fentry;
+        elfinfo->ep64                  = fentry;
+        elfinfo->has_native_coordinates = 1;
+        if (fentry <= UINT32_MAX) {
+            elfinfo->ep = (uint32_t)fentry;
+        } else {
+            elfinfo->ep                        = 0;
+            elfinfo->legacy_metadata_incomplete = 1;
+        }
     }
 
     return CL_CLEAN;
@@ -450,6 +482,11 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
             cli_dbgmsg("ELF: Can't allocate memory for section headers\n");
             return CL_EMEM;
         }
+        elfinfo->sections64 = (struct cli_exe_section64 *)cli_max_calloc(shnum, sizeof(struct cli_exe_section64));
+        if (!elfinfo->sections64) {
+            cli_dbgmsg("ELF: Can't allocate memory for native-width section headers\n");
+            return CL_EMEM;
+        }
     }
 
     if (shnum) {
@@ -482,9 +519,17 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         shoff += sizeof(struct elf_section_hdr32);
 
         if (elfinfo) {
-            elfinfo->sections[i].rva = EC32(section_hdr[i].sh_addr, conv);
-            elfinfo->sections[i].raw = EC32(section_hdr[i].sh_offset, conv);
-            elfinfo->sections[i].rsz = EC32(section_hdr[i].sh_size, conv);
+            elfinfo->sections64[i].rva  = EC32(section_hdr[i].sh_addr, conv);
+            elfinfo->sections64[i].raw  = EC32(section_hdr[i].sh_offset, conv);
+            elfinfo->sections64[i].rsz  = EC32(section_hdr[i].sh_size, conv);
+            elfinfo->sections64[i].urva = elfinfo->sections64[i].rva;
+            elfinfo->sections64[i].uvsz = elfinfo->sections64[i].rsz;
+            elfinfo->sections64[i].uraw = elfinfo->sections64[i].raw;
+            elfinfo->sections64[i].ursz = elfinfo->sections64[i].rsz;
+
+            elfinfo->sections[i].rva = (uint32_t)elfinfo->sections64[i].rva;
+            elfinfo->sections[i].raw = (uint32_t)elfinfo->sections64[i].raw;
+            elfinfo->sections[i].rsz = (uint32_t)elfinfo->sections64[i].rsz;
         }
         if (ctx) {
             cli_dbgmsg("ELF: Section %u\n", i);
@@ -549,6 +594,11 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
             cli_dbgmsg("ELF: Can't allocate memory for section headers\n");
             return CL_EMEM;
         }
+        elfinfo->sections64 = (struct cli_exe_section64 *)cli_max_calloc(shnum, sizeof(struct cli_exe_section64));
+        if (!elfinfo->sections64) {
+            cli_dbgmsg("ELF: Can't allocate memory for native-width section headers\n");
+            return CL_EMEM;
+        }
     }
 
     if (shnum) {
@@ -565,6 +615,7 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
     /* Loop over section headers */
     for (i = 0; i < shnum; i++) {
         uint32_t sh_type, sh_flags;
+        uint64_t section_addr, section_offset, section_size;
 
         if (fmap_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr64)) != sizeof(struct elf_section_hdr64)) {
             cli_dbgmsg("ELF: Can't read section header\n");
@@ -581,9 +632,29 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         shoff += sizeof(struct elf_section_hdr64);
 
         if (elfinfo) {
-            elfinfo->sections[i].rva = EC64(section_hdr[i].sh_addr, conv);
-            elfinfo->sections[i].raw = EC64(section_hdr[i].sh_offset, conv);
-            elfinfo->sections[i].rsz = EC64(section_hdr[i].sh_size, conv);
+            section_addr   = EC64(section_hdr[i].sh_addr, conv);
+            section_offset = EC64(section_hdr[i].sh_offset, conv);
+            section_size   = EC64(section_hdr[i].sh_size, conv);
+
+            elfinfo->sections64[i].rva  = section_addr;
+            elfinfo->sections64[i].raw  = section_offset;
+            elfinfo->sections64[i].rsz  = section_size;
+            elfinfo->sections64[i].chr  = (uint32_t)(EC64(section_hdr[i].sh_flags, conv) & ELF_SHF_MASK);
+            elfinfo->sections64[i].urva = section_addr;
+            elfinfo->sections64[i].uvsz = section_size;
+            elfinfo->sections64[i].uraw = section_offset;
+            elfinfo->sections64[i].ursz = section_size;
+
+            if (section_addr > UINT32_MAX || section_offset > UINT32_MAX || section_size > UINT32_MAX) {
+                /* Do not expose a partially narrowed section to legacy
+                 * bytecode. Native matcher consumers use sections64. */
+                memset(&elfinfo->sections[i], 0, sizeof(elfinfo->sections[i]));
+                elfinfo->legacy_metadata_incomplete = 1;
+            } else {
+                elfinfo->sections[i].rva = (uint32_t)section_addr;
+                elfinfo->sections[i].raw = (uint32_t)section_offset;
+                elfinfo->sections[i].rsz = (uint32_t)section_size;
+            }
         }
         if (ctx) {
             cli_dbgmsg("ELF: Section " STDu32 "\n", (uint32_t)i);
@@ -772,6 +843,7 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "ELF program-header parsing ended before inspection completed");
         return CL_EPARSE;
     } else if (ret != CL_CLEAN) {
+        cli_mark_scan_incomplete(ctx, "ELF program-header parsing failed before inspection completed");
         return ret;
     }
 
@@ -785,6 +857,7 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "ELF section-header parsing ended before inspection completed");
         return CL_EPARSE;
     } else if (ret != CL_CLEAN) {
+        cli_mark_scan_incomplete(ctx, "ELF section-header parsing failed before inspection completed");
         return ret;
     }
 
@@ -831,6 +904,10 @@ cl_error_t cli_elfheader(cli_ctx *ctx, struct cli_exe_info *elfinfo)
     }
     if (ret != CL_SUCCESS) {
         goto done;
+    }
+
+    if (elfinfo->legacy_metadata_incomplete) {
+        cli_mark_scan_incomplete(ctx, "ELF64 coordinates exceed the legacy 32-bit metadata ABI");
     }
 
 done:

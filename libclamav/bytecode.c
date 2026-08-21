@@ -2952,11 +2952,17 @@ cl_error_t cli_bytecode_runlsig(cli_ctx *cctx, struct cli_target_info *tinfo,
         return ret;
     }
     if (tinfo && tinfo->status == 1) {
-        ctx.sections = tinfo->exeinfo.sections;
+        /* Legacy bytecode receives only the 32-bit executable metadata ABI.
+         * Do not let a narrowed ELF64 section appear as a valid section at
+         * offset zero; the native matcher keeps the complete coordinates and
+         * the scan is already marked incomplete for this bridge. */
+        const bool legacy_metadata_available = !tinfo->exeinfo.legacy_metadata_incomplete;
+
+        ctx.sections = legacy_metadata_available ? tinfo->exeinfo.sections : NULL;
         memset(&pehookdata, 0, sizeof(pehookdata));
         pehookdata.offset    = tinfo->exeinfo.offset;
-        pehookdata.ep        = tinfo->exeinfo.ep;
-        pehookdata.nsections = tinfo->exeinfo.nsections;
+        pehookdata.ep        = legacy_metadata_available ? tinfo->exeinfo.ep : 0;
+        pehookdata.nsections = legacy_metadata_available ? tinfo->exeinfo.nsections : 0;
         pehookdata.hdr_size  = tinfo->exeinfo.hdr_size;
         ctx.hooks.pedata     = &pehookdata;
         ctx.resaddr          = tinfo->exeinfo.res_addr;

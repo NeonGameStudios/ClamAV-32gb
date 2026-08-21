@@ -427,6 +427,25 @@ static int cli_parse_uint64(const char *text, uint64_t *value)
     return 1;
 }
 
+static uint64_t cli_exe_entrypoint(const struct cli_exe_info *exeinfo)
+{
+    return exeinfo->has_native_coordinates ? exeinfo->ep64 : exeinfo->ep;
+}
+
+static uint64_t cli_exe_section_raw(const struct cli_exe_info *exeinfo, uint16_t section)
+{
+    if (exeinfo->sections64)
+        return exeinfo->sections64[section].raw;
+    return exeinfo->sections[section].raw;
+}
+
+static uint64_t cli_exe_section_size(const struct cli_exe_info *exeinfo, uint16_t section)
+{
+    if (exeinfo->sections64)
+        return exeinfo->sections64[section].rsz;
+    return exeinfo->sections[section].rsz;
+}
+
 cl_error_t cli_caloff(const char *offstr, const struct cli_target_info *info, cli_target_t target, uint64_t *offdata, uint64_t *offset_min, uint64_t *offset_max)
 {
     char offcpy[65] = {0};
@@ -582,45 +601,45 @@ cl_error_t cli_caloff(const char *offstr, const struct cli_target_info *info, cl
                 break;
 
             case CLI_OFF_EP_PLUS:
-                if (UINT64_MAX - info->exeinfo.ep < offdata[1])
+                if (UINT64_MAX - cli_exe_entrypoint(&info->exeinfo) < offdata[1])
                     break;
-                *offset_min = info->exeinfo.ep + offdata[1];
+                *offset_min = cli_exe_entrypoint(&info->exeinfo) + offdata[1];
                 break;
 
             case CLI_OFF_EP_MINUS:
-                if (offdata[1] > info->exeinfo.ep)
+                if (offdata[1] > cli_exe_entrypoint(&info->exeinfo))
                     break;
-                *offset_min = info->exeinfo.ep - offdata[1];
+                *offset_min = cli_exe_entrypoint(&info->exeinfo) - offdata[1];
                 break;
 
             case CLI_OFF_SL_PLUS:
                 if (!info->exeinfo.nsections)
                     break;
-                if (UINT64_MAX - info->exeinfo.sections[info->exeinfo.nsections - 1].raw < offdata[1])
+                if (UINT64_MAX - cli_exe_section_raw(&info->exeinfo, info->exeinfo.nsections - 1) < offdata[1])
                     break;
-                *offset_min = info->exeinfo.sections[info->exeinfo.nsections - 1].raw + offdata[1];
+                *offset_min = cli_exe_section_raw(&info->exeinfo, info->exeinfo.nsections - 1) + offdata[1];
                 break;
 
             case CLI_OFF_SX_PLUS:
                 if (offdata[3] >= info->exeinfo.nsections)
                     *offset_min = CLI_OFF_NONE64;
-                else if (UINT64_MAX - info->exeinfo.sections[offdata[3]].raw < offdata[1])
+                else if (UINT64_MAX - cli_exe_section_raw(&info->exeinfo, offdata[3]) < offdata[1])
                     *offset_min = CLI_OFF_NONE64;
                 else
-                    *offset_min = info->exeinfo.sections[offdata[3]].raw + offdata[1];
+                    *offset_min = cli_exe_section_raw(&info->exeinfo, offdata[3]) + offdata[1];
                 break;
 
             case CLI_OFF_SE:
                 if (offdata[3] >= info->exeinfo.nsections) {
                     *offset_min = CLI_OFF_NONE64;
                 } else {
-                    *offset_min = info->exeinfo.sections[offdata[3]].raw;
+                    *offset_min = cli_exe_section_raw(&info->exeinfo, offdata[3]);
                     if (offset_max) {
-                        if (UINT64_MAX - *offset_min < info->exeinfo.sections[offdata[3]].rsz ||
-                            UINT64_MAX - (*offset_min + info->exeinfo.sections[offdata[3]].rsz) < offdata[2])
+                        if (UINT64_MAX - *offset_min < cli_exe_section_size(&info->exeinfo, offdata[3]) ||
+                            UINT64_MAX - (*offset_min + cli_exe_section_size(&info->exeinfo, offdata[3])) < offdata[2])
                             *offset_min = CLI_OFF_NONE64;
                         else
-                            *offset_max = *offset_min + info->exeinfo.sections[offdata[3]].rsz + offdata[2];
+                            *offset_max = *offset_min + cli_exe_section_size(&info->exeinfo, offdata[3]) + offdata[2];
                     }
                     // TODO offdata[2] == MaxShift. Won't this make offset_max
                     // extend beyond the end of the section?  This doesn't seem like
@@ -1065,7 +1084,7 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
     if (ac_lsig->tdb.ep || ac_lsig->tdb.nos) {
         if (!target_info || target_info->status != 1)
             goto done;
-        if (ac_lsig->tdb.ep && (ac_lsig->tdb.ep[0] > target_info->exeinfo.ep || ac_lsig->tdb.ep[1] < target_info->exeinfo.ep))
+        if (ac_lsig->tdb.ep && (ac_lsig->tdb.ep[0] > cli_exe_entrypoint(&target_info->exeinfo) || ac_lsig->tdb.ep[1] < cli_exe_entrypoint(&target_info->exeinfo)))
             goto done;
         if (ac_lsig->tdb.nos && (ac_lsig->tdb.nos[0] > target_info->exeinfo.nsections || ac_lsig->tdb.nos[1] < target_info->exeinfo.nsections))
             goto done;
@@ -1189,7 +1208,7 @@ static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
     context.file_size = ctx->fmap->len;
     if (target_info != NULL) {
         if (target_info->status == 1)
-            context.entry_point = target_info->exeinfo.ep;
+            context.entry_point = cli_exe_entrypoint(&target_info->exeinfo);
     }
 
     rc = yr_execute_code(ac_lsig, acdata, &context, 0, 0);

@@ -62,5 +62,10 @@ void cli_exe_info_destroy(struct cli_exe_info *exeinfo)
         exeinfo->sections = NULL;
     }
 
+    if (NULL != exeinfo->sections64) {
+        free(exeinfo->sections64);
+        exeinfo->sections64 = NULL;
+    }
+
     cli_hashset_destroy(&(exeinfo->vinfo));
 }

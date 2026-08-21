@@ -79,6 +79,10 @@
 - TIFF IFD traversal now keeps its working cursor native-width, preventing a
   malformed IFD near the 4 GiB coordinate boundary from wrapping back to the
   beginning of a larger file; the on-disk TIFF offsets remain 32-bit.
+- ELF64 entrypoint and section coordinates now retain a native-width matcher
+  view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
+  checked program-header arithmetic and sparse-map regressions cover the
+  boundary.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database
   qualification on Sonic1.

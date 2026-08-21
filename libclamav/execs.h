@@ -61,6 +61,25 @@ struct cli_exe_section {
     uint32_t ursz; /**< PE - unaligned SizeOfRawData */
 };
 
+/** Native-width executable section coordinates.
+ *
+ * The bytecode-facing cli_exe_section structure is a compatibility ABI and
+ * must remain 32-bit.  ELF64 file offsets, virtual addresses, and section
+ * sizes do not share that restriction, so the native matcher keeps a
+ * parallel representation instead of silently narrowing them.
+ */
+struct cli_exe_section64 {
+    uint64_t rva;  /**< Relative/virtual address */
+    uint64_t vsz;  /**< Virtual size */
+    uint64_t raw;  /**< Raw offset (in file) */
+    uint64_t rsz;  /**< Raw size (in file) */
+    uint32_t chr;  /**< Section characteristics */
+    uint64_t urva; /**< Unaligned virtual address */
+    uint64_t uvsz; /**< Unaligned virtual size */
+    uint64_t uraw; /**< Unaligned raw offset */
+    uint64_t ursz; /**< Unaligned raw size */
+};
+
 /** Executable file information
  *  NOTE: This is used to store PE, MachO, and ELF executable information,
  *  but it predominantly has fields for PE info.  Not all members are
@@ -82,11 +101,25 @@ struct cli_exe_info {
      * This array has \p nsection elements */
     struct cli_exe_section *sections;
 
+    /** Native-width section coordinates, when the file format requires them.
+     * This array has \p nsections elements when non-NULL and is not passed
+     * to the legacy bytecode ABI. */
+    struct cli_exe_section64 *sections64;
+
     /** Offset where this executable starts in file (nonzero if embedded) */
     uint32_t offset;
 
     /** File offset to the entrypoint of the executable. */
     uint32_t ep;
+
+    /** Native-width file offset to the entrypoint. */
+    uint64_t ep64;
+
+    /** The parser populated native-width executable coordinates. */
+    uint8_t has_native_coordinates;
+
+    /** A required legacy metadata bridge could not represent all coordinates. */
+    uint8_t legacy_metadata_incomplete;
 
     /** Number of sections.
      *  NOTE: If a section is determined to be invalid (exists outside of the

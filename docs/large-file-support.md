@@ -2733,6 +2733,23 @@ regression uses a sparse logical map above 4 GiB and records the post-IFD
 read coordinate; TIFF parser-family and complete corpus qualification remain
 open.
 
+## ELF64 executable metadata coordinates — 2026-08-20
+
+ELF64 entrypoint and section coordinates now retain their native 64-bit values
+in a parallel matcher metadata view. Relative `EP`, `SL`, `SX`, and `SE`
+offset calculations therefore remain correct when a valid section or entrypoint
+starts above 4 GiB; the legacy bytecode-facing executable structure remains
+32-bit for ABI compatibility.
+
+If an ELF coordinate cannot be represented by that legacy ABI, the narrowed
+section is not exposed as a zero-offset section. Legacy bytecode metadata is
+disabled for the layer and the scan is marked incomplete, while native raw and
+relative matcher paths continue using the complete coordinates. Program-header
+interval and entry-offset arithmetic is subtraction/check based and malformed
+overflow returns a fail-visible parser error. Sparse-map regressions cover both
+native coordinate preservation and entry-offset overflow; full ELF parser,
+bytecode-v2, sanitizer, and supported-build Sonic1 qualification remain open.
+
 ## Script normalization matcher boundary — 2026-08-19
 
 Normalized script output above 4 GiB cannot be passed to the legacy 32-bit

@@ -11308,6 +11308,174 @@ START_TEST(test_elf_truncated_header_is_fail_visible)
 }
 END_TEST
 
+#if SIZE_MAX > UINT32_MAX
+struct elf_large_metadata_state {
+    size_t length;
+    size_t max_offset;
+    uint64_t section_offset;
+    uint8_t file_header[sizeof(struct elf_file_hdr64)];
+    uint8_t program_header[sizeof(struct elf_program_hdr64)];
+    uint8_t section_header[sizeof(struct elf_section_hdr64)];
+};
+
+static void elf_large_metadata_copy(uint8_t *dst, size_t count, uint64_t offset,
+                                    uint64_t source_offset, const uint8_t *source,
+                                    size_t source_length)
+{
+    uint64_t read_end   = offset + count;
+    uint64_t source_end = source_offset + source_length;
+    uint64_t copy_start;
+    uint64_t copy_end;
+
+    if (offset >= source_end || read_end <= source_offset)
+        return;
+
+    copy_start = MAX(offset, source_offset);
+    copy_end   = MIN(read_end, source_end);
+    memcpy(dst + (size_t)(copy_start - offset), source + (size_t)(copy_start - source_offset),
+           (size_t)(copy_end - copy_start));
+}
+
+static off_t elf_large_metadata_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct elf_large_metadata_state *state = handle;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+    if ((size_t)offset > state->max_offset)
+        state->max_offset = (size_t)offset;
+
+    memset(buf, 0, count);
+    elf_large_metadata_copy(buf, count, (uint64_t)offset, 0, state->file_header,
+                            sizeof(state->file_header));
+    elf_large_metadata_copy(buf, count, (uint64_t)offset, sizeof(state->file_header),
+                            state->program_header, sizeof(state->program_header));
+    elf_large_metadata_copy(buf, count, (uint64_t)offset, state->section_offset,
+                            state->section_header, sizeof(state->section_header));
+    return (off_t)count;
+}
+
+static void elf_large_metadata_fixture_init(struct elf_large_metadata_state *state,
+                                            int overflow_entry_offset)
+{
+    memset(state, 0, sizeof(*state));
+    state->section_offset = (uint64_t)UINT32_MAX + 0x1000U;
+    state->length         = (size_t)(state->section_offset + sizeof(state->section_header));
+
+    state->file_header[0] = 0x7f;
+    state->file_header[1] = 'E';
+    state->file_header[2] = 'L';
+    state->file_header[3] = 'F';
+    state->file_header[4] = 2; /* ELFCLASS64 */
+    state->file_header[5] = 1; /* ELFDATA2LSB */
+    state->file_header[6] = 1;
+    zip_stream_write_u16(state->file_header + 16, 2);
+    zip_stream_write_u16(state->file_header + 18, 62);
+    zip_stream_write_u32(state->file_header + 20, 1);
+    zip_stream_write_u64(state->file_header + 24, overflow_entry_offset ? 0x400001U : 0x400000U);
+    zip_stream_write_u64(state->file_header + 32, sizeof(state->file_header));
+    zip_stream_write_u64(state->file_header + 40, state->section_offset);
+    zip_stream_write_u16(state->file_header + 52, sizeof(state->file_header));
+    zip_stream_write_u16(state->file_header + 54, sizeof(state->program_header));
+    zip_stream_write_u16(state->file_header + 56, 1);
+    zip_stream_write_u16(state->file_header + 58, sizeof(state->section_header));
+    zip_stream_write_u16(state->file_header + 60, 1);
+
+    zip_stream_write_u32(state->program_header + 0, 1); /* PT_LOAD */
+    zip_stream_write_u32(state->program_header + 4, 5);
+    zip_stream_write_u64(state->program_header + 8,
+                         overflow_entry_offset ? UINT64_MAX : state->section_offset);
+    zip_stream_write_u64(state->program_header + 16, 0x400000U);
+    zip_stream_write_u64(state->program_header + 24, 0x400000U);
+    zip_stream_write_u64(state->program_header + 32, 0x1000U);
+    zip_stream_write_u64(state->program_header + 40, 0x1000U);
+    zip_stream_write_u64(state->program_header + 48, 0x1000U);
+
+    zip_stream_write_u32(state->section_header + 4, 1); /* SHT_PROGBITS */
+    zip_stream_write_u64(state->section_header + 16, UINT64_C(0x100000000));
+    zip_stream_write_u64(state->section_header + 24, state->section_offset);
+    zip_stream_write_u64(state->section_header + 32, 0x100U);
+}
+
+START_TEST(test_elf64_metadata_preserves_native_coordinates)
+{
+    struct elf_large_metadata_state state;
+    struct cli_exe_info exeinfo;
+    struct cli_target_info target_info;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    uint64_t offdata[4] = {CLI_OFF_SX_PLUS, 0, 0, 0};
+    uint64_t offset_min = CLI_OFF_NONE64;
+    uint64_t offset_max = CLI_OFF_NONE64;
+
+    if (sizeof(off_t) <= 4)
+        return;
+
+    elf_large_metadata_fixture_init(&state, 0);
+    memset(&ctx, 0, sizeof(ctx));
+    cli_exe_info_init(&exeinfo, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, elf_large_metadata_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_elfheader(&ctx, &exeinfo);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(exeinfo.has_native_coordinates);
+    ck_assert_ptr_nonnull(exeinfo.sections64);
+    ck_assert_uint_eq(exeinfo.ep64, state.section_offset);
+    ck_assert_uint_eq(exeinfo.sections64[0].raw, state.section_offset);
+    ck_assert_uint_eq(exeinfo.sections64[0].rva, UINT64_C(0x100000000));
+    ck_assert_uint_eq(exeinfo.ep, 0);
+    ck_assert_uint_eq(exeinfo.sections[0].raw, 0);
+    ck_assert(exeinfo.legacy_metadata_incomplete);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    memset(&target_info, 0, sizeof(target_info));
+    target_info.fsize    = (off_t)state.length;
+    target_info.status   = 1;
+    target_info.exeinfo = exeinfo;
+    ret = cli_caloff(NULL, &target_info, TARGET_ELF, offdata, &offset_min, &offset_max);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(offset_min, state.section_offset);
+
+    cli_exe_info_destroy(&exeinfo);
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_elf64_entry_offset_overflow_is_fail_visible)
+{
+    struct elf_large_metadata_state state;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    if (sizeof(off_t) <= 4)
+        return;
+
+    elf_large_metadata_fixture_init(&state, 1);
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_handle(&state, 0, state.length, elf_large_metadata_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.options = &options;
+    ctx.fmap = map;
+
+    ret = cli_scanelf(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_macho_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {0xfe, 0xed, 0xfa, 0xce};
@@ -12400,6 +12568,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_cl, test_elf64_metadata_preserves_native_coordinates);
+    tcase_add_test(tc_cl, test_elf64_entry_offset_overflow_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
