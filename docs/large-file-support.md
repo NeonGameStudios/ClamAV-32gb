@@ -4319,3 +4319,12 @@ central `cli_magic_scan()` dispatch path. This prevents the early type-error
 return from bypassing the shared completion contract. A direct fault-injected
 regression and source guard are registered; compiled Linux/Sonic1, sanitizer,
 and full ingress qualification remain open.
+
+## PCRE full-subject fmap failure — 2026-08-21
+
+PCRE full-subject mapping failures now release the contiguous reservation,
+mark the scan incomplete and non-cacheable, and return `CL_EREAD`; the generic
+and target matcher loops stop on that status instead of continuing into later
+logical work. The focused synthetic regression and source guard are
+registered. Compiled Linux/Sonic1, sanitizer, full-size PCRE, and RSS
+qualification remain open.

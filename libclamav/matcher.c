@@ -272,7 +272,8 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
                 if (!buffer) {
                     cli_scan_release_contiguous(ctx, map->len);
                     fmap_release_unlocked(map);
-                    return CL_EMEM;
+                    cli_mark_scan_incomplete(ctx, "PCRE subject could not be mapped completely");
+                    return CL_EREAD;
                 }
 
                 /* scan the full buffer */
@@ -1532,7 +1533,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                               &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
                               bm_offsets_table_initialized ? &bm_offsets_table : NULL,
                               &target_pcre_offsets_table, ctx);
-            if (ret == CL_VIRUS || ret == CL_EMEM) {
+            if (ret == CL_VIRUS || ret == CL_EMEM || ret == CL_EREAD) {
                 goto done;
             }
         }
@@ -1544,7 +1545,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                               &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
                               NULL,
                               &generic_pcre_offsets_table, ctx);
-            if (ret == CL_VIRUS || ret == CL_EMEM) {
+            if (ret == CL_VIRUS || ret == CL_EMEM || ret == CL_EREAD) {
                 goto done;
             } else if ((acmode & AC_SCAN_FT) && ((cli_file_t)ret >= CL_TYPENO)) {
                 if (ret > type)

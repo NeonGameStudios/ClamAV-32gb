@@ -1203,6 +1203,51 @@ START_TEST(test_scan_fmap_pread_failure_is_incomplete)
 END_TEST
 #endif
 
+static const void *matcher_pcre_full_map_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if ((at == 0) && (len == map->len))
+        return NULL;
+    if ((len == 0) || (at > map->len) || (len > map->len - at))
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_pcre_full_map_read_failure_is_fail_visible)
+{
+    static const uint8_t input[SCANBUFF + 1] = {0};
+    static char pcre_signature[]              = PCRE_BYPASS "/deadbeef/";
+    struct cli_matcher *root = ctx.engine->root[0];
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_ptr_nonnull(root);
+    ck_assert_int_eq(readdb_parse_ldb_subsignature(root, "PcreFullMapReadFailure",
+                                                   pcre_signature, "*", NULL, 0, 0, 0, NULL),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_pcre_build(root, CLI_DEFAULT_PCRE_MATCH_LIMIT,
+                                    CLI_DEFAULT_PCRE_RECMATCH_LIMIT, NULL),
+                     CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need = matcher_pcre_full_map_read_failure;
+    ctx.fmap = map;
+    ctx.recursion_stack[ctx.recursion_level].fmap = map;
+
+    ret = cli_scan_fmap(&ctx, CL_TYPE_ANY, false, NULL, AC_SCAN_VIR, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PCRE subject could not be mapped completely");
+    ck_assert(map->dont_cache_flag);
+
+    ctx.fmap                                      = &thefmap;
+    ctx.recursion_stack[ctx.recursion_level].fmap = &thefmap;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pcre_subject_limit_is_fail_visible)
 {
     struct cl_engine *engine;
@@ -1311,6 +1356,7 @@ Suite *test_matchers_suite(void)
 #ifndef _WIN32
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);
 #endif
+    tcase_add_test(tc_matchers, test_pcre_full_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_pcre_subject_limit_is_fail_visible);
     return s;
 }

@@ -237,7 +237,7 @@ not a cold-cache or production-workload certification.
 |---|---|---|
 | Matcher offsets and sorting | Source-fixed and focused-tested | BM uses an explicit 64-bit comparator; native sentinels cannot collide with valid 32-bit-boundary offsets; absolute/window coordinates and byte-compare overlap de-duplication are checked. |
 | Signature size/offset parsing | Source-fixed and focused-tested | Logical `FileSize`, calculated offsets, and exact-size hash keys retain native 64-bit values; reserved sentinel values are rejected. |
-| PCRE | Fail-visible bounded support | PCRE subjects are capped by the 1 GiB contiguous-allocation ceiling. A required skipped pass marks all active layers incomplete and non-cacheable; full-map dispatch now uses overflow-safe range arithmetic for large offsets. |
+| PCRE | Fail-visible bounded support | On qualifying 64-bit anonymous-map builds, PCRE subjects follow the 32 GiB contiguous ceiling; other builds retain the 1 GiB allocation ceiling. Size-limit skips mark active layers incomplete/non-cacheable, full-map dispatch uses overflow-safe range arithmetic, and full-subject fmap read failures now return `CL_EREAD` with the same sticky state. |
 | Bytecode | Fail-visible ABI boundary | The legacy bytecode ABI remains 32-bit. Maps or offsets that cannot be represented are rejected only when an applicable hook would run, and the result is incomplete/non-clean. |
 | fmap and hashing | Source-fixed and synthetic-tested | Aging uses a persistent bounded cursor and release budget; read failures roll back page state and return `CL_EREAD`; hash and extraction readers use bounded windows. |
 | Cache, stats, and FFI | Source-fixed and focused-tested | File sizes are 64-bit in cache/stat records and JSON; checked-in Rust layouts match the widened C structures and have layout assertions. |
@@ -1989,3 +1989,16 @@ A direct fault-injected `cli_magic_scan(CL_TYPE_ANY)` regression checks the
 status, completion reason, and cache invariant; the source guard and ingress
 capability rows record the contract. Compiled Linux/Sonic1, sanitizer, and
 full ingress qualification remain open.
+
+## PCRE full-subject fmap failure — 2026-08-21
+
+The full-map PCRE path previously converted a failed in-range subject mapping
+to `CL_EMEM` without recording the required scan as incomplete. The matcher
+loop could also continue past a `CL_EREAD` returned by a matcher branch. The
+path now releases the contiguous reservation, marks
+`PCRE subject could not be mapped completely`, returns `CL_EREAD`, and makes
+that status terminal in both generic and target matcher passes. A synthetic
+full-map callback regression checks the return status, sticky reason, and
+non-cacheable map; source guards and the PCRE capability row record the
+contract. Compiled Linux/Sonic1, sanitizer, full-size PCRE, and RSS
+qualification remain open.
