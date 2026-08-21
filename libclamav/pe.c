@@ -2508,6 +2508,7 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
     int nimps = 0;
     unsigned int err;
     int first = 1;
+    bool descriptor_terminated = false;
 
     /* If the PE doesn't have an import table then skip it. This is an
      * uncommon case but can happen. */
@@ -2521,7 +2522,8 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
     impoff = cli_rawaddr(peinfo->dirs[1].VirtualAddress, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
     if (err || (size_t)impoff > fsize || (size_t)peinfo->dirs[1].Size > fsize - (size_t)impoff) {
         cli_dbgmsg("scan_pe: invalid rva for import table data\n");
-        status = CL_BREAK;
+        cli_mark_scan_incomplete(ctx, "PE import table range is outside the input map");
+        status = CL_EFORMAT;
         goto done;
     }
 
@@ -2549,23 +2551,17 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
         uint32_t temp;
 
         /* Get copy of image import descriptor to work with */
-        if (fmap_readn(map, &image, descriptor_offset, sizeof(image)) != sizeof(image)) {
+        size_t nread = fmap_readn(map, &image, descriptor_offset, sizeof(image));
+        if (nread != sizeof(image)) {
             cli_dbgmsg("scan_pe: failed to read import descriptor\n");
             cli_mark_scan_incomplete(ctx, "PE import descriptor could not be read completely");
-            status = CL_EREAD;
+            status = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
             goto done;
-        }
-
-        if (image.Name == 0) {
-            // Name RVA is 0, which doesn't seem right. I guess we skip the rest?
-            // TODO: Is that right?
-            break;
         }
 
         /* Prepare for next iteration, in case we need to `continue;` */
         left -= sizeof(struct pe_image_import_descriptor);
         descriptor_offset += sizeof(struct pe_image_import_descriptor);
-        nimps++;
 
         /* Endian Conversion */
         temp                       = EC32(image.u.OriginalFirstThunk);
@@ -2578,6 +2574,18 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
         image.Name                 = temp;
         temp                       = EC32(image.FirstThunk);
         image.FirstThunk           = temp;
+
+        if (image.Name == 0) {
+            if (image.u.OriginalFirstThunk != 0 || image.TimeDateStamp != 0 || image.ForwarderChain != 0 || image.FirstThunk != 0) {
+                cli_mark_scan_incomplete(ctx, "PE import descriptor terminator is malformed");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            descriptor_terminated = true;
+            break;
+        }
+
+        nimps++;
 
         /* DLL name acquisition */
         offset = cli_rawaddr(image.Name, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
@@ -2619,6 +2627,15 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
             status = ret;
             goto done;
         }
+    }
+
+    if (!descriptor_terminated) {
+        cli_mark_scan_incomplete(ctx,
+                                 (nimps >= PE_MAXIMPORTS)
+                                     ? "PE import descriptor table exceeded its inspection limit"
+                                     : "PE import descriptor table ended before its terminator");
+        status = CL_EPARSE;
+        goto done;
     }
 
     for (type = CLI_HASH_MD5; type < CLI_HASH_AVAIL_TYPES; type++) {

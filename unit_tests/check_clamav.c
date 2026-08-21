@@ -9384,7 +9384,8 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
 
 /* The checked-in PE fixture's first import thunk is at this raw file offset.
  * Allow every other memory window so the scan reaches the thunk-table read. */
-#define PE_TEST_IMPORT_THUNK_OFFSET 0x126e3cU
+#define PE_TEST_IMPORT_DESCRIPTOR_OFFSET 0x126e00U
+#define PE_TEST_IMPORT_THUNK_OFFSET      0x126e3cU
 
 static const void *pe_import_thunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
@@ -11273,6 +11274,24 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
                                scan_engine, &options, NULL, NULL, NULL, NULL,
                                "CL_TYPE_MSEXE", NULL);
     ck_assert_msg(ret != CL_SUCCESS, "PE import thunk read failure returned clean");
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+
+    /* The first descriptor's Name field is at +12. Keep its thunk RVA
+     * nonzero while clearing Name to create a malformed terminator. */
+    memset(data + PE_TEST_IMPORT_DESCRIPTOR_OFFSET + 12, 0, sizeof(uint32_t));
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, file_path, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_MSEXE", NULL);
+    ck_assert_msg(ret != CL_SUCCESS, "malformed PE import descriptor returned clean");
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert_ptr_null(last_alert);
     ck_assert(map->dont_cache_flag);

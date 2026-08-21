@@ -1859,3 +1859,13 @@ non-ordinal import names as incomplete instead of silently omitting them. A
 fault-injected checked-in PE fixture regression and source guards are
 registered. Compiled Linux/Sonic1 execution, sanitizer coverage, and broader
 PE/import corpus qualification remain open.
+
+## PE import-descriptor completion — 2026-08-20
+
+PE import-descriptor inspection now distinguishes failed reads from short
+reads, rejects import-table ranges outside the input map, requires a valid
+zero descriptor terminator, rejects malformed terminators, and enforces the
+`PE_MAXIMPORTS` bound. The checked-in PE regression now also exercises a
+malformed terminator, with source guards registered. Compiled Linux/Sonic1
+execution, sanitizer coverage, and broader PE/import corpus qualification
+remain open.
