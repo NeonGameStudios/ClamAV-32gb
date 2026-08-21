@@ -321,6 +321,8 @@
 - Legacy MSXML base64 embedded-data failures now fail closed as incomplete and
   non-cacheable instead of skipping the element; add compiled XML/OOXML corpus
   and sanitizer qualification.
+- Confirmed XAR `<data>`/`<ea>` entries with invalid metadata no longer end the
+  TOC walk as clean; add compiled malformed-XAR and production corpus coverage.
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.

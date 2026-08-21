@@ -365,7 +365,7 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size
 
     if (gotoffset && gotlength && gotsize) {
         rc = CL_SUCCESS;
-    } else if (0 == gotoffset + gotlength + gotsize)
+    } else if (!indata && !inea && 0 == gotoffset + gotlength + gotsize)
         rc = CL_BREAK;
     else
         rc = CL_EFORMAT;

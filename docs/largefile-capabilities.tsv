@@ -147,7 +147,7 @@ parser	CL_TYPE_TIFF	pending	libclamav/tiff.c	initial and IFD fmap callback failu
 parser	CL_TYPE_TNEF	pending	libclamav/scanners.c	initial and attribute-header fmap failures remain incomplete; in-range callback failures preserve CL_EREAD while short headers remain CL_EPARSE; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_UDF	pending	libclamav/udf.c	UDF descriptor fmap callback failures now return CL_EREAD while short or out-of-map descriptors remain CL_EPARSE; generic volume identifiers use equality semantics and unsupported identifiers are fail-visible; parser-family qualification, width review, and complete corpus evidence remain required
 parser	CL_TYPE_UUENCODED	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_XAR	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_XAR	pending	libclamav/scanners.c	confirmed XAR data/EA entries with invalid or incomplete metadata now remain fail-visible instead of being treated as an ordinary TOC end; parser-family qualification and explicit completion evidence remain required
 parser	CL_TYPE_XDP	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_XML_HWP	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_XML_WORD	pending	libclamav/scanners.c	legacy MSXML base64 failures now fail closed; dispatch branch still requires parser-family qualification and explicit completion evidence

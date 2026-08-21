@@ -3003,3 +3003,14 @@ incomplete/non-cacheable, and returns `CL_EPARSE` for malformed or unavailable
 decoded data; a focused malformed-base64 regression and source guard cover the
 boundary. Compiled Linux/Sonic1, XML/OOXML corpus, sanitizer, and broader
 parser qualification remain open.
+
+## XAR TOC metadata status — 2026-08-21
+
+The XAR TOC walker previously returned `CL_BREAK` when a confirmed `<data>` or
+`<ea>` entry contained no valid `offset`, `length`, or `size` values. The outer
+scanner converts that status to success, so a malformed member could terminate
+the TOC walk and appear clean. The walker now reserves `CL_BREAK` for a genuine
+end-of-TOC condition and returns a fail-visible format error for malformed
+entries; a focused invalid-metadata regression and source guard cover it.
+Compiled Linux/Sonic1, sanitizer, and production XAR corpus qualification
+remain open.

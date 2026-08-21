@@ -9556,6 +9556,50 @@ START_TEST(test_xar_truncated_header_is_fail_visible)
 }
 END_TEST
 
+static uint8_t *xar_test_make_archive_from_toc(const uint8_t *toc, size_t toc_length, size_t *data_length);
+
+START_TEST(test_xar_invalid_file_metadata_is_fail_visible)
+{
+    static const uint8_t toc[] = "<?xml version=\"1.0\"?><xar><toc><file><data><offset>bad</offset><length>bad</length><size>bad</size></data></file></toc>";
+    uint8_t *data;
+    size_t data_length;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, data_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
+    ck_assert_msg(ret != CL_SUCCESS,
+                  "XAR invalid file metadata was reported clean");
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 static void xar_test_write_be64(uint8_t *dst, uint64_t value)
 {
     unsigned int i;
@@ -16148,6 +16192,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_xml_reader_error_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_subdocument_temporary_quota_is_fail_visible);
