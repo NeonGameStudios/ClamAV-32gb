@@ -133,6 +133,10 @@
   callback failures (`CL_EREAD`) from impossible/truncated coordinates
   (`CL_EPARSE`) across all four legacy variants; add compiled callback-fault,
   sanitizer, and production CPIO corpus qualification.
+- GZip, BZip2, and XZ streaming input now distinguish in-range fmap callback
+  failures (`CL_EREAD`) from genuine premature EOF/decode failures; add
+  compiled callback-fault, sanitizer, and production compressed-stream corpus
+  qualification.
 - ELF64 entrypoint and section coordinates now retain a native-width matcher
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the

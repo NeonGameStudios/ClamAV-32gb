@@ -4820,6 +4820,16 @@ static const void *zip_targeted_read_failure(fmap_t *map, size_t at, size_t len,
     return (const uint8_t *)map->data + at;
 }
 
+static const void *compressed_input_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_zip_local_filename_read_failure_is_fail_visible)
 {
     uint8_t archive[31] = {0};
@@ -4942,6 +4952,76 @@ START_TEST(test_gzip_bzip_truncated_streams_are_fail_visible)
                       cl_strerror(ret), ret);
         ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
         ck_assert(last_alert == NULL);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+        cl_engine_free(scan_engine);
+    }
+
+    free(gzip);
+    free(bzip);
+}
+END_TEST
+
+START_TEST(test_compressed_input_read_failure_is_fail_visible)
+{
+    static const uint8_t xz[] = {
+        0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0x00, 0x04,
+        0xe6, 0xd6, 0xb4, 0x46, 0x02, 0x00, 0x21, 0x01,
+        0x16, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5,
+        0xa3, 0x01, 0x00, 0x0c, 0x78, 0x7a, 0x2d, 0x6c,
+        0x69, 0x6d, 0x69, 0x74, 0x2d, 0x74, 0x65, 0x73,
+        0x74, 0x00, 0x00, 0x00, 0x00, 0x6f, 0xc7, 0xf2, 0xf6,
+        0xa5, 0x44, 0x03, 0x64, 0x00, 0x01, 0x25, 0x0d,
+        0x71, 0x19, 0xc4, 0xb6, 0x1f, 0xb6, 0xf3, 0x7d,
+        0x01, 0x00, 0x00, 0x00, 0x04, 0x59, 0x5a};
+    static const char *const types[] = {"CL_TYPE_GZ", "CL_TYPE_BZ", "CL_TYPE_XZ"};
+    uint8_t *gzip;
+    uint8_t *bzip;
+    const uint8_t *archives[3];
+    size_t lengths[3];
+    static const uint8_t input[] = "compressed fmap callback failure";
+    size_t i;
+
+    gzip         = gzip_stream(input, sizeof(input) - 1U, &lengths[0]);
+    bzip         = zip_stream_bzip2(input, sizeof(input) - 1U, &lengths[1]);
+    archives[0]  = gzip;
+    archives[1]  = bzip;
+    archives[2]  = xz;
+    lengths[2]   = sizeof(xz);
+    ck_assert_ptr_nonnull(gzip);
+    ck_assert_ptr_nonnull(bzip);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    for (i = 0; i < 3; i++) {
+        struct cl_scan_options options;
+        struct cl_engine *scan_engine;
+        cl_verdict_t verdict;
+        const char *last_alert;
+        uint64_t scanned;
+        fmap_t *map;
+        cl_error_t ret;
+
+        memset(&options, 0, sizeof(options));
+        options.parse = CL_SCAN_PARSE_ARCHIVE;
+        scan_engine = cl_engine_new();
+        ck_assert_ptr_nonnull(scan_engine);
+        ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+        map = cl_fmap_open_memory(archives[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        map->need   = compressed_input_read_failure;
+        verdict     = CL_VERDICT_STRONG_INDICATOR;
+        last_alert  = "stale";
+        scanned     = UINT64_MAX;
+
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            types[i], NULL);
+        ck_assert_msg(ret == CL_EREAD,
+                      "%s callback failure returned %s (%d)", types[i],
+                      cl_strerror(ret), ret);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert_ptr_null(last_alert);
         ck_assert(map->dont_cache_flag);
 
         cl_fmap_close(map);
@@ -15973,6 +16053,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_local_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_header_index_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
+    tcase_add_test(tc_cl, test_compressed_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_xz_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_xz_truncated_stream_is_fail_visible);
     tcase_add_test(tc_cl, test_compressed_output_temporary_limit_is_fail_visible);

@@ -4017,6 +4017,15 @@ failures remain `CL_EREAD`, and focused regressions cover both boundaries.
 Compiled CPIO corpus, sanitizer, callback-fault, and supported-build Sonic1
 qualification remain release gates.
 
+## Compressed-stream input read status — 2026-08-21
+
+Fmap-backed GZip, BZip2, and XZ input now preserves `CL_EREAD` when an
+in-range callback cannot provide the next compressed window. Genuine EOF and
+decoder failures retain their existing non-clean statuses, and a focused
+callback-fault regression covers all three formats. Compiled compressed
+corpus, sanitizer, callback-fault, and supported-build Sonic1 qualification
+remain release gates.
+
 ## CAB SFX fixed-header admission — 2026-08-20
 
 CAB SFX admission now requires the complete fixed 36-byte header before

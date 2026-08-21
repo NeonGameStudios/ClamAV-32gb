@@ -1528,10 +1528,13 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
         stream_complete    = false;
         unsigned int bytes = MIN(map->len - at, map->pgsz);
         if (!(z.next_in = (void *)fmap_need_off_once(map, at, bytes))) {
+            cl_error_t input_status = (at < map->len) ? CL_EREAD : CL_EUNPACK;
             cli_dbgmsg("GZip: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
-            cli_mark_scan_incomplete(ctx, "GZip compressed input could not be read completely");
+            cli_mark_scan_incomplete(ctx, (input_status == CL_EREAD)
+                                          ? "GZip compressed input could not be read completely"
+                                          : "GZip stream ended before compressed input was complete");
             inflateEnd(&z);
-            ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, CL_EREAD,
+            ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, input_status,
                                               temporary_reserved,
                                               "GZip temporary output could not be closed",
                                               "GZip temporary output could not be removed");
@@ -1670,9 +1673,15 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
             strm.avail_in = avail;
             off += avail;
             if (!strm.next_in || !strm.avail_in) {
-                cli_dbgmsg("Bzip: premature end of compressed stream; refusing partial output\n");
-                cli_mark_scan_incomplete(ctx, "Bzip stream ended before decompression completed");
-                decode_status = CL_EUNPACK;
+                if (off < ctx->fmap->len) {
+                    cli_dbgmsg("Bzip: compressed input could not be read; refusing partial output\n");
+                    cli_mark_scan_incomplete(ctx, "Bzip compressed input could not be read completely");
+                    decode_status = CL_EREAD;
+                } else {
+                    cli_dbgmsg("Bzip: premature end of compressed stream; refusing partial output\n");
+                    cli_mark_scan_incomplete(ctx, "Bzip stream ended before decompression completed");
+                    decode_status = CL_EUNPACK;
+                }
                 break;
             }
         }
@@ -1795,9 +1804,15 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
             strm.avail_in = avail;
             off += avail;
             if (!strm.avail_in) {
-                cli_errmsg("cli_scanxz: premature end of compressed stream\n");
-                cli_mark_scan_incomplete(ctx, "XZ stream ended before the decoder reached XZ_STREAM_END");
-                ret = CL_EFORMAT;
+                if (off < ctx->fmap->len) {
+                    cli_errmsg("cli_scanxz: compressed input could not be read\n");
+                    cli_mark_scan_incomplete(ctx, "XZ compressed input could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_errmsg("cli_scanxz: premature end of compressed stream\n");
+                    cli_mark_scan_incomplete(ctx, "XZ stream ended before the decoder reached XZ_STREAM_END");
+                    ret = CL_EFORMAT;
+                }
                 goto xz_exit;
             }
         }

@@ -2883,3 +2883,13 @@ cross-boundary requests as short input (`CL_EPARSE`) while preserving
 in-range callback failures as `CL_EREAD` for fixed headers and member names.
 Focused regressions cover both cases; compiled Linux/Sonic1, sanitizer,
 callback-fault, and production CPIO corpus qualification remain open.
+
+## Compressed-stream input read status — 2026-08-21
+
+The fmap-backed GZip, BZip2, and XZ readers previously treated a failed
+in-range input window like an ordinary end-of-stream condition. They now
+classify a failed window as `CL_EREAD` and retain the incomplete/non-cacheable
+state, while exact EOF still follows each decoder's existing premature-end
+status. A focused callback-fault regression covers all three streaming paths;
+compiled Linux/Sonic1, sanitizer, callback-fault, and production compressed
+corpus qualification remain open.
