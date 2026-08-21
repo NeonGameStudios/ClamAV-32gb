@@ -42,7 +42,8 @@ use crate::{
         cl_error_t, cl_error_t_CL_EFORMAT, cl_error_t_CL_EMAXFILES, cl_error_t_CL_EMAXSIZE,
         cl_error_t_CL_EMEM, cl_error_t_CL_EREAD, cl_error_t_CL_EPARSE, cl_error_t_CL_ERROR,
         cl_error_t_CL_ERESOURCE,
-        cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNLINK, cl_error_t_CL_EWRITE,
+        cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNPACK, cl_error_t_CL_EUNLINK,
+        cl_error_t_CL_EWRITE,
         cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
     },
     util::{
@@ -1122,6 +1123,15 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
 
     if alz_metadata_ret != cl_error_t_CL_SUCCESS {
         return alz_metadata_ret;
+    }
+
+    if alz.has_unsupported_feature() {
+        return parser_failure(
+            ctx,
+            "ALZ",
+            cl_error_t_CL_EUNPACK,
+            "archive contains an encrypted or unsupported member feature",
+        );
     }
 
     if let Some(needed) = alz.file_limit_exceeded_size {

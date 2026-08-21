@@ -77,7 +77,7 @@ unsupported	vba-over-4g	unsupported	libclamav/scanners.c	legacy VBA matcher/data
 parser	CL_TYPE_7Z	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_7ZSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_AI_MODEL	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
-parser	CL_TYPE_ALZ	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
+parser	CL_TYPE_ALZ	pending	libclamav_rust/src/scanners.rs	bounded Rust reader/spool path now reports encrypted, data-descriptor, and unsupported-compression members as explicit incomplete results; parser-family and production qualification remain open
 parser	CL_TYPE_APM	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_ARJ	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence
 parser	CL_TYPE_ARJSFX	pending	libclamav/scanners.c	dispatch branch requires parser-family qualification and explicit completion evidence

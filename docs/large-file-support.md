@@ -3868,6 +3868,16 @@ the public scanner path, with source guards covering both boundaries. Full
 partition corpus, sanitizer, and supported-build Sonic1 qualification remain
 release gates.
 
+## ALZ unsupported-member admission — 2026-08-20
+
+The Rust ALZ parser now records encrypted, data-descriptor, and unsupported
+compression members while continuing its metadata walk. The scanner-facing
+adapter converts that state into an explicit incomplete `CL_EUNPACK` result,
+so an archive with an uninspected member cannot return clean. A focused Rust
+regression and source guards cover the admission boundary; dependency-complete
+Rust, corpus, sanitizer, and supported-build Sonic1 qualification remain
+release gates.
+
 ## UDF file-list completeness — 2026-08-20
 
 UDF no longer scans the smaller of its file-identifier and file-entry lists.

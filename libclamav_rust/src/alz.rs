@@ -648,6 +648,7 @@ pub struct Alz {
     extracted_size: u64,
     scan_counted_files: usize,
     parse_error: bool,
+    unsupported_feature: bool,
 }
 
 impl<'aa> Alz {
@@ -711,6 +712,7 @@ impl<'aa> Alz {
                 }
 
                 debug!("{err}");
+                self.unsupported_feature = true;
                 return Ok(());
             }
 
@@ -853,11 +855,16 @@ impl<'aa> Alz {
             extracted_size: 0,
             scan_counted_files: 0,
             parse_error: false,
+            unsupported_feature: false,
         }
     }
 
     pub const fn has_parse_error(&self) -> bool {
         self.parse_error
+    }
+
+    pub const fn has_unsupported_feature(&self) -> bool {
+        self.unsupported_feature
     }
 
     /// # Errors
@@ -1613,6 +1620,31 @@ mod tests {
         assert_eq!(alz.embedded_files.len(), 1);
         assert_eq!(alz.embedded_files[0].name.as_deref(), Some("first.txt"));
         assert_eq!(alz.embedded_files[0].data, b"first!");
+    }
+
+    #[test]
+    fn unsupported_method_is_recorded_for_scanner_admission() {
+        const ALZ_COMP_UNSUPPORTED: u8 = 99;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_file(
+            &mut bytes,
+            "unsupported.bin",
+            ALZ_COMP_UNSUPPORTED,
+            6,
+            b"second",
+        );
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(extraction_limits())
+        })
+        .unwrap();
+
+        assert!(alz.has_unsupported_feature());
+        assert!(alz.embedded_files.is_empty());
     }
 
     #[test]
