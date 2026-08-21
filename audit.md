@@ -169,6 +169,11 @@ normalizer. A zero-valued `StreamMaxLength` therefore selects the bounded
 32-GiB ceiling at the daemon staging boundary instead of becoming a zero-byte
 quota; a focused unit regression covers both zero and explicit limits.
 
+The clamd INSTREAM receive loop now computes the buffered portion of an
+attacker-controlled chunk with subtraction-form bounds. This prevents a
+32-bit `size_t` addition wrap from turning a malformed maximum-size chunk into
+an out-of-bounds read; the helper has a focused maximum-chunk regression.
+
 clamd directory scans now add an incomplete child report for recursion-limit,
 unsupported-special-file, stat, allocation, and realpath skips. Intentional
 symlink exclusions remain policy skips, but required paths that the walker

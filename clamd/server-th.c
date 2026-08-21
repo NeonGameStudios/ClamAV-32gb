@@ -962,10 +962,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
                 return -1;
             }
         }
-        if (pos + buf->chunksize < buf->off)
-            cmdlen = buf->chunksize;
-        else
-            cmdlen = buf->off - pos;
+        cmdlen = clamd_stream_chunk_length(pos, buf->off, buf->chunksize);
         buf->chunksize -= cmdlen;
         if (cli_writen(buf->dumpfd, buf->buffer + pos, cmdlen) == (size_t)-1) {
             if (buf->structured_report)

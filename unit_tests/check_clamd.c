@@ -480,6 +480,15 @@ START_TEST(test_stream_limit_zero_selects_large_file_ceiling)
 }
 END_TEST
 
+START_TEST(test_stream_chunk_length_is_wrap_safe)
+{
+    ck_assert_uint_eq(clamd_stream_chunk_length(0, 1024, 4096), 1024);
+    ck_assert_uint_eq(clamd_stream_chunk_length(4, 1024, 16), 16);
+    ck_assert_uint_eq(clamd_stream_chunk_length(4, 1024, UINT32_MAX), 1020);
+    ck_assert_uint_eq(clamd_stream_chunk_length(1024, 1024, UINT32_MAX), 0);
+}
+END_TEST
+
 static int sockd;
 #ifndef _WIN32
 START_TEST(test_stream_client_rejects_over_limit)
@@ -1388,6 +1397,7 @@ static Suite *test_clamd_suite(void)
 #endif
     tcase_add_test(tc_parser, test_maxscantime_cli_boundaries);
     tcase_add_test(tc_parser, test_stream_limit_zero_selects_large_file_ceiling);
+    tcase_add_test(tc_parser, test_stream_chunk_length_is_wrap_safe);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
     tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
     tcase_add_test(tc_parser, test_largefile_admission_accepts_historical_defaults);

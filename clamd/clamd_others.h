@@ -78,6 +78,20 @@ struct fd_data {
 #endif
 };
 
+/* Return only bytes already buffered for the current INSTREAM chunk.  Do not
+ * form pos + chunksize: chunksize is attacker-controlled and can wrap a
+ * native size_t on 32-bit builds. */
+static inline size_t clamd_stream_chunk_length(size_t pos, size_t off, uint32_t chunksize)
+{
+    size_t available;
+
+    if (pos >= off)
+        return 0;
+
+    available = off - pos;
+    return ((uint64_t)chunksize < (uint64_t)available) ? (size_t)chunksize : available;
+}
+
 #ifdef HAVE_POLL
 #define FDS_INIT(mutex)           \
     {                             \

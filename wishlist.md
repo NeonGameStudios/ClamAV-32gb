@@ -78,6 +78,9 @@
 - Keep the clamd INSTREAM quota boundary and its clients on one policy helper;
   zero `StreamMaxLength` now selects the bounded 32-GiB ceiling at both ends,
   with the daemon-side unit regression covered locally.
+- Keep clamd INSTREAM buffered-chunk arithmetic subtraction-based and
+  wrap-safe for malformed maximum-size protocol chunks; the helper and
+  boundary regression are now source-guarded.
 - HFS+ catalog node-size validation and catalog block coordinates now retain
   64-bit arithmetic through fmap admission; large-volume corpus qualification
   remains open.
