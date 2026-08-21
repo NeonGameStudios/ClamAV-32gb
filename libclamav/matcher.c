@@ -1243,6 +1243,7 @@ static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
     memset(&context, 0, sizeof(YR_SCAN_CONTEXT));
     context.fmap      = ctx->fmap;
     context.file_size = ctx->fmap->len;
+    context.scan_ctx  = ctx;
     if (target_info != NULL) {
         if (target_info->status == 1)
             context.entry_point = cli_exe_entrypoint(&target_info->exeinfo);

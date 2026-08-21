@@ -2695,3 +2695,14 @@ exact EOF from an in-range failed read, marks the scan incomplete, and returns
 non-cacheable and cannot leave a clean verdict. Supported-Linux compilation,
 fault-injection execution, sanitizer, and complete TAR corpus qualification
 remain open.
+
+## YARA in-rule deadline enforcement — 2026-08-21
+
+The ClamAV YARA interpreter previously received a zero internal timeout, so a
+single logical rule containing a long-running loop could run without an active
+`MaxScanTime` check until the outer logical-signature loop regained control.
+YARA execution now carries the scan context and checks the same wall-clock
+deadline every bounded instruction interval, returning `CL_ETIMEOUT` through
+the normal terminal-result path. A focused loop regression verifies the timeout
+and sticky abort state; supported-Linux compilation, sanitizer, and production
+YARA corpus qualification remain open.

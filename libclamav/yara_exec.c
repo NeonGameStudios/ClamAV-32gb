@@ -188,6 +188,9 @@ int yr_execute_code(
   int count;
   int result = -1;
   int cycle = 0;
+#if !REAL_YARA
+  int clam_cycle = 0;
+#endif
 #if REAL_YARA
   int tidx = yr_get_tidx();
 #else
@@ -962,6 +965,18 @@ int yr_execute_code(
         cycle = 0;
       }
     }
+
+#if !REAL_YARA
+    /* A single ClamAV YARA rule can contain a long-running loop. The outer
+     * logical-signature loop cannot observe its deadline until this function
+     * returns, so apply the scan context's wall-clock deadline here too. */
+    if (context != NULL && context->scan_ctx != NULL && ++clam_cycle == 10)
+    {
+      if (cli_checktimelimit(context->scan_ctx) != CL_SUCCESS)
+        return CL_ETIMEOUT;
+      clam_cycle = 0;
+    }
+#endif
 
     ip++;
   }

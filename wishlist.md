@@ -234,6 +234,9 @@
 - TAR initial-header fmap read failures now remain fail-visible instead of
   being mistaken for exact EOF; add compiled TAR fault-injection and corpus
   coverage during parser qualification.
+- ClamAV YARA rules now observe the active scan deadline during a single
+  long-running logical rule; add compiled timeout, sanitizer, and production
+  YARA corpus coverage.
 
 ## Large-file validation and expansion progression
 

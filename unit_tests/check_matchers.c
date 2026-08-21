@@ -1004,6 +1004,41 @@ START_TEST(test_yara_evaluation_accounts_matcher_work)
 }
 END_TEST
 
+START_TEST(test_yara_execution_honors_scan_time_limit)
+{
+#ifdef HAVE_YARA
+    uint8_t code[27] = {OP_PUSH, 0, 0, 0, 0, 0, 0, 0, 0,
+                        OP_PUSH, 0, 0, 0, 0, 0, 0, 0, 0,
+                        OP_JLE, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint64_t target = PTR_TO_UINT64(code);
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    cl_error_t ret;
+
+    memcpy(code + 19, &target, sizeof(target));
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id           = 0;
+    lsig.type         = CLI_YARA_NORMAL;
+    lsig.u.code_start = code;
+    lsig.virname      = (char *)"YaraTimeoutTest";
+    lsigtable[0]      = &lsig;
+    root.ac_lsigs     = 1;
+    root.ac_lsigtable = lsigtable;
+    ctx.time_limit.tv_sec  = 1;
+    ctx.time_limit.tv_usec = 0;
+
+    ret = cli_exp_eval(&ctx, &root, NULL, NULL);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.abort_scan);
+    ck_assert(ctx.scan_timed_out);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_byte_compare_overlap_dedup)
 {
     struct cli_matcher root;
@@ -1481,6 +1516,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_evaluation_accounts_matcher_work);
+    tcase_add_test(tc_matchers, test_yara_execution_honors_scan_time_limit);
     tcase_add_test(tc_matchers, test_byte_compare_overlap_dedup);
     tcase_add_test(tc_matchers, test_byte_compare_offset_above_uint32);
 #ifndef _WIN32
