@@ -143,6 +143,10 @@ static int dmg_write_checked(cli_ctx *ctx, int fd, const uint8_t *buffer, size_t
         cli_mark_scan_incomplete(ctx, reason);
         return CL_EPARSE;
     }
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "DMG reconstructed output reached the configured time limit");
+        return CL_ETIMEOUT;
+    }
     if (length != 0 && cli_writen(fd, buffer, length) != length) {
         cli_mark_scan_incomplete(ctx, "DMG reconstructed output could not be written completely");
         return CL_EWRITE;
@@ -293,8 +297,13 @@ int cli_scandmg(cli_ctx *ctx)
     while (ret == CL_CLEAN && mish_list != NULL) {
         struct dmg_mish_with_stripes *next = mish_list->next;
 
-        ret = dmg_handle_mish(ctx, file++, dirname, hdr.dataForkOffset,
-                              hdr.dataForkLength, mish_list);
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            ret = CL_ETIMEOUT;
+            cli_mark_scan_incomplete(ctx, "DMG partition reconstruction reached the configured time limit");
+        } else {
+            ret = dmg_handle_mish(ctx, file++, dirname, hdr.dataForkOffset,
+                                  hdr.dataForkLength, mish_list);
+        }
         free(mish_list->mish);
         free(mish_list);
         mish_list = next;
@@ -1162,6 +1171,14 @@ static int dmg_extract_xml(cli_ctx *ctx, char *dir, struct dmg_koly_block *hdr)
     remaining = hdr->xmlLength;
     while (remaining != 0) {
         size_t wanted = (size_t)MIN(remaining, (uint64_t)sizeof(buffer));
+
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            close(ofd);
+            free(xmlfile);
+            cli_mark_scan_incomplete(ctx, "DMG XML staging reached the configured time limit");
+            return CL_ETIMEOUT;
+        }
+
         read_result = offset > (uint64_t)SIZE_MAX
                           ? (size_t)-1
                           : fmap_readn(ctx->fmap, buffer, (size_t)offset, wanted);

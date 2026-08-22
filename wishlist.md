@@ -655,6 +655,9 @@
 - MIME body-spool writes and bounded raw/encoded body exports now check the
   shared deadline before each write/read chunk; add compiled timeout injection
   during mail reassembly/export and production mail corpus coverage.
+- DMG XML staging, partition reconstruction, and the shared bounded stripe
+  writer now check the scan deadline, preserving `CL_ETIMEOUT`; add compiled
+  DMG timeout-injection and production corpus qualification.
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.

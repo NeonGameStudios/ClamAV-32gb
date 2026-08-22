@@ -5455,3 +5455,12 @@ shared deadline helper. Body-spool writes and each bounded raw/encoded export
 chunk now check `MaxScanTime`, preserving `CL_ETIMEOUT` and fail-closed status
 through mail materialization. Compiled timeout injection during reassembly,
 mail corpus, sanitizer, and Sonic1 qualification remain open.
+
+## DMG staging and reconstruction deadline — 2026-08-22
+
+DMG stripe decoders already checked the shared deadline around their input and
+decoder loops, but the optional XML temporary copy, partition-list handoff, and
+shared bounded output writer had separate I/O intervals that could bypass that
+check. Those intervals now preserve `CL_ETIMEOUT` before staging or reconstructed
+output is treated as complete. Compiled DMG timeout injection, corpus,
+sanitizer, and Sonic1 qualification remain open.
