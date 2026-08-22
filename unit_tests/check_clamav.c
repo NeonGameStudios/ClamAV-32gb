@@ -8685,6 +8685,26 @@ START_TEST(test_arc4_apply_uses_native_length)
 }
 END_TEST
 
+START_TEST(test_pdf_packed_object_reference_bounds_are_fail_visible)
+{
+    char valid[]       = "16777215 255 R";
+    char invalid_obj[] = "16777216 0 R";
+    char invalid_gen[] = "1 256 R";
+    char *end;
+    uint32_t id = 0;
+
+    end = valid + sizeof(valid) - 1;
+    ck_assert_int_eq(is_object_reference(valid, &end, &id), 1);
+    ck_assert_uint_eq(id, UINT32_MAX);
+
+    end = invalid_obj + sizeof(invalid_obj) - 1;
+    ck_assert_int_eq(is_object_reference(invalid_obj, &end, &id), -1);
+
+    end = invalid_gen + sizeof(invalid_gen) - 1;
+    ck_assert_int_eq(is_object_reference(invalid_gen, &end, &id), -1);
+}
+END_TEST
+
 #if SIZE_MAX > UINT32_MAX
 START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
 {
@@ -19245,6 +19265,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_arc4_apply_uses_native_length);
+    tcase_add_test(tc_cl, test_pdf_packed_object_reference_bounds_are_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_pdf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_stream_limit_is_fail_visible);

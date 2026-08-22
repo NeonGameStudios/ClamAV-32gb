@@ -438,7 +438,15 @@ int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, 
 
     objstm->current = objstm->first + objoff;
 
-    obj->id    = (objid << 8) | (0 & 0xff);
+    if (objid > PDF_PACKED_OBJECT_NUMBER_MAX) {
+        if (pdf->ctx)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+        cli_dbgmsg("pdf_findobj_in_objstm: object number exceeds packed ID width\n");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    obj->id    = (uint32_t)(objid << 8);
     obj->start = objstm->current;
     obj->flags = 0;
 
@@ -726,7 +734,15 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf)
     }
     objid = (unsigned long)temp_long;
 
-    obj->id    = (objid << 8) | (genid & 0xff);
+    if (objid > PDF_PACKED_OBJECT_NUMBER_MAX || genid > PDF_PACKED_GENERATION_NUMBER_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+        cli_dbgmsg("pdf_findobj: object number or generation exceeds packed ID width\n");
+        pdf->offset = obj_end - pdf->map;
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    obj->id    = (uint32_t)(objid << 8) | (uint32_t)genid;
     obj->start = obj_end - pdf->map; /* obj start begins just after the "obj" string */
     obj->flags = 0;
 
@@ -1078,7 +1094,14 @@ static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
 
             cli_dbgmsg("find_length: length is in indirect object %lu %lu\n", objid, genid);
 
-            obj = find_obj(pdf, obj, (length << 8) | (genid & 0xff));
+            if (length > PDF_PACKED_OBJECT_NUMBER_MAX || genid > PDF_PACKED_GENERATION_NUMBER_MAX) {
+                if (pdf->ctx)
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+                cli_dbgmsg("find_length: object number or generation exceeds packed ID width\n");
+                return 0;
+            }
+
+            obj = find_obj(pdf, obj, (uint32_t)(length << 8) | (uint32_t)genid);
             if (!obj) {
                 cli_dbgmsg("find_length: indirect object not found\n");
                 return 0;
@@ -2216,6 +2239,12 @@ static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
     }
     objid = (unsigned long)temp_long;
 
+    if (objid > PDF_PACKED_OBJECT_NUMBER_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+        cli_dbgmsg("pdf_parse_encrypt: object number exceeds packed ID width\n");
+        return;
+    }
+
     objid = objid << 8;
     q2    = pdf_nextobject(q, len);
     if (!q2 || !isdigit(*q2))
@@ -2232,14 +2261,20 @@ static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
     }
     genid = (unsigned long)temp_long;
 
-    objid |= genid & 0xff;
+    if (genid > PDF_PACKED_GENERATION_NUMBER_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+        cli_dbgmsg("pdf_parse_encrypt: generation number exceeds packed ID width\n");
+        return;
+    }
+
+    objid |= genid;
     q2 = pdf_nextobject(q, len);
     if (!q2 || *q2 != 'R')
         return;
 
     cli_dbgmsg("pdf_parse_encrypt: Encrypt dictionary in obj %lu %lu\n", objid >> 8, objid & 0xff);
 
-    pdf->enc_objid = objid;
+    pdf->enc_objid = (uint32_t)objid;
 }
 
 static void pdf_parse_trailer(struct pdf_struct *pdf, const char *s, long length)
@@ -2574,6 +2609,12 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
                 }
                 objid = (unsigned long)temp_long;
 
+                if (objid > PDF_PACKED_OBJECT_NUMBER_MAX) {
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+                    cli_dbgmsg("pdf_parseobj: object number exceeds packed ID width\n");
+                    return;
+                }
+
                 objid = objid << 8;
 
                 while ((dict_remaining > 0) && isdigit(*q2)) {
@@ -2594,7 +2635,13 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
                     }
                     genid = (unsigned long)temp_long;
 
-                    objid |= genid & 0xff;
+                    if (genid > PDF_PACKED_GENERATION_NUMBER_MAX) {
+                        cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+                        cli_dbgmsg("pdf_parseobj: generation number exceeds packed ID width\n");
+                        return;
+                    }
+
+                    objid |= genid;
 
                     q2 = pdf_nextobject(q2, dict_remaining);
                     if (q2 && *q2 == 'R') {

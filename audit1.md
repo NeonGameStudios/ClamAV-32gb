@@ -3671,3 +3671,15 @@ latent truncation if that boundary or another caller changed. `arc4_apply()`
 now accepts `size_t`, the cast and TODO are gone, and the focused ARC4 vector
 regression plus source guards preserve native-width propagation. This does
 not expand the documented PDF filter boundary.
+
+## PDF packed object-reference bounds — 2026-08-22
+
+The PDF parser represents an object reference as a 32-bit composite: the
+object number occupies 24 bits and the generation occupies 8 bits. The parser
+previously shifted or masked larger values into that composite, allowing a
+malformed large reference to alias a different object. Direct object discovery,
+object-stream discovery, `/Length` resolution, encryption dictionaries,
+special action references, and PDFNG string/dictionary/array references now
+reject out-of-range values and mark the scan incomplete. The focused helper
+regression covers the maximum representable reference and both overflow cases;
+full malformed-reference corpus qualification remains open.

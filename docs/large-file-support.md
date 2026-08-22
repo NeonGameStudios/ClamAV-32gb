@@ -2811,6 +2811,14 @@ decryption, so raising the explicit contiguous-buffer ceiling later cannot
 silently decrypt only a truncated prefix. The current PDF decoder still
 retains the documented 1 GiB allocation boundary.
 
+The legacy PDF parser stores an object reference as a packed 32-bit value
+(24-bit object number plus 8-bit generation). All direct, indirect, object
+stream, encryption, string, dictionary, and array reference paths now reject
+values outside that representable range before shifting or masking them. An
+out-of-range reference marks the scan incomplete instead of aliasing an
+unrelated object through integer wraparound; the focused regression covers the
+upper valid boundary and both overflow cases.
+
 The capability manifest records `pdf-stream-over-1g` as deliberately
 unsupported. This is a legacy contiguous-buffer boundary, not an outer-file
 limit: a PDF may still contain other inspectable objects, but a legacy filter

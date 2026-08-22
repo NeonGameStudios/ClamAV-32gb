@@ -31,6 +31,10 @@
 #define PDF_INPUT_WINDOW_SIZE (64 * 1024)
 
 #define PDF_OBJECT_RECURSION_LIMIT 25
+/* Internal object IDs pack the format's object number and generation into
+ * one 32-bit lookup key; reject values that cannot be represented losslessly. */
+#define PDF_PACKED_OBJECT_NUMBER_MAX 0x00ffffffU
+#define PDF_PACKED_GENERATION_NUMBER_MAX 0x000000ffU
 
 struct objstm_struct {
     size_t first;         // offset of first obj
@@ -206,6 +210,8 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
 struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, size_t objsize, char *begin, char **endchar);
 struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, size_t objsize, char *begin, char **endchar);
 
+/* Returns 1 for a valid reference, 0 for a non-reference, and -1 when the
+ * packed object-number or generation width cannot represent the reference. */
 int is_object_reference(char *begin, char **endchar, uint32_t *id);
 void pdf_free_dict(struct pdf_dict *dict);
 void pdf_free_array(struct pdf_array *array);

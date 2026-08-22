@@ -47,6 +47,9 @@
 - The PDF ARC4 helper now carries native `size_t` lengths, removing the final
   encrypted-stream truncation cast; the deliberate 1 GiB PDF decoder boundary
   and parser-family qualification remain open.
+- PDF packed object references now reject object-number and generation-width
+  overflow instead of aliasing another object; full malformed-reference corpus
+  and parser-family qualification remain open.
 - XLM BIFF data and OfficeArt drawing groups now use the shared bounded
   allocator with checked cumulative growth; allocation-ceiling and arithmetic
   failures remain explicit incomplete results.

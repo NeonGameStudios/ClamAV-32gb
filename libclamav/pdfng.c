@@ -146,6 +146,7 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
 {
     char *end = *endchar;
     char *p1  = begin, *p2;
+    unsigned long object_number;
     unsigned long n;
     uint32_t t = 0;
 
@@ -180,7 +181,7 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
     if (n == ULONG_MAX && errno)
         return 0;
 
-    t = n << 8;
+    object_number = n;
 
     /* Skip more whitespace */
     p1 = p2;
@@ -205,8 +206,6 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
     if (n == ULONG_MAX && errno)
         return 0;
 
-    t |= (n & 0xff);
-
     /* Skip even more whitespace */
     p1 = p2;
     while (p1 < end && isspace(p1[0]))
@@ -216,6 +215,16 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
         return 0;
 
     if (p1[0] == 'R') {
+        if (object_number > PDF_PACKED_OBJECT_NUMBER_MAX) {
+            cli_dbgmsg("is_object_reference: object number exceeds packed ID width\n");
+            return -1;
+        }
+        if (n > PDF_PACKED_GENERATION_NUMBER_MAX) {
+            cli_dbgmsg("is_object_reference: generation number exceeds packed ID width\n");
+            return -1;
+        }
+
+        t = (uint32_t)(object_number << 8) | (uint32_t)n;
         *endchar = p1 + 1;
         if (id)
             *id = t;
@@ -443,6 +452,7 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
     size_t len, checklen;
     char *res = NULL;
     uint32_t objid;
+    int object_reference;
 
     if (PDF_OBJECT_RECURSION_LIMIT < pdf->parse_recursion_depth) {
         cli_dbgmsg("pdf_parse_string: Recursion limit reached.\n");
@@ -505,7 +515,13 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
      */
 
     p2 = (char *)(q + objsize);
-    if (is_object_reference(p1, &p2, &objid)) {
+    object_reference = is_object_reference(p1, &p2, &objid);
+    if (object_reference < 0) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+        return NULL;
+    }
+
+    if (object_reference > 0) {
         cl_error_t ret;
         struct pdf_obj *newobj;
         char *begin, *p3;
@@ -948,7 +964,8 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     p1++;
                 }
 
-                is_object_reference(begin, &p1, NULL);
+                if (is_object_reference(begin, &p1, NULL) < 0)
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
 
                 val = cli_max_calloc((p1 - begin) + 2, 1);
                 if (!(val))
@@ -1130,9 +1147,16 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 pdf->parse_recursion_depth--;
                 begin += 1;
                 break;
-            default:
+            default: {
                 p1 = end;
-                if (!is_object_reference(begin, &p1, NULL)) {
+                int object_reference = is_object_reference(begin, &p1, NULL);
+
+                if (object_reference < 0) {
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
+                    object_reference = 0;
+                }
+
+                if (object_reference == 0) {
                     p1 = begin + 1;
                     while (p1 < end && !isspace(p1[0]))
                         p1++;
@@ -1147,6 +1171,7 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
                 begin = p1;
                 break;
+            }
         }
 
         /* Parse error, just return what we could */
