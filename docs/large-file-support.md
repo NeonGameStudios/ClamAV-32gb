@@ -5134,3 +5134,10 @@ stop. The parser still records the standard heuristic and sticky incomplete
 state, but no longer returns clean after required members were omitted. Full
 ALZ limit-edge corpus, sanitizer, and supported-build qualification remain
 release gates.
+
+- The shared `clamd_stream_limit()` helper now clamps positive
+  `StreamMaxLength` values above the certified 32-GiB ceiling even when a
+  caller supplies an `optstruct` directly. Both daemon staging and client
+  preflight therefore retain the same hard ingress bound; a focused clamd unit
+  regression covers the bypass case, while compiled service and Sonic1
+  qualification remain open.

@@ -3625,3 +3625,14 @@ and then returned `CL_SUCCESS`. Those paths now return `CL_EMAXSIZE` or
 non-clean parser result even when outer sticky-state unwinding changes later.
 Full ALZ limit-edge corpus, sanitizer, and production qualification remain
 open.
+
+## Shared stream-ceiling enforcement — 2026-08-22
+
+`StreamMaxLength` is normally validated by the option parser, but daemon and
+client integrations can also pass an `optstruct` directly. The shared
+`clamd_stream_limit()` helper now clamps positive values above the certified
+32-GiB ceiling before either clamd staging or client-side stream preflight uses
+them. This prevents a stale or programmatic integration from widening the
+wire-ingress budget by bypassing configuration parsing. A focused clamd unit
+regression covers the over-limit option object; compiled service and Sonic1
+qualification remain open.

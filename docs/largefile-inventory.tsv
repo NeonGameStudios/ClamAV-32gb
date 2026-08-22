@@ -263,25 +263,26 @@ fixed-width-integer	clamscan/manager.c	1495	    uint32_t numDots      = 0;
 fixed-width-integer	clamscan/manager.c	2109	        uint32_t opt_value = opt->numarg;
 fixed-width-integer	common/cert_util.c	316	    const uint32_t STARTING_RAW_PEM_LENGTH = 350 * 1024;
 fixed-width-integer	common/cert_util.c	317	    uint32_t i;
-fixed-width-integer	common/clamdcom.c	1060	            uint32_t json_length = 0;
-fixed-width-integer	common/clamdcom.c	241	    uint64_t limit;
-fixed-width-integer	common/clamdcom.c	251	    limit = max_file_size->numarg > 0 ? (uint64_t)max_file_size->numarg : CLI_MAX_LARGE_FILESIZE;
-fixed-width-integer	common/clamdcom.c	268	    if ((uint64_t)sb.st_size > limit) {
-fixed-width-integer	common/clamdcom.c	402	    uint32_t buf[BUFSIZ / sizeof(uint32_t)];
-fixed-width-integer	common/clamdcom.c	405	    uint64_t todo;
-fixed-width-integer	common/clamdcom.c	430	            ((uint64_t)sb.st_size > (uint64_t)todo)) {
-fixed-width-integer	common/clamdcom.c	452	    while ((len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t))) > 0) {
-fixed-width-integer	common/clamdcom.c	453	        if (reject_over_limit && ((uint64_t)len > todo)) {
-fixed-width-integer	common/clamdcom.c	458	        if ((uint64_t)len > todo) len = (int)todo;
-fixed-width-integer	common/clamdcom.c	460	        if (sendln(sockd, (const char *)buf, len + sizeof(uint32_t))) {
+fixed-width-integer	common/clamdcom.c	1068	            uint32_t json_length = 0;
+fixed-width-integer	common/clamdcom.c	249	    uint64_t limit;
+fixed-width-integer	common/clamdcom.c	259	    limit = max_file_size->numarg > 0 ? (uint64_t)max_file_size->numarg : CLI_MAX_LARGE_FILESIZE;
+fixed-width-integer	common/clamdcom.c	276	    if ((uint64_t)sb.st_size > limit) {
+fixed-width-integer	common/clamdcom.c	410	    uint32_t buf[BUFSIZ / sizeof(uint32_t)];
+fixed-width-integer	common/clamdcom.c	413	    uint64_t todo;
+fixed-width-integer	common/clamdcom.c	438	            ((uint64_t)sb.st_size > (uint64_t)todo)) {
+fixed-width-integer	common/clamdcom.c	460	    while ((len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t))) > 0) {
+fixed-width-integer	common/clamdcom.c	461	        if (reject_over_limit && ((uint64_t)len > todo)) {
+fixed-width-integer	common/clamdcom.c	466	        if ((uint64_t)len > todo) len = (int)todo;
+fixed-width-integer	common/clamdcom.c	468	        if (sendln(sockd, (const char *)buf, len + sizeof(uint32_t))) {
 fixed-width-integer	common/clamdcom.c	61	uint64_t clamd_stream_limit(const struct optstruct *clamdopts)
-fixed-width-integer	common/clamdcom.c	72	    return (uint64_t)stream_limit->numarg;
-fixed-width-integer	common/clamdcom.c	786	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
-fixed-width-integer	common/clamdcom.c	788	    uint32_t network_length;
-fixed-width-integer	common/clamdcom.c	789	    uint32_t length;
-fixed-width-integer	common/clamdcom.c	821	static struct json_object *report_json_parse_object(const char *json, uint32_t json_length)
-fixed-width-integer	common/clamdcom.c	849	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
-fixed-width-integer	common/clamdcom.c	953	int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
+fixed-width-integer	common/clamdcom.c	77	    if ((uint64_t)stream_limit->numarg > CLI_MAX_LARGE_FILESIZE)
+fixed-width-integer	common/clamdcom.c	794	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
+fixed-width-integer	common/clamdcom.c	796	    uint32_t network_length;
+fixed-width-integer	common/clamdcom.c	797	    uint32_t length;
+fixed-width-integer	common/clamdcom.c	80	    return (uint64_t)stream_limit->numarg;
+fixed-width-integer	common/clamdcom.c	829	static struct json_object *report_json_parse_object(const char *json, uint32_t json_length)
+fixed-width-integer	common/clamdcom.c	857	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+fixed-width-integer	common/clamdcom.c	961	int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
 fixed-width-integer	common/clamdcom.h	45	uint64_t clamd_stream_limit(const struct optstruct *clamdopts);
 fixed-width-integer	common/clamdcom.h	97	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
 fixed-width-integer	common/clamdcom.h	98	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
@@ -5898,12 +5899,12 @@ fixed-width-integer	unit_tests/check_clamav.c	9861	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	9908	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	9958	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	9993	    uint64_t scanned;
-fixed-width-integer	unit_tests/check_clamd.c	1029	    uint32_t chunk;
-fixed-width-integer	unit_tests/check_clamd.c	1039	    ck_assert_msg(nread == stbuf.st_size, "read failed: %d != " STDi64 ", %s\n", nread, (int64_t)stbuf.st_size, strerror(errno));
-fixed-width-integer	unit_tests/check_clamd.c	1082	    uint32_t frame_length;
-fixed-width-integer	unit_tests/check_clamd.c	1083	    uint32_t terminator;
-fixed-width-integer	unit_tests/check_clamd.c	1095	    ck_assert_msg((uint64_t)frame_length + sizeof(frame_length) + sizeof(terminator) == len,
-fixed-width-integer	unit_tests/check_clamd.c	1457	            uint32_t chunk;
+fixed-width-integer	unit_tests/check_clamd.c	1032	    uint32_t chunk;
+fixed-width-integer	unit_tests/check_clamd.c	1042	    ck_assert_msg(nread == stbuf.st_size, "read failed: %d != " STDi64 ", %s\n", nread, (int64_t)stbuf.st_size, strerror(errno));
+fixed-width-integer	unit_tests/check_clamd.c	1085	    uint32_t frame_length;
+fixed-width-integer	unit_tests/check_clamd.c	1086	    uint32_t terminator;
+fixed-width-integer	unit_tests/check_clamd.c	1098	    ck_assert_msg((uint64_t)frame_length + sizeof(frame_length) + sizeof(terminator) == len,
+fixed-width-integer	unit_tests/check_clamd.c	1460	            uint32_t chunk;
 fixed-width-integer	unit_tests/check_clamd.c	180	        ck_assert_int_eq(scan_report_json_status(reports[i], (uint32_t)strlen(reports[i]), &infected, &partial), 0);
 fixed-width-integer	unit_tests/check_clamd.c	198	    ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback),
 fixed-width-integer	unit_tests/check_clamd.c	213	    ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback), &infected, &incomplete), -1);
@@ -5916,9 +5917,9 @@ fixed-width-integer	unit_tests/check_clamd.c	288	    uint32_t network_length;
 fixed-width-integer	unit_tests/check_clamd.c	289	    uint32_t json_length = 0;
 fixed-width-integer	unit_tests/check_clamd.c	295	    network_length = htonl((uint32_t)strlen(payload));
 fixed-width-integer	unit_tests/check_clamd.c	306	    ck_assert_int_eq(json_length, (uint32_t)strlen(payload));
-fixed-width-integer	unit_tests/check_clamd.c	619	    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
-fixed-width-integer	unit_tests/check_clamd.c	620	    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t) + sizeof(payload) - 1 + sizeof(uint32_t)];
-fixed-width-integer	unit_tests/check_clamd.c	621	    uint32_t network_length;
+fixed-width-integer	unit_tests/check_clamd.c	622	    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
+fixed-width-integer	unit_tests/check_clamd.c	623	    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t) + sizeof(payload) - 1 + sizeof(uint32_t)];
+fixed-width-integer	unit_tests/check_clamd.c	624	    uint32_t network_length;
 fixed-width-integer	unit_tests/check_clamfi_quota.c	19	    uint64_t effective = 0;
 fixed-width-integer	unit_tests/check_clamfi_quota.c	20	    uint64_t next      = 0;
 fixed-width-integer	unit_tests/check_clamfi_quota.c	21	    uint64_t four_gib  = (uint64_t)4 * 1024 * 1024 * 1024;
@@ -7283,87 +7284,87 @@ native-width-integer	common/cert_util.h	87	cl_error_t cert_store_set_trusted(X50
 native-width-integer	common/cert_util.h	95	size_t cert_store_remove_trusted(void);
 native-width-integer	common/cert_util_internal.h	34	    size_t count;
 native-width-integer	common/cert_util_internal.h	78	cl_error_t cert_store_set_trusted_int(X509 **trusted_certs, size_t trusted_cert_count);
-native-width-integer	common/clamdcom.c	1001	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
-native-width-integer	common/clamdcom.c	1006	                sent = sendln(sockd, command, (unsigned int)length);
-native-width-integer	common/clamdcom.c	1014	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
-native-width-integer	common/clamdcom.c	1019	                sent = sendln(sockd, command, (unsigned int)length);
-native-width-integer	common/clamdcom.c	1027	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
-native-width-integer	common/clamdcom.c	1032	                sent = sendln(sockd, command, (unsigned int)length);
-native-width-integer	common/clamdcom.c	1056	        int received = 0;
-native-width-integer	common/clamdcom.c	1061	            int frame_infected   = 0;
-native-width-integer	common/clamdcom.c	1062	            int frame_incomplete = 0;
-native-width-integer	common/clamdcom.c	109	int recvln(struct RCVLN *s, char **rbol, char **reol)
-native-width-integer	common/clamdcom.c	133	            int ret = 0;
-native-width-integer	common/clamdcom.c	163	int chkpath(const char *path, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	165	    int status = 0;
-native-width-integer	common/clamdcom.c	195	static int send_fdpass_fd_command(int sockd, int fd, const char *command)
-native-width-integer	common/clamdcom.c	200	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
-native-width-integer	common/clamdcom.c	207	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
-native-width-integer	common/clamdcom.c	217	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
-native-width-integer	common/clamdcom.c	219	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
-native-width-integer	common/clamdcom.c	222	    *(int *)CMSG_DATA(cmsg) = fd;
-native-width-integer	common/clamdcom.c	236	static int fdpass_size_preflight(int fd, const char *display_filename,
-native-width-integer	common/clamdcom.c	276	static int send_fdpass_fd_checked_common(int sockd, int fd, const char *display_filename,
-native-width-integer	common/clamdcom.c	279	    int preflight = fdpass_size_preflight(fd, display_filename, clamdopts);
-native-width-integer	common/clamdcom.c	286	int send_fdpass_fd(int sockd, int fd)
-native-width-integer	common/clamdcom.c	291	int send_fdpass_fd_report(int sockd, int fd)
-native-width-integer	common/clamdcom.c	298	int send_fdpass(int sockd, const char *filename)
-native-width-integer	common/clamdcom.c	300	    int fd;
-native-width-integer	common/clamdcom.c	301	    int ret;
-native-width-integer	common/clamdcom.c	302	    int close_fd = 0;
-native-width-integer	common/clamdcom.c	319	int send_fdpass_report(int sockd, const char *filename)
-native-width-integer	common/clamdcom.c	321	    int fd;
-native-width-integer	common/clamdcom.c	322	    int ret;
-native-width-integer	common/clamdcom.c	323	    int close_fd = 0;
-native-width-integer	common/clamdcom.c	339	int send_fdpass_fd_checked(int sockd, int fd, const char *display_filename,
-native-width-integer	common/clamdcom.c	345	int send_fdpass_checked(int sockd, const char *filename,
-native-width-integer	common/clamdcom.c	348	    int fd;
-native-width-integer	common/clamdcom.c	349	    int ret;
-native-width-integer	common/clamdcom.c	350	    int close_fd = 0;
-native-width-integer	common/clamdcom.c	367	int send_fdpass_fd_report_checked(int sockd, int fd, const char *display_filename,
-native-width-integer	common/clamdcom.c	373	int send_fdpass_report_checked(int sockd, const char *filename,
-native-width-integer	common/clamdcom.c	376	    int fd;
-native-width-integer	common/clamdcom.c	377	    int ret;
-native-width-integer	common/clamdcom.c	378	    int close_fd = 0;
-native-width-integer	common/clamdcom.c	398	static int send_stream_fd_common(int sockd, int fd, const char *display_filename,
-native-width-integer	common/clamdcom.c	403	    int len;
-native-width-integer	common/clamdcom.c	448	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
-native-width-integer	common/clamdcom.c	458	        if ((uint64_t)len > todo) len = (int)todo;
-native-width-integer	common/clamdcom.c	488	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	498	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	503	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	510	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	512	    int fd;
-native-width-integer	common/clamdcom.c	513	    int ret;
-native-width-integer	common/clamdcom.c	532	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	534	    int fd;
-native-width-integer	common/clamdcom.c	535	    int ret;
-native-width-integer	common/clamdcom.c	554	int dconnect(struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	556	    int sockd, res;
-native-width-integer	common/clamdcom.c	623	int dsresult(int sockd, int scantype, const char *filename, const action_source_t *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	625	    int infected = 0, len = 0, beenthere = 0;
-native-width-integer	common/clamdcom.c	767	static int recv_full(int sockd, void *buffer, size_t length)
-native-width-integer	common/clamdcom.c	77	int sendln(int sockd, const char *line, unsigned int len)
-native-width-integer	common/clamdcom.c	772	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
-native-width-integer	common/clamdcom.c	777	        cursor += (size_t)received;
-native-width-integer	common/clamdcom.c	778	        length -= (size_t)received;
-native-width-integer	common/clamdcom.c	786	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
-native-width-integer	common/clamdcom.c	80	        int sent = send(sockd, line, len, 0);
-native-width-integer	common/clamdcom.c	808	    payload = (char *)malloc((size_t)length + 1U);
-native-width-integer	common/clamdcom.c	826	    size_t parse_end;
-native-width-integer	common/clamdcom.c	834	    object = json_tokener_parse_ex(tokener, json, (int)json_length);
-native-width-integer	common/clamdcom.c	836	    parse_end = (size_t)json_tokener_get_parse_end(tokener);
-native-width-integer	common/clamdcom.c	849	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
-native-width-integer	common/clamdcom.c	856	    int status;
-native-width-integer	common/clamdcom.c	857	    int verdict;
-native-width-integer	common/clamdcom.c	93	void recvlninit(struct RCVLN *s, int sockd)
-native-width-integer	common/clamdcom.c	953	int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
-native-width-integer	common/clamdcom.c	984	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
-native-width-integer	common/clamdcom.c	985	             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
-native-width-integer	common/clamdcom.c	986	             int *errors, struct optstruct *clamdopts)
-native-width-integer	common/clamdcom.c	988	    int sent = 0;
-native-width-integer	common/clamdcom.c	989	    int frame;
-native-width-integer	common/clamdcom.c	990	    int terminated               = 0;
+native-width-integer	common/clamdcom.c	1009	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
+native-width-integer	common/clamdcom.c	101	void recvlninit(struct RCVLN *s, int sockd)
+native-width-integer	common/clamdcom.c	1014	                sent = sendln(sockd, command, (unsigned int)length);
+native-width-integer	common/clamdcom.c	1022	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
+native-width-integer	common/clamdcom.c	1027	                sent = sendln(sockd, command, (unsigned int)length);
+native-width-integer	common/clamdcom.c	1035	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
+native-width-integer	common/clamdcom.c	1040	                sent = sendln(sockd, command, (unsigned int)length);
+native-width-integer	common/clamdcom.c	1064	        int received = 0;
+native-width-integer	common/clamdcom.c	1069	            int frame_infected   = 0;
+native-width-integer	common/clamdcom.c	1070	            int frame_incomplete = 0;
+native-width-integer	common/clamdcom.c	117	int recvln(struct RCVLN *s, char **rbol, char **reol)
+native-width-integer	common/clamdcom.c	141	            int ret = 0;
+native-width-integer	common/clamdcom.c	171	int chkpath(const char *path, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	173	    int status = 0;
+native-width-integer	common/clamdcom.c	203	static int send_fdpass_fd_command(int sockd, int fd, const char *command)
+native-width-integer	common/clamdcom.c	208	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
+native-width-integer	common/clamdcom.c	215	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
+native-width-integer	common/clamdcom.c	225	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
+native-width-integer	common/clamdcom.c	227	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
+native-width-integer	common/clamdcom.c	230	    *(int *)CMSG_DATA(cmsg) = fd;
+native-width-integer	common/clamdcom.c	244	static int fdpass_size_preflight(int fd, const char *display_filename,
+native-width-integer	common/clamdcom.c	284	static int send_fdpass_fd_checked_common(int sockd, int fd, const char *display_filename,
+native-width-integer	common/clamdcom.c	287	    int preflight = fdpass_size_preflight(fd, display_filename, clamdopts);
+native-width-integer	common/clamdcom.c	294	int send_fdpass_fd(int sockd, int fd)
+native-width-integer	common/clamdcom.c	299	int send_fdpass_fd_report(int sockd, int fd)
+native-width-integer	common/clamdcom.c	306	int send_fdpass(int sockd, const char *filename)
+native-width-integer	common/clamdcom.c	308	    int fd;
+native-width-integer	common/clamdcom.c	309	    int ret;
+native-width-integer	common/clamdcom.c	310	    int close_fd = 0;
+native-width-integer	common/clamdcom.c	327	int send_fdpass_report(int sockd, const char *filename)
+native-width-integer	common/clamdcom.c	329	    int fd;
+native-width-integer	common/clamdcom.c	330	    int ret;
+native-width-integer	common/clamdcom.c	331	    int close_fd = 0;
+native-width-integer	common/clamdcom.c	347	int send_fdpass_fd_checked(int sockd, int fd, const char *display_filename,
+native-width-integer	common/clamdcom.c	353	int send_fdpass_checked(int sockd, const char *filename,
+native-width-integer	common/clamdcom.c	356	    int fd;
+native-width-integer	common/clamdcom.c	357	    int ret;
+native-width-integer	common/clamdcom.c	358	    int close_fd = 0;
+native-width-integer	common/clamdcom.c	375	int send_fdpass_fd_report_checked(int sockd, int fd, const char *display_filename,
+native-width-integer	common/clamdcom.c	381	int send_fdpass_report_checked(int sockd, const char *filename,
+native-width-integer	common/clamdcom.c	384	    int fd;
+native-width-integer	common/clamdcom.c	385	    int ret;
+native-width-integer	common/clamdcom.c	386	    int close_fd = 0;
+native-width-integer	common/clamdcom.c	406	static int send_stream_fd_common(int sockd, int fd, const char *display_filename,
+native-width-integer	common/clamdcom.c	411	    int len;
+native-width-integer	common/clamdcom.c	456	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
+native-width-integer	common/clamdcom.c	466	        if ((uint64_t)len > todo) len = (int)todo;
+native-width-integer	common/clamdcom.c	496	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	506	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	511	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	518	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	520	    int fd;
+native-width-integer	common/clamdcom.c	521	    int ret;
+native-width-integer	common/clamdcom.c	540	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	542	    int fd;
+native-width-integer	common/clamdcom.c	543	    int ret;
+native-width-integer	common/clamdcom.c	562	int dconnect(struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	564	    int sockd, res;
+native-width-integer	common/clamdcom.c	631	int dsresult(int sockd, int scantype, const char *filename, const action_source_t *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	633	    int infected = 0, len = 0, beenthere = 0;
+native-width-integer	common/clamdcom.c	775	static int recv_full(int sockd, void *buffer, size_t length)
+native-width-integer	common/clamdcom.c	780	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
+native-width-integer	common/clamdcom.c	785	        cursor += (size_t)received;
+native-width-integer	common/clamdcom.c	786	        length -= (size_t)received;
+native-width-integer	common/clamdcom.c	794	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
+native-width-integer	common/clamdcom.c	816	    payload = (char *)malloc((size_t)length + 1U);
+native-width-integer	common/clamdcom.c	834	    size_t parse_end;
+native-width-integer	common/clamdcom.c	842	    object = json_tokener_parse_ex(tokener, json, (int)json_length);
+native-width-integer	common/clamdcom.c	844	    parse_end = (size_t)json_tokener_get_parse_end(tokener);
+native-width-integer	common/clamdcom.c	85	int sendln(int sockd, const char *line, unsigned int len)
+native-width-integer	common/clamdcom.c	857	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+native-width-integer	common/clamdcom.c	864	    int status;
+native-width-integer	common/clamdcom.c	865	    int verdict;
+native-width-integer	common/clamdcom.c	88	        int sent = send(sockd, line, len, 0);
+native-width-integer	common/clamdcom.c	961	int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
+native-width-integer	common/clamdcom.c	992	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+native-width-integer	common/clamdcom.c	993	             bool apply_action, FILE *report_stream, int *infected, int *incomplete,
+native-width-integer	common/clamdcom.c	994	             int *errors, struct optstruct *clamdopts)
+native-width-integer	common/clamdcom.c	996	    int sent = 0;
+native-width-integer	common/clamdcom.c	997	    int frame;
+native-width-integer	common/clamdcom.c	998	    int terminated               = 0;
 native-width-integer	common/clamdcom.h	58	    int sockd;
 native-width-integer	common/clamdcom.h	59	    int r;
 native-width-integer	common/clamdcom.h	68	int sendln(int sockd, const char *line, unsigned int len);
@@ -16890,54 +16891,54 @@ native-width-integer	unit_tests/check_clamav.c	989	    ck_assert_int_eq(write(fd
 native-width-integer	unit_tests/check_clamav.c	99	extern int clamav_test_fail_write;
 native-width-integer	unit_tests/check_clamav.c	993	        ck_assert_int_eq(write(fd, block, sizeof(block)), (ssize_t)sizeof(block));
 native-width-integer	unit_tests/check_clamav_skip.c	3	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamd.c	1003	    size_t len = strlen("nSTATS\n");
-native-width-integer	unit_tests/check_clamd.c	1004	    int rc;
-native-width-integer	unit_tests/check_clamd.c	1008	    ck_assert_msg((size_t)rc == len, "Unable to send(): %s\n", strerror(errno));
-native-width-integer	unit_tests/check_clamd.c	1025	static size_t prepare_instream(char *buf, size_t off, size_t buflen)
-native-width-integer	unit_tests/check_clamd.c	1028	    int fd, nread;
-native-width-integer	unit_tests/check_clamd.c	1052	    size_t len, expect_len;
-native-width-integer	unit_tests/check_clamd.c	1054	    size_t off     = strlen(buf);
-native-width-integer	unit_tests/check_clamd.c	1055	    int rc;
-native-width-integer	unit_tests/check_clamd.c	1060	    ck_assert_msg((size_t)send(sockd, buf, off, 0) == off, "send() failed: %s\n", strerror(errno));
-native-width-integer	unit_tests/check_clamd.c	1080	    size_t len;
-native-width-integer	unit_tests/check_clamd.c	1081	    size_t off = sizeof("zINSTREAMREPORT");
-native-width-integer	unit_tests/check_clamd.c	1088	    ck_assert_msg((size_t)send(sockd, buf, off, 0) == off, "send() failed: %s\n", strerror(errno));
-native-width-integer	unit_tests/check_clamd.c	1109	static int sendmsg_fd(int sockd, const char *mesg, size_t msg_len, int fd, int singlemsg)
-native-width-integer	unit_tests/check_clamd.c	1113	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
-native-width-integer	unit_tests/check_clamd.c	1116	    int rc;
-native-width-integer	unit_tests/check_clamd.c	1136	    msg.msg_controllen = CMSG_LEN(sizeof(int));
-native-width-integer	unit_tests/check_clamd.c	1139	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
+native-width-integer	unit_tests/check_clamd.c	1006	    size_t len = strlen("nSTATS\n");
+native-width-integer	unit_tests/check_clamd.c	1007	    int rc;
+native-width-integer	unit_tests/check_clamd.c	1011	    ck_assert_msg((size_t)rc == len, "Unable to send(): %s\n", strerror(errno));
+native-width-integer	unit_tests/check_clamd.c	1028	static size_t prepare_instream(char *buf, size_t off, size_t buflen)
+native-width-integer	unit_tests/check_clamd.c	1031	    int fd, nread;
+native-width-integer	unit_tests/check_clamd.c	1055	    size_t len, expect_len;
+native-width-integer	unit_tests/check_clamd.c	1057	    size_t off     = strlen(buf);
+native-width-integer	unit_tests/check_clamd.c	1058	    int rc;
+native-width-integer	unit_tests/check_clamd.c	1063	    ck_assert_msg((size_t)send(sockd, buf, off, 0) == off, "send() failed: %s\n", strerror(errno));
+native-width-integer	unit_tests/check_clamd.c	1083	    size_t len;
+native-width-integer	unit_tests/check_clamd.c	1084	    size_t off = sizeof("zINSTREAMREPORT");
+native-width-integer	unit_tests/check_clamd.c	1091	    ck_assert_msg((size_t)send(sockd, buf, off, 0) == off, "send() failed: %s\n", strerror(errno));
+native-width-integer	unit_tests/check_clamd.c	1112	static int sendmsg_fd(int sockd, const char *mesg, size_t msg_len, int fd, int singlemsg)
+native-width-integer	unit_tests/check_clamd.c	1116	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
+native-width-integer	unit_tests/check_clamd.c	1119	    int rc;
+native-width-integer	unit_tests/check_clamd.c	1139	    msg.msg_controllen = CMSG_LEN(sizeof(int));
 native-width-integer	unit_tests/check_clamd.c	114	        int fd             = mkstemp(config_path);
-native-width-integer	unit_tests/check_clamd.c	1142	    *(int *)CMSG_DATA(cmsg) = fd;
-native-width-integer	unit_tests/check_clamd.c	1153	static void tst_fildes(const char *cmd, size_t len, int fd,
-native-width-integer	unit_tests/check_clamd.c	1154	                       const char *expect, size_t expect_len, int closefd, int singlemsg)
-native-width-integer	unit_tests/check_clamd.c	1157	    int rc;
+native-width-integer	unit_tests/check_clamd.c	1142	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
+native-width-integer	unit_tests/check_clamd.c	1145	    *(int *)CMSG_DATA(cmsg) = fd;
+native-width-integer	unit_tests/check_clamd.c	1156	static void tst_fildes(const char *cmd, size_t len, int fd,
+native-width-integer	unit_tests/check_clamd.c	1157	                       const char *expect, size_t expect_len, int closefd, int singlemsg)
+native-width-integer	unit_tests/check_clamd.c	1160	    int rc;
 native-width-integer	unit_tests/check_clamd.c	119	        size_t invalid_index;
-native-width-integer	unit_tests/check_clamd.c	1204	    int fd;
-native-width-integer	unit_tests/check_clamd.c	1205	    int closefd   = 0;
-native-width-integer	unit_tests/check_clamd.c	1206	    int singlemsg = 0;
-native-width-integer	unit_tests/check_clamd.c	1208	    size_t nreply_len, nsend_len;
-native-width-integer	unit_tests/check_clamd.c	1254	    int dummyfd, i, killed = 0;
-native-width-integer	unit_tests/check_clamd.c	1281	    size_t len;
-native-width-integer	unit_tests/check_clamd.c	1282	    int dummyfd;
-native-width-integer	unit_tests/check_clamd.c	1307	    size_t i;
-native-width-integer	unit_tests/check_clamd.c	1309	    size_t len;
-native-width-integer	unit_tests/check_clamd.c	1349	    int rc;
-native-width-integer	unit_tests/check_clamd.c	1350	    int i;
-native-width-integer	unit_tests/check_clamd.c	1352	    int *sock;
-native-width-integer	unit_tests/check_clamd.c	1353	    int num_fds, maxfd = 0;
-native-width-integer	unit_tests/check_clamd.c	1359	    sock = malloc(sizeof(int) * num_fds);
-native-width-integer	unit_tests/check_clamd.c	1360	    memset(sock, -1, sizeof(int) * num_fds);
-native-width-integer	unit_tests/check_clamd.c	1388	        int ret;
-native-width-integer	unit_tests/check_clamd.c	1430	static void test_idsession_commands(int split, int instream)
-native-width-integer	unit_tests/check_clamd.c	1433	    size_t i, len = 0, j = 0;
-native-width-integer	unit_tests/check_clamd.c	1486	        for (i = 0; i < (size_t)(p - buf); i++)
-native-width-integer	unit_tests/check_clamd.c	1487	            ck_assert_msg((size_t)send(sockd, &buf[i], 1, 0) == 1, "send() failed: %zu, %s\n", i, strerror(errno));
-native-width-integer	unit_tests/check_clamd.c	1521	    ck_assert_msg((size_t)send(sockd, ID_CMD, sizeof(ID_CMD), 0) == sizeof(ID_CMD),
-native-width-integer	unit_tests/check_clamd.c	1525	    ck_assert_msg((size_t)send(sockd, ID_CMD, sizeof(ID_CMD), 0) == sizeof(ID_CMD),
-native-width-integer	unit_tests/check_clamd.c	1529	    ck_assert_msg((size_t)send(sockd, ID_CMD, sizeof(ID_CMD), 0) == sizeof(ID_CMD),
-native-width-integer	unit_tests/check_clamd.c	1609	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamd.c	1611	    int num_fds;
+native-width-integer	unit_tests/check_clamd.c	1207	    int fd;
+native-width-integer	unit_tests/check_clamd.c	1208	    int closefd   = 0;
+native-width-integer	unit_tests/check_clamd.c	1209	    int singlemsg = 0;
+native-width-integer	unit_tests/check_clamd.c	1211	    size_t nreply_len, nsend_len;
+native-width-integer	unit_tests/check_clamd.c	1257	    int dummyfd, i, killed = 0;
+native-width-integer	unit_tests/check_clamd.c	1284	    size_t len;
+native-width-integer	unit_tests/check_clamd.c	1285	    int dummyfd;
+native-width-integer	unit_tests/check_clamd.c	1310	    size_t i;
+native-width-integer	unit_tests/check_clamd.c	1312	    size_t len;
+native-width-integer	unit_tests/check_clamd.c	1352	    int rc;
+native-width-integer	unit_tests/check_clamd.c	1353	    int i;
+native-width-integer	unit_tests/check_clamd.c	1355	    int *sock;
+native-width-integer	unit_tests/check_clamd.c	1356	    int num_fds, maxfd = 0;
+native-width-integer	unit_tests/check_clamd.c	1362	    sock = malloc(sizeof(int) * num_fds);
+native-width-integer	unit_tests/check_clamd.c	1363	    memset(sock, -1, sizeof(int) * num_fds);
+native-width-integer	unit_tests/check_clamd.c	1391	        int ret;
+native-width-integer	unit_tests/check_clamd.c	1433	static void test_idsession_commands(int split, int instream)
+native-width-integer	unit_tests/check_clamd.c	1436	    size_t i, len = 0, j = 0;
+native-width-integer	unit_tests/check_clamd.c	1489	        for (i = 0; i < (size_t)(p - buf); i++)
+native-width-integer	unit_tests/check_clamd.c	1490	            ck_assert_msg((size_t)send(sockd, &buf[i], 1, 0) == 1, "send() failed: %zu, %s\n", i, strerror(errno));
+native-width-integer	unit_tests/check_clamd.c	1524	    ck_assert_msg((size_t)send(sockd, ID_CMD, sizeof(ID_CMD), 0) == sizeof(ID_CMD),
+native-width-integer	unit_tests/check_clamd.c	1528	    ck_assert_msg((size_t)send(sockd, ID_CMD, sizeof(ID_CMD), 0) == sizeof(ID_CMD),
+native-width-integer	unit_tests/check_clamd.c	1532	    ck_assert_msg((size_t)send(sockd, ID_CMD, sizeof(ID_CMD), 0) == sizeof(ID_CMD),
+native-width-integer	unit_tests/check_clamd.c	1612	int main(int argc, char **argv)
+native-width-integer	unit_tests/check_clamd.c	1614	    int num_fds;
 native-width-integer	unit_tests/check_clamd.c	173	    int expected_infected[] = {0, 1, 0};
 native-width-integer	unit_tests/check_clamd.c	174	    int expected_incomplete[] = {0, 0, 1};
 native-width-integer	unit_tests/check_clamd.c	175	    size_t i;
@@ -16972,47 +16973,48 @@ native-width-integer	unit_tests/check_clamd.c	451	                              
 native-width-integer	unit_tests/check_clamd.c	479	    size_t i;
 native-width-integer	unit_tests/check_clamd.c	500	    size_t i;
 native-width-integer	unit_tests/check_clamd.c	501	    int saved_opterr = opterr;
-native-width-integer	unit_tests/check_clamd.c	551	static int sockd;
-native-width-integer	unit_tests/check_clamd.c	556	    int sockets[2];
-native-width-integer	unit_tests/check_clamd.c	557	    int pipefd[2];
-native-width-integer	unit_tests/check_clamd.c	568	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
-native-width-integer	unit_tests/check_clamd.c	578	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-native-width-integer	unit_tests/check_clamd.c	591	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-native-width-integer	unit_tests/check_clamd.c	601	    ck_assert_int_eq((int)write(pipefd[1], over, sizeof(over) - 1), (int)sizeof(over) - 1);
-native-width-integer	unit_tests/check_clamd.c	614	    int sockets[2];
-native-width-integer	unit_tests/check_clamd.c	617	    const size_t command_length = sizeof("zINSTREAM");
-native-width-integer	unit_tests/check_clamd.c	618	    const size_t frame_length   = sizeof(payload) - 1;
-native-width-integer	unit_tests/check_clamd.c	619	    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
-native-width-integer	unit_tests/check_clamd.c	629	    ck_assert_int_eq((int)fwrite(payload, 1, frame_length, regular), (int)frame_length);
-native-width-integer	unit_tests/check_clamd.c	635	    ck_assert_int_eq((int)recv(sockets[1], wire, sizeof(wire), MSG_WAITALL), (int)wire_length);
-native-width-integer	unit_tests/check_clamd.c	655	    int sockets[2];
-native-width-integer	unit_tests/check_clamd.c	676	    int sockets[2];
-native-width-integer	unit_tests/check_clamd.c	687	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
-native-width-integer	unit_tests/check_clamd.c	697	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-native-width-integer	unit_tests/check_clamd.c	710	    int sockets[2];
-native-width-integer	unit_tests/check_clamd.c	711	    int printok = 1;
-native-width-integer	unit_tests/check_clamd.c	712	    int errors   = 0;
-native-width-integer	unit_tests/check_clamd.c	713	    int infected;
-native-width-integer	unit_tests/check_clamd.c	717	    ck_assert_int_eq((int)send(sockets[1], response, sizeof(response), 0), (int)sizeof(response));
+native-width-integer	unit_tests/check_clamd.c	540	    stream_limit.numarg = (long long)CLI_MAX_LARGE_FILESIZE + 1;
+native-width-integer	unit_tests/check_clamd.c	554	static int sockd;
+native-width-integer	unit_tests/check_clamd.c	559	    int sockets[2];
+native-width-integer	unit_tests/check_clamd.c	560	    int pipefd[2];
+native-width-integer	unit_tests/check_clamd.c	571	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
+native-width-integer	unit_tests/check_clamd.c	581	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+native-width-integer	unit_tests/check_clamd.c	594	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+native-width-integer	unit_tests/check_clamd.c	604	    ck_assert_int_eq((int)write(pipefd[1], over, sizeof(over) - 1), (int)sizeof(over) - 1);
+native-width-integer	unit_tests/check_clamd.c	617	    int sockets[2];
+native-width-integer	unit_tests/check_clamd.c	620	    const size_t command_length = sizeof("zINSTREAM");
+native-width-integer	unit_tests/check_clamd.c	621	    const size_t frame_length   = sizeof(payload) - 1;
+native-width-integer	unit_tests/check_clamd.c	622	    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
+native-width-integer	unit_tests/check_clamd.c	632	    ck_assert_int_eq((int)fwrite(payload, 1, frame_length, regular), (int)frame_length);
+native-width-integer	unit_tests/check_clamd.c	638	    ck_assert_int_eq((int)recv(sockets[1], wire, sizeof(wire), MSG_WAITALL), (int)wire_length);
+native-width-integer	unit_tests/check_clamd.c	658	    int sockets[2];
+native-width-integer	unit_tests/check_clamd.c	679	    int sockets[2];
+native-width-integer	unit_tests/check_clamd.c	690	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
+native-width-integer	unit_tests/check_clamd.c	700	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+native-width-integer	unit_tests/check_clamd.c	713	    int sockets[2];
+native-width-integer	unit_tests/check_clamd.c	714	    int printok = 1;
+native-width-integer	unit_tests/check_clamd.c	715	    int errors   = 0;
+native-width-integer	unit_tests/check_clamd.c	716	    int infected;
+native-width-integer	unit_tests/check_clamd.c	720	    ck_assert_int_eq((int)send(sockets[1], response, sizeof(response), 0), (int)sizeof(response));
 native-width-integer	unit_tests/check_clamd.c	73	static int conn_tcp(int port)
-native-width-integer	unit_tests/check_clamd.c	732	static void conn_setup_mayfail(int may)
-native-width-integer	unit_tests/check_clamd.c	734	    int rc;
-native-width-integer	unit_tests/check_clamd.c	757	static void conn_setup_mayfail(int may)
+native-width-integer	unit_tests/check_clamd.c	735	static void conn_setup_mayfail(int may)
+native-width-integer	unit_tests/check_clamd.c	737	    int rc;
 native-width-integer	unit_tests/check_clamd.c	76	    int rc;
+native-width-integer	unit_tests/check_clamd.c	760	static void conn_setup_mayfail(int may)
 native-width-integer	unit_tests/check_clamd.c	77	    int sd = socket(AF_INET, SOCK_STREAM, 0);
-native-width-integer	unit_tests/check_clamd.c	797	static int isroot = 0;
-native-width-integer	unit_tests/check_clamd.c	808	    int fd = open(NONEXISTENT, O_RDONLY | O_BINARY);
-native-width-integer	unit_tests/check_clamd.c	840	    int support_old;
-native-width-integer	unit_tests/check_clamd.c	841	    int skiproot;
-native-width-integer	unit_tests/check_clamd.c	871	static void *recvpartial(int sd, size_t *len, int partial)
-native-width-integer	unit_tests/check_clamd.c	874	    size_t buf_size = 0;
-native-width-integer	unit_tests/check_clamd.c	875	    size_t off      = 0;
-native-width-integer	unit_tests/check_clamd.c	876	    ssize_t bread;
-native-width-integer	unit_tests/check_clamd.c	900	static void *recvfull(int sd, size_t *len)
-native-width-integer	unit_tests/check_clamd.c	905	static void test_command(const char *cmd, size_t len, const char *extra, const char *expect, size_t expect_len)
-native-width-integer	unit_tests/check_clamd.c	908	    ssize_t rc;
-native-width-integer	unit_tests/check_clamd.c	912	    ck_assert_msg((size_t)rc == len, "Unable to send(): %s\n", strerror(errno));
-native-width-integer	unit_tests/check_clamd.c	916	        ck_assert_msg((size_t)rc == strlen(extra), "Unable to send() extra for %s: %s\n", cmd, strerror(errno));
+native-width-integer	unit_tests/check_clamd.c	800	static int isroot = 0;
+native-width-integer	unit_tests/check_clamd.c	811	    int fd = open(NONEXISTENT, O_RDONLY | O_BINARY);
+native-width-integer	unit_tests/check_clamd.c	843	    int support_old;
+native-width-integer	unit_tests/check_clamd.c	844	    int skiproot;
+native-width-integer	unit_tests/check_clamd.c	874	static void *recvpartial(int sd, size_t *len, int partial)
+native-width-integer	unit_tests/check_clamd.c	877	    size_t buf_size = 0;
+native-width-integer	unit_tests/check_clamd.c	878	    size_t off      = 0;
+native-width-integer	unit_tests/check_clamd.c	879	    ssize_t bread;
+native-width-integer	unit_tests/check_clamd.c	903	static void *recvfull(int sd, size_t *len)
+native-width-integer	unit_tests/check_clamd.c	908	static void test_command(const char *cmd, size_t len, const char *extra, const char *expect, size_t expect_len)
+native-width-integer	unit_tests/check_clamd.c	911	    ssize_t rc;
+native-width-integer	unit_tests/check_clamd.c	915	    ck_assert_msg((size_t)rc == len, "Unable to send(): %s\n", strerror(errno));
+native-width-integer	unit_tests/check_clamd.c	919	        ck_assert_msg((size_t)rc == strlen(extra), "Unable to send() extra for %s: %s\n", cmd, strerror(errno));
 native-width-integer	unit_tests/check_clamd.c	94	    size_t i;
 native-width-integer	unit_tests/check_clamfi_quota.c	17	int main(void)
 native-width-integer	unit_tests/check_disasm.c	218	    ssize_t size;
@@ -17270,7 +17272,7 @@ boundary-constant	clamdscan/proto.c	846	    ftw = cli_ftw(file, flags, maxlevel 
 boundary-constant	common/actions.c	1141	        if (stream_size.QuadPart > UINT32_MAX) {
 boundary-constant	common/actions.c	1142	            want = UINT32_MAX;
 boundary-constant	common/actions.c	1307	            if (stream_name_chars > (SIZE_MAX / sizeof(WCHAR)) - 1) {
-boundary-constant	common/clamdcom.c	772	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
+boundary-constant	common/clamdcom.c	780	        int received = recv(sockd, (char *)cursor, (int)((length > INT_MAX) ? INT_MAX : length), 0);
 boundary-constant	common/optparser.c	1325	                            fprintf(stderr, "ERROR: MaxScanTime must be an integer from 0 through %u\n", UINT32_MAX);
 boundary-constant	common/optparser.c	1342	                    lnumlimit = LLONG_MAX;
 boundary-constant	common/optparser.c	1346	                    lnumlimit = LLONG_MAX < ULONG_MAX ? LLONG_MAX : ULONG_MAX;
@@ -17585,9 +17587,9 @@ boundary-constant	unit_tests/check_clamav.c	8430	        hwpole2_map->len = (siz
 boundary-constant	unit_tests/check_clamav.c	8615	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	8654	                               (size_t)UINT32_MAX + 1U, 0, fd, &status, NULL);
 boundary-constant	unit_tests/check_clamav.c	8723	    const size_t wide_offset = (size_t)UINT32_MAX + 1U;
-boundary-constant	unit_tests/check_clamd.c	546	    ck_assert_uint_eq(clamd_stream_chunk_length(4, 1024, UINT32_MAX), 1020);
-boundary-constant	unit_tests/check_clamd.c	547	    ck_assert_uint_eq(clamd_stream_chunk_length(1024, 1024, UINT32_MAX), 0);
-boundary-constant	unit_tests/check_clamd.c	663	    ck_assert_int_eq(send_stream_fd(sockets[0], INT_MAX, "invalid", &stream_limit), -1);
+boundary-constant	unit_tests/check_clamd.c	549	    ck_assert_uint_eq(clamd_stream_chunk_length(4, 1024, UINT32_MAX), 1020);
+boundary-constant	unit_tests/check_clamd.c	550	    ck_assert_uint_eq(clamd_stream_chunk_length(1024, 1024, UINT32_MAX), 0);
+boundary-constant	unit_tests/check_clamd.c	666	    ck_assert_int_eq(send_stream_fd(sockets[0], INT_MAX, "invalid", &stream_limit), -1);
 boundary-constant	unit_tests/check_matchers.c	1201	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_matchers.c	1274	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, second, CLI_HASH_MD5, UINT32_MAX, second_name), CL_SUCCESS);
 boundary-constant	unit_tests/check_matchers.c	1275	    ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine, HASH_PURPOSE_WHOLE_FILE_DETECT, first, CLI_HASH_MD5, UINT32_MAX, first_name), CL_SUCCESS);
@@ -17706,9 +17708,9 @@ quantity-parser	unit_tests/check_clamav.c	19415	        int timeout = atoi(user_
 quantity-parser	unit_tests/check_clamd.c	102	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	514	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 narrowing-cast	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
-narrowing-cast	common/clamdcom.c	1006	                sent = sendln(sockd, command, (unsigned int)length);
-narrowing-cast	common/clamdcom.c	1019	                sent = sendln(sockd, command, (unsigned int)length);
-narrowing-cast	common/clamdcom.c	1032	                sent = sendln(sockd, command, (unsigned int)length);
+narrowing-cast	common/clamdcom.c	1014	                sent = sendln(sockd, command, (unsigned int)length);
+narrowing-cast	common/clamdcom.c	1027	                sent = sendln(sockd, command, (unsigned int)length);
+narrowing-cast	common/clamdcom.c	1040	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	libclamav/blob.c	803	                       (unsigned long)len, fb->b.name);
 narrowing-cast	libclamav/bytecode.c	132	            legacy_offsets[i] = (uint32_t)offsets[i];
 narrowing-cast	libclamav/bytecode.c	1542	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
@@ -17761,13 +17763,13 @@ narrowing-cast	libfreshclam/libfreshclam_internal.c	1658	            if (((int)s
 narrowing-cast	unit_tests/check_clamav.c	12818	    ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/parser-temp-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
 narrowing-cast	unit_tests/check_clamav.c	4889	                                             (uint32_t)length,
 narrowing-cast	unit_tests/check_clamav.c	4916	                                             (uint32_t)length,
-narrowing-cast	unit_tests/check_clamd.c	568	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
-narrowing-cast	unit_tests/check_clamd.c	578	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-narrowing-cast	unit_tests/check_clamd.c	591	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-narrowing-cast	unit_tests/check_clamd.c	601	    ck_assert_int_eq((int)write(pipefd[1], over, sizeof(over) - 1), (int)sizeof(over) - 1);
-narrowing-cast	unit_tests/check_clamd.c	687	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
-narrowing-cast	unit_tests/check_clamd.c	697	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-narrowing-cast	unit_tests/check_clamd.c	717	    ck_assert_int_eq((int)send(sockets[1], response, sizeof(response), 0), (int)sizeof(response));
+narrowing-cast	unit_tests/check_clamd.c	571	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
+narrowing-cast	unit_tests/check_clamd.c	581	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+narrowing-cast	unit_tests/check_clamd.c	594	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+narrowing-cast	unit_tests/check_clamd.c	604	    ck_assert_int_eq((int)write(pipefd[1], over, sizeof(over) - 1), (int)sizeof(over) - 1);
+narrowing-cast	unit_tests/check_clamd.c	690	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
+narrowing-cast	unit_tests/check_clamd.c	700	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+narrowing-cast	unit_tests/check_clamd.c	720	    ck_assert_int_eq((int)send(sockets[1], response, sizeof(response), 0), (int)sizeof(response));
 narrowing-cast	win32/compat/net.c	268	    int ret = send((SOCKET)sockfd, (const char *)buf, (int)len, flags);
 format-width	clamav-milter/clamav-milter.c	443	            if (fprintf(fd, "%u\n", (unsigned int)getpid()) < 0) {
 format-width	clamav-milter/clamav-milter.c	65	    logg(LOGG_DEBUG, "clamav-milter: milter_exit, signal %d\n", sig);
@@ -18013,7 +18015,7 @@ format-width	common/cert_util.c	483	                mprintf(LOGG_ERROR, "X509_du
 format-width	common/cert_util.c	561	                mprintf(LOGG_ERROR, "NULL cert at index %zu in X509 cert list; skipping\n", i);
 format-width	common/cert_util.c	577	                    mprintf(LOGG_ERROR, "Failed to add certificate to store: %s (%lu) [%s]\n",
 format-width	common/cert_util.c	647	                                    "Error: %d [%s]\n",
-format-width	common/clamdcom.c	576	    snprintf(port, sizeof(port), "%lld", optget(clamdopts, "TCPSocket")->numarg);
+format-width	common/clamdcom.c	584	    snprintf(port, sizeof(port), "%lld", optget(clamdopts, "TCPSocket")->numarg);
 format-width	common/exeScanner.c	190	        elogg(LOGG_INFO, "exeScanner: CreateFileA failed %lu\n", GetLastError());
 format-width	common/exeScanner.c	197	        elogg(LOGG_INFO, "exeScanner: CreateFileMappingA() failed %lu\n", GetLastError());
 format-width	common/exeScanner.c	203	        elogg(LOGG_INFO, "exeScanner: MapViewOfFile() failed %lu\n", GetLastError());
@@ -20152,19 +20154,19 @@ format-width	unit_tests/check_clamav.c	9187	                  "truncated PDF Fla
 format-width	unit_tests/check_clamav.c	9462	                  "MSEXPAND temporary limit returned %s (%d)", cl_strerror(ret), ret);
 format-width	unit_tests/check_clamav.c	9564	                  "UUEncode temporary limit returned %s (%d)", cl_strerror(ret), ret);
 format-width	unit_tests/check_clamav.c	9738	                  "BinHex temporary limit returned %s (%d)", cl_strerror(ret), ret);
-format-width	unit_tests/check_clamd.c	1012	    ck_assert_msg(len > strlen(STATS_REPLY), "Reply has wrong size: %lu, minimum %lu, reply: %s\n",
-format-width	unit_tests/check_clamd.c	1039	    ck_assert_msg(nread == stbuf.st_size, "read failed: %d != " STDi64 ", %s\n", nread, (int64_t)stbuf.st_size, strerror(errno));
-format-width	unit_tests/check_clamd.c	1065	    ck_assert_msg(len == expect_len, "Reply has wrong size: %lu, expected %lu, reply: %s\n",
-format-width	unit_tests/check_clamd.c	1172	    ck_assert_msg(sscanf(recvdata, "fd[%u]", &rc) == 1, "Reply doesn't contain fd: %s\n", recvdata);
-format-width	unit_tests/check_clamd.c	1175	    ck_assert_msg(len == expect_len, "Reply has wrong size: %lu, expected %lu, reply: %s, expected: %s\n",
-format-width	unit_tests/check_clamd.c	1318	        snprintf(buf, sizeof(buf), "%u", (unsigned)(i + 1));
-format-width	unit_tests/check_clamd.c	1323	        ck_assert_msg(!!p, "wrong VERSION reply (%zu): %s\n", i, data);
-format-width	unit_tests/check_clamd.c	1325	        ck_assert_msg(*p == ' ', "wrong VERSION reply (%zu): %s\n", i, p);
-format-width	unit_tests/check_clamd.c	1487	            ck_assert_msg((size_t)send(sockd, &buf[i], 1, 0) == 1, "send() failed: %zu, %s\n", i, strerror(errno));
-format-width	unit_tests/check_clamd.c	1502	            ck_assert_msg(sscanf(p, "%u", &id) == 1, "Wrong ID in reply: %s\n", p);
-format-width	unit_tests/check_clamd.c	1504	            ck_assert_msg(id <= j, "ID too big: %u, max: %zu\n", id, j);
-format-width	unit_tests/check_clamd.c	1507	                          "Wrong ID reply for ID %u:\nReceived: \n%s\nExpected: \n%s\n",
-format-width	unit_tests/check_clamd.c	1619	        fprintf(stderr, "Error at WSAStartup(): %d\n", WSAGetLastError());
+format-width	unit_tests/check_clamd.c	1015	    ck_assert_msg(len > strlen(STATS_REPLY), "Reply has wrong size: %lu, minimum %lu, reply: %s\n",
+format-width	unit_tests/check_clamd.c	1042	    ck_assert_msg(nread == stbuf.st_size, "read failed: %d != " STDi64 ", %s\n", nread, (int64_t)stbuf.st_size, strerror(errno));
+format-width	unit_tests/check_clamd.c	1068	    ck_assert_msg(len == expect_len, "Reply has wrong size: %lu, expected %lu, reply: %s\n",
+format-width	unit_tests/check_clamd.c	1175	    ck_assert_msg(sscanf(recvdata, "fd[%u]", &rc) == 1, "Reply doesn't contain fd: %s\n", recvdata);
+format-width	unit_tests/check_clamd.c	1178	    ck_assert_msg(len == expect_len, "Reply has wrong size: %lu, expected %lu, reply: %s, expected: %s\n",
+format-width	unit_tests/check_clamd.c	1321	        snprintf(buf, sizeof(buf), "%u", (unsigned)(i + 1));
+format-width	unit_tests/check_clamd.c	1326	        ck_assert_msg(!!p, "wrong VERSION reply (%zu): %s\n", i, data);
+format-width	unit_tests/check_clamd.c	1328	        ck_assert_msg(*p == ' ', "wrong VERSION reply (%zu): %s\n", i, p);
+format-width	unit_tests/check_clamd.c	1490	            ck_assert_msg((size_t)send(sockd, &buf[i], 1, 0) == 1, "send() failed: %zu, %s\n", i, strerror(errno));
+format-width	unit_tests/check_clamd.c	1505	            ck_assert_msg(sscanf(p, "%u", &id) == 1, "Wrong ID in reply: %s\n", p);
+format-width	unit_tests/check_clamd.c	1507	            ck_assert_msg(id <= j, "ID too big: %u, max: %zu\n", id, j);
+format-width	unit_tests/check_clamd.c	1510	                          "Wrong ID reply for ID %u:\nReceived: \n%s\nExpected: \n%s\n",
+format-width	unit_tests/check_clamd.c	1622	        fprintf(stderr, "Error at WSAStartup(): %d\n", WSAGetLastError());
 format-width	unit_tests/check_disasm.c	226	    ck_assert_msg(size == st.st_size, "disasm size mismatch(value %zd, expected: %zd)", size, (ssize_t)st.st_size);
 format-width	unit_tests/check_disasm.c	229	    ck_assert_msg(d != NULL, "disasm malloc(%zd) failed", size * 2);
 format-width	unit_tests/check_matchers.c	243	        ck_assert_msg(!strncmp(virname, ac_testdata[i].virname, strlen(ac_testdata[i].virname)), "Dataset %u matched with %s", i, virname);
@@ -20976,62 +20978,62 @@ offset-size-arithmetic	common/cert_util.c	292	    cert_name = malloc(biomem->len
 offset-size-arithmetic	common/cert_util.c	459	                                          sizeof(*tmp_trusted.certificates));
 offset-size-arithmetic	common/cert_util.c	72	    *data = calloc(1, pem_len + 1);
 offset-size-arithmetic	common/cert_util.h	120	 * @param[out] cert_data_len - Length of cert_data buffer
-offset-size-arithmetic	common/clamdcom.c	1001	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
-offset-size-arithmetic	common/clamdcom.c	1014	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
-offset-size-arithmetic	common/clamdcom.c	1027	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
-offset-size-arithmetic	common/clamdcom.c	1038	                       ? send_stream_fd_report(sockd, action_source->scan_fd, display_filename, clamdopts)
-offset-size-arithmetic	common/clamdcom.c	1044	                       ? send_fdpass_fd_report_checked(sockd, action_source->scan_fd, display_filename, clamdopts)
-offset-size-arithmetic	common/clamdcom.c	115	            s->r = recv(s->sockd, s->cur, sizeof(s->buf) - (s->cur - s->buf), 0);
-offset-size-arithmetic	common/clamdcom.c	146	        if (!eol && s->r == sizeof(s->buf)) {
-offset-size-arithmetic	common/clamdcom.c	195	static int send_fdpass_fd_command(int sockd, int fd, const char *command)
-offset-size-arithmetic	common/clamdcom.c	207	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
-offset-size-arithmetic	common/clamdcom.c	223	    if (sendmsg(sockd, &msg, 0) == -1) {
-offset-size-arithmetic	common/clamdcom.c	230	/* FILDES carries a complete descriptor rather than a length-framed stream.
-offset-size-arithmetic	common/clamdcom.c	236	static int fdpass_size_preflight(int fd, const char *display_filename,
-offset-size-arithmetic	common/clamdcom.c	251	    limit = max_file_size->numarg > 0 ? (uint64_t)max_file_size->numarg : CLI_MAX_LARGE_FILESIZE;
-offset-size-arithmetic	common/clamdcom.c	276	static int send_fdpass_fd_checked_common(int sockd, int fd, const char *display_filename,
-offset-size-arithmetic	common/clamdcom.c	298	int send_fdpass(int sockd, const char *filename)
-offset-size-arithmetic	common/clamdcom.c	319	int send_fdpass_report(int sockd, const char *filename)
-offset-size-arithmetic	common/clamdcom.c	339	int send_fdpass_fd_checked(int sockd, int fd, const char *display_filename,
-offset-size-arithmetic	common/clamdcom.c	345	int send_fdpass_checked(int sockd, const char *filename,
-offset-size-arithmetic	common/clamdcom.c	367	int send_fdpass_fd_report_checked(int sockd, int fd, const char *display_filename,
-offset-size-arithmetic	common/clamdcom.c	373	int send_fdpass_report_checked(int sockd, const char *filename,
-offset-size-arithmetic	common/clamdcom.c	398	static int send_stream_fd_common(int sockd, int fd, const char *display_filename,
-offset-size-arithmetic	common/clamdcom.c	440	         * current position because they are not seekable. */
-offset-size-arithmetic	common/clamdcom.c	448	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
-offset-size-arithmetic	common/clamdcom.c	452	    while ((len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t))) > 0) {
-offset-size-arithmetic	common/clamdcom.c	460	        if (sendln(sockd, (const char *)buf, len + sizeof(uint32_t))) {
-offset-size-arithmetic	common/clamdcom.c	483	    if (sendln(sockd, (const char *)buf, 4))
-offset-size-arithmetic	common/clamdcom.c	488	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
-offset-size-arithmetic	common/clamdcom.c	494	     * every stream, including pipes/stdin where no size preflight is possible. */
-offset-size-arithmetic	common/clamdcom.c	498	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
-offset-size-arithmetic	common/clamdcom.c	503	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
-offset-size-arithmetic	common/clamdcom.c	510	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts)
-offset-size-arithmetic	common/clamdcom.c	532	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts)
-offset-size-arithmetic	common/clamdcom.c	576	    snprintf(port, sizeof(port), "%lld", optget(clamdopts, "TCPSocket")->numarg);
-offset-size-arithmetic	common/clamdcom.c	622	 * NOTE: filename may be NULL for STREAM scantype. */
-offset-size-arithmetic	common/clamdcom.c	623	int dsresult(int sockd, int scantype, const char *filename, const action_source_t *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts)
-offset-size-arithmetic	common/clamdcom.c	629	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
-offset-size-arithmetic	common/clamdcom.c	642	            len = strlen(filename) + strlen(scancmd[scantype]) + 3;
-offset-size-arithmetic	common/clamdcom.c	658	            /* NULL filename safe in send_stream() */
-offset-size-arithmetic	common/clamdcom.c	659	            len = (NULL != action_source) ? send_stream_fd_action(sockd, action_source->scan_fd, display_filename, clamdopts) : send_stream(sockd, filename, clamdopts);
-offset-size-arithmetic	common/clamdcom.c	663	            /* NULL filename safe in send_fdpass() */
-offset-size-arithmetic	common/clamdcom.c	665	                      ? send_fdpass_fd_checked(sockd, action_source->scan_fd, display_filename, clamdopts)
-offset-size-arithmetic	common/clamdcom.c	681	        if (len == -1) {
-offset-size-arithmetic	common/clamdcom.c	699	                if (!strncmp(bol, unkco, sizeof(unkco) - 1))
-offset-size-arithmetic	common/clamdcom.c	707	                static char last_filename[PATH_MAX + 1] = {'\0'};
-offset-size-arithmetic	common/clamdcom.c	750	        if (CLAMSTAT(filename, &sb) == -1) {
-offset-size-arithmetic	common/clamdcom.c	77	int sendln(int sockd, const char *line, unsigned int len)
-offset-size-arithmetic	common/clamdcom.c	778	        length -= (size_t)received;
-offset-size-arithmetic	common/clamdcom.c	783	/* Read one length-prefixed structured report frame.  A zero-length frame is
-offset-size-arithmetic	common/clamdcom.c	786	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
-offset-size-arithmetic	common/clamdcom.c	808	    payload = (char *)malloc((size_t)length + 1U);
-offset-size-arithmetic	common/clamdcom.c	838	        parse_end++;
-offset-size-arithmetic	common/clamdcom.c	849	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
-offset-size-arithmetic	common/clamdcom.c	87	        len -= sent;
-offset-size-arithmetic	common/clamdcom.c	953	int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
-offset-size-arithmetic	common/clamdcom.c	984	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
-offset-size-arithmetic	common/clamdcom.c	991	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
+offset-size-arithmetic	common/clamdcom.c	1009	                size_t length = strlen(filename) + sizeof("zCONTSCANREPORT ");
+offset-size-arithmetic	common/clamdcom.c	1022	                size_t length = strlen(filename) + sizeof("zMULTISCANREPORT ");
+offset-size-arithmetic	common/clamdcom.c	1035	                size_t length = strlen(filename) + sizeof("zALLMATCHSCANREPORT ");
+offset-size-arithmetic	common/clamdcom.c	1046	                       ? send_stream_fd_report(sockd, action_source->scan_fd, display_filename, clamdopts)
+offset-size-arithmetic	common/clamdcom.c	1052	                       ? send_fdpass_fd_report_checked(sockd, action_source->scan_fd, display_filename, clamdopts)
+offset-size-arithmetic	common/clamdcom.c	123	            s->r = recv(s->sockd, s->cur, sizeof(s->buf) - (s->cur - s->buf), 0);
+offset-size-arithmetic	common/clamdcom.c	154	        if (!eol && s->r == sizeof(s->buf)) {
+offset-size-arithmetic	common/clamdcom.c	203	static int send_fdpass_fd_command(int sockd, int fd, const char *command)
+offset-size-arithmetic	common/clamdcom.c	215	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
+offset-size-arithmetic	common/clamdcom.c	231	    if (sendmsg(sockd, &msg, 0) == -1) {
+offset-size-arithmetic	common/clamdcom.c	238	/* FILDES carries a complete descriptor rather than a length-framed stream.
+offset-size-arithmetic	common/clamdcom.c	244	static int fdpass_size_preflight(int fd, const char *display_filename,
+offset-size-arithmetic	common/clamdcom.c	259	    limit = max_file_size->numarg > 0 ? (uint64_t)max_file_size->numarg : CLI_MAX_LARGE_FILESIZE;
+offset-size-arithmetic	common/clamdcom.c	284	static int send_fdpass_fd_checked_common(int sockd, int fd, const char *display_filename,
+offset-size-arithmetic	common/clamdcom.c	306	int send_fdpass(int sockd, const char *filename)
+offset-size-arithmetic	common/clamdcom.c	327	int send_fdpass_report(int sockd, const char *filename)
+offset-size-arithmetic	common/clamdcom.c	347	int send_fdpass_fd_checked(int sockd, int fd, const char *display_filename,
+offset-size-arithmetic	common/clamdcom.c	353	int send_fdpass_checked(int sockd, const char *filename,
+offset-size-arithmetic	common/clamdcom.c	375	int send_fdpass_fd_report_checked(int sockd, int fd, const char *display_filename,
+offset-size-arithmetic	common/clamdcom.c	381	int send_fdpass_report_checked(int sockd, const char *filename,
+offset-size-arithmetic	common/clamdcom.c	406	static int send_stream_fd_common(int sockd, int fd, const char *display_filename,
+offset-size-arithmetic	common/clamdcom.c	448	         * current position because they are not seekable. */
+offset-size-arithmetic	common/clamdcom.c	456	    if (sendln(sockd, command, (unsigned int)strlen(command) + 1U)) {
+offset-size-arithmetic	common/clamdcom.c	460	    while ((len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t))) > 0) {
+offset-size-arithmetic	common/clamdcom.c	468	        if (sendln(sockd, (const char *)buf, len + sizeof(uint32_t))) {
+offset-size-arithmetic	common/clamdcom.c	491	    if (sendln(sockd, (const char *)buf, 4))
+offset-size-arithmetic	common/clamdcom.c	496	int send_stream_fd(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
+offset-size-arithmetic	common/clamdcom.c	502	     * every stream, including pipes/stdin where no size preflight is possible. */
+offset-size-arithmetic	common/clamdcom.c	506	int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
+offset-size-arithmetic	common/clamdcom.c	511	int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
+offset-size-arithmetic	common/clamdcom.c	518	int send_stream(int sockd, const char *filename, struct optstruct *clamdopts)
+offset-size-arithmetic	common/clamdcom.c	540	int send_stream_report(int sockd, const char *filename, struct optstruct *clamdopts)
+offset-size-arithmetic	common/clamdcom.c	584	    snprintf(port, sizeof(port), "%lld", optget(clamdopts, "TCPSocket")->numarg);
+offset-size-arithmetic	common/clamdcom.c	630	 * NOTE: filename may be NULL for STREAM scantype. */
+offset-size-arithmetic	common/clamdcom.c	631	int dsresult(int sockd, int scantype, const char *filename, const action_source_t *action_source, bool apply_action, int *printok, int *errors, struct optstruct *clamdopts)
+offset-size-arithmetic	common/clamdcom.c	637	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
+offset-size-arithmetic	common/clamdcom.c	650	            len = strlen(filename) + strlen(scancmd[scantype]) + 3;
+offset-size-arithmetic	common/clamdcom.c	666	            /* NULL filename safe in send_stream() */
+offset-size-arithmetic	common/clamdcom.c	667	            len = (NULL != action_source) ? send_stream_fd_action(sockd, action_source->scan_fd, display_filename, clamdopts) : send_stream(sockd, filename, clamdopts);
+offset-size-arithmetic	common/clamdcom.c	671	            /* NULL filename safe in send_fdpass() */
+offset-size-arithmetic	common/clamdcom.c	673	                      ? send_fdpass_fd_checked(sockd, action_source->scan_fd, display_filename, clamdopts)
+offset-size-arithmetic	common/clamdcom.c	689	        if (len == -1) {
+offset-size-arithmetic	common/clamdcom.c	707	                if (!strncmp(bol, unkco, sizeof(unkco) - 1))
+offset-size-arithmetic	common/clamdcom.c	715	                static char last_filename[PATH_MAX + 1] = {'\0'};
+offset-size-arithmetic	common/clamdcom.c	758	        if (CLAMSTAT(filename, &sb) == -1) {
+offset-size-arithmetic	common/clamdcom.c	786	        length -= (size_t)received;
+offset-size-arithmetic	common/clamdcom.c	791	/* Read one length-prefixed structured report frame.  A zero-length frame is
+offset-size-arithmetic	common/clamdcom.c	794	int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator)
+offset-size-arithmetic	common/clamdcom.c	816	    payload = (char *)malloc((size_t)length + 1U);
+offset-size-arithmetic	common/clamdcom.c	846	        parse_end++;
+offset-size-arithmetic	common/clamdcom.c	85	int sendln(int sockd, const char *line, unsigned int len)
+offset-size-arithmetic	common/clamdcom.c	857	int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+offset-size-arithmetic	common/clamdcom.c	95	        len -= sent;
+offset-size-arithmetic	common/clamdcom.c	961	int scan_report_json_alert(const char *json, uint32_t json_length, char **alert)
+offset-size-arithmetic	common/clamdcom.c	992	int dsreport(int sockd, int scantype, const char *filename, const struct action_source *action_source,
+offset-size-arithmetic	common/clamdcom.c	999	    const char *display_filename = (NULL != action_source) ? action_source->display_path : filename;
 offset-size-arithmetic	common/clamdcom.h	68	int sendln(int sockd, const char *line, unsigned int len);
 offset-size-arithmetic	common/clamdcom.h	75	int send_fdpass(int sockd, const char *filename);
 offset-size-arithmetic	common/clamdcom.h	77	int send_fdpass_report(int sockd, const char *filename);
@@ -32086,53 +32088,53 @@ offset-size-arithmetic	unit_tests/check_clamav.c	9871	    cli_writeint32(data + 
 offset-size-arithmetic	unit_tests/check_clamav.c	9873	    cli_writeint32(data + 84, 2);  /* UTF-16 byte length */
 offset-size-arithmetic	unit_tests/check_clamav.c	989	    ck_assert_int_eq(write(fd, header, sizeof(header) - 1), (ssize_t)(sizeof(header) - 1));
 offset-size-arithmetic	unit_tests/check_clamav.c	9917	    data[36] = 0x00; /* package is compressed */
-offset-size-arithmetic	unit_tests/check_clamd.c	1025	static size_t prepare_instream(char *buf, size_t off, size_t buflen)
-offset-size-arithmetic	unit_tests/check_clamd.c	1037	    off += 4;
-offset-size-arithmetic	unit_tests/check_clamd.c	1038	    nread = read(fd, &buf[off], buflen - off - 4);
-offset-size-arithmetic	unit_tests/check_clamd.c	1040	    off += nread;
-offset-size-arithmetic	unit_tests/check_clamd.c	1041	    buf[off++] = 0;
-offset-size-arithmetic	unit_tests/check_clamd.c	1042	    buf[off++] = 0;
-offset-size-arithmetic	unit_tests/check_clamd.c	1043	    buf[off++] = 0;
+offset-size-arithmetic	unit_tests/check_clamd.c	1028	static size_t prepare_instream(char *buf, size_t off, size_t buflen)
+offset-size-arithmetic	unit_tests/check_clamd.c	1040	    off += 4;
+offset-size-arithmetic	unit_tests/check_clamd.c	1041	    nread = read(fd, &buf[off], buflen - off - 4);
+offset-size-arithmetic	unit_tests/check_clamd.c	1043	    off += nread;
 offset-size-arithmetic	unit_tests/check_clamd.c	1044	    buf[off++] = 0;
+offset-size-arithmetic	unit_tests/check_clamd.c	1045	    buf[off++] = 0;
+offset-size-arithmetic	unit_tests/check_clamd.c	1046	    buf[off++] = 0;
+offset-size-arithmetic	unit_tests/check_clamd.c	1047	    buf[off++] = 0;
 offset-size-arithmetic	unit_tests/check_clamd.c	106	    for (i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamd.c	1091	    ck_assert_msg(len >= (sizeof(frame_length) + sizeof(terminator)),
-offset-size-arithmetic	unit_tests/check_clamd.c	1095	    ck_assert_msg((uint64_t)frame_length + sizeof(frame_length) + sizeof(terminator) == len,
-offset-size-arithmetic	unit_tests/check_clamd.c	1097	    memcpy(&terminator, recvdata + sizeof(frame_length) + frame_length, sizeof(terminator));
-offset-size-arithmetic	unit_tests/check_clamd.c	1109	static int sendmsg_fd(int sockd, const char *mesg, size_t msg_len, int fd, int singlemsg)
-offset-size-arithmetic	unit_tests/check_clamd.c	1119	        /* send FILDES\n and then a single character + ancillary data */
-offset-size-arithmetic	unit_tests/check_clamd.c	1124	        /* send single message with ancillary data */
-offset-size-arithmetic	unit_tests/check_clamd.c	1125	        ck_assert_msg(msg_len < sizeof(dummy) - 1, "message too large");
-offset-size-arithmetic	unit_tests/check_clamd.c	1129	        iov[0].iov_len  = msg_len + 1;
-offset-size-arithmetic	unit_tests/check_clamd.c	1160	    ck_assert_msg(sendmsg_fd(sockd, cmd, len, fd, singlemsg) != -1,
-offset-size-arithmetic	unit_tests/check_clamd.c	1174	    len -= p - recvdata;
-offset-size-arithmetic	unit_tests/check_clamd.c	1230	    nreply_len = snprintf(nreply, sizeof(nreply), "%s%c", cmd->reply, cmd->term);
-offset-size-arithmetic	unit_tests/check_clamd.c	1231	    nsend_len  = snprintf(nsend, sizeof(nsend), "%s%c", cmd->cmd, cmd->term);
-offset-size-arithmetic	unit_tests/check_clamd.c	1261	        if (sendmsg_fd(sockd, fildes, sizeof(fildes), dummyfd, 1) == -1) {
-offset-size-arithmetic	unit_tests/check_clamd.c	1267	    if (send(sockd, end, sizeof(end), 0) == -1) {
-offset-size-arithmetic	unit_tests/check_clamd.c	1288	     * The \0 is from the extra char needed when sending ancillary data */
-offset-size-arithmetic	unit_tests/check_clamd.c	1289	    ck_assert_msg(sendmsg_fd(sockd, idsession, sizeof(idsession), dummyfd, 1) != -1,
-offset-size-arithmetic	unit_tests/check_clamd.c	1318	        snprintf(buf, sizeof(buf), "%u", (unsigned)(i + 1));
-offset-size-arithmetic	unit_tests/check_clamd.c	1359	    sock = malloc(sizeof(int) * num_fds);
-offset-size-arithmetic	unit_tests/check_clamd.c	1360	    memset(sock, -1, sizeof(int) * num_fds);
-offset-size-arithmetic	unit_tests/check_clamd.c	1418	            test_command("RELOAD", sizeof("RELOAD") - 1, NULL, "RELOADING\n", sizeof("RELOADING\n") - 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	1436	    const char *replies[2 + sizeof(basic_tests) / sizeof(basic_tests[0])];
-offset-size-arithmetic	unit_tests/check_clamd.c	1439	    for (i = 0; i < sizeof(basic_tests) / sizeof(basic_tests[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamd.c	1444	            ck_assert_msg(p + strlen(test->command) + 2 < buf + sizeof(buf), "Buffer too small");
-offset-size-arithmetic	unit_tests/check_clamd.c	1447	            p += strlen(test->command);
-offset-size-arithmetic	unit_tests/check_clamd.c	1450	                ck_assert_msg(p + strlen(test->extra) < buf + sizeof(buf), "Buffer too small");
-offset-size-arithmetic	unit_tests/check_clamd.c	1452	                p += strlen(test->extra);
-offset-size-arithmetic	unit_tests/check_clamd.c	1460	            ck_assert_msg(p + sizeof(INSTREAM_CMD) + 544 < buf + sizeof(buf), "Buffer too small");
-offset-size-arithmetic	unit_tests/check_clamd.c	1465	            ck_assert_msg(p + sizeof(INSTREAM_CMD) + 16388 < buf + sizeof(buf), "Buffer too small");
+offset-size-arithmetic	unit_tests/check_clamd.c	1094	    ck_assert_msg(len >= (sizeof(frame_length) + sizeof(terminator)),
+offset-size-arithmetic	unit_tests/check_clamd.c	1098	    ck_assert_msg((uint64_t)frame_length + sizeof(frame_length) + sizeof(terminator) == len,
+offset-size-arithmetic	unit_tests/check_clamd.c	1100	    memcpy(&terminator, recvdata + sizeof(frame_length) + frame_length, sizeof(terminator));
+offset-size-arithmetic	unit_tests/check_clamd.c	1112	static int sendmsg_fd(int sockd, const char *mesg, size_t msg_len, int fd, int singlemsg)
+offset-size-arithmetic	unit_tests/check_clamd.c	1122	        /* send FILDES\n and then a single character + ancillary data */
+offset-size-arithmetic	unit_tests/check_clamd.c	1127	        /* send single message with ancillary data */
+offset-size-arithmetic	unit_tests/check_clamd.c	1128	        ck_assert_msg(msg_len < sizeof(dummy) - 1, "message too large");
+offset-size-arithmetic	unit_tests/check_clamd.c	1132	        iov[0].iov_len  = msg_len + 1;
+offset-size-arithmetic	unit_tests/check_clamd.c	1163	    ck_assert_msg(sendmsg_fd(sockd, cmd, len, fd, singlemsg) != -1,
+offset-size-arithmetic	unit_tests/check_clamd.c	1177	    len -= p - recvdata;
+offset-size-arithmetic	unit_tests/check_clamd.c	1233	    nreply_len = snprintf(nreply, sizeof(nreply), "%s%c", cmd->reply, cmd->term);
+offset-size-arithmetic	unit_tests/check_clamd.c	1234	    nsend_len  = snprintf(nsend, sizeof(nsend), "%s%c", cmd->cmd, cmd->term);
+offset-size-arithmetic	unit_tests/check_clamd.c	1264	        if (sendmsg_fd(sockd, fildes, sizeof(fildes), dummyfd, 1) == -1) {
+offset-size-arithmetic	unit_tests/check_clamd.c	1270	    if (send(sockd, end, sizeof(end), 0) == -1) {
+offset-size-arithmetic	unit_tests/check_clamd.c	1291	     * The \0 is from the extra char needed when sending ancillary data */
+offset-size-arithmetic	unit_tests/check_clamd.c	1292	    ck_assert_msg(sendmsg_fd(sockd, idsession, sizeof(idsession), dummyfd, 1) != -1,
+offset-size-arithmetic	unit_tests/check_clamd.c	1321	        snprintf(buf, sizeof(buf), "%u", (unsigned)(i + 1));
+offset-size-arithmetic	unit_tests/check_clamd.c	1362	    sock = malloc(sizeof(int) * num_fds);
+offset-size-arithmetic	unit_tests/check_clamd.c	1363	    memset(sock, -1, sizeof(int) * num_fds);
+offset-size-arithmetic	unit_tests/check_clamd.c	1421	            test_command("RELOAD", sizeof("RELOAD") - 1, NULL, "RELOADING\n", sizeof("RELOADING\n") - 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	1439	    const char *replies[2 + sizeof(basic_tests) / sizeof(basic_tests[0])];
+offset-size-arithmetic	unit_tests/check_clamd.c	1442	    for (i = 0; i < sizeof(basic_tests) / sizeof(basic_tests[0]); i++) {
+offset-size-arithmetic	unit_tests/check_clamd.c	1447	            ck_assert_msg(p + strlen(test->command) + 2 < buf + sizeof(buf), "Buffer too small");
+offset-size-arithmetic	unit_tests/check_clamd.c	1450	            p += strlen(test->command);
+offset-size-arithmetic	unit_tests/check_clamd.c	1453	                ck_assert_msg(p + strlen(test->extra) < buf + sizeof(buf), "Buffer too small");
+offset-size-arithmetic	unit_tests/check_clamd.c	1455	                p += strlen(test->extra);
+offset-size-arithmetic	unit_tests/check_clamd.c	1463	            ck_assert_msg(p + sizeof(INSTREAM_CMD) + 544 < buf + sizeof(buf), "Buffer too small");
+offset-size-arithmetic	unit_tests/check_clamd.c	1468	            ck_assert_msg(p + sizeof(INSTREAM_CMD) + 16388 < buf + sizeof(buf), "Buffer too small");
 offset-size-arithmetic	unit_tests/check_clamd.c	148	        for (invalid_index = 0; invalid_index < sizeof(invalid_config) / sizeof(invalid_config[0]); invalid_index++) {
-offset-size-arithmetic	unit_tests/check_clamd.c	1480	    ck_assert_msg(p + sizeof(END_CMD) < buf + sizeof(buf), "Buffer too small");
-offset-size-arithmetic	unit_tests/check_clamd.c	1485	        /* test corner-cases: 1-byte sends */
-offset-size-arithmetic	unit_tests/check_clamd.c	1486	        for (i = 0; i < (size_t)(p - buf); i++)
-offset-size-arithmetic	unit_tests/check_clamd.c	1489	        ck_assert_msg(send(sockd, buf, p - buf, 0) == p - buf, "send() failed: %s\n", strerror(errno));
-offset-size-arithmetic	unit_tests/check_clamd.c	1493	    for (i = 0; i < sizeof(basic_tests) / sizeof(basic_tests[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamd.c	1510	            p = q + strlen(q) + 1;
-offset-size-arithmetic	unit_tests/check_clamd.c	1580	    tcase_add_loop_test(tc_commands, test_basic_commands, 0, sizeof(basic_tests) / sizeof(basic_tests[0]));
-offset-size-arithmetic	unit_tests/check_clamd.c	1581	    tcase_add_loop_test(tc_commands, test_compat_commands, 0, sizeof(basic_tests) / sizeof(basic_tests[0]));
-offset-size-arithmetic	unit_tests/check_clamd.c	1583	    tcase_add_loop_test(tc_commands, test_fildes, 0, 4 * sizeof(fildes_cmds) / sizeof(fildes_cmds[0]));
+offset-size-arithmetic	unit_tests/check_clamd.c	1483	    ck_assert_msg(p + sizeof(END_CMD) < buf + sizeof(buf), "Buffer too small");
+offset-size-arithmetic	unit_tests/check_clamd.c	1488	        /* test corner-cases: 1-byte sends */
+offset-size-arithmetic	unit_tests/check_clamd.c	1489	        for (i = 0; i < (size_t)(p - buf); i++)
+offset-size-arithmetic	unit_tests/check_clamd.c	1492	        ck_assert_msg(send(sockd, buf, p - buf, 0) == p - buf, "send() failed: %s\n", strerror(errno));
+offset-size-arithmetic	unit_tests/check_clamd.c	1496	    for (i = 0; i < sizeof(basic_tests) / sizeof(basic_tests[0]); i++) {
+offset-size-arithmetic	unit_tests/check_clamd.c	1513	            p = q + strlen(q) + 1;
+offset-size-arithmetic	unit_tests/check_clamd.c	1583	    tcase_add_loop_test(tc_commands, test_basic_commands, 0, sizeof(basic_tests) / sizeof(basic_tests[0]));
+offset-size-arithmetic	unit_tests/check_clamd.c	1584	    tcase_add_loop_test(tc_commands, test_compat_commands, 0, sizeof(basic_tests) / sizeof(basic_tests[0]));
+offset-size-arithmetic	unit_tests/check_clamd.c	1586	    tcase_add_loop_test(tc_commands, test_fildes, 0, 4 * sizeof(fildes_cmds) / sizeof(fildes_cmds[0]));
 offset-size-arithmetic	unit_tests/check_clamd.c	177	    for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
 offset-size-arithmetic	unit_tests/check_clamd.c	213	    ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback), &infected, &incomplete), -1);
 offset-size-arithmetic	unit_tests/check_clamd.c	248	    for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
@@ -32149,51 +32151,51 @@ offset-size-arithmetic	unit_tests/check_clamd.c	394	        char config_path[] =
 offset-size-arithmetic	unit_tests/check_clamd.c	483	    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
 offset-size-arithmetic	unit_tests/check_clamd.c	504	    for (i = 0; i < sizeof(valid) / sizeof(valid[0]); i++) {
 offset-size-arithmetic	unit_tests/check_clamd.c	518	    for (i = 0; i < sizeof(invalid) / sizeof(invalid[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamd.c	568	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	571	    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "regular-over-limit", &stream_limit), 0);
-offset-size-arithmetic	unit_tests/check_clamd.c	578	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	581	    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "regular-at-limit", &stream_limit), 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	591	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	594	    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "regular-zero-limit", &stream_limit), 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	601	    ck_assert_int_eq((int)write(pipefd[1], over, sizeof(over) - 1), (int)sizeof(over) - 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	604	    ck_assert_int_eq(send_stream_fd(sockets[0], pipefd[0], "pipe-over-limit", &stream_limit), -1);
-offset-size-arithmetic	unit_tests/check_clamd.c	618	    const size_t frame_length   = sizeof(payload) - 1;
-offset-size-arithmetic	unit_tests/check_clamd.c	619	    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
-offset-size-arithmetic	unit_tests/check_clamd.c	620	    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t) + sizeof(payload) - 1 + sizeof(uint32_t)];
-offset-size-arithmetic	unit_tests/check_clamd.c	638	    memcpy(&network_length, wire + command_length, sizeof(network_length));
-offset-size-arithmetic	unit_tests/check_clamd.c	640	    ck_assert_mem_eq(wire + command_length + sizeof(network_length), payload, frame_length);
-offset-size-arithmetic	unit_tests/check_clamd.c	642	    memcpy(&network_length, wire + command_length + sizeof(network_length) + frame_length,
-offset-size-arithmetic	unit_tests/check_clamd.c	663	    ck_assert_int_eq(send_stream_fd(sockets[0], INT_MAX, "invalid", &stream_limit), -1);
-offset-size-arithmetic	unit_tests/check_clamd.c	664	    ck_assert_int_eq(recv(sockets[1], &command, sizeof(command), MSG_DONTWAIT), -1);
-offset-size-arithmetic	unit_tests/check_clamd.c	687	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	690	    ck_assert_int_eq(send_fdpass_fd_checked(sockets[0], fileno(regular), "regular-over-limit", &file_limit), 0);
-offset-size-arithmetic	unit_tests/check_clamd.c	697	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	700	    ck_assert_int_eq(send_fdpass_fd_checked(sockets[0], fileno(regular), "regular-at-limit", &file_limit), 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	867	    {"INSTREAM", "\xff\xff\xff\xff", "INSTREAM size limit exceeded. ERROR", 0, 0, IDS_REJECT}, /* too big chunksize */
-offset-size-arithmetic	unit_tests/check_clamd.c	871	static void *recvpartial(int sd, size_t *len, int partial)
-offset-size-arithmetic	unit_tests/check_clamd.c	881	        if (off + BUFSIZ > buf_size) {
-offset-size-arithmetic	unit_tests/check_clamd.c	882	            buf_size += BUFSIZ + 1;
-offset-size-arithmetic	unit_tests/check_clamd.c	889	        off += bread;
-offset-size-arithmetic	unit_tests/check_clamd.c	893	    // But note that off-1 will likely be a '\n' newline character, and we don't want to overwrite that.
-offset-size-arithmetic	unit_tests/check_clamd.c	894	    buf[MIN(off, buf_size - 1)] = '\0';
-offset-size-arithmetic	unit_tests/check_clamd.c	900	static void *recvfull(int sd, size_t *len)
-offset-size-arithmetic	unit_tests/check_clamd.c	905	static void test_command(const char *cmd, size_t len, const char *extra, const char *expect, size_t expect_len)
-offset-size-arithmetic	unit_tests/check_clamd.c	941	    /* send nCOMMAND */
-offset-size-arithmetic	unit_tests/check_clamd.c	942	    snprintf(nreply, sizeof(nreply), "%s\n", test->reply);
-offset-size-arithmetic	unit_tests/check_clamd.c	943	    snprintf(nsend, sizeof(nsend), "n%s\n", test->command);
-offset-size-arithmetic	unit_tests/check_clamd.c	945	    test_command(nsend, strlen(nsend), test->extra, nreply, strlen(nreply));
-offset-size-arithmetic	unit_tests/check_clamd.c	948	    /* send zCOMMAND */
-offset-size-arithmetic	unit_tests/check_clamd.c	949	    snprintf(nsend, sizeof(nsend), "z%s", test->command);
-offset-size-arithmetic	unit_tests/check_clamd.c	951	    test_command(nsend, strlen(nsend) + 1, test->extra, test->reply, strlen(test->reply) + 1);
-offset-size-arithmetic	unit_tests/check_clamd.c	958	    /* test sending the command the "old way" */
+offset-size-arithmetic	unit_tests/check_clamd.c	571	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	574	    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "regular-over-limit", &stream_limit), 0);
+offset-size-arithmetic	unit_tests/check_clamd.c	581	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	584	    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "regular-at-limit", &stream_limit), 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	594	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	597	    ck_assert_int_eq(send_stream_fd(sockets[0], fileno(regular), "regular-zero-limit", &stream_limit), 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	604	    ck_assert_int_eq((int)write(pipefd[1], over, sizeof(over) - 1), (int)sizeof(over) - 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	607	    ck_assert_int_eq(send_stream_fd(sockets[0], pipefd[0], "pipe-over-limit", &stream_limit), -1);
+offset-size-arithmetic	unit_tests/check_clamd.c	621	    const size_t frame_length   = sizeof(payload) - 1;
+offset-size-arithmetic	unit_tests/check_clamd.c	622	    const size_t wire_length    = command_length + sizeof(uint32_t) + frame_length + sizeof(uint32_t);
+offset-size-arithmetic	unit_tests/check_clamd.c	623	    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t) + sizeof(payload) - 1 + sizeof(uint32_t)];
+offset-size-arithmetic	unit_tests/check_clamd.c	641	    memcpy(&network_length, wire + command_length, sizeof(network_length));
+offset-size-arithmetic	unit_tests/check_clamd.c	643	    ck_assert_mem_eq(wire + command_length + sizeof(network_length), payload, frame_length);
+offset-size-arithmetic	unit_tests/check_clamd.c	645	    memcpy(&network_length, wire + command_length + sizeof(network_length) + frame_length,
+offset-size-arithmetic	unit_tests/check_clamd.c	666	    ck_assert_int_eq(send_stream_fd(sockets[0], INT_MAX, "invalid", &stream_limit), -1);
+offset-size-arithmetic	unit_tests/check_clamd.c	667	    ck_assert_int_eq(recv(sockets[1], &command, sizeof(command), MSG_DONTWAIT), -1);
+offset-size-arithmetic	unit_tests/check_clamd.c	690	    ck_assert_int_eq((int)fwrite(over, 1, sizeof(over) - 1, regular), (int)sizeof(over) - 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	693	    ck_assert_int_eq(send_fdpass_fd_checked(sockets[0], fileno(regular), "regular-over-limit", &file_limit), 0);
+offset-size-arithmetic	unit_tests/check_clamd.c	700	    ck_assert_int_eq((int)fwrite(exact, 1, sizeof(exact) - 1, regular), (int)sizeof(exact) - 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	703	    ck_assert_int_eq(send_fdpass_fd_checked(sockets[0], fileno(regular), "regular-at-limit", &file_limit), 1);
+offset-size-arithmetic	unit_tests/check_clamd.c	870	    {"INSTREAM", "\xff\xff\xff\xff", "INSTREAM size limit exceeded. ERROR", 0, 0, IDS_REJECT}, /* too big chunksize */
+offset-size-arithmetic	unit_tests/check_clamd.c	874	static void *recvpartial(int sd, size_t *len, int partial)
+offset-size-arithmetic	unit_tests/check_clamd.c	884	        if (off + BUFSIZ > buf_size) {
+offset-size-arithmetic	unit_tests/check_clamd.c	885	            buf_size += BUFSIZ + 1;
+offset-size-arithmetic	unit_tests/check_clamd.c	892	        off += bread;
+offset-size-arithmetic	unit_tests/check_clamd.c	896	    // But note that off-1 will likely be a '\n' newline character, and we don't want to overwrite that.
+offset-size-arithmetic	unit_tests/check_clamd.c	897	    buf[MIN(off, buf_size - 1)] = '\0';
+offset-size-arithmetic	unit_tests/check_clamd.c	903	static void *recvfull(int sd, size_t *len)
+offset-size-arithmetic	unit_tests/check_clamd.c	908	static void test_command(const char *cmd, size_t len, const char *extra, const char *expect, size_t expect_len)
+offset-size-arithmetic	unit_tests/check_clamd.c	944	    /* send nCOMMAND */
+offset-size-arithmetic	unit_tests/check_clamd.c	945	    snprintf(nreply, sizeof(nreply), "%s\n", test->reply);
+offset-size-arithmetic	unit_tests/check_clamd.c	946	    snprintf(nsend, sizeof(nsend), "n%s\n", test->command);
+offset-size-arithmetic	unit_tests/check_clamd.c	948	    test_command(nsend, strlen(nsend), test->extra, nreply, strlen(nreply));
+offset-size-arithmetic	unit_tests/check_clamd.c	951	    /* send zCOMMAND */
+offset-size-arithmetic	unit_tests/check_clamd.c	952	    snprintf(nsend, sizeof(nsend), "z%s", test->command);
+offset-size-arithmetic	unit_tests/check_clamd.c	954	    test_command(nsend, strlen(nsend) + 1, test->extra, test->reply, strlen(test->reply) + 1);
 offset-size-arithmetic	unit_tests/check_clamd.c	96	    for (i = 0; i < sizeof(valid) / sizeof(valid[0]); i++) {
-offset-size-arithmetic	unit_tests/check_clamd.c	969	        snprintf(nreply, sizeof(nreply), "%s\n", test->reply);
-offset-size-arithmetic	unit_tests/check_clamd.c	974	        test_command(test->command, strlen(test->command), test->extra, nreply, strlen(nreply));
-offset-size-arithmetic	unit_tests/check_clamd.c	979	    snprintf(nsend, sizeof(nsend), "%s\n", test->command);
-offset-size-arithmetic	unit_tests/check_clamd.c	981	    test_command(nsend, strlen(nsend), test->extra, nreply, strlen(nreply));
-offset-size-arithmetic	unit_tests/check_clamd.c	986	         * strlen("FILDES\n") characters, then 1 character and the FD. */
-offset-size-arithmetic	unit_tests/check_clamd.c	988	        snprintf(nsend, sizeof(nsend), "%s\r\n", test->command);
-offset-size-arithmetic	unit_tests/check_clamd.c	990	        test_command(nsend, strlen(nsend), test->extra, nreply, strlen(nreply));
+offset-size-arithmetic	unit_tests/check_clamd.c	961	    /* test sending the command the "old way" */
+offset-size-arithmetic	unit_tests/check_clamd.c	972	        snprintf(nreply, sizeof(nreply), "%s\n", test->reply);
+offset-size-arithmetic	unit_tests/check_clamd.c	977	        test_command(test->command, strlen(test->command), test->extra, nreply, strlen(nreply));
+offset-size-arithmetic	unit_tests/check_clamd.c	982	    snprintf(nsend, sizeof(nsend), "%s\n", test->command);
+offset-size-arithmetic	unit_tests/check_clamd.c	984	    test_command(nsend, strlen(nsend), test->extra, nreply, strlen(nreply));
+offset-size-arithmetic	unit_tests/check_clamd.c	989	         * strlen("FILDES\n") characters, then 1 character and the FD. */
+offset-size-arithmetic	unit_tests/check_clamd.c	991	        snprintf(nsend, sizeof(nsend), "%s\r\n", test->command);
+offset-size-arithmetic	unit_tests/check_clamd.c	993	        test_command(nsend, strlen(nsend), test->extra, nreply, strlen(nreply));
 offset-size-arithmetic	unit_tests/check_clamfi_quota.c	1	/* Small, allocation-free regression tests for clamav-milter size policy. */
 offset-size-arithmetic	unit_tests/check_clamfi_quota.c	28	    CHECK(!clamfi_normalize_maxfilesize(thirty_two_gib + 1, &effective), "32 GiB+1 MaxFileSize was accepted");
 offset-size-arithmetic	unit_tests/check_disasm.c	112	        /* addrsize, m00/rm110 - mov [eax-5355], ebp */
@@ -32519,9 +32521,9 @@ large-file-option	clamscan/manager.c	2082	        if ((ret = cl_engine_set_num(e
 large-file-option	clamscan/manager.c	2083	            logg(LOGG_ERROR, "cli_engine_set_num(CL_ENGINE_MAX_FILESIZE) failed: %s\n", cl_strerror(ret));
 large-file-option	clamscan/manager.c	2091	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL))
 large-file-option	clamscan/manager.c	2093	        if (rlim.rlim_cur < (rlim_t)cl_engine_get_num(engine, CL_ENGINE_MAX_SCANSIZE, NULL))
-large-file-option	common/clamdcom.c	232	 * daemon's MaxFileSize policy available.  The daemon still rechecks the
-large-file-option	common/clamdcom.c	248	    max_file_size = optget(clamdopts, "MaxFileSize");
-large-file-option	common/clamdcom.c	269	        logg(LOGG_ERROR, "%s: File size exceeds MaxFileSize; refusing FILDES input. ERROR\n",
+large-file-option	common/clamdcom.c	240	 * daemon's MaxFileSize policy available.  The daemon still rechecks the
+large-file-option	common/clamdcom.c	256	    max_file_size = optget(clamdopts, "MaxFileSize");
+large-file-option	common/clamdcom.c	277	        logg(LOGG_ERROR, "%s: File size exceeds MaxFileSize; refusing FILDES input. ERROR\n",
 large-file-option	common/optparser.c	1411	                if (!strcmp(optentry->name, "MaxFileSize") ||
 large-file-option	common/optparser.c	1413	                    !strcmp(optentry->name, "OnAccessMaxFileSize")) {
 large-file-option	common/optparser.c	1653	                if (!strcmp(optentry->name, "MaxFileSize") ||
@@ -32610,7 +32612,7 @@ large-file-option	unit_tests/check_clamd.c	430	    ck_assert_int_eq(cl_engine_se
 large-file-option	unit_tests/check_clamd.c	467	    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, 0), CL_SUCCESS);
 large-file-option	unit_tests/check_clamd.c	470	    ck_assert_str_eq(reason, "MaxScanSize=0 disables the certified 64 GiB logical scan budget");
 large-file-option	unit_tests/check_clamd.c	477	    static const char *const names[] = {"StreamMaxLength", "OnAccessMaxFileSize"};
-large-file-option	unit_tests/check_clamd.c	682	    file_limit.name   = "MaxFileSize";
+large-file-option	unit_tests/check_clamd.c	685	    file_limit.name   = "MaxFileSize";
 large-file-option	unit_tests/check_clamfi_quota.c	24	    CHECK(clamfi_normalize_maxfilesize(0, &effective), "zero MaxFileSize was rejected");
 large-file-option	unit_tests/check_clamfi_quota.c	25	    CHECK(effective == thirty_two_gib, "zero MaxFileSize did not select 32 GiB");
 large-file-option	unit_tests/check_clamfi_quota.c	26	    CHECK(clamfi_normalize_maxfilesize(four_gib, &effective), "4 GiB MaxFileSize was rejected");

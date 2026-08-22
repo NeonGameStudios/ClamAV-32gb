@@ -699,3 +699,8 @@
   oversized, cumulative-size, or internally counted skipped members, rather
   than only recording a heuristic and returning success. Full ALZ limit-edge
   and production qualification remain open.
+
+- Keep `clamd_stream_limit()` as the single hard 32-GiB ingress ceiling for
+  both daemon staging and client preflight, including integrations that pass a
+  directly constructed option object; compiled service and Sonic1 evidence
+  remain required.

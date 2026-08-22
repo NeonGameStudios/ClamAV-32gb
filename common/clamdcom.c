@@ -69,6 +69,14 @@ uint64_t clamd_stream_limit(const struct optstruct *clamdopts)
     if (!stream_limit || stream_limit->numarg <= 0)
         return CLI_MAX_LARGE_FILESIZE;
 
+    /* Keep the shared daemon/client contract fail-closed even when an
+     * optstruct did not come through common/optparser.c. Stale callers and
+     * programmatic integrations can construct an option object directly;
+     * neither side of the protocol may stage or send more than the certified
+     * 32-GiB ingress ceiling. */
+    if ((uint64_t)stream_limit->numarg > CLI_MAX_LARGE_FILESIZE)
+        return CLI_MAX_LARGE_FILESIZE;
+
     return (uint64_t)stream_limit->numarg;
 }
 

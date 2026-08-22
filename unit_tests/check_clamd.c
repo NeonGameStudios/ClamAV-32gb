@@ -536,6 +536,9 @@ START_TEST(test_stream_limit_zero_selects_large_file_ceiling)
 
     stream_limit.numarg = 4096;
     ck_assert_uint_eq(clamd_stream_limit(&stream_limit), 4096);
+
+    stream_limit.numarg = (long long)CLI_MAX_LARGE_FILESIZE + 1;
+    ck_assert_uint_eq(clamd_stream_limit(&stream_limit), CLI_MAX_LARGE_FILESIZE);
 }
 END_TEST
 
