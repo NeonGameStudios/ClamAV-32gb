@@ -1718,6 +1718,7 @@ contains libclamav/xar.c '!indata && !inea && 0 == gotoffset + gotlength + gotsi
 contains libclamav/xar.c 'XAR inspection ended before completion'
 contains libclamav/xar.c 'XAR TOC temporary spool could not be reserved'
 contains libclamav/xar.c 'xar_reserve_output'
+contains libclamav/xar.c 'XAR temporary output reached the configured time limit'
 contains libclamav/xar.c 'XAR gzip member exceeds temporary storage limits'
 contains libclamav/xar.c 'XAR LZMA member exceeds temporary storage limits'
 contains libclamav/xar.c 'XAR member exceeds temporary storage limits'

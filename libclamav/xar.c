@@ -97,6 +97,10 @@ static cl_error_t xar_reserve_output(cli_ctx *ctx, uint64_t *reserved, uint64_t 
         return CL_ERESOURCE;
     }
 
+    status = xar_checktimelimit(ctx, "XAR temporary output reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
+
     status = cli_scan_reserve_temporary(ctx, bytes);
     if (status != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, reason);
