@@ -4957,7 +4957,8 @@ host run remains required.
 
 Recognized BMP inputs now receive bounded structural validation of the file
 header, DIB dimensions, compression, pixel offset, declared file size, and
-pixel range without mapping the attacker-declared image payload. This does not
+derived uncompressed pixel range (including the legal zero image-size case)
+without mapping the attacker-declared image payload. This does not
 claim complete BMP decoding: valid structurally admitted BMPs return an
 explicit unsupported/incomplete result, while malformed/truncated inputs
 preserve `CL_EPARSE` and backing callback failures preserve `CL_EREAD`.

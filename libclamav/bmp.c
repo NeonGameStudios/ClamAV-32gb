@@ -83,6 +83,19 @@ static bool bmp_compression_is_known(uint32_t compression)
     }
 }
 
+static bool bmp_compression_has_raw_rows(uint32_t compression)
+{
+    switch (compression) {
+        case BMP_BI_RGB:
+        case BMP_BI_BITFIELDS:
+        case BMP_BI_ALPHABITFIELDS:
+        case BMP_BI_CMYK:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static bool bmp_bpp_is_known(uint16_t bits_per_pixel)
 {
     switch (bits_per_pixel) {
@@ -123,6 +136,10 @@ cl_error_t cli_scanbmp(cli_ctx *ctx)
     uint64_t dib_end;
     uint64_t available_end;
     uint64_t map_length;
+    uint64_t required_pixel_bytes;
+    uint64_t row_bits;
+    uint64_t row_bytes;
+    uint64_t height;
     bool top_down = false;
     cl_error_t status;
 
@@ -216,6 +233,29 @@ cl_error_t cli_scanbmp(cli_ctx *ctx)
     if ((image_size != 0) &&
         ((uint64_t)image_size > (available_end - (uint64_t)pixel_offset)))
         return bmp_parse_error(ctx, "BMP pixel data range is truncated");
+
+    /* BI_RGB and the raw bitfield/CMYK variants may legally leave
+     * biSizeImage at zero. Derive their row-stride range so a header-only
+     * mapping cannot be treated as a structurally admitted image. */
+    if (bmp_compression_has_raw_rows(compression)) {
+        height = top_down ? (UINT64_C(0x100000000) - (uint64_t)height_raw) : (uint64_t)height_raw;
+        if ((uint64_t)width_raw > UINT64_MAX / (uint64_t)bits_per_pixel)
+            return bmp_parse_error(ctx, "BMP row-size arithmetic overflowed");
+        row_bits = (uint64_t)width_raw * (uint64_t)bits_per_pixel;
+        if (row_bits > UINT64_MAX - 31U)
+            return bmp_parse_error(ctx, "BMP row-size arithmetic overflowed");
+        row_bytes = (row_bits + 31U) / 32U;
+        if (row_bytes > UINT64_MAX / 4U)
+            return bmp_parse_error(ctx, "BMP row-size arithmetic overflowed");
+        row_bytes *= 4U;
+        if ((height != 0) && (row_bytes > UINT64_MAX / height))
+            return bmp_parse_error(ctx, "BMP pixel-size arithmetic overflowed");
+        required_pixel_bytes = row_bytes * height;
+        if (required_pixel_bytes > (available_end - (uint64_t)pixel_offset))
+            return bmp_parse_error(ctx, "BMP derived pixel data range is truncated");
+        if ((image_size != 0) && ((uint64_t)image_size < required_pixel_bytes))
+            return bmp_parse_error(ctx, "BMP declared pixel data size is too small");
+    }
 
     /* Header admission is deliberately not a clean result. The bounded
      * parser does not decode pixels or inspect embedded compressed payloads. */

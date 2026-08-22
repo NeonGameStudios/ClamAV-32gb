@@ -161,6 +161,7 @@ contains unit_tests/check_clamav.c 'test_descriptor_limit_preflight_precedes_fma
 contains unit_tests/check_clamav.c 'test_child_descriptor_inspection_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_file_type_detection_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_graphics_bmp_truncated_header_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_bmp_missing_uncompressed_pixel_range_is_malformed'
 contains unit_tests/check_clamav.c 'test_bmp_structural_admission_remains_incomplete'
 contains libclamav/apm.c 'APM partition entry could not be read completely'
 contains unit_tests/check_clamav.c 'test_apm_partition_read_failure_is_fail_visible'
