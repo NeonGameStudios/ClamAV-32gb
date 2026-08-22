@@ -1424,7 +1424,7 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
     cl_error_t decode_status    = CL_SUCCESS;
     uint64_t outsize            = 0;
     uint64_t temporary_reserved = 0;
-    int bytes;
+    int bytes = 0;
     bool stream_complete = false;
     fmap_t *map          = ctx->fmap;
     char *tmpname;
@@ -1455,7 +1455,15 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
         return ret;
     }
 
-    while ((bytes = gzread(gz, buff, FILEBUFF)) > 0) {
+    for (;;) {
+        decode_status = cli_checktimelimit(ctx);
+        if (decode_status != CL_SUCCESS)
+            break;
+
+        bytes = gzread(gz, buff, FILEBUFF);
+        if (bytes <= 0)
+            break;
+
         if (outsize > UINT64_MAX - (uint64_t)bytes) {
             cli_mark_scan_incomplete(ctx, "GZip legacy output size overflowed");
             decode_status = CL_EPARSE;
@@ -1546,6 +1554,10 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
     }
 
     while (at < map->len) {
+        decode_status = cli_checktimelimit(ctx);
+        if (decode_status != CL_SUCCESS)
+            break;
+
         stream_complete    = false;
         unsigned int bytes = MIN(map->len - at, map->pgsz);
         if (!(z.next_in = (void *)fmap_need_off_once(map, at, bytes))) {
@@ -1568,6 +1580,13 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
             int inf;
             size_t produced;
             uint64_t next_outsize;
+
+            decode_status = cli_checktimelimit(ctx);
+            if (decode_status != CL_SUCCESS) {
+                at = map->len;
+                break;
+            }
+
             z.avail_out = sizeof(buff);
             z.next_out  = buff;
             inf         = inflate(&z, Z_NO_FLUSH);
@@ -1688,6 +1707,10 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
     }
 
     do {
+        decode_status = cli_checktimelimit(ctx);
+        if (decode_status != CL_SUCCESS)
+            break;
+
         if (!strm.avail_in) {
             avail         = 0;
             strm.next_in  = (void *)fmap_need_off_once_len(ctx->fmap, off, FILEBUFF, &avail);
@@ -1819,6 +1842,10 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
     cli_dbgmsg("cli_scanxz: decompressing to file %s\n", tmpname);
 
     do {
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS)
+            goto xz_exit;
+
         /* set up input buffer */
         if (!strm.avail_in) {
             strm.next_in  = (void *)fmap_need_off_once_len(ctx->fmap, off, CLI_XZ_IBUF_SIZE, &avail);

@@ -222,6 +222,10 @@
   failures (`CL_EREAD`) from genuine premature EOF/decode failures; add
   compiled callback-fault, sanitizer, and production compressed-stream corpus
   qualification.
+- GZip (including its legacy fallback), BZip2, and XZ now re-check the shared
+  `MaxScanTime` deadline during decompression instead of allowing CPU-heavy
+  streams with little output to bypass the scan deadline; add compiled timeout,
+  sanitizer, and production compressed-stream qualification.
 - Script normalization now carries the text normalizer's specific fmap read
   status, preserving in-range callback failures as `CL_EREAD` instead of
   generic parse errors; add compiled scanner-level callback-fault and
