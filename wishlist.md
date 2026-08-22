@@ -1032,6 +1032,8 @@
 - The legacy PDF dictionary helper and large value decoders now receive scan
   context deadlines; migrate the compatibility context-free encryption helper
   and add compiled malformed-value and timeout coverage.
+- The context-bearing encryption-object `/Standard` search now uses deadline
+  windows; add compiled encrypted-PDF timeout and malformed-dictionary tests.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.

@@ -4492,6 +4492,11 @@ method helper remains a compatibility boundary and deliberately retains its
 fallback search behavior; compiled dictionary timeout and malformed-value
 qualification remain open.
 
+The context-bearing encryption-object `/Standard` search now also uses the
+deadline-aware window helper; the PDF version-header search remains bounded to
+the existing 1032-byte probe. Compiled encrypted-PDF timeout and malformed
+dictionary qualification remain release gates.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one

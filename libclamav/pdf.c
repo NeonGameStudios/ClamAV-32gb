@@ -2340,6 +2340,7 @@ static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
 {
     const char *q, *q2;
     cl_error_t search_status;
+    cl_error_t search_status;
     unsigned long objid;
     unsigned long genid;
     long temp_long;
@@ -3705,7 +3706,11 @@ void pdf_handle_enc(struct pdf_struct *pdf)
     pdf->enc_method_stream       = ENC_UNKNOWN;
     pdf->enc_method_embeddedfile = ENC_UNKNOWN;
 
-    q2 = cli_memstr(q, len, "/Standard", 9);
+    q2 = pdf_memstr_deadline(pdf, q, len, "/Standard", 9, &search_status);
+    if (CL_ETIMEOUT == search_status) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF encryption standard search reached the configured time limit");
+        goto done;
+    }
     if (!q2) {
         cli_dbgmsg("pdf_handle_enc: /Standard not found\n");
         noisy_warnmsg("pdf_handle_enc: /Standard not found\n");
