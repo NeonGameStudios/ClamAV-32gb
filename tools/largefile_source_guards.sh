@@ -2230,6 +2230,7 @@ contains libclamav/hfsplus.c 'cli_scan_release_temporary(ctx, resource_reserved)
 contains libclamav/iso9660.c 'iso->base_offset > ctx->fmap->len'
 contains libclamav/iso9660.c 'logical_offset > available'
 contains libclamav/iso9660.c 'ISO directory block coordinate overflowed'
+contains libclamav/iso9660.c 'ISO root directory block coordinate overflowed'
 contains libclamav/iso9660.c 'ISO directory traversal reached the configured time limit'
 contains libclamav/iso9660.c 'ISO directory-entry traversal reached the configured time limit'
 contains libclamav/iso9660.c 'ISO file extent traversal reached the configured time limit'

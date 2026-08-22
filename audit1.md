@@ -3796,3 +3796,15 @@ bytes differ from logical bytes. A focused synthetic descriptor regression
 covers the shorter-than-declared case. Static guards and whitespace validation
 remain the available local evidence; compiled transformed-extent/read-fault,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
+
+## ISO9660 root-directory coordinate overflow — 2026-08-22
+
+ISO child directory records already checked their extent-location plus
+extended-attribute-length coordinate, but the primary root-directory record
+still performed that addition in a 32-bit expression. A wrapped root could
+therefore redirect the walk to an earlier block. The root coordinate now uses
+checked 64-bit arithmetic and marks overflow incomplete before directory
+state is traversed; the existing coordinate regression covers both child and
+root cases. Static guards and whitespace validation remain the available local
+evidence; compiled ISO corpus, sanitizer, and supported-build qualification
+remain release gates.

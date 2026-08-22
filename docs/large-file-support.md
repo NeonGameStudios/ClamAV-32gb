@@ -5249,3 +5249,13 @@ buffer length when searching for a version suffix and writing the terminator,
 so a long identifier cannot index past the display buffer. A synthetic
 260-byte identifier regression and source guards cover the boundary; compiled
 ISO corpus, sanitizer, and parser-family qualification remain open.
+
+## ISO9660 root-directory coordinate overflow — 2026-08-22
+
+The primary ISO root directory uses the same extent-location plus
+extended-attribute-length arithmetic as child directory records. That sum is
+now performed in 64-bit arithmetic and rejected before the root walk when it
+cannot be represented by the ISO block coordinate; otherwise a wrapped value
+could redirect inspection to an earlier block. The existing coordinate
+regression now covers both child and root records; compiled ISO corpus,
+sanitizer, and parser-family qualification remain open.

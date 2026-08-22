@@ -356,6 +356,7 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     cl_error_t status   = CL_SUCCESS;
     cl_error_t ret      = CL_SUCCESS;
     uint32_t nextJoliet = 0;
+    uint64_t root_directory_block64;
 
     if (ctx == NULL || ctx->fmap == NULL)
         return CL_ENULLARG;
@@ -513,6 +514,12 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
             goto done;
         }
 
+        root_directory_block64 = (uint64_t)cli_readint32(privol + 156 + 2) + privol[156 + 1];
+        if (root_directory_block64 > UINT32_MAX) {
+            status = iso_incomplete(ctx, "ISO root directory block coordinate overflowed");
+            goto done;
+        }
+
         iso.ctx = ctx;
         ret     = cli_hashset_init(&iso.dir_blocks, 1024, 80);
         if (ret != CL_SUCCESS) {
@@ -521,7 +528,7 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
             goto done;
         }
 
-        ret = iso_parse_dir(&iso, cli_readint32(privol + 156 + 2) + privol[156 + 1], cli_readint32(privol + 156 + 10));
+        ret = iso_parse_dir(&iso, (unsigned int)root_directory_block64, cli_readint32(privol + 156 + 10));
         cli_hashset_destroy(&iso.dir_blocks);
         switch (ret) {
             case CL_CLEAN:

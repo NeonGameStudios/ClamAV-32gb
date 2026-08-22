@@ -11421,6 +11421,30 @@ START_TEST(test_iso_directory_coordinate_overflow_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+
+    /* The primary root record has the same 32-bit extent-plus-attribute
+     * arithmetic as a child record. A wrapped root must not redirect the walk
+     * to an earlier block and produce a clean result. */
+    data[ISO_OFFSET + 156 + 1] = 1;
+    data[ISO_OFFSET + 156 + 2] = 0xff;
+    data[ISO_OFFSET + 156 + 3] = 0xff;
+    data[ISO_OFFSET + 156 + 4] = 0xff;
+    data[ISO_OFFSET + 156 + 5] = 0xff;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_ISO9660", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
     cl_engine_free(scan_engine);
 }
 END_TEST
