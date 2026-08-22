@@ -174,6 +174,8 @@ struct pdf_struct {
     off_t startoff;
     cli_ctx *ctx;
     const char *dir;
+    /* Set by pdf_extract_obj while its temporary output remains live. */
+    uint64_t *temporary_reserved;
     unsigned files;
     uint32_t enc_objid;
     char *fileID;

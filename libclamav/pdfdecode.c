@@ -109,6 +109,69 @@ static cl_error_t pdf_checktimelimit(struct pdf_struct *pdf, const char *reason)
     return status;
 }
 
+static cl_error_t pdf_write_output(struct pdf_struct *pdf, int fout, const void *data, size_t length)
+{
+    cl_error_t status;
+
+    if (pdf == NULL || pdf->ctx == NULL || data == NULL || fout < 0)
+        return CL_ENULLARG;
+
+    if (pdf->temporary_reserved != NULL) {
+        if (UINT64_MAX - *pdf->temporary_reserved < (uint64_t)length) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF stream temporary output size overflowed");
+            return CL_ERESOURCE;
+        }
+
+        status = cli_scan_reserve_temporary(pdf->ctx, (uint64_t)length);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF stream output exceeds temporary storage limits");
+            return status;
+        }
+        *pdf->temporary_reserved += (uint64_t)length;
+    }
+
+    if (cli_writen(fout, data, length) != length) {
+        if (pdf->temporary_reserved != NULL) {
+            cli_scan_release_temporary(pdf->ctx, (uint64_t)length);
+            *pdf->temporary_reserved -= (uint64_t)length;
+        }
+        cli_mark_scan_incomplete(pdf->ctx, "PDF stream output could not be written completely");
+        return CL_EWRITE;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *stream, size_t streamlen, int fout,
+                                       size_t *bytes_scanned)
+{
+    size_t offset = 0;
+    cl_error_t status;
+
+    status = cli_checklimits("pdf", pdf->ctx, (uint64_t)streamlen, 0, 0);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF raw stream exceeded configured scan limits");
+        return status;
+    }
+
+    while (offset < streamlen) {
+        size_t chunk = MIN((size_t)PDF_INPUT_WINDOW_SIZE, streamlen - offset);
+
+        status = pdf_checktimelimit(pdf, "PDF raw stream traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            return status;
+
+        status = pdf_write_output(pdf, fout, stream + offset, chunk);
+        if (status != CL_SUCCESS)
+            return status;
+        offset += chunk;
+    }
+
+    if (bytes_scanned != NULL)
+        *bytes_scanned = streamlen;
+    return CL_SUCCESS;
+}
+
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -158,18 +221,29 @@ size_t pdf_decodestream(
     if (*status != CL_SUCCESS)
         goto done;
 
-    /* The legacy filter implementations use 32-bit input lengths internally.
-     * Reject a larger PDF stream before assigning it to the token or narrowing
-     * it in a filter, rather than wrapping the length and scanning a prefix. */
-    if (streamlen > UINT32_MAX) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF stream exceeds the decoder's 32-bit input boundary");
-        *status = CL_ERESOURCE;
-        goto done;
-    }
-
     if (!stream || !streamlen || fout < 0) {
         cli_dbgmsg("pdf_decodestream: no filters or stream on obj %u %u\n", obj->id >> 8, obj->id & 0xff);
         *status = CL_ENULLARG;
+        goto done;
+    }
+
+    /* An unfiltered stream has no reason to enter the contiguous legacy
+     * decoder token. Copy it to the child output in bounded chunks instead,
+     * preserving the 64-bit containing-file coordinate and shared temporary
+     * admission. Object streams and encrypted layers still require the
+     * filtered token path below. */
+    if (obj->numfilters == 0 && objstm == NULL && !(pdf->flags & (1 << DECRYPTABLE_PDF))) {
+        *status = pdf_write_raw_stream(pdf, stream, streamlen, fout, &bytes_scanned);
+        goto done;
+    }
+
+    /* The legacy filter implementations use 32-bit input lengths internally.
+     * Reject a larger filtered stream before assigning it to the token or
+     * narrowing it in a filter, rather than wrapping the length and scanning a
+     * prefix. */
+    if (streamlen > UINT32_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF filtered stream exceeds the decoder's 32-bit input boundary");
+        *status = CL_ERESOURCE;
         goto done;
     }
 
@@ -228,10 +302,10 @@ size_t pdf_decodestream(
         } else {
             cli_dbgmsg("pdf_decodestream: no non-forced filters decoded, returning raw stream\n");
 
-            if (cli_writen(fout, stream, streamlen) != streamlen) {
+            cl_error_t write_status = pdf_write_output(pdf, fout, stream, streamlen);
+            if (write_status != CL_SUCCESS) {
                 cli_errmsg("pdf_decodestream: failed to write raw stream to output file\n");
-                cli_mark_scan_incomplete(pdf->ctx, "PDF raw stream could not be written completely");
-                *status = CL_EWRITE;
+                *status = write_status;
             } else {
                 bytes_scanned = streamlen;
             }
@@ -431,12 +505,15 @@ static size_t pdf_decodestream_internal(
         if (limit_status != CL_SUCCESS) {
             cli_mark_scan_incomplete(pdf->ctx, "PDF decoded stream exceeded configured scan limits");
             *status = limit_status;
-        } else if (cli_writen(fout, token->content, token->length) != token->length) {
-            cli_errmsg("pdf_decodestream_internal: failed to write decoded stream content to output file\n");
-            cli_mark_scan_incomplete(pdf->ctx, "PDF decoded stream could not be written completely");
-            *status = CL_EWRITE;
         } else {
-            bytes_scanned = token->length;
+            cl_error_t write_status = pdf_write_output(pdf, fout, token->content, token->length);
+
+            if (write_status != CL_SUCCESS) {
+                cli_errmsg("pdf_decodestream_internal: failed to write decoded stream content to output file\n");
+                *status = write_status;
+            } else {
+                bytes_scanned = token->length;
+            }
         }
     }
 

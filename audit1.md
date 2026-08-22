@@ -3998,3 +3998,15 @@ MBOX/phishing URL normalizer uses the same admission while it runs. Quota and
 write failures remain incomplete and non-cacheable, including RFC2397 files
 that finish before the normalizer exits. Direct legacy HTML helper wrappers
 retain their compatibility behavior and still require separate qualification.
+
+## PDF raw-stream chunking and output admission — 2026-08-22
+
+Unfiltered PDF streams previously entered the contiguous legacy decoder token
+and could be rejected by the 1 GiB individual-allocation boundary even though
+no filter decoding was required. They now copy to the extracted child in
+64 KiB chunks while preserving native-width containing-file coordinates.
+Decoded/filtered stream output is admitted through the same caller-owned
+temporary reservation used by `pdf_extract_obj`. Filtered decoder input and
+decoder growth above the 1 GiB individual-allocation boundary remain an
+explicit unsupported/incomplete result; full streaming filter conversion,
+compiled PDF corpus, sanitizer, and Sonic1 qualification remain open.

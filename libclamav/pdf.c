@@ -1598,6 +1598,8 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
     bool dump                = true;
     struct pdf_dict *dparams = NULL;
 
+    pdf->temporary_reserved = &temporary_reserved;
+
     cli_dbgmsg("pdf_extract_obj: obj %u %u\n", obj->id >> 8, obj->id & 0xff);
 
     if (PDF_OBJECT_RECURSION_LIMIT < pdf->parse_recursion_depth) {
@@ -2054,6 +2056,7 @@ done:
                                      "PDF extracted object could not be closed",
                                      "PDF extracted object could not be removed");
     temporary_reserved = 0;
+    pdf->temporary_reserved = NULL;
 
     return status;
 }

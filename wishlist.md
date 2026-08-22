@@ -262,6 +262,12 @@
   legacy ASCII85, RunLength, Flate, ASCIIHex, LZW, and filter-chain traversal
   now honors the shared scan deadline; fully streaming PDF-filter conversion
   and large-corpus qualification remain open.
+- Unfiltered PDF streams now bypass the contiguous legacy decoder token and copy
+  to extracted output in 64 KiB chunks with caller-owned `MaxTemporarySize`
+  reservations; decoded filtered output is charged to the same shared budget,
+  while filtered decoder input/growth remains explicitly bounded at the 1 GiB
+  individual-allocation ceiling and full streaming filter conversion remains
+  open.
 - TIFF IFD traversal now keeps its working cursor native-width, preventing a
   malformed IFD near the 4 GiB coordinate boundary from wrapping back to the
   beginning of a larger file; the on-disk TIFF offsets remain 32-bit.
