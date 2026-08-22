@@ -4249,3 +4249,14 @@ current reservation and keep partial output out of nested scans. Source guards
 cover the legacy and streaming boundaries; deterministic timeout injection,
 compiled XML/OOXML/HWPML corpus, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## Shared compressed-output write deadlines — 2026-08-22
+
+The shared compressed-output reservation now re-checks the scan deadline after
+each temporary quota admission, releasing the current chunk when the deadline
+expires. GZip (including the legacy fallback), BZip2, XZ, script normalization,
+and CryptFF now also re-check the deadline immediately before each materialized
+write and preserve the timeout through their existing cleanup paths. Source
+guards cover the shared writer and each family-specific timeout reason;
+deterministic output-timeout injection, compiled compressed/script/CryptFF
+corpus, sanitizer, and Sonic1 qualification remain release gates.

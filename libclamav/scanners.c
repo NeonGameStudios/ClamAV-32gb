@@ -1510,7 +1510,33 @@ static cl_error_t cli_reserve_temp_output(cli_ctx *ctx, uint64_t *reserved, uint
         return status;
     }
 
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_scan_release_temporary(ctx, bytes);
+        cli_mark_scan_incomplete(ctx, "compressed decoder output reached the configured time limit");
+        return status;
+    }
+
     *reserved += bytes;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_write_temp_output(cli_ctx *ctx, int fd, const void *data, size_t bytes,
+                                        const char *time_reason, const char *write_reason)
+{
+    cl_error_t status;
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, time_reason);
+        return status;
+    }
+
+    if (cli_writen(fd, data, bytes) != bytes) {
+        cli_mark_scan_incomplete(ctx, write_reason);
+        return CL_EWRITE;
+    }
+
     return CL_SUCCESS;
 }
 
@@ -1576,9 +1602,9 @@ static cl_error_t cli_scangzip_with_zib_from_the_80s(cli_ctx *ctx, unsigned char
                  ctx, &temporary_reserved, (uint64_t)bytes,
                  "GZip legacy output exceeds temporary storage limits")) != CL_SUCCESS)
             break;
-        if (cli_writen(fd, buff, (size_t)bytes) != (size_t)bytes) {
-            cli_mark_scan_incomplete(ctx, "GZip legacy output could not be written completely");
-            decode_status = CL_EWRITE;
+        if ((decode_status = cli_write_temp_output(ctx, fd, buff, (size_t)bytes,
+                                                   "GZip legacy output reached the configured time limit",
+                                                   "GZip legacy output could not be written completely")) != CL_SUCCESS) {
             break;
         }
     }
@@ -1715,10 +1741,11 @@ static cl_error_t cli_scangzip(cli_ctx *ctx)
                 at = map->len;
                 break;
             }
-            if (cli_writen(fd, buff, produced) != produced) {
-                cli_mark_scan_incomplete(ctx, "GZip output could not be written completely");
+            if ((decode_status = cli_write_temp_output(ctx, fd, buff, produced,
+                                                       "GZip output reached the configured time limit",
+                                                       "GZip output could not be written completely")) != CL_SUCCESS) {
                 inflateEnd(&z);
-                ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, CL_EWRITE,
+                ret = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
                                                   temporary_reserved,
                                                   "GZip temporary output could not be closed",
                                                   "GZip temporary output could not be removed");
@@ -1867,10 +1894,10 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
                      "Bzip output exceeds temporary storage limits")) != CL_SUCCESS)
                 break;
 
-            if (cli_writen(fd, buf, produced) != produced) {
+            if ((decode_status = cli_write_temp_output(ctx, fd, buf, produced,
+                                                       "Bzip output reached the configured time limit",
+                                                       "Bzip output could not be written completely")) != CL_SUCCESS) {
                 cli_dbgmsg("Bzip: Can't write to file.\n");
-                cli_mark_scan_incomplete(ctx, "Bzip output could not be written completely");
-                decode_status = CL_EWRITE;
                 BZ2_bzDecompressEnd(&strm);
                 decode_status = cli_cleanup_compressed_temp(ctx, &fd, tmpname, decode_status,
                                                             temporary_reserved,
@@ -2045,10 +2072,10 @@ static cl_error_t cli_scanxz(cli_ctx *ctx)
             // cli_dbgmsg("Writing %li bytes to XZ decompress temp file(%li byte total)\n",
             //            towrite, size);
 
-            if (cli_writen(fd, buf, towrite) != towrite) {
+            if ((ret = cli_write_temp_output(ctx, fd, buf, towrite,
+                                             "XZ output reached the configured time limit",
+                                             "XZ decompressed output could not be written completely")) != CL_SUCCESS) {
                 cli_errmsg("cli_scanxz: Can't write to file.\n");
-                cli_mark_scan_incomplete(ctx, "XZ decompressed output could not be written completely");
-                ret = CL_EWRITE;
                 goto xz_exit;
             }
             size           = next_size;
@@ -3707,10 +3734,10 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
                     ret = CL_ERESOURCE;
                     goto done;
                 }
-                if (write(ofd, state.out, written) != (ssize_t)written) {
+                if ((ret = cli_write_temp_output(ctx, ofd, state.out, written,
+                                                 "Script normalized output reached the configured time limit",
+                                                 "Script normalized output could not be written completely")) != CL_SUCCESS) {
                     cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
-                    cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
-                    ret = CL_EWRITE;
                     goto done;
                 }
                 text_normalize_reset(&state);
@@ -4305,10 +4332,10 @@ static cl_error_t cli_scancryptff(cli_ctx *ctx)
         if ((ret = cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)bread,
                                            "CryptFF temporary output exceeds temporary storage limits")) != CL_SUCCESS)
             break;
-        if (cli_writen(ndesc, dest, bread) != bread) {
+        if ((ret = cli_write_temp_output(ctx, ndesc, dest, bread,
+                                         "CryptFF temporary output reached the configured time limit",
+                                         "CryptFF temporary output could not be written completely")) != CL_SUCCESS) {
             cli_dbgmsg("CryptFF: Can't write to descriptor %d\n", ndesc);
-            cli_mark_scan_incomplete(ctx, "CryptFF temporary output could not be written completely");
-            ret = CL_EWRITE;
             break;
         }
 
