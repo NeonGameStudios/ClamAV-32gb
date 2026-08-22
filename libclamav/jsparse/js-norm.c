@@ -316,27 +316,45 @@ struct buf {
     int outfd;
     cl_error_t error;
     cli_ctx *scan_ctx;
+    uint64_t *temporary_reserved;
     uint64_t total;
     char buf[65536];
 };
 
 static inline cl_error_t buf_flush(struct buf *buf, size_t length)
 {
+    uint64_t bytes;
+
     if (buf->error != CL_SUCCESS)
         return buf->error;
+    bytes = (uint64_t)length;
+    if (UINT64_MAX - buf->total < bytes) {
+        buf->error = CL_ERESOURCE;
+        return buf->error;
+    }
     if (buf->scan_ctx && cli_scan_account_matcher_work(buf->scan_ctx, (uint64_t)length) != CL_SUCCESS) {
         buf->error = CL_ERESOURCE;
         return buf->error;
     }
+    if (buf->temporary_reserved) {
+        if (buf->scan_ctx == NULL || UINT64_MAX - *buf->temporary_reserved < bytes) {
+            buf->error = CL_ERESOURCE;
+            return buf->error;
+        }
+        buf->error = cli_scan_reserve_temporary(buf->scan_ctx, bytes);
+        if (buf->error != CL_SUCCESS)
+            return buf->error;
+        *buf->temporary_reserved += bytes;
+    }
     if (cli_writen(buf->outfd, buf->buf, length) != length) {
+        if (buf->temporary_reserved) {
+            cli_scan_release_temporary(buf->scan_ctx, bytes);
+            *buf->temporary_reserved -= bytes;
+        }
         buf->error = CL_EWRITE;
         return buf->error;
     }
-    if (UINT64_MAX - buf->total < (uint64_t)length) {
-        buf->error = CL_ERESOURCE;
-        return buf->error;
-    }
-    buf->total += (uint64_t)length;
+    buf->total += bytes;
     return CL_SUCCESS;
 }
 
@@ -996,7 +1014,8 @@ void cli_js_parse_done(struct parser_state *state)
     state->scanner = NULL;
 }
 
-cl_error_t cli_js_output_ctx(struct parser_state *state, const char *tempdir, cli_ctx *ctx)
+cl_error_t cli_js_output_ctx_with_quota(struct parser_state *state, const char *tempdir, cli_ctx *ctx,
+                                        uint64_t *temporary_reserved)
 {
     unsigned i;
     struct buf buf;
@@ -1008,6 +1027,7 @@ cl_error_t cli_js_output_ctx(struct parser_state *state, const char *tempdir, cl
     buf.pos      = 0;
     buf.error    = CL_SUCCESS;
     buf.scan_ctx = ctx;
+    buf.temporary_reserved = temporary_reserved;
     buf.total    = 0;
     buf.outfd    = open(filename, O_CREAT | O_WRONLY | O_BINARY, 0600);
     if (buf.outfd < 0) {
@@ -1043,6 +1063,11 @@ cl_error_t cli_js_output_ctx(struct parser_state *state, const char *tempdir, cl
         return buf.error;
     cli_dbgmsg(MODULE "dumped/appended normalized script to: %s\n", filename);
     return CL_SUCCESS;
+}
+
+cl_error_t cli_js_output_ctx(struct parser_state *state, const char *tempdir, cli_ctx *ctx)
+{
+    return cli_js_output_ctx_with_quota(state, tempdir, ctx, NULL);
 }
 
 cl_error_t cli_js_output(struct parser_state *state, const char *tempdir)

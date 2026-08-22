@@ -12,7 +12,7 @@
 - The generated size/type/offset inventory has been refreshed from the current
   source tree and now remains reproducible through `tools/largefile_inventory.sh`;
   `largefile_source_guards.sh` now rejects any committed inventory drift, and
-  the 159-entry capability manifest validates against the refreshed dispatch
+  the 160-entry capability manifest validates against the refreshed dispatch
   inventory.
 - Sanitizer runtime qualification now rejects any native compile-database entry
   that lacks either ASan or UBSan, rather than accepting evidence because the
@@ -440,6 +440,10 @@
   range checks; parser-family and production-corpus qualification remain open.
 - HTML normalized no-comment, no-tags, and JavaScript output open failures now
   remain fail-visible; parser-family and production-corpus qualification remain open.
+- HTML normalized no-comment, no-tags, JavaScript, and RFC2397 output now uses
+  caller-owned chunk reservations against MaxTemporarySize through nested scans
+  and cleanup; compiled quota-fault, sanitizer, and production HTML/MHTML corpus
+  qualification remain open.
 - The mandatory service gate now directly exercises and oracle-validates all
   six structured clamd command families; full production qualification remains open.
 - CAB/CHM fmap callbacks now reject unrepresentable or wrapping origin/seek

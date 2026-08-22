@@ -205,6 +205,36 @@ START_TEST(test_htmlnorm_mapped_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_htmlnorm_temporary_limit_is_fail_visible)
+{
+    static const unsigned char input[] = "<html><body>temporary quota</body></html>";
+    cl_engine *engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint64_t temporary_reserved = 0;
+
+    memset(&ctx, 0, sizeof(ctx));
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, 1), CL_SUCCESS);
+
+    ck_assert_msg(mkdir(dir, 0700) == 0, "mkdir failed: %s", dir);
+    map = cl_fmap_open_memory(input, sizeof(input) - 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = engine;
+    ctx.fmap   = map;
+
+    ck_assert(!html_normalise_map_with_quota(&ctx, map, dir, NULL, NULL, &temporary_reserved));
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(temporary_reserved, 0);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    ck_assert_msg(cli_rmdirs(dir) == 0, "rmdirs failed: %s", dir);
+}
+END_TEST
+
 #ifndef _WIN32
 START_TEST(test_htmlnorm_time_limit_is_fail_visible)
 {
@@ -339,6 +369,7 @@ Suite *test_htmlnorm_suite(void)
     tcase_add_unchecked_fixture(tc_htmlnorm_api,
                                 htmlnorm_setup, htmlnorm_teardown);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_mapped_read_failure_is_fail_visible);
+    tcase_add_test(tc_htmlnorm_api, test_htmlnorm_temporary_limit_is_fail_visible);
 #ifndef _WIN32
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_time_limit_is_fail_visible);
 #endif

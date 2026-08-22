@@ -5011,7 +5011,7 @@ attempt.
 The authoritative `docs/largefile-inventory.tsv` was regenerated from the
 current source tree after the recent parser, daemon, Rust, and test changes.
 The generator reproduces the committed 32,608-line inventory exactly, and the
-159-entry capability manifest still validates every required ingress, matcher,
+160-entry capability manifest still validates every required ingress, matcher,
 feature, unsupported boundary, parser dispatch branch, and source path.
 
 ## clamscan stdin staging shares the temporary budget — 2026-08-22
@@ -5383,3 +5383,14 @@ ASan or UBSan. This prevents a partially instrumented build from satisfying the
 sanitizer provenance gate because one command happens to carry both flags.
 Actual Linux/Sonic1 sanitizer execution and parser coverage remain release
 gates.
+
+## HTML normalized-output temporary admission — 2026-08-22
+
+HTML nocomment, notags, JavaScript, and RFC2397 normalized output is now
+admitted in chunks against the caller-owned `MaxTemporarySize` budget before
+each write. The main HTML scanner retains those reservations through required
+normalized child scans and cleanup, while MBOX/phishing URL normalization uses
+the same admission for its file-backed pass. Quota and write failures remain
+incomplete and non-cacheable, including RFC2397 outputs that finish before
+the normalizer exits. Direct legacy HTML helper wrappers retain their
+compatibility behavior and require separate qualification.

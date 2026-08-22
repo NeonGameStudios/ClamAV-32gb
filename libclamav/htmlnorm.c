@@ -100,6 +100,8 @@ typedef enum {
 typedef struct file_buff_tag {
     int fd;
     cli_ctx *ctx;
+    uint64_t *temporary_reserved;
+    cl_error_t error;
     bool write_error;
     unsigned char buffer[HTML_FILE_BUFF_LEN];
     uint64_t length;
@@ -316,13 +318,61 @@ static unsigned char *cli_readchunk(FILE *stream, m_area_t *m_area, unsigned int
     return chunk;
 }
 
+static void html_output_mark_failure(file_buff_t *fbuff, cl_error_t status, const char *reason)
+{
+    if (fbuff == NULL)
+        return;
+
+    fbuff->write_error = true;
+    if (fbuff->error == CL_SUCCESS)
+        fbuff->error = status;
+    if (fbuff->ctx)
+        cli_mark_scan_incomplete(fbuff->ctx, reason);
+}
+
+static bool html_output_reserve(file_buff_t *fbuff, size_t length)
+{
+    cl_error_t status;
+
+    if (fbuff == NULL || length == 0 || fbuff->temporary_reserved == NULL)
+        return true;
+    if (fbuff->ctx == NULL || UINT64_MAX - *fbuff->temporary_reserved < (uint64_t)length) {
+        html_output_mark_failure(fbuff, CL_ERESOURCE, "HTML normalized output exceeds temporary storage limits");
+        return false;
+    }
+
+    status = cli_scan_reserve_temporary(fbuff->ctx, (uint64_t)length);
+    if (status != CL_SUCCESS) {
+        html_output_mark_failure(fbuff, status, "HTML normalized output exceeds temporary storage limits");
+        return false;
+    }
+    *fbuff->temporary_reserved += (uint64_t)length;
+    return true;
+}
+
+static void html_output_release(file_buff_t *fbuff, size_t length)
+{
+    if (fbuff == NULL || length == 0 || fbuff->temporary_reserved == NULL || fbuff->ctx == NULL)
+        return;
+    if (*fbuff->temporary_reserved < (uint64_t)length)
+        return;
+
+    cli_scan_release_temporary(fbuff->ctx, (uint64_t)length);
+    *fbuff->temporary_reserved -= (uint64_t)length;
+}
+
 static void html_output_flush(file_buff_t *fbuff)
 {
     if (fbuff && (fbuff->length > 0)) {
+        size_t length = (size_t)fbuff->length;
+
+        if (!html_output_reserve(fbuff, length)) {
+            fbuff->length = 0;
+            return;
+        }
         if (cli_writen(fbuff->fd, fbuff->buffer, fbuff->length) != fbuff->length) {
-            fbuff->write_error = true;
-            if (fbuff->ctx)
-                cli_mark_scan_incomplete(fbuff->ctx, "HTML normalized output could not be written completely");
+            html_output_release(fbuff, length);
+            html_output_mark_failure(fbuff, CL_EWRITE, "HTML normalized output could not be written completely");
         }
         fbuff->length = 0;
     }
@@ -334,6 +384,8 @@ static inline void html_output_c(file_buff_t *fbuff1, unsigned char c)
         if (fbuff1->length == HTML_FILE_BUFF_LEN) {
             html_output_flush(fbuff1);
         }
+        if (fbuff1->write_error)
+            return;
         fbuff1->buffer[fbuff1->length++] = c;
     }
 }
@@ -341,15 +393,17 @@ static inline void html_output_c(file_buff_t *fbuff1, unsigned char c)
 static void html_output_str(file_buff_t *fbuff, const unsigned char *str, size_t len)
 {
     if (fbuff) {
-        if ((fbuff->length + len) >= HTML_FILE_BUFF_LEN) {
+        if (len >= HTML_FILE_BUFF_LEN - fbuff->length) {
             html_output_flush(fbuff);
         }
+        if (fbuff->write_error)
+            return;
         if (len >= HTML_FILE_BUFF_LEN) {
-            html_output_flush(fbuff);
+            if (!html_output_reserve(fbuff, len))
+                return;
             if (cli_writen(fbuff->fd, str, len) != len) {
-                fbuff->write_error = true;
-                if (fbuff->ctx)
-                    cli_mark_scan_incomplete(fbuff->ctx, "HTML normalized output could not be written completely");
+                html_output_release(fbuff, len);
+                html_output_mark_failure(fbuff, CL_EWRITE, "HTML normalized output could not be written completely");
             }
         } else {
             memcpy(fbuff->buffer + fbuff->length, str, len);
@@ -666,7 +720,8 @@ static void screnc_decode(unsigned char *ptr, struct screnc_state *s)
 }
 
 static cl_error_t js_process(cli_ctx *ctx, struct parser_state *js_state, const unsigned char *js_begin, const unsigned char *js_end,
-                             const unsigned char *line, const unsigned char *ptr, tag_type in_tag, const char *dirname)
+                             const unsigned char *line, const unsigned char *ptr, tag_type in_tag, const char *dirname,
+                             uint64_t *temporary_reserved)
 {
     if (!js_begin)
         js_begin = line;
@@ -680,7 +735,7 @@ static cl_error_t js_process(cli_ctx *ctx, struct parser_state *js_state, const 
     if (in_tag == TAG_DONT_EXTRACT) {
         /*  we found a /script, normalize script now */
         cli_js_parse_done(js_state);
-        cl_error_t ret = cli_js_output_ctx(js_state, dirname, ctx);
+        cl_error_t ret = cli_js_output_ctx_with_quota(js_state, dirname, ctx, temporary_reserved);
         cli_js_destroy(js_state);
         return ret;
     }
@@ -736,7 +791,8 @@ static bool htmlnorm_checktimelimit(cli_ctx *ctx, const char *reason)
     return true;
 }
 
-static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
+static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const char *dirname, tag_arguments_t *hrefs,
+                               const struct cli_dconf *dconf, form_data_t *form_data, uint64_t *temporary_reserved)
 {
     int fd_tmp, tag_length = 0, tag_arg_length = 0;
     bool binary, retval = false, escape = false, hex = false;
@@ -813,8 +869,10 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
             file_buff_o2 = file_buff_text = NULL;
             goto done;
         }
-        file_buff_o2->ctx         = ctx;
-        file_buff_o2->write_error = false;
+        file_buff_o2->ctx                = ctx;
+        file_buff_o2->temporary_reserved = temporary_reserved;
+        file_buff_o2->error              = CL_SUCCESS;
+        file_buff_o2->write_error        = false;
 
         /* this will still contains scripts that are inside comments */
         snprintf(filename, 1024, "%s" PATHSEP "nocomment.html", dirname);
@@ -834,8 +892,10 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
             cli_errmsg("cli_html_normalise: Unable to allocate memory for file_buff_text\n");
             goto done;
         }
-        file_buff_text->ctx         = ctx;
-        file_buff_text->write_error = false;
+        file_buff_text->ctx                = ctx;
+        file_buff_text->temporary_reserved = temporary_reserved;
+        file_buff_text->error              = CL_SUCCESS;
+        file_buff_text->write_error        = false;
 
         snprintf(filename, 1024, "%s" PATHSEP "notags.html", dirname);
         file_buff_text->fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IWUSR | S_IRUSR);
@@ -1279,7 +1339,8 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                             in_tag = TAG_DONT_EXTRACT;
                             if (js_state) {
                                 js_end            = ptr;
-                                cl_error_t js_ret = js_process(ctx, js_state, js_begin, js_end, line, ptr, in_tag, dirname);
+                                cl_error_t js_ret = js_process(ctx, js_state, js_begin, js_end, line, ptr, in_tag, dirname,
+                                                                temporary_reserved);
                                 js_state          = NULL;
                                 js_begin = js_end = NULL;
                                 if (js_ret != CL_SUCCESS) {
@@ -1775,9 +1836,14 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         if (NULL != file_tmp_o1) {
                             if (file_tmp_o1->fd != -1) {
                                 html_output_flush(file_tmp_o1);
-                                close(file_tmp_o1->fd);
+                                if (close(file_tmp_o1->fd) != 0) {
+                                    cli_mark_scan_incomplete(ctx, "HTML embedded data output could not be closed");
+                                    retval = false;
+                                }
                                 file_tmp_o1->fd = -1;
                             }
+                            if (file_tmp_o1->write_error)
+                                retval = false;
                             free(file_tmp_o1);
                         }
 
@@ -1786,9 +1852,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                             cli_errmsg("cli_html_normalise: Unable to allocate memory for file_tmp_o1\n");
                             goto done;
                         }
-                        file_tmp_o1->ctx         = ctx;
-                        file_tmp_o1->write_error = false;
-                        file_tmp_o1->fd          = -1;
+                        file_tmp_o1->ctx                = ctx;
+                        file_tmp_o1->temporary_reserved = temporary_reserved;
+                        file_tmp_o1->error              = CL_SUCCESS;
+                        file_tmp_o1->write_error        = false;
+                        file_tmp_o1->fd                 = -1;
 
                         /* Create rfc2397 directory if it doesn't already exist */
                         snprintf(filename, 1024, "%s" PATHSEP "rfc2397", dirname);
@@ -1878,9 +1946,14 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                     if (file_tmp_o1) {
                         if (file_tmp_o1->fd != -1) {
                             html_output_flush(file_tmp_o1);
-                            close(file_tmp_o1->fd);
+                            if (close(file_tmp_o1->fd) != 0) {
+                                cli_mark_scan_incomplete(ctx, "HTML embedded data output could not be closed");
+                                retval = false;
+                            }
                             file_tmp_o1->fd = -1;
                         }
+                        if (file_tmp_o1->write_error)
+                            retval = false;
                         free(file_tmp_o1);
                         file_tmp_o1 = NULL;
                     }
@@ -1933,7 +2006,8 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
         ptrend = NULL;
 
         if (js_state) {
-            cl_error_t js_ret = js_process(ctx, js_state, js_begin, js_end, line, ptr, in_tag, dirname);
+            cl_error_t js_ret = js_process(ctx, js_state, js_begin, js_end, line, ptr, in_tag, dirname,
+                                           temporary_reserved);
             if (in_tag == TAG_DONT_EXTRACT)
                 js_state = NULL;
             if (js_ret != CL_SUCCESS) {
@@ -2046,7 +2120,7 @@ done:
     if (js_state) {
         /*  output script so far */
         cli_js_parse_done(js_state);
-        if (cli_js_output_ctx(js_state, dirname, ctx) != CL_SUCCESS) {
+        if (cli_js_output_ctx_with_quota(js_state, dirname, ctx, temporary_reserved) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "JavaScript normalization output could not be completed");
             retval = false;
         }
@@ -2128,7 +2202,7 @@ bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in
     m_area.map        = NULL;
     m_area.read_error = false;
 
-    return cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data);
+    return cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data, NULL);
 }
 
 bool html_normalise_map(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf)
@@ -2138,6 +2212,19 @@ bool html_normalise_map(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_argu
 
 bool html_normalise_map_form_data(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
 {
+    return html_normalise_map_form_data_with_quota(ctx, map, dirname, hrefs, dconf, form_data, NULL);
+}
+
+bool html_normalise_map_with_quota(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_arguments_t *hrefs,
+                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved)
+{
+    return html_normalise_map_form_data_with_quota(ctx, map, dirname, hrefs, dconf, NULL, temporary_reserved);
+}
+
+bool html_normalise_map_form_data_with_quota(cli_ctx *ctx, fmap_t *map, const char *dirname,
+                                             tag_arguments_t *hrefs, const struct cli_dconf *dconf,
+                                             form_data_t *form_data, uint64_t *temporary_reserved)
+{
     bool retval = false;
     m_area_t m_area;
 
@@ -2146,7 +2233,7 @@ bool html_normalise_map_form_data(cli_ctx *ctx, fmap_t *map, const char *dirname
     m_area.offset     = 0;
     m_area.map        = map;
     m_area.read_error = false;
-    retval            = cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data);
+    retval = cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data, temporary_reserved);
     return retval;
 }
 

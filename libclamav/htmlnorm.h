@@ -55,6 +55,11 @@ bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, con
 bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
 bool html_normalise_map(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
 bool html_normalise_map_form_data(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
+bool html_normalise_map_with_quota(cli_ctx *ctx, fmap_t *map, const char *dirname, tag_arguments_t *hrefs,
+                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved);
+bool html_normalise_map_form_data_with_quota(cli_ctx *ctx, fmap_t *map, const char *dirname,
+                                             tag_arguments_t *hrefs, const struct cli_dconf *dconf,
+                                             form_data_t *form_data, uint64_t *temporary_reserved);
 void html_tag_arg_free(tag_arguments_t *tags);
 bool html_screnc_decode(fmap_t *map, const char *dirname);
 bool html_screnc_decode_ctx(cli_ctx *ctx, fmap_t *map, const char *dirname,

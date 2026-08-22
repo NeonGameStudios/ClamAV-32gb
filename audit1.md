@@ -3987,3 +3987,14 @@ This removes the obsolete per-window 32-bit matcher boundary and preserves
 full-map PCRE, logical, and YARA evaluation for normalized output. Empty
 generated views remain representable; input-size, temporary-space, parser,
 sanitizer, corpus, and Sonic1 qualification remain release gates.
+
+## HTML normalized-output temporary admission — 2026-08-22
+
+HTML nocomment, notags, JavaScript, and RFC2397 normalized outputs now reserve
+each emitted chunk against the caller-owned `MaxTemporarySize` budget before
+writing. The main HTML scanner holds those reservations through all required
+normalized child scans and releases them only after temporary cleanup; the
+MBOX/phishing URL normalizer uses the same admission while it runs. Quota and
+write failures remain incomplete and non-cacheable, including RFC2397 files
+that finish before the normalizer exits. Direct legacy HTML helper wrappers
+retain their compatibility behavior and still require separate qualification.

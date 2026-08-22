@@ -4749,6 +4749,7 @@ getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
     fmap_t *map        = NULL;
     blob *b            = NULL;
     bool owns_input    = false;
+    uint64_t temporary_reserved = 0;
     STATBUF sb;
 
     if (incomplete)
@@ -4791,7 +4792,7 @@ getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
     hrefs->contents           = NULL;
 
     cli_dbgmsg("getHrefs: calling html_normalise_map\n");
-    if (!html_normalise_map(ctx, map, tmpdir, hrefs, ctx->dconf)) {
+    if (!html_normalise_map_with_quota(ctx, map, tmpdir, hrefs, ctx->dconf, &temporary_reserved)) {
         cli_mark_scan_incomplete(ctx, "HTML phishing input could not be normalized completely");
         if (incomplete)
             *incomplete = true;
@@ -4814,6 +4815,8 @@ getHrefs(cli_ctx *ctx, message *m, tag_arguments_t *hrefs, bool *incomplete)
     }
 
 done:
+    if (temporary_reserved)
+        cli_scan_release_temporary(ctx, temporary_reserved);
     if (map)
         fmap_free(map);
     if (owns_input && input)
