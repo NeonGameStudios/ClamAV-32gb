@@ -3695,3 +3695,13 @@ non-cacheable, resets the v1 context, and continues. A focused unit regression
 checks that the later v2 dispatch selects `match_offsets64` after the v1
 conversion fails; mixed interpreter/JIT and production qualification remain
 open.
+
+## ELF32 table-coordinate widening — 2026-08-22
+
+ELF32's table-base fields remain 32-bit format values, but the parser now
+uses native-width cursors while walking implicit program and section-header
+entries. This prevents a table that crosses 4 GiB in a larger containing file
+from wrapping its cursor to the beginning and reading unrelated bytes. A
+synthetic >4 GiB-coordinate regression verifies the second section header;
+compiled ELF corpus, sanitizer, and supported-Linux qualification remain
+release gates.

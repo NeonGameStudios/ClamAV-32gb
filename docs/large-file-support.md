@@ -5178,3 +5178,14 @@ release gates.
   `INT64_MAX` rather than emitting negative metrics. A focused saturated-counter
   regression covers the boundary; compiled report and service qualification
   remain open.
+
+## ELF32 table-coordinate widening — 2026-08-22
+
+ELF32 keeps its on-disk entry-point, program-table, and section-table offsets
+at 32 bits, but a table's later implicit entries can still lie beyond the
+4 GiB boundary in a larger containing file. The parser now widens its
+program/section table cursors to native-width containing-file coordinates
+instead of wrapping after the first entry. Format-defined 32-bit section and
+entry coordinates remain unchanged, and a synthetic table fixture verifies a
+second section header is read above `UINT32_MAX`. Full ELF corpus, sanitizer,
+and supported-Linux qualification remain open.

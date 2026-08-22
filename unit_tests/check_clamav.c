@@ -17054,6 +17054,93 @@ START_TEST(test_elf64_entry_offset_overflow_is_fail_visible)
     cl_fmap_close(map);
 }
 END_TEST
+
+struct elf32_large_table_state {
+    size_t length;
+    uint64_t section_offset;
+    uint64_t max_offset;
+    uint8_t file_header[sizeof(struct elf_file_hdr32)];
+    uint8_t section_headers[2 * sizeof(struct elf_section_hdr32)];
+};
+
+static off_t elf32_large_table_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct elf32_large_table_state *state = handle;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+    if ((uint64_t)offset > state->max_offset)
+        state->max_offset = (uint64_t)offset;
+
+    memset(buf, 0, count);
+    elf_large_metadata_copy(buf, count, (uint64_t)offset, 0, state->file_header,
+                            sizeof(state->file_header));
+    elf_large_metadata_copy(buf, count, (uint64_t)offset, state->section_offset,
+                            state->section_headers, sizeof(state->section_headers));
+    return (off_t)count;
+}
+
+START_TEST(test_elf32_table_coordinates_are_native_width)
+{
+    struct elf32_large_table_state state;
+    struct cli_exe_info exeinfo;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    if (sizeof(off_t) <= 4)
+        return;
+
+    memset(&state, 0, sizeof(state));
+    state.section_offset = (uint64_t)UINT32_MAX - 16U;
+    state.length         = (size_t)(state.section_offset + sizeof(state.section_headers));
+
+    state.file_header[0] = 0x7f;
+    state.file_header[1] = 'E';
+    state.file_header[2] = 'L';
+    state.file_header[3] = 'F';
+    state.file_header[4] = 1; /* ELFCLASS32 */
+    state.file_header[5] = 1; /* ELFDATA2LSB */
+    state.file_header[6] = 1;
+    zip_stream_write_u16(state.file_header + 16, 2);
+    zip_stream_write_u16(state.file_header + 18, 3);
+    zip_stream_write_u32(state.file_header + 20, 1);
+    zip_stream_write_u32(state.file_header + 24, 0); /* no entry-point table */
+    zip_stream_write_u32(state.file_header + 28, 0);
+    zip_stream_write_u32(state.file_header + 32, (uint32_t)state.section_offset);
+    zip_stream_write_u32(state.file_header + 36, 0);
+    zip_stream_write_u16(state.file_header + 40, sizeof(struct elf_file_hdr32));
+    zip_stream_write_u16(state.file_header + 42, 0);
+    zip_stream_write_u16(state.file_header + 44, 0);
+    zip_stream_write_u16(state.file_header + 46, sizeof(struct elf_section_hdr32));
+    zip_stream_write_u16(state.file_header + 48, 2);
+    zip_stream_write_u16(state.file_header + 50, 0);
+
+    zip_stream_write_u32(state.section_headers + sizeof(struct elf_section_hdr32) + 4, 1);
+    zip_stream_write_u32(state.section_headers + sizeof(struct elf_section_hdr32) + 12, 0x1000);
+    zip_stream_write_u32(state.section_headers + sizeof(struct elf_section_hdr32) + 16, 0x2000);
+    zip_stream_write_u32(state.section_headers + sizeof(struct elf_section_hdr32) + 20, 0x100);
+
+    memset(&ctx, 0, sizeof(ctx));
+    cli_exe_info_init(&exeinfo, 0);
+    map = cl_fmap_open_handle(&state, 0, state.length, elf32_large_table_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_elfheader(&ctx, &exeinfo);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(state.max_offset, state.section_offset + sizeof(struct elf_section_hdr32));
+    ck_assert_uint_eq(exeinfo.sections64[1].raw, 0x2000);
+    ck_assert_uint_eq(exeinfo.sections64[1].rva, 0x1000);
+    ck_assert_uint_eq(exeinfo.sections64[1].rsz, 0x100);
+    ck_assert(!ctx.scan_incomplete);
+
+    cli_exe_info_destroy(&exeinfo);
+    cl_fmap_close(map);
+}
+END_TEST
 #endif
 
 START_TEST(test_macho_truncated_header_is_fail_visible)
@@ -19328,6 +19415,7 @@ static Suite *test_cl_suite(void)
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_elf64_metadata_preserves_native_coordinates);
     tcase_add_test(tc_cl, test_elf64_entry_offset_overflow_is_fail_visible);
+    tcase_add_test(tc_cl, test_elf32_table_coordinates_are_native_width);
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_time_limit_is_fail_visible);

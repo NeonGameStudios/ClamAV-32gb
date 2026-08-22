@@ -283,7 +283,8 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
 {
     struct elf_program_hdr32 *program_hdr = NULL;
     uint16_t phnum, phentsize;
-    uint32_t entry, fentry = 0, phoff;
+    uint32_t entry, fentry = 0;
+    uint64_t phoff;
     uint32_t i;
     uint8_t err;
 
@@ -306,7 +307,7 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
 
         phoff = file_hdr->e_phoff;
         if (ctx) {
-            cli_dbgmsg("ELF: Program header table offset: %u\n", phoff);
+            cli_dbgmsg("ELF: Program header table offset: " STDu64 "\n", phoff);
         }
 
         if (phnum) {
@@ -505,7 +506,8 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
 {
     struct elf_section_hdr32 *section_hdr = NULL;
     uint16_t shnum, shentsize;
-    uint32_t shoff, i;
+    uint64_t shoff;
+    uint32_t i;
 
     shnum = file_hdr->e_shnum;
     cli_dbgmsg("ELF: Number of sections: %d\n", shnum);
@@ -533,7 +535,7 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
 
     shoff = file_hdr->e_shoff;
     if (ctx)
-        cli_dbgmsg("ELF: Section header table offset: %d\n", shoff);
+        cli_dbgmsg("ELF: Section header table offset: " STDu64 "\n", shoff);
 
     if (elfinfo) {
         elfinfo->sections = (struct cli_exe_section *)cli_max_calloc(shnum, sizeof(struct cli_exe_section));
