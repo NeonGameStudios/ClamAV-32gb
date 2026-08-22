@@ -383,6 +383,11 @@
   visible through the client return value instead of becoming clean or generic
   connection failures; add compiled fanotify and monitoring-mode integration
   coverage.
+- The shared framed-report consumers now validate and preserve the report's
+  numeric incomplete status through on-access and milter handling; detections
+  remain authoritative when a multi-frame response also contains an incomplete
+  result, while contradictory clean/error combinations fail closed. Add
+  compiled multi-frame timeout/resource and exact milter-action qualification.
 - On-access requests that cannot be sent, including a file disappearing before
   open, now become explicit non-clean `CL_EOPEN`/write failures instead of a
   zero-length soft skip that could be labeled clean; compiled fanotify and

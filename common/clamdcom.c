@@ -854,18 +854,50 @@ static struct json_object *report_json_parse_object(const char *json, uint32_t j
     return object;
 }
 
-int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete)
+static int scan_report_json_status_value(struct json_object *object, cl_error_t *status_out, int required)
+{
+    struct json_object *status_object = NULL;
+    int status;
+
+    if (!object || !status_out)
+        return -1;
+    if (!json_object_object_get_ex(object, "status", &status_object)) {
+        if (required)
+            return -1;
+        *status_out = CL_EPARSE;
+        return 0;
+    }
+    if (!json_object_is_type(status_object, json_type_int))
+        return -1;
+    status = json_object_get_int(status_object);
+    if (status < CL_SUCCESS || status >= CL_ELAST_ERROR)
+        return -1;
+    *status_out = (cl_error_t)status;
+    return 0;
+}
+
+static int scan_report_json_incomplete_status_is_valid(cl_error_t status)
+{
+    return status != CL_SUCCESS && status != CL_VERIFIED && status != CL_VIRUS;
+}
+
+int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete,
+                            cl_error_t *status_out)
 {
     struct json_object *object;
     struct json_object *completion_object = NULL;
     struct json_object *status_object     = NULL;
     struct json_object *verdict_object    = NULL;
     const char *completion;
-    int status;
+    cl_error_t report_status;
     int verdict;
 
-    if (!json || !infected || !incomplete || json_length == 0)
+    if (!json || !infected || !incomplete || !status_out || json_length == 0)
         return -1;
+
+    *infected   = 0;
+    *incomplete = 0;
+    *status_out = CL_ERROR;
 
     object = report_json_parse_object(json, json_length);
     if (!object || !json_object_object_get_ex(object, "verdict", &verdict_object)) {
@@ -896,8 +928,11 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
             verdict == CL_VERDICT_POTENTIALLY_UNWANTED) {
             if (strcmp(completion, "COMPLETE") == 0)
                 goto invalid;
+            if (scan_report_json_status_value(object, &report_status, 0) < 0)
+                goto invalid;
             *infected   = 1;
             *incomplete = 0;
+            *status_out = CL_VIRUS;
             json_object_put(object);
             return 0;
         }
@@ -910,11 +945,11 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
             if (!json_object_object_get_ex(object, "status", &status_object) ||
                 !json_object_is_type(status_object, json_type_int))
                 goto invalid;
-            status = json_object_get_int(status_object);
-            if (status != CL_SUCCESS)
+            if (json_object_get_int(status_object) != CL_SUCCESS)
                 goto invalid;
             *infected   = 0;
             *incomplete = 0;
+            *status_out = CL_SUCCESS;
             json_object_put(object);
             return 0;
         }
@@ -923,8 +958,12 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
             strcmp(completion, "MALFORMED_CONFIRMED") == 0 ||
             strcmp(completion, "RESOURCE_FAILURE") == 0 ||
             strcmp(completion, "APPLICATION_ABORT") == 0) {
+            if (scan_report_json_status_value(object, &report_status, 1) < 0 ||
+                !scan_report_json_incomplete_status_is_valid(report_status))
+                goto invalid;
             *infected   = 0;
             *incomplete = 1;
+            *status_out = report_status;
             json_object_put(object);
             return 0;
         }
@@ -936,16 +975,23 @@ int scan_report_json_status(const char *json, uint32_t json_length, int *infecte
     if (strcmp(json_object_get_string(verdict_object), "infected") == 0) {
         if (completion && strcmp(completion, "COMPLETE") == 0)
             goto invalid;
+        if (scan_report_json_status_value(object, &report_status, 0) < 0)
+            goto invalid;
         *infected   = 1;
         *incomplete = 0;
+        *status_out = CL_VIRUS;
         json_object_put(object);
         return 0;
     }
     if (strcmp(json_object_get_string(verdict_object), "incomplete") == 0) {
         if (completion && strcmp(completion, "COMPLETE") == 0)
             goto invalid;
+        if (scan_report_json_status_value(object, &report_status, 0) < 0 ||
+            !scan_report_json_incomplete_status_is_valid(report_status))
+            goto invalid;
         *infected   = 0;
         *incomplete = 1;
+        *status_out = report_status;
         json_object_put(object);
         return 0;
     }
@@ -1068,6 +1114,7 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             uint32_t json_length = 0;
             int frame_infected   = 0;
             int frame_incomplete = 0;
+            cl_error_t frame_status = CL_ERROR;
 
             frame = recv_scan_report_frame(sockd, &json, &json_length, &terminated);
             if (frame < 0)
@@ -1075,7 +1122,8 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             if (terminated)
                 break;
             received = 1;
-            if (scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete) < 0) {
+            if (scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete,
+                                        &frame_status) < 0) {
                 free(json);
                 return -1;
             }
@@ -1092,6 +1140,8 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
             } else if (frame_incomplete) {
                 (*incomplete)++;
                 (*errors)++;
+                logg(LOGG_INFO, "%s: INCOMPLETE (%s)\n", display_filename ? display_filename : "stream",
+                     cl_strerror(frame_status));
             }
             free(json);
         }

@@ -383,9 +383,10 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
     {
         int report_infected   = 0;
         int report_incomplete = 0;
+        cl_error_t report_status = CL_SUCCESS;
 
         if (onas_recv_scan_report(&rcv, timeout, &report_infected,
-                                  &report_incomplete) < 0) {
+                                  &report_incomplete, &report_status) < 0) {
             if (ret_code && *ret_code == CL_SUCCESS)
                 *ret_code = (rcv.curlcode == CURLE_OPERATION_TIMEDOUT) ? CL_ETIMEOUT : CL_EREAD;
             if (errors)
@@ -396,14 +397,18 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
         }
 
         if (report_incomplete && !report_infected) {
-            if (ret_code)
-                *ret_code = CL_EPARSE;
+            if (ret_code) {
+                *ret_code = (report_status == CL_SUCCESS || report_status == CL_VERIFIED ||
+                             report_status == CL_VIRUS)
+                                ? CL_EPARSE
+                                : report_status;
+            }
             if (errors)
                 (*errors)++;
             *printok = 0;
             infected = -1;
-            logg(LOGG_INFO, "%s: structured clamd report incomplete\n",
-                 display_filename ? display_filename : "FD");
+            logg(LOGG_INFO, "%s: structured clamd report incomplete (%s)\n",
+                 display_filename ? display_filename : "FD", cl_strerror(report_status));
             goto done;
         }
 

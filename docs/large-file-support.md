@@ -50,6 +50,15 @@ matcher result. Structured qualification rejects detection evidence that
 omits or mismatches the oracle offset; parser, hash, callback, and child-layer
 alerts remain offset-less rather than publishing an unverified coordinate.
 
+The shared framed-report parser now returns the validated numeric `cl_error_t`
+for incomplete reports. On-access callers preserve timeout, resource, limit,
+and parser statuses instead of replacing them with a generic parse error, and
+milter logging records the same status while still refusing a clean action.
+Detection remains authoritative when a multi-frame response contains both a
+detection and an incomplete sibling; contradictory clean/error combinations
+are rejected. Compiled multi-frame and exact milter-action qualification
+remains a release gate.
+
 The clamd INSTREAM receiver also fails closed on staging writes: a failed
 temporary-file write stops the stream immediately, emits one protocol-matched
 error, and removes the partial descriptor without dispatching it to the

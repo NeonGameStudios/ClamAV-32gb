@@ -456,6 +456,7 @@ static int dspreport(struct client_parallel_data *c)
     int terminator             = 0;
     int frame_infected         = 0;
     int frame_incomplete       = 0;
+    cl_error_t frame_status    = CL_ERROR;
     unsigned int rid;
     struct SCANID **id;
     const char *filename;
@@ -475,7 +476,8 @@ static int dspreport(struct client_parallel_data *c)
     }
     free(terminator_json);
     if (report_json_id(json, json_length, &rid) < 0 ||
-        scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete) < 0) {
+        scan_report_json_status(json, json_length, &frame_infected, &frame_incomplete,
+                                &frame_status) < 0) {
         free(json);
         return 1;
     }
@@ -503,7 +505,7 @@ static int dspreport(struct client_parallel_data *c)
     } else if (frame_incomplete) {
         c->errors++;
         c->printok = 0;
-        logg(LOGG_INFO, "%s: INCOMPLETE\n", filename);
+        logg(LOGG_INFO, "%s: INCOMPLETE (%s)\n", filename, cl_strerror(frame_status));
     }
     free(json);
     free((void *)filename);

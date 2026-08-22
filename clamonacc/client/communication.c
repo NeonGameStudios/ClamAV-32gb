@@ -243,15 +243,16 @@ void onas_recvlninit(struct onas_rcvln *rcv_data, CURL *curl, int sockd)
 }
 
 int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
-                          int *infected, int *incomplete)
+                          int *infected, int *incomplete, cl_error_t *status_out)
 {
     int received = 0;
 
-    if (!rcv_data || !infected || !incomplete)
+    if (!rcv_data || !infected || !incomplete || !status_out)
         return -1;
 
     *infected   = 0;
     *incomplete = 0;
+    *status_out = CL_SUCCESS;
 
     for (;;) {
         uint32_t network_length;
@@ -259,6 +260,7 @@ int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
         char *payload;
         int frame_infected   = 0;
         int frame_incomplete = 0;
+        cl_error_t frame_status = CL_ERROR;
 
         if (onas_recv_bytes(rcv_data, &network_length, sizeof(network_length), timeout_ms) < 0)
             return -1;
@@ -279,16 +281,21 @@ int onas_recv_scan_report(struct onas_rcvln *rcv_data, int64_t timeout_ms,
         payload[length] = '\0';
 
         if (scan_report_json_status(payload, length, &frame_infected,
-                                    &frame_incomplete) < 0) {
+                                    &frame_incomplete, &frame_status) < 0) {
             free(payload);
             return -1;
         }
 
         received = 1;
-        if (frame_infected)
+        if (frame_infected) {
             *infected = 1;
-        if (frame_incomplete)
+            *status_out = CL_VIRUS;
+        } else if (frame_incomplete) {
             *incomplete = 1;
+            if (!*infected &&
+                (*status_out == CL_SUCCESS || *status_out == CL_ERROR || *status_out == CL_EPARSE))
+                *status_out = frame_status;
+        }
         free(payload);
     }
 }

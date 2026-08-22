@@ -172,14 +172,19 @@ START_TEST(test_scan_report_json_status_accepts_library_reports)
     const char *reports[] = {complete, detection, incomplete};
     int expected_infected[] = {0, 1, 0};
     int expected_incomplete[] = {0, 0, 1};
+    cl_error_t expected_status[] = {CL_SUCCESS, CL_VIRUS, CL_ERESOURCE};
     size_t i;
 
     for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
         int infected = -1;
         int partial = -1;
-        ck_assert_int_eq(scan_report_json_status(reports[i], (uint32_t)strlen(reports[i]), &infected, &partial), 0);
+        cl_error_t status = CL_ERROR;
+        ck_assert_int_eq(scan_report_json_status(reports[i], (uint32_t)strlen(reports[i]), &infected, &partial,
+                                                 &status),
+                         0);
         ck_assert_int_eq(infected, expected_infected[i]);
         ck_assert_int_eq(partial, expected_incomplete[i]);
+        ck_assert_int_eq(status, expected_status[i]);
     }
 }
 END_TEST
@@ -194,12 +199,41 @@ START_TEST(test_scan_report_json_status_accepts_dispatch_failure_fallback)
         "\"skipped_operations\":1}";
     int infected = -1;
     int incomplete = -1;
+    cl_error_t status = CL_SUCCESS;
 
     ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback),
-                                             &infected, &incomplete),
+                                             &infected, &incomplete, &status),
                      0);
     ck_assert_int_eq(infected, 0);
     ck_assert_int_eq(incomplete, 1);
+    ck_assert_int_eq(status, CL_ERESOURCE);
+}
+END_TEST
+
+START_TEST(test_scan_report_json_status_preserves_string_incomplete_status)
+{
+    static const char explicit_status[] = "{\"status\":35,\"verdict\":\"incomplete\"}";
+    static const char implicit_status[] = "{\"verdict\":\"incomplete\"}";
+    int infected = -1;
+    int incomplete = -1;
+    cl_error_t status = CL_SUCCESS;
+
+    ck_assert_int_eq(scan_report_json_status(explicit_status, (uint32_t)strlen(explicit_status), &infected,
+                                             &incomplete, &status),
+                     0);
+    ck_assert_int_eq(infected, 0);
+    ck_assert_int_eq(incomplete, 1);
+    ck_assert_int_eq(status, CL_ERESOURCE);
+
+    infected   = -1;
+    incomplete = -1;
+    status     = CL_SUCCESS;
+    ck_assert_int_eq(scan_report_json_status(implicit_status, (uint32_t)strlen(implicit_status), &infected,
+                                             &incomplete, &status),
+                     0);
+    ck_assert_int_eq(infected, 0);
+    ck_assert_int_eq(incomplete, 1);
+    ck_assert_int_eq(status, CL_EPARSE);
 }
 END_TEST
 
@@ -209,8 +243,9 @@ START_TEST(test_scan_report_json_status_rejects_legacy_clean_fallback)
         "{\"version\":1,\"id\":7,\"status_code\":0,\"verdict\":\"clean\",\"completion\":\"COMPLETE\"}";
     int infected = -1;
     int incomplete = -1;
+    cl_error_t status = CL_SUCCESS;
 
-    ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback), &infected, &incomplete), -1);
+    ck_assert_int_eq(scan_report_json_status(fallback, (uint32_t)strlen(fallback), &infected, &incomplete, &status), -1);
 }
 END_TEST
 
@@ -242,14 +277,22 @@ START_TEST(test_scan_report_json_status_rejects_contradictory_reports)
         "{\"status\":0,\"verdict\":0,\"completion\":\"DETECTION_TERMINATED\"}";
     static const char detected_complete[] =
         "{\"status\":0,\"verdict\":2,\"completion\":\"COMPLETE\"}";
-    const char *reports[] = {nested, clean_error, clean_missing_status, clean_detection, detected_complete};
+    static const char clean_incomplete[] =
+        "{\"status\":0,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\"}";
+    static const char detected_incomplete[] =
+        "{\"status\":1,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\"}";
+    static const char invalid_incomplete[] =
+        "{\"status\":999,\"verdict\":0,\"completion\":\"RESOURCE_FAILURE\"}";
+    const char *reports[] = {nested, clean_error, clean_missing_status, clean_detection, detected_complete,
+                             clean_incomplete, detected_incomplete, invalid_incomplete};
     size_t i;
 
     for (i = 0; i < sizeof(reports) / sizeof(reports[0]); i++) {
         int infected = -1;
         int incomplete = -1;
+        cl_error_t status = CL_SUCCESS;
         ck_assert_int_eq(scan_report_json_status(reports[i], (uint32_t)strlen(reports[i]),
-                                                 &infected, &incomplete),
+                                                 &infected, &incomplete, &status),
                          -1);
     }
 }
@@ -1544,6 +1587,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_maxscantime_parser_rejects_narrowing);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_library_reports);
     tcase_add_test(tc_parser, test_scan_report_json_status_accepts_dispatch_failure_fallback);
+    tcase_add_test(tc_parser, test_scan_report_json_status_preserves_string_incomplete_status);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_legacy_clean_fallback);
     tcase_add_test(tc_parser, test_scan_report_fallback_completion_classes);
     tcase_add_test(tc_parser, test_scan_report_json_status_rejects_contradictory_reports);

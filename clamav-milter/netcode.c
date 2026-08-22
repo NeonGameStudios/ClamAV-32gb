@@ -371,16 +371,17 @@ static int nc_recv_scan_report_frame(int s, char **json, uint32_t *json_length, 
     return 1;
 }
 
-int nc_recv_scan_report(int s, int *infected, int *incomplete, char **alert)
+int nc_recv_scan_report(int s, int *infected, int *incomplete, cl_error_t *status_out, char **alert)
 {
     int terminated = 0;
     int received   = 0;
 
-    if (!infected || !incomplete || !alert)
+    if (!infected || !incomplete || !status_out || !alert)
         return -1;
 
     *infected   = 0;
     *incomplete = 0;
+    *status_out = CL_SUCCESS;
     *alert      = NULL;
 
     while (!terminated) {
@@ -388,6 +389,7 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete, char **alert)
         uint32_t json_length = 0;
         int frame_infected   = 0;
         int frame_incomplete = 0;
+        cl_error_t frame_status = CL_ERROR;
         char *frame_alert    = NULL;
         int frame;
 
@@ -397,7 +399,7 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete, char **alert)
         if (terminated)
             break;
         if (scan_report_json_status(json, json_length, &frame_infected,
-                                    &frame_incomplete) < 0) {
+                                    &frame_incomplete, &frame_status) < 0) {
             free(json);
             return -1;
         }
@@ -410,14 +412,18 @@ int nc_recv_scan_report(int s, int *infected, int *incomplete, char **alert)
         received = 1;
         if (frame_infected) {
             *infected = 1;
+            *status_out = CL_VIRUS;
             if (frame_alert) {
                 free(*alert);
                 *alert      = frame_alert;
                 frame_alert = NULL;
             }
-        }
-        if (frame_incomplete)
+        } else if (frame_incomplete) {
             *incomplete = 1;
+            if (!*infected &&
+                (*status_out == CL_SUCCESS || *status_out == CL_ERROR || *status_out == CL_EPARSE))
+                *status_out = frame_status;
+        }
         free(frame_alert);
         free(json);
     }

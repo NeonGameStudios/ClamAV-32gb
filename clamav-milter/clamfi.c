@@ -351,6 +351,7 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     int len, ret;
     int infected   = 0;
     int incomplete = 0;
+    cl_error_t report_status = CL_SUCCESS;
     char *alert    = NULL;
     unsigned int crcpt;
 
@@ -398,7 +399,7 @@ sfsistat clamfi_eom(SMFICTX *ctx)
         }
     }
 
-    if (nc_recv_scan_report(cf->main, &infected, &incomplete, &alert) < 0) {
+    if (nc_recv_scan_report(cf->main, &infected, &incomplete, &report_status, &alert) < 0) {
         logg(LOGG_ERROR, "No valid structured report from clamd\n");
         free(alert);
         if (cf->local)
@@ -418,7 +419,8 @@ sfsistat clamfi_eom(SMFICTX *ctx)
      * the library and clamd structured-report contract.  A non-detection
      * incomplete result must never be treated as a clean milter action. */
     if (incomplete && !infected) {
-        logg(LOGG_ERROR, "Structured clamd report is incomplete; refusing clean verdict\n");
+        logg(LOGG_ERROR, "Structured clamd report is incomplete (%s); refusing clean verdict\n",
+             cl_strerror(report_status));
         free(alert);
         nullify(ctx, cf, CF_MAIN);
         free(cf);

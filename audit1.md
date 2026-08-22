@@ -3931,3 +3931,16 @@ verifier now require `last_alert_offset` to be present and equal to the
 detection oracle. A synthetic mismatch regression rejects an incorrect
 offset; compiled report, service, sanitizer, parser-corpus, and Sonic1
 qualification remain release gates.
+
+## Structured report status propagation — 2026-08-22
+
+The shared framed-report parser previously discarded the numeric status on
+incomplete reports, so on-access and milter consumers could only distinguish a
+boolean incomplete flag and on-access reduced the result to `CL_EPARSE`. It
+now validates the status against the `cl_error_t` range, rejects contradictory
+clean/error combinations, and returns the exact non-clean status. On-access
+and milter frame aggregation preserve that status while retaining detection
+precedence across sibling frames; malformed reports still fail closed. The
+focused parser regression covers explicit and implicit string incomplete
+reports and contradictory numeric statuses. Compiled fanotify, multi-frame,
+exact milter-action, sanitizer, and Sonic1 qualification remain open.

@@ -35,6 +35,7 @@
 #endif
 
 #include "misc.h"
+#include "clamav.h"
 
 struct action_source;
 
@@ -95,6 +96,7 @@ int dsreport(int sockd, int scantype, const char *filename, const struct action_
              bool apply_action, FILE *report_stream, int *infected, int *incomplete,
              int *errors, struct optstruct *clamdopts);
 int recv_scan_report_frame(int sockd, char **json, uint32_t *json_length, int *terminator);
-int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete);
+int scan_report_json_status(const char *json, uint32_t json_length, int *infected, int *incomplete,
+                            cl_error_t *status_out);
 int scan_report_json_alert(const char *json, uint32_t json_length, char **alert);
 #endif
