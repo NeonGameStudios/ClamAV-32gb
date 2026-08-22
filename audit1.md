@@ -4402,8 +4402,10 @@ the deadline before entering the helper, but generic reader, OneNote root, and
 other shared spool paths had no final check after that reservation. The helper
 now re-checks `MaxScanTime` after quota admission and before writing; if the
 deadline expires, it releases only the newly added reservation and returns the
-timeout to the caller. Compiled timeout injection and Rust parser-family
-qualification remain open.
+timeout to the caller. The helper also splits large callback slices into bounded
+64 KiB writes and checks the deadline before each write, so a large OneNote
+attachment cannot monopolize one unchecked output operation. Compiled timeout
+injection and Rust parser-family qualification remain open.
 
 ## CommuniGate MIME header-skip deadline — 2026-08-22
 

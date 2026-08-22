@@ -1086,3 +1086,7 @@
 - yC emulator and section-decrypt loops now propagate distinct timeout results
   and checkpoint the shared `MaxScanTime`; add compiled yC timeout-injection,
   hostile jump-loop, production corpus, sanitizer, and Sonic1 qualification.
+- Rust temporary-spool writes now use bounded 64 KiB chunks with a deadline
+  check before each write, including large callback slices from Rust parsers;
+  add deterministic short-write/timeout coverage and compiled Rust/Sonic1
+  qualification.

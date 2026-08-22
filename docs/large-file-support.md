@@ -5728,3 +5728,13 @@ parser/read/matcher results are merged and scanning continues; detections and
 critical timeout/resource/I/O failures still halt immediately. Static guards
 cover both ingress helpers, while compiled fault-injection and
 production-signature qualification remain release gates.
+
+## Rust temporary-spool write boundaries — 2026-08-22
+
+Rust parser output that arrives as a large callback slice now reaches disk
+through bounded 64 KiB writes, with a shared `MaxScanTime` check before every
+write. A timeout or short write remains fail-visible and releases any
+reservation added for the current chunk, so a large OneNote attachment or
+other Rust-produced view cannot monopolize one unchecked output operation.
+Compiled Rust parser, deterministic write-timeout, sanitizer, and Sonic1
+qualification remain release gates.

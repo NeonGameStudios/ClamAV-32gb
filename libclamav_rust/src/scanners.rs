@@ -196,6 +196,8 @@ struct TempSpool {
 }
 
 impl TempSpool {
+    const WRITE_CHUNK: usize = 64 * 1024;
+
     unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
         let status = sys::cli_scan_reserve_temporary(ctx, expected_size);
         if status != cl_error_t_CL_SUCCESS {
@@ -273,17 +275,40 @@ impl TempSpool {
 
         let mut offset = 0usize;
         while offset < bytes.len() {
+            let deadline_status = unsafe { check_scan_time_limit(self.ctx) };
+            if deadline_status != cl_error_t_CL_SUCCESS {
+                if additional != 0 {
+                    unsafe { sys::cli_scan_release_temporary(self.ctx, additional) };
+                    self.reserved -= additional;
+                }
+                return Err(deadline_status);
+            }
+
+            let write_len = (bytes.len() - offset).min(Self::WRITE_CHUNK);
             let written = unsafe {
                 libc::write(
                     self.fd,
                     bytes[offset..].as_ptr().cast(),
-                    bytes.len() - offset,
+                    write_len,
                 )
             };
             if written <= 0 {
+                if additional != 0 {
+                    unsafe { sys::cli_scan_release_temporary(self.ctx, additional) };
+                    self.reserved -= additional;
+                }
                 return Err(cl_error_t_CL_EWRITE);
             }
             offset = offset.saturating_add(written as usize);
+
+            let deadline_status = unsafe { check_scan_time_limit(self.ctx) };
+            if deadline_status != cl_error_t_CL_SUCCESS {
+                if additional != 0 {
+                    unsafe { sys::cli_scan_release_temporary(self.ctx, additional) };
+                    self.reserved -= additional;
+                }
+                return Err(deadline_status);
+            }
         }
         self.written = new_written;
         Ok(())
