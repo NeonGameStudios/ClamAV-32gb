@@ -335,6 +335,9 @@
   `MaxScanTime` deadline during decompression instead of allowing CPU-heavy
   streams with little output to bypass the scan deadline; add compiled timeout,
   sanitizer, and production compressed-stream qualification.
+- The shared compressed-output reservation now checks the deadline before GZip,
+  BZip2, XZ, SZDD, script-normalization, and CryptFF spool writes; add compiled
+  output-timeout injection across those decoder families.
 - BZip2 extraction now consumes concatenated streams and rejects decoder
   no-progress states while input remains; add compiled malformed-stream,
   sanitizer, and production BZip2 corpus qualification.

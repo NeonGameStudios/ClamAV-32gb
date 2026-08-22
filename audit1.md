@@ -4077,3 +4077,12 @@ raw-member writers had no deadline admission of its own. The reservation now
 rejects an expired context before the associated spool write, preserving
 `CL_ETIMEOUT` and fail-closed cleanup across all XAR output producers. Compiled
 timeout injection, corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Shared compressed-output reservation deadline — 2026-08-22
+
+GZip, BZip2, XZ, SZDD, script normalization, and CryptFF already checked
+`MaxScanTime` in their decoder/input loops, but all of them could reach their
+common temporary-output reservation as a separate output interval. That shared
+admission now rejects expired contexts before reserving bytes for a spool write,
+preserving `CL_ETIMEOUT` across the decoder families. Compiled output-timeout
+injection, corpus, sanitizer, and Sonic1 qualification remain open.

@@ -1498,6 +1498,12 @@ static cl_error_t cli_reserve_temp_output(cli_ctx *ctx, uint64_t *reserved, uint
         return CL_ERESOURCE;
     }
 
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "compressed decoder output reached the configured time limit");
+        return status;
+    }
+
     status = cli_scan_reserve_temporary(ctx, bytes);
     if (status != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, reason);
