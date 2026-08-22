@@ -66,7 +66,8 @@
   shared individual-allocation ceiling.
 - Bundled CAB/CHM libmspack callbacks now check the shared scan deadline during
   decoder reads, seeks, and writes and preserve timeout through archive open and
-  extraction; add callback-injected timeout and production corpus qualification.
+  extraction; a constructor-injected callback-timeout regression now covers both
+  decoder-owned read boundaries, while production corpus qualification remains.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
   copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
   keeping provenance binding consistent with the actual workload; full

@@ -15577,11 +15577,22 @@ extern struct mschm_decompressor *__real_mspack_create_chm_decompressor(struct m
 
 static int mspack_test_fail_cab_constructor;
 static int mspack_test_fail_chm_constructor;
+static cli_ctx *mspack_test_expire_ctx;
+static int mspack_test_expire_cab_callbacks;
+static int mspack_test_expire_chm_callbacks;
+
+static void mspack_test_expire_callback_context(void)
+{
+    if (mspack_test_expire_ctx != NULL && gettimeofday(&mspack_test_expire_ctx->time_limit, NULL) == 0)
+        mspack_test_expire_ctx->time_limit.tv_sec--;
+}
 
 struct mscab_decompressor *__wrap_mspack_create_cab_decompressor(struct mspack_system *sys)
 {
     if (mspack_test_fail_cab_constructor)
         return NULL;
+    if (mspack_test_expire_cab_callbacks)
+        mspack_test_expire_callback_context();
     return __real_mspack_create_cab_decompressor(sys);
 }
 
@@ -15589,6 +15600,8 @@ struct mschm_decompressor *__wrap_mspack_create_chm_decompressor(struct mspack_s
 {
     if (mspack_test_fail_chm_constructor)
         return NULL;
+    if (mspack_test_expire_chm_callbacks)
+        mspack_test_expire_callback_context();
     return __real_mspack_create_chm_decompressor(sys);
 }
 
@@ -15644,6 +15657,62 @@ START_TEST(test_mspack_constructor_failures_are_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     mspack_test_fail_chm_constructor = 0;
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_mspack_callback_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    ctx.this_layer_tmpdir    = tmpdir;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap   = map;
+    layer.fmap = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+
+    /* The constructor passes the scanner context into the real decoder. Make
+     * the first decoder-owned read expire after the entry-point preflight so
+     * this exercises the shared mspack callback rather than the outer check. */
+    mspack_test_expire_ctx          = &ctx;
+    mspack_test_expire_cab_callbacks = 1;
+    ret = cli_scanmscab(&ctx, 0);
+    mspack_test_expire_cab_callbacks = 0;
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB decoder reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+
+    mspack_test_expire_chm_callbacks = 1;
+    ret = cli_scanmschm(&ctx);
+    mspack_test_expire_chm_callbacks = 0;
+    mspack_test_expire_ctx            = NULL;
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CHM decoder reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
     cl_fmap_close(map);
 }
 END_TEST
@@ -18586,6 +18655,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_script_normalization_window_offset_is_stable);
 #ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
     tcase_add_test(tc_cl, test_mspack_constructor_failures_are_fail_visible);
+    tcase_add_test(tc_cl, test_mspack_callback_time_limit_is_fail_visible);
 #endif
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP
     tcase_add_test(tc_cl, test_normalized_script_map_failure_is_fail_visible);

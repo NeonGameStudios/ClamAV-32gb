@@ -3380,9 +3380,10 @@ The bundled libmspack adapter now carries the scanning context into its fmap
 callbacks and checks the shared deadline before decoder reads, seeks, and
 writes. Timeout state is shared across decoder-owned handles, marks the layer
 incomplete, and is preserved as `CL_ETIMEOUT` through CAB/CHM archive opening
-and member extraction. A direct expired-context CAB-header regression and
-source guards cover the entry boundary; callback-injected timeout, compiled
-CAB/CHM corpus, sanitizer, and Sonic1 qualification remain release gates.
+and member extraction. Direct expired-context and constructor-injected
+callback-timeout regressions cover both decoder-owned read boundaries, with
+source guards; compiled CAB/CHM corpus, sanitizer, and Sonic1 qualification
+remain release gates.
 
 ## RAR decoder deadlines — 2026-08-22
 
