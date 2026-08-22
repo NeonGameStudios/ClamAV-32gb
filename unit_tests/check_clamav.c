@@ -169,6 +169,30 @@ START_TEST(test_cl_fmap_set_hash_accepts_full_hash)
 }
 END_TEST
 
+START_TEST(test_fmap_hash_time_limit_is_fail_visible)
+{
+    static const unsigned char data[] = "fmap hash deadline regression";
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *hash = NULL;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = fmap_open_memory(data, sizeof(data) - 1U, NULL);
+    ck_assert_ptr_nonnull(map);
+
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(CL_ETIMEOUT, fmap_get_hash_ctx(map, &hash, CLI_HASH_SHA2_256, &ctx));
+    ck_assert_ptr_null(hash);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(!map->have_hash[CLI_HASH_SHA2_256]);
+
+    fmap_free(map);
+}
+END_TEST
+
 START_TEST(test_cl_fmap_get_data_clamps_wrapped_length)
 {
     static const unsigned char data[] = "public fmap range API regression";
@@ -20432,6 +20456,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_retdbdir);
 #endif
     tcase_add_test(tc_cl, test_cl_fmap_set_hash_accepts_full_hash);
+    tcase_add_test(tc_cl, test_fmap_hash_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cl_fmap_get_data_clamps_wrapped_length);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);

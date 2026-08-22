@@ -53,6 +53,7 @@ contains libclamav/fmap.c 'cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned ch
 contains libclamav/fmap.c 'if (ctx && cli_checktimelimit(ctx) != CL_SUCCESS)'
 contains libclamav/fmap.c 'fmap hash calculation reached the configured time limit'
 contains libclamav/fmap.c 'return fmap_get_hash_ctx(map, hash, type, NULL);'
+contains unit_tests/check_clamav.c 'test_fmap_hash_time_limit_is_fail_visible'
 contains libclamav/mbox.c 'if (mbox_check_deadline(ctx)) {'
 contains libclamav/mbox.c 'retcode = CL_ETIMEOUT;'
 contains libclamav/mbox.c 'MIME message input could not be read completely'

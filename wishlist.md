@@ -7,7 +7,8 @@
   remain gated on qualification.
 - Internal fmap hashing now checks `MaxScanTime` before and between bounded
   read windows, including matcher and cache callers; public no-context hash
-  APIs retain legacy behavior, and compiled timeout qualification remains open.
+  APIs retain legacy behavior; a focused timeout regression is registered, and
+  compiled timeout qualification remains open.
 - The CommuniGate MIME header-skip loop now checks `MaxScanTime` on every
   line and preserves incomplete fmap reads instead of silently continuing;
   compiled mailbox timeout qualification remains open.

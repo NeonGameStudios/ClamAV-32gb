@@ -993,8 +993,9 @@ On expiry it records the timeout as an incomplete scan and returns
 `CL_ETIMEOUT`; partially initialized hash contexts are discarded without
 publishing a digest. The public `cl_fmap_get_hash()` API has no scan context,
 so it retains its legacy behavior. Source-level coverage is complete for the
-internal call sites; compiled timeout injection and large-file parser/matcher
-qualification remain release gates.
+internal call sites, and `test_fmap_hash_time_limit_is_fail_visible` covers
+the fail-visible pre-expired-context boundary; compiled timeout injection and
+large-file parser/matcher qualification remain release gates.
 
 ## Rust reader timeout status preservation — 2026-08-22
 
