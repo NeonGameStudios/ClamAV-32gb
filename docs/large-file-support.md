@@ -5297,3 +5297,14 @@ the segment boundary ends normally, while a resource or thumbnail that claims
 bytes beyond it remains a non-cacheable parse failure. A focused boundary
 regression injects a callback fault at the following segment; compiled
 thumbnail corpus, sanitizer, and production JPEG qualification remain open.
+
+## GPT sector-size probe read failures — 2026-08-22
+
+GPT auto-detection previously used an unlocked fmap probe without a scanning
+context. An in-range backing-read failure could therefore be reduced to the
+same zero-sector result as an ordinary non-GPT input. The probe now uses
+bounded `fmap_readn()` windows, preserves `CL_EREAD`, and marks the layer
+incomplete before the parser exits. A focused auto-detection callback
+regression covers the 512-byte candidate; static guards remain local evidence,
+while compiled partition-image, sanitizer, and supported-build qualification
+remain release gates.

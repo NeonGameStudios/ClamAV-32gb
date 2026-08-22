@@ -3849,3 +3849,14 @@ regression places an injected seven-byte read fault at that boundary and
 expects the following SOS to remain complete. Static guards and whitespace
 validation remain local evidence; compiled thumbnail corpus, sanitizer, and
 supported-build qualification remain release gates.
+
+## GPT sector-size probe read failures — 2026-08-22
+
+GPT auto-detection previously used an unlocked fmap probe without a scanning
+context. An in-range backing-read failure could therefore be reduced to the
+same zero-sector result as an ordinary non-GPT input. The probe now uses
+bounded `fmap_readn()` windows, preserves `CL_EREAD`, and marks the layer
+incomplete before the parser exits. A focused auto-detection callback
+regression covers the 512-byte candidate; static guards remain local evidence,
+while compiled partition-image, sanitizer, and supported-build qualification
+remain release gates.

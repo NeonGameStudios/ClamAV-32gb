@@ -117,31 +117,54 @@ static void gpt_printGUID(uint8_t GUID[], const char *msg);
 static cl_error_t gpt_partition_intersection(cli_ctx *ctx, struct gpt_header hdr, size_t sectorsize);
 
 /* returns 0 on failing to detect sectorsize */
+static cl_error_t gpt_detect_size_read(fmap_t *map, size_t *detected_size, cli_ctx *ctx)
+{
+    static const size_t candidates[] = {512, 1024, 2048, 4096};
+    unsigned char signature[sizeof(GPT_SIGNATURE_STR) - 1];
+    size_t i;
+
+    if (map == NULL || detected_size == NULL)
+        return CL_EARG;
+
+    *detected_size = 0;
+    for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); ++i) {
+        size_t offset = candidates[i];
+        size_t bytes_read;
+
+        /* An unavailable candidate is ordinary non-GPT input. Once the
+         * complete candidate range is inside the map, however, a failed
+         * backing read is an operational error and must remain visible. */
+        if (offset > map->len || sizeof(signature) > map->len - offset)
+            continue;
+
+        bytes_read = fmap_readn(map, signature, offset, sizeof(signature));
+        if (bytes_read == (size_t)-1) {
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "GPT sector-size probe could not be read completely");
+            return CL_EREAD;
+        }
+        if (bytes_read != sizeof(signature)) {
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "GPT sector-size probe was truncated");
+            return CL_EFORMAT;
+        }
+        if (memcmp(signature, GPT_SIGNATURE_STR, sizeof(signature)) == 0) {
+            *detected_size = offset;
+            return CL_SUCCESS;
+        }
+    }
+
+    return CL_EFORMAT;
+}
+
 size_t gpt_detect_size(fmap_t *map)
 {
-    unsigned char *buff;
+    size_t detected_size = 0;
 
-    buff = (unsigned char *)fmap_need_off_once(map, 512, 8);
-    if (!buff) return 0;
-    if (0 == strncmp((const char *)buff, GPT_SIGNATURE_STR, 8))
-        return 512;
+    if (gpt_detect_size_read(map, &detected_size, NULL) != CL_SUCCESS)
+        return 0;
 
-    buff = (unsigned char *)fmap_need_off_once(map, 1024, 8);
-    if (!buff) return 0;
-    if (0 == strncmp((const char *)buff, GPT_SIGNATURE_STR, 8))
-        return 1024;
-
-    buff = (unsigned char *)fmap_need_off_once(map, 2048, 8);
-    if (!buff) return 0;
-    if (0 == strncmp((const char *)buff, GPT_SIGNATURE_STR, 8))
-        return 2048;
-
-    buff = (unsigned char *)fmap_need_off_once(map, 4096, 8);
-    if (!buff) return 0;
-    if (0 == strncmp((const char *)buff, GPT_SIGNATURE_STR, 8))
-        return 4096;
-
-    return 0;
+    return detected_size;
 }
 
 /* attempts to detect sector size is input as 0 */
@@ -168,7 +191,9 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
 
     /* sector size calculation */
     if (sectorsize == 0) {
-        sectorsize = gpt_detect_size(ctx->fmap);
+        status = gpt_detect_size_read(ctx->fmap, &sectorsize, ctx);
+        if (status != CL_SUCCESS)
+            goto done;
         cli_dbgmsg("cli_scangpt: detected %lu sector size\n", (unsigned long)sectorsize);
     }
     if (sectorsize == 0) {

@@ -512,6 +512,9 @@
 - APM, GPT, and MBR parser entry points and partition-table/intersection walks
   now honor the shared scan deadline and preserve timeout as incomplete;
   add compiled partition-image corpus and timeout qualification.
+- GPT sector-size auto-detection now uses bounded `fmap_readn()` probes and
+  preserves an in-range backing-read failure as `CL_EREAD`; add compiled
+  auto-detection fault-injection and partition-image qualification.
 - Legacy clamd FILDES and INSTREAM command workers now preserve parser, limit,
   read, and format failures instead of normalizing them to successful command
   completion; add daemon IDSESSION and malformed/limit integration coverage.
