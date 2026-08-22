@@ -11,7 +11,7 @@
   accounting; the compiled Linux/Sonic1 execution remains open.
 - The generated size/type/offset inventory has been refreshed from the current
   source tree and now remains reproducible through `tools/largefile_inventory.sh`;
-  the 158-entry capability manifest validates against the refreshed dispatch
+  the 159-entry capability manifest validates against the refreshed dispatch
   inventory.
 - Large-mail phishing URL inspection now uses quota-accounted file-backed
   input, fmap HTML normalization, and 64 KiB chunked text-URL extraction; the
@@ -621,6 +621,10 @@
   UnRAR interface/backend artifacts, and puts those artifacts first in the
   loader path; synthetic verifier controls reject missing or mismatched
   components. Authorized production-CVD and service qualification remain open.
+- MIME/mbox raw line reads, materialized-header traversal, and disk-backed
+  multipart/related traversal now honor the shared `MaxScanTime` deadline and
+  preserve `CL_ETIMEOUT`; add compiled timeout injection and production mail
+  corpus qualification.
 
 ## Large-file validation and expansion progression
 

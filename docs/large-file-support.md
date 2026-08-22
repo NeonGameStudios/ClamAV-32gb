@@ -4947,7 +4947,7 @@ attempt.
 The authoritative `docs/largefile-inventory.tsv` was regenerated from the
 current source tree after the recent parser, daemon, Rust, and test changes.
 The generator reproduces the committed 32,401-line inventory exactly, and the
-158-entry capability manifest still validates every required ingress, matcher,
+159-entry capability manifest still validates every required ingress, matcher,
 feature, unsupported boundary, parser dispatch branch, and source path.
 
 ## clamscan stdin staging shares the temporary budget — 2026-08-22
@@ -5086,3 +5086,14 @@ shared scan deadline, as does PNG chunk traversal. Deadline expiry marks the
 confirmed media layer incomplete and prevents a clean overlay result. Compiled
 timeout injection, sanitizer, and production GIF/PNG corpus qualification
 remain open.
+
+## MIME/mbox traversal deadlines — 2026-08-22
+
+The MIME/mbox parser now checks the shared `MaxScanTime` deadline before raw
+message entry, at each bounded line read, while parsing materialized headers,
+and during disk-backed multipart discovery and related-part traversal. Expiry
+marks the message incomplete and preserves `CL_ETIMEOUT`, so a large message
+cannot spend unbounded time in line/header/multipart handling before reaching
+the common scan-result policy. A focused expired-context regression verifies
+the fail-visible result and cache suppression; compiled MIME timeout injection,
+sanitizer, and production mail-corpus qualification remain open.

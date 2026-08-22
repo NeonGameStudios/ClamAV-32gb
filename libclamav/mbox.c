@@ -237,6 +237,19 @@ static bool haveTooManyHeaderBytes(size_t totalLen, cli_ctx *ctx, bool *heuristi
 static bool haveTooManyEmailHeaders(size_t totalHeaderCnt, cli_ctx *ctx, bool *heuristicFound);
 static bool haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound);
 
+/* MIME parsing has several line-oriented paths that can otherwise spend a
+ * long time in input, header, or part traversal without reaching a generic
+ * scan-limit helper. Keep the shared deadline sticky and make expiry
+ * fail-visible to the outer mailbox result policy. */
+static bool mbox_check_deadline(cli_ctx *ctx)
+{
+    if (cli_checktimelimit(ctx) == CL_SUCCESS)
+        return false;
+
+    cli_mark_scan_incomplete(ctx, "MIME parser reached the configured time limit");
+    return true;
+}
+
 /* Maximum line length according to RFC2821 */
 #define RFC2821LENGTH 1000
 
@@ -402,6 +415,9 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
     fmap_t *map = ctx->fmap;
 
     cli_dbgmsg("in mbox()\n");
+
+    if (mbox_check_deadline(ctx))
+        return CL_ETIMEOUT;
 
     if (!fmap_gets(map, buffer, &at, sizeof(buffer))) {
         /* EOF at the end of the map is an empty message. A nonempty map that
@@ -995,6 +1011,9 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
     do {
         const char *line;
 
+        if (mbox_check_deadline(ctx))
+            break;
+
         (void)cli_chomp(buffer);
 
         if (buffer[0] == '\0')
@@ -1323,6 +1342,9 @@ parseEmailHeaders(message *m, const table_t *rfc821, bool *heuristicFound)
     for (t = messageGetBody(m); t; t = t->t_next) {
         const char *line;
 
+        if (mbox_check_deadline(m->ctx))
+            break;
+
         if (t->t_line)
             line = lineGetData(t->t_line);
         else
@@ -1465,6 +1487,13 @@ parseEmailHeaders(message *m, const table_t *rfc821, bool *heuristicFound)
             messageMoveText(ret, t, m);
             break;
         }
+    }
+
+    if (m->ctx && m->ctx->scan_timed_out) {
+        if (fullline)
+            free(fullline);
+        messageDestroy(ret);
+        return NULL;
     }
 
     if (fullline) {
@@ -1872,6 +1901,11 @@ scanStreamedRelatedParts(streamed_mime_part *parts, mbox_ctx *mctx,
         const mime_type type = entry->part ? messageGetMimeType(entry->part) : NOMIME;
         const char *subtype = entry->part ? messageGetMimeSubtype(entry->part) : NULL;
 
+        if (mbox_check_deadline(mctx->ctx)) {
+            result = FAIL;
+            break;
+        }
+
         if (type == TEXT) {
             if (subtype && strcasecmp(subtype, "html") == 0) {
                 root = entry->part;
@@ -1892,6 +1926,11 @@ scanStreamedRelatedParts(streamed_mime_part *parts, mbox_ctx *mctx,
 
     for (entry = parts; entry != NULL; entry = entry->next) {
         mbox_status part_rc;
+
+        if (mbox_check_deadline(mctx->ctx)) {
+            result = FAIL;
+            break;
+        }
 
         if (entry->part == NULL)
             continue;
@@ -1937,6 +1976,9 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
     if (mainMessage == NULL || mctx == NULL || mainMessage->body_spool == NULL)
         return FAIL;
 
+    if (mbox_check_deadline(mctx->ctx))
+        return FAIL;
+
     main_subtype = messageGetMimeSubtype(mainMessage);
     is_related  = main_subtype && strcasecmp(main_subtype, "related") == 0;
 
@@ -1968,6 +2010,11 @@ static mbox_status parseMultipartBodySpool(message *mainMessage, mbox_ctx *mctx,
 
     while (fgets(line, sizeof(line), input) != NULL) {
         size_t line_len = strlen(line);
+
+        if (mbox_check_deadline(mctx->ctx)) {
+            result = FAIL;
+            break;
+        }
 
         if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
             cli_mark_scan_incomplete(mctx->ctx,
@@ -2193,6 +2240,9 @@ parseEmailBody(message *messageIn, text *textIn, mbox_ctx *mctx, unsigned int re
                                  "Mail parser input was materialized incompletely");
         return FAIL;
     }
+
+    if (mbox_check_deadline(mctx->ctx))
+        return FAIL;
 
     cli_dbgmsg("in parseEmailBody, %u files saved so far\n",
                mctx->files);
@@ -4893,6 +4943,9 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
     char *curbuf;
     size_t i;
     bool line_terminated = false;
+
+    if (mbox_check_deadline(ctx))
+        return NULL;
 
     if (map == NULL || at == NULL || *at > map->len) {
         cli_mark_scan_incomplete(ctx, "MIME message line input range is invalid");

@@ -3563,3 +3563,15 @@ evidence. The verifier hashes and validates every recorded component, while
 synthetic controls reject missing or mismatched Rust or enabled-UnRAR
 evidence. This closes the component-identity gap structurally; production-CVD,
 service, sanitizer-runtime, and Sonic1 qualification remain release gates.
+
+## MIME/mbox traversal deadlines — 2026-08-22
+
+The MIME/mbox path could spend extended time in raw line reads, materialized
+header traversal, or disk-backed multipart discovery without consulting the
+shared scan deadline. It now checks `cli_checktimelimit()` at message entry,
+before each bounded line read, across materialized headers, and during
+streamed multipart and related-part traversal. Expiry marks the layer
+incomplete with an explicit reason and preserves `CL_ETIMEOUT` through the
+outer result policy; the focused expired-context regression also verifies
+cache suppression. Compiled timeout injection, sanitizer, and production
+mail-corpus qualification remain release gates.

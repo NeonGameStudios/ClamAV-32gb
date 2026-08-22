@@ -13562,6 +13562,38 @@ START_TEST(test_mbox_initial_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbox_time_limit_is_fail_visible)
+{
+    static const uint8_t input[] =
+        "From sender@example.com Sat Jan  1 00:00:00 2022\n"
+        "Subject: deadline\n"
+        "\n"
+        "body\n";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Heuristics.Limits.Exceeded.MaxScanTime");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_line_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "P I legacy message\n\nbody";
@@ -19339,6 +19371,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_unknown_message_subtype_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_partial_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_disposition_notification_large_body_uses_streaming_spool);
+    tcase_add_test(tc_cl_scan, test_mbox_time_limit_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_mhtml_unterminated_comment_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_mhtml_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
