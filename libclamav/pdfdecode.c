@@ -593,6 +593,7 @@ static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *o
     }
     if (!(dptr = decoded = (uint8_t *)cli_max_malloc(decoded_size))) {
         cli_errmsg("cli_pdf: cannot allocate memory for decoded output\n");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF ASCII85 decoded output could not be allocated");
         return CL_EMEM;
     }
 
@@ -702,6 +703,7 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
     if (!(decoded = (uint8_t *)malloc(capacity))) {
         cli_errmsg("cli_pdf: cannot allocate memory for decoded output\n");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF RunLength decoded output could not be allocated");
         return CL_EMEM;
     }
 
@@ -733,6 +735,7 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
                 if (!(temp = cli_max_realloc(decoded, capacity + INFLATE_CHUNK_SIZE))) {
                     cli_errmsg("cli_pdf: cannot reallocate memory for decoded output\n");
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF RunLength decoded output could not be grown");
                     rc = CL_EMEM;
                     break;
                 }
@@ -764,6 +767,7 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
                 if (!(temp = cli_max_realloc(decoded, capacity + INFLATE_CHUNK_SIZE))) {
                     cli_errmsg("cli_pdf: cannot reallocate memory for decoded output\n");
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF RunLength decoded output could not be grown");
                     rc = CL_EMEM;
                     break;
                 }
@@ -789,6 +793,7 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
         } else if (!(temp = cli_max_realloc(decoded, declen))) {
             /* Shrink output buffer to final the decoded data length to minimize RAM usage */
             cli_errmsg("cli_pdf: cannot reallocate memory for decoded output\n");
+            cli_mark_scan_incomplete(pdf->ctx, "PDF RunLength decoded output could not be resized");
             rc = CL_EMEM;
         } else {
             decoded = temp;
@@ -859,6 +864,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
 
     if (!(decoded = (uint8_t *)malloc(capacity))) {
         cli_errmsg("cli_pdf: cannot allocate memory for decoded output\n");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoded output could not be allocated");
         return CL_EMEM;
     }
 
@@ -871,6 +877,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
     zstat = inflateInit(&stream);
     if (zstat != Z_OK) {
         cli_warnmsg("cli_pdf: inflateInit failed\n");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder could not be initialized");
         free(decoded);
         return CL_EMEM;
     }
@@ -907,6 +914,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
             zstat = inflateInit(&stream);
             if (zstat != Z_OK) {
                 cli_warnmsg("cli_pdf: inflateInit failed\n");
+                cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder could not be initialized");
                 free(decoded);
                 return CL_EMEM;
             }
@@ -933,6 +941,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
 
             if (!(temp = cli_max_realloc(decoded, capacity + INFLATE_CHUNK_SIZE))) {
                 cli_errmsg("cli_pdf: cannot reallocate memory for decoded output\n");
+                cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoded output could not be grown");
                 rc = CL_EMEM;
                 break;
             }
@@ -1006,6 +1015,7 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
         } else if (!(temp = cli_max_realloc(decoded, declen))) {
             /* Shrink output buffer to final the decoded data length to minimize RAM usage */
             cli_errmsg("cli_pdf: cannot reallocate memory for decoded output\n");
+            cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoded output could not be resized");
             rc = CL_EMEM;
         } else {
             decoded = temp;
@@ -1037,6 +1047,7 @@ static cl_error_t filter_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *
 
     if (!(decoded = (uint8_t *)cli_max_calloc(length / 2 + 1, sizeof(uint8_t)))) {
         cli_errmsg("cli_pdf: cannot allocate memory for decoded output\n");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF ASCIIHex decoded output could not be allocated");
         return CL_EMEM;
     }
 
@@ -1196,6 +1207,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
 
     if (!(decoded = (uint8_t *)malloc(capacity))) {
         cli_errmsg("cli_pdf: cannot allocate memory for decoded output\n");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoded output could not be allocated");
         rc = CL_EMEM;
         goto done;
     }
@@ -1212,6 +1224,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
     lzwstat = lzwInit(&stream);
     if (lzwstat != Z_OK) {
         cli_warnmsg("cli_pdf: lzwInit failed\n");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoder could not be initialized");
         rc = CL_EMEM;
         goto done;
     }
@@ -1245,6 +1258,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
             lzwstat = lzwInit(&stream);
             if (lzwstat != Z_OK) {
                 cli_warnmsg("cli_pdf: lzwInit failed\n");
+                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoder could not be initialized");
                 rc = CL_EMEM;
                 goto done;
             }
@@ -1276,6 +1290,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
 
             if (!(temp = cli_max_realloc(decoded, capacity + INFLATE_CHUNK_SIZE))) {
                 cli_errmsg("cli_pdf: cannot reallocate memory for decoded output\n");
+                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoded output could not be grown");
                 rc = CL_EMEM;
                 break;
             }
@@ -1354,6 +1369,7 @@ done:
         } else if (!(temp = cli_max_realloc(decoded, declen))) {
             /* Shrink output buffer to final the decoded data length to minimize RAM usage */
             cli_errmsg("cli_pdf: cannot reallocate memory for decoded output\n");
+            cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoded output could not be resized");
             rc = CL_EMEM;
         } else {
             decoded = temp;

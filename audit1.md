@@ -4752,6 +4752,19 @@ The source guards and non-clang regression gates pass. Compiled fault
 injection, sanitizer runs, production corpora, and Sonic1 qualification remain
 open.
 
+## Legacy PDF decoder allocation failures — 2026-08-22
+
+The legacy PDF ASCII85, RunLength, Flate, ASCIIHex, and LZW filters could
+return `CL_EMEM` after an output-buffer allocation, growth, final resize, or
+decoder initialization failure without setting the scan's sticky incomplete
+state. Each required decoder path now records a filter-specific incomplete
+reason before returning or entering its cleanup path, so a skipped decoded
+stream cannot be published as clean or cacheable while raw matching continues.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation/decoder fault injection, sanitizer runs,
+production PDF corpus, and Sonic1 qualification remain open.
+
 ## Direct clamd report oracle consistency — 2026-08-22
 
 The direct `SCANREPORT`/`CONTSCANREPORT`/`MULTISCANREPORT`/`ALLMATCHSCANREPORT`,
