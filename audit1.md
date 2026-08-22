@@ -4030,3 +4030,12 @@ reservation or output writes, preserving `CL_ETIMEOUT` and fail-closed status
 when a decoder produces data without another input read. Compiled timeout
 injection, malformed/multi-member corpus, sanitizer, and Sonic1 qualification
 remain open.
+
+## OneNote attachment-output deadline — 2026-08-22
+
+OneNote’s legacy reader and bounded modern parser both deliver attachment bytes
+through callbacks after the source has been read or mapped. Those callbacks now
+check `MaxScanTime` before reserving or writing attachment output, preserving
+`CL_ETIMEOUT` and fail-closed status when resident attachment data would
+otherwise bypass the reader deadline. Compiled timeout injection, modern-parser
+size-boundary, corpus, sanitizer, and Sonic1 qualification remain open.

@@ -525,6 +525,7 @@ contains libclamav_rust/src/scanners.rs 'OneNote input ended before its fixed pr
 contains libclamav_rust/src/scanners.rs 'Ok(Err(AlzError::Read(field)))'
 contains libclamav_rust/src/scanners.rs 'struct OneNoteScanSink'
 contains libclamav_rust/src/scanners.rs 'onenote::scan_legacy_reader(&mut reader, file_len, &mut sink)'
+contains libclamav_rust/src/scanners.rs 'attachment output reached the configured time limit'
 contains libclamav_rust/src/sys.rs 'pub matcher_work: u64'
 contains libclamav_rust/src/sys.rs 'pub maxmatcherwork: u64'
 contains libclamav_rust/src/sys.rs 'cl_error_t_CL_ERESOURCE: cl_error_t = 35'

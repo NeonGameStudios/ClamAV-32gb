@@ -109,6 +109,10 @@
 - Rust OneNote fixed-prefix truncation versus fmap read failure, and ALZ field
   read failures, now retain distinct non-clean statuses; add compiled Rust and
   parser-corpus qualification.
+- OneNote legacy attachment sinks and bounded modern attachment callbacks now
+  check the shared scan deadline before output admission, preserving timeout
+  status even when attachment bytes are already resident; retain compiled
+  timeout-injection and OneNote parser-family qualification.
 - DMG trailer, XML, and streamed stripe fmap read failures now preserve
   `CL_EREAD` instead of becoming generic parse errors; add compiled DMG corpus
   and sanitizer qualification.

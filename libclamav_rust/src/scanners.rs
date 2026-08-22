@@ -464,6 +464,13 @@ impl onenote::LegacyAttachmentSink for OneNoteScanSink {
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), onenote::Error> {
+        let deadline_status = check_scan_time_limit(self.ctx);
+        if deadline_status != cl_error_t_CL_SUCCESS {
+            return Err(self.record_failure(
+                deadline_status,
+                "attachment output reached the configured time limit",
+            ));
+        }
         let status = match self.spool.as_mut() {
             Some(spool) => spool.write_all(data),
             None => Err(cl_error_t_CL_EWRITE),
@@ -696,6 +703,16 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
                 return false;
             }
         };
+        let deadline_status = check_scan_time_limit(ctx);
+        if deadline_status != cl_error_t_CL_SUCCESS {
+            scan_result = parser_failure(
+                ctx,
+                "OneNote",
+                deadline_status,
+                "attachment output reached the configured time limit",
+            );
+            return false;
+        }
         let mut attachment_spool = match TempSpool::new(ctx, expected_size) {
             Ok(spool) => spool,
             Err(status) => {
