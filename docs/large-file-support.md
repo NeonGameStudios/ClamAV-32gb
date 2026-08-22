@@ -2491,10 +2491,13 @@ VBA project and module decompression now treats seek failures, intermediate
 blob-growth failures, and missing module streams as incomplete parser results.
 OLE/VBA callers no longer silently continue as clean when a recognized macro
 cannot be materialized or decrypted; they retain a deferred non-clean status
-while allowing unrelated sibling content to be examined. This closes a
-fail-visible gap but does not convert the legacy VBA callback/data API into a
-fully streaming 32 GiB parser; its contiguous matcher and normalization
-ceilings remain release gates.
+while allowing unrelated sibling content to be examined. Decompressed modules
+now enter the 64-bit fmap matcher path, preserving full-map PCRE and
+logical/YARA evaluation instead of narrowing the legacy buffer-matcher length
+to 32 bits. The decompressor still materializes one module in a contiguous
+buffer, so output above the individual-allocation ceiling remains an explicit
+unsupported/incomplete boundary and a streaming VBA decompressor remains a
+release gate.
 
 ## Mail text-list accounting — 2026-08-19
 

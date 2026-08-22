@@ -3967,3 +3967,14 @@ fmap reads or nested partition scans; the intersection walk also rejects a
 32-bit block-count scaling overflow. A focused synthetic coordinate regression
 covers the wrap-to-readable-range case on narrow `size_t` builds. Compiled
 partition-image, sanitizer, and parser-family qualification remain open.
+
+## VBA 64-bit fmap matcher admission — 2026-08-22
+
+The legacy OLE/VBA path rejected decompressed module buffers above 4 GiB before
+matching because it passed their length through `cli_scan_buff()`'s 32-bit
+buffer ABI. `vba_scandata()` now creates a child fmap and uses
+`cli_scan_fmap()`, so raw matching, full-map PCRE, and logical/YARA evaluation
+retain native-size input coordinates. The decompressor still materializes one
+module in a contiguous buffer bounded by the individual-allocation ceiling;
+streaming VBA decompression, corpus, sanitizer, and Sonic1 qualification remain
+open.

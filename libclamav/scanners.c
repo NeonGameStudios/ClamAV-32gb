@@ -2106,82 +2106,32 @@ static cl_error_t cli_scanszdd(cli_ctx *ctx)
 
 static cl_error_t vba_scandata(const unsigned char *data, size_t len, cli_ctx *ctx)
 {
-    cl_error_t ret                      = CL_SUCCESS;
-    struct cli_matcher *generic_ac_root = ctx->engine->root[0];
-    struct cli_matcher *target_ac_root  = ctx->engine->root[2];
-    struct cli_ac_data gmdata, tmdata;
-    bool gmdata_initialized = false;
-    bool tmdata_initialized = false;
-    struct cli_ac_data *mdata[2];
-    bool must_pop_stack = false;
+    cl_error_t ret;
+    fmap_t *new_map;
 
-    cl_fmap_t *new_map = NULL;
-
-    if ((ret = cli_ac_initdata(&tmdata, target_ac_root->ac_partsigs, target_ac_root->ac_lsigs, target_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN))) {
-        goto done;
-    }
-    tmdata_initialized = true;
-
-    if ((ret = cli_ac_initdata(&gmdata, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN))) {
-        goto done;
-    }
-    gmdata_initialized = true;
-
-    mdata[0] = &tmdata;
-    mdata[1] = &gmdata;
-
-    if (len > UINT32_MAX) {
-        cli_dbgmsg("vba_scandata: refusing to narrow an in-memory buffer larger than 4 GiB for the legacy matcher API\n");
-        cli_mark_scan_incomplete(ctx, "VBA decompressed content exceeds the legacy matcher ABI");
-        ret = CL_EFORMAT;
-        goto done;
-    }
-    ret = cli_scan_buff(data, (uint32_t)len, 0, ctx, CL_TYPE_MSOLE2, mdata);
-    if (CL_SUCCESS != ret) {
-        goto done;
+    if ((NULL == data) || (NULL == ctx)) {
+        if (NULL != ctx)
+            cli_mark_scan_incomplete(ctx, "VBA decompressed content had no scan context");
+        return CL_ENULLARG;
     }
 
-    /*
-     * Evaluate logical & yara rules given the new matches to see if anything alerts.
-     */
+    /* Use the 64-bit fmap matcher path rather than narrowing the decompressed
+     * project to cli_scan_buff()'s legacy uint32_t length. This also keeps
+     * full-subject PCRE matching and logical/YARA evaluation on the same
+     * child fmap as the raw matcher. */
     new_map = fmap_open_memory(data, len, NULL);
-    if (new_map == NULL) {
-        cli_dbgmsg("Failed to create fmap for evaluating logical/yara rules after call to cli_scan_buff()\n");
-        ret = CL_EMEM;
-        goto done;
+    if (NULL == new_map) {
+        cli_mark_scan_incomplete(ctx, "VBA decompressed content fmap could not be created");
+        return CL_EMEM;
     }
 
-    ret = cli_recursion_stack_push(ctx, new_map, CL_TYPE_MSOLE2, true, LAYER_ATTRIBUTES_NONE); /* Perform exp_eval with child fmap */
-    if (CL_SUCCESS != ret) {
-        cli_dbgmsg("Failed to scan fmap.\n");
-        goto done;
-    }
-
-    must_pop_stack = true;
-
-    ret = cli_exp_eval(ctx, target_ac_root, &tmdata, NULL);
-    if (CL_SUCCESS != ret) {
-        goto done;
-    }
-
-    ret = cli_exp_eval(ctx, generic_ac_root, &gmdata, NULL);
-
-done:
-
-    if (must_pop_stack) {
-        (void)cli_recursion_stack_pop(ctx); /* Restore the parent fmap */
-    }
-
-    if (NULL != new_map) {
+    ret = cli_recursion_stack_push(ctx, new_map, CL_TYPE_MSOLE2, true, LAYER_ATTRIBUTES_NONE);
+    if (CL_SUCCESS == ret) {
+        ret = cli_scan_fmap(ctx, CL_TYPE_MSOLE2, false, NULL, AC_SCAN_VIR, NULL);
+        (void)cli_recursion_stack_pop(ctx);
         fmap_free(new_map);
-    }
-
-    if (tmdata_initialized) {
-        cli_ac_freedata(&tmdata);
-    }
-
-    if (gmdata_initialized) {
-        cli_ac_freedata(&gmdata);
+    } else {
+        fmap_free(new_map);
     }
 
     return ret;
@@ -2681,8 +2631,6 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
 
                 if (NULL != data) {
                     /* cli_dbgmsg("Project content:\n%s", data); */
-                    if (ctx->scanned)
-                        *ctx->scanned += data_len;
                     if (ctx->engine->keeptmp) {
                         if (CL_SUCCESS != (status = cli_gentempfd(ctx->this_layer_tmpdir, &proj_contents_fname, &proj_contents_fd))) {
                             cli_warnmsg("WARNING: VBA project '%s_%u' cannot be dumped to file\n", vba_project->name[i], j);
@@ -2846,10 +2794,6 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
                     deferred_failure = CL_EPARSE;
             } else {
                 cli_dbgmsg("cli_ole2_tempdir_scan_vba: Project content:\n%s", data);
-
-                if (ctx->scanned) {
-                    *ctx->scanned += vba_project->length[i];
-                }
 
                 status = vba_scandata(data, vba_project->length[i], ctx);
                 if (CL_SUCCESS != status) {

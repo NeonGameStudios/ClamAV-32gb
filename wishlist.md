@@ -466,6 +466,10 @@
 - OLE2 property-tree, VBA/XLM, MSO-inflation, embedded-stream, and
   encrypted-stream traversal now honor the shared scan deadline; add compiled
   timeout-injection and large Office/VBA corpus qualification.
+- Decompressed VBA modules now enter the 64-bit fmap matcher path, preserving
+  full-map PCRE and logical/YARA evaluation instead of rejecting lengths above
+  4 GiB at the legacy buffer-matcher ABI; the decompressor's contiguous
+  individual-allocation ceiling remains an explicit unsupported boundary.
 - 7-Zip member extraction now checks the shared deadline in its streaming
   output callback and fmap input read/seek callbacks, including long
   solid-folder decoder work, preserving `CL_ETIMEOUT` through decoder read
