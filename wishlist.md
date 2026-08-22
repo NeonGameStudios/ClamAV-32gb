@@ -16,6 +16,10 @@
 - AutoIt EA06 script decompilation now marks its bounded output-buffer
   allocation failure as incomplete before returning `CL_EMEM`; compiled fault
   injection, parser corpus, sanitizer, and Sonic1 qualification remain open.
+- RTF parser stack growth and embedded-object state/description allocation
+  failures now mark required inspection incomplete before returning `CL_EMEM`;
+  compiled allocation fault injection, parser corpus, sanitizer, and Sonic1
+  qualification remain open.
 - MHTML preclassification now bounds each comment value before the legacy
   in-memory XML reader, checks bounded tag searches, and rejects oversized
   metadata as an explicit resource-incomplete result; add compiled oversized-

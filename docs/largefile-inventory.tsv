@@ -4285,9 +4285,9 @@ fixed-width-integer	libclamav/rijndael.h	11	void rijndaelEncrypt(const uint32_t 
 fixed-width-integer	libclamav/rijndael.h	7	int rijndaelSetupDecrypt(uint32_t *rk, const unsigned char *key, int keybits);
 fixed-width-integer	libclamav/rijndael.h	8	void rijndaelDecrypt(const uint32_t *rk, int nrounds, const unsigned char ciphertext[16], unsigned char plaintext[16]);
 fixed-width-integer	libclamav/rtf.c	119	    uint64_t temporary_reserved;
-fixed-width-integer	libclamav/rtf.c	449	                    if (data->desc_len > UINT64_MAX - sizeof(uint32_t) ||
-fixed-width-integer	libclamav/rtf.c	450	                        cli_scan_reserve_temporary(data->ctx, (uint64_t)data->desc_len + sizeof(uint32_t)) != CL_SUCCESS) {
-fixed-width-integer	libclamav/rtf.c	454	                    data->temporary_reserved = (uint64_t)data->desc_len + sizeof(uint32_t);
+fixed-width-integer	libclamav/rtf.c	451	                    if (data->desc_len > UINT64_MAX - sizeof(uint32_t) ||
+fixed-width-integer	libclamav/rtf.c	452	                        cli_scan_reserve_temporary(data->ctx, (uint64_t)data->desc_len + sizeof(uint32_t)) != CL_SUCCESS) {
+fixed-width-integer	libclamav/rtf.c	456	                    data->temporary_reserved = (uint64_t)data->desc_len + sizeof(uint32_t);
 fixed-width-integer	libclamav/rtf.c	68	    int64_t controlword_param;
 fixed-width-integer	libclamav/scan_layer.c	119	    uint32_t *recursion_level_out)
 fixed-width-integer	libclamav/scan_layer.c	151	    uint64_t *object_id_out)
@@ -12831,41 +12831,41 @@ native-width-integer	libclamav/rtf.c	195	        const int toplevel            =
 native-width-integer	libclamav/rtf.c	213	static int load_actions(table_t* t)
 native-width-integer	libclamav/rtf.c	215	    size_t i;
 native-width-integer	libclamav/rtf.c	222	static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* tmpdir)
-native-width-integer	libclamav/rtf.c	245	static void rtf_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
-native-width-integer	libclamav/rtf.c	265	static int rtf_write_output(struct rtf_object_data *data, const void *buffer, size_t length)
-native-width-integer	libclamav/rtf.c	315	static int rtf_object_process(struct rtf_state* state, const unsigned char* input, const size_t len)
-native-width-integer	libclamav/rtf.c	320	    size_t out_cnt = 0;
-native-width-integer	libclamav/rtf.c	321	    size_t i;
-native-width-integer	libclamav/rtf.c	322	    int ret;
-native-width-integer	libclamav/rtf.c	361	                        cli_dbgmsg("Warning: rtf objdata magic number not matched, expected:%d, got: %d, at pos:%lu\n", rtf_data_magic[i], out_data[i], (unsigned long int)data->bread);
-native-width-integer	libclamav/rtf.c	375	                    data->desc_len |= ((size_t)out_data[i]) << (data->bread * 8);
-native-width-integer	libclamav/rtf.c	381	                        cli_dbgmsg("Description length too big (%lu), showing only 64 bytes of it\n", (unsigned long int)data->desc_len);
-native-width-integer	libclamav/rtf.c	390	                    cli_dbgmsg("RTF: description length:%lu\n", (unsigned long int)data->desc_len);
-native-width-integer	libclamav/rtf.c	443	                    data->desc_len |= ((size_t)out_data[i]) << (8 * data->bread);
-native-width-integer	libclamav/rtf.c	448	                    cli_dbgmsg("Dumping rtf embedded object of size:%lu\n", (unsigned long int)data->desc_len);
-native-width-integer	libclamav/rtf.c	473	                        size_t header_want = sizeof(data->object_header) - data->object_header_len;
-native-width-integer	libclamav/rtf.c	507	                    size_t out_want = (out_cnt < data->desc_len) ? out_cnt : data->desc_len;
-native-width-integer	libclamav/rtf.c	515	                        int rc;
-native-width-integer	libclamav/rtf.c	534	static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
-native-width-integer	libclamav/rtf.c	537	    int rc                       = 0;
+native-width-integer	libclamav/rtf.c	246	static void rtf_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
+native-width-integer	libclamav/rtf.c	266	static int rtf_write_output(struct rtf_object_data *data, const void *buffer, size_t length)
+native-width-integer	libclamav/rtf.c	316	static int rtf_object_process(struct rtf_state* state, const unsigned char* input, const size_t len)
+native-width-integer	libclamav/rtf.c	321	    size_t out_cnt = 0;
+native-width-integer	libclamav/rtf.c	322	    size_t i;
+native-width-integer	libclamav/rtf.c	323	    int ret;
+native-width-integer	libclamav/rtf.c	362	                        cli_dbgmsg("Warning: rtf objdata magic number not matched, expected:%d, got: %d, at pos:%lu\n", rtf_data_magic[i], out_data[i], (unsigned long int)data->bread);
+native-width-integer	libclamav/rtf.c	376	                    data->desc_len |= ((size_t)out_data[i]) << (data->bread * 8);
+native-width-integer	libclamav/rtf.c	382	                        cli_dbgmsg("Description length too big (%lu), showing only 64 bytes of it\n", (unsigned long int)data->desc_len);
+native-width-integer	libclamav/rtf.c	392	                    cli_dbgmsg("RTF: description length:%lu\n", (unsigned long int)data->desc_len);
+native-width-integer	libclamav/rtf.c	445	                    data->desc_len |= ((size_t)out_data[i]) << (8 * data->bread);
+native-width-integer	libclamav/rtf.c	450	                    cli_dbgmsg("Dumping rtf embedded object of size:%lu\n", (unsigned long int)data->desc_len);
+native-width-integer	libclamav/rtf.c	475	                        size_t header_want = sizeof(data->object_header) - data->object_header_len;
+native-width-integer	libclamav/rtf.c	509	                    size_t out_want = (out_cnt < data->desc_len) ? out_cnt : data->desc_len;
+native-width-integer	libclamav/rtf.c	517	                        int rc;
+native-width-integer	libclamav/rtf.c	536	static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
+native-width-integer	libclamav/rtf.c	539	    int rc                       = 0;
 native-width-integer	libclamav/rtf.c	57	typedef int (*rtf_callback_begin)(struct rtf_state*, cli_ctx* ctx, const char* tmpdir);
-native-width-integer	libclamav/rtf.c	576	static void rtf_action(struct rtf_state* state, long action)
+native-width-integer	libclamav/rtf.c	578	static void rtf_action(struct rtf_state* state, long action)
 native-width-integer	libclamav/rtf.c	58	typedef int (*rtf_callback_process)(struct rtf_state*, const unsigned char* data, const size_t len);
 native-width-integer	libclamav/rtf.c	59	typedef int (*rtf_callback_end)(struct rtf_state*, cli_ctx*);
-native-width-integer	libclamav/rtf.c	632	int cli_scanrtf(cli_ctx* ctx)
-native-width-integer	libclamav/rtf.c	640	    size_t bread;
-native-width-integer	libclamav/rtf.c	643	    size_t offset = 0;
-native-width-integer	libclamav/rtf.c	644	    int fmap_read_failed = 0;
+native-width-integer	libclamav/rtf.c	634	int cli_scanrtf(cli_ctx* ctx)
+native-width-integer	libclamav/rtf.c	642	    size_t bread;
+native-width-integer	libclamav/rtf.c	645	    size_t offset = 0;
+native-width-integer	libclamav/rtf.c	646	    int fmap_read_failed = 0;
 native-width-integer	libclamav/rtf.c	66	    size_t default_elements;
 native-width-integer	libclamav/rtf.c	67	    size_t controlword_cnt;
 native-width-integer	libclamav/rtf.c	70	    int controlword_param_sign;
 native-width-integer	libclamav/rtf.c	71	    int encounteredTopLevel; /* encountered top-level control words that we care about */
-native-width-integer	libclamav/rtf.c	734	                                size_t i;
-native-width-integer	libclamav/rtf.c	735	                                size_t left = ptr_end - ptr;
-native-width-integer	libclamav/rtf.c	736	                                size_t use  = left;
+native-width-integer	libclamav/rtf.c	738	                                size_t i;
+native-width-integer	libclamav/rtf.c	739	                                size_t left = ptr_end - ptr;
+native-width-integer	libclamav/rtf.c	740	                                size_t use  = left;
 native-width-integer	libclamav/rtf.c	80	    size_t elements;
 native-width-integer	libclamav/rtf.c	81	    size_t stack_cnt;
-native-width-integer	libclamav/rtf.c	814	                    int action;
+native-width-integer	libclamav/rtf.c	818	                    int action;
 native-width-integer	libclamav/rtf.c	82	    size_t stack_size;
 native-width-integer	libclamav/rtf.c	83	    int warned;
 native-width-integer	libclamav/rtf.c	94	static const size_t rtf_action_mapping_cnt = sizeof(rtf_action_mapping) / sizeof(rtf_action_mapping[0]);
@@ -19957,10 +19957,10 @@ format-width	libclamav/regex_pcre.c	266	        cli_dbgmsg("cli_pcre_report: run
 format-width	libclamav/regex_pcre.c	288	                cli_dbgmsg("cli_pcre_report:  %d: %s%s\n", i, outstr, trunc ? " (trunc)" : "");
 format-width	libclamav/regex_pcre.c	289	                // cli_dbgmsg("cli_pcre_report:  %d: %.*s%s\n", i, length, start, trunc ? " (trunc)":"");
 format-width	libclamav/regex_pcre.c	296	            cli_dbgmsg("cli_pcre_report: error occurred in pcre_match: %d\n", rc);
-format-width	libclamav/rtf.c	361	                        cli_dbgmsg("Warning: rtf objdata magic number not matched, expected:%d, got: %d, at pos:%lu\n", rtf_data_magic[i], out_data[i], (unsigned long int)data->bread);
-format-width	libclamav/rtf.c	381	                        cli_dbgmsg("Description length too big (%lu), showing only 64 bytes of it\n", (unsigned long int)data->desc_len);
-format-width	libclamav/rtf.c	390	                    cli_dbgmsg("RTF: description length:%lu\n", (unsigned long int)data->desc_len);
-format-width	libclamav/rtf.c	448	                    cli_dbgmsg("Dumping rtf embedded object of size:%lu\n", (unsigned long int)data->desc_len);
+format-width	libclamav/rtf.c	362	                        cli_dbgmsg("Warning: rtf objdata magic number not matched, expected:%d, got: %d, at pos:%lu\n", rtf_data_magic[i], out_data[i], (unsigned long int)data->bread);
+format-width	libclamav/rtf.c	382	                        cli_dbgmsg("Description length too big (%lu), showing only 64 bytes of it\n", (unsigned long int)data->desc_len);
+format-width	libclamav/rtf.c	392	                    cli_dbgmsg("RTF: description length:%lu\n", (unsigned long int)data->desc_len);
+format-width	libclamav/rtf.c	450	                    cli_dbgmsg("Dumping rtf embedded object of size:%lu\n", (unsigned long int)data->desc_len);
 format-width	libclamav/scanners.c	1127	                snprintf(prefix, sizeof(prefix), "comments_%u", i);
 format-width	libclamav/scanners.c	1204	                cli_dbgmsg("EGG: Error (%u) reading file header!\n", egg_ret);
 format-width	libclamav/scanners.c	1351	    cli_dbgmsg("EGG: Exit code: %d\n", status);
@@ -28528,43 +28528,43 @@ offset-size-arithmetic	libclamav/rtf.c	172	        stack->stack_size += 128;
 offset-size-arithmetic	libclamav/rtf.c	173	        states = cli_max_realloc(stack->states, stack->stack_size * sizeof(*stack->states));
 offset-size-arithmetic	libclamav/rtf.c	194	        const size_t default_elements = state->default_elements - 1;
 offset-size-arithmetic	libclamav/rtf.c	224	    struct rtf_object_data* data = malloc(sizeof(*data));
-offset-size-arithmetic	libclamav/rtf.c	361	                        cli_dbgmsg("Warning: rtf objdata magic number not matched, expected:%d, got: %d, at pos:%lu\n", rtf_data_magic[i], out_data[i], (unsigned long int)data->bread);
-offset-size-arithmetic	libclamav/rtf.c	375	                    data->desc_len |= ((size_t)out_data[i]) << (data->bread * 8);
-offset-size-arithmetic	libclamav/rtf.c	381	                        cli_dbgmsg("Description length too big (%lu), showing only 64 bytes of it\n", (unsigned long int)data->desc_len);
-offset-size-arithmetic	libclamav/rtf.c	384	                        data->desc_name = cli_max_malloc(data->desc_len + 1);
-offset-size-arithmetic	libclamav/rtf.c	390	                    cli_dbgmsg("RTF: description length:%lu\n", (unsigned long int)data->desc_len);
-offset-size-arithmetic	libclamav/rtf.c	396	                for (i = 0; i < out_cnt && data->bread < data->desc_len && data->bread < 64; i++, data->bread++)
-offset-size-arithmetic	libclamav/rtf.c	400	                if (data->bread < data->desc_len && data->bread < 64) {
-offset-size-arithmetic	libclamav/rtf.c	405	                if (data->desc_len - data->bread > out_cnt) {
-offset-size-arithmetic	libclamav/rtf.c	406	                    data->desc_len -= out_cnt;
-offset-size-arithmetic	libclamav/rtf.c	410	                out_cnt -= data->desc_len - data->bread;
-offset-size-arithmetic	libclamav/rtf.c	412	                    out_data += data->desc_len - data->bread;
-offset-size-arithmetic	libclamav/rtf.c	443	                    data->desc_len |= ((size_t)out_data[i]) << (8 * data->bread);
-offset-size-arithmetic	libclamav/rtf.c	448	                    cli_dbgmsg("Dumping rtf embedded object of size:%lu\n", (unsigned long int)data->desc_len);
-offset-size-arithmetic	libclamav/rtf.c	449	                    if (data->desc_len > UINT64_MAX - sizeof(uint32_t) ||
-offset-size-arithmetic	libclamav/rtf.c	450	                        cli_scan_reserve_temporary(data->ctx, (uint64_t)data->desc_len + sizeof(uint32_t)) != CL_SUCCESS) {
-offset-size-arithmetic	libclamav/rtf.c	454	                    data->temporary_reserved = (uint64_t)data->desc_len + sizeof(uint32_t);
-offset-size-arithmetic	libclamav/rtf.c	472	                    if (data->desc_len >= sizeof(data->object_header)) {
-offset-size-arithmetic	libclamav/rtf.c	473	                        size_t header_want = sizeof(data->object_header) - data->object_header_len;
-offset-size-arithmetic	libclamav/rtf.c	478	                        data->object_header_len += header_want;
-offset-size-arithmetic	libclamav/rtf.c	481	                        if (data->object_header_len < sizeof(data->object_header))
-offset-size-arithmetic	libclamav/rtf.c	485	                    if (data->desc_len < sizeof(data->object_header) ||
-offset-size-arithmetic	libclamav/rtf.c	490	                        data->bread = 1; /* flag to indicate this needs to be scanned with cli_decode_ole_object*/
-offset-size-arithmetic	libclamav/rtf.c	501	                        data->desc_len -= data->object_header_len;
-offset-size-arithmetic	libclamav/rtf.c	507	                    size_t out_want = (out_cnt < data->desc_len) ? out_cnt : data->desc_len;
-offset-size-arithmetic	libclamav/rtf.c	509	                    data->desc_len -= out_want;
-offset-size-arithmetic	libclamav/rtf.c	534	static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
+offset-size-arithmetic	libclamav/rtf.c	362	                        cli_dbgmsg("Warning: rtf objdata magic number not matched, expected:%d, got: %d, at pos:%lu\n", rtf_data_magic[i], out_data[i], (unsigned long int)data->bread);
+offset-size-arithmetic	libclamav/rtf.c	376	                    data->desc_len |= ((size_t)out_data[i]) << (data->bread * 8);
+offset-size-arithmetic	libclamav/rtf.c	382	                        cli_dbgmsg("Description length too big (%lu), showing only 64 bytes of it\n", (unsigned long int)data->desc_len);
+offset-size-arithmetic	libclamav/rtf.c	385	                        data->desc_name = cli_max_malloc(data->desc_len + 1);
+offset-size-arithmetic	libclamav/rtf.c	392	                    cli_dbgmsg("RTF: description length:%lu\n", (unsigned long int)data->desc_len);
+offset-size-arithmetic	libclamav/rtf.c	398	                for (i = 0; i < out_cnt && data->bread < data->desc_len && data->bread < 64; i++, data->bread++)
+offset-size-arithmetic	libclamav/rtf.c	402	                if (data->bread < data->desc_len && data->bread < 64) {
+offset-size-arithmetic	libclamav/rtf.c	407	                if (data->desc_len - data->bread > out_cnt) {
+offset-size-arithmetic	libclamav/rtf.c	408	                    data->desc_len -= out_cnt;
+offset-size-arithmetic	libclamav/rtf.c	412	                out_cnt -= data->desc_len - data->bread;
+offset-size-arithmetic	libclamav/rtf.c	414	                    out_data += data->desc_len - data->bread;
+offset-size-arithmetic	libclamav/rtf.c	445	                    data->desc_len |= ((size_t)out_data[i]) << (8 * data->bread);
+offset-size-arithmetic	libclamav/rtf.c	450	                    cli_dbgmsg("Dumping rtf embedded object of size:%lu\n", (unsigned long int)data->desc_len);
+offset-size-arithmetic	libclamav/rtf.c	451	                    if (data->desc_len > UINT64_MAX - sizeof(uint32_t) ||
+offset-size-arithmetic	libclamav/rtf.c	452	                        cli_scan_reserve_temporary(data->ctx, (uint64_t)data->desc_len + sizeof(uint32_t)) != CL_SUCCESS) {
+offset-size-arithmetic	libclamav/rtf.c	456	                    data->temporary_reserved = (uint64_t)data->desc_len + sizeof(uint32_t);
+offset-size-arithmetic	libclamav/rtf.c	474	                    if (data->desc_len >= sizeof(data->object_header)) {
+offset-size-arithmetic	libclamav/rtf.c	475	                        size_t header_want = sizeof(data->object_header) - data->object_header_len;
+offset-size-arithmetic	libclamav/rtf.c	480	                        data->object_header_len += header_want;
+offset-size-arithmetic	libclamav/rtf.c	483	                        if (data->object_header_len < sizeof(data->object_header))
+offset-size-arithmetic	libclamav/rtf.c	487	                    if (data->desc_len < sizeof(data->object_header) ||
+offset-size-arithmetic	libclamav/rtf.c	492	                        data->bread = 1; /* flag to indicate this needs to be scanned with cli_decode_ole_object*/
+offset-size-arithmetic	libclamav/rtf.c	503	                        data->desc_len -= data->object_header_len;
+offset-size-arithmetic	libclamav/rtf.c	509	                    size_t out_want = (out_cnt < data->desc_len) ? out_cnt : data->desc_len;
+offset-size-arithmetic	libclamav/rtf.c	511	                    data->desc_len -= out_want;
+offset-size-arithmetic	libclamav/rtf.c	536	static int rtf_object_end(struct rtf_state* state, cli_ctx* ctx)
 offset-size-arithmetic	libclamav/rtf.c	59	typedef int (*rtf_callback_end)(struct rtf_state*, cli_ctx*);
 offset-size-arithmetic	libclamav/rtf.c	62	    rtf_callback_begin cb_begin; /* must be non-null if you want cb_process, and cb_end to be called, also it must change cb_data to non-null */
 offset-size-arithmetic	libclamav/rtf.c	65	    void* cb_data; /* data set up by cb_begin, used by cb_process, and cleaned up by cb_end. typically state data */
-offset-size-arithmetic	libclamav/rtf.c	661	    stack.states     = cli_max_malloc(stack.stack_size * sizeof(*stack.states));
-offset-size-arithmetic	libclamav/rtf.c	695	    for (offset = 0;; offset += bread) {
-offset-size-arithmetic	libclamav/rtf.c	700	        ptr = fmap_need_off_once_len(ctx->fmap, offset, BUFF_SIZE, &bread);
-offset-size-arithmetic	libclamav/rtf.c	704	        ptr_end = ptr + bread;
-offset-size-arithmetic	libclamav/rtf.c	735	                                size_t left = ptr_end - ptr;
-offset-size-arithmetic	libclamav/rtf.c	819	                        if (state.cb_data && state.cb_end) { /* premature end of previous block */
-offset-size-arithmetic	libclamav/rtf.c	834	    /* fmap_need_off_once_len() reports exact end-of-map as a normal zero-byte
-offset-size-arithmetic	libclamav/rtf.c	838	    if (ret != CL_ETIMEOUT && offset < ctx->fmap->len) {
+offset-size-arithmetic	libclamav/rtf.c	663	    stack.states     = cli_max_malloc(stack.stack_size * sizeof(*stack.states));
+offset-size-arithmetic	libclamav/rtf.c	698	    for (offset = 0;; offset += bread) {
+offset-size-arithmetic	libclamav/rtf.c	703	        ptr = fmap_need_off_once_len(ctx->fmap, offset, BUFF_SIZE, &bread);
+offset-size-arithmetic	libclamav/rtf.c	707	        ptr_end = ptr + bread;
+offset-size-arithmetic	libclamav/rtf.c	739	                                size_t left = ptr_end - ptr;
+offset-size-arithmetic	libclamav/rtf.c	823	                        if (state.cb_data && state.cb_end) { /* premature end of previous block */
+offset-size-arithmetic	libclamav/rtf.c	838	    /* fmap_need_off_once_len() reports exact end-of-map as a normal zero-byte
+offset-size-arithmetic	libclamav/rtf.c	842	    if (ret != CL_ETIMEOUT && offset < ctx->fmap->len) {
 offset-size-arithmetic	libclamav/rtf.c	94	static const size_t rtf_action_mapping_cnt = sizeof(rtf_action_mapping) / sizeof(rtf_action_mapping[0]);
 offset-size-arithmetic	libclamav/scan_layer.h	52	#endif /* __SCAN_LAYER_H_LC */
 offset-size-arithmetic	libclamav/scan_report.c	214	    report = calloc(1, sizeof(*report));

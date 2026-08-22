@@ -224,6 +224,7 @@ static int rtf_object_begin(struct rtf_state* state, cli_ctx* ctx, const char* t
     struct rtf_object_data* data = malloc(sizeof(*data));
     if (!data) {
         cli_errmsg("rtf_object_begin: Unable to allocate memory for object data\n");
+        cli_mark_scan_incomplete(ctx, "RTF embedded-object state could not be allocated");
         return CL_EMEM;
     }
     data->fd                 = -1;
@@ -384,6 +385,7 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                         data->desc_name = cli_max_malloc(data->desc_len + 1);
                     if (!data->desc_name) {
                         cli_errmsg("rtf_object_process: Unable to allocate memory for data->desc_name\n");
+                        cli_mark_scan_incomplete(data->ctx, "RTF embedded-object description could not be allocated");
                         return CL_EMEM;
                     }
                     data->internal_state = WAIT_DESC;
@@ -662,6 +664,7 @@ int cli_scanrtf(cli_ctx* ctx)
 
     if (!stack.states) {
         cli_errmsg("ScanRTF: Unable to allocate memory for stack states\n");
+        cli_mark_scan_incomplete(ctx, "RTF parser stack could not be allocated");
         return CL_EMEM;
     }
 
@@ -708,6 +711,7 @@ int cli_scanrtf(cli_ctx* ctx)
                     switch (*ptr++) {
                         case '{':
                             if ((ret = push_state(&stack, &state))) {
+                                cli_mark_scan_incomplete(ctx, "RTF parser stack could not be grown");
                                 cli_dbgmsg("RTF:Push failure!\n");
                                 SCAN_CLEANUP;
                                 return ret;

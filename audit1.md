@@ -4781,6 +4781,14 @@ boundary or an injected allocation fault prevents script inspection. Compiled
 fault injection, parser corpus, sanitizer, and Sonic1 qualification remain
 open.
 
+## RTF parser allocation failures — 2026-08-22
+
+RTF parser stack growth and embedded-object state/description allocations now
+mark required inspection incomplete before returning `CL_EMEM`. This keeps
+allocation faults non-cacheable and visible even when they occur before
+temporary-object admission. Compiled allocation fault injection, parser
+corpus, sanitizer, and Sonic1 qualification remain open.
+
 ## Scan-level temporary-directory setup failures — 2026-08-22
 
 `scan_common()` and recursive child-layer setup previously returned allocation
