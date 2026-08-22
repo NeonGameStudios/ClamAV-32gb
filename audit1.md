@@ -3615,3 +3615,13 @@ also returns `CL_EMAXFILES` directly so each layer of the boundary preserves
 the required non-clean result. A focused Rust helper regression covers this
 admission path; full ALZ corpus, sanitizer, and production qualification
 remain open.
+
+## ALZ final limit-result propagation — 2026-08-22
+
+ALZ finalization also had paths where a recorded oversized member, cumulative
+scan-size exhaustion, or internal file-count stop appended a limit heuristic
+and then returned `CL_SUCCESS`. Those paths now return `CL_EMAXSIZE` or
+`CL_EMAXFILES` directly after recording the limit, preserving an explicit
+non-clean parser result even when outer sticky-state unwinding changes later.
+Full ALZ limit-edge corpus, sanitizer, and production qualification remain
+open.

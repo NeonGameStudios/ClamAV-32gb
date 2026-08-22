@@ -694,3 +694,8 @@
   configured file-count limit, instead of relying only on the outer sticky
   incomplete state. A focused Rust helper regression covers the boundary;
   full ALZ corpus and production qualification remain open.
+
+- ALZ finalization now returns `CL_EMAXSIZE` or `CL_EMAXFILES` directly for
+  oversized, cumulative-size, or internally counted skipped members, rather
+  than only recording a heuristic and returning success. Full ALZ limit-edge
+  and production qualification remain open.

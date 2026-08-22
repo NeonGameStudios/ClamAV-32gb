@@ -1217,7 +1217,7 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
 
     if let Some(needed) = alz.file_limit_exceeded_size {
         let ret = check_scan_limits("ALZ", ctx, needed, 0, 0);
-        if ret != cl_error_t_CL_SUCCESS && ret != cl_error_t_CL_EMAXSIZE {
+        if ret != cl_error_t_CL_SUCCESS {
             return ret;
         }
     }
@@ -1228,6 +1228,7 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             HEURISTICS_LIMITS_EXCEEDED_MAX_SCAN_SIZE,
             cl_error_t_CL_EMAXSIZE,
         );
+        return cl_error_t_CL_EMAXSIZE;
     }
 
     if alz.file_count_limit_exceeded {
@@ -1236,6 +1237,7 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             HEURISTICS_LIMITS_EXCEEDED_MAX_FILES,
             cl_error_t_CL_EMAXFILES,
         );
+        return cl_error_t_CL_EMAXFILES;
     }
 
     if alz.has_parse_error() {

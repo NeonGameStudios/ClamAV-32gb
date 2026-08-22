@@ -5125,3 +5125,12 @@ parser no longer returns clean merely because the outer C context carries a
 sticky incomplete flag; the direct result and cache/report policy now agree.
 A focused helper regression covers the boundary, while full ALZ corpus,
 sanitizer, and supported-build qualification remain release gates.
+
+## ALZ final limit-result propagation — 2026-08-22
+
+ALZ finalization now returns `CL_EMAXSIZE` for a recorded oversized or
+cumulative-size skip and `CL_EMAXFILES` for an internally counted file-limit
+stop. The parser still records the standard heuristic and sticky incomplete
+state, but no longer returns clean after required members were omitted. Full
+ALZ limit-edge corpus, sanitizer, and supported-build qualification remain
+release gates.

@@ -454,6 +454,8 @@ contains libclamav_rust/src/scanners.rs 'metadata scan failed with {}. Aborting 
 contains libclamav_rust/src/scanners.rs 'fn alz_metadata_scan_format_error_stops'
 contains libclamav_rust/src/scanners.rs 'fn alz_metadata_limit_failure_is_fail_visible'
 contains libclamav_rust/src/scanners.rs 'do not rely on outer unwinding to'
+contains libclamav_rust/src/scanners.rs 'return cl_error_t_CL_EMAXSIZE;'
+contains libclamav_rust/src/scanners.rs 'return cl_error_t_CL_EMAXFILES;'
 contains libclamav_rust/src/alz.rs 'fn deflate_limit_uses_decompressed_size_not_header'
 contains libclamav_rust/src/alz.rs 'assert!(alz.embedded_files.is_empty())'
 not_contains libclamav_rust/src/scanners.rs 'Alz::from_bytes_with_filter_stream'
