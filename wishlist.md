@@ -117,6 +117,9 @@
 - OLE2 summary-property metadata now reads only the bounded property table and
   bounded per-property windows instead of mapping the full attacker-declared
   property-set size; malformed/truncated windows remain fail-visible.
+- OLE2 encryption probing now reads a bounded native-width window at the
+  encryption stream offset instead of indexing beyond the initial header view;
+  add compiled encrypted-OLE2 and fault-injected read qualification.
 - PE import-hash inspection now reads fixed-size import descriptors on demand
   and validates the import-directory range without 32-bit addition wraparound.
 - The PE resource-string heuristic now borrows at most the 8 KiB prefix its

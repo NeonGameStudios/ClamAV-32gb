@@ -730,6 +730,11 @@ const uint16_t XLS_XOR_OBFUSCATION    = 0;
 const uint16_t XLS_RC4_ENCRYPTION     = 1;
 const uint32_t MINISTREAM_CUTOFF_SIZE = 0x1000;
 
+/* Encryption metadata is variable-length, but its standard CSP name and
+ * verifier are small. Keep the optional probe bounded instead of borrowing
+ * the entire remaining OLE2 map as one contiguous window. */
+#define OLE2_ENCRYPTION_INFO_READ_WINDOW (64U * 1024U)
+
 static size_t get_stream_data_offset(ole2_header_t *hdr, const property_t *word_block, uint32_t sector)
 {
     const uint64_t offset      = (uint64_t)1 << hdr->log2_big_block_size;
@@ -3207,14 +3212,24 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         cli_dbgmsg("WARNING: Untested sbat cutoff (%u); data may not extract correctly\n", hdr.sbat_cutoff);
     }
 
-    /* determine if encrypted with VelvetSweatshop password */
-    encryption_offset = 4 * (1 << hdr.log2_big_block_size);
-    if ((encryption_offset + sizeof(encryption_info_stream_standard_t)) <= hdr.m_length) {
+    /* determine if encrypted with VelvetSweatshop password. The initial
+     * header window is only hdr_size bytes long; it cannot be reused for the
+     * encryption stream, which begins several sectors later. */
+    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
+    if (encryption_offset <= hdr.m_length &&
+        sizeof(encryption_info_stream_standard_t) <= hdr.m_length - encryption_offset) {
+        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
+                                       (size_t)OLE2_ENCRYPTION_INFO_READ_WINDOW);
+        const uint8_t *encryption_info = fmap_need_off_once(hdr.map, encryption_offset, encryption_window);
 
-        bEncrypted = initialize_encryption_key(
-            &(((const uint8_t *)phdr)[encryption_offset]),
-            hdr.m_length - encryption_offset,
-            &key, &encryption_status);
+        if (encryption_info == NULL) {
+            cli_mark_scan_incomplete(ctx, "OLE2 encryption metadata could not be read completely");
+            ret = CL_EREAD;
+            goto done;
+        }
+
+        bEncrypted = initialize_encryption_key(encryption_info, encryption_window,
+                                                &key, &encryption_status);
     }
 
     /* 8 SBAT blocks per file block */

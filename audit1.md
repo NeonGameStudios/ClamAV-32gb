@@ -3761,3 +3761,15 @@ preventing an out-of-bounds write while retaining the non-cacheable incomplete
 disposition. A synthetic 260-byte identifier regression and source guards
 cover the boundary; compiled ISO corpus, sanitizer, and parser-family
 qualification remain open.
+
+## OLE2 encryption metadata window — 2026-08-22
+
+OLE2 encryption detection previously reused the fmap pointer for the fixed
+header after indexing it by the encryption-stream offset. That pointer only
+covered the header window, so an input with enough sectors to reach the
+encryption stream could make the probe read outside the mapped range. The
+probe now performs checked native-width range admission, maps at most a 64 KiB
+encryption-info window, and marks an in-range callback failure incomplete.
+A callback-backed regression verifies that the later native range is fetched;
+compiled encrypted-OLE2 corpus, sanitizer, and supported-build qualification
+remain release gates.
