@@ -1039,6 +1039,8 @@
 - Active PDF encryption crypt-filter parsing now supplies scan context while
   the public compatibility wrapper remains; add compiled malformed-filter and
   timeout coverage.
+- Legacy PDF name normalization and JavaScript delimiter recovery now use
+  deadline-aware searches; add compiled malformed-object and timeout coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.

@@ -4507,6 +4507,12 @@ context-aware `parse_enc_method_ctx()` while preserving the public
 context-free `parse_enc_method()` wrapper for ABI compatibility. Compiled
 encrypted-PDF timeout and malformed-filter qualification remain open.
 
+The remaining large legacy-PDF name and JavaScript delimiter scans now use the
+same deadline-aware one-byte searches, so dictionary-name normalization and
+non-conforming JavaScript recovery cannot consume an entire large object
+without observing the shared limit. Compiled timeout and malformed-object
+qualification remain open.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one

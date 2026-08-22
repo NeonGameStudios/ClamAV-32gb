@@ -2098,7 +2098,12 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
                         q2 = q + bytesleft - 1;
 
                     /* non-conforming PDFs that don't escape ) properly */
-                    q3 = memchr(q, ')', bytesleft);
+                    q3 = pdf_memstr_deadline(pdf, q, bytesleft, ")", 1, &search_status);
+                    if (CL_ETIMEOUT == search_status) {
+                        cli_mark_scan_incomplete(pdf->ctx, "PDF JavaScript delimiter search reached the configured time limit");
+                        status = CL_ETIMEOUT;
+                        break;
+                    }
                     if (q3 && q3 < q2)
                         q2 = q3;
 
@@ -2451,6 +2456,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
     size_t i         = 0;
     unsigned filters = 0, blockopens = 0;
     enum objstate objstate = STATE_NONE;
+    cl_error_t search_status;
 
     json_object *pdfobj = NULL, *jsonobj = NULL;
 
@@ -2667,7 +2673,11 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
     /*  process pdf names */
     for (q = dict; dict_length > 0;) {
         int escapes = 0, breakout = 0;
-        q2 = memchr(q, '/', dict_length);
+        q2 = pdf_memstr_deadline(pdf, q, dict_length, "/", 1, &search_status);
+        if (CL_ETIMEOUT == search_status) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary-name search reached the configured time limit");
+            return;
+        }
         if (!q2)
             break;
 
