@@ -4981,6 +4981,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
         fpt = ftoffset;
 
         while (fpt) {
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "raw embedded-type dispatch reached the configured time limit");
+                if (nret == CL_SUCCESS)
+                    nret = ret;
+                break;
+            }
+
             if ((fpt->offset > 0) &&
                 // Only handle each offset once to prevent duplicate processing like if two signatures are found at the same offset.
                 ((size_t)fpt->offset > last_offset)) {

@@ -2765,6 +2765,7 @@ contains libclamav/scanners.c 'embedded PE header could not be inspected complet
 contains libclamav/scanners.c 'A prior required-path failure belongs to the whole scan context'
 contains libclamav/cache.c 'scan incomplete or timed out, skipping cache'
 contains libclamav/scanners.c 'The outer raw matcher is mandatory for every non-ignored layer'
+contains libclamav/scanners.c 'raw embedded-type dispatch reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_html_normalize_cap_does_not_skip_raw_matching'
 contains libclamav/message.c 'messageBeginBodySpool'
 contains libclamav/message.c 'MIME body uses an encoding without a streaming decoder'

@@ -4428,6 +4428,16 @@ The read remains bounded and short/in-range fmap failures remain fail-visible.
 Compiled HTML timeout injection, parser corpus, sanitizer, and supported-build
 Sonic1 qualification remain release gates.
 
+## Raw embedded-type dispatch deadline — 2026-08-22
+
+The raw matcher produced a linked list of embedded file-type candidates, but the
+central dispatch loop could walk that list without checking `MaxScanTime`. A
+large candidate list could therefore delay the deadline while repeatedly
+entering required parser admission and header checks. The dispatch loop now
+checks the shared deadline before each candidate, marks the scan incomplete on
+expiry, and preserves `CL_ETIMEOUT` for the final result. Parser-specific
+qualification and Sonic1 runtime evidence remain release gates.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one
