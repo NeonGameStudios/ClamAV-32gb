@@ -89,6 +89,12 @@ static void unrar_dbgmsg_internal(const char* str, ...)
 
 uint8_t unrar_debug = 0;
 
+struct unrar_callback_data {
+    char* output_buffer;
+    cl_unrar_progress_callback_t progress;
+    void* progress_context;
+};
+
 /**
  * @brief  Translate an ERAR_<code> to the appropriate UNRAR_<code>
  *
@@ -387,20 +393,22 @@ done:
     return status;
 }
 
-cl_unrar_error_t unrar_extract_file(void* hArchive, const char* destPath, char* outputBuffer)
+cl_unrar_error_t unrar_extract_file_ex(void* hArchive, const char* destPath, char* outputBuffer,
+                                       cl_unrar_progress_callback_t progress, void* progress_context)
 {
     cl_unrar_error_t status = UNRAR_ERR;
     int process_file_ret    = 0;
+    struct unrar_callback_data callback_data;
 
     if (NULL == hArchive || NULL == destPath) {
         unrar_dbgmsg("unrar_extract_file: Invalid arguments.\n");
         goto done;
     }
 
-    if (NULL != outputBuffer) {
-        LPARAM UserData = (LPARAM)outputBuffer;
-        RARSetCallback(hArchive, CallbackProc, UserData);
-    }
+    callback_data.output_buffer   = outputBuffer;
+    callback_data.progress        = progress;
+    callback_data.progress_context = progress_context;
+    RARSetCallback(hArchive, CallbackProc, (LPARAM)&callback_data);
 
     process_file_ret = RARProcessFile(hArchive, RAR_EXTRACT, NULL, (char*)destPath);
     if (ERAR_BAD_DATA == process_file_ret) {
@@ -425,15 +433,27 @@ done:
     return status;
 }
 
-cl_unrar_error_t unrar_skip_file(void* hArchive)
+cl_unrar_error_t unrar_extract_file(void* hArchive, const char* destPath, char* outputBuffer)
+{
+    return unrar_extract_file_ex(hArchive, destPath, outputBuffer, NULL, NULL);
+}
+
+cl_unrar_error_t unrar_skip_file_ex(void* hArchive, cl_unrar_progress_callback_t progress,
+                                    void* progress_context)
 {
     cl_unrar_error_t status = UNRAR_ERR;
     int process_file_ret    = 0;
+    struct unrar_callback_data callback_data;
 
     if (NULL == hArchive) {
         unrar_dbgmsg("unrar_skip_file: Invalid arguments.\n");
         goto done;
     }
+
+    callback_data.output_buffer    = NULL;
+    callback_data.progress         = progress;
+    callback_data.progress_context = progress_context;
+    RARSetCallback(hArchive, CallbackProc, (LPARAM)&callback_data);
 
     process_file_ret = RARProcessFile(hArchive, RAR_SKIP, NULL, NULL);
     if (ERAR_SUCCESS != process_file_ret) {
@@ -450,6 +470,11 @@ done:
     return status;
 }
 
+cl_unrar_error_t unrar_skip_file(void* hArchive)
+{
+    return unrar_skip_file_ex(hArchive, NULL, NULL);
+}
+
 void unrar_close(void* hArchive)
 {
     RARCloseArchive(hArchive);
@@ -458,6 +483,7 @@ void unrar_close(void* hArchive)
 int CALLBACK CallbackProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
 {
     int status = 1; /* -1 to cancel, 1 to continue */
+    struct unrar_callback_data* callback_data = (struct unrar_callback_data*)UserData;
 
     switch (msg) {
         case UCM_CHANGEVOLUMEW: {
@@ -468,7 +494,14 @@ int CALLBACK CallbackProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
             break;
         }
         case UCM_PROCESSDATA: {
-            char* UserBuffer = (char*)UserData;
+            char* UserBuffer = callback_data ? callback_data->output_buffer : NULL;
+
+            if (callback_data != NULL && callback_data->progress != NULL &&
+                callback_data->progress(callback_data->progress_context) != 0) {
+                status = -1;
+                unrar_dbgmsg("CallbackProc: Progress callback requested extraction cancellation.\n");
+                break;
+            }
 
             if (UserBuffer == NULL) {
                 /* No buffer provided, continue with extraction to a temp file. */

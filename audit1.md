@@ -3383,3 +3383,15 @@ incomplete, and is preserved as `CL_ETIMEOUT` through CAB/CHM archive opening
 and member extraction. A direct expired-context CAB-header regression and
 source guards cover the entry boundary; callback-injected timeout, compiled
 CAB/CHM corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## RAR decoder deadlines — 2026-08-22
+
+The optional UnRAR bridge previously checked limits only between backend calls;
+member extraction and skip operations could continue inside UnRAR without a
+shared cancellation boundary. New versioned `*_ex` interface symbols preserve
+the legacy ABI while passing a progress callback into UnRAR's process-data
+callback. RAR archive open, header, skip, and extraction boundaries now retain
+`CL_ETIMEOUT` and mark the scan incomplete, including cancellation during
+decoder work. A callback-injected public scan regression and source guards
+cover the contract; compiled UnRAR backend, malformed/corpus, sanitizer, and
+Sonic1 qualification remain release gates.

@@ -43,6 +43,8 @@
 #define unrar_peek_file_header libclamunrar_iface_LTX_unrar_peek_file_header
 #define unrar_extract_file libclamunrar_iface_LTX_unrar_extract_file
 #define unrar_skip_file libclamunrar_iface_LTX_unrar_skip_file
+#define unrar_extract_file_ex libclamunrar_iface_LTX_unrar_extract_file_ex
+#define unrar_skip_file_ex libclamunrar_iface_LTX_unrar_skip_file_ex
 #define unrar_close libclamunrar_iface_LTX_unrar_close
 
 typedef enum cl_unrar_error_tag {
@@ -64,10 +66,17 @@ typedef struct unrar_metadata_tag {
     uint32_t is_dir;
 } unrar_metadata_t;
 
+/* Return zero to continue decoder work, or nonzero to abort the operation. */
+typedef int (*cl_unrar_progress_callback_t)(void *context);
+
 cl_unrar_error_t unrar_open(const char *filename, void **hArchive, char **comment, uint32_t *comment_size, uint8_t debug_flag);
 cl_unrar_error_t unrar_peek_file_header(void *hArchive, unrar_metadata_t *file_metadata);
 cl_unrar_error_t unrar_extract_file(void *hArchive, const char *destPath, char *outputBuffer);
 cl_unrar_error_t unrar_skip_file(void *hArchive);
+cl_unrar_error_t unrar_extract_file_ex(void *hArchive, const char *destPath, char *outputBuffer,
+                                       cl_unrar_progress_callback_t progress, void *progress_context);
+cl_unrar_error_t unrar_skip_file_ex(void *hArchive, cl_unrar_progress_callback_t progress,
+                                    void *progress_context);
 void unrar_close(void *hArchive);
 
 #endif

@@ -315,9 +315,43 @@ static cl_error_t cli_rar_error_to_scan_result(cl_unrar_error_t unrar_ret)
     }
 }
 
+static cl_error_t cli_rar_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
+static int cli_rar_progress_callback(void *opaque)
+{
+    return cli_rar_checktimelimit((cli_ctx *)opaque, "RAR decoder reached the configured time limit") != CL_SUCCESS;
+}
+
+static cl_error_t cli_rar_skip_file_with_deadline(void *hArchive, cli_ctx *ctx)
+{
+    cl_unrar_error_t unrar_ret;
+    cl_error_t status;
+
+    status = cli_rar_checktimelimit(ctx, "RAR member skip reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
+
+    unrar_ret = cli_unrar_skip_file_ex(hArchive, cli_rar_progress_callback, ctx);
+    status    = cli_rar_checktimelimit(ctx, "RAR member skip reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
+
+    return cli_rar_error_to_scan_result(unrar_ret);
+}
+
 static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
 {
     cl_error_t status          = CL_EPARSE;
+    cl_error_t deadline_status = CL_SUCCESS;
+    cl_error_t skip_status     = CL_SUCCESS;
     cl_unrar_error_t unrar_ret = UNRAR_ERR;
 
     unsigned int file_count = 0;
@@ -351,6 +385,10 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
     /*
      * Open the archive.
      */
+    status = cli_rar_checktimelimit(ctx, "RAR archive inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        goto done;
+
     if (UNRAR_OK != (unrar_ret = cli_unrar_open(filepath, &hArchive, &comment, &comment_size, cli_debug_flag))) {
         if (unrar_ret == UNRAR_ENCRYPTED) {
             cli_dbgmsg("RAR: Encrypted main header\n");
@@ -364,6 +402,9 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "RAR archive header could not be opened completely");
         goto done;
     }
+    status = cli_rar_checktimelimit(ctx, "RAR archive inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        goto done;
 
     /* If the archive header had a comment, write it to the comment dir. */
     if ((comment != NULL) && (comment_size > 0)) {
@@ -407,6 +448,10 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
     do {
         status = CL_SUCCESS;
 
+        status = cli_rar_checktimelimit(ctx, "RAR archive inspection reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
+
         /* Zero out the metadata struct before we read the header */
         memset(&metadata, 0, sizeof(unrar_metadata_t));
 
@@ -414,17 +459,27 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
          * Get the header information for the next file in the archive.
          */
         unrar_ret = cli_unrar_peek_file_header(hArchive, &metadata);
+        deadline_status = cli_rar_checktimelimit(ctx, "RAR archive inspection reached the configured time limit");
+        if (deadline_status != CL_SUCCESS) {
+            status = deadline_status;
+            goto done;
+        }
         if (unrar_ret != UNRAR_OK) {
             if (unrar_ret == UNRAR_ENCRYPTED) {
                 /* Found an encrypted file header, must skip. */
                 cli_dbgmsg("RAR: Encrypted file header, unable to reading file metadata and file contents. Skipping file...\n");
                 nEncryptedFilesFound += 1;
 
-                if (UNRAR_OK != cli_unrar_skip_file(hArchive)) {
+                skip_status = cli_rar_skip_file_with_deadline(hArchive, ctx);
+                if (CL_SUCCESS != skip_status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("RAR: Failed to skip file. RAR archive extraction has failed.\n");
-                    cli_mark_scan_incomplete(ctx, "RAR encrypted member could not be skipped completely");
-                    status = CL_EFORMAT;
+                    if (skip_status != CL_ETIMEOUT) {
+                        cli_mark_scan_incomplete(ctx, "RAR encrypted member could not be skipped completely");
+                        status = CL_EFORMAT;
+                    } else {
+                        status = skip_status;
+                    }
                     break;
                 }
                 cli_mark_scan_incomplete(ctx, "RAR encrypted member contents were not inspected");
@@ -464,11 +519,16 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 /* Entry is a directory. Skip. */
                 cli_dbgmsg("RAR: Found directory. Skipping to next file.\n");
 
-                if (UNRAR_OK != cli_unrar_skip_file(hArchive)) {
+                skip_status = cli_rar_skip_file_with_deadline(hArchive, ctx);
+                if (CL_SUCCESS != skip_status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("RAR: Failed to skip directory. RAR archive extraction has failed.\n");
-                    cli_mark_scan_incomplete(ctx, "RAR directory member could not be skipped completely");
-                    status = CL_EFORMAT;
+                    if (skip_status != CL_ETIMEOUT) {
+                        cli_mark_scan_incomplete(ctx, "RAR directory member could not be skipped completely");
+                        status = CL_EFORMAT;
+                    } else {
+                        status = skip_status;
+                    }
                     break;
                 }
             } else if ((status = cli_checklimits("RAR", ctx, metadata.unpack_size, 0, 0)) != CL_SUCCESS) {
@@ -477,11 +537,16 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
 
                 cli_dbgmsg("RAR: Next file is too large (%" PRIu64 " bytes); it would exceed max scansize.  Skipping to next file.\n", metadata.unpack_size);
 
-                if (UNRAR_OK != cli_unrar_skip_file(hArchive)) {
+                skip_status = cli_rar_skip_file_with_deadline(hArchive, ctx);
+                if (CL_SUCCESS != skip_status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("RAR: Failed to skip file. RAR archive extraction has failed.\n");
-                    cli_mark_scan_incomplete(ctx, "RAR limited member could not be skipped completely");
-                    status = CL_EFORMAT;
+                    if (skip_status != CL_ETIMEOUT) {
+                        cli_mark_scan_incomplete(ctx, "RAR limited member could not be skipped completely");
+                        status = CL_EFORMAT;
+                    } else {
+                        status = skip_status;
+                    }
                     break;
                 }
             } else if (metadata.encrypted != 0) {
@@ -490,10 +555,11 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 nEncryptedFilesFound += 1;
                 cli_mark_scan_incomplete(ctx, "RAR encrypted member contents were not inspected");
 
-                if (UNRAR_OK != cli_unrar_skip_file(hArchive)) {
+                skip_status = cli_rar_skip_file_with_deadline(hArchive, ctx);
+                if (CL_SUCCESS != skip_status) {
                     /* Failed to skip!  Break extraction loop. */
                     cli_dbgmsg("RAR: Failed to skip file. RAR archive extraction has failed.\n");
-                    status = CL_EFORMAT;
+                    status = (skip_status == CL_ETIMEOUT) ? skip_status : CL_EFORMAT;
                     break;
                 }
             } else {
@@ -524,8 +590,20 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 }
                 cli_dbgmsg("RAR: Extracting file: %s to %s\n", metadata.filename, extract_fullpath);
 
-                unrar_ret = cli_unrar_extract_file(hArchive, extract_fullpath, NULL);
-                if (unrar_ret != UNRAR_OK) {
+                status = cli_rar_checktimelimit(ctx, "RAR member extraction reached the configured time limit");
+                if (status != CL_SUCCESS)
+                    goto done;
+
+                unrar_ret = cli_unrar_extract_file_ex(hArchive, extract_fullpath, NULL,
+                                                      cli_rar_progress_callback, ctx);
+                deadline_status = cli_rar_checktimelimit(ctx, "RAR member extraction reached the configured time limit");
+                if (deadline_status != CL_SUCCESS) {
+                    status = deadline_status;
+                    if (!ctx->engine->keeptmp)
+                        (void)cli_unlink(extract_fullpath);
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
+                } else if (unrar_ret != UNRAR_OK) {
                     /*
                      * Some other error extracting the file
                      */

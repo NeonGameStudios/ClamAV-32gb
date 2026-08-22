@@ -25,6 +25,9 @@
   inspected through their validated descriptor while temporary bytes remain
   reserved. Backend-enabled RAR corpus and supported-build qualification remain
   open.
+- The optional UnRAR backend now receives a deadline callback for member
+  extraction and skip operations, preserving timeout as `CL_ETIMEOUT`; add
+  compiled backend callback-injection and production RAR corpus qualification.
 - 7-Zip member extraction now independently verifies the decoder-produced count
   and the materialized regular-file size against the declared member size before
   nested scanning; parser-family and supported-build qualification remain open.
