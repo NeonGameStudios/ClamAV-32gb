@@ -4919,3 +4919,11 @@ after the effective 20-second limit. The response reported
 `remote_started=false` and no remote command output. This is a host-liveness
 failure, not build or scan evidence; current-head Linux/Sonic1 qualification
 remains open.
+
+## Source inventory refresh — 2026-08-21
+
+The authoritative `docs/largefile-inventory.tsv` was regenerated from the
+current source tree after the recent parser, daemon, Rust, and test changes.
+The generator reproduces the committed 32,384-line inventory exactly, and the
+158-entry capability manifest still validates every required ingress, matcher,
+feature, unsupported boundary, parser dispatch branch, and source path.

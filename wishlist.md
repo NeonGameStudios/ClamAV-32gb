@@ -5,6 +5,10 @@
 - The 32 GiB ingress policy, shared accounting/fail-closed controls, and
   capability manifest are implemented and source-guarded; release defaults
   remain gated on qualification.
+- The generated size/type/offset inventory has been refreshed from the current
+  source tree and now remains reproducible through `tools/largefile_inventory.sh`;
+  the 158-entry capability manifest validates against the refreshed dispatch
+  inventory.
 - Large-mail phishing URL inspection now uses quota-accounted file-backed
   input, fmap HTML normalization, and 64 KiB chunked text-URL extraction; the
   former 100 KiB whole-message helper boundary is removed.
