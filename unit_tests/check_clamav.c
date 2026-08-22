@@ -14981,6 +14981,35 @@ START_TEST(test_arj_truncated_main_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_arj_time_limit_is_fail_visible)
+{
+    static const uint8_t data[4] = {0x60, 0xea, 0x00, 0x00};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_size = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_unarj_header_check(&ctx, 0, &archive_size);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_arj_truncated_member_is_fail_visible)
 {
     uint8_t data[87];
@@ -18797,6 +18826,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ishield_truncated_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_main_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_arj_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_stored_member_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_member_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_member_extraction_is_fail_visible);

@@ -100,6 +100,19 @@ static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t le
     return data;
 }
 
+static cl_error_t arj_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status;
+
+    if (ctx == NULL)
+        return CL_SUCCESS;
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+    return status;
+}
+
 #ifndef HAVE_ATTRIB_PACKED
 #define __attribute__(x)
 #endif
@@ -159,6 +172,7 @@ typedef struct arj_file_hdr_tag {
 typedef struct arj_decode_tag {
     unsigned char *text;
     fmap_t *map;
+    cli_ctx *ctx;
     size_t offset;
     const uint8_t *buf;
     const void *bufend;
@@ -179,12 +193,24 @@ typedef struct arj_decode_tag {
 
 static cl_error_t fill_buf(arj_decode_t *decode_data, int n)
 {
+    cl_error_t time_status;
+
     if (decode_data->status != CL_SUCCESS)
         return decode_data->status;
+    time_status = arj_checktimelimit(decode_data->ctx, "ARJ compressed decoder reached the configured time limit");
+    if (time_status != CL_SUCCESS) {
+        decode_data->status = time_status;
+        return time_status;
+    }
     if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX)
         return CL_EFORMAT;
     decode_data->bit_buf = (((uint64_t)decode_data->bit_buf) << n) & 0xFFFF;
     while (n > decode_data->bit_count) {
+        time_status = arj_checktimelimit(decode_data->ctx, "ARJ compressed decoder reached the configured time limit");
+        if (time_status != CL_SUCCESS) {
+            decode_data->status = time_status;
+            return time_status;
+        }
         decode_data->bit_buf |= decode_data->sub_bit_buf << (n -= decode_data->bit_count);
         if (decode_data->comp_size != 0) {
             decode_data->comp_size--;
@@ -572,6 +598,7 @@ static cl_error_t decode(arj_metadata_t *metadata)
         return CL_EMEM;
     }
     decode_data.map       = metadata->map;
+    decode_data.ctx       = metadata->ctx;
     decode_data.offset    = metadata->offset;
     decode_data.comp_size = metadata->comp_size;
     ret                   = decode_start(&decode_data);
@@ -583,6 +610,12 @@ static cl_error_t decode(arj_metadata_t *metadata)
     decode_data.status = CL_SUCCESS;
 
     while (count < metadata->orig_size) {
+        ret = arj_checktimelimit(metadata->ctx, "ARJ member decompression reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            free(decode_data.text);
+            metadata->offset = decode_data.offset;
+            return ret;
+        }
         if ((chr = decode_c(&decode_data)) <= UCHAR_MAX) {
             decode_data.text[out_ptr] = (unsigned char)chr;
             count++;
@@ -739,6 +772,7 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
         return CL_EMEM;
     }
     decode_data.map       = metadata->map;
+    decode_data.ctx       = metadata->ctx;
     decode_data.offset    = metadata->offset;
     decode_data.comp_size = metadata->comp_size;
     ret                   = init_getbits(&decode_data);
@@ -751,6 +785,12 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
     decode_data.status                      = CL_SUCCESS;
 
     while (count < metadata->orig_size) {
+        ret = arj_checktimelimit(metadata->ctx, "ARJ member decompression reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            free(decode_data.text);
+            metadata->offset = decode_data.offset;
+            return ret;
+        }
         chr = decode_len(&decode_data);
         if (decode_data.status != CL_SUCCESS) {
             free(decode_data.text);
@@ -840,6 +880,10 @@ static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
     while (rem > 0) {
         todo = (unsigned int)MIN(8192, rem);
         cl_error_t read_status;
+
+        read_status = arj_checktimelimit(metadata->ctx, "ARJ stored member copy reached the configured time limit");
+        if (read_status != CL_SUCCESS)
+            return read_status;
 
         data = unarj_need_off_once_len(metadata->map, metadata->offset, todo, &count, &read_status);
         if (!data || !count) {
@@ -984,7 +1028,14 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
     metadata->offset += 4; /* crc */
     /* Skip past any extended header data */
     for (;;) {
-        const uint16_t *countp = fmap_need_off_once(metadata->map, metadata->offset, 2);
+        const uint16_t *countp;
+
+        if (arj_checktimelimit(metadata->ctx, "ARJ main-header traversal reached the configured time limit") != CL_SUCCESS) {
+            ret = false;
+            goto done;
+        }
+
+        countp = fmap_need_off_once(metadata->map, metadata->offset, 2);
         if (!countp) {
             ret = false;
             goto done;
@@ -1143,7 +1194,18 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
 
     /* Skip past any extended header data */
     for (;;) {
-        const uint16_t *countp = fmap_need_off_once(metadata->map, metadata->offset, 2);
+        const uint16_t *countp;
+
+        if (arj_checktimelimit(metadata->ctx, "ARJ file-header traversal reached the configured time limit") != CL_SUCCESS) {
+            ret = CL_ETIMEOUT;
+            if (metadata->filename) {
+                free(metadata->filename);
+                metadata->filename = NULL;
+            }
+            goto done;
+        }
+
+        countp = fmap_need_off_once(metadata->map, metadata->offset, 2);
         if (!countp) {
             if (metadata->filename)
                 free(metadata->filename);
@@ -1189,6 +1251,11 @@ cl_error_t cli_unarj_open(fmap_t *map, const char *dirname, arj_metadata_t *meta
     cl_error_t ret;
 
     UNUSEDPARAM(dirname);
+    if (metadata == NULL || map == NULL)
+        return CL_ENULLARG;
+    ret = arj_checktimelimit(metadata->ctx, "ARJ inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
     cli_dbgmsg("in cli_unarj_open\n");
     metadata->map    = map;
     metadata->offset = 0;
@@ -1199,6 +1266,9 @@ cl_error_t cli_unarj_open(fmap_t *map, const char *dirname, arj_metadata_t *meta
     }
     if (!arj_read_main_header(metadata)) {
         cli_dbgmsg("cli_unarj_open: Failed to read main header\n");
+        ret = arj_checktimelimit(metadata->ctx, "ARJ inspection reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            return ret;
         return CL_EFORMAT;
     }
     return CL_SUCCESS;
@@ -1223,8 +1293,13 @@ cl_error_t cli_unarj_header_check(
     }
 
     metadata.map    = ctx->fmap;
+    metadata.ctx    = ctx;
     metadata.offset = offset;
     *size           = 0;
+
+    status = arj_checktimelimit(ctx, "ARJ inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        goto done;
 
     status = is_arj_archive(&metadata);
     if (CL_SUCCESS != status) {
@@ -1239,6 +1314,9 @@ cl_error_t cli_unarj_header_check(
     bool_ret = arj_read_main_header(&metadata);
     if (false == bool_ret) {
         cli_dbgmsg("Failed to read main header\n");
+        status = arj_checktimelimit(ctx, "ARJ inspection reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
         cli_mark_scan_incomplete(ctx, "ARJ main header is malformed or truncated");
         status = CL_EPARSE;
         goto done;
@@ -1305,6 +1383,10 @@ cl_error_t cli_unarj_prepare_file(arj_metadata_t *metadata)
         return CL_ENULLARG;
     }
 
+    ret = arj_checktimelimit(metadata->ctx, "ARJ member-header inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     /* Each file is preceded by the ARJ file marker */
     ret = is_arj_archive(metadata);
     if (ret != CL_SUCCESS) {
@@ -1324,6 +1406,10 @@ cl_error_t cli_unarj_extract_file(const char *dirname, arj_metadata_t *metadata)
     if (!metadata || !dirname) {
         return CL_ENULLARG;
     }
+
+    ret = arj_checktimelimit(metadata->ctx, "ARJ member extraction reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
 
     if (metadata->encrypted) {
         cli_dbgmsg("PASSWORDed file (skipping)\n");

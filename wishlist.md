@@ -253,6 +253,10 @@
 - ARJ extracted members now must materialize as regular files whose size exactly
   matches the declared original size before nested scanning; add malformed
   output-size and filesystem-fault corpus qualification.
+- ARJ header traversal, stored-member copying, and both decompression loops now
+  honor the shared scan deadline and preserve fail-visible `CL_ETIMEOUT`; add
+  compiled timeout-injection, decoder-state, sanitizer, and production ARJ
+  corpus qualification.
 - CPIO fixed-header and member-name reads now distinguish in-range fmap
   callback failures (`CL_EREAD`) from impossible/truncated coordinates
   (`CL_EPARSE`) across all four legacy variants; add compiled callback-fault,

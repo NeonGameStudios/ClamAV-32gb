@@ -3443,3 +3443,14 @@ shared deadline and preserve `CL_ETIMEOUT` while existing temporary cleanup
 remains active. A direct expired-context regression and source guards cover
 the parser entry and timeout contract; compiled SIS corpus, malformed nesting,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## ARJ decoder traversal deadlines — 2026-08-22
+
+ARJ header admission and output-size checks were already fail-closed, but
+extended-header walks, stored-member copies, and compressed output loops could
+continue without consulting the shared deadline. The scan context now travels
+through ARJ metadata and decoder state; parser/header entry, header iteration,
+stored copies, bit-window refills, and both decompression loops preserve
+`CL_ETIMEOUT`. A direct header-check timeout regression and source guards cover
+the contract; compiled ARJ decoder-state corpus, sanitizer, and Sonic1
+qualification remain release gates.

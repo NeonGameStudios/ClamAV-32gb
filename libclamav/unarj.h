@@ -37,6 +37,7 @@ typedef struct arj_metadata_tag {
     uint8_t method;
     fmap_t *map;
     size_t offset;
+    cli_ctx *ctx;
 } arj_metadata_t;
 
 /**

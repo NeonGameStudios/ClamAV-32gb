@@ -1300,6 +1300,7 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
     cli_dbgmsg("in cli_scanarj()\n");
 
     memset(&metadata, 0, sizeof(arj_metadata_t));
+    metadata.ctx = ctx;
 
     /* generate the temporary directory */
     if (!(dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "arj-tmp"))) {
