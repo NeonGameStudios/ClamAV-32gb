@@ -174,10 +174,11 @@ static void URI_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_a
 
 /* End PDF statistics callbacks and related */
 
-static int pdf_readint(const char *q0, int len, const char *key);
-static const char *pdf_getdict(const char *q0, int *len, const char *key);
-static char *pdf_readval(const char *q, int len, const char *key);
-static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape);
+static int pdf_readint(struct pdf_struct *pdf, const char *q0, int len, const char *key);
+static const char *pdf_getdict(struct pdf_struct *pdf, const char *q0, int *len, const char *key);
+static char *pdf_readval(struct pdf_struct *pdf, const char *q, int len, const char *key);
+static char *pdf_readstring(struct pdf_struct *pdf, const char *q0, int len, const char *key, unsigned *slen,
+                            const char **qend, bool noescape);
 
 static cl_error_t pdf_cleanup_temp_output(cli_ctx *ctx, int *fd, const char *filename, cl_error_t status,
                                           bool remove_file, uint64_t temporary_reserved,
@@ -1883,9 +1884,9 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         /*
          * Identify the DecodeParms, if available.
          */
-        if (NULL != (pstr = pdf_getdict(start, &dict_len, "/DecodeParms"))) {
+        if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/DecodeParms"))) {
             cli_dbgmsg("pdf_extract_obj: Found /DecodeParms\n");
-        } else if (NULL != (pstr = pdf_getdict(start, &dict_len, "/DP"))) {
+        } else if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/DP"))) {
             cli_dbgmsg("pdf_extract_obj: Found /DP\n");
         }
 
@@ -1916,7 +1917,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
          * is an object stream. If so, collect the relevant info.
          */
         dict_len = obj->stream - start;
-        if (NULL != (pstr = pdf_getdict(start, &dict_len, "/Type/ObjStm"))) {
+        if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/Type/ObjStm"))) {
             int objstm_first  = -1;
             int objstm_length = -1;
             int objstm_n      = -1;
@@ -1924,11 +1925,11 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             cli_dbgmsg("pdf_extract_obj: Found /Type/ObjStm\n");
 
             dict_len = obj->stream - start;
-            if (-1 == (objstm_first = pdf_readint(start, dict_len, "/First"))) {
+            if (-1 == (objstm_first = pdf_readint(pdf, start, dict_len, "/First"))) {
                 cli_warnmsg("pdf_extract_obj: Failed to find offset of first object in object stream\n");
-            } else if (-1 == (objstm_length = pdf_readint(start, dict_len, "/Length"))) {
+            } else if (-1 == (objstm_length = pdf_readint(pdf, start, dict_len, "/Length"))) {
                 cli_warnmsg("pdf_extract_obj: Failed to find length of object stream\n");
-            } else if (-1 == (objstm_n = pdf_readint(start, dict_len, "/N"))) {
+            } else if (-1 == (objstm_n = pdf_readint(pdf, start, dict_len, "/N"))) {
                 cli_warnmsg("pdf_extract_obj: Failed to find num objects in object stream\n");
             } else {
                 /* Add objstm to pdf struct, so it can be freed eventually */
@@ -2049,7 +2050,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             bytesleft -= q2 - q + 11;
             q = q2 + 11;
 
-            js = pdf_readstring(q, bytesleft, "/JS", NULL, &q2, !(pdf->flags & (1 << DECRYPTABLE_PDF)));
+            js = pdf_readstring(pdf, q, bytesleft, "/JS", NULL, &q2, !(pdf->flags & (1 << DECRYPTABLE_PDF)));
             bytesleft -= q2 - q;
             q = q2;
 
@@ -2427,7 +2428,7 @@ static void pdf_parse_trailer(struct pdf_struct *pdf, const char *s, long length
 
         pdf->flags |= 1 << ENCRYPTED_PDF;
         pdf_parse_encrypt(pdf, enc, s + length - enc);
-        newID = pdf_readstring(s, length, "/ID", &newIDlen, NULL, false);
+        newID = pdf_readstring(pdf, s, length, "/ID", &newIDlen, NULL, false);
 
         if (newID) {
             free(pdf->fileID);
@@ -2714,7 +2715,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
 
             pdfobj_flag(pdf, obj, LINEARIZED_PDF);
             objstate    = STATE_NONE;
-            trailer_end = pdf_readint(dict, full_dict_length, "/H");
+            trailer_end = pdf_readint(pdf, dict, full_dict_length, "/H");
             if ((trailer_end > 0) && ((size_t)trailer_end < pdf->size)) {
                 trailer = trailer_end - 1024;
                 if (trailer < 0)
@@ -2867,9 +2868,10 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
  * @param key           Null terminated 'key' to search for.
  * @return const char*  Address of the dictionary key's 'value'.
  */
-static const char *pdf_getdict(const char *q0, int *len, const char *key)
+static const char *pdf_getdict(struct pdf_struct *pdf, const char *q0, int *len, const char *key)
 {
     const char *q;
+    cl_error_t search_status;
 
     if (*len <= 0) {
         cli_dbgmsg("pdf_getdict: bad length %d\n", *len);
@@ -2880,7 +2882,14 @@ static const char *pdf_getdict(const char *q0, int *len, const char *key)
         return NULL;
 
     /* find the key */
-    q = cli_memstr(q0, *len, key, strlen(key));
+    if (pdf != NULL)
+        q = pdf_memstr_deadline(pdf, q0, *len, key, strlen(key), &search_status);
+    else
+        q = cli_memstr(q0, *len, key, strlen(key));
+    if (pdf != NULL && CL_ETIMEOUT == search_status) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary key search reached the configured time limit");
+        return NULL;
+    }
     if (!q) {
         cli_dbgmsg("pdf_getdict: %s not found in dict\n", key);
         return NULL;
@@ -2915,17 +2924,19 @@ static const char *pdf_getdict(const char *q0, int *len, const char *key)
  * @param noescape      Select 'true' to ignore escape characters, 'false' to process them.
  * @return char*
  */
-static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape)
+static char *pdf_readstring(struct pdf_struct *pdf, const char *q0, int len, const char *key, unsigned *slen,
+                            const char **qend, bool noescape)
 {
     char *s, *s0;
     const char *start, *q, *end;
+    cl_error_t search_status;
     if (slen)
         *slen = 0;
 
     if (qend)
         *qend = q0;
 
-    q = pdf_getdict(q0, &len, key);
+    q = pdf_getdict(pdf, q0, &len, key);
     if (!q || len <= 0)
         return NULL;
 
@@ -2934,6 +2945,10 @@ static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *
         start     = ++q;
         len--;
         for (; paren > 0 && len > 0; q++, len--) {
+            if (pdf != NULL && 0 == ((size_t)(q - start) % PDF_SEARCH_WINDOW) && cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF literal string search reached the configured time limit");
+                return NULL;
+            }
             switch (*q) {
                 case '(':
                     paren++;
@@ -3043,10 +3058,21 @@ static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *
         len -= 1;
         // skip newlines after <
         while (len > 0 && *start == '\n') {
+            if (pdf != NULL && 0 == ((size_t)(start - q) % PDF_SEARCH_WINDOW) && cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF hexadecimal string search reached the configured time limit");
+                return NULL;
+            }
             start = ++q;
             len -= 1;
         }
-        q = memchr(q + 1, '>', len - 1);
+        if (pdf != NULL)
+            q = pdf_memstr_deadline(pdf, q + 1, len - 1, ">", 1, &search_status);
+        else
+            q = memchr(q + 1, '>', len - 1);
+        if (pdf != NULL && CL_ETIMEOUT == search_status) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF hexadecimal string search reached the configured time limit");
+            return NULL;
+        }
         if (!q)
             return NULL;
 
@@ -3076,13 +3102,13 @@ static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *
     return NULL;
 }
 
-static char *pdf_readval(const char *q, int len, const char *key)
+static char *pdf_readval(struct pdf_struct *pdf, const char *q, int len, const char *key)
 {
     const char *end;
     char *s;
     int origlen = len;
 
-    q = pdf_getdict(q, &len, key);
+    q = pdf_getdict(pdf, q, &len, key);
     if (!q || len <= 0)
         return NULL;
 
@@ -3099,6 +3125,10 @@ static char *pdf_readval(const char *q, int len, const char *key)
     end = q;
 
     while (len > 0 && *end && !(*end == '/' || (len > 1 && end[0] == '>' && end[1] == '>'))) {
+        if (pdf != NULL && 0 == ((size_t)(end - q) % PDF_SEARCH_WINDOW) && cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary value search reached the configured time limit");
+            return NULL;
+        }
         end++;
         len--;
     }
@@ -3119,10 +3149,10 @@ static char *pdf_readval(const char *q, int len, const char *key)
     return s;
 }
 
-static int pdf_readint(const char *q0, int len, const char *key)
+static int pdf_readint(struct pdf_struct *pdf, const char *q0, int len, const char *key)
 {
     long value    = 0;
-    const char *q = pdf_getdict(q0, &len, key);
+    const char *q = pdf_getdict(pdf, q0, &len, key);
 
     if (q == NULL) {
         value = -1;
@@ -3132,9 +3162,9 @@ static int pdf_readint(const char *q0, int len, const char *key)
     return value;
 }
 
-static int pdf_readbool(const char *q0, int len, const char *key, int Default)
+static int pdf_readbool(struct pdf_struct *pdf, const char *q0, int len, const char *key, int Default)
 {
-    const char *q = pdf_getdict(q0, &len, key);
+    const char *q = pdf_getdict(pdf, q0, &len, key);
 
     if (!q || len < 5)
         return Default;
@@ -3593,11 +3623,11 @@ enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key
     if (!strcmp(key, "Identity"))
         return ENC_IDENTITY;
 
-    q = pdf_getdict(dict, (int *)(&len), key);
+    q = pdf_getdict(NULL, dict, (int *)(&len), key);
     if (!q)
         return def;
 
-    CFM = pdf_readval(q, len, "/CFM");
+    CFM = pdf_readval(NULL, q, len, "/CFM");
     if (CFM) {
         cli_dbgmsg("parse_enc_method: %s CFM: %s\n", key, CFM);
         if (!strncmp(CFM, "V2", 2))
@@ -3686,16 +3716,16 @@ void pdf_handle_enc(struct pdf_struct *pdf)
      * /AESV2/Length /Standard/Length
      * /Length /Standard
      * make sure we don't mistake AES's length for Standard's */
-    length = pdf_readint(q2, len - (q2 - q), "/Length");
+    length = pdf_readint(pdf, q2, len - (q2 - q), "/Length");
     if (length == ~0u)
-        length = pdf_readint(q, len, "/Length");
+        length = pdf_readint(pdf, q, len, "/Length");
 
     if (length < 40) {
         cli_dbgmsg("pdf_handle_enc: invalid length: %d\n", length);
         length = 40;
     }
 
-    R = pdf_readint(q, len, "/R");
+    R = pdf_readint(pdf, q, len, "/R");
     if (R == ~0u) {
         cli_dbgmsg("pdf_handle_enc: invalid R\n");
         noisy_warnmsg("pdf_handle_enc: invalid R\n");
@@ -3708,7 +3738,7 @@ void pdf_handle_enc(struct pdf_struct *pdf)
         goto done;
     }
 
-    P = pdf_readint(q, len, "/P");
+    P = pdf_readint(pdf, q, len, "/P");
     if (R < 6) { // P field doesn't seem to be required for R6.
         if (P == ~0u) {
             cli_dbgmsg("pdf_handle_enc: invalid P\n");
@@ -3728,12 +3758,12 @@ void pdf_handle_enc(struct pdf_struct *pdf)
         pdf->enc_method_string       = ENC_V2;
         pdf->enc_method_embeddedfile = ENC_V2;
     } else if (R == 4 || R == 5 || R == 6) {
-        EM        = pdf_readbool(q, len, "/EncryptMetadata", 1);
-        StmF      = pdf_readval(q, len, "/StmF");
-        StrF      = pdf_readval(q, len, "/StrF");
-        EFF       = pdf_readval(q, len, "/EFF");
+        EM        = pdf_readbool(pdf, q, len, "/EncryptMetadata", 1);
+        StmF      = pdf_readval(pdf, q, len, "/StmF");
+        StrF      = pdf_readval(pdf, q, len, "/StrF");
+        EFF       = pdf_readval(pdf, q, len, "/EFF");
         n         = len;
-        pdf->CF   = pdf_getdict(q, (int *)(&n), "/CF");
+        pdf->CF   = pdf_getdict(pdf, q, (int *)(&n), "/CF");
         pdf->CF_n = n;
 
         if (StmF) {
@@ -3761,14 +3791,14 @@ void pdf_handle_enc(struct pdf_struct *pdf)
              * Read the UE value (for checking user-password)
              */
             n      = 0;
-            UE     = pdf_readstring(q, len, "/UE", &n, NULL, false);
+            UE     = pdf_readstring(pdf, q, len, "/UE", &n, NULL, false);
             UE_len = n;
 
             /*
              * Read the OE value (for checking owner-password)
              */
             n      = 0;
-            OE     = pdf_readstring(q, len, "/OE", &n, NULL, false);
+            OE     = pdf_readstring(pdf, q, len, "/OE", &n, NULL, false);
             OE_len = n;
         }
     }
@@ -3780,7 +3810,7 @@ void pdf_handle_enc(struct pdf_struct *pdf)
      * Read the O value
      */
     n = 0;
-    O = pdf_readstring(q, len, "/O", &n, NULL, false);
+    O = pdf_readstring(pdf, q, len, "/O", &n, NULL, false);
     if (!O || n < oulen) {
         cli_dbgmsg("pdf_handle_enc: invalid O: %d\n", n);
         noisy_warnmsg("pdf_handle_enc: invalid O: %d\n", n);
@@ -3804,7 +3834,7 @@ void pdf_handle_enc(struct pdf_struct *pdf)
      * Read the U value
      */
     n = 0;
-    U = pdf_readstring(q, len, "/U", &n, NULL, false);
+    U = pdf_readstring(pdf, q, len, "/U", &n, NULL, false);
     if (!U || n < oulen) {
         cli_dbgmsg("pdf_handle_enc: invalid U: %u\n", n);
         noisy_warnmsg("pdf_handle_enc: invalid U: %u\n", n);

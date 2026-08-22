@@ -4485,6 +4485,13 @@ large unsigned length on that callback. URI metadata extraction now checks the
 deadline during both bytewise delimiter searches; compiled metadata timeout
 and malformed-object qualification remain open.
 
+The legacy PDF dictionary helper now accepts the PDF context and uses deadline
+windows for key searches. Literal, hexadecimal, and name-value scans also
+checkpoint while decoding large values. The public context-free encryption
+method helper remains a compatibility boundary and deliberately retains its
+fallback search behavior; compiled dictionary timeout and malformed-value
+qualification remain open.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one

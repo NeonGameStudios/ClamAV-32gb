@@ -1029,6 +1029,9 @@
 - PDF page-tree metadata searches now use deadline windows, `/Colors` passes
   the remaining length correctly, and URI delimiter scans check timeouts; add
   compiled metadata malformed-object and timeout coverage.
+- The legacy PDF dictionary helper and large value decoders now receive scan
+  context deadlines; migrate the compatibility context-free encryption helper
+  and add compiled malformed-value and timeout coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.
