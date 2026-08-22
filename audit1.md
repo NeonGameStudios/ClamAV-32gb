@@ -4772,6 +4772,15 @@ boundary failure. Detection-terminated and already-incomplete reports retain
 their stronger outcome. Compiled daemon, production-CVD, and Sonic1
 qualification remain open.
 
+## AutoIt EA06 script-buffer allocation failure — 2026-08-22
+
+The EA06 script decompiler's bounded output-buffer allocation failure now
+marks the current layer incomplete before returning `CL_EMEM`. This preserves
+the non-cacheable/fail-visible contract when the explicit 1 GiB random-access
+boundary or an injected allocation fault prevents script inspection. Compiled
+fault injection, parser corpus, sanitizer, and Sonic1 qualification remain
+open.
+
 ## Scan-level temporary-directory setup failures — 2026-08-22
 
 `scan_common()` and recursive child-layer setup previously returned allocation

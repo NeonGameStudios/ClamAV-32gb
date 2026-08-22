@@ -1988,6 +1988,7 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
              * output buffer */
             UNP.csize = UNP.usize;
             if (!(buf = cli_max_malloc(UNP.csize))) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 script buffer could not be allocated");
                 free(UNP.outputbuf);
                 return CL_EMEM;
             }
