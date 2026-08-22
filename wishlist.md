@@ -370,6 +370,9 @@
   Rust and malformed-archive corpus qualification.
 - MSEXPAND now rejects decoder output that exceeds its declared decompressed size;
   add broader malformed-SZDD corpus coverage during parser qualification.
+- MSEXPAND bitstream and back-reference traversal now honor the shared scan
+  deadline; add compiled timeout-injection and long-output decoder corpus
+  qualification.
 - OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed
   MSO stream corpus coverage during Office-parser qualification.
 - ZWS/SWF compressed-input length fields are now enforced before LZMA setup; add

@@ -3305,3 +3305,14 @@ operational error instead of overwriting it with a cleanup parser result. A
 direct expired-context regression and source guards cover parser entry;
 compiled RTF/OLE corpus, sanitizer, and Sonic1 qualification remain release
 gates.
+
+## MSEXPAND traversal deadline — 2026-08-22
+
+The SZDD/MSEXPAND decoder already enforced declared output and temporary
+quotas, but its bitstream and back-reference loops lacked shared deadline
+checkpoints. It now checks at parser entry, before each decode iteration, and
+before each bounded back-reference expansion; timeout returns through the
+existing caller cleanup so temporary reservations and files are released. A
+direct expired-context regression and source guards cover parser entry;
+compiled SZDD corpus, sanitizer, and Sonic1 qualification remain release
+gates.

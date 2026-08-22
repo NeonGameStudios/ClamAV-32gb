@@ -101,6 +101,16 @@ struct msexp_hdr {
         return CL_SUCCESS;                                                                    \
     w = 0;
 
+static cl_error_t msexpand_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
 {
     const struct msexp_hdr *hdr;
@@ -114,6 +124,10 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
     unsigned int fsize;
     cl_error_t status;
     size_t ret;
+
+    status = msexpand_checktimelimit(ctx, "MSEXPAND inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
 
     if (!(hdr = fmap_need_off_once(map, 0, sizeof(*hdr)))) {
         cli_mark_scan_incomplete(ctx, "MSEXPAND header could not be read completely");
@@ -143,6 +157,9 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
 
     memset(buff, 0, B_SIZE);
     while (1) {
+        status = msexpand_checktimelimit(ctx, "MSEXPAND traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            return status;
 
         if (!rbytes || (r == rbytes)) {
             READBYTES;
@@ -183,6 +200,9 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
                 k += (l & 0xf0) << 4;
                 l = (l & 0x0f) + 3;
                 while (l--) {
+                    status = msexpand_checktimelimit(ctx, "MSEXPAND back-reference traversal reached the configured time limit");
+                    if (status != CL_SUCCESS)
+                        return status;
                     if (w == RW_SIZE) {
                         WRITEBYTES;
                     }
