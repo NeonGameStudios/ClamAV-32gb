@@ -48,6 +48,16 @@ static const uint8_t hqxtbl[] = {
 
 #define BH_FLUSH_SZ (BUFSIZ - 256)
 
+static cl_error_t binhex_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static void binhex_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
                                         const char *reason)
 {
@@ -79,6 +89,9 @@ int cli_binhex(cli_ctx *ctx)
     char *dname, *rname;
 
     cli_dbgmsg("in cli_binhex\n");
+    ret = binhex_checktimelimit(ctx, "BinHex inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
     if (!map->len) return CL_CLEAN;
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &dname, &datafd)) != CL_SUCCESS)
@@ -97,6 +110,11 @@ int cli_binhex(cli_ctx *ctx)
 
     while (1) {
         uint8_t b;
+
+        ret = binhex_checktimelimit(ctx, "BinHex traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            break;
+
         if (!enc_todo || dec_done >= BH_FLUSH_SZ) {
             if (write_phase == IN_HEADER) {
                 uint32_t namelen = (uint32_t)decoded[0], hdrlen = 1 + namelen + 1 + 4 + 4 + 2;
@@ -297,8 +315,14 @@ int cli_binhex(cli_ctx *ctx)
             if (!this_byte)
                 this_byte = 0x90;
             else {
-                while (--this_byte)
+                while (--this_byte) {
+                    ret = binhex_checktimelimit(ctx, "BinHex run-length traversal reached the configured time limit");
+                    if (ret != CL_SUCCESS)
+                        break;
                     decoded[dec_done++] = last_byte;
+                }
+                if (ret != CL_SUCCESS)
+                    break;
                 continue;
             }
         } else if (this_byte == 0x90) {

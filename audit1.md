@@ -3283,3 +3283,12 @@ timeouts release zlib/LZMA state through the existing cleanup paths, release
 temporary reservations/files, and remain `CL_ETIMEOUT` incomplete results. A
 direct expired-context regression and source guards cover parser entry;
 compiled XAR corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## BinHex traversal deadline — 2026-08-22
+
+BinHex's byte decoder and run-length expansion previously had no parser-local
+deadline checkpoints. They now check the shared deadline before each decode
+iteration, preserve `CL_ETIMEOUT` as an incomplete non-cacheable result, and
+use the existing temporary-file cleanup path on timeout. A direct
+expired-context regression and source guards cover parser entry; compiled
+BinHex/mail corpus, sanitizer, and Sonic1 qualification remain release gates.

@@ -9242,6 +9242,33 @@ START_TEST(test_binhex_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_binhex_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_binhex(&ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "BinHex inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -18032,6 +18059,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_truncated_uuencode_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_truncated_binhex_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_binhex_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_output_temporary_limit_is_fail_visible);
