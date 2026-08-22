@@ -1854,7 +1854,7 @@ fixed-width-integer	libclamav/egg.h	42	    uint64_t unpack_size;
 fixed-width-integer	libclamav/egg.h	46	    uint32_t is_dir;
 fixed-width-integer	libclamav/egg.h	75	    uint32_t* nComments);
 fixed-width-integer	libclamav/egg.h	84	    uint32_t* nComments,
-fixed-width-integer	libclamav/elf.c	1021	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/elf.c	1029	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/elf.c	110	static uint64_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 fixed-width-integer	libclamav/elf.c	112	    uint16_t i, found = 0;
 fixed-width-integer	libclamav/elf.c	113	    uint32_t start, memsz;
@@ -1868,40 +1868,40 @@ fixed-width-integer	libclamav/elf.c	283	    uint32_t entry;
 fixed-width-integer	libclamav/elf.c	284	    uint64_t fentry = 0;
 fixed-width-integer	libclamav/elf.c	285	    uint64_t phoff;
 fixed-width-integer	libclamav/elf.c	286	    uint32_t i;
-fixed-width-integer	libclamav/elf.c	380	            elfinfo->ep = (uint32_t)fentry;
-fixed-width-integer	libclamav/elf.c	395	    uint16_t phnum, phentsize;
-fixed-width-integer	libclamav/elf.c	396	    uint64_t entry, fentry = 0, phoff;
-fixed-width-integer	libclamav/elf.c	397	    uint32_t i;
-fixed-width-integer	libclamav/elf.c	466	                cli_dbgmsg("ELF: Segment type: 0x" STDx32 "\n", (uint32_t)EC32(program_hdr[i].p_type, conv));
-fixed-width-integer	libclamav/elf.c	467	                cli_dbgmsg("ELF: Segment offset: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_offset, conv));
-fixed-width-integer	libclamav/elf.c	468	                cli_dbgmsg("ELF: Segment virtual address: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_vaddr, conv));
-fixed-width-integer	libclamav/elf.c	469	                cli_dbgmsg("ELF: Segment real size: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_filesz, conv));
-fixed-width-integer	libclamav/elf.c	470	                cli_dbgmsg("ELF: Segment virtual size: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_memsz, conv));
-fixed-width-integer	libclamav/elf.c	491	            elfinfo->ep = (uint32_t)fentry;
-fixed-width-integer	libclamav/elf.c	506	    uint16_t shnum, shentsize;
-fixed-width-integer	libclamav/elf.c	507	    uint64_t shoff;
-fixed-width-integer	libclamav/elf.c	508	    uint32_t i;
-fixed-width-integer	libclamav/elf.c	564	        uint32_t sh_type, sh_flags;
+fixed-width-integer	libclamav/elf.c	382	            elfinfo->ep = (uint32_t)fentry;
+fixed-width-integer	libclamav/elf.c	397	    uint16_t phnum, phentsize;
+fixed-width-integer	libclamav/elf.c	398	    uint64_t entry, fentry = 0, phoff;
+fixed-width-integer	libclamav/elf.c	399	    uint32_t i;
+fixed-width-integer	libclamav/elf.c	470	                cli_dbgmsg("ELF: Segment type: 0x" STDx32 "\n", (uint32_t)EC32(program_hdr[i].p_type, conv));
+fixed-width-integer	libclamav/elf.c	471	                cli_dbgmsg("ELF: Segment offset: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_offset, conv));
+fixed-width-integer	libclamav/elf.c	472	                cli_dbgmsg("ELF: Segment virtual address: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_vaddr, conv));
+fixed-width-integer	libclamav/elf.c	473	                cli_dbgmsg("ELF: Segment real size: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_filesz, conv));
+fixed-width-integer	libclamav/elf.c	474	                cli_dbgmsg("ELF: Segment virtual size: 0x" STDx64 "\n", (uint64_t)EC64(program_hdr[i].p_memsz, conv));
+fixed-width-integer	libclamav/elf.c	495	            elfinfo->ep = (uint32_t)fentry;
+fixed-width-integer	libclamav/elf.c	510	    uint16_t shnum, shentsize;
+fixed-width-integer	libclamav/elf.c	511	    uint64_t shoff;
+fixed-width-integer	libclamav/elf.c	512	    uint32_t i;
+fixed-width-integer	libclamav/elf.c	570	        uint32_t sh_type, sh_flags;
 fixed-width-integer	libclamav/elf.c	59	static void cli_elf_sectionlog(uint32_t sh_type, uint32_t sh_flags);
-fixed-width-integer	libclamav/elf.c	601	            elfinfo->sections[i].rva = (uint32_t)elfinfo->sections64[i].rva;
-fixed-width-integer	libclamav/elf.c	602	            elfinfo->sections[i].raw = (uint32_t)elfinfo->sections64[i].raw;
-fixed-width-integer	libclamav/elf.c	603	            elfinfo->sections[i].rsz = (uint32_t)elfinfo->sections64[i].rsz;
+fixed-width-integer	libclamav/elf.c	607	            elfinfo->sections[i].rva = (uint32_t)elfinfo->sections64[i].rva;
+fixed-width-integer	libclamav/elf.c	608	            elfinfo->sections[i].raw = (uint32_t)elfinfo->sections64[i].raw;
+fixed-width-integer	libclamav/elf.c	609	            elfinfo->sections[i].rsz = (uint32_t)elfinfo->sections64[i].rsz;
 fixed-width-integer	libclamav/elf.c	61	static size_t cli_elf_readn(fmap_t *map, void *dst, uint64_t at, size_t len)
-fixed-width-integer	libclamav/elf.c	627	    uint16_t shnum, shentsize;
-fixed-width-integer	libclamav/elf.c	628	    uint32_t i;
-fixed-width-integer	libclamav/elf.c	629	    uint64_t shoff;
+fixed-width-integer	libclamav/elf.c	633	    uint16_t shnum, shentsize;
+fixed-width-integer	libclamav/elf.c	634	    uint32_t i;
+fixed-width-integer	libclamav/elf.c	635	    uint64_t shoff;
 fixed-width-integer	libclamav/elf.c	66	    if (at > (uint64_t)map->len)
-fixed-width-integer	libclamav/elf.c	685	        uint32_t sh_type, sh_flags;
-fixed-width-integer	libclamav/elf.c	686	        uint64_t section_addr, section_offset, section_size;
-fixed-width-integer	libclamav/elf.c	722	            elfinfo->sections64[i].chr  = (uint32_t)(EC64(section_hdr[i].sh_flags, conv) & ELF_SHF_MASK);
-fixed-width-integer	libclamav/elf.c	734	                elfinfo->sections[i].rva = (uint32_t)section_addr;
-fixed-width-integer	libclamav/elf.c	735	                elfinfo->sections[i].raw = (uint32_t)section_offset;
-fixed-width-integer	libclamav/elf.c	736	                elfinfo->sections[i].rsz = (uint32_t)section_size;
-fixed-width-integer	libclamav/elf.c	740	            cli_dbgmsg("ELF: Section " STDu32 "\n", (uint32_t)i);
-fixed-width-integer	libclamav/elf.c	741	            cli_dbgmsg("ELF: Section offset: " STDu64 "\n", (uint64_t)EC64(section_hdr[i].sh_offset, conv));
-fixed-width-integer	libclamav/elf.c	742	            cli_dbgmsg("ELF: Section size: " STDu64 "\n", (uint64_t)EC64(section_hdr[i].sh_size, conv));
-fixed-width-integer	libclamav/elf.c	745	            sh_flags = (uint32_t)(EC64(section_hdr[i].sh_flags, conv) & ELF_SHF_MASK);
-fixed-width-integer	libclamav/elf.c	757	static void cli_elf_sectionlog(uint32_t sh_type, uint32_t sh_flags)
+fixed-width-integer	libclamav/elf.c	693	        uint32_t sh_type, sh_flags;
+fixed-width-integer	libclamav/elf.c	694	        uint64_t section_addr, section_offset, section_size;
+fixed-width-integer	libclamav/elf.c	730	            elfinfo->sections64[i].chr  = (uint32_t)(EC64(section_hdr[i].sh_flags, conv) & ELF_SHF_MASK);
+fixed-width-integer	libclamav/elf.c	742	                elfinfo->sections[i].rva = (uint32_t)section_addr;
+fixed-width-integer	libclamav/elf.c	743	                elfinfo->sections[i].raw = (uint32_t)section_offset;
+fixed-width-integer	libclamav/elf.c	744	                elfinfo->sections[i].rsz = (uint32_t)section_size;
+fixed-width-integer	libclamav/elf.c	748	            cli_dbgmsg("ELF: Section " STDu32 "\n", (uint32_t)i);
+fixed-width-integer	libclamav/elf.c	749	            cli_dbgmsg("ELF: Section offset: " STDu64 "\n", (uint64_t)EC64(section_hdr[i].sh_offset, conv));
+fixed-width-integer	libclamav/elf.c	750	            cli_dbgmsg("ELF: Section size: " STDu64 "\n", (uint64_t)EC64(section_hdr[i].sh_size, conv));
+fixed-width-integer	libclamav/elf.c	753	            sh_flags = (uint32_t)(EC64(section_hdr[i].sh_flags, conv) & ELF_SHF_MASK);
+fixed-width-integer	libclamav/elf.c	765	static void cli_elf_sectionlog(uint32_t sh_type, uint32_t sh_flags)
 fixed-width-integer	libclamav/elf.h	100	    uint64_t p_offset;
 fixed-width-integer	libclamav/elf.h	101	    uint64_t p_vaddr;
 fixed-width-integer	libclamav/elf.h	102	    uint64_t p_paddr;
@@ -9285,13 +9285,13 @@ native-width-integer	libclamav/egg.h	123	    size_t* output_buffer_length);
 native-width-integer	libclamav/egg.h	45	    unsigned int encrypted;
 native-width-integer	libclamav/egg.h	56	typedef cl_error_t (*cli_egg_write_callback)(void* opaque, const void* data, size_t length);
 native-width-integer	libclamav/egg.h	94	cl_error_t cli_egg_header_check(fmap_t* map, size_t offset);
-native-width-integer	libclamav/elf.c	1020	    int ndesc      = -1;
-native-width-integer	libclamav/elf.c	1044	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/elf.c	1028	    int ndesc      = -1;
+native-width-integer	libclamav/elf.c	1052	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
 native-width-integer	libclamav/elf.c	171	    size_t bytes_read;
 native-width-integer	libclamav/elf.c	278	static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
-native-width-integer	libclamav/elf.c	502	static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
+native-width-integer	libclamav/elf.c	506	static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
 native-width-integer	libclamav/elf.c	61	static size_t cli_elf_readn(fmap_t *map, void *dst, uint64_t at, size_t len)
-native-width-integer	libclamav/elf.c	623	static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
+native-width-integer	libclamav/elf.c	629	static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
 native-width-integer	libclamav/elf.c	63	    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
 native-width-integer	libclamav/elf.c	68	    return fmap_readn(map, dst, (size_t)at, len);
 native-width-integer	libclamav/elf.c	71	static cl_error_t cli_elf_read_status(cli_ctx *ctx, size_t bytes_read, size_t expected, const char *reason)
@@ -17754,9 +17754,9 @@ boundary-constant	libclamav/dmg.c	471	    } else if (state->file == UINT_MAX) {
 boundary-constant	libclamav/egg.c	2530	    if (compressed_size > CLI_MAX_ALLOCATION || compressed_size > UINT_MAX) {
 boundary-constant	libclamav/egg.c	2661	    if (compressed_size > CLI_MAX_ALLOCATION || compressed_size > UINT_MAX) {
 boundary-constant	libclamav/egg.c	2783	    if (compressed_size > CLI_MAX_ALLOCATION || compressed_size > UINT_MAX) {
-boundary-constant	libclamav/elf.c	379	        if (fentry <= UINT32_MAX) {
-boundary-constant	libclamav/elf.c	490	        if (fentry <= UINT32_MAX) {
-boundary-constant	libclamav/elf.c	728	            if (section_addr > UINT32_MAX || section_offset > UINT32_MAX || section_size > UINT32_MAX) {
+boundary-constant	libclamav/elf.c	381	        if (fentry <= UINT32_MAX) {
+boundary-constant	libclamav/elf.c	494	        if (fentry <= UINT32_MAX) {
+boundary-constant	libclamav/elf.c	736	            if (section_addr > UINT32_MAX || section_offset > UINT32_MAX || section_size > UINT32_MAX) {
 boundary-constant	libclamav/fmap.c	1349	    if (end_offset == SIZE_MAX)
 boundary-constant	libclamav/fmap.c	265	    if (NULL == result || right > SIZE_MAX - left)
 boundary-constant	libclamav/fmap.c	281	    if (extent == 0 || sub < base || base > SIZE_MAX - extent)
@@ -18992,17 +18992,17 @@ format-width	libclamav/egg.c	869	    cli_dbgmsg("egg_parse_archive_extra_field: 
 format-width	libclamav/egg.c	919	                cli_dbgmsg("egg_parse_archive_extra_field: size in extra_field is different than size of split_compression (%zu != %u).\n", sizeof(split_compression), size);
 format-width	libclamav/elf.c	198	            cli_dbgmsg("ELF: Unknown ELF class (%u)\n", file_hdr->hdr64.e_ident[4]);
 format-width	libclamav/elf.c	291	    cli_dbgmsg("ELF: Number of program headers: %d\n", phnum);
-format-width	libclamav/elf.c	345	                cli_dbgmsg("ELF: Can't read segment #%d\n", i);
-format-width	libclamav/elf.c	354	                cli_dbgmsg("ELF: Segment #%d\n", i);
-format-width	libclamav/elf.c	402	    cli_dbgmsg("ELF: Number of program headers: %d\n", phnum);
-format-width	libclamav/elf.c	456	                cli_dbgmsg("ELF: Can't read segment #%d\n", i);
-format-width	libclamav/elf.c	465	                cli_dbgmsg("ELF: Segment #%d\n", i);
-format-width	libclamav/elf.c	511	    cli_dbgmsg("ELF: Number of sections: %d\n", shnum);
-format-width	libclamav/elf.c	606	            cli_dbgmsg("ELF: Section %u\n", i);
-format-width	libclamav/elf.c	607	            cli_dbgmsg("ELF: Section offset: %u\n", EC32(section_hdr[i].sh_offset, conv));
-format-width	libclamav/elf.c	608	            cli_dbgmsg("ELF: Section size: %u\n", EC32(section_hdr[i].sh_size, conv));
-format-width	libclamav/elf.c	632	    cli_dbgmsg("ELF: Number of sections: %d\n", shnum);
-format-width	libclamav/elf.c	866	            cli_dbgmsg("ELF: File type: Unknown (%d)\n", file_hdr.hdr64.e_type);
+format-width	libclamav/elf.c	347	                cli_dbgmsg("ELF: Can't read segment #%d\n", i);
+format-width	libclamav/elf.c	356	                cli_dbgmsg("ELF: Segment #%d\n", i);
+format-width	libclamav/elf.c	404	    cli_dbgmsg("ELF: Number of program headers: %d\n", phnum);
+format-width	libclamav/elf.c	460	                cli_dbgmsg("ELF: Can't read segment #%d\n", i);
+format-width	libclamav/elf.c	469	                cli_dbgmsg("ELF: Segment #%d\n", i);
+format-width	libclamav/elf.c	515	    cli_dbgmsg("ELF: Number of sections: %d\n", shnum);
+format-width	libclamav/elf.c	612	            cli_dbgmsg("ELF: Section %u\n", i);
+format-width	libclamav/elf.c	613	            cli_dbgmsg("ELF: Section offset: %u\n", EC32(section_hdr[i].sh_offset, conv));
+format-width	libclamav/elf.c	614	            cli_dbgmsg("ELF: Section size: %u\n", EC32(section_hdr[i].sh_size, conv));
+format-width	libclamav/elf.c	638	    cli_dbgmsg("ELF: Number of sections: %d\n", shnum);
+format-width	libclamav/elf.c	874	            cli_dbgmsg("ELF: File type: Unknown (%d)\n", file_hdr.hdr64.e_type);
 format-width	libclamav/entconv.c	1074	                            cli_warnmsg("cli_codepage_to_utf8: iconv error: Unexpected error code %d.\n", errno);
 format-width	libclamav/entconv.c	1167	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
 format-width	libclamav/entconv.c	748	        /*cli_dbgmsg(MODULE_NAME "resuming (inleft:%lu, outleft:%lu, inpos:%ld, %ld)\n",
@@ -23381,7 +23381,7 @@ offset-size-arithmetic	libclamav/egg.h	114	 * @param[out] filename             T
 offset-size-arithmetic	libclamav/egg.h	123	    size_t* output_buffer_length);
 offset-size-arithmetic	libclamav/egg.h	137	 * @param[out] filename  UTF-8 filename allocated by the function.
 offset-size-arithmetic	libclamav/egg.h	165	#endif // _EGG_H
-offset-size-arithmetic	libclamav/elf.c	1044	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/elf.c	1052	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
 offset-size-arithmetic	libclamav/elf.c	110	static uint64_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 offset-size-arithmetic	libclamav/elf.c	119	        if (vaddr >= start && vaddr - start < memsz) {
 offset-size-arithmetic	libclamav/elf.c	133	    return file_offset + delta;
@@ -23408,24 +23408,24 @@ offset-size-arithmetic	libclamav/elf.c	264	            file_hdr->hdr32.hdr.e_phe
 offset-size-arithmetic	libclamav/elf.c	266	            file_hdr->hdr32.hdr.e_shentsize = EC16(file_hdr->hdr32.hdr.e_shentsize, conv);
 offset-size-arithmetic	libclamav/elf.c	299	        phentsize = file_hdr->e_phentsize;
 offset-size-arithmetic	libclamav/elf.c	306	        phoff = file_hdr->e_phoff;
-offset-size-arithmetic	libclamav/elf.c	342	            phoff += sizeof(struct elf_program_hdr32);
-offset-size-arithmetic	libclamav/elf.c	410	        phentsize = file_hdr->e_phentsize;
-offset-size-arithmetic	libclamav/elf.c	417	        phoff = file_hdr->e_phoff;
-offset-size-arithmetic	libclamav/elf.c	453	            phoff += sizeof(struct elf_program_hdr64);
-offset-size-arithmetic	libclamav/elf.c	523	    shentsize = file_hdr->e_shentsize;
-offset-size-arithmetic	libclamav/elf.c	534	    shoff = file_hdr->e_shoff;
-offset-size-arithmetic	libclamav/elf.c	590	        shoff += sizeof(struct elf_section_hdr32);
-offset-size-arithmetic	libclamav/elf.c	598	            elfinfo->sections64[i].uraw = elfinfo->sections64[i].raw;
-offset-size-arithmetic	libclamav/elf.c	602	            elfinfo->sections[i].raw = (uint32_t)elfinfo->sections64[i].raw;
+offset-size-arithmetic	libclamav/elf.c	344	            phoff += sizeof(struct elf_program_hdr32);
+offset-size-arithmetic	libclamav/elf.c	412	        phentsize = file_hdr->e_phentsize;
+offset-size-arithmetic	libclamav/elf.c	419	        phoff = file_hdr->e_phoff;
+offset-size-arithmetic	libclamav/elf.c	457	            phoff += sizeof(struct elf_program_hdr64);
+offset-size-arithmetic	libclamav/elf.c	527	    shentsize = file_hdr->e_shentsize;
+offset-size-arithmetic	libclamav/elf.c	538	    shoff = file_hdr->e_shoff;
+offset-size-arithmetic	libclamav/elf.c	596	        shoff += sizeof(struct elf_section_hdr32);
+offset-size-arithmetic	libclamav/elf.c	604	            elfinfo->sections64[i].uraw = elfinfo->sections64[i].raw;
+offset-size-arithmetic	libclamav/elf.c	608	            elfinfo->sections[i].raw = (uint32_t)elfinfo->sections64[i].raw;
 offset-size-arithmetic	libclamav/elf.c	61	static size_t cli_elf_readn(fmap_t *map, void *dst, uint64_t at, size_t len)
 offset-size-arithmetic	libclamav/elf.c	63	    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
-offset-size-arithmetic	libclamav/elf.c	644	    shentsize = file_hdr->e_shentsize;
-offset-size-arithmetic	libclamav/elf.c	655	    shoff = file_hdr->e_shoff;
+offset-size-arithmetic	libclamav/elf.c	650	    shentsize = file_hdr->e_shentsize;
+offset-size-arithmetic	libclamav/elf.c	661	    shoff = file_hdr->e_shoff;
 offset-size-arithmetic	libclamav/elf.c	71	static cl_error_t cli_elf_read_status(cli_ctx *ctx, size_t bytes_read, size_t expected, const char *reason)
-offset-size-arithmetic	libclamav/elf.c	712	        shoff += sizeof(struct elf_section_hdr64);
-offset-size-arithmetic	libclamav/elf.c	731	                memset(&elfinfo->sections[i], 0, sizeof(elfinfo->sections[i]));
+offset-size-arithmetic	libclamav/elf.c	720	        shoff += sizeof(struct elf_section_hdr64);
+offset-size-arithmetic	libclamav/elf.c	739	                memset(&elfinfo->sections[i], 0, sizeof(elfinfo->sections[i]));
 offset-size-arithmetic	libclamav/elf.c	75	    if (bytes_read == (size_t)-1) {
-offset-size-arithmetic	libclamav/elf.c	839	    /* Load header to determine size and class */
+offset-size-arithmetic	libclamav/elf.c	847	    /* Load header to determine size and class */
 offset-size-arithmetic	libclamav/elf.h	144	/* Exposed functions */
 offset-size-arithmetic	libclamav/entconv.c	1001	            /* Set a null byte, since null-terminator is not provided when in_size is provided */
 offset-size-arithmetic	libclamav/entconv.c	102	/* buffer must be at least 2 bytes in size */

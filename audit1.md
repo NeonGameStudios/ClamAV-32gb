@@ -4981,3 +4981,16 @@ errors are now propagated to the scan-context boundary.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled allocation fault injection, production HTML/mail corpora,
 sanitizer runs, and Sonic1 qualification remain open.
+
+## ELF scan working-buffer allocation failures — 2026-08-22
+
+ELF program-header and section-header working buffers used by the active scan
+path could return `CL_EMEM` without marking required executable inspection
+incomplete. Both 32-bit and 64-bit scan paths now record parser-specific
+incomplete reasons before returning. Metadata-only `elfinfo` allocations are
+left to the existing metadata wrapper, which has no scan context and already
+reconciles its returned status.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation fault injection, production ELF corpora,
+sanitizer runs, and Sonic1 qualification remain open.

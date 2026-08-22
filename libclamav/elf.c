@@ -312,6 +312,8 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
             program_hdr = (struct elf_program_hdr32 *)cli_max_calloc(phnum, sizeof(struct elf_program_hdr32));
             if (!program_hdr) {
                 cli_errmsg("ELF: Can't allocate memory for program headers\n");
+                if (ctx)
+                    cli_mark_scan_incomplete(ctx, "ELF program header table could not be allocated");
                 return CL_EMEM;
             }
             if (ctx) {
@@ -423,6 +425,8 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
             program_hdr = (struct elf_program_hdr64 *)cli_max_calloc(phnum, sizeof(struct elf_program_hdr64));
             if (!program_hdr) {
                 cli_errmsg("ELF: Can't allocate memory for program headers\n");
+                if (ctx)
+                    cli_mark_scan_incomplete(ctx, "ELF program header table could not be allocated");
                 return CL_EMEM;
             }
             if (ctx) {
@@ -552,6 +556,8 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         section_hdr = (struct elf_section_hdr32 *)cli_max_calloc(shnum, shentsize);
         if (!section_hdr) {
             cli_errmsg("ELF: Can't allocate memory for section headers\n");
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "ELF section header table could not be allocated");
             return CL_EMEM;
         }
         if (ctx) {
@@ -673,6 +679,8 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         section_hdr = (struct elf_section_hdr64 *)cli_max_calloc(shnum, shentsize);
         if (!section_hdr) {
             cli_errmsg("ELF: Can't allocate memory for section headers\n");
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "ELF section header table could not be allocated");
             return CL_EMEM;
         }
         if (ctx) {

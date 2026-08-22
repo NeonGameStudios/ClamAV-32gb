@@ -762,6 +762,9 @@
 - ELF broken-executable heuristic alert results now propagate callback,
   trusted, and operational statuses instead of preserving only `CL_VIRUS`; add
   ELF heuristic fault-injection and malformed-corpus coverage.
+- ELF active program/section-header working-buffer allocation failures now
+  mark required inspection incomplete before returning `CL_EMEM`; add compiled
+  allocation fault-injection and executable-corpus qualification.
 - Mach-O and universal-binary broken-executable heuristic alert results now
   propagate callback, trusted, and operational statuses; add Mach-O heuristic
   fault-injection and malformed-corpus coverage.
