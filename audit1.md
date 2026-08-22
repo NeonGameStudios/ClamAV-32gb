@@ -1985,6 +1985,7 @@ This is a targeted fmap range correction. Descriptor-backed large-file,
 nested-window, sanitizer, and supported Linux/Sonic1 qualification remain
 release gates.
 
+
 ## Descriptor root-size preflight — 2026-08-20
 
 `cl_scandesc_ex2()` previously called `fmap_new()` before applying the root
@@ -4445,3 +4446,13 @@ write as well, reports `CL_ETIMEOUT` through the callback status, and preserves
 the existing temporary cleanup and no-partial-child-scan behavior. Compiled
 solid-archive timeout injection, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## PDFNG referenced-object reload deadline — 2026-08-22
+
+PDFNG indirect-string handling can dump a referenced object and reload it into
+one contiguous buffer below the individual-allocation ceiling. That raw reload
+could previously consume a large I/O operation without observing `MaxScanTime`.
+The path now checks the shared deadline immediately before and after the read,
+cleans up the temporary object and buffer on expiry, and leaves the broader
+PDFNG in-memory parsing loops as a separate qualification item. Compiled
+timeout injection, sanitizer, and Sonic1 qualification remain release gates.

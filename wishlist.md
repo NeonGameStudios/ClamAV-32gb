@@ -1010,3 +1010,6 @@
 - RAR `keeptmp` archive-comment staging now uses bounded writes with shared
   deadline checks and fail-visible short-write handling; add compiled RAR
   comment-timeout and optional-backend corpus qualification.
+- PDFNG referenced-object reloads now check `MaxScanTime` immediately before
+  and after their bounded contiguous read; add compiled reload-timeout and
+  broader PDFNG parser-loop qualification.

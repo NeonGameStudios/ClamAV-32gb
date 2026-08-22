@@ -73,6 +73,15 @@
 
 char *pdf_convert_utf(char *begin, size_t sz);
 
+static int pdfng_checktimelimit(struct pdf_struct *pdf, const char *reason)
+{
+    if (pdf == NULL || pdf->ctx == NULL || cli_checktimelimit(pdf->ctx) == CL_SUCCESS)
+        return 0;
+
+    cli_mark_scan_incomplete(pdf->ctx, reason);
+    return 1;
+}
+
 char *pdf_convert_utf(char *begin, size_t sz)
 {
     char *res = NULL;
@@ -454,6 +463,9 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
     uint32_t objid;
     int object_reference;
 
+    if (pdfng_checktimelimit(pdf, "PDF referenced-object parsing reached the configured time limit"))
+        return NULL;
+
     if (PDF_OBJECT_RECURSION_LIMIT < pdf->parse_recursion_depth) {
         cli_dbgmsg("pdf_parse_string: Recursion limit reached.\n");
         return NULL;
@@ -601,7 +613,23 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
                 return NULL;
             }
 
+            if (pdfng_checktimelimit(pdf, "PDF referenced-object reload reached the configured time limit")) {
+                close(fd);
+                cli_unlink(newobj->path);
+                free(newobj->path);
+                newobj->path = NULL;
+                free(begin);
+                return NULL;
+            }
             if (read(fd, begin, sb.st_size) != sb.st_size) {
+                close(fd);
+                cli_unlink(newobj->path);
+                free(newobj->path);
+                newobj->path = NULL;
+                free(begin);
+                return NULL;
+            }
+            if (pdfng_checktimelimit(pdf, "PDF referenced-object reload reached the configured time limit")) {
                 close(fd);
                 cli_unlink(newobj->path);
                 free(newobj->path);
