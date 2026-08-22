@@ -4887,11 +4887,13 @@ exercises the same bounded-child technique with a synthetic offset above 4
 GiB. Compiled scanner, sanitizer, production-database, and Sonic1 evidence
 remain release gates.
 
-## Local macOS qualification preflight — 2026-08-21
+## Local macOS qualification preflight — 2026-08-22
 
-The native macOS host-preflight was rerun on Darwin arm64. It recorded
-`memory_available_kb=6038704` against the required `minimum_available_kb=50331648`
-and therefore failed the host-resource gate. The same capture reports no CMake
-binary. This is an environment limitation, not a scan result or a qualification
-claim; the 64 GB bare-metal host and a dependency-complete build remain required
-for the planned macOS raw-path run.
+A fresh native macOS host-preflight on Darwin arm64 recorded
+`memory_available_kb=5323248` against the required
+`minimum_available_kb=50331648` and therefore failed the host-resource gate.
+The environment also reports no CMake or Ninja binary; its `hw.memsize` query is
+restricted, while the memory-pressure capture identifies a roughly 16 GiB
+system. This is an environment limitation, not a scan result or a
+qualification claim; the 64 GB bare-metal host and a dependency-complete build
+remain required for the planned macOS raw-path run.
