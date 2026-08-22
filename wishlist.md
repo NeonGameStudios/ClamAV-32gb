@@ -334,6 +334,10 @@
   Rust-parser qualification.
 - Legacy CPIO/TAR/RAR/EGG/ARJ/InstallShield metadata callback failures now
   propagate; add callback-fault and malformed archive corpus coverage.
+- All CPIO legacy/newc header, name, padding, and member-data cursor advances
+  now use checked native-width arithmetic; an overflow remains an explicit
+  incomplete parse instead of wrapping to an attacker-selected earlier range.
+  Add compiled coordinate-boundary and malformed CPIO corpus coverage.
 - UNIX mbox bounce and BinHex attachment scans now propagate every non-clean
   result instead of checking only for `CL_VIRUS`; add mail-spool fault and
   malformed BinHex corpus coverage.

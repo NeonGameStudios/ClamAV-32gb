@@ -110,6 +110,15 @@ static int cpio_align_size(size_t value, size_t alignment, size_t *aligned)
     return 0;
 }
 
+static int cpio_advance(size_t *position, size_t amount)
+{
+    if (NULL == position || amount > SIZE_MAX - *position)
+        return -1;
+
+    *position += amount;
+    return 0;
+}
+
 static void sanitname(char *name)
 {
     while (*name) {
@@ -136,7 +145,11 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
     memset(name, 0, sizeof(name));
 
     while ((hdr_read = cpio_readn(ctx->fmap, &hdr_old, pos, sizeof(hdr_old))) == sizeof(hdr_old)) {
-        pos += sizeof(hdr_old);
+        if (cpio_advance(&pos, sizeof(hdr_old)) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
         if (!hdr_old.magic && trailer) {
             complete = 1;
             status   = CL_SUCCESS;
@@ -165,7 +178,11 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
                 status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
-            pos += namesize;
+            if (cpio_advance(&pos, namesize) < 0) {
+                cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                status = CL_EPARSE;
+                goto done;
+            }
             name[namesize - 1] = 0;
             sanitname(name);
             cli_dbgmsg("CPIO: Name: %s\n", name);
@@ -177,9 +194,17 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
                 if (hdr_namesize % 2) {
                     hdr_namesize++;
                 }
-                pos += hdr_namesize - namesize;
+                if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
+                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                    status = CL_EPARSE;
+                    goto done;
+                }
             } else if (hdr_namesize % 2) {
-                pos++;
+                if (cpio_advance(&pos, 1) < 0) {
+                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                    status = CL_EPARSE;
+                    goto done;
+                }
             }
 
             fmap_name = name;
@@ -212,7 +237,11 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
             goto done;
         }
 
-        pos += filesize;
+        if (cpio_advance(&pos, filesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
     }
 
 done:
@@ -244,7 +273,11 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
     memset(&hdr_odc, 0, sizeof(hdr_odc));
 
     while ((hdr_read = cpio_readn(ctx->fmap, &hdr_odc, pos, sizeof(hdr_odc))) == sizeof(hdr_odc)) {
-        pos += sizeof(hdr_odc);
+        if (cpio_advance(&pos, sizeof(hdr_odc)) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
         if (!hdr_odc.magic[0] && trailer) {
             complete = 1;
             status   = CL_SUCCESS;
@@ -276,7 +309,11 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
                 status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
-            pos += namesize;
+            if (cpio_advance(&pos, namesize) < 0) {
+                cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                status = CL_EPARSE;
+                goto done;
+            }
             name[namesize - 1] = 0;
             sanitname(name);
             cli_dbgmsg("CPIO: Name: %s\n", name);
@@ -285,7 +322,11 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
             }
 
             if (namesize < hdr_namesize) {
-                pos += hdr_namesize - namesize;
+                if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
+                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                    status = CL_EPARSE;
+                    goto done;
+                }
             }
         }
 
@@ -314,7 +355,11 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
             goto done;
         }
 
-        pos += filesize;
+        if (cpio_advance(&pos, filesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
     }
 
 done:
@@ -346,7 +391,11 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
     memset(name, 0, 513);
 
     while ((hdr_read = cpio_readn(ctx->fmap, &hdr_newc, pos, sizeof(hdr_newc))) == sizeof(hdr_newc)) {
-        pos += sizeof(hdr_newc);
+        if (cpio_advance(&pos, sizeof(hdr_newc)) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
         if (!hdr_newc.magic[0] && trailer) {
             complete = 1;
             status   = CL_SUCCESS;
@@ -378,7 +427,11 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
                 status = (hdr_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
-            pos += namesize;
+            if (cpio_advance(&pos, namesize) < 0) {
+                cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                status = CL_EPARSE;
+                goto done;
+            }
             name[namesize - 1] = 0;
             sanitname(name);
             cli_dbgmsg("CPIO: Name: %s\n", name);
@@ -398,9 +451,17 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
                     status = CL_EPARSE;
                     goto done;
                 }
-                pos += hdr_namesize - namesize;
+                if (cpio_advance(&pos, hdr_namesize - namesize) < 0) {
+                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                    status = CL_EPARSE;
+                    goto done;
+                }
             } else if (pad) {
-                pos += pad;
+                if (cpio_advance(&pos, pad) < 0) {
+                    cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+                    status = CL_EPARSE;
+                    goto done;
+                }
             }
         }
 
@@ -435,7 +496,11 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
             goto done;
         }
 
-        pos += filesize;
+        if (cpio_advance(&pos, filesize) < 0) {
+            cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
+            status = CL_EPARSE;
+            goto done;
+        }
     }
 
 done:

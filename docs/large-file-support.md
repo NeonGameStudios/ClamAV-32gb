@@ -5035,3 +5035,13 @@ can no longer bypass the scan deadline until the whole input is consumed;
 timeouts preserve the non-clean status and discard the partial temporary
 member. Compiled timeout injection, sanitizer, and production compressed-stream
 qualification remain open.
+
+## CPIO cursor arithmetic — 2026-08-22
+
+The old binary, ODC, and newc/CRC CPIO handlers now route every header, name,
+padding, and member-data cursor advance through a checked native-width helper.
+An attacker-controlled length that would wrap the archive coordinate is now a
+fail-visible `CL_EPARSE` result with the layer marked incomplete. Existing
+header/name callback-fault and impossible-next-header regressions remain
+applicable; compiled CPIO coordinate-boundary and production-corpus
+qualification remain open.
