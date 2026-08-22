@@ -6071,6 +6071,35 @@ START_TEST(test_msxml_base64_decode_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msxml_stream_time_limit_is_fail_visible)
+{
+    static const uint8_t document[] = "<chunk>QUJD</chunk>";
+    static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_B64}};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_msxml_parse_document_streaming(&ctx, map, keys, sizeof(keys) / sizeof(keys[0]),
+                                             MSXML_FLAG_FAIL_INCOMPLETE, NULL);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML streaming inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_rtf_truncated_document_is_fail_visible)
 {
     static const uint8_t document[] = {'{', '\\', 'r', 't', 'f', '1'};
@@ -18376,6 +18405,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_base64_decode_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_msxml_stream_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_input_read_failure_is_fail_visible);

@@ -792,6 +792,20 @@ static void msxml_stream_fail(struct msxml_stream_state *state, cl_error_t ret, 
         xmlStopParser(state->parser);
 }
 
+static cl_error_t msxml_stream_checktimelimit(struct msxml_stream_state *state, const char *reason)
+{
+    cl_error_t ret;
+
+    if (!state)
+        return CL_ENULLARG;
+
+    ret = cli_checktimelimit(state->ctx);
+    if (ret != CL_SUCCESS)
+        msxml_stream_fail(state, ret, reason);
+
+    return ret;
+}
+
 static int msxml_stream_copy_xml_string(char *dst, size_t dst_size, const xmlChar *begin, const xmlChar *end)
 {
     size_t len;
@@ -820,6 +834,9 @@ static cl_error_t msxml_stream_reserve_write(struct msxml_stream_state *state, i
 
     while (offset < len) {
         size_t chunk = MIN((size_t)MSXML_STREAM_IO_SIZE, len - offset);
+
+        if (msxml_stream_checktimelimit(state, "MSXML streaming output reached the configured time limit") != CL_SUCCESS)
+            return state->ret;
 
         if (cli_scan_reserve_temporary(state->ctx, (uint64_t)chunk) != CL_SUCCESS) {
             msxml_stream_fail(state, CL_ERESOURCE, "MSXML streaming spool exceeded the temporary-space limit");
@@ -867,6 +884,9 @@ static cl_error_t msxml_stream_decode_base64(struct msxml_stream_state *state, s
     size_t i;
 
     for (i = 0; i < (size_t)len; i++) {
+        if (msxml_stream_checktimelimit(state, "MSXML base64 decoding reached the configured time limit") != CL_SUCCESS)
+            return state->ret;
+
         unsigned char value = data[i];
         unsigned char output[3];
         int a, b, c, d;
@@ -1005,6 +1025,9 @@ static void msxml_stream_add_json_value(struct msxml_stream_state *state, struct
         size_t chunk = MIN(sizeof(value) - 1, (size_t)len - offset);
         cl_error_t ret;
 
+        if (msxml_stream_checktimelimit(state, "MSXML JSON value processing reached the configured time limit") != CL_SUCCESS)
+            return;
+
         memcpy(value, data + offset, chunk);
         value[chunk] = '\0';
         ret          = msxml_parse_value(frame->json_obj, "Value", value);
@@ -1032,6 +1055,9 @@ static void msxml_sax_start_element_ns(void *arg, const xmlChar *localname, cons
     UNUSEDPARAM(nb_defaulted);
 
     if (!state || state->ret == CL_VIRUS || state->ret == CL_BREAK || state->ret != CL_SUCCESS)
+        return;
+
+    if (msxml_stream_checktimelimit(state, "MSXML element processing reached the configured time limit") != CL_SUCCESS)
         return;
 
     if (state->skipped_depth) {
@@ -1157,6 +1183,9 @@ static void msxml_sax_characters(void *arg, const xmlChar *ch, int len)
     if (!state || !ch || len <= 0 || state->ret != CL_SUCCESS || state->skipped_depth || state->depth == 0)
         return;
 
+    if (msxml_stream_checktimelimit(state, "MSXML character processing reached the configured time limit") != CL_SUCCESS)
+        return;
+
     frame = &state->frames[state->depth - 1];
     if (frame->ignored)
         return;
@@ -1193,6 +1222,9 @@ static void msxml_sax_end_element_ns(void *arg, const xmlChar *localname, const 
     if (!state || state->ret == CL_VIRUS || state->ret == CL_BREAK || state->ret != CL_SUCCESS)
         return;
 
+    if (msxml_stream_checktimelimit(state, "MSXML element processing reached the configured time limit") != CL_SUCCESS)
+        return;
+
     if (state->skipped_depth) {
         state->skipped_depth--;
         return;
@@ -1219,6 +1251,9 @@ static void msxml_sax_comment(void *arg, const xmlChar *value)
     cl_error_t ret;
 
     if (!state || !value || state->ret != CL_SUCCESS || state->skipped_depth || state->depth == 0)
+        return;
+
+    if (msxml_stream_checktimelimit(state, "MSXML comment processing reached the configured time limit") != CL_SUCCESS)
         return;
 
     frame = &state->frames[state->depth - 1];
@@ -1264,6 +1299,11 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
     if (!ctx || !map || !keys)
         return CL_ENULLARG;
 
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "MSXML streaming inspection reached the configured time limit");
+        return CL_ETIMEOUT;
+    }
+
     if (!mxctx) {
         memset(&reserve, 0, sizeof(reserve));
         mxctx = &reserve;
@@ -1306,6 +1346,9 @@ cl_error_t cli_msxml_parse_document_streaming(cli_ctx *ctx, fmap_t *map, const s
     memset(&input, 0, sizeof(input));
     input.map = map;
     for (;;) {
+        if (msxml_stream_checktimelimit(&state, "MSXML streaming inspection reached the configured time limit") != CL_SUCCESS)
+            break;
+
         nread = msxml_read_cb(&input, (char *)buffer, sizeof(buffer));
         if (nread < 0) {
             msxml_stream_fail(&state, CL_EREAD, "MSXML fmap input could not be read completely");

@@ -3316,3 +3316,14 @@ existing caller cleanup so temporary reservations and files are released. A
 direct expired-context regression and source guards cover parser entry;
 compiled SZDD corpus, sanitizer, and Sonic1 qualification remain release
 gates.
+
+## Streaming MSXML/XDP deadline — 2026-08-22
+
+The streaming MSXML path now checks the shared deadline at parser entry and
+before input chunks, SAX character/element/comment callbacks, JSON chunk
+processing, base64 decoding, and temporary-output writes. A timeout stops the
+push parser and remains a fail-visible `CL_ETIMEOUT` result; cleanup of any
+active spool still runs through the existing frame-disposal path. A direct
+expired-context regression and source guards cover the parser entry;
+compiled XML/XDP corpus, sanitizer, and Sonic1 qualification remain release
+gates.
