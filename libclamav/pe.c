@@ -5444,6 +5444,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         struct cli_exe_section *section          = &(peinfo->sections[i]);
         struct pe_image_section_hdr *section_hdr = &(section_hdrs[i]);
         char sname[9];
+        uint32_t section_rva_end;
 
         // TODO I don't see any documentation that says VirtualAddress and VirtualSize must be aligned
         section->rva  = PEALIGN(EC32(section_hdr->VirtualAddress), salign);
@@ -5567,12 +5568,19 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             }
         }
 
-        // TODO should we skip all of these checks if it's an empty
-        // section? Why the exception for uraw?
+        // These are unsigned PE format fields. Older PE-specific code uses
+        // signed-coordinate assumptions, but the native section view can
+        // preserve the values without treating a legal high bit as a broken
+        // header.
         if (section->urva >> 31 || section->uvsz >> 31 || (section->rsz && section->uraw >> 31) || peinfo->sections[i].ursz >> 31) {
-            cli_dbgmsg("cli_peheader: Found PE values with sign bit set\n");
-            ret = CL_EFORMAT;
-            goto done;
+            cli_dbgmsg("cli_peheader: PE section fields exceed legacy signed-coordinate assumptions; PE-specific legacy analysis will be skipped\n");
+            peinfo->legacy_metadata_incomplete = 1;
+        }
+
+        if (cli_pe_add_u32(section->rva, section->rsz, &section_rva_end) < 0) {
+            cli_dbgmsg("cli_peheader: PE section RVA extent exceeds the legacy 32-bit coordinate range\n");
+            peinfo->legacy_metadata_incomplete = 1;
+            section_rva_end = UINT32_MAX;
         }
 
         if (!i) {
@@ -5585,7 +5593,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             }
 
             peinfo->min = section->rva;
-            peinfo->max = section->rva + section->rsz;
+            peinfo->max = section_rva_end;
         } else {
             size_t section_end = (size_t)section->raw + (size_t)section->rsz;
 
@@ -5600,8 +5608,8 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             if (section->rva < peinfo->min)
                 peinfo->min = section->rva;
 
-            if (section->rva + section->rsz > peinfo->max) {
-                peinfo->max = section->rva + section->rsz;
+            if (section_rva_end > peinfo->max) {
+                peinfo->max = section_rva_end;
             }
 
             // TODO This case might be possible, which would lead to us

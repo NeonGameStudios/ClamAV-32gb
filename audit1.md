@@ -3727,3 +3727,15 @@ instead of wrapping it into an earlier file location, and the PE-specific
 scanner marks that skipped legacy layer incomplete. A focused boundary
 regression covers both outcomes; compiled PE corpus, unpacker, sanitizer, and
 supported-build qualification remain open.
+
+## PE32 unsigned high-bit section fields — 2026-08-22
+
+PE section-header DWORDs are unsigned format fields, so a high bit in a
+VirtualAddress, VirtualSize, or raw-coordinate field is not by itself a
+malformed header. The PE header path now preserves those values in its native
+section metadata and marks only the legacy signed-coordinate PE-specific
+analysis incomplete instead of returning `CL_EFORMAT` and discarding the
+recognized layer. Checked RVA-extent arithmetic also marks a legacy bridge
+incomplete before its 32-bit extent can wrap. A synthetic high-bit section
+header regression and source guards cover the disposition; compiled PE,
+unpacker, sanitizer, and supported-build qualification remain open.

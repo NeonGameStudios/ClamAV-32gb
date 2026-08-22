@@ -732,3 +732,8 @@
   containing-file coordinates while preserving format-defined 32-bit RVAs;
   legacy PE-specific and bytecode paths must fail closed above their ABI width,
   with compiled PE corpus and supported-Linux qualification still required.
+- Preserve unsigned high-bit PE section-header fields in the native metadata
+  view; classify legacy signed-coordinate PE-specific analysis as explicitly
+  incomplete, and keep checked RVA-extent arithmetic from wrapping. The
+  synthetic boundary regression is registered; compiled PE corpus, unpacker,
+  sanitizer, and supported-Linux qualification remain required.

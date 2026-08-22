@@ -5205,3 +5205,16 @@ therefore remains explicitly incomplete when the legacy ABI is required. A
 focused boundary regression covers both the native result and the fail-closed
 legacy result. Full PE corpus, unpacker, sanitizer, and supported-Linux
 qualification remain open.
+
+## PE32 unsigned high-bit section fields — 2026-08-22
+
+PE section-header DWORDs are unsigned format fields. A high bit in a
+`VirtualAddress`, `VirtualSize`, or raw-coordinate field is therefore not
+automatically a malformed header. The PE header parser now keeps those values
+in the native section metadata and marks only the legacy signed-coordinate
+PE-specific path incomplete instead of rejecting the recognized layer. RVA
+extent aggregation is checked before updating the legacy 32-bit range, so an
+overflow becomes an explicit incomplete result rather than a wrapped bound. A
+synthetic high-bit section-header regression and source guards cover the
+disposition; compiled PE corpus, unpacker, sanitizer, and supported-build
+qualification remain open.

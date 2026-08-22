@@ -3973,6 +3973,93 @@ START_TEST(test_pe_rawaddr_preserves_native_coordinate)
     ck_assert_int_eq(err, 1);
 }
 END_TEST
+
+START_TEST(test_pe_header_preserves_unsigned_high_bit_section_fields)
+{
+    char file_path[PATH_MAX];
+    struct cl_scan_options options;
+    struct cli_exe_info peinfo;
+    struct pe_native_offset_map_state state;
+    cli_ctx header_ctx;
+    struct stat st;
+    fmap_t *parent;
+    fmap_t *nested;
+    uint8_t *data;
+    size_t offset = 0;
+    size_t pe_offset;
+    size_t section_offset;
+    size_t source_offset = (size_t)UINT32_MAX + 4096U;
+    uint16_t nsections;
+    uint16_t opt_hdr_size;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg(FSTAT(fd, &st) == 0, "fstat(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg((uintmax_t)st.st_size <= SIZE_MAX - source_offset,
+                  "PE fixture cannot be placed at the synthetic native offset");
+
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    ck_assert_msg((size_t)st.st_size >= 0x40, "PE fixture is too short for DOS metadata");
+    pe_offset = (size_t)cli_readint32(data + 0x3c);
+    ck_assert_msg(pe_offset <= (size_t)st.st_size - sizeof(struct pe_image_file_hdr),
+                  "PE fixture signature header is outside the fixture");
+    nsections = (uint16_t)cli_readint16(data + pe_offset + offsetof(struct pe_image_file_hdr, NumberOfSections));
+    opt_hdr_size = (uint16_t)cli_readint16(data + pe_offset + offsetof(struct pe_image_file_hdr, SizeOfOptionalHeader));
+    ck_assert_msg(nsections > 1, "PE fixture does not contain a second section");
+    ck_assert_msg(opt_hdr_size <= (size_t)st.st_size - pe_offset - sizeof(struct pe_image_file_hdr),
+                  "PE optional header is outside the fixture");
+    section_offset = pe_offset + sizeof(struct pe_image_file_hdr) + opt_hdr_size;
+    ck_assert_msg(section_offset <= (size_t)st.st_size - 2 * sizeof(struct pe_image_section_hdr),
+                  "PE section table is outside the fixture");
+
+    /* VirtualAddress is an unsigned DWORD; its high bit is not a malformed
+     * signed value. Keep all raw bytes and exercise the native section view. */
+    cli_writeint32(data + section_offset + sizeof(struct pe_image_section_hdr) + offsetof(struct pe_image_section_hdr, VirtualAddress),
+                   0x80002000U);
+
+    memset(&options, 0, sizeof(options));
+    memset(&header_ctx, 0, sizeof(header_ctx));
+    state.data          = data;
+    state.length        = (size_t)st.st_size;
+    state.source_offset = source_offset;
+    parent              = cl_fmap_open_memory(data, 1);
+    ck_assert_ptr_nonnull(parent);
+    parent->handle      = &state;
+    parent->need        = pe_native_offset_map_need;
+    parent->len         = source_offset + state.length;
+    parent->real_len    = parent->len;
+
+    nested = fmap_duplicate(parent, source_offset, state.length, "unsigned-pe-field-test");
+    ck_assert_ptr_nonnull(nested);
+
+    header_ctx.fmap              = nested;
+    header_ctx.options           = &options;
+    header_ctx.this_layer_tmpdir = tmpdir;
+    cli_exe_info_init(&peinfo, 0);
+    ret = cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(header_ctx.scan_incomplete);
+    ck_assert(peinfo.legacy_metadata_incomplete);
+    ck_assert_uint_eq(peinfo.sections[1].urva, 0x80002000U);
+    ck_assert_uint_eq(peinfo.sections64[1].urva, 0x80002000U);
+
+    cli_exe_info_destroy(&peinfo);
+    free_duplicate_fmap(nested);
+    cl_fmap_close(parent);
+    free(data);
+}
+END_TEST
 #endif
 
 struct zip_stream_pread_state {
@@ -19418,6 +19505,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pe_rawaddr_preserves_native_coordinate);
+    tcase_add_test(tc_cl, test_pe_header_preserves_unsigned_high_bit_section_fields);
 #endif
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pe_header_nested_fmap_accepts_native_offset);
