@@ -91,6 +91,13 @@ whose size matches the declared unpacked size; the validated descriptor is
 then scanned while its declared temporary reservation remains charged. RAR
 corpus and backend-enabled build qualification remain release gates.
 
+The 7-Zip path likewise validates each successfully decoded member twice before
+dispatching it to nested scanning: the decoder-produced byte count and the
+materialized regular file's `st_size` must both equal the archive-declared
+member size. A mismatch is an incomplete `CL_EUNPACK` result and the partial
+output is never scanned. 7-Zip parser-corpus and supported-build qualification
+remain release gates.
+
 Local macOS validation has begun with a native host-preflight and runtime gate;
 its first result is documented in
 [`largefile-macos-20260818.md`](largefile-macos-20260818.md). The current

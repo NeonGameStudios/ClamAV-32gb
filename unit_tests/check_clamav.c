@@ -69,6 +69,7 @@
 #include "elf.h"
 #include "dmg.h"
 #include "egg.h"
+#include "7z_iface.h"
 #include "autoit.h"
 #include "binhex.h"
 #include "nsis/nulsft.h"
@@ -11590,6 +11591,25 @@ START_TEST(test_7z_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_output_size_mismatch_is_fail_visible)
+{
+    static const uint8_t data[] = "7-Zip output-size regression";
+    char *path = NULL;
+    int fd = -1;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, data, sizeof(data) - 1), (ssize_t)(sizeof(data) - 1));
+    ck_assert(cli_7z_output_matches_declared(fd, sizeof(data) - 1, sizeof(data) - 1));
+    ck_assert(!cli_7z_output_matches_declared(fd, sizeof(data), sizeof(data) - 1));
+    ck_assert(!cli_7z_output_matches_declared(fd, sizeof(data) - 1, sizeof(data)));
+
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_egg_sfx_header_admission)
 {
     static const uint8_t valid_header[] = {
@@ -17571,6 +17591,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_7z_output_size_mismatch_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_extra_field_admission_is_fail_visible);

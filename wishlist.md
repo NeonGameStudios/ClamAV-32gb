@@ -25,6 +25,9 @@
   inspected through their validated descriptor while temporary bytes remain
   reserved. Backend-enabled RAR corpus and supported-build qualification remain
   open.
+- 7-Zip member extraction now independently verifies the decoder-produced count
+  and the materialized regular-file size against the declared member size before
+  nested scanning; parser-family and supported-build qualification remain open.
 - InstallShield MSI layers with unsupported control metadata now fail closed as
   non-cacheable `CL_EUNPACK`; valid-parser corpus and supported-build
   qualification remain open.

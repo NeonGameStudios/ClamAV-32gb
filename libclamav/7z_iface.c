@@ -110,6 +110,17 @@ static cl_error_t cli_7z_error_status(SRes res)
     }
 }
 
+bool cli_7z_output_matches_declared(int fd, uint64_t declared_size, uint64_t processed_size)
+{
+    STATBUF output_stat;
+
+    if (processed_size != declared_size || FSTAT(fd, &output_stat) != 0 || output_stat.st_size < 0 ||
+        !S_ISREG(output_stat.st_mode) || (uint64_t)output_stat.st_size != declared_size)
+        return false;
+
+    return true;
+}
+
 static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_error_t *status,
                                 uint64_t temporary_reserved)
 {
@@ -224,7 +235,6 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
         UInt32 i, blockIndex = 0xFFFFFFFF;
         Byte *outBuffer      = NULL;
         size_t outBufferSize = 0;
-        unsigned int encrypted = 0;
 
         for (i = 0; i < db.db.NumFiles; i++) {
             UInt64 outSizeProcessed = 0;
@@ -238,6 +248,8 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             cl_error_t metadata_status;
             CClamFileOutStream output;
             uint64_t temporary_reserved = 0;
+            unsigned int encrypted      = 0;
+            bool output_mismatch        = false;
 
             // abort if we would exceed max files or max scan time.
             if ((found = cli_checklimits("7unz", ctx, 0, 0, 0)))
@@ -346,6 +358,12 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 if (found == CL_SUCCESS)
                     found = CL_EPARSE;
             }
+            if (res == SZ_OK && !cli_7z_output_matches_declared(fd, f->Size, outSizeProcessed)) {
+                cli_mark_scan_incomplete(ctx, "7-Zip extracted output did not match its declared member size");
+                found           = CL_EUNPACK;
+                res             = SZ_ERROR_DATA;
+                output_mismatch = true;
+            }
             metadata_status = cli_matchmeta(ctx, name, 0, f->Size, encrypted, i, f->CrcDefined ? f->Crc : 0);
             if (metadata_status != CL_SUCCESS) {
                 found = metadata_status;
@@ -364,6 +382,8 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 }
                 cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                 free(tmp_name);
+                if (output_mismatch)
+                    break;
                 continue;
             } else if (outSizeProcessed == 0) {
                 cli_dbgmsg("cli_unz: extracted empty file\n");
