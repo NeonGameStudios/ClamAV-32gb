@@ -378,6 +378,9 @@
   and large-embedded-payload corpus qualification.
 - Optional XDP `keeptmp` staging now honors the shared deadline and preserves
   read/write/resource failures; add compiled staging-failure qualification.
+- HWP3 document-info, paragraph, font-table, and information-block traversal
+  now honor the shared scan deadline; add compiled timeout-injection and large
+  legacy-document corpus qualification.
 - OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed
   MSO stream corpus coverage during Office-parser qualification.
 - ZWS/SWF compressed-input length fields are now enforced before LZMA setup; add

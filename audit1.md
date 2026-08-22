@@ -2337,6 +2337,15 @@ Source guards and `git diff --check` are the current local evidence.
 Fault-injected cleanup, dependency-complete builds, and supported-build
 Sonic1 qualification remain release gates.
 
+## HWP3 traversal deadline — 2026-08-22
+
+HWP3 now checks the shared deadline at parser entry and while walking
+document-info/summary metadata, paragraph characters and content, font-table
+entries, and information blocks. Timeout returns remain fail-visible
+`CL_ETIMEOUT` results through the existing callback cleanup paths. A direct
+expired-context regression and source guards cover parser entry; compiled
+HWP3 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
 ## Clamscan directory-entry inspection closeout — 2026-08-20
 
 Directory scans now count failed per-entry `LSTAT()` and symlink-follow

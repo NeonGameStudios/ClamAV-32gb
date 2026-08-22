@@ -545,10 +545,23 @@ struct hwp3_docsummary_entry {
 #define PCSD_SIZE 0  /* offset 0 (2 bytes) - size of characters */
 #define PCSD_PROP 26 /* offset 26 (1 byte) - properties */
 
+static inline cl_error_t hwp3_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct hwp3_docinfo *docinfo)
 {
     const uint8_t *hwp3_ptr;
     cl_error_t iret;
+
+    if (hwp3_checktimelimit(ctx, "HWP3 document-info inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
 
     // TODO: use fmap_readn?
     if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCINFO_SIZE))) {
@@ -643,6 +656,9 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
     if (!SCAN_COLLECT_METADATA)
         return CL_SUCCESS;
 
+    if (hwp3_checktimelimit(ctx, "HWP3 document-summary inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
+
     if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCSUMMARY_SIZE))) {
         cli_errmsg("HWP3.x: Failed to read fmap for hwp docsummary\n");
         cli_mark_scan_incomplete(ctx, "HWP3 document-summary could not be read completely");
@@ -728,6 +744,9 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
     uint16_t pcsd_size;
     uint8_t pcsd_prop;
 #endif
+
+    if (hwp3_checktimelimit(ctx, "HWP3 paragraph inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
 
     hwp3_debug("HWP3.x: recursion level: %u\n", level);
     hwp3_debug("HWP3.x: Paragraph[%u, %d] starts @ offset %zu\n", level, p, offset);
@@ -833,6 +852,9 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
 
     if (ifsc) {
         for (i = 0, c = 0; i < nchars; i++) {
+            if (hwp3_checktimelimit(ctx, "HWP3 character-style traversal reached the configured time limit") != CL_SUCCESS)
+                return CL_ETIMEOUT;
+
             /* examine byte for cs data type */
             if (fmap_readn(map, &cfsb, offset, sizeof(cfsb)) != sizeof(cfsb))
                 return CL_EREAD;
@@ -879,6 +901,9 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
     /* scan for end-of-paragraph [0x0d00 on offset parity to current content] */
     while ((!term) &&
            (offset < map->len)) {
+
+        if (hwp3_checktimelimit(ctx, "HWP3 paragraph-content traversal reached the configured time limit") != CL_SUCCESS)
+            return CL_ETIMEOUT;
 
         if (fmap_readn(map, &content, offset, sizeof(content)) != sizeof(content))
             return CL_EREAD;
@@ -1562,6 +1587,9 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
 #endif
     json_object *infoblk_1, *contents = NULL, *counter, *entry = NULL;
 
+    if (hwp3_checktimelimit(ctx, "HWP3 information-block inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
+
     hwp3_debug("HWP3.x: Information Block @ offset %llu\n", infoloc);
 
     if (SCAN_COLLECT_METADATA) {
@@ -1708,6 +1736,9 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
             }
 
             for (i = 0; i < count; i++) {
+                if (hwp3_checktimelimit(ctx, "HWP3 information-block traversal reached the configured time limit") != CL_SUCCESS)
+                    return CL_ETIMEOUT;
+
 #if HWP3_DEBUG /* additional fields can be added */
                 memset(field, 0, HWP3_FIELD_LENGTH);
                 if (fmap_readn(map, field, *offset, 256) != 256) {
@@ -1803,6 +1834,9 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
 
     UNUSEDPARAM(filepath);
 
+    if (hwp3_checktimelimit(ctx, "HWP3 content inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
+
     offset = start = cbdata ? *(size_t *)cbdata : 0;
 
     if (offset == 0) {
@@ -1836,6 +1870,12 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
 
     for (i = 0; i < 7; i++) {
         uint16_t nfonts;
+
+        if (hwp3_checktimelimit(ctx, "HWP3 font-table traversal reached the configured time limit") != CL_SUCCESS) {
+            if (dmap)
+                fmap_free(dmap);
+            return CL_ETIMEOUT;
+        }
 
         if (fmap_readn(map, &nfonts, offset, sizeof(nfonts)) != sizeof(nfonts)) {
             if (dmap)
@@ -1916,6 +1956,9 @@ cl_error_t cli_scanhwp3(cli_ctx *ctx)
     struct hwp3_docinfo docinfo;
     size_t offset = 0, new_offset = 0;
     fmap_t *map = ctx->fmap;
+
+    if (hwp3_checktimelimit(ctx, "HWP3 inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
 
     /*
     // version
