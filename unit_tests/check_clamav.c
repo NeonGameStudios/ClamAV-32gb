@@ -5865,6 +5865,33 @@ START_TEST(test_swf_truncated_uncompressed_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_scanswf(&ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "SWF inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static size_t swf_read_failure_offset = SIZE_MAX;
 
 static const void *swf_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -18142,6 +18169,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_zlib_truncated_stream_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_lzma_declared_input_size_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_output_temporary_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_swf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_required_read_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_swf_cleanup_close_failure_is_fail_visible);

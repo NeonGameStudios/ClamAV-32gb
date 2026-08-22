@@ -3236,3 +3236,12 @@ non-cacheable result without conflating it with a truncated header. A direct
 regression exercises all four entry points; source guards and the capability
 manifest record the coverage. Compiled archive corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## SWF traversal and decoder deadlines — 2026-08-22
+
+SWF uncompressed tag walking and CWS/ZWS decompression now check the shared
+scan deadline at parser entry and before each structural or decoder iteration.
+Timeouts release decoder state and temporary output before returning
+`CL_ETIMEOUT` as an incomplete, non-cacheable result. A direct expired-context
+regression and source guards cover the change; compiled SWF corpus, sanitizer,
+and Sonic1 qualification remain release gates.

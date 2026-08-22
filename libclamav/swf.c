@@ -79,6 +79,16 @@ static cl_error_t swf_read_failure(cli_ctx *ctx, cl_error_t status, const char *
     return status;
 }
 
+static cl_error_t swf_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 #define INITBITS                                                                       \
     {                                                                                  \
         cl_error_t read_status = swf_read_exact(map, &get_c, offset, sizeof(get_c));    \
@@ -278,6 +288,12 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     }
 
     while (lret == LZMA_RESULT_OK) {
+        ret = swf_checktimelimit(ctx, "SWF LZMA traversal reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            cli_LzmaShutdown(&lz);
+            return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
+        }
+
         if (lz.avail_in == 0) {
             lz.next_in = inbuff;
 
@@ -388,6 +404,12 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
     }
 
     do {
+        ret = swf_checktimelimit(ctx, "SWF zlib traversal reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            inflateEnd(&stream);
+            return swf_cleanup_temp(ctx, fd, tmpname, ret, temporary_reserved);
+        }
+
         if (stream.avail_in == 0) {
             stream.next_in = (Bytef *)inbuff;
             ret = swf_read_chunk(map, inbuff, offset, FILEBUFF, &n_read);
@@ -475,6 +497,10 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_scanswf()\n");
 
+    read_status = swf_checktimelimit(ctx, "SWF inspection reached the configured time limit");
+    if (read_status != CL_SUCCESS)
+        return read_status;
+
     read_status = swf_read_exact(map, &file_hdr, offset, sizeof(file_hdr));
     if (read_status != CL_SUCCESS) {
         cli_dbgmsg("SWF: Can't read file header\n");
@@ -538,6 +564,10 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
     }
 
     while (offset < map->len) {
+        read_status = swf_checktimelimit(ctx, "SWF tag traversal reached the configured time limit");
+        if (read_status != CL_SUCCESS)
+            return read_status;
+
         GETWORD(tag_hdr);
         tag_type = tag_hdr >> 6;
         if (tag_type == 0)
