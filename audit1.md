@@ -4325,3 +4325,13 @@ critical timeout/resource/I/O failures. A focused regression verifies that an
 unavailable first bytecode entry remains incomplete and non-cacheable while a
 later logical signature still produces `CL_VIRUS`; compiled logical-signature,
 interpreter/JIT, sanitizer, and production qualification remain open.
+
+## Raw matcher-root continuation after non-critical failure — 2026-08-22
+
+The target-specific raw matcher previously returned immediately from buffer
+and fmap scans on any non-clean result, so a non-critical target-root read,
+parser, or matcher failure could suppress the independent generic raw pass.
+Both raw ingress helpers now merge non-critical target-root failures, continue
+with the generic root, and retain the merged non-clean result; detections and
+critical failures still stop immediately. Static guards cover both paths;
+compiled fault-injection and production-signature qualification remain open.

@@ -960,3 +960,9 @@
   later logical detection. The focused regression is registered; compiled
   logical-signature, interpreter/JIT, sanitizer, and production qualification
   remain open.
+
+- Target-specific raw matcher failures in buffer and fmap scans now remain
+  fail-visible while non-critical failures continue into the independent
+  generic raw pass; detections and critical timeout/resource/I/O failures still
+  halt immediately. Static guards cover both raw ingress helpers; compiled
+  fault-injection and production-signature qualification remain open.

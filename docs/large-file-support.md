@@ -5719,3 +5719,12 @@ legacy-ABI incompatibility remains incomplete and non-cacheable without
 silencing a later detection. The focused regression and source guards cover
 this status contract; compiled logical-signature, interpreter/JIT, sanitizer,
 and production qualification remain release gates.
+
+## Raw matcher-root continuation after non-critical failure — 2026-08-22
+
+Target-specific raw matcher failures in buffer and fmap scans now remain
+fail-visible without suppressing the independent generic raw pass. Non-critical
+parser/read/matcher results are merged and scanning continues; detections and
+critical timeout/resource/I/O failures still halt immediately. Static guards
+cover both ingress helpers, while compiled fault-injection and
+production-signature qualification remain release gates.

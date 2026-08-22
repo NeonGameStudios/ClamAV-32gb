@@ -319,6 +319,7 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
 cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t offset, cli_ctx *ctx, cli_file_t ftype, struct cli_ac_data **acdata)
 {
     cl_error_t ret = CL_CLEAN;
+    cl_error_t status = CL_CLEAN;
     unsigned int i = 0, j = 0;
     struct cli_ac_data matcher_data;
     struct cli_matcher *generic_ac_root, *target_ac_root = NULL;
@@ -372,11 +373,13 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
         }
 
         /* Preserve matcher failures instead of allowing the generic root to
-         * turn a target-root resource, callback, timeout, or read failure
-         * into a clean buffer result. File-type results are not errors and
-         * may continue to the generic root. */
+         * turn a target-root failure into a clean buffer result. A
+         * non-critical target-root failure must not suppress the independent
+         * generic raw matcher; detections and critical failures still halt. */
         if (ret != CL_SUCCESS && ret < CL_TYPENO) {
-            return ret;
+            status = cli_merge_scan_status(status, ret);
+            if (cli_scan_status_is_critical(ret))
+                return status;
         }
 
         // reset virname back to NULL for matching with the generic AC root.
@@ -400,11 +403,14 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
             // no longer need our AC local matcher data (if using)
             cli_ac_freedata(&matcher_data);
         }
+
+        if (ret != CL_SUCCESS && ret < CL_TYPENO)
+            status = cli_merge_scan_status(status, ret);
     } else {
         ret = CL_SUCCESS;
     }
 
-    return ret;
+    return status;
 }
 
 /*
@@ -1375,6 +1381,8 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
 {
     const unsigned char *buff;
     cl_error_t ret = CL_CLEAN, type = CL_CLEAN;
+    cl_error_t status = CL_CLEAN;
+    cl_error_t current;
 
     cli_hash_type_t hash_type;
     bool need_hash[CLI_HASH_AVAIL_TYPES] = {false};
@@ -1632,31 +1640,39 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         if (target_ac_root) {
             const char *virname = NULL;
 
-            ret = matcher_run(target_ac_root, buff, bytes, &virname, &target_ac_data, offset,
+            current = matcher_run(target_ac_root, buff, bytes, &virname, &target_ac_data, offset,
                               &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
                               bm_offsets_table_initialized ? &bm_offsets_table : NULL,
                               &target_pcre_offsets_table, ctx);
-            /* Matcher failures must remain visible; only file-type results
-             * are allowed to continue to the next matcher root. */
-            if (ret != CL_SUCCESS && ret < CL_TYPENO) {
-                goto done;
+            /* Preserve target-root failures while allowing the independent
+             * generic raw matcher to run after non-critical errors. */
+            if (current != CL_SUCCESS && current < CL_TYPENO) {
+                status = cli_merge_scan_status(status, current);
+                if (cli_scan_status_is_critical(current)) {
+                    ret = current;
+                    goto done;
+                }
             }
         }
 
         if (!filetype_only && generic_ac_root) {
             const char *virname = NULL;
 
-            ret = matcher_run(generic_ac_root, buff, bytes, &virname, &generic_ac_data, offset,
+            current = matcher_run(generic_ac_root, buff, bytes, &virname, &generic_ac_data, offset,
                               &info, ftype, ftoffset, acmode, PCRE_SCAN_FMAP, acres, ctx->fmap,
                               NULL,
                               &generic_pcre_offsets_table, ctx);
             /* Do not let a resource, callback, timeout, or parser failure
              * disappear after the generic matcher has returned it. */
-            if (ret != CL_SUCCESS && ret < CL_TYPENO) {
-                goto done;
-            } else if ((acmode & AC_SCAN_FT) && ((cli_file_t)ret >= CL_TYPENO)) {
-                if (ret > type)
-                    type = ret;
+            if (current != CL_SUCCESS && current < CL_TYPENO) {
+                status = cli_merge_scan_status(status, current);
+                if (cli_scan_status_is_critical(current)) {
+                    ret = current;
+                    goto done;
+                }
+            } else if ((acmode & AC_SCAN_FT) && ((cli_file_t)current >= CL_TYPENO)) {
+                if (current > type)
+                    type = current;
             }
 
             /* if (bytes <= (maxpatlen * (offset!=0))), it means the last window finished the file hashing *
@@ -1748,6 +1764,8 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             }
         }
     }
+
+    ret = cli_merge_scan_status(status, ret);
 
     /*
      * Evaluate the logical expressions for clamav logical signatures and YARA rules.
