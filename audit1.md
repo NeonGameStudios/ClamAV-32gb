@@ -3292,3 +3292,16 @@ iteration, preserve `CL_ETIMEOUT` as an incomplete non-cacheable result, and
 use the existing temporary-file cleanup path on timeout. A direct
 expired-context regression and source guards cover parser entry; compiled
 BinHex/mail corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## RTF traversal deadline — 2026-08-22
+
+RTF's top-level document/fmap-chunk walk previously had no shared deadline
+checkpoint, allowing a large document to continue through parser state and
+embedded-object processing without a time-boundary check. The parser now
+checks at entry and before each bounded fmap chunk, preserves timeout as an
+incomplete non-cacheable result, and avoids classifying timeout as a callback
+read failure. Embedded-object cleanup now preserves a stronger timeout or
+operational error instead of overwriting it with a cleanup parser result. A
+direct expired-context regression and source guards cover parser entry;
+compiled RTF/OLE corpus, sanitizer, and Sonic1 qualification remain release
+gates.

@@ -252,6 +252,16 @@ static void rtf_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int faile
         *status = CL_EUNLINK;
 }
 
+static cl_error_t rtf_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
 {
     cl_error_t ret = CL_CLEAN;
@@ -584,8 +594,11 @@ static void rtf_cleanup_tmpdir(cli_ctx *ctx, const char *tempname, cl_error_t *s
 }
 
 #define SCAN_CLEANUP                                                                  \
-    if (state.cb_data && state.cb_end)                                                \
-        ret = state.cb_end(&state, ctx);                                              \
+    if (state.cb_data && state.cb_end) {                                              \
+        cl_error_t cleanup_ret = state.cb_end(&state, ctx);                           \
+        if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)                 \
+            ret = cleanup_ret;                                                        \
+    }                                                                                 \
     if (stack.elements != 0 || state.parse_state != PARSE_MAIN) {                     \
         cli_mark_scan_incomplete(ctx, "RTF document ended before parsing completed"); \
         if (ret == CL_SUCCESS)                                                        \
@@ -615,6 +628,10 @@ int cli_scanrtf(cli_ctx* ctx)
     int fmap_read_failed = 0;
 
     cli_dbgmsg("in cli_scanrtf()\n");
+
+    ret = rtf_checktimelimit(ctx, "RTF inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
 
     memset(main_symbols, 0, 256);
     main_symbols['{']  = 1;
@@ -657,7 +674,15 @@ int cli_scanrtf(cli_ctx* ctx)
 
     init_rtf_state(&state);
 
-    for (offset = 0; (ptr = fmap_need_off_once_len(ctx->fmap, offset, BUFF_SIZE, &bread)) && bread; offset += bread) {
+    for (offset = 0;; offset += bread) {
+        ret = rtf_checktimelimit(ctx, "RTF traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            break;
+
+        ptr = fmap_need_off_once_len(ctx->fmap, offset, BUFF_SIZE, &bread);
+        if (!ptr || !bread)
+            break;
+
         ptr_end = ptr + bread;
         while (ptr < ptr_end) {
             switch (state.parse_state) {
@@ -792,7 +817,7 @@ int cli_scanrtf(cli_ctx* ctx)
      * read, but an in-range callback failure also terminates the loop. Keep
      * those cases distinct so an operational failure cannot look like clean
      * EOF after the cleanup macro runs. */
-    if (offset < ctx->fmap->len) {
+    if (ret != CL_ETIMEOUT && offset < ctx->fmap->len) {
         cli_mark_scan_incomplete(ctx, "RTF input could not be read completely");
         fmap_read_failed = 1;
     }

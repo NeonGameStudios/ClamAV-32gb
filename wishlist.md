@@ -133,6 +133,8 @@
 - RTF embedded-object probing now carries its two-byte header across 8 KiB
   reader boundaries instead of reading beyond a one-byte callback; the
   split-boundary regression is fail-visible and non-cacheable.
+- RTF document and fmap-chunk traversal now honor the shared scan deadline;
+  add compiled timeout-injection and long-document/object corpus qualification.
 - Optional fuzzy-image matching now has an explicit unsupported boundary for
   images above the individual-allocation ceiling; it cannot silently skip the
   detector and report a clean scan.
