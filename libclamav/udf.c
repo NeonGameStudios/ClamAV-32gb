@@ -95,6 +95,10 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
     }
     temporary_reserved = (uint64_t)dataLen;
 
+    status = udf_checktimelimit(ctx, "UDF file extent temporary admission reached the configured time limit");
+    if (status != CL_SUCCESS)
+        goto done;
+
     /* Not sure if I care about the name that is actually created. */
     if (cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, fileName, &tmpf, &fd) != CL_SUCCESS) {
         cli_warnmsg("writeWholeFile: Can't create temp file\n");
@@ -126,6 +130,9 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
                 status = CL_EREAD;
                 goto done;
             }
+            status = udf_checktimelimit(ctx, "UDF file extent output reached the configured time limit");
+            if (status != CL_SUCCESS)
+                goto done;
             if (cli_writen(fd, buffer, chunk) != chunk) {
                 cli_warnmsg("writeWholeFile: Can't write to file %s\n", tmpf);
                 cli_mark_scan_incomplete(ctx, "UDF file extent could not be written completely");

@@ -2595,12 +2595,12 @@ fixed-width-integer	libclamav/ishield.c	99	    uint16_t ordinal_id;
 fixed-width-integer	libclamav/iso9660.c	101	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/iso9660.c	108	    if (cli_scan_reserve_temporary(iso->ctx, (uint64_t)len) != CL_SUCCESS) {
 fixed-width-integer	libclamav/iso9660.c	113	    temporary_reserved = (uint64_t)len;
-fixed-width-integer	libclamav/iso9660.c	300	                uint64_t fileoff64 = (uint64_t)cli_readint32(dir + 2) + dir[1];
-fixed-width-integer	libclamav/iso9660.c	358	    uint32_t nextJoliet = 0;
-fixed-width-integer	libclamav/iso9660.c	359	    uint64_t root_directory_block64;
-fixed-width-integer	libclamav/iso9660.c	409	        uint64_t descriptor_offset64 = (uint64_t)iso.base_offset + (uint64_t)i * iso.sectsz;
-fixed-width-integer	libclamav/iso9660.c	517	        root_directory_block64 = (uint64_t)cli_readint32(privol + 156 + 2) + privol[156 + 1];
+fixed-width-integer	libclamav/iso9660.c	311	                uint64_t fileoff64 = (uint64_t)cli_readint32(dir + 2) + dir[1];
+fixed-width-integer	libclamav/iso9660.c	369	    uint32_t nextJoliet = 0;
+fixed-width-integer	libclamav/iso9660.c	370	    uint64_t root_directory_block64;
+fixed-width-integer	libclamav/iso9660.c	420	        uint64_t descriptor_offset64 = (uint64_t)iso.base_offset + (uint64_t)i * iso.sectsz;
 fixed-width-integer	libclamav/iso9660.c	52	    uint64_t available;
+fixed-width-integer	libclamav/iso9660.c	528	        root_directory_block64 = (uint64_t)cli_readint32(privol + 156 + 2) + privol[156 + 1];
 fixed-width-integer	libclamav/iso9660.c	53	    uint64_t logical_offset;
 fixed-width-integer	libclamav/iso9660.c	54	    uint64_t block_offset;
 fixed-width-integer	libclamav/iso9660.c	55	    uint64_t absolute_offset;
@@ -3226,9 +3226,9 @@ fixed-width-integer	libclamav/msdoc.h	158	    uint16_t codepage;
 fixed-width-integer	libclamav/msdoc.h	34	#define sum16_endian_convert(v) le16_to_host((uint16_t)(v))
 fixed-width-integer	libclamav/msdoc.h	35	#define sum32_endian_convert(v) le32_to_host((uint32_t)(v))
 fixed-width-integer	libclamav/msdoc.h	36	#define sum64_endian_convert(v) le64_to_host((uint64_t)(v))
-fixed-width-integer	libclamav/msexpand.c	114	cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/msexpand.c	152	    if ((status = cli_scan_reserve_temporary(ctx, (uint64_t)fsize)) != CL_SUCCESS) {
-fixed-width-integer	libclamav/msexpand.c	156	    *temporary_reserved = (uint64_t)fsize;
+fixed-width-integer	libclamav/msexpand.c	117	cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/msexpand.c	155	    if ((status = cli_scan_reserve_temporary(ctx, (uint64_t)fsize)) != CL_SUCCESS) {
+fixed-width-integer	libclamav/msexpand.c	159	    *temporary_reserved = (uint64_t)fsize;
 fixed-width-integer	libclamav/msexpand.c	60	    uint32_t magic1;
 fixed-width-integer	libclamav/msexpand.c	61	    uint32_t magic2;
 fixed-width-integer	libclamav/msexpand.c	62	    uint16_t magic3;
@@ -4456,89 +4456,89 @@ fixed-width-integer	libclamav/scanners.h	78	    uint64_t temporary_bytes_reserve
 fixed-width-integer	libclamav/scanners.h	93	    uint64_t *scanned_out,
 fixed-width-integer	libclamav/sf_base64decode.c	6	 ** 9/11/2013 - Changed uint32_t to size_t
 fixed-width-integer	libclamav/sf_base64decode.h	6	 ** 9/11/2013 - Changed uint32_t to size_t
-fixed-width-integer	libclamav/sis.c	1005	    uint32_t smax;
-fixed-width-integer	libclamav/sis.c	1006	    uint32_t sleft;
-fixed-width-integer	libclamav/sis.c	1008	    uint32_t fsize[7];
-fixed-width-integer	libclamav/sis.c	1027	static inline int getd(struct SISTREAM *s, uint32_t *v)
-fixed-width-integer	libclamav/sis.c	1054	    uint32_t *fsize = &s->fsize[s->level];
-fixed-width-integer	libclamav/sis.c	1068	static inline int getfield(struct SISTREAM *s, uint32_t *field)
-fixed-width-integer	libclamav/sis.c	1082	static inline int skip(struct SISTREAM *s, uint32_t size)
-fixed-width-integer	libclamav/sis.c	1090	        if (seekto < 0) { /* in case sizeof(long)==sizeof(uint32_t) */
-fixed-width-integer	libclamav/sis.c	1121	    uint32_t field, optst[] = {T_CONTROLLERCHECKSUM, T_DATACHECKSUM, T_COMPRESSED};
-fixed-width-integer	libclamav/sis.c	1167	            uint32_t atype;
-fixed-width-integer	libclamav/sis.c	1192	                        uint32_t usize, usizeh, len;
-fixed-width-integer	libclamav/sis.c	1195	                        uint64_t member_input_size;
-fixed-width-integer	libclamav/sis.c	1196	                        uint64_t member_output_size;
-fixed-width-integer	libclamav/sis.c	1224	                            member_input_size  = field ? (uint64_t)s->fsize[s->level] : (uint64_t)len;
-fixed-width-integer	libclamav/sis.c	1225	                            member_output_size = field ? (uint64_t)usize : (uint64_t)len;
-fixed-width-integer	libclamav/sis.c	1350	/*     if((int32_t)fsz<0) fsz=0; \ */
+fixed-width-integer	libclamav/sis.c	1015	    uint32_t smax;
+fixed-width-integer	libclamav/sis.c	1016	    uint32_t sleft;
+fixed-width-integer	libclamav/sis.c	1018	    uint32_t fsize[7];
+fixed-width-integer	libclamav/sis.c	1037	static inline int getd(struct SISTREAM *s, uint32_t *v)
+fixed-width-integer	libclamav/sis.c	1064	    uint32_t *fsize = &s->fsize[s->level];
+fixed-width-integer	libclamav/sis.c	1078	static inline int getfield(struct SISTREAM *s, uint32_t *field)
+fixed-width-integer	libclamav/sis.c	1092	static inline int skip(struct SISTREAM *s, uint32_t size)
+fixed-width-integer	libclamav/sis.c	1100	        if (seekto < 0) { /* in case sizeof(long)==sizeof(uint32_t) */
+fixed-width-integer	libclamav/sis.c	1131	    uint32_t field, optst[] = {T_CONTROLLERCHECKSUM, T_DATACHECKSUM, T_COMPRESSED};
+fixed-width-integer	libclamav/sis.c	1177	            uint32_t atype;
+fixed-width-integer	libclamav/sis.c	1202	                        uint32_t usize, usizeh, len;
+fixed-width-integer	libclamav/sis.c	1205	                        uint64_t member_input_size;
+fixed-width-integer	libclamav/sis.c	1206	                        uint64_t member_output_size;
+fixed-width-integer	libclamav/sis.c	1234	                            member_input_size  = field ? (uint64_t)s->fsize[s->level] : (uint64_t)len;
+fixed-width-integer	libclamav/sis.c	1235	                            member_output_size = field ? (uint64_t)usize : (uint64_t)len;
 fixed-width-integer	libclamav/sis.c	136	static cl_error_t sis_stream_member_to_fd(cli_ctx *ctx, fmap_t *map, uint64_t input_offset,
+fixed-width-integer	libclamav/sis.c	1360	/*     if((int32_t)fsz<0) fsz=0; \ */
 fixed-width-integer	libclamav/sis.c	137	                                          uint64_t input_size, uint64_t output_size, bool compressed, int fd)
 fixed-width-integer	libclamav/sis.c	141	    uint64_t input_pos         = input_offset;
-fixed-width-integer	libclamav/sis.c	1415	/* static void stringifycbuff(uint8_t *ptr, uint32_t len) { */
-fixed-width-integer	libclamav/sis.c	1416	/*   uint32_t i; */
 fixed-width-integer	libclamav/sis.c	142	    uint64_t input_remaining   = input_size;
+fixed-width-integer	libclamav/sis.c	1425	/* static void stringifycbuff(uint8_t *ptr, uint32_t len) { */
+fixed-width-integer	libclamav/sis.c	1426	/*   uint32_t i; */
 fixed-width-integer	libclamav/sis.c	143	    uint64_t output_total      = 0;
-fixed-width-integer	libclamav/sis.c	1431	/*   uint32_t uid[4]; */
-fixed-width-integer	libclamav/sis.c	1434	/*   uint32_t field, fsz; */
-fixed-width-integer	libclamav/sis.c	1444	/*     uint32_t expect; */
-fixed-width-integer	libclamav/sis.c	1480	/*     uint32_t totalsize; */
+fixed-width-integer	libclamav/sis.c	1441	/*   uint32_t uid[4]; */
+fixed-width-integer	libclamav/sis.c	1444	/*   uint32_t field, fsz; */
+fixed-width-integer	libclamav/sis.c	1454	/*     uint32_t expect; */
+fixed-width-integer	libclamav/sis.c	1490	/*     uint32_t totalsize; */
 fixed-width-integer	libclamav/sis.c	153	    if (input_offset > (uint64_t)map->len || input_size > (uint64_t)map->len - input_offset) {
-fixed-width-integer	libclamav/sis.c	1557	/* 	uint32_t method; */
-fixed-width-integer	libclamav/sis.c	1558	/* 	uint32_t usize; */
-fixed-width-integer	libclamav/sis.c	1559	/* 	uint32_t misc; */
-fixed-width-integer	libclamav/sis.c	1636	/*       uint32_t maj,min,bld; */
-fixed-width-integer	libclamav/sis.c	238	            if (output_total > output_size || (uint64_t)produced > output_size - output_total) {
-fixed-width-integer	libclamav/sis.c	297	    uint32_t uid[4];
-fixed-width-integer	libclamav/sis.c	436	static cl_error_t getsistring(cli_ctx *ctx, fmap_t *map, uint32_t ptr, uint32_t len, char **name_out)
-fixed-width-integer	libclamav/sis.c	439	    uint32_t i;
-fixed-width-integer	libclamav/sis.c	473	static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
-fixed-width-integer	libclamav/sis.c	475	    uint32_t *values;
-fixed-width-integer	libclamav/sis.c	476	    uint32_t *ptrs;
-fixed-width-integer	libclamav/sis.c	477	    uint32_t *lens;
-fixed-width-integer	libclamav/sis.c	481	    const uint32_t len = sizeof(uint32_t) * langs * 2;
-fixed-width-integer	libclamav/sis.c	532	        uint16_t filesum;
-fixed-width-integer	libclamav/sis.c	533	        uint16_t langs;
-fixed-width-integer	libclamav/sis.c	534	        uint16_t files;
-fixed-width-integer	libclamav/sis.c	535	        uint16_t deps;
-fixed-width-integer	libclamav/sis.c	536	        uint16_t ulangs;
-fixed-width-integer	libclamav/sis.c	537	        uint16_t instfiles;
-fixed-width-integer	libclamav/sis.c	538	        uint16_t drive;
-fixed-width-integer	libclamav/sis.c	539	        uint16_t caps;
-fixed-width-integer	libclamav/sis.c	540	        uint32_t version;
-fixed-width-integer	libclamav/sis.c	541	        uint16_t flags;
-fixed-width-integer	libclamav/sis.c	542	        uint16_t type;
-fixed-width-integer	libclamav/sis.c	543	        uint16_t verhi;
-fixed-width-integer	libclamav/sis.c	544	        uint16_t verlo;
-fixed-width-integer	libclamav/sis.c	545	        uint32_t versub;
-fixed-width-integer	libclamav/sis.c	546	        uint32_t plangs;
-fixed-width-integer	libclamav/sis.c	547	        uint32_t pfiles;
-fixed-width-integer	libclamav/sis.c	548	        uint32_t pdeps;
-fixed-width-integer	libclamav/sis.c	549	        uint32_t pcerts;
-fixed-width-integer	libclamav/sis.c	550	        uint32_t pnames;
-fixed-width-integer	libclamav/sis.c	551	        uint32_t psig;
-fixed-width-integer	libclamav/sis.c	552	        uint32_t pcaps;
-fixed-width-integer	libclamav/sis.c	553	        uint32_t uspace;
-fixed-width-integer	libclamav/sis.c	554	        uint32_t nspace;
-fixed-width-integer	libclamav/sis.c	557	    const uint16_t *llangs;
-fixed-width-integer	libclamav/sis.c	559	    uint32_t sleft = 0, smax = 0;
-fixed-width-integer	libclamav/sis.c	563	    uint32_t *ptrs          = NULL;
-fixed-width-integer	libclamav/sis.c	605	    if (!(llangs = sis_need_off(ctx, pos, sis.langs * sizeof(uint16_t), &status,
-fixed-width-integer	libclamav/sis.c	611	    pos += sis.langs * sizeof(uint16_t);
-fixed-width-integer	libclamav/sis.c	649	                uint32_t uid;
-fixed-width-integer	libclamav/sis.c	650	                uint16_t verhi;
-fixed-width-integer	libclamav/sis.c	651	                uint16_t verlo;
-fixed-width-integer	libclamav/sis.c	652	                uint32_t versub;
-fixed-width-integer	libclamav/sis.c	659	            pos = sis.pdeps + i * (sizeof(dep) + sis.langs * 2 * sizeof(uint32_t));
-fixed-width-integer	libclamav/sis.c	695	        uint32_t pkgtype, fcount = 1;
-fixed-width-integer	libclamav/sis.c	696	        uint32_t j;
-fixed-width-integer	libclamav/sis.c	709	                uint32_t ftype, options, ssname, psname, sdname, pdname;
-fixed-width-integer	libclamav/sis.c	711	                uint32_t *lens, *olens;
-fixed-width-integer	libclamav/sis.c	770	                if (!(ptrs = cli_max_malloc(fcount * sizeof(uint32_t) * 3))) {
-fixed-width-integer	libclamav/sis.c	803	                        uint64_t member_output_size;
-fixed-width-integer	libclamav/sis.c	841	                        member_output_size = compd ? (uint64_t)olens[j] : (uint64_t)lens[j];
-fixed-width-integer	libclamav/sis.c	901	                fcount = 2 * sizeof(uint32_t);
-fixed-width-integer	libclamav/sis.c	907	                fcount *= sis.langs * 2 * sizeof(uint32_t);
+fixed-width-integer	libclamav/sis.c	1567	/* 	uint32_t method; */
+fixed-width-integer	libclamav/sis.c	1568	/* 	uint32_t usize; */
+fixed-width-integer	libclamav/sis.c	1569	/* 	uint32_t misc; */
+fixed-width-integer	libclamav/sis.c	1646	/*       uint32_t maj,min,bld; */
+fixed-width-integer	libclamav/sis.c	243	            if (output_total > output_size || (uint64_t)produced > output_size - output_total) {
+fixed-width-integer	libclamav/sis.c	307	    uint32_t uid[4];
+fixed-width-integer	libclamav/sis.c	446	static cl_error_t getsistring(cli_ctx *ctx, fmap_t *map, uint32_t ptr, uint32_t len, char **name_out)
+fixed-width-integer	libclamav/sis.c	449	    uint32_t i;
+fixed-width-integer	libclamav/sis.c	483	static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
+fixed-width-integer	libclamav/sis.c	485	    uint32_t *values;
+fixed-width-integer	libclamav/sis.c	486	    uint32_t *ptrs;
+fixed-width-integer	libclamav/sis.c	487	    uint32_t *lens;
+fixed-width-integer	libclamav/sis.c	491	    const uint32_t len = sizeof(uint32_t) * langs * 2;
+fixed-width-integer	libclamav/sis.c	542	        uint16_t filesum;
+fixed-width-integer	libclamav/sis.c	543	        uint16_t langs;
+fixed-width-integer	libclamav/sis.c	544	        uint16_t files;
+fixed-width-integer	libclamav/sis.c	545	        uint16_t deps;
+fixed-width-integer	libclamav/sis.c	546	        uint16_t ulangs;
+fixed-width-integer	libclamav/sis.c	547	        uint16_t instfiles;
+fixed-width-integer	libclamav/sis.c	548	        uint16_t drive;
+fixed-width-integer	libclamav/sis.c	549	        uint16_t caps;
+fixed-width-integer	libclamav/sis.c	550	        uint32_t version;
+fixed-width-integer	libclamav/sis.c	551	        uint16_t flags;
+fixed-width-integer	libclamav/sis.c	552	        uint16_t type;
+fixed-width-integer	libclamav/sis.c	553	        uint16_t verhi;
+fixed-width-integer	libclamav/sis.c	554	        uint16_t verlo;
+fixed-width-integer	libclamav/sis.c	555	        uint32_t versub;
+fixed-width-integer	libclamav/sis.c	556	        uint32_t plangs;
+fixed-width-integer	libclamav/sis.c	557	        uint32_t pfiles;
+fixed-width-integer	libclamav/sis.c	558	        uint32_t pdeps;
+fixed-width-integer	libclamav/sis.c	559	        uint32_t pcerts;
+fixed-width-integer	libclamav/sis.c	560	        uint32_t pnames;
+fixed-width-integer	libclamav/sis.c	561	        uint32_t psig;
+fixed-width-integer	libclamav/sis.c	562	        uint32_t pcaps;
+fixed-width-integer	libclamav/sis.c	563	        uint32_t uspace;
+fixed-width-integer	libclamav/sis.c	564	        uint32_t nspace;
+fixed-width-integer	libclamav/sis.c	567	    const uint16_t *llangs;
+fixed-width-integer	libclamav/sis.c	569	    uint32_t sleft = 0, smax = 0;
+fixed-width-integer	libclamav/sis.c	573	    uint32_t *ptrs          = NULL;
+fixed-width-integer	libclamav/sis.c	615	    if (!(llangs = sis_need_off(ctx, pos, sis.langs * sizeof(uint16_t), &status,
+fixed-width-integer	libclamav/sis.c	621	    pos += sis.langs * sizeof(uint16_t);
+fixed-width-integer	libclamav/sis.c	659	                uint32_t uid;
+fixed-width-integer	libclamav/sis.c	660	                uint16_t verhi;
+fixed-width-integer	libclamav/sis.c	661	                uint16_t verlo;
+fixed-width-integer	libclamav/sis.c	662	                uint32_t versub;
+fixed-width-integer	libclamav/sis.c	669	            pos = sis.pdeps + i * (sizeof(dep) + sis.langs * 2 * sizeof(uint32_t));
+fixed-width-integer	libclamav/sis.c	705	        uint32_t pkgtype, fcount = 1;
+fixed-width-integer	libclamav/sis.c	706	        uint32_t j;
+fixed-width-integer	libclamav/sis.c	719	                uint32_t ftype, options, ssname, psname, sdname, pdname;
+fixed-width-integer	libclamav/sis.c	721	                uint32_t *lens, *olens;
+fixed-width-integer	libclamav/sis.c	780	                if (!(ptrs = cli_max_malloc(fcount * sizeof(uint32_t) * 3))) {
+fixed-width-integer	libclamav/sis.c	813	                        uint64_t member_output_size;
+fixed-width-integer	libclamav/sis.c	851	                        member_output_size = compd ? (uint64_t)olens[j] : (uint64_t)lens[j];
+fixed-width-integer	libclamav/sis.c	911	                fcount = 2 * sizeof(uint32_t);
+fixed-width-integer	libclamav/sis.c	917	                fcount *= sis.langs * 2 * sizeof(uint32_t);
 fixed-width-integer	libclamav/special.c	108	static uint32_t riff_endian_convert_32(uint32_t value, int big_endian)
 fixed-width-integer	libclamav/special.c	134	    if (offset < 0 || (uint64_t)offset > (uint64_t)map->len ||
 fixed-width-integer	libclamav/special.c	148	    uint32_t cache_buf;
@@ -4674,33 +4674,33 @@ fixed-width-integer	libclamav/type_desc.h	59	typedef int64_t (*cli_apicall_ptrbu
 fixed-width-integer	libclamav/type_desc.h	63	    uint16_t type; /* type id in cli_apicall_types array */
 fixed-width-integer	libclamav/type_desc.h	64	    uint16_t idx;
 fixed-width-integer	libclamav/type_desc.h	71	    uint16_t type;
-fixed-width-integer	libclamav/udf.c	179	                                    uint16_t icbFlags, udf_extent *extent)
-fixed-width-integer	libclamav/udf.c	182	    uint32_t partitionStartingLocation = 0;
-fixed-width-integer	libclamav/udf.c	183	    uint32_t logicalBlockSize          = 0;
-fixed-width-integer	libclamav/udf.c	184	    uint64_t offset64                  = 0;
-fixed-width-integer	libclamav/udf.c	185	    uint64_t partitionOffset           = 0;
-fixed-width-integer	libclamav/udf.c	186	    uint64_t extentOffset              = 0;
-fixed-width-integer	libclamav/udf.c	187	    uint32_t rawLength                 = 0;
-fixed-width-integer	libclamav/udf.c	188	    uint32_t extentType                = 0;
-fixed-width-integer	libclamav/udf.c	189	    uint32_t extentBlock               = 0;
-fixed-width-integer	libclamav/udf.c	190	    uint32_t recordedLength            = 0;
-fixed-width-integer	libclamav/udf.c	191	    uint32_t extentInformationLength = 0;
-fixed-width-integer	libclamav/udf.c	276	    partitionOffset = (uint64_t)partitionStartingLocation * logicalBlockSize;
-fixed-width-integer	libclamav/udf.c	277	    extentOffset    = (uint64_t)extentBlock * logicalBlockSize;
-fixed-width-integer	libclamav/udf.c	298	                              uint16_t icbFlags, uint64_t information_length,
-fixed-width-integer	libclamav/udf.c	305	    uint64_t total_length = 0;
-fixed-width-integer	libclamav/udf.c	409	    uint16_t tagId              = getDescriptorTagId(&fed->tag);
+fixed-width-integer	libclamav/udf.c	1004	    uint16_t tagId        = getDescriptorTagId((DescriptorTag *)buffer);
+fixed-width-integer	libclamav/udf.c	186	                                    uint16_t icbFlags, udf_extent *extent)
+fixed-width-integer	libclamav/udf.c	189	    uint32_t partitionStartingLocation = 0;
+fixed-width-integer	libclamav/udf.c	190	    uint32_t logicalBlockSize          = 0;
+fixed-width-integer	libclamav/udf.c	191	    uint64_t offset64                  = 0;
+fixed-width-integer	libclamav/udf.c	192	    uint64_t partitionOffset           = 0;
+fixed-width-integer	libclamav/udf.c	193	    uint64_t extentOffset              = 0;
+fixed-width-integer	libclamav/udf.c	194	    uint32_t rawLength                 = 0;
+fixed-width-integer	libclamav/udf.c	195	    uint32_t extentType                = 0;
+fixed-width-integer	libclamav/udf.c	196	    uint32_t extentBlock               = 0;
+fixed-width-integer	libclamav/udf.c	197	    uint32_t recordedLength            = 0;
+fixed-width-integer	libclamav/udf.c	198	    uint32_t extentInformationLength = 0;
+fixed-width-integer	libclamav/udf.c	283	    partitionOffset = (uint64_t)partitionStartingLocation * logicalBlockSize;
+fixed-width-integer	libclamav/udf.c	284	    extentOffset    = (uint64_t)extentBlock * logicalBlockSize;
+fixed-width-integer	libclamav/udf.c	305	                              uint16_t icbFlags, uint64_t information_length,
+fixed-width-integer	libclamav/udf.c	312	    uint64_t total_length = 0;
+fixed-width-integer	libclamav/udf.c	416	    uint16_t tagId              = getDescriptorTagId(&fed->tag);
 fixed-width-integer	libclamav/udf.c	75	                                 size_t extent_count, uint64_t dataLen)
 fixed-width-integer	libclamav/udf.c	80	    uint64_t copied             = 0;
 fixed-width-integer	libclamav/udf.c	81	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/udf.c	883	    uint32_t cnt;
-fixed-width-integer	libclamav/udf.c	885	    uint32_t capacity;
-fixed-width-integer	libclamav/udf.c	892	    uint32_t i;
-fixed-width-integer	libclamav/udf.c	903	    uint32_t capacity = POINTER_LIST_INCREMENT;
-fixed-width-integer	libclamav/udf.c	927	        uint32_t newCapacity = pl->capacity + POINTER_LIST_INCREMENT;
-fixed-width-integer	libclamav/udf.c	951	    uint16_t tagId        = getDescriptorTagId((DescriptorTag *)buffer);
+fixed-width-integer	libclamav/udf.c	890	    uint32_t cnt;
+fixed-width-integer	libclamav/udf.c	892	    uint32_t capacity;
+fixed-width-integer	libclamav/udf.c	899	    uint32_t i;
+fixed-width-integer	libclamav/udf.c	910	    uint32_t capacity = POINTER_LIST_INCREMENT;
+fixed-width-integer	libclamav/udf.c	934	        uint32_t newCapacity = pl->capacity + POINTER_LIST_INCREMENT;
+fixed-width-integer	libclamav/udf.c	958	    uint16_t tagId        = getDescriptorTagId((DescriptorTag *)buffer);
 fixed-width-integer	libclamav/udf.c	96	    temporary_reserved = (uint64_t)dataLen;
-fixed-width-integer	libclamav/udf.c	997	    uint16_t tagId        = getDescriptorTagId((DescriptorTag *)buffer);
 fixed-width-integer	libclamav/udf.h	121	    uint32_t volumeDescriptorSequenceNumber;
 fixed-width-integer	libclamav/udf.h	122	    uint32_t primaryVolumeDescriptorNumber;
 fixed-width-integer	libclamav/udf.h	124	    uint16_t volumeSequenceNumber;
@@ -4919,8 +4919,8 @@ fixed-width-integer	libclamav/untar.c	102	    uint64_t checksum;
 fixed-width-integer	libclamav/untar.c	123	                                          bool scan, uint64_t temporary_reserved)
 fixed-width-integer	libclamav/untar.c	202	    uint64_t size_value = 0;
 fixed-width-integer	libclamav/untar.c	208	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/untar.c	416	            ret = cli_scan_reserve_temporary(ctx, (uint64_t)size);
-fixed-width-integer	libclamav/untar.c	421	            temporary_reserved = (uint64_t)size;
+fixed-width-integer	libclamav/untar.c	420	            ret = cli_scan_reserve_temporary(ctx, (uint64_t)size);
+fixed-width-integer	libclamav/untar.c	425	            temporary_reserved = (uint64_t)size;
 fixed-width-integer	libclamav/untar.c	62	octal(const char *str, uint64_t *value)
 fixed-width-integer	libclamav/untar.c	64	    uint64_t ret = 0;
 fixed-width-integer	libclamav/untar.c	74	        uint64_t digit = (uint64_t)(*str - '0');
@@ -9941,25 +9941,25 @@ native-width-integer	libclamav/ishield.c	994	    int i;
 native-width-integer	libclamav/ishield.h	27	cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset);
 native-width-integer	libclamav/ishield.h	28	cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off);
 native-width-integer	libclamav/ishield.h	29	cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz);
-native-width-integer	libclamav/iso9660.c	119	        unsigned int todo;
-native-width-integer	libclamav/iso9660.c	175	static char *iso_string(iso9660_t *iso, const void *src, unsigned int len)
-native-width-integer	libclamav/iso9660.c	203	static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int len)
-native-width-integer	libclamav/iso9660.c	216	        unsigned int dirsz;
-native-width-integer	libclamav/iso9660.c	257	            unsigned int entrysz, fileoff, filesz, name_len;
-native-width-integer	libclamav/iso9660.c	293	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
-native-width-integer	libclamav/iso9660.c	305	                fileoff = (unsigned int)fileoff64;
+native-width-integer	libclamav/iso9660.c	125	        unsigned int todo;
+native-width-integer	libclamav/iso9660.c	186	static char *iso_string(iso9660_t *iso, const void *src, unsigned int len)
+native-width-integer	libclamav/iso9660.c	214	static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int len)
+native-width-integer	libclamav/iso9660.c	227	        unsigned int dirsz;
+native-width-integer	libclamav/iso9660.c	268	            unsigned int entrysz, fileoff, filesz, name_len;
+native-width-integer	libclamav/iso9660.c	304	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
+native-width-integer	libclamav/iso9660.c	316	                fileoff = (unsigned int)fileoff64;
 native-width-integer	libclamav/iso9660.c	34	    size_t base_offset;
-native-width-integer	libclamav/iso9660.c	348	cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
 native-width-integer	libclamav/iso9660.c	35	    unsigned int blocksz;
-native-width-integer	libclamav/iso9660.c	355	    int i;
+native-width-integer	libclamav/iso9660.c	359	cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
 native-width-integer	libclamav/iso9660.c	36	    unsigned int sectsz;
+native-width-integer	libclamav/iso9660.c	366	    int i;
 native-width-integer	libclamav/iso9660.c	37	    unsigned int fileno;
-native-width-integer	libclamav/iso9660.c	371	        /* Need 16 sectors at least 2048 bytes long */
 native-width-integer	libclamav/iso9660.c	38	    unsigned int joliet;
-native-width-integer	libclamav/iso9660.c	410	        size_t descriptor_offset;
-native-width-integer	libclamav/iso9660.c	414	        descriptor_offset = (size_t)descriptor_offset64;
+native-width-integer	libclamav/iso9660.c	382	        /* Need 16 sectors at least 2048 bytes long */
+native-width-integer	libclamav/iso9660.c	421	        size_t descriptor_offset;
+native-width-integer	libclamav/iso9660.c	425	        descriptor_offset = (size_t)descriptor_offset64;
 native-width-integer	libclamav/iso9660.c	49	static const void *needblock(const iso9660_t *iso, unsigned int block, int temp, cl_error_t *read_status)
-native-width-integer	libclamav/iso9660.c	531	        ret = iso_parse_dir(&iso, (unsigned int)root_directory_block64, cli_readint32(privol + 156 + 10));
+native-width-integer	libclamav/iso9660.c	542	        ret = iso_parse_dir(&iso, (unsigned int)root_directory_block64, cli_readint32(privol + 156 + 10));
 native-width-integer	libclamav/iso9660.c	56	    unsigned int blocks_per_sect;
 native-width-integer	libclamav/iso9660.c	88	                                 ? fmap_need_off_once(ctx->fmap, (size_t)absolute_offset, iso->blocksz)
 native-width-integer	libclamav/iso9660.c	89	                                 : fmap_need_off(ctx->fmap, (size_t)absolute_offset, iso->blocksz);
@@ -10882,12 +10882,12 @@ native-width-integer	libclamav/msdoc.h	153	    size_t maplen;
 native-width-integer	libclamav/msdoc.h	159	    int writecp;
 native-width-integer	libclamav/msdoc.h	165	    int toval;
 native-width-integer	libclamav/msdoc.h	169	int cli_ole2_summary_json(cli_ctx *ctx, int fd, int mode, const char *filepath);
-native-width-integer	libclamav/msexpand.c	114	cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
-native-width-integer	libclamav/msexpand.c	121	    unsigned int j = B_SIZE - 16, k, l, r = 0, w = 0, rbytes = 0, wbytes = 0;
-native-width-integer	libclamav/msexpand.c	123	    off_t cur_off = sizeof(*hdr);
-native-width-integer	libclamav/msexpand.c	124	    unsigned int fsize;
-native-width-integer	libclamav/msexpand.c	126	    size_t ret;
-native-width-integer	libclamav/msexpand.c	95	    if (ret == (size_t)-1 || (unsigned int)ret != w) {                                        \
+native-width-integer	libclamav/msexpand.c	117	cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
+native-width-integer	libclamav/msexpand.c	124	    unsigned int j = B_SIZE - 16, k, l, r = 0, w = 0, rbytes = 0, wbytes = 0;
+native-width-integer	libclamav/msexpand.c	126	    off_t cur_off = sizeof(*hdr);
+native-width-integer	libclamav/msexpand.c	127	    unsigned int fsize;
+native-width-integer	libclamav/msexpand.c	129	    size_t ret;
+native-width-integer	libclamav/msexpand.c	98	    if (ret == (size_t)-1 || (unsigned int)ret != w) {                                        \
 native-width-integer	libclamav/msexpand.h	29	cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved);
 native-width-integer	libclamav/msxml.c	112	                 (long long unsigned)cbdata->mappos, (long long unsigned)(cbdata->mappos + cbdata->winsize),
 native-width-integer	libclamav/msxml.c	113	                 (long long unsigned)cbdata->map->len);
@@ -12958,60 +12958,60 @@ native-width-integer	libclamav/sf_base64decode.c	65	    size_t max_base64_chars;
 native-width-integer	libclamav/sf_base64decode.c	67	    int error = 0;
 native-width-integer	libclamav/sf_base64decode.h	30	int sf_base64decode(uint8_t *, size_t, uint8_t *, size_t, size_t *);
 native-width-integer	libclamav/sf_base64decode.h	6	 ** 9/11/2013 - Changed uint32_t to size_t
-native-width-integer	libclamav/sis.c	1003	    size_t pos;
-native-width-integer	libclamav/sis.c	1007	    long fnext[7];
-native-width-integer	libclamav/sis.c	1009	    unsigned int level;
-native-width-integer	libclamav/sis.c	1010	    int incomplete;
-native-width-integer	libclamav/sis.c	1027	static inline int getd(struct SISTREAM *s, uint32_t *v)
-native-width-integer	libclamav/sis.c	1030	        size_t nread;
-native-width-integer	libclamav/sis.c	1033	        if (nread == (size_t)-1) {
-native-width-integer	libclamav/sis.c	1052	static inline int getsize(struct SISTREAM *s)
-native-width-integer	libclamav/sis.c	1068	static inline int getfield(struct SISTREAM *s, uint32_t *field)
-native-width-integer	libclamav/sis.c	1070	    int ret;
-native-width-integer	libclamav/sis.c	1082	static inline int skip(struct SISTREAM *s, uint32_t size)
-native-width-integer	libclamav/sis.c	1084	    long seekto;
-native-width-integer	libclamav/sis.c	1090	        if (seekto < 0) { /* in case sizeof(long)==sizeof(uint32_t) */
-native-width-integer	libclamav/sis.c	1103	static inline int skipthis(struct SISTREAM *s)
-native-width-integer	libclamav/sis.c	1122	    unsigned int i;
-native-width-integer	libclamav/sis.c	1194	                        int fd;
+native-width-integer	libclamav/sis.c	1013	    size_t pos;
+native-width-integer	libclamav/sis.c	1017	    long fnext[7];
+native-width-integer	libclamav/sis.c	1019	    unsigned int level;
+native-width-integer	libclamav/sis.c	1020	    int incomplete;
+native-width-integer	libclamav/sis.c	1037	static inline int getd(struct SISTREAM *s, uint32_t *v)
+native-width-integer	libclamav/sis.c	1040	        size_t nread;
+native-width-integer	libclamav/sis.c	1043	        if (nread == (size_t)-1) {
+native-width-integer	libclamav/sis.c	1062	static inline int getsize(struct SISTREAM *s)
+native-width-integer	libclamav/sis.c	1078	static inline int getfield(struct SISTREAM *s, uint32_t *field)
+native-width-integer	libclamav/sis.c	1080	    int ret;
+native-width-integer	libclamav/sis.c	1092	static inline int skip(struct SISTREAM *s, uint32_t size)
+native-width-integer	libclamav/sis.c	1094	    long seekto;
+native-width-integer	libclamav/sis.c	1100	        if (seekto < 0) { /* in case sizeof(long)==sizeof(uint32_t) */
+native-width-integer	libclamav/sis.c	1113	static inline int skipthis(struct SISTREAM *s)
+native-width-integer	libclamav/sis.c	1132	    unsigned int i;
+native-width-integer	libclamav/sis.c	1204	                        int fd;
 native-width-integer	libclamav/sis.c	121	sis_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
-native-width-integer	libclamav/sis.c	1217	                            s->pos -= (long)s->sleft;
+native-width-integer	libclamav/sis.c	1227	                            s->pos -= (long)s->sleft;
 native-width-integer	libclamav/sis.c	137	                                          uint64_t input_size, uint64_t output_size, bool compressed, int fd)
-native-width-integer	libclamav/sis.c	1387	/*     if ((ssize_t)((N)-sleft)<0) { \ */
-native-width-integer	libclamav/sis.c	1397	/*     fseek(f, -(long)sleft, SEEK_CUR); \ */
-native-width-integer	libclamav/sis.c	1429	/* int main(int argc, char **argv) { */
-native-width-integer	libclamav/sis.c	1432	/*   unsigned int i, sleft=0, smax=0, level=0; */
-native-width-integer	libclamav/sis.c	1435	/*   int ret = 0; */
-native-width-integer	libclamav/sis.c	1439	/*     unsigned int next[200]; */
-native-width-integer	libclamav/sis.c	1440	/*     unsigned int count; */
-native-width-integer	libclamav/sis.c	1560	/* 	int zresult; */
-native-width-integer	libclamav/sis.c	1574	/* 	  fseek(f, -(long)sleft, SEEK_CUR); */
+native-width-integer	libclamav/sis.c	1397	/*     if ((ssize_t)((N)-sleft)<0) { \ */
+native-width-integer	libclamav/sis.c	1407	/*     fseek(f, -(long)sleft, SEEK_CUR); \ */
+native-width-integer	libclamav/sis.c	1439	/* int main(int argc, char **argv) { */
+native-width-integer	libclamav/sis.c	1442	/*   unsigned int i, sleft=0, smax=0, level=0; */
+native-width-integer	libclamav/sis.c	1445	/*   int ret = 0; */
+native-width-integer	libclamav/sis.c	1449	/*     unsigned int next[200]; */
+native-width-integer	libclamav/sis.c	1450	/*     unsigned int count; */
+native-width-integer	libclamav/sis.c	1570	/* 	int zresult; */
+native-width-integer	libclamav/sis.c	1584	/* 	  fseek(f, -(long)sleft, SEEK_CUR); */
 native-width-integer	libclamav/sis.c	167	            size_t chunk;
 native-width-integer	libclamav/sis.c	168	            size_t nread;
 native-width-integer	libclamav/sis.c	176	            chunk = (input_remaining > sizeof(input)) ? sizeof(input) : (size_t)input_remaining;
 native-width-integer	libclamav/sis.c	177	            nread = fmap_readn(map, input, (size_t)input_pos, chunk);
 native-width-integer	libclamav/sis.c	180	                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-native-width-integer	libclamav/sis.c	207	        size_t produced;
-native-width-integer	libclamav/sis.c	208	        int zstatus;
-native-width-integer	libclamav/sis.c	217	            size_t chunk = (input_remaining > sizeof(input)) ? sizeof(input) : (size_t)input_remaining;
-native-width-integer	libclamav/sis.c	218	            size_t nread = fmap_readn(map, input, (size_t)input_pos, chunk);
-native-width-integer	libclamav/sis.c	222	                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-native-width-integer	libclamav/sis.c	295	    unsigned int i;
-native-width-integer	libclamav/sis.c	322	        size_t nread = fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS);
-native-width-integer	libclamav/sis.c	394	            size_t tmp = fmap_readn(map, buff + sleft, pos, BUFSIZ - sleft);                   \
-native-width-integer	libclamav/sis.c	396	            if (((size_t)-1) == tmp) {                                                         \
-native-width-integer	libclamav/sis.c	423	        size_t tmp = fmap_readn(map, buff, pos, BUFSIZ);                                            \
-native-width-integer	libclamav/sis.c	424	        if (((size_t)-1) == tmp) {                                                                  \
-native-width-integer	libclamav/sis.c	455	        size_t nread = fmap_readn(map, name, ptr, len);
-native-width-integer	libclamav/sis.c	473	static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
-native-width-integer	libclamav/sis.c	478	    unsigned int j;
-native-width-integer	libclamav/sis.c	479	    size_t nread;
-native-width-integer	libclamav/sis.c	558	    unsigned int i, umped = 0;
-native-width-integer	libclamav/sis.c	561	    size_t pos;
-native-width-integer	libclamav/sis.c	564	    int fd                  = -1;
-native-width-integer	libclamav/sis.c	573	        size_t nread = fmap_readn(map, &sis, SIZEOF_HEADER_UUIDS, sizeof(sis));
-native-width-integer	libclamav/sis.c	620	        alangs[i] = (size_t)EC16(llangs[i]) < MAXLANG ? sislangs[EC16(llangs[i])] : sislangs[0];
-native-width-integer	libclamav/sis.c	661	                size_t nread = fmap_readn(map, &dep, pos, sizeof(dep));
+native-width-integer	libclamav/sis.c	212	        size_t produced;
+native-width-integer	libclamav/sis.c	213	        int zstatus;
+native-width-integer	libclamav/sis.c	222	            size_t chunk = (input_remaining > sizeof(input)) ? sizeof(input) : (size_t)input_remaining;
+native-width-integer	libclamav/sis.c	223	            size_t nread = fmap_readn(map, input, (size_t)input_pos, chunk);
+native-width-integer	libclamav/sis.c	227	                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+native-width-integer	libclamav/sis.c	305	    unsigned int i;
+native-width-integer	libclamav/sis.c	332	        size_t nread = fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS);
+native-width-integer	libclamav/sis.c	404	            size_t tmp = fmap_readn(map, buff + sleft, pos, BUFSIZ - sleft);                   \
+native-width-integer	libclamav/sis.c	406	            if (((size_t)-1) == tmp) {                                                         \
+native-width-integer	libclamav/sis.c	433	        size_t tmp = fmap_readn(map, buff, pos, BUFSIZ);                                            \
+native-width-integer	libclamav/sis.c	434	        if (((size_t)-1) == tmp) {                                                                  \
+native-width-integer	libclamav/sis.c	465	        size_t nread = fmap_readn(map, name, ptr, len);
+native-width-integer	libclamav/sis.c	483	static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
+native-width-integer	libclamav/sis.c	488	    unsigned int j;
+native-width-integer	libclamav/sis.c	489	    size_t nread;
+native-width-integer	libclamav/sis.c	568	    unsigned int i, umped = 0;
+native-width-integer	libclamav/sis.c	571	    size_t pos;
+native-width-integer	libclamav/sis.c	574	    int fd                  = -1;
+native-width-integer	libclamav/sis.c	583	        size_t nread = fmap_readn(map, &sis, SIZEOF_HEADER_UUIDS, sizeof(sis));
+native-width-integer	libclamav/sis.c	630	        alangs[i] = (size_t)EC16(llangs[i]) < MAXLANG ? sislangs[EC16(llangs[i])] : sislangs[0];
+native-width-integer	libclamav/sis.c	671	                size_t nread = fmap_readn(map, &dep, pos, sizeof(dep));
 native-width-integer	libclamav/sis.c	72	sis_read_failure(cli_ctx *ctx, size_t nread, const char *read_reason, const char *short_reason)
 native-width-integer	libclamav/sis.c	74	    if (nread == (size_t)-1) {
 native-width-integer	libclamav/sis.c	84	sis_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *status,
@@ -13370,67 +13370,67 @@ native-width-integer	libclamav/tnef.c	86	    int alldone;
 native-width-integer	libclamav/tnef.c	87	    off_t fsize, pos = 0;
 native-width-integer	libclamav/tnef.c	95	    if (fsize < (off_t)MIN_SIZE) {
 native-width-integer	libclamav/tnef.h	30	int cli_tnef(const char *dir, cli_ctx *ctx);
-native-width-integer	libclamav/udf.c	1039	cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
-native-width-integer	libclamav/udf.c	1042	    size_t idx                              = offset;
-native-width-integer	libclamav/udf.c	1043	    size_t lastOffset                       = 0;
-native-width-integer	libclamav/udf.c	1044	    size_t i                                = 0;
-native-width-integer	libclamav/udf.c	105	    for (size_t i = 0; i < extent_count; i++) {
-native-width-integer	libclamav/udf.c	106	        size_t extent_copied = 0;
-native-width-integer	libclamav/udf.c	1066	        return CL_EPARSE; /* Need 16 sectors at least 2048 bytes long */
-native-width-integer	libclamav/udf.c	1090	                // File isn't long enough to store the required generic volume structure descriptors at the given offset.
-native-width-integer	libclamav/udf.c	116	            size_t chunk = MIN(sizeof(buffer), extents[i].length - extent_copied);
-native-width-integer	libclamav/udf.c	1418	                size_t cnt = fileIdentifierList.cnt;
-native-width-integer	libclamav/udf.c	181	    size_t length                      = 0;
-native-width-integer	libclamav/udf.c	285	    if (offset64 > SIZE_MAX || (size_t)offset64 > ctx->fmap->len || length > ctx->fmap->len - (size_t)offset64) {
-native-width-integer	libclamav/udf.c	290	    extent->offset = (size_t)offset64;
-native-width-integer	libclamav/udf.c	297	                              size_t allocation_descriptor_len,
-native-width-integer	libclamav/udf.c	303	    size_t descriptor_size;
-native-width-integer	libclamav/udf.c	304	    size_t extent_count;
-native-width-integer	libclamav/udf.c	362	    for (size_t i = 0; i < extent_count; i++) {
-native-width-integer	libclamav/udf.c	412	    size_t file_entry_descriptor_size;
-native-width-integer	libclamav/udf.c	413	    size_t allocation_descriptor_len;
-native-width-integer	libclamav/udf.c	478	static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *read_status)
-native-width-integer	libclamav/udf.c	489	static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
-native-width-integer	libclamav/udf.c	493	    size_t idx      = *idxp;
-native-width-integer	libclamav/udf.c	495	    size_t i;
-native-width-integer	libclamav/udf.c	538	static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-native-width-integer	libclamav/udf.c	543	    size_t idx                    = *idxp;
-native-width-integer	libclamav/udf.c	544	    size_t lastOffset             = *lastOffsetp;
-native-width-integer	libclamav/udf.c	576	static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(cli_ctx *ctx, size_t *idxp,
-native-width-integer	libclamav/udf.c	577	                                                                                 size_t *lastOffsetp,
-native-width-integer	libclamav/udf.c	582	    size_t idx                              = *idxp;
-native-width-integer	libclamav/udf.c	583	    size_t lastOffset                       = *lastOffsetp;
+native-width-integer	libclamav/udf.c	1005	    size_t bufUsed;
+native-width-integer	libclamav/udf.c	1006	    size_t fedDescSize;
+native-width-integer	libclamav/udf.c	1046	cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
+native-width-integer	libclamav/udf.c	1049	    size_t idx                              = offset;
+native-width-integer	libclamav/udf.c	1050	    size_t lastOffset                       = 0;
+native-width-integer	libclamav/udf.c	1051	    size_t i                                = 0;
+native-width-integer	libclamav/udf.c	1073	        return CL_EPARSE; /* Need 16 sectors at least 2048 bytes long */
+native-width-integer	libclamav/udf.c	109	    for (size_t i = 0; i < extent_count; i++) {
+native-width-integer	libclamav/udf.c	1097	                // File isn't long enough to store the required generic volume structure descriptors at the given offset.
+native-width-integer	libclamav/udf.c	110	        size_t extent_copied = 0;
+native-width-integer	libclamav/udf.c	120	            size_t chunk = MIN(sizeof(buffer), extents[i].length - extent_copied);
+native-width-integer	libclamav/udf.c	1425	                size_t cnt = fileIdentifierList.cnt;
+native-width-integer	libclamav/udf.c	188	    size_t length                      = 0;
+native-width-integer	libclamav/udf.c	292	    if (offset64 > SIZE_MAX || (size_t)offset64 > ctx->fmap->len || length > ctx->fmap->len - (size_t)offset64) {
+native-width-integer	libclamav/udf.c	297	    extent->offset = (size_t)offset64;
+native-width-integer	libclamav/udf.c	304	                              size_t allocation_descriptor_len,
+native-width-integer	libclamav/udf.c	310	    size_t descriptor_size;
+native-width-integer	libclamav/udf.c	311	    size_t extent_count;
+native-width-integer	libclamav/udf.c	369	    for (size_t i = 0; i < extent_count; i++) {
+native-width-integer	libclamav/udf.c	419	    size_t file_entry_descriptor_size;
+native-width-integer	libclamav/udf.c	420	    size_t allocation_descriptor_len;
+native-width-integer	libclamav/udf.c	485	static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *read_status)
+native-width-integer	libclamav/udf.c	496	static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
+native-width-integer	libclamav/udf.c	500	    size_t idx      = *idxp;
+native-width-integer	libclamav/udf.c	502	    size_t i;
+native-width-integer	libclamav/udf.c	545	static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	550	    size_t idx                    = *idxp;
+native-width-integer	libclamav/udf.c	551	    size_t lastOffset             = *lastOffsetp;
+native-width-integer	libclamav/udf.c	583	static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(cli_ctx *ctx, size_t *idxp,
+native-width-integer	libclamav/udf.c	584	                                                                                 size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	589	    size_t idx                              = *idxp;
+native-width-integer	libclamav/udf.c	590	    size_t lastOffset                       = *lastOffsetp;
 native-width-integer	libclamav/udf.c	60	    size_t offset;
 native-width-integer	libclamav/udf.c	61	    size_t length;
-native-width-integer	libclamav/udf.c	615	static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-native-width-integer	libclamav/udf.c	620	    size_t idx                    = *idxp;
-native-width-integer	libclamav/udf.c	621	    size_t lastOffset             = *lastOffsetp;
-native-width-integer	libclamav/udf.c	653	static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-native-width-integer	libclamav/udf.c	658	    size_t idx                = *idxp;
-native-width-integer	libclamav/udf.c	659	    size_t lastOffset         = *lastOffsetp;
-native-width-integer	libclamav/udf.c	691	static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-native-width-integer	libclamav/udf.c	696	    size_t idx                       = *idxp;
-native-width-integer	libclamav/udf.c	697	    size_t lastOffset                = *lastOffsetp;
-native-width-integer	libclamav/udf.c	729	static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-native-width-integer	libclamav/udf.c	734	    size_t idx                  = *idxp;
-native-width-integer	libclamav/udf.c	735	    size_t lastOffset           = *lastOffsetp;
+native-width-integer	libclamav/udf.c	622	static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	627	    size_t idx                    = *idxp;
+native-width-integer	libclamav/udf.c	628	    size_t lastOffset             = *lastOffsetp;
+native-width-integer	libclamav/udf.c	660	static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	665	    size_t idx                = *idxp;
+native-width-integer	libclamav/udf.c	666	    size_t lastOffset         = *lastOffsetp;
+native-width-integer	libclamav/udf.c	698	static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	703	    size_t idx                       = *idxp;
+native-width-integer	libclamav/udf.c	704	    size_t lastOffset                = *lastOffsetp;
+native-width-integer	libclamav/udf.c	736	static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	741	    size_t idx                  = *idxp;
+native-width-integer	libclamav/udf.c	742	    size_t lastOffset           = *lastOffsetp;
 native-width-integer	libclamav/udf.c	75	                                 size_t extent_count, uint64_t dataLen)
-native-width-integer	libclamav/udf.c	767	static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli_ctx *ctx, size_t *idxp,
-native-width-integer	libclamav/udf.c	768	                                                                              size_t *lastOffsetp,
 native-width-integer	libclamav/udf.c	77	    int fd     = -1;
-native-width-integer	libclamav/udf.c	773	    size_t idx                             = *idxp;
-native-width-integer	libclamav/udf.c	774	    size_t lastOffset                      = *lastOffsetp;
-native-width-integer	libclamav/udf.c	806	static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-native-width-integer	libclamav/udf.c	811	    size_t idx                          = *idxp;
-native-width-integer	libclamav/udf.c	812	    size_t lastOffset                   = *lastOffsetp;
-native-width-integer	libclamav/udf.c	844	static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
-native-width-integer	libclamav/udf.c	848	    size_t idx              = *idxp;
-native-width-integer	libclamav/udf.c	849	    size_t lastOffset       = *lastOffsetp;
-native-width-integer	libclamav/udf.c	915	static cl_error_t insertPointer(PointerList *pl, const uint8_t *pointer, size_t size)
-native-width-integer	libclamav/udf.c	952	    size_t bufUsed;
-native-width-integer	libclamav/udf.c	953	    size_t fidDescSize;
-native-width-integer	libclamav/udf.c	998	    size_t bufUsed;
-native-width-integer	libclamav/udf.c	999	    size_t fedDescSize;
+native-width-integer	libclamav/udf.c	774	static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli_ctx *ctx, size_t *idxp,
+native-width-integer	libclamav/udf.c	775	                                                                              size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	780	    size_t idx                             = *idxp;
+native-width-integer	libclamav/udf.c	781	    size_t lastOffset                      = *lastOffsetp;
+native-width-integer	libclamav/udf.c	813	static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+native-width-integer	libclamav/udf.c	818	    size_t idx                          = *idxp;
+native-width-integer	libclamav/udf.c	819	    size_t lastOffset                   = *lastOffsetp;
+native-width-integer	libclamav/udf.c	851	static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
+native-width-integer	libclamav/udf.c	855	    size_t idx              = *idxp;
+native-width-integer	libclamav/udf.c	856	    size_t lastOffset       = *lastOffsetp;
+native-width-integer	libclamav/udf.c	922	static cl_error_t insertPointer(PointerList *pl, const uint8_t *pointer, size_t size)
+native-width-integer	libclamav/udf.c	959	    size_t bufUsed;
+native-width-integer	libclamav/udf.c	960	    size_t fidDescSize;
 native-width-integer	libclamav/udf.h	211	static inline size_t getFileIdentifierDescriptorSize(const FileIdentifierDescriptor* fid)
 native-width-integer	libclamav/udf.h	263	static inline size_t getFileEntryDescriptorSize(const FileEntryDescriptor* fed)
 native-width-integer	libclamav/udf.h	535	cl_error_t cli_scanudf(cli_ctx* ctx, size_t offset);
@@ -13515,7 +13515,7 @@ native-width-integer	libclamav/untar.c	345	                case 'N': /* Old GNU 
 native-width-integer	libclamav/untar.c	370	                size = (size_t)size_value;
 native-width-integer	libclamav/untar.c	388	                size_t nskip = size;
 native-width-integer	libclamav/untar.c	389	                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
-native-width-integer	libclamav/untar.c	441	            size_t nbytes, nwritten;
+native-width-integer	libclamav/untar.c	445	            size_t nbytes, nwritten;
 native-width-integer	libclamav/untar.c	96	 * @return int value of checksum, -1 (from octal()) if bad value
 native-width-integer	libclamav/untar.c	98	static int
 native-width-integer	libclamav/untar.h	32	cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx);
@@ -17614,9 +17614,9 @@ boundary-constant	libclamav/hfsplus.c	830	            if (fileOffset64 > SIZE_MA
 boundary-constant	libclamav/hfsplus.c	839	            if (startOffset > SIZE_MAX - fileOffset) {
 boundary-constant	libclamav/hwp.c	146	            if (outsize > SIZE_MAX - count) {
 boundary-constant	libclamav/hwp.c	324	    if (payload_size > UINT32_MAX) {
-boundary-constant	libclamav/iso9660.c	301	                if (fileoff64 > UINT32_MAX) {
-boundary-constant	libclamav/iso9660.c	412	        if (descriptor_offset64 > SIZE_MAX)
-boundary-constant	libclamav/iso9660.c	518	        if (root_directory_block64 > UINT32_MAX) {
+boundary-constant	libclamav/iso9660.c	312	                if (fileoff64 > UINT32_MAX) {
+boundary-constant	libclamav/iso9660.c	423	        if (descriptor_offset64 > SIZE_MAX)
+boundary-constant	libclamav/iso9660.c	529	        if (root_directory_block64 > UINT32_MAX) {
 boundary-constant	libclamav/iso9660.c	83	    if (absolute_offset > SIZE_MAX)
 boundary-constant	libclamav/jp2.c	124	        if (offset > (uint64_t)SIZE_MAX)
 boundary-constant	libclamav/jp2.c	140	            if (offset > (uint64_t)SIZE_MAX - JP2_BOX_HEADER_SIZE)
@@ -17721,10 +17721,10 @@ boundary-constant	libclamav/str.c	840	    if ((num == ULONG_MAX) && (errno == ER
 boundary-constant	libclamav/tiff.c	72	    if (width != 0 && (uint64_t)count > (uint64_t)(SIZE_MAX / width))
 boundary-constant	libclamav/tnef.c	317	            if (string_len == SIZE_MAX)
 boundary-constant	libclamav/tnef.c	372	            if (string_len == SIZE_MAX)
-boundary-constant	libclamav/udf.c	1449	        if (idx > SIZE_MAX - VOLUME_DESCRIPTOR_SIZE) {
-boundary-constant	libclamav/udf.c	285	    if (offset64 > SIZE_MAX || (size_t)offset64 > ctx->fmap->len || length > ctx->fmap->len - (size_t)offset64) {
-boundary-constant	libclamav/udf.c	348	    if (extent_count > SIZE_MAX / sizeof(*extents)) {
-boundary-constant	libclamav/udf.c	522	        if (idx > SIZE_MAX - VOLUME_DESCRIPTOR_SIZE)
+boundary-constant	libclamav/udf.c	1456	        if (idx > SIZE_MAX - VOLUME_DESCRIPTOR_SIZE) {
+boundary-constant	libclamav/udf.c	292	    if (offset64 > SIZE_MAX || (size_t)offset64 > ctx->fmap->len || length > ctx->fmap->len - (size_t)offset64) {
+boundary-constant	libclamav/udf.c	355	    if (extent_count > SIZE_MAX / sizeof(*extents)) {
+boundary-constant	libclamav/udf.c	529	        if (idx > SIZE_MAX - VOLUME_DESCRIPTOR_SIZE)
 boundary-constant	libclamav/unarj.c	205	    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX)
 boundary-constant	libclamav/untar.c	106	    if (!octal(ochecksum, &checksum) || checksum > INT_MAX)
 boundary-constant	libclamav/untar.c	364	            if (!octal(osize, &size_value) || size_value > SIZE_MAX) {
@@ -18026,7 +18026,7 @@ narrowing-cast	libclamav/bytecode_api.c	2223	    return size > UINT32_MAX ? 0 : 
 narrowing-cast	libclamav/bytecode_api.c	314	    write_len = (uint64_t)(uint32_t)len;
 narrowing-cast	libclamav/egg.c	2275	        stream.avail_out = (unsigned int)sizeof(decoded);
 narrowing-cast	libclamav/entconv.c	1167	        cli_warnmsg("utf16 length is not multiple of two: %lu\n", (long)length);
-narrowing-cast	libclamav/iso9660.c	293	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
+narrowing-cast	libclamav/iso9660.c	304	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
 narrowing-cast	libclamav/jsparse/js-norm.c	603	               (unsigned long)end, (unsigned long)len);
 narrowing-cast	libclamav/matcher-ac.c	2105	                                            cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
 narrowing-cast	libclamav/matcher-ac.c	2220	                                        cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
@@ -19094,14 +19094,14 @@ format-width	libclamav/ishield.c	897	                    cli_dbgmsg("is_parse_hd
 format-width	libclamav/ishield.c	942	                                        cli_dbgmsg("is_parse_hdr: File limit reached (max: %u)\n", ctx->engine->maxfiles);
 format-width	libclamav/ishield.c	954	                                cli_dbgmsg("is_parse_hdr: data%u.cab not available\n", cabno);
 format-width	libclamav/ishield.c	967	                    cli_dbgmsg("is_parse_hdr: skipped unknown file entry %u\n", i);
-format-width	libclamav/iso9660.c	271	                cli_dbgmsg("iso_parse_dir: Directory entry overflow, breaking out %u %u\n", entrysz, dirsz);
-format-width	libclamav/iso9660.c	309	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
-format-width	libclamav/iso9660.c	475	            cli_dbgmsg("cli_scaniso: Raw sector size: %u\n", iso.sectsz);
-format-width	libclamav/iso9660.c	476	            cli_dbgmsg("cli_scaniso: Block size: %u\n", iso.blocksz);
-format-width	libclamav/iso9660.c	478	            cli_dbgmsg("cli_scaniso: Volume descriptor version: %u\n", privol[6]);
-format-width	libclamav/iso9660.c	485	            cli_dbgmsg("cli_scaniso: Volume %u of %u\n", cli_readint32(privol + 124) & 0xffff, cli_readint32(privol + 120) & 0xffff);
-format-width	libclamav/iso9660.c	505	            cli_dbgmsg("cli_scaniso: File Structure Version: %u\n", privol[881]);
-format-width	libclamav/iso9660.c	508	                cli_dbgmsg("cli_scaniso: Joliet level %u\n", iso.joliet);
+format-width	libclamav/iso9660.c	282	                cli_dbgmsg("iso_parse_dir: Directory entry overflow, breaking out %u %u\n", entrysz, dirsz);
+format-width	libclamav/iso9660.c	320	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
+format-width	libclamav/iso9660.c	486	            cli_dbgmsg("cli_scaniso: Raw sector size: %u\n", iso.sectsz);
+format-width	libclamav/iso9660.c	487	            cli_dbgmsg("cli_scaniso: Block size: %u\n", iso.blocksz);
+format-width	libclamav/iso9660.c	489	            cli_dbgmsg("cli_scaniso: Volume descriptor version: %u\n", privol[6]);
+format-width	libclamav/iso9660.c	496	            cli_dbgmsg("cli_scaniso: Volume %u of %u\n", cli_readint32(privol + 124) & 0xffff, cli_readint32(privol + 120) & 0xffff);
+format-width	libclamav/iso9660.c	516	            cli_dbgmsg("cli_scaniso: File Structure Version: %u\n", privol[881]);
+format-width	libclamav/iso9660.c	519	                cli_dbgmsg("cli_scaniso: Joliet level %u\n", iso.joliet);
 format-width	libclamav/jpeg.c	463	                cli_warnmsg("JPEG: Spurious bytes before segment %u\n", segment);
 format-width	libclamav/jpeg.c	466	                cli_dbgmsg("Spurious bytes before segment %u\n", segment);
 format-width	libclamav/jpeg.c	498	        cli_dbgmsg("segment[%d] = 0x%02x, Length %u\n", segment, marker, len);
@@ -19314,7 +19314,7 @@ format-width	libclamav/msdoc.c	783	    cli_dbgmsg("ole2_summary_propset_json: pr
 format-width	libclamav/msdoc.c	815	        cli_dbgmsg("ole2_summary_propset_json: propid: 0x%08x, propoff: %u\n", propid, propoff);
 format-width	libclamav/msdoc.c	857	    cli_dbgmsg("in cli_ole2_summary_json_cleanup: %d[%x]\n", retcode, sctx->flags);
 format-width	libclamav/msdoc.c	962	    cli_dbgmsg("ole2_summary_json: streamsize: %zu\n", sctx.maplen);
-format-width	libclamav/msexpand.c	143	    cli_dbgmsg("MSEXPAND: File size from header: %u\n", fsize);
+format-width	libclamav/msexpand.c	146	    cli_dbgmsg("MSEXPAND: File size from header: %u\n", fsize);
 format-width	libclamav/msxml.c	111	    cli_msxmlmsg("msxml_read_cb: acquired new window @ [%llu(+%llu)(max:%llu)]\n",
 format-width	libclamav/msxml.c	133	    cli_msxmlmsg("msxml_read_cb: requested %zu bytes from offset %llu\n", len, (long long unsigned)(cbdata->mappos + cbdata->winpos));
 format-width	libclamav/msxml.c	151	                cli_msxmlmsg("msxml_read_cb: propagating fmap EOF [%llu]\n", (long long unsigned)wbytes);
@@ -19873,26 +19873,26 @@ format-width	libclamav/scanners.c	8129	                cli_errmsg("scan_common: 
 format-width	libclamav/scanners.c	8371	        cli_errmsg("cl_scandesc_callback: Can't fstat descriptor %d\n", desc);
 format-width	libclamav/scanners.c	8376	        cli_errmsg("cl_scandesc_callback: Descriptor %d has an invalid negative size\n", desc);
 format-width	libclamav/scanners.c	867	    cli_dbgmsg("EGG: %s, encrypted: %u, compressed: %u, normal: %u, ratio: %u\n",
-format-width	libclamav/sis.c	1075	            cli_dbgmsg("SIS: %d:Got %s(%x) field with size %x\n", s->level, sisfields[*field], *field, s->fsize[s->level]);
-format-width	libclamav/sis.c	1077	            cli_dbgmsg("SIS: %d:Got invalid(%x) field with size %x\n", s->level, *field, s->fsize[s->level]);
-format-width	libclamav/sis.c	1177	                cli_dbgmsg("SIS: %d:Got dataunit element with size %x\n", s->level, s->fsize[s->level]);
-format-width	libclamav/sis.c	1202	                        cli_dbgmsg("SIS: %d:Got filedata element with size %x\n", s->level, s->fsize[s->level]);
-format-width	libclamav/sis.c	1524	/*     printf("Got %s field (%d) with size %x(%u)\n", sisfields[field], field, fsz, fsz); */
-format-width	libclamav/sis.c	1572	/* 	printf("%s compression %d, size %d, usize %d\n", sstack.tree, method, fsz, usize); */
-format-width	libclamav/sis.c	1640	/*       printf("%s %s = %u.%u.%u\n", sstack.tree, this->what, maj, min, bld); */
-format-width	libclamav/sis.c	1649	/*       printf("%s %s = %u-%u-%u\n", sstack.tree, this->what, field&0xffff, (field>>16)&0xff, (field>>24)&0xff); */
-format-width	libclamav/sis.c	1654	/*       printf("%s %s = %u:%u:%u\n", sstack.tree, this->what, field&0xff, (field>>8)&0xff, (field>>16)&0xff); */
-format-width	libclamav/sis.c	1694	/*       printf("Error: unhandled field %d\n", field); */
-format-width	libclamav/sis.c	387	        /* cli_dbgmsg("GETD2 smax: %d sleft: %d\n", smax, sleft); */                           \
-format-width	libclamav/sis.c	413	    /* cli_dbgmsg("SKIP smax: %d sleft: %d\n", smax, sleft); */                                     \
-format-width	libclamav/sis.c	518	            cli_dbgmsg("\t%s (%s - @%x, len %d)\n", name, alangs[j], EC32(ptrs[j]), EC32(lens[j]));
-format-width	libclamav/sis.c	583	    /*  cli_dbgmsg("SIS HEADER INFO: \nFile checksum: %x\nLangs: %d\nFiles: %d\nDeps: %d\nUsed langs: %d\nInstalled files: %d\nDest drive: %d\nCapabilities: %d\nSIS Version: %d\nFlags: %x\nType: %d\nVersion: %d.%d.%d\nLangs@: %x\nFiles@: %x\nDeps@: %x\nCerts@: %x\nName@: %x\nSig@: %x\nCaps@: %x\nUspace: %d\nNspace: %d\n\n", sis.filesum, sis.langs, sis.files, sis.deps, sis.ulangs, sis.instfiles, sis.drive, sis.caps, sis.version, sis.flags, sis.type, sis.verhi, sis.verlo, sis.versub, sis.plangs, sis.pfiles, sis.pdeps, sis.pcerts, sis.pnames, sis.psig, sis.pcaps, sis.uspace, sis.nspace);
-format-width	libclamav/sis.c	675	                cli_dbgmsg("\tUID: %x v. %d.%d.%d\n\taka:\n", EC32(dep.uid), EC16(dep.verhi), EC16(dep.verlo), EC32(dep.versub));
-format-width	libclamav/sis.c	689	        cli_dbgmsg("SIS: Invalid SIS format or not an SIS file. The pointer to the file records must not point to within the SIS header: %u\n", sis.pfiles);
-format-width	libclamav/sis.c	703	        cli_dbgmsg("SIS: Pkgtype: %d\n", pkgtype);
-format-width	libclamav/sis.c	754	                cli_dbgmsg("SIS: File details:\n\tOptions: %d\n\tType: %s\n", options, sftype);
-format-width	libclamav/sis.c	816	                            cli_dbgmsg("\tThe pointer (offset) of the file in the archive cannot be within the SIS header: %u\n", ptrs[j]);
-format-width	libclamav/sis.c	839	                        cli_dbgmsg("\tUnpacking lang#%d - ptr:%x compressed size:%x original (decompressed) size:%x\n", j, ptrs[j], lens[j], olens[j]);
+format-width	libclamav/sis.c	1085	            cli_dbgmsg("SIS: %d:Got %s(%x) field with size %x\n", s->level, sisfields[*field], *field, s->fsize[s->level]);
+format-width	libclamav/sis.c	1087	            cli_dbgmsg("SIS: %d:Got invalid(%x) field with size %x\n", s->level, *field, s->fsize[s->level]);
+format-width	libclamav/sis.c	1187	                cli_dbgmsg("SIS: %d:Got dataunit element with size %x\n", s->level, s->fsize[s->level]);
+format-width	libclamav/sis.c	1212	                        cli_dbgmsg("SIS: %d:Got filedata element with size %x\n", s->level, s->fsize[s->level]);
+format-width	libclamav/sis.c	1534	/*     printf("Got %s field (%d) with size %x(%u)\n", sisfields[field], field, fsz, fsz); */
+format-width	libclamav/sis.c	1582	/* 	printf("%s compression %d, size %d, usize %d\n", sstack.tree, method, fsz, usize); */
+format-width	libclamav/sis.c	1650	/*       printf("%s %s = %u.%u.%u\n", sstack.tree, this->what, maj, min, bld); */
+format-width	libclamav/sis.c	1659	/*       printf("%s %s = %u-%u-%u\n", sstack.tree, this->what, field&0xffff, (field>>16)&0xff, (field>>24)&0xff); */
+format-width	libclamav/sis.c	1664	/*       printf("%s %s = %u:%u:%u\n", sstack.tree, this->what, field&0xff, (field>>8)&0xff, (field>>16)&0xff); */
+format-width	libclamav/sis.c	1704	/*       printf("Error: unhandled field %d\n", field); */
+format-width	libclamav/sis.c	397	        /* cli_dbgmsg("GETD2 smax: %d sleft: %d\n", smax, sleft); */                           \
+format-width	libclamav/sis.c	423	    /* cli_dbgmsg("SKIP smax: %d sleft: %d\n", smax, sleft); */                                     \
+format-width	libclamav/sis.c	528	            cli_dbgmsg("\t%s (%s - @%x, len %d)\n", name, alangs[j], EC32(ptrs[j]), EC32(lens[j]));
+format-width	libclamav/sis.c	593	    /*  cli_dbgmsg("SIS HEADER INFO: \nFile checksum: %x\nLangs: %d\nFiles: %d\nDeps: %d\nUsed langs: %d\nInstalled files: %d\nDest drive: %d\nCapabilities: %d\nSIS Version: %d\nFlags: %x\nType: %d\nVersion: %d.%d.%d\nLangs@: %x\nFiles@: %x\nDeps@: %x\nCerts@: %x\nName@: %x\nSig@: %x\nCaps@: %x\nUspace: %d\nNspace: %d\n\n", sis.filesum, sis.langs, sis.files, sis.deps, sis.ulangs, sis.instfiles, sis.drive, sis.caps, sis.version, sis.flags, sis.type, sis.verhi, sis.verlo, sis.versub, sis.plangs, sis.pfiles, sis.pdeps, sis.pcerts, sis.pnames, sis.psig, sis.pcaps, sis.uspace, sis.nspace);
+format-width	libclamav/sis.c	685	                cli_dbgmsg("\tUID: %x v. %d.%d.%d\n\taka:\n", EC32(dep.uid), EC16(dep.verhi), EC16(dep.verlo), EC32(dep.versub));
+format-width	libclamav/sis.c	699	        cli_dbgmsg("SIS: Invalid SIS format or not an SIS file. The pointer to the file records must not point to within the SIS header: %u\n", sis.pfiles);
+format-width	libclamav/sis.c	713	        cli_dbgmsg("SIS: Pkgtype: %d\n", pkgtype);
+format-width	libclamav/sis.c	764	                cli_dbgmsg("SIS: File details:\n\tOptions: %d\n\tType: %s\n", options, sftype);
+format-width	libclamav/sis.c	826	                            cli_dbgmsg("\tThe pointer (offset) of the file in the archive cannot be within the SIS header: %u\n", ptrs[j]);
+format-width	libclamav/sis.c	849	                        cli_dbgmsg("\tUnpacking lang#%d - ptr:%x compressed size:%x original (decompressed) size:%x\n", j, ptrs[j], lens[j], olens[j]);
 format-width	libclamav/special.c	271	    cli_dbgmsg("swizz_j48: %u, %u, %u\n", n[0], n[1], n[2]);
 format-width	libclamav/special.c	337	    cli_dbgmsg("cli_detect_swizz_str: %u, %u, %u\n", ngram_cnts[0], ngram_cnts[1], ngram_cnts[2]);
 format-width	libclamav/special.c	345	    cli_dbgmsg("cli_detect_swizz_str: %s, %u words\n", ret == CL_VIRUS ? "suspicious" : "ok", words);
@@ -19961,16 +19961,16 @@ format-width	libclamav/tnef.c	362	    cli_dbgmsg("attachment tag 0x%x, type 0x%x
 format-width	libclamav/tnef.c	443	            cli_dbgmsg("TNEF - unsupported attachment tag 0x%x type 0x%d length %d\n",
 format-width	libclamav/tnef.c	448	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
 format-width	libclamav/tnef.c	508	    cli_dbgmsg("message tag 0x%x, type 0x%x, length %d\n",
-format-width	libclamav/udf.c	1356	        cli_dbgmsg("UDF Descriptor Tag ID: %d\n", tagId);
-format-width	libclamav/udf.c	1406	                cli_dbgmsg("cli_scanudf: Parsing %d file entries.\n", fileEntryList.cnt);
-format-width	libclamav/udf.c	1430	                        cli_dbgmsg("cli_scanudf: Failed to extract or scan file %zu: %s\n", i, cl_strerror(ret));
-format-width	libclamav/udf.c	461	    fprintf(stderr, "TagId = %d (0x%x)\n", dt->tagId, dt->tagId);
-format-width	libclamav/udf.c	462	    fprintf(stderr, "Version = %d (0x%x)\n", dt->descriptorVersion, dt->descriptorVersion);
-format-width	libclamav/udf.c	463	    fprintf(stderr, "Checksum = %d (0x%x)\n", dt->checksum, dt->checksum);
-format-width	libclamav/udf.c	464	    fprintf(stderr, "Serial Number = %d (0x%x)\n", dt->serialNumber, dt->serialNumber);
-format-width	libclamav/udf.c	466	    fprintf(stderr, "Descriptor CRC = %d (0x%x)\n", dt->descriptorCRC, dt->descriptorCRC);
-format-width	libclamav/udf.c	467	    fprintf(stderr, "Descriptor CRC Length = %d (0x%x)\n", dt->descriptorCRCLength, dt->descriptorCRCLength);
-format-width	libclamav/udf.c	468	    fprintf(stderr, "Tag Location = %d (0x%x)\n", dt->tagLocation, dt->tagLocation);
+format-width	libclamav/udf.c	1363	        cli_dbgmsg("UDF Descriptor Tag ID: %d\n", tagId);
+format-width	libclamav/udf.c	1413	                cli_dbgmsg("cli_scanudf: Parsing %d file entries.\n", fileEntryList.cnt);
+format-width	libclamav/udf.c	1437	                        cli_dbgmsg("cli_scanudf: Failed to extract or scan file %zu: %s\n", i, cl_strerror(ret));
+format-width	libclamav/udf.c	468	    fprintf(stderr, "TagId = %d (0x%x)\n", dt->tagId, dt->tagId);
+format-width	libclamav/udf.c	469	    fprintf(stderr, "Version = %d (0x%x)\n", dt->descriptorVersion, dt->descriptorVersion);
+format-width	libclamav/udf.c	470	    fprintf(stderr, "Checksum = %d (0x%x)\n", dt->checksum, dt->checksum);
+format-width	libclamav/udf.c	471	    fprintf(stderr, "Serial Number = %d (0x%x)\n", dt->serialNumber, dt->serialNumber);
+format-width	libclamav/udf.c	473	    fprintf(stderr, "Descriptor CRC = %d (0x%x)\n", dt->descriptorCRC, dt->descriptorCRC);
+format-width	libclamav/udf.c	474	    fprintf(stderr, "Descriptor CRC Length = %d (0x%x)\n", dt->descriptorCRCLength, dt->descriptorCRCLength);
+format-width	libclamav/udf.c	475	    fprintf(stderr, "Tag Location = %d (0x%x)\n", dt->tagLocation, dt->tagLocation);
 format-width	libclamav/unarj.c	1045	        cli_dbgmsg("Extended header size: %d\n", count);
 format-width	libclamav/unarj.c	1088	    cli_dbgmsg("Header Size: %d\n", header_size);
 format-width	libclamav/unarj.c	1095	        cli_dbgmsg("arj_read_file_header: invalid header_size: %u\n ", header_size);
@@ -20002,7 +20002,7 @@ format-width	libclamav/untar.c	239	        cli_dbgmsg("cli_untar: pos = %lu\n", 
 format-width	libclamav/untar.c	291	            cli_dbgmsg("cli_untar: Candidate checksum = %d, [%o in octal]\n", checksum, checksum);
 format-width	libclamav/untar.c	304	                cli_dbgmsg("cli_untar: Checksum %d is valid.\n", checksum);
 format-width	libclamav/untar.c	371	                cli_dbgmsg("cli_untar: size = %zu\n", size);
-format-width	libclamav/untar.c	451	                cli_errmsg("cli_untar: only wrote %zu bytes to file %s (out of disc space?): %s\n",
+format-width	libclamav/untar.c	462	                cli_errmsg("cli_untar: only wrote %zu bytes to file %s (out of disc space?): %s\n",
 format-width	libclamav/unzip.c	1006	                        cli_warnmsg("cli_unzip: failed to write or account for %zu inflated bytes\n", produced);
 format-width	libclamav/unzip.c	1043	                        cli_warnmsg("cli_unzip: failed to write or account for %zu bunzipped bytes\n", produced);
 format-width	libclamav/unzip.c	1079	                        cli_warnmsg("cli_unzip: failed to write or account for %zu exploded bytes\n", produced);
@@ -24556,33 +24556,33 @@ offset-size-arithmetic	libclamav/ishield.c	946	                                 
 offset-size-arithmetic	libclamav/ishield.c	971	                fmap_unneed_ptr(map, (void *)file_name, strlen(file_name) + 1);
 offset-size-arithmetic	libclamav/ishield.c	973	                fmap_unneed_ptr(map, (void *)dir_name, strlen(dir_name) + 1);
 offset-size-arithmetic	libclamav/ishield.c	985	        off += sizeof(*file);
-offset-size-arithmetic	libclamav/iso9660.c	128	        todo = MIN(len, iso->blocksz);
-offset-size-arithmetic	libclamav/iso9660.c	147	        len -= todo;
-offset-size-arithmetic	libclamav/iso9660.c	180	        if (len > (sizeof(iso->buf) - 2)) {
-offset-size-arithmetic	libclamav/iso9660.c	182	            len = sizeof(iso->buf) - 2;
-offset-size-arithmetic	libclamav/iso9660.c	186	        iso->buf[len + 1] = '\0';
-offset-size-arithmetic	libclamav/iso9660.c	189	        strncpy(iso->buf, uutf8, sizeof(iso->buf));
-offset-size-arithmetic	libclamav/iso9660.c	190	        iso->buf[sizeof(iso->buf) - 1] = '\0';
-offset-size-arithmetic	libclamav/iso9660.c	193	        if (len >= sizeof(iso->buf)) {
-offset-size-arithmetic	libclamav/iso9660.c	195	            len = sizeof(iso->buf) - 1;
-offset-size-arithmetic	libclamav/iso9660.c	213	    for (; len && ret == CL_SUCCESS; block++, len -= MIN(len, iso->blocksz)) {
-offset-size-arithmetic	libclamav/iso9660.c	270	            if (entrysz > dirsz) { /* record size overlaps onto the next sector, no point in looking in there */
-offset-size-arithmetic	libclamav/iso9660.c	293	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
-offset-size-arithmetic	libclamav/iso9660.c	300	                uint64_t fileoff64 = (uint64_t)cli_readint32(dir + 2) + dir[1];
-offset-size-arithmetic	libclamav/iso9660.c	309	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
-offset-size-arithmetic	libclamav/iso9660.c	375	    if (offset > ctx->fmap->len || sizeof(primary_descriptor) > ctx->fmap->len - offset)
-offset-size-arithmetic	libclamav/iso9660.c	378	    primary_map = fmap_need_off(ctx->fmap, offset, sizeof(primary_descriptor));
-offset-size-arithmetic	libclamav/iso9660.c	384	    next = (uint8_t *)cli_memstr((char *)primary_map + 2049, sizeof(primary_descriptor) - 2049, "CD001", 5);
-offset-size-arithmetic	libclamav/iso9660.c	387	        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
-offset-size-arithmetic	libclamav/iso9660.c	394	        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
-offset-size-arithmetic	libclamav/iso9660.c	401	        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
-offset-size-arithmetic	libclamav/iso9660.c	405	    iso.base_offset = offset - iso.sectsz * 16;
-offset-size-arithmetic	libclamav/iso9660.c	409	        uint64_t descriptor_offset64 = (uint64_t)iso.base_offset + (uint64_t)i * iso.sectsz;
-offset-size-arithmetic	libclamav/iso9660.c	415	        next             = fmap_need_off_once(ctx->fmap, descriptor_offset, 2048);
-offset-size-arithmetic	libclamav/iso9660.c	417	            if (descriptor_offset <= ctx->fmap->len && 2048 <= ctx->fmap->len - descriptor_offset) {
-offset-size-arithmetic	libclamav/iso9660.c	418	                fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
-offset-size-arithmetic	libclamav/iso9660.c	456	    fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
-offset-size-arithmetic	libclamav/iso9660.c	500	            cli_dbgmsg("cli_scaniso: Path table size: 0x%x\n", cli_readint32(privol + 132) & 0xffff);
+offset-size-arithmetic	libclamav/iso9660.c	134	        todo = MIN(len, iso->blocksz);
+offset-size-arithmetic	libclamav/iso9660.c	158	        len -= todo;
+offset-size-arithmetic	libclamav/iso9660.c	191	        if (len > (sizeof(iso->buf) - 2)) {
+offset-size-arithmetic	libclamav/iso9660.c	193	            len = sizeof(iso->buf) - 2;
+offset-size-arithmetic	libclamav/iso9660.c	197	        iso->buf[len + 1] = '\0';
+offset-size-arithmetic	libclamav/iso9660.c	200	        strncpy(iso->buf, uutf8, sizeof(iso->buf));
+offset-size-arithmetic	libclamav/iso9660.c	201	        iso->buf[sizeof(iso->buf) - 1] = '\0';
+offset-size-arithmetic	libclamav/iso9660.c	204	        if (len >= sizeof(iso->buf)) {
+offset-size-arithmetic	libclamav/iso9660.c	206	            len = sizeof(iso->buf) - 1;
+offset-size-arithmetic	libclamav/iso9660.c	224	    for (; len && ret == CL_SUCCESS; block++, len -= MIN(len, iso->blocksz)) {
+offset-size-arithmetic	libclamav/iso9660.c	281	            if (entrysz > dirsz) { /* record size overlaps onto the next sector, no point in looking in there */
+offset-size-arithmetic	libclamav/iso9660.c	304	            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
+offset-size-arithmetic	libclamav/iso9660.c	311	                uint64_t fileoff64 = (uint64_t)cli_readint32(dir + 2) + dir[1];
+offset-size-arithmetic	libclamav/iso9660.c	320	            cli_dbgmsg("iso_parse_dir: %s '%s': off %x - size %x - flags %x - unit size %x - gap size %x - volume %u\n", (dir[25] & 2) ? "Directory" : "File", iso->buf, fileoff, filesz, dir[25], dir[26], dir[27], cli_readint32(&dir[28]) & 0xffff);
+offset-size-arithmetic	libclamav/iso9660.c	386	    if (offset > ctx->fmap->len || sizeof(primary_descriptor) > ctx->fmap->len - offset)
+offset-size-arithmetic	libclamav/iso9660.c	389	    primary_map = fmap_need_off(ctx->fmap, offset, sizeof(primary_descriptor));
+offset-size-arithmetic	libclamav/iso9660.c	395	    next = (uint8_t *)cli_memstr((char *)primary_map + 2049, sizeof(primary_descriptor) - 2049, "CD001", 5);
+offset-size-arithmetic	libclamav/iso9660.c	398	        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+offset-size-arithmetic	libclamav/iso9660.c	405	        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+offset-size-arithmetic	libclamav/iso9660.c	412	        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+offset-size-arithmetic	libclamav/iso9660.c	416	    iso.base_offset = offset - iso.sectsz * 16;
+offset-size-arithmetic	libclamav/iso9660.c	420	        uint64_t descriptor_offset64 = (uint64_t)iso.base_offset + (uint64_t)i * iso.sectsz;
+offset-size-arithmetic	libclamav/iso9660.c	426	        next             = fmap_need_off_once(ctx->fmap, descriptor_offset, 2048);
+offset-size-arithmetic	libclamav/iso9660.c	428	            if (descriptor_offset <= ctx->fmap->len && 2048 <= ctx->fmap->len - descriptor_offset) {
+offset-size-arithmetic	libclamav/iso9660.c	429	                fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+offset-size-arithmetic	libclamav/iso9660.c	467	    fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+offset-size-arithmetic	libclamav/iso9660.c	511	            cli_dbgmsg("cli_scaniso: Path table size: 0x%x\n", cli_readint32(privol + 132) & 0xffff);
 offset-size-arithmetic	libclamav/iso9660.c	66	    if (iso->base_offset > ctx->fmap->len)
 offset-size-arithmetic	libclamav/iso9660.c	69	    available       = (uint64_t)(ctx->fmap->len - iso->base_offset);
 offset-size-arithmetic	libclamav/iso9660.c	74	    logical_offset = (uint64_t)(block / blocks_per_sect) * iso->sectsz;   /* logical sector */
@@ -25969,13 +25969,13 @@ offset-size-arithmetic	libclamav/msdoc.c	995	    foff += sizeof(summary_stub_t);
 offset-size-arithmetic	libclamav/msdoc.c	998	    /* endian conversion and checks */
 offset-size-arithmetic	libclamav/msdoc.h	157	    uint32_t pssize; /* track from propset start, not tail start */
 offset-size-arithmetic	libclamav/msdoc.h	171	#endif /* __MSDOC_H_ */
-offset-size-arithmetic	libclamav/msexpand.c	123	    off_t cur_off = sizeof(*hdr);
-offset-size-arithmetic	libclamav/msexpand.c	132	    if (!(hdr = fmap_need_off_once(map, 0, sizeof(*hdr)))) {
-offset-size-arithmetic	libclamav/msexpand.c	142	    fsize = EC32(hdr->fsize);
+offset-size-arithmetic	libclamav/msexpand.c	126	    off_t cur_off = sizeof(*hdr);
+offset-size-arithmetic	libclamav/msexpand.c	135	    if (!(hdr = fmap_need_off_once(map, 0, sizeof(*hdr)))) {
+offset-size-arithmetic	libclamav/msexpand.c	145	    fsize = EC32(hdr->fsize);
 offset-size-arithmetic	libclamav/msexpand.c	78	    rbytes = MIN(RW_SIZE, map->len - cur_off);                                        \
 offset-size-arithmetic	libclamav/msexpand.c	86	    cur_off += rbytes;                                                                \
 offset-size-arithmetic	libclamav/msexpand.c	90	    if ((uint64_t)wbytes > (uint64_t)fsize || (uint64_t)w > (uint64_t)fsize - (uint64_t)wbytes) { \
-offset-size-arithmetic	libclamav/msexpand.c	95	    if (ret == (size_t)-1 || (unsigned int)ret != w) {                                        \
+offset-size-arithmetic	libclamav/msexpand.c	98	    if (ret == (size_t)-1 || (unsigned int)ret != w) {                                        \
 offset-size-arithmetic	libclamav/msxml.c	100	    new_window = fmap_need_off_once(cbdata->map, new_mappos, bytes);
 offset-size-arithmetic	libclamav/msxml.c	112	                 (long long unsigned)cbdata->mappos, (long long unsigned)(cbdata->mappos + cbdata->winsize),
 offset-size-arithmetic	libclamav/msxml.c	133	    cli_msxmlmsg("msxml_read_cb: requested %zu bytes from offset %llu\n", len, (long long unsigned)(cbdata->mappos + cbdata->winpos));
@@ -28575,86 +28575,86 @@ offset-size-arithmetic	libclamav/sf_base64decode.c	70	      At the end we're goi
 offset-size-arithmetic	libclamav/sf_base64decode.c	71	    max_base64_chars = (outbuf_size / 3) * 4 + 4; /* 4 base64 bytes gives 3 data bytes, plus
 offset-size-arithmetic	libclamav/sf_base64decode.c	75	    endofinbuf     = inbuf + inbuf_size;
 offset-size-arithmetic	libclamav/sf_base64decode.h	30	int sf_base64decode(uint8_t *, size_t, uint8_t *, size_t, size_t *);
-offset-size-arithmetic	libclamav/sis.c	1032	        nread = fmap_readn(s->map, &s->buff[s->sleft], s->pos, BUFSIZ - s->sleft);
-offset-size-arithmetic	libclamav/sis.c	1033	        if (nread == (size_t)-1) {
-offset-size-arithmetic	libclamav/sis.c	1045	        s->pos += nread;
-offset-size-arithmetic	libclamav/sis.c	1052	static inline int getsize(struct SISTREAM *s)
-offset-size-arithmetic	libclamav/sis.c	1054	    uint32_t *fsize = &s->fsize[s->level];
-offset-size-arithmetic	libclamav/sis.c	1055	    if (getd(s, fsize) || !*fsize)
-offset-size-arithmetic	libclamav/sis.c	1057	    if ((*fsize) >> 31 || (s->level && *fsize > s->fsize[s->level - 1] * 2)) {
-offset-size-arithmetic	libclamav/sis.c	1063	    /* To handle crafted archives we allow the content to overflow the container but only up to 2 times the container size */
-offset-size-arithmetic	libclamav/sis.c	1064	    s->fnext[s->level] = s->pos - s->sleft + *fsize;
-offset-size-arithmetic	libclamav/sis.c	1075	            cli_dbgmsg("SIS: %d:Got %s(%x) field with size %x\n", s->level, sisfields[*field], *field, s->fsize[s->level]);
-offset-size-arithmetic	libclamav/sis.c	1077	            cli_dbgmsg("SIS: %d:Got invalid(%x) field with size %x\n", s->level, *field, s->fsize[s->level]);
-offset-size-arithmetic	libclamav/sis.c	1089	        seekto = size - s->sleft;
-offset-size-arithmetic	libclamav/sis.c	1090	        if (seekto < 0) { /* in case sizeof(long)==sizeof(uint32_t) */
-offset-size-arithmetic	libclamav/sis.c	1096	        s->pos += seekto;
-offset-size-arithmetic	libclamav/sis.c	1105	    return skip(s, ALIGN4(s->fsize[s->level]));
-offset-size-arithmetic	libclamav/sis.c	1108	static inline void seeknext(struct SISTREAM *s)
-offset-size-arithmetic	libclamav/sis.c	1110	    s->pos = s->fnext[s->level];
-offset-size-arithmetic	libclamav/sis.c	1170	            if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_DATAUNIT || s->fsize[s->level] < 4) break;
-offset-size-arithmetic	libclamav/sis.c	1171	            s->fsize[s->level] -= 4;
-offset-size-arithmetic	libclamav/sis.c	1174	            while (s->fsize[s->level - 1]) { /* FOREACH DATA::ARRAY::DATAUNITs */
-offset-size-arithmetic	libclamav/sis.c	1177	                cli_dbgmsg("SIS: %d:Got dataunit element with size %x\n", s->level, s->fsize[s->level]);
-offset-size-arithmetic	libclamav/sis.c	1178	                if (ALIGN4(s->fsize[s->level]) < s->fsize[s->level - 1])
-offset-size-arithmetic	libclamav/sis.c	1179	                    s->fsize[s->level - 1] -= ALIGN4(s->fsize[s->level]);
-offset-size-arithmetic	libclamav/sis.c	1181	                    s->fsize[s->level - 1] = 0;
-offset-size-arithmetic	libclamav/sis.c	1187	                    if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_FILEDATA || s->fsize[s->level] < 4) break;
-offset-size-arithmetic	libclamav/sis.c	1188	                    s->fsize[s->level] -= 4;
-offset-size-arithmetic	libclamav/sis.c	1191	                    while (s->fsize[s->level - 1]) { /* FOREACH DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA */
-offset-size-arithmetic	libclamav/sis.c	1202	                        cli_dbgmsg("SIS: %d:Got filedata element with size %x\n", s->level, s->fsize[s->level]);
-offset-size-arithmetic	libclamav/sis.c	1203	                        if (ALIGN4(s->fsize[s->level]) < s->fsize[s->level - 1])
-offset-size-arithmetic	libclamav/sis.c	1204	                            s->fsize[s->level - 1] -= ALIGN4(s->fsize[s->level]);
-offset-size-arithmetic	libclamav/sis.c	1206	                            s->fsize[s->level - 1] = 0;
-offset-size-arithmetic	libclamav/sis.c	1213	                            s->fsize[s->level] -= 12;
-offset-size-arithmetic	libclamav/sis.c	1214	                            cli_dbgmsg("SIS: File is%s compressed - size %x -> %x\n", (field) ? "" : " not", s->fsize[s->level], usize);
-offset-size-arithmetic	libclamav/sis.c	1217	                            s->pos -= (long)s->sleft;
-offset-size-arithmetic	libclamav/sis.c	1219	                            len                = ALIGN4(s->fsize[s->level]);
-offset-size-arithmetic	libclamav/sis.c	1224	                            member_input_size  = field ? (uint64_t)s->fsize[s->level] : (uint64_t)len;
-offset-size-arithmetic	libclamav/sis.c	1269	                            s->pos += len;
-offset-size-arithmetic	libclamav/sis.c	1330	/*   /\* FIXME: RESEEK before spamming strings if not compressed *\/ */
-offset-size-arithmetic	libclamav/sis.c	1387	/*     if ((ssize_t)((N)-sleft)<0) { \ */
-offset-size-arithmetic	libclamav/sis.c	1391	/*     fseek(f, (N)-sleft, SEEK_CUR); \ */
-offset-size-arithmetic	libclamav/sis.c	1397	/*     fseek(f, -(long)sleft, SEEK_CUR); \ */
-offset-size-arithmetic	libclamav/sis.c	1415	/* static void stringifycbuff(uint8_t *ptr, uint32_t len) { */
-offset-size-arithmetic	libclamav/sis.c	1427	/* #define MAXLANG (sizeof(sislangs)/sizeof(sislangs[0])) */
-offset-size-arithmetic	libclamav/sis.c	1457	/*     { T_STRING,                     0, 0, &s[8], "Vendor name"}, */
-offset-size-arithmetic	libclamav/sis.c	1459	/*     { T_ARRAY,                      0, 0, &s[10], "Vendor names"}, */
-offset-size-arithmetic	libclamav/sis.c	1504	/*       if (t_array.totalsize<=(ALIGN4(fsz)+4)) */
-offset-size-arithmetic	libclamav/sis.c	1506	/*       t_array.totalsize-=ALIGN4(fsz)+4; */
+offset-size-arithmetic	libclamav/sis.c	1042	        nread = fmap_readn(s->map, &s->buff[s->sleft], s->pos, BUFSIZ - s->sleft);
+offset-size-arithmetic	libclamav/sis.c	1043	        if (nread == (size_t)-1) {
+offset-size-arithmetic	libclamav/sis.c	1055	        s->pos += nread;
+offset-size-arithmetic	libclamav/sis.c	1062	static inline int getsize(struct SISTREAM *s)
+offset-size-arithmetic	libclamav/sis.c	1064	    uint32_t *fsize = &s->fsize[s->level];
+offset-size-arithmetic	libclamav/sis.c	1065	    if (getd(s, fsize) || !*fsize)
+offset-size-arithmetic	libclamav/sis.c	1067	    if ((*fsize) >> 31 || (s->level && *fsize > s->fsize[s->level - 1] * 2)) {
+offset-size-arithmetic	libclamav/sis.c	1073	    /* To handle crafted archives we allow the content to overflow the container but only up to 2 times the container size */
+offset-size-arithmetic	libclamav/sis.c	1074	    s->fnext[s->level] = s->pos - s->sleft + *fsize;
+offset-size-arithmetic	libclamav/sis.c	1085	            cli_dbgmsg("SIS: %d:Got %s(%x) field with size %x\n", s->level, sisfields[*field], *field, s->fsize[s->level]);
+offset-size-arithmetic	libclamav/sis.c	1087	            cli_dbgmsg("SIS: %d:Got invalid(%x) field with size %x\n", s->level, *field, s->fsize[s->level]);
+offset-size-arithmetic	libclamav/sis.c	1099	        seekto = size - s->sleft;
+offset-size-arithmetic	libclamav/sis.c	1100	        if (seekto < 0) { /* in case sizeof(long)==sizeof(uint32_t) */
+offset-size-arithmetic	libclamav/sis.c	1106	        s->pos += seekto;
+offset-size-arithmetic	libclamav/sis.c	1115	    return skip(s, ALIGN4(s->fsize[s->level]));
+offset-size-arithmetic	libclamav/sis.c	1118	static inline void seeknext(struct SISTREAM *s)
+offset-size-arithmetic	libclamav/sis.c	1120	    s->pos = s->fnext[s->level];
+offset-size-arithmetic	libclamav/sis.c	1180	            if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_DATAUNIT || s->fsize[s->level] < 4) break;
+offset-size-arithmetic	libclamav/sis.c	1181	            s->fsize[s->level] -= 4;
+offset-size-arithmetic	libclamav/sis.c	1184	            while (s->fsize[s->level - 1]) { /* FOREACH DATA::ARRAY::DATAUNITs */
+offset-size-arithmetic	libclamav/sis.c	1187	                cli_dbgmsg("SIS: %d:Got dataunit element with size %x\n", s->level, s->fsize[s->level]);
+offset-size-arithmetic	libclamav/sis.c	1188	                if (ALIGN4(s->fsize[s->level]) < s->fsize[s->level - 1])
+offset-size-arithmetic	libclamav/sis.c	1189	                    s->fsize[s->level - 1] -= ALIGN4(s->fsize[s->level]);
+offset-size-arithmetic	libclamav/sis.c	1191	                    s->fsize[s->level - 1] = 0;
+offset-size-arithmetic	libclamav/sis.c	1197	                    if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_FILEDATA || s->fsize[s->level] < 4) break;
+offset-size-arithmetic	libclamav/sis.c	1198	                    s->fsize[s->level] -= 4;
+offset-size-arithmetic	libclamav/sis.c	1201	                    while (s->fsize[s->level - 1]) { /* FOREACH DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA */
+offset-size-arithmetic	libclamav/sis.c	1212	                        cli_dbgmsg("SIS: %d:Got filedata element with size %x\n", s->level, s->fsize[s->level]);
+offset-size-arithmetic	libclamav/sis.c	1213	                        if (ALIGN4(s->fsize[s->level]) < s->fsize[s->level - 1])
+offset-size-arithmetic	libclamav/sis.c	1214	                            s->fsize[s->level - 1] -= ALIGN4(s->fsize[s->level]);
+offset-size-arithmetic	libclamav/sis.c	1216	                            s->fsize[s->level - 1] = 0;
+offset-size-arithmetic	libclamav/sis.c	1223	                            s->fsize[s->level] -= 12;
+offset-size-arithmetic	libclamav/sis.c	1224	                            cli_dbgmsg("SIS: File is%s compressed - size %x -> %x\n", (field) ? "" : " not", s->fsize[s->level], usize);
+offset-size-arithmetic	libclamav/sis.c	1227	                            s->pos -= (long)s->sleft;
+offset-size-arithmetic	libclamav/sis.c	1229	                            len                = ALIGN4(s->fsize[s->level]);
+offset-size-arithmetic	libclamav/sis.c	1234	                            member_input_size  = field ? (uint64_t)s->fsize[s->level] : (uint64_t)len;
+offset-size-arithmetic	libclamav/sis.c	1279	                            s->pos += len;
+offset-size-arithmetic	libclamav/sis.c	1340	/*   /\* FIXME: RESEEK before spamming strings if not compressed *\/ */
+offset-size-arithmetic	libclamav/sis.c	1397	/*     if ((ssize_t)((N)-sleft)<0) { \ */
+offset-size-arithmetic	libclamav/sis.c	1401	/*     fseek(f, (N)-sleft, SEEK_CUR); \ */
+offset-size-arithmetic	libclamav/sis.c	1407	/*     fseek(f, -(long)sleft, SEEK_CUR); \ */
+offset-size-arithmetic	libclamav/sis.c	1425	/* static void stringifycbuff(uint8_t *ptr, uint32_t len) { */
+offset-size-arithmetic	libclamav/sis.c	1437	/* #define MAXLANG (sizeof(sislangs)/sizeof(sislangs[0])) */
+offset-size-arithmetic	libclamav/sis.c	1467	/*     { T_STRING,                     0, 0, &s[8], "Vendor name"}, */
+offset-size-arithmetic	libclamav/sis.c	1469	/*     { T_ARRAY,                      0, 0, &s[10], "Vendor names"}, */
+offset-size-arithmetic	libclamav/sis.c	1514	/*       if (t_array.totalsize<=(ALIGN4(fsz)+4)) */
+offset-size-arithmetic	libclamav/sis.c	1516	/*       t_array.totalsize-=ALIGN4(fsz)+4; */
 offset-size-arithmetic	libclamav/sis.c	153	    if (input_offset > (uint64_t)map->len || input_size > (uint64_t)map->len - input_offset) {
-offset-size-arithmetic	libclamav/sis.c	1574	/* 	  fseek(f, -(long)sleft, SEEK_CUR); */
-offset-size-arithmetic	libclamav/sis.c	1581	/* 	  if(!(cbuff=malloc(usize))) { */
-offset-size-arithmetic	libclamav/sis.c	1597	/* 	  if ((uLongf)usize != uusize) { */
-offset-size-arithmetic	libclamav/sis.c	1602	/* 	  fwrite(cbuff, uusize, 1, fopen("/tmp/gunz", "w")); */
+offset-size-arithmetic	libclamav/sis.c	1584	/* 	  fseek(f, -(long)sleft, SEEK_CUR); */
+offset-size-arithmetic	libclamav/sis.c	1591	/* 	  if(!(cbuff=malloc(usize))) { */
+offset-size-arithmetic	libclamav/sis.c	1607	/* 	  if ((uLongf)usize != uusize) { */
+offset-size-arithmetic	libclamav/sis.c	1612	/* 	  fwrite(cbuff, uusize, 1, fopen("/tmp/gunz", "w")); */
 offset-size-arithmetic	libclamav/sis.c	180	                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-offset-size-arithmetic	libclamav/sis.c	189	            input_pos += chunk;
-offset-size-arithmetic	libclamav/sis.c	222	                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
-offset-size-arithmetic	libclamav/sis.c	225	            input_pos += chunk;
-offset-size-arithmetic	libclamav/sis.c	235	        produced         = sizeof(output) - stream.avail_out;
-offset-size-arithmetic	libclamav/sis.c	238	            if (output_total > output_size || (uint64_t)produced > output_size - output_total) {
-offset-size-arithmetic	libclamav/sis.c	369	    PKGendif     /* #ENDIF */
-offset-size-arithmetic	libclamav/sis.c	394	            size_t tmp = fmap_readn(map, buff + sleft, pos, BUFSIZ - sleft);                   \
-offset-size-arithmetic	libclamav/sis.c	396	            if (((size_t)-1) == tmp) {                                                         \
-offset-size-arithmetic	libclamav/sis.c	405	            pos += smax - sleft;                                                               \
-offset-size-arithmetic	libclamav/sis.c	422	        pos += (N)-sleft;                                                                           \
-offset-size-arithmetic	libclamav/sis.c	424	        if (((size_t)-1) == tmp) {                                                                  \
-offset-size-arithmetic	libclamav/sis.c	430	        pos += smax;                                                                                \
-offset-size-arithmetic	libclamav/sis.c	434	#define MAXLANG (sizeof(sislangs) / sizeof(sislangs[0]))
-offset-size-arithmetic	libclamav/sis.c	436	static cl_error_t getsistring(cli_ctx *ctx, fmap_t *map, uint32_t ptr, uint32_t len, char **name_out)
-offset-size-arithmetic	libclamav/sis.c	448	    name = cli_max_malloc(len + 1);
-offset-size-arithmetic	libclamav/sis.c	473	static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
-offset-size-arithmetic	libclamav/sis.c	481	    const uint32_t len = sizeof(uint32_t) * langs * 2;
-offset-size-arithmetic	libclamav/sis.c	605	    if (!(llangs = sis_need_off(ctx, pos, sis.langs * sizeof(uint16_t), &status,
-offset-size-arithmetic	libclamav/sis.c	611	    pos += sis.langs * sizeof(uint16_t);
-offset-size-arithmetic	libclamav/sis.c	612	    if (!(alangs = cli_max_malloc(sis.langs * sizeof(char *)))) {
-offset-size-arithmetic	libclamav/sis.c	659	            pos = sis.pdeps + i * (sizeof(dep) + sis.langs * 2 * sizeof(uint32_t));
-offset-size-arithmetic	libclamav/sis.c	674	                pos += sizeof(dep);
-offset-size-arithmetic	libclamav/sis.c	711	                uint32_t *lens, *olens;
+offset-size-arithmetic	libclamav/sis.c	194	            input_pos += chunk;
+offset-size-arithmetic	libclamav/sis.c	227	                status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+offset-size-arithmetic	libclamav/sis.c	230	            input_pos += chunk;
+offset-size-arithmetic	libclamav/sis.c	240	        produced         = sizeof(output) - stream.avail_out;
+offset-size-arithmetic	libclamav/sis.c	243	            if (output_total > output_size || (uint64_t)produced > output_size - output_total) {
+offset-size-arithmetic	libclamav/sis.c	379	    PKGendif     /* #ENDIF */
+offset-size-arithmetic	libclamav/sis.c	404	            size_t tmp = fmap_readn(map, buff + sleft, pos, BUFSIZ - sleft);                   \
+offset-size-arithmetic	libclamav/sis.c	406	            if (((size_t)-1) == tmp) {                                                         \
+offset-size-arithmetic	libclamav/sis.c	415	            pos += smax - sleft;                                                               \
+offset-size-arithmetic	libclamav/sis.c	432	        pos += (N)-sleft;                                                                           \
+offset-size-arithmetic	libclamav/sis.c	434	        if (((size_t)-1) == tmp) {                                                                  \
+offset-size-arithmetic	libclamav/sis.c	440	        pos += smax;                                                                                \
+offset-size-arithmetic	libclamav/sis.c	444	#define MAXLANG (sizeof(sislangs) / sizeof(sislangs[0]))
+offset-size-arithmetic	libclamav/sis.c	446	static cl_error_t getsistring(cli_ctx *ctx, fmap_t *map, uint32_t ptr, uint32_t len, char **name_out)
+offset-size-arithmetic	libclamav/sis.c	458	    name = cli_max_malloc(len + 1);
+offset-size-arithmetic	libclamav/sis.c	483	static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t langs, const char **alangs)
+offset-size-arithmetic	libclamav/sis.c	491	    const uint32_t len = sizeof(uint32_t) * langs * 2;
+offset-size-arithmetic	libclamav/sis.c	615	    if (!(llangs = sis_need_off(ctx, pos, sis.langs * sizeof(uint16_t), &status,
+offset-size-arithmetic	libclamav/sis.c	621	    pos += sis.langs * sizeof(uint16_t);
+offset-size-arithmetic	libclamav/sis.c	622	    if (!(alangs = cli_max_malloc(sis.langs * sizeof(char *)))) {
+offset-size-arithmetic	libclamav/sis.c	669	            pos = sis.pdeps + i * (sizeof(dep) + sis.langs * 2 * sizeof(uint32_t));
+offset-size-arithmetic	libclamav/sis.c	684	                pos += sizeof(dep);
 offset-size-arithmetic	libclamav/sis.c	72	sis_read_failure(cli_ctx *ctx, size_t nread, const char *read_reason, const char *short_reason)
+offset-size-arithmetic	libclamav/sis.c	721	                uint32_t *lens, *olens;
 offset-size-arithmetic	libclamav/sis.c	74	    if (nread == (size_t)-1) {
-offset-size-arithmetic	libclamav/sis.c	770	                if (!(ptrs = cli_max_malloc(fcount * sizeof(uint32_t) * 3))) {
-offset-size-arithmetic	libclamav/sis.c	776	                olens = &ptrs[fcount * 2];
+offset-size-arithmetic	libclamav/sis.c	780	                if (!(ptrs = cli_max_malloc(fcount * sizeof(uint32_t) * 3))) {
+offset-size-arithmetic	libclamav/sis.c	786	                olens = &ptrs[fcount * 2];
 offset-size-arithmetic	libclamav/sis.c	84	sis_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *status,
 offset-size-arithmetic	libclamav/sis.c	92	    if (offset > ctx->fmap->len || length > ctx->fmap->len - offset) {
 offset-size-arithmetic	libclamav/sis.c	98	    ptr = fmap_need_off_once(ctx->fmap, offset, length);
@@ -28954,61 +28954,61 @@ offset-size-arithmetic	libclamav/tnef.c	517	    /* fmap_readn() uses (size_t)-1 
 offset-size-arithmetic	libclamav/tnef.c	67	/* a TNEF file must be at least this size */
 offset-size-arithmetic	libclamav/tnef.c	68	#define MIN_SIZE (sizeof(uint32_t) + sizeof(uint16_t))
 offset-size-arithmetic	libclamav/tnef.c	93	    fsize = ctx->fmap->len;
-offset-size-arithmetic	libclamav/udf.c	108	        if (extents[i].offset > map->len || extents[i].length > map->len - extents[i].offset) {
-offset-size-arithmetic	libclamav/udf.c	116	            size_t chunk = MIN(sizeof(buffer), extents[i].length - extent_copied);
-offset-size-arithmetic	libclamav/udf.c	123	            if (fmap_readn(map, buffer, extents[i].offset + extent_copied, chunk) != chunk) {
-offset-size-arithmetic	libclamav/udf.c	208	            rawLength   = le32_to_host(shortDesc->length);
-offset-size-arithmetic	libclamav/udf.c	214	            rawLength   = le32_to_host(longDesc->length);
-offset-size-arithmetic	libclamav/udf.c	226	            rawLength                = le32_to_host(extDesc->extentLen);
-offset-size-arithmetic	libclamav/udf.c	244	    extentType = rawLength >> 30;
-offset-size-arithmetic	libclamav/udf.c	283	    offset64 = partitionOffset + extentOffset;
-offset-size-arithmetic	libclamav/udf.c	285	    if (offset64 > SIZE_MAX || (size_t)offset64 > ctx->fmap->len || length > ctx->fmap->len - (size_t)offset64) {
-offset-size-arithmetic	libclamav/udf.c	347	    extent_count = allocation_descriptor_len / descriptor_size;
-offset-size-arithmetic	libclamav/udf.c	348	    if (extent_count > SIZE_MAX / sizeof(*extents)) {
-offset-size-arithmetic	libclamav/udf.c	355	    extents = cli_max_calloc(extent_count, sizeof(*extents));
-offset-size-arithmetic	libclamav/udf.c	372	        if (total_length > UINT64_MAX - extents[i].length) {
-offset-size-arithmetic	libclamav/udf.c	378	        total_length += extents[i].length;
-offset-size-arithmetic	libclamav/udf.c	430	    allocation_descriptor_len  = le32_to_host(fed->allocationDescLen);
-offset-size-arithmetic	libclamav/udf.c	437	    allocation_descriptor = (void *)((uint8_t *)fed + (file_entry_descriptor_size - allocation_descriptor_len));
-offset-size-arithmetic	libclamav/udf.c	478	static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *read_status)
-offset-size-arithmetic	libclamav/udf.c	480	    const void *ptr = fmap_need_off(ctx->fmap, offset, length);
-offset-size-arithmetic	libclamav/udf.c	482	    if (NULL == ptr && offset <= ctx->fmap->len && length <= ctx->fmap->len - offset)
-offset-size-arithmetic	libclamav/udf.c	489	static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
-offset-size-arithmetic	libclamav/udf.c	493	    size_t idx      = *idxp;
-offset-size-arithmetic	libclamav/udf.c	516	            fmap_unneed_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
-offset-size-arithmetic	libclamav/udf.c	520	        fmap_unneed_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
-offset-size-arithmetic	libclamav/udf.c	538	static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	543	    size_t idx                    = *idxp;
-offset-size-arithmetic	libclamav/udf.c	544	    size_t lastOffset             = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	576	static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(cli_ctx *ctx, size_t *idxp,
-offset-size-arithmetic	libclamav/udf.c	577	                                                                                 size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	582	    size_t idx                              = *idxp;
-offset-size-arithmetic	libclamav/udf.c	583	    size_t lastOffset                       = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	615	static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	620	    size_t idx                    = *idxp;
-offset-size-arithmetic	libclamav/udf.c	621	    size_t lastOffset             = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	653	static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	658	    size_t idx                = *idxp;
-offset-size-arithmetic	libclamav/udf.c	659	    size_t lastOffset         = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	691	static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	696	    size_t idx                       = *idxp;
-offset-size-arithmetic	libclamav/udf.c	697	    size_t lastOffset                = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	729	static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	734	    size_t idx                  = *idxp;
-offset-size-arithmetic	libclamav/udf.c	735	    size_t lastOffset           = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	767	static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli_ctx *ctx, size_t *idxp,
-offset-size-arithmetic	libclamav/udf.c	768	                                                                              size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	773	    size_t idx                             = *idxp;
-offset-size-arithmetic	libclamav/udf.c	774	    size_t lastOffset                      = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	806	static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
-offset-size-arithmetic	libclamav/udf.c	811	    size_t idx                          = *idxp;
-offset-size-arithmetic	libclamav/udf.c	812	    size_t lastOffset                   = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	844	static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
-offset-size-arithmetic	libclamav/udf.c	848	    size_t idx              = *idxp;
-offset-size-arithmetic	libclamav/udf.c	849	    size_t lastOffset       = *lastOffsetp;
-offset-size-arithmetic	libclamav/udf.c	906	    CLI_CALLOC_OR_GOTO_DONE(pl->idxs, capacity, sizeof(uint8_t *),
-offset-size-arithmetic	libclamav/udf.c	924	        if (pl->capacity > (CLI_MAX_ALLOCATION / sizeof(uint8_t *)) - POINTER_LIST_INCREMENT) {
-offset-size-arithmetic	libclamav/udf.c	928	        CLI_SAFER_REALLOC_OR_GOTO_DONE(pl->idxs, newCapacity * sizeof(uint8_t *),
+offset-size-arithmetic	libclamav/udf.c	112	        if (extents[i].offset > map->len || extents[i].length > map->len - extents[i].offset) {
+offset-size-arithmetic	libclamav/udf.c	120	            size_t chunk = MIN(sizeof(buffer), extents[i].length - extent_copied);
+offset-size-arithmetic	libclamav/udf.c	127	            if (fmap_readn(map, buffer, extents[i].offset + extent_copied, chunk) != chunk) {
+offset-size-arithmetic	libclamav/udf.c	215	            rawLength   = le32_to_host(shortDesc->length);
+offset-size-arithmetic	libclamav/udf.c	221	            rawLength   = le32_to_host(longDesc->length);
+offset-size-arithmetic	libclamav/udf.c	233	            rawLength                = le32_to_host(extDesc->extentLen);
+offset-size-arithmetic	libclamav/udf.c	251	    extentType = rawLength >> 30;
+offset-size-arithmetic	libclamav/udf.c	290	    offset64 = partitionOffset + extentOffset;
+offset-size-arithmetic	libclamav/udf.c	292	    if (offset64 > SIZE_MAX || (size_t)offset64 > ctx->fmap->len || length > ctx->fmap->len - (size_t)offset64) {
+offset-size-arithmetic	libclamav/udf.c	354	    extent_count = allocation_descriptor_len / descriptor_size;
+offset-size-arithmetic	libclamav/udf.c	355	    if (extent_count > SIZE_MAX / sizeof(*extents)) {
+offset-size-arithmetic	libclamav/udf.c	362	    extents = cli_max_calloc(extent_count, sizeof(*extents));
+offset-size-arithmetic	libclamav/udf.c	379	        if (total_length > UINT64_MAX - extents[i].length) {
+offset-size-arithmetic	libclamav/udf.c	385	        total_length += extents[i].length;
+offset-size-arithmetic	libclamav/udf.c	437	    allocation_descriptor_len  = le32_to_host(fed->allocationDescLen);
+offset-size-arithmetic	libclamav/udf.c	444	    allocation_descriptor = (void *)((uint8_t *)fed + (file_entry_descriptor_size - allocation_descriptor_len));
+offset-size-arithmetic	libclamav/udf.c	485	static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *read_status)
+offset-size-arithmetic	libclamav/udf.c	487	    const void *ptr = fmap_need_off(ctx->fmap, offset, length);
+offset-size-arithmetic	libclamav/udf.c	489	    if (NULL == ptr && offset <= ctx->fmap->len && length <= ctx->fmap->len - offset)
+offset-size-arithmetic	libclamav/udf.c	496	static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
+offset-size-arithmetic	libclamav/udf.c	500	    size_t idx      = *idxp;
+offset-size-arithmetic	libclamav/udf.c	523	            fmap_unneed_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+offset-size-arithmetic	libclamav/udf.c	527	        fmap_unneed_off(ctx->fmap, idx, VOLUME_DESCRIPTOR_SIZE);
+offset-size-arithmetic	libclamav/udf.c	545	static PrimaryVolumeDescriptor *getPrimaryVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	550	    size_t idx                    = *idxp;
+offset-size-arithmetic	libclamav/udf.c	551	    size_t lastOffset             = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	583	static ImplementationUseVolumeDescriptor *getImplementationUseVolumeDescriptor(cli_ctx *ctx, size_t *idxp,
+offset-size-arithmetic	libclamav/udf.c	584	                                                                                 size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	589	    size_t idx                              = *idxp;
+offset-size-arithmetic	libclamav/udf.c	590	    size_t lastOffset                       = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	622	static LogicalVolumeDescriptor *getLogicalVolumeDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	627	    size_t idx                    = *idxp;
+offset-size-arithmetic	libclamav/udf.c	628	    size_t lastOffset             = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	660	static PartitionDescriptor *getPartitionDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	665	    size_t idx                = *idxp;
+offset-size-arithmetic	libclamav/udf.c	666	    size_t lastOffset         = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	698	static UnallocatedSpaceDescriptor *getUnallocatedSpaceDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	703	    size_t idx                       = *idxp;
+offset-size-arithmetic	libclamav/udf.c	704	    size_t lastOffset                = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	736	static TerminatingDescriptor *getTerminatingDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	741	    size_t idx                  = *idxp;
+offset-size-arithmetic	libclamav/udf.c	742	    size_t lastOffset           = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	774	static LogicalVolumeIntegrityDescriptor *getLogicalVolumeIntegrityDescriptor(cli_ctx *ctx, size_t *idxp,
+offset-size-arithmetic	libclamav/udf.c	775	                                                                              size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	780	    size_t idx                             = *idxp;
+offset-size-arithmetic	libclamav/udf.c	781	    size_t lastOffset                      = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	813	static AnchorVolumeDescriptorPointer *getAnchorVolumeDescriptorPointer(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp,
+offset-size-arithmetic	libclamav/udf.c	818	    size_t idx                          = *idxp;
+offset-size-arithmetic	libclamav/udf.c	819	    size_t lastOffset                   = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	851	static FileSetDescriptor *getFileSetDescriptor(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp, cl_error_t *read_status)
+offset-size-arithmetic	libclamav/udf.c	855	    size_t idx              = *idxp;
+offset-size-arithmetic	libclamav/udf.c	856	    size_t lastOffset       = *lastOffsetp;
+offset-size-arithmetic	libclamav/udf.c	913	    CLI_CALLOC_OR_GOTO_DONE(pl->idxs, capacity, sizeof(uint8_t *),
+offset-size-arithmetic	libclamav/udf.c	931	        if (pl->capacity > (CLI_MAX_ALLOCATION / sizeof(uint8_t *)) - POINTER_LIST_INCREMENT) {
+offset-size-arithmetic	libclamav/udf.c	935	        CLI_SAFER_REALLOC_OR_GOTO_DONE(pl->idxs, newCapacity * sizeof(uint8_t *),
 offset-size-arithmetic	libclamav/udf.h	195	#define FILE_IDENTIFIER_DESCRIPTOR_SIZE_KNOWN (sizeof(FileIdentifierDescriptor) - 1)
 offset-size-arithmetic	libclamav/udf.h	211	static inline size_t getFileIdentifierDescriptorSize(const FileIdentifierDescriptor* fid)
 offset-size-arithmetic	libclamav/udf.h	262	#define FILE_ENTRY_DESCRIPTOR_SIZE_KNOWN (sizeof(FileEntryDescriptor) - 1)
@@ -29180,9 +29180,9 @@ offset-size-arithmetic	libclamav/untar.c	378	                     * the configur
 offset-size-arithmetic	libclamav/untar.c	389	                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
 offset-size-arithmetic	libclamav/untar.c	393	                else if (padding && size > SIZE_MAX - padding) {
 offset-size-arithmetic	libclamav/untar.c	406	                pos += nskip;
-offset-size-arithmetic	libclamav/untar.c	424	            snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "tar%02u", dir, files);
-offset-size-arithmetic	libclamav/untar.c	425	            fullname[sizeof(fullname) - 1] = '\0';
-offset-size-arithmetic	libclamav/untar.c	461	                size -= nbytes;
+offset-size-arithmetic	libclamav/untar.c	428	            snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "tar%02u", dir, files);
+offset-size-arithmetic	libclamav/untar.c	429	            fullname[sizeof(fullname) - 1] = '\0';
+offset-size-arithmetic	libclamav/untar.c	472	                size -= nbytes;
 offset-size-arithmetic	libclamav/untar.h	32	cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx);
 offset-size-arithmetic	libclamav/unzip.c	1002	                produced = sizeof(obuf) - *avail_out;
 offset-size-arithmetic	libclamav/unzip.c	1039	                    size_t produced = sizeof(obuf) - strm.avail_out;

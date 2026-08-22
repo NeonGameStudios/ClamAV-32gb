@@ -180,6 +180,11 @@ static cl_error_t sis_stream_member_to_fd(cli_ctx *ctx, fmap_t *map, uint64_t in
                 status         = (nread == (size_t)-1) ? CL_EREAD : CL_EPARSE;
                 goto done;
             }
+            status = cli_checktimelimit(ctx);
+            if (status != CL_SUCCESS) {
+                failure_reason = "SIS member output reached the configured time limit";
+                goto done;
+            }
             if (cli_writen(fd, input, chunk) != chunk) {
                 failure_reason = "SIS member could not be written completely";
                 status         = CL_EWRITE;
@@ -238,6 +243,11 @@ static cl_error_t sis_stream_member_to_fd(cli_ctx *ctx, fmap_t *map, uint64_t in
             if (output_total > output_size || (uint64_t)produced > output_size - output_total) {
                 failure_reason = "SIS decompressed member exceeded its declared output size";
                 status         = CL_EFORMAT;
+                goto done;
+            }
+            status = cli_checktimelimit(ctx);
+            if (status != CL_SUCCESS) {
+                failure_reason = "SIS decompressed member output reached the configured time limit";
                 goto done;
             }
             if (cli_writen(fd, output, produced) != produced) {

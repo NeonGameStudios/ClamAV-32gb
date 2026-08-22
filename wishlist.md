@@ -99,6 +99,9 @@
 - Bytecode output and shared MIME/fileblob spool paths now re-check the shared
   deadline after temporary admission and before writing; add post-admission
   timeout injection and complete bytecode/mail corpus qualification.
+- MSEXPAND, TAR, SIS, ISO9660, and UDF materialized-output paths now re-check
+  the shared deadline at output boundaries; add deterministic post-admission
+  timeout injection and complete archive/filesystem corpus qualification.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
   copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
   keeping provenance binding consistent with the actual workload; full

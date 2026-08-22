@@ -112,6 +112,12 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
     }
     temporary_reserved = (uint64_t)len;
 
+    ret = cli_checktimelimit(iso->ctx);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(iso->ctx, "ISO file extent temporary admission reached the configured time limit");
+        goto cleanup;
+    }
+
     cli_dbgmsg("iso_scan_file: dumping to %s\n", tmpf);
     while (len) {
         cl_error_t read_status;
@@ -136,6 +142,11 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
                 cli_dbgmsg("iso_scan_file: cannot dump block outside file, ISO may be truncated\n");
                 ret = iso_incomplete(iso->ctx, "ISO file data block was outside the available map");
             }
+            break;
+        }
+        ret = cli_checktimelimit(iso->ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(iso->ctx, "ISO file extent output reached the configured time limit");
             break;
         }
         if (cli_writen(fd, buf, todo) != todo) {

@@ -413,6 +413,10 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             if (ret != CL_SUCCESS)
                 return ret;
 
+            ret = cli_untar_checktimelimit(ctx, "TAR member temporary admission reached the configured time limit");
+            if (ret != CL_SUCCESS)
+                return ret;
+
             ret = cli_scan_reserve_temporary(ctx, (uint64_t)size);
             if (ret != CL_SUCCESS) {
                 cli_mark_scan_incomplete(ctx, "TAR member temporary output exceeded the configured limit");
@@ -444,6 +448,13 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             nbytes = (size > 512) ? 512 : size;
             if (nread && (nread < nbytes))
                 nbytes = nread;
+
+            ret = cli_untar_checktimelimit(ctx, "TAR member output reached the configured time limit");
+            if (ret != CL_SUCCESS) {
+                (void)cli_untar_finish_member(ctx, &fout, fullname, name, false, temporary_reserved);
+                temporary_reserved = 0;
+                return ret;
+            }
 
             nwritten = cli_writen(fout, block, nbytes);
 

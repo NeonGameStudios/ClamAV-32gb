@@ -5568,3 +5568,13 @@ treated as complete. Focused expired-context regressions and source guards
 cover the admission path; deterministic post-admission injection, compiled
 bytecode/mail corpus, sanitizer, and Sonic1 qualification remain release
 gates.
+
+## Archive and filesystem output deadlines — 2026-08-22
+
+MSEXPAND, TAR, SIS, ISO9660, and UDF staging paths now re-check the shared
+deadline before or immediately before materialized output writes. TAR, ISO9660,
+and UDF also reject expired temporary admission, while SIS compressed and
+stored member sinks preserve timeout cleanup through their shared streaming
+helper. Source guards cover these boundaries; deterministic post-admission
+injection, compiled archive/filesystem corpus, sanitizer, and Sonic1
+qualification remain release gates.

@@ -91,6 +91,9 @@ struct msexp_hdr {
         cli_mark_scan_incomplete(ctx, "MSEXPAND output exceeded its declared size");          \
         return CL_EFORMAT;                                                                     \
     }                                                                                         \
+    status = msexpand_checktimelimit(ctx, "MSEXPAND output reached the configured time limit"); \
+    if (status != CL_SUCCESS)                                                                   \
+        return status;                                                                          \
     ret = cli_writen(ofd, wbuff, w);                                                          \
     if (ret == (size_t)-1 || (unsigned int)ret != w) {                                        \
         cli_mark_scan_incomplete(ctx, "MSEXPAND output could not be written completely");     \
