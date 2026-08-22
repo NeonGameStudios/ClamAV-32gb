@@ -4752,6 +4752,18 @@ The source guards and non-clang regression gates pass. Compiled fault
 injection, sanitizer runs, production corpora, and Sonic1 qualification remain
 open.
 
+## RAR and bytecode handoff setup failures — 2026-08-22
+
+RAR member extraction now records an incomplete result when its required
+output-path allocation fails. Bytecode output-file allocation/open failures
+and normalized-JavaScript temporary-directory allocation/creation failures
+now use the same sticky fail-closed state, including contexts entered through
+the bytecode API without a non-null scan context.
+
+The source guards and non-clang regression gates pass. Compiled UnRAR and
+interpreter/JIT fault injection, production corpora, and Sonic1 qualification
+remain open.
+
 ## HFS+ and InstallShield setup allocation failures — 2026-08-22
 
 HFS+ temporary-directory allocation/creation and InstallShield MSI member-name

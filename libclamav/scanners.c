@@ -612,6 +612,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 }
                 if (NULL == extract_fullpath) {
                     cli_dbgmsg("RAR: Memory error allocating filename for extracted file.");
+                    cli_mark_scan_incomplete(ctx, "RAR extracted member temporary output could not be allocated");
                     cli_scan_release_temporary(ctx, temporary_reserved);
                     temporary_reserved = 0;
                     status = CL_EMEM;

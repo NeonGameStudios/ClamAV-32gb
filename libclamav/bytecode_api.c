@@ -324,14 +324,17 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
         ctx->tempfile = cli_gentemp_with_prefix(cctx ? cctx->this_layer_tmpdir : NULL, "bcapi_write");
         if (!ctx->tempfile) {
             cli_dbgmsg("Bytecode API: Unable to allocate memory for tempfile\n");
+            cli_bcapi_mark_map_read_error(ctx, "Bytecode temporary output could not be allocated");
             cli_event_error_oom(EV, 0);
             return -1;
         }
         ctx->outfd = open(ctx->tempfile, O_RDWR | O_CREAT | O_EXCL | O_TRUNC | O_BINARY, 0600);
         if (ctx->outfd == -1) {
             cli_warnmsg("Bytecode API: Can't create file %s: %s\n", ctx->tempfile, cli_strerror(errno, err, sizeof(err)));
+            cli_bcapi_mark_map_read_error(ctx, "Bytecode temporary output could not be opened");
             cli_event_error_str(EV, "cli_bcapi_write: Can't create temporary file");
             free(ctx->tempfile);
+            ctx->tempfile = NULL;
             return -1;
         }
         cli_dbgmsg("bytecode opened new tempfile: %s\n", ctx->tempfile);
@@ -1448,13 +1451,17 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
     b->state      = state;
     if (!ctx->jsnormdir) {
         cli_ctx *cctx  = (cli_ctx *)ctx->ctx;
-        ctx->jsnormdir = cli_gentemp_with_prefix(cctx ? cctx->engine->tmpdir : NULL, "normalized-js");
-        if (ctx->jsnormdir) {
-            if (mkdir(ctx->jsnormdir, 0700)) {
-                cli_dbgmsg("js: can't create temp dir %s\n", ctx->jsnormdir);
-                free(ctx->jsnormdir);
-                return CL_ETMPDIR;
-            }
+        ctx->jsnormdir = cli_gentemp_with_prefix(cctx && cctx->engine ? cctx->engine->tmpdir : NULL, "normalized-js");
+        if (!ctx->jsnormdir) {
+            cli_bcapi_mark_map_read_error(ctx, "Bytecode normalized JavaScript directory could not be allocated");
+            return -1;
+        }
+        if (mkdir(ctx->jsnormdir, 0700)) {
+            cli_dbgmsg("js: can't create temp dir %s\n", ctx->jsnormdir);
+            cli_bcapi_mark_map_read_error(ctx, "Bytecode normalized JavaScript directory could not be created");
+            free(ctx->jsnormdir);
+            ctx->jsnormdir = NULL;
+            return CL_ETMPDIR;
         }
     }
     return n - 1;
