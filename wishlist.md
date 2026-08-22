@@ -303,6 +303,9 @@
 - SWF uncompressed tag traversal and CWS/ZWS decoder loops now honor the
   shared deadline with temporary-output cleanup; add compiled timeout-injection
   and long compressed/uncompressed SWF corpus qualification.
+- SWF temporary-output reservations now re-check the shared deadline before
+  quota admission; add deterministic output-timeout injection and full SWF
+  corpus qualification.
 - TNEF attribute, attachment-data, and debug-dump traversal now honor the
   shared scan deadline and preserve timeout as an incomplete, non-cacheable
   result; add compiled timeout-injection and long-attribute/attachment corpus

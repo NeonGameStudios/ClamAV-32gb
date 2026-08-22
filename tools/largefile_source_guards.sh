@@ -1769,6 +1769,7 @@ contains libclamav/scanners.c 'cli_scan_release_temporary(ctx, temporary_reserve
 contains libclamav/scanners.c 'XZ temporary output could not be closed'
 contains libclamav/scanners.c 'XZ temporary output could not be removed'
 contains libclamav/swf.c 'swf_reserve_output'
+contains libclamav/swf.c 'swf_checktimelimit(ctx, "SWF temporary output reached the configured time limit")'
 contains libclamav/swf.c 'SWF output exceeds temporary storage limits'
 contains libclamav/swf.c 'cli_magic_scan_desc_type_reserved(fd, tmpname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE)'
 contains unit_tests/check_clamav.c 'test_swf_output_temporary_limit_is_fail_visible'

@@ -188,6 +188,9 @@ static cl_error_t swf_reserve_output(cli_ctx *ctx, uint64_t *reserved, size_t by
 
     if (bytes == 0)
         return CL_SUCCESS;
+    status = swf_checktimelimit(ctx, "SWF temporary output reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
     if (NULL == reserved || UINT64_MAX - *reserved < (uint64_t)bytes) {
         cli_mark_scan_incomplete(ctx, "SWF output size overflowed temporary quota accounting");
         return CL_ERESOURCE;

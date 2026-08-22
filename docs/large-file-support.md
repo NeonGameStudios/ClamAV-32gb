@@ -5482,3 +5482,12 @@ common temporary-output reservation as a separate output interval. That shared
 admission now rejects expired contexts before reserving bytes for a spool write,
 preserving `CL_ETIMEOUT` across the decoder families. Compiled output-timeout
 injection, corpus, sanitizer, and Sonic1 qualification remain open.
+
+## SWF temporary-output admission deadline — 2026-08-22
+
+SWF CWS/ZWS temporary-output reservations now re-check `MaxScanTime` immediately
+before quota admission, closing the interval between decoder-loop checks and
+the output write. An expired context therefore releases the temporary file and
+returns `CL_ETIMEOUT` without treating the partial output as scannable. A
+source guard covers this boundary; deterministic output-timeout injection,
+compiled corpus, sanitizer, and Sonic1 qualification remain release gates.

@@ -3349,6 +3349,15 @@ Timeouts release decoder state and temporary output before returning
 regression and source guards cover the change; compiled SWF corpus, sanitizer,
 and Sonic1 qualification remain release gates.
 
+## SWF temporary-output admission deadline — 2026-08-22
+
+SWF CWS/ZWS temporary-output reservations now re-check the shared deadline
+before quota admission, closing the interval between decoder-loop checks and
+the output write. An expired context releases the temporary file and returns
+`CL_ETIMEOUT` without treating partial output as scannable. A source guard
+covers this boundary; deterministic output-timeout injection, compiled SWF
+corpus, sanitizer, and Sonic1 qualification remain release gates.
+
 ## CryptFF traversal deadlines — 2026-08-22
 
 CryptFF already decrypted through a fixed buffer and quota-accounted temporary
