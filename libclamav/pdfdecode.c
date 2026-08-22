@@ -98,6 +98,17 @@ static cl_error_t pdf_decoder_capacity_check(cli_ctx *ctx, size_t capacity)
     return CL_SUCCESS;
 }
 
+static cl_error_t pdf_checktimelimit(struct pdf_struct *pdf, const char *reason)
+{
+    cli_ctx *ctx = pdf ? pdf->ctx : NULL;
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS && ctx)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -142,6 +153,10 @@ size_t pdf_decodestream(
         *status = CL_EARG;
         goto done;
     }
+
+    *status = pdf_checktimelimit(pdf, "PDF stream inspection reached the configured time limit");
+    if (*status != CL_SUCCESS)
+        goto done;
 
     /* The legacy filter implementations use 32-bit input lengths internally.
      * Reject a larger PDF stream before assigning it to the token or narrowing
@@ -278,6 +293,10 @@ static size_t pdf_decodestream_internal(
         goto done;
     }
 
+    *status = pdf_checktimelimit(pdf, "PDF filter chain reached the configured time limit");
+    if (*status != CL_SUCCESS)
+        goto done;
+
     *status = CL_SUCCESS;
 
     /*
@@ -298,6 +317,12 @@ static size_t pdf_decodestream_internal(
     }
 
     for (i = 0; i < obj->numfilters; i++) {
+        retval = pdf_checktimelimit(pdf, "PDF filter traversal reached the configured time limit");
+        if (retval != CL_SUCCESS) {
+            *status = retval;
+            break;
+        }
+
         switch (obj->filterlist[i]) {
             case OBJ_FILTER_A85:
                 cli_dbgmsg("pdf_decodestream_internal: decoding [%u] => ASCII85DECODE\n", obj->filterlist[i]);
@@ -485,6 +510,10 @@ static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *o
         cli_dbgmsg("cli_pdf: no EOF marker found\n");
 
     while (remaining > 0) {
+        if (pdf_checktimelimit(pdf, "PDF ASCII85 traversal reached the configured time limit") != CL_SUCCESS) {
+            rc = CL_ETIMEOUT;
+            break;
+        }
         int byte = (remaining--) ? (int)*ptr++ : EOF;
 
         if ((byte == '~') && (remaining > 0) && (*ptr == '>'))
@@ -587,6 +616,10 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
     }
 
     while (offset < length) {
+        if (pdf_checktimelimit(pdf, "PDF RunLength traversal reached the configured time limit") != CL_SUCCESS) {
+            rc = CL_ETIMEOUT;
+            break;
+        }
         uint8_t srclen = content[offset++];
         size_t output_length;
 
@@ -688,13 +721,15 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
     return rc;
 }
 
-static uint8_t *decode_nextlinestart(uint8_t *content, uint32_t length)
+static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, uint32_t length)
 {
     uint8_t *pt = content;
     uint32_t r;
     int toggle = 0;
 
     for (r = 0; r < length; r++, pt++) {
+        if ((r & 0x3fffU) == 0 && pdf_checktimelimit(pdf, "PDF decoder resynchronization reached the configured time limit") != CL_SUCCESS)
+            return NULL;
         if (*pt == '\n' || *pt == '\r')
             toggle = 1;
         else if (toggle)
@@ -750,13 +785,25 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
         return CL_EMEM;
     }
 
+    if (pdf_checktimelimit(pdf, "PDF Flate traversal reached the configured time limit") != CL_SUCCESS) {
+        rc = CL_ETIMEOUT;
+        (void)inflateEnd(&stream);
+        free(decoded);
+        return rc;
+    }
+
     /* initial inflate */
     zstat = inflate(&stream, Z_NO_FLUSH);
     /* check if nothing written whatsoever */
     if ((zstat != Z_OK) && (stream.avail_out == INFLATE_CHUNK_SIZE)) {
         /* skip till EOL, and try inflating from there, sometimes
          * PDFs contain extra whitespace */
-        uint8_t *q = decode_nextlinestart(content, length);
+        uint8_t *q = decode_nextlinestart(pdf, content, length);
+        if (pdf->ctx && pdf->ctx->scan_timed_out) {
+            (void)inflateEnd(&stream);
+            free(decoded);
+            return CL_ETIMEOUT;
+        }
         if (q) {
             (void)inflateEnd(&stream);
             length -= q - content;
@@ -781,6 +828,10 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
     }
 
     while (zstat == Z_OK && stream.avail_in) {
+        if (pdf_checktimelimit(pdf, "PDF Flate traversal reached the configured time limit") != CL_SUCCESS) {
+            rc = CL_ETIMEOUT;
+            break;
+        }
         /* extend output capacity if needed,*/
         if (stream.avail_out == 0) {
             if ((rc = pdf_decoder_capacity_check(pdf->ctx, capacity)) != CL_SUCCESS)
@@ -900,6 +951,10 @@ static cl_error_t filter_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *
     }
 
     for (i = 0, j = 0; i + 1 < length; i++) {
+        if (pdf_checktimelimit(pdf, "PDF ASCIIHex traversal reached the configured time limit") != CL_SUCCESS) {
+            rc = CL_ETIMEOUT;
+            break;
+        }
         if (content[i] == ' ')
             continue;
 
@@ -950,6 +1005,8 @@ static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, st
         struct pdf_dict_node *node = params->nodes;
 
         while (node) {
+            if (pdf_checktimelimit(pdf, "PDF encryption-parameter traversal reached the configured time limit") != CL_SUCCESS)
+                return CL_ETIMEOUT;
             if (node->type == PDF_DICT_STRING) {
                 if (!strncmp(node->key, "/Type", 6)) { /* optional field - Type */
                     /* MUST be "CryptFilterDecodeParms" */
@@ -1011,6 +1068,8 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
         struct pdf_dict_node *node = params->nodes;
 
         while (node) {
+            if (pdf_checktimelimit(pdf, "PDF LZW-parameter traversal reached the configured time limit") != CL_SUCCESS)
+                return CL_ETIMEOUT;
             if (node->type == PDF_DICT_STRING) {
                 if (!strncmp(node->key, "/EarlyChange", 13)) { /* optional field - lzw flag */
                     char *end, *value = (char *)node->value;
@@ -1067,13 +1126,22 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
         goto done;
     }
 
+    if (pdf_checktimelimit(pdf, "PDF LZW traversal reached the configured time limit") != CL_SUCCESS) {
+        rc = CL_ETIMEOUT;
+        goto done;
+    }
+
     /* initial inflate */
     lzwstat = lzwInflate(&stream);
     /* check if nothing written whatsoever */
     if ((lzwstat != Z_OK) && (stream.avail_out == INFLATE_CHUNK_SIZE)) {
         /* skip till EOL, and try inflating from there, sometimes
          * PDFs contain extra whitespace */
-        uint8_t *q = decode_nextlinestart(content, length);
+        uint8_t *q = decode_nextlinestart(pdf, content, length);
+        if (pdf->ctx && pdf->ctx->scan_timed_out) {
+            rc = CL_ETIMEOUT;
+            goto done;
+        }
         if (q) {
             (void)lzwInflateEnd(&stream);
             length -= q - content;
@@ -1098,6 +1166,10 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
     }
 
     while (lzwstat == Z_OK && stream.avail_in) {
+        if (pdf_checktimelimit(pdf, "PDF LZW traversal reached the configured time limit") != CL_SUCCESS) {
+            rc = CL_ETIMEOUT;
+            break;
+        }
         /* extend output capacity if needed,*/
         if (stream.avail_out == 0) {
             if ((rc = pdf_decoder_capacity_check(pdf->ctx, capacity)) != CL_SUCCESS)

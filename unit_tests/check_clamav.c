@@ -8402,6 +8402,43 @@ START_TEST(test_hwpml_truncated_document_is_fail_visible)
 END_TEST
 
 #ifndef _WIN32
+START_TEST(test_pdf_time_limit_is_fail_visible)
+{
+    static const uint8_t raw_stream[] = "0123456789";
+    struct cl_engine engine;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t status = CL_SUCCESS;
+    size_t written;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(raw_stream, sizeof(raw_stream) - 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    pdf.ctx    = &ctx;
+    obj.id     = 1U << 8;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)raw_stream,
+                               sizeof(raw_stream) - 1, 0, -1, &status, NULL);
+    ck_assert_uint_eq(written, 0);
+    ck_assert_int_eq(status, CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF stream inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pdf_stream_limit_is_fail_visible)
 {
     static const uint8_t raw_stream[] = "0123456789";
@@ -18871,6 +18908,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
 #endif
 #ifndef _WIN32
+    tcase_add_test(tc_cl, test_pdf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_stream_limit_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pdf_stream_width_boundary_is_fail_visible);

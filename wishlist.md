@@ -214,8 +214,9 @@
 - PDF legacy filter input and Flate/RunLength/LZW growth now reject the shared
   1 GiB individual-allocation ceiling with explicit `CL_ERESOURCE`, and ASCII85
   expansion checks its prospective contiguous output before allocation; the
-  fully streaming PDF-filter conversion and large-corpus qualification remain
-  open.
+  legacy ASCII85, RunLength, Flate, ASCIIHex, LZW, and filter-chain traversal
+  now honors the shared scan deadline; fully streaming PDF-filter conversion
+  and large-corpus qualification remain open.
 - TIFF IFD traversal now keeps its working cursor native-width, preventing a
   malformed IFD near the 4 GiB coordinate boundary from wrapping back to the
   beginning of a larger file; the on-disk TIFF offsets remain 32-bit.

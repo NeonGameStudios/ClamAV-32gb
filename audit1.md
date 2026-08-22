@@ -2337,6 +2337,17 @@ Source guards and `git diff --check` are the current local evidence.
 Fault-injected cleanup, dependency-complete builds, and supported-build
 Sonic1 qualification remain release gates.
 
+## PDF filter traversal deadlines — 2026-08-22
+
+The legacy PDF filter path enforced allocation and decoded-output limits but
+could spend its scan budget inside ASCII85, RunLength, Flate, ASCIIHex, LZW, or
+filter-chain traversal without a shared deadline checkpoint. Parser entry,
+filter selection, parameter walks, decoder resynchronization, and the main
+filter loops now preserve `CL_ETIMEOUT` and release decoder/output state on
+timeout. A direct expired-context regression and source guards cover parser
+entry; the existing 1 GiB contiguous-filter boundary, compiled decoder corpus,
+sanitizer, and Sonic1 qualification remain release gates.
+
 ## EGG traversal deadlines — 2026-08-22
 
 The scanner-facing EGG path already checked time while writing streamed member
