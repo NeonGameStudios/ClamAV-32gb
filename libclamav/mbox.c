@@ -4679,6 +4679,11 @@ static bool extract_text_urls_map(cli_ctx *ctx, fmap_t *map, tag_arguments_t *hr
         size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
         size_t i;
 
+        if (mbox_check_deadline(ctx)) {
+            cli_dbgmsg("HTML phishing URL extraction reached the configured time limit\n");
+            return false;
+        }
+
         if (fmap_readn(map, buffer, offset, wanted) != wanted) {
             cli_mark_scan_incomplete(ctx, "HTML phishing input could not be read completely");
             return false;
@@ -4738,6 +4743,11 @@ static bool extract_text_urls_map(cli_ctx *ctx, fmap_t *map, tag_arguments_t *hr
         }
 
         offset += wanted;
+    }
+
+    if (mbox_check_deadline(ctx)) {
+        cli_dbgmsg("HTML phishing URL extraction reached the configured time limit\n");
+        return false;
     }
 
     if (url_len) {

@@ -4414,3 +4414,15 @@ EOF. The loop now checks `MaxScanTime` before each line, returns
 `CL_ETIMEOUT` on expiry, and marks an early fmap failure as incomplete
 `CL_EREAD`. Static guards cover both boundaries; compiled mailbox timeout and
 fault-injection qualification remain release gates.
+
+## HTML phishing URL extraction deadline — 2026-08-22
+
+The file-backed HTML phishing helper `extract_text_urls_map()` processed a
+64 KiB window at a time, but its complete-map loop had no parser-owned
+`MaxScanTime` checkpoint. A large HTML body could therefore spend the whole
+URL extraction pass in a required enabled path without observing the shared
+deadline. The helper now checks the deadline before each fmap window and again
+before publishing the trailing URL, returning an incomplete result on expiry.
+The read remains bounded and short/in-range fmap failures remain fail-visible.
+Compiled HTML timeout injection, parser corpus, sanitizer, and supported-build
+Sonic1 qualification remain release gates.

@@ -1003,3 +1003,7 @@
   the setup status; critical memory, timeout, resource, and I/O failures still
   halt immediately. Static coverage is present; compiled fault-injection and
   production-signature qualification remain open.
+- File-backed HTML phishing URL extraction now checks `MaxScanTime` before and
+  after each bounded fmap window, so URL scanning cannot silently consume a
+  large HTML body past the shared deadline; compiled HTML timeout injection
+  and production qualification remain open.

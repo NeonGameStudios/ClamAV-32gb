@@ -3131,9 +3131,9 @@ fixed-width-integer	libclamav/matcher.h	94	    const uint64_t *filesize;
 fixed-width-integer	libclamav/matcher.h	95	    const uint32_t *container, *handlertype;
 fixed-width-integer	libclamav/matcher.h	96	    const uint32_t *intermediates;
 fixed-width-integer	libclamav/matcher.h	98	    const uint32_t *sectoff, *sectrva, *sectvsz, *sectraw, *sectrsz,
-fixed-width-integer	libclamav/mbox.c	4764	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/mbox.c	4784	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
-fixed-width-integer	libclamav/mbox.c	5538	            cli_jsonint(thisobj, "ContainedObjectsIndex", (int32_t)arrlen);
+fixed-width-integer	libclamav/mbox.c	4774	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/mbox.c	4794	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
+fixed-width-integer	libclamav/mbox.c	5548	            cli_jsonint(thisobj, "ContainedObjectsIndex", (int32_t)arrlen);
 fixed-width-integer	libclamav/mbr.h	69	    uint32_t firstLBA __attribute__((packed));
 fixed-width-integer	libclamav/mbr.h	70	    uint32_t numLBA __attribute__((packed));
 fixed-width-integer	libclamav/mbr.h	76	    uint16_t signature __attribute__((packed));
@@ -10589,34 +10589,34 @@ native-width-integer	libclamav/mbox.c	4675	    size_t url_len     = 0;
 native-width-integer	libclamav/mbox.c	4676	    size_t offset      = 0;
 native-width-integer	libclamav/mbox.c	4679	        size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
 native-width-integer	libclamav/mbox.c	4680	        size_t i;
-native-width-integer	libclamav/mbox.c	4784	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
-native-width-integer	libclamav/mbox.c	4794	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
-native-width-integer	libclamav/mbox.c	4844	checkURLs(message *mainMessage, mbox_ctx *mctx, mbox_status *rc, int is_html)
+native-width-integer	libclamav/mbox.c	4794	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
+native-width-integer	libclamav/mbox.c	4804	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
+native-width-integer	libclamav/mbox.c	4854	checkURLs(message *mainMessage, mbox_ctx *mctx, mbox_status *rc, int is_html)
 native-width-integer	libclamav/mbox.c	489	        int messagenumber;
-native-width-integer	libclamav/mbox.c	4890	sigsegv(int sig)
-native-width-integer	libclamav/mbox.c	4898	print_trace(int use_syslog)
-native-width-integer	libclamav/mbox.c	4901	    size_t size;
-native-width-integer	libclamav/mbox.c	4903	    size_t i;
-native-width-integer	libclamav/mbox.c	4918	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
-native-width-integer	libclamav/mbox.c	4932	usefulHeader(int commandNumber, const char *cmd)
-native-width-integer	libclamav/mbox.c	4955	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx)
-native-width-integer	libclamav/mbox.c	4959	    size_t i;
-native-width-integer	libclamav/mbox.c	4970	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
-native-width-integer	libclamav/mbox.c	5050	    size_t len;
-native-width-integer	libclamav/mbox.c	5067	        int numSpaces = 0, numDigits = 0;
-native-width-integer	libclamav/mbox.c	5106	            const int scan_rc = scanFileblob(mctx, fb);
-native-width-integer	libclamav/mbox.c	5127	static int
-native-width-integer	libclamav/mbox.c	5130	    int rc = CL_CLEAN;
-native-width-integer	libclamav/mbox.c	5235	do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, mbox_ctx *mctx, message *messageIn, text **tptr, unsigned int recursion_level)
-native-width-integer	libclamav/mbox.c	5243	    const int doPhishingScan = mctx->ctx->engine->dboptions & CL_DB_PHISHING_URLS && (DCONF_PHISHING & PHISHING_CONF_ENGINE);
-native-width-integer	libclamav/mbox.c	5363	                    const int is_html = (tableFind(mctx->subtypeTable, cptr) == HTML);
-native-width-integer	libclamav/mbox.c	5410	                int scan_rc = saveTextPart(mctx, aMessage, 1);
-native-width-integer	libclamav/mbox.c	5463	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
-native-width-integer	libclamav/mbox.c	5488	        int arrlen = 0;
-native-width-integer	libclamav/mbox.c	5490	        size_t arrlen = 0;
-native-width-integer	libclamav/mbox.c	5506	            int scan_rc = scanFileblob(mctx, fb);
-native-width-integer	libclamav/mbox.c	5555	static int
-native-width-integer	libclamav/mbox.c	5558	    int quotes = 0;
+native-width-integer	libclamav/mbox.c	4900	sigsegv(int sig)
+native-width-integer	libclamav/mbox.c	4908	print_trace(int use_syslog)
+native-width-integer	libclamav/mbox.c	4911	    size_t size;
+native-width-integer	libclamav/mbox.c	4913	    size_t i;
+native-width-integer	libclamav/mbox.c	4928	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
+native-width-integer	libclamav/mbox.c	4942	usefulHeader(int commandNumber, const char *cmd)
+native-width-integer	libclamav/mbox.c	4965	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx)
+native-width-integer	libclamav/mbox.c	4969	    size_t i;
+native-width-integer	libclamav/mbox.c	4980	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
+native-width-integer	libclamav/mbox.c	5060	    size_t len;
+native-width-integer	libclamav/mbox.c	5077	        int numSpaces = 0, numDigits = 0;
+native-width-integer	libclamav/mbox.c	5116	            const int scan_rc = scanFileblob(mctx, fb);
+native-width-integer	libclamav/mbox.c	5137	static int
+native-width-integer	libclamav/mbox.c	5140	    int rc = CL_CLEAN;
+native-width-integer	libclamav/mbox.c	5245	do_multipart(message *mainMessage, message **messages, int i, mbox_status *rc, mbox_ctx *mctx, message *messageIn, text **tptr, unsigned int recursion_level)
+native-width-integer	libclamav/mbox.c	5253	    const int doPhishingScan = mctx->ctx->engine->dboptions & CL_DB_PHISHING_URLS && (DCONF_PHISHING & PHISHING_CONF_ENGINE);
+native-width-integer	libclamav/mbox.c	5373	                    const int is_html = (tableFind(mctx->subtypeTable, cptr) == HTML);
+native-width-integer	libclamav/mbox.c	5420	                int scan_rc = saveTextPart(mctx, aMessage, 1);
+native-width-integer	libclamav/mbox.c	5473	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
+native-width-integer	libclamav/mbox.c	5498	        int arrlen = 0;
+native-width-integer	libclamav/mbox.c	5500	        size_t arrlen = 0;
+native-width-integer	libclamav/mbox.c	5516	            int scan_rc = scanFileblob(mctx, fb);
+native-width-integer	libclamav/mbox.c	5565	static int
+native-width-integer	libclamav/mbox.c	5568	    int quotes = 0;
 native-width-integer	libclamav/mbox.c	776	    size_t bufferLen;
 native-width-integer	libclamav/mbox.c	790	    size_t spaceLeft = (READ_STRUCT_BUFFER_LEN - rs->bufferLen);
 native-width-integer	libclamav/mbox.c	794	        int part         = spaceLeft;
@@ -19292,15 +19292,15 @@ format-width	libclamav/mbox.c	4073	                cli_errmsg("parseMimeHeader: 
 format-width	libclamav/mbox.c	4155	            cli_errmsg("rfc822comments: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
 format-width	libclamav/mbox.c	4224	        cli_errmsg("rfc2047: Unable to allocate memory for out %llu\n", (long long unsigned)(strlen(in) + 1));
 format-width	libclamav/mbox.c	4480	                snprintf(filename, sizeof(filename), "_%s-%u", md5_hex, n);
-format-width	libclamav/mbox.c	4911	    cli_errmsg("Backtrace of pid %d:\n", pid);
-format-width	libclamav/mbox.c	4913	        syslog(LOG_ERR, "Backtrace of pid %d:", pid);
-format-width	libclamav/mbox.c	4918	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
+format-width	libclamav/mbox.c	4921	    cli_errmsg("Backtrace of pid %d:\n", pid);
+format-width	libclamav/mbox.c	4923	        syslog(LOG_ERR, "Backtrace of pid %d:", pid);
+format-width	libclamav/mbox.c	4928	            syslog(LOG_ERR, "bt[%llu]: %s", (unsigned long long)i, strings[i]);
 format-width	libclamav/mbox.c	505	                cli_dbgmsg("Deal with message number %d\n", messagenumber++);
-format-width	libclamav/mbox.c	5274	    cli_dbgmsg("Mixed message part %d is of type %d\n",
-format-width	libclamav/mbox.c	5298	            cli_dbgmsg("No mime headers found in multipart part %d\n", i);
-format-width	libclamav/mbox.c	5375	            cli_dbgmsg("Found message inside multipart (encoding type %d)\n",
-format-width	libclamav/mbox.c	5463	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
-format-width	libclamav/mbox.c	5478	            cli_dbgmsg("Only text and application attachments are fully supported, type = %d\n",
+format-width	libclamav/mbox.c	5284	    cli_dbgmsg("Mixed message part %d is of type %d\n",
+format-width	libclamav/mbox.c	5308	            cli_dbgmsg("No mime headers found in multipart part %d\n", i);
+format-width	libclamav/mbox.c	5385	            cli_dbgmsg("Found message inside multipart (encoding type %d)\n",
+format-width	libclamav/mbox.c	5473	                cli_dbgmsg("Finished recursion, rc = %d\n", (int)*rc);
+format-width	libclamav/mbox.c	5488	            cli_dbgmsg("Only text and application attachments are fully supported, type = %d\n",
 format-width	libclamav/mbox.c	551	                        cli_dbgmsg("Message number %d is infected\n",
 format-width	libclamav/mbox.c	645	            cli_dbgmsg("Extract attachments from email %d\n", messagenumber);
 format-width	libclamav/mbox.c	767	    cli_dbgmsg("cli_mbox returning %d\n", retcode);
@@ -25675,43 +25675,43 @@ offset-size-arithmetic	libclamav/mbox.c	4560	                    while (fgets(bu
 offset-size-arithmetic	libclamav/mbox.c	4672	    char history[sizeof("https:") - 1];
 offset-size-arithmetic	libclamav/mbox.c	4678	    while (offset < map->len) {
 offset-size-arithmetic	libclamav/mbox.c	4679	        size_t wanted = MIN((size_t)TEXT_URL_MAP_CHUNK, map->len - offset);
-offset-size-arithmetic	libclamav/mbox.c	4696	                } else if (url_len < sizeof(url) - 1) {
-offset-size-arithmetic	libclamav/mbox.c	4697	                    url[url_len++] = (char)c;
-offset-size-arithmetic	libclamav/mbox.c	4708	                history[history_len++] = (char)c;
-offset-size-arithmetic	libclamav/mbox.c	4710	                memmove(history, history + 1, sizeof(history) - 1);
-offset-size-arithmetic	libclamav/mbox.c	4711	                history[sizeof(history) - 1] = (char)c;
-offset-size-arithmetic	libclamav/mbox.c	4715	                (history[history_len - 6] | 0x20) == 'h' &&
-offset-size-arithmetic	libclamav/mbox.c	4716	                (history[history_len - 5] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4717	                (history[history_len - 4] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4718	                (history[history_len - 3] | 0x20) == 'p' &&
-offset-size-arithmetic	libclamav/mbox.c	4719	                (history[history_len - 2] | 0x20) == 's' && history[history_len - 1] == ':') {
-offset-size-arithmetic	libclamav/mbox.c	4720	                memcpy(url, history + history_len - 6, 6);
-offset-size-arithmetic	libclamav/mbox.c	4723	                       (history[history_len - 5] | 0x20) == 'h' &&
-offset-size-arithmetic	libclamav/mbox.c	4724	                       (history[history_len - 4] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4725	                       (history[history_len - 3] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4726	                       (history[history_len - 2] | 0x20) == 'p' &&
-offset-size-arithmetic	libclamav/mbox.c	4727	                       history[history_len - 1] == ':') {
-offset-size-arithmetic	libclamav/mbox.c	4728	                memcpy(url, history + history_len - 5, 5);
-offset-size-arithmetic	libclamav/mbox.c	4731	                       (history[history_len - 4] | 0x20) == 'f' &&
-offset-size-arithmetic	libclamav/mbox.c	4732	                       (history[history_len - 3] | 0x20) == 't' &&
-offset-size-arithmetic	libclamav/mbox.c	4733	                       (history[history_len - 2] | 0x20) == 'p' &&
-offset-size-arithmetic	libclamav/mbox.c	4734	                       history[history_len - 1] == ':') {
-offset-size-arithmetic	libclamav/mbox.c	4735	                memcpy(url, history + history_len - 4, 4);
-offset-size-arithmetic	libclamav/mbox.c	4740	        offset += wanted;
-offset-size-arithmetic	libclamav/mbox.c	4770	    /* A completed raw body spool is already file-backed. Encoded spools and
-offset-size-arithmetic	libclamav/mbox.c	4784	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
-offset-size-arithmetic	libclamav/mbox.c	4794	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
-offset-size-arithmetic	libclamav/mbox.c	4955	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/mbox.c	4970	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
-offset-size-arithmetic	libclamav/mbox.c	4971	    src = cursrc = fmap_need_off_once(map, *at, input_len);
-offset-size-arithmetic	libclamav/mbox.c	4992	        if (!input_len--) {
-offset-size-arithmetic	libclamav/mbox.c	5006	                if (input_len && *cursrc == '\r') {
-offset-size-arithmetic	libclamav/mbox.c	5014	                if (input_len && *cursrc == '\n') {
-offset-size-arithmetic	libclamav/mbox.c	5029	        const char *next = fmap_need_off_once(map, *at, 1);
-offset-size-arithmetic	libclamav/mbox.c	5084	    return (bool)(cli_compare_ftm_file((const unsigned char *)line, len, mctx->ctx->engine) == CL_TYPE_MAIL);
-offset-size-arithmetic	libclamav/mbox.c	5185	        fileblobSetFilename(fb, mctx->dir, "bounce");
-offset-size-arithmetic	libclamav/mbox.c	5494	            /* attempt to determine container size - prevents incorrect type reporting */
-offset-size-arithmetic	libclamav/mbox.c	5626	                continue; /* white space at end of line */
+offset-size-arithmetic	libclamav/mbox.c	4701	                } else if (url_len < sizeof(url) - 1) {
+offset-size-arithmetic	libclamav/mbox.c	4702	                    url[url_len++] = (char)c;
+offset-size-arithmetic	libclamav/mbox.c	4713	                history[history_len++] = (char)c;
+offset-size-arithmetic	libclamav/mbox.c	4715	                memmove(history, history + 1, sizeof(history) - 1);
+offset-size-arithmetic	libclamav/mbox.c	4716	                history[sizeof(history) - 1] = (char)c;
+offset-size-arithmetic	libclamav/mbox.c	4720	                (history[history_len - 6] | 0x20) == 'h' &&
+offset-size-arithmetic	libclamav/mbox.c	4721	                (history[history_len - 5] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	4722	                (history[history_len - 4] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	4723	                (history[history_len - 3] | 0x20) == 'p' &&
+offset-size-arithmetic	libclamav/mbox.c	4724	                (history[history_len - 2] | 0x20) == 's' && history[history_len - 1] == ':') {
+offset-size-arithmetic	libclamav/mbox.c	4725	                memcpy(url, history + history_len - 6, 6);
+offset-size-arithmetic	libclamav/mbox.c	4728	                       (history[history_len - 5] | 0x20) == 'h' &&
+offset-size-arithmetic	libclamav/mbox.c	4729	                       (history[history_len - 4] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	4730	                       (history[history_len - 3] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	4731	                       (history[history_len - 2] | 0x20) == 'p' &&
+offset-size-arithmetic	libclamav/mbox.c	4732	                       history[history_len - 1] == ':') {
+offset-size-arithmetic	libclamav/mbox.c	4733	                memcpy(url, history + history_len - 5, 5);
+offset-size-arithmetic	libclamav/mbox.c	4736	                       (history[history_len - 4] | 0x20) == 'f' &&
+offset-size-arithmetic	libclamav/mbox.c	4737	                       (history[history_len - 3] | 0x20) == 't' &&
+offset-size-arithmetic	libclamav/mbox.c	4738	                       (history[history_len - 2] | 0x20) == 'p' &&
+offset-size-arithmetic	libclamav/mbox.c	4739	                       history[history_len - 1] == ':') {
+offset-size-arithmetic	libclamav/mbox.c	4740	                memcpy(url, history + history_len - 4, 4);
+offset-size-arithmetic	libclamav/mbox.c	4745	        offset += wanted;
+offset-size-arithmetic	libclamav/mbox.c	4780	    /* A completed raw body spool is already file-backed. Encoded spools and
+offset-size-arithmetic	libclamav/mbox.c	4794	        (uint64_t)sb.st_size > (uint64_t)(size_t)-1) {
+offset-size-arithmetic	libclamav/mbox.c	4804	    map = fmap_new(input->fd, 0, (size_t)sb.st_size, input->fullname, input->fullname);
+offset-size-arithmetic	libclamav/mbox.c	4965	getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/mbox.c	4980	    size_t input_len = MIN(map->len - *at, buffer_len + 1);
+offset-size-arithmetic	libclamav/mbox.c	4981	    src = cursrc = fmap_need_off_once(map, *at, input_len);
+offset-size-arithmetic	libclamav/mbox.c	5002	        if (!input_len--) {
+offset-size-arithmetic	libclamav/mbox.c	5016	                if (input_len && *cursrc == '\r') {
+offset-size-arithmetic	libclamav/mbox.c	5024	                if (input_len && *cursrc == '\n') {
+offset-size-arithmetic	libclamav/mbox.c	5039	        const char *next = fmap_need_off_once(map, *at, 1);
+offset-size-arithmetic	libclamav/mbox.c	5094	    return (bool)(cli_compare_ftm_file((const unsigned char *)line, len, mctx->ctx->engine) == CL_TYPE_MAIL);
+offset-size-arithmetic	libclamav/mbox.c	5195	        fileblobSetFilename(fb, mctx->dir, "bounce");
+offset-size-arithmetic	libclamav/mbox.c	5504	            /* attempt to determine container size - prevents incorrect type reporting */
+offset-size-arithmetic	libclamav/mbox.c	5636	                continue; /* white space at end of line */
 offset-size-arithmetic	libclamav/mbox.c	642	        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx) != NULL);
 offset-size-arithmetic	libclamav/mbox.c	692	               (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx) != NULL)) {
 offset-size-arithmetic	libclamav/mbox.c	696	        buffer[sizeof(buffer) - 1] = '\0';
