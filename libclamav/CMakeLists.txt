@@ -393,6 +393,8 @@ set(LIBCLAMAV_SOURCES
     jpeg.c              jpeg.h
     # BMP image format structural admission
     bmp.c               bmp.h
+    # JPEG 2000 image format structural admission
+    jp2.c               jp2.h
     # PNG image format checker
     png.c               png.h
     # TIFF image format checker

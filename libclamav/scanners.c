@@ -97,6 +97,7 @@
 #include "events.h"
 #include "swf.h"
 #include "bmp.h"
+#include "jp2.h"
 #include "jpeg.h"
 #include "gif.h"
 #include "png.h"
@@ -6803,6 +6804,10 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                  */
 
                 ret = cli_scanbmp(ctx);
+                if (ret != CL_EFORMAT)
+                    break;
+
+                ret = cli_scanjp2(ctx);
                 if (ret != CL_EFORMAT)
                     break;
 
