@@ -3449,6 +3449,11 @@ and closed-output regressions plus source guards cover the admission path;
 deterministic post-admission injection, compiled bytecode/mail corpus,
 sanitizer, and Sonic1 qualification remain release gates.
 
+The MSPack decoder callback and bytecode output bridge also re-check the
+deadline after their output-budget/accounting updates and immediately before
+the underlying write, closing a narrow expiry window between admission and
+materialization.
+
 ## Archive and filesystem output deadlines — 2026-08-22
 
 MSEXPAND, TAR, SIS, ISO9660, and UDF staging paths now re-check the shared

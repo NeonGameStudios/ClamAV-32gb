@@ -121,6 +121,10 @@
   bytecode writes release their current reservation and block extraction of
   partial output; add post-admission timeout injection and complete
   bytecode/mail corpus qualification.
+- MSPack decoder writes and bytecode output now perform a final deadline check
+  after output-budget/accounting updates and immediately before materializing
+  bytes; add deterministic expiry-window injection and complete CAB/CHM and
+  bytecode corpus qualification.
 - MSEXPAND, TAR, SIS, ISO9660, and UDF materialized-output paths now re-check
   the shared deadline at output boundaries; add deterministic post-admission
   timeout injection and complete archive/filesystem corpus qualification.

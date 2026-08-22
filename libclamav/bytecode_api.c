@@ -354,6 +354,12 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
             return -1;
         }
         ctx->temporary_reserved += write_len;
+        if (cli_checktimelimit(cctx) != CL_SUCCESS) {
+            cli_scan_release_temporary(cctx, write_len);
+            ctx->temporary_reserved -= write_len;
+            cli_mark_scan_incomplete(cctx, "Bytecode temporary output reached the configured time limit");
+            return -1;
+        }
     }
     res = cli_writen(ctx->outfd, data, (size_t)len);
     if (res != (size_t)len) {

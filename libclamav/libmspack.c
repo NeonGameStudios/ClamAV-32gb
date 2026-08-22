@@ -272,6 +272,11 @@ static int mspack_fmap_write(struct mspack_file *file, void *buffer, int bytes)
         mspack_handle->max_size -= max_size;
     }
 
+    /* Re-check after output-budget admission and immediately before
+     * materializing decoder output. */
+    if (!mspack_deadline_ok(mspack_handle->system_ex))
+        return -1;
+
     count = fwrite(buffer, max_size, 1, mspack_handle->f);
     if (count < 1) {
         cli_dbgmsg("%s() err %d <%zu %d>\n", __func__, __LINE__, count, bytes);
