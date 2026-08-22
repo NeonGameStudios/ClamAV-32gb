@@ -18589,6 +18589,105 @@ START_TEST(test_macho_section_alignment_exponent_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_macho_32bit_section_alignment_overflow_is_fail_visible)
+{
+    enum {
+        MACHO_HEADER_SIZE = 28,
+        LOAD_COMMAND_SIZE = 8,
+        SEGMENT_SIZE       = 48,
+        SECTION_SIZE       = 68,
+        ARCHIVE_SIZE       = MACHO_HEADER_SIZE + LOAD_COMMAND_SIZE + SEGMENT_SIZE + SECTION_SIZE
+    };
+    uint8_t data[ARCHIVE_SIZE] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    size_t segment_offset = MACHO_HEADER_SIZE + LOAD_COMMAND_SIZE;
+    size_t section_offset = segment_offset + SEGMENT_SIZE;
+
+    /* A 32-bit section size at UINT32_MAX with a non-zero alignment pad must
+     * not wrap its containing-file metadata back to a small range. */
+    macho_test_write_u32(data + 0, 0xfeedfaceU);
+    macho_test_write_u32(data + 4, 7U); /* CPU_TYPE_I386. */
+    macho_test_write_u32(data + 12, 2U); /* MH_EXECUTE. */
+    macho_test_write_u32(data + 16, 1U); /* one load command. */
+    macho_test_write_u32(data + 20, LOAD_COMMAND_SIZE + SEGMENT_SIZE + SECTION_SIZE);
+    macho_test_write_u32(data + MACHO_HEADER_SIZE, 0x1U); /* LC_SEGMENT. */
+    macho_test_write_u32(data + MACHO_HEADER_SIZE + 4, LOAD_COMMAND_SIZE + SEGMENT_SIZE + SECTION_SIZE);
+    macho_test_write_u32(data + segment_offset + 44, 1U); /* nsects. */
+    macho_test_write_u32(data + section_offset + 36, UINT32_MAX); /* size. */
+    macho_test_write_u32(data + section_offset + 44, 31U);         /* align. */
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho(&ctx, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible)
+{
+    enum {
+        MACHO_HEADER_SIZE       = 28,
+        LOAD_COMMAND_SIZE       = 8,
+        SEGMENT_SIZE             = 48,
+        SECTION_SIZE             = 68,
+        SEGMENT_COMMAND_SIZE     = LOAD_COMMAND_SIZE + SEGMENT_SIZE + SECTION_SIZE,
+        THREAD_STATE_SIZE        = 68,
+        THREAD_COMMAND_SIZE      = LOAD_COMMAND_SIZE + LOAD_COMMAND_SIZE + THREAD_STATE_SIZE,
+        ARCHIVE_SIZE             = MACHO_HEADER_SIZE + SEGMENT_COMMAND_SIZE + THREAD_COMMAND_SIZE
+    };
+    uint8_t data[ARCHIVE_SIZE] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    size_t segment_offset = MACHO_HEADER_SIZE + LOAD_COMMAND_SIZE;
+    size_t section_offset = segment_offset + SEGMENT_SIZE;
+    size_t thread_offset  = MACHO_HEADER_SIZE + SEGMENT_COMMAND_SIZE;
+
+    /* The entry point is inside the section, but raw + (entry - rva) is
+     * larger than UINT32_MAX and must not wrap to a small file coordinate. */
+    macho_test_write_u32(data + 0, 0xfeedfaceU);
+    macho_test_write_u32(data + 4, 7U); /* CPU_TYPE_I386. */
+    macho_test_write_u32(data + 12, 2U); /* MH_EXECUTE. */
+    macho_test_write_u32(data + 16, 2U); /* segment and thread commands. */
+    macho_test_write_u32(data + 20, SEGMENT_COMMAND_SIZE + THREAD_COMMAND_SIZE);
+    macho_test_write_u32(data + MACHO_HEADER_SIZE, 0x1U); /* LC_SEGMENT. */
+    macho_test_write_u32(data + MACHO_HEADER_SIZE + 4, SEGMENT_COMMAND_SIZE);
+    macho_test_write_u32(data + segment_offset + 44, 1U); /* nsects. */
+    macho_test_write_u32(data + section_offset + 36, 0x20000000U); /* size. */
+    macho_test_write_u32(data + section_offset + 40, 0xf0000000U); /* raw. */
+    macho_test_write_u32(data + thread_offset, 0x4U); /* LC_UNIXTHREAD. */
+    macho_test_write_u32(data + thread_offset + 4, THREAD_COMMAND_SIZE);
+    macho_test_write_u32(data + thread_offset + 16 + 40, 0x10000000U); /* eip. */
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho(&ctx, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_udf_truncated_descriptor_area_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -20809,6 +20908,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_unibin_member_range_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_32bit_section_alignment_overflow_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_descriptor_read_failure_is_fail_visible);

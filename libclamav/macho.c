@@ -222,7 +222,7 @@ static uint32_t cli_rawaddr(uint32_t vaddr, struct cli_exe_section *sects, uint1
         }
     }
 
-    if (!found) {
+    if (!found || UINT32_MAX - sects[i].raw < vaddr - sects[i].rva) {
         *err = 1;
         return 0;
     }
@@ -579,8 +579,18 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                         free(sections64);
                         RETURN_MACHO_BROKEN;
                     }
-                    section.align      = 1U << EC32(section.align, conv);
-                    sections[sect].rsz = sections[sect].vsz + (section.align - (sections[sect].vsz % section.align)) % section.align;
+                    section.align = 1U << EC32(section.align, conv);
+                    {
+                        uint64_t padding = ((uint64_t)section.align - ((uint64_t)sections[sect].vsz % section.align)) % section.align;
+
+                        if (padding > UINT32_MAX - sections[sect].vsz) {
+                            cli_dbgmsg("cli_scanmacho: 32-bit section size alignment overflowed\n");
+                            free(sections);
+                            free(sections64);
+                            RETURN_MACHO_BROKEN;
+                        }
+                        sections[sect].rsz = (uint32_t)((uint64_t)sections[sect].vsz + padding);
+                    }
                     strncpy(name, section.sectname, sizeof(name));
                     name[sizeof(name) - 1] = '\0';
                 }

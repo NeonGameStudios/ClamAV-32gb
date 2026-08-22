@@ -3411,6 +3411,19 @@ A focused oversized-comment unit fixture and source guards cover the new
 boundary. Compiled Linux execution, sanitizer coverage, and broader MHTML
 corpus/Sonic1 qualification remain release gates.
 
+## Mach-O 32-bit coordinate overflow — 2026-08-22
+
+The 32-bit Mach-O metadata path now checks the raw-address addition used to
+map an entry point and calculates aligned section extents in a widened
+temporary before storing the format-defined 32-bit result. A wrapped file
+coordinate or aligned section size is now a fail-visible malformed layer
+instead of a small, misleading range. The existing 64-bit native-coordinate
+path remains independently checked.
+
+A focused malformed 32-bit section regression and source guards cover the
+overflow boundary. Compiled Mach-O corpus, sanitizer, and Sonic1
+qualification remain release gates.
+
 ## RFC 1341 partial-message reassembly — 2026-08-19
 
 RFC 1341 `message/partial` reassembly now requires every numbered fragment

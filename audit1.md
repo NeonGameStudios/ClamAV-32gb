@@ -4690,3 +4690,13 @@ file-backed and separate from this metadata-only boundary.
 The focused oversized-comment fixture and source guards are registered.
 Compiled MHTML execution, sanitizer coverage, and supported-build Sonic1
 qualification remain open.
+
+## Mach-O 32-bit coordinate overflow — 2026-08-22
+
+The 32-bit Mach-O path previously computed entry-point raw coordinates and
+alignment-rounded section sizes in 32-bit arithmetic. Both could wrap before
+the parser reported an error. The raw-address helper now checks the addition,
+and section alignment uses a widened temporary and rejects an extent above
+`UINT32_MAX` as a broken executable. A focused malformed 32-bit section
+fixture and source guards are registered; compiled Mach-O, sanitizer, and
+Sonic1 qualification remain open.
