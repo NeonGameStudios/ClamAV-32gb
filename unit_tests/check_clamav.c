@@ -11537,6 +11537,34 @@ static const void *macho_load_command_read_failure(fmap_t *map, size_t at, size_
 #define PE_TEST_IMPORT_FUNCTION_OFFSET   0x127066U
 #define PE_TEST_IMPORT_THUNK_OFFSET      0x126e3cU
 
+struct pe_native_offset_map_state {
+    const uint8_t *data;
+    size_t length;
+    size_t source_offset;
+};
+
+static const void *pe_native_offset_map_need(fmap_t *map, size_t at, size_t len, int lock)
+{
+    struct pe_native_offset_map_state *state = map->handle;
+    size_t absolute;
+    size_t relative;
+
+    (void)lock;
+    if (NULL == state || len == 0 || at > map->len || len > map->len - at ||
+        at > SIZE_MAX - map->nested_offset)
+        return NULL;
+
+    absolute = map->nested_offset + at;
+    if (absolute < state->source_offset)
+        return NULL;
+
+    relative = absolute - state->source_offset;
+    if (relative > state->length || len > state->length - relative)
+        return NULL;
+
+    return state->data + relative;
+}
+
 static const void *pe_import_thunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -13887,6 +13915,81 @@ START_TEST(test_pe_truncated_header_is_fail_visible)
     cl_fmap_close(map);
 }
 END_TEST
+
+#if SIZE_MAX > UINT32_MAX
+START_TEST(test_pe_header_nested_fmap_accepts_native_offset)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct cli_exe_info peinfo;
+    struct pe_native_offset_map_state state;
+    cli_ctx header_ctx;
+    struct stat st;
+    fmap_t *parent;
+    fmap_t *nested;
+    uint8_t *data;
+    size_t offset = 0;
+    size_t source_offset = (size_t)UINT32_MAX + 4096U;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg(FSTAT(fd, &st) == 0, "fstat(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg((uintmax_t)st.st_size <= SIZE_MAX - source_offset,
+                  "PE fixture cannot be placed at the synthetic native offset");
+
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    memset(&options, 0, sizeof(options));
+    memset(&header_ctx, 0, sizeof(header_ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    state.data         = data;
+    state.length       = (size_t)st.st_size;
+    state.source_offset = source_offset;
+    parent             = cl_fmap_open_memory(data, 1);
+    ck_assert_ptr_nonnull(parent);
+    parent->handle     = &state;
+    parent->need       = pe_native_offset_map_need;
+    parent->len        = source_offset + state.length;
+    parent->real_len   = parent->len;
+
+    nested = fmap_duplicate(parent, source_offset, state.length, "embedded-pe-header-test");
+    ck_assert_ptr_nonnull(nested);
+    ck_assert_uint_eq(nested->nested_offset, source_offset);
+
+    header_ctx.engine            = scan_engine;
+    header_ctx.dconf             = scan_engine->dconf;
+    header_ctx.options           = &options;
+    header_ctx.fmap              = nested;
+    header_ctx.this_layer_tmpdir = tmpdir;
+    cli_exe_info_init(&peinfo, 0);
+    ret = cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(peinfo.offset, 0);
+    ck_assert(!header_ctx.scan_incomplete);
+    cli_exe_info_destroy(&peinfo);
+
+    free_duplicate_fmap(nested);
+    cl_fmap_close(parent);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+#endif
 
 START_TEST(test_executable_metadata_targetinfo_failure_is_fail_visible)
 {
@@ -16973,6 +17076,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_arj_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_cl, test_pe_header_nested_fmap_accepts_native_offset);
+#endif
     tcase_add_test(tc_cl, test_executable_metadata_targetinfo_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);

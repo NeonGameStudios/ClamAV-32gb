@@ -81,6 +81,9 @@
 - PE icon bitmap headers now use native-width map coordinates and reject
   declared header ranges that extend beyond the input; add compiled PE/icon
   corpus and sanitizer qualification.
+- Embedded PE candidates above 4 GiB now undergo header admission through a
+  bounded child fmap rooted at the native-width offset; add compiled embedded
+  PE, production-database, and Sonic1 qualification.
 - EGG metadata extra fields now reject sizes above the individual-allocation
   ceiling explicitly, and encryption-header size subtraction is underflow-safe.
 - AC exact-tail matching now has a >4 GiB offset regression that verifies the

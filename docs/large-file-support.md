@@ -1341,9 +1341,11 @@ or waive them.
   the signed block-coordinate limit return `CL_EFORMAT`. VBA’s in-memory
   matcher still rejects a decompressed buffer above its legacy 32-bit API.
 - Embedded PE metadata still carries a 32-bit containing-file offset for its
-  compatibility ABI; embedded PE analysis marks offsets above 4 GiB
-  incomplete with an explicit diagnostic while the raw signature scan
-  continues.
+  compatibility ABI. For recognized candidates above 4 GiB, header admission
+  roots a bounded child fmap at the native-width containing offset and invokes
+  the legacy parser with a zero relative offset; the containing raw scan keeps
+  its native-width coordinate and still marks any later parser limitation
+  incomplete.
 - UDF allocation offsets, HFS+ block-to-byte conversions, and audited XAR/DMG
   extents use checked native-width arithmetic. XAR and DMG compressed input is
   consumed in bounded chunks, cumulative output limits are checked, and a
@@ -3041,10 +3043,11 @@ truncated, unreadable, or resource-failed header. The latter marks the parent
 scan incomplete and preserves the non-clean result instead of silently
 discarding the header-check failure.
 
-Embedded PE recognition now treats `MaxEmbeddedPE` exhaustion and the legacy
-32-bit containing-offset ABI boundary as explicit incomplete/resource results.
-The scanner no longer silently skips a recognized embedded PE while allowing
-the containing layer to remain clean.
+Embedded PE recognition now treats `MaxEmbeddedPE` exhaustion as an explicit
+incomplete/resource result. The former legacy 32-bit containing-offset ABI
+boundary is handled by rooting header admission in a bounded child fmap, so a
+recognized candidate above 4 GiB is no longer skipped before its PE header is
+checked.
 
 Embedded PE header admission now keeps generic “not actually PE” results as
 disproven candidates, but marks truncation, timeout, resource, allocation, and
@@ -4869,6 +4872,20 @@ unsupported optional ingress from being counted as a successful worker or
 `IDSESSION` aggregate. Certified Linux x86-64 builds still require descriptor
 passing and need compiled no-feature integration coverage before that variant
 can be claimed.
+
+## Embedded PE header admission above 4 GiB — 2026-08-21
+
+Embedded PE header validation no longer rejects a recognized candidate solely
+because its containing-file offset exceeds the 32-bit legacy executable
+metadata ABI. The scanner now creates a bounded fmap view rooted at the
+native-width candidate offset, runs the existing PE header parser at relative
+offset zero, propagates any child non-cacheable state back to the containing
+map, restores the parent context, and then continues with the normal nested
+scan. The legacy metadata ABI is unchanged; parser-specific 32-bit limits
+inside the child remain explicit incomplete results. A focused regression
+exercises the same bounded-child technique with a synthetic offset above 4
+GiB. Compiled scanner, sanitizer, production-database, and Sonic1 evidence
+remain release gates.
 
 ## Local macOS qualification preflight — 2026-08-21
 

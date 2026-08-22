@@ -5268,6 +5268,9 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                             if (SCAN_PARSE_PE && ctx->dconf->pe &&
                                 (type == CL_TYPE_MSEXE || type == CL_TYPE_ZIP || type == CL_TYPE_MSOLE2)) {
                                 struct cli_exe_info peinfo;
+                                fmap_t *parent_map     = ctx->fmap;
+                                fmap_t *pe_header_map  = NULL;
+                                uint32_t header_offset = (uint32_t)fpt->offset;
 
                                 if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
                                     cli_dbgmsg("scanraw: MaxEmbeddedPE exceeded\n");
@@ -5278,19 +5281,43 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
 
                                 if ((uint64_t)fpt->offset > UINT32_MAX) {
-                                    cli_dbgmsg("scanraw: embedded PE offset exceeds the 32-bit executable metadata ABI; skipping at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    cli_mark_scan_incomplete(ctx, "embedded PE metadata requires a 32-bit containing-file offset");
-                                    if (nret == CL_SUCCESS)
-                                        nret = CL_ERESOURCE;
-                                    break;
+                                    /*
+                                     * The PE metadata bridge still carries a 32-bit
+                                     * embedded offset. Root the header-only check in a
+                                     * bounded child fmap so that the bridge sees offset
+                                     * zero while the containing scan retains native-width
+                                     * coordinates.
+                                     */
+                                    pe_header_map = fmap_duplicate(parent_map,
+                                                                   fpt->offset,
+                                                                   parent_map->len - fpt->offset,
+                                                                   "embedded-pe-header");
+                                    if (NULL == pe_header_map) {
+                                        cli_dbgmsg("scanraw: embedded PE header fmap could not be duplicated at " STDu64 "\n",
+                                                    (uint64_t)fpt->offset);
+                                        cli_mark_scan_incomplete(ctx, "embedded PE header fmap could not be duplicated");
+                                        if (nret == CL_SUCCESS)
+                                            nret = CL_EMAP;
+                                        break;
+                                    }
+
+                                    ctx->fmap = pe_header_map;
+                                    header_offset = 0;
                                 }
-                                cli_exe_info_init(&peinfo, (uint32_t)fpt->offset);
+                                cli_exe_info_init(&peinfo, header_offset);
 
                                 // Header validity check to prevent false positives from being scanned.
                                 ret = cli_peheader(ctx, &peinfo, CLI_PEHEADER_OPT_NONE);
 
                                 // peinfo memory may have been allocated and must be freed even if it failed.
                                 cli_exe_info_destroy(&peinfo);
+
+                                if (NULL != pe_header_map) {
+                                    if (pe_header_map->dont_cache_flag)
+                                        parent_map->dont_cache_flag = true;
+                                    ctx->fmap = parent_map;
+                                    free_duplicate_fmap(pe_header_map);
+                                }
 
                                 if (CL_SUCCESS != ret) {
                                     if (ret != CL_ERROR) {
