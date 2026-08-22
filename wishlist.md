@@ -505,6 +505,9 @@
 - XLM macro and extracted-image temporary-output boundaries now re-check the
   shared deadline before quota admission and before writing; retain deterministic
   timeout injection and complete Office/XLM corpus qualification.
+- InstallShield MSI, embedded-file, and CAB output paths now re-check the shared
+  deadline before admission and before writes; add deterministic timeout
+  injection and complete InstallShield corpus qualification.
 - Decompressed VBA modules now enter the 64-bit fmap matcher path, preserving
   full-map PCRE and logical/YARA evaluation instead of rejecting lengths above
   4 GiB at the legacy buffer-matcher ABI; the decompressor's contiguous

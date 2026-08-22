@@ -5538,3 +5538,12 @@ before each direct write. Timeout paths release the reservation and retain the
 incomplete result without scanning partial normalized data. Source guards cover
 both output APIs; deterministic timeout injection, compiled HTML/MHTML corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## InstallShield output deadlines — 2026-08-22
+
+InstallShield MSI member, embedded-file, and CAB output paths now re-check
+`MaxScanTime` before admission and immediately before each materialized write.
+Timeout cleanup releases current or aggregate temporary reservations and keeps
+partial output from reaching a nested scan. Source guards cover all three
+paths; deterministic timeout injection, compiled InstallShield corpus,
+sanitizer, and Sonic1 qualification remain release gates.

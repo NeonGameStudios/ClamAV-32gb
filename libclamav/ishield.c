@@ -381,6 +381,11 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
                     break;
                 }
                 if (produced) {
+                    ret = cli_checktimelimit(ctx);
+                    if (ret != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "InstallShield MSI member output reached the configured time limit");
+                        break;
+                    }
                     if (UINT64_MAX - temporary_reserved < (uint64_t)produced ||
                         cli_scan_reserve_temporary(ctx, (uint64_t)produced) != CL_SUCCESS) {
                         cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output exceeds storage limits");
@@ -388,6 +393,13 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
                         break;
                     }
                     temporary_reserved += (uint64_t)produced;
+                    ret = cli_checktimelimit(ctx);
+                    if (ret != CL_SUCCESS) {
+                        cli_scan_release_temporary(ctx, (uint64_t)produced);
+                        temporary_reserved -= (uint64_t)produced;
+                        cli_mark_scan_incomplete(ctx, "InstallShield MSI member output reached the configured time limit");
+                        break;
+                    }
                     if (cli_writen(ofd, obuf, produced) != produced) {
                         cli_mark_scan_incomplete(ctx, "InstallShield MSI member temporary output could not be written completely");
                         ret = CL_EWRITE;
@@ -646,6 +658,12 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
         return ret;
     }
 
+    ret = cli_checktimelimit(ctx);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "InstallShield embedded file output reached the configured time limit");
+        return ret;
+    }
+
     temporary_reserved = (uint64_t)fsize;
     if (cli_scan_reserve_temporary(ctx, temporary_reserved) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "InstallShield embedded file exceeds temporary storage limits");
@@ -673,6 +691,11 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
             cli_dbgmsg("ishield: read error\n");
             cli_mark_scan_incomplete(ctx, "InstallShield embedded file could not be read completely");
             ret = CL_EREAD;
+            break;
+        }
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "InstallShield embedded file output reached the configured time limit");
             break;
         }
         if (cli_writen(ofd, buf, rd) != rd) {
@@ -1006,6 +1029,12 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
         free(outbuf);
         return ret;
     }
+    ret = cli_checktimelimit(ctx);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "InstallShield CAB output reached the configured time limit");
+        free(outbuf);
+        return ret;
+    }
     if (cli_scan_reserve_temporary(ctx, size) != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "InstallShield CAB output exceeds temporary storage limits");
         free(outbuf);
@@ -1105,6 +1134,13 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
                     break;
                 }
 
+                if (writelen) {
+                    ret = cli_checktimelimit(ctx);
+                    if (ret != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "InstallShield CAB output reached the configured time limit");
+                        break;
+                    }
+                }
                 if (writelen && cli_writen(ofd, outbuf, writelen) != writelen) {
                     cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be written completely");
                     ret = CL_EWRITE;

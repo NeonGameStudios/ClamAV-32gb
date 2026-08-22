@@ -3405,6 +3405,15 @@ incomplete result without scanning partial normalized data. Source guards cover
 both output APIs; deterministic timeout injection, compiled HTML/MHTML corpus,
 sanitizer, and Sonic1 qualification remain release gates.
 
+## InstallShield output deadlines — 2026-08-22
+
+InstallShield MSI member, embedded-file, and CAB output paths now re-check the
+shared deadline before admission and immediately before each materialized
+write. Timeout cleanup releases current or aggregate temporary reservations and
+keeps partial output from reaching a nested scan. Source guards cover all
+three paths; deterministic timeout injection, compiled InstallShield corpus,
+sanitizer, and Sonic1 qualification remain release gates.
+
 ## CryptFF traversal deadlines — 2026-08-22
 
 CryptFF already decrypted through a fixed buffer and quota-accounted temporary
