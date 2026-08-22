@@ -2678,6 +2678,14 @@ if grep -F 'Technical design limitations prevent ClamAV from scanning files grea
     exit 1
 fi
 
+inventory_tmp=$(mktemp "${TMPDIR:-/tmp}/clamav-largefile-inventory.XXXXXX")
+trap 'rm -f "$inventory_tmp"' EXIT HUP INT TERM
+sh "$root/tools/largefile_inventory.sh" > "$inventory_tmp"
+if ! cmp -s "$root/docs/largefile-inventory.tsv" "$inventory_tmp"; then
+    echo 'large-file source guard failed: committed inventory is stale' >&2
+    exit 1
+fi
+
 awk -F '\t' '
     NR == 1 { next }
     $2 ~ /^\.\// { exit 1 }

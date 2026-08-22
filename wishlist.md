@@ -11,6 +11,7 @@
   accounting; the compiled Linux/Sonic1 execution remains open.
 - The generated size/type/offset inventory has been refreshed from the current
   source tree and now remains reproducible through `tools/largefile_inventory.sh`;
+  `largefile_source_guards.sh` now rejects any committed inventory drift, and
   the 159-entry capability manifest validates against the refreshed dispatch
   inventory.
 - Large-mail phishing URL inspection now uses quota-accounted file-backed

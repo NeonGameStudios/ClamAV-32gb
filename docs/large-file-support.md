@@ -4946,7 +4946,7 @@ attempt.
 
 The authoritative `docs/largefile-inventory.tsv` was regenerated from the
 current source tree after the recent parser, daemon, Rust, and test changes.
-The generator reproduces the committed 32,401-line inventory exactly, and the
+The generator reproduces the committed 32,608-line inventory exactly, and the
 159-entry capability manifest still validates every required ingress, matcher,
 feature, unsupported boundary, parser dispatch branch, and source path.
 

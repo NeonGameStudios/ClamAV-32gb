@@ -3575,3 +3575,11 @@ incomplete with an explicit reason and preserves `CL_ETIMEOUT` through the
 outer result policy; the focused expired-context regression also verifies
 cache suppression. Compiled timeout injection, sanitizer, and production
 mail-corpus qualification remain release gates.
+
+## Inventory reproducibility closeout — 2026-08-22
+
+The committed `docs/largefile-inventory.tsv` had drifted from the current
+source after the parser and resource-hardening slices. It has been regenerated
+to 32,608 lines from `tools/largefile_inventory.sh`; a byte-for-byte
+reproducibility check now runs inside `tools/largefile_source_guards.sh`, so
+stale inventory evidence fails the local guard instead of being accepted.
