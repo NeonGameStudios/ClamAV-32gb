@@ -400,8 +400,13 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                         break;
                     }
                     if (res == SZ_OK && legacySize != 0) {
-                        if (cli_writen(fd, outBuffer + legacyOffset, legacySize) != legacySize) {
+                        size_t legacy_written = ClamFileOutStream_Write(&output, outBuffer + legacyOffset, legacySize);
+                        if (output.status != CL_SUCCESS) {
+                            found = output.status;
+                            res   = SZ_ERROR_WRITE;
+                        } else if (legacy_written != legacySize) {
                             cli_mark_scan_incomplete(ctx, "7-Zip legacy member output could not be written completely");
+                            found = CL_EWRITE;
                             res = SZ_ERROR_WRITE;
                         } else {
                             outSizeProcessed = legacySize;

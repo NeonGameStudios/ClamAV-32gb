@@ -493,6 +493,9 @@
   solid-folder decoder work, preserving `CL_ETIMEOUT` through decoder read
   errors; add compiled solid-archive timeout-injection and production corpus
   qualification.
+- The bounded 7-Zip legacy whole-buffer fallback now routes its output through
+  the same deadline-aware callback, so a fallback write cannot bypass timeout
+  admission; retain legacy-fallback and solid-folder corpus qualification.
 - OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed
   MSO stream corpus coverage during Office-parser qualification.
 - ZWS/SWF compressed-input length fields are now enforced before LZMA setup; add

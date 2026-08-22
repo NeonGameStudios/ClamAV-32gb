@@ -2430,6 +2430,16 @@ entry and deterministic input-timeout regressions plus source guards cover the
 boundaries; compiled solid-archive corpus, sanitizer, and Sonic1 qualification
 remain release gates.
 
+## 7-Zip legacy-fallback output deadline — 2026-08-22
+
+The bounded 7-Zip path already checked deadlines in its streaming extraction
+callback, but the compatibility fallback for decoder folders below the 1 GiB
+individual-allocation ceiling wrote its materialized buffer directly with
+`cli_writen()`. That fallback now uses the same deadline-aware output callback,
+preserving `CL_ETIMEOUT` before temporary output can be treated as complete.
+Compiled fallback/solid-folder timeout injection, corpus, sanitizer, and
+Sonic1 qualification remain open.
+
 ## Clamscan directory-entry inspection closeout — 2026-08-20
 
 Directory scans now count failed per-entry `LSTAT()` and symlink-follow
