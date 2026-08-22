@@ -151,6 +151,8 @@ int cli_binhex(cli_ctx *ctx)
                     break;
                 }
                 resource_reserved = resource_size;
+                if ((ret = binhex_checktimelimit(ctx, "BinHex output temporary admission reached the configured time limit")) != CL_SUCCESS)
+                    break;
                 cli_dbgmsg("cli_binhex: decoding '%s' - %u bytes of data to %s - %u bytes or resources to %s\n", decoded + 1, datalen, dname, reslen, rname);
                 memmove(decoded, &decoded[hdrlen], dec_done - hdrlen);
                 dec_done -= hdrlen;
@@ -160,6 +162,8 @@ int cli_binhex(cli_ctx *ctx)
                 unsigned int todo = MIN(dec_done, datalen);
                 datalen -= todo;
                 dec_done -= todo;
+                if ((ret = binhex_checktimelimit(ctx, "BinHex data fork output reached the configured time limit")) != CL_SUCCESS)
+                    break;
                 if (cli_writen(datafd, decoded, todo) != todo) {
                     ret = CL_EWRITE;
                     break;
@@ -172,7 +176,11 @@ int cli_binhex(cli_ctx *ctx)
                         break;
                     }
                     {
-                        cl_error_t scan_ret = cli_magic_scan_desc_type_reserved(datafd, dname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+                        cl_error_t scan_ret;
+
+                        if ((ret = binhex_checktimelimit(ctx, "BinHex data fork nested-scan handoff reached the configured time limit")) != CL_SUCCESS)
+                            break;
+                        scan_ret = cli_magic_scan_desc_type_reserved(datafd, dname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
                         if (scan_ret != CL_SUCCESS)
                             ret = scan_ret;
                     }
@@ -217,6 +225,8 @@ int cli_binhex(cli_ctx *ctx)
                 unsigned int todo = MIN(dec_done, reslen);
                 reslen -= todo;
                 dec_done -= todo;
+                if ((ret = binhex_checktimelimit(ctx, "BinHex resource fork output reached the configured time limit")) != CL_SUCCESS)
+                    break;
                 if (cli_writen(resfd, decoded, todo) != todo) {
                     ret = CL_EWRITE;
                     break;
@@ -228,7 +238,11 @@ int cli_binhex(cli_ctx *ctx)
                         break;
                     }
                     {
-                        cl_error_t scan_ret = cli_magic_scan_desc_type_reserved(resfd, rname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+                        cl_error_t scan_ret;
+
+                        if ((ret = binhex_checktimelimit(ctx, "BinHex resource fork nested-scan handoff reached the configured time limit")) != CL_SUCCESS)
+                            break;
+                        scan_ret = cli_magic_scan_desc_type_reserved(resfd, rname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
                         if (scan_ret != CL_SUCCESS)
                             ret = scan_ret;
                     }

@@ -262,6 +262,20 @@ static cl_error_t rtf_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static int rtf_write_output(struct rtf_object_data *data, const void *buffer, size_t length)
+{
+    cl_error_t status;
+
+    status = rtf_checktimelimit(data->ctx, "RTF embedded object output reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
+    if (cli_writen(data->fd, buffer, length) != length) {
+        cli_mark_scan_incomplete(data->ctx, "RTF embedded object temporary output could not be written completely");
+        return CL_EWRITE;
+    }
+    return CL_SUCCESS;
+}
+
 static cl_error_t decode_and_scan(struct rtf_object_data* data, cli_ctx* ctx)
 {
     cl_error_t ret = CL_CLEAN;
@@ -438,6 +452,8 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                         return CL_ERESOURCE;
                     }
                     data->temporary_reserved = (uint64_t)data->desc_len + sizeof(uint32_t);
+                    if ((ret = rtf_checktimelimit(data->ctx, "RTF embedded object temporary admission reached the configured time limit")) != CL_SUCCESS)
+                        return ret;
                     if ((ret = cli_gentempfd(data->tmpdir, &data->name, &data->fd))) {
                         cli_scan_release_temporary(data->ctx, data->temporary_reserved);
                         data->temporary_reserved = 0;
@@ -473,15 +489,15 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                         char out[4];
                         data->bread = 1; /* flag to indicate this needs to be scanned with cli_decode_ole_object*/
                         cli_writeint32(out, data->desc_len);
-                        if (cli_writen(data->fd, out, 4) != 4)
-                            return CL_EWRITE;
+                        if ((ret = rtf_write_output(data, out, 4)) != CL_SUCCESS)
+                            return ret;
                     } else {
                         data->bread = 2;
                     }
 
                     if (data->object_header_len > 0) {
-                        if (cli_writen(data->fd, data->object_header, data->object_header_len) != data->object_header_len)
-                            return CL_EWRITE;
+                        if ((ret = rtf_write_output(data, data->object_header, data->object_header_len)) != CL_SUCCESS)
+                            return ret;
                         data->desc_len -= data->object_header_len;
                         data->object_header_len = 0;
                     }
@@ -491,8 +507,8 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                     size_t out_want = (out_cnt < data->desc_len) ? out_cnt : data->desc_len;
 
                     data->desc_len -= out_want;
-                    if (cli_writen(data->fd, out_data, out_want) != out_want)
-                        return CL_EWRITE;
+                    if ((ret = rtf_write_output(data, out_data, out_want)) != CL_SUCCESS)
+                        return ret;
                     out_data += out_want;
                     out_cnt -= out_want;
                     if (!data->desc_len) {

@@ -570,6 +570,12 @@
 - BinHex byte decoding and run-length expansion now honor the shared scan
   deadline and preserve cleanup/non-cacheable timeout results; add compiled
   timeout-injection and long-encoded-attachment corpus qualification.
+- BinHex data/resource fork output now re-checks the shared deadline after
+  admission, before writes, and before nested handoff; add deterministic
+  post-admission injection and complete BinHex corpus qualification.
+- RTF embedded-object admission and materialized writes now re-check the shared
+  deadline; add deterministic post-admission injection and complete RTF object
+  corpus qualification.
 - PE import wildcard matches, Authenticode certificate alerts, and bytecode
   hook alert-append failures now remain fail-visible; add signature,
   callback/resource fault-injection and production PE/bytecode corpus coverage.

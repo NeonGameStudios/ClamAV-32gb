@@ -4218,3 +4218,12 @@ materialized writes. Timeout cleanup preserves the existing member reservation
 and prevents partial output from reaching nested scans. Source guards cover
 the shared and encrypted writers; deterministic post-admission injection,
 compiled ZIP corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## BinHex and RTF output deadlines — 2026-08-22
+
+BinHex data/resource fork output now re-checks the shared deadline after
+temporary admission, immediately before writes, and before nested handoff.
+RTF embedded-object admission and each materialized write use the same
+fail-closed deadline boundary. Source guards cover both families; deterministic
+post-admission injection, compiled BinHex/RTF corpus, sanitizer, and Sonic1
+qualification remain release gates.
