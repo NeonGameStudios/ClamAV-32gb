@@ -538,6 +538,9 @@
 - APM, GPT, and MBR parser entry points and partition-table/intersection walks
   now honor the shared scan deadline and preserve timeout as incomplete;
   add compiled partition-image corpus and timeout qualification.
+- APM block coordinates and old-school partition scaling now use checked
+  native-size conversion before fmap reads or nested scans; add compiled
+  narrow-width/large-coordinate partition-image qualification.
 - GPT sector-size auto-detection now uses bounded `fmap_readn()` probes and
   preserves an in-range backing-read failure as `CL_EREAD`; add compiled
   auto-detection fault-injection and partition-image qualification.

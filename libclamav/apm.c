@@ -47,6 +47,15 @@
 
 static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize, bool old_school);
 
+static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
+{
+    if ((NULL == bytes) || (0 == sectorsize) || (blocks > SIZE_MAX / sectorsize))
+        return false;
+
+    *bytes = (size_t)blocks * sectorsize;
+    return true;
+}
+
 static cl_error_t apm_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
 {
     size_t got = fmap_readn(ctx->fmap, dst, at, len);
@@ -67,6 +76,7 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     struct apm_partition_info aptable, apentry;
     bool old_school = false;
     size_t sectorsize, maplen, partsize, described_size;
+    size_t tableoff = 0, tablesize = 0;
     size_t pos = 0, partoff = 0;
     unsigned i;
     uint32_t max_prtns = 0;
@@ -136,7 +146,11 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     }
 
     /* read partition table at sector 1 (or after the ddm if old-school) */
-    pos = APM_PTABLE_BLOCK * sectorsize;
+    if (!apm_scale_blocks(APM_PTABLE_BLOCK, sectorsize, &pos)) {
+        cli_mark_scan_incomplete(ctx, "APM partition-table offset overflowed");
+        status = CL_EFORMAT;
+        goto done;
+    }
 
     status = apm_read(ctx, &aptable, pos, sizeof(aptable), "APM partition table could not be read completely");
     if (status != CL_SUCCESS) {
@@ -166,6 +180,13 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         goto done;
     }
 
+    if (!apm_scale_blocks(aptable.pBlockStart, sectorsize, &tableoff) ||
+        !apm_scale_blocks(aptable.pBlockCount, sectorsize, &tablesize)) {
+        cli_mark_scan_incomplete(ctx, "APM partition table coordinate overflowed");
+        status = CL_EFORMAT;
+        goto done;
+    }
+
     /* check that the partition table fits in the space specified - HEURISTICS */
     if (SCAN_HEURISTIC_PARTITION_INTXN && (ctx->dconf->other & OTHER_CONF_PRTNINTXN)) {
         status = apm_partition_intersection(ctx, &aptable, sectorsize, old_school);
@@ -182,8 +203,7 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     cli_dbgmsg("Partition Count: %u\n", aptable.numPartitions);
     cli_dbgmsg("Blocks: [%u, +%u), ([%lu, +%lu))\n",
                aptable.pBlockStart, aptable.pBlockCount,
-               (unsigned long)(aptable.pBlockStart * sectorsize),
-               (unsigned long)(aptable.pBlockCount * sectorsize));
+               (unsigned long)tableoff, (unsigned long)tablesize);
 
     /* check engine maxpartitions limit */
     if (aptable.numPartitions < ctx->engine->maxpartitions) {
@@ -199,7 +219,11 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
             goto done;
 
         /* read partition table entry */
-        pos = i * sectorsize;
+        if (!apm_scale_blocks(i, sectorsize, &pos)) {
+            cli_mark_scan_incomplete(ctx, "APM partition entry offset overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
         status = apm_read(ctx, &apentry, pos, sizeof(apentry), "APM partition entry could not be read completely");
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanapm: Invalid Apple partition entry\n");
@@ -229,8 +253,12 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
             continue;
         }
 
-        partoff  = apentry.pBlockStart * sectorsize;
-        partsize = apentry.pBlockCount * sectorsize;
+        if (!apm_scale_blocks(apentry.pBlockStart, sectorsize, &partoff) ||
+            !apm_scale_blocks(apentry.pBlockCount, sectorsize, &partsize)) {
+            cli_mark_scan_incomplete(ctx, "APM partition coordinate overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
         /* re-calculate if old_school and aligned [512 * 4 => 2048] */
         if (old_school && ((i % 4) == 0)) {
             if (!strncmp((char *)apentry.type, "Apple_Driver", 32) ||
@@ -240,7 +268,11 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
                 !strncmp((char *)apentry.type, "Apple_Driver_ATAPI", 32) ||
                 !strncmp((char *)apentry.type, "Apple_Patches", 32)) {
 
-                partsize = (size_t)apentry.pBlockCount * 2048U;
+                if (!apm_scale_blocks(apentry.pBlockCount, 4U * APM_FALLBACK_SECTOR_SIZE, &partsize)) {
+                    cli_mark_scan_incomplete(ctx, "APM old-school partition coordinate overflowed");
+                    status = CL_EFORMAT;
+                    goto done;
+                }
             }
         }
 
@@ -308,7 +340,11 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
             goto done;
 
         /* read partition table entry */
-        pos = i * sectorsize;
+        if (!apm_scale_blocks(i, sectorsize, &pos)) {
+            cli_mark_scan_incomplete(ctx, "APM intersection entry offset overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
         status = apm_read(ctx, &apentry, pos, sizeof(apentry), "APM partition intersection entry could not be read completely");
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanapm: Invalid Apple partition entry\n");
@@ -328,7 +364,12 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
                 !strncmp((char *)apentry.type, "Apple_Driver_ATAPI", 32) ||
                 !strncmp((char *)apentry.type, "Apple_Patches", 32)) {
 
-                apentry.pBlockCount = apentry.pBlockCount * 4;
+                if (apentry.pBlockCount > UINT32_MAX / 4U) {
+                    cli_mark_scan_incomplete(ctx, "APM intersection block count overflowed");
+                    status = CL_EFORMAT;
+                    goto done;
+                }
+                apentry.pBlockCount *= 4U;
             }
         }
 

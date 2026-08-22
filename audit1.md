@@ -3957,3 +3957,13 @@ the limit/abort state and reason (`CL_ERESOURCE`, `CL_BREAK`, `CL_EUNPACK`,
 unsupported-file skips explicitly use `CL_EUNPACK`; focused report tests cover
 resource, generic, and unsupported normalization. Compiled daemon skip, wire,
 sanitizer, and Sonic1 qualification remain open.
+
+## APM partition coordinate admission — 2026-08-22
+
+APM block coordinates were multiplied directly into `size_t` offsets, and the
+old-school 2048-byte driver scaling had a second unchecked multiplication.
+Those products are now admitted through a checked native-size helper before
+fmap reads or nested partition scans; the intersection walk also rejects a
+32-bit block-count scaling overflow. A focused synthetic coordinate regression
+covers the wrap-to-readable-range case on narrow `size_t` builds. Compiled
+partition-image, sanitizer, and parser-family qualification remain open.
