@@ -7,13 +7,15 @@ a green service gate cannot accidentally omit a structured command family. It
 deliberately uses only Python's standard library.
 """
 
-import csv
 import hashlib
 import json
 import os
 import socket
 import struct
 import sys
+from pathlib import Path
+
+from largefile_service_workload_check import load_oracle as load_qualification_oracle
 
 
 MAX_FRAME = 16 * 1024 * 1024
@@ -69,23 +71,20 @@ def receive_report(sock):
 
 
 def load_oracle(path, role):
-    with open(path, newline="", encoding="utf-8") as stream:
-        rows = list(csv.reader(stream, delimiter="\t"))
-    if not rows or rows[0] != [
-        "role",
-        "expected_size",
-        "expected_sha256",
-        "expected_exit",
-        "expected_completion",
-        "expected_signature",
-        "expected_offset",
-        "expected_type",
-    ]:
-        fail("qualification oracle has an invalid header")
-    matches = [row for row in rows[1:] if row and row[0] == role]
-    if len(matches) != 1 or len(matches[0]) != 8:
+    oracle = load_qualification_oracle(Path(path))
+    if role not in oracle:
         fail(f"qualification oracle must contain one {role} row")
-    return matches[0]
+    size, digest, expected_exit, completion, signature, offset, file_type = oracle[role]
+    return [
+        role,
+        str(size),
+        digest,
+        str(expected_exit),
+        completion,
+        signature,
+        offset,
+        file_type,
+    ]
 
 
 def validate_input(path, oracle):

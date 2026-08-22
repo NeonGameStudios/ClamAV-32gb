@@ -23,6 +23,11 @@ code cannot be presented as production evidence. The gate's
 `oracle-binding.txt` records the expected status, completion, signature,
 offset, and type alongside each verified size and hash.
 
+The direct framed clamd report probe uses the same strict oracle parser as the
+post-run workload verifier. It therefore rejects malformed role rows,
+signature/offset pairings, completion values, file types, or expected exits
+before a report frame can be recorded as qualification evidence.
+
 The service gate also snapshots every regular file in the production and edge
 database directories as a sorted relative-path/size/SHA-256 manifest before
 starting clamd. The directories must be distinct, symlink-free, and non-empty;
@@ -5062,7 +5067,7 @@ attempt.
 The authoritative `docs/largefile-inventory.tsv` was regenerated from the
 current source tree after the recent parser, daemon, Rust, and test changes.
 The generator reproduces the committed 32,608-line inventory exactly, and the
-160-entry capability manifest still validates every required ingress, matcher,
+162-entry capability manifest still validates every required ingress, matcher,
 feature, unsupported boundary, parser dispatch branch, and source path.
 
 ## clamscan stdin staging shares the temporary budget — 2026-08-22

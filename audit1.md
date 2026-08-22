@@ -4752,6 +4752,16 @@ The source guards and non-clang regression gates pass. Compiled fault
 injection, sanitizer runs, production corpora, and Sonic1 qualification remain
 open.
 
+## Direct clamd report oracle consistency — 2026-08-22
+
+The direct `SCANREPORT`/`CONTSCANREPORT`/`MULTISCANREPORT`/`ALLMATCHSCANREPORT`,
+`FILDESREPORT`, and `INSTREAMREPORT` probe previously parsed only the selected
+oracle row. It now reuses the independent service verifier's strict parser,
+so malformed four-role manifests and inconsistent detection signature/offset
+bindings are rejected before a framed report is accepted. A synthetic
+regression covers the malformed clean-signature/offset pairing. Compiled
+wire-protocol, production-CVD, and Sonic1 qualification remain open.
+
 ## Scan-level temporary-directory setup failures — 2026-08-22
 
 `scan_common()` and recursive child-layer setup previously returned allocation

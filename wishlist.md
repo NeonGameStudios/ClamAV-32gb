@@ -5,6 +5,10 @@
 - The 32 GiB ingress policy, shared accounting/fail-closed controls, and
   capability manifest are implemented and source-guarded; release defaults
   remain gated on qualification.
+- Direct framed clamd report probes now reuse the strict four-role service
+  oracle parser instead of accepting a weaker role-only row; malformed
+  detection/offset bindings fail before a protocol result can be recorded.
+  Compiled report, production-CVD, and Sonic1 qualification remain open.
 - MHTML preclassification now bounds each comment value before the legacy
   in-memory XML reader, checks bounded tag searches, and rejects oversized
   metadata as an explicit resource-incomplete result; add compiled oversized-
@@ -26,7 +30,7 @@
 - The generated size/type/offset inventory has been refreshed from the current
   source tree and now remains reproducible through `tools/largefile_inventory.sh`;
   `largefile_source_guards.sh` now rejects any committed inventory drift, and
-  the 160-entry capability manifest validates against the refreshed dispatch
+  the 162-entry capability manifest validates against the refreshed dispatch
   inventory.
 - Sanitizer runtime qualification now rejects any native compile-database entry
   that lacks either ASan or UBSan, rather than accepting evidence because the

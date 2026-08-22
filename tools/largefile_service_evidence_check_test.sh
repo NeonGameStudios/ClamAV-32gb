@@ -170,6 +170,37 @@ workload_hash_manifest=$(sha256sum "$workload_results" | awk '{ print $1 }')
 
 sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null
 
+python3 - "$qualification_oracle" "$tmp/invalid-oracle.tsv" <<'PY'
+from pathlib import Path
+import sys
+
+source, destination = map(Path, sys.argv[1:])
+contents = source.read_text(encoding="utf-8")
+contents = contents.replace(
+    "\tCOMPLETE\t-\t-\tCL_TYPE_DATA",
+    "\tCOMPLETE\t-\t1\tCL_TYPE_DATA",
+    1,
+)
+destination.write_text(contents, encoding="utf-8")
+PY
+if ! python3 - "$root" "$tmp/invalid-oracle.tsv" <<'PY'
+import sys
+
+sys.path.insert(0, sys.argv[1] + "/tools")
+from largefile_clamd_report_protocol import load_oracle
+
+try:
+    load_oracle(sys.argv[2], "production")
+except RuntimeError:
+    pass
+else:
+    raise SystemExit("direct clamd report probe accepted a malformed oracle")
+PY
+then
+    echo 'direct clamd report probe accepted a malformed oracle' >&2
+    exit 1
+fi
+
 cp "$out/reports/edge-clamscan.jsonl" "$out/reports/edge-clamscan.good"
 sed 's/"verdict":2/"verdict":0/' "$out/reports/edge-clamscan.good" > \
     "$out/reports/edge-clamscan.jsonl"
