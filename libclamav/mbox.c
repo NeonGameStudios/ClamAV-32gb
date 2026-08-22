@@ -662,15 +662,27 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         /*
          * It's a single message, parse the headers then the body
          */
-        if (strncmp(buffer, "P I ", 4) == 0)
+        if (strncmp(buffer, "P I ", 4) == 0) {
             /*
              * CommuniGate Pro format: ignore headers until
              * blank line
              */
-            while (fmap_gets(map, buffer, &at, sizeof(buffer)) &&
-                   (strchr("\r\n", buffer[0]) == NULL)) {
-                ;
+            while (1) {
+                if (mbox_check_deadline(ctx)) {
+                    retcode = CL_ETIMEOUT;
+                    break;
+                }
+                if (!fmap_gets(map, buffer, &at, sizeof(buffer))) {
+                    if (at < map->len) {
+                        cli_mark_scan_incomplete(ctx, "MIME message input could not be read completely");
+                        retcode = CL_EREAD;
+                    }
+                    break;
+                }
+                if (strchr("\r\n", buffer[0]) != NULL)
+                    break;
             }
+        }
         /* getline_from_mbox could be using unlocked_stdio(3),
          * so lock file here */
         /*

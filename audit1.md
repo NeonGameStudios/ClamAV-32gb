@@ -4402,3 +4402,14 @@ now re-checks `MaxScanTime` after quota admission and before writing; if the
 deadline expires, it releases only the newly added reservation and returns the
 timeout to the caller. Compiled timeout injection and Rust parser-family
 qualification remain open.
+
+## CommuniGate MIME header-skip deadline — 2026-08-22
+
+The single-message CommuniGate Pro compatibility path skipped header lines with
+an unbounded `fmap_gets()` loop. On a large input without a blank separator it
+could traverse the complete fmap without reaching the MIME parser’s shared
+deadline helper, and an incomplete fmap read was indistinguishable from normal
+EOF. The loop now checks `MaxScanTime` before each line, returns
+`CL_ETIMEOUT` on expiry, and marks an early fmap failure as incomplete
+`CL_EREAD`. Static guards cover both boundaries; compiled mailbox timeout and
+fault-injection qualification remain release gates.
