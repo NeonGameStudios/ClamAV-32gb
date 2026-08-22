@@ -4237,3 +4237,15 @@ retain explicit timeout results; cleanup releases reservations before partial
 Office output can be scanned. Source guards cover these paths; deterministic
 post-admission injection, compiled Office/PPT corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## MSXML materialization deadlines — 2026-08-22
+
+Legacy MSXML callback and Base64 materialization now re-check the shared scan
+deadline after temporary admission, immediately before writing, and immediately
+before nested scanning or callback handoff. The streaming MSXML writer now also
+checks the deadline after each chunk reservation, and its Base64 and callback
+handoffs re-check it immediately before dispatch. Expired paths release the
+current reservation and keep partial output out of nested scans. Source guards
+cover the legacy and streaming boundaries; deterministic timeout injection,
+compiled XML/OOXML/HWPML corpus, sanitizer, and Sonic1 qualification remain
+release gates.

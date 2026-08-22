@@ -515,6 +515,11 @@
 - Streaming MSXML/XDP input, character, JSON, base64, and temporary-output
   traversal now honor the shared scan deadline; add compiled timeout-injection
   and large-embedded-payload corpus qualification.
+- Legacy MSXML callback and base64 materialization now re-check the shared
+  deadline after temporary admission, before writing, and before nested
+  handoff; streaming MSXML output and nested handoffs receive the same
+  post-admission boundary. Add deterministic timeout injection and compiled
+  XML/OOXML/HWPML corpus qualification.
 - Optional XDP `keeptmp` staging now honors the shared deadline and preserves
   read/write/resource failures; add compiled staging-failure qualification.
 - XDP temporary-dump writes now re-check the shared deadline after quota

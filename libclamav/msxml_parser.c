@@ -111,6 +111,20 @@ static int msxml_base64_is_valid(const unsigned char *data, size_t len)
     return 1;
 }
 
+static cl_error_t msxml_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret;
+
+    if (!ctx)
+        return CL_ENULLARG;
+
+    ret = cli_checktimelimit(ctx);
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 static const struct key_entry *msxml_check_key(struct msxml_ictx *ictx, const xmlChar *key, size_t keylen)
 {
     unsigned i;
@@ -433,9 +447,28 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                                 return CL_ERESOURCE;
                             }
 
+                            if ((ret = msxml_checktimelimit(ctx, "MSXML callback temporary admission reached the configured time limit")) !=
+                                CL_SUCCESS) {
+                                cli_scan_release_temporary(ctx, temporary_reserved);
+                                return ret;
+                            }
+
                             if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tempfile, &of)) != CL_SUCCESS) {
                                 cli_warnmsg("msxml_parse_element: failed to create temporary file %s\n", tempfile);
                                 cli_scan_release_temporary(ctx, temporary_reserved);
+                                return ret;
+                            }
+
+                            if ((ret = msxml_checktimelimit(ctx, "MSXML callback temporary output reached the configured time limit")) !=
+                                CL_SUCCESS) {
+                                if (close(of) != 0)
+                                    cleanup_failed = 1;
+                                if (!(ctx->engine->keeptmp) && cli_unlink(tempfile) != 0)
+                                    cleanup_failed = 1;
+                                cli_scan_release_temporary(ctx, temporary_reserved);
+                                free(tempfile);
+                                if (cleanup_failed)
+                                    cli_mark_scan_incomplete(ctx, "MSXML callback temporary output cleanup failed");
                                 return ret;
                             }
 
@@ -451,7 +484,9 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
 
                             cli_dbgmsg("msxml_parse_element: extracted binary data to %s\n", tempfile);
 
-                            ret = mxctx->scan_cb(of, tempfile, ctx, num_attribs, attribs, mxctx->scan_data);
+                            ret = msxml_checktimelimit(ctx, "MSXML callback nested-scan handoff reached the configured time limit");
+                            if (ret == CL_SUCCESS)
+                                ret = mxctx->scan_cb(of, tempfile, ctx, num_attribs, attribs, mxctx->scan_data);
                             if (close(of) != 0)
                                 cleanup_failed = 1;
                             if (!(ctx->engine->keeptmp) && cli_unlink(tempfile) != 0)
@@ -501,10 +536,31 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
                                 return CL_ERESOURCE;
                             }
 
+                            if ((ret = msxml_checktimelimit(ctx, "MSXML base64 temporary admission reached the configured time limit")) !=
+                                CL_SUCCESS) {
+                                cli_scan_release_temporary(ctx, temporary_reserved);
+                                free(decoded);
+                                return ret;
+                            }
+
                             if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tempfile, &of)) != CL_SUCCESS) {
                                 cli_warnmsg("msxml_parse_element: failed to create temporary file %s\n", tempfile);
                                 cli_scan_release_temporary(ctx, temporary_reserved);
                                 free(decoded);
+                                return ret;
+                            }
+
+                            if ((ret = msxml_checktimelimit(ctx, "MSXML base64 temporary output reached the configured time limit")) !=
+                                CL_SUCCESS) {
+                                free(decoded);
+                                if (close(of) != 0)
+                                    cleanup_failed = 1;
+                                if (!(ctx->engine->keeptmp) && cli_unlink(tempfile) != 0)
+                                    cleanup_failed = 1;
+                                cli_scan_release_temporary(ctx, temporary_reserved);
+                                free(tempfile);
+                                if (cleanup_failed)
+                                    cli_mark_scan_incomplete(ctx, "MSXML base64 temporary output cleanup failed");
                                 return ret;
                             }
 
@@ -522,7 +578,9 @@ static cl_error_t msxml_parse_element(struct msxml_ctx *mxctx, xmlTextReaderPtr 
 
                             cli_dbgmsg("msxml_parse_element: extracted binary data to %s\n", tempfile);
 
-                            ret = cli_magic_scan_desc_type_reserved(of, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+                            ret = msxml_checktimelimit(ctx, "MSXML base64 nested-scan handoff reached the configured time limit");
+                            if (ret == CL_SUCCESS)
+                                ret = cli_magic_scan_desc_type_reserved(of, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
                             if (close(of) != 0)
                                 cleanup_failed = 1;
                             if (!(ctx->engine->keeptmp) && cli_unlink(tempfile) != 0)
@@ -843,6 +901,11 @@ static cl_error_t msxml_stream_reserve_write(struct msxml_stream_state *state, i
             return CL_ERESOURCE;
         }
 
+        if (msxml_stream_checktimelimit(state, "MSXML streaming output reached the configured time limit") != CL_SUCCESS) {
+            cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
+            return state->ret;
+        }
+
         if (cli_writen(fd, cursor + offset, chunk) != chunk) {
             cli_scan_release_temporary(state->ctx, (uint64_t)chunk);
             msxml_stream_fail(state, CL_EWRITE, "MSXML streaming spool write failed");
@@ -992,6 +1055,9 @@ static cl_error_t msxml_stream_finish_frame(struct msxml_stream_state *state, st
         }
 
         if (frame->b64_saw_data) {
+            if (msxml_stream_checktimelimit(state, "MSXML streaming base64 nested-scan handoff reached the configured time limit") !=
+                CL_SUCCESS)
+                return state->ret;
             if (state->mxctx->decoded_cb)
                 ret = state->mxctx->decoded_cb(frame->b64_fd, frame->b64_name, state->ctx, state->mxctx->scan_data);
             else
@@ -1003,6 +1069,9 @@ static cl_error_t msxml_stream_finish_frame(struct msxml_stream_state *state, st
     }
 
     if (frame->cb_fd >= 0 && frame->cb_saw_data && state->mxctx->scan_cb) {
+        if (msxml_stream_checktimelimit(state, "MSXML streaming callback nested-scan handoff reached the configured time limit") !=
+            CL_SUCCESS)
+            return state->ret;
         ret                = state->mxctx->scan_cb(frame->cb_fd, frame->cb_name, state->ctx, frame->num_attribs,
                                                    frame->attribs, state->mxctx->scan_data);
         if (ret != CL_SUCCESS)
