@@ -4270,3 +4270,12 @@ deadline after temporary admission, immediately before each materialized write,
 fail-closed boundaries. Source guards cover the shared and family-specific
 reasons; deterministic timeout injection, compiled archive/Office/HTML corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## JavaScript normalization output deadlines — 2026-08-22
+
+The quota-backed JavaScript normalization flush now re-checks the shared scan
+deadline after each temporary reservation and immediately before writing. A
+timeout releases the current reservation and propagates an incomplete result
+to HTML and bytecode normalization callers. Source guards cover both deadline
+boundaries; deterministic timeout injection, compiled HTML/bytecode corpus,
+sanitizer, and Sonic1 qualification remain release gates.

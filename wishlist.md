@@ -372,6 +372,9 @@
   nested handoff; EGG member output, per-chunk RAR staging, legacy VBA project
   output, and UTF-16 HTML output receive the same boundary checks. Add compiled
   timeout injection and parser-family corpus qualification.
+- JavaScript normalization’s quota-backed flush now re-checks the shared
+  deadline after each reservation and immediately before writing; add compiled
+  HTML/bytecode normalization timeout injection and corpus qualification.
 - BZip2 extraction now consumes concatenated streams and rejects decoder
   no-progress states while input remains; add compiled malformed-stream,
   sanitizer, and production BZip2 corpus qualification.

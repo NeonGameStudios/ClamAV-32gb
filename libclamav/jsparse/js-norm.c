@@ -321,9 +321,24 @@ struct buf {
     char buf[65536];
 };
 
+static cl_error_t jsnorm_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status;
+
+    if (!ctx)
+        return CL_ENULLARG;
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static inline cl_error_t buf_flush(struct buf *buf, size_t length)
 {
     uint64_t bytes;
+    cl_error_t status;
 
     if (buf->error != CL_SUCCESS)
         return buf->error;
@@ -345,7 +360,28 @@ static inline cl_error_t buf_flush(struct buf *buf, size_t length)
         if (buf->error != CL_SUCCESS)
             return buf->error;
         *buf->temporary_reserved += bytes;
+
+        status = jsnorm_checktimelimit(buf->scan_ctx, "JavaScript normalization temporary admission reached the configured time limit");
+        if (status != CL_SUCCESS) {
+            cli_scan_release_temporary(buf->scan_ctx, bytes);
+            *buf->temporary_reserved -= bytes;
+            buf->error = status;
+            return buf->error;
+        }
     }
+
+    if (buf->scan_ctx) {
+        status = jsnorm_checktimelimit(buf->scan_ctx, "JavaScript normalization output reached the configured time limit");
+        if (status != CL_SUCCESS) {
+            if (buf->temporary_reserved) {
+                cli_scan_release_temporary(buf->scan_ctx, bytes);
+                *buf->temporary_reserved -= bytes;
+            }
+            buf->error = status;
+            return buf->error;
+        }
+    }
+
     if (cli_writen(buf->outfd, buf->buf, length) != length) {
         if (buf->temporary_reserved) {
             cli_scan_release_temporary(buf->scan_ctx, bytes);
