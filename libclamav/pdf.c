@@ -804,10 +804,58 @@ done:
     return status;
 }
 
+static cl_error_t pdf_write_reserved_output(struct pdf_struct *pdf, int fout, const void *buf, size_t len,
+                                            uint64_t *temporary_reserved, const char *quota_reason,
+                                            const char *admission_reason,
+                                            const char *write_reason, const char *failure_reason)
+{
+    cl_error_t status;
+
+    if (pdf == NULL || pdf->ctx == NULL || temporary_reserved == NULL || (len != 0 && buf == NULL))
+        return CL_ENULLARG;
+
+    status = cli_checktimelimit(pdf->ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pdf->ctx, admission_reason);
+        return status;
+    }
+
+    status = cli_scan_reserve_temporary(pdf->ctx, (uint64_t)len);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pdf->ctx, quota_reason);
+        return status;
+    }
+
+    if (*temporary_reserved > UINT64_MAX - (uint64_t)len) {
+        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
+        cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object temporary size overflowed");
+        return CL_EPARSE;
+    }
+    *temporary_reserved += (uint64_t)len;
+
+    status = cli_checktimelimit(pdf->ctx);
+    if (status != CL_SUCCESS) {
+        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
+        *temporary_reserved -= (uint64_t)len;
+        cli_mark_scan_incomplete(pdf->ctx, write_reason);
+        return status;
+    }
+
+    if (cli_writen(fout, buf, len) != len) {
+        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
+        *temporary_reserved -= (uint64_t)len;
+        cli_mark_scan_incomplete(pdf->ctx, failure_reason);
+        return CL_EWRITE;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t filter_writen(struct pdf_struct *pdf, struct pdf_obj *obj, int fout, const char *buf, size_t len,
                                 size_t *sum, uint64_t *temporary_reserved)
 {
     uint64_t needed;
+    cl_error_t status;
 
     UNUSEDPARAM(obj);
 
@@ -816,27 +864,19 @@ static cl_error_t filter_writen(struct pdf_struct *pdf, struct pdf_obj *obj, int
     else
         needed = (uint64_t)*sum + (uint64_t)len;
 
-    cl_error_t limit_status = cli_checklimits("pdf", pdf->ctx, needed, 0, 0);
-    if (limit_status != CL_SUCCESS) {
+    status = cli_checklimits("pdf", pdf->ctx, needed, 0, 0);
+    if (status != CL_SUCCESS) {
         cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object exceeded configured scan limits");
-        return limit_status;
+        return status;
     }
 
-    if (cli_scan_reserve_temporary(pdf->ctx, (uint64_t)len) != CL_SUCCESS) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object exceeds temporary storage limits");
-        return CL_ERESOURCE;
-    }
-    if (*temporary_reserved > UINT64_MAX - (uint64_t)len) {
-        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
-        cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object temporary size overflowed");
-        return CL_EPARSE;
-    }
-    *temporary_reserved += (uint64_t)len;
-
-    if (cli_writen(fout, buf, len) != len) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object could not be written completely");
-        return CL_EWRITE;
-    }
+    status = pdf_write_reserved_output(pdf, fout, buf, len, temporary_reserved,
+                                       "PDF extracted object exceeds temporary storage limits",
+                                       "PDF extracted object output admission reached the configured time limit",
+                                       "PDF extracted object output write reached the configured time limit",
+                                       "PDF extracted object could not be written completely");
+    if (status != CL_SUCCESS)
+        return status;
 
     if (len > SIZE_MAX - *sum) {
         cli_mark_scan_incomplete(pdf->ctx, "PDF extracted object size overflowed");
@@ -1466,6 +1506,8 @@ enum cstate {
 static cl_error_t process(struct pdf_struct *pdf, struct text_norm_state *s, enum cstate *st, const char *buf,
                           size_t length, int fout, uint64_t *temporary_reserved)
 {
+    cl_error_t status;
+
     do {
         switch (*st) {
             case CSTATE_NONE:
@@ -1495,15 +1537,13 @@ static cl_error_t process(struct pdf_struct *pdf, struct text_norm_state *s, enu
                     *st = CSTATE_TJ;
                 } else {
                     if (text_normalize_buffer(s, (const unsigned char *)buf, 1) != 1) {
-                        if (cli_scan_reserve_temporary(pdf->ctx, (uint64_t)s->out_pos) != CL_SUCCESS) {
-                            cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents exceed temporary storage limits");
-                            return CL_ERESOURCE;
-                        }
-                        *temporary_reserved += (uint64_t)s->out_pos;
-                        if (cli_writen(fout, s->out, s->out_pos) != s->out_pos) {
-                            cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents could not be written completely");
-                            return CL_EWRITE;
-                        }
+                        status = pdf_write_reserved_output(pdf, fout, s->out, s->out_pos, temporary_reserved,
+                                                           "PDF normalized contents exceed temporary storage limits",
+                                                           "PDF normalized contents output admission reached the configured time limit",
+                                                           "PDF normalized contents output write reached the configured time limit",
+                                                           "PDF normalized contents could not be written completely");
+                        if (status != CL_SUCCESS)
+                            return status;
                         text_normalize_reset(s);
                     }
                 }
@@ -1556,17 +1596,13 @@ static int pdf_scan_contents(int fd, struct pdf_struct *pdf, struct pdf_obj *obj
             goto done;
     }
 
-    if (cli_scan_reserve_temporary(pdf->ctx, (uint64_t)s.out_pos) != CL_SUCCESS) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents exceed temporary storage limits");
-        rc = CL_ERESOURCE;
+    rc = pdf_write_reserved_output(pdf, fout, s.out, s.out_pos, &temporary_reserved,
+                                   "PDF normalized contents exceed temporary storage limits",
+                                   "PDF normalized contents output admission reached the configured time limit",
+                                   "PDF normalized contents output write reached the configured time limit",
+                                   "PDF normalized contents could not be written completely");
+    if (rc != CL_SUCCESS)
         goto done;
-    }
-    temporary_reserved += (uint64_t)s.out_pos;
-    if (cli_writen(fout, s.out, s.out_pos) != s.out_pos) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents could not be written completely");
-        rc = CL_EWRITE;
-        goto done;
-    }
 
     if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
         cli_mark_scan_incomplete(pdf->ctx, "PDF normalized contents could not be rewound");
@@ -4120,6 +4156,12 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
     }
     pdf_input_reserved = (uint64_t)size;
 
+    rc = cli_checktimelimit(ctx);
+    if (rc != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "PDF parser staging admission reached the configured time limit");
+        goto done;
+    }
+
     rc = cli_gentempfd(ctx->this_layer_tmpdir, &pdf_tempfile, &pdf_tempfd);
     if (rc != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "PDF parser staging tempfile could not be created");
@@ -4131,12 +4173,22 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
 
         copied = 0;
         while (copied < size) {
+            rc = cli_checktimelimit(ctx);
+            if (rc != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "PDF parser staging read reached the configured time limit");
+                goto done;
+            }
             wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
             nread  = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
             if (nread != wanted) {
                 cli_errmsg("cli_pdf: bounded input read failed at offset %zu\n", copied);
                 cli_mark_scan_incomplete(ctx, "PDF parser input could not be read completely");
                 rc = CL_EREAD;
+                goto done;
+            }
+            rc = cli_checktimelimit(ctx);
+            if (rc != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "PDF parser staging write reached the configured time limit");
                 goto done;
             }
             if (cli_writen(pdf_tempfd, buffer, nread) != nread) {

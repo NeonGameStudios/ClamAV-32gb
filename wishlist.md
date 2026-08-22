@@ -61,6 +61,9 @@
 - PDF raw and decoded stream output now re-checks the shared deadline after
   temporary admission and immediately before each write; add deterministic
   output-timeout injection and full PDF corpus qualification.
+- PDF parser staging, extracted-object output, and normalized-content output now
+  share post-admission and pre-write deadline checks; add deterministic staging
+  timeout injection and full PDF corpus qualification.
 - XLM BIFF data and OfficeArt drawing groups now use the shared bounded
   allocator with checked cumulative growth; allocation-ceiling and arithmetic
   failures remain explicit incomplete results.

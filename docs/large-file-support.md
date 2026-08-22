@@ -5412,7 +5412,9 @@ no filter decoding was required. They now copy to the extracted child in
 64 KiB chunks while preserving native-width containing-file coordinates.
 Decoded/filtered stream output is admitted through the same caller-owned
 temporary reservation used by `pdf_extract_obj`, with both paths re-checking the
-shared deadline after admission and immediately before each write. Filtered decoder input and
+shared deadline after admission and immediately before each write. Parser
+staging, extracted-object output, and normalized-content output now use the same
+fail-closed boundaries. Filtered decoder input and
 decoder growth above the 1 GiB individual-allocation boundary remain an
 explicit unsupported/incomplete result; full streaming filter conversion,
 compiled PDF corpus, sanitizer, and Sonic1 qualification remain open.
