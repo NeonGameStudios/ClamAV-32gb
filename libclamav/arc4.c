@@ -50,7 +50,7 @@ bool arc4_init(struct arc4_state *a, const uint8_t *key, unsigned keylength)
     return true;
 }
 
-void arc4_apply(struct arc4_state *s, uint8_t *data, unsigned len)
+void arc4_apply(struct arc4_state *s, uint8_t *data, size_t len)
 {
     uint8_t i = s->i, j = s->j;
     uint32_t *S = &s->S[0];

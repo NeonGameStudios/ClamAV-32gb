@@ -44,6 +44,9 @@
 - PDFNG referenced-object reloads now reject objects at the individual
   contiguous-allocation ceiling instead of using an unbounded `calloc`; the
   parser marks the layer incomplete and raw matching remains authoritative.
+- The PDF ARC4 helper now carries native `size_t` lengths, removing the final
+  encrypted-stream truncation cast; the deliberate 1 GiB PDF decoder boundary
+  and parser-family qualification remain open.
 - XLM BIFF data and OfficeArt drawing groups now use the shared bounded
   allocator with checked cumulative growth; allocation-ceiling and arithmetic
   failures remain explicit incomplete results.

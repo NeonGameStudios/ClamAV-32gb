@@ -34,6 +34,7 @@
 
 // libclamav
 #include "clamav.h"
+#include "arc4.h"
 #include "blob.h"
 #include "default.h"
 #include "readdb.h"
@@ -8668,6 +8669,19 @@ START_TEST(test_pdf_stream_limit_is_fail_visible)
     free(path);
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_arc4_apply_uses_native_length)
+{
+    static const uint8_t key[]      = "Key";
+    static const uint8_t expected[] = {0xbb, 0xf3, 0x16, 0xe8, 0xd9, 0x40, 0xaf, 0x0a, 0xd3};
+    uint8_t data[]                   = "Plaintext";
+    struct arc4_state state;
+
+    ck_assert(arc4_init(&state, key, sizeof(key) - 1));
+    arc4_apply(&state, data, (size_t)(sizeof(data) - 1));
+    ck_assert_int_eq(memcmp(data, expected, sizeof(expected)), 0);
 }
 END_TEST
 
@@ -19230,6 +19244,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
 #endif
+    tcase_add_test(tc_cl, test_arc4_apply_uses_native_length);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_pdf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_stream_limit_is_fail_visible);

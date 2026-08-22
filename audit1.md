@@ -3660,3 +3660,14 @@ allowing clamd's existing explicit incomplete fallback to take over. The
 32-bit report limits are also serialized through the same 64-bit-safe path. A
 focused saturated-counter regression and source guards cover the boundary;
 compiled JSON-C-version and service qualification remain release gates.
+
+## PDF ARC4 length propagation — 2026-08-22
+
+`decrypt_any()` previously cast its native `size_t` input length to
+`unsigned` before calling the ARC4 helper. The current PDF decoder rejects
+streams above the 1 GiB contiguous-allocation boundary, so that cast was not
+reachable through today's supported PDF stream path; it was nevertheless a
+latent truncation if that boundary or another caller changed. `arc4_apply()`
+now accepts `size_t`, the cast and TODO are gone, and the focused ARC4 vector
+regression plus source guards preserve native-width propagation. This does
+not expand the documented PDF filter boundary.

@@ -20,6 +20,7 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "clamav-types.h"
 struct arc4_state {
@@ -29,4 +30,4 @@ struct arc4_state {
 };
 
 bool arc4_init(struct arc4_state *a, const uint8_t *key, unsigned keylength);
-void arc4_apply(struct arc4_state *s, uint8_t *data, unsigned len);
+void arc4_apply(struct arc4_state *s, uint8_t *data, size_t len);

@@ -1160,6 +1160,10 @@ contains libclamav/pdfdecode.c 'PDF stream uses an unknown filter and was not de
 contains libclamav/pdfdecode.c 'PDF LZW decoding is disabled and the stream was not inspected'
 contains libclamav/pdfdecode.c "PDF stream exceeds the decoder's 32-bit input boundary"
 contains libclamav/pdfdecode.c 'PDF stream exceeds the individual allocation boundary'
+contains libclamav/arc4.h 'void arc4_apply(struct arc4_state *s, uint8_t *data, size_t len);'
+contains libclamav/arc4.c 'void arc4_apply(struct arc4_state *s, uint8_t *data, size_t len)'
+not_contains libclamav/pdf.c 'arc4_apply(&arc4, q, (unsigned)*length)'
+contains unit_tests/check_clamav.c 'test_arc4_apply_uses_native_length'
 contains libclamav/pdfdecode.c 'PDF ASCII85 decoded output exceeds the individual allocation boundary'
 contains libclamav/pdfdecode.c 'pdf_decoder_capacity_check'
 contains libclamav/pdfdecode.c 'PDF LZW decoder output size overflowed'

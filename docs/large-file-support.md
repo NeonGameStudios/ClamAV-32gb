@@ -2805,6 +2805,12 @@ Object-stream containment now uses subtraction-based checked bounds for both
 the current and next object offsets, so malformed large values cannot wrap the
 first-plus-offset calculation before the parser rejects them.
 
+The PDF ARC4 primitive now accepts `size_t` lengths as well. This removes the
+remaining call-site narrowing in encrypted-string and encrypted-stream
+decryption, so raising the explicit contiguous-buffer ceiling later cannot
+silently decrypt only a truncated prefix. The current PDF decoder still
+retains the documented 1 GiB allocation boundary.
+
 The capability manifest records `pdf-stream-over-1g` as deliberately
 unsupported. This is a legacy contiguous-buffer boundary, not an outer-file
 limit: a PDF may still contain other inspectable objects, but a legacy filter

@@ -1376,7 +1376,7 @@ char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *l
                 free(q);
                 return NULL;
             }
-            arc4_apply(&arc4, q, (unsigned)*length); /* TODO: may truncate for very large lengths */
+            arc4_apply(&arc4, q, *length);
 
             noisy_msg(pdf, "decrypt_any: decrypted ARC4 data\n");
 
