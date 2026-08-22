@@ -51,6 +51,10 @@
   temporary staging begins.
 - Bundled 7-Zip and NSIS decoder allocation callbacks now use checked shared
   allocation, including multiplication overflow checks for NSIS zlib state.
+- NSIS member-table, raw-copy, compressed, and solid-stream traversal now
+  honors the shared scan deadline and preserves fail-visible `CL_ETIMEOUT`;
+  add compiled timeout-injection, decoder-state, sanitizer, and production
+  NSIS corpus qualification.
 - TNEF attribute-string lengths now convert to `size_t` before the terminating
   byte, allocation, and read-coordinate arithmetic; the parser cannot wrap a
   maximum positive signed length.

@@ -82,6 +82,16 @@ struct nsis_st {
     char ofn[1024];
 };
 
+static cl_error_t nsis_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 #define LINESTR(x) #x
 #define LINESTR2(x) LINESTR(x)
 #define __AT__ " at "__FILE__ \
@@ -260,6 +270,10 @@ static cl_error_t nsis_write_output(struct nsis_st *n,
     if (length == 0)
         return CL_SUCCESS;
 
+    ret = nsis_checktimelimit(ctx, "NSIS output staging reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     if (*total_out > UINT64_MAX - (uint64_t)length) {
         cli_mark_scan_incomplete(ctx, "NSIS expanded member size overflowed");
         return CL_EFORMAT;
@@ -297,6 +311,10 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
     int ret, gotsome = 0;
     unsigned char ibuf[NSIS_INPUT_CHUNK];
     unsigned char obuf[BUFSIZ];
+
+    ret = nsis_checktimelimit(ctx, "NSIS inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
 
     if (n->eof) {
         cli_dbgmsg("NSIS: extraction complete\n");
@@ -364,6 +382,12 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                 while (input_remaining != 0) {
                     size_t chunk = MIN(sizeof(ibuf), input_remaining);
 
+                    ret = nsis_checktimelimit(ctx, "NSIS member traversal reached the configured time limit");
+                    if (ret != CL_SUCCESS) {
+                        nsis_close_output(n);
+                        return ret;
+                    }
+
                     if (fmap_readn(n->map, ibuf, input_pos, chunk) != chunk) {
                         cli_mark_scan_incomplete(ctx, "NSIS member could not be read completely");
                         nsis_close_output(n);
@@ -390,6 +414,10 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
 
                 for (;;) {
                     size_t produced;
+
+                    ret = nsis_checktimelimit(ctx, "NSIS compressed member traversal reached the configured time limit");
+                    if (ret != CL_SUCCESS)
+                        break;
 
                     if (n->nsis.avail_in == 0 && input_remaining != 0) {
                         size_t chunk = MIN(sizeof(ibuf), input_remaining);
@@ -478,6 +506,9 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         loops             = 0;
 
         while ((size_t)(n->nsis.next_out - obuf) < 4) {
+            ret = nsis_checktimelimit(ctx, "NSIS solid member-header traversal reached the configured time limit");
+            if (ret != CL_SUCCESS)
+                break;
             int refill = nsis_solid_refill(n, ctx);
             if (refill < 0)
                 return CL_EREAD;
@@ -501,6 +532,8 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("NSIS: bad stream"__AT__
                        "\n");
+            if (ret == CL_ETIMEOUT)
+                return ret;
             cli_mark_scan_incomplete(ctx, "NSIS solid member header decompression was incomplete");
             return CL_EFORMAT;
         }
@@ -528,6 +561,9 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
 
         while (size) {
             unsigned int wsz;
+            ret = nsis_checktimelimit(ctx, "NSIS solid member traversal reached the configured time limit");
+            if (ret != CL_SUCCESS)
+                break;
             int refill = nsis_solid_refill(n, ctx);
 
             if (refill < 0) {
@@ -565,6 +601,10 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                 break;
         }
 
+        if (ret == CL_ETIMEOUT) {
+            nsis_close_output(n);
+            return ret;
+        }
         if (ret == CL_EFORMAT || size != 0) {
             cli_dbgmsg("NSIS: bad stream"__AT__
                        "\n");
@@ -604,6 +644,9 @@ static int nsis_headers(struct nsis_st *n, cli_ctx *ctx)
     int i;
     uint8_t comps[] = {0, 0, 0, 0}, trunc = 0;
 
+    if (nsis_checktimelimit(ctx, "NSIS header inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
+
     if (n->off > n->map->len || n->map->len - n->off < 0x1c) {
         cli_mark_scan_incomplete(ctx, "NSIS header is outside the input map");
         return CL_EREAD;
@@ -636,6 +679,9 @@ static int nsis_headers(struct nsis_st *n, cli_ctx *ctx)
     for (i = 0, pos = 0; pos <= n->asz && n->asz - pos > 4; i++) {
         uint32_t nextsz;
         uint32_t rawsz;
+
+        if (nsis_checktimelimit(ctx, "NSIS member-table traversal reached the configured time limit") != CL_SUCCESS)
+            return CL_ETIMEOUT;
 
         buf = fmap_need_off_once(n->map, n->off + 0x1c + pos, 4);
         if (buf == NULL) {
@@ -698,6 +744,8 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
 
     if (!ctx || !ctx->fmap)
         return CL_ENULLARG;
+    if (nsis_checktimelimit(ctx, "NSIS header inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
     if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
         return CL_EFORMAT;
 
@@ -760,6 +808,12 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
 
     cli_dbgmsg("in scannulsft()\n");
 
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    ret = nsis_checktimelimit(ctx, "NSIS inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     memset(&nsist, 0, sizeof(struct nsis_st));
 
     if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset > ctx->fmap->len) {
@@ -782,6 +836,9 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
     if (ctx->engine->keeptmp) cli_dbgmsg("NSIS: Extracting files to %s\n", nsist.dir);
 
     do {
+        ret = nsis_checktimelimit(ctx, "NSIS member traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            break;
         ret = cli_nsis_unpack(&nsist, ctx);
         if (ret == CL_SUCCESS && nsist.opened == 0) {
             /* Don't scan a non-existent file */

@@ -3454,3 +3454,14 @@ stored copies, bit-window refills, and both decompression loops preserve
 `CL_ETIMEOUT`. A direct header-check timeout regression and source guards cover
 the contract; compiled ARJ decoder-state corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## NSIS/NULSFT traversal deadlines — 2026-08-22
+
+NSIS extraction already used bounded input/output chunks and shared temporary
+quotas, but member-table discovery, raw and compressed member loops, and solid
+stream header/output traversal did not consistently check the shared deadline.
+The parser now checks at entry and across those traversal boundaries, preserves
+`CL_ETIMEOUT`, and leaves the existing output close, decoder shutdown, temporary
+reservation release, and directory cleanup paths active. A direct expired-context
+regression and source guards cover parser entry; compiled NSIS decoder-state,
+malformed-stream, sanitizer, and Sonic1 qualification remain release gates.
