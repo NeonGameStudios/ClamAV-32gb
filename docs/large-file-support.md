@@ -5062,3 +5062,11 @@ marks the layer incomplete when the deadline expires. This bounds work from a
 large or cyclic-looking directory chain without changing the native-width
 coordinate and value-range checks. Compiled timeout injection, sanitizer, and
 production TIFF corpus qualification remain open.
+
+## GIF and PNG traversal deadlines — 2026-08-22
+
+GIF block, extension-sub-block, and image-data-sub-block loops now check the
+shared scan deadline, as does PNG chunk traversal. Deadline expiry marks the
+confirmed media layer incomplete and prevents a clean overlay result. Compiled
+timeout injection, sanitizer, and production GIF/PNG corpus qualification
+remain open.

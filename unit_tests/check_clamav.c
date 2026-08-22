@@ -16779,6 +16779,31 @@ START_TEST(test_gif_header_read_failures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_block_timeout_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        'G', 'I', 'F', '8', '9', 'a',
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "GIF block traversal reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_png_truncated_chunks_are_fail_visible)
 {
     static const uint8_t missing_iend[] = {
@@ -16855,6 +16880,30 @@ START_TEST(test_png_chunk_read_failure_is_fail_visible)
     ck_assert_int_eq(cli_parsepng(&ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "PNG chunk length could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_png_chunk_timeout_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(cli_parsepng(&ctx), CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PNG chunk traversal reached the configured time limit");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -17793,8 +17842,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
+    tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
     tcase_add_test(tc_png, test_png_chunk_read_failure_is_fail_visible);
+    tcase_add_test(tc_png, test_png_chunk_timeout_is_fail_visible);
     tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_initial_read_failure_is_fail_visible);

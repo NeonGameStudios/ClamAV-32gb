@@ -298,6 +298,9 @@
   add compiled timeout-injection and large-chain corpus qualification.
 - GIF block, color-table, and extension range admission now uses checked
   subtraction-form bounds rather than wrapping offset-plus-length comparisons.
+- GIF block, extension, and image-data traversal plus PNG chunk traversal now
+  honor the shared scan deadline; add compiled timeout-injection and large-chain
+  media corpus qualification.
 - HWP3 information-block bounds now use subtraction-form admission, and image
   payload headers reject short lengths before fixed-header subtraction.
 - The service gate now directly exercises `SCANREPORT` through a Unix-socket

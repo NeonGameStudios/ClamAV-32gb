@@ -289,6 +289,12 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
     while (1) {
         uint8_t block_label = 0;
 
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "GIF block traversal reached the configured time limit");
+            goto scan_overlay;
+        }
+
         /*
          * Get the block label
          */
@@ -363,6 +369,12 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                     }
 
                     while (1) {
+                        status = cli_checktimelimit(ctx);
+                        if (status != CL_SUCCESS) {
+                            cli_mark_scan_incomplete(ctx, "GIF extension traversal reached the configured time limit");
+                            goto scan_overlay;
+                        }
+
                         /*
                          * Skip over the extension and any sub-blocks,
                          * Try to read the block size for each sub-block to skip them.
@@ -443,6 +455,12 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                 offset++; /* Skip over the LZW Minimum Code Size uint8_t */
 
                 while (1) {
+                    status = cli_checktimelimit(ctx);
+                    if (status != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "GIF image-data traversal reached the configured time limit");
+                        goto scan_overlay;
+                    }
+
                     /*
                      * Skip over the image data block(s).
                      * Try to read the block size for each image data sub-block to skip them.

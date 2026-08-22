@@ -130,6 +130,12 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
     map = ctx->fmap;
 
     while (1) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "PNG chunk traversal reached the configured time limit");
+            goto scan_overlay;
+        }
+
         bytes_read = fmap_readn(map, (void *)&chunk_data_length_u32, offset, PNG_CHUNK_LENGTH_SIZE);
         if (bytes_read == (size_t)-1) {
             cli_dbgmsg("PNG: read failure while reading chunk length\n");
