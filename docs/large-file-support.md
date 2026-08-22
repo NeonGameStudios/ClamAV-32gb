@@ -4453,6 +4453,13 @@ malformed-header regressions plus source guards are registered; compiled
 Linux/Sonic1, sanitizer, and broader OLE2/Office corpus qualification remain
 open.
 
+The AES password-derivation path now routes its attacker-controlled
+salt-derived buffer through the shared individual-allocation ceiling instead
+of plain `calloc()`. An oversized encrypted verifier therefore remains an
+explicitly uninspectable encrypted document rather than requesting an
+unbounded heap buffer; encrypted Office corpus and supported-build
+qualification remain open.
+
 ## BinHex encoded-input fmap failure — 2026-08-21
 
 The BinHex decoder now marks an in-range encoded-input fmap failure incomplete

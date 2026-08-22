@@ -2608,7 +2608,7 @@ static cl_error_t generate_key_aes(const char *const password, encryption_key_t 
     if (bufLen <= sizeof(stackBuffer)) {
         buffer = stackBuffer;
     } else {
-        heapBuffer = calloc(bufLen, 1);
+        heapBuffer = cli_max_calloc(bufLen, 1);
         if (NULL == heapBuffer) {
             cli_errmsg("ole2: calloc failed\n");
             ret = CL_EMEM;

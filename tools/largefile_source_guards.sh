@@ -592,6 +592,8 @@ contains libclamav/scanners.c 'Script normalization exceeded the legacy matcher 
 contains docs/largefile-capabilities.tsv 'script-normalization-over-4g'
 contains tools/largefile_capability_manifest.sh 'script-normalization-over-4g'
 contains libclamav/ole2_extract.c 'OLE2 sector chain exceeds the deep-parser ABI'
+contains libclamav/ole2_extract.c 'heapBuffer = cli_max_calloc(bufLen, 1);'
+not_contains libclamav/ole2_extract.c 'heapBuffer = calloc(bufLen, 1);'
 contains libclamav/scanners.c 'OLE2 VBA project directory could not be parsed'
 contains libclamav/scanners.c 'directory entry could not be inspected'
 contains libclamav/scanners.c 'directory enumeration ended before every entry was inspected'
