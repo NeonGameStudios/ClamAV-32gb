@@ -175,7 +175,7 @@ uint32_t unspack(const char *start_of_stuff, char *dest, cli_ctx *ctx, uint32_t 
     section.rsz = dsize;
     section.vsz = dsize;
     section.rva = rva;
-    return !cli_rebuildpe(dest, &section, 1, base, ep, 0, 0, file);
+    return !cli_rebuildpe_ctx(ctx, dest, &section, 1, base, ep, 0, 0, file);
 }
 
 uint32_t very_real_unpack(uint16_t *table, uint32_t tablesz, uint32_t tre, uint32_t allocsz, uint32_t firstbyte, const char *src, uint32_t ssize, char *dst, uint32_t dsize)

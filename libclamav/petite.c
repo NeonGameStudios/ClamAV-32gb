@@ -75,7 +75,7 @@ static int doubledl(char **scur, uint8_t *mydlptr, char *buffer, uint32_t buffer
     return (olddl >> 7) & 1;
 }
 
-int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize)
+int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, cli_ctx *ctx)
 {
     char *adjbuf     = buf - minrva;
     char *packed     = NULL;
@@ -229,7 +229,7 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
             cli_dbgmsg("Petite: Sections dump:\n");
             for (t = 0; t < j; t++)
                 cli_dbgmsg("Petite: .SECT%d RVA:%x VSize:%x ROffset: %x, RSize:%x\n", t, usects[t].rva, usects[t].vsz, usects[t].raw, usects[t].rsz);
-            if (!cli_rebuildpe(buf, usects, j, Imagebase, enc_ep, ResRva, ResSize, desc)) {
+            if (!cli_rebuildpe_ctx(ctx, buf, usects, j, Imagebase, enc_ep, ResRva, ResSize, desc)) {
                 cli_dbgmsg("Petite: Rebuilding failed\n");
                 free(usects);
                 return 1;

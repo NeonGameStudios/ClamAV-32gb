@@ -295,8 +295,13 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
     /* Fix SizeOfImage */
     cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38, cli_readint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38) - sections[sectcount].vsz);
 
-    if (cli_writen(desc, fbuf, filesize) == (size_t)-1) {
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "yC output reached the configured time limit");
+        return CL_ETIMEOUT;
+    }
+    if (cli_writen(desc, fbuf, filesize) != (size_t)filesize) {
         cli_dbgmsg("yC: Cannot write unpacked file\n");
+        cli_mark_scan_incomplete(ctx, "yC output could not be written completely");
         return CL_EUNPACK;
     }
     return CL_SUCCESS;

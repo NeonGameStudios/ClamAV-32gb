@@ -361,7 +361,7 @@ static int decomp_block(struct ASPK *stream, uint32_t size, uint8_t *stuff, uint
     stream.dict_helper[n].size   = sz;                             \
     wrkbuf                       = &wrkbuf[sz * sizeof(uint32_t) + 0x100];
 
-int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version)
+int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, cli_ctx *ctx)
 {
     struct ASPK stream;
     uint32_t i = 0, j = 0;
@@ -490,7 +490,14 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
     }
     if (!(outsects = cli_max_malloc(sizeof(struct cli_exe_section) * sectcount))) {
         cli_dbgmsg("Aspack: OOM - rebuild failed\n");
-        cli_writen(f, image, size);
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "Aspack fallback output reached the configured time limit");
+            return 0;
+        }
+        if (cli_writen(f, image, size) != size) {
+            cli_mark_scan_incomplete(ctx, "Aspack fallback output could not be written completely");
+            return 0;
+        }
         return 1; /* No whatsoheader - won't infloop in pe.c */
     }
     memcpy(outsects, sections, sizeof(struct cli_exe_section) * sectcount);
@@ -499,9 +506,18 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
         outsects[i].rsz = outsects[i].vsz;
     }
 
-    if (!cli_rebuildpe((char *)image, outsects, sectcount, base, cli_readint32(image + ep + oep_offset), 0, 0, f)) {
+    if (!cli_rebuildpe_ctx(ctx, (char *)image, outsects, sectcount, base, cli_readint32(image + ep + oep_offset), 0, 0, f)) {
         cli_dbgmsg("Aspack: rebuild failed\n");
-        cli_writen(f, image, size);
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "Aspack fallback output reached the configured time limit");
+            free(outsects);
+            return 0;
+        }
+        if (cli_writen(f, image, size) != size) {
+            cli_mark_scan_incomplete(ctx, "Aspack fallback output could not be written completely");
+            free(outsects);
+            return 0;
+        }
     } else {
         cli_dbgmsg("Aspack: successfully rebuilt\n");
     }

@@ -25,6 +25,8 @@
 #include "clamav-types.h"
 #include "execs.h"
 
+struct cli_ctx_tag;
+
 #define ASPACK_EP_OFFSET_212 (58 + 0x70e)
 #define ASPACK_EP_OFFSET_OTHER (58 + 0x76a)
 #define ASPACK_EP_OFFSET_242 (58 + 0x776)
@@ -40,6 +42,6 @@ typedef enum aspack_version_tag {
     ASPACK_VER_242
 } aspack_version_t;
 
-int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version);
+int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, struct cli_ctx_tag *);
 
 #endif

@@ -3717,7 +3717,7 @@ int cli_scanpe(cli_ctx *ctx)
                 cli_jsonstr(pe_json, "Packer", "MEW");
 
             CLI_UNPTEMP("cli_scanpe: MEW", (src, 0));
-            CLI_UNPRESULTS("cli_scanpe: MEW", (unmew11(src, offdiff, ssize, dsize, EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->sections[0].rva, uselzma, ndesc)), 1, (src, 0));
+            CLI_UNPRESULTS("cli_scanpe: MEW", (unmew11(src, offdiff, ssize, dsize, EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->sections[0].rva, uselzma, ndesc, ctx)), 1, (src, 0));
             break;
         }
     }
@@ -3829,7 +3829,7 @@ int cli_scanpe(cli_ctx *ctx)
                 cli_jsonstr(pe_json, "Packer", "Upack");
 
             CLI_UNPTEMP("cli_scanpe: Upack", (dest, 0));
-            CLI_UNPRESULTS("cli_scanpe: Upack", (unupack(upack, dest, dsize, epbuff, vma, peinfo->ep, EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->sections[0].rva, ndesc)), 1, (dest, 0));
+            CLI_UNPRESULTS("cli_scanpe: Upack", (unupack(upack, dest, dsize, epbuff, vma, peinfo->ep, EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->sections[0].rva, ndesc, ctx)), 1, (dest, 0));
 
             break;
         }
@@ -3920,7 +3920,7 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "FSG");
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, 0));
-        CLI_UNPRESULTSFSG2("cli_scanpe: FSG", (unfsg_200(newesi - peinfo->sections[i + 1].rva + src, dest, fsg_input_size, dsize, newedi, EC32(peinfo->pe_opt.opt32.ImageBase), newedx, ndesc)), 1, (dest, 0));
+        CLI_UNPRESULTSFSG2("cli_scanpe: FSG", (unfsg_200(newesi - peinfo->sections[i + 1].rva + src, dest, fsg_input_size, dsize, newedi, EC32(peinfo->pe_opt.opt32.ImageBase), newedx, ndesc, ctx)), 1, (dest, 0));
         break;
     }
 
@@ -4032,7 +4032,7 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "FSG");
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
-        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc)), 1, (dest, sections, 0));
+        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
         break; /* were done with 1.33 */
     }
 
@@ -4141,7 +4141,7 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "FSG");
 
         CLI_UNPTEMP("cli_scanpe: FSG", (dest, sections, 0));
-        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc)), 1, (dest, sections, 0));
+        CLI_UNPRESULTSFSG1("cli_scanpe: FSG", (unfsg_133(src + newesi - peinfo->sections[i + 1].rva, dest, fsg_input_size, dsize, sections, sectcnt, EC32(peinfo->pe_opt.opt32.ImageBase), oldep, ndesc, ctx)), 1, (dest, sections, 0));
 
         break; /* were done with 1.31 */
     }
@@ -4412,7 +4412,7 @@ int cli_scanpe(cli_ctx *ctx)
                 cli_jsonstr(pe_json, "Packer", "Petite");
 
             CLI_UNPTEMP("cli_scanpe: Petite", (dest, 0));
-            CLI_UNPRESULTS("Petite", (petite_inflate2x_1to9(dest, peinfo->min, peinfo->max - peinfo->min, peinfo->sections, peinfo->nsections - (found == 1 ? 1 : 0), EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->vep, ndesc, found, peinfo->dirs[2].VirtualAddress, peinfo->dirs[2].Size)), 0, (dest, 0));
+            CLI_UNPRESULTS("Petite", (petite_inflate2x_1to9(dest, peinfo->min, peinfo->max - peinfo->min, peinfo->sections, peinfo->nsections - (found == 1 ? 1 : 0), EC32(peinfo->pe_opt.opt32.ImageBase), peinfo->vep, ndesc, found, peinfo->dirs[2].VirtualAddress, peinfo->dirs[2].Size, ctx)), 0, (dest, 0));
         }
     }
 
@@ -4447,7 +4447,7 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "PEspin");
 
         CLI_UNPTEMP("cli_scanpe: PESpin", (spinned, 0));
-        CLI_UNPRESULTS_("cli_scanpe: PEspin", SPINCASE(), (unspin(spinned, fsize, peinfo->sections, peinfo->nsections - 1, peinfo->vep, ndesc, ctx)), 0, (spinned, 0));
+            CLI_UNPRESULTS_("cli_scanpe: PEspin", SPINCASE(), (unspin(spinned, fsize, peinfo->sections, peinfo->nsections - 1, peinfo->vep, ndesc, ctx)), 0, (spinned, 0));
     }
 
     /* yC 1.3 & variants */
@@ -4619,7 +4619,7 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "WWPack");
 
         CLI_UNPTEMP("cli_scanpe: WWPack", (src, packer, 0));
-        CLI_UNPRESULTS("cli_scanpe: WWPack", (wwunpack((uint8_t *)src, ssize, packer, peinfo->sections, peinfo->nsections - 1, peinfo->e_lfanew, ndesc)), 0, (src, packer, 0));
+            CLI_UNPRESULTS("cli_scanpe: WWPack", (wwunpack((uint8_t *)src, ssize, packer, peinfo->sections, peinfo->nsections - 1, peinfo->e_lfanew, ndesc, ctx)), 0, (src, packer, 0));
         break;
     }
 
@@ -4686,7 +4686,7 @@ int cli_scanpe(cli_ctx *ctx)
             cli_jsonstr(pe_json, "Packer", "Aspack");
 
         CLI_UNPTEMP("cli_scanpe: Aspack", (src, 0));
-        CLI_UNPRESULTS("cli_scanpe: Aspack", (unaspack((uint8_t *)src, ssize, peinfo->sections, peinfo->nsections, peinfo->vep - 1, EC32(peinfo->pe_opt.opt32.ImageBase), ndesc, aspack_ver)), 1, (src, 0));
+        CLI_UNPRESULTS("cli_scanpe: Aspack", (unaspack((uint8_t *)src, ssize, peinfo->sections, peinfo->nsections, peinfo->vep - 1, EC32(peinfo->pe_opt.opt32.ImageBase), ndesc, aspack_ver, ctx)), 1, (src, 0));
         break;
     }
 

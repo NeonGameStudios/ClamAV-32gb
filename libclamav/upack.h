@@ -28,6 +28,8 @@
 
 #include "clamav-types.h"
 
-int unupack(int, char *, uint32_t, char *, uint32_t, uint32_t, uint32_t, uint32_t, int);
+struct cli_ctx_tag;
+
+int unupack(int, char *, uint32_t, char *, uint32_t, uint32_t, uint32_t, uint32_t, int, struct cli_ctx_tag *);
 
 #endif

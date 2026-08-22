@@ -97,6 +97,10 @@
 - PE UPX/FSG direct output and generic rebuilt-PE nested handoffs now re-check
   the shared deadline; add deterministic output-timeout injection and complete
   PE unpacker corpus qualification.
+- The internal PE rebuilt-output writer now receives scan context from the
+  legacy MEW, Upack, FSG, Petite, PEspin, yC, WWPack, NsPack, and Aspack paths;
+  short writes and deadline expiry are fail-visible. Add compiled timeout and
+  short-write injection across the full PE unpacker corpus.
 - HFS+ inline compressed output above its 64 KiB decoder buffer is now an
   explicit resource-incomplete result, and supported output uses the shared
   allocation guard.

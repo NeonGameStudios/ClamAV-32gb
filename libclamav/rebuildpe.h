@@ -25,7 +25,11 @@
 #include "clamav-types.h"
 #include "execs.h"
 
+struct cli_ctx_tag;
+
 int cli_rebuildpe(char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int);
 int cli_rebuildpe_align(char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int, uint32_t);
+int cli_rebuildpe_ctx(struct cli_ctx_tag *, char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int);
+int cli_rebuildpe_align_ctx(struct cli_ctx_tag *, char *, struct cli_exe_section *, int, uint32_t, uint32_t, uint32_t, uint32_t, int, uint32_t);
 
 #endif

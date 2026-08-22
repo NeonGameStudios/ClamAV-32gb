@@ -130,10 +130,20 @@ struct IMAGE_PE_HEADER {
 
 int cli_rebuildpe(char *buffer, struct cli_exe_section *sections, int sects, uint32_t base, uint32_t ep, uint32_t ResRva, uint32_t ResSize, int file)
 {
-    return cli_rebuildpe_align(buffer, sections, sects, base, ep, ResRva, ResSize, file, 0);
+    return cli_rebuildpe_ctx(NULL, buffer, sections, sects, base, ep, ResRva, ResSize, file);
 }
 
 int cli_rebuildpe_align(char *buffer, struct cli_exe_section *sections, int sects, uint32_t base, uint32_t ep, uint32_t ResRva, uint32_t ResSize, int file, uint32_t align)
+{
+    return cli_rebuildpe_align_ctx(NULL, buffer, sections, sects, base, ep, ResRva, ResSize, file, align);
+}
+
+int cli_rebuildpe_ctx(struct cli_ctx_tag *ctx, char *buffer, struct cli_exe_section *sections, int sects, uint32_t base, uint32_t ep, uint32_t ResRva, uint32_t ResSize, int file)
+{
+    return cli_rebuildpe_align_ctx(ctx, buffer, sections, sects, base, ep, ResRva, ResSize, file, 0);
+}
+
+int cli_rebuildpe_align_ctx(struct cli_ctx_tag *ctx, char *buffer, struct cli_exe_section *sections, int sects, uint32_t base, uint32_t ep, uint32_t ResRva, uint32_t ResSize, int file, uint32_t align)
 {
     uint32_t datasize = 0, rawbase = PESALIGN(0x148 + 0x80 + 0x28 * sects, 0x200);
     uint64_t packed_datasize = 0;
@@ -229,7 +239,15 @@ int cli_rebuildpe_align(char *buffer, struct cli_exe_section *sections, int sect
     }
     fakepe->SizeOfImage = EC32(datasize);
 
-    i = (cli_writen(file, pefile, rawbase) != (size_t)-1);
+    if (ctx && cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "PE rebuilt output reached the configured time limit");
+        free(pefile);
+        return 0;
+    }
+
+    i = (cli_writen(file, pefile, rawbase) == (size_t)rawbase);
+    if (!i && ctx)
+        cli_mark_scan_incomplete(ctx, "PE rebuilt output could not be written completely");
     free(pefile);
     return i;
 }

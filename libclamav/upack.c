@@ -57,7 +57,7 @@ enum { UPACK_399,
        UPACK_0151477,
        UPACK_0297729 };
 
-int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file)
+int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
 {
     int j, searchval;
     char *loc_esi = NULL, *loc_edi = NULL, *loc_ebx = NULL, *end_edi = NULL, *save_edi = NULL, *alvalue = NULL;
@@ -434,7 +434,7 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         return 0;
     }
 
-    if (!cli_rebuildpe(dest + (upack ? 0 : va), &section, 1, base, original_ep, 0, 0, file)) {
+    if (!cli_rebuildpe_ctx(ctx, dest + (upack ? 0 : va), &section, 1, base, original_ep, 0, 0, file)) {
         cli_dbgmsg("Upack: Rebuilding failed\n");
         return 0;
     }

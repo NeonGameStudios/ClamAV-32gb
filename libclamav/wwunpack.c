@@ -70,7 +70,7 @@
         }                                           \
     }
 
-cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_exe_section *sects, uint16_t scount, uint32_t pe, int desc)
+cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_exe_section *sects, uint16_t scount, uint32_t pe, int desc, cli_ctx *ctx)
 {
     uint8_t *structs = wwsect + 0x2a1, *compd, *ccur, *unpd, *ucur, bc;
     uint32_t src, srcend, szd, bt, bits;
@@ -272,7 +272,12 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
         }
 
         memset(structs, 0, 0x28);
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "WWPack output reached the configured time limit");
+            return CL_ETIMEOUT;
+        }
         if (cli_writen(desc, exe, exesz) != (size_t)exesz) {
+            cli_mark_scan_incomplete(ctx, "WWPack output could not be written completely");
             error = CL_EWRITE;
         }
     }

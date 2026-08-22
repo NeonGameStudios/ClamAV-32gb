@@ -25,7 +25,9 @@
 #include "clamav-types.h"
 #include "execs.h"
 
-int unfsg_200(const char *, char *, int, int, uint32_t, uint32_t, uint32_t, int);
-int unfsg_133(const char *, char *, int, int, struct cli_exe_section *, int, uint32_t, uint32_t, int);
+struct cli_ctx_tag;
+
+int unfsg_200(const char *, char *, int, int, uint32_t, uint32_t, uint32_t, int, struct cli_ctx_tag *);
+int unfsg_133(const char *, char *, int, int, struct cli_exe_section *, int, uint32_t, uint32_t, int, struct cli_ctx_tag *);
 
 #endif

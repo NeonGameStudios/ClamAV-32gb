@@ -505,7 +505,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
                 bitmap = bitmap >> 1;
             }
 
-            if (!cli_rebuildpe(ep, rebhlp, sectcnt, 0x400000, 0x1000, 0, 0, desc)) { /* can't be bothered fixing those values: the rebuilt exe is completely broken anyway. */
+            if (!cli_rebuildpe_ctx(ctx, ep, rebhlp, sectcnt, 0x400000, 0x1000, 0, 0, desc)) { /* can't be bothered fixing those values: the rebuilt exe is completely broken anyway. */
                 cli_dbgmsg("spin: Cannot write unpacked file\n");
                 retval = 1;
             }

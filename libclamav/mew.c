@@ -761,7 +761,7 @@ uint32_t lzma_upack_esi_54(struct lzmastate *p, uint32_t old_eax, uint32_t *old_
  * @param filedesc 	File descriptor
  * @return int 		Returns -1 on failure, 1 on success.
  */
-int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc)
+int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
 {
     uint32_t entry_point, newedi, loc_ds = dsize, loc_ss = ssize;
     char *source     = NULL;
@@ -908,7 +908,7 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
         section[0].rva = vadd;
         section[0].rsz = section[0].vsz = dsize;
     }
-    if (!cli_rebuildpe_align(src, section, i, base, entry_point - base, 0, 0, filedesc, 0x1000)) {
+    if (!cli_rebuildpe_align_ctx(ctx, src, section, i, base, entry_point - base, 0, 0, filedesc, 0x1000)) {
         cli_dbgmsg("MEW: Rebuilding failed\n");
         free(section);
         return -1;

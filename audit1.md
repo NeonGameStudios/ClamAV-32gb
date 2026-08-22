@@ -2360,12 +2360,12 @@ Sonic1 qualification remain release gates.
 
 ## PE unpacked-output deadlines — 2026-08-22
 
-The direct UPX/FSG materialization path now re-checks the shared deadline
-immediately before writing its bounded output, and the common rebuilt-PE macro
-re-checks it immediately before handing the staged descriptor to nested scan.
-Write and timeout failures remain incomplete and non-cacheable; deterministic
-timeout injection, compiled PE unpacker corpus, sanitizer, and Sonic1
-qualification remain release gates.
+The internal MEW, Upack, FSG, Petite, PEspin, yC, WWPack, NsPack, and Aspack
+paths now propagate scan context into the common deadline-aware rebuilt-output
+writer. The direct UPX/FSG path, yC/WWPack output, Aspack fallbacks, and common
+nested-scan handoffs preserve timeout and short-write failures. Deterministic
+timeout/short-write injection, compiled PE unpacker corpus, sanitizer, and
+Sonic1 qualification remain release gates.
 
 ## Structured-text traversal deadlines — 2026-08-22
 

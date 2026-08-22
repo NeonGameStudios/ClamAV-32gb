@@ -47,7 +47,7 @@
 #include "packlibs.h"
 #include "fsg.h"
 
-int unfsg_200(const char *source, char *dest, int ssize, int dsize, uint32_t rva, uint32_t base, uint32_t ep, int file)
+int unfsg_200(const char *source, char *dest, int ssize, int dsize, uint32_t rva, uint32_t base, uint32_t ep, int file, cli_ctx *ctx)
 {
     struct cli_exe_section section; /* Yup, just one ;) */
 
@@ -58,14 +58,14 @@ int unfsg_200(const char *source, char *dest, int ssize, int dsize, uint32_t rva
     section.vsz = dsize;
     section.rva = rva;
 
-    if (!cli_rebuildpe(dest, &section, 1, base, ep, 0, 0, file)) {
+    if (!cli_rebuildpe_ctx(ctx, dest, &section, 1, base, ep, 0, 0, file)) {
         cli_dbgmsg("FSG: Rebuilding failed\n");
         return 0;
     }
     return 1;
 }
 
-int unfsg_133(const char *source, char *dest, int ssize, int dsize, struct cli_exe_section *sections, int sectcount, uint32_t base, uint32_t ep, int file)
+int unfsg_133(const char *source, char *dest, int ssize, int dsize, struct cli_exe_section *sections, int sectcount, uint32_t base, uint32_t ep, int file, cli_ctx *ctx)
 {
     const char *tsrc = source;
     char *tdst       = dest;
@@ -115,7 +115,7 @@ int unfsg_133(const char *source, char *dest, int ssize, int dsize, struct cli_e
         cli_dbgmsg("FSG: .SECT%d RVA:%x VSize:%x ROffset: %x, RSize:%x\n", i, sections[i].rva, sections[i].vsz, sections[i].raw, sections[i].rsz);
     }
 
-    if (!cli_rebuildpe(dest, sections, sectcount + 1, base, ep, 0, 0, file)) {
+    if (!cli_rebuildpe_ctx(ctx, dest, sections, sectcount + 1, base, ep, 0, 0, file)) {
         cli_dbgmsg("FSG: Rebuilding failed\n");
         return 0;
     }
