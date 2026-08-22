@@ -438,6 +438,12 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
 
         /* Write the blocks, walking the map */
         while (currBlock <= endBlock) {
+            status = cli_checktimelimit(ctx);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "HFS+ fork extraction reached the configured time limit");
+                goto done;
+            }
+
             size_t to_write = (targetSize < (uint64_t)volHeader->blockSize) ? (size_t)targetSize : (size_t)volHeader->blockSize;
             size_t written;
             uint64_t blockOffset = (uint64_t)currBlock * volHeader->blockSize;
@@ -605,6 +611,12 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
     /* Because we want to scan them all, the index nodes add no value */
     while (status == CL_SUCCESS && !foundAttr) {
         hfsNodeDescriptor nodeDesc;
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ attributes traversal reached the configured time limit");
+            goto done;
+        }
 
         if (thisNode == 0) {
             cli_dbgmsg("hfsplus_check_attribute: reached end of leaf nodes.\n");
@@ -1016,6 +1028,11 @@ static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBl
     }
 
     for (i = 0; i < *numBlocks; ++i) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ resource block-table conversion reached the configured time limit");
+            goto done;
+        }
         (*table)[i].offset = le32_to_host((*table)[i].offset);
         (*table)[i].length = le32_to_host((*table)[i].length);
     }
@@ -1070,6 +1087,12 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
     /* Because we want to scan them all, the index nodes add no value */
     while (status == CL_SUCCESS) {
         hfsNodeDescriptor nodeDesc;
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ catalog traversal reached the configured time limit");
+            goto done;
+        }
 
         if (thisNode == 0) {
             cli_dbgmsg("hfsplus_walk_catalog: reached end of leaf nodes.\n");
@@ -1400,6 +1423,12 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                         unsigned curBlock;
 
                                         for (curBlock = 0; status == CL_SUCCESS && curBlock < numBlocks; ++curBlock) {
+                                            status = cli_checktimelimit(ctx);
+                                            if (status != CL_SUCCESS) {
+                                                cli_mark_scan_incomplete(ctx, "HFS+ compressed-resource traversal reached the configured time limit");
+                                                goto done;
+                                            }
+
                                             int z_ret;
                                             off_t blockOffset = dataOffset + (off_t)table[curBlock].offset;
                                             size_t curOffset;
@@ -1725,6 +1754,12 @@ cl_error_t cli_scanhfsplus(cli_ctx *ctx)
     if (!ctx || !ctx->fmap) {
         cli_errmsg("cli_scanhfsplus: Invalid context\n");
         status = CL_ENULLARG;
+        goto done;
+    }
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "HFS+ inspection reached the configured time limit");
         goto done;
     }
 

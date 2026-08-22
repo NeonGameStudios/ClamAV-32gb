@@ -5055,6 +5055,14 @@ declared original size. A mismatch is marked incomplete and returns
 completed. The compiled malformed-output, filesystem-fault, sanitizer, and
 production ARJ qualification gates remain open.
 
+## HFS+ traversal deadlines — 2026-08-22
+
+HFS+ now checks the shared deadline at parser entry and while walking catalog
+nodes, attribute nodes, fork blocks, resource block tables, and compressed
+resource blocks. A timeout marks the partition incomplete and prevents a clean
+result after a partial traversal. Compiled timeout injection, sanitizer, and
+large-volume HFS+ qualification remain open.
+
 ## TIFF IFD traversal deadline — 2026-08-22
 
 TIFF now checks the shared scan deadline before each linked IFD is entered and

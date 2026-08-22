@@ -180,6 +180,9 @@
   allocation/read sizing and fail with `CL_ERESOURCE` before a wrapped table
   can be allocated or read; compressed-resource corpus qualification remains
   open.
+- HFS+ catalog, attribute-tree, fork, resource-table, and compressed-resource
+  traversal now honor the shared scan deadline; add compiled timeout-injection
+  and large-volume corpus qualification.
 - PDF Flate, RunLength, and LZW decoder output now retains native-width
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial
