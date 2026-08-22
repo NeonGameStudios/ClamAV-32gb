@@ -2130,6 +2130,7 @@ contains libclamav_rust/src/scanners.rs 'decoder panicked while scanning the arc
 contains libclamav_rust/src/scanners.rs 'member decoder exceeded its declared output size'
 contains libclamav_rust/src/scanners.rs 'LHA member exceeds configured scan limits with status'
 contains libclamav_rust/src/scanners.rs 'archive metadata scan failed with status'
+contains libclamav_rust/src/scanners.rs 'decoder output reached the configured time limit'
 not_contains libclamav_rust/src/scanners.rs "Extracted file '{filename}' would exceed size limits. Skipping."
 contains libclamav_rust/src/scanners.rs 'let mut buffer = [0u8; 64 * 1024]'
 contains libclamav/scanners.c 'UTF-16 HTML input could not be converted completely'

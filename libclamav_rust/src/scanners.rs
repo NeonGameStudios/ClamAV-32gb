@@ -868,6 +868,15 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
             let mut bytes_read = 0u64;
             let mut buffer = [0u8; 64 * 1024];
             loop {
+                let deadline_status = check_scan_time_limit(ctx);
+                if deadline_status != cl_error_t_CL_SUCCESS {
+                    return parser_failure(
+                        ctx,
+                        "LHA/LZH",
+                        deadline_status,
+                        "decoder output reached the configured time limit",
+                    );
+                }
                 match decoder.read(&mut buffer) {
                     Ok(0) => break,
                     Ok(read) => {

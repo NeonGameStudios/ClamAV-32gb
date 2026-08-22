@@ -4010,3 +4010,13 @@ temporary reservation used by `pdf_extract_obj`. Filtered decoder input and
 decoder growth above the 1 GiB individual-allocation boundary remain an
 explicit unsupported/incomplete result; full streaming filter conversion,
 compiled PDF corpus, sanitizer, and Sonic1 qualification remain open.
+
+## LHA/LZH decoder-output deadline — 2026-08-22
+
+The Rust LHA/LZH path already reads through the bounded context-aware fmap
+adapter and writes members through a quota-accounted spool, but a decoder can
+emit several output chunks without asking the reader for more input. The member
+output loop now checks the shared scan deadline before every bounded decoder
+read, preserving `CL_ETIMEOUT` and the incomplete/non-cacheable result even in
+that no-new-input interval. Compiled timeout injection, malformed/multi-member
+corpus, sanitizer, and Sonic1 qualification remain open.

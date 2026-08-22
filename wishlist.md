@@ -498,6 +498,9 @@
 - LHA/LZH member-limit and metadata callback failures now stop fail-closed;
   add malformed, oversized, callback, and multi-member corpus coverage during
   Rust-parser qualification.
+- LHA/LZH decoder output now checks the shared scan deadline between bounded
+  output chunks, covering decoders that emit data without another fmap read;
+  retain compiled timeout-injection and parser-family qualification.
 - Legacy CPIO/TAR/RAR/EGG/ARJ/InstallShield metadata callback failures now
   propagate; add callback-fault and malformed archive corpus coverage.
 - TAR parser entry and member traversal now honor the shared scan deadline and
