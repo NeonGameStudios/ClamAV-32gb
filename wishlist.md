@@ -487,9 +487,14 @@
   and large-embedded-payload corpus qualification.
 - Optional XDP `keeptmp` staging now honors the shared deadline and preserves
   read/write/resource failures; add compiled staging-failure qualification.
+- XDP temporary-dump writes now re-check the shared deadline after quota
+  admission; add deterministic post-admission timeout injection.
 - HWP3 document-info, paragraph, font-table, and information-block traversal
   now honor the shared scan deadline; add compiled timeout-injection and large
   legacy-document corpus qualification.
+- HWP raw-deflate and HWPML Base64 output now re-check the shared deadline
+  before quota admission and before writing; add deterministic output-timeout
+  injection and full HWP/HWPML corpus qualification.
 - OLE2 property-tree, VBA/XLM, MSO-inflation, embedded-stream, and
   encrypted-stream traversal now honor the shared scan deadline; add compiled
   timeout-injection and large Office/VBA corpus qualification.

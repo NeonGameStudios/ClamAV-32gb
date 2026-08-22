@@ -104,6 +104,11 @@ static cl_error_t dump_xdp(cli_ctx *ctx, fmap_t *map, char **filename)
             cli_mark_scan_incomplete(ctx, "XDP temporary dump exceeded temporary storage limits");
             goto fail;
         }
+        ret = xdp_checktimelimit(ctx, "XDP temporary dump reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            cli_scan_release_temporary(ctx, (uint64_t)nread);
+            goto fail;
+        }
         if (cli_writen(fd, buffer, nread) != nread) {
             cli_scan_release_temporary(ctx, (uint64_t)nread);
             cli_mark_scan_incomplete(ctx, "XDP temporary dump could not be written completely");

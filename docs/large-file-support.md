@@ -5511,3 +5511,21 @@ bytes, releases that reservation on timeout, and returns `CL_ETIMEOUT` without
 scanning partial output. A source guard covers this boundary; deterministic
 timeout injection, compiled NSIS corpus, sanitizer, and Sonic1 qualification
 remain release gates.
+
+## HWP/HWPML output deadlines — 2026-08-22
+
+HWP raw-deflate output and HWPML Base64 attachment output now re-check
+`MaxScanTime` before temporary quota admission and again before writing. Any
+post-admission timeout releases the just-added reservation and returns
+`CL_ETIMEOUT` without treating partial document output as complete. Source
+guards cover these boundaries; deterministic timeout injection, compiled
+HWP/HWPML corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## XDP post-admission output deadline — 2026-08-22
+
+XDP temporary payload staging already checked the deadline before each input
+chunk, and now checks again after reserving the chunk and before writing it.
+Timeout cleanup releases the reservation and returns `CL_ETIMEOUT` without
+scanning partial output. A source guard covers this boundary; deterministic
+timeout injection, compiled XDP corpus, sanitizer, and Sonic1 qualification
+remain release gates.

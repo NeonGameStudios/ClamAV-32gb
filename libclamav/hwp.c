@@ -138,6 +138,11 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
         zret  = inflate(&zstrm, Z_SYNC_FLUSH);
         count = FILEBUFF - zstrm.avail_out;
         if (count) {
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "HWP decompressed output reached the configured time limit");
+                goto dc_end;
+            }
             if (outsize > SIZE_MAX - count) {
                 cli_mark_scan_incomplete(ctx, "HWP decompressed output size overflowed");
                 ret = CL_ERESOURCE;
@@ -153,6 +158,13 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
                 goto dc_end;
             }
             temporary_reserved += (uint64_t)count;
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS) {
+                cli_scan_release_temporary(ctx, (uint64_t)count);
+                temporary_reserved -= (uint64_t)count;
+                cli_mark_scan_incomplete(ctx, "HWP decompressed output reached the configured time limit");
+                goto dc_end;
+            }
             if (cli_writen(ofd, outbuf, count) != count) {
                 cli_errmsg("%s: Can't write to file %s\n", parent, tmpname);
                 cli_mark_scan_incomplete(ctx, "HWP decompressed temporary output could not be written completely");
@@ -2096,9 +2108,22 @@ static cl_error_t hwpml_flush_base64_output(cli_ctx *ctx, int output_fd, const u
         return (ret == CL_ETIMEOUT) ? ret : CL_EPARSE;
     }
 
+    ret = cli_checktimelimit(ctx);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "HWPML Base64 decoded attachment reached the configured time limit");
+        return ret;
+    }
+
     ret = cli_scan_reserve_temporary(ctx, (uint64_t)output_used);
     if (ret != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "HWPML Base64 decoded attachment exceeds temporary storage limits");
+        return ret;
+    }
+
+    ret = cli_checktimelimit(ctx);
+    if (ret != CL_SUCCESS) {
+        cli_scan_release_temporary(ctx, (uint64_t)output_used);
+        cli_mark_scan_incomplete(ctx, "HWPML Base64 decoded attachment reached the configured time limit");
         return ret;
     }
 

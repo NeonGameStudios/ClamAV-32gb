@@ -2421,45 +2421,48 @@ fixed-width-integer	libclamav/htmlnorm.c	831	    uint32_t mbchar2 = 0;
 fixed-width-integer	libclamav/htmlnorm.h	59	                                   const struct cli_dconf *dconf, uint64_t *temporary_reserved);
 fixed-width-integer	libclamav/htmlnorm.h	62	                                             form_data_t *form_data, uint64_t *temporary_reserved);
 fixed-width-integer	libclamav/htmlnorm.h	66	                            uint64_t *temporary_reserved);
-fixed-width-integer	libclamav/hwp.c	1076	                    uint16_t ncells;
-fixed-width-integer	libclamav/hwp.c	1078	                    uint16_t type;
-fixed-width-integer	libclamav/hwp.c	1148	                    uint32_t size;
-fixed-width-integer	libclamav/hwp.c	149	            if (UINT64_MAX - temporary_reserved < (uint64_t)count ||
-fixed-width-integer	libclamav/hwp.c	150	                cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
-fixed-width-integer	libclamav/hwp.c	1503	                    uint32_t length;
-fixed-width-integer	libclamav/hwp.c	155	            temporary_reserved += (uint64_t)count;
-fixed-width-integer	libclamav/hwp.c	1581	    uint32_t infoid, infolen;
-fixed-width-integer	libclamav/hwp.c	1824	static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
-fixed-width-integer	libclamav/hwp.c	1830	    uint16_t nstyles;
-fixed-width-integer	libclamav/hwp.c	1872	        uint16_t nfonts;
-fixed-width-integer	libclamav/hwp.c	2052	static cl_error_t hwpml_scan_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
-fixed-width-integer	libclamav/hwp.c	2079	                                            size_t output_used, uint64_t *total)
-fixed-width-integer	libclamav/hwp.c	2082	    uint64_t next_total;
-fixed-width-integer	libclamav/hwp.c	2099	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)output_used);
-fixed-width-integer	libclamav/hwp.c	2106	        cli_scan_release_temporary(ctx, (uint64_t)output_used);
-fixed-width-integer	libclamav/hwp.c	2115	cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd, uint64_t *decoded_size)
-fixed-width-integer	libclamav/hwp.c	2120	    uint64_t total      = 0;
-fixed-width-integer	libclamav/hwp.c	2225	    uint64_t decoded_reserved = 0;
-fixed-width-integer	libclamav/hwp.c	295	    uint32_t usize, asize;
-fixed-width-integer	libclamav/hwp.c	318	    asize = (uint32_t)payload_size;
-fixed-width-integer	libclamav/hwp.c	406	static cl_error_t hwp5_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
-fixed-width-integer	libclamav/hwp.c	499	    uint32_t di_writeprot;
-fixed-width-integer	libclamav/hwp.c	500	    uint16_t di_externapp;
-fixed-width-integer	libclamav/hwp.c	501	    uint16_t di_passwd;
-fixed-width-integer	libclamav/hwp.c	503	    uint16_t di_infoblksize;
-fixed-width-integer	libclamav/hwp.c	721	static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, uint32_t level, size_t *roffset, int *last)
-fixed-width-integer	libclamav/hwp.c	727	    uint16_t nchars, nlines, content;
-fixed-width-integer	libclamav/hwp.c	729	    uint16_t i;
+fixed-width-integer	libclamav/hwp.c	1000	                    uint32_t length;
+fixed-width-integer	libclamav/hwp.c	1088	                    uint16_t ncells;
+fixed-width-integer	libclamav/hwp.c	1090	                    uint16_t type;
+fixed-width-integer	libclamav/hwp.c	1160	                    uint32_t size;
+fixed-width-integer	libclamav/hwp.c	1515	                    uint32_t length;
+fixed-width-integer	libclamav/hwp.c	154	            if (UINT64_MAX - temporary_reserved < (uint64_t)count ||
+fixed-width-integer	libclamav/hwp.c	155	                cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
+fixed-width-integer	libclamav/hwp.c	1593	    uint32_t infoid, infolen;
+fixed-width-integer	libclamav/hwp.c	160	            temporary_reserved += (uint64_t)count;
+fixed-width-integer	libclamav/hwp.c	163	                cli_scan_release_temporary(ctx, (uint64_t)count);
+fixed-width-integer	libclamav/hwp.c	164	                temporary_reserved -= (uint64_t)count;
+fixed-width-integer	libclamav/hwp.c	1836	static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
+fixed-width-integer	libclamav/hwp.c	1842	    uint16_t nstyles;
+fixed-width-integer	libclamav/hwp.c	1884	        uint16_t nfonts;
+fixed-width-integer	libclamav/hwp.c	2064	static cl_error_t hwpml_scan_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
+fixed-width-integer	libclamav/hwp.c	2091	                                            size_t output_used, uint64_t *total)
+fixed-width-integer	libclamav/hwp.c	2094	    uint64_t next_total;
+fixed-width-integer	libclamav/hwp.c	2117	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)output_used);
+fixed-width-integer	libclamav/hwp.c	2125	        cli_scan_release_temporary(ctx, (uint64_t)output_used);
+fixed-width-integer	libclamav/hwp.c	2131	        cli_scan_release_temporary(ctx, (uint64_t)output_used);
+fixed-width-integer	libclamav/hwp.c	2140	cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd, uint64_t *decoded_size)
+fixed-width-integer	libclamav/hwp.c	2145	    uint64_t total      = 0;
+fixed-width-integer	libclamav/hwp.c	2250	    uint64_t decoded_reserved = 0;
+fixed-width-integer	libclamav/hwp.c	307	    uint32_t usize, asize;
+fixed-width-integer	libclamav/hwp.c	330	    asize = (uint32_t)payload_size;
+fixed-width-integer	libclamav/hwp.c	418	static cl_error_t hwp5_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
+fixed-width-integer	libclamav/hwp.c	511	    uint32_t di_writeprot;
+fixed-width-integer	libclamav/hwp.c	512	    uint16_t di_externapp;
+fixed-width-integer	libclamav/hwp.c	513	    uint16_t di_passwd;
+fixed-width-integer	libclamav/hwp.c	515	    uint16_t di_infoblksize;
 fixed-width-integer	libclamav/hwp.c	73	typedef cl_error_t (*hwp_cb)(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved);
-fixed-width-integer	libclamav/hwp.c	732	    uint16_t match;
-fixed-width-integer	libclamav/hwp.c	737	    uint16_t fsize;
-fixed-width-integer	libclamav/hwp.c	738	    uint32_t special;
-fixed-width-integer	libclamav/hwp.c	741	    uint16_t loff, lcor, lhei, lpag;
-fixed-width-integer	libclamav/hwp.c	744	    uint16_t pcsd_size;
+fixed-width-integer	libclamav/hwp.c	733	static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, uint32_t level, size_t *roffset, int *last)
+fixed-width-integer	libclamav/hwp.c	739	    uint16_t nchars, nlines, content;
+fixed-width-integer	libclamav/hwp.c	741	    uint16_t i;
+fixed-width-integer	libclamav/hwp.c	744	    uint16_t match;
+fixed-width-integer	libclamav/hwp.c	749	    uint16_t fsize;
+fixed-width-integer	libclamav/hwp.c	750	    uint32_t special;
+fixed-width-integer	libclamav/hwp.c	753	    uint16_t loff, lcor, lhei, lpag;
+fixed-width-integer	libclamav/hwp.c	756	    uint16_t pcsd_size;
 fixed-width-integer	libclamav/hwp.c	82	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/hwp.c	926	                    uint32_t length;
-fixed-width-integer	libclamav/hwp.c	959	                    uint32_t length;
-fixed-width-integer	libclamav/hwp.c	988	                    uint32_t length;
+fixed-width-integer	libclamav/hwp.c	938	                    uint32_t length;
+fixed-width-integer	libclamav/hwp.c	971	                    uint32_t length;
 fixed-width-integer	libclamav/hwp.h	48	    uint32_t version;
 fixed-width-integer	libclamav/hwp.h	49	    uint32_t flags;
 fixed-width-integer	libclamav/hwp.h	69	cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd, uint64_t *decoded_size);
@@ -5412,8 +5415,9 @@ fixed-width-integer	libclamav/xar.h	48	    uint64_t toc_length_compressed;
 fixed-width-integer	libclamav/xar.h	49	    uint64_t toc_length_decompressed;
 fixed-width-integer	libclamav/xar.h	50	    uint32_t chksum_alg; /* 0 = none */
 fixed-width-integer	libclamav/xdp.c	102	        ret = cli_scan_reserve_temporary(ctx, (uint64_t)nread);
-fixed-width-integer	libclamav/xdp.c	108	            cli_scan_release_temporary(ctx, (uint64_t)nread);
-fixed-width-integer	libclamav/xdp.c	113	        cli_scan_release_temporary(ctx, (uint64_t)nread);
+fixed-width-integer	libclamav/xdp.c	109	            cli_scan_release_temporary(ctx, (uint64_t)nread);
+fixed-width-integer	libclamav/xdp.c	113	            cli_scan_release_temporary(ctx, (uint64_t)nread);
+fixed-width-integer	libclamav/xdp.c	118	        cli_scan_release_temporary(ctx, (uint64_t)nread);
 fixed-width-integer	libclamav/xlm_extract.c	3730	    uint16_t recVerAndInstance; // 4 bytes for recVer, 12 bytes for recInstance
 fixed-width-integer	libclamav/xlm_extract.c	3731	    uint16_t recType;
 fixed-width-integer	libclamav/xlm_extract.c	3732	    uint32_t recLen;
@@ -9763,52 +9767,52 @@ native-width-integer	libclamav/htmlnorm.h	51	    size_t count;
 native-width-integer	libclamav/htmlnorm.h	54	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
 native-width-integer	libclamav/htmlnorm.h	55	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
 native-width-integer	libclamav/hwp.c	122	            if (in == (size_t)-1) {
-native-width-integer	libclamav/hwp.c	1577	static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t *offset, int *last)
-native-width-integer	libclamav/hwp.c	1583	    int i, count;
-native-width-integer	libclamav/hwp.c	1584	    long long unsigned infoloc = (long long unsigned)(*offset);
-native-width-integer	libclamav/hwp.c	1611	            int value = json_object_get_int(counter);
-native-width-integer	libclamav/hwp.c	1660	    if (*offset > map->len || (size_t)infolen > map->len - *offset) {
-native-width-integer	libclamav/hwp.c	1661	        size_t remaining = (*offset <= map->len) ? map->len - *offset : 0;
-native-width-integer	libclamav/hwp.c	1824	static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
-native-width-integer	libclamav/hwp.c	1828	    size_t offset, start, new_offset;
-native-width-integer	libclamav/hwp.c	1829	    int i, p = 0, last = 0;
-native-width-integer	libclamav/hwp.c	1840	    offset = start = cbdata ? *(size_t *)cbdata : 0;
-native-width-integer	libclamav/hwp.c	1942	        size_t dlen = offset - start;
-native-width-integer	libclamav/hwp.c	1957	    size_t offset = 0, new_offset = 0;
-native-width-integer	libclamav/hwp.c	2049	static size_t num_hwpml_keys = sizeof(hwpml_keys) / sizeof(struct key_entry);
-native-width-integer	libclamav/hwp.c	2052	static cl_error_t hwpml_scan_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
-native-width-integer	libclamav/hwp.c	2063	static int hwpml_base64_value(unsigned char value)
-native-width-integer	libclamav/hwp.c	2078	static cl_error_t hwpml_flush_base64_output(cli_ctx *ctx, int output_fd, const unsigned char *output,
-native-width-integer	libclamav/hwp.c	2079	                                            size_t output_used, uint64_t *total)
-native-width-integer	libclamav/hwp.c	2115	cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd, uint64_t *decoded_size)
-native-width-integer	libclamav/hwp.c	212	static char *convert_hstr_to_utf8(const char *begin, size_t sz, const char *parent, cl_error_t *ret)
-native-width-integer	libclamav/hwp.c	2121	    size_t output_used  = 0;
-native-width-integer	libclamav/hwp.c	2122	    size_t quartet_used = 0;
-native-width-integer	libclamav/hwp.c	2123	    size_t i;
-native-width-integer	libclamav/hwp.c	2124	    size_t produced;
-native-width-integer	libclamav/hwp.c	2125	    size_t nread;
-native-width-integer	libclamav/hwp.c	2126	    int a, b, c, d;
-native-width-integer	libclamav/hwp.c	2127	    int terminal = 0;
-native-width-integer	libclamav/hwp.c	2136	    if (lseek(input_fd, 0, SEEK_SET) == (off_t)-1) {
-native-width-integer	libclamav/hwp.c	2149	        if (nread == (size_t)-1) {
-native-width-integer	libclamav/hwp.c	2156	        for (i = 0; i < (size_t)nread; i++) {
-native-width-integer	libclamav/hwp.c	2157	            if (isspace((int)input[i]))
-native-width-integer	libclamav/hwp.c	218	    size_t inlen, outlen;
-native-width-integer	libclamav/hwp.c	2220	static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs, struct attrib_entry *attribs, void *cbdata)
-native-width-integer	libclamav/hwp.c	2224	    int i, df = -1, com = 0, enc = 0;
-native-width-integer	libclamav/hwp.c	296	    size_t payload_size;
-native-width-integer	libclamav/hwp.c	406	static cl_error_t hwp5_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
-native-width-integer	libclamav/hwp.c	417	cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, int fd, const char *filepath)
-native-width-integer	libclamav/hwp.c	509	    size_t offset;
-native-width-integer	libclamav/hwp.c	558	static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct hwp3_docinfo *docinfo)
-native-width-integer	libclamav/hwp.c	647	static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
-native-width-integer	libclamav/hwp.c	651	    size_t i;
-native-width-integer	libclamav/hwp.c	681	            size_t b64len = strlen(hwp3_docsummary_fields[i].name) + 8;
-native-width-integer	libclamav/hwp.c	721	static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, uint32_t level, size_t *roffset, int *last)
-native-width-integer	libclamav/hwp.c	725	    size_t offset = *roffset;
-native-width-integer	libclamav/hwp.c	726	    size_t new_offset;
+native-width-integer	libclamav/hwp.c	1589	static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t *offset, int *last)
+native-width-integer	libclamav/hwp.c	1595	    int i, count;
+native-width-integer	libclamav/hwp.c	1596	    long long unsigned infoloc = (long long unsigned)(*offset);
+native-width-integer	libclamav/hwp.c	1623	            int value = json_object_get_int(counter);
+native-width-integer	libclamav/hwp.c	1672	    if (*offset > map->len || (size_t)infolen > map->len - *offset) {
+native-width-integer	libclamav/hwp.c	1673	        size_t remaining = (*offset <= map->len) ? map->len - *offset : 0;
+native-width-integer	libclamav/hwp.c	1836	static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
+native-width-integer	libclamav/hwp.c	1840	    size_t offset, start, new_offset;
+native-width-integer	libclamav/hwp.c	1841	    int i, p = 0, last = 0;
+native-width-integer	libclamav/hwp.c	1852	    offset = start = cbdata ? *(size_t *)cbdata : 0;
+native-width-integer	libclamav/hwp.c	1954	        size_t dlen = offset - start;
+native-width-integer	libclamav/hwp.c	1969	    size_t offset = 0, new_offset = 0;
+native-width-integer	libclamav/hwp.c	2061	static size_t num_hwpml_keys = sizeof(hwpml_keys) / sizeof(struct key_entry);
+native-width-integer	libclamav/hwp.c	2064	static cl_error_t hwpml_scan_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
+native-width-integer	libclamav/hwp.c	2075	static int hwpml_base64_value(unsigned char value)
+native-width-integer	libclamav/hwp.c	2090	static cl_error_t hwpml_flush_base64_output(cli_ctx *ctx, int output_fd, const unsigned char *output,
+native-width-integer	libclamav/hwp.c	2091	                                            size_t output_used, uint64_t *total)
+native-width-integer	libclamav/hwp.c	2140	cl_error_t cli_hwpml_decode_base64_fd(cli_ctx *ctx, int input_fd, int output_fd, uint64_t *decoded_size)
+native-width-integer	libclamav/hwp.c	2146	    size_t output_used  = 0;
+native-width-integer	libclamav/hwp.c	2147	    size_t quartet_used = 0;
+native-width-integer	libclamav/hwp.c	2148	    size_t i;
+native-width-integer	libclamav/hwp.c	2149	    size_t produced;
+native-width-integer	libclamav/hwp.c	2150	    size_t nread;
+native-width-integer	libclamav/hwp.c	2151	    int a, b, c, d;
+native-width-integer	libclamav/hwp.c	2152	    int terminal = 0;
+native-width-integer	libclamav/hwp.c	2161	    if (lseek(input_fd, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/hwp.c	2174	        if (nread == (size_t)-1) {
+native-width-integer	libclamav/hwp.c	2181	        for (i = 0; i < (size_t)nread; i++) {
+native-width-integer	libclamav/hwp.c	2182	            if (isspace((int)input[i]))
+native-width-integer	libclamav/hwp.c	224	static char *convert_hstr_to_utf8(const char *begin, size_t sz, const char *parent, cl_error_t *ret)
+native-width-integer	libclamav/hwp.c	2245	static cl_error_t hwpml_binary_cb(int fd, const char *filepath, cli_ctx *ctx, int num_attribs, struct attrib_entry *attribs, void *cbdata)
+native-width-integer	libclamav/hwp.c	2249	    int i, df = -1, com = 0, enc = 0;
+native-width-integer	libclamav/hwp.c	230	    size_t inlen, outlen;
+native-width-integer	libclamav/hwp.c	308	    size_t payload_size;
+native-width-integer	libclamav/hwp.c	418	static cl_error_t hwp5_cb(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved)
+native-width-integer	libclamav/hwp.c	429	cl_error_t cli_scanhwp5_stream(cli_ctx *ctx, hwp5_header_t *hwp5, char *name, int fd, const char *filepath)
+native-width-integer	libclamav/hwp.c	521	    size_t offset;
+native-width-integer	libclamav/hwp.c	570	static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct hwp3_docinfo *docinfo)
+native-width-integer	libclamav/hwp.c	659	static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
+native-width-integer	libclamav/hwp.c	663	    size_t i;
+native-width-integer	libclamav/hwp.c	693	            size_t b64len = strlen(hwp3_docsummary_fields[i].name) + 8;
 native-width-integer	libclamav/hwp.c	73	typedef cl_error_t (*hwp_cb)(void *cbdata, int fd, const char *filepath, cli_ctx *ctx, uint64_t temporary_reserved);
-native-width-integer	libclamav/hwp.c	730	    int c, l, sp = 0, term = 0;
+native-width-integer	libclamav/hwp.c	733	static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, uint32_t level, size_t *roffset, int *last)
+native-width-integer	libclamav/hwp.c	737	    size_t offset = *roffset;
+native-width-integer	libclamav/hwp.c	738	    size_t new_offset;
+native-width-integer	libclamav/hwp.c	742	    int c, l, sp = 0, term = 0;
 native-width-integer	libclamav/hwp.c	75	static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at, size_t len, const char *parent, hwp_cb cb, void *cbdata)
 native-width-integer	libclamav/hwp.c	78	    int zret, ofd;
 native-width-integer	libclamav/hwp.c	79	    size_t in;
@@ -17599,8 +17603,8 @@ boundary-constant	libclamav/hfsplus.c	375	    if (targetSize > SIZE_MAX || cli_s
 boundary-constant	libclamav/hfsplus.c	451	            if (blockOffset > SIZE_MAX || blockOffset > ctx->fmap->len ||
 boundary-constant	libclamav/hfsplus.c	830	            if (fileOffset64 > SIZE_MAX) {
 boundary-constant	libclamav/hfsplus.c	839	            if (startOffset > SIZE_MAX - fileOffset) {
-boundary-constant	libclamav/hwp.c	141	            if (outsize > SIZE_MAX - count) {
-boundary-constant	libclamav/hwp.c	312	    if (payload_size > UINT32_MAX) {
+boundary-constant	libclamav/hwp.c	146	            if (outsize > SIZE_MAX - count) {
+boundary-constant	libclamav/hwp.c	324	    if (payload_size > UINT32_MAX) {
 boundary-constant	libclamav/iso9660.c	301	                if (fileoff64 > UINT32_MAX) {
 boundary-constant	libclamav/iso9660.c	412	        if (descriptor_offset64 > SIZE_MAX)
 boundary-constant	libclamav/iso9660.c	518	        if (root_directory_block64 > UINT32_MAX) {
@@ -18930,138 +18934,138 @@ format-width	libclamav/hfsplus.c	83	    cli_dbgmsg("%s Header: maxKeyLength %hu 
 format-width	libclamav/hfsplus.c	99	    cli_dbgmsg("%s Desc: fLink %u bLink %u kind %d height %u numRecords %u\n",
 format-width	libclamav/htmlnorm.c	2366	        cli_dbgmsg("html_screnc_decode: missing %u bytes\n", screnc_state.length);
 format-width	libclamav/htmlnorm.c	704	                cli_dbgmsg("screnc_decode: checksum mismatch: %u != %" PRIu64 "\n", s->sum, expected);
-format-width	libclamav/hwp.c	1013	                        cli_errmsg("HWP3.x: Bookmark has incorrect length: %u != 34)\n", length);
-format-width	libclamav/hwp.c	1022	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected date format marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1039	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected date code marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1058	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected tab marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1080	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected box object marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1099	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as table\n", level, p);
-format-width	libclamav/hwp.c	1101	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as text box\n", level, p);
-format-width	libclamav/hwp.c	1103	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as equation\n", level, p);
-format-width	libclamav/hwp.c	1105	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as button\n", level, p);
-format-width	libclamav/hwp.c	1107	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as UNKNOWN(%u)\n", level, p, type);
-format-width	libclamav/hwp.c	1117	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object contains %u cell(s)\n", level, p, ncells);
-format-width	libclamav/hwp.c	1120	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box cell info array starts @ %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1124	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: number of box cells is too high, invalid. %u\n", level, p, ncells);
-format-width	libclamav/hwp.c	1130	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box cell paragraph list starts @ %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1139	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box cell caption paragraph list starts @ %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1149	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected drawing marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1165	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: drawing is %u additional bytes\n", level, p, size);
-format-width	libclamav/hwp.c	1170	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: image size value is too high, invalid. %u\n", level, p, size);
-format-width	libclamav/hwp.c	1176	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: drawing caption paragraph list starts @ %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1184	                    hwp3_debug("HWP3.x: Detected end-of-paragraph marker @ offset %zu\n", offset);
-format-width	libclamav/hwp.c	1191	                    hwp3_debug("HWP3.x: Detected line information marker @ offset %zu\n", offset);
-format-width	libclamav/hwp.c	1205	                    hwp3_debug("HWP3.x: Detected hidden description marker @ offset %zu\n", offset);
-format-width	libclamav/hwp.c	1221	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: hidden description paragraph list starts @ %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1234	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1254	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer as header\n", level, p);
-format-width	libclamav/hwp.c	1256	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer as footer\n", level, p);
-format-width	libclamav/hwp.c	1258	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer as UNKNOWN(%u)\n", level, p, type);
-format-width	libclamav/hwp.c	1263	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: header/footer paragraph list starts @ %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1272	                    hwp3_debug("HWP3.x: Detected footnote/endnote marker @ offset %zu\n", offset);
-format-width	libclamav/hwp.c	1291	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: footnote/endnote paragraph list starts @ %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1304	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1322	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as side\n", level, p);
-format-width	libclamav/hwp.c	1324	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as footnote\n", level, p);
-format-width	libclamav/hwp.c	1326	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as North America???\n", level, p);
-format-width	libclamav/hwp.c	1328	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as drawing\n", level, p);
-format-width	libclamav/hwp.c	1330	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as table\n", level, p);
-format-width	libclamav/hwp.c	1332	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as equation\n", level, p);
-format-width	libclamav/hwp.c	1334	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as UNKNOWN(%u)\n", level, p, type);
-format-width	libclamav/hwp.c	1341	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected code number change marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1358	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected thread page number marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1376	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected hide special marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1394	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected mail merge display marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1411	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected overlapping marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1428	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected hyphen marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1445	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected title/table/picture show times marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1462	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected browse displayed marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1481	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected overview shape/summary number marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1505	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected cross-reference marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1523	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
-format-width	libclamav/hwp.c	1531	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected title/table/picture show times marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1547	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected title/table/picture show times marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	1562	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character as [UNKNOWN]\n", level, p);
-format-width	libclamav/hwp.c	1563	                    cli_errmsg("HWP3.x: Paragraph[%u, %d]: cannot understand special character %u\n", level, p, content);
-format-width	libclamav/hwp.c	1571	    hwp3_debug("HWP3.x: end recursion level: %d\n", level);
-format-width	libclamav/hwp.c	1593	    hwp3_debug("HWP3.x: Information Block @ offset %llu\n", infoloc);
-format-width	libclamav/hwp.c	1617	        cli_errmsg("HWP3.x: Failed to read information block id @ %zu\n", *offset);
-format-width	libclamav/hwp.c	1633	    hwp3_debug("HWP3.x: Information Block[%llu]: ID:  %u\n", infoloc, infoid);
-format-width	libclamav/hwp.c	1637	        hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Booking Information\n", infoloc);
-format-width	libclamav/hwp.c	1646	        cli_errmsg("HWP3.x: Failed to read information block len @ %zu\n", *offset);
-format-width	libclamav/hwp.c	1657	    hwp3_debug("HWP3.x: Information Block[%llu]: LEN: %u\n", infoloc, infolen);
-format-width	libclamav/hwp.c	1662	        cli_errmsg("HWP3.x: Information block length %u exceeds remaining map length %zu at offset %zu\n",
-format-width	libclamav/hwp.c	1671	                hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Terminating Entry\n", infoloc);
-format-width	libclamav/hwp.c	1679	                cli_errmsg("HWP3.x: Information Block[%llu]: TYPE: Invalid Terminating Entry\n", infoloc);
-format-width	libclamav/hwp.c	168	    cli_dbgmsg("%s: Decompressed %zu bytes to %s\n", parent, outsize, tmpname);
-format-width	libclamav/hwp.c	1683	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Image Data\n", infoloc);
-format-width	libclamav/hwp.c	1696	                cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
-format-width	libclamav/hwp.c	1699	            hwp3_debug("HWP3.x: Information Block[%llu]: NAME: %s\n", infoloc, field);
-format-width	libclamav/hwp.c	1703	                cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
-format-width	libclamav/hwp.c	1706	            hwp3_debug("HWP3.x: Information Block[%llu]: FORM: %s\n", infoloc, field);
-format-width	libclamav/hwp.c	1714	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: OLE2 Data\n", infoloc);
-format-width	libclamav/hwp.c	1724	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Hypertext/Hyperlink Information\n", infoloc);
-format-width	libclamav/hwp.c	1726	                cli_errmsg("HWP3.x: Information Block[%llu]: Invalid multiple of 617 => %u\n", infoloc, infolen);
-format-width	libclamav/hwp.c	1731	            hwp3_debug("HWP3.x: Information Block[%llu]: COUNT: %d entries\n", infoloc, count);
-format-width	libclamav/hwp.c	1745	                    cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
-format-width	libclamav/hwp.c	1748	                hwp3_debug("HWP3.x: Information Block[%llu]: %d: NAME: %s\n", infoloc, i, field);
-format-width	libclamav/hwp.c	1756	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Presentation Information\n", infoloc);
-format-width	libclamav/hwp.c	1765	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Booking Information\n", infoloc);
-format-width	libclamav/hwp.c	1772	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Background Image Data\n", infoloc);
-format-width	libclamav/hwp.c	1787	                cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
-format-width	libclamav/hwp.c	1790	            hwp3_debug("HWP3.x: Information Block[%llu]: NAME: %s\n", infoloc, field);
-format-width	libclamav/hwp.c	1798	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Table Extension\n", infoloc);
-format-width	libclamav/hwp.c	1806	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Press Frame Information Field Name\n", infoloc);
-format-width	libclamav/hwp.c	1814	            cli_warnmsg("HWP3.x: Information Block[%llu]: TYPE: UNKNOWN(%u)\n", infoloc, infoid);
-format-width	libclamav/hwp.c	1861	        hwp3_debug("HWP3.x: Document Content Stream starts @ offset %zu\n", offset);
-format-width	libclamav/hwp.c	1890	        hwp3_debug("HWP3.x: Font Entry %d with %u entries @ offset %zu\n", i + 1, nfonts, offset);
-format-width	libclamav/hwp.c	1893	            cli_errmsg("HWP3.x: Font Entry: number of fonts is too high, invalid. %u\n", nfonts);
-format-width	libclamav/hwp.c	1912	    hwp3_debug("HWP3.x: %u Styles @ offset %zu\n", nstyles, offset);
-format-width	libclamav/hwp.c	1915	        cli_errmsg("HWP3.x: Font Entry: number of font styles is too high, invalid. %u\n", nstyles);
-format-width	libclamav/hwp.c	1991	            cli_errmsg("HWP3.x: Doc info block size is too high, invalid. %u\n", docinfo.di_infoblksize);
-format-width	libclamav/hwp.c	2249	    hwpml_debug("HWPML: Checking attributes: com: %d, enc: %d\n", com, enc);
-format-width	libclamav/hwp.c	313	        cli_warnmsg("HWPOLE2: payload exceeds its 32-bit size field (%zu bytes)\n", payload_size);
-format-width	libclamav/hwp.c	327	        cli_warnmsg("HWPOLE2: Mismatched uncompressed prefix and size: %u != %u\n", usize, asize);
-format-width	libclamav/hwp.c	331	    cli_dbgmsg("HWPOLE2: Matched uncompressed prefix and size: %u == %u\n", usize, asize);
-format-width	libclamav/hwp.c	584	    hwp3_debug("HWP3.x: di_writeprot:   %u\n", docinfo->di_writeprot);
-format-width	libclamav/hwp.c	585	    hwp3_debug("HWP3.x: di_externapp:   %u\n", docinfo->di_externapp);
-format-width	libclamav/hwp.c	586	    hwp3_debug("HWP3.x: di_passwd:      %u\n", docinfo->di_passwd);
-format-width	libclamav/hwp.c	587	    hwp3_debug("HWP3.x: di_compressed:  %u\n", docinfo->di_compressed);
-format-width	libclamav/hwp.c	588	    hwp3_debug("HWP3.x: di_infoblksize: %u\n", docinfo->di_infoblksize);
-format-width	libclamav/hwp.c	712	            cli_errmsg("HWP3.x: ID %u block fails verification\n", id);               \
-format-width	libclamav/hwp.c	751	    hwp3_debug("HWP3.x: recursion level: %u\n", level);
-format-width	libclamav/hwp.c	752	    hwp3_debug("HWP3.x: Paragraph[%u, %d] starts @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	775	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: ppfs   %u\n", level, p, ppfs);
-format-width	libclamav/hwp.c	776	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: nchars %u\n", level, p, nchars);
-format-width	libclamav/hwp.c	777	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: nlines %u\n", level, p, nlines);
-format-width	libclamav/hwp.c	778	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: ifsc   %u\n", level, p, ifsc);
-format-width	libclamav/hwp.c	793	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: flags  %x\n", level, p, flags);
-format-width	libclamav/hwp.c	794	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: spcl   %x\n", level, p, special);
-format-width	libclamav/hwp.c	795	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: istyle %u\n", level, p, istyle);
-format-width	libclamav/hwp.c	796	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: fsize  %u\n", level, p, fsize);
-format-width	libclamav/hwp.c	801	        hwp3_debug("HWP3.x: Detected end-of-paragraph list @ offset %zu\n", offset);
-format-width	libclamav/hwp.c	802	        hwp3_debug("HWP3.x: end recursion level: %u\n", level);
-format-width	libclamav/hwp.c	816	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d information starts @ offset %zu\n", level, p, i, offset);
-format-width	libclamav/hwp.c	834	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: loff %u\n", level, p, i, loff);
-format-width	libclamav/hwp.c	835	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: lcor %x\n", level, p, i, lcor);
-format-width	libclamav/hwp.c	836	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: lhei %u\n", level, p, i, lhei);
-format-width	libclamav/hwp.c	837	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: lpag %u\n", level, p, i, lpag);
-format-width	libclamav/hwp.c	844	        cli_errmsg("HWP3.x: Paragraph[%u, %d]: nlines value is too high, invalid. %u\n", level, p, nlines);
-format-width	libclamav/hwp.c	866	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: character font style data @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	877	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: CFS %u: pcsd_size %u\n", level, p, 0, pcsd_size);
-format-width	libclamav/hwp.c	878	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: CFS %u: pcsd_prop %x\n", level, p, 0, pcsd_prop);
-format-width	libclamav/hwp.c	887	                    cli_errmsg("HWP3.x: Paragraph[%u, %d]: unknown CFS type 0x%x @ offset %zu\n", level, p, cfsb, offset);
-format-width	libclamav/hwp.c	888	                    cli_errmsg("HWP3.x: Paragraph parsing detected %d of %u characters\n", i, nchars);
-format-width	libclamav/hwp.c	893	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected %d CFS block(s) and %d characters\n", level, p, c, i);
-format-width	libclamav/hwp.c	895	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: separate character font style segment not stored\n", level, p);
-format-width	libclamav/hwp.c	899	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: content starts @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	915	            hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character %u @ offset %zu\n", level, p, content, offset);
-format-width	libclamav/hwp.c	928	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character as [reserved]\n", level, p);
-format-width	libclamav/hwp.c	946	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
-format-width	libclamav/hwp.c	952	                    cli_errmsg("HWP3.x: Paragraph[%u, %d]: possible invalid usage of reserved special character %u\n", level, p, content);
-format-width	libclamav/hwp.c	961	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected field code marker @ offset %zu\n", level, p, offset);
-format-width	libclamav/hwp.c	979	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
-format-width	libclamav/hwp.c	991	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected bookmark marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1003	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected bookmark marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1025	                        cli_errmsg("HWP3.x: Bookmark has incorrect length: %u != 34)\n", length);
+format-width	libclamav/hwp.c	1034	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected date format marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1051	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected date code marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1070	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected tab marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1092	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected box object marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1111	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as table\n", level, p);
+format-width	libclamav/hwp.c	1113	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as text box\n", level, p);
+format-width	libclamav/hwp.c	1115	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as equation\n", level, p);
+format-width	libclamav/hwp.c	1117	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as button\n", level, p);
+format-width	libclamav/hwp.c	1119	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object detected as UNKNOWN(%u)\n", level, p, type);
+format-width	libclamav/hwp.c	1129	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box object contains %u cell(s)\n", level, p, ncells);
+format-width	libclamav/hwp.c	1132	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box cell info array starts @ %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1136	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: number of box cells is too high, invalid. %u\n", level, p, ncells);
+format-width	libclamav/hwp.c	1142	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box cell paragraph list starts @ %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1151	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: box cell caption paragraph list starts @ %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1161	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected drawing marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1177	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: drawing is %u additional bytes\n", level, p, size);
+format-width	libclamav/hwp.c	1182	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: image size value is too high, invalid. %u\n", level, p, size);
+format-width	libclamav/hwp.c	1188	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: drawing caption paragraph list starts @ %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1196	                    hwp3_debug("HWP3.x: Detected end-of-paragraph marker @ offset %zu\n", offset);
+format-width	libclamav/hwp.c	1203	                    hwp3_debug("HWP3.x: Detected line information marker @ offset %zu\n", offset);
+format-width	libclamav/hwp.c	1217	                    hwp3_debug("HWP3.x: Detected hidden description marker @ offset %zu\n", offset);
+format-width	libclamav/hwp.c	1233	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: hidden description paragraph list starts @ %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1246	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1266	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer as header\n", level, p);
+format-width	libclamav/hwp.c	1268	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer as footer\n", level, p);
+format-width	libclamav/hwp.c	1270	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected header/footer as UNKNOWN(%u)\n", level, p, type);
+format-width	libclamav/hwp.c	1275	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: header/footer paragraph list starts @ %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1284	                    hwp3_debug("HWP3.x: Detected footnote/endnote marker @ offset %zu\n", offset);
+format-width	libclamav/hwp.c	1303	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: footnote/endnote paragraph list starts @ %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1316	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1334	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as side\n", level, p);
+format-width	libclamav/hwp.c	1336	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as footnote\n", level, p);
+format-width	libclamav/hwp.c	1338	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as North America???\n", level, p);
+format-width	libclamav/hwp.c	1340	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as drawing\n", level, p);
+format-width	libclamav/hwp.c	1342	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as table\n", level, p);
+format-width	libclamav/hwp.c	1344	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as equation\n", level, p);
+format-width	libclamav/hwp.c	1346	                        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected paste code number as UNKNOWN(%u)\n", level, p, type);
+format-width	libclamav/hwp.c	1353	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected code number change marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1370	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected thread page number marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1388	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected hide special marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1406	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected mail merge display marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1423	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected overlapping marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1440	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected hyphen marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1457	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected title/table/picture show times marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1474	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected browse displayed marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1493	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected overview shape/summary number marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1517	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected cross-reference marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1535	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
+format-width	libclamav/hwp.c	1543	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected title/table/picture show times marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1559	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected title/table/picture show times marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	1574	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character as [UNKNOWN]\n", level, p);
+format-width	libclamav/hwp.c	1575	                    cli_errmsg("HWP3.x: Paragraph[%u, %d]: cannot understand special character %u\n", level, p, content);
+format-width	libclamav/hwp.c	1583	    hwp3_debug("HWP3.x: end recursion level: %d\n", level);
+format-width	libclamav/hwp.c	1605	    hwp3_debug("HWP3.x: Information Block @ offset %llu\n", infoloc);
+format-width	libclamav/hwp.c	1629	        cli_errmsg("HWP3.x: Failed to read information block id @ %zu\n", *offset);
+format-width	libclamav/hwp.c	1645	    hwp3_debug("HWP3.x: Information Block[%llu]: ID:  %u\n", infoloc, infoid);
+format-width	libclamav/hwp.c	1649	        hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Booking Information\n", infoloc);
+format-width	libclamav/hwp.c	1658	        cli_errmsg("HWP3.x: Failed to read information block len @ %zu\n", *offset);
+format-width	libclamav/hwp.c	1669	    hwp3_debug("HWP3.x: Information Block[%llu]: LEN: %u\n", infoloc, infolen);
+format-width	libclamav/hwp.c	1674	        cli_errmsg("HWP3.x: Information block length %u exceeds remaining map length %zu at offset %zu\n",
+format-width	libclamav/hwp.c	1683	                hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Terminating Entry\n", infoloc);
+format-width	libclamav/hwp.c	1691	                cli_errmsg("HWP3.x: Information Block[%llu]: TYPE: Invalid Terminating Entry\n", infoloc);
+format-width	libclamav/hwp.c	1695	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Image Data\n", infoloc);
+format-width	libclamav/hwp.c	1708	                cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
+format-width	libclamav/hwp.c	1711	            hwp3_debug("HWP3.x: Information Block[%llu]: NAME: %s\n", infoloc, field);
+format-width	libclamav/hwp.c	1715	                cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
+format-width	libclamav/hwp.c	1718	            hwp3_debug("HWP3.x: Information Block[%llu]: FORM: %s\n", infoloc, field);
+format-width	libclamav/hwp.c	1726	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: OLE2 Data\n", infoloc);
+format-width	libclamav/hwp.c	1736	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Hypertext/Hyperlink Information\n", infoloc);
+format-width	libclamav/hwp.c	1738	                cli_errmsg("HWP3.x: Information Block[%llu]: Invalid multiple of 617 => %u\n", infoloc, infolen);
+format-width	libclamav/hwp.c	1743	            hwp3_debug("HWP3.x: Information Block[%llu]: COUNT: %d entries\n", infoloc, count);
+format-width	libclamav/hwp.c	1757	                    cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
+format-width	libclamav/hwp.c	1760	                hwp3_debug("HWP3.x: Information Block[%llu]: %d: NAME: %s\n", infoloc, i, field);
+format-width	libclamav/hwp.c	1768	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Presentation Information\n", infoloc);
+format-width	libclamav/hwp.c	1777	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Booking Information\n", infoloc);
+format-width	libclamav/hwp.c	1784	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Background Image Data\n", infoloc);
+format-width	libclamav/hwp.c	1799	                cli_errmsg("HWP3.x: Failed to read information block field @ %zu\n", *offset);
+format-width	libclamav/hwp.c	180	    cli_dbgmsg("%s: Decompressed %zu bytes to %s\n", parent, outsize, tmpname);
+format-width	libclamav/hwp.c	1802	            hwp3_debug("HWP3.x: Information Block[%llu]: NAME: %s\n", infoloc, field);
+format-width	libclamav/hwp.c	1810	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Table Extension\n", infoloc);
+format-width	libclamav/hwp.c	1818	            hwp3_debug("HWP3.x: Information Block[%llu]: TYPE: Press Frame Information Field Name\n", infoloc);
+format-width	libclamav/hwp.c	1826	            cli_warnmsg("HWP3.x: Information Block[%llu]: TYPE: UNKNOWN(%u)\n", infoloc, infoid);
+format-width	libclamav/hwp.c	1873	        hwp3_debug("HWP3.x: Document Content Stream starts @ offset %zu\n", offset);
+format-width	libclamav/hwp.c	1902	        hwp3_debug("HWP3.x: Font Entry %d with %u entries @ offset %zu\n", i + 1, nfonts, offset);
+format-width	libclamav/hwp.c	1905	            cli_errmsg("HWP3.x: Font Entry: number of fonts is too high, invalid. %u\n", nfonts);
+format-width	libclamav/hwp.c	1924	    hwp3_debug("HWP3.x: %u Styles @ offset %zu\n", nstyles, offset);
+format-width	libclamav/hwp.c	1927	        cli_errmsg("HWP3.x: Font Entry: number of font styles is too high, invalid. %u\n", nstyles);
+format-width	libclamav/hwp.c	2003	            cli_errmsg("HWP3.x: Doc info block size is too high, invalid. %u\n", docinfo.di_infoblksize);
+format-width	libclamav/hwp.c	2274	    hwpml_debug("HWPML: Checking attributes: com: %d, enc: %d\n", com, enc);
+format-width	libclamav/hwp.c	325	        cli_warnmsg("HWPOLE2: payload exceeds its 32-bit size field (%zu bytes)\n", payload_size);
+format-width	libclamav/hwp.c	339	        cli_warnmsg("HWPOLE2: Mismatched uncompressed prefix and size: %u != %u\n", usize, asize);
+format-width	libclamav/hwp.c	343	    cli_dbgmsg("HWPOLE2: Matched uncompressed prefix and size: %u == %u\n", usize, asize);
+format-width	libclamav/hwp.c	596	    hwp3_debug("HWP3.x: di_writeprot:   %u\n", docinfo->di_writeprot);
+format-width	libclamav/hwp.c	597	    hwp3_debug("HWP3.x: di_externapp:   %u\n", docinfo->di_externapp);
+format-width	libclamav/hwp.c	598	    hwp3_debug("HWP3.x: di_passwd:      %u\n", docinfo->di_passwd);
+format-width	libclamav/hwp.c	599	    hwp3_debug("HWP3.x: di_compressed:  %u\n", docinfo->di_compressed);
+format-width	libclamav/hwp.c	600	    hwp3_debug("HWP3.x: di_infoblksize: %u\n", docinfo->di_infoblksize);
+format-width	libclamav/hwp.c	724	            cli_errmsg("HWP3.x: ID %u block fails verification\n", id);               \
+format-width	libclamav/hwp.c	763	    hwp3_debug("HWP3.x: recursion level: %u\n", level);
+format-width	libclamav/hwp.c	764	    hwp3_debug("HWP3.x: Paragraph[%u, %d] starts @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	787	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: ppfs   %u\n", level, p, ppfs);
+format-width	libclamav/hwp.c	788	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: nchars %u\n", level, p, nchars);
+format-width	libclamav/hwp.c	789	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: nlines %u\n", level, p, nlines);
+format-width	libclamav/hwp.c	790	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: ifsc   %u\n", level, p, ifsc);
+format-width	libclamav/hwp.c	805	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: flags  %x\n", level, p, flags);
+format-width	libclamav/hwp.c	806	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: spcl   %x\n", level, p, special);
+format-width	libclamav/hwp.c	807	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: istyle %u\n", level, p, istyle);
+format-width	libclamav/hwp.c	808	    hwp3_debug("HWP3.x: Paragraph[%u, %d]: fsize  %u\n", level, p, fsize);
+format-width	libclamav/hwp.c	813	        hwp3_debug("HWP3.x: Detected end-of-paragraph list @ offset %zu\n", offset);
+format-width	libclamav/hwp.c	814	        hwp3_debug("HWP3.x: end recursion level: %u\n", level);
+format-width	libclamav/hwp.c	828	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d information starts @ offset %zu\n", level, p, i, offset);
+format-width	libclamav/hwp.c	846	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: loff %u\n", level, p, i, loff);
+format-width	libclamav/hwp.c	847	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: lcor %x\n", level, p, i, lcor);
+format-width	libclamav/hwp.c	848	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: lhei %u\n", level, p, i, lhei);
+format-width	libclamav/hwp.c	849	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: Line %d: lpag %u\n", level, p, i, lpag);
+format-width	libclamav/hwp.c	856	        cli_errmsg("HWP3.x: Paragraph[%u, %d]: nlines value is too high, invalid. %u\n", level, p, nlines);
+format-width	libclamav/hwp.c	878	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: character font style data @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	889	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: CFS %u: pcsd_size %u\n", level, p, 0, pcsd_size);
+format-width	libclamav/hwp.c	890	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: CFS %u: pcsd_prop %x\n", level, p, 0, pcsd_prop);
+format-width	libclamav/hwp.c	899	                    cli_errmsg("HWP3.x: Paragraph[%u, %d]: unknown CFS type 0x%x @ offset %zu\n", level, p, cfsb, offset);
+format-width	libclamav/hwp.c	900	                    cli_errmsg("HWP3.x: Paragraph parsing detected %d of %u characters\n", i, nchars);
+format-width	libclamav/hwp.c	905	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected %d CFS block(s) and %d characters\n", level, p, c, i);
+format-width	libclamav/hwp.c	907	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: separate character font style segment not stored\n", level, p);
+format-width	libclamav/hwp.c	911	        hwp3_debug("HWP3.x: Paragraph[%u, %d]: content starts @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	927	            hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character %u @ offset %zu\n", level, p, content, offset);
+format-width	libclamav/hwp.c	940	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected special character as [reserved]\n", level, p);
+format-width	libclamav/hwp.c	958	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
+format-width	libclamav/hwp.c	964	                    cli_errmsg("HWP3.x: Paragraph[%u, %d]: possible invalid usage of reserved special character %u\n", level, p, content);
+format-width	libclamav/hwp.c	973	                    hwp3_debug("HWP3.x: Paragraph[%u, %d]: detected field code marker @ offset %zu\n", level, p, offset);
+format-width	libclamav/hwp.c	991	                        cli_errmsg("HWP3.x: Paragraph[%u, %d]: length value is too high, invalid. %u\n", level, p, length);
 format-width	libclamav/inflate64.c	488	            Tracev((stderr, "inflate:       stored length %u\n",
 format-width	libclamav/inflate64.c	649	            Tracevv((stderr, "inflate:         op %u\n", this.op));
 format-width	libclamav/inflate64.c	668	            Tracevv((stderr, "inflate:         length %u\n", state->length));
@@ -24062,270 +24066,270 @@ offset-size-arithmetic	libclamav/htmlnorm.c	815	    unsigned char *ptrend       
 offset-size-arithmetic	libclamav/htmlnorm.c	929	            href_contents_begin = ptr; /*start of a new line, last line already appended to contents see below*/
 offset-size-arithmetic	libclamav/htmlnorm.h	54	bool html_normalise_mem(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf);
 offset-size-arithmetic	libclamav/htmlnorm.h	55	bool html_normalise_mem_form_data(cli_ctx *ctx, unsigned char *in_buff, off_t in_size, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data);
-offset-size-arithmetic	libclamav/hwp.c	1006	                    /* length check - always 34 bytes */
-offset-size-arithmetic	libclamav/hwp.c	1007	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-offset-size-arithmetic	libclamav/hwp.c	1017	                    offset += 42;
-offset-size-arithmetic	libclamav/hwp.c	1025	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1026	                     * offset 2 (40 x 2 bytes) - date format as user-defined dialog
-offset-size-arithmetic	libclamav/hwp.c	1027	                     * offset 82 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1034	                    offset += 84;
-offset-size-arithmetic	libclamav/hwp.c	1042	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1043	                     * offset 2 (40 x 2 bytes) - date format string
-offset-size-arithmetic	libclamav/hwp.c	1044	                     * offset 82 (4 x 2 bytes) - date (year, month, day of week)
-offset-size-arithmetic	libclamav/hwp.c	1045	                     * offset 90 (2 x 2 bytes) - time (hour, minute)
-offset-size-arithmetic	libclamav/hwp.c	1046	                     * offset 94 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1053	                    offset += 96;
-offset-size-arithmetic	libclamav/hwp.c	1061	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1062	                     * offset 2 (2 bytes) - tab width
-offset-size-arithmetic	libclamav/hwp.c	1063	                     * offset 4 (2 bytes) - unknown(?)
-offset-size-arithmetic	libclamav/hwp.c	1064	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1071	                    offset += 8;
-offset-size-arithmetic	libclamav/hwp.c	1089	                    offset += 8;
-offset-size-arithmetic	libclamav/hwp.c	1093	                    /* box type located at offset 78 of box information */
-offset-size-arithmetic	libclamav/hwp.c	1094	                    if (fmap_readn(map, &type, offset + 78, sizeof(type)) != sizeof(type))
-offset-size-arithmetic	libclamav/hwp.c	1110	                    /* ncells is located at offset 80 of box information */
-offset-size-arithmetic	libclamav/hwp.c	1111	                    if (fmap_readn(map, &ncells, offset + 80, sizeof(ncells)) != sizeof(ncells))
-offset-size-arithmetic	libclamav/hwp.c	1115	                    offset += 84;
-offset-size-arithmetic	libclamav/hwp.c	1119	                    /* cell information (27 bytes x ncells(offset 80 of table)) */
-offset-size-arithmetic	libclamav/hwp.c	1122	                    new_offset = offset + (27 * ncells);
-offset-size-arithmetic	libclamav/hwp.c	1123	                    if ((new_offset < offset) || (new_offset >= map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	1146	                case 11: /* drawing */
-offset-size-arithmetic	libclamav/hwp.c	1158	                    offset += 8;
-offset-size-arithmetic	libclamav/hwp.c	1160	                    /* Drawing Info Block is 328+n bytes with n = size of image */
-offset-size-arithmetic	libclamav/hwp.c	1161	                    /* n is located at offset 0 of info block */
-offset-size-arithmetic	libclamav/hwp.c	1168	                    new_offset = offset + (348 + size);
-offset-size-arithmetic	libclamav/hwp.c	1169	                    if ((new_offset <= offset) || (new_offset >= map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	1183	                case 13: /* end-of-paragraph marker - treated identically as character */
-offset-size-arithmetic	libclamav/hwp.c	1184	                    hwp3_debug("HWP3.x: Detected end-of-paragraph marker @ offset %zu\n", offset);
-offset-size-arithmetic	libclamav/hwp.c	1187	                    offset += sizeof(content);
-offset-size-arithmetic	libclamav/hwp.c	1200	                    offset += 92;
-offset-size-arithmetic	libclamav/hwp.c	1208	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1209	                     * offset 2 (4 bytes) - reserved
-offset-size-arithmetic	libclamav/hwp.c	1210	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1211	                     * offset 8 (8 bytes) - reserved
-offset-size-arithmetic	libclamav/hwp.c	1218	                    offset += 16;
+offset-size-arithmetic	libclamav/hwp.c	1006	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1007	                     * offset 2 (4 bytes) - length of information = 34
+offset-size-arithmetic	libclamav/hwp.c	1008	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1009	                     * offset 8 (16 x 2 bytes) - bookmark name
+offset-size-arithmetic	libclamav/hwp.c	1010	                     * offset 40 (2 bytes) - bookmark type
+offset-size-arithmetic	libclamav/hwp.c	1018	                    /* length check - always 34 bytes */
+offset-size-arithmetic	libclamav/hwp.c	1019	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
+offset-size-arithmetic	libclamav/hwp.c	1029	                    offset += 42;
+offset-size-arithmetic	libclamav/hwp.c	1037	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1038	                     * offset 2 (40 x 2 bytes) - date format as user-defined dialog
+offset-size-arithmetic	libclamav/hwp.c	1039	                     * offset 82 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1046	                    offset += 84;
+offset-size-arithmetic	libclamav/hwp.c	1054	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1055	                     * offset 2 (40 x 2 bytes) - date format string
+offset-size-arithmetic	libclamav/hwp.c	1056	                     * offset 82 (4 x 2 bytes) - date (year, month, day of week)
+offset-size-arithmetic	libclamav/hwp.c	1057	                     * offset 90 (2 x 2 bytes) - time (hour, minute)
+offset-size-arithmetic	libclamav/hwp.c	1058	                     * offset 94 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1065	                    offset += 96;
+offset-size-arithmetic	libclamav/hwp.c	1073	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1074	                     * offset 2 (2 bytes) - tab width
+offset-size-arithmetic	libclamav/hwp.c	1075	                     * offset 4 (2 bytes) - unknown(?)
+offset-size-arithmetic	libclamav/hwp.c	1076	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1083	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1101	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1105	                    /* box type located at offset 78 of box information */
+offset-size-arithmetic	libclamav/hwp.c	1106	                    if (fmap_readn(map, &type, offset + 78, sizeof(type)) != sizeof(type))
+offset-size-arithmetic	libclamav/hwp.c	1122	                    /* ncells is located at offset 80 of box information */
+offset-size-arithmetic	libclamav/hwp.c	1123	                    if (fmap_readn(map, &ncells, offset + 80, sizeof(ncells)) != sizeof(ncells))
+offset-size-arithmetic	libclamav/hwp.c	1127	                    offset += 84;
+offset-size-arithmetic	libclamav/hwp.c	1131	                    /* cell information (27 bytes x ncells(offset 80 of table)) */
+offset-size-arithmetic	libclamav/hwp.c	1134	                    new_offset = offset + (27 * ncells);
+offset-size-arithmetic	libclamav/hwp.c	1135	                    if ((new_offset < offset) || (new_offset >= map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	1158	                case 11: /* drawing */
+offset-size-arithmetic	libclamav/hwp.c	1170	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1172	                    /* Drawing Info Block is 328+n bytes with n = size of image */
+offset-size-arithmetic	libclamav/hwp.c	1173	                    /* n is located at offset 0 of info block */
+offset-size-arithmetic	libclamav/hwp.c	1180	                    new_offset = offset + (348 + size);
+offset-size-arithmetic	libclamav/hwp.c	1181	                    if ((new_offset <= offset) || (new_offset >= map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	1195	                case 13: /* end-of-paragraph marker - treated identically as character */
+offset-size-arithmetic	libclamav/hwp.c	1196	                    hwp3_debug("HWP3.x: Detected end-of-paragraph marker @ offset %zu\n", offset);
+offset-size-arithmetic	libclamav/hwp.c	1199	                    offset += sizeof(content);
+offset-size-arithmetic	libclamav/hwp.c	1212	                    offset += 92;
 offset-size-arithmetic	libclamav/hwp.c	122	            if (in == (size_t)-1) {
-offset-size-arithmetic	libclamav/hwp.c	1237	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1238	                     * offset 2 (4 bytes) - reserved
-offset-size-arithmetic	libclamav/hwp.c	1239	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1240	                     * offset 8 (8 x 1 byte) - reserved
-offset-size-arithmetic	libclamav/hwp.c	1241	                     * offset 16 (1 byte) - type (header/footer)
-offset-size-arithmetic	libclamav/hwp.c	1242	                     * offset 17 (1 byte) - kind
-offset-size-arithmetic	libclamav/hwp.c	1250	                    if (fmap_readn(map, &type, offset + 16, sizeof(type)) != sizeof(type))
-offset-size-arithmetic	libclamav/hwp.c	1260	                    offset += 18;
-offset-size-arithmetic	libclamav/hwp.c	1270	                case 17: /* footnote/endnote */
-offset-size-arithmetic	libclamav/hwp.c	1275	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1276	                     * offset 2 (4 bytes) - reserved
-offset-size-arithmetic	libclamav/hwp.c	1277	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1278	                     * offset 8 (8 x 1 bytes) - reserved
-offset-size-arithmetic	libclamav/hwp.c	1279	                     * offset 16 (2 bytes) - number
-offset-size-arithmetic	libclamav/hwp.c	1280	                     * offset 18 (2 bytes) - type
-offset-size-arithmetic	libclamav/hwp.c	1281	                     * offset 20 (2 bytes) - alignment
-offset-size-arithmetic	libclamav/hwp.c	1288	                    offset += 22;
-offset-size-arithmetic	libclamav/hwp.c	1307	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1308	                     * offset 2 (2 bytes) - type
-offset-size-arithmetic	libclamav/hwp.c	1309	                     * offset 4 (2 bytes) - number value
-offset-size-arithmetic	libclamav/hwp.c	1310	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1318	                    if (fmap_readn(map, &type, offset + 2, sizeof(type)) != sizeof(type))
-offset-size-arithmetic	libclamav/hwp.c	1336	                    offset += 8;
-offset-size-arithmetic	libclamav/hwp.c	1344	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1345	                     * offset 2 (2 bytes) - type
-offset-size-arithmetic	libclamav/hwp.c	1346	                     * offset 4 (2 bytes) - new number value
-offset-size-arithmetic	libclamav/hwp.c	1347	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1354	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1220	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1221	                     * offset 2 (4 bytes) - reserved
+offset-size-arithmetic	libclamav/hwp.c	1222	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1223	                     * offset 8 (8 bytes) - reserved
+offset-size-arithmetic	libclamav/hwp.c	1230	                    offset += 16;
+offset-size-arithmetic	libclamav/hwp.c	1249	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1250	                     * offset 2 (4 bytes) - reserved
+offset-size-arithmetic	libclamav/hwp.c	1251	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1252	                     * offset 8 (8 x 1 byte) - reserved
+offset-size-arithmetic	libclamav/hwp.c	1253	                     * offset 16 (1 byte) - type (header/footer)
+offset-size-arithmetic	libclamav/hwp.c	1254	                     * offset 17 (1 byte) - kind
+offset-size-arithmetic	libclamav/hwp.c	1262	                    if (fmap_readn(map, &type, offset + 16, sizeof(type)) != sizeof(type))
+offset-size-arithmetic	libclamav/hwp.c	1272	                    offset += 18;
+offset-size-arithmetic	libclamav/hwp.c	1282	                case 17: /* footnote/endnote */
+offset-size-arithmetic	libclamav/hwp.c	1287	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1288	                     * offset 2 (4 bytes) - reserved
+offset-size-arithmetic	libclamav/hwp.c	1289	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1290	                     * offset 8 (8 x 1 bytes) - reserved
+offset-size-arithmetic	libclamav/hwp.c	1291	                     * offset 16 (2 bytes) - number
+offset-size-arithmetic	libclamav/hwp.c	1292	                     * offset 18 (2 bytes) - type
+offset-size-arithmetic	libclamav/hwp.c	1293	                     * offset 20 (2 bytes) - alignment
+offset-size-arithmetic	libclamav/hwp.c	1300	                    offset += 22;
+offset-size-arithmetic	libclamav/hwp.c	1319	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1320	                     * offset 2 (2 bytes) - type
+offset-size-arithmetic	libclamav/hwp.c	1321	                     * offset 4 (2 bytes) - number value
+offset-size-arithmetic	libclamav/hwp.c	1322	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1330	                    if (fmap_readn(map, &type, offset + 2, sizeof(type)) != sizeof(type))
+offset-size-arithmetic	libclamav/hwp.c	1348	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1356	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1357	                     * offset 2 (2 bytes) - type
+offset-size-arithmetic	libclamav/hwp.c	1358	                     * offset 4 (2 bytes) - new number value
+offset-size-arithmetic	libclamav/hwp.c	1359	                     * offset 6 (2 bytes) - special character ID
 offset-size-arithmetic	libclamav/hwp.c	136	            off_in += in;
-offset-size-arithmetic	libclamav/hwp.c	1361	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1362	                     * offset 2 (2 bytes) - location
-offset-size-arithmetic	libclamav/hwp.c	1363	                     * offset 4 (2 bytes) - shape
-offset-size-arithmetic	libclamav/hwp.c	1364	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1371	                    offset += 8;
-offset-size-arithmetic	libclamav/hwp.c	1379	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1380	                     * offset 2 (2 bytes) - type
-offset-size-arithmetic	libclamav/hwp.c	1381	                     * offset 4 (2 bytes) - target
-offset-size-arithmetic	libclamav/hwp.c	1382	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1389	                    offset += 8;
-offset-size-arithmetic	libclamav/hwp.c	1397	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1398	                     * offset 2 (20 x 1 bytes) - field name (in ASCII)
-offset-size-arithmetic	libclamav/hwp.c	1399	                     * offset 22 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1406	                    offset += 24;
-offset-size-arithmetic	libclamav/hwp.c	141	            if (outsize > SIZE_MAX - count) {
-offset-size-arithmetic	libclamav/hwp.c	1414	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1415	                     * offset 2 (3 x 2 bytes) - overlapping letters
-offset-size-arithmetic	libclamav/hwp.c	1416	                     * offset 8 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1423	                    offset += 10;
-offset-size-arithmetic	libclamav/hwp.c	1431	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1432	                     * offset 2 (2 bytes) - width of hyphen
-offset-size-arithmetic	libclamav/hwp.c	1433	                     * offset 4 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1440	                    offset += 6;
-offset-size-arithmetic	libclamav/hwp.c	1448	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1449	                     * offset 2 (2 bytes) - type
-offset-size-arithmetic	libclamav/hwp.c	1450	                     * offset 4 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1457	                    offset += 6;
-offset-size-arithmetic	libclamav/hwp.c	146	            if ((ret = cli_checklimits("HWP", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
-offset-size-arithmetic	libclamav/hwp.c	1465	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1466	                     * offset 2 (60 x 2 bytes) - keyword 1
-offset-size-arithmetic	libclamav/hwp.c	1467	                     * offset 122 (60 x 2 bytes) - keyword 2
-offset-size-arithmetic	libclamav/hwp.c	1468	                     * offset 242 (2 bytes) - page number
-offset-size-arithmetic	libclamav/hwp.c	1469	                     * offset 244 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1476	                    offset += 246;
-offset-size-arithmetic	libclamav/hwp.c	1484	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1485	                     * offset 2 (2 bytes) - type
-offset-size-arithmetic	libclamav/hwp.c	1486	                     * offset 4 (1 byte)  - form
-offset-size-arithmetic	libclamav/hwp.c	1487	                     * offset 5 (1 byte)  - step
-offset-size-arithmetic	libclamav/hwp.c	1488	                     * offset 6 (7 x 2 bytes)  - summary number
-offset-size-arithmetic	libclamav/hwp.c	1489	                     * offset 20 (7 x 2 bytes) - custom
-offset-size-arithmetic	libclamav/hwp.c	1490	                     * offset 34 (2 x 7 x 2 bytes) - decorative letters
-offset-size-arithmetic	libclamav/hwp.c	1491	                     * offset 62 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1498	                    offset += 64;
-offset-size-arithmetic	libclamav/hwp.c	1508	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1509	                     * offset 2 (4 bytes) - length of information
-offset-size-arithmetic	libclamav/hwp.c	1510	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1511	                     * offset 8 (n bytes) - ...
-offset-size-arithmetic	libclamav/hwp.c	1517	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-offset-size-arithmetic	libclamav/hwp.c	1521	                    new_offset = offset + (8 + length);
-offset-size-arithmetic	libclamav/hwp.c	1522	                    if ((new_offset <= offset) || (new_offset > map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	1534	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1535	                     * offset 2 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1542	                    offset += 4;
-offset-size-arithmetic	libclamav/hwp.c	1550	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1551	                     * offset 2 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	1558	                    offset += 4;
-offset-size-arithmetic	libclamav/hwp.c	1567	            offset += sizeof(content);
-offset-size-arithmetic	libclamav/hwp.c	1577	static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t *offset, int *last)
-offset-size-arithmetic	libclamav/hwp.c	162	            outsize += count;
-offset-size-arithmetic	libclamav/hwp.c	1620	    *offset += sizeof(infoid);
-offset-size-arithmetic	libclamav/hwp.c	1635	    /* Booking Information(5) - no length field and no content */
-offset-size-arithmetic	libclamav/hwp.c	1645	    if (fmap_readn(map, &infolen, *offset, sizeof(infolen)) != sizeof(infolen)) {
-offset-size-arithmetic	libclamav/hwp.c	1646	        cli_errmsg("HWP3.x: Failed to read information block len @ %zu\n", *offset);
-offset-size-arithmetic	libclamav/hwp.c	1649	    *offset += sizeof(infolen);
-offset-size-arithmetic	libclamav/hwp.c	1660	    if (*offset > map->len || (size_t)infolen > map->len - *offset) {
-offset-size-arithmetic	libclamav/hwp.c	1661	        size_t remaining = (*offset <= map->len) ? map->len - *offset : 0;
-offset-size-arithmetic	libclamav/hwp.c	1663	                   infolen, remaining, *offset);
-offset-size-arithmetic	libclamav/hwp.c	170	    /* A raw-deflate stream is not complete until zlib reports its terminal
-offset-size-arithmetic	libclamav/hwp.c	1702	            if (fmap_readn(map, field, *offset + 16, 16) != 16) {
-offset-size-arithmetic	libclamav/hwp.c	1710	                ret = cli_magic_scan_nested_fmap_type(map, *offset + 32, infolen - 32, ctx,
-offset-size-arithmetic	libclamav/hwp.c	1730	            count = (infolen / 617);
-offset-size-arithmetic	libclamav/hwp.c	1751	                ret = cli_magic_scan_nested_fmap_type(map, *offset + (617 * i) + 288, 325, ctx,
-offset-size-arithmetic	libclamav/hwp.c	1781	                cli_jsonint(entry, "ImageSize", infolen - 324);
-offset-size-arithmetic	libclamav/hwp.c	1786	            if (fmap_readn(map, field, *offset + 24, 256) != 256) {
-offset-size-arithmetic	libclamav/hwp.c	1794	                ret = cli_magic_scan_nested_fmap_type(map, *offset + 324, infolen - 324, ctx,
-offset-size-arithmetic	libclamav/hwp.c	1820	    *offset += infolen;
-offset-size-arithmetic	libclamav/hwp.c	1840	    offset = start = cbdata ? *(size_t *)cbdata : 0;
-offset-size-arithmetic	libclamav/hwp.c	1890	        hwp3_debug("HWP3.x: Font Entry %d with %u entries @ offset %zu\n", i + 1, nfonts, offset);
-offset-size-arithmetic	libclamav/hwp.c	1891	        new_offset = offset + (2 + nfonts * 40);
-offset-size-arithmetic	libclamav/hwp.c	1892	        if ((new_offset <= offset) || (new_offset >= map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	1913	    new_offset = offset + (2 + nstyles * 238);
-offset-size-arithmetic	libclamav/hwp.c	1914	    if ((new_offset <= offset) || (new_offset >= map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	1920	    offset += (2 + nstyles * 238);
-offset-size-arithmetic	libclamav/hwp.c	1924	    /* Paragraphs - are terminated with 0x0d00[13(CR) as hchar], empty paragraph marks end of section and do NOT end with 0x0d00 */
-offset-size-arithmetic	libclamav/hwp.c	1940	    /* scan the uncompressed stream - both compressed and uncompressed cases [ALLMATCH] */
-offset-size-arithmetic	libclamav/hwp.c	1942	        size_t dlen = offset - start;
-offset-size-arithmetic	libclamav/hwp.c	1967	    offset += HWP3_IDENTITY_INFO_SIZE;
-offset-size-arithmetic	libclamav/hwp.c	1972	    offset += HWP3_DOCINFO_SIZE;
-offset-size-arithmetic	libclamav/hwp.c	1977	    offset += HWP3_DOCSUMMARY_SIZE;
-offset-size-arithmetic	libclamav/hwp.c	1989	        new_offset = offset + docinfo.di_infoblksize;
-offset-size-arithmetic	libclamav/hwp.c	1990	        if ((new_offset <= offset) || (new_offset >= map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	2001	        ret = hwp3_cb(&offset, 0, ctx->fmap->path, ctx, 0);
-offset-size-arithmetic	libclamav/hwp.c	2049	static size_t num_hwpml_keys = sizeof(hwpml_keys) / sizeof(struct key_entry);
-offset-size-arithmetic	libclamav/hwp.c	2051	/* binary streams needs to be base64-decoded then decompressed if fields are set */
-offset-size-arithmetic	libclamav/hwp.c	2079	                                            size_t output_used, uint64_t *total)
-offset-size-arithmetic	libclamav/hwp.c	212	static char *convert_hstr_to_utf8(const char *begin, size_t sz, const char *parent, cl_error_t *ret)
-offset-size-arithmetic	libclamav/hwp.c	2136	    if (lseek(input_fd, 0, SEEK_SET) == (off_t)-1) {
-offset-size-arithmetic	libclamav/hwp.c	2149	        if (nread == (size_t)-1) {
-offset-size-arithmetic	libclamav/hwp.c	2185	            if (output_used > sizeof(output) - produced) {
-offset-size-arithmetic	libclamav/hwp.c	311	    payload_size = map->len - sizeof(usize);
-offset-size-arithmetic	libclamav/hwp.c	427	        /* encrypted and compressed streams */
-offset-size-arithmetic	libclamav/hwp.c	483	/* all fields use little endian and unicode encoding, if applicable */
-offset-size-arithmetic	libclamav/hwp.c	491	#define DI_WRITEPROT 24    /* offset 24 (4 bytes) - write protection */
-offset-size-arithmetic	libclamav/hwp.c	492	#define DI_EXTERNAPP 28    /* offset 28 (2 bytes) - external application */
-offset-size-arithmetic	libclamav/hwp.c	493	#define DI_PNAME 32        /* offset 32 (40 x 1 bytes) - print name */
-offset-size-arithmetic	libclamav/hwp.c	494	#define DI_ANNOTE 72       /* offset 72 (24 x 1 bytes) - annotation */
-offset-size-arithmetic	libclamav/hwp.c	495	#define DI_PASSWD 96       /* offset 96 (2 bytes) - password protected */
-offset-size-arithmetic	libclamav/hwp.c	496	#define DI_COMPRESSED 124  /* offset 124 (1 byte) - compression */
-offset-size-arithmetic	libclamav/hwp.c	497	#define DI_INFOBLKSIZE 126 /* offset 126 (2 bytes) - information block length */
-offset-size-arithmetic	libclamav/hwp.c	512	    {0, "Title"},      /* offset 0 (56 x 2 bytes) - title */
-offset-size-arithmetic	libclamav/hwp.c	513	    {112, "Subject"},  /* offset 112 (56 x 2 bytes) - subject */
-offset-size-arithmetic	libclamav/hwp.c	514	    {224, "Author"},   /* offset 224 (56 x 2 bytes) - author */
-offset-size-arithmetic	libclamav/hwp.c	515	    {336, "Date"},     /* offset 336 (56 x 2 bytes) - date */
-offset-size-arithmetic	libclamav/hwp.c	516	    {448, "Keyword1"}, /* offset 448 (2 x 56 x 2 bytes) - keywords */
-offset-size-arithmetic	libclamav/hwp.c	519	    {672, "Etc0"}, /* offset 672 (3 x 56 x 2 bytes) - etc */
-offset-size-arithmetic	libclamav/hwp.c	522	#define NUM_DOCSUMMARY_FIELDS sizeof(hwp3_docsummary_fields) / sizeof(struct hwp3_docsummary_entry)
-offset-size-arithmetic	libclamav/hwp.c	532	#define PI_PPFS 0    /* offset 0 (1 byte)  - prior paragraph format style */
-offset-size-arithmetic	libclamav/hwp.c	533	#define PI_NCHARS 1  /* offset 1 (2 bytes) - character count */
-offset-size-arithmetic	libclamav/hwp.c	534	#define PI_NLINES 3  /* offset 3 (2 bytes) - line count */
-offset-size-arithmetic	libclamav/hwp.c	535	#define PI_IFSC 5    /* offset 5 (1 byte)  - including font style of characters */
-offset-size-arithmetic	libclamav/hwp.c	536	#define PI_FLAGS 6   /* offset 6 (1 byte)  - other flags */
-offset-size-arithmetic	libclamav/hwp.c	537	#define PI_SPECIAL 7 /* offset 7 (4 bytes) - special characters markers */
-offset-size-arithmetic	libclamav/hwp.c	538	#define PI_ISTYLE 11 /* offset 11 (1 byte) - paragraph style index */
-offset-size-arithmetic	libclamav/hwp.c	540	#define PLI_LOFF 0  /* offset 0 (2 bytes) - line starting offset */
-offset-size-arithmetic	libclamav/hwp.c	541	#define PLI_LCOR 2  /* offset 2 (2 bytes) - line blank correction */
-offset-size-arithmetic	libclamav/hwp.c	542	#define PLI_LHEI 4  /* offset 4 (2 bytes) - line max char height */
-offset-size-arithmetic	libclamav/hwp.c	543	#define PLI_LPAG 12 /* offset 12 (2 bytes) - line pagination*/
-offset-size-arithmetic	libclamav/hwp.c	545	#define PCSD_SIZE 0  /* offset 0 (2 bytes) - size of characters */
-offset-size-arithmetic	libclamav/hwp.c	546	#define PCSD_PROP 26 /* offset 26 (1 byte) - properties */
-offset-size-arithmetic	libclamav/hwp.c	558	static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct hwp3_docinfo *docinfo)
-offset-size-arithmetic	libclamav/hwp.c	567	    if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCINFO_SIZE))) {
-offset-size-arithmetic	libclamav/hwp.c	573	    memcpy(&(docinfo->di_writeprot), hwp3_ptr + DI_WRITEPROT, sizeof(docinfo->di_writeprot));
-offset-size-arithmetic	libclamav/hwp.c	574	    memcpy(&(docinfo->di_externapp), hwp3_ptr + DI_EXTERNAPP, sizeof(docinfo->di_externapp));
-offset-size-arithmetic	libclamav/hwp.c	575	    memcpy(&(docinfo->di_passwd), hwp3_ptr + DI_PASSWD, sizeof(docinfo->di_passwd));
-offset-size-arithmetic	libclamav/hwp.c	576	    memcpy(&(docinfo->di_compressed), hwp3_ptr + DI_COMPRESSED, sizeof(docinfo->di_compressed));
-offset-size-arithmetic	libclamav/hwp.c	577	    memcpy(&(docinfo->di_infoblksize), hwp3_ptr + DI_INFOBLKSIZE, sizeof(docinfo->di_infoblksize));
-offset-size-arithmetic	libclamav/hwp.c	582	    docinfo->di_infoblksize = le16_to_host(docinfo->di_infoblksize);
-offset-size-arithmetic	libclamav/hwp.c	587	    hwp3_debug("HWP3.x: di_compressed:  %u\n", docinfo->di_compressed);
-offset-size-arithmetic	libclamav/hwp.c	588	    hwp3_debug("HWP3.x: di_infoblksize: %u\n", docinfo->di_infoblksize);
-offset-size-arithmetic	libclamav/hwp.c	662	    if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCSUMMARY_SIZE))) {
-offset-size-arithmetic	libclamav/hwp.c	681	            size_t b64len = strlen(hwp3_docsummary_fields[i].name) + 8;
-offset-size-arithmetic	libclamav/hwp.c	706	        if (fmap_readn(map, &match, offset + second, sizeof(match)) != sizeof(match)) \
-offset-size-arithmetic	libclamav/hwp.c	721	static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, uint32_t level, size_t *roffset, int *last)
-offset-size-arithmetic	libclamav/hwp.c	725	    size_t offset = *roffset;
+offset-size-arithmetic	libclamav/hwp.c	1366	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1373	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1374	                     * offset 2 (2 bytes) - location
+offset-size-arithmetic	libclamav/hwp.c	1375	                     * offset 4 (2 bytes) - shape
+offset-size-arithmetic	libclamav/hwp.c	1376	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1383	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1391	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1392	                     * offset 2 (2 bytes) - type
+offset-size-arithmetic	libclamav/hwp.c	1393	                     * offset 4 (2 bytes) - target
+offset-size-arithmetic	libclamav/hwp.c	1394	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1401	                    offset += 8;
+offset-size-arithmetic	libclamav/hwp.c	1409	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1410	                     * offset 2 (20 x 1 bytes) - field name (in ASCII)
+offset-size-arithmetic	libclamav/hwp.c	1411	                     * offset 22 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1418	                    offset += 24;
+offset-size-arithmetic	libclamav/hwp.c	1426	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1427	                     * offset 2 (3 x 2 bytes) - overlapping letters
+offset-size-arithmetic	libclamav/hwp.c	1428	                     * offset 8 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1435	                    offset += 10;
+offset-size-arithmetic	libclamav/hwp.c	1443	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1444	                     * offset 2 (2 bytes) - width of hyphen
+offset-size-arithmetic	libclamav/hwp.c	1445	                     * offset 4 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1452	                    offset += 6;
+offset-size-arithmetic	libclamav/hwp.c	146	            if (outsize > SIZE_MAX - count) {
+offset-size-arithmetic	libclamav/hwp.c	1460	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1461	                     * offset 2 (2 bytes) - type
+offset-size-arithmetic	libclamav/hwp.c	1462	                     * offset 4 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1469	                    offset += 6;
+offset-size-arithmetic	libclamav/hwp.c	1477	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1478	                     * offset 2 (60 x 2 bytes) - keyword 1
+offset-size-arithmetic	libclamav/hwp.c	1479	                     * offset 122 (60 x 2 bytes) - keyword 2
+offset-size-arithmetic	libclamav/hwp.c	1480	                     * offset 242 (2 bytes) - page number
+offset-size-arithmetic	libclamav/hwp.c	1481	                     * offset 244 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1488	                    offset += 246;
+offset-size-arithmetic	libclamav/hwp.c	1496	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1497	                     * offset 2 (2 bytes) - type
+offset-size-arithmetic	libclamav/hwp.c	1498	                     * offset 4 (1 byte)  - form
+offset-size-arithmetic	libclamav/hwp.c	1499	                     * offset 5 (1 byte)  - step
+offset-size-arithmetic	libclamav/hwp.c	1500	                     * offset 6 (7 x 2 bytes)  - summary number
+offset-size-arithmetic	libclamav/hwp.c	1501	                     * offset 20 (7 x 2 bytes) - custom
+offset-size-arithmetic	libclamav/hwp.c	1502	                     * offset 34 (2 x 7 x 2 bytes) - decorative letters
+offset-size-arithmetic	libclamav/hwp.c	1503	                     * offset 62 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	151	            if ((ret = cli_checklimits("HWP", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
+offset-size-arithmetic	libclamav/hwp.c	1510	                    offset += 64;
+offset-size-arithmetic	libclamav/hwp.c	1520	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1521	                     * offset 2 (4 bytes) - length of information
+offset-size-arithmetic	libclamav/hwp.c	1522	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1523	                     * offset 8 (n bytes) - ...
+offset-size-arithmetic	libclamav/hwp.c	1529	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
+offset-size-arithmetic	libclamav/hwp.c	1533	                    new_offset = offset + (8 + length);
+offset-size-arithmetic	libclamav/hwp.c	1534	                    if ((new_offset <= offset) || (new_offset > map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	1546	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1547	                     * offset 2 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1554	                    offset += 4;
+offset-size-arithmetic	libclamav/hwp.c	1562	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1563	                     * offset 2 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	1570	                    offset += 4;
+offset-size-arithmetic	libclamav/hwp.c	1579	            offset += sizeof(content);
+offset-size-arithmetic	libclamav/hwp.c	1589	static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t *offset, int *last)
+offset-size-arithmetic	libclamav/hwp.c	1632	    *offset += sizeof(infoid);
+offset-size-arithmetic	libclamav/hwp.c	1647	    /* Booking Information(5) - no length field and no content */
+offset-size-arithmetic	libclamav/hwp.c	1657	    if (fmap_readn(map, &infolen, *offset, sizeof(infolen)) != sizeof(infolen)) {
+offset-size-arithmetic	libclamav/hwp.c	1658	        cli_errmsg("HWP3.x: Failed to read information block len @ %zu\n", *offset);
+offset-size-arithmetic	libclamav/hwp.c	1661	    *offset += sizeof(infolen);
+offset-size-arithmetic	libclamav/hwp.c	1672	    if (*offset > map->len || (size_t)infolen > map->len - *offset) {
+offset-size-arithmetic	libclamav/hwp.c	1673	        size_t remaining = (*offset <= map->len) ? map->len - *offset : 0;
+offset-size-arithmetic	libclamav/hwp.c	1675	                   infolen, remaining, *offset);
+offset-size-arithmetic	libclamav/hwp.c	1714	            if (fmap_readn(map, field, *offset + 16, 16) != 16) {
+offset-size-arithmetic	libclamav/hwp.c	1722	                ret = cli_magic_scan_nested_fmap_type(map, *offset + 32, infolen - 32, ctx,
+offset-size-arithmetic	libclamav/hwp.c	174	            outsize += count;
+offset-size-arithmetic	libclamav/hwp.c	1742	            count = (infolen / 617);
+offset-size-arithmetic	libclamav/hwp.c	1763	                ret = cli_magic_scan_nested_fmap_type(map, *offset + (617 * i) + 288, 325, ctx,
+offset-size-arithmetic	libclamav/hwp.c	1793	                cli_jsonint(entry, "ImageSize", infolen - 324);
+offset-size-arithmetic	libclamav/hwp.c	1798	            if (fmap_readn(map, field, *offset + 24, 256) != 256) {
+offset-size-arithmetic	libclamav/hwp.c	1806	                ret = cli_magic_scan_nested_fmap_type(map, *offset + 324, infolen - 324, ctx,
+offset-size-arithmetic	libclamav/hwp.c	182	    /* A raw-deflate stream is not complete until zlib reports its terminal
+offset-size-arithmetic	libclamav/hwp.c	1832	    *offset += infolen;
+offset-size-arithmetic	libclamav/hwp.c	1852	    offset = start = cbdata ? *(size_t *)cbdata : 0;
+offset-size-arithmetic	libclamav/hwp.c	1902	        hwp3_debug("HWP3.x: Font Entry %d with %u entries @ offset %zu\n", i + 1, nfonts, offset);
+offset-size-arithmetic	libclamav/hwp.c	1903	        new_offset = offset + (2 + nfonts * 40);
+offset-size-arithmetic	libclamav/hwp.c	1904	        if ((new_offset <= offset) || (new_offset >= map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	1925	    new_offset = offset + (2 + nstyles * 238);
+offset-size-arithmetic	libclamav/hwp.c	1926	    if ((new_offset <= offset) || (new_offset >= map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	1932	    offset += (2 + nstyles * 238);
+offset-size-arithmetic	libclamav/hwp.c	1936	    /* Paragraphs - are terminated with 0x0d00[13(CR) as hchar], empty paragraph marks end of section and do NOT end with 0x0d00 */
+offset-size-arithmetic	libclamav/hwp.c	1952	    /* scan the uncompressed stream - both compressed and uncompressed cases [ALLMATCH] */
+offset-size-arithmetic	libclamav/hwp.c	1954	        size_t dlen = offset - start;
+offset-size-arithmetic	libclamav/hwp.c	1979	    offset += HWP3_IDENTITY_INFO_SIZE;
+offset-size-arithmetic	libclamav/hwp.c	1984	    offset += HWP3_DOCINFO_SIZE;
+offset-size-arithmetic	libclamav/hwp.c	1989	    offset += HWP3_DOCSUMMARY_SIZE;
+offset-size-arithmetic	libclamav/hwp.c	2001	        new_offset = offset + docinfo.di_infoblksize;
+offset-size-arithmetic	libclamav/hwp.c	2002	        if ((new_offset <= offset) || (new_offset >= map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	2013	        ret = hwp3_cb(&offset, 0, ctx->fmap->path, ctx, 0);
+offset-size-arithmetic	libclamav/hwp.c	2061	static size_t num_hwpml_keys = sizeof(hwpml_keys) / sizeof(struct key_entry);
+offset-size-arithmetic	libclamav/hwp.c	2063	/* binary streams needs to be base64-decoded then decompressed if fields are set */
+offset-size-arithmetic	libclamav/hwp.c	2091	                                            size_t output_used, uint64_t *total)
+offset-size-arithmetic	libclamav/hwp.c	2161	    if (lseek(input_fd, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/hwp.c	2174	        if (nread == (size_t)-1) {
+offset-size-arithmetic	libclamav/hwp.c	2210	            if (output_used > sizeof(output) - produced) {
+offset-size-arithmetic	libclamav/hwp.c	224	static char *convert_hstr_to_utf8(const char *begin, size_t sz, const char *parent, cl_error_t *ret)
+offset-size-arithmetic	libclamav/hwp.c	323	    payload_size = map->len - sizeof(usize);
+offset-size-arithmetic	libclamav/hwp.c	439	        /* encrypted and compressed streams */
+offset-size-arithmetic	libclamav/hwp.c	495	/* all fields use little endian and unicode encoding, if applicable */
+offset-size-arithmetic	libclamav/hwp.c	503	#define DI_WRITEPROT 24    /* offset 24 (4 bytes) - write protection */
+offset-size-arithmetic	libclamav/hwp.c	504	#define DI_EXTERNAPP 28    /* offset 28 (2 bytes) - external application */
+offset-size-arithmetic	libclamav/hwp.c	505	#define DI_PNAME 32        /* offset 32 (40 x 1 bytes) - print name */
+offset-size-arithmetic	libclamav/hwp.c	506	#define DI_ANNOTE 72       /* offset 72 (24 x 1 bytes) - annotation */
+offset-size-arithmetic	libclamav/hwp.c	507	#define DI_PASSWD 96       /* offset 96 (2 bytes) - password protected */
+offset-size-arithmetic	libclamav/hwp.c	508	#define DI_COMPRESSED 124  /* offset 124 (1 byte) - compression */
+offset-size-arithmetic	libclamav/hwp.c	509	#define DI_INFOBLKSIZE 126 /* offset 126 (2 bytes) - information block length */
+offset-size-arithmetic	libclamav/hwp.c	524	    {0, "Title"},      /* offset 0 (56 x 2 bytes) - title */
+offset-size-arithmetic	libclamav/hwp.c	525	    {112, "Subject"},  /* offset 112 (56 x 2 bytes) - subject */
+offset-size-arithmetic	libclamav/hwp.c	526	    {224, "Author"},   /* offset 224 (56 x 2 bytes) - author */
+offset-size-arithmetic	libclamav/hwp.c	527	    {336, "Date"},     /* offset 336 (56 x 2 bytes) - date */
+offset-size-arithmetic	libclamav/hwp.c	528	    {448, "Keyword1"}, /* offset 448 (2 x 56 x 2 bytes) - keywords */
+offset-size-arithmetic	libclamav/hwp.c	531	    {672, "Etc0"}, /* offset 672 (3 x 56 x 2 bytes) - etc */
+offset-size-arithmetic	libclamav/hwp.c	534	#define NUM_DOCSUMMARY_FIELDS sizeof(hwp3_docsummary_fields) / sizeof(struct hwp3_docsummary_entry)
+offset-size-arithmetic	libclamav/hwp.c	544	#define PI_PPFS 0    /* offset 0 (1 byte)  - prior paragraph format style */
+offset-size-arithmetic	libclamav/hwp.c	545	#define PI_NCHARS 1  /* offset 1 (2 bytes) - character count */
+offset-size-arithmetic	libclamav/hwp.c	546	#define PI_NLINES 3  /* offset 3 (2 bytes) - line count */
+offset-size-arithmetic	libclamav/hwp.c	547	#define PI_IFSC 5    /* offset 5 (1 byte)  - including font style of characters */
+offset-size-arithmetic	libclamav/hwp.c	548	#define PI_FLAGS 6   /* offset 6 (1 byte)  - other flags */
+offset-size-arithmetic	libclamav/hwp.c	549	#define PI_SPECIAL 7 /* offset 7 (4 bytes) - special characters markers */
+offset-size-arithmetic	libclamav/hwp.c	550	#define PI_ISTYLE 11 /* offset 11 (1 byte) - paragraph style index */
+offset-size-arithmetic	libclamav/hwp.c	552	#define PLI_LOFF 0  /* offset 0 (2 bytes) - line starting offset */
+offset-size-arithmetic	libclamav/hwp.c	553	#define PLI_LCOR 2  /* offset 2 (2 bytes) - line blank correction */
+offset-size-arithmetic	libclamav/hwp.c	554	#define PLI_LHEI 4  /* offset 4 (2 bytes) - line max char height */
+offset-size-arithmetic	libclamav/hwp.c	555	#define PLI_LPAG 12 /* offset 12 (2 bytes) - line pagination*/
+offset-size-arithmetic	libclamav/hwp.c	557	#define PCSD_SIZE 0  /* offset 0 (2 bytes) - size of characters */
+offset-size-arithmetic	libclamav/hwp.c	558	#define PCSD_PROP 26 /* offset 26 (1 byte) - properties */
+offset-size-arithmetic	libclamav/hwp.c	570	static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct hwp3_docinfo *docinfo)
+offset-size-arithmetic	libclamav/hwp.c	579	    if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCINFO_SIZE))) {
+offset-size-arithmetic	libclamav/hwp.c	585	    memcpy(&(docinfo->di_writeprot), hwp3_ptr + DI_WRITEPROT, sizeof(docinfo->di_writeprot));
+offset-size-arithmetic	libclamav/hwp.c	586	    memcpy(&(docinfo->di_externapp), hwp3_ptr + DI_EXTERNAPP, sizeof(docinfo->di_externapp));
+offset-size-arithmetic	libclamav/hwp.c	587	    memcpy(&(docinfo->di_passwd), hwp3_ptr + DI_PASSWD, sizeof(docinfo->di_passwd));
+offset-size-arithmetic	libclamav/hwp.c	588	    memcpy(&(docinfo->di_compressed), hwp3_ptr + DI_COMPRESSED, sizeof(docinfo->di_compressed));
+offset-size-arithmetic	libclamav/hwp.c	589	    memcpy(&(docinfo->di_infoblksize), hwp3_ptr + DI_INFOBLKSIZE, sizeof(docinfo->di_infoblksize));
+offset-size-arithmetic	libclamav/hwp.c	594	    docinfo->di_infoblksize = le16_to_host(docinfo->di_infoblksize);
+offset-size-arithmetic	libclamav/hwp.c	599	    hwp3_debug("HWP3.x: di_compressed:  %u\n", docinfo->di_compressed);
+offset-size-arithmetic	libclamav/hwp.c	600	    hwp3_debug("HWP3.x: di_infoblksize: %u\n", docinfo->di_infoblksize);
+offset-size-arithmetic	libclamav/hwp.c	674	    if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCSUMMARY_SIZE))) {
+offset-size-arithmetic	libclamav/hwp.c	693	            size_t b64len = strlen(hwp3_docsummary_fields[i].name) + 8;
+offset-size-arithmetic	libclamav/hwp.c	718	        if (fmap_readn(map, &match, offset + second, sizeof(match)) != sizeof(match)) \
+offset-size-arithmetic	libclamav/hwp.c	733	static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, uint32_t level, size_t *roffset, int *last)
+offset-size-arithmetic	libclamav/hwp.c	737	    size_t offset = *roffset;
 offset-size-arithmetic	libclamav/hwp.c	75	static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at, size_t len, const char *parent, hwp_cb cb, void *cbdata)
-offset-size-arithmetic	libclamav/hwp.c	759	    if (fmap_readn(map, &ppfs, offset + PI_PPFS, sizeof(ppfs)) != sizeof(ppfs))
-offset-size-arithmetic	libclamav/hwp.c	762	    if (fmap_readn(map, &nchars, offset + PI_NCHARS, sizeof(nchars)) != sizeof(nchars))
-offset-size-arithmetic	libclamav/hwp.c	767	    if (fmap_readn(map, &nlines, offset + PI_NLINES, sizeof(nlines)) != sizeof(nlines))
-offset-size-arithmetic	libclamav/hwp.c	772	    if (fmap_readn(map, &ifsc, offset + PI_IFSC, sizeof(ifsc)) != sizeof(ifsc))
-offset-size-arithmetic	libclamav/hwp.c	781	    if (fmap_readn(map, &flags, offset + PI_FLAGS, sizeof(flags)) != sizeof(flags))
-offset-size-arithmetic	libclamav/hwp.c	784	    if (fmap_readn(map, &special, offset + PI_SPECIAL, sizeof(special)) != sizeof(special))
-offset-size-arithmetic	libclamav/hwp.c	787	    if (fmap_readn(map, &istyle, offset + PI_ISTYLE, sizeof(istyle)) != sizeof(istyle))
-offset-size-arithmetic	libclamav/hwp.c	790	    if (fmap_readn(map, &fsize, offset + 12, sizeof(fsize)) != sizeof(fsize))
-offset-size-arithmetic	libclamav/hwp.c	799	    /* detected empty paragraph marker => end-of-paragraph list */
-offset-size-arithmetic	libclamav/hwp.c	801	        hwp3_debug("HWP3.x: Detected end-of-paragraph list @ offset %zu\n", offset);
-offset-size-arithmetic	libclamav/hwp.c	803	        (*roffset) = offset + HWP3_PARAINFO_SIZE_S;
-offset-size-arithmetic	libclamav/hwp.c	809	        offset += HWP3_PARAINFO_SIZE_S;
-offset-size-arithmetic	libclamav/hwp.c	811	        offset += HWP3_PARAINFO_SIZE_L;
-offset-size-arithmetic	libclamav/hwp.c	815	    for (i = 0; (i < nlines) && (offset < map->len); i++) {
-offset-size-arithmetic	libclamav/hwp.c	817	        if (fmap_readn(map, &loff, offset + PLI_LOFF, sizeof(loff)) != sizeof(loff))
-offset-size-arithmetic	libclamav/hwp.c	820	        if (fmap_readn(map, &lcor, offset + PLI_LCOR, sizeof(lcor)) != sizeof(lcor))
-offset-size-arithmetic	libclamav/hwp.c	823	        if (fmap_readn(map, &lhei, offset + PLI_LHEI, sizeof(lhei)) != sizeof(lhei))
-offset-size-arithmetic	libclamav/hwp.c	826	        if (fmap_readn(map, &lpag, offset + PLI_LPAG, sizeof(lpag)) != sizeof(lpag))
-offset-size-arithmetic	libclamav/hwp.c	839	        offset += HWP3_LINEINFO_SIZE;
-offset-size-arithmetic	libclamav/hwp.c	842	    new_offset = offset + (nlines * HWP3_LINEINFO_SIZE);
-offset-size-arithmetic	libclamav/hwp.c	843	    if ((new_offset < offset) || (new_offset >= map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	850	    if (offset >= map->len)
-offset-size-arithmetic	libclamav/hwp.c	862	            offset += sizeof(cfsb);
-offset-size-arithmetic	libclamav/hwp.c	869	                    if (fmap_readn(map, &pcsd_size, offset + PCSD_SIZE, sizeof(pcsd_size)) != sizeof(pcsd_size))
-offset-size-arithmetic	libclamav/hwp.c	872	                    if (fmap_readn(map, &pcsd_prop, offset + PCSD_PROP, sizeof(pcsd_prop)) != sizeof(pcsd_prop))
-offset-size-arithmetic	libclamav/hwp.c	882	                    offset += HWP3_CHARSHPDATA_SIZE;
-offset-size-arithmetic	libclamav/hwp.c	901	    /* scan for end-of-paragraph [0x0d00 on offset parity to current content] */
-offset-size-arithmetic	libclamav/hwp.c	903	           (offset < map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	931	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	932	                     * offset 2 (4 bytes) - length of information = n
-offset-size-arithmetic	libclamav/hwp.c	933	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	934	                     * offset 8 (n bytes) - information
-offset-size-arithmetic	libclamav/hwp.c	940	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-offset-size-arithmetic	libclamav/hwp.c	944	                    new_offset = offset + (8 + length);
-offset-size-arithmetic	libclamav/hwp.c	945	                    if ((new_offset <= offset) || (new_offset > map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	964	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	965	                     * offset 2 (4 bytes) - length of information = n
-offset-size-arithmetic	libclamav/hwp.c	966	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	967	                     * offset 8 (n bytes) - field code details
-offset-size-arithmetic	libclamav/hwp.c	973	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-offset-size-arithmetic	libclamav/hwp.c	977	                    new_offset = offset + (8 + length);
-offset-size-arithmetic	libclamav/hwp.c	978	                    if ((new_offset <= offset) || (new_offset > map->len)) {
-offset-size-arithmetic	libclamav/hwp.c	994	                     * offset 0 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	995	                     * offset 2 (4 bytes) - length of information = 34
-offset-size-arithmetic	libclamav/hwp.c	996	                     * offset 6 (2 bytes) - special character ID
-offset-size-arithmetic	libclamav/hwp.c	997	                     * offset 8 (16 x 2 bytes) - bookmark name
-offset-size-arithmetic	libclamav/hwp.c	998	                     * offset 40 (2 bytes) - bookmark type
+offset-size-arithmetic	libclamav/hwp.c	771	    if (fmap_readn(map, &ppfs, offset + PI_PPFS, sizeof(ppfs)) != sizeof(ppfs))
+offset-size-arithmetic	libclamav/hwp.c	774	    if (fmap_readn(map, &nchars, offset + PI_NCHARS, sizeof(nchars)) != sizeof(nchars))
+offset-size-arithmetic	libclamav/hwp.c	779	    if (fmap_readn(map, &nlines, offset + PI_NLINES, sizeof(nlines)) != sizeof(nlines))
+offset-size-arithmetic	libclamav/hwp.c	784	    if (fmap_readn(map, &ifsc, offset + PI_IFSC, sizeof(ifsc)) != sizeof(ifsc))
+offset-size-arithmetic	libclamav/hwp.c	793	    if (fmap_readn(map, &flags, offset + PI_FLAGS, sizeof(flags)) != sizeof(flags))
+offset-size-arithmetic	libclamav/hwp.c	796	    if (fmap_readn(map, &special, offset + PI_SPECIAL, sizeof(special)) != sizeof(special))
+offset-size-arithmetic	libclamav/hwp.c	799	    if (fmap_readn(map, &istyle, offset + PI_ISTYLE, sizeof(istyle)) != sizeof(istyle))
+offset-size-arithmetic	libclamav/hwp.c	802	    if (fmap_readn(map, &fsize, offset + 12, sizeof(fsize)) != sizeof(fsize))
+offset-size-arithmetic	libclamav/hwp.c	811	    /* detected empty paragraph marker => end-of-paragraph list */
+offset-size-arithmetic	libclamav/hwp.c	813	        hwp3_debug("HWP3.x: Detected end-of-paragraph list @ offset %zu\n", offset);
+offset-size-arithmetic	libclamav/hwp.c	815	        (*roffset) = offset + HWP3_PARAINFO_SIZE_S;
+offset-size-arithmetic	libclamav/hwp.c	821	        offset += HWP3_PARAINFO_SIZE_S;
+offset-size-arithmetic	libclamav/hwp.c	823	        offset += HWP3_PARAINFO_SIZE_L;
+offset-size-arithmetic	libclamav/hwp.c	827	    for (i = 0; (i < nlines) && (offset < map->len); i++) {
+offset-size-arithmetic	libclamav/hwp.c	829	        if (fmap_readn(map, &loff, offset + PLI_LOFF, sizeof(loff)) != sizeof(loff))
+offset-size-arithmetic	libclamav/hwp.c	832	        if (fmap_readn(map, &lcor, offset + PLI_LCOR, sizeof(lcor)) != sizeof(lcor))
+offset-size-arithmetic	libclamav/hwp.c	835	        if (fmap_readn(map, &lhei, offset + PLI_LHEI, sizeof(lhei)) != sizeof(lhei))
+offset-size-arithmetic	libclamav/hwp.c	838	        if (fmap_readn(map, &lpag, offset + PLI_LPAG, sizeof(lpag)) != sizeof(lpag))
+offset-size-arithmetic	libclamav/hwp.c	851	        offset += HWP3_LINEINFO_SIZE;
+offset-size-arithmetic	libclamav/hwp.c	854	    new_offset = offset + (nlines * HWP3_LINEINFO_SIZE);
+offset-size-arithmetic	libclamav/hwp.c	855	    if ((new_offset < offset) || (new_offset >= map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	862	    if (offset >= map->len)
+offset-size-arithmetic	libclamav/hwp.c	874	            offset += sizeof(cfsb);
+offset-size-arithmetic	libclamav/hwp.c	881	                    if (fmap_readn(map, &pcsd_size, offset + PCSD_SIZE, sizeof(pcsd_size)) != sizeof(pcsd_size))
+offset-size-arithmetic	libclamav/hwp.c	884	                    if (fmap_readn(map, &pcsd_prop, offset + PCSD_PROP, sizeof(pcsd_prop)) != sizeof(pcsd_prop))
+offset-size-arithmetic	libclamav/hwp.c	894	                    offset += HWP3_CHARSHPDATA_SIZE;
+offset-size-arithmetic	libclamav/hwp.c	913	    /* scan for end-of-paragraph [0x0d00 on offset parity to current content] */
+offset-size-arithmetic	libclamav/hwp.c	915	           (offset < map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	943	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	944	                     * offset 2 (4 bytes) - length of information = n
+offset-size-arithmetic	libclamav/hwp.c	945	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	946	                     * offset 8 (n bytes) - information
+offset-size-arithmetic	libclamav/hwp.c	952	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
+offset-size-arithmetic	libclamav/hwp.c	956	                    new_offset = offset + (8 + length);
+offset-size-arithmetic	libclamav/hwp.c	957	                    if ((new_offset <= offset) || (new_offset > map->len)) {
+offset-size-arithmetic	libclamav/hwp.c	976	                     * offset 0 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	977	                     * offset 2 (4 bytes) - length of information = n
+offset-size-arithmetic	libclamav/hwp.c	978	                     * offset 6 (2 bytes) - special character ID
+offset-size-arithmetic	libclamav/hwp.c	979	                     * offset 8 (n bytes) - field code details
+offset-size-arithmetic	libclamav/hwp.c	985	                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
+offset-size-arithmetic	libclamav/hwp.c	989	                    new_offset = offset + (8 + length);
+offset-size-arithmetic	libclamav/hwp.c	990	                    if ((new_offset <= offset) || (new_offset > map->len)) {
 offset-size-arithmetic	libclamav/hwp.h	71	#endif /* __HWP_H__ */
 offset-size-arithmetic	libclamav/iana_cctld.h	3	/* Computed positions: -k'1-2' */
 offset-size-arithmetic	libclamav/iana_cctld.h	500	            if (*str == *s && !memcmp (str + 1, s + 1, len - 1))
@@ -29765,8 +29769,8 @@ offset-size-arithmetic	libclamav/xar.c	877	                    unsigned int byte
 offset-size-arithmetic	libclamav/xar.c	913	                        produced = sizeof(buff) - strm.avail_out;
 offset-size-arithmetic	libclamav/xar.c	982	                size_t in_remaining = MIN(length, map->len - at);
 offset-size-arithmetic	libclamav/xar.c	998	                if (data_end - at < CLI_LZMA_HDR_SIZE) {
-offset-size-arithmetic	libclamav/xdp.c	114	        offset += nread;
-offset-size-arithmetic	libclamav/xdp.c	146	    return cli_msxml_parse_document_streaming(ctx, ctx->fmap, xdp_keys, sizeof(xdp_keys) / sizeof(xdp_keys[0]),
+offset-size-arithmetic	libclamav/xdp.c	119	        offset += nread;
+offset-size-arithmetic	libclamav/xdp.c	151	    return cli_msxml_parse_document_streaming(ctx, ctx->fmap, xdp_keys, sizeof(xdp_keys) / sizeof(xdp_keys[0]),
 offset-size-arithmetic	libclamav/xdp.c	88	    while (offset < map->len) {
 offset-size-arithmetic	libclamav/xdp.c	93	        wanted = MIN(sizeof(buffer), map->len - offset);
 offset-size-arithmetic	libclamav/xlm_extract.c	13	 *  See https://www.openoffice.org/sc/excelfileformat.pdf
