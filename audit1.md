@@ -3890,3 +3890,13 @@ resource walker now returns `CL_EREAD` for in-range fmap callback failures and
 failure as incomplete and non-cacheable before returning. The focused normal
 PE scan regression faults the confirmed resource-tree root; compiled Swizzor
 corpus, sanitizer, and supported-build qualification remain release gates.
+
+## PDF trailer-xref read failures — 2026-08-22
+
+The PDF trailer xref probe previously collapsed an in-range backing-read
+failure into the same parse status used for malformed xref structure. The
+probe now preserves `CL_EREAD` and the incomplete/non-cacheable state for a
+callback failure, while retaining `CL_EPARSE` for a successfully read invalid
+xref. The focused regression faults the xref window after trailer discovery;
+compiled PDF corpus, sanitizer, and supported-build qualification remain
+release gates.

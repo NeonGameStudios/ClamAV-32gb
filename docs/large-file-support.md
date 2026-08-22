@@ -5338,3 +5338,12 @@ malformed or out-of-range coordinates to `cli_scanpe`, which marks the layer
 incomplete and non-cacheable. A focused normal-scan callback regression covers
 the confirmed resource-tree root; compiled Swizzor corpus, sanitizer, and
 supported-build qualification remain release gates.
+
+## PDF trailer-xref read failures — 2026-08-22
+
+The PDF trailer xref window is an admitted in-range read. A backing fmap
+callback failure in that window now remains `CL_EREAD`, incomplete, and
+non-cacheable, while a successfully read but malformed xref remains
+`CL_EPARSE`. The focused regression faults the xref window after version and
+trailer discovery; compiled PDF corpus, sanitizer, and supported-build
+qualification remain release gates.

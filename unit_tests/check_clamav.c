@@ -9134,15 +9134,19 @@ START_TEST(test_pdf_truncated_trailer_is_fail_visible)
         "%PDF-1.7\n%%EOF\n";
     static const uint8_t negative_xref[] =
         "%PDF-1.7\nstartxref\n-1\n%%EOF\n";
+    static const uint8_t invalid_xref[] =
+        "%PDF-1.7\nstartxref\n10\n%%EOF\n";
     const uint8_t *cases[] = {
         missing_eof,
         missing_startxref,
         negative_xref,
+        invalid_xref,
     };
     const size_t lengths[] = {
         sizeof(missing_eof) - 1,
         sizeof(missing_startxref) - 1,
         sizeof(negative_xref) - 1,
+        sizeof(invalid_xref) - 1,
     };
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
@@ -13329,6 +13333,18 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
     return NULL;
 }
 
+static size_t pdf_xref_read_failure_offset;
+
+static const void *pdf_xref_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == pdf_xref_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *riff_chunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -13660,6 +13676,38 @@ START_TEST(test_pdf_parser_read_failure_is_fail_visible)
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF parser version window could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_pdf_trailer_xref_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "%PDF-1.7\nstartxref\n10\n%%EOF\n";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    pdf_xref_read_failure_offset = 10U;
+    map->need                   = pdf_xref_read_failure;
+    ctx.fmap                    = map;
+
+    ret = cli_pdf(tmpdir, &ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PDF trailer xref could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -20427,6 +20475,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_jpeg_photoshop_exact_eof_is_complete);
     tcase_add_test(tc_cl, test_text_normalize_map_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_parser_read_failure_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_trailer_xref_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_trailer_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_object_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_decode_error_is_fail_visible);

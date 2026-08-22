@@ -41,6 +41,10 @@
 - Encrypted PDF streams without a usable key or supported method now retain an
   explicit unsupported completion reason while raw matching continues; valid
   encrypted-PDF corpus and qualification remain open.
+- PDF trailer-xref backing-read failures now remain explicit `CL_EREAD`
+  incomplete results instead of being conflated with malformed xref structure;
+  compiled trailer-fault, sanitizer, and production PDF corpus qualification
+  remain open.
 - PDFNG referenced-object reloads now reject objects at the individual
   contiguous-allocation ceiling instead of using an unbounded `calloc`; the
   parser marks the layer incomplete and raw matching remains authoritative.

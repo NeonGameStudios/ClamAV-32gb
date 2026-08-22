@@ -3902,6 +3902,7 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
 {
     cl_error_t rc                  = CL_SUCCESS;
     const char *parse_error_reason = NULL;
+    const char *read_error_reason  = NULL;
     struct pdf_struct pdf;
     fmap_t *map = ctx ? ctx->fmap : NULL;
     size_t size;
@@ -4084,11 +4085,21 @@ cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
                     if (bytesleft > 4096)
                         bytesleft = 4096;
 
-                    q = fmap_need_off_once(map, (size_t)offset + xref, bytesleft);
-                    if (!q || xrefCheck(q, q + bytesleft) == -1) {
+                    if (bytesleft == 0) {
                         cli_dbgmsg("cli_pdf: did not find valid xref\n");
                         pdf.flags |= 1 << BAD_PDF_TRAILER;
                         parse_error_reason = "PDF trailer xref is invalid";
+                    } else {
+                        q = fmap_need_off_once(map, (size_t)offset + xref, bytesleft);
+                        if (!q) {
+                            cli_dbgmsg("cli_pdf: PDF trailer xref could not be read completely\n");
+                            pdf.flags |= 1 << BAD_PDF_TRAILER;
+                            read_error_reason = "PDF trailer xref could not be read completely";
+                        } else if (xrefCheck(q, q + bytesleft) == -1) {
+                            cli_dbgmsg("cli_pdf: did not find valid xref\n");
+                            pdf.flags |= 1 << BAD_PDF_TRAILER;
+                            parse_error_reason = "PDF trailer xref is invalid";
+                        }
                     }
                 }
             }
@@ -4224,6 +4235,12 @@ done:
         cli_mark_scan_incomplete(ctx, "PDF object parsing ended before inspection completed");
         if (CL_SUCCESS == rc)
             rc = CL_EFORMAT;
+    }
+
+    if (read_error_reason != NULL) {
+        cli_mark_scan_incomplete(ctx, read_error_reason);
+        if (CL_SUCCESS == rc)
+            rc = CL_EREAD;
     }
 
     if (parse_error_reason != NULL) {
