@@ -3327,3 +3327,9 @@ active spool still runs through the existing frame-disposal path. A direct
 expired-context regression and source guards cover the parser entry;
 compiled XML/XDP corpus, sanitizer, and Sonic1 qualification remain release
 gates.
+
+The optional XDP `keeptmp` payload copy also checks the shared deadline before
+each bounded chunk and returns fail-visible read, write, or temporary-resource
+errors instead of silently continuing to XML parsing. A direct expired-context
+regression and source guards cover the staging entry; compiled XDP staging and
+Sonic1 qualification remain release gates.

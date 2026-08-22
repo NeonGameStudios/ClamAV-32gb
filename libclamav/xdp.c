@@ -48,69 +48,99 @@
 #include "xdp.h"
 #include "msxml_parser.h"
 
-static char *dump_xdp(cli_ctx *ctx, fmap_t *map);
+static cl_error_t xdp_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
+static cl_error_t dump_xdp(cli_ctx *ctx, fmap_t *map, char **filename);
 
 static const struct key_entry xdp_keys[] = {
     {"chunk", "XDPChunk", MSXML_SCAN_B64}};
 
-static char *dump_xdp(cli_ctx *ctx, fmap_t *map)
+static cl_error_t dump_xdp(cli_ctx *ctx, fmap_t *map, char **filename)
 {
     int fd;
-    char *filename;
+    cl_error_t ret;
     unsigned char buffer[FILEBUFF];
     size_t offset = 0;
     size_t wanted;
     size_t nread;
 
-    if (cli_gentempfd(ctx->this_layer_tmpdir, &filename, &fd) != CL_SUCCESS)
-        return NULL;
+    if (!ctx || !map || !filename)
+        return CL_ENULLARG;
+
+    *filename = NULL;
+
+    ret = xdp_checktimelimit(ctx, "XDP temporary dump reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
+    ret = cli_gentempfd(ctx->this_layer_tmpdir, filename, &fd);
+    if (ret != CL_SUCCESS)
+        return ret;
 
     while (offset < map->len) {
+        ret = xdp_checktimelimit(ctx, "XDP temporary dump reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            goto fail;
+
         wanted = MIN(sizeof(buffer), map->len - offset);
         nread  = fmap_readn(map, buffer, offset, wanted);
         if (nread != wanted) {
             cli_errmsg("dump_xdp: failed to read XDP input at offset %zu\n", offset);
-            close(fd);
-            cli_unlink(filename);
-            free(filename);
-            return NULL;
+            cli_mark_scan_incomplete(ctx, "XDP temporary dump input could not be read completely");
+            ret = CL_EREAD;
+            goto fail;
         }
 
-        if (cli_scan_reserve_temporary(ctx, (uint64_t)nread) != CL_SUCCESS) {
-            close(fd);
-            cli_unlink(filename);
-            free(filename);
-            return NULL;
+        ret = cli_scan_reserve_temporary(ctx, (uint64_t)nread);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "XDP temporary dump exceeded temporary storage limits");
+            goto fail;
         }
         if (cli_writen(fd, buffer, nread) != nread) {
             cli_scan_release_temporary(ctx, (uint64_t)nread);
-            close(fd);
-            cli_unlink(filename);
-            free(filename);
-            return NULL;
+            cli_mark_scan_incomplete(ctx, "XDP temporary dump could not be written completely");
+            ret = CL_EWRITE;
+            goto fail;
         }
         cli_scan_release_temporary(ctx, (uint64_t)nread);
         offset += nread;
     }
 
-    cli_dbgmsg("dump_xdp: Dumped payload to %s\n", filename);
+    cli_dbgmsg("dump_xdp: Dumped payload to %s\n", *filename);
 
     close(fd);
 
-    return filename;
+    return CL_SUCCESS;
+
+fail:
+    close(fd);
+    cli_unlink(*filename);
+    free(*filename);
+    *filename = NULL;
+    return ret;
 }
 
 cl_error_t cli_scanxdp(cli_ctx *ctx)
 {
     char *dumpname;
+    cl_error_t ret;
 
     if (!ctx || !ctx->fmap)
         return CL_ENULLARG;
 
     if (ctx->engine && ctx->engine->keeptmp) {
-        dumpname = dump_xdp(ctx, ctx->fmap);
-        if (dumpname)
-            free(dumpname);
+        ret = dump_xdp(ctx, ctx->fmap, &dumpname);
+        if (ret != CL_SUCCESS)
+            return ret;
+        free(dumpname);
     }
 
     return cli_msxml_parse_document_streaming(ctx, ctx->fmap, xdp_keys, sizeof(xdp_keys) / sizeof(xdp_keys[0]),
