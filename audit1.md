@@ -2337,6 +2337,18 @@ Source guards and `git diff --check` are the current local evidence.
 Fault-injected cleanup, dependency-complete builds, and supported-build
 Sonic1 qualification remain release gates.
 
+## EGG traversal deadlines — 2026-08-22
+
+The scanner-facing EGG path already checked time while writing streamed member
+output, but archive indexing, file/block metadata traversal, and decoder loops
+could continue without a parser-owned deadline checkpoint. An extended open
+path now binds the scanning context to the EGG handle; indexing, metadata,
+stored/deflate/BZip2/LZMA streaming, and legacy block traversal preserve
+`CL_ETIMEOUT` and mark the scan incomplete. The legacy open API remains a
+no-context wrapper for compatibility. A direct expired-context regression and
+source guards cover parser entry; callback-injected timeout, compiled EGG
+corpus, sanitizer, and Sonic1 qualification remain release gates.
+
 ## HWP3 traversal deadline — 2026-08-22
 
 HWP3 now checks the shared deadline at parser entry and while walking

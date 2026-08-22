@@ -75,6 +75,16 @@ cl_error_t cli_egg_open(
     uint32_t* nComments);
 
 /**
+ * @brief Open an EGG archive with a scanning context for deadline checks.
+ */
+cl_error_t cli_egg_open_ex(
+    fmap_t* map,
+    void** hArchive,
+    char*** comments,
+    uint32_t* nComments,
+    cli_ctx* ctx);
+
+/**
  * @brief Validate the minimum EGG header before admitting an embedded layer.
  *
  * A short or unrelated magic match is rejected as a non-layer. Once the

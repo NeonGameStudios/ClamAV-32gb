@@ -353,6 +353,7 @@ typedef struct {
 
 typedef struct {
     fmap_t* map;
+    cli_ctx* ctx;
     size_t offset;
     uint64_t fileExtractionIndex;
     int bSolid; /* Solid == all files compressed together. */
@@ -366,6 +367,20 @@ typedef struct {
     uint64_t nComments;
     char** comments;
 } egg_handle;
+
+static cl_error_t egg_checktimelimit(const egg_handle* handle)
+{
+    cl_error_t status;
+
+    if (handle == NULL || handle->ctx == NULL)
+        return CL_SUCCESS;
+
+    status = cli_checktimelimit(handle->ctx);
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(handle->ctx, "EGG traversal reached the configured time limit");
+
+    return status;
+}
 
 #define EGG_VALIDATE_HANDLE(h) \
     ((!handle || !handle->map || (handle->offset > handle->map->len)) ? CL_EARG : CL_SUCCESS)
@@ -1441,6 +1456,9 @@ static cl_error_t egg_parse_file_headers(egg_handle* handle, egg_file** file)
 
     while (handle->map->len > handle->offset) {
 
+        if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+            goto done;
+
         /* Get the next magic32_t */
         index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(magic32_t));
         if (!index) {
@@ -1592,6 +1610,9 @@ static cl_error_t egg_parse_archive_headers(egg_handle* handle)
 
     while (handle->map->len > handle->offset) {
 
+        if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+            goto done;
+
         /* Get the next magic32_t */
         index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(magic32_t));
         if (!index) {
@@ -1664,7 +1685,7 @@ cl_error_t cli_egg_header_check(fmap_t* map, size_t offset)
     return CL_SUCCESS;
 }
 
-cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t* nComments)
+cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint32_t* nComments, cli_ctx* ctx)
 {
     cl_error_t status = CL_EPARSE;
     cl_error_t retval;
@@ -1689,7 +1710,11 @@ cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t
         goto done;
     }
     handle->map    = map;
+    handle->ctx    = ctx;
     handle->offset = 0;
+
+    if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+        goto done;
 
     /*
      * 1st:
@@ -1709,6 +1734,9 @@ cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t
      *      c) 0+ archive comment headers
      */
     while (CL_SUCCESS == retval) {
+
+        if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+            goto done;
 
         /* Get the next magic32_t */
         index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(magic32_t));
@@ -1949,6 +1977,11 @@ done:
     return status;
 }
 
+cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t* nComments)
+{
+    return cli_egg_open_ex(map, hArchive, comments, nComments, NULL);
+}
+
 cl_error_t cli_egg_peek_file_header(void* hArchive, cl_egg_metadata* file_metadata)
 {
     cl_error_t status  = CL_EPARSE;
@@ -2005,6 +2038,9 @@ cl_error_t cli_egg_peek_file_header(void* hArchive, cl_egg_metadata* file_metada
         }
         for (i = 0; i < currFile->nBlocks; i++) {
             egg_block* currBlock = currFile->blocks[i];
+
+            if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+                goto done;
 
             if (!currBlock->blockHeader) {
                 cli_errmsg("cli_egg_peek_file_header: egg_block missing block_header!\n");
@@ -2117,6 +2153,9 @@ static cl_error_t egg_stream_store(const egg_handle* handle, const egg_block* bl
         return CL_EFORMAT;
 
     while (input_offset < (size_t)block->compressedSize) {
+        status = egg_checktimelimit(handle);
+        if (status != CL_SUCCESS)
+            return status;
         status = egg_stream_read(handle, block, &input_offset, buffer, &buffer_length);
         if (status != CL_SUCCESS)
             return status;
@@ -2150,6 +2189,9 @@ static cl_error_t egg_stream_deflate(const egg_handle* handle, const egg_block* 
     initialized = 1;
 
     for (;;) {
+        status = egg_checktimelimit(handle);
+        if (status != CL_SUCCESS)
+            goto done;
         if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
             status = egg_stream_read(handle, block, &input_offset, input, &input_length);
             if (status != CL_SUCCESS)
@@ -2218,6 +2260,9 @@ static cl_error_t egg_stream_bzip2(const egg_handle* handle, const egg_block* bl
     initialized = 1;
 
     for (;;) {
+        status = egg_checktimelimit(handle);
+        if (status != CL_SUCCESS)
+            goto done;
         if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
             status = egg_stream_read(handle, block, &input_offset, input, &input_length);
             if (status != CL_SUCCESS)
@@ -2284,6 +2329,9 @@ static cl_error_t egg_stream_lzma(const egg_handle* handle, const egg_block* blo
     memset(&stream, 0, sizeof(stream));
 
     for (;;) {
+        status = egg_checktimelimit(handle);
+        if (status != CL_SUCCESS)
+            goto done;
         if (stream.avail_in == 0 && input_offset < (size_t)block->compressedSize) {
             status = egg_stream_read(handle, block, &input_offset, input, &input_length);
             if (status != CL_SUCCESS)
@@ -2416,6 +2464,9 @@ cl_error_t cli_egg_extract_file_stream(void* hArchive, cli_egg_write_callback wr
     for (i = 0; i < currFile->nBlocks; i++) {
         egg_block* block = currFile->blocks[i];
         egg_stream_output output;
+
+        if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+            goto done;
 
         if (block == NULL || block->blockHeader == NULL || block->compressedSize == 0 ||
             block->compressedDataOffset > handle->map->len ||
@@ -2917,6 +2968,9 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
             const char* compressedData;
             uint64_t next_size;
 
+            if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+                goto done;
+
             if (NULL == currBlock->blockHeader) {
                 cli_errmsg("cli_egg_extract_file: current egg_block missing header!\n");
                 break;
@@ -3143,6 +3197,9 @@ cl_error_t cli_egg_skip_file(void* hArchive)
         status = CL_EARG;
         goto done;
     }
+
+    if (CL_SUCCESS != (status = egg_checktimelimit(handle)))
+        goto done;
 
     if (handle->fileExtractionIndex >= handle->nFiles) {
         cli_warnmsg("cli_egg_skip_file: File index exceeds number of files in archive!\n");

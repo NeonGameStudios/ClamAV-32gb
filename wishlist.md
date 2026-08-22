@@ -113,6 +113,9 @@
   parser-corpus qualification.
 - EGG metadata extra fields now reject sizes above the individual-allocation
   ceiling explicitly, and encryption-header size subtraction is underflow-safe.
+- EGG archive indexing, block metadata traversal, and streamed decoder loops now
+  honor the shared scan deadline; add compiled timeout-injection and production
+  EGG corpus qualification.
 - AC exact-tail matching now has a >4 GiB offset regression that verifies the
   returned match coordinate remains 64-bit; production-signature qualification
   is still open.

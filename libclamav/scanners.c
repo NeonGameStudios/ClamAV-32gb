@@ -928,7 +928,7 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
     /*
      * Open the archive.
      */
-    if (CL_SUCCESS != (egg_ret = cli_egg_open(ctx->fmap, &hArchive, &comments, &nComments))) {
+    if (CL_SUCCESS != (egg_ret = cli_egg_open_ex(ctx->fmap, &hArchive, &comments, &nComments, ctx))) {
         if (egg_ret == CL_EUNPACK) {
             cli_dbgmsg("EGG: Encrypted main header\n");
             nEncryptedFilesFound += 1;

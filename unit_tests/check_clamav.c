@@ -12097,6 +12097,37 @@ START_TEST(test_egg_lzma_stream_extracts_bounded_member)
 }
 END_TEST
 
+START_TEST(test_egg_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG traversal reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_egg_extra_field_admission_is_fail_visible)
 {
     static const uint8_t valid_header[] = {
@@ -18350,6 +18381,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
+    tcase_add_test(tc_cl, test_egg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
     tcase_add_test(tc_cl, test_autoit_ea06_missing_member_is_fail_visible);
