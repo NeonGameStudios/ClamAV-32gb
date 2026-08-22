@@ -4200,3 +4200,12 @@ materialized writes. Timeout cleanup releases the fork/resource reservation
 and prevents partial output from reaching nested scans. Source guards cover
 the output families; deterministic post-admission injection, compiled HFS+
 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## AutoIt output deadlines — 2026-08-22
+
+EA05/EA06 streamed output and EA06 script materialization now re-check the
+shared deadline after temporary admission and immediately before writes. The
+shared decoder flush and nested-member handoff are covered, and timeout paths
+release reservations before partial output can be scanned. Source guards cover
+the output families; deterministic post-admission injection, compiled AutoIt
+corpus, sanitizer, and Sonic1 qualification remain release gates.

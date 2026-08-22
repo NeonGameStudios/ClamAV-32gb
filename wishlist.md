@@ -73,6 +73,10 @@
 - NSIS output staging now re-checks the shared deadline after temporary quota
   admission and before writing; add deterministic post-admission timeout
   injection and full NSIS corpus qualification.
+- AutoIt EA05/EA06 streamed output and EA06 script materialization now re-check
+  the shared deadline after temporary admission and immediately before writes;
+  add deterministic post-admission injection and complete AutoIt corpus
+  qualification.
 - TNEF attribute-string lengths now convert to `size_t` before the terminating
   byte, allocation, and read-coordinate arithmetic; the parser cannot wrap a
   maximum positive signed length.

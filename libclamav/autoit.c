@@ -661,8 +661,16 @@ static void autoit_output_destroy(struct UNP *UNP)
 
 static cl_error_t autoit_output_flush(struct UNP *UNP)
 {
+    cl_error_t status;
+
     if (UNP->output_pending_length == 0)
         return CL_SUCCESS;
+
+    status = autoit_checktimelimit(UNP->ctx, "AutoIt expanded member output reached the configured time limit");
+    if (status != CL_SUCCESS) {
+        UNP->error = 1;
+        return status;
+    }
 
     if (cli_writen(UNP->output_fd, UNP->output_pending, UNP->output_pending_length) != UNP->output_pending_length) {
         cli_mark_scan_incomplete(UNP->ctx, "AutoIt expanded member temporary output could not be written completely");
@@ -761,8 +769,10 @@ static cl_error_t autoit_scan_temp_member(cli_ctx *ctx, int *tempfd, char **temp
         cli_mark_scan_incomplete(ctx, "AutoIt EA06 member temporary output could not be rewound");
         status = CL_ESEEK;
     } else {
-        status = cli_magic_scan_desc_type_reserved(*tempfd, *tempfile, ctx, CL_TYPE_ANY, NULL,
-                                                    LAYER_ATTRIBUTES_NONE);
+        status = autoit_checktimelimit(ctx, "AutoIt EA06 member nested-scan handoff reached the configured time limit");
+        if (status == CL_SUCCESS)
+            status = cli_magic_scan_desc_type_reserved(*tempfd, *tempfile, ctx, CL_TYPE_ANY, NULL,
+                                                        LAYER_ATTRIBUTES_NONE);
     }
 
     return autoit_release_temp_member(ctx, tempfd, tempfile, temporary_reserved, status);
@@ -1185,6 +1195,10 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
             }
             temporary_reserved = UNP.usize;
 
+            status = autoit_checktimelimit(ctx, "AutoIt EA05 expanded member temporary admission reached the configured time limit");
+            if (status != CL_SUCCESS)
+                goto done;
+
             status = autoit_output_init(&UNP, tempfd);
             if (status != CL_SUCCESS)
                 goto done;
@@ -1312,6 +1326,10 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
             }
             temporary_reserved = UNP.csize;
 
+            status = autoit_checktimelimit(ctx, "AutoIt EA05 stored member temporary admission reached the configured time limit");
+            if (status != CL_SUCCESS)
+                goto done;
+
             MT_init(&input_mt, 0x22af + m4sum);
             while (input_offset < next_offset) {
                 size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
@@ -1326,6 +1344,8 @@ static cl_error_t ea05(cli_ctx *ctx, const uint8_t *base)
                 }
                 for (j = 0; j < chunk; j++)
                     stored_buffer[j] ^= MT_getnext(&input_mt);
+                if (CL_SUCCESS != (status = autoit_checktimelimit(ctx, "AutoIt EA05 stored member output reached the configured time limit")))
+                    goto done;
                 if (cli_writen(tempfd, stored_buffer, chunk) != chunk) {
                     cli_mark_scan_incomplete(ctx, "AutoIt EA05 stored member temporary output could not be written completely");
                     status = CL_EWRITE;
@@ -1707,6 +1727,13 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     return ret;
                 }
                 stream_reserved = UNP.usize;
+                ret = autoit_checktimelimit(ctx, "AutoIt EA06 expanded member temporary admission reached the configured time limit");
+                if (ret != CL_SUCCESS) {
+                    free(UNP.inputbuf);
+                    UNP.inputbuf = NULL;
+                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                      &stream_reserved, ret);
+                }
                 ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "autoit", &stream_tempfile, &stream_tempfd);
                 if (ret != CL_SUCCESS) {
                     free(UNP.inputbuf);
@@ -1879,6 +1906,10 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     return ret;
                 }
                 stream_reserved = UNP.csize;
+                ret = autoit_checktimelimit(ctx, "AutoIt EA06 stored member temporary admission reached the configured time limit");
+                if (ret != CL_SUCCESS)
+                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                      &stream_reserved, ret);
                 ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "autoit", &stream_tempfile, &stream_tempfd);
                 if (ret != CL_SUCCESS) {
                     cli_scan_release_temporary(ctx, stream_reserved);
@@ -1905,6 +1936,11 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     }
                     for (j = 0; j < chunk; j++)
                         stored_buffer[j] ^= LAME_getnext(&input_lame);
+                    if (autoit_checktimelimit(ctx, "AutoIt EA06 stored member output reached the configured time limit") != CL_SUCCESS) {
+                        stream_output = false;
+                        return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                          &stream_reserved, CL_ETIMEOUT);
+                    }
                     if (cli_writen(stream_tempfd, stored_buffer, chunk) != chunk) {
                         cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member temporary output could not be written completely");
                         stream_output = false;
@@ -2253,12 +2289,32 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
         }
         temporary_reserved = (uint64_t)UNP.cur_output;
 
+        ret = autoit_checktimelimit(ctx, "AutoIt EA06 script output temporary admission reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
+            free(buf);
+            return ret;
+        }
+
         if ((i = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
             cli_dbgmsg("autoit: Can't create file %s\n", tempfile);
             cli_scan_release_temporary(ctx, temporary_reserved);
             temporary_reserved = 0;
             free(buf);
             return CL_ECREAT;
+        }
+        ret = autoit_checktimelimit(ctx, "AutoIt EA06 script output reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            autoit_note_cleanup_failure(ctx, &ret, close(i) != 0,
+                                        "AutoIt EA06 script output could not be closed");
+            if (!ctx->engine->keeptmp)
+                autoit_note_cleanup_failure(ctx, &ret, cli_unlink(tempfile) != 0,
+                                            "AutoIt EA06 script output could not be removed");
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
+            free(buf);
+            return ret;
         }
         if (cli_writen(i, buf, UNP.cur_output) != UNP.cur_output) {
             cli_dbgmsg("autoit: cannot write %d bytes\n", UNP.usize);
