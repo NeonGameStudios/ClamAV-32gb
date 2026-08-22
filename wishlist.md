@@ -568,8 +568,9 @@
   signature/offset, and exact-edge milter outcome after the workload; compiled
   Linux/Sonic1 evidence remains required.
 - RIFF header and chunk callback failures now preserve `CL_EREAD` instead of
-  being flattened into truncation; add compiled callback-fault and production
-  RIFF corpus qualification.
+  being flattened into truncation, while parser entry and chunk traversal
+  honor the shared deadline and preserve `CL_ETIMEOUT`; add compiled
+  callback/timeout-fault and production RIFF corpus qualification.
 - Old-format SIS metadata table, dependency-header, string, header, and
   language-table failures now remain incomplete/non-cacheable with distinct
   `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and

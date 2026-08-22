@@ -113,6 +113,16 @@ static uint32_t riff_endian_convert_32(uint32_t value, int big_endian)
         return le32_to_host(value);
 }
 
+static cl_error_t riff_checktimelimit(cli_ctx *ctx)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, "RIFF inspection reached the configured time limit");
+
+    return status;
+}
+
 /* fmap_need_off_once() uses NULL for both an unavailable range and a failed
  * backing read. Keep those cases distinct while the RIFF exploit detector
  * walks a structurally confirmed file. */
@@ -134,6 +144,7 @@ static const void *riff_need_off(cli_ctx *ctx, off_t offset, size_t length, cl_e
 
 static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_level, cl_error_t *read_status)
 {
+    cl_error_t time_status;
     uint32_t cache_buf;
     char *buffer;
     const uint32_t *buf;
@@ -141,6 +152,10 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
     uint64_t next_offset;
     off_t cur_offset = *offset;
     fmap_t *map      = ctx->fmap;
+
+    time_status = riff_checktimelimit(ctx);
+    if (time_status != CL_SUCCESS)
+        return time_status;
 
     if (rec_level > 1000) {
         cli_dbgmsg("riff_read_chunk: recursion level exceeded\n");
@@ -205,6 +220,7 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
 
 int cli_check_riff_exploit(cli_ctx *ctx)
 {
+    cl_error_t time_status;
     const uint32_t *buf;
     int big_endian, retval;
     cl_error_t read_status = CL_SUCCESS;
@@ -212,6 +228,10 @@ int cli_check_riff_exploit(cli_ctx *ctx)
     fmap_t *map = ctx->fmap;
 
     cli_dbgmsg("in cli_check_riff_exploit()\n");
+
+    time_status = riff_checktimelimit(ctx);
+    if (time_status != CL_SUCCESS)
+        return time_status;
 
     /* A map shorter than the fixed RIFF/ACON probe is not a candidate. Once
      * the complete probe range exists, a failed fmap read is an operational

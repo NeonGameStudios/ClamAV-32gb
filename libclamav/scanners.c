@@ -4319,7 +4319,7 @@ static cl_error_t cli_scanriff(cli_ctx *ctx)
     int check;
 
     check = cli_check_riff_exploit(ctx);
-    if (check == CL_EPARSE || check == CL_EREAD)
+    if (check == CL_EPARSE || check == CL_EREAD || check == CL_ETIMEOUT)
         return check;
 
     if (check == 2)

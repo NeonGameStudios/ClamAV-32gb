@@ -13163,6 +13163,55 @@ START_TEST(test_riff_chunk_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifndef _WIN32
+START_TEST(test_riff_time_limit_is_fail_visible)
+{
+    static const uint8_t input[] = {
+        'R', 'I', 'F', 'F',
+        0x00, 0x00, 0x00, 0x00,
+        'A', 'C', 'O', 'N',
+    };
+    struct cl_engine engine;
+    struct cli_dconf dconf;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&dconf, 0, sizeof(dconf));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    dconf.other       = OTHER_CONF_RIFF;
+    engine.dboptions  = CL_DB_COMPILED;
+    engine.dconf      = &dconf;
+    options.general   = CL_SCAN_GENERAL_HEURISTICS;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    layer.fmap                = map;
+    ctx.engine                = &engine;
+    ctx.dconf                 = &dconf;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(cli_magic_scan(&ctx, CL_TYPE_RIFF), CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "RIFF inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_structured_detector_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "structured detector read failure";
@@ -18871,6 +18920,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_chunk_read_failure_is_fail_visible);
+#ifndef _WIN32
+    tcase_add_test(tc_cl, test_riff_time_limit_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_exact_eof_ends_attribute_list);
     tcase_add_test(tc_cl, test_tnef_time_limit_is_fail_visible);

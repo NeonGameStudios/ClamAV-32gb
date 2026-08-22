@@ -3499,3 +3499,14 @@ finishes. Script decompilation still requires random access to its decoded
 token stream and retains the explicit 1 GiB unsupported boundary. Source guards
 cover the bounded paths; compiled stored/compressed fixtures, sanitizer, and
 Sonic1 qualification remain release gates.
+
+## RIFF traversal deadlines — 2026-08-22
+
+The RIFF exploit detector already distinguished in-range fmap callback failures
+from genuinely truncated structures, but its recursive chunk walk had no shared
+scan-deadline checkpoint. Parser entry and every chunk traversal now check the
+deadline and mark the layer incomplete with `CL_ETIMEOUT`; the RIFF dispatcher
+propagates that status instead of allowing a timeout to become a clean result.
+A dispatch-level expired-context regression and source guards cover the
+contract; compiled RIFF corpus, callback/timeout fault injection, sanitizer,
+and Sonic1 qualification remain release gates.
