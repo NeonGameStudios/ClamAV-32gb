@@ -67,6 +67,16 @@ static size_t tnef_readn(fmap_t *map, void *dst, off_t at, size_t len);
 /* a TNEF file must be at least this size */
 #define MIN_SIZE (sizeof(uint32_t) + sizeof(uint16_t))
 
+static cl_error_t tnef_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 int cli_tnef(const char *dir, cli_ctx *ctx)
 {
     uint32_t i32;
@@ -75,6 +85,10 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
     cl_error_t ret;
     int alldone;
     off_t fsize, pos = 0;
+
+    ret = tnef_checktimelimit(ctx, "TNEF inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
 
     fsize = ctx->fmap->len;
 
@@ -108,6 +122,12 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         uint8_t part  = 0;
         uint16_t type = 0, tag = 0;
         int32_t length = 0;
+
+        ret = tnef_checktimelimit(ctx, "TNEF attribute traversal reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            alldone = 1;
+            break;
+        }
 
         switch (tnef_header(ctx->fmap, &pos, &part, &type, &tag, &length)) {
             case TNEF_HEADER_EOF:
@@ -203,7 +223,15 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                         cli_warnmsg("Saving dump to %s:  refer to https://docs.clamav.net/manual/Installing.html\n", filename);
 
                         pos = 0;
-                        while ((count = fmap_readn(ctx->fmap, buffer, pos, sizeof(buffer))) != (size_t)-1 && count != 0) {
+                        while (1) {
+                            if (tnef_checktimelimit(ctx, "TNEF debug-dump traversal reached the configured time limit") != CL_SUCCESS) {
+                                ret     = CL_ETIMEOUT;
+                                alldone = 1;
+                                break;
+                            }
+                            count = fmap_readn(ctx->fmap, buffer, pos, sizeof(buffer));
+                            if (count == (size_t)-1 || count == 0)
+                                break;
                             pos += count;
                             cli_writen(fout, buffer, count);
                         }
@@ -325,6 +353,7 @@ tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t lengt
 static cl_error_t
 tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize)
 {
+    cl_error_t status;
     uint32_t todo;
     off_t offset;
     char *string;
@@ -392,7 +421,13 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
             while (todo) {
                 unsigned char buf[BUFSIZ];
                 size_t wanted = MIN(sizeof(buf), todo);
-                size_t got    = fmap_readn(map, buf, *pos, wanted);
+                size_t got;
+
+                status = tnef_checktimelimit(ctx, "TNEF attachment traversal reached the configured time limit");
+                if (status != CL_SUCCESS)
+                    return status;
+
+                got = fmap_readn(map, buf, *pos, wanted);
                 if (got != wanted) {
                     cli_mark_scan_incomplete(ctx, "TNEF attachment data could not be read completely");
                     return CL_EREAD;

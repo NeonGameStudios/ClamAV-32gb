@@ -3253,3 +3253,13 @@ before each segment, and before each Photoshop 8BIM resource record. Timeout
 results remain sticky incomplete and non-cacheable. A direct expired-context
 regression and source guards cover the new boundaries; compiled JPEG corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## TNEF traversal deadline — 2026-08-22
+
+TNEF attribute-list iteration, attachment-data copying, and the debug-only
+unknown-level dump loop previously had no parser-local deadline checkpoint.
+They now check the shared deadline before each attacker-controlled iteration;
+timeouts preserve `CL_ETIMEOUT`, mark the layer incomplete, and prevent a
+cacheable clean result. A direct expired-context regression and source guards
+cover parser entry; compiled TNEF corpus, sanitizer, and Sonic1 qualification
+remain release gates.

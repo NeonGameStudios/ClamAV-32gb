@@ -226,6 +226,10 @@
 - SWF uncompressed tag traversal and CWS/ZWS decoder loops now honor the
   shared deadline with temporary-output cleanup; add compiled timeout-injection
   and long compressed/uncompressed SWF corpus qualification.
+- TNEF attribute, attachment-data, and debug-dump traversal now honor the
+  shared scan deadline and preserve timeout as an incomplete, non-cacheable
+  result; add compiled timeout-injection and long-attribute/attachment corpus
+  qualification.
 - ARJ compressed bit-window refills and stored-member reads now preserve
   in-range fmap callback failures as `CL_EREAD` instead of `CL_EFORMAT`; add
   callback-fault, sanitizer, and production ARJ corpus qualification.
