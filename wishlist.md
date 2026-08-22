@@ -463,6 +463,11 @@
 - Standalone and mail-embedded UUEncode decoding now checks the shared deadline
   before each input line and preserves timeout through mbox result handling;
   add compiled timeout-injection and long-attachment corpus qualification.
+- UUEncode message-state/output-blob allocation and decoded attachment
+  materialization failures now mark the required attachment incomplete, and
+  unterminated/invalid attachments are explicit non-clean results; compiled
+  allocation fault injection, corpus, sanitizer, and Sonic1 qualification
+  remain open.
 - ARJ compressed bit-window refills and stored-member reads now preserve
   in-range fmap callback failures as `CL_EREAD` instead of `CL_EFORMAT`; add
   callback-fault, sanitizer, and production ARJ corpus qualification.

@@ -13866,9 +13866,9 @@ native-width-integer	libclamav/upx.h	29	int upx_inflate2b(const char *, uint32_t
 native-width-integer	libclamav/upx.h	30	int upx_inflate2d(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 native-width-integer	libclamav/upx.h	31	int upx_inflate2e(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 native-width-integer	libclamav/upx.h	32	int upx_inflatelzma(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
-native-width-integer	libclamav/uuencode.c	110	int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at)
-native-width-integer	libclamav/uuencode.c	135	        size_t len;
-native-width-integer	libclamav/uuencode.c	157	        len = (size_t)(uptr - data);
+native-width-integer	libclamav/uuencode.c	112	int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at)
+native-width-integer	libclamav/uuencode.c	138	        size_t len;
+native-width-integer	libclamav/uuencode.c	160	        len = (size_t)(uptr - data);
 native-width-integer	libclamav/uuencode.c	58	int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 native-width-integer	libclamav/uuencode.c	63	    size_t at = 0;
 native-width-integer	libclamav/uuencode.h	27	int cli_uuencode(struct cli_ctx_tag *ctx, const char *dir, fmap_t *map);
@@ -29755,10 +29755,10 @@ offset-size-arithmetic	libclamav/upx.c	628	        if (!CLI_ISCONTAINED(dst, *ds
 offset-size-arithmetic	libclamav/upx.c	633	            dst[dcur + i] = dst[dcur + unp_offset + i];
 offset-size-arithmetic	libclamav/upx.c	641	int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties, struct cli_ctx_tag *ctx)
 offset-size-arithmetic	libclamav/upx.c	679	    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, *dsize, ctx);
-offset-size-arithmetic	libclamav/uuencode.c	110	int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at)
-offset-size-arithmetic	libclamav/uuencode.c	142	        if (!fmap_gets(map, buffer, at, sizeof(buffer) - 1))
-offset-size-arithmetic	libclamav/uuencode.c	157	        len = (size_t)(uptr - data);
-offset-size-arithmetic	libclamav/uuencode.c	169	    return saw_end && !materialization_failed ? 1 : -1;
+offset-size-arithmetic	libclamav/uuencode.c	112	int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at)
+offset-size-arithmetic	libclamav/uuencode.c	145	        if (!fmap_gets(map, buffer, at, sizeof(buffer) - 1))
+offset-size-arithmetic	libclamav/uuencode.c	160	        len = (size_t)(uptr - data);
+offset-size-arithmetic	libclamav/uuencode.c	173	    return saw_end && !materialization_failed ? 1 : -1;
 offset-size-arithmetic	libclamav/uuencode.c	45	/* Maximum line length according to RFC821 */
 offset-size-arithmetic	libclamav/uuencode.c	69	    if (!fmap_gets(map, buffer, &at, sizeof(buffer) - 1)) {
 offset-size-arithmetic	libclamav/uuencode.h	28	int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at);

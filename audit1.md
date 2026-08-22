@@ -4910,3 +4910,15 @@ The source guards and non-clang regression gates remain the available local
 evidence. Compiled NSIS decoder fault injection, malformed and valid
 production corpus coverage, sanitizer runs, and Sonic1 qualification remain
 open.
+
+## UUEncode required materialization failures — 2026-08-22
+
+Standalone UUEncode scanning now marks the scan incomplete when message state
+or the decoded output blob cannot be allocated, when decoded attachment data
+cannot be materialized, or when a confirmed attachment is unterminated or
+invalid. The direct parser now carries the same sticky state that the scanner
+wrapper already used for embedded UUEncode failures.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation fault injection, long and malformed attachment
+corpora, sanitizer runs, and Sonic1 qualification remain open.

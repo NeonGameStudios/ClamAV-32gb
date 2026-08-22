@@ -83,6 +83,7 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 
     m = messageCreate();
     if (m == NULL) {
+        cli_mark_scan_incomplete(ctx, "UUencoded message state could not be allocated");
         return CL_EMEM;
     }
 
@@ -95,6 +96,7 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
         if (ctx->scan_timed_out)
             return CL_ETIMEOUT;
         cli_dbgmsg("UUencoded attachment ended before its terminator or contained invalid data\n");
+        cli_mark_scan_incomplete(ctx, "UUencoded attachment was not terminated or decoded completely");
         return CL_EPARSE;
     }
     messageDestroy(m);
@@ -120,6 +122,7 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
 
     fb = fileblobCreate();
     if (fb == NULL) {
+        cli_mark_scan_incomplete(m->ctx, "UUencoded attachment output blob could not be allocated");
         free(filename);
         return -1;
     }
@@ -159,6 +162,7 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
             break;
 
         if (fileblobAddData(fb, data, len) < 0) {
+            cli_mark_scan_incomplete(m->ctx, "UUencoded attachment could not be materialized completely");
             materialization_failed = true;
             break;
         }
