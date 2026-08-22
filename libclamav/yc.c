@@ -54,6 +54,24 @@ static int yc_bounds_check(cli_ctx *ctx, char *base, unsigned int filesize, char
     return 0;
 }
 
+static int yc_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+{
+    if (ctx == NULL)
+        return 0;
+
+    (*ticks)++;
+    if (*ticks < 4096)
+        return 0;
+
+    *ticks = 0;
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "yC emulation reached the configured time limit");
+        return 1;
+    }
+
+    return 0;
+}
+
 /* ========================================================================== */
 /* "Emulates" the poly decryptors */
 
@@ -81,9 +99,13 @@ static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, cha
     unsigned char cl = ecx & 0xff;
     unsigned int j, i;
     unsigned int max_jmp_loop = 100000000;
+    uint32_t ticks = 0;
 
     for (i = 0; i < ecx && i < max_emu; i++) /* Byte looper - Decrypts every byte and write it back */
     {
+        if (yc_checktimelimit(ctx, &ticks)) {
+            return 3;
+        }
         if (yc_bounds_check(ctx, base, filesize, code, i)) {
             return 2;
         }
@@ -91,6 +113,9 @@ static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, cha
 
         for (j = 0; j < 0x30; j++) /* Poly Decryptor "Emulator" */
         {
+            if (yc_checktimelimit(ctx, &ticks)) {
+                return 3;
+            }
             if (yc_bounds_check(ctx, base, filesize, decryptor_offset, j)) {
                 return 2;
             }
@@ -232,11 +257,17 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
   */
     cli_dbgmsg("yC: offset: %x, length: %x\n", offset, ecx);
     cli_dbgmsg("yC: decrypting decryptor on sect %d\n", sectcount);
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "yC emulation reached the configured time limit");
+        return CL_ETIMEOUT;
+    }
     switch (yc_poly_emulator(ctx, fbuf, filesize, fbuf + ycsect + 0x93, fbuf + ycsect + 0xc6, ecx, ecx)) {
         case 2:
             return CL_VIRUS;
         case 1:
             return CL_EUNPACK;
+        case 3:
+            return CL_ETIMEOUT;
     }
     filesize -= sections[sectcount].ursz;
 
@@ -253,6 +284,11 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
     /* Loop through all sections and decrypt them... */
     for (i = 0; i < sectcount; i++) {
         uint32_t name = (uint32_t)cli_readint32(sname + i * 0x28);
+
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "yC section emulation reached the configured time limit");
+            return CL_ETIMEOUT;
+        }
         if (!sections[i].raw ||
             !sections[i].rsz ||
             name == 0x63727372 ||     /* rsrc */
@@ -279,6 +315,8 @@ int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_s
                 return CL_VIRUS;
             case 1:
                 return CL_EUNPACK;
+            case 3:
+                return CL_ETIMEOUT;
         }
     }
 

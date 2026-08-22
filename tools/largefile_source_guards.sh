@@ -2437,6 +2437,8 @@ contains libclamav/wwunpack.c 'WWPack decompression reached the configured time 
 contains libclamav/wwunpack.c 'WWPack output reconstruction reached the configured time limit'
 contains libclamav/yc.c 'yC output reached the configured time limit'
 contains libclamav/yc.c 'yC output could not be written completely'
+contains libclamav/yc.c 'yC emulation reached the configured time limit'
+contains libclamav/yc.c 'yC section emulation reached the configured time limit'
 contains libclamav/rebuildpe.h 'cli_rebuildpe_align_ctx'
 contains libclamav/pe.c 'unmew11(src, offdiff, ssize, dsize'
 contains libclamav/pe.c 'unupack(upack, dest, dsize'

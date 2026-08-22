@@ -4644,3 +4644,13 @@ resource-section handoffs through the context-free FSG wrapper. Both handoffs
 now use `cli_unfsg_ctx()`, so FSG timeout and partial-output failures remain
 visible to PEspin. PEspin's emulator/XOR loops, compiled timeout injection,
 production corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## yC emulator deadline checkpoints — 2026-08-22
+
+The yC poly emulator previously checked bounds but did not observe
+`MaxScanTime` during its per-byte decrypt loop or hostile jump-loop budget.
+It now checkpoints both emulator loops, checks section transitions, and
+propagates a distinct `CL_ETIMEOUT` result instead of treating timeout as a
+virus or generic unpack failure. Compiled timeout injection, hostile jump-loop
+coverage, production yC corpus, sanitizer, and Sonic1 qualification remain
+release gates.

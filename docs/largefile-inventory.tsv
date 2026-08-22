@@ -5619,11 +5619,13 @@ fixed-width-integer	libclamav/yara_parser.h	30	    int64_t argument,
 fixed-width-integer	libclamav/yara_parser.h	37	    int64_t argument,
 fixed-width-integer	libclamav/yara_parser.h	73	    int32_t type,
 fixed-width-integer	libclamav/yara_parser.h	76	    int32_t integer);
-fixed-width-integer	libclamav/yc.c	216	int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
-fixed-width-integer	libclamav/yc.c	218	    uint32_t ycsect = sections[sectcount].raw + offset;
-fixed-width-integer	libclamav/yc.c	222	    uint32_t max_emu;
-fixed-width-integer	libclamav/yc.c	255	        uint32_t name = (uint32_t)cli_readint32(sname + i * 0x28);
-fixed-width-integer	libclamav/yc.c	60	static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, char *decryptor_offset, char *code, unsigned int ecx, uint32_t max_emu)
+fixed-width-integer	libclamav/yc.c	102	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/yc.c	241	int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
+fixed-width-integer	libclamav/yc.c	243	    uint32_t ycsect = sections[sectcount].raw + offset;
+fixed-width-integer	libclamav/yc.c	247	    uint32_t max_emu;
+fixed-width-integer	libclamav/yc.c	286	        uint32_t name = (uint32_t)cli_readint32(sname + i * 0x28);
+fixed-width-integer	libclamav/yc.c	57	static int yc_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+fixed-width-integer	libclamav/yc.c	78	static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, char *decryptor_offset, char *code, unsigned int ecx, uint32_t max_emu)
 fixed-width-integer	libclamav/yc.h	29	int yc_decrypt(cli_ctx *, char *, unsigned int, struct cli_exe_section *, unsigned int, uint32_t, int, uint32_t, int16_t);
 fixed-width-integer	libclamav_rust/src/ffi_util.rs	74	/// int64_t result;
 fixed-width-integer	libclammspack/test/md5.h	40	typedef uint32_t md5_uint32;
@@ -14508,15 +14510,16 @@ native-width-integer	libclamav/yara_parser.h	79	int yr_parser_reduce_string_iden
 native-width-integer	libclamav/yara_parser.h	85	int yr_parser_emit_pushes_for_strings(
 native-width-integer	libclamav/yara_parser.h	90	int yr_parser_reduce_external(
 native-width-integer	libclamav/yara_parser.h	96	int yr_parser_reduce_import(
-native-width-integer	libclamav/yc.c	216	int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
-native-width-integer	libclamav/yc.c	219	    unsigned int i;
-native-width-integer	libclamav/yc.c	223	    unsigned int ofilesize = filesize;
-native-width-integer	libclamav/yc.c	302	    if (cli_writen(desc, fbuf, filesize) != (size_t)filesize) {
+native-width-integer	libclamav/yc.c	100	    unsigned int j, i;
+native-width-integer	libclamav/yc.c	101	    unsigned int max_jmp_loop = 100000000;
+native-width-integer	libclamav/yc.c	241	int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
+native-width-integer	libclamav/yc.c	244	    unsigned int i;
+native-width-integer	libclamav/yc.c	248	    unsigned int ofilesize = filesize;
+native-width-integer	libclamav/yc.c	340	    if (cli_writen(desc, fbuf, filesize) != (size_t)filesize) {
 native-width-integer	libclamav/yc.c	44	static int yc_bounds_check(cli_ctx *ctx, char *base, unsigned int filesize, char *offset, unsigned int bound)
 native-width-integer	libclamav/yc.c	46	    if ((unsigned int)((offset + bound) - base) > filesize) {
-native-width-integer	libclamav/yc.c	60	static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, char *decryptor_offset, char *code, unsigned int ecx, uint32_t max_emu)
-native-width-integer	libclamav/yc.c	82	    unsigned int j, i;
-native-width-integer	libclamav/yc.c	83	    unsigned int max_jmp_loop = 100000000;
+native-width-integer	libclamav/yc.c	57	static int yc_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+native-width-integer	libclamav/yc.c	78	static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, char *decryptor_offset, char *code, unsigned int ecx, uint32_t max_emu)
 native-width-integer	libclamav/yc.h	29	int yc_decrypt(cli_ctx *, char *, unsigned int, struct cli_exe_section *, unsigned int, uint32_t, int, uint32_t, int16_t);
 native-width-integer	libclamav_rust/src/evidence.rs	243	/// The out_depth and out_object_id parameters are optional, and will be size_t pointers for depth and object_id.
 native-width-integer	libclamav_rust/src/sys.rs	1063	    pub offset: off_t,
@@ -20244,9 +20247,9 @@ format-width	libclamav/yara_lexer.c	2958	    cli_warnmsg("yywarning(): %s line %
 format-width	libclamav/yara_lexer.c	3023	    cli_errmsg("yyerror(): %s line %d %s\n", file_name?file_name:"(file name missing)", compiler->last_error_line, error_message);
 format-width	libclamav/yara_lexer.c	3043	    cli_errmsg("yyerror(): %s line %d %s\n", file_name?file_name:"NULL filename", compiler->last_error_line, message);
 format-width	libclamav/yara_parser.c	214	                    "wrong type for argument %i of \"%s\"",
-format-width	libclamav/yc.c	234	    cli_dbgmsg("yC: decrypting decryptor on sect %d\n", sectcount);
-format-width	libclamav/yc.c	268	        cli_dbgmsg("yC: decrypting sect%d\n", i);
-format-width	libclamav/yc.c	271	            cli_dbgmsg("yC: bad emulation length limit %u\n", max_emu);
+format-width	libclamav/yc.c	259	    cli_dbgmsg("yC: decrypting decryptor on sect %d\n", sectcount);
+format-width	libclamav/yc.c	304	        cli_dbgmsg("yC: decrypting sect%d\n", i);
+format-width	libclamav/yc.c	307	            cli_dbgmsg("yC: bad emulation length limit %u\n", max_emu);
 format-width	libclammspack/examples/cabd_memory.c	170	      fprintf(stderr, "can't open cabinet (%d)\n", cabd->last_error(cabd));
 format-width	libclammspack/examples/cabrip.c	29	    printf("ripping %s offset %" LD " length %u to %s\n",
 format-width	libclammspack/examples/cabrip.c	48	            fprintf(stderr, "%s: file %u bytes shorter than expected\n",
@@ -30322,25 +30325,25 @@ offset-size-arithmetic	libclamav/yara_parser.c	717	            //      offsetof(
 offset-size-arithmetic	libclamav/yara_parser.c	718	            //      offsetof(YR_RULE, ns), ClamAV - later
 offset-size-arithmetic	libclamav/yara_parser.c	772	    rule->code_start = yr_arena_base_address(compiler->code_arena);
 offset-size-arithmetic	libclamav/yara_parser.c	773	    yr_arena_append(compiler->the_arena, compiler->code_arena);
-offset-size-arithmetic	libclamav/yc.c	159	                    if (decryptor_offset[j] == '\xC0') /* ROL AL,num */
-offset-size-arithmetic	libclamav/yc.c	181	                    if (decryptor_offset[j] == '\xC8') /* ROR AL,CL */
-offset-size-arithmetic	libclamav/yc.c	216	int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
-offset-size-arithmetic	libclamav/yc.c	218	    uint32_t ycsect = sections[sectcount].raw + offset;
-offset-size-arithmetic	libclamav/yc.c	228	  Start offset for analyze: Start of yC Section + 0x93
-offset-size-arithmetic	libclamav/yc.c	229	  End offset for analyze: Start of yC Section + 0xC3
-offset-size-arithmetic	libclamav/yc.c	235	    switch (yc_poly_emulator(ctx, fbuf, filesize, fbuf + ycsect + 0x93, fbuf + ycsect + 0xc6, ecx, ecx)) {
-offset-size-arithmetic	libclamav/yc.c	241	    filesize -= sections[sectcount].ursz;
-offset-size-arithmetic	libclamav/yc.c	247	  Start offset for analyze: Start of yC Section + 0x457
-offset-size-arithmetic	libclamav/yc.c	248	  End offset for analyze: Start of yC Section + 0x487
-offset-size-arithmetic	libclamav/yc.c	269	        max_emu = filesize - sections[i].raw;
-offset-size-arithmetic	libclamav/yc.c	274	        switch (yc_poly_emulator(ctx, fbuf, ofilesize, fbuf + ycsect + (offset == -0x18 ? 0x3ea : 0x457),
-offset-size-arithmetic	libclamav/yc.c	289	    memset((char *)pe + sizeof(struct pe_image_file_hdr) + 0x68, 0, 8);
-offset-size-arithmetic	libclamav/yc.c	293	    cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 16, cli_readint32(fbuf + ycsect + 0xa0f));
-offset-size-arithmetic	libclamav/yc.c	296	    cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38, cli_readint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38) - sections[sectcount].vsz);
+offset-size-arithmetic	libclamav/yc.c	184	                    if (decryptor_offset[j] == '\xC0') /* ROL AL,num */
+offset-size-arithmetic	libclamav/yc.c	206	                    if (decryptor_offset[j] == '\xC8') /* ROR AL,CL */
+offset-size-arithmetic	libclamav/yc.c	241	int yc_decrypt(cli_ctx *ctx, char *fbuf, unsigned int filesize, struct cli_exe_section *sections, unsigned int sectcount, uint32_t peoffset, int desc, uint32_t ecx, int16_t offset)
+offset-size-arithmetic	libclamav/yc.c	243	    uint32_t ycsect = sections[sectcount].raw + offset;
+offset-size-arithmetic	libclamav/yc.c	253	  Start offset for analyze: Start of yC Section + 0x93
+offset-size-arithmetic	libclamav/yc.c	254	  End offset for analyze: Start of yC Section + 0xC3
+offset-size-arithmetic	libclamav/yc.c	264	    switch (yc_poly_emulator(ctx, fbuf, filesize, fbuf + ycsect + 0x93, fbuf + ycsect + 0xc6, ecx, ecx)) {
+offset-size-arithmetic	libclamav/yc.c	272	    filesize -= sections[sectcount].ursz;
+offset-size-arithmetic	libclamav/yc.c	278	  Start offset for analyze: Start of yC Section + 0x457
+offset-size-arithmetic	libclamav/yc.c	279	  End offset for analyze: Start of yC Section + 0x487
+offset-size-arithmetic	libclamav/yc.c	305	        max_emu = filesize - sections[i].raw;
+offset-size-arithmetic	libclamav/yc.c	310	        switch (yc_poly_emulator(ctx, fbuf, ofilesize, fbuf + ycsect + (offset == -0x18 ? 0x3ea : 0x457),
+offset-size-arithmetic	libclamav/yc.c	327	    memset((char *)pe + sizeof(struct pe_image_file_hdr) + 0x68, 0, 8);
+offset-size-arithmetic	libclamav/yc.c	331	    cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 16, cli_readint32(fbuf + ycsect + 0xa0f));
+offset-size-arithmetic	libclamav/yc.c	334	    cli_writeint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38, cli_readint32((char *)pe + sizeof(struct pe_image_file_hdr) + 0x38) - sections[sectcount].vsz);
 offset-size-arithmetic	libclamav/yc.c	40	#define EC16(x) le16_to_host(x) /* Convert little endian to host */
 offset-size-arithmetic	libclamav/yc.c	44	static int yc_bounds_check(cli_ctx *ctx, char *base, unsigned int filesize, char *offset, unsigned int bound)
 offset-size-arithmetic	libclamav/yc.c	46	    if ((unsigned int)((offset + bound) - base) > filesize) {
-offset-size-arithmetic	libclamav/yc.c	60	static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, char *decryptor_offset, char *code, unsigned int ecx, uint32_t max_emu)
+offset-size-arithmetic	libclamav/yc.c	78	static int yc_poly_emulator(cli_ctx *ctx, char *base, unsigned int filesize, char *decryptor_offset, char *code, unsigned int ecx, uint32_t max_emu)
 offset-size-arithmetic	libclamav_rust/build.rs	151	        // Silence code-style warnings for generated bindings.
 offset-size-arithmetic	libclamav_rust/build.rs	155	        // Keep bindgen's size, alignment, and field-offset assertions enabled.
 offset-size-arithmetic	libclamav_rust/src/alz.rs	1025	                    /*This is the end, nothing really to do here.*/

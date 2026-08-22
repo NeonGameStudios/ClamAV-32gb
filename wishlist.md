@@ -1079,3 +1079,6 @@
 - PEspin compressed-section handoffs now use the context-aware FSG decoder;
   add compiled PEspin timeout injection and retain separate emulation/XOR,
   production corpus, sanitizer, and Sonic1 qualification.
+- yC emulator and section-decrypt loops now propagate distinct timeout results
+  and checkpoint the shared `MaxScanTime`; add compiled yC timeout-injection,
+  hostile jump-loop, production corpus, sanitizer, and Sonic1 qualification.
