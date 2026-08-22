@@ -472,6 +472,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
             }
 
             targetSize -= to_write;
+            outputBlocks++;
             currBlock++;
 
             if (targetSize == 0) {

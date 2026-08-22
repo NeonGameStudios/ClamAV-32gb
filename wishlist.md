@@ -73,6 +73,9 @@
 - HFS+ inline compressed output above its 64 KiB decoder buffer is now an
   explicit resource-incomplete result, and supported output uses the shared
   allocation guard.
+- HFS+ fork extraction now counts emitted blocks against the declared
+  `totalBlocks` value instead of reading additional inline extents; add
+  compiled malformed-fork and extent-overflow qualification.
 - The bundled CAB/CHM adapter now bounds decoder-requested allocations with the
   shared individual-allocation ceiling.
 - Bundled CAB/CHM libmspack callbacks now check the shared scan deadline during

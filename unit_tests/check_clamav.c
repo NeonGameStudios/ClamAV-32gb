@@ -13176,6 +13176,16 @@ static const void *hfsplus_fork_read_failure(fmap_t *map, size_t at, size_t len,
     return (const uint8_t *)map->data + at;
 }
 
+static const void *hfsplus_second_fork_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == (31U * 512U))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *hfsplus_catalog_node_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -18331,6 +18341,25 @@ START_TEST(test_hfsplus_fork_read_failure_is_fail_visible)
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ fork contents could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    /* A fork that declares one block must not consume a second inline extent
+     * merely because its logical size asks for more data. The old path never
+     * incremented outputBlocks and reached the injected second-block read. */
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 1024);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 2);
+    map->need              = hfsplus_second_fork_read_failure;
+    map->dont_cache_flag   = false;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine              = &engine;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ fork ended before its declared size");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);

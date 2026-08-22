@@ -3773,3 +3773,14 @@ encryption-info window, and marks an in-range callback failure incomplete.
 A callback-backed regression verifies that the later native range is fetched;
 compiled encrypted-OLE2 corpus, sanitizer, and supported-build qualification
 remain release gates.
+
+## HFS+ declared fork-block accounting — 2026-08-22
+
+HFS+ fork extraction checked the format-declared `totalBlocks` value but never
+advanced its emitted-block counter. A fork could therefore provide a larger
+logical size and consume a later inline extent after its declared block count
+was exhausted. The extractor now increments the native output count after
+each successfully written block and stops with an incomplete result when the
+declared fork ends early. The focused regression injects a failure at the
+second block and verifies that the corrected path stops before requesting it;
+compiled HFS+ corpus, sanitizer, and production qualification remain open.
