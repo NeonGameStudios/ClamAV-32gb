@@ -1849,11 +1849,13 @@ cli_dbgmsg("sizeof(hfsNodeDescriptor) is %lu\n", sizeof(hfsNodeDescriptor));
     /* Create temp folder for contents */
     if (!(targetdir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "hfsplus-tmp"))) {
         cli_errmsg("cli_scanhfsplus: cli_gentemp failed\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ temporary directory could not be allocated");
         status = CL_ETMPDIR;
         goto done;
     }
     if (mkdir(targetdir, 0700)) {
         cli_errmsg("cli_scanhfsplus: Cannot create temporary directory %s\n", targetdir);
+        cli_mark_scan_incomplete(ctx, "HFS+ temporary directory could not be created");
         status = CL_ETMPDIR;
         goto done;
     }

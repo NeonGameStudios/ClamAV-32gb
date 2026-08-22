@@ -299,8 +299,10 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
         }
 
         filename = cli_safer_strdup((const char *)key);
-        if (!filename)
+        if (!filename) {
+            cli_mark_scan_incomplete(ctx, "InstallShield MSI member name could not be allocated");
             return CL_EMEM;
+        }
 
         /* FIXMEISHIELD: cleanup the spam below */
         cli_dbgmsg("ishield-msi: File %s (csize: %llx, unk1:%x unk2:%x unk3:%x unk4:%x unk5:%x unk6:%x unk7:%x unk8:%x unk9:%x unk10:%x unk11:%x)\n", key, (long long)csize, fb.unk1, fb.unk2, fb.unk3, fb.unk4, fb.unk5, fb.unk6, fb.unk7, fb.unk8, fb.unk9, fb.unk10, fb.unk11);
@@ -1023,6 +1025,7 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
 
     if (!(outbuf = malloc(IS_CABBUFSZ))) {
         cli_errmsg("is_extract_cab: Unable to allocate memory for outbuf\n");
+        cli_mark_scan_incomplete(ctx, "InstallShield CAB output buffer could not be allocated");
         return CL_EMEM;
     }
 

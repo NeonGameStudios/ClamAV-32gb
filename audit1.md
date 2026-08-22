@@ -4751,3 +4751,14 @@ unchanged.
 The source guards and non-clang regression gates pass. Compiled fault
 injection, sanitizer runs, production corpora, and Sonic1 qualification remain
 open.
+
+## HFS+ and InstallShield setup allocation failures — 2026-08-22
+
+HFS+ temporary-directory allocation/creation and InstallShield MSI member-name
+and CAB output-buffer allocation failures now mark required parser work
+incomplete before returning. This preserves the fail-closed contract even
+when setup fails before temporary-file creation or quota admission.
+
+The source guards and non-clang regression gates pass. Compiled allocation
+fault injection, sanitizer runs, production corpora, and Sonic1 qualification
+remain open.
