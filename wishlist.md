@@ -202,6 +202,9 @@
   distinguish in-range fmap callback failures (`CL_EREAD`) from genuinely short
   structures; add callback-fault, sanitizer, and production JPEG corpus
   qualification.
+- JPEG parser entry and Photoshop 8BIM resource traversal now honor the shared
+  deadline in addition to the segment walk; add compiled timeout-injection and
+  long-resource JPEG corpus qualification.
 - GIF required signature, version, descriptor, block-label, extension, and
   image-data reads now distinguish in-range fmap callback failures (`CL_EREAD`)
   from genuinely short structures; add callback-fault, sanitizer, and

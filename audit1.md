@@ -3245,3 +3245,11 @@ Timeouts release decoder state and temporary output before returning
 `CL_ETIMEOUT` as an incomplete, non-cacheable result. A direct expired-context
 regression and source guards cover the change; compiled SWF corpus, sanitizer,
 and Sonic1 qualification remain release gates.
+
+## JPEG segment and Photoshop-resource deadlines — 2026-08-22
+
+JPEG now checks the shared scan deadline before initial header inspection,
+before each segment, and before each Photoshop 8BIM resource record. Timeout
+results remain sticky incomplete and non-cacheable. A direct expired-context
+regression and source guards cover the new boundaries; compiled JPEG corpus,
+sanitizer, and Sonic1 qualification remain release gates.

@@ -265,6 +265,16 @@ static cl_error_t jpeg_read_status(cli_ctx *ctx, size_t bytes_read, size_t expec
     return jpeg_parse_error(ctx, reason);
 }
 
+static cl_error_t jpeg_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
 {
     cl_error_t retval;
@@ -275,6 +285,10 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
     uint64_t size;
     size_t offset = *off;
     fmap_t *map   = ctx->fmap;
+
+    retval = jpeg_checktimelimit(ctx, "JPEG Photoshop-resource traversal reached the configured time limit");
+    if (retval != CL_SUCCESS)
+        return retval;
 
     /* Reaching the exact end means that the resource list has ended. Any
      * bytes still inside the map must contain a complete resource header; a
@@ -385,6 +399,10 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
     }
     map = ctx->fmap;
 
+    status = jpeg_checktimelimit(ctx, "JPEG inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        goto done;
+
     {
         size_t bytes_read = fmap_readn(map, buff, offset, 4);
         if (bytes_read != 4) {
@@ -410,7 +428,7 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
     }
 
     while (1) {
-        status = cli_checktimelimit(ctx);
+        status = jpeg_checktimelimit(ctx, "JPEG segment traversal reached the configured time limit");
         if (status != CL_SUCCESS)
             goto done;
         segment++;
