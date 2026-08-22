@@ -500,6 +500,9 @@
   and sanitizer qualification.
 - Confirmed XAR `<data>`/`<ea>` entries with invalid metadata no longer end the
   TOC walk as clean; add compiled malformed-XAR and production corpus coverage.
+- XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
+  honor the shared scan deadline with decoder and temporary-file cleanup; add
+  compiled timeout-injection and long-member/TOC corpus qualification.
 - Oversized MIME lines now fail closed instead of being split or skipped by the
   bounded legacy parser; add compiled long-header/body and production mail
   corpus coverage.

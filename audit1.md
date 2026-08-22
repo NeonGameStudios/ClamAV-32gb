@@ -3273,3 +3273,13 @@ deadline before each line, marks timeout incomplete, and preserves
 normalizing it to a generic parse result. A direct expired-context regression
 and source guards cover standalone entry; compiled UUEncode/mail corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## XAR traversal and decoder deadlines — 2026-08-22
+
+XAR TOC XML traversal, compressed TOC inflation, subdocument discovery, gzip
+and LZMA member decoding, and raw member copying previously lacked shared
+deadline checkpoints. They now check before attacker-controlled iterations;
+timeouts release zlib/LZMA state through the existing cleanup paths, release
+temporary reservations/files, and remain `CL_ETIMEOUT` incomplete results. A
+direct expired-context regression and source guards cover parser entry;
+compiled XAR corpus, sanitizer, and Sonic1 qualification remain release gates.

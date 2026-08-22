@@ -42,6 +42,16 @@ static cl_error_t xar_incomplete(cli_ctx *ctx, const char *reason)
     return CL_EPARSE;
 }
 
+static cl_error_t xar_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 /*
    xar_cleanup_temp_file - cleanup after cli_gentempfd
    parameters:
@@ -258,7 +268,7 @@ static void xar_get_checksum_values(xmlTextReaderPtr reader, unsigned char **cks
      e_hash - pointer to int for returning extracted checksum algorithm.
    returns - CL_FORMAT, CL_SUCCESS, CL_BREAK. CL_BREAK indicates no more <data>/<ea> element.
  */
-static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size_t *offset, size_t *size, int *encoding,
+static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t *length, size_t *offset, size_t *size, int *encoding,
                                    unsigned char **a_cksum, int *a_hash, unsigned char **e_cksum, int *e_hash)
 {
     const xmlChar *name;
@@ -271,8 +281,16 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, size_t *length, size
     *e_hash   = XAR_CKSUM_NONE;
     *encoding = CL_TYPE_ANY;
 
+    rc = xar_checktimelimit(ctx, "XAR TOC data traversal reached the configured time limit");
+    if (rc != CL_SUCCESS)
+        return rc;
+
     rc = xmlTextReaderRead(reader);
     while (rc == 1) {
+        rc = xar_checktimelimit(ctx, "XAR TOC data traversal reached the configured time limit");
+        if (rc != CL_SUCCESS)
+            return rc;
+
         name = xmlTextReaderConstLocalName(reader);
         if (indata || inea) {
             /*  cli_dbgmsg("cli_scanxar: xmlTextReaderRead read %s\n", name); */
@@ -389,13 +407,23 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
     int cleanup_rc;
     int temp_rc;
     int reader_status;
+    cl_error_t time_status;
     size_t subdoc_len;
     uint64_t subdoc_reserved;
     xmlChar *subdoc;
     const xmlChar *name;
     char *tmpname;
 
-    while ((reader_status = xmlTextReaderRead(reader)) == 1) {
+    while (1) {
+        time_status = xar_checktimelimit(ctx, "XAR subdocument traversal reached the configured time limit");
+        if (time_status != CL_SUCCESS) {
+            rc = time_status;
+            break;
+        }
+        reader_status = xmlTextReaderRead(reader);
+        if (reader_status != 1)
+            break;
+
         name = xmlTextReaderConstLocalName(reader);
         if (name == NULL) {
             cli_dbgmsg("cli_scanxar: xmlTextReaderConstLocalName() no name.\n");
@@ -474,6 +502,8 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
         }
     }
 
+    if (rc == CL_ETIMEOUT)
+        return rc;
     if (reader_status < 0)
         return xar_incomplete(ctx, "XAR TOC XML reader failed before file entries were inspected");
 
@@ -588,6 +618,10 @@ int cli_scanxar(cli_ctx *ctx)
 
     memset(&strm, 0x00, sizeof(z_stream));
 
+    rc = xar_checktimelimit(ctx, "XAR inspection reached the configured time limit");
+    if (rc != CL_SUCCESS)
+        return rc;
+
     /* retrieve xar header */
     if (fmap_readn(ctx->fmap, &hdr, 0, sizeof(hdr)) != sizeof(hdr)) {
         cli_dbgmsg("cli_scanxar: Invalid header, too short.\n");
@@ -653,6 +687,12 @@ int cli_scanxar(cli_ctx *ctx)
             size_t chunk         = MIN(sizeof(inbuf), (size_t)(hdr.toc_length_compressed - compressed_read));
             size_t source_offset = hdr.size + (size_t)compressed_read;
 
+            rc = xar_checktimelimit(ctx, "XAR TOC decoder traversal reached the configured time limit");
+            if (rc != CL_SUCCESS) {
+                inflateEnd(&strm);
+                goto exit_toc;
+            }
+
             if (fmap_readn(ctx->fmap, inbuf, source_offset, chunk) != chunk) {
                 cli_dbgmsg("cli_scanxar: could not read the complete compressed TOC chunk\n");
                 cli_mark_scan_incomplete(ctx, "XAR TOC could not be read completely");
@@ -668,6 +708,12 @@ int cli_scanxar(cli_ctx *ctx)
             do {
                 int inflate_rc;
                 size_t produced;
+
+                rc = xar_checktimelimit(ctx, "XAR TOC decoder traversal reached the configured time limit");
+                if (rc != CL_SUCCESS) {
+                    inflateEnd(&strm);
+                    goto exit_toc;
+                }
 
                 strm.next_out  = outbuf;
                 strm.avail_out = sizeof(outbuf);
@@ -761,7 +807,7 @@ int cli_scanxar(cli_ctx *ctx)
     /* Walk the TOC XML and extract files */
     fd      = -1;
     tmpname = NULL;
-    while (CL_SUCCESS == (rc = xar_get_toc_data_values(reader, &length, &offset, &size, &encoding,
+    while (CL_SUCCESS == (rc = xar_get_toc_data_values(reader, ctx, &length, &offset, &size, &encoding,
                                                        &a_cksum, &a_hash, &e_cksum, &e_hash))) {
         int do_extract_cksum = 1;
         unsigned char *blockp;
@@ -825,6 +871,13 @@ int cli_scanxar(cli_ctx *ctx)
                     unsigned long avail_in;
                     void *next_in;
                     unsigned int bytes = MIN(data_end - at, map->pgsz);
+
+                    rc = xar_checktimelimit(ctx, "XAR gzip decoder traversal reached the configured time limit");
+                    if (rc != CL_SUCCESS) {
+                        inflateEnd(&strm);
+                        goto exit_tmpfile;
+                    }
+
                     if (!(strm.next_in = next_in = (void *)fmap_need_off_once(map, at, bytes))) {
                         cli_dbgmsg("cli_scanxar: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
                         inflateEnd(&strm);
@@ -838,6 +891,11 @@ int cli_scanxar(cli_ctx *ctx)
                         size_t produced;
                         cl_error_t limit_status;
                         unsigned char buff[FILEBUFF];
+
+                        rc = xar_checktimelimit(ctx, "XAR gzip decoder traversal reached the configured time limit");
+                        if (rc != CL_SUCCESS)
+                            break;
+
                         strm.avail_out = sizeof(buff);
                         strm.next_out  = buff;
                         inf            = inflate(&strm, Z_SYNC_FLUSH);
@@ -974,6 +1032,13 @@ int cli_scanxar(cli_ctx *ctx)
                     void *next_in;
                     unsigned long in_consumed;
 
+                    rc = xar_checktimelimit(ctx, "XAR LZMA decoder traversal reached the configured time limit");
+                    if (rc != CL_SUCCESS) {
+                        cli_LzmaShutdown(&lz);
+                        __lzma_wrap_free(NULL, buff);
+                        goto exit_tmpfile;
+                    }
+
                     lz.next_out  = buff;
                     lz.avail_out = CLI_LZMA_OBUF_SIZE;
                     lz.avail_in = avail_in = MIN(CLI_LZMA_IBUF_SIZE, in_remaining);
@@ -1079,6 +1144,10 @@ int cli_scanxar(cli_ctx *ctx)
 
                     while (copied < length) {
                         size_t writelen = MIN(sizeof(copy_buffer), length - copied);
+
+                        rc = xar_checktimelimit(ctx, "XAR member traversal reached the configured time limit");
+                        if (rc != CL_SUCCESS)
+                            goto exit_tmpfile;
 
                         if (fmap_readn(map, copy_buffer, at + copied, writelen) != writelen) {
                             cli_mark_scan_incomplete(ctx, "XAR member could not be read completely");
