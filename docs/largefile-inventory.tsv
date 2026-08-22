@@ -5422,11 +5422,12 @@ fixed-width-integer	libclamav/vba_extract.h	43	cl_error_t cli_vba_readdir_new(cl
 fixed-width-integer	libclamav/vba_extract.h	44	                               int *tempfd, int *has_macros, char **tempfile, uint64_t *temporary_reserved);
 fixed-width-integer	libclamav/vba_extract.h	52	char *cli_ppt_vba_read_ex(int fd, cli_ctx *ctx, uint64_t *temporary_reserved_out);
 fixed-width-integer	libclamav/vba_extract.h	53	unsigned char *cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len,
-fixed-width-integer	libclamav/wwunpack.c	109	            uint32_t backbytes, backsize;
-fixed-width-integer	libclamav/wwunpack.c	195	                            uint16_t shifted = 0x0d;
+fixed-width-integer	libclamav/wwunpack.c	115	            uint32_t backbytes, backsize;
+fixed-width-integer	libclamav/wwunpack.c	207	                            uint16_t shifted = 0x0d;
 fixed-width-integer	libclamav/wwunpack.c	73	cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_exe_section *sects, uint16_t scount, uint32_t pe, int desc, cli_ctx *ctx)
 fixed-width-integer	libclamav/wwunpack.c	76	    uint32_t src, srcend, szd, bt, bits;
-fixed-width-integer	libclamav/wwunpack.c	78	    uint16_t i;
+fixed-width-integer	libclamav/wwunpack.c	77	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/wwunpack.c	79	    uint16_t i;
 fixed-width-integer	libclamav/wwunpack.h	30	cl_error_t wwunpack(uint8_t *, uint32_t, uint8_t *, struct cli_exe_section *, uint16_t, uint32_t, int, struct cli_ctx_tag *);
 fixed-width-integer	libclamav/www.c	192	void submit_post(const char *host, const char *port, const char *method, const char *url, const char *postdata, uint32_t timeout)
 fixed-width-integer	libclamav/www.c	57	int connect_host(const char *host, const char *port, uint32_t timeout, int useAsync)
@@ -13984,7 +13985,7 @@ native-width-integer	libclamav/vba_extract.h	50	int cli_scan_ole10(int fd, cli_c
 native-width-integer	libclamav/vba_extract.h	51	char *cli_ppt_vba_read(int fd, cli_ctx *ctx);
 native-width-integer	libclamav/vba_extract.h	52	char *cli_ppt_vba_read_ex(int fd, cli_ctx *ctx, uint64_t *temporary_reserved_out);
 native-width-integer	libclamav/vba_extract.h	53	unsigned char *cli_wm_decrypt_macro(int fd, off_t offset, uint32_t len,
-native-width-integer	libclamav/wwunpack.c	279	        if (cli_writen(desc, exe, exesz) != (size_t)exesz) {
+native-width-integer	libclamav/wwunpack.c	301	        if (cli_writen(desc, exe, exesz) != (size_t)exesz) {
 native-width-integer	libclamav/wwunpack.c	73	cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_exe_section *sects, uint16_t scount, uint32_t pe, int desc, cli_ctx *ctx)
 native-width-integer	libclamav/wwunpack.h	30	cl_error_t wwunpack(uint8_t *, uint32_t, uint8_t *, struct cli_exe_section *, uint16_t, uint32_t, int, struct cli_ctx_tag *);
 native-width-integer	libclamav/www.c	156	size_t encoded_size(const char *postdata)
@@ -29874,12 +29875,12 @@ offset-size-arithmetic	libclamav/vba_extract.c	983	                data_offset +
 offset-size-arithmetic	libclamav/vba_extract.c	987	                data_offset += sizeof(uint32_t);
 offset-size-arithmetic	libclamav/vba_extract.c	989	                if (size > data_len - data_offset) {
 offset-size-arithmetic	libclamav/vba_extract.h	49	unsigned char *cli_vba_inflate(int fd, off_t offset, size_t *size);
-offset-size-arithmetic	libclamav/wwunpack.c	214	                backsize = saved + 2;
-offset-size-arithmetic	libclamav/wwunpack.c	217	            if (!CLI_ISCONTAINED(exe, exesz, ucur, backsize) || !CLI_ISCONTAINED(exe, exesz, ucur - backbytes, backsize))
-offset-size-arithmetic	libclamav/wwunpack.c	220	                while (backsize--) {
-offset-size-arithmetic	libclamav/wwunpack.c	86	        src = sects[scount].rva - cli_readint32(structs); /* src delta / dst delta - not used / dwords / end of src */
-offset-size-arithmetic	libclamav/wwunpack.c	93	        unpd = ucur = exe + src + srcend + 4 - szd;
-offset-size-arithmetic	libclamav/wwunpack.c	98	        cli_dbgmsg("WWP: src: %x, szd: %x, srcend: %x - %x\n", src, szd, srcend, srcend + 4 - szd);
+offset-size-arithmetic	libclamav/wwunpack.c	104	        cli_dbgmsg("WWP: src: %x, szd: %x, srcend: %x - %x\n", src, szd, srcend, srcend + 4 - szd);
+offset-size-arithmetic	libclamav/wwunpack.c	226	                backsize = saved + 2;
+offset-size-arithmetic	libclamav/wwunpack.c	229	            if (!CLI_ISCONTAINED(exe, exesz, ucur, backsize) || !CLI_ISCONTAINED(exe, exesz, ucur - backbytes, backsize))
+offset-size-arithmetic	libclamav/wwunpack.c	232	                while (backsize--) {
+offset-size-arithmetic	libclamav/wwunpack.c	92	        src = sects[scount].rva - cli_readint32(structs); /* src delta / dst delta - not used / dwords / end of src */
+offset-size-arithmetic	libclamav/wwunpack.c	99	        unpd = ucur = exe + src + srcend + 4 - szd;
 offset-size-arithmetic	libclamav/www.c	156	size_t encoded_size(const char *postdata)
 offset-size-arithmetic	libclamav/www.c	162	        len += isalnum(*p) ? 1 : 3;
 offset-size-arithmetic	libclamav/www.c	192	void submit_post(const char *host, const char *port, const char *method, const char *url, const char *postdata, uint32_t timeout)

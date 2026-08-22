@@ -4575,3 +4575,13 @@ boundary remains explicit, and the LZMA-backed UPX path checks the deadline
 before and after its decoder call. Static guards and diff checks are covered;
 compiled UPX timeout injection, production PE corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## WWPack decompression deadline checkpoints — 2026-08-22
+
+The legacy WWPack decoder already received scan context for rebuilt-output
+handling, but its bitstream, large back-copy, block traversal, and section
+reconstruction loops did not independently observe `MaxScanTime`. Those loops
+now checkpoint the shared deadline at bounded progress intervals and return a
+fail-visible `CL_ETIMEOUT` without handing partial output to the nested scan.
+Compiled WWPack timeout injection, short-write coverage, production PE corpus,
+sanitizer, and Sonic1 qualification remain release gates.

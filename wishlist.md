@@ -1057,3 +1057,7 @@
   and PE-rebuild loops now receive the shared scan context and checkpoint
   `MaxScanTime`; add compiled UPX timeout injection and production PE corpus,
   sanitizer, and Sonic1 qualification.
+- Legacy WWPack bitstream, large back-copy, block traversal, and section
+  reconstruction loops now checkpoint the shared `MaxScanTime`; add compiled
+  WWPack timeout injection, short-write coverage, and production PE corpus,
+  sanitizer, and Sonic1 qualification.

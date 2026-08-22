@@ -2424,6 +2424,8 @@ contains libclamav/aspack.c 'Aspack fallback output reached the configured time 
 contains libclamav/aspack.c 'Aspack fallback output could not be written completely'
 contains libclamav/wwunpack.c 'WWPack output reached the configured time limit'
 contains libclamav/wwunpack.c 'WWPack output could not be written completely'
+contains libclamav/wwunpack.c 'WWPack decompression reached the configured time limit'
+contains libclamav/wwunpack.c 'WWPack output reconstruction reached the configured time limit'
 contains libclamav/yc.c 'yC output reached the configured time limit'
 contains libclamav/yc.c 'yC output could not be written completely'
 contains libclamav/rebuildpe.h 'cli_rebuildpe_align_ctx'

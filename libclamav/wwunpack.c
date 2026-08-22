@@ -74,11 +74,17 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
 {
     uint8_t *structs = wwsect + 0x2a1, *compd, *ccur, *unpd, *ucur, bc;
     uint32_t src, srcend, szd, bt, bits;
+    uint32_t ticks = 0;
     cl_error_t error = 0;
     uint16_t i;
 
     cli_dbgmsg("in wwunpack\n");
     while (1) {
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "WWPack decompression reached the configured time limit");
+            error = CL_ETIMEOUT;
+            break;
+        }
         if (!CLI_ISCONTAINED(wwsect, sects[scount].rsz, structs, 17)) {
             cli_dbgmsg("WWPack: Array of structs out of section\n");
             break;
@@ -108,6 +114,12 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
         while (CL_SUCCESS == error) {
             uint32_t backbytes, backsize;
             uint8_t saved;
+
+            if (!(++ticks & 0xfffU) && cli_checktimelimit(ctx) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "WWPack decompression reached the configured time limit");
+                error = CL_ETIMEOUT;
+                break;
+            }
 
             BIT;
             if (!bits) { /* BYTE copy */
@@ -216,11 +228,17 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
 
             if (!CLI_ISCONTAINED(exe, exesz, ucur, backsize) || !CLI_ISCONTAINED(exe, exesz, ucur - backbytes, backsize))
                 error = 1;
-            else
+            else {
                 while (backsize--) {
+                    if (!(++ticks & 0xffffU) && cli_checktimelimit(ctx) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "WWPack decompression reached the configured time limit");
+                        error = CL_ETIMEOUT;
+                        break;
+                    }
                     *ucur = *(ucur - backbytes);
                     ucur++;
                 }
+            }
         }
         free(compd);
         if (error) {
@@ -255,6 +273,10 @@ cl_error_t wwunpack(uint8_t *exe, uint32_t exesz, uint8_t *wwsect, struct cli_ex
         structs = &exe[(0xffff & cli_readint32(&exe[pe + 0x14])) + pe + 0x18];
 
         for (i = 0; i < scount; i++) {
+            if (!(i & 0xffU) && cli_checktimelimit(ctx) != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "WWPack output reconstruction reached the configured time limit");
+                return CL_ETIMEOUT;
+            }
             if (!CLI_ISCONTAINED(exe, exesz, structs, 0x28)) {
                 cli_dbgmsg("WWPack: structs pointer out of bounds\n");
                 return CL_EFORMAT;
