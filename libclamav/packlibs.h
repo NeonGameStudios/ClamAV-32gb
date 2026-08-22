@@ -33,5 +33,6 @@ int cli_unfsg(const char *, char *, int, int, const char **, char **);
 int cli_unfsg_ctx(const char *, char *, int, int, const char **, char **, struct cli_ctx_tag *);
 
 int unmew(const char *, char *, int, int, const char **, char **);
+int unmew_ctx(const char *, char *, int, int, const char **, char **, struct cli_ctx_tag *);
 
 #endif

@@ -213,17 +213,42 @@ int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char *
     return cli_unfsg_ctx(source, dest, ssize, dsize, endsrc, enddst, NULL);
 }
 
-int unmew(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
+static int mew_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+{
+    if (ctx == NULL)
+        return 0;
+
+    (*ticks)++;
+    if (*ticks < 4096)
+        return 0;
+
+    *ticks = 0;
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "MEW decompression reached the configured time limit");
+        return 1;
+    }
+
+    return 0;
+}
+
+int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
 {
     uint8_t mydl = 0x80;
     uint32_t myeax_backbytes, myecx_backsize, oldback = 0;
+    uint32_t ticks = 0;
     const char *csrc = source;
     char *cdst       = dest;
     int oob, lostbit = 1;
 
+    if (ctx != NULL && cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "MEW decompression reached the configured time limit");
+        return -1;
+    }
     *cdst++ = *csrc++;
 
     while (1) {
+        if (mew_checktimelimit(ctx, &ticks))
+            return -1;
         if ((oob = doubledl(&csrc, &mydl, source, ssize))) {
             if (oob == -1)
                 return -1;
@@ -242,6 +267,8 @@ int unmew(const char *source, char *dest, int ssize, int dsize, const char **end
                     myecx_backsize++;
                     myeax_backbytes = 0x10;
                     while (myeax_backbytes < 0x100) {
+                        if (mew_checktimelimit(ctx, &ticks))
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                         myeax_backbytes = myeax_backbytes * 2 + oob;
@@ -274,6 +301,8 @@ int unmew(const char *source, char *dest, int ssize, int dsize, const char **end
                 /* 180 */
                 myecx_backsize = 1;
                 do {
+                    if (mew_checktimelimit(ctx, &ticks))
+                        return -1;
                     if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                         return -1;
                     myecx_backsize = myecx_backsize * 2 + oob;
@@ -286,6 +315,8 @@ int unmew(const char *source, char *dest, int ssize, int dsize, const char **end
                     /* 18a */
                     myecx_backsize = 1;
                     do {
+                        if (mew_checktimelimit(ctx, &ticks))
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                         myecx_backsize = myecx_backsize * 2 + oob;
@@ -303,6 +334,8 @@ int unmew(const char *source, char *dest, int ssize, int dsize, const char **end
                     myecx_backsize = 1;
                     csrc++;
                     do {
+                        if (mew_checktimelimit(ctx, &ticks))
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                         myecx_backsize = myecx_backsize * 2 + oob;
@@ -329,6 +362,8 @@ int unmew(const char *source, char *dest, int ssize, int dsize, const char **end
                 return -1;
             }
             while (myecx_backsize--) {
+                if (mew_checktimelimit(ctx, &ticks))
+                    return -1;
                 *cdst = *(cdst - myeax_backbytes);
                 cdst++;
             }
@@ -349,4 +384,9 @@ int unmew(const char *source, char *dest, int ssize, int dsize, const char **end
     *endsrc = csrc;
     *enddst = cdst;
     return 0;
+}
+
+int unmew(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
+{
+    return unmew_ctx(source, dest, ssize, dsize, endsrc, enddst, NULL);
 }

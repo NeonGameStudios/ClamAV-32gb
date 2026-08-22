@@ -1070,3 +1070,6 @@
 - FSG decompression and back-copy loops now use a context-aware decoder entry
   while retaining a compatibility wrapper for other packers; add compiled FSG
   timeout injection, multi-section corpus, sanitizer, and Sonic1 qualification.
+- Non-LZMA MEW bitstream, back-copy, and section-traversal loops now use a
+  context-aware decoder entry; add compiled MEW timeout injection and retain
+  separate LZMA-path, production corpus, sanitizer, and Sonic1 qualification.

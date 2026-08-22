@@ -810,6 +810,12 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
     loc_ss -= 12;
     loc_ss -= off;
     while (1) {
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "MEW section traversal reached the configured time limit");
+            if (section != NULL)
+                free(section);
+            return -1;
+        }
         cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
         if (!CLI_ISCONTAINED(src, size_sum, lesi, loc_ss) || !CLI_ISCONTAINED(src, size_sum, ledi, loc_ds)) {
             cli_dbgmsg("Possibly programmer error or hand-crafted PE file, report to clamav team\n");
@@ -817,7 +823,7 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
                 free(section);
             return -1;
         }
-        if (unmew(lesi, ledi, loc_ss, loc_ds, &f1, &f2)) {
+        if (unmew_ctx(lesi, ledi, loc_ss, loc_ds, &f1, &f2, ctx)) {
             free(section);
             return -1;
         }

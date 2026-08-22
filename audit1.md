@@ -4615,3 +4615,13 @@ decoder progress and large copies, while the existing context-free wrapper is
 retained for MEW and Spin callers. FSG timeout is fail-visible before PE
 rebuild or nested scanning. Compiled timeout injection, multi-section corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## MEW non-LZMA decompression deadline checkpoints — 2026-08-22
+
+The legacy non-LZMA MEW bitstream decoder previously remained context-free;
+its section output and back-copy loops could run beyond the shared
+`MaxScanTime`. A context-aware `unmew_ctx()` path now checkpoints decoder
+progress, large copies, and MEW section traversal before PE rebuild. The
+separate `mew_lzma()` decoder is not covered by this slice and remains an
+explicit qualification item. Compiled MEW timeout injection, production
+corpus, sanitizer, and Sonic1 qualification remain release gates.

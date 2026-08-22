@@ -3177,7 +3177,7 @@ fixed-width-integer	libclamav/mew.c	764	int unmew11(char *src, uint32_t off, uin
 fixed-width-integer	libclamav/mew.c	766	    uint32_t entry_point, newedi, loc_ds = dsize, loc_ss = ssize;
 fixed-width-integer	libclamav/mew.c	774	    uint32_t vma                    = base + vadd;
 fixed-width-integer	libclamav/mew.c	775	    uint32_t size_sum               = ssize + dsize;
-fixed-width-integer	libclamav/mew.c	839	            uint32_t val = PESALIGN(f2 - src, 0x1000);
+fixed-width-integer	libclamav/mew.c	845	            uint32_t val = PESALIGN(f2 - src, 0x1000);
 fixed-width-integer	libclamav/mew.c	96	    p->p2 = EC32(CE32(((uint32_t)cli_readint32(old_edx + 1))));
 fixed-width-integer	libclamav/mew.h	35	    uint32_t p1, p2;
 fixed-width-integer	libclamav/mew.h	38	int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t);
@@ -3662,7 +3662,9 @@ fixed-width-integer	libclamav/others.h	747	void cli_set_match_offset(cli_ctx *ct
 fixed-width-integer	libclamav/others.h	809	cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t type, bool is_new_buffer, uint32_t attributes);
 fixed-width-integer	libclamav/others_common.c	1063	    uint32_t depth           = 0;
 fixed-width-integer	libclamav/others_common.c	387	    if ((uint32_t)(*timep) > 0x7fffffff) {
-fixed-width-integer	libclamav/packlibs.c	219	    uint32_t myeax_backbytes, myecx_backsize, oldback = 0;
+fixed-width-integer	libclamav/packlibs.c	216	static int mew_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+fixed-width-integer	libclamav/packlibs.c	237	    uint32_t myeax_backbytes, myecx_backsize, oldback = 0;
+fixed-width-integer	libclamav/packlibs.c	238	    uint32_t ticks = 0;
 fixed-width-integer	libclamav/packlibs.c	32	static int doubledl(const char **scur, uint8_t *mydlptr, const char *buffer, uint32_t buffersize)
 fixed-width-integer	libclamav/packlibs.c	49	static int fsg_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
 fixed-width-integer	libclamav/packlibs.c	70	    uint32_t backbytes, backsize, oldback = 0;
@@ -11535,15 +11537,18 @@ native-width-integer	libclamav/others_common.c	829	static cl_error_t cli_ftw_dir
 native-width-integer	libclamav/others_common.c	833	    size_t i, entries_cnt = 0;
 native-width-integer	libclamav/others_common.c	848	            int stated = 0;
 native-width-integer	libclamav/packlibs.c	211	int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
-native-width-integer	libclamav/packlibs.c	216	int unmew(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
-native-width-integer	libclamav/packlibs.c	222	    int oob, lostbit = 1;
+native-width-integer	libclamav/packlibs.c	216	static int mew_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+native-width-integer	libclamav/packlibs.c	234	int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
+native-width-integer	libclamav/packlibs.c	241	    int oob, lostbit = 1;
 native-width-integer	libclamav/packlibs.c	32	static int doubledl(const char **scur, uint8_t *mydlptr, const char *buffer, uint32_t buffersize)
+native-width-integer	libclamav/packlibs.c	389	int unmew(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
 native-width-integer	libclamav/packlibs.c	49	static int fsg_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
 native-width-integer	libclamav/packlibs.c	67	int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
 native-width-integer	libclamav/packlibs.c	74	    int oob, lostbit = 1;
 native-width-integer	libclamav/packlibs.h	32	int cli_unfsg(const char *, char *, int, int, const char **, char **);
 native-width-integer	libclamav/packlibs.h	33	int cli_unfsg_ctx(const char *, char *, int, int, const char **, char **, struct cli_ctx_tag *);
 native-width-integer	libclamav/packlibs.h	35	int unmew(const char *, char *, int, int, const char **, char **);
+native-width-integer	libclamav/packlibs.h	36	int unmew_ctx(const char *, char *, int, int, const char **, char **, struct cli_ctx_tag *);
 native-width-integer	libclamav/partition_intersection.c	41	cl_error_t partition_intersection_list_check(partition_intersection_list_t* list, unsigned* pitxn, off_t start, size_t size)
 native-width-integer	libclamav/partition_intersection.c	53	            if (check_node->Start + check_node->Size > (unsigned long)start) {
 native-width-integer	libclamav/partition_intersection.c	58	            if (start + size > (unsigned long)(check_node->Start)) {
@@ -19401,8 +19406,8 @@ format-width	libclamav/message.c	2771	    cli_dbgmsg("messageDedup reclaimed %lu
 format-width	libclamav/message.c	462	                    cli_dbgmsg("Unknown MIME type \"%s\" - guessing as %s (%d%% certainty)\n",
 format-width	libclamav/message.c	854	        cli_dbgmsg("messageFindArgument: compare %lu bytes of %s with %s\n",
 format-width	libclamav/message.c	927	        cli_dbgmsg("messageHasArgument: compare %lu bytes of %s with %s\n",
-format-width	libclamav/mew.c	813	        cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
-format-width	libclamav/mew.c	867	                cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
+format-width	libclamav/mew.c	819	        cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
+format-width	libclamav/mew.c	873	                cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
 format-width	libclamav/mpool.c	483	    spam("Map created @%p->%p - size %lu out of %lu - voidptr=%lu\n", mpool_p, (char *)mpool_p + mp.u.mpm.size, (unsigned long)mp.u.mpm.usize, (unsigned long)mp.u.mpm.size, (unsigned long)SIZEOF_VOID_P);
 format-width	libclamav/mpool.c	556	    spam("Map flushed @%p, in use: %lu\n", mp, (unsigned long)used);
 format-width	libclamav/mpool.c	611	    spam("malloc @%p size %lu (%s) origsize %lu overhead %lu\n", f, (unsigned long)realneed, dbg, (unsigned long)size, (unsigned long)(needed - size));
@@ -19544,7 +19549,7 @@ format-width	libclamav/others_common.c	324	        cli_errmsg("cli_max_realloc()
 format-width	libclamav/others_common.c	336	        cli_warnmsg("cli_max_realloc_or_free(): File or section is too large to scan (%zu bytes). For your safety, ClamAV limits how much memory an operation can allocate to %d bytes\n",
 format-width	libclamav/others_common.c	345	        cli_errmsg("cli_max_realloc_or_free(): Can't re-allocate memory to %zu bytes.\n", size);
 format-width	libclamav/others_common.c	371	        cli_errmsg("cli_safer_strdup(): Can't allocate memory (%u bytes).\n", (unsigned int)strlen(s));
-format-width	libclamav/packlibs.c	325	                cli_dbgmsg("MEW: rete: %p %d %p %d %d || %p %d %p %d %d\n", dest, dsize, cdst, myecx_backsize,
+format-width	libclamav/packlibs.c	358	                cli_dbgmsg("MEW: rete: %p %d %p %d %d || %p %d %p %d %d\n", dest, dsize, cdst, myecx_backsize,
 format-width	libclamav/pdf.c	1038	    cli_dbgmsg("pdfobj_flag: %s flagged in object %u %u\n", s, obj->id >> 8, obj->id & 0xff);
 format-width	libclamav/pdf.c	1167	        cli_dbgmsg("find_length: Encountered invalid negative object length or objid (%ld).\n", temp_long);
 format-width	libclamav/pdf.c	1192	            cli_dbgmsg("find_length: Encountered invalid negative object genid (%ld).\n", temp_long);
@@ -25930,12 +25935,12 @@ offset-size-arithmetic	libclamav/mew.c	795	    /* Ensure that off + required dat
 offset-size-arithmetic	libclamav/mew.c	796	    if (!CLI_ISCONTAINED(src, size_sum, src + off, 12)) {
 offset-size-arithmetic	libclamav/mew.c	801	    source = src + dsize + off;
 offset-size-arithmetic	libclamav/mew.c	807	    loc_ds      = size_sum - (newedi - vma);
-offset-size-arithmetic	libclamav/mew.c	836	        loc_ds = size_sum - (cli_readint32(f1) - vma);
-offset-size-arithmetic	libclamav/mew.c	866	            if (section[i].raw + section[i].rsz > dsize) {
-offset-size-arithmetic	libclamav/mew.c	868	                           i, section[i].raw, section[i].raw + section[i].rsz, dsize);
-offset-size-arithmetic	libclamav/mew.c	885	        if (!CLI_ISCONTAINED(src, size_sum, src + uselzma + 8, 1)) {
-offset-size-arithmetic	libclamav/mew.c	891	        if (!CLI_ISCONTAINED(src, size_sum, f1 + 4, 20 + 4 + 5)) {
-offset-size-arithmetic	libclamav/mew.c	896	        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50')) {
+offset-size-arithmetic	libclamav/mew.c	842	        loc_ds = size_sum - (cli_readint32(f1) - vma);
+offset-size-arithmetic	libclamav/mew.c	872	            if (section[i].raw + section[i].rsz > dsize) {
+offset-size-arithmetic	libclamav/mew.c	874	                           i, section[i].raw, section[i].raw + section[i].rsz, dsize);
+offset-size-arithmetic	libclamav/mew.c	891	        if (!CLI_ISCONTAINED(src, size_sum, src + uselzma + 8, 1)) {
+offset-size-arithmetic	libclamav/mew.c	897	        if (!CLI_ISCONTAINED(src, size_sum, f1 + 4, 20 + 4 + 5)) {
+offset-size-arithmetic	libclamav/mew.c	902	        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50')) {
 offset-size-arithmetic	libclamav/mpool.c	371	#define FRAGSBITS (sizeof(fragsz) / sizeof(fragsz[0]))
 offset-size-arithmetic	libclamav/mpool.c	406	static size_t align_to_pagesize(struct MP *mp, size_t size)
 offset-size-arithmetic	libclamav/mpool.c	408	    return (size / mp->psize + (size % mp->psize != 0)) * mp->psize;
@@ -26730,31 +26735,32 @@ offset-size-arithmetic	libclamav/packlibs.c	199	            if (cdst < dest || c
 offset-size-arithmetic	libclamav/packlibs.c	206	    if (endsrc) *endsrc = csrc;
 offset-size-arithmetic	libclamav/packlibs.c	207	    if (enddst) *enddst = cdst;
 offset-size-arithmetic	libclamav/packlibs.c	211	int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
-offset-size-arithmetic	libclamav/packlibs.c	216	int unmew(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
-offset-size-arithmetic	libclamav/packlibs.c	242	                    myecx_backsize++;
-offset-size-arithmetic	libclamav/packlibs.c	245	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
-offset-size-arithmetic	libclamav/packlibs.c	262	                    myecx_backsize  = myecx_backsize * 2 + (myeax_backbytes & 1);
-offset-size-arithmetic	libclamav/packlibs.c	269	                    myecx_backsize += 2;
-offset-size-arithmetic	libclamav/packlibs.c	277	                    if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
-offset-size-arithmetic	libclamav/packlibs.c	279	                    myecx_backsize = myecx_backsize * 2 + oob;
-offset-size-arithmetic	libclamav/packlibs.c	280	                    if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
-offset-size-arithmetic	libclamav/packlibs.c	284	                myecx_backsize = myecx_backsize - 1 - lostbit;
-offset-size-arithmetic	libclamav/packlibs.c	289	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
-offset-size-arithmetic	libclamav/packlibs.c	291	                        myecx_backsize = myecx_backsize * 2 + oob;
-offset-size-arithmetic	libclamav/packlibs.c	292	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
-offset-size-arithmetic	libclamav/packlibs.c	302	                    myeax_backbytes += (myecx_backsize - 1) << 8;
-offset-size-arithmetic	libclamav/packlibs.c	306	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
-offset-size-arithmetic	libclamav/packlibs.c	308	                        myecx_backsize = myecx_backsize * 2 + oob;
-offset-size-arithmetic	libclamav/packlibs.c	309	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
-offset-size-arithmetic	libclamav/packlibs.c	314	                        myecx_backsize++;
-offset-size-arithmetic	libclamav/packlibs.c	316	                        myecx_backsize++;
-offset-size-arithmetic	libclamav/packlibs.c	318	                        myecx_backsize += 2;
-offset-size-arithmetic	libclamav/packlibs.c	324	            if (!CLI_ISCONTAINED(dest, dsize, cdst, myecx_backsize) || !CLI_ISCONTAINED(dest, dsize, cdst - myeax_backbytes, myecx_backsize)) {
-offset-size-arithmetic	libclamav/packlibs.c	327	                           dest, dsize, cdst - myeax_backbytes, myecx_backsize,
-offset-size-arithmetic	libclamav/packlibs.c	328	                           CLI_ISCONTAINED(dest, dsize, cdst - myeax_backbytes, myecx_backsize));
-offset-size-arithmetic	libclamav/packlibs.c	331	            while (myecx_backsize--) {
-offset-size-arithmetic	libclamav/packlibs.c	338	            if (cdst < dest || cdst >= dest + dsize || csrc < source || csrc >= source + ssize) {
-offset-size-arithmetic	libclamav/packlibs.c	340	                           cdst, dest, dsize, dest + dsize, csrc, source, ssize, source + ssize);
+offset-size-arithmetic	libclamav/packlibs.c	234	int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/packlibs.c	267	                    myecx_backsize++;
+offset-size-arithmetic	libclamav/packlibs.c	272	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
+offset-size-arithmetic	libclamav/packlibs.c	289	                    myecx_backsize  = myecx_backsize * 2 + (myeax_backbytes & 1);
+offset-size-arithmetic	libclamav/packlibs.c	296	                    myecx_backsize += 2;
+offset-size-arithmetic	libclamav/packlibs.c	306	                    if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
+offset-size-arithmetic	libclamav/packlibs.c	308	                    myecx_backsize = myecx_backsize * 2 + oob;
+offset-size-arithmetic	libclamav/packlibs.c	309	                    if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
+offset-size-arithmetic	libclamav/packlibs.c	313	                myecx_backsize = myecx_backsize - 1 - lostbit;
+offset-size-arithmetic	libclamav/packlibs.c	320	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
+offset-size-arithmetic	libclamav/packlibs.c	322	                        myecx_backsize = myecx_backsize * 2 + oob;
+offset-size-arithmetic	libclamav/packlibs.c	323	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
+offset-size-arithmetic	libclamav/packlibs.c	333	                    myeax_backbytes += (myecx_backsize - 1) << 8;
+offset-size-arithmetic	libclamav/packlibs.c	339	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
+offset-size-arithmetic	libclamav/packlibs.c	341	                        myecx_backsize = myecx_backsize * 2 + oob;
+offset-size-arithmetic	libclamav/packlibs.c	342	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
+offset-size-arithmetic	libclamav/packlibs.c	347	                        myecx_backsize++;
+offset-size-arithmetic	libclamav/packlibs.c	349	                        myecx_backsize++;
+offset-size-arithmetic	libclamav/packlibs.c	351	                        myecx_backsize += 2;
+offset-size-arithmetic	libclamav/packlibs.c	357	            if (!CLI_ISCONTAINED(dest, dsize, cdst, myecx_backsize) || !CLI_ISCONTAINED(dest, dsize, cdst - myeax_backbytes, myecx_backsize)) {
+offset-size-arithmetic	libclamav/packlibs.c	360	                           dest, dsize, cdst - myeax_backbytes, myecx_backsize,
+offset-size-arithmetic	libclamav/packlibs.c	361	                           CLI_ISCONTAINED(dest, dsize, cdst - myeax_backbytes, myecx_backsize));
+offset-size-arithmetic	libclamav/packlibs.c	364	            while (myecx_backsize--) {
+offset-size-arithmetic	libclamav/packlibs.c	373	            if (cdst < dest || cdst >= dest + dsize || csrc < source || csrc >= source + ssize) {
+offset-size-arithmetic	libclamav/packlibs.c	375	                           cdst, dest, dsize, dest + dsize, csrc, source, ssize, source + ssize);
+offset-size-arithmetic	libclamav/packlibs.c	389	int unmew(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
 offset-size-arithmetic	libclamav/packlibs.c	39	        if (*scur < buffer || *scur >= buffer + buffersize - 1)
 offset-size-arithmetic	libclamav/packlibs.c	67	int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/packlibs.c	76	    if (ssize <= 0 || dsize <= 0) return -1;
