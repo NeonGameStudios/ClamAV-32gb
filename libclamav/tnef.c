@@ -202,7 +202,9 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                 break;
             case 0:
                 break;
-            default:
+            default: {
+                cl_error_t dump_ret = CL_SUCCESS;
+
                 cli_warnmsg("TNEF - unknown level %d tag 0x%x\n", (int)part, (int)tag);
 
                 /*
@@ -225,7 +227,7 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                         pos = 0;
                         while (1) {
                             if (tnef_checktimelimit(ctx, "TNEF debug-dump traversal reached the configured time limit") != CL_SUCCESS) {
-                                ret     = CL_ETIMEOUT;
+                                dump_ret = CL_ETIMEOUT;
                                 alldone = 1;
                                 break;
                             }
@@ -233,15 +235,26 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
                             if (count == (size_t)-1 || count == 0)
                                 break;
                             pos += count;
-                            cli_writen(fout, buffer, count);
+                            if (tnef_checktimelimit(ctx, "TNEF debug-dump output reached the configured time limit") != CL_SUCCESS) {
+                                dump_ret = CL_ETIMEOUT;
+                                alldone = 1;
+                                break;
+                            }
+                            if (cli_writen(fout, buffer, count) != count) {
+                                cli_mark_scan_incomplete(ctx, "TNEF debug-dump output could not be written completely");
+                                dump_ret = CL_EWRITE;
+                                alldone = 1;
+                                break;
+                            }
                         }
                         close(fout);
                     }
                     free(filename);
                 }
-                ret     = CL_EFORMAT;
+                ret     = dump_ret == CL_SUCCESS ? CL_EFORMAT : dump_ret;
                 alldone = 1;
                 break;
+            }
         }
     } while (!alldone);
 
