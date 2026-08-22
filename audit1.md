@@ -3647,3 +3647,16 @@ them. This prevents a stale or programmatic integration from widening the
 wire-ingress budget by bypassing configuration parsing. A focused clamd unit
 regression covers the over-limit option object; compiled service and Sonic1
 qualification remain open.
+
+## Structured report unsigned-counter serialization — 2026-08-22
+
+`cl_scan_report_to_json()` previously cast every 64-bit metric and limit to
+`int64_t` before handing it to json-c. The scan-report counters intentionally
+saturate at `UINT64_MAX` during aggregate and resource accounting, so that cast
+could emit a negative JSON number for a valid saturated counter. The serializer
+now uses json-c's unsigned integer object on versions that provide it, and
+returns `CL_EARG` on older json-c versions when a value cannot be represented,
+allowing clamd's existing explicit incomplete fallback to take over. The
+32-bit report limits are also serialized through the same 64-bit-safe path. A
+focused saturated-counter regression and source guards cover the boundary;
+compiled JSON-C-version and service qualification remain release gates.

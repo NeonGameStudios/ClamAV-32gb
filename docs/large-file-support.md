@@ -5147,3 +5147,8 @@ release gates.
   the scan incomplete instead of wrapping and admitting another object. The
   internal ABI is unchanged; the focused limit regression covers this native
   counter boundary, while production file-count qualification remains open.
+- Structured report JSON now serializes 64-bit counters through json-c's
+  unsigned-integer type, and legacy json-c versions refuse values above
+  `INT64_MAX` rather than emitting negative metrics. A focused saturated-counter
+  regression covers the boundary; compiled report and service qualification
+  remain open.

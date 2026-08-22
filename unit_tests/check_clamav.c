@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <check.h>
+#include <json.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -1248,6 +1249,49 @@ START_TEST(test_scan_report_complete_and_json)
     cl_engine_free(engine);
     cli_unlink(path);
     free(path);
+}
+END_TEST
+
+START_TEST(test_scan_report_json_preserves_unsigned_boundaries)
+{
+    cl_scan_report_t *report = NULL;
+    char *json              = NULL;
+    cl_error_t status;
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    report->metrics.root_size            = UINT64_MAX;
+    report->metrics.logical_bytes        = UINT64_MAX;
+    report->metrics.matcher_bytes        = UINT64_MAX;
+    report->metrics.contiguous_bytes     = UINT64_MAX;
+    report->metrics.temporary_bytes      = UINT64_MAX;
+    report->metrics.files_scanned        = UINT64_MAX;
+    report->metrics.elapsed_ms           = UINT64_MAX;
+    report->metrics.parser_operations    = UINT64_MAX;
+    report->metrics.detector_operations  = UINT64_MAX;
+    report->metrics.skipped_operations   = UINT64_MAX;
+    report->limits.max_file_size         = UINT64_MAX;
+    report->limits.max_scan_size         = UINT64_MAX;
+    report->limits.max_pcre_file_size    = UINT64_MAX;
+    report->limits.max_matcher_work      = UINT64_MAX;
+    report->limits.max_temporary_size    = UINT64_MAX;
+    report->limits.max_contiguous_size   = UINT64_MAX;
+    report->limits.max_scan_time         = UINT64_MAX;
+
+    status = cl_scan_report_to_json(report, &json);
+#if JSON_C_MINOR_VERSION >= 14
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_ptr_nonnull(json);
+    ck_assert_ptr_nonnull(strstr(json, "\"root_size\":18446744073709551615"));
+    ck_assert_ptr_nonnull(strstr(json, "\"max_file_size\":18446744073709551615"));
+    ck_assert_ptr_null(strstr(json, "\"root_size\":-"));
+    ck_assert_ptr_null(strstr(json, "\"max_file_size\":-"));
+#else
+    ck_assert_int_eq(status, CL_EARG);
+    ck_assert_ptr_null(json);
+#endif
+
+    free(json);
+    cl_scan_report_free(report);
 }
 END_TEST
 
@@ -19020,6 +19064,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
+    tcase_add_test(tc_cl, test_scan_report_json_preserves_unsigned_boundaries);
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_scan_report_unsupported_encryption_is_not_malformed);
     tcase_add_test(tc_cl, test_scan_report_unsupported_decoder_statuses_are_unsupported);

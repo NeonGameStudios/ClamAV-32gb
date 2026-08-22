@@ -1806,7 +1806,9 @@ extern cl_error_t cl_scan_report_get_file_type(
 /**
  * @brief Serialize a report as a JSON object.
  *
- * The caller owns the returned string and must release it with free().
+ * The caller owns the returned string and must release it with free().  On
+ * json-c versions without unsigned integer support, this returns CL_EARG
+ * rather than emitting a negative value when a counter exceeds INT64_MAX.
  */
 extern cl_error_t cl_scan_report_to_json(
     const cl_scan_report_t *report,

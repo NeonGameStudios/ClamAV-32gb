@@ -709,3 +709,7 @@
   `cli_ctx.scannedfiles` native ceiling: an unlimited `MaxFiles=0` policy must
   return an incomplete resource result at `UINT32_MAX`, never wrap and admit a
   new object; production file-count qualification remains required.
+- Keep structured report counters non-negative at saturation: use json-c's
+  unsigned integer representation where available, and reject values above
+  `INT64_MAX` on legacy json-c rather than serializing a negative metric; add
+  compiled JSON-C-version and service fallback qualification.

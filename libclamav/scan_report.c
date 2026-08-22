@@ -158,6 +158,32 @@ static void report_add_u64(uint64_t *destination, uint64_t value)
         *destination += value;
 }
 
+static cl_error_t report_json_add_u64(
+    json_object *object,
+    const char *key,
+    uint64_t value)
+{
+    json_object *number;
+
+    if ((NULL == object) || (NULL == key))
+        return CL_ENULLARG;
+
+#if JSON_C_MINOR_VERSION >= 14
+    number = json_object_new_uint64(value);
+#else
+    /* Older json-c releases have no unsigned integer JSON type. Do not
+     * convert a saturated counter above INT64_MAX into a negative number. */
+    if (value > INT64_MAX)
+        return CL_EARG;
+    number = json_object_new_int64((int64_t)value);
+#endif
+    if (NULL == number)
+        return CL_EMEM;
+
+    json_object_object_add(object, key, number);
+    return CL_SUCCESS;
+}
+
 static int report_verdict_rank(cl_verdict_t verdict)
 {
     switch (verdict) {
@@ -626,6 +652,7 @@ cl_error_t cl_scan_report_to_json(
 {
     json_object *object;
     const char *serialized;
+    cl_error_t status;
 
     if ((NULL == report) || (NULL == json_out))
         return CL_ENULLARG;
@@ -644,26 +671,66 @@ cl_error_t cl_scan_report_to_json(
         json_object_object_add(object, "target", json_object_new_string(report->target));
     if (NULL != report->file_type)
         json_object_object_add(object, "file_type", json_object_new_string(report->file_type));
-    json_object_object_add(object, "root_size", json_object_new_int64((int64_t)report->metrics.root_size));
-    json_object_object_add(object, "logical_bytes", json_object_new_int64((int64_t)report->metrics.logical_bytes));
-    json_object_object_add(object, "matcher_bytes", json_object_new_int64((int64_t)report->metrics.matcher_bytes));
-    json_object_object_add(object, "contiguous_bytes", json_object_new_int64((int64_t)report->metrics.contiguous_bytes));
-    json_object_object_add(object, "temporary_bytes", json_object_new_int64((int64_t)report->metrics.temporary_bytes));
-    json_object_object_add(object, "files_scanned", json_object_new_int64((int64_t)report->metrics.files_scanned));
-    json_object_object_add(object, "max_recursion_depth", json_object_new_int((int)report->metrics.max_recursion_depth));
-    json_object_object_add(object, "elapsed_ms", json_object_new_int64((int64_t)report->metrics.elapsed_ms));
-    json_object_object_add(object, "parser_operations", json_object_new_int64((int64_t)report->metrics.parser_operations));
-    json_object_object_add(object, "detector_operations", json_object_new_int64((int64_t)report->metrics.detector_operations));
-    json_object_object_add(object, "skipped_operations", json_object_new_int64((int64_t)report->metrics.skipped_operations));
-    json_object_object_add(object, "max_file_size", json_object_new_int64((int64_t)report->limits.max_file_size));
-    json_object_object_add(object, "max_scan_size", json_object_new_int64((int64_t)report->limits.max_scan_size));
-    json_object_object_add(object, "max_pcre_file_size", json_object_new_int64((int64_t)report->limits.max_pcre_file_size));
-    json_object_object_add(object, "max_matcher_work", json_object_new_int64((int64_t)report->limits.max_matcher_work));
-    json_object_object_add(object, "max_temporary_size", json_object_new_int64((int64_t)report->limits.max_temporary_size));
-    json_object_object_add(object, "max_contiguous_size", json_object_new_int64((int64_t)report->limits.max_contiguous_size));
-    json_object_object_add(object, "max_scan_time", json_object_new_int64((int64_t)report->limits.max_scan_time));
-    json_object_object_add(object, "max_files", json_object_new_int((int)report->limits.max_files));
-    json_object_object_add(object, "max_recursion", json_object_new_int((int)report->limits.max_recursion));
+    status = report_json_add_u64(object, "root_size", report->metrics.root_size);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "logical_bytes", report->metrics.logical_bytes);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "matcher_bytes", report->metrics.matcher_bytes);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "contiguous_bytes", report->metrics.contiguous_bytes);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "temporary_bytes", report->metrics.temporary_bytes);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "files_scanned", report->metrics.files_scanned);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_recursion_depth", report->metrics.max_recursion_depth);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "elapsed_ms", report->metrics.elapsed_ms);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "parser_operations", report->metrics.parser_operations);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "detector_operations", report->metrics.detector_operations);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "skipped_operations", report->metrics.skipped_operations);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_file_size", report->limits.max_file_size);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_scan_size", report->limits.max_scan_size);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_pcre_file_size", report->limits.max_pcre_file_size);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_matcher_work", report->limits.max_matcher_work);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_temporary_size", report->limits.max_temporary_size);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_contiguous_size", report->limits.max_contiguous_size);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_scan_time", report->limits.max_scan_time);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_files", report->limits.max_files);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_u64(object, "max_recursion", report->limits.max_recursion);
+    if (CL_SUCCESS != status)
+        goto json_error;
 
     if (NULL != report->reason)
         json_object_object_add(object, "reason", json_object_new_string(report->reason));
@@ -676,4 +743,8 @@ cl_error_t cl_scan_report_to_json(
 
     json_object_put(object);
     return (NULL != *json_out) ? CL_SUCCESS : CL_EMEM;
+
+json_error:
+    json_object_put(object);
+    return status;
 }
