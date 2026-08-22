@@ -33,9 +33,11 @@ struct cli_ctx_tag;
 struct lzmastate {
     const char *p0;
     uint32_t p1, p2;
+    struct cli_ctx_tag *ctx;
+    uint32_t ticks;
 };
 
-int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t);
+int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 
 uint32_t lzma_upack_esi_00(struct lzmastate *, char *, char *, uint32_t);
 uint32_t lzma_upack_esi_50(struct lzmastate *, uint32_t, uint32_t, char **, char *, uint32_t *, char *, uint32_t);

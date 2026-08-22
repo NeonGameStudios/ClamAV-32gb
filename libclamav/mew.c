@@ -61,6 +61,24 @@
 #define PEALIGN(o, a) (((a)) ? (((o) / (a)) * (a)) : (o))
 #define PESALIGN(o, a) (((a)) ? (((o) / (a) + ((o) % (a) != 0)) * (a)) : (o))
 
+static int mew_lzma_checktimelimit(struct lzmastate *p)
+{
+    if (p->ctx == NULL)
+        return 0;
+
+    p->ticks++;
+    if (p->ticks < 4096)
+        return 0;
+
+    p->ticks = 0;
+    if (cli_checktimelimit(p->ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(p->ctx, "MEW LZMA decompression reached the configured time limit");
+        return 1;
+    }
+
+    return 0;
+}
+
 /* modifies all parameters */
 /* northfox does this shitty way,
  * this should be done with just a bswap
@@ -103,6 +121,10 @@ static const char *lzma_bswap_4861dc(struct lzmastate *p, const char *old_edx)
 static uint32_t lzma_486248(struct lzmastate *p, const char **old_ecx, char *src, uint32_t size)
 {
     uint32_t loc_esi, loc_edi, loc_eax, loc_ecx, ret;
+
+    if (mew_lzma_checktimelimit(p))
+        return 0xffffffff;
+
     if (!CLI_ISCONTAINED(src, size, *old_ecx, 4) || !CLI_ISCONTAINED(src, size, p->p0, 1))
         return 0xffffffff;
     loc_esi = p->p1;
@@ -164,6 +186,8 @@ static uint32_t lzma_48635C(uint8_t znaczek, const char **old_ecx, struct lzmast
     loc_ebx = ret | 2;
 
     while (loc_esi == ret) {
+        if (mew_lzma_checktimelimit(p))
+            return 0xffffffff;
         if (loc_ebx >= 0x100) {
             ret     = (ret & 0xffffff00) | (loc_ebx & 0xff);
             *retval = ret;
@@ -180,6 +204,8 @@ static uint32_t lzma_48635C(uint8_t znaczek, const char **old_ecx, struct lzmast
     }
     loc_esi = 0x100;
     while (loc_ebx < loc_esi) {
+        if (mew_lzma_checktimelimit(p))
+            return 0xffffffff;
         loc_ebx += loc_ebx;
         *old_ecx = loc_edi + loc_ebx;
         if ((ret = lzma_486248(p, old_ecx, src, size)) == 0xffffffff)
@@ -203,6 +229,8 @@ static uint32_t lzma_4862e0(struct lzmastate *p, const char **old_ecx, uint32_t 
         /* loc_4862f1 */
         stack_ecx = loc_ebx;
         do {
+            if (mew_lzma_checktimelimit(p))
+                return 0xffffffff;
             loc_esi  = ret + ret;
             *old_ecx = loc_edi + loc_esi;
             if ((ret = lzma_486248(p, old_ecx, src, size)) == 0xffffffff)
@@ -274,6 +302,8 @@ static uint32_t lzma_486204(struct lzmastate *p, uint32_t old_edx, uint32_t *ret
         /* loc_4866212 */
         loc_ebx = old_edx;
         do {
+            if (mew_lzma_checktimelimit(p))
+                return 0xffffffff;
             loc_esi >>= 1;
             loc_eax <<= 1;
             if (loc_edi >= loc_esi) {
@@ -317,6 +347,8 @@ static uint32_t lzma_48631a(struct lzmastate *p, const char **old_ecx, uint32_t 
     }
 
     do {
+        if (mew_lzma_checktimelimit(p))
+            return 0xffffffff;
         loc_esi  = *old_edx + *old_edx;
         *old_ecx = loc_esi + loc_ebx;
         if ((ret = lzma_486248(p, old_ecx, src, size)) == 0xffffffff)
@@ -333,7 +365,7 @@ static uint32_t lzma_48631a(struct lzmastate *p, const char **old_ecx, uint32_t 
     return 0;
 }
 
-int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special)
+int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special, cli_ctx *ctx)
 {
     uint32_t var08, var0C, var10, var14, var20, var24, var28, var34;
     struct lzmastate var40;
@@ -352,6 +384,14 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
     uint32_t loc_esi, loc_edi;
     uint8_t *var18;
 
+    var40.ctx   = ctx;
+    var40.ticks = 0;
+
+    if (ctx != NULL && cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "MEW LZMA decompression reached the configured time limit");
+        return -1;
+    }
+
     if (special) {
         pushed_edx = cli_readint32(source);
         source += 4;
@@ -362,8 +402,12 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
     new_ebx = orgsource + temp;
 
     do {
+        if (mew_lzma_checktimelimit(&var40))
+            return -1;
         mainloop = 1;
         do {
+            if (mew_lzma_checktimelimit(&var40))
+                return -1;
             /* loc_486450 */
             if (!special) {
                 source = pushed_ebx;
@@ -398,6 +442,8 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
             if (!CLI_ISCONTAINED(orgsource, size_sum, dest, 0x6E6C))
                 return -1;
             for (i = 0; i < 0x1b9b; i++) {
+                if (mew_lzma_checktimelimit(&var40))
+                    return -1;
                 cli_writeint32(dest, 0x4000400);
                 dest += 4;
             }
@@ -414,6 +460,8 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
 
         cli_dbgmsg("MEWlzma: entering do while loop\n");
         do {
+            if (mew_lzma_checktimelimit(&var40))
+                return -1;
             /* loc_4864a5 */
             new_eax = var08 & 3;
             new_ecx = (((loc_esi << 4) + new_eax) * 2) + new_ebx;
@@ -562,6 +610,8 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
                          !CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_edx), var28 - new_edx)))
                         return -1;
                     do {
+                        if (mew_lzma_checktimelimit(&var40))
+                            return -1;
                         var1                            = *(uint8_t *)(new_ecx + new_eax);
                         *(uint8_t *)(new_ecx + new_edx) = var1;
 
@@ -594,6 +644,8 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
                     /* loc_48651D */
                     new_eax = 1;
                     do {
+                        if (mew_lzma_checktimelimit(&var40))
+                            return -1;
                         /* loc_486525 */
                         /*new_ecx = var0C_ecxcopy;*/
                         new_eax += new_eax;
@@ -651,6 +703,8 @@ int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, 
                 return 0; /* No point in full failing just because we can't fixxup the calls */
 
             for (loc_ecx = 0; loc_ecx < pushed_edx - 5; loc_ecx++) {
+                if (mew_lzma_checktimelimit(&var40))
+                    return -1;
                 /* 0xe8, 0xe9 call opcodes */
                 if (pushed_esi[loc_ecx] == '\xe8' || pushed_esi[loc_ecx] == '\xe9') {
                     char *adr = (char *)(pushed_esi + loc_ecx + 1);
@@ -899,7 +953,7 @@ int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t ba
             return -1;
         }
 
-        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50')) {
+        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50', ctx)) {
             return -1;
         }
         loc_ds = PESALIGN(loc_ds, 0x1000);

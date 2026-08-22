@@ -4622,9 +4622,17 @@ The legacy non-LZMA MEW bitstream decoder previously remained context-free;
 its section output and back-copy loops could run beyond the shared
 `MaxScanTime`. A context-aware `unmew_ctx()` path now checkpoints decoder
 progress, large copies, and MEW section traversal before PE rebuild. The
-separate `mew_lzma()` decoder is not covered by this slice and remains an
-explicit qualification item. Compiled MEW timeout injection, production
-corpus, sanitizer, and Sonic1 qualification remain release gates.
+compiled non-LZMA timeout injection, production corpus, sanitizer, and Sonic1
+qualification remain release gates.
+
+## MEW LZMA decompression deadline checkpoints — 2026-08-22
+
+The separate legacy `mew_lzma()` decoder now carries scan context through its
+shared LZMA state. Its range-decode helper loops, output/copy loops, and
+special-mode call-fix traversal checkpoint `MaxScanTime`; timeout marks the
+layer incomplete and prevents the rebuilt PE from being handed to nested
+scanning. Compiled LZMA timeout injection, malformed packed-PE coverage,
+production corpus, sanitizer, and Sonic1 qualification remain release gates.
 
 ## Petite decompression deadline checkpoints — 2026-08-22
 

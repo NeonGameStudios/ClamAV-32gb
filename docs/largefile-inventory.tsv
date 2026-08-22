@@ -3138,53 +3138,54 @@ fixed-width-integer	libclamav/mbox.c	5548	            cli_jsonint(thisobj, "Cont
 fixed-width-integer	libclamav/mbr.h	69	    uint32_t firstLBA __attribute__((packed));
 fixed-width-integer	libclamav/mbr.h	70	    uint32_t numLBA __attribute__((packed));
 fixed-width-integer	libclamav/mbr.h	76	    uint16_t signature __attribute__((packed));
-fixed-width-integer	libclamav/mew.c	103	static uint32_t lzma_486248(struct lzmastate *p, const char **old_ecx, char *src, uint32_t size)
-fixed-width-integer	libclamav/mew.c	105	    uint32_t loc_esi, loc_edi, loc_eax, loc_ecx, ret;
-fixed-width-integer	libclamav/mew.c	118	        loc_edi = ((int32_t)(0x800 - ret) >> 5) + ((loc_eax & 0xffff0000) | ret);
-fixed-width-integer	libclamav/mew.c	153	static uint32_t lzma_48635C(uint8_t znaczek, const char **old_ecx, struct lzmastate *p, uint32_t *retval, char *src, uint32_t size)
-fixed-width-integer	libclamav/mew.c	155	    uint32_t loc_esi = (znaczek & 0xff) >> 7, /* msb */
-fixed-width-integer	libclamav/mew.c	194	static uint32_t lzma_4862e0(struct lzmastate *p, const char **old_ecx, uint32_t *old_edx, uint32_t *retval, char *src, uint32_t size)
-fixed-width-integer	libclamav/mew.c	196	    uint32_t loc_ebx, loc_esi, stack_ecx, ret;
-fixed-width-integer	libclamav/mew.c	226	static uint32_t lzma_4863da(uint32_t var0, struct lzmastate *p, const char **old_ecx, uint32_t *old_edx, uint32_t *retval, char *src, uint32_t size)
-fixed-width-integer	libclamav/mew.c	228	    uint32_t ret;
-fixed-width-integer	libclamav/mew.c	266	static uint32_t lzma_486204(struct lzmastate *p, uint32_t old_edx, uint32_t *retval, char *src, uint32_t size)
-fixed-width-integer	libclamav/mew.c	268	    uint32_t loc_esi, loc_edi, loc_ebx, loc_eax;
-fixed-width-integer	libclamav/mew.c	302	static uint32_t lzma_48631a(struct lzmastate *p, const char **old_ecx, uint32_t *old_edx, uint32_t *retval, char *src, uint32_t size)
-fixed-width-integer	libclamav/mew.c	304	    uint32_t copy1, copy2;
-fixed-width-integer	libclamav/mew.c	305	    uint32_t loc_esi, loc_edi, ret;
-fixed-width-integer	libclamav/mew.c	312	    copy2    = (uint32_t)loc_edi;
-fixed-width-integer	libclamav/mew.c	314	    if (copy1 <= (uint32_t)loc_edi) {
-fixed-width-integer	libclamav/mew.c	326	        /* ret <<= (uint32_t)(*old_ecx)&0xff; */
-fixed-width-integer	libclamav/mew.c	336	int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special)
-fixed-width-integer	libclamav/mew.c	338	    uint32_t var08, var0C, var10, var14, var20, var24, var28, var34;
-fixed-width-integer	libclamav/mew.c	340	    uint32_t new_eax, new_edx, temp;
-fixed-width-integer	libclamav/mew.c	350	    uint32_t pushed_edx    = 0;
-fixed-width-integer	libclamav/mew.c	352	    uint32_t loc_esi, loc_edi;
-fixed-width-integer	libclamav/mew.c	457	                        uint32_t loc_ecx;
-fixed-width-integer	libclamav/mew.c	458	                        loc_ecx = ((int32_t)new_eax >> 1) - 1; /* sar */
-fixed-width-integer	libclamav/mew.c	520	                            uint32_t loc_ecx;
-fixed-width-integer	libclamav/mew.c	646	            uint32_t loc_ecx;
-fixed-width-integer	libclamav/mew.c	658	                    cli_writeint32(adr, EC32(CE32((uint32_t)cli_readint32(adr))) - loc_ecx - 1);
-fixed-width-integer	libclamav/mew.c	672	uint32_t lzma_upack_esi_00(struct lzmastate *p, char *old_ecx, char *bb, uint32_t bl)
-fixed-width-integer	libclamav/mew.c	674	    uint32_t loc_eax, ret, loc_edi;
-fixed-width-integer	libclamav/mew.c	711	uint32_t lzma_upack_esi_50(struct lzmastate *p, uint32_t old_eax, uint32_t old_ecx, char **old_edx, char *old_ebp, uint32_t *retval, char *bs, uint32_t bl)
-fixed-width-integer	libclamav/mew.c	713	    uint32_t loc_eax = old_eax, ret;
-fixed-width-integer	libclamav/mew.c	727	uint32_t lzma_upack_esi_54(struct lzmastate *p, uint32_t old_eax, uint32_t *old_ecx, char **old_edx, uint32_t *retval, char *bs, uint32_t bl)
-fixed-width-integer	libclamav/mew.c	729	    uint32_t ret, loc_eax = old_eax;
-fixed-width-integer	libclamav/mew.c	73	        old_edx was 'uint32_t *' before and in mew_lzma there was
-fixed-width-integer	libclamav/mew.c	76	        uint32_t loc_esi, loc_edi;
-fixed-width-integer	libclamav/mew.c	764	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
-fixed-width-integer	libclamav/mew.c	766	    uint32_t entry_point, newedi, loc_ds = dsize, loc_ss = ssize;
-fixed-width-integer	libclamav/mew.c	774	    uint32_t vma                    = base + vadd;
-fixed-width-integer	libclamav/mew.c	775	    uint32_t size_sum               = ssize + dsize;
-fixed-width-integer	libclamav/mew.c	845	            uint32_t val = PESALIGN(f2 - src, 0x1000);
-fixed-width-integer	libclamav/mew.c	96	    p->p2 = EC32(CE32(((uint32_t)cli_readint32(old_edx + 1))));
+fixed-width-integer	libclamav/mew.c	114	    p->p2 = EC32(CE32(((uint32_t)cli_readint32(old_edx + 1))));
+fixed-width-integer	libclamav/mew.c	121	static uint32_t lzma_486248(struct lzmastate *p, const char **old_ecx, char *src, uint32_t size)
+fixed-width-integer	libclamav/mew.c	123	    uint32_t loc_esi, loc_edi, loc_eax, loc_ecx, ret;
+fixed-width-integer	libclamav/mew.c	140	        loc_edi = ((int32_t)(0x800 - ret) >> 5) + ((loc_eax & 0xffff0000) | ret);
+fixed-width-integer	libclamav/mew.c	175	static uint32_t lzma_48635C(uint8_t znaczek, const char **old_ecx, struct lzmastate *p, uint32_t *retval, char *src, uint32_t size)
+fixed-width-integer	libclamav/mew.c	177	    uint32_t loc_esi = (znaczek & 0xff) >> 7, /* msb */
+fixed-width-integer	libclamav/mew.c	220	static uint32_t lzma_4862e0(struct lzmastate *p, const char **old_ecx, uint32_t *old_edx, uint32_t *retval, char *src, uint32_t size)
+fixed-width-integer	libclamav/mew.c	222	    uint32_t loc_ebx, loc_esi, stack_ecx, ret;
+fixed-width-integer	libclamav/mew.c	254	static uint32_t lzma_4863da(uint32_t var0, struct lzmastate *p, const char **old_ecx, uint32_t *old_edx, uint32_t *retval, char *src, uint32_t size)
+fixed-width-integer	libclamav/mew.c	256	    uint32_t ret;
+fixed-width-integer	libclamav/mew.c	294	static uint32_t lzma_486204(struct lzmastate *p, uint32_t old_edx, uint32_t *retval, char *src, uint32_t size)
+fixed-width-integer	libclamav/mew.c	296	    uint32_t loc_esi, loc_edi, loc_ebx, loc_eax;
+fixed-width-integer	libclamav/mew.c	332	static uint32_t lzma_48631a(struct lzmastate *p, const char **old_ecx, uint32_t *old_edx, uint32_t *retval, char *src, uint32_t size)
+fixed-width-integer	libclamav/mew.c	334	    uint32_t copy1, copy2;
+fixed-width-integer	libclamav/mew.c	335	    uint32_t loc_esi, loc_edi, ret;
+fixed-width-integer	libclamav/mew.c	342	    copy2    = (uint32_t)loc_edi;
+fixed-width-integer	libclamav/mew.c	344	    if (copy1 <= (uint32_t)loc_edi) {
+fixed-width-integer	libclamav/mew.c	358	        /* ret <<= (uint32_t)(*old_ecx)&0xff; */
+fixed-width-integer	libclamav/mew.c	368	int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special, cli_ctx *ctx)
+fixed-width-integer	libclamav/mew.c	370	    uint32_t var08, var0C, var10, var14, var20, var24, var28, var34;
+fixed-width-integer	libclamav/mew.c	372	    uint32_t new_eax, new_edx, temp;
+fixed-width-integer	libclamav/mew.c	382	    uint32_t pushed_edx    = 0;
+fixed-width-integer	libclamav/mew.c	384	    uint32_t loc_esi, loc_edi;
+fixed-width-integer	libclamav/mew.c	505	                        uint32_t loc_ecx;
+fixed-width-integer	libclamav/mew.c	506	                        loc_ecx = ((int32_t)new_eax >> 1) - 1; /* sar */
+fixed-width-integer	libclamav/mew.c	568	                            uint32_t loc_ecx;
+fixed-width-integer	libclamav/mew.c	698	            uint32_t loc_ecx;
+fixed-width-integer	libclamav/mew.c	712	                    cli_writeint32(adr, EC32(CE32((uint32_t)cli_readint32(adr))) - loc_ecx - 1);
+fixed-width-integer	libclamav/mew.c	726	uint32_t lzma_upack_esi_00(struct lzmastate *p, char *old_ecx, char *bb, uint32_t bl)
+fixed-width-integer	libclamav/mew.c	728	    uint32_t loc_eax, ret, loc_edi;
+fixed-width-integer	libclamav/mew.c	765	uint32_t lzma_upack_esi_50(struct lzmastate *p, uint32_t old_eax, uint32_t old_ecx, char **old_edx, char *old_ebp, uint32_t *retval, char *bs, uint32_t bl)
+fixed-width-integer	libclamav/mew.c	767	    uint32_t loc_eax = old_eax, ret;
+fixed-width-integer	libclamav/mew.c	781	uint32_t lzma_upack_esi_54(struct lzmastate *p, uint32_t old_eax, uint32_t *old_ecx, char **old_edx, uint32_t *retval, char *bs, uint32_t bl)
+fixed-width-integer	libclamav/mew.c	783	    uint32_t ret, loc_eax = old_eax;
+fixed-width-integer	libclamav/mew.c	818	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
+fixed-width-integer	libclamav/mew.c	820	    uint32_t entry_point, newedi, loc_ds = dsize, loc_ss = ssize;
+fixed-width-integer	libclamav/mew.c	828	    uint32_t vma                    = base + vadd;
+fixed-width-integer	libclamav/mew.c	829	    uint32_t size_sum               = ssize + dsize;
+fixed-width-integer	libclamav/mew.c	899	            uint32_t val = PESALIGN(f2 - src, 0x1000);
+fixed-width-integer	libclamav/mew.c	91	        old_edx was 'uint32_t *' before and in mew_lzma there was
+fixed-width-integer	libclamav/mew.c	94	        uint32_t loc_esi, loc_edi;
 fixed-width-integer	libclamav/mew.h	35	    uint32_t p1, p2;
-fixed-width-integer	libclamav/mew.h	38	int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t);
-fixed-width-integer	libclamav/mew.h	40	uint32_t lzma_upack_esi_00(struct lzmastate *, char *, char *, uint32_t);
-fixed-width-integer	libclamav/mew.h	41	uint32_t lzma_upack_esi_50(struct lzmastate *, uint32_t, uint32_t, char **, char *, uint32_t *, char *, uint32_t);
-fixed-width-integer	libclamav/mew.h	42	uint32_t lzma_upack_esi_54(struct lzmastate *, uint32_t, uint32_t *, char **, uint32_t *, char *, uint32_t);
-fixed-width-integer	libclamav/mew.h	43	int unmew11(char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, int, int, struct cli_ctx_tag *);
+fixed-width-integer	libclamav/mew.h	37	    uint32_t ticks;
+fixed-width-integer	libclamav/mew.h	40	int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+fixed-width-integer	libclamav/mew.h	42	uint32_t lzma_upack_esi_00(struct lzmastate *, char *, char *, uint32_t);
+fixed-width-integer	libclamav/mew.h	43	uint32_t lzma_upack_esi_50(struct lzmastate *, uint32_t, uint32_t, char **, char *, uint32_t *, char *, uint32_t);
+fixed-width-integer	libclamav/mew.h	44	uint32_t lzma_upack_esi_54(struct lzmastate *, uint32_t, uint32_t *, char **, uint32_t *, char *, uint32_t);
+fixed-width-integer	libclamav/mew.h	45	int unmew11(char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, int, int, struct cli_ctx_tag *);
 fixed-width-integer	libclamav/mpool.c	384	        uint64_t dummy_align;
 fixed-width-integer	libclamav/mpool.c	397	    uint16_t magic;
 fixed-width-integer	libclamav/mpool.c	866	uint16_t *cli_mpool_hex2ui(mpool_t *mp, const char *hex)
@@ -10817,19 +10818,20 @@ native-width-integer	libclamav/message.h	90	fileblob *messageToFileblob(message 
 native-width-integer	libclamav/message.h	91	blob *messageToBlob(message *m, int destroy);
 native-width-integer	libclamav/message.h	97	unsigned char *decodeLine(message *m, encoding_type enctype, const char *line, unsigned char *buf, size_t buflen);
 native-width-integer	libclamav/message.h	98	int isuuencodebegin(const char *line);
-native-width-integer	libclamav/mew.c	336	int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special)
-native-width-integer	libclamav/mew.c	341	    int i, mainloop;
-native-width-integer	libclamav/mew.c	616	                    int t;
-native-width-integer	libclamav/mew.c	762	 * @return int 		Returns -1 on failure, 1 on success.
-native-width-integer	libclamav/mew.c	764	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
-native-width-integer	libclamav/mew.c	772	    int i;
-native-width-integer	libclamav/mew.c	779	        cli_dbgmsg("MEW: base (%08x) + PE section RVA (%08x) exceeds max size of unsigned int (%08x)\n",
-native-width-integer	libclamav/mew.c	784	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
-native-width-integer	libclamav/mew.c	788	    if (((size_t)(src + off) < (size_t)(src)) ||
-native-width-integer	libclamav/mew.c	789	        ((size_t)(src + off) < (size_t)(off))) {
-native-width-integer	libclamav/mew.c	791	                   (size_t)src, (size_t)off, SIZE_MAX);
-native-width-integer	libclamav/mew.h	38	int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t);
-native-width-integer	libclamav/mew.h	43	int unmew11(char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, int, int, struct cli_ctx_tag *);
+native-width-integer	libclamav/mew.c	368	int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special, cli_ctx *ctx)
+native-width-integer	libclamav/mew.c	373	    int i, mainloop;
+native-width-integer	libclamav/mew.c	64	static int mew_lzma_checktimelimit(struct lzmastate *p)
+native-width-integer	libclamav/mew.c	668	                    int t;
+native-width-integer	libclamav/mew.c	816	 * @return int 		Returns -1 on failure, 1 on success.
+native-width-integer	libclamav/mew.c	818	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
+native-width-integer	libclamav/mew.c	826	    int i;
+native-width-integer	libclamav/mew.c	833	        cli_dbgmsg("MEW: base (%08x) + PE section RVA (%08x) exceeds max size of unsigned int (%08x)\n",
+native-width-integer	libclamav/mew.c	838	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
+native-width-integer	libclamav/mew.c	842	    if (((size_t)(src + off) < (size_t)(src)) ||
+native-width-integer	libclamav/mew.c	843	        ((size_t)(src + off) < (size_t)(off))) {
+native-width-integer	libclamav/mew.c	845	                   (size_t)src, (size_t)off, SIZE_MAX);
+native-width-integer	libclamav/mew.h	40	int mew_lzma(char *, const char *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+native-width-integer	libclamav/mew.h	45	int unmew11(char *, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, int, int, struct cli_ctx_tag *);
 native-width-integer	libclamav/mpool.c	186	static const unsigned int fragsz[] = {
 native-width-integer	libclamav/mpool.c	375	    size_t size;
 native-width-integer	libclamav/mpool.c	376	    size_t usize;
@@ -17764,9 +17766,9 @@ boundary-constant	libclamav/matcher-hash.c	202	    if (size >= UINT32_MAX) {
 boundary-constant	libclamav/matcher-hash.c	397	    if (size >= UINT32_MAX) {
 boundary-constant	libclamav/matcher-hash.c	459	    if (size >= UINT32_MAX) {
 boundary-constant	libclamav/matcher.c	1095	    if (!offsets || !legacy_offsets || file_size > UINT32_MAX)
-boundary-constant	libclamav/mew.c	780	                   base, vadd, UINT32_MAX);
-boundary-constant	libclamav/mew.c	785	                   ssize, dsize, UINT32_MAX);
-boundary-constant	libclamav/mew.c	791	                   (size_t)src, (size_t)off, SIZE_MAX);
+boundary-constant	libclamav/mew.c	834	                   base, vadd, UINT32_MAX);
+boundary-constant	libclamav/mew.c	839	                   ssize, dsize, UINT32_MAX);
+boundary-constant	libclamav/mew.c	845	                   (size_t)src, (size_t)off, SIZE_MAX);
 boundary-constant	libclamav/msdoc.c	485	            if (strsize > UINT32_MAX / 2) {
 boundary-constant	libclamav/nsis/nulsft.c	372	        if ((size_t)size > SIZE_MAX - n->curpos) {
 boundary-constant	libclamav/nsis/nulsft.c	768	        if (ctx->fmap->offset > SIZE_MAX - ctx->fmap->nested_offset ||
@@ -19412,8 +19414,8 @@ format-width	libclamav/message.c	2771	    cli_dbgmsg("messageDedup reclaimed %lu
 format-width	libclamav/message.c	462	                    cli_dbgmsg("Unknown MIME type \"%s\" - guessing as %s (%d%% certainty)\n",
 format-width	libclamav/message.c	854	        cli_dbgmsg("messageFindArgument: compare %lu bytes of %s with %s\n",
 format-width	libclamav/message.c	927	        cli_dbgmsg("messageHasArgument: compare %lu bytes of %s with %s\n",
-format-width	libclamav/mew.c	819	        cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
-format-width	libclamav/mew.c	873	                cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
+format-width	libclamav/mew.c	873	        cli_dbgmsg("MEW unpacking section %d (%p->%p)\n", i, lesi, ledi);
+format-width	libclamav/mew.c	927	                cli_dbgmsg("MEW: Section %i [%d, %d] exceeds destination size %u\n",
 format-width	libclamav/mpool.c	483	    spam("Map created @%p->%p - size %lu out of %lu - voidptr=%lu\n", mpool_p, (char *)mpool_p + mp.u.mpm.size, (unsigned long)mp.u.mpm.usize, (unsigned long)mp.u.mpm.size, (unsigned long)SIZEOF_VOID_P);
 format-width	libclamav/mpool.c	556	    spam("Map flushed @%p, in use: %lu\n", mp, (unsigned long)used);
 format-width	libclamav/mpool.c	611	    spam("malloc @%p size %lu (%s) origsize %lu overhead %lu\n", f, (unsigned long)realneed, dbg, (unsigned long)size, (unsigned long)(needed - size));
@@ -25919,34 +25921,35 @@ offset-size-arithmetic	libclamav/message.h	74	void messageSetDispositionType(mes
 offset-size-arithmetic	libclamav/message.h	75	const char *messageGetDispositionType(const message *m);
 offset-size-arithmetic	libclamav/message.h	79	char *messageGetFilename(const message *m);
 offset-size-arithmetic	libclamav/message.h	80	int messageHasFilename(const message *m);
-offset-size-arithmetic	libclamav/mew.c	106	    if (!CLI_ISCONTAINED(src, size, *old_ecx, 4) || !CLI_ISCONTAINED(src, size, p->p0, 1))
-offset-size-arithmetic	libclamav/mew.c	285	                if (!CLI_ISCONTAINED(src, size, p->p0, 1))
-offset-size-arithmetic	libclamav/mew.c	526	                            if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + loc_ecx, 1))
-offset-size-arithmetic	libclamav/mew.c	532	                            if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + new_edx, 1))
-offset-size-arithmetic	libclamav/mew.c	559	                         (!CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_eax), var0C) ||
-offset-size-arithmetic	libclamav/mew.c	560	                          !CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_edx), var0C))) ||
-offset-size-arithmetic	libclamav/mew.c	561	                        (!CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_eax), var28 - new_edx) ||
-offset-size-arithmetic	libclamav/mew.c	562	                         !CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_edx), var28 - new_edx)))
+offset-size-arithmetic	libclamav/mew.c	128	    if (!CLI_ISCONTAINED(src, size, *old_ecx, 4) || !CLI_ISCONTAINED(src, size, p->p0, 1))
+offset-size-arithmetic	libclamav/mew.c	315	                if (!CLI_ISCONTAINED(src, size, p->p0, 1))
+offset-size-arithmetic	libclamav/mew.c	368	int mew_lzma(char *orgsource, const char *buf, uint32_t size_sum, uint32_t vma, uint32_t special, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/mew.c	574	                            if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + loc_ecx, 1))
+offset-size-arithmetic	libclamav/mew.c	580	                            if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + new_edx, 1))
 offset-size-arithmetic	libclamav/mew.c	59	#define EC32(x) le32_to_host(x) /* Convert little endian to host */
 offset-size-arithmetic	libclamav/mew.c	60	#define CE32(x) be32_to_host(x) /* Convert big endian to host */
-offset-size-arithmetic	libclamav/mew.c	619	                    if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + new_eax, 1))
-offset-size-arithmetic	libclamav/mew.c	637	                if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + new_edx, 1))
-offset-size-arithmetic	libclamav/mew.c	764	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/mew.c	775	    uint32_t size_sum               = ssize + dsize;
-offset-size-arithmetic	libclamav/mew.c	783	    if (ssize + dsize < ssize) {
-offset-size-arithmetic	libclamav/mew.c	784	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
-offset-size-arithmetic	libclamav/mew.c	788	    if (((size_t)(src + off) < (size_t)(src)) ||
-offset-size-arithmetic	libclamav/mew.c	789	        ((size_t)(src + off) < (size_t)(off))) {
-offset-size-arithmetic	libclamav/mew.c	795	    /* Ensure that off + required data exists within buffer */
-offset-size-arithmetic	libclamav/mew.c	796	    if (!CLI_ISCONTAINED(src, size_sum, src + off, 12)) {
-offset-size-arithmetic	libclamav/mew.c	801	    source = src + dsize + off;
-offset-size-arithmetic	libclamav/mew.c	807	    loc_ds      = size_sum - (newedi - vma);
-offset-size-arithmetic	libclamav/mew.c	842	        loc_ds = size_sum - (cli_readint32(f1) - vma);
-offset-size-arithmetic	libclamav/mew.c	872	            if (section[i].raw + section[i].rsz > dsize) {
-offset-size-arithmetic	libclamav/mew.c	874	                           i, section[i].raw, section[i].raw + section[i].rsz, dsize);
-offset-size-arithmetic	libclamav/mew.c	891	        if (!CLI_ISCONTAINED(src, size_sum, src + uselzma + 8, 1)) {
-offset-size-arithmetic	libclamav/mew.c	897	        if (!CLI_ISCONTAINED(src, size_sum, f1 + 4, 20 + 4 + 5)) {
-offset-size-arithmetic	libclamav/mew.c	902	        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50')) {
+offset-size-arithmetic	libclamav/mew.c	607	                         (!CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_eax), var0C) ||
+offset-size-arithmetic	libclamav/mew.c	608	                          !CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_edx), var0C))) ||
+offset-size-arithmetic	libclamav/mew.c	609	                        (!CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_eax), var28 - new_edx) ||
+offset-size-arithmetic	libclamav/mew.c	610	                         !CLI_ISCONTAINED(orgsource, size_sum, (char *)(new_ecx + new_edx), var28 - new_edx)))
+offset-size-arithmetic	libclamav/mew.c	671	                    if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + new_eax, 1))
+offset-size-arithmetic	libclamav/mew.c	689	                if (!CLI_ISCONTAINED((uint8_t *)orgsource, size_sum, var18 + new_edx, 1))
+offset-size-arithmetic	libclamav/mew.c	818	int unmew11(char *src, uint32_t off, uint32_t ssize, uint32_t dsize, uint32_t base, uint32_t vadd, int uselzma, int filedesc, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/mew.c	829	    uint32_t size_sum               = ssize + dsize;
+offset-size-arithmetic	libclamav/mew.c	837	    if (ssize + dsize < ssize) {
+offset-size-arithmetic	libclamav/mew.c	838	        cli_dbgmsg("MEW: section size (%08x) + diff size (%08x) exceeds max size of unsigned int (%08x)\n",
+offset-size-arithmetic	libclamav/mew.c	842	    if (((size_t)(src + off) < (size_t)(src)) ||
+offset-size-arithmetic	libclamav/mew.c	843	        ((size_t)(src + off) < (size_t)(off))) {
+offset-size-arithmetic	libclamav/mew.c	849	    /* Ensure that off + required data exists within buffer */
+offset-size-arithmetic	libclamav/mew.c	850	    if (!CLI_ISCONTAINED(src, size_sum, src + off, 12)) {
+offset-size-arithmetic	libclamav/mew.c	855	    source = src + dsize + off;
+offset-size-arithmetic	libclamav/mew.c	861	    loc_ds      = size_sum - (newedi - vma);
+offset-size-arithmetic	libclamav/mew.c	896	        loc_ds = size_sum - (cli_readint32(f1) - vma);
+offset-size-arithmetic	libclamav/mew.c	926	            if (section[i].raw + section[i].rsz > dsize) {
+offset-size-arithmetic	libclamav/mew.c	928	                           i, section[i].raw, section[i].raw + section[i].rsz, dsize);
+offset-size-arithmetic	libclamav/mew.c	945	        if (!CLI_ISCONTAINED(src, size_sum, src + uselzma + 8, 1)) {
+offset-size-arithmetic	libclamav/mew.c	951	        if (!CLI_ISCONTAINED(src, size_sum, f1 + 4, 20 + 4 + 5)) {
+offset-size-arithmetic	libclamav/mew.c	956	        if (mew_lzma(src, f1 + 4, size_sum, vma, *(src + uselzma + 8) == '\x50', ctx)) {
 offset-size-arithmetic	libclamav/mpool.c	371	#define FRAGSBITS (sizeof(fragsz) / sizeof(fragsz[0]))
 offset-size-arithmetic	libclamav/mpool.c	406	static size_t align_to_pagesize(struct MP *mp, size_t size)
 offset-size-arithmetic	libclamav/mpool.c	408	    return (size / mp->psize + (size % mp->psize != 0)) * mp->psize;
