@@ -4561,3 +4561,17 @@ before dependency evidence and workload execution. The component directory is
 now initialized before its first use, and the source guard enforces that order.
 The gate still requires the authorized Linux release/sanitizer and service
 qualification inputs described above.
+
+## UPX decompressor deadline checkpoints — 2026-08-22
+
+The legacy UPX NRV2B/NRV2D/NRV2E paths previously received no scan context;
+their bitstream, back-reference-copy, import-recovery, and PE-rebuild loops
+could therefore continue after the shared `MaxScanTime` deadline even though
+the surrounding PE path checked it before and after unpacking. The UPX entry
+points now receive the scan context, checkpoint the deadline every bounded
+number of decoder operations and during large back-reference copies, and mark
+the layer incomplete on expiry. The existing 1 GiB contiguous unpacker
+boundary remains explicit, and the LZMA-backed UPX path checks the deadline
+before and after its decoder call. Static guards and diff checks are covered;
+compiled UPX timeout injection, production PE corpus, sanitizer, and Sonic1
+qualification remain release gates.

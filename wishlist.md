@@ -1053,3 +1053,7 @@
 - The runtime evidence gate now initializes its copied dependency directory
   before constructing the loader path under `set -u`; retain Linux release,
   sanitizer, service, and production-corpus qualification as release gates.
+- Legacy UPX NRV2B/NRV2D/NRV2E bitstream, back-reference-copy, import-recovery,
+  and PE-rebuild loops now receive the shared scan context and checkpoint
+  `MaxScanTime`; add compiled UPX timeout injection and production PE corpus,
+  sanitizer, and Sonic1 qualification.

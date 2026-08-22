@@ -3055,7 +3055,7 @@ int cli_scanpe(cli_ctx *ctx)
     size_t bytes;
     unsigned int i, j, found, upx_success = 0, err;
     unsigned int ssize = 0, dsize = 0, corrupted_cur;
-    int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t) = NULL;
+    int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, cli_ctx *) = NULL;
     const char *src                                                                        = NULL;
     char *dest                                                                             = NULL;
     int ndesc;
@@ -4206,11 +4206,11 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             /* Try skewed first (skew may be zero) */
-            if (upxfn(src + skew, ssize - skew, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - skew) >= 0) {
+            if (upxfn(src + skew, ssize - skew, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - skew, ctx) >= 0) {
                 upx_success = 1;
             }
             /* If skew not successful and non-zero, try no skew */
-            else if (skew && (upxfn(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) >= 0)) {
+            else if (skew && (upxfn(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) >= 0)) {
                 upx_success = 1;
             }
 
@@ -4221,7 +4221,7 @@ int cli_scanpe(cli_ctx *ctx)
         }
 
         if (!upx_success && upxfn != upx_inflate2b) {
-            if (upx_inflate2b(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) == -1 && upx_inflate2b(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15) == -1) {
+            if (upx_inflate2b(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) == -1 && upx_inflate2b(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15, ctx) == -1) {
 
                 cli_dbgmsg("cli_scanpe: UPX: NRV2B decompressor failed\n");
             } else {
@@ -4231,7 +4231,7 @@ int cli_scanpe(cli_ctx *ctx)
         }
 
         if (!upx_success && upxfn != upx_inflate2d) {
-            if (upx_inflate2d(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) == -1 && upx_inflate2d(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15) == -1) {
+            if (upx_inflate2d(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) == -1 && upx_inflate2d(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15, ctx) == -1) {
 
                 cli_dbgmsg("cli_scanpe: UPX: NRV2D decompressor failed\n");
             } else {
@@ -4241,7 +4241,7 @@ int cli_scanpe(cli_ctx *ctx)
         }
 
         if (!upx_success && upxfn != upx_inflate2e) {
-            if (upx_inflate2e(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) == -1 && upx_inflate2e(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15) == -1) {
+            if (upx_inflate2e(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) == -1 && upx_inflate2e(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15, ctx) == -1) {
                 cli_dbgmsg("cli_scanpe: UPX: NRV2E decompressor failed\n");
             } else {
                 upx_success = 1;
@@ -4259,7 +4259,7 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             if (strictdsize <= dsize)
-                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, 0x20003) >= 0;
+                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, 0x20003, ctx) >= 0;
         } else if (cli_memstr(UPX_LZMA1_FIRST, 8, epbuff + 0x39, 8) && cli_memstr(UPX_LZMA1_SECOND, 8, epbuff + 0x45, 8)) {
             uint32_t strictdsize = cli_readint32(epbuff + 0x2b), skew = 0;
             uint32_t properties = cli_readint32(epbuff + 0x41);
@@ -4271,7 +4271,7 @@ int cli_scanpe(cli_ctx *ctx)
             }
 
             if (strictdsize <= dsize)
-                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, properties) >= 0;
+                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, properties, ctx) >= 0;
         }
 
         if (!upx_success) {

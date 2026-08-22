@@ -3799,7 +3799,7 @@ fixed-width-integer	libclamav/pe.c	299	cl_error_t cli_pe_unpack_size_check(cli_c
 fixed-width-integer	libclamav/pe.c	3015	    obj = json_object_new_int((int32_t)(s->rsz));
 fixed-width-integer	libclamav/pe.c	3021	    obj = json_object_new_int((int32_t)(s->raw));
 fixed-width-integer	libclamav/pe.c	304	    if (size > (uint64_t)CLI_MAX_ALLOCATION) {
-fixed-width-integer	libclamav/pe.c	3058	    int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t) = NULL;
+fixed-width-integer	libclamav/pe.c	3058	    int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, cli_ctx *) = NULL;
 fixed-width-integer	libclamav/pe.c	3069	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/pe.c	3092	    uint32_t opts = CLI_PEHEADER_OPT_DBG_PRINT_INFO | CLI_PEHEADER_OPT_REMOVE_MISSING_SECTIONS;
 fixed-width-integer	libclamav/pe.c	313	static int cli_pe_add_u32(uint32_t left, uint32_t right, uint32_t *result)
@@ -5142,46 +5142,54 @@ fixed-width-integer	libclamav/upack.c	60	int unupack(int upack, char *dest, uint
 fixed-width-integer	libclamav/upack.c	65	    uint32_t save1, save3, loc_ecx, count, shlsize, original_ep, ret, loc_ebx_u;
 fixed-width-integer	libclamav/upack.c	71	        uint32_t aljump, shroff, lngjmpoff;
 fixed-width-integer	libclamav/upack.h	33	int unupack(int, char *, uint32_t, char *, uint32_t, uint32_t, uint32_t, uint32_t, int, struct cli_ctx_tag *);
-fixed-width-integer	libclamav/upx.c	101	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
-fixed-width-integer	libclamav/upx.c	120	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend)
-fixed-width-integer	libclamav/upx.c	124	    uint32_t realstuffsz = 0, valign = 0;
-fixed-width-integer	libclamav/upx.c	125	    uint32_t foffset = 0xd0 + 0xf8;
-fixed-width-integer	libclamav/upx.c	188	        uint32_t rebsz = PESALIGN(dend, 0x1000);
-fixed-width-integer	libclamav/upx.c	212	        uint32_t vsize = PESALIGN((uint32_t)cli_readint32(sections + 8), valign);
-fixed-width-integer	libclamav/upx.c	213	        uint32_t urva  = PEALIGN((uint32_t)cli_readint32(sections + 12), valign);
-fixed-width-integer	libclamav/upx.c	246	        uint32_t offset1, offset2, offset3;
-fixed-width-integer	libclamav/upx.c	247	        offset1 = (uint32_t)cli_readint32(sections + 20);
-fixed-width-integer	libclamav/upx.c	248	        offset2 = (uint32_t)cli_readint32(sections + 16);
-fixed-width-integer	libclamav/upx.c	254	        offset3 = (uint32_t)cli_readint32(sections + 12);
-fixed-width-integer	libclamav/upx.c	281	static int doubleebx(const char *src, uint32_t *myebx, uint32_t *scur, uint32_t ssize)
-fixed-width-integer	libclamav/upx.c	283	    uint32_t oldebx = *myebx;
-fixed-width-integer	libclamav/upx.c	298	int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-fixed-width-integer	libclamav/upx.c	300	    int32_t backbytes, unp_offset = -1;
-fixed-width-integer	libclamav/upx.c	301	    uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x108, 0x110, 0xd5, 0};
-fixed-width-integer	libclamav/upx.c	319	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
-fixed-width-integer	libclamav/upx.c	345	        if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
-fixed-width-integer	libclamav/upx.c	368	        if ((uint32_t)unp_offset < 0xfffff300)
-fixed-width-integer	libclamav/upx.c	383	int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-fixed-width-integer	libclamav/upx.c	385	    int32_t backbytes, unp_offset = -1;
-fixed-width-integer	libclamav/upx.c	386	    uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x11c, 0x124, 0};
-fixed-width-integer	libclamav/upx.c	404	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
-fixed-width-integer	libclamav/upx.c	414	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
-fixed-width-integer	libclamav/upx.c	438	            if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
-fixed-width-integer	libclamav/upx.c	463	        if ((uint32_t)unp_offset < 0xfffffb00)
-fixed-width-integer	libclamav/upx.c	477	int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-fixed-width-integer	libclamav/upx.c	479	    int32_t backbytes, unp_offset = -1;
-fixed-width-integer	libclamav/upx.c	480	    uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x128, 0x130, 0};
-fixed-width-integer	libclamav/upx.c	497	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
-fixed-width-integer	libclamav/upx.c	507	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
-fixed-width-integer	libclamav/upx.c	530	            if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
-fixed-width-integer	libclamav/upx.c	535	            if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
-fixed-width-integer	libclamav/upx.c	563	        if ((uint32_t)unp_offset < 0xfffffb00)
-fixed-width-integer	libclamav/upx.c	580	int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties)
-fixed-width-integer	libclamav/upx.c	583	    uint32_t magic[] = {0xb16, 0xb1e, 0};
-fixed-width-integer	libclamav/upx.h	27	int upx_inflate2b(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t);
-fixed-width-integer	libclamav/upx.h	28	int upx_inflate2d(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t);
-fixed-width-integer	libclamav/upx.h	29	int upx_inflate2e(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t);
-fixed-width-integer	libclamav/upx.h	30	int upx_inflatelzma(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, uint32_t);
+fixed-width-integer	libclamav/upx.c	122	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
+fixed-width-integer	libclamav/upx.c	141	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
+fixed-width-integer	libclamav/upx.c	145	    uint32_t realstuffsz = 0, valign = 0;
+fixed-width-integer	libclamav/upx.c	146	    uint32_t foffset = 0xd0 + 0xf8;
+fixed-width-integer	libclamav/upx.c	147	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/upx.c	148	    uint32_t vsize, urva;
+fixed-width-integer	libclamav/upx.c	149	    uint32_t offset1, offset2, offset3;
+fixed-width-integer	libclamav/upx.c	226	        uint32_t rebsz = PESALIGN(dend, 0x1000);
+fixed-width-integer	libclamav/upx.c	252	        vsize = PESALIGN((uint32_t)cli_readint32(sections + 8), valign);
+fixed-width-integer	libclamav/upx.c	253	        urva  = PEALIGN((uint32_t)cli_readint32(sections + 12), valign);
+fixed-width-integer	libclamav/upx.c	290	        offset1 = (uint32_t)cli_readint32(sections + 20);
+fixed-width-integer	libclamav/upx.c	291	        offset2 = (uint32_t)cli_readint32(sections + 16);
+fixed-width-integer	libclamav/upx.c	297	        offset3 = (uint32_t)cli_readint32(sections + 12);
+fixed-width-integer	libclamav/upx.c	324	static int upx_doubleebx(const char *src, uint32_t *myebx, uint32_t *scur, uint32_t ssize,
+fixed-width-integer	libclamav/upx.c	325	                         struct cli_ctx_tag *ctx, uint32_t *ticks)
+fixed-width-integer	libclamav/upx.c	327	    uint32_t oldebx = *myebx;
+fixed-width-integer	libclamav/upx.c	347	int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+fixed-width-integer	libclamav/upx.c	349	    int32_t backbytes, unp_offset = -1;
+fixed-width-integer	libclamav/upx.c	350	    uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x108, 0x110, 0xd5, 0};
+fixed-width-integer	libclamav/upx.c	351	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/upx.c	369	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
+fixed-width-integer	libclamav/upx.c	395	        if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
+fixed-width-integer	libclamav/upx.c	418	        if ((uint32_t)unp_offset < 0xfffff300)
+fixed-width-integer	libclamav/upx.c	436	int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+fixed-width-integer	libclamav/upx.c	438	    int32_t backbytes, unp_offset = -1;
+fixed-width-integer	libclamav/upx.c	439	    uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x11c, 0x124, 0};
+fixed-width-integer	libclamav/upx.c	440	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/upx.c	458	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
+fixed-width-integer	libclamav/upx.c	468	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
+fixed-width-integer	libclamav/upx.c	492	            if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
+fixed-width-integer	libclamav/upx.c	517	        if ((uint32_t)unp_offset < 0xfffffb00)
+fixed-width-integer	libclamav/upx.c	534	int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+fixed-width-integer	libclamav/upx.c	536	    int32_t backbytes, unp_offset = -1;
+fixed-width-integer	libclamav/upx.c	537	    uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x128, 0x130, 0};
+fixed-width-integer	libclamav/upx.c	538	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/upx.c	555	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
+fixed-width-integer	libclamav/upx.c	565	            if (((int64_t)backbytes + oob) > INT32_MAX / 2)
+fixed-width-integer	libclamav/upx.c	588	            if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
+fixed-width-integer	libclamav/upx.c	593	            if ((backsize = (uint32_t)doubleebx(src, &myebx, &scur, ssize)) == 0xffffffff)
+fixed-width-integer	libclamav/upx.c	621	        if ((uint32_t)unp_offset < 0xfffffb00)
+fixed-width-integer	libclamav/upx.c	641	int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties, struct cli_ctx_tag *ctx)
+fixed-width-integer	libclamav/upx.c	644	    uint32_t magic[] = {0xb16, 0xb1e, 0};
+fixed-width-integer	libclamav/upx.c	646	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/upx.c	68	static int upx_checktimelimit(struct cli_ctx_tag *ctx, uint32_t *ticks)
+fixed-width-integer	libclamav/upx.h	29	int upx_inflate2b(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+fixed-width-integer	libclamav/upx.h	30	int upx_inflate2d(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+fixed-width-integer	libclamav/upx.h	31	int upx_inflate2e(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+fixed-width-integer	libclamav/upx.h	32	int upx_inflatelzma(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 fixed-width-integer	libclamav/vba_extract.c	1006	                if (sizeof(uint16_t) + sizeof(uint32_t) > data_len - data_offset) {
 fixed-width-integer	libclamav/vba_extract.c	1012	                memcpy(&val16, &data[data_offset], sizeof(uint16_t));
 fixed-width-integer	libclamav/vba_extract.c	1018	                data_offset += sizeof(uint16_t);
@@ -11931,7 +11939,7 @@ native-width-integer	libclamav/pe.c	3054	    size_t epsize;
 native-width-integer	libclamav/pe.c	3055	    size_t bytes;
 native-width-integer	libclamav/pe.c	3056	    unsigned int i, j, found, upx_success = 0, err;
 native-width-integer	libclamav/pe.c	3057	    unsigned int ssize = 0, dsize = 0, corrupted_cur;
-native-width-integer	libclamav/pe.c	3058	    int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t) = NULL;
+native-width-integer	libclamav/pe.c	3058	    int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, cli_ctx *) = NULL;
 native-width-integer	libclamav/pe.c	3061	    int ndesc;
 native-width-integer	libclamav/pe.c	3064	    int upack = 0;
 native-width-integer	libclamav/pe.c	3065	    size_t fsize;
@@ -13807,21 +13815,22 @@ native-width-integer	libclamav/upack.c	62	    int j, searchval;
 native-width-integer	libclamav/upack.c	642	            loc_ebp *= (int)0x300; /* XXX */
 native-width-integer	libclamav/upack.c	67	    int upack_version = UPACK_399;
 native-width-integer	libclamav/upack.h	33	int unupack(int, char *, uint32_t, char *, uint32_t, uint32_t, uint32_t, uint32_t, int, struct cli_ctx_tag *);
-native-width-integer	libclamav/upx.c	101	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
-native-width-integer	libclamav/upx.c	120	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend)
-native-width-integer	libclamav/upx.c	123	    unsigned int sectcnt = 0, upd = 1;
-native-width-integer	libclamav/upx.c	281	static int doubleebx(const char *src, uint32_t *myebx, uint32_t *scur, uint32_t ssize)
-native-width-integer	libclamav/upx.c	298	int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-native-width-integer	libclamav/upx.c	302	    int oob;
-native-width-integer	libclamav/upx.c	383	int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-native-width-integer	libclamav/upx.c	387	    int oob;
-native-width-integer	libclamav/upx.c	477	int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-native-width-integer	libclamav/upx.c	481	    int oob;
-native-width-integer	libclamav/upx.c	580	int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties)
-native-width-integer	libclamav/upx.h	27	int upx_inflate2b(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t);
-native-width-integer	libclamav/upx.h	28	int upx_inflate2d(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t);
-native-width-integer	libclamav/upx.h	29	int upx_inflate2e(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t);
-native-width-integer	libclamav/upx.h	30	int upx_inflatelzma(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, uint32_t);
+native-width-integer	libclamav/upx.c	122	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
+native-width-integer	libclamav/upx.c	141	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
+native-width-integer	libclamav/upx.c	144	    unsigned int sectcnt = 0, upd = 1;
+native-width-integer	libclamav/upx.c	324	static int upx_doubleebx(const char *src, uint32_t *myebx, uint32_t *scur, uint32_t ssize,
+native-width-integer	libclamav/upx.c	347	int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+native-width-integer	libclamav/upx.c	352	    int oob;
+native-width-integer	libclamav/upx.c	436	int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+native-width-integer	libclamav/upx.c	441	    int oob;
+native-width-integer	libclamav/upx.c	534	int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+native-width-integer	libclamav/upx.c	539	    int oob;
+native-width-integer	libclamav/upx.c	641	int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties, struct cli_ctx_tag *ctx)
+native-width-integer	libclamav/upx.c	68	static int upx_checktimelimit(struct cli_ctx_tag *ctx, uint32_t *ticks)
+native-width-integer	libclamav/upx.h	29	int upx_inflate2b(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+native-width-integer	libclamav/upx.h	30	int upx_inflate2d(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+native-width-integer	libclamav/upx.h	31	int upx_inflate2e(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
+native-width-integer	libclamav/upx.h	32	int upx_inflatelzma(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, uint32_t, struct cli_ctx_tag *);
 native-width-integer	libclamav/uuencode.c	110	int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at)
 native-width-integer	libclamav/uuencode.c	135	        size_t len;
 native-width-integer	libclamav/uuencode.c	157	        len = (size_t)(uptr - data);
@@ -17849,16 +17858,16 @@ boundary-constant	libclamav/unzip.c	309	            if (local_header_offset > SI
 boundary-constant	libclamav/unzip.c	3260	        if (zip_catalogue[i].local_header_size > SIZE_MAX - zip_catalogue[i].local_header_offset) {
 boundary-constant	libclamav/upack.c	295	            if (((uint64_t)count + j) * 4 > UINT_MAX)
 boundary-constant	libclamav/upack.c	358	            if (((uint64_t)count + 6) * 4 > UINT_MAX)
-boundary-constant	libclamav/upx.c	349	        if (backsize + oob > UINT32_MAX / 2)
-boundary-constant	libclamav/upx.c	357	                if (backsize + oob > UINT32_MAX / 2)
-boundary-constant	libclamav/upx.c	363	            if (backsize > UINT32_MAX - 2)
-boundary-constant	libclamav/upx.c	444	        if (backsize + oob > UINT32_MAX / 2)
-boundary-constant	libclamav/upx.c	452	                if (backsize + oob > UINT32_MAX / 2)
-boundary-constant	libclamav/upx.c	458	            if (backsize > UINT32_MAX - 2)
-boundary-constant	libclamav/upx.c	544	                if (backsize + oob > UINT32_MAX / 2)
-boundary-constant	libclamav/upx.c	551	                    if (backsize + oob > UINT32_MAX / 2)
-boundary-constant	libclamav/upx.c	557	                if (backsize > UINT32_MAX - 2)
-boundary-constant	libclamav/upx.c	566	        if (backsize > UINT32_MAX - 2)
+boundary-constant	libclamav/upx.c	399	        if (backsize + oob > UINT32_MAX / 2)
+boundary-constant	libclamav/upx.c	407	                if (backsize + oob > UINT32_MAX / 2)
+boundary-constant	libclamav/upx.c	413	            if (backsize > UINT32_MAX - 2)
+boundary-constant	libclamav/upx.c	498	        if (backsize + oob > UINT32_MAX / 2)
+boundary-constant	libclamav/upx.c	506	                if (backsize + oob > UINT32_MAX / 2)
+boundary-constant	libclamav/upx.c	512	            if (backsize > UINT32_MAX - 2)
+boundary-constant	libclamav/upx.c	602	                if (backsize + oob > UINT32_MAX / 2)
+boundary-constant	libclamav/upx.c	609	                    if (backsize + oob > UINT32_MAX / 2)
+boundary-constant	libclamav/upx.c	615	                if (backsize > UINT32_MAX - 2)
+boundary-constant	libclamav/upx.c	624	        if (backsize > UINT32_MAX - 2)
 boundary-constant	libclamav/xar.c	215	            if (numstr[0] == '-' || errno == ERANGE || numval > SIZE_MAX ||
 boundary-constant	libclamav/xar.c	663	    if (hdr.toc_length_compressed > SIZE_MAX || hdr.toc_length_decompressed > SIZE_MAX ||
 boundary-constant	libclamav/yara_grammar.c	327	       && UINT_LEAST8_MAX <= INT_MAX)
@@ -20138,7 +20147,7 @@ format-width	libclamav/unzip.c	652	                cli_dbgmsg("cli_unzip: method
 format-width	libclamav/unzip.c	733	                cli_dbgmsg("cli_unzip: BZIP2 stream failed with status %d\n", bzret);
 format-width	libclamav/unzip.c	809	                cli_dbgmsg("cli_unzip: Implode decoder returned unexpected status %d\n", xret);
 format-width	libclamav/upack.c	457	        cli_dbgmsg("state[%d] = %08x\n", i, state[i]);
-format-width	libclamav/upx.c	217	            cli_dbgmsg("UPX: Sect %d out of bounds - giving up rebuild\n", upd);
+format-width	libclamav/upx.c	257	            cli_dbgmsg("UPX: Sect %d out of bounds - giving up rebuild\n", upd);
 format-width	libclamav/vba_extract.c	128	        cli_dbgmsg("get_unicode_name: odd number of bytes %d\n", size);
 format-width	libclamav/vba_extract.c	1309	                    snprintf(module_filename, sizeof(module_filename), "%s" PATHSEP "%s_%u", dir, module_hash, i);
 format-width	libclamav/vba_extract.c	1465	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "%s_%u", dir, hash, which);
@@ -27471,17 +27480,17 @@ offset-size-arithmetic	libclamav/pe.c	4172	        if (!peinfo->sections[i + 1].
 offset-size-arithmetic	libclamav/pe.c	4173	            cli_dbgmsg("cli_scanpe: UPX: Can't read raw data of section %d\n", i + 1);
 offset-size-arithmetic	libclamav/pe.c	4178	        if ((dest = (char *)cli_max_calloc(dsize + 8192, sizeof(char))) == NULL) {
 offset-size-arithmetic	libclamav/pe.c	4202	                /* Ignore suggested skew larger than section size */
-offset-size-arithmetic	libclamav/pe.c	4209	            if (upxfn(src + skew, ssize - skew, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - skew) >= 0) {
-offset-size-arithmetic	libclamav/pe.c	4213	            else if (skew && (upxfn(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) >= 0)) {
-offset-size-arithmetic	libclamav/pe.c	4224	            if (upx_inflate2b(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) == -1 && upx_inflate2b(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15) == -1) {
-offset-size-arithmetic	libclamav/pe.c	4234	            if (upx_inflate2d(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) == -1 && upx_inflate2d(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15) == -1) {
-offset-size-arithmetic	libclamav/pe.c	4244	            if (upx_inflate2e(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep) == -1 && upx_inflate2e(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15) == -1) {
+offset-size-arithmetic	libclamav/pe.c	4209	            if (upxfn(src + skew, ssize - skew, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - skew, ctx) >= 0) {
+offset-size-arithmetic	libclamav/pe.c	4213	            else if (skew && (upxfn(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) >= 0)) {
+offset-size-arithmetic	libclamav/pe.c	4224	            if (upx_inflate2b(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) == -1 && upx_inflate2b(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15, ctx) == -1) {
+offset-size-arithmetic	libclamav/pe.c	4234	            if (upx_inflate2d(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) == -1 && upx_inflate2d(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15, ctx) == -1) {
+offset-size-arithmetic	libclamav/pe.c	4244	            if (upx_inflate2e(src, ssize, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, ctx) == -1 && upx_inflate2e(src + 0x15, ssize - 0x15, dest, &dsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep - 0x15, ctx) == -1) {
 offset-size-arithmetic	libclamav/pe.c	4253	            uint32_t strictdsize = cli_readint32(epbuff + 0x21), skew = 0;
 offset-size-arithmetic	libclamav/pe.c	426	 * let a native coordinate above that ABI width wrap into an earlier offset. */
-offset-size-arithmetic	libclamav/pe.c	4262	                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, 0x20003) >= 0;
+offset-size-arithmetic	libclamav/pe.c	4262	                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, 0x20003, ctx) >= 0;
 offset-size-arithmetic	libclamav/pe.c	4264	            uint32_t strictdsize = cli_readint32(epbuff + 0x2b), skew = 0;
 offset-size-arithmetic	libclamav/pe.c	427	uint32_t cli_rawaddr(uint32_t rva, const struct cli_exe_section *shp, uint16_t nos, unsigned int *err, size_t fsize, uint32_t hdr_size)
-offset-size-arithmetic	libclamav/pe.c	4274	                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, properties) >= 0;
+offset-size-arithmetic	libclamav/pe.c	4274	                upx_success = upx_inflatelzma(src + skew, ssize - skew, dest, &strictdsize, peinfo->sections[i].rva, peinfo->sections[i + 1].rva, peinfo->vep, properties, ctx) >= 0;
 offset-size-arithmetic	libclamav/pe.c	4316	        if (lseek(ndesc, 0, SEEK_SET) == -1) {
 offset-size-arithmetic	libclamav/pe.c	4328	        cli_dbgmsg("***** Scanning decompressed file *****\n");
 offset-size-arithmetic	libclamav/pe.c	4369	            dsize = peinfo->max - peinfo->min;
@@ -29576,97 +29585,97 @@ offset-size-arithmetic	libclamav/upack.c	60	int unupack(int upack, char *dest, u
 offset-size-arithmetic	libclamav/upack.c	63	    char *loc_esi = NULL, *loc_edi = NULL, *loc_ebx = NULL, *end_edi = NULL, *save_edi = NULL, *alvalue = NULL;
 offset-size-arithmetic	libclamav/upack.c	91	            if (!CLI_ISCONTAINED(dest, dsize, dest + ep + 0xa, 2) || dest[ep + 0xa] != '\xeb')
 offset-size-arithmetic	libclamav/upack.c	98	            if (!CLI_ISCONTAINED(dest, dsize, alvalue, 2) || *alvalue != '\xeb')
-offset-size-arithmetic	libclamav/upx.c	101	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
-offset-size-arithmetic	libclamav/upx.c	113	    if (!CLI_ISCONTAINED(dst, dsize, sections, *sectcnt * 0x28)) return NULL;
-offset-size-arithmetic	libclamav/upx.c	120	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend)
-offset-size-arithmetic	libclamav/upx.c	125	    uint32_t foffset = 0xd0 + 0xf8;
-offset-size-arithmetic	libclamav/upx.c	131	        if (CLI_ISCONTAINED(src, ssize - 5, src + ep - upx1 + valign - 2, 2) &&
-offset-size-arithmetic	libclamav/upx.c	133	            src[ep - upx1 + valign - 1] == '\xbe')   /* ... [esi + offset]          */
-offset-size-arithmetic	libclamav/upx.c	137	    if (!valign && CLI_ISCONTAINED(src, ssize - 8, src + ep - upx1 + 0x80, 8)) {
-offset-size-arithmetic	libclamav/upx.c	141	        while ((pt = cli_memstr(pt, ssize - (pt - src) - 8, "\x8d\xbe", 2))) {
-offset-size-arithmetic	libclamav/upx.c	150	    if (valign && CLI_ISCONTAINED(src, ssize, src + ep - upx1 + valign, 4)) {
-offset-size-arithmetic	libclamav/upx.c	162	                while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr) {
-offset-size-arithmetic	libclamav/upx.c	164	                    while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr)
-offset-size-arithmetic	libclamav/upx.c	176	    if (!pehdr && dend > 0xf8 + 0x28) {
-offset-size-arithmetic	libclamav/upx.c	178	        pehdr = &dst[dend - 0xf8 - 0x28];
-offset-size-arithmetic	libclamav/upx.c	197	        memcpy(dst, newbuf, dend + 0x200);
-offset-size-arithmetic	libclamav/upx.c	202	        *dsize = rebsz + 0x200;
-offset-size-arithmetic	libclamav/upx.c	209	    foffset = PESALIGN(foffset + 0x28 * sectcnt, valign);
-offset-size-arithmetic	libclamav/upx.c	212	        uint32_t vsize = PESALIGN((uint32_t)cli_readint32(sections + 8), valign);
-offset-size-arithmetic	libclamav/upx.c	225	        if (foffset + vsize < foffset) {
-offset-size-arithmetic	libclamav/upx.c	229	        foffset += vsize;
-offset-size-arithmetic	libclamav/upx.c	247	        offset1 = (uint32_t)cli_readint32(sections + 20);
-offset-size-arithmetic	libclamav/upx.c	248	        offset2 = (uint32_t)cli_readint32(sections + 16);
-offset-size-arithmetic	libclamav/upx.c	249	        if (offset1 > foffset || offset2 > foffset || offset1 + offset2 > foffset) {
-offset-size-arithmetic	libclamav/upx.c	254	        offset3 = (uint32_t)cli_readint32(sections + 12);
-offset-size-arithmetic	libclamav/upx.c	255	        if (offset3 - upx0 > *dsize) {
-offset-size-arithmetic	libclamav/upx.c	259	        memcpy(newbuf + offset1, dst + offset3 - upx0, offset2);
-offset-size-arithmetic	libclamav/upx.c	266	    if (foffset > *dsize + 8192) {
-offset-size-arithmetic	libclamav/upx.c	267	        cli_dbgmsg("UPX: wrong raw size - giving up rebuild\n");
-offset-size-arithmetic	libclamav/upx.c	287	        if (!CLI_ISCONTAINED(src, ssize, src + *scur, 4))
-offset-size-arithmetic	libclamav/upx.c	298	int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-offset-size-arithmetic	libclamav/upx.c	300	    int32_t backbytes, unp_offset = -1;
-offset-size-arithmetic	libclamav/upx.c	306	            if (scur >= ssize || dcur >= *dsize)
-offset-size-arithmetic	libclamav/upx.c	317	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	322	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	347	        if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	349	        if (backsize + oob > UINT32_MAX / 2)
-offset-size-arithmetic	libclamav/upx.c	351	        backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/upx.c	353	            backsize++;
-offset-size-arithmetic	libclamav/upx.c	355	                if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	357	                if (backsize + oob > UINT32_MAX / 2)
-offset-size-arithmetic	libclamav/upx.c	359	                backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/upx.c	363	            if (backsize > UINT32_MAX - 2)
-offset-size-arithmetic	libclamav/upx.c	365	            backsize += 2;
-offset-size-arithmetic	libclamav/upx.c	369	            backsize++;
-offset-size-arithmetic	libclamav/upx.c	371	        backsize++;
-offset-size-arithmetic	libclamav/upx.c	373	        if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
-offset-size-arithmetic	libclamav/upx.c	376	            dst[dcur + i] = dst[dcur + unp_offset + i];
-offset-size-arithmetic	libclamav/upx.c	383	int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-offset-size-arithmetic	libclamav/upx.c	385	    int32_t backbytes, unp_offset = -1;
-offset-size-arithmetic	libclamav/upx.c	391	            if (scur >= ssize || dcur >= *dsize)
-offset-size-arithmetic	libclamav/upx.c	402	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	407	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	412	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	122	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
+offset-size-arithmetic	libclamav/upx.c	134	    if (!CLI_ISCONTAINED(dst, dsize, sections, *sectcnt * 0x28)) return NULL;
+offset-size-arithmetic	libclamav/upx.c	141	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
+offset-size-arithmetic	libclamav/upx.c	146	    uint32_t foffset = 0xd0 + 0xf8;
+offset-size-arithmetic	libclamav/upx.c	158	        if (CLI_ISCONTAINED(src, ssize - 5, src + ep - upx1 + valign - 2, 2) &&
+offset-size-arithmetic	libclamav/upx.c	160	            src[ep - upx1 + valign - 1] == '\xbe')   /* ... [esi + offset]          */
+offset-size-arithmetic	libclamav/upx.c	164	    if (!valign && CLI_ISCONTAINED(src, ssize - 8, src + ep - upx1 + 0x80, 8)) {
+offset-size-arithmetic	libclamav/upx.c	168	        while ((pt = cli_memstr(pt, ssize - (pt - src) - 8, "\x8d\xbe", 2))) {
+offset-size-arithmetic	libclamav/upx.c	179	    if (valign && CLI_ISCONTAINED(src, ssize, src + ep - upx1 + valign, 4)) {
+offset-size-arithmetic	libclamav/upx.c	193	                while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr) {
+offset-size-arithmetic	libclamav/upx.c	197	                    while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr) {
+offset-size-arithmetic	libclamav/upx.c	212	    if (!pehdr && dend > 0xf8 + 0x28) {
+offset-size-arithmetic	libclamav/upx.c	214	        pehdr = &dst[dend - 0xf8 - 0x28];
+offset-size-arithmetic	libclamav/upx.c	235	        memcpy(dst, newbuf, dend + 0x200);
+offset-size-arithmetic	libclamav/upx.c	240	        *dsize = rebsz + 0x200;
+offset-size-arithmetic	libclamav/upx.c	247	    foffset = PESALIGN(foffset + 0x28 * sectcnt, valign);
+offset-size-arithmetic	libclamav/upx.c	252	        vsize = PESALIGN((uint32_t)cli_readint32(sections + 8), valign);
+offset-size-arithmetic	libclamav/upx.c	265	        if (foffset + vsize < foffset) {
+offset-size-arithmetic	libclamav/upx.c	269	        foffset += vsize;
+offset-size-arithmetic	libclamav/upx.c	290	        offset1 = (uint32_t)cli_readint32(sections + 20);
+offset-size-arithmetic	libclamav/upx.c	291	        offset2 = (uint32_t)cli_readint32(sections + 16);
+offset-size-arithmetic	libclamav/upx.c	292	        if (offset1 > foffset || offset2 > foffset || offset1 + offset2 > foffset) {
+offset-size-arithmetic	libclamav/upx.c	297	        offset3 = (uint32_t)cli_readint32(sections + 12);
+offset-size-arithmetic	libclamav/upx.c	298	        if (offset3 - upx0 > *dsize) {
+offset-size-arithmetic	libclamav/upx.c	302	        memcpy(newbuf + offset1, dst + offset3 - upx0, offset2);
+offset-size-arithmetic	libclamav/upx.c	309	    if (foffset > *dsize + 8192) {
+offset-size-arithmetic	libclamav/upx.c	310	        cli_dbgmsg("UPX: wrong raw size - giving up rebuild\n");
+offset-size-arithmetic	libclamav/upx.c	334	        if (!CLI_ISCONTAINED(src, ssize, src + *scur, 4))
+offset-size-arithmetic	libclamav/upx.c	347	int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+offset-size-arithmetic	libclamav/upx.c	349	    int32_t backbytes, unp_offset = -1;
+offset-size-arithmetic	libclamav/upx.c	356	            if (scur >= ssize || dcur >= *dsize)
+offset-size-arithmetic	libclamav/upx.c	367	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	372	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	397	        if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	399	        if (backsize + oob > UINT32_MAX / 2)
+offset-size-arithmetic	libclamav/upx.c	401	        backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/upx.c	403	            backsize++;
+offset-size-arithmetic	libclamav/upx.c	405	                if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	407	                if (backsize + oob > UINT32_MAX / 2)
+offset-size-arithmetic	libclamav/upx.c	409	                backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/upx.c	413	            if (backsize > UINT32_MAX - 2)
+offset-size-arithmetic	libclamav/upx.c	415	            backsize += 2;
+offset-size-arithmetic	libclamav/upx.c	419	            backsize++;
 offset-size-arithmetic	libclamav/upx.c	42	** This code DOES NOT revert the uncompressed section to its original state as no E8/E9 fixup and
-offset-size-arithmetic	libclamav/upx.c	442	        if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	444	        if (backsize + oob > UINT32_MAX / 2)
-offset-size-arithmetic	libclamav/upx.c	446	        backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/upx.c	448	            backsize++;
-offset-size-arithmetic	libclamav/upx.c	450	                if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	452	                if (backsize + oob > UINT32_MAX / 2)
-offset-size-arithmetic	libclamav/upx.c	454	                backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/upx.c	458	            if (backsize > UINT32_MAX - 2)
-offset-size-arithmetic	libclamav/upx.c	460	            backsize += 2;
-offset-size-arithmetic	libclamav/upx.c	464	            backsize++;
-offset-size-arithmetic	libclamav/upx.c	466	        backsize++;
-offset-size-arithmetic	libclamav/upx.c	467	        if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
-offset-size-arithmetic	libclamav/upx.c	470	            dst[dcur + i] = dst[dcur + unp_offset + i];
-offset-size-arithmetic	libclamav/upx.c	477	int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
-offset-size-arithmetic	libclamav/upx.c	479	    int32_t backbytes, unp_offset = -1;
-offset-size-arithmetic	libclamav/upx.c	487	            if (scur >= ssize || dcur >= *dsize)
-offset-size-arithmetic	libclamav/upx.c	495	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	500	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	505	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	526	            backsize = backbytes & 1; /* Using backsize to carry on the shifted out bit (UPX uses CF) */
-offset-size-arithmetic	libclamav/upx.c	532	        } /* Using backsize to carry on the doubleebx result (UPX uses CF) */
-offset-size-arithmetic	libclamav/upx.c	534	        if (backsize) { /* i.e. IF ( last sar shifted out 1 bit || last doubleebx()==1 ) */
-offset-size-arithmetic	libclamav/upx.c	539	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	542	                if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	544	                if (backsize + oob > UINT32_MAX / 2)
-offset-size-arithmetic	libclamav/upx.c	546	                backsize = 2 + oob;
-offset-size-arithmetic	libclamav/upx.c	549	                    if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
-offset-size-arithmetic	libclamav/upx.c	551	                    if (backsize + oob > UINT32_MAX / 2)
-offset-size-arithmetic	libclamav/upx.c	553	                    backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/upx.c	557	                if (backsize > UINT32_MAX - 2)
-offset-size-arithmetic	libclamav/upx.c	559	                backsize += 2;
-offset-size-arithmetic	libclamav/upx.c	564	            backsize++;
-offset-size-arithmetic	libclamav/upx.c	566	        if (backsize > UINT32_MAX - 2)
-offset-size-arithmetic	libclamav/upx.c	568	        backsize += 2;
-offset-size-arithmetic	libclamav/upx.c	570	        if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
-offset-size-arithmetic	libclamav/upx.c	573	            dst[dcur + i] = dst[dcur + unp_offset + i];
-offset-size-arithmetic	libclamav/upx.c	580	int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties)
-offset-size-arithmetic	libclamav/upx.c	611	    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, *dsize);
+offset-size-arithmetic	libclamav/upx.c	421	        backsize++;
+offset-size-arithmetic	libclamav/upx.c	423	        if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
+offset-size-arithmetic	libclamav/upx.c	428	            dst[dcur + i] = dst[dcur + unp_offset + i];
+offset-size-arithmetic	libclamav/upx.c	436	int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+offset-size-arithmetic	libclamav/upx.c	438	    int32_t backbytes, unp_offset = -1;
+offset-size-arithmetic	libclamav/upx.c	445	            if (scur >= ssize || dcur >= *dsize)
+offset-size-arithmetic	libclamav/upx.c	456	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	461	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	466	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	496	        if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	498	        if (backsize + oob > UINT32_MAX / 2)
+offset-size-arithmetic	libclamav/upx.c	500	        backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/upx.c	502	            backsize++;
+offset-size-arithmetic	libclamav/upx.c	504	                if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	506	                if (backsize + oob > UINT32_MAX / 2)
+offset-size-arithmetic	libclamav/upx.c	508	                backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/upx.c	512	            if (backsize > UINT32_MAX - 2)
+offset-size-arithmetic	libclamav/upx.c	514	            backsize += 2;
+offset-size-arithmetic	libclamav/upx.c	518	            backsize++;
+offset-size-arithmetic	libclamav/upx.c	520	        backsize++;
+offset-size-arithmetic	libclamav/upx.c	521	        if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
+offset-size-arithmetic	libclamav/upx.c	526	            dst[dcur + i] = dst[dcur + unp_offset + i];
+offset-size-arithmetic	libclamav/upx.c	534	int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
+offset-size-arithmetic	libclamav/upx.c	536	    int32_t backbytes, unp_offset = -1;
+offset-size-arithmetic	libclamav/upx.c	545	            if (scur >= ssize || dcur >= *dsize)
+offset-size-arithmetic	libclamav/upx.c	553	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	558	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	563	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	584	            backsize = backbytes & 1; /* Using backsize to carry on the shifted out bit (UPX uses CF) */
+offset-size-arithmetic	libclamav/upx.c	590	        } /* Using backsize to carry on the doubleebx result (UPX uses CF) */
+offset-size-arithmetic	libclamav/upx.c	592	        if (backsize) { /* i.e. IF ( last sar shifted out 1 bit || last doubleebx()==1 ) */
+offset-size-arithmetic	libclamav/upx.c	597	            if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	600	                if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	602	                if (backsize + oob > UINT32_MAX / 2)
+offset-size-arithmetic	libclamav/upx.c	604	                backsize = 2 + oob;
+offset-size-arithmetic	libclamav/upx.c	607	                    if ((oob = doubleebx(src, &myebx, &scur, ssize)) == -1)
+offset-size-arithmetic	libclamav/upx.c	609	                    if (backsize + oob > UINT32_MAX / 2)
+offset-size-arithmetic	libclamav/upx.c	611	                    backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/upx.c	615	                if (backsize > UINT32_MAX - 2)
+offset-size-arithmetic	libclamav/upx.c	617	                backsize += 2;
+offset-size-arithmetic	libclamav/upx.c	622	            backsize++;
+offset-size-arithmetic	libclamav/upx.c	624	        if (backsize > UINT32_MAX - 2)
+offset-size-arithmetic	libclamav/upx.c	626	        backsize += 2;
+offset-size-arithmetic	libclamav/upx.c	628	        if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
+offset-size-arithmetic	libclamav/upx.c	633	            dst[dcur + i] = dst[dcur + unp_offset + i];
+offset-size-arithmetic	libclamav/upx.c	641	int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties, struct cli_ctx_tag *ctx)
+offset-size-arithmetic	libclamav/upx.c	679	    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, *dsize, ctx);
 offset-size-arithmetic	libclamav/uuencode.c	110	int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at)
 offset-size-arithmetic	libclamav/uuencode.c	142	        if (!fmap_gets(map, buffer, at, sizeof(buffer) - 1))
 offset-size-arithmetic	libclamav/uuencode.c	157	        len = (size_t)(uptr - data);

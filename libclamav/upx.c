@@ -62,6 +62,27 @@
 #define PEALIGN(o, a) (((a)) ? (((o) / (a)) * (a)) : (o))
 #define PESALIGN(o, a) (((a)) ? (((o) / (a) + ((o) % (a) != 0)) * (a)) : (o))
 
+/* UPX is a legacy, bounded-buffer decoder. Keep its context-free public
+ * implementation, but checkpoint the shared scan deadline often enough that
+ * hostile bitstreams cannot consume the entire scan budget in a tight loop. */
+static int upx_checktimelimit(struct cli_ctx_tag *ctx, uint32_t *ticks)
+{
+    if (ctx == NULL)
+        return 0;
+
+    (*ticks)++;
+    if (*ticks < 4096)
+        return 0;
+
+    *ticks = 0;
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "PE UPX decompression reached the configured time limit");
+        return 1;
+    }
+
+    return 0;
+}
+
 #define HEADERS "\
 \x4D\x5A\x90\x00\x02\x00\x00\x00\x04\x00\x0F\x00\xFF\xFF\x00\x00\
 \xB0\x00\x00\x00\x00\x00\x00\x00\x40\x00\x1A\x00\x00\x00\x00\x00\
@@ -117,15 +138,21 @@ static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, u
 
 /* PE from UPX */
 
-static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend)
+static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
 {
     char *imports, *sections = NULL, *pehdr = NULL, *newbuf;
     unsigned int sectcnt = 0, upd = 1;
     uint32_t realstuffsz = 0, valign = 0;
     uint32_t foffset = 0xd0 + 0xf8;
+    uint32_t ticks = 0;
+    uint32_t vsize, urva;
+    uint32_t offset1, offset2, offset3;
 
     if ((dst == NULL) || (src == NULL))
         return 0;
+
+    if (upx_checktimelimit(ctx, &ticks))
+        return -1;
 
     while ((valign = magic[sectcnt++])) {
         if (CLI_ISCONTAINED(src, ssize - 5, src + ep - upx1 + valign - 2, 2) &&
@@ -139,6 +166,8 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         cli_dbgmsg("UPX: bad magic - scanning for imports\n");
 
         while ((pt = cli_memstr(pt, ssize - (pt - src) - 8, "\x8d\xbe", 2))) {
+            if (upx_checktimelimit(ctx, &ticks))
+                return -1;
             if (pt[6] == '\x8b' && pt[7] == '\x07') { /* lea edi, [esi+imports] / mov eax, [edi] */
                 valign = pt - src + 2 - ep + upx1;
                 break;
@@ -158,11 +187,18 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         } else {
             pehdr = imports;
             while (CLI_ISCONTAINED(dst, *dsize, pehdr, 8) && cli_readint32(pehdr)) {
+                if (upx_checktimelimit(ctx, &ticks))
+                    return -1;
                 pehdr += 8;
                 while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr) {
+                    if (upx_checktimelimit(ctx, &ticks))
+                        return -1;
                     pehdr++;
-                    while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr)
+                    while (CLI_ISCONTAINED(dst, *dsize, pehdr, 2) && *pehdr) {
+                        if (upx_checktimelimit(ctx, &ticks))
+                            return -1;
                         pehdr++;
+                    }
                     pehdr++;
                 }
                 pehdr++;
@@ -177,6 +213,8 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
         cli_dbgmsg("UPX: no luck - scanning for PE\n");
         pehdr = &dst[dend - 0xf8 - 0x28];
         while (pehdr > dst) {
+            if (upx_checktimelimit(ctx, &ticks))
+                return -1;
             if ((sections = checkpe(dst, *dsize, pehdr, &valign, &sectcnt)))
                 break;
             pehdr--;
@@ -209,8 +247,10 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
     foffset = PESALIGN(foffset + 0x28 * sectcnt, valign);
 
     for (upd = 0; upd < sectcnt; upd++) {
-        uint32_t vsize = PESALIGN((uint32_t)cli_readint32(sections + 8), valign);
-        uint32_t urva  = PEALIGN((uint32_t)cli_readint32(sections + 12), valign);
+        if (upx_checktimelimit(ctx, &ticks))
+            return -1;
+        vsize = PESALIGN((uint32_t)cli_readint32(sections + 8), valign);
+        urva  = PEALIGN((uint32_t)cli_readint32(sections + 12), valign);
 
         /* Within bounds ? */
         if (!CLI_ISCONTAINED(upx0, realstuffsz, urva, vsize)) {
@@ -243,7 +283,10 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
     memcpy(newbuf + 0xd0, pehdr, 0xf8 + 0x28 * sectcnt);
     sections = pehdr + 0xf8;
     for (upd = 0; upd < sectcnt; upd++) {
-        uint32_t offset1, offset2, offset3;
+        if (upx_checktimelimit(ctx, &ticks)) {
+            free(newbuf);
+            return -1;
+        }
         offset1 = (uint32_t)cli_readint32(sections + 20);
         offset2 = (uint32_t)cli_readint32(sections + 16);
         if (offset1 > foffset || offset2 > foffset || offset1 + offset2 > foffset) {
@@ -278,9 +321,13 @@ static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize
 
 /* [doubleebx] */
 
-static int doubleebx(const char *src, uint32_t *myebx, uint32_t *scur, uint32_t ssize)
+static int upx_doubleebx(const char *src, uint32_t *myebx, uint32_t *scur, uint32_t ssize,
+                         struct cli_ctx_tag *ctx, uint32_t *ticks)
 {
     uint32_t oldebx = *myebx;
+
+    if (upx_checktimelimit(ctx, ticks))
+        return -1;
 
     *myebx *= 2;
     if (!(oldebx & 0x7fffffff)) {
@@ -293,12 +340,15 @@ static int doubleebx(const char *src, uint32_t *myebx, uint32_t *scur, uint32_t 
     return (oldebx >> 31);
 }
 
+#define doubleebx(src, myebx, scur, ssize) upx_doubleebx(src, myebx, scur, ssize, ctx, &ticks)
+
 /* [inflate] */
 
-int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
+int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
 {
     int32_t backbytes, unp_offset = -1;
     uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x108, 0x110, 0xd5, 0};
+    uint32_t ticks = 0;
     int oob;
 
     while (1) {
@@ -372,18 +422,22 @@ int upx_inflate2b(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, u
 
         if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
             return -1;
-        for (i = 0; i < backsize; i++)
+        for (i = 0; i < backsize; i++) {
+            if ((i & 0xffffU) == 0 && upx_checktimelimit(ctx, &ticks))
+                return -1;
             dst[dcur + i] = dst[dcur + unp_offset + i];
+        }
         dcur += backsize;
     }
 
-    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, dcur);
+    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, dcur, ctx);
 }
 
-int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
+int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
 {
     int32_t backbytes, unp_offset = -1;
     uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x11c, 0x124, 0};
+    uint32_t ticks = 0;
     int oob;
 
     while (1) {
@@ -466,18 +520,22 @@ int upx_inflate2d(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, u
         backsize++;
         if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
             return -1;
-        for (i = 0; i < backsize; i++)
+        for (i = 0; i < backsize; i++) {
+            if ((i & 0xffffU) == 0 && upx_checktimelimit(ctx, &ticks))
+                return -1;
             dst[dcur + i] = dst[dcur + unp_offset + i];
+        }
         dcur += backsize;
     }
 
-    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, dcur);
+    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, dcur, ctx);
 }
 
-int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep)
+int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, struct cli_ctx_tag *ctx)
 {
     int32_t backbytes, unp_offset = -1;
     uint32_t backsize, myebx = 0, scur = 0, dcur = 0, i, magic[] = {0x128, 0x130, 0};
+    uint32_t ticks = 0;
     int oob;
 
     for (;;) {
@@ -569,19 +627,26 @@ int upx_inflate2e(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, u
 
         if (!CLI_ISCONTAINED(dst, *dsize, dst + dcur + unp_offset, backsize) || !CLI_ISCONTAINED(dst, *dsize, dst + dcur, backsize) || unp_offset >= 0)
             return -1;
-        for (i = 0; i < backsize; i++)
+        for (i = 0; i < backsize; i++) {
+            if ((i & 0xffffU) == 0 && upx_checktimelimit(ctx, &ticks))
+                return -1;
             dst[dcur + i] = dst[dcur + unp_offset + i];
+        }
         dcur += backsize;
     }
 
-    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, dcur);
+    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, dcur, ctx);
 }
 
-int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties)
+int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t upx0, uint32_t upx1, uint32_t ep, uint32_t properties, struct cli_ctx_tag *ctx)
 {
     struct CLI_LZMA l;
     uint32_t magic[] = {0xb16, 0xb1e, 0};
     unsigned char fake_lzmahdr[5];
+    uint32_t ticks = 0;
+
+    if (upx_checktimelimit(ctx, &ticks))
+        return -1;
 
     memset(&l, 0, sizeof(l));
     cli_writeint32(fake_lzmahdr + 1, *dsize);
@@ -608,5 +673,10 @@ int upx_inflatelzma(const char *src, uint32_t ssize, char *dst, uint32_t *dsize,
     }
     cli_LzmaShutdown(&l);
 
-    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, *dsize);
+    if (upx_checktimelimit(ctx, &ticks))
+        return -1;
+
+    return pefromupx(src, ssize, dst, dsize, ep, upx0, upx1, magic, *dsize, ctx);
 }
+
+#undef doubleebx
