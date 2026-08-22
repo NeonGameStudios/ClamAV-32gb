@@ -5317,3 +5317,13 @@ in-range backing-read failure (`CL_EREAD`) from a genuinely truncated table
 (`CL_EPARSE`), preserving the sticky incomplete/non-cacheable result in both
 cases. A focused callback regression covers the in-range failure; compiled SIS
 corpus, sanitizer, and supported-build qualification remain release gates.
+
+## PE version-resource read failures — 2026-08-22
+
+PE version-resource extraction previously discarded the status from its
+resource-tree walker and skipped failed entry or payload windows. The target
+metadata path now preserves resource-tree, entry, and payload coordinate or
+backing-read failures as non-cacheable `CL_EFORMAT` or `CL_EREAD` results. A
+focused callback regression covers a confirmed resource-tree read failure;
+compiled PE metadata corpus, sanitizer, and supported-build qualification
+remain release gates.

@@ -5715,6 +5715,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         struct vinfo_list vlist;
         const uint8_t *vptr, *baseptr;
         uint32_t rva, res_sz;
+        cl_error_t resource_status;
 
         // TODO This code assumes peinfo->offset == 0, which might not always
         // be the case.
@@ -5723,7 +5724,15 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         }
 
         memset(&vlist, 0, sizeof(vlist));
-        findres(0x10, 0xffffffff, map, peinfo, versioninfo_cb, &vlist);
+        resource_status = findres_ex(0x10, 0xffffffff, map, peinfo, versioninfo_cb, &vlist);
+        if (resource_status != CL_SUCCESS) {
+            if (resource_status == CL_EREAD)
+                cli_mark_scan_incomplete(ctx, "PE version resource tree could not be read completely");
+            else
+                cli_mark_scan_incomplete(ctx, "PE version resource tree is malformed or out of range");
+            ret = resource_status;
+            goto done;
+        }
         if (!vlist.count)
             break; /* No version_information */
 
@@ -5736,21 +5745,43 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         for (i = 0; i < vlist.count; i++) { /* enum all version_information res - RESUMABLE */
             cli_dbgmsg("cli_peheader: parsing version info @ rva %x (%zu/%u)\n", vlist.rvas[i], i + 1, vlist.count);
             rva = cli_rawaddr(vlist.rvas[i], peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
-            if (err)
-                continue;
+            if (err) {
+                cli_mark_scan_incomplete(ctx, "PE version resource entry has invalid coordinates");
+                ret = CL_EFORMAT;
+                goto done;
+            }
 
-            if (!(vptr = fmap_need_off_once(map, rva, 16)))
-                continue;
+            if (rva > fsize || 16 > fsize - (size_t)rva) {
+                cli_mark_scan_incomplete(ctx, "PE version resource entry is outside the input map");
+                ret = CL_EFORMAT;
+                goto done;
+            }
+            if (!(vptr = fmap_need_off_once(map, rva, 16))) {
+                cli_mark_scan_incomplete(ctx, "PE version resource entry could not be read completely");
+                ret = CL_EREAD;
+                goto done;
+            }
 
             baseptr = vptr - rva;
             /* parse resource */
             rva    = cli_readint32(vptr);     /* ptr to version_info */
             res_sz = cli_readint32(vptr + 4); /* sizeof(resource) */
             rva    = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
-            if (err)
-                continue;
-            if (!(vptr = fmap_need_off_once(map, rva, res_sz)))
-                continue;
+            if (err) {
+                cli_mark_scan_incomplete(ctx, "PE version resource data has invalid coordinates");
+                ret = CL_EFORMAT;
+                goto done;
+            }
+            if (!res_sz || rva > fsize || (size_t)res_sz > fsize - (size_t)rva) {
+                cli_mark_scan_incomplete(ctx, "PE version resource data is outside the input map");
+                ret = CL_EFORMAT;
+                goto done;
+            }
+            if (!(vptr = fmap_need_off_once(map, rva, res_sz))) {
+                cli_mark_scan_incomplete(ctx, "PE version resource data could not be read completely");
+                ret = CL_EREAD;
+                goto done;
+            }
 
             while (res_sz > 4) { /* look for version_info - NOT RESUMABLE (expecting exactly one versioninfo) */
                 uint32_t vinfo_sz, vinfo_val_sz, got_varfileinfo = 0;

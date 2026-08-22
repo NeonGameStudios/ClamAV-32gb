@@ -13496,6 +13496,18 @@ static const void *pe_petite_section_read_failure(fmap_t *map, size_t at, size_t
     return (const uint8_t *)map->data + at;
 }
 
+static size_t pe_version_resource_read_offset;
+
+static const void *pe_version_resource_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == pe_version_resource_read_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *fmap_gets_read_failure(fmap_t *map, char *dst, size_t *at, size_t max_len)
 {
     (void)map;
@@ -16300,6 +16312,84 @@ START_TEST(test_executable_metadata_targetinfo_failure_is_fail_visible)
 
     cli_targetinfo_destroy(&info);
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_pe_version_resource_read_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct cli_exe_info peinfo;
+    cli_ctx header_ctx;
+    cli_ctx ctx;
+    struct stat st;
+    fmap_t *map;
+    cl_error_t ret;
+    unsigned int err = 0;
+    uint8_t *data;
+    size_t offset = 0;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&options, 0, sizeof(options));
+    memset(&header_ctx, 0, sizeof(header_ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    header_ctx.engine            = scan_engine;
+    header_ctx.dconf             = scan_engine->dconf;
+    header_ctx.options           = &options;
+    header_ctx.fmap              = map;
+    header_ctx.this_layer_tmpdir = tmpdir;
+    cli_exe_info_init(&peinfo, 0);
+    ret = cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_msg(peinfo.ndatadirs >= 3 && peinfo.dirs[2].Size,
+                  "PE fixture has no resource directory");
+    pe_version_resource_read_offset = cli_rawaddr(peinfo.dirs[2].VirtualAddress,
+                                                   peinfo.sections, peinfo.nsections, &err,
+                                                   map->len, peinfo.hdr_size);
+    ck_assert_int_eq(err, 0);
+    cli_exe_info_destroy(&peinfo);
+
+    map->need = pe_version_resource_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    cli_exe_info_init(&peinfo, 0);
+
+    ret = cli_pe_targetinfo(&ctx, &peinfo);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE version resource tree could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cli_exe_info_destroy(&peinfo);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
 }
 END_TEST
 
@@ -20154,6 +20244,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_header_nested_fmap_accepts_native_offset);
 #endif
     tcase_add_test(tc_cl, test_executable_metadata_targetinfo_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_version_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_range_is_fail_visible);

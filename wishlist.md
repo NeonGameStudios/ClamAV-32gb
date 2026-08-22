@@ -135,6 +135,10 @@
   and validates the import-directory range without 32-bit addition wraparound.
 - The PE resource-string heuristic now borrows at most the 8 KiB prefix its
   detector consumes, with subtraction-form resource range validation.
+- PE version-resource extraction now preserves resource-tree, entry, and
+  payload read/coordinate failures as non-cacheable `CL_EREAD`/`CL_EFORMAT`
+  results instead of silently omitting version metadata; compiled PE metadata
+  corpus and callback-fault qualification remain open.
 - PE icon bitmap headers now use native-width map coordinates and reject
   declared header ranges that extend beyond the input; add compiled PE/icon
   corpus and sanitizer qualification.

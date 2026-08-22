@@ -3869,3 +3869,14 @@ in-range backing-read failure (`CL_EREAD`) from a genuinely truncated table
 (`CL_EPARSE`), preserving the sticky incomplete/non-cacheable result in both
 cases. A focused callback regression covers the in-range failure; compiled SIS
 corpus, sanitizer, and supported-build qualification remain release gates.
+
+## PE version-resource read failures — 2026-08-22
+
+PE version-resource extraction previously ignored the status returned by its
+resource-tree walker and silently skipped failed entry or payload windows. The
+metadata path now propagates malformed/out-of-range coordinates as `CL_EFORMAT`
+and in-range fmap callback failures as `CL_EREAD`, marking the scan incomplete
+and non-cacheable before relative version metadata can be omitted. The focused
+regression faults the confirmed resource-tree root in the checked-in PE
+fixture; compiled PE metadata corpus, sanitizer, and supported-build
+qualification remain release gates.
