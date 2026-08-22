@@ -15485,6 +15485,33 @@ START_TEST(test_elf_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_scanelf(&ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_elf_scan_program_header_read_failure_is_fail_visible)
 {
     uint8_t data[64 + 56] = {0};
@@ -15769,6 +15796,60 @@ START_TEST(test_macho_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_macho_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_scanmacho(&ctx, NULL);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_macho_unibin_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_scanmacho_unibin(&ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O universal-binary inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static void macho_test_write_u32(uint8_t *dst, uint32_t value);
 
 START_TEST(test_macho_metadata_read_failure_is_fail_visible)
@@ -16030,6 +16111,33 @@ START_TEST(test_udf_truncated_descriptor_area_is_fail_visible)
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_udf_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF inspection reached the configured time limit");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -17867,6 +17975,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_elf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_metadata_read_failure_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
@@ -17874,6 +17983,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_elf64_entry_offset_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_unibin_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_metadata_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_scan_load_command_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_native_metadata_preserves_64bit_sections);
@@ -17882,6 +17993,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
+    tcase_add_test(tc_cl, test_udf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_descriptor_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_unknown_generic_descriptor_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);

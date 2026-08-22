@@ -254,9 +254,21 @@
 - ELF required metadata reads now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add direct scanner,
   sanitizer, and production ELF corpus qualification.
+- ELF executable inspection now checks the shared deadline before header
+  admission, between metadata phases, and at each program/section-header
+  traversal step; add compiled timeout-injection and large-metadata corpus
+  qualification.
 - Mach-O required metadata and universal-binary reads now distinguish in-range
   fmap callback failures (`CL_EREAD`) from genuinely short input (`CL_EPARSE`);
   add direct scanner, universal-binary, sanitizer, and production Mach-O corpus
+  qualification.
+- Mach-O load-command, section, universal-binary architecture, and nested
+  member traversal now honor the shared deadline with cleanup and explicit
+  timeout results; add compiled timeout-injection and large-metadata corpus
+  qualification.
+- UDF descriptor, empty-descriptor, file-index, allocation, and extracted-file
+  traversal now honor the shared deadline with cleanup and explicit timeout
+  propagation; add compiled timeout-injection and fragmented-volume corpus
   qualification.
 - The remaining milestone is a current-head Linux x86-64 build and the full
   Release/ASan/UBSan, parser-corpus, resource-budget, and production-database

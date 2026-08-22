@@ -3206,3 +3206,16 @@ call sites now stop instead of continuing after the error. A public
 the returned status and structured-report status. Static guards and whitespace
 validation pass; compiled Linux/Sonic1 and broader callback fault-injection
 qualification remain open.
+
+## Executable and UDF traversal deadlines — 2026-08-22
+
+ELF program/section-header inspection, Mach-O load-command/section inspection,
+Mach-O universal-binary architecture/member traversal, and UDF descriptor and
+file-index traversal previously had no deadline check at their parser-local
+loop boundaries. They now check the shared scan deadline before each
+attacker-controlled iteration, release temporary metadata arrays on timeout,
+and preserve `CL_ETIMEOUT` as a sticky incomplete, non-cacheable result.
+Direct expired-context regressions cover ELF, Mach-O, Mach-O universal-binary,
+and UDF entry points; source guards and the capability manifest record the new
+coverage. Compiled parser corpus, sanitizer, and Sonic1 qualification remain
+release gates.

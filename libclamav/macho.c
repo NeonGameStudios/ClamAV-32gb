@@ -270,6 +270,12 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     uint64_t at;
     cl_error_t read_status;
 
+    read_status = cli_checktimelimit(ctx);
+    if (read_status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Mach-O inspection reached the configured time limit");
+        return read_status;
+    }
+
     if (fileinfo) {
         get_fileinfo = true;
 
@@ -394,6 +400,14 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     }
 
     for (i = 0; i < hdr.ncmds; i++) {
+        read_status = cli_checktimelimit(ctx);
+        if (read_status != CL_SUCCESS) {
+            free(sections);
+            free(sections64);
+            cli_mark_scan_incomplete(ctx, "Mach-O load-command traversal reached the configured time limit");
+            return read_status;
+        }
+
         read_status = cli_macho_read_status(cli_macho_readn(map, at, &load_cmd, sizeof(load_cmd)), sizeof(load_cmd));
         if (read_status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanmacho: Can't read load command\n");
@@ -483,6 +497,14 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             }
 
             for (j = 0; j < nsects; j++) {
+                read_status = cli_checktimelimit(ctx);
+                if (read_status != CL_SUCCESS) {
+                    free(sections);
+                    free(sections64);
+                    cli_mark_scan_incomplete(ctx, "Mach-O section traversal reached the configured time limit");
+                    return read_status;
+                }
+
                 if (m64) {
                     read_status = cli_macho_read_status(cli_macho_readn(map, at, &section64, sizeof(section64)), sizeof(section64));
                     if (read_status != CL_SUCCESS) {
@@ -722,6 +744,12 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     fmap_t *map    = ctx->fmap;
     uint64_t at;
 
+    read_status = cli_checktimelimit(ctx);
+    if (read_status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Mach-O universal-binary inspection reached the configured time limit");
+        return read_status;
+    }
+
     read_status = cli_macho_read_status(cli_macho_readn(map, 0, &fat_header, sizeof(fat_header)), sizeof(fat_header));
     if (read_status != CL_SUCCESS) {
         cli_dbgmsg("cli_scanmacho_unibin: Can't read fat_header\n");
@@ -757,6 +785,12 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     for (i = 0; i < fat_header.nfats; i++) {
         uint64_t member_end;
 
+        read_status = cli_checktimelimit(ctx);
+        if (read_status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "Mach-O universal-binary traversal reached the configured time limit");
+            return read_status;
+        }
+
         read_status = cli_macho_read_status(cli_macho_readn(map, at, &fat_arch, sizeof(fat_arch)), sizeof(fat_arch));
         if (read_status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanmacho_unibin: Can't read fat_arch\n");
@@ -787,6 +821,12 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "Mach-O universal-binary architecture range is outside the input map");
             ret = CL_EPARSE;
             break;
+        }
+
+        read_status = cli_checktimelimit(ctx);
+        if (read_status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "Mach-O universal-binary member traversal reached the configured time limit");
+            return read_status;
         }
 
         ret = cli_magic_scan_nested_fmap_type(map, fat_arch.offset, fat_arch.size, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);

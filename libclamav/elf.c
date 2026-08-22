@@ -97,6 +97,16 @@ static cl_error_t cli_elf_broken_result(cli_ctx *ctx, cl_error_t fallback)
     return ret;
 }
 
+static cl_error_t cli_elf_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS && ctx)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 static uint32_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 {
     uint16_t i, found = 0;
@@ -313,6 +323,12 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         for (i = 0; i < phnum; i++) {
             cl_error_t read_status;
 
+            read_status = cli_elf_checktimelimit(ctx, "ELF program-header traversal reached the configured time limit");
+            if (read_status != CL_SUCCESS) {
+                free(program_hdr);
+                return read_status;
+            }
+
             err = 0;
             read_status = cli_elf_read_status(ctx,
                                                cli_elf_readn(map, &program_hdr[i], phoff, sizeof(struct elf_program_hdr32)),
@@ -417,6 +433,12 @@ static cl_error_t cli_elf_ph64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *e
 
         for (i = 0; i < phnum; i++) {
             cl_error_t read_status;
+
+            read_status = cli_elf_checktimelimit(ctx, "ELF program-header traversal reached the configured time limit");
+            if (read_status != CL_SUCCESS) {
+                free(program_hdr);
+                return read_status;
+            }
 
             err = 0;
             read_status = cli_elf_read_status(ctx,
@@ -542,6 +564,12 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         uint32_t sh_type, sh_flags;
         cl_error_t read_status;
 
+        read_status = cli_elf_checktimelimit(ctx, "ELF section-header traversal reached the configured time limit");
+        if (read_status != CL_SUCCESS) {
+            free(section_hdr);
+            return read_status;
+        }
+
         read_status = cli_elf_read_status(ctx,
                                            cli_elf_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr32)),
                                            sizeof(struct elf_section_hdr32),
@@ -657,6 +685,12 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         uint32_t sh_type, sh_flags;
         uint64_t section_addr, section_offset, section_size;
         cl_error_t read_status;
+
+        read_status = cli_elf_checktimelimit(ctx, "ELF section-header traversal reached the configured time limit");
+        if (read_status != CL_SUCCESS) {
+            free(section_hdr);
+            return read_status;
+        }
 
         read_status = cli_elf_read_status(ctx,
                                            cli_elf_readn(map, &section_hdr[i], shoff, sizeof(struct elf_section_hdr64)),
@@ -798,6 +832,10 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_scanelf\n");
 
+    ret = cli_elf_checktimelimit(ctx, "ELF inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     /* Load header to determine size and class */
     ret = cli_elf_fileheader(ctx, map, &file_hdr, &conv, &is64);
     if (ret == CL_BREAK) {
@@ -880,6 +918,10 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
     }
 
     /* Program headers and Entry */
+    ret = cli_elf_checktimelimit(ctx, "ELF program-header inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     if (is64) {
         ret = cli_elf_ph64(ctx, map, NULL, &(file_hdr.hdr64), conv);
     } else {
@@ -894,6 +936,10 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
     }
 
     /* Sections */
+    ret = cli_elf_checktimelimit(ctx, "ELF section-header inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     if (is64) {
         ret = cli_elf_sh64(ctx, map, NULL, &(file_hdr.hdr64), conv);
     } else {

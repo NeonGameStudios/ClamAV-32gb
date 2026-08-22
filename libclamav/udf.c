@@ -61,6 +61,16 @@ typedef struct {
     size_t length;
 } udf_extent;
 
+static cl_error_t udf_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_t *map, const udf_extent *extents,
                                  size_t extent_count, uint64_t dataLen)
 {
@@ -334,6 +344,10 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     }
 
     for (size_t i = 0; i < extent_count; i++) {
+        ret = udf_checktimelimit(ctx, "UDF allocation-descriptor traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            goto done;
+
         ret = getUDFExtentRange(ctx, pPartitionDescriptor, pLogicalVolumeDescriptor,
                                 (const uint8_t *)allocation_descriptor + (i * descriptor_size), icbFlags, &extents[i]);
         if (ret != CL_SUCCESS)
@@ -457,6 +471,11 @@ static bool skipEmptyDescriptors(cli_ctx *ctx, size_t *idxp, size_t *lastOffsetp
     size_t i;
 
     while (1) {
+        if (udf_checktimelimit(ctx, "UDF empty-descriptor traversal reached the configured time limit") != CL_SUCCESS) {
+            *read_status = CL_ETIMEOUT;
+            goto done;
+        }
+
         buffer = (uint8_t *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, read_status);
         if (NULL == buffer) {
             goto done;
@@ -909,7 +928,15 @@ static cl_error_t findFileIdentifiers(cli_ctx *ctx, const uint8_t *const input, 
     size_t bufUsed;
     size_t fidDescSize;
 
+    ret = udf_checktimelimit(ctx, "UDF file-identifier traversal reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     while (FILE_IDENTIFIER_DESCRIPTOR == tagId) {
+        ret = udf_checktimelimit(ctx, "UDF file-identifier traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            break;
+
         /* This is how far into the Volume we already are. */
         bufUsed     = buffer - input;
         fidDescSize = getFileIdentifierDescriptorSize((FileIdentifierDescriptor *)buffer);
@@ -947,7 +974,15 @@ static cl_error_t findFileEntries(cli_ctx *ctx, const uint8_t *const input, Poin
     size_t bufUsed;
     size_t fedDescSize;
 
+    ret = udf_checktimelimit(ctx, "UDF file-entry traversal reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     while (FILE_ENTRY_DESCRIPTOR == tagId) {
+        ret = udf_checktimelimit(ctx, "UDF file-entry traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            break;
+
         /* This is how far into the Volume we already are. */
         bufUsed     = buffer - input;
         fedDescSize = getFileEntryDescriptorSize((FileEntryDescriptor *)buffer);
@@ -1007,11 +1042,23 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
         return CL_EPARSE; /* Need 16 sectors at least 2048 bytes long */
     }
 
+    ret = udf_checktimelimit(ctx, "UDF inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        goto done;
+
     cli_dbgmsg("Scanning UDF file\n");
 
     for (i = 0; i < NUM_GENERIC_VOLUME_DESCRIPTORS; i++) {
+        ret = udf_checktimelimit(ctx, "UDF generic volume descriptor traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            goto done;
+
         gvsd = (GenericVolumeStructureDescriptor *)udf_need_off(ctx, idx, sizeof(GenericVolumeStructureDescriptor), &read_status);
         if (NULL == gvsd) {
+            if (CL_ETIMEOUT == read_status) {
+                ret = CL_ETIMEOUT;
+                goto done;
+            }
             if (CL_EREAD == read_status) {
                 cli_mark_scan_incomplete(ctx, "UDF generic volume descriptor area could not be read completely");
                 ret = CL_EREAD;
@@ -1054,6 +1101,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
     while (1) {
 
+        ret = udf_checktimelimit(ctx, "UDF volume descriptor traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            goto done;
+
         if (!isInitialized) {
             /* We don't use most of these descriptors, but verify they all exist because
              * they are part of a properly formatted udf file. */
@@ -1070,6 +1121,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (pvd = getPrimaryVolumeDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Primary Volume Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF primary volume descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1083,6 +1138,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (iuvd = getImplementationUseVolumeDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Implementation Use Volume Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF implementation-use descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1099,6 +1158,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (lvd = getLogicalVolumeDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Logical Volume Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF logical volume descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1116,6 +1179,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (pd = getPartitionDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Partition Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF partition descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1133,6 +1200,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (usd = getUnallocatedSpaceDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Unallocated Space Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF unallocated-space descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1146,6 +1217,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (td = getTerminatingDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Terminating Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF terminating descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1159,6 +1234,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (lvid = getLogicalVolumeIntegrityDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Logical Volume Integrity Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF logical-volume-integrity descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1172,6 +1251,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (td = getTerminatingDescriptor(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Terminating Descriptor\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF second terminating descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1185,6 +1268,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
 
             if (NULL == (avdp = getAnchorVolumeDescriptorPointer(ctx, &idx, &lastOffset, &read_status))) {
                 cli_dbgmsg("Failed to get Anchor Volume Descriptor Pointer\n");
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF anchor volume descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1200,6 +1287,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 cli_dbgmsg("Failed to get File Set Descriptor\n");
 
                 // The file set descriptor may come after an extended file entry descriptor.
+                if (CL_ETIMEOUT == read_status) {
+                    ret = CL_ETIMEOUT;
+                    goto done;
+                }
                 if (CL_EREAD == read_status) {
                     cli_mark_scan_incomplete(ctx, "UDF file set descriptor could not be read completely");
                     ret = CL_EREAD;
@@ -1221,6 +1312,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
         file_volume_tag = (DescriptorTag *)udf_need_off(ctx, idx, VOLUME_DESCRIPTOR_SIZE, &read_status);
         if (NULL == file_volume_tag) {
             cli_dbgmsg("Failed to get File Volume Tag\n");
+            if (CL_ETIMEOUT == read_status) {
+                ret = CL_ETIMEOUT;
+                goto done;
+            }
             if (CL_EREAD == read_status) {
                 cli_mark_scan_incomplete(ctx, "UDF file volume descriptor could not be read completely");
                 ret = CL_EREAD;
@@ -1299,6 +1394,10 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                 size_t cnt = fileIdentifierList.cnt;
 
                 for (i = 0; i < cnt; i++) {
+                    ret = udf_checktimelimit(ctx, "UDF file-entry scan traversal reached the configured time limit");
+                    if (ret != CL_SUCCESS)
+                        goto done;
+
                     ret = parseFileEntryDescriptor(ctx,
                                                    (FileEntryDescriptor *)fileEntryList.idxs[i],
                                                    &pd_snapshot, &lvd_snapshot,
