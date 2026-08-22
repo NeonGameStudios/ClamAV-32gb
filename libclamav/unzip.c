@@ -109,6 +109,32 @@ struct zip_central_values {
     bool zip64_sizes;
 };
 
+/* fmap_need_*() uses NULL for both an out-of-range request and a failed
+ * backing read.  ZIP callers need to preserve that distinction: a malformed
+ * coordinate is a parse failure, while an in-range read failure is an
+ * operational failure and must remain CL_EREAD. */
+static const void *zip_need_off_status(fmap_t *map, size_t offset, size_t length, int lock, cl_error_t *status)
+{
+    const void *ptr;
+
+    if (!status)
+        return NULL;
+
+    if (!map || offset > map->len || length > map->len - offset) {
+        *status = CL_EPARSE;
+        return NULL;
+    }
+
+    ptr = map->need(map, offset, length, lock);
+    if (!ptr) {
+        *status = CL_EREAD;
+        return NULL;
+    }
+
+    *status = CL_SUCCESS;
+    return ptr;
+}
+
 static bool zip_record_end_checked(const struct zip_record *record, size_t *end)
 {
     size_t member_size;
@@ -1537,6 +1563,7 @@ static cl_error_t parse_local_file_header(
     size_t descriptor_size   = 0;
     bool zip64_sizes         = false;
     bool masked_local_values = false;
+    cl_error_t map_status     = CL_SUCCESS;
     uint32_t expected_crc32  = 0;
     uint32_t metadata_crc32  = 0;
 
@@ -1544,10 +1571,13 @@ static cl_error_t parse_local_file_header(
         *file_record_size = 0;
     }
 
-    local_header = fmap_need_off(ctx->fmap, loff, SIZEOF_LOCAL_HEADER);
+    local_header = zip_need_off_status(ctx->fmap, loff, SIZEOF_LOCAL_HEADER, 1, &map_status);
     if (NULL == local_header) {
-        cli_dbgmsg("cli_unzip: local header - out of file or work complete\n");
-        status = CL_EPARSE;
+        cli_dbgmsg("cli_unzip: local header - %s\n",
+                   map_status == CL_EREAD ? "could not be read completely" : "out of file or work complete");
+        if (map_status == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "ZIP local header could not be read completely");
+        status = map_status;
         goto done;
     }
     if (LOCAL_HEADER_magic != ZIP_MAGIC_LOCAL_FILE_HEADER) {
@@ -1868,15 +1898,19 @@ cl_error_t cli_unzip_single_header_check(
     cl_error_t status             = CL_ERROR;
     struct zip_record file_record = {0};
     cl_error_t ret;
+    cl_error_t map_status;
     const uint8_t *local_header;
 
     if (NULL == ctx || NULL == ctx->fmap)
         return CL_ENULLARG;
 
-    local_header = fmap_need_off(ctx->fmap, offset, SIZEOF_LOCAL_HEADER);
+    local_header = zip_need_off_status(ctx->fmap, offset, SIZEOF_LOCAL_HEADER, 1, &map_status);
     if (NULL == local_header) {
-        cli_dbgmsg("cli_unzip: single header check - local header is truncated\n");
-        return CL_EPARSE;
+        cli_dbgmsg("cli_unzip: single header check - local header %s\n",
+                   map_status == CL_EREAD ? "could not be read completely" : "is truncated");
+        if (map_status == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "ZIP local header could not be read completely");
+        return map_status;
     }
     if (LOCAL_HEADER_flags & F_MSKED) {
         /* A SFX admission probe has no central directory to supply the
@@ -1958,6 +1992,7 @@ static cl_error_t parse_central_directory_file_header(
     const uint8_t *central_extra  = NULL;
     uint8_t central_header_copy[SIZEOF_CENTRAL_HEADER];
     struct zip_central_values central_values;
+    cl_error_t map_status;
     size_t index;
     uint32_t magic;
 
@@ -1969,10 +2004,12 @@ static cl_error_t parse_central_directory_file_header(
         goto done;
     }
 
-    central_magic = fmap_need_off_once(ctx->fmap, central_file_header_offset, sizeof(uint32_t));
+    central_magic = zip_need_off_status(ctx->fmap, central_file_header_offset, sizeof(uint32_t), 0, &map_status);
     if (NULL == central_magic) {
-        cli_mark_scan_incomplete(ctx, "ZIP central-directory record signature is truncated");
-        status = CL_EPARSE;
+        cli_mark_scan_incomplete(ctx, map_status == CL_EREAD
+                                          ? "ZIP central-directory record signature could not be read completely"
+                                          : "ZIP central-directory record signature is truncated");
+        status = map_status;
         goto done;
     }
     magic = cli_readint32(central_magic);
@@ -1992,10 +2029,12 @@ static cl_error_t parse_central_directory_file_header(
         goto done;
     }
 
-    central_header = fmap_need_off(ctx->fmap, central_file_header_offset, SIZEOF_CENTRAL_HEADER);
+    central_header = zip_need_off_status(ctx->fmap, central_file_header_offset, SIZEOF_CENTRAL_HEADER, 1, &map_status);
     if (NULL == central_header) {
-        cli_mark_scan_incomplete(ctx, "ZIP central-directory record is truncated");
-        status = CL_EPARSE;
+        cli_mark_scan_incomplete(ctx, map_status == CL_EREAD
+                                          ? "ZIP central-directory record could not be read completely"
+                                          : "ZIP central-directory record is truncated");
+        status = map_status;
         goto done;
     }
 
@@ -3016,6 +3055,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
 {
     cl_error_t status = CL_ERROR;
     cl_error_t ret;
+    cl_error_t map_status;
 
     size_t num_files_unzipped = 0;
     size_t fsize;
@@ -3192,10 +3232,13 @@ scan_catalogue:
             /* ZipCrypto still consumes local-header fields through macros.
              * Snapshot the fixed header before bounded streaming ages other
              * fmap pages, then release the archive view. */
-            local_header = fmap_need_off(map, zip_catalogue[i].local_header_offset, SIZEOF_LOCAL_HEADER);
+            local_header = zip_need_off_status(map, zip_catalogue[i].local_header_offset,
+                                               SIZEOF_LOCAL_HEADER, 1, &map_status);
             if (NULL == local_header) {
-                cli_mark_scan_incomplete(ctx, "ZIP local header could not be mapped for decryption");
-                status = CL_EPARSE;
+                cli_mark_scan_incomplete(ctx, map_status == CL_EREAD
+                                                  ? "ZIP local header could not be read completely for decryption"
+                                                  : "ZIP local header could not be mapped for decryption");
+                status = map_status;
                 goto done;
             }
 

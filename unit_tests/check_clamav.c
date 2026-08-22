@@ -5261,6 +5261,42 @@ START_TEST(test_zip_local_header_index_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_zip_local_header_read_failure_is_fail_visible)
+{
+    static const uint8_t input[30] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    cli_scan_layer_t layer;
+    fmap_t *map;
+    size_t zip_size = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&layer, 0, sizeof(layer));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    zip_targeted_read_failure_offset = 0;
+    map->need                     = zip_targeted_read_failure;
+    ctx.engine                    = &engine;
+    ctx.fmap                      = map;
+    ctx.recursion_stack           = &layer;
+    ctx.recursion_stack_size      = 1;
+    layer.fmap                    = map;
+
+    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP local header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(zip_size, 0U);
+
+    cl_fmap_close(map);
+    zip_targeted_read_failure_offset = 0;
+}
+END_TEST
+
 START_TEST(test_gzip_bzip_truncated_streams_are_fail_visible)
 {
     static const uint8_t input[] = "large-file compressed stream boundary";
@@ -6526,6 +6562,64 @@ START_TEST(test_zip_central_filename_read_failure_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "ZIP central filename field could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(archive);
+    zip_targeted_read_failure_offset = 0;
+}
+END_TEST
+
+START_TEST(test_zip_central_header_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "central-header-read-failure";
+    static const char member_name[] = "stream-test.bin";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_length;
+    size_t local_length;
+    uint8_t *archive;
+    cl_error_t ret;
+
+    archive = zip_stream_central_archive(input, sizeof(input) - 1U,
+                                         sizeof(input) - 1U,
+                                         ZIP_TEST_METHOD_STORED,
+                                         (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                         &archive_length);
+    ck_assert_ptr_nonnull(archive);
+
+    local_length = 30U + (sizeof(member_name) - 1U) + (sizeof(input) - 1U);
+    zip_targeted_read_failure_offset = local_length;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    map->need                = zip_targeted_read_failure;
+    ctx.engine               = engine;
+    ctx.options              = &options;
+    ctx.dconf                = engine->dconf;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIP;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+
+    ret = cli_unzip(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP central-directory record signature could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -17180,6 +17274,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_truncated_entry_paths_are_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_filename_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_local_header_index_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_zip_local_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_zip_central_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
     tcase_add_test(tc_cl, test_compressed_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_xz_limit_is_fail_visible);

@@ -84,6 +84,10 @@
 - Embedded PE candidates above 4 GiB now undergo header admission through a
   bounded child fmap rooted at the native-width offset; add compiled embedded
   PE, production-database, and Sonic1 qualification.
+- ZIP fixed local and central-directory header admission now distinguishes an
+  in-range fmap backing-read failure (`CL_EREAD`) from an out-of-range or
+  truncated coordinate (`CL_EPARSE`); add compiled ZIP callback-fault and
+  parser-corpus qualification.
 - EGG metadata extra fields now reject sizes above the individual-allocation
   ceiling explicitly, and encryption-header size subtraction is underflow-safe.
 - AC exact-tail matching now has a >4 GiB offset regression that verifies the

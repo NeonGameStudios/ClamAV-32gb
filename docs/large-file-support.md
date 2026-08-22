@@ -4897,3 +4897,16 @@ restricted, while the memory-pressure capture identifies a roughly 16 GiB
 system. This is an environment limitation, not a scan result or a
 qualification claim; the 64 GB bare-metal host and a dependency-complete build
 remain required for the planned macOS raw-path run.
+
+## ZIP fixed-header fmap read status — 2026-08-21
+
+ZIP fixed local-header and central-directory-header admission now validates
+the requested range before calling the fmap callback. An out-of-range request
+remains `CL_EPARSE`, while an in-range backing-read failure is reported as
+`CL_EREAD`, marked incomplete, and made non-cacheable. This prevents a storage
+or callback fault from being misrepresented as ordinary malformed ZIP input.
+
+Focused local-header and central-header callback-fault regressions and the
+source guard are registered. The current macOS checkout has no CMake/Ninja
+build tree, so the compiled unit tests remain a release qualification gate
+rather than a claimed local runtime result.
