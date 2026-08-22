@@ -5054,3 +5054,11 @@ declared original size. A mismatch is marked incomplete and returns
 `CL_EUNPACK`, so stored members cannot scan a short output as if extraction had
 completed. The compiled malformed-output, filesystem-fault, sanitizer, and
 production ARJ qualification gates remain open.
+
+## TIFF IFD traversal deadline — 2026-08-22
+
+TIFF now checks the shared scan deadline before each linked IFD is entered and
+marks the layer incomplete when the deadline expires. This bounds work from a
+large or cyclic-looking directory chain without changing the native-width
+coordinate and value-range checks. Compiled timeout injection, sanitizer, and
+production TIFF corpus qualification remain open.

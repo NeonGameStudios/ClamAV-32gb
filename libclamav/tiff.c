@@ -155,6 +155,12 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
     /* each IFD represents a subfile, though only the first one normally matters */
     do {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "TIFF IFD traversal reached the configured time limit");
+            goto done;
+        }
+
         /* acquire number of directory entries in current IFD */
         {
             size_t bytes_read = tiff_readn(map, &num_entries, offset, 2);

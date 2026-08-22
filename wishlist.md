@@ -294,6 +294,8 @@
   instead of being discarded after hash computation.
 - TIFF IFD type-width multiplication and external-value range checks now use
   checked native-size arithmetic and remain fail-visible.
+- TIFF IFD traversal now checks the shared scan deadline at each directory;
+  add compiled timeout-injection and large-chain corpus qualification.
 - GIF block, color-table, and extension range admission now uses checked
   subtraction-form bounds rather than wrapping offset-plus-length comparisons.
 - HWP3 information-block bounds now use subtraction-form admission, and image
