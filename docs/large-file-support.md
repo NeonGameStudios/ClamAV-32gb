@@ -4920,6 +4920,11 @@ after the effective 20-second limit. The response reported
 failure, not build or scan evidence; current-head Linux/Sonic1 qualification
 remains open.
 
+A subsequent read-only retry after resuming the roadmap produced the same
+20-second connect timeout, again with `remote_started=false` and no remote
+output. No Sonic1 build, scan, or resource result is inferred from either
+attempt.
+
 ## Source inventory refresh — 2026-08-21
 
 The authoritative `docs/largefile-inventory.tsv` was regenerated from the

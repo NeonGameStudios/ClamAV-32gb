@@ -176,6 +176,8 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'largefile_poc=pass\n'
     printf 'temp_budget=pass\n'
     printf 'policy_32g_plus_one=pass\n'
+    printf 'policy_32g_plus_one_stdin=pass\n'
+    printf 'policy_32g_edge_stdin=pass\n'
     printf 'cancellation=pass status=124\n'
     printf 'sanitizer=pass\n'
     printf 'concurrency_1=pass rss_sum_kb=1\n'
@@ -195,6 +197,11 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'cgroup_available_kb=unlimited\n'
 } > "$out/host-preflight/host-preflight.txt"
 printf 'MaxFileSize exceeded\n' > "$out/32g-plus-one.log"
+printf 'stdin exceeds MaxFileSize\n' > "$out/32g-plus-one-stdin.log"
+{
+    printf 'LargeFile.POC.32g-edge.UNOFFICIAL: /external/32g-edge.bin: FOUND\n'
+    printf 'signature LargeFile.POC.32g-edge.UNOFFICIAL matched at 34359738304\n'
+} > "$out/32g-edge-stdin.log"
 printf 'terminated by timeout\n' > "$out/cancellation.log"
 printf 'sanitizer clean\n' > "$out/sanitizer/logs/clean.log"
 for level in 1 2 4; do

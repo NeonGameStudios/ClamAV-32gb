@@ -469,7 +469,9 @@
   service gate now schedules exact-edge coverage for both `clamscan` and
   `clamdscan -`, with compiled temporary-budget evidence and the new
   path-helper regression's runtime execution still open; the Linux raw gate
-  now also schedules the 32-GiB-plus-one stdin boundary.
+  now requires both exact-32-GiB stdin detection at the final marker and the
+  32-GiB-plus-one stdin rejection. Sonic1 remains unreachable during the
+  latest bounded SSH-connect retry, so no Linux runtime result is claimed.
 
 1. **Validate the current 32 GiB raw path on the local macOS host**
    - **Host preflight remains open:** the latest Darwin arm64 capture had

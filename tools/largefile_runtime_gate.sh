@@ -733,6 +733,36 @@ else
     failures=$((failures + 1))
 fi
 
+# The positive stdin boundary must also be exercised: an unknown-length
+# stream exactly 32 GiB long must reach the final marker and return the same
+# detection/offset as the path-based edge case.  Keep this separate from the
+# 32-GiB+1 rejection so a clean prefix cannot satisfy either policy check.
+edge_stdin_log=$out/32g-edge-stdin.log
+edge_stdin_status=0
+mkdir -p "$poc_out/tmp/edge-stdin"
+"$runtime_clamscan" \
+    --database="$poc_out/db" \
+    --max-filesize=32G \
+    --max-scansize=32G \
+    --max-temporary-size=64G \
+    --max-contiguous-size=32G \
+    --pcre-max-filesize=32G \
+    --max-scantime="$max_scan_time_ms" \
+    --debug \
+    --no-summary \
+    --tempdir="$poc_out/tmp/edge-stdin" \
+    - < "$corpus/32g-edge.bin" > "$edge_stdin_log" 2>&1 || edge_stdin_status=$?
+if [ "$edge_stdin_status" -eq 1 ] &&
+    grep -E 'LargeFile\.POC\.32g-edge(\.UNOFFICIAL)?.*FOUND' \
+        "$edge_stdin_log" >/dev/null 2>&1 &&
+    grep -E 'signature LargeFile\.POC\.32g-edge(\.UNOFFICIAL)? matched at 34359738304' \
+        "$edge_stdin_log" >/dev/null 2>&1; then
+    printf 'policy_32g_edge_stdin=pass\n' >> "$metadata"
+else
+    printf 'policy_32g_edge_stdin=fail status=%s\n' "$edge_stdin_status" >> "$metadata"
+    failures=$((failures + 1))
+fi
+
 concurrency_input=$corpus/$concurrency_file
 if [ ! -f "$concurrency_input" ]; then
     echo "concurrency input not found: $concurrency_input" >&2

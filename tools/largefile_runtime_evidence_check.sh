@@ -63,6 +63,8 @@ metadata=$out/build-identity.txt
 host_preflight=$out/host-preflight/host-preflight.txt
 results=$out/poc/results.tsv
 policy_log=$out/32g-plus-one.log
+policy_stdin_log=$out/32g-plus-one-stdin.log
+policy_edge_stdin_log=$out/32g-edge-stdin.log
 cancellation_log=$out/cancellation.log
 manifest=$out/SHA256SUMS
 scanner_copy=$out/artifacts/clamscan
@@ -77,7 +79,8 @@ repository_tree=$out/provenance/repository-tree.txt
 repository_index=$out/provenance/repository-index.txt
 source_manifest=$out/provenance/source-manifest.txt
 build_source_manifest=$out/provenance/build-source-manifest.txt
-for required in "$metadata" "$host_preflight" "$results" "$policy_log" "$cancellation_log" \
+for required in "$metadata" "$host_preflight" "$results" "$policy_log" \
+    "$policy_stdin_log" "$policy_edge_stdin_log" "$cancellation_log" \
     "$manifest" "$scanner_copy" "$cmake_cache" "$compile_commands" "$cargo_lock" \
     "$repository_metadata" "$repository_tree" "$repository_index" \
     "$source_manifest" "$build_source_manifest"; do
@@ -630,6 +633,33 @@ grep -Fx "max_temp_bytes=$fixed_max_temp_bytes" "$metadata" >/dev/null 2>&1 || {
 }
 grep -F 'policy_32g_plus_one=pass' "$metadata" >/dev/null 2>&1 || {
     echo '32 GiB+1 policy rejection did not pass' >&2
+    exit 1
+}
+grep -F 'policy_32g_plus_one_stdin=pass' "$metadata" >/dev/null 2>&1 || {
+    echo '32 GiB+1 stdin policy rejection did not pass' >&2
+    exit 1
+}
+grep -F 'policy_32g_edge_stdin=pass' "$metadata" >/dev/null 2>&1 || {
+    echo 'exact 32 GiB stdin policy acceptance did not pass' >&2
+    exit 1
+}
+grep -E 'MaxFileSize|Max file size|exceeds the maximum file size|stdin exceeds MaxFileSize' \
+    "$policy_stdin_log" >/dev/null 2>&1 || {
+    echo '32 GiB+1 stdin log does not prove the size rejection' >&2
+    exit 1
+}
+if grep -E '(^|[[:space:]])OK([[:space:]]|$)' "$policy_stdin_log" >/dev/null 2>&1; then
+    echo '32 GiB+1 stdin log reports a clean prefix as OK' >&2
+    exit 1
+fi
+grep -E 'LargeFile\.POC\.32g-edge(\.UNOFFICIAL)?.*FOUND' \
+    "$policy_edge_stdin_log" >/dev/null 2>&1 || {
+    echo 'exact 32 GiB stdin log does not prove the edge detection' >&2
+    exit 1
+}
+grep -E 'signature LargeFile\.POC\.32g-edge(\.UNOFFICIAL)? matched at 34359738304' \
+    "$policy_edge_stdin_log" >/dev/null 2>&1 || {
+    echo 'exact 32 GiB stdin log does not prove the final marker offset' >&2
     exit 1
 }
 grep -E '^cancellation=pass status=(124|137|143)$' "$metadata" >/dev/null 2>&1 || {
