@@ -50,12 +50,30 @@
 #define EC32(x) le32_to_host(x) /* Convert little endian to host */
 #define CE32(x) be32_to_host(x) /* Convert big endian to host */
 
-int unupack399(char *, uint32_t, uint32_t, char *, uint32_t, char *, char *, uint32_t, char *);
+int unupack399(char *, uint32_t, uint32_t, char *, uint32_t, char *, char *, uint32_t, char *, cli_ctx *);
 
 enum { UPACK_399,
        UPACK_11_12,
        UPACK_0151477,
        UPACK_0297729 };
+
+static int upack_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+{
+    if (ctx == NULL)
+        return 0;
+
+    (*ticks)++;
+    if (*ticks < 4096)
+        return 0;
+
+    *ticks = 0;
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Upack decompression reached the configured time limit");
+        return 1;
+    }
+
+    return 0;
+}
 
 int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
 {
@@ -221,7 +239,7 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
         }
         /* begin end */
         cli_dbgmsg("Upack: data initialized, before upack lzma call!\n");
-        if ((ret = (uint32_t)unupack399(dest, dsize, 0, loc_ebx, 0, loc_edi, end_edi, shlsize, paddr)) == 0xffffffff)
+        if ((ret = (uint32_t)unupack399(dest, dsize, 0, loc_ebx, 0, loc_edi, end_edi, shlsize, paddr, ctx)) == 0xffffffff)
             return -1;
         /* alternative begin */
     } else {
@@ -384,7 +402,7 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
             return -1;
         }
         cli_dbgmsg("Upack: data initialized, before upack lzma call!\n");
-        if ((ret = (uint32_t)unupack399(dest, dsize, loc_ecx, loc_ebx, loc_ecx, loc_edi, end_edi, shlsize, paddr)) == 0xffffffff)
+        if ((ret = (uint32_t)unupack399(dest, dsize, loc_ecx, loc_ebx, loc_ecx, loc_edi, end_edi, shlsize, paddr, ctx)) == 0xffffffff)
             return -1;
         if (upack_version == UPACK_399)
             save3 = cli_readint32(loc_esi + 0x40);
@@ -394,6 +412,10 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
 
     /* let's fix calls */
     loc_ecx = 0;
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Upack fix-up reached the configured time limit");
+        return -1;
+    }
     if (!CLI_ISCONTAINED(dest, dsize, alvalue, 1)) {
         cli_dbgmsg("Upack: alvalue out of bounds\n");
         return -1;
@@ -402,6 +424,10 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
     searchval = *alvalue & 0xff;
     cli_dbgmsg("Upack: loops: %08x search value: %02x\n", save3, searchval);
     while (save3) {
+        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "Upack fix-up reached the configured time limit");
+            return -1;
+        }
         if (!CLI_ISCONTAINED(dest, dsize, pushed_esi + loc_ecx, 1)) {
             cli_dbgmsg("Upack: callfixerr %p %08x = %p, %p\n", dest, dsize, dest + dsize, pushed_esi + loc_ecx);
             return -1;
@@ -441,11 +467,12 @@ int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uin
     return 1;
 }
 
-int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr)
+int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr, cli_ctx *ctx)
 {
     struct lzmastate p;
     uint32_t loc_eax, ret, loc_al, loc_ecx = init_ecx, loc_ebp, eax_copy = init_eax, temp, i, jakas_kopia;
     uint32_t state[6], temp_ebp;
+    uint32_t ticks = 0;
     char *loc_edx, *loc_ebx = init_ebx, *loc_edi = init_edi, *loc_ebp8, *edi_copy;
     p.p0 = paddr;
     p.p1 = cli_readint32(init_ebx);
@@ -457,6 +484,8 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
         cli_dbgmsg("state[%d] = %08x\n", i, state[i]);
     }
     do {
+        if (upack_checktimelimit(ctx, &ticks))
+            return -1;
         loc_eax = eax_copy;
         loc_edx = loc_ebx + (loc_eax << 2) + 0x58;
 
@@ -619,8 +648,11 @@ int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_
             if (!CLI_ISCONTAINED(bs, bl, loc_edi, loc_ecx) || !CLI_ISCONTAINED(bs, bl, loc_edi - loc_ebp, loc_ecx + 1))
                 return -1;
             state[2] = loc_ebp;
-            for (i = 0; i < loc_ecx; i++, loc_edi++)
+            for (i = 0; i < loc_ecx; i++, loc_edi++) {
+                if (upack_checktimelimit(ctx, &ticks))
+                    return -1;
                 *loc_edi = *(loc_edi - loc_ebp);
+            }
             loc_eax = (loc_eax & 0xffffff00) | *(uint8_t *)(loc_edi - loc_ebp);
             loc_ecx = 0x80;
         } else {

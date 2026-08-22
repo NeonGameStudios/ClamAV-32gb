@@ -1064,3 +1064,6 @@
 - Legacy Aspack block-output and large back-copy loops now checkpoint the
   shared `MaxScanTime`; add compiled Aspack timeout injection, short-write
   coverage, and production PE corpus, sanitizer, and Sonic1 qualification.
+- Legacy Upack output, LZMA back-copy, and call-fix loops now receive the
+  shared scan context and checkpoint `MaxScanTime`; add compiled Upack timeout
+  injection, production PE corpus, sanitizer, and Sonic1 qualification.

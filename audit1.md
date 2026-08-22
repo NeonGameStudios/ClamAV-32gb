@@ -4595,3 +4595,13 @@ the deadline at bounded progress intervals; expiry marks the layer incomplete,
 stops decompression, and prevents partial output from reaching PE rebuild or
 nested scanning. Compiled Aspack timeout injection, short-write coverage,
 production PE corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## Upack decompression deadline checkpoints — 2026-08-22
+
+The legacy Upack `unupack399` path could expand output toward the contiguous
+unpacker ceiling and then perform call-fix processing without observing the
+shared `MaxScanTime`. Its context-aware decoder now checkpoints the output and
+back-copy loops, while the caller checks the fix-up traversal before rebuilding
+the PE. Timeout is fail-visible and partial output is not handed to rebuild or
+nested scanning. Compiled Upack timeout injection, production PE corpus,
+sanitizer, and Sonic1 qualification remain release gates.

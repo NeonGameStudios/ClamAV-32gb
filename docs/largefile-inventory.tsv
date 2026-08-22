@@ -5118,30 +5118,32 @@ fixed-width-integer	libclamav/unzip.h	81	typedef cl_error_t (*zip_cb)(int fd, co
 fixed-width-integer	libclamav/unzip.h	90	    uint64_t remaining;
 fixed-width-integer	libclamav/unzip.h	94	static inline cl_error_t zip_input_init(struct zip_input *input, fmap_t *map, size_t offset, uint64_t length)
 fixed-width-integer	libclamav/unzip.h	99	    if (offset > map->len || length > (uint64_t)(map->len - offset))
-fixed-width-integer	libclamav/upack.c	169	            if ((uint32_t)cli_readint32(loc_esi + 7) < base || (uint32_t)cli_readint32(loc_esi + 7) > vma)
-fixed-width-integer	libclamav/upack.c	195	        paddr   = dest + ((uint32_t)cli_readint32(loc_edi - 4)) - vma;
-fixed-width-integer	libclamav/upack.c	224	        if ((ret = (uint32_t)unupack399(dest, dsize, 0, loc_ebx, 0, loc_edi, end_edi, shlsize, paddr)) == 0xffffffff)
-fixed-width-integer	libclamav/upack.c	250	        original_ep += (int32_t)save1;
-fixed-width-integer	libclamav/upack.c	295	            if (((uint64_t)count + j) * 4 > UINT_MAX)
-fixed-width-integer	libclamav/upack.c	318	            for (j = 0; (uint32_t)j < count; j++, loc_edi += 4) /* checked above */
-fixed-width-integer	libclamav/upack.c	323	            cli_writeint32(loc_esi + 0x10, (uint32_t)cli_readint32(loc_esi + 0x10) + loc_ebx_u);
-fixed-width-integer	libclamav/upack.c	328	            save_edi = loc_edi = dest + ((uint32_t)cli_readint32(loc_esi) - base);
-fixed-width-integer	libclamav/upack.c	335	                int32_t temp = cli_readint32(loc_ebx + (j << 2));
-fixed-width-integer	libclamav/upack.c	353	            paddr = dest + ((uint32_t)cli_readint32(loc_esi)) - base;
-fixed-width-integer	libclamav/upack.c	358	            if (((uint64_t)count + 6) * 4 > UINT_MAX)
-fixed-width-integer	libclamav/upack.c	369	            for (j = 0; (uint32_t)j < count; j++, loc_edi += 4)
-fixed-width-integer	libclamav/upack.c	387	        if ((ret = (uint32_t)unupack399(dest, dsize, loc_ecx, loc_ebx, loc_ecx, loc_edi, end_edi, shlsize, paddr)) == 0xffffffff)
-fixed-width-integer	libclamav/upack.c	418	            cli_writeint32(adr, EC32(CE32((uint32_t)(cli_readint32(adr) & 0xffffff00))) - loc_ecx - 4);
-fixed-width-integer	libclamav/upack.c	444	int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr)
-fixed-width-integer	libclamav/upack.c	447	    uint32_t loc_eax, ret, loc_al, loc_ecx = init_ecx, loc_ebp, eax_copy = init_eax, temp, i, jakas_kopia;
-fixed-width-integer	libclamav/upack.c	448	    uint32_t state[6], temp_ebp;
-fixed-width-integer	libclamav/upack.c	471	            /* *(uint32_t *)(loc_ebx + 14) = loc_ebp; ???? */
-fixed-width-integer	libclamav/upack.c	514	                            uint32_t temp_edx;
-fixed-width-integer	libclamav/upack.c	53	int unupack399(char *, uint32_t, uint32_t, char *, uint32_t, char *, char *, uint32_t, char *);
-fixed-width-integer	libclamav/upack.c	552	                    temp_ebp = CLI_SRS((int32_t)loc_eax, 31); /* thx, desp */
-fixed-width-integer	libclamav/upack.c	60	int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
-fixed-width-integer	libclamav/upack.c	65	    uint32_t save1, save3, loc_ecx, count, shlsize, original_ep, ret, loc_ebx_u;
-fixed-width-integer	libclamav/upack.c	71	        uint32_t aljump, shroff, lngjmpoff;
+fixed-width-integer	libclamav/upack.c	187	            if ((uint32_t)cli_readint32(loc_esi + 7) < base || (uint32_t)cli_readint32(loc_esi + 7) > vma)
+fixed-width-integer	libclamav/upack.c	213	        paddr   = dest + ((uint32_t)cli_readint32(loc_edi - 4)) - vma;
+fixed-width-integer	libclamav/upack.c	242	        if ((ret = (uint32_t)unupack399(dest, dsize, 0, loc_ebx, 0, loc_edi, end_edi, shlsize, paddr, ctx)) == 0xffffffff)
+fixed-width-integer	libclamav/upack.c	268	        original_ep += (int32_t)save1;
+fixed-width-integer	libclamav/upack.c	313	            if (((uint64_t)count + j) * 4 > UINT_MAX)
+fixed-width-integer	libclamav/upack.c	336	            for (j = 0; (uint32_t)j < count; j++, loc_edi += 4) /* checked above */
+fixed-width-integer	libclamav/upack.c	341	            cli_writeint32(loc_esi + 0x10, (uint32_t)cli_readint32(loc_esi + 0x10) + loc_ebx_u);
+fixed-width-integer	libclamav/upack.c	346	            save_edi = loc_edi = dest + ((uint32_t)cli_readint32(loc_esi) - base);
+fixed-width-integer	libclamav/upack.c	353	                int32_t temp = cli_readint32(loc_ebx + (j << 2));
+fixed-width-integer	libclamav/upack.c	371	            paddr = dest + ((uint32_t)cli_readint32(loc_esi)) - base;
+fixed-width-integer	libclamav/upack.c	376	            if (((uint64_t)count + 6) * 4 > UINT_MAX)
+fixed-width-integer	libclamav/upack.c	387	            for (j = 0; (uint32_t)j < count; j++, loc_edi += 4)
+fixed-width-integer	libclamav/upack.c	405	        if ((ret = (uint32_t)unupack399(dest, dsize, loc_ecx, loc_ebx, loc_ecx, loc_edi, end_edi, shlsize, paddr, ctx)) == 0xffffffff)
+fixed-width-integer	libclamav/upack.c	444	            cli_writeint32(adr, EC32(CE32((uint32_t)(cli_readint32(adr) & 0xffffff00))) - loc_ecx - 4);
+fixed-width-integer	libclamav/upack.c	470	int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr, cli_ctx *ctx)
+fixed-width-integer	libclamav/upack.c	473	    uint32_t loc_eax, ret, loc_al, loc_ecx = init_ecx, loc_ebp, eax_copy = init_eax, temp, i, jakas_kopia;
+fixed-width-integer	libclamav/upack.c	474	    uint32_t state[6], temp_ebp;
+fixed-width-integer	libclamav/upack.c	475	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/upack.c	500	            /* *(uint32_t *)(loc_ebx + 14) = loc_ebp; ???? */
+fixed-width-integer	libclamav/upack.c	53	int unupack399(char *, uint32_t, uint32_t, char *, uint32_t, char *, char *, uint32_t, char *, cli_ctx *);
+fixed-width-integer	libclamav/upack.c	543	                            uint32_t temp_edx;
+fixed-width-integer	libclamav/upack.c	581	                    temp_ebp = CLI_SRS((int32_t)loc_eax, 31); /* thx, desp */
+fixed-width-integer	libclamav/upack.c	60	static int upack_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+fixed-width-integer	libclamav/upack.c	78	int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
+fixed-width-integer	libclamav/upack.c	83	    uint32_t save1, save3, loc_ecx, count, shlsize, original_ep, ret, loc_ebx_u;
+fixed-width-integer	libclamav/upack.c	89	        uint32_t aljump, shroff, lngjmpoff;
 fixed-width-integer	libclamav/upack.h	33	int unupack(int, char *, uint32_t, char *, uint32_t, uint32_t, uint32_t, uint32_t, int, struct cli_ctx_tag *);
 fixed-width-integer	libclamav/upx.c	122	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
 fixed-width-integer	libclamav/upx.c	141	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
@@ -13807,16 +13809,17 @@ native-width-integer	libclamav/unzip.h	247	cl_error_t unzip_search_single(cli_ct
 native-width-integer	libclamav/unzip.h	81	typedef cl_error_t (*zip_cb)(int fd, const char *filepath, cli_ctx *ctx, const char *name, uint32_t attributes);
 native-width-integer	libclamav/unzip.h	89	    size_t offset;
 native-width-integer	libclamav/unzip.h	94	static inline cl_error_t zip_input_init(struct zip_input *input, fmap_t *map, size_t offset, uint64_t length)
-native-width-integer	libclamav/upack.c	118	        /* use this as a temp to make a long jmp to head of unpacking proc */
-native-width-integer	libclamav/upack.c	146	        /* is there a long jump ? */
-native-width-integer	libclamav/upack.c	204	        for (j = 0; (unsigned int)j < count; j++, loc_edi += 4)
-native-width-integer	libclamav/upack.c	228	        int ep_jmp_offs, rep_stosd_count_offs, context_bits_offs;
-native-width-integer	libclamav/upack.c	444	int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr)
-native-width-integer	libclamav/upack.c	53	int unupack399(char *, uint32_t, uint32_t, char *, uint32_t, char *, char *, uint32_t, char *);
-native-width-integer	libclamav/upack.c	60	int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
-native-width-integer	libclamav/upack.c	62	    int j, searchval;
-native-width-integer	libclamav/upack.c	642	            loc_ebp *= (int)0x300; /* XXX */
-native-width-integer	libclamav/upack.c	67	    int upack_version = UPACK_399;
+native-width-integer	libclamav/upack.c	136	        /* use this as a temp to make a long jmp to head of unpacking proc */
+native-width-integer	libclamav/upack.c	164	        /* is there a long jump ? */
+native-width-integer	libclamav/upack.c	222	        for (j = 0; (unsigned int)j < count; j++, loc_edi += 4)
+native-width-integer	libclamav/upack.c	246	        int ep_jmp_offs, rep_stosd_count_offs, context_bits_offs;
+native-width-integer	libclamav/upack.c	470	int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr, cli_ctx *ctx)
+native-width-integer	libclamav/upack.c	53	int unupack399(char *, uint32_t, uint32_t, char *, uint32_t, char *, char *, uint32_t, char *, cli_ctx *);
+native-width-integer	libclamav/upack.c	60	static int upack_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+native-width-integer	libclamav/upack.c	674	            loc_ebp *= (int)0x300; /* XXX */
+native-width-integer	libclamav/upack.c	78	int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
+native-width-integer	libclamav/upack.c	80	    int j, searchval;
+native-width-integer	libclamav/upack.c	85	    int upack_version = UPACK_399;
 native-width-integer	libclamav/upack.h	33	int unupack(int, char *, uint32_t, char *, uint32_t, uint32_t, uint32_t, uint32_t, int, struct cli_ctx_tag *);
 native-width-integer	libclamav/upx.c	122	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
 native-width-integer	libclamav/upx.c	141	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
@@ -17859,8 +17862,8 @@ boundary-constant	libclamav/unzip.c	3041	                if (fsize < ZIP64_END_R
 boundary-constant	libclamav/unzip.c	3057	            if (cd_offset > SIZE_MAX || cd_size > SIZE_MAX - (size_t)cd_offset)
 boundary-constant	libclamav/unzip.c	309	            if (local_header_offset > SIZE_MAX)
 boundary-constant	libclamav/unzip.c	3260	        if (zip_catalogue[i].local_header_size > SIZE_MAX - zip_catalogue[i].local_header_offset) {
-boundary-constant	libclamav/upack.c	295	            if (((uint64_t)count + j) * 4 > UINT_MAX)
-boundary-constant	libclamav/upack.c	358	            if (((uint64_t)count + 6) * 4 > UINT_MAX)
+boundary-constant	libclamav/upack.c	313	            if (((uint64_t)count + j) * 4 > UINT_MAX)
+boundary-constant	libclamav/upack.c	376	            if (((uint64_t)count + 6) * 4 > UINT_MAX)
 boundary-constant	libclamav/upx.c	399	        if (backsize + oob > UINT32_MAX / 2)
 boundary-constant	libclamav/upx.c	407	                if (backsize + oob > UINT32_MAX / 2)
 boundary-constant	libclamav/upx.c	413	            if (backsize > UINT32_MAX - 2)
@@ -20149,7 +20152,7 @@ format-width	libclamav/unzip.c	646	                cli_dbgmsg("cli_unzip: method
 format-width	libclamav/unzip.c	652	                cli_dbgmsg("cli_unzip: method %u stream made no progress\n", method);
 format-width	libclamav/unzip.c	733	                cli_dbgmsg("cli_unzip: BZIP2 stream failed with status %d\n", bzret);
 format-width	libclamav/unzip.c	809	                cli_dbgmsg("cli_unzip: Implode decoder returned unexpected status %d\n", xret);
-format-width	libclamav/upack.c	457	        cli_dbgmsg("state[%d] = %08x\n", i, state[i]);
+format-width	libclamav/upack.c	484	        cli_dbgmsg("state[%d] = %08x\n", i, state[i]);
 format-width	libclamav/upx.c	257	            cli_dbgmsg("UPX: Sect %d out of bounds - giving up rebuild\n", upd);
 format-width	libclamav/vba_extract.c	128	        cli_dbgmsg("get_unicode_name: odd number of bytes %d\n", size);
 format-width	libclamav/vba_extract.c	1309	                    snprintf(module_filename, sizeof(module_filename), "%s" PATHSEP "%s_%u", dir, module_hash, i);
@@ -29545,49 +29548,49 @@ offset-size-arithmetic	libclamav/unzip.h	433	#define CENTRAL_HEADER_off         
 offset-size-arithmetic	libclamav/unzip.h	440	#endif /* UNZIP_PRIVATE */
 offset-size-arithmetic	libclamav/unzip.h	442	#endif /* __UNZIP_H */
 offset-size-arithmetic	libclamav/unzip.h	99	    if (offset > map->len || length > (uint64_t)(map->len - offset))
-offset-size-arithmetic	libclamav/upack.c	104	            if (!CLI_ISCONTAINED(dest, dsize, dest + ep + 7, 5) || dest[ep + 7] != '\xe9')
-offset-size-arithmetic	libclamav/upack.c	111	        if (!CLI_ISCONTAINED(dest, dsize, alvalue, 2) || *alvalue != '\xb5')
-offset-size-arithmetic	libclamav/upack.c	116	        if (!CLI_ISCONTAINED(dest, dsize, alvalue, lngjmpoff + 5) || *(alvalue + lngjmpoff) != '\xe9')
-offset-size-arithmetic	libclamav/upack.c	119	        shlsize = cli_readint32(alvalue + lngjmpoff + 1);
-offset-size-arithmetic	libclamav/upack.c	122	            shlsize = shlsize + (loc_esi - dest) + *(loc_esi + 0x1b) + 0x1c + 0x018; /* read checked above */
-offset-size-arithmetic	libclamav/upack.c	125	            shlsize = shlsize + (loc_esi - dest) + 0x035;
-offset-size-arithmetic	libclamav/upack.c	127	        alvalue = dest + shlsize + 43;
-offset-size-arithmetic	libclamav/upack.c	132	        if (!CLI_ISCONTAINED(dest, dsize, alvalue - 1, 2) || *(alvalue - 1) != '\xe3') {
-offset-size-arithmetic	libclamav/upack.c	133	            /* in upack_0297729 and upack_0151477 jecxz is at offset: 46 */
-offset-size-arithmetic	libclamav/upack.c	134	            alvalue = dest + shlsize + 46;
-offset-size-arithmetic	libclamav/upack.c	135	            if (!CLI_ISCONTAINED(dest, dsize, alvalue - 1, 2) || *(alvalue - 1) != '\xe3')
-offset-size-arithmetic	libclamav/upack.c	147	        if (!CLI_ISCONTAINED(dest, dsize, alvalue, aljump + 5) || *(alvalue + aljump) != '\xe9')
-offset-size-arithmetic	libclamav/upack.c	149	        /* do jmp, 1+4 - size of jmp instruction, aljump - instruction offset, 27 offset to cmp al,xx*/
-offset-size-arithmetic	libclamav/upack.c	155	        if (!CLI_ISCONTAINED(dest, dsize, dest + shlsize + shroff, 3) || *(dest + shlsize + shroff) != '\xc1' || *(dest + shlsize + shroff + 1) != '\xed')
-offset-size-arithmetic	libclamav/upack.c	157	        shlsize = (*(dest + shlsize + shroff + 2)) & 0xff;
-offset-size-arithmetic	libclamav/upack.c	167	            if (!CLI_ISCONTAINED(dest, dsize, loc_esi + 6, 10) || *(loc_esi + 6) != '\xbe' || *(loc_esi + 11) != '\xbf')
-offset-size-arithmetic	libclamav/upack.c	174	            if (!CLI_ISCONTAINED(dest, dsize, loc_esi + 7, 5) || *(loc_esi + 7) != '\xbe')
-offset-size-arithmetic	libclamav/upack.c	181	            if (!CLI_ISCONTAINED(dest, dsize, loc_edi, (0x58 + 24 + 4 * count)) || !CLI_ISCONTAINED(dest, dsize, loc_esi, (0x58 + 0x64 + 4)))
-offset-size-arithmetic	libclamav/upack.c	189	            if (!CLI_ISCONTAINED(dest, dsize, loc_edi, (0x9c + 24 + 4 * count)) || !CLI_ISCONTAINED(dest, dsize, loc_esi, (0x9c + 0x34 + 4)))
-offset-size-arithmetic	libclamav/upack.c	213	            end_edi = dest + cli_readint32(loc_esi + 0x64) - vma;
-offset-size-arithmetic	libclamav/upack.c	216	            end_edi = dest + cli_readint32(loc_esi + 0x34) - vma;
-offset-size-arithmetic	libclamav/upack.c	222	        /* begin end */
-offset-size-arithmetic	libclamav/upack.c	246	        if (!CLI_ISCONTAINED(dest, dsize, loc_esi, ep_jmp_offs + 4))
-offset-size-arithmetic	libclamav/upack.c	249	        original_ep = (loc_esi - dest) + ep_jmp_offs + 4;
-offset-size-arithmetic	libclamav/upack.c	257	        shlsize = (*(loc_esi + context_bits_offs)) & 0xff;
-offset-size-arithmetic	libclamav/upack.c	258	        shlsize = 8 - shlsize;
-offset-size-arithmetic	libclamav/upack.c	297	            if (!CLI_ISCONTAINED(dest, dsize, loc_esi, (j * 4)) || !CLI_ISCONTAINED(dest, dsize, loc_edi, ((j + count) * 4)))
-offset-size-arithmetic	libclamav/upack.c	321	            if (!CLI_ISCONTAINED(dest, dsize, (loc_esi + 0x10), 4))
-offset-size-arithmetic	libclamav/upack.c	332	            if (!CLI_ISCONTAINED(dest, dsize, loc_ebx - 4, (12 + 4 * 4)) || !CLI_ISCONTAINED(dest, dsize, loc_esi + 0x24, 4) || !CLI_ISCONTAINED(dest, dsize, loc_esi + 0x40, 4))
-offset-size-arithmetic	libclamav/upack.c	341	            end_edi    = dest + cli_readint32(loc_esi + 0x24) - base;
-offset-size-arithmetic	libclamav/upack.c	360	            if (!CLI_ISCONTAINED(dest, dsize, loc_edi, ((6 + count) * 4)))
-offset-size-arithmetic	libclamav/upack.c	379	            end_edi = dest + cli_readint32(loc_esi - 0x28) - base; /* read checked above */
-offset-size-arithmetic	libclamav/upack.c	405	        if (!CLI_ISCONTAINED(dest, dsize, pushed_esi + loc_ecx, 1)) {
-offset-size-arithmetic	libclamav/upack.c	406	            cli_dbgmsg("Upack: callfixerr %p %08x = %p, %p\n", dest, dsize, dest + dsize, pushed_esi + loc_ecx);
-offset-size-arithmetic	libclamav/upack.c	427	    section.rsz = end_edi - loc_edi;
-offset-size-arithmetic	libclamav/upack.c	428	    section.vsz = end_edi - loc_edi;
-offset-size-arithmetic	libclamav/upack.c	444	int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr)
+offset-size-arithmetic	libclamav/upack.c	109	            if (!CLI_ISCONTAINED(dest, dsize, dest + ep + 0xa, 2) || dest[ep + 0xa] != '\xeb')
+offset-size-arithmetic	libclamav/upack.c	116	            if (!CLI_ISCONTAINED(dest, dsize, alvalue, 2) || *alvalue != '\xeb')
+offset-size-arithmetic	libclamav/upack.c	122	            if (!CLI_ISCONTAINED(dest, dsize, dest + ep + 7, 5) || dest[ep + 7] != '\xe9')
+offset-size-arithmetic	libclamav/upack.c	129	        if (!CLI_ISCONTAINED(dest, dsize, alvalue, 2) || *alvalue != '\xb5')
+offset-size-arithmetic	libclamav/upack.c	134	        if (!CLI_ISCONTAINED(dest, dsize, alvalue, lngjmpoff + 5) || *(alvalue + lngjmpoff) != '\xe9')
+offset-size-arithmetic	libclamav/upack.c	137	        shlsize = cli_readint32(alvalue + lngjmpoff + 1);
+offset-size-arithmetic	libclamav/upack.c	140	            shlsize = shlsize + (loc_esi - dest) + *(loc_esi + 0x1b) + 0x1c + 0x018; /* read checked above */
+offset-size-arithmetic	libclamav/upack.c	143	            shlsize = shlsize + (loc_esi - dest) + 0x035;
+offset-size-arithmetic	libclamav/upack.c	145	        alvalue = dest + shlsize + 43;
+offset-size-arithmetic	libclamav/upack.c	150	        if (!CLI_ISCONTAINED(dest, dsize, alvalue - 1, 2) || *(alvalue - 1) != '\xe3') {
+offset-size-arithmetic	libclamav/upack.c	151	            /* in upack_0297729 and upack_0151477 jecxz is at offset: 46 */
+offset-size-arithmetic	libclamav/upack.c	152	            alvalue = dest + shlsize + 46;
+offset-size-arithmetic	libclamav/upack.c	153	            if (!CLI_ISCONTAINED(dest, dsize, alvalue - 1, 2) || *(alvalue - 1) != '\xe3')
+offset-size-arithmetic	libclamav/upack.c	165	        if (!CLI_ISCONTAINED(dest, dsize, alvalue, aljump + 5) || *(alvalue + aljump) != '\xe9')
+offset-size-arithmetic	libclamav/upack.c	167	        /* do jmp, 1+4 - size of jmp instruction, aljump - instruction offset, 27 offset to cmp al,xx*/
+offset-size-arithmetic	libclamav/upack.c	173	        if (!CLI_ISCONTAINED(dest, dsize, dest + shlsize + shroff, 3) || *(dest + shlsize + shroff) != '\xc1' || *(dest + shlsize + shroff + 1) != '\xed')
+offset-size-arithmetic	libclamav/upack.c	175	        shlsize = (*(dest + shlsize + shroff + 2)) & 0xff;
+offset-size-arithmetic	libclamav/upack.c	185	            if (!CLI_ISCONTAINED(dest, dsize, loc_esi + 6, 10) || *(loc_esi + 6) != '\xbe' || *(loc_esi + 11) != '\xbf')
+offset-size-arithmetic	libclamav/upack.c	192	            if (!CLI_ISCONTAINED(dest, dsize, loc_esi + 7, 5) || *(loc_esi + 7) != '\xbe')
+offset-size-arithmetic	libclamav/upack.c	199	            if (!CLI_ISCONTAINED(dest, dsize, loc_edi, (0x58 + 24 + 4 * count)) || !CLI_ISCONTAINED(dest, dsize, loc_esi, (0x58 + 0x64 + 4)))
+offset-size-arithmetic	libclamav/upack.c	207	            if (!CLI_ISCONTAINED(dest, dsize, loc_edi, (0x9c + 24 + 4 * count)) || !CLI_ISCONTAINED(dest, dsize, loc_esi, (0x9c + 0x34 + 4)))
+offset-size-arithmetic	libclamav/upack.c	231	            end_edi = dest + cli_readint32(loc_esi + 0x64) - vma;
+offset-size-arithmetic	libclamav/upack.c	234	            end_edi = dest + cli_readint32(loc_esi + 0x34) - vma;
+offset-size-arithmetic	libclamav/upack.c	240	        /* begin end */
+offset-size-arithmetic	libclamav/upack.c	264	        if (!CLI_ISCONTAINED(dest, dsize, loc_esi, ep_jmp_offs + 4))
+offset-size-arithmetic	libclamav/upack.c	267	        original_ep = (loc_esi - dest) + ep_jmp_offs + 4;
+offset-size-arithmetic	libclamav/upack.c	275	        shlsize = (*(loc_esi + context_bits_offs)) & 0xff;
+offset-size-arithmetic	libclamav/upack.c	276	        shlsize = 8 - shlsize;
+offset-size-arithmetic	libclamav/upack.c	315	            if (!CLI_ISCONTAINED(dest, dsize, loc_esi, (j * 4)) || !CLI_ISCONTAINED(dest, dsize, loc_edi, ((j + count) * 4)))
+offset-size-arithmetic	libclamav/upack.c	339	            if (!CLI_ISCONTAINED(dest, dsize, (loc_esi + 0x10), 4))
+offset-size-arithmetic	libclamav/upack.c	350	            if (!CLI_ISCONTAINED(dest, dsize, loc_ebx - 4, (12 + 4 * 4)) || !CLI_ISCONTAINED(dest, dsize, loc_esi + 0x24, 4) || !CLI_ISCONTAINED(dest, dsize, loc_esi + 0x40, 4))
+offset-size-arithmetic	libclamav/upack.c	359	            end_edi    = dest + cli_readint32(loc_esi + 0x24) - base;
+offset-size-arithmetic	libclamav/upack.c	378	            if (!CLI_ISCONTAINED(dest, dsize, loc_edi, ((6 + count) * 4)))
+offset-size-arithmetic	libclamav/upack.c	397	            end_edi = dest + cli_readint32(loc_esi - 0x28) - base; /* read checked above */
+offset-size-arithmetic	libclamav/upack.c	431	        if (!CLI_ISCONTAINED(dest, dsize, pushed_esi + loc_ecx, 1)) {
+offset-size-arithmetic	libclamav/upack.c	432	            cli_dbgmsg("Upack: callfixerr %p %08x = %p, %p\n", dest, dsize, dest + dsize, pushed_esi + loc_ecx);
+offset-size-arithmetic	libclamav/upack.c	453	    section.rsz = end_edi - loc_edi;
+offset-size-arithmetic	libclamav/upack.c	454	    section.vsz = end_edi - loc_edi;
+offset-size-arithmetic	libclamav/upack.c	470	int unupack399(char *bs, uint32_t bl, uint32_t init_eax, char *init_ebx, uint32_t init_ecx, char *init_edi, char *end_edi, uint32_t shlsize, char *paddr, cli_ctx *ctx)
 offset-size-arithmetic	libclamav/upack.c	50	#define EC32(x) le32_to_host(x) /* Convert little endian to host */
 offset-size-arithmetic	libclamav/upack.c	51	#define CE32(x) be32_to_host(x) /* Convert big endian to host */
-offset-size-arithmetic	libclamav/upack.c	60	int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/upack.c	63	    char *loc_esi = NULL, *loc_edi = NULL, *loc_ebx = NULL, *end_edi = NULL, *save_edi = NULL, *alvalue = NULL;
-offset-size-arithmetic	libclamav/upack.c	91	            if (!CLI_ISCONTAINED(dest, dsize, dest + ep + 0xa, 2) || dest[ep + 0xa] != '\xeb')
-offset-size-arithmetic	libclamav/upack.c	98	            if (!CLI_ISCONTAINED(dest, dsize, alvalue, 2) || *alvalue != '\xeb')
+offset-size-arithmetic	libclamav/upack.c	78	int unupack(int upack, char *dest, uint32_t dsize, char *buff, uint32_t vma, uint32_t ep, uint32_t base, uint32_t va, int file, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/upack.c	81	    char *loc_esi = NULL, *loc_edi = NULL, *loc_ebx = NULL, *end_edi = NULL, *save_edi = NULL, *alvalue = NULL;
 offset-size-arithmetic	libclamav/upx.c	122	static char *checkpe(char *dst, uint32_t dsize, char *pehdr, uint32_t *valign, unsigned int *sectcnt)
 offset-size-arithmetic	libclamav/upx.c	134	    if (!CLI_ISCONTAINED(dst, dsize, sections, *sectcnt * 0x28)) return NULL;
 offset-size-arithmetic	libclamav/upx.c	141	static int pefromupx(const char *src, uint32_t ssize, char *dst, uint32_t *dsize, uint32_t ep, uint32_t upx0, uint32_t upx1, uint32_t *magic, uint32_t dend, struct cli_ctx_tag *ctx)
