@@ -5192,3 +5192,16 @@ legacy metadata bridge is explicitly incomplete when it cannot represent the
 native coordinate. A synthetic table fixture verifies both the derived
 entry-point coordinate and a second section header above `UINT32_MAX`. Full
 ELF corpus, sanitizer, and supported-Linux qualification remain open.
+
+## PE32 native RVA-to-file coordinates — 2026-08-22
+
+PE32 RVAs and section-header fields remain format-defined 32-bit values, but a
+section's 32-bit raw start plus an in-section RVA delta can cross 4 GiB in a
+larger containing file. PE translation now computes that sum in native width
+and exposes native section metadata and entry-point coordinates to the modern
+matcher. The legacy `cli_rawaddr()` and bytecode bridge reject an
+unrepresentable coordinate rather than wrapping it; PE-specific inspection
+therefore remains explicitly incomplete when the legacy ABI is required. A
+focused boundary regression covers both the native result and the fail-closed
+legacy result. Full PE corpus, unpacker, sanitizer, and supported-Linux
+qualification remain open.

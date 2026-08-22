@@ -3950,6 +3950,31 @@ START_TEST(test_pe_overlay_range_preserves_native_size)
 }
 END_TEST
 
+#if SIZE_MAX > UINT32_MAX
+START_TEST(test_pe_rawaddr_preserves_native_coordinate)
+{
+    struct cli_exe_section section;
+    unsigned int err = 0;
+    uint64_t native;
+
+    memset(&section, 0, sizeof(section));
+    section.rva = 0x1000;
+    section.rsz = 16;
+    section.raw = UINT32_MAX - 3U;
+
+    native = cli_rawaddr64(0x1008, &section, 1, &err,
+                           (size_t)UINT32_MAX + 16U, 0x1000);
+    ck_assert_int_eq(err, 0);
+    ck_assert_uint_eq(native, (uint64_t)UINT32_MAX + 5U);
+
+    err = 0;
+    ck_assert_uint_eq(cli_rawaddr(0x1008, &section, 1, &err,
+                                  (size_t)UINT32_MAX + 16U, 0x1000), 0);
+    ck_assert_int_eq(err, 1);
+}
+END_TEST
+#endif
+
 struct zip_stream_pread_state {
     const uint8_t *data;
     size_t length;
@@ -19391,6 +19416,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_arj_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_cl, test_pe_rawaddr_preserves_native_coordinate);
+#endif
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pe_header_nested_fmap_accepts_native_offset);
 #endif

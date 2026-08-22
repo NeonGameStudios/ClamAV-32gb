@@ -361,15 +361,17 @@ static int versioninfo_cb(void *opaque, uint32_t type, uint32_t name, uint32_t l
     return 0;
 }
 
-/* Given an RVA (relative to the ImageBase), return the file offset of the
- * corresponding data */
-uint32_t cli_rawaddr(uint32_t rva, const struct cli_exe_section *shp, uint16_t nos, unsigned int *err, size_t fsize, uint32_t hdr_size)
+/* Given an RVA (relative to the ImageBase), return the native-width file
+ * offset of the corresponding data. The RVA and section fields remain
+ * format-defined 32-bit values, but their containing-file coordinate can be
+ * larger than UINT32_MAX. */
+uint64_t cli_rawaddr64(uint32_t rva, const struct cli_exe_section *shp, uint16_t nos, unsigned int *err, size_t fsize, uint32_t hdr_size)
 {
     int i, found = 0;
-    uint32_t ret;
+    uint64_t ret;
 
     if (rva < hdr_size) { /* Out of section EP - mapped to imagebase+rva */
-        if (rva >= fsize) {
+        if ((uint64_t)rva >= fsize) {
             *err = 1;
             return 0;
         }
@@ -390,9 +392,23 @@ uint32_t cli_rawaddr(uint32_t rva, const struct cli_exe_section *shp, uint16_t n
         return 0;
     }
 
-    ret  = (rva - shp[i].rva) + shp[i].raw;
+    ret  = (uint64_t)(rva - shp[i].rva) + (uint64_t)shp[i].raw;
     *err = 0;
     return ret;
+}
+
+/* Legacy callers and bytecode still receive a 32-bit file coordinate. Never
+ * let a native coordinate above that ABI width wrap into an earlier offset. */
+uint32_t cli_rawaddr(uint32_t rva, const struct cli_exe_section *shp, uint16_t nos, unsigned int *err, size_t fsize, uint32_t hdr_size)
+{
+    uint64_t ret = cli_rawaddr64(rva, shp, nos, err, fsize, hdr_size);
+
+    if (*err || ret > UINT32_MAX) {
+        *err = 1;
+        return 0;
+    }
+
+    return (uint32_t)ret;
 }
 
 static cl_error_t findres_map_window(fmap_t *map, size_t offset, size_t length, const uint8_t **window)
@@ -3093,6 +3109,12 @@ int cli_scanpe(cli_ctx *ctx)
             return peheader_ret;
     }
 
+    if (peinfo->legacy_metadata_incomplete) {
+        cli_mark_scan_incomplete(ctx, "PE coordinates exceed the legacy 32-bit metadata ABI");
+        cli_exe_info_destroy(peinfo);
+        return CL_EPARSE;
+    }
+
     if (!peinfo->is_pe32plus) { /* PE */
         if (DCONF & PE_CONF_UPACK) {
             upack = (EC16(peinfo->file_hdr.SizeOfOptionalHeader) == 0x148);
@@ -5379,6 +5401,13 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
+    peinfo->sections64 = (struct cli_exe_section64 *)cli_max_calloc(peinfo->nsections, sizeof(struct cli_exe_section64));
+    if (!peinfo->sections64) {
+        cli_dbgmsg("cli_peheader: Can't allocate native-width section headers\n");
+        goto done;
+    }
+    peinfo->has_native_coordinates = 1;
+
     section_hdrs = (struct pe_image_section_hdr *)cli_max_calloc(peinfo->nsections, sizeof(struct pe_image_section_hdr));
 
     if (!section_hdrs) {
@@ -5443,6 +5472,9 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
                         memcpy(&(peinfo->sections[j]), &(peinfo->sections[j + 1]), sizeof(struct cli_exe_section));
 
                     for (j = i; j < (size_t)(peinfo->nsections - 1); j++)
+                        memcpy(&(peinfo->sections64[j]), &(peinfo->sections64[j + 1]), sizeof(struct cli_exe_section64));
+
+                    for (j = i; j < (size_t)(peinfo->nsections - 1); j++)
                         memcpy(&section_hdrs[j], &section_hdrs[j + 1], sizeof(struct pe_image_section_hdr));
 
                     peinfo->nsections--;
@@ -5486,6 +5518,16 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         // TODO Should this be done before we dump the json
         if (!section->vsz && section->rsz)
             section->vsz = PESALIGN(section->ursz, salign);
+
+        peinfo->sections64[i].rva  = section->rva;
+        peinfo->sections64[i].vsz  = section->vsz;
+        peinfo->sections64[i].raw  = section->raw;
+        peinfo->sections64[i].rsz  = section->rsz;
+        peinfo->sections64[i].chr  = section->chr;
+        peinfo->sections64[i].urva = section->urva;
+        peinfo->sections64[i].uvsz = section->uvsz;
+        peinfo->sections64[i].uraw = section->uraw;
+        peinfo->sections64[i].ursz = section->ursz;
 
         if (opts & CLI_PEHEADER_OPT_DBG_PRINT_INFO) {
             cli_dbgmsg("Section %zu\n", section_pe_idx);
@@ -5579,14 +5621,21 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
 
     // NOTE: For DLLs the entrypoint is likely to be zero
     // TODO Should this offset include peinfo->offset?
-    if (!(peinfo->ep = cli_rawaddr(peinfo->vep, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size)) && err) {
+    peinfo->ep64 = cli_rawaddr64(peinfo->vep, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
+    if (!peinfo->ep64 && err) {
         cli_dbgmsg("cli_peheader: Broken PE file - Can't map EntryPoint to a file offset\n");
         ret = CL_EFORMAT;
         goto done;
     }
+    if (peinfo->ep64 <= UINT32_MAX) {
+        peinfo->ep = (uint32_t)peinfo->ep64;
+    } else {
+        peinfo->ep = 0;
+        peinfo->legacy_metadata_incomplete = 1;
+    }
 
     if (opts & CLI_PEHEADER_OPT_COLLECT_JSON) {
-        cli_jsonint(pe_json, "EntryPointOffset", peinfo->ep);
+        cli_jsonint64(pe_json, "EntryPointOffset", (int64_t)peinfo->ep64);
 
         if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS) {
             ret = CL_ETIMEOUT;
@@ -5595,7 +5644,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     if (opts & CLI_PEHEADER_OPT_DBG_PRINT_INFO) {
-        cli_dbgmsg("EntryPoint offset: 0x%x (%d)\n", peinfo->ep, peinfo->ep);
+        cli_dbgmsg("EntryPoint offset: 0x" STDx64 "\n", peinfo->ep64);
     }
 
     if (is_dll || peinfo->ndatadirs < 3 || !peinfo->dirs[2].Size)
@@ -5793,6 +5842,8 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     peinfo->is_dll = is_dll;
 
     ret = CL_SUCCESS;
+    if (peinfo->legacy_metadata_incomplete)
+        cli_mark_scan_incomplete(ctx, "PE coordinates exceed the legacy 32-bit metadata ABI");
 
 done:
     /* In the fail case, peinfo will get destroyed by the caller */

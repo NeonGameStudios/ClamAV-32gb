@@ -3715,3 +3715,15 @@ width and preserves the explicit incomplete marker only for the legacy
 32-bit metadata bridge. The synthetic ELF32 regression covers this overflow
 alongside the table-cursor boundary; compiled ELF corpus, sanitizer, and
 supported-Linux qualification remain release gates.
+
+## PE32 native RVA-to-file coordinates — 2026-08-22
+
+PE32 section starts and RVAs remain 32-bit format fields, but their containing
+file coordinate is not limited to 32 bits: a valid in-section delta can carry
+the raw offset above 4 GiB. The native PE translator now performs this sum in
+64-bit arithmetic and populates the native executable metadata view. The
+legacy translator and bytecode bridge reject an unrepresentable coordinate
+instead of wrapping it into an earlier file location, and the PE-specific
+scanner marks that skipped legacy layer incomplete. A focused boundary
+regression covers both outcomes; compiled PE corpus, unpacker, sanitizer, and
+supported-build qualification remain open.

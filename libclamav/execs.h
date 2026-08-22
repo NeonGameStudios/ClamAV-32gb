@@ -65,7 +65,8 @@ struct cli_exe_section {
  *
  * The bytecode-facing cli_exe_section structure is a compatibility ABI and
  * must remain 32-bit.  ELF64 file offsets, virtual addresses, and section
- * sizes do not share that restriction, so the native matcher keeps a
+ * sizes do not share that restriction, and PE section-start plus RVA-delta
+ * coordinates can cross the 4 GiB boundary, so the native matcher keeps a
  * parallel representation instead of silently narrowing them.
  */
 struct cli_exe_section64 {

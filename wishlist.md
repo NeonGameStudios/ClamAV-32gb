@@ -728,3 +728,7 @@
   native width while preserving the format's 32-bit fields; the synthetic
   >4 GiB-coordinate regression is registered, with compiled ELF corpus and
   supported-Linux qualification still required.
+- Widen PE32 RVA-to-file translation and entry-point metadata to native-width
+  containing-file coordinates while preserving format-defined 32-bit RVAs;
+  legacy PE-specific and bytecode paths must fail closed above their ABI width,
+  with compiled PE corpus and supported-Linux qualification still required.
