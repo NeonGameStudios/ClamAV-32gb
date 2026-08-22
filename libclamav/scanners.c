@@ -8703,7 +8703,7 @@ cl_error_t cl_scanfile_callback(
     return status;
 }
 
-cl_error_t cl_scanfile_ex2(
+static cl_error_t scanfile_ex2_with_temporary_bytes(
     const char *filename,
     cl_verdict_t *verdict_out,
     const char **last_alert_out,
@@ -8716,6 +8716,7 @@ cl_error_t cl_scanfile_ex2(
     const char *hash_alg,
     const char *file_type_hint,
     char **file_type_out,
+    uint64_t temporary_bytes_reserved,
     cl_scan_report_t **report_out)
 {
     int fd;
@@ -8755,7 +8756,7 @@ cl_error_t cl_scanfile_ex2(
     if (fname != filename)
         free((char *)fname);
 
-    ret = cl_scandesc_ex2(
+    ret = cli_scandesc_ex2_with_temporary_bytes(
         fd,
         filename,
         verdict_out,
@@ -8769,6 +8770,7 @@ cl_error_t cl_scanfile_ex2(
         hash_alg,
         file_type_hint,
         file_type_out,
+        temporary_bytes_reserved,
         report_out);
 
     if (close(fd) != 0) {
@@ -8781,6 +8783,71 @@ cl_error_t cl_scanfile_ex2(
     }
 
     return ret;
+}
+
+cl_error_t cli_scanfile_ex2_with_temporary_bytes(
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    uint64_t temporary_bytes_reserved,
+    cl_scan_report_t **report_out)
+{
+    return scanfile_ex2_with_temporary_bytes(
+        filename,
+        verdict_out,
+        last_alert_out,
+        scanned_out,
+        engine,
+        scanoptions,
+        context,
+        hash_hint,
+        hash_out,
+        hash_alg,
+        file_type_hint,
+        file_type_out,
+        temporary_bytes_reserved,
+        report_out);
+}
+
+cl_error_t cl_scanfile_ex2(
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    cl_scan_report_t **report_out)
+{
+    return scanfile_ex2_with_temporary_bytes(
+        filename,
+        verdict_out,
+        last_alert_out,
+        scanned_out,
+        engine,
+        scanoptions,
+        context,
+        hash_hint,
+        hash_out,
+        hash_alg,
+        file_type_hint,
+        file_type_out,
+        0,
+        report_out);
 }
 
 cl_error_t cl_scanfile_ex(

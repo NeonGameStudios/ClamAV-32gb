@@ -79,6 +79,30 @@ cl_error_t cli_scandesc_ex2_with_temporary_bytes(
     cl_scan_report_t **report_out);
 
 /**
+ * @brief Scan a file while accounting for caller-owned staged bytes.
+ *
+ * This is the path-based counterpart to
+ * cli_scandesc_ex2_with_temporary_bytes(). The caller keeps the staged file
+ * alive for the duration of the scan, so its complete size remains charged
+ * alongside parser and decoder spools.
+ */
+cl_error_t cli_scanfile_ex2_with_temporary_bytes(
+    const char *filename,
+    cl_verdict_t *verdict_out,
+    const char **last_alert_out,
+    uint64_t *scanned_out,
+    const struct cl_engine *engine,
+    struct cl_scan_options *scanoptions,
+    void *context,
+    const char *hash_hint,
+    char **hash_out,
+    const char *hash_alg,
+    const char *file_type_hint,
+    char **file_type_out,
+    uint64_t temporary_bytes_reserved,
+    cl_scan_report_t **report_out);
+
+/**
  * @brief Scan a tempfile / sub-file of _any_ type, passing in the fd, filepath (if available), and the scanning context.
  *
  * @param desc          File descriptor

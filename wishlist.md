@@ -365,7 +365,8 @@
   covers all three statuses, with compiled execution still required.
 - clamdscan stdin legacy results now keep `dsresult()`'s print status separate
   from its infection count and propagate daemon `ERROR` replies into the exit
-  status; add compiled stdin/INSTREAM service coverage.
+  status; the service gate now schedules a pipe-backed stdin/INSTREAM case,
+  with compiled execution still open.
 - Buffer and fmap matcher callers now preserve every matcher error below
   `CL_TYPENO` instead of allowing a later matcher pass to hide resource,
   timeout, callback, or read failures; add matcher fault-injection and
@@ -462,6 +463,13 @@
   no-FD-passing integration fixture before claiming that build variant.
 
 ## Large-file validation and expansion progression
+
+- `clamscan` stdin staging now shares the engine's `MaxTemporarySize` budget
+  with parser spools and passes the staged byte count into the scan; the
+  service gate now schedules exact-edge coverage for both `clamscan` and
+  `clamdscan -`, with compiled temporary-budget evidence and the new
+  path-helper regression's runtime execution still open; the Linux raw gate
+  now also schedules the 32-GiB-plus-one stdin boundary.
 
 1. **Validate the current 32 GiB raw path on the local macOS host**
    - **Host preflight remains open:** the latest Darwin arm64 capture had

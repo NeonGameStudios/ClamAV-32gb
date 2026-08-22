@@ -998,8 +998,10 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 {
     cl_error_t ret;
 
-    uint64_t fsize         = 0;
-    uint64_t maxfilesize   = 0;
+    uint64_t fsize            = 0;
+    uint64_t maxfilesize      = 0;
+    uint64_t maxtemporarysize = 0;
+    uint64_t staged_size      = 0;
     cl_verdict_t verdict   = CL_VERDICT_NOTHING_FOUND;
     const char *alert_name = NULL;
     const char *tmpdir     = NULL;
@@ -1034,7 +1036,10 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         return 2;
     }
 
-    maxfilesize = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
+    maxfilesize      = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);
+    maxtemporarysize = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, NULL);
+    if (maxtemporarysize == 0)
+        maxtemporarysize = CLI_MAX_TEMPORARY_SIZE;
 
     if (!(filename = cli_gentemp(tmpdir))) {
         logg(LOGG_ERROR, "Can't generate tempfile name\n");
@@ -1052,15 +1057,28 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
     }
 
     while ((bread = fread(buff, 1, FILEBUFF, stdin))) {
-        if ((UINT64_MAX - fsize < (uint64_t)bread) ||
-            (maxfilesize != 0 && (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize))) {
-            logg(LOGG_ERROR, "stdin exceeds MaxFileSize; refusing to scan a partial prefix\n");
-            ret = CL_EMAXSIZE;
-            if (maxfilesize != 0 && maxfilesize < (uint64_t)INT64_MAX) {
+        bool size_overflow = UINT64_MAX - fsize < (uint64_t)bread;
+        bool file_over_limit = maxfilesize != 0 &&
+                               (fsize > maxfilesize || (uint64_t)bread > maxfilesize - fsize);
+        bool temporary_over_limit = maxtemporarysize != 0 &&
+                                    (fsize > maxtemporarysize || (uint64_t)bread > maxtemporarysize - fsize);
+
+        if (size_overflow || file_over_limit || temporary_over_limit) {
+            if (size_overflow || temporary_over_limit) {
+                logg(LOGG_ERROR, "stdin exceeds MaxTemporarySize; refusing to stage more input\n");
+                ret = CL_ERESOURCE;
+            } else {
+                logg(LOGG_ERROR, "stdin exceeds MaxFileSize; refusing to scan a partial prefix\n");
+                ret = CL_EMAXSIZE;
+            }
+            if (ret == CL_EMAXSIZE && maxfilesize != 0 && maxfilesize < (uint64_t)INT64_MAX &&
+                maxfilesize + 1 <= maxtemporarysize) {
                 if (ftruncate(fileno(fs), (off_t)(maxfilesize + 1)) == -1)
                     logg(LOGG_DEBUG, "Unable to materialize the over-limit sentinel: %s\n", strerror(errno));
-                else
+                else {
                     over_limit_sentinel = true;
+                    staged_size = maxfilesize + 1;
+                }
             }
             if (fclose(fs) != 0) {
                 logg(LOGG_ERROR, "Can't close stdin temporary file: %s\n", strerror(errno));
@@ -1071,7 +1089,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
                 return 2;
             }
             if (over_limit_sentinel) {
-                ret = cl_scanfile_ex2(
+                ret = cli_scanfile_ex2_with_temporary_bytes(
                     filename,
                     &verdict,
                     &alert_name,
@@ -1084,6 +1102,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
                     hash_alg,
                     file_type_hint,
                     file_type_out,
+                    staged_size,
                     &report);
                 enforce_structured_completion(report, &ret);
                 if (ensure_structured_scan_report(opts, engine, "stdin", ret, verdict, alert_name, &report) != 0)
@@ -1154,7 +1173,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
 
     info.bytes_read += fsize;
 
-    ret = cl_scanfile_ex2(
+    ret = cli_scanfile_ex2_with_temporary_bytes(
         filename,
         &verdict,
         &alert_name,
@@ -1167,6 +1186,7 @@ static int scanstdin(const struct cl_engine *engine, const struct optstruct *opt
         hash_alg,
         file_type_hint,
         file_type_out,
+        fsize,
         &report);
 
     enforce_structured_completion(report, &ret);

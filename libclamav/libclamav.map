@@ -374,6 +374,7 @@ CLAMAV_PRIVATE {
     cli_scan_reserve_temporary;
     cli_scan_release_temporary;
     cli_magic_scan_desc_type_reserved;
+    cli_scanfile_ex2_with_temporary_bytes;
     cli_scandesc_ex2_with_temporary_bytes;
     cli_matchmeta;
     cli_cvdunpack_and_verify;

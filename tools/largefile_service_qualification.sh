@@ -742,6 +742,40 @@ run_service_scan()
     return 0
 }
 
+run_service_stdin()
+{
+    scan_label=edge-clamdscan-stdin
+    oracle_load edge "$edge_file"
+    scan_log=$out/logs/$scan_label.log
+    scan_report=$out/reports/$scan_label.jsonl
+    scan_status=0
+    (
+        "/usr/bin/time" -f '%e' -o "$out/logs/$scan_label.elapsed" \
+            sh -c 'cat "$1" | timeout --signal=TERM --kill-after=5 "$3" "$2" \
+                --no-summary --report-json="$4" -c "$5" -' sh \
+                "$edge_file" "$build_dir/clamdscan/clamdscan" "$service_timeout_s" \
+                "$scan_report" "$config"
+    ) > "$scan_log" 2>&1 &
+    scan_pid=$!
+    while kill -0 "$scan_pid" 2>/dev/null; do
+        measure_service_resources
+        sleep 0.05
+    done
+    wait "$scan_pid" || scan_status=$?
+    case "$scan_status" in
+        0|1|2) ;;
+        *) echo "$scan_label failed with status $scan_status" >&2; return 1 ;;
+    esac
+    if grep -Eiq 'AddressSanitizer|UndefinedBehaviorSanitizer|runtime error|Segmentation fault|stack smashing' "$scan_log"; then
+        echo "$scan_label emitted a crash/sanitizer diagnostic" >&2
+        return 1
+    fi
+    oracle_status=$scan_status
+    check_oracle_output "$scan_label" "$scan_log" "$scan_report" yes no service "$edge_file"
+    printf '%s_status=%s\n' "$scan_label" "$scan_status" >> "$out/service-summary.txt"
+    return 0
+}
+
 run_direct_production()
 {
     oracle_load production "$production_file"
@@ -760,6 +794,29 @@ run_direct_production()
         return 1
     fi
     printf 'production_cvd_clamscan=pass\n' >> "$out/service-summary.txt"
+}
+
+run_direct_stdin()
+{
+    oracle_load edge "$edge_file"
+    stdin_status=0
+    stdin_report="$out/reports/edge-clamscan-stdin.jsonl"
+    "/usr/bin/time" -f '%e' -o "$out/logs/edge-clamscan-stdin.elapsed" \
+        timeout --signal=TERM --kill-after=5 "$service_timeout_s" \
+        "$build_dir/clamscan/clamscan" --database="$edge_db" \
+        --max-filesize=32G --max-scansize=64G --max-matcher-work=256G \
+        --max-temporary-size=64G --max-contiguous-size=32G \
+        --pcre-max-filesize=32G --max-scantime="$max_scan_time_ms" \
+        --tempdir="$out/tmp" --no-summary --debug \
+        --report-json="$stdin_report" - < "$edge_file" \
+        > "$out/logs/edge-clamscan-stdin.log" 2>&1 || stdin_status=$?
+    oracle_status=$stdin_status
+    if ! check_oracle_output edge-clamscan-stdin \
+        "$out/logs/edge-clamscan-stdin.log" "$stdin_report" yes yes cli "$edge_file"; then
+        echo 'edge clamscan stdin oracle failed' >&2
+        exit 1
+    fi
+    printf 'edge_clamscan_stdin=pass\n' >> "$out/service-summary.txt"
 }
 
 run_serial_queue()
@@ -914,10 +971,13 @@ if ! check_oracle_output edge-clamscan "$out/logs/edge-clamscan.log" "$edge_repo
     echo 'edge clamscan oracle failed' >&2
     exit 1
 fi
+run_direct_stdin
 stop_service
 start_service "$edge_db" 1 2
 run_service_scan edge edge_contscan "$edge_file"
 printf 'edge_clamdscan_contscan=pass\n' >> "$out/service-summary.txt"
+run_service_stdin
+printf 'edge_clamdscan_stdin=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_multiscan "$edge_file" --multiscan
 printf 'edge_clamdscan_multiscan=pass\n' >> "$out/service-summary.txt"
 run_service_scan edge edge_allmatch "$edge_file" --allmatch

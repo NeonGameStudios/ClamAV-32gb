@@ -126,6 +126,8 @@ def expected_workloads() -> dict[str, tuple[str, str, bool]]:
     ):
         expected[label] = ("service", role, False)
     expected["edge-clamscan"] = ("cli", "edge", True)
+    expected["edge-clamscan-stdin"] = ("cli", "edge", True)
+    expected["edge-clamdscan-stdin"] = ("service", "edge", False)
     for label in ("edge_contscan", "edge_multiscan", "edge_allmatch", "edge_fildes", "edge_instream"):
         expected[label] = ("service", "edge", False)
     for worker in (1, 2, 3, 4):

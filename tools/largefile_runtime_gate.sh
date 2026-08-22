@@ -706,6 +706,33 @@ else
     failures=$((failures + 1))
 fi
 
+# Exercise the same 32-GiB-plus-one policy through unknown-length stdin. The
+# front end must read through the boundary, reject the input, and never
+# report a clean prefix as OK.
+policy_stdin_log=$out/32g-plus-one-stdin.log
+policy_stdin_status=0
+"$runtime_clamscan" \
+    --database="$poc_out/db" \
+    --max-filesize=32G \
+    --max-scansize=32G \
+    --max-temporary-size=64G \
+    --max-contiguous-size=32G \
+    --pcre-max-filesize=32G \
+    --max-scantime="$max_scan_time_ms" \
+    --alert-exceeds-max \
+    --debug \
+    --no-summary \
+    - < "$policy_file" > "$policy_stdin_log" 2>&1 || policy_stdin_status=$?
+if [ "$policy_stdin_status" -eq 1 ] &&
+    grep -E 'MaxFileSize|Max file size|exceeds the maximum file size|stdin exceeds MaxFileSize' \
+        "$policy_stdin_log" >/dev/null 2>&1 &&
+    ! grep -E '(^|[[:space:]])OK([[:space:]]|$)' "$policy_stdin_log" >/dev/null 2>&1; then
+    printf 'policy_32g_plus_one_stdin=pass\n' >> "$metadata"
+else
+    printf 'policy_32g_plus_one_stdin=fail status=%s\n' "$policy_stdin_status" >> "$metadata"
+    failures=$((failures + 1))
+fi
+
 concurrency_input=$corpus/$concurrency_file
 if [ ! -f "$concurrency_input" ]; then
     echo "concurrency input not found: $concurrency_input" >&2

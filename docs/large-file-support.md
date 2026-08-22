@@ -4924,6 +4924,25 @@ remains open.
 
 The authoritative `docs/largefile-inventory.tsv` was regenerated from the
 current source tree after the recent parser, daemon, Rust, and test changes.
-The generator reproduces the committed 32,384-line inventory exactly, and the
+The generator reproduces the committed 32,401-line inventory exactly, and the
 158-entry capability manifest still validates every required ingress, matcher,
 feature, unsupported boundary, parser dispatch branch, and source path.
+
+## clamscan stdin staging shares the temporary budget — 2026-08-22
+
+`clamscan` now admits each stdin chunk against the engine's
+`MaxTemporarySize` before writing it to its staging file, and passes the
+complete staged byte count into the descriptor scan. A successful exact-size
+stdin scan therefore charges the staged source plus parser spools; a
+temporary-budget crossing returns `CL_ERESOURCE` and removes the partial file.
+A `MaxFileSize` crossing still uses the one-byte-over-limit sentinel only when
+that sentinel itself fits the temporary budget. The service qualification
+gate now records exact-edge `clamscan` stdin and `clamdscan -` stdin
+workloads against the same hash/type/status oracle; compiled stdin,
+temporary-budget, and exact-edge runtime evidence remain open. A focused
+library regression also verifies that
+the path-based helper reports the staged reservation at the exact quota and
+returns `CL_ERESOURCE` when the reservation crosses it.
+The Linux raw runtime gate also schedules a sparse 32-GiB-plus-one stdin
+boundary and rejects a clean-prefix result; the dedicated host run remains
+required.

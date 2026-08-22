@@ -57,7 +57,7 @@ done
 workload_results=$out/provenance/service-workload-results.tsv
 printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > "$workload_results"
 report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
-workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-multiworker-1 clamd-multiworker-2 clamd-multiworker-3 clamd-multiworker-4'
+workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-multiworker-1 clamd-multiworker-2 clamd-multiworker-3 clamd-multiworker-4'
 for label in $workload_labels; do
     case "$label" in
         production_cvd_scanreport|production_cvd_contscanreport|production_cvd_multiscanreport|production_cvd_allmatchscan|production_cvd_fildesreport|production_cvd_instreamreport)
@@ -90,7 +90,7 @@ for label in $workload_labels; do
             role=production
             check_offset=no
             ;;
-        edge-clamscan)
+        edge-clamscan|edge-clamscan-stdin)
             kind=cli
             role=edge
             check_offset=yes
