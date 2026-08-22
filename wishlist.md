@@ -743,3 +743,7 @@
   partial view. The sparse logical-map boundary regression is registered;
   compiled PE corpus, unpacker, sanitizer, and supported-Linux qualification
   remain required.
+- Keep ISO9660 long directory-name normalization bounded by the destination
+  buffer and preserve its explicit incomplete/non-cacheable result; the
+  synthetic 260-byte identifier regression is registered, with compiled ISO
+  corpus, sanitizer, and parser-family qualification still required.

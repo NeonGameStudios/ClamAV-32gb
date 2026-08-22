@@ -3750,3 +3750,14 @@ hash generation also refuses to produce a partial legacy result when that
 bridge is incomplete. A sparse logical-map regression covers a 4-GiB aligned
 section size and native overlay start, while compiled PE corpus, unpacker,
 sanitizer, and supported-build qualification remain open.
+
+## ISO9660 long directory names — 2026-08-22
+
+ISO directory identifiers larger than the fixed 260-byte display buffer are
+still deliberately bounded and marked incomplete, but the directory walker
+previously used the original on-disk length when searching for a version
+suffix and writing the terminator. It now uses the normalized buffer length,
+preventing an out-of-bounds write while retaining the non-cacheable incomplete
+disposition. A synthetic 260-byte identifier regression and source guards
+cover the boundary; compiled ISO corpus, sanitizer, and parser-family
+qualification remain open.

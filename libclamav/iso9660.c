@@ -254,7 +254,7 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
         }
 
         for (dirsz = MIN(iso->blocksz, len);;) {
-            unsigned int entrysz, fileoff, filesz;
+            unsigned int entrysz, fileoff, filesz, name_len;
             char *sep;
 
             ret = cli_checktimelimit(ctx);
@@ -290,11 +290,12 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
                 break;
             }
             iso_string(iso, &dir[33], filesz);
-            sep = memchr(iso->buf, ';', filesz);
+            name_len = MIN(filesz, (unsigned int)sizeof(iso->buf) - 1U);
+            sep      = memchr(iso->buf, ';', name_len);
             if (sep)
                 *sep = '\0';
             else
-                iso->buf[filesz] = '\0';
+                iso->buf[name_len] = '\0';
             {
                 uint64_t fileoff64 = (uint64_t)cli_readint32(dir + 2) + dir[1];
                 if (fileoff64 > UINT32_MAX) {
