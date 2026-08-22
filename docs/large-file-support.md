@@ -2889,25 +2889,22 @@ overflow returns a fail-visible parser error. Sparse-map regressions cover both
 native coordinate preservation and entry-offset overflow; full ELF parser,
 bytecode-v2, sanitizer, and supported-build Sonic1 qualification remain open.
 
-## Script normalization matcher boundary — 2026-08-19
+## Script normalization matcher boundary — 2026-08-19; superseded 2026-08-22
 
-Normalized script output above 4 GiB cannot be passed to the legacy 32-bit
-matcher subject ABI. The scanner now rejects that normalized layer with an
-explicit incomplete result; the capability manifest records this as
-`script-normalization-over-4g`. Raising the outer 32-GiB policy does not remove
-this parser-specific boundary, and conversion to a streaming/native-width
-normalization matcher remains a release gate.
+The earlier script path passed normalized windows through the legacy 32-bit
+matcher subject ABI, so normalized output above 4 GiB was an explicit
+incomplete boundary even when the outer 32-GiB policy allowed the input. The
+current path writes the complete normalized view to quota-accounted temporary
+storage and scans one child fmap through the native-width matcher path. The
+obsolete `script-normalization-over-4g` capability boundary is therefore
+removed; parser, temporary-space, sanitizer, corpus, and Sonic1 qualification
+remain release gates.
 
 ## Script normalization window accounting — 2026-08-21
 
-The in-memory script normalizer now treats matcher overlap as window context
-rather than new output. Successive windows therefore use the non-overlapping
-normalized offset, write each normalized byte to the optional temporary file
-once, and retain only the bytes actually produced when a short final window is
-flushed. This prevents boundary signatures from receiving drifted coordinates,
-prevents temporary-space reservations from charging overlap twice, and avoids
-scanning uninitialized carry bytes. The focused regression
-`test_script_normalization_window_offset_is_stable` covers an absolute target
+The preceding implementation treated matcher overlap as window context rather
+than new output. That evidence remains useful for the focused regression
+`test_script_normalization_window_offset_is_stable`, which covers an absolute target
 signature beyond the first normalized window; compiled scanner, sanitizer, and
 production-signature qualification remain release gates.
 

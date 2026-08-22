@@ -3619,33 +3619,17 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
     struct text_norm_state state;
     char *tmpname = NULL;
     int ofd       = -1;
-    struct cli_matcher *target_ac_root;
-    uint32_t maxpatlen;
-    uint64_t normalized_offset = 0;
-    size_t carry_len            = 0;
-    struct cli_matcher *generic_ac_root;
-    struct cli_ac_data gmdata, tmdata;
-    int gmdata_initialized = 0;
-    int tmdata_initialized = 0;
-    struct cli_ac_data *mdata[2];
     cl_fmap_t *new_map = NULL;
     fmap_t *map;
     size_t at = 0;
     uint64_t curr_len;
     uint64_t temporary_reserved = 0;
-    struct cli_target_info info;
 
     if (!ctx || !ctx->engine->root)
         return CL_ENULLARG;
 
     map             = ctx->fmap;
     curr_len        = map->len;
-    generic_ac_root = ctx->engine->root[0];
-    target_ac_root  = ctx->engine->root[7];
-    maxpatlen       = target_ac_root ? target_ac_root->maxpatlen : 0;
-
-    // Initialize info so it's safe to pass to destroy later
-    cli_targetinfo_init(&info);
 
     cli_dbgmsg("in cli_scanscript()\n");
 
@@ -3663,213 +3647,96 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
         goto done;
     }
 
-    if (!(normalized = malloc(SCANBUFF + maxpatlen))) {
+    if (!(normalized = malloc(SCANBUFF))) {
         cli_dbgmsg("cli_scanscript: Unable to malloc %u bytes\n", SCANBUFF);
         cli_mark_scan_incomplete(ctx, "Script normalization buffer could not be allocated");
         ret = CL_EMEM;
         goto done;
     }
-    text_normalize_init(&state, normalized, SCANBUFF + maxpatlen);
+    text_normalize_init(&state, normalized, SCANBUFF);
 
-    if ((ret = cli_ac_initdata(&tmdata, target_ac_root ? target_ac_root->ac_partsigs : 0, target_ac_root ? target_ac_root->ac_lsigs : 0, target_ac_root ? target_ac_root->ac_reloff_num : 0, CLI_DEFAULT_AC_TRACKLEN))) {
+    /* Keep every normalized view file-backed so the final matcher pass can
+     * retain native-width offsets and run full-map PCRE/logical evaluation. */
+    if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &ofd))) {
+        cli_dbgmsg("cli_scanscript: Can't generate temporary file/descriptor\n");
+        cli_mark_scan_incomplete(ctx, "Script normalized output could not be created");
         goto done;
     }
-    tmdata_initialized = 1;
+    if (ctx->engine->keeptmp)
+        cli_dbgmsg("cli_scanscript: saving normalized file to %s\n", tmpname);
 
-    if ((ret = cli_ac_initdata(&gmdata, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN))) {
-        goto done;
-    }
-    gmdata_initialized = 1;
+    while (1) {
+        size_t len;
 
-    /* dump to disk only if explicitly asked to
-     * or if necessary to check relative offsets,
-     * otherwise we can process just in-memory */
-    if (ctx->engine->keeptmp || (target_ac_root && (target_ac_root->ac_reloff_num > 0 || target_ac_root->linked_bcs))) {
-        if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &ofd))) {
-            cli_dbgmsg("cli_scanscript: Can't generate temporary file/descriptor\n");
-            cli_mark_scan_incomplete(ctx, "Script normalized output could not be created");
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "Script normalization reached the configured time limit");
             goto done;
         }
-        if (ctx->engine->keeptmp)
-            cli_dbgmsg("cli_scanscript: saving normalized file to %s\n", tmpname);
-    }
 
-    mdata[0] = &tmdata;
-    mdata[1] = &gmdata;
-
-    /* If there's a relative offset in target_ac_root or triggered bytecodes, normalize to file.*/
-    if (target_ac_root && (target_ac_root->ac_reloff_num > 0 || target_ac_root->linked_bcs)) {
-        size_t map_off = 0;
-        while (map_off < map->len) {
-            size_t written;
-
-            ret = cli_checktimelimit(ctx);
-            if (ret != CL_SUCCESS) {
-                cli_mark_scan_incomplete(ctx, "Script normalization reached the configured time limit");
-                goto done;
-            }
-
-            if (!(written = text_normalize_map(&state, map, map_off)))
-                break;
-            map_off += written;
-
-            if (cli_reserve_temp_output(ctx, &temporary_reserved, (uint64_t)state.out_pos,
-                                        "Script normalized output exceeds temporary storage limits") != CL_SUCCESS) {
-                ret = CL_ERESOURCE;
-                goto done;
-            }
-            if (write(ofd, state.out, state.out_pos) != (ssize_t)state.out_pos) {
-                cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
-                cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
-                ret = CL_EWRITE;
-                goto done;
-            }
-            text_normalize_reset(&state);
-        }
-
-        if (state.read_error) {
+        len  = MIN(map->pgsz, map->len - at);
+        buff = fmap_need_off_once(map, at, len);
+        if (len && !buff) {
             cli_mark_scan_incomplete(ctx, "Script normalization could not read the complete input map");
-            ret = (state.read_status == CL_SUCCESS) ? CL_EPARSE : state.read_status;
+            ret = (at < map->len) ? CL_EREAD : CL_EPARSE;
             goto done;
         }
 
-        /* Temporarily store the normalized file map in the context. */
-        new_map = fmap_new(ofd, 0, 0, NULL, tmpname);
-        if (new_map == NULL) {
+        if (!buff || !len || len > state.out_len - state.out_pos) {
+            size_t written = state.out_pos;
+
+            if (written) {
+                if (cli_reserve_temp_output(
+                        ctx, &temporary_reserved, (uint64_t)written,
+                        "Script normalized output exceeds temporary storage limits") != CL_SUCCESS) {
+                    ret = CL_ERESOURCE;
+                    goto done;
+                }
+                if (write(ofd, state.out, written) != (ssize_t)written) {
+                    cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
+                    cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
+                    ret = CL_EWRITE;
+                    goto done;
+                }
+                text_normalize_reset(&state);
+            }
+        }
+
+        if (!len)
+            break;
+        if (text_normalize_buffer(&state, buff, len) != len) {
+            cli_dbgmsg("cli_scanscript: short read during normalizing\n");
+            cli_mark_scan_incomplete(ctx, "Script normalization did not consume the complete input map");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        at += len;
+    }
+
+    {
+        int empty = 0;
+
+        new_map = fmap_check_empty(ofd, 0, 0, &empty, NULL, tmpname);
+        if ((NULL == new_map) && empty) {
+            static const unsigned char empty_data = 0;
+            new_map = fmap_open_memory(&empty_data, 0, NULL);
+        }
+        if (NULL == new_map) {
             cli_dbgmsg("cli_scanscript: could not map file %s\n", tmpname);
             cli_mark_scan_incomplete(ctx, "Script normalized output could not be mapped for scanning");
             ret = CL_EREAD;
             goto done;
         }
-
-        /* Perform cli_scan_fmap with child fmap */
-        ret = cli_recursion_stack_push(ctx, new_map, CL_TYPE_TEXT_ASCII, true, LAYER_ATTRIBUTES_NORMALIZED);
-        if (CL_SUCCESS != ret) {
-            cli_dbgmsg("Failed to scan fmap.\n");
-            goto done;
-        }
-
-        /* scan map */
-        ret = cli_scan_fmap(ctx, CL_TYPE_TEXT_ASCII, false, NULL, AC_SCAN_VIR, NULL);
-
-        (void)cli_recursion_stack_pop(ctx); /* Restore the parent fmap */
-
-        if (CL_SUCCESS != ret) {
-            goto done;
-        }
-
-    } else {
-        /* Since the above is moderately costly all in all,
-         * do the old stuff if there's no relative offsets. */
-
-        if (target_ac_root) {
-            cli_targetinfo(&info, 7, ctx);
-            ret = cli_ac_caloff(target_ac_root, &tmdata, &info);
-            if (ret)
-                goto done;
-        }
-
-        while (1) {
-            ret = cli_checktimelimit(ctx);
-            if (ret != CL_SUCCESS) {
-                cli_mark_scan_incomplete(ctx, "Script normalization reached the configured time limit");
-                goto done;
-            }
-
-            size_t len = MIN(map->pgsz, map->len - at);
-            buff       = fmap_need_off_once(map, at, len);
-            if (len && !buff) {
-                cli_mark_scan_incomplete(ctx, "Script normalization could not read the complete input map");
-                ret = (at < map->len) ? CL_EREAD : CL_EPARSE;
-                goto done;
-            }
-            at += len;
-            if (!buff || !len || state.out_pos + len > state.out_len) {
-                size_t scan_len   = state.out_pos;
-                size_t scan_carry = carry_len;
-                size_t new_len;
-
-                if (scan_carry > scan_len ||
-                    normalized_offset < (uint64_t)scan_carry) {
-                    cli_mark_scan_incomplete(ctx, "Script normalization window overlap is invalid");
-                    ret = CL_EPARSE;
-                    goto done;
-                }
-
-                new_len = scan_len - scan_carry;
-                if ((uint64_t)new_len > UINT64_MAX - normalized_offset) {
-                    cli_mark_scan_incomplete(ctx, "script normalized offset overflowed");
-                    ret = CL_EPARSE;
-                    goto done;
-                }
-
-                /* flush if error/EOF, or too little buffer space left */
-                if (ofd != -1 && new_len) {
-                    if (cli_reserve_temp_output(
-                            ctx, &temporary_reserved, (uint64_t)new_len,
-                            "Script normalized output exceeds temporary storage limits") != CL_SUCCESS) {
-                        ret = CL_ERESOURCE;
-                        goto done;
-                    }
-                    if (write(ofd, state.out + scan_carry, new_len) != (ssize_t)new_len) {
-                        cli_errmsg("cli_scanscript: can't write to file %s\n", tmpname);
-                        cli_mark_scan_incomplete(ctx, "Script normalized output could not be written completely");
-                        if (close(ofd) != 0)
-                            cli_mark_scan_incomplete(ctx, "Script normalized output could not be closed");
-                        ofd = -1;
-                        ret = CL_EWRITE;
-                        goto done;
-                    }
-                }
-                /* when we flush the buffer also scan */
-                if (scan_len > UINT32_MAX) {
-                    cli_dbgmsg("cli_scanscript: refusing to narrow normalized output larger than 4 GiB for the legacy matcher API\n");
-                    cli_mark_scan_incomplete(ctx, "Script normalization exceeded the legacy matcher subject width");
-                    ret = CL_EFORMAT;
-                    goto done;
-                }
-
-                if (new_len) {
-                    ret = cli_scan_buff(state.out, (uint32_t)scan_len,
-                                        normalized_offset - (uint64_t)scan_carry, ctx,
-                                        CL_TYPE_TEXT_ASCII, mdata);
-                    if (CL_SUCCESS != ret) {
-                        goto done;
-                    }
-
-                    if (ctx->scanned)
-                        *ctx->scanned += scan_len;
-                }
-
-                normalized_offset += (uint64_t)new_len;
-
-                /* Carry only bytes that were actually produced. The carried
-                 * prefix was already written/scanned in the previous window,
-                 * so the next window starts at its logical, non-overlapping
-                 * offset while retaining the matcher boundary context. */
-                carry_len = MIN((size_t)maxpatlen, scan_len);
-                if (carry_len)
-                    memmove(state.out, state.out + scan_len - carry_len, carry_len);
-                text_normalize_reset(&state);
-                state.out_pos = carry_len;
-            }
-            if (!len)
-                break;
-            if (!buff || text_normalize_buffer(&state, buff, len) != len) {
-                cli_dbgmsg("cli_scanscript: short read during normalizing\n");
-                cli_mark_scan_incomplete(ctx, "Script normalization did not consume the complete input map");
-                ret = CL_EPARSE;
-                goto done;
-            }
-        }
     }
 
-    ret = cli_exp_eval(ctx, target_ac_root, &tmdata, NULL);
+    ret = cli_recursion_stack_push(ctx, new_map, CL_TYPE_TEXT_ASCII, true, LAYER_ATTRIBUTES_NORMALIZED);
     if (CL_SUCCESS != ret) {
+        cli_dbgmsg("Failed to scan normalized fmap.\n");
         goto done;
     }
 
-    ret = cli_exp_eval(ctx, generic_ac_root, &gmdata, NULL);
+    ret = cli_scan_fmap(ctx, CL_TYPE_TEXT_ASCII, false, NULL, AC_SCAN_VIR, NULL);
+    (void)cli_recursion_stack_pop(ctx); /* Restore the parent fmap */
     if (CL_SUCCESS != ret) {
         goto done;
     }
@@ -3879,18 +3746,8 @@ done:
         fmap_free(new_map);
     }
 
-    cli_targetinfo_destroy(&info);
-
     if (NULL != normalized) {
         free(normalized);
-    }
-
-    if (tmdata_initialized) {
-        cli_ac_freedata(&tmdata);
-    }
-
-    if (gmdata_initialized) {
-        cli_ac_freedata(&gmdata);
     }
 
     if (ofd != -1) {

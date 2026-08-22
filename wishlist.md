@@ -332,6 +332,10 @@
   status, preserving in-range callback failures as `CL_EREAD` instead of
   generic parse errors; add compiled scanner-level callback-fault and
   production script corpus qualification.
+- Script normalization now writes the complete generated view to a
+  quota-accounted temporary fmap and scans it through the native-width matcher
+  path, removing the obsolete 4-GiB buffer-ABI boundary; compiled timeout,
+  cleanup, corpus, sanitizer, and Sonic1 qualification remain release gates.
 - The mandatory service gate now binds `clamd`, `clamdscan`, `clamscan`, and
   milter workloads to the audited source/build manifest, compile graph,
   executable hashes, and resolved runtime dependency hashes; retain a real
