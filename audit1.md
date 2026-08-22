@@ -4897,3 +4897,16 @@ The source guards and non-clang regression gates remain the available local
 evidence. Compiled hook fault injection, interpreter/JIT qualification,
 production executable corpora, sanitizer runs, and Sonic1 qualification
 remain open.
+
+## NSIS required-path failures — 2026-08-22
+
+NSIS member extraction now marks the current layer incomplete when decoder
+initialization fails, either compressed or solid temporary output cannot be
+created, a confirmed header cannot be read, or an extracted member cannot be
+rewound before its nested scan. Candidate-admission coordinate rejection is
+still kept separate from confirmed-layer failure classification.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled NSIS decoder fault injection, malformed and valid
+production corpus coverage, sanitizer runs, and Sonic1 qualification remain
+open.

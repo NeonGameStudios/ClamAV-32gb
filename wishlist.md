@@ -125,6 +125,10 @@
 - NSIS output staging now re-checks the shared deadline after temporary quota
   admission and before writing; add deterministic post-admission timeout
   injection and full NSIS corpus qualification.
+- NSIS decoder initialization, fixed-header reads, temporary-output creation,
+  and extracted-member rewind failures now mark the required layer incomplete;
+  compiled decoder fault injection, malformed corpus, sanitizer, and Sonic1
+  qualification remain open.
 - AutoIt EA05/EA06 streamed output and EA06 script materialization now re-check
   the shared deadline after temporary admission and immediately before writes;
   add deterministic post-admission injection and complete AutoIt corpus

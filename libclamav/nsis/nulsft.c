@@ -375,6 +375,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         }
         if ((n->ofd = open(n->ofn, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600)) == -1) {
             cli_errmsg("NSIS: unable to create output file %s - aborting.\n", n->ofn);
+            cli_mark_scan_incomplete(ctx, "NSIS temporary output could not be created");
             return CL_ECREAT;
         }
         n->close_failed = 0;
@@ -410,6 +411,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
                 if ((ret = nsis_init(n)) != CL_SUCCESS) {
                     cli_dbgmsg("NSIS: decompressor init failed"__AT__
                                "\n");
+                    cli_mark_scan_incomplete(ctx, "NSIS decoder could not be initialized");
                     nsis_close_output(n);
                     return ret;
                 }
@@ -494,6 +496,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
         if (!n->solid_started) {
             if ((ret = nsis_init(n)) != CL_SUCCESS) {
                 cli_dbgmsg("NSIS: decompressor init failed\n");
+                cli_mark_scan_incomplete(ctx, "NSIS decoder could not be initialized");
                 return ret;
             }
             n->solid_input_pos       = n->curpos;
@@ -560,6 +563,7 @@ static int nsis_unpack_next(struct nsis_st *n, cli_ctx *ctx)
 
         if ((n->ofd = open(n->ofn, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600)) == -1) {
             cli_errmsg("NSIS: unable to create output file %s - aborting.\n", n->ofn);
+            cli_mark_scan_incomplete(ctx, "NSIS temporary output could not be created");
             return CL_ECREAT;
         }
         n->close_failed = 0;
@@ -657,8 +661,10 @@ static int nsis_headers(struct nsis_st *n, cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "NSIS header is outside the input map");
         return CL_EREAD;
     }
-    if (!(buf = fmap_need_off_once(n->map, n->off, 0x1c)))
+    if (!(buf = fmap_need_off_once(n->map, n->off, 0x1c))) {
+        cli_mark_scan_incomplete(ctx, "NSIS header could not be read completely");
         return CL_EREAD;
+    }
 
     n->hsz    = (uint32_t)cli_readint32(buf + 0x14);
     n->asz    = (uint32_t)cli_readint32(buf + 0x18);
@@ -771,12 +777,16 @@ cl_error_t cli_nulsft_header_check(cli_ctx *ctx, off_t offset)
         read_offset = ctx->fmap->offset + ctx->fmap->nested_offset + (size_t)offset;
         if ((off_t)read_offset < 0 || (uint64_t)(off_t)read_offset != read_offset)
             return CL_EFORMAT;
-        if (pread(fd, header, sizeof(header), (off_t)read_offset) != (ssize_t)sizeof(header))
+        if (pread(fd, header, sizeof(header), (off_t)read_offset) != (ssize_t)sizeof(header)) {
+            cli_mark_scan_incomplete(ctx, "NSIS header could not be read completely");
             return CL_EREAD;
+        }
         buf = header;
     } else {
-        if (!(buf = fmap_need_off(ctx->fmap, offset, sizeof(header))))
+        if (!(buf = fmap_need_off(ctx->fmap, offset, sizeof(header)))) {
+            cli_mark_scan_incomplete(ctx, "NSIS header could not be read completely");
             return CL_EREAD;
+        }
     }
 
     /* The four bytes immediately before the NullsoftInst signature are the
@@ -855,6 +865,7 @@ int cli_scannulsft(cli_ctx *ctx, off_t offset)
             cli_dbgmsg("NSIS: Successfully extracted file #%u\n", nsist.fno);
             if (lseek(nsist.ofd, 0, SEEK_SET) == -1) {
                 cli_dbgmsg("NSIS: call to lseek() failed\n");
+                cli_mark_scan_incomplete(ctx, "NSIS extracted member could not be rewound");
                 ret = CL_ESEEK;
                 break;
             }
