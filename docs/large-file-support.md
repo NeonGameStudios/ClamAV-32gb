@@ -5347,3 +5347,12 @@ non-cacheable, while a successfully read but malformed xref remains
 `CL_EPARSE`. The focused regression faults the xref window after version and
 trailer discovery; compiled PDF corpus, sanitizer, and supported-build
 qualification remain release gates.
+
+## Complete sanitizer compile-graph evidence — 2026-08-22
+
+The runtime gate and post-run verifier now inspect every command-based native
+entry in the sanitizer compile database and reject any entry missing either
+ASan or UBSan. This prevents a partially instrumented build from satisfying the
+sanitizer provenance gate because one command happens to carry both flags.
+Actual Linux/Sonic1 sanitizer execution and parser coverage remain release
+gates.

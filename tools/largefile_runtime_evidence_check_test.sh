@@ -257,6 +257,25 @@ refresh_manifest()
 refresh_manifest
 "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
 
+cp "$out/provenance/compile_commands-sanitizer.json" "$out/provenance/compile_commands-sanitizer.good"
+printf '[{"directory":"%s","command":"cc -fsanitize=address,undefined -c synthetic.c","file":"synthetic.c"},{"directory":"%s","command":"cc -c uninstrumented.c","file":"uninstrumented.c"}]\n' \
+    "$root" "$root" > "$out/provenance/compile_commands-sanitizer.json"
+mutated_sanitizer_compile_commands_hash=$(sha256sum "$out/provenance/compile_commands-sanitizer.json" | awk '{ print $1 }')
+sed "s/^sanitizer_compile_commands_sha256=.*/sanitizer_compile_commands_sha256=$mutated_sanitizer_compile_commands_hash/" \
+    "$out/build-identity.txt" > "$out/build-identity.mutated"
+mv "$out/build-identity.mutated" "$out/build-identity.txt"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted an uninstrumented native sanitizer compile command' >&2
+    exit 1
+fi
+mv "$out/provenance/compile_commands-sanitizer.good" "$out/provenance/compile_commands-sanitizer.json"
+sanitizer_compile_commands_hash=$(sha256sum "$out/provenance/compile_commands-sanitizer.json" | awk '{ print $1 }')
+sed "s/^sanitizer_compile_commands_sha256=.*/sanitizer_compile_commands_sha256=$sanitizer_compile_commands_hash/" \
+    "$out/build-identity.txt" > "$out/build-identity.restored"
+mv "$out/build-identity.restored" "$out/build-identity.txt"
+refresh_manifest
+
 grep -v '^runtime_gate=pass$' "$out/build-identity.txt" > "$out/build-identity.no-pass"
 mv "$out/build-identity.txt" "$out/build-identity.with-pass"
 mv "$out/build-identity.no-pass" "$out/build-identity.txt"

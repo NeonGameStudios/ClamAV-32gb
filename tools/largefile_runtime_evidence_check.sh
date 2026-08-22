@@ -7,6 +7,19 @@
 
 set -eu
 
+verify_native_sanitizer_compile_graph()
+{
+    awk '
+        /"command"[[:space:]]*:/ {
+            entries++
+            if ($0 !~ /-fsanitize=[^"[:space:]]*address/ ||
+                $0 !~ /-fsanitize=[^"[:space:]]*undefined/)
+                bad = 1
+        }
+        END { exit (entries == 0 || bad) }
+    ' "$1"
+}
+
 if [ "$#" -ne 4 ]; then
     echo "usage: $0 OUTPUT_DIRECTORY [sanitizer-required] [levels] RSS_BUDGET_KB" >&2
     exit 2
@@ -631,9 +644,8 @@ if [ "$require_sanitizer" = yes ]; then
         echo 'sanitizer provenance does not prove Rust instrumentation' >&2
         exit 1
     }
-    if ! grep -E -- '-fsanitize=address(,undefined)?' "$sanitizer_compile_commands" >/dev/null 2>&1 ||
-        ! grep -E -- '-fsanitize=(address,)?undefined' "$sanitizer_compile_commands" >/dev/null 2>&1; then
-        echo 'sanitizer compile graph does not contain both ASan and UBSan instrumentation' >&2
+    if ! verify_native_sanitizer_compile_graph "$sanitizer_compile_commands"; then
+        echo 'sanitizer compile graph contains an uninstrumented native compile command' >&2
         exit 1
     fi
     grep -Fx 'sanitizer_toolchain=nightly' "$metadata" >/dev/null 2>&1 || {

@@ -24,6 +24,19 @@
 
 set -eu
 
+verify_native_sanitizer_compile_graph()
+{
+    awk '
+        /"command"[[:space:]]*:/ {
+            entries++
+            if ($0 !~ /-fsanitize=[^"[:space:]]*address/ ||
+                $0 !~ /-fsanitize=[^"[:space:]]*undefined/)
+                bad = 1
+        }
+        END { exit (entries == 0 || bad) }
+    ' "$1"
+}
+
 if [ "$#" -ne 3 ]; then
     echo "usage: $0 CLAMSCAN OUTPUT_DIRECTORY RSS_BUDGET_KB" >&2
     exit 2
@@ -526,9 +539,8 @@ if [ -n "$sanitizer_clamscan" ]; then
         echo 'sanitizer scanner has no ASan/UBSan instrumentation evidence' >&2
         exit 2
     fi
-    if ! grep -E -- '-fsanitize=address(,undefined)?' "$provenance/compile_commands-sanitizer.json" >/dev/null 2>&1 ||
-        ! grep -E -- '-fsanitize=(address,)?undefined' "$provenance/compile_commands-sanitizer.json" >/dev/null 2>&1; then
-        echo 'sanitizer compile graph does not contain both ASan and UBSan instrumentation' >&2
+    if ! verify_native_sanitizer_compile_graph "$provenance/compile_commands-sanitizer.json"; then
+        echo 'sanitizer compile graph contains an uninstrumented native compile command' >&2
         exit 2
     fi
     sanitizer_rust_library=$(find "$san_build_dir" -type f -name 'libclamav_rust.a' -print |

@@ -3900,3 +3900,11 @@ callback failure, while retaining `CL_EPARSE` for a successfully read invalid
 xref. The focused regression faults the xref window after trailer discovery;
 compiled PDF corpus, sanitizer, and supported-build qualification remain
 release gates.
+
+## Complete sanitizer compile-graph evidence — 2026-08-22
+
+F-13 evidence validation now rejects a sanitizer compile database with even one
+native command lacking ASan or UBSan, while preserving the existing Rust archive
+and loader checks. This closes the specific “flags appear somewhere” verifier
+weakness; self-contained release attestation, full sanitizer execution, and
+service qualification remain open.

@@ -14,6 +14,10 @@
   `largefile_source_guards.sh` now rejects any committed inventory drift, and
   the 159-entry capability manifest validates against the refreshed dispatch
   inventory.
+- Sanitizer runtime qualification now rejects any native compile-database entry
+  that lacks either ASan or UBSan, rather than accepting evidence because the
+  flags appear in only one command; full Linux/Sonic1 sanitizer qualification
+  remains open.
 - Large-mail phishing URL inspection now uses quota-accounted file-backed
   input, fmap HTML normalization, and 64 KiB chunked text-URL extraction; the
   former 100 KiB whole-message helper boundary is removed.
