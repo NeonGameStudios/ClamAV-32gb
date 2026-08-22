@@ -28,6 +28,11 @@ post-run workload verifier. It therefore rejects malformed role rows,
 signature/offset pairings, completion values, file types, or expected exits
 before a report frame can be recorded as qualification evidence.
 
+Before serializing an existing clamd report, the final wire boundary also
+reconciles any later non-success worker, close, aggregation, or detection
+status through the post-scan-failure contract. A report that was complete
+before that failure is converted to an explicit non-clean result.
+
 The service gate also snapshots every regular file in the production and edge
 database directories as a sorted relative-path/size/SHA-256 manifest before
 starting clamd. The directories must be distinct, symlink-free, and non-empty;

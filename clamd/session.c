@@ -55,6 +55,7 @@
 #include "clamav.h"
 #include "str.h"
 #include "others.h"
+#include "scan_report.h"
 
 // common
 #include "optparser.h"
@@ -222,6 +223,22 @@ int conn_reply_scan_report(const client_conn_t *conn, cl_error_t status, int inf
 
     if (!conn)
         return -1;
+
+    /* The scanner can finish its report before a daemon-side close,
+     * aggregation, or transport step reports an error. Do not serialize a
+     * clean COMPLETE report after that later failure. Detection remains
+     * authoritative, and cli_scan_report_note_post_scan_failure() preserves
+     * an already non-complete or detection-terminated report. */
+    if (conn->structured_scan_report) {
+        cl_error_t report_status = status;
+
+        if (infected && report_status == CL_SUCCESS)
+            report_status = CL_VIRUS;
+        if (report_status != CL_SUCCESS && report_status != CL_VERIFIED)
+            cli_scan_report_note_post_scan_failure(conn->structured_scan_report,
+                                                   report_status,
+                                                   "daemon scan completion reported a non-success status");
+    }
 
     /* Prefer the same versioned report emitted by the public *_ex2 API.  The
      * clamd protocol adds the request id at the front because the library

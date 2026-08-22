@@ -144,6 +144,7 @@ not_contains common/clamdcom.c 'return send_stream_fd_common(sockd, fd, display_
 contains clamd/session.c '\"id\":%u'
 contains clamd/session.h 'cl_scan_report_t *structured_scan_report;'
 contains clamd/session.c 'cl_scan_report_to_json(conn->structured_scan_report'
+contains clamd/session.c 'cli_scan_report_note_post_scan_failure(conn->structured_scan_report'
 contains clamd/scanner.c 'cl_scanfile_ex2('
 contains clamd/scanner.c 'cli_scandesc_ex2_with_temporary_bytes('
 contains libclamav/scanners.c 'Reject a known-size root before fmap_new()'

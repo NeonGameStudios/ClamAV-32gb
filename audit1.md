@@ -4762,6 +4762,16 @@ bindings are rejected before a framed report is accepted. A synthetic
 regression covers the malformed clean-signature/offset pairing. Compiled
 wire-protocol, production-CVD, and Sonic1 qualification remain open.
 
+## Clamd final report status reconciliation — 2026-08-22
+
+`conn_reply_scan_report()` now applies the existing post-scan-failure contract
+to a report before JSON serialization when the daemon supplies a later
+non-success or detection status. This prevents a complete report from being
+published as clean after a worker aggregation, descriptor-close, or transport
+boundary failure. Detection-terminated and already-incomplete reports retain
+their stronger outcome. Compiled daemon, production-CVD, and Sonic1
+qualification remain open.
+
 ## Scan-level temporary-directory setup failures — 2026-08-22
 
 `scan_common()` and recursive child-layer setup previously returned allocation

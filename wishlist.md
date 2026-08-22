@@ -9,6 +9,10 @@
   oracle parser instead of accepting a weaker role-only row; malformed
   detection/offset bindings fail before a protocol result can be recorded.
   Compiled report, production-CVD, and Sonic1 qualification remain open.
+- Final clamd framed-report serialization now reconciles a later daemon-side
+  non-success or detection status with a previously complete report, so close,
+  aggregation, and transport-boundary failures cannot be published as clean.
+  Compiled daemon and Sonic1 qualification remain open.
 - MHTML preclassification now bounds each comment value before the legacy
   in-memory XML reader, checks bounded tag searches, and rejects oversized
   metadata as an explicit resource-incomplete result; add compiled oversized-
