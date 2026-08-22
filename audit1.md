@@ -3476,3 +3476,15 @@ preserves `CL_ETIMEOUT`, and releases any allocated member buffers on timeout.
 A direct expired-context regression and source guards cover parser entry; the
 existing random-access/1 GiB EA06 boundary, compiled AutoIt corpus, sanitizer,
 and Sonic1 qualification remain release gates.
+
+## AutoIt EA06 non-script spooling — 2026-08-22
+
+EA06 non-script members previously retained the complete stored member or
+decoded output in a contiguous allocation before nested scanning. Stored
+members now decrypt into a bounded chunk and disk-backed temporary file, while
+compressed members reuse the existing 32 KiB history window and bounded output
+writer; temporary reservations and cleanup remain active until the child scan
+finishes. Script decompilation still requires random access to its decoded
+token stream and retains the explicit 1 GiB unsupported boundary. Source guards
+cover the bounded paths; compiled stored/compressed fixtures, sanitizer, and
+Sonic1 qualification remain release gates.
