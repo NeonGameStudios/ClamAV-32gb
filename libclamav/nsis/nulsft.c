@@ -293,6 +293,12 @@ static cl_error_t nsis_write_output(struct nsis_st *n,
         return ret;
     }
     n->temporary_reserved += (uint64_t)length;
+    ret = nsis_checktimelimit(ctx, "NSIS output staging reached the configured time limit");
+    if (ret != CL_SUCCESS) {
+        cli_scan_release_temporary(ctx, (uint64_t)length);
+        n->temporary_reserved -= (uint64_t)length;
+        return ret;
+    }
     if (cli_writen(fd, buffer, length) != length) {
         cli_scan_release_temporary(ctx, (uint64_t)length);
         n->temporary_reserved -= (uint64_t)length;

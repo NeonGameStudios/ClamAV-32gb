@@ -5501,3 +5501,13 @@ without allowing partial macro or image output to be scanned as complete. A
 focused expired-context macro regression and source guards cover the boundary;
 compiled Office/XLM corpus, sanitizer, and Sonic1 qualification remain release
 gates.
+
+## NSIS post-admission output deadline — 2026-08-22
+
+NSIS extraction already checked `MaxScanTime` before each output reservation,
+but a deadline could expire after quota admission and before the corresponding
+temporary write. The output callback now re-checks the deadline after reserving
+bytes, releases that reservation on timeout, and returns `CL_ETIMEOUT` without
+scanning partial output. A source guard covers this boundary; deterministic
+timeout injection, compiled NSIS corpus, sanitizer, and Sonic1 qualification
+remain release gates.
