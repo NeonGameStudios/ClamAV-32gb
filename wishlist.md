@@ -966,6 +966,10 @@
   generic raw pass; detections and critical timeout/resource/I/O failures still
   halt immediately. Static guards cover both raw ingress helpers; compiled
   fault-injection and production-signature qualification remain open.
+- Buffer-ingress AC-data initialization now skips only a root with a
+  non-critical setup failure, allowing the independent generic or target root
+  to run while preserving the failure status; compiled fault-injection and
+  production-signature qualification remain open.
 - Raw matcher-root setup now isolates non-critical AC, BM, and PCRE offset
   preparation failures to the affected root, recomputes overlap from roots
   that are ready, and continues the independent raw matcher while preserving

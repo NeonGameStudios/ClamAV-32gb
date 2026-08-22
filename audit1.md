@@ -4335,6 +4335,8 @@ Both raw ingress helpers now merge non-critical target-root failures, continue
 with the generic root, and retain the merged non-clean result; detections and
 critical failures still stop immediately. Static guards cover both paths;
 compiled fault-injection and production-signature qualification remain open.
+Local AC-data initialization now follows the same rule: a non-critical setup
+failure skips only that root, while the other root remains eligible to run.
 
 ## Raw matcher-root setup isolation — 2026-08-22
 

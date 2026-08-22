@@ -320,9 +320,12 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
 {
     cl_error_t ret = CL_CLEAN;
     cl_error_t status = CL_CLEAN;
+    cl_error_t current;
     unsigned int i = 0, j = 0;
     struct cli_ac_data matcher_data;
     struct cli_matcher *generic_ac_root, *target_ac_root = NULL;
+    bool target_match_ready = false;
+    bool generic_match_ready = false;
     const char *virname            = NULL;
     const struct cl_engine *engine = ctx->engine;
 
@@ -357,29 +360,38 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
 
         if (!acdata) {
             // no ac matcher data was provided, so we need to initialize our own.
-            ret = cli_ac_initdata(&matcher_data, target_ac_root->ac_partsigs, target_ac_root->ac_lsigs, target_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
-            if (CL_SUCCESS != ret) {
-                return ret;
+            current = cli_ac_initdata(&matcher_data, target_ac_root->ac_partsigs, target_ac_root->ac_lsigs,
+                                      target_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
+            if (CL_SUCCESS != current) {
+                status = cli_merge_scan_status(status, current);
+                if (cli_scan_status_is_critical(current))
+                    return status;
+            } else {
+                target_match_ready = true;
             }
+        } else {
+            target_match_ready = true;
         }
 
-        ret = matcher_run(target_ac_root, buffer, length, &virname,
-                          acdata ? (acdata[0]) : (&matcher_data),
-                          offset, NULL, ftype, NULL, AC_SCAN_VIR, PCRE_SCAN_BUFF, NULL, ctx->fmap, NULL, NULL, ctx);
+        if (target_match_ready) {
+            ret = matcher_run(target_ac_root, buffer, length, &virname,
+                              acdata ? (acdata[0]) : (&matcher_data),
+                              offset, NULL, ftype, NULL, AC_SCAN_VIR, PCRE_SCAN_BUFF, NULL, ctx->fmap, NULL, NULL, ctx);
 
-        if (!acdata) {
-            // no longer need our AC local matcher data (if using)
-            cli_ac_freedata(&matcher_data);
-        }
+            if (!acdata) {
+                // no longer need our AC local matcher data (if using)
+                cli_ac_freedata(&matcher_data);
+            }
 
-        /* Preserve matcher failures instead of allowing the generic root to
-         * turn a target-root failure into a clean buffer result. A
-         * non-critical target-root failure must not suppress the independent
-         * generic raw matcher; detections and critical failures still halt. */
-        if (ret != CL_SUCCESS && ret < CL_TYPENO) {
-            status = cli_merge_scan_status(status, ret);
-            if (cli_scan_status_is_critical(ret))
-                return status;
+            /* Preserve matcher failures instead of allowing the generic root to
+             * turn a target-root failure into a clean buffer result. A
+             * non-critical target-root failure must not suppress the independent
+             * generic raw matcher; detections and critical failures still halt. */
+            if (ret != CL_SUCCESS && ret < CL_TYPENO) {
+                status = cli_merge_scan_status(status, ret);
+                if (cli_scan_status_is_critical(ret))
+                    return status;
+            }
         }
 
         // reset virname back to NULL for matching with the generic AC root.
@@ -389,23 +401,32 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
     if (generic_ac_root) {
         if (!acdata) {
             // no ac matcher data was provided, so we need to initialize our own.
-            ret = cli_ac_initdata(&matcher_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
-            if (CL_SUCCESS != ret) {
-                return ret;
+            current = cli_ac_initdata(&matcher_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs,
+                                      generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
+            if (CL_SUCCESS != current) {
+                status = cli_merge_scan_status(status, current);
+                if (cli_scan_status_is_critical(current))
+                    return status;
+            } else {
+                generic_match_ready = true;
             }
+        } else {
+            generic_match_ready = true;
         }
 
-        ret = matcher_run(generic_ac_root, buffer, length, &virname,
-                          acdata ? (acdata[1]) : (&matcher_data),
-                          offset, NULL, ftype, NULL, AC_SCAN_VIR, PCRE_SCAN_BUFF, NULL, ctx->fmap, NULL, NULL, ctx);
+        if (generic_match_ready) {
+            ret = matcher_run(generic_ac_root, buffer, length, &virname,
+                              acdata ? (acdata[1]) : (&matcher_data),
+                              offset, NULL, ftype, NULL, AC_SCAN_VIR, PCRE_SCAN_BUFF, NULL, ctx->fmap, NULL, NULL, ctx);
 
-        if (!acdata) {
-            // no longer need our AC local matcher data (if using)
-            cli_ac_freedata(&matcher_data);
+            if (!acdata) {
+                // no longer need our AC local matcher data (if using)
+                cli_ac_freedata(&matcher_data);
+            }
+
+            if (ret != CL_SUCCESS && ret < CL_TYPENO)
+                status = cli_merge_scan_status(status, ret);
         }
-
-        if (ret != CL_SUCCESS && ret < CL_TYPENO)
-            status = cli_merge_scan_status(status, ret);
     } else {
         ret = CL_SUCCESS;
     }
