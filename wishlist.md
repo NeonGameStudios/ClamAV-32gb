@@ -1023,6 +1023,9 @@
   pointer subtraction; add malformed-object and timeout regression coverage.
 - Legacy PDF stream-boundary searches now use overlapping 64 KiB deadline
   windows; add compiled timeout and malformed-stream regression coverage.
+- Legacy PDF `/Length`, JavaScript, `/XRef`, and trailer encryption searches
+  now use deadline windows; make the dictionary helper and metadata tree
+  searches context-aware and add compiled timeout coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.

@@ -1118,6 +1118,7 @@ static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
     size_t bytes_remaining = dict_len;
     long temp_long         = 0;
     const char *index;
+    cl_error_t search_status;
 
     if (bytes_remaining < 8) {
         return 0;
@@ -1126,7 +1127,11 @@ static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
     /*
      * Find the "/Length" dictionary key
      */
-    index = cli_memstr(obj_start, bytes_remaining, "/Length", 7);
+    index = pdf_memstr_deadline(pdf, obj_start, bytes_remaining, "/Length", 7, &search_status);
+    if (CL_ETIMEOUT == search_status) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF stream-length dictionary search reached the configured time limit");
+        return 0;
+    }
     if (!index)
         return 0;
 
@@ -1707,6 +1712,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
     uint64_t temporary_reserved = 0;
     bool dump                = true;
     struct pdf_dict *dparams = NULL;
+    cl_error_t search_status;
 
     pdf->temporary_reserved = &temporary_reserved;
 
@@ -1865,8 +1871,13 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         }
 
         /* Check if XRef is enabled */
-        if (cli_memstr(start, dict_len, "/XRef", strlen("/XRef"))) {
+        if (pdf_memstr_deadline(pdf, start, dict_len, "/XRef", strlen("/XRef"), &search_status)) {
             xref = 1;
+        }
+        if (CL_ETIMEOUT == search_status) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF stream dictionary search reached the configured time limit");
+            status = CL_ETIMEOUT;
+            goto done;
         }
 
         /*
@@ -2026,7 +2037,12 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             size_t js_len = 0;
             const char *q3;
 
-            q2 = cli_memstr(q, bytesleft, "/JavaScript", 11);
+            q2 = pdf_memstr_deadline(pdf, q, bytesleft, "/JavaScript", 11, &search_status);
+            if (CL_ETIMEOUT == search_status) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF JavaScript search reached the configured time limit");
+                status = CL_ETIMEOUT;
+                break;
+            }
             if (!q2)
                 break;
 
@@ -2322,12 +2338,17 @@ static void handle_pdfname(struct pdf_struct *pdf, struct pdf_obj *obj, const ch
 static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
 {
     const char *q, *q2;
+    cl_error_t search_status;
     unsigned long objid;
     unsigned long genid;
     long temp_long;
 
     if (len >= 16 && !strncmp(enc, "/EncryptMetadata", 16)) {
-        q = cli_memstr(enc + 16, len - 16, "/Encrypt", 8);
+        q = pdf_memstr_deadline(pdf, enc + 16, len - 16, "/Encrypt", 8, &search_status);
+        if (CL_ETIMEOUT == search_status) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF encryption dictionary search reached the configured time limit");
+            return;
+        }
         if (!q)
             return;
 
@@ -2393,8 +2414,13 @@ static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
 static void pdf_parse_trailer(struct pdf_struct *pdf, const char *s, long length)
 {
     const char *enc;
+    cl_error_t search_status;
 
-    enc = cli_memstr(s, length, "/Encrypt", 8);
+    enc = pdf_memstr_deadline(pdf, s, length, "/Encrypt", 8, &search_status);
+    if (CL_ETIMEOUT == search_status) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF trailer encryption search reached the configured time limit");
+        return;
+    }
     if (enc) {
         char *newID;
         unsigned int newIDlen = 0;

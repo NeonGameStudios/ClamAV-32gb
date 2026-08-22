@@ -4472,6 +4472,12 @@ timeout is reported as an incomplete scan instead of silently treating the
 object as a truncated stream; compiled timeout and malformed-stream
 qualification remain release gates.
 
+The remaining whole-object PDF searches for stream `/Length`, JavaScript,
+`/XRef`, and trailer encryption now use the same deadline-aware windows and
+mark the scan incomplete on timeout. The classic dictionary helper and
+metadata tree searches still need a context-aware pass, with compiled timeout
+qualification remaining open.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one
