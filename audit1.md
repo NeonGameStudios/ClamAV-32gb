@@ -4727,3 +4727,15 @@ that the input fmap is non-cacheable.
 The source guards and non-clang regression gates pass. Compiled BinHex
 coverage, sanitizer runs, production corpus, and Sonic1 qualification remain
 open.
+
+## HWP, HFS+, and OLE2 temporary-output failures — 2026-08-22
+
+The HWP/HWPML, HFS+, and OLE2 helper layers had several direct temporary-file
+allocation or open failures that returned to their callers without recording
+a parser-specific incomplete reason. Those branches now mark the layer before
+returning, while existing quota/deadline and cleanup ownership remains
+unchanged.
+
+The source guards and non-clang regression gates pass. Compiled fault
+injection, sanitizer runs, production document/filesystem corpora, and Sonic1
+qualification remain open.

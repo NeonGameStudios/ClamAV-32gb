@@ -389,6 +389,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
     status = cli_gentempfd(dirname, &tmpname, &ofd);
     if (status != CL_SUCCESS) {
         cli_dbgmsg("hfsplus_scanfile: Cannot generate temporary file.\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ fork temporary output could not be created");
         goto done;
     }
     cli_dbgmsg("hfsplus_scanfile: Extracting to %s\n", tmpname);
@@ -1285,6 +1286,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                     status = cli_gentempfd(dirname, &tmpname, &ofd);
                     if (status != CL_SUCCESS) {
                         cli_dbgmsg("hfsplus_walk_catalog: Cannot generate temporary file.\n");
+                        cli_mark_scan_incomplete(ctx, "HFS+ compressed temporary output could not be created");
                         goto done;
                     }
 

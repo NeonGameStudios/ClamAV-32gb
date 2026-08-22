@@ -1864,6 +1864,7 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
     /* reserve tempfile for output and scanning */
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &ofd)) != CL_SUCCESS) {
         cli_errmsg("scan_mso_stream: Can't generate temporary file\n");
+        cli_mark_scan_incomplete(ctx, "MSO temporary output could not be created");
         fmap_free(input);
         return ret;
     }
@@ -2027,12 +2028,14 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
         goto done;
 
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded stream temporary output could not be created");
         ret = CL_EMEM;
         goto done;
     }
 
     if ((ofd = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
         cli_dbgmsg("OLE2 [handler_otf]: Can't create file %s\n", tempfile);
+        cli_mark_scan_incomplete(ctx, "OLE2 embedded stream temporary output could not be opened");
         ret = CL_ECREAT;
         goto done;
     }
@@ -2285,12 +2288,14 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     nrounds = rijndaelSetupDecrypt(rk, key->key, key->key_length_bits);
 
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
+        cli_mark_scan_incomplete(ctx, "OLE2 encrypted stream temporary output could not be created");
         ret = CL_EMEM;
         goto done;
     }
 
     if ((ofd = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
         cli_dbgmsg("OLE2 [handler_otf]: Can't create file %s\n", tempfile);
+        cli_mark_scan_incomplete(ctx, "OLE2 encrypted stream temporary output could not be opened");
         ret = CL_ECREAT;
         goto done;
     }
