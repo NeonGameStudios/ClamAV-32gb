@@ -748,9 +748,10 @@
 - DMG XML staging, partition reconstruction, and the shared bounded stripe
   writer now check the scan deadline, preserving `CL_ETIMEOUT`; add compiled
   DMG timeout-injection and production corpus qualification.
-- XAR’s shared temporary-output reservation now checks the deadline before TOC,
-  subdocument, compressed-member, and raw-member spool writes; add compiled
-  XAR output-timeout injection and production corpus qualification.
+- XAR’s shared temporary-output writer now checks the deadline after admission
+  and immediately before TOC, subdocument, compressed-member, and raw-member
+  spool writes while preserving short writes; add compiled XAR output-timeout
+  injection and production corpus qualification.
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.

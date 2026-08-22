@@ -4189,11 +4189,12 @@ sanitizer, and Sonic1 qualification remain open.
 ## XAR output-reservation deadline — 2026-08-22
 
 XAR’s decoder and member loops already checked `MaxScanTime`, but the common
-temporary-output reservation used by TOC, subdocument, compressed-member, and
-raw-member writers had no deadline admission of its own. The reservation now
-rejects an expired context before the associated spool write, preserving
-`CL_ETIMEOUT` and fail-closed cleanup across all XAR output producers. Compiled
-timeout injection, corpus, sanitizer, and Sonic1 qualification remain open.
+temporary-output writer used by TOC, subdocument, compressed-member, and
+raw-member producers did not re-check the deadline after admission. It now
+checks both after reservation and immediately before each spool write, releases
+the current reservation on timeout or short write, and preserves `CL_ETIMEOUT`
+or `CL_EWRITE` through cleanup. Compiled timeout/short-write injection, corpus,
+sanitizer, and Sonic1 qualification remain open.
 
 ## Shared compressed-output reservation deadline — 2026-08-22
 

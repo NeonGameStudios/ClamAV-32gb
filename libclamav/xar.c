@@ -111,6 +111,37 @@ static cl_error_t xar_reserve_output(cli_ctx *ctx, uint64_t *reserved, uint64_t 
     return CL_SUCCESS;
 }
 
+static cl_error_t xar_write_output(cli_ctx *ctx, int fd, const void *data, size_t len,
+                                   uint64_t *reserved, const char *reserve_reason,
+                                   const char *deadline_reason, const char *failure_reason)
+{
+    cl_error_t status;
+
+    status = xar_reserve_output(ctx, reserved, (uint64_t)len, reserve_reason);
+    if (status != CL_SUCCESS)
+        return status;
+
+    status = xar_checktimelimit(ctx, deadline_reason);
+    if (status != CL_SUCCESS) {
+        if (reserved != NULL && *reserved >= (uint64_t)len) {
+            cli_scan_release_temporary(ctx, (uint64_t)len);
+            *reserved -= (uint64_t)len;
+        }
+        return status;
+    }
+
+    if (cli_writen(fd, data, len) != len) {
+        if (reserved != NULL && *reserved >= (uint64_t)len) {
+            cli_scan_release_temporary(ctx, (uint64_t)len);
+            *reserved -= (uint64_t)len;
+        }
+        cli_mark_scan_incomplete(ctx, failure_reason);
+        return CL_EWRITE;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t xar_bounded_xml_length(const xmlChar *data, size_t limit, size_t *length)
 {
     size_t i;
@@ -136,21 +167,10 @@ static cl_error_t xar_bounded_xml_length(const xmlChar *data, size_t limit, size
 static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data, size_t len,
                                 uint64_t *reserved)
 {
-    cl_error_t status;
-
-    if (len == 0)
-        return CL_SUCCESS;
-
-    status = xar_reserve_output(ctx, reserved, (uint64_t)len,
-                                "XAR TOC temporary spool could not be reserved");
-    if (status != CL_SUCCESS)
-        return status;
-    if (cli_writen(fd, data, len) != len) {
-        cli_mark_scan_incomplete(ctx, "XAR TOC temporary spool could not be written completely");
-        return CL_EWRITE;
-    }
-
-    return CL_SUCCESS;
+    return xar_write_output(ctx, fd, data, len, reserved,
+                            "XAR TOC temporary spool could not be reserved",
+                            "XAR TOC temporary spool write reached the configured time limit",
+                            "XAR TOC temporary spool could not be written completely");
 }
 
 static int xar_toc_read(void *opaque, char *buffer, int len)
@@ -459,13 +479,6 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
             cli_dbgmsg("cli_scanxar: staged XML subdocument, len %zu.\n", subdoc_len);
 
             subdoc_reserved = 0;
-            rc             = xar_reserve_output(ctx, &subdoc_reserved, (uint64_t)subdoc_len,
-                                                "XAR subdocument temporary output exceeds storage limits");
-            if (rc != CL_SUCCESS) {
-                xmlFree(subdoc);
-                return rc;
-            }
-
             fd      = -1;
             tmpname = NULL;
             temp_rc = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd);
@@ -476,10 +489,12 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
                 goto subdocument_cleanup;
             }
 
-            if (cli_writen(fd, subdoc, subdoc_len) != subdoc_len) {
+            rc = xar_write_output(ctx, fd, subdoc, subdoc_len, &subdoc_reserved,
+                                  "XAR subdocument temporary output exceeds storage limits",
+                                  "XAR subdocument temporary output write reached the configured time limit",
+                                  "XAR subdocument temporary output could not be written completely");
+            if (rc != CL_SUCCESS) {
                 cli_dbgmsg("cli_scanxar: cli_writen error writing subdoc temporary file.\n");
-                cli_mark_scan_incomplete(ctx, "XAR subdocument temporary output could not be written completely");
-                rc = CL_EWRITE;
                 goto subdocument_cleanup;
             }
 
@@ -925,17 +940,15 @@ int cli_scanxar(cli_ctx *ctx)
                             break;
                         }
 
-                        if ((rc = xar_reserve_output(ctx, &member_reserved, (uint64_t)produced,
-                                                     "XAR gzip member exceeds temporary storage limits")) != CL_SUCCESS)
-                            break;
-
                         if (e_hash_ctx != NULL)
                             xar_hash_update(e_hash_ctx, buff, produced, e_hash);
 
-                        if (cli_writen(fd, buff, produced) != produced) {
+                        if ((rc = xar_write_output(ctx, fd, buff, produced, &member_reserved,
+                                                   "XAR gzip member exceeds temporary storage limits",
+                                                   "XAR gzip member output reached the configured time limit",
+                                                   "XAR gzip member could not be written completely")) != CL_SUCCESS) {
                             cli_dbgmsg("cli_scanxar: cli_writen error file %s.\n", tmpname);
                             inflateEnd(&strm);
-                            rc = CL_EWRITE;
                             goto exit_tmpfile;
                         }
                         if (inf == Z_STREAM_END) {
@@ -1099,25 +1112,19 @@ int cli_scanxar(cli_ctx *ctx)
                         break;
                     }
 
-                    if ((rc = xar_reserve_output(ctx, &member_reserved, (uint64_t)avail_out,
-                                                 "XAR LZMA member exceeds temporary storage limits")) != CL_SUCCESS) {
-                        cli_LzmaShutdown(&lz);
-                        __lzma_wrap_free(NULL, buff);
-                        goto exit_tmpfile;
-                    }
-
                     /* Write a decompressed block. */
                     /* cli_dbgmsg("Writing %li bytes to LZMA decompress temp file, " */
                     /*            "consumed %li of %li available compressed bytes.\n", */
                     /*            avail_out, in_consumed, avail_in); */
 
-                    if (cli_writen(fd, buff, avail_out) != avail_out) {
+                    if ((rc = xar_write_output(ctx, fd, buff, avail_out, &member_reserved,
+                                               "XAR LZMA member exceeds temporary storage limits",
+                                               "XAR LZMA member output reached the configured time limit",
+                                               "XAR LZMA member could not be written completely")) != CL_SUCCESS) {
                         cli_dbgmsg("cli_scanxar: cli_writen error writing lzma temp file for %llu bytes.\n",
                                    (long long unsigned)avail_out);
-                        cli_mark_scan_incomplete(ctx, "XAR LZMA member could not be written completely");
                         __lzma_wrap_free(NULL, buff);
                         cli_LzmaShutdown(&lz);
-                        rc = CL_EWRITE;
                         goto exit_tmpfile;
                     }
 
@@ -1160,12 +1167,11 @@ int cli_scanxar(cli_ctx *ctx)
                         }
                         if (a_hash_ctx != NULL)
                             xar_hash_update(a_hash_ctx, copy_buffer, writelen, a_hash);
-                        if ((rc = xar_reserve_output(ctx, &member_reserved, (uint64_t)writelen,
-                                                     "XAR member exceeds temporary storage limits")) != CL_SUCCESS)
-                            goto exit_tmpfile;
-                        if (cli_writen(fd, copy_buffer, writelen) != writelen) {
+                        if ((rc = xar_write_output(ctx, fd, copy_buffer, writelen, &member_reserved,
+                                                   "XAR member exceeds temporary storage limits",
+                                                   "XAR member output reached the configured time limit",
+                                                   "XAR member could not be written completely")) != CL_SUCCESS) {
                             cli_dbgmsg("cli_scanxar: cli_writen error %zu bytes @ %zu.\n", writelen, at + copied);
-                            rc = CL_EWRITE;
                             goto exit_tmpfile;
                         }
                         copied += writelen;
