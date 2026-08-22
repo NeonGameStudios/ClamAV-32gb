@@ -3683,3 +3683,15 @@ special action references, and PDFNG string/dictionary/array references now
 reject out-of-range values and mark the scan incomplete. The focused helper
 regression covers the maximum representable reference and both overflow cases;
 full malformed-reference corpus qualification remains open.
+
+## Mixed bytecode offset-bridge continuation — 2026-08-22
+
+The mixed format-7/format-8 hook path already continued after a legacy file
+size could not be represented, but its separate logical-match offset bridge
+still returned immediately when an offset exceeded the v1 range. That made a
+small mapped layer with a large native matcher coordinate suppress every later
+v2 hook. The bridge now records `CL_EMAXSIZE`, marks the layer incomplete and
+non-cacheable, resets the v1 context, and continues. A focused unit regression
+checks that the later v2 dispatch selects `match_offsets64` after the v1
+conversion fails; mixed interpreter/JIT and production qualification remain
+open.

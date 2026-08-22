@@ -719,3 +719,7 @@
   unsigned integer representation where available, and reject values above
   `INT64_MAX` on legacy json-c rather than serializing a negative metric; add
   compiled JSON-C-version and service fallback qualification.
+- Mixed ABI bytecode hooks now continue after a v1 logical-match offset exceeds
+  its 32-bit bridge, preserving the explicit incomplete/non-cacheable result
+  while allowing a later v2 hook to use native offsets; retain mixed
+  interpreter/JIT and production-bytecode qualification as a release gate.

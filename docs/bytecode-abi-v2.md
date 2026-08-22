@@ -59,10 +59,12 @@ represented by the host mapping or by the signed result type. A failed read
 or coordinate conversion is fail-visible through the scan-incomplete report.
 
 When a hook table mixes ABI generations, a v1 hook that cannot represent the
-large layer is recorded as incomplete and skipped; later applicable v2 hooks
-still run. The final scan remains non-clean and non-cacheable because the v1
-detector was unavailable, but a compatible v2 detector cannot be suppressed by
-the legacy failure.
+large layer or one of its logical match offsets is recorded as incomplete and
+skipped; later applicable v2 hooks still run. The final scan remains non-clean
+and non-cacheable because the v1 detector was unavailable, but a compatible v2
+detector cannot be suppressed by the legacy failure. The focused hook
+regression also checks that the later dispatch selects the native offset array
+after the v1 bridge rejects an above-`UINT32_MAX` coordinate.
 
 ## Qualification requirement
 

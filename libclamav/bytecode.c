@@ -3112,8 +3112,14 @@ cl_error_t cli_bytecode_runhook(cli_ctx *cctx, const struct cl_engine *engine, s
         } else {
             if (!bytecode_offsets_to_legacy(ctx->lsigoff, legacy_offsets)) {
                 cli_mark_scan_incomplete(cctx, "bytecode hook requires 64-bit matcher offsets");
+                /* The legacy entry is unavailable, but a later v2 hook can
+                 * still inspect the layer with the native offsets. Preserve
+                 * this admission error and continue the mixed-ABI table. */
+                if (error_ret == CL_SUCCESS)
+                    error_ret = CL_EMAXSIZE;
+                errorflag = 1;
                 bytecode_context_reset(ctx);
-                return CL_EMAXSIZE;
+                continue;
             }
             memcpy(ctx->lsigoff32, legacy_offsets, sizeof(ctx->lsigoff32));
             ctx->hooks.match_offsets = ctx->lsigoff32;

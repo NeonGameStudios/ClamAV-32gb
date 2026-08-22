@@ -4281,11 +4281,23 @@ gates.
 
 Hook tables can contain both legacy format-7 and format-8 bytecode. On a layer
 above 4 GiB, a v1 hook still produces an explicit incomplete, non-cacheable
-result, but its admission failure no longer aborts the hook loop before a later
-v2 hook is attempted. This preserves detections available through the widened
-ABI without misreporting the skipped legacy detector as complete. Mixed-ABI
+result, and a v1 hook whose logical match offset is above `UINT32_MAX` is
+treated the same way. Neither admission failure aborts the hook loop before a
+later v2 hook is attempted. This preserves detections available through the
+widened ABI without misreporting the skipped legacy detector as complete. The
+focused unit regression verifies that the later v2 dispatch selects the native
+offset array after the v1 offset bridge rejects the coordinate. Mixed-ABI
 interpreter/JIT, sanitizer, production-bytecode, and supported-build Sonic1
 qualification remain release gates.
+
+## Mixed bytecode offset-bridge continuation — 2026-08-22
+
+The legacy hook offset bridge now preserves its `CL_EMAXSIZE` admission error,
+marks the layer incomplete and non-cacheable, and continues to later hooks
+instead of returning before a compatible format-8 hook can run. This closes a
+second mixed-ABI suppression path: a small mapped layer can still carry a
+logical match coordinate that cannot fit the v1 offset array even when the
+v1 file-size field itself is representable.
 
 ## YARA logical-pass matcher-work accounting — 2026-08-20
 

@@ -876,6 +876,77 @@ START_TEST(test_bytecode_large_map_hook_gates_only_applicable_bytecode)
 }
 END_TEST
 
+START_TEST(test_bytecode_v1_offset_overflow_continues_to_v2_hook)
+{
+#if SIZE_MAX > UINT32_MAX
+    unsigned char byte = 0;
+    struct cl_engine *engine;
+    struct cli_bc_ctx *bcctx;
+    struct cli_bc *bcs;
+    cli_scan_layer_t layer;
+    cli_ctx cctx;
+    fmap_t *map;
+    cl_error_t ret;
+    unsigned hook_slot = BC_PRECLASS - _BC_START_HOOKS;
+    unsigned i;
+
+    memset(&cctx, 0, sizeof(cctx));
+    memset(&layer, 0, sizeof(layer));
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    map = cl_fmap_open_memory(&byte, sizeof(byte));
+    ck_assert_ptr_nonnull(map);
+    layer.fmap                = map;
+    cctx.engine               = engine;
+    cctx.fmap                 = map;
+    cctx.recursion_stack      = &layer;
+    cctx.recursion_stack_size = 1;
+
+    engine->bcs.all_bcs         = calloc(2, sizeof(*engine->bcs.all_bcs));
+    engine->hooks[hook_slot]    = calloc(2, sizeof(*engine->hooks[hook_slot]));
+    ck_assert_ptr_nonnull(engine->bcs.all_bcs);
+    ck_assert_ptr_nonnull(engine->hooks[hook_slot]);
+    engine->bcs.count            = 2;
+    engine->hooks_cnt[hook_slot] = 2;
+    engine->hooks[hook_slot][0]  = 0;
+    engine->hooks[hook_slot][1]  = 1;
+
+    bcs = engine->bcs.all_bcs;
+    for (i = 0; i < 2; i++) {
+        bcs[i].id                   = i + 1;
+        bcs[i].metadata.formatlevel = i == 0 ? BC_FORMAT_LEVEL : BC_FORMAT_LEVEL_V2;
+        bcs[i].num_func             = 1;
+        bcs[i].funcs                = calloc(1, sizeof(*bcs[i].funcs));
+        bcs[i].state                = bc_loaded;
+        ck_assert_ptr_nonnull(bcs[i].funcs);
+    }
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx      = &cctx;
+    bcctx->lsigoff[0] = (uint64_t)UINT32_MAX + 1;
+    for (i = 1; i < 64; i++)
+        bcctx->lsigoff[i] = CLI_OFF_NONE64;
+
+    ret = cli_bytecode_runhook(&cctx, engine, bcctx, BC_PRECLASS, map);
+    ck_assert_int_eq(ret, CL_EMAXSIZE);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    /* The legacy hook was skipped, but the later v2 hook selected the native
+     * offset array before its intentionally unprepared runtime failed. */
+    ck_assert(bcctx->hooks.match_offsets64 == bcctx->lsigoff);
+
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_bytecode_lsig_rejects_invalid_dispatch_arguments)
 {
     struct cli_all_bc bcs;
@@ -1136,6 +1207,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_load_bytecode_jit);
     tcase_add_test(tc_cli_arith, test_load_bytecode_int);
     tcase_add_test(tc_cli_arith, test_bytecode_large_map_hook_gates_only_applicable_bytecode);
+    tcase_add_test(tc_cli_arith, test_bytecode_v1_offset_overflow_continues_to_v2_hook);
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_rejects_invalid_dispatch_arguments);
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_execution_failure_is_fail_visible);
     tcase_add_test(tc_cli_arith, test_bytecode_timeout_respects_scan_deadline);
