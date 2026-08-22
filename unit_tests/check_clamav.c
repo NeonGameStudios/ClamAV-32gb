@@ -17060,6 +17060,7 @@ struct elf32_large_table_state {
     uint64_t section_offset;
     uint64_t max_offset;
     uint8_t file_header[sizeof(struct elf_file_hdr32)];
+    uint8_t program_header[sizeof(struct elf_program_hdr32)];
     uint8_t section_headers[2 * sizeof(struct elf_section_hdr32)];
 };
 
@@ -17077,6 +17078,8 @@ static off_t elf32_large_table_pread_cb(void *handle, void *buf, size_t count, o
     memset(buf, 0, count);
     elf_large_metadata_copy(buf, count, (uint64_t)offset, 0, state->file_header,
                             sizeof(state->file_header));
+    elf_large_metadata_copy(buf, count, (uint64_t)offset, sizeof(state->file_header),
+                            state->program_header, sizeof(state->program_header));
     elf_large_metadata_copy(buf, count, (uint64_t)offset, state->section_offset,
                             state->section_headers, sizeof(state->section_headers));
     return (off_t)count;
@@ -17107,16 +17110,25 @@ START_TEST(test_elf32_table_coordinates_are_native_width)
     zip_stream_write_u16(state.file_header + 16, 2);
     zip_stream_write_u16(state.file_header + 18, 3);
     zip_stream_write_u32(state.file_header + 20, 1);
-    zip_stream_write_u32(state.file_header + 24, 0); /* no entry-point table */
-    zip_stream_write_u32(state.file_header + 28, 0);
+    zip_stream_write_u32(state.file_header + 24, 0x1100);
+    zip_stream_write_u32(state.file_header + 28, sizeof(struct elf_file_hdr32));
     zip_stream_write_u32(state.file_header + 32, (uint32_t)state.section_offset);
     zip_stream_write_u32(state.file_header + 36, 0);
     zip_stream_write_u16(state.file_header + 40, sizeof(struct elf_file_hdr32));
-    zip_stream_write_u16(state.file_header + 42, 0);
-    zip_stream_write_u16(state.file_header + 44, 0);
+    zip_stream_write_u16(state.file_header + 42, sizeof(struct elf_program_hdr32));
+    zip_stream_write_u16(state.file_header + 44, 1);
     zip_stream_write_u16(state.file_header + 46, sizeof(struct elf_section_hdr32));
     zip_stream_write_u16(state.file_header + 48, 2);
     zip_stream_write_u16(state.file_header + 50, 0);
+
+    zip_stream_write_u32(state.program_header + 0, 1); /* PT_LOAD */
+    zip_stream_write_u32(state.program_header + 4, (uint32_t)state.section_offset);
+    zip_stream_write_u32(state.program_header + 8, 0x1000);
+    zip_stream_write_u32(state.program_header + 12, 0x1000);
+    zip_stream_write_u32(state.program_header + 16, 0x200);
+    zip_stream_write_u32(state.program_header + 20, 0x200);
+    zip_stream_write_u32(state.program_header + 24, 5);
+    zip_stream_write_u32(state.program_header + 28, 0x1000);
 
     zip_stream_write_u32(state.section_headers + sizeof(struct elf_section_hdr32) + 4, 1);
     zip_stream_write_u32(state.section_headers + sizeof(struct elf_section_hdr32) + 12, 0x1000);
@@ -17132,10 +17144,13 @@ START_TEST(test_elf32_table_coordinates_are_native_width)
     ret = cli_elfheader(&ctx, &exeinfo);
     ck_assert_int_eq(ret, CL_SUCCESS);
     ck_assert_uint_eq(state.max_offset, state.section_offset + sizeof(struct elf_section_hdr32));
+    ck_assert_uint_eq(exeinfo.ep64, (uint64_t)state.section_offset + 0x100U);
+    ck_assert_uint_eq(exeinfo.ep, 0);
+    ck_assert(exeinfo.legacy_metadata_incomplete);
     ck_assert_uint_eq(exeinfo.sections64[1].raw, 0x2000);
     ck_assert_uint_eq(exeinfo.sections64[1].rva, 0x1000);
     ck_assert_uint_eq(exeinfo.sections64[1].rsz, 0x100);
-    ck_assert(!ctx.scan_incomplete);
+    ck_assert(ctx.scan_incomplete);
 
     cli_exe_info_destroy(&exeinfo);
     cl_fmap_close(map);

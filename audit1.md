@@ -3705,3 +3705,13 @@ from wrapping its cursor to the beginning and reading unrelated bytes. A
 synthetic >4 GiB-coordinate regression verifies the second section header;
 compiled ELF corpus, sanitizer, and supported-Linux qualification remain
 release gates.
+
+## ELF32 derived entry-point coordinate widening — 2026-08-22
+
+ELF32 program-header fields remain format-defined 32-bit values, but the
+derived file coordinate `p_offset + (e_entry - p_vaddr)` can exceed 4 GiB in
+a larger containing file. The parser now computes that coordinate in native
+width and preserves the explicit incomplete marker only for the legacy
+32-bit metadata bridge. The synthetic ELF32 regression covers this overflow
+alongside the table-cursor boundary; compiled ELF corpus, sanitizer, and
+supported-Linux qualification remain release gates.

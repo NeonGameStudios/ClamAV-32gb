@@ -5184,8 +5184,11 @@ release gates.
 ELF32 keeps its on-disk entry-point, program-table, and section-table offsets
 at 32 bits, but a table's later implicit entries can still lie beyond the
 4 GiB boundary in a larger containing file. The parser now widens its
-program/section table cursors to native-width containing-file coordinates
-instead of wrapping after the first entry. Format-defined 32-bit section and
-entry coordinates remain unchanged, and a synthetic table fixture verifies a
-second section header is read above `UINT32_MAX`. Full ELF corpus, sanitizer,
-and supported-Linux qualification remain open.
+program/section table cursors and derived entry-point file coordinates to
+native-width containing-file arithmetic instead of wrapping after the first
+entry or rejecting a segment whose derived file offset crosses 4 GiB.
+Format-defined 32-bit section and entry coordinates remain unchanged; the
+legacy metadata bridge is explicitly incomplete when it cannot represent the
+native coordinate. A synthetic table fixture verifies both the derived
+entry-point coordinate and a second section header above `UINT32_MAX`. Full
+ELF corpus, sanitizer, and supported-Linux qualification remain open.

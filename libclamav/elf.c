@@ -107,10 +107,11 @@ static cl_error_t cli_elf_checktimelimit(cli_ctx *ctx, const char *reason)
     return ret;
 }
 
-static uint32_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
+static uint64_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint16_t phnum, uint8_t conv, uint8_t *err)
 {
     uint16_t i, found = 0;
-    uint32_t start, memsz, delta, file_offset;
+    uint32_t start, memsz;
+    uint64_t delta, file_offset;
 
     for (i = 0; i < phnum; i++) {
         start = EC32(ph[i].p_vaddr, conv);
@@ -127,12 +128,8 @@ static uint32_t cli_rawaddr32(uint32_t vaddr, struct elf_program_hdr32 *ph, uint
     }
 
     *err = 0;
-    delta       = vaddr - start;
+    delta       = (uint64_t)(vaddr - start);
     file_offset = EC32(ph[i].p_offset, conv);
-    if (delta > UINT32_MAX - file_offset) {
-        *err = 1;
-        return 0;
-    }
     return file_offset + delta;
 }
 
@@ -283,7 +280,8 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
 {
     struct elf_program_hdr32 *program_hdr = NULL;
     uint16_t phnum, phentsize;
-    uint32_t entry, fentry = 0;
+    uint32_t entry;
+    uint64_t fentry = 0;
     uint64_t phoff;
     uint32_t i;
     uint8_t err;
@@ -371,7 +369,7 @@ static int cli_elf_ph32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         }
         if (ctx) {
             cli_dbgmsg("ELF: Entry point address: 0x%.8x\n", entry);
-            cli_dbgmsg("ELF: Entry point offset: 0x%.8x (%d)\n", fentry, fentry);
+            cli_dbgmsg("ELF: Entry point offset: 0x" STDx64 " (" STDu64 ")\n", fentry, fentry);
         }
     }
 

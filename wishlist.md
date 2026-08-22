@@ -724,6 +724,7 @@
   while allowing a later v2 hook to use native offsets; retain mixed
   interpreter/JIT and production-bytecode qualification as a release gate.
 - Widen ELF32 program/section table traversal cursors to native-width
-  containing-file coordinates while preserving the format's 32-bit fields;
-  the synthetic >4 GiB-coordinate regression is registered, with compiled ELF
-  corpus and supported-Linux qualification still required.
+  containing-file coordinates and derive ELF32 entry-point file offsets in
+  native width while preserving the format's 32-bit fields; the synthetic
+  >4 GiB-coordinate regression is registered, with compiled ELF corpus and
+  supported-Linux qualification still required.
