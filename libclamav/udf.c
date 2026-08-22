@@ -188,7 +188,9 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
     uint32_t extentType                = 0;
     uint32_t extentBlock               = 0;
     uint32_t recordedLength            = 0;
-    bool hasRecordedLength             = false;
+    uint32_t extentInformationLength = 0;
+    bool hasRecordedLength           = false;
+    bool hasInformationLength        = false;
 
     if (NULL == ctx || NULL == ctx->fmap || NULL == pPartitionDescriptor || NULL == pLogicalVolumeDescriptor ||
         NULL == allocation_descriptor || NULL == extent) {
@@ -220,10 +222,12 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
         case 2: {
             const ext_ad *extDesc = (const ext_ad *)allocation_descriptor;
 
-            extentBlock       = le32_to_host(extDesc->extentLocation.blockNumber);
-            rawLength         = le32_to_host(extDesc->extentLen);
-            recordedLength    = le32_to_host(extDesc->recordedLen);
-            hasRecordedLength = true;
+            extentBlock              = le32_to_host(extDesc->extentLocation.blockNumber);
+            rawLength                = le32_to_host(extDesc->extentLen);
+            recordedLength           = le32_to_host(extDesc->recordedLen);
+            extentInformationLength = le32_to_host(extDesc->infoLen);
+            hasRecordedLength       = true;
+            hasInformationLength    = true;
 
             if (le16_to_host(extDesc->extentLocation.partitionReferenceNumber) != le16_to_host(pPartitionDescriptor->partitionNumber)) {
                 cli_warnmsg("extractFile: Unable to extract the files because the Partition Descriptor Reference Numbers don't match\n");
@@ -249,6 +253,11 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
             cli_warnmsg("extractFile: Recorded length exceeds the UDF extent length.\n");
             cli_mark_scan_incomplete(ctx, "UDF recorded length exceeds its extent");
             return CL_EPARSE;
+        }
+        if (hasInformationLength && recordedLength != extentInformationLength) {
+            cli_warnmsg("extractFile: UDF extended allocation descriptor requires an unsupported transformation.\n");
+            cli_mark_scan_incomplete(ctx, "UDF extended allocation descriptor transformation is unsupported");
+            return CL_EUNPACK;
         }
         length = recordedLength;
     }
@@ -286,7 +295,8 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
 static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescriptor, LogicalVolumeDescriptor *pLogicalVolumeDescriptor,
                               void *allocation_descriptor,
                               size_t allocation_descriptor_len,
-                              uint16_t icbFlags, FileIdentifierDescriptor *fileIdentifierDescriptor)
+                              uint16_t icbFlags, uint64_t information_length,
+                              FileIdentifierDescriptor *fileIdentifierDescriptor)
 {
     cl_error_t ret = CL_EPARSE;
     udf_extent *extents = NULL;
@@ -317,6 +327,12 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     }
 
     if (0 == allocation_descriptor_len) {
+        if (0 != information_length) {
+            cli_warnmsg("extractFile: UDF allocation extents do not match the declared information length.\n");
+            cli_mark_scan_incomplete(ctx, "UDF allocation extents do not match declared information length");
+            ret = CL_EPARSE;
+            goto done;
+        }
         ret = CL_SUCCESS;
         goto done;
     }
@@ -352,6 +368,7 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
                                 (const uint8_t *)allocation_descriptor + (i * descriptor_size), icbFlags, &extents[i]);
         if (ret != CL_SUCCESS)
             goto done;
+
         if (total_length > UINT64_MAX - extents[i].length) {
             cli_warnmsg("extractFile: Aggregate UDF extent length overflowed.\n");
             cli_mark_scan_incomplete(ctx, "UDF aggregate extent length overflowed");
@@ -359,6 +376,13 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
             goto done;
         }
         total_length += extents[i].length;
+    }
+
+    if (total_length != information_length) {
+        cli_warnmsg("extractFile: UDF allocation extents do not match the declared information length.\n");
+        cli_mark_scan_incomplete(ctx, "UDF allocation extents do not match declared information length");
+        ret = CL_EPARSE;
+        goto done;
     }
 
     if (0 == total_length) {
@@ -421,7 +445,7 @@ static cl_error_t parseFileEntryDescriptor(cli_ctx *ctx, FileEntryDescriptor *fe
     ret = extractFile(ctx, pPartitionDescriptor, pLogicalVolumeDescriptor,
                       allocation_descriptor,
                       allocation_descriptor_len,
-                      le16_to_host(fed->icbTag.flags), fileIdentifierDescriptor);
+                      le16_to_host(fed->icbTag.flags), le64_to_host(fed->infoLength), fileIdentifierDescriptor);
     if (CL_SUCCESS != ret) {
         cli_dbgmsg("parseFileEntryDescriptor: Failed to extract file.\n");
         goto done;

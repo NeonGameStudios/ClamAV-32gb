@@ -2346,6 +2346,17 @@ alignment/fail-closed boundary. Compiled multi-extent UDF corpus coverage,
 sanitizer execution, and supported-build Sonic1 qualification remain release
 gates.
 
+## UDF logical information-length accounting — 2026-08-22
+
+UDF file-entry allocation descriptors have a format-defined information length
+that must equal the sum of their per-extent information lengths. Extraction now
+requires that exact accounting before materialization, rejects allocation lists
+that are shorter or longer than the declaration, and marks transformed `ext_ad`
+content unsupported when recorded bytes differ from logical bytes. A focused
+synthetic regression covers the shorter-than-declared boundary; compiled
+transformed-extent/read-fault, sanitizer, and supported-build Sonic1
+qualification remain release gates.
+
 ## UDF required descriptor read status — 2026-08-21
 
 UDF descriptor helpers now distinguish an in-range fmap callback failure from

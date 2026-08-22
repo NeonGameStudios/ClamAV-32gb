@@ -17985,6 +17985,141 @@ START_TEST(test_udf_mismatched_file_lists_are_fail_visible)
 }
 END_TEST
 
+static void test_udf_put_le32(uint8_t *dst, uint32_t value)
+{
+    dst[0] = (uint8_t)value;
+    dst[1] = (uint8_t)(value >> 8);
+    dst[2] = (uint8_t)(value >> 16);
+    dst[3] = (uint8_t)(value >> 24);
+}
+
+static void test_udf_put_le16(uint8_t *dst, uint16_t value)
+{
+    dst[0] = (uint8_t)value;
+    dst[1] = (uint8_t)(value >> 8);
+}
+
+static void test_udf_put_le64(uint8_t *dst, uint64_t value)
+{
+    test_udf_put_le32(dst, (uint32_t)value);
+    test_udf_put_le32(dst + sizeof(uint32_t), (uint32_t)(value >> 32));
+}
+
+START_TEST(test_udf_declared_information_length_is_fail_visible)
+{
+    enum {
+        UDF_TEST_VOLUME_BLOCKS       = 16,
+        UDF_TEST_SIZE                = UDF_EMPTY_LEN + (UDF_TEST_VOLUME_BLOCKS * VOLUME_DESCRIPTOR_SIZE),
+        UDF_TEST_PRIMARY             = 1,
+        UDF_TEST_IMPLEMENTATION_USE  = 4,
+        UDF_TEST_LOGICAL             = 6,
+        UDF_TEST_PARTITION           = 5,
+        UDF_TEST_UNALLOCATED         = 7,
+        UDF_TEST_TERMINATING         = 8,
+        UDF_TEST_LVID                = 9,
+        UDF_TEST_ANCHOR              = 2,
+        UDF_TEST_FILE_SET            = 256,
+        UDF_TEST_FILE_IDENTIFIER     = 257,
+        UDF_TEST_FILE_ENTRY          = 261,
+        UDF_TEST_DECLARED_LENGTH     = 2048,
+        UDF_TEST_ALLOCATED_LENGTH    = 1024
+    };
+    uint8_t *data;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t base = UDF_EMPTY_LEN;
+    size_t fed_offset;
+    size_t lvd_offset;
+    size_t pd_offset;
+    size_t allocation_offset;
+    cl_error_t ret;
+
+    data = calloc(1, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(data);
+    test_udf_set_generic_identifiers(data, base);
+
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_PRIMARY & 0xff;
+    data[base + (3 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_PRIMARY >> 8;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_IMPLEMENTATION_USE & 0xff;
+    data[base + (4 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_IMPLEMENTATION_USE >> 8;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_LOGICAL & 0xff;
+    data[base + (5 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_LOGICAL >> 8;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_PARTITION & 0xff;
+    data[base + (6 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_PARTITION >> 8;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_UNALLOCATED & 0xff;
+    data[base + (7 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_UNALLOCATED >> 8;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_TERMINATING & 0xff;
+    data[base + (8 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_TERMINATING >> 8;
+    data[base + (9 * VOLUME_DESCRIPTOR_SIZE)]       = UDF_TEST_LVID & 0xff;
+    data[base + (9 * VOLUME_DESCRIPTOR_SIZE) + 1]   = UDF_TEST_LVID >> 8;
+    data[base + (10 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_TERMINATING & 0xff;
+    data[base + (10 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_TERMINATING >> 8;
+    data[base + (11 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_ANCHOR & 0xff;
+    data[base + (11 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_ANCHOR >> 8;
+    data[base + (12 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_SET & 0xff;
+    data[base + (12 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_SET >> 8;
+    data[base + (13 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_IDENTIFIER & 0xff;
+    data[base + (13 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_IDENTIFIER >> 8;
+    data[base + (14 * VOLUME_DESCRIPTOR_SIZE)]      = UDF_TEST_FILE_ENTRY & 0xff;
+    data[base + (14 * VOLUME_DESCRIPTOR_SIZE) + 1]  = UDF_TEST_FILE_ENTRY >> 8;
+
+    lvd_offset = base + (5 * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + lvd_offset + offsetof(LogicalVolumeDescriptor, logicalBlockSize), 1);
+
+    pd_offset = base + (6 * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionStartingLocation), 0);
+
+    fed_offset = base + (14 * VOLUME_DESCRIPTOR_SIZE);
+    test_udf_put_le64(data + fed_offset + offsetof(FileEntryDescriptor, infoLength), UDF_TEST_DECLARED_LENGTH);
+    test_udf_put_le32(data + fed_offset + offsetof(FileEntryDescriptor, allocationDescLen), sizeof(short_ad));
+
+    allocation_offset = fed_offset + offsetof(FileEntryDescriptor, rest);
+    test_udf_put_le32(data + allocation_offset + offsetof(short_ad, length), UDF_TEST_ALLOCATED_LENGTH);
+    test_udf_put_le32(data + allocation_offset + offsetof(short_ad, position), 0);
+
+    data[base + (15 * VOLUME_DESCRIPTOR_SIZE)]     = 0xff;
+    data[base + (15 * VOLUME_DESCRIPTOR_SIZE) + 1] = 0x03;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, UDF_TEST_SIZE);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF allocation extents do not match declared information length");
+    ck_assert(map->dont_cache_flag);
+
+    /* An ext_ad whose logical information length differs from its recorded
+     * length requires a transformation this parser does not implement. */
+    test_udf_put_le16(data + fed_offset + offsetof(FileEntryDescriptor, icbTag) + offsetof(ICBTag, flags), 2);
+    test_udf_put_le64(data + fed_offset + offsetof(FileEntryDescriptor, infoLength), 512);
+    test_udf_put_le32(data + fed_offset + offsetof(FileEntryDescriptor, allocationDescLen), sizeof(ext_ad));
+    allocation_offset = fed_offset + offsetof(FileEntryDescriptor, rest);
+    test_udf_put_le32(data + allocation_offset + offsetof(ext_ad, extentLen), UDF_TEST_ALLOCATED_LENGTH);
+    test_udf_put_le32(data + allocation_offset + offsetof(ext_ad, recordedLen), 512);
+    test_udf_put_le32(data + allocation_offset + offsetof(ext_ad, infoLen), UDF_TEST_ALLOCATED_LENGTH);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map->dont_cache_flag = false;
+    ctx.engine           = &engine;
+    ctx.fmap             = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF extended allocation descriptor transformation is unsupported");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_udf_allocation_descriptor_alignment_is_fail_visible)
 {
     enum {
@@ -19758,6 +19893,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_udf_descriptor_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_unknown_generic_descriptor_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
+    tcase_add_test(tc_cl, test_udf_declared_information_length_is_fail_visible);
     tcase_add_test(tc_cl, test_udf_allocation_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_tree_header_read_failure_is_fail_visible);

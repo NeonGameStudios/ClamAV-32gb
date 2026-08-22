@@ -3784,3 +3784,15 @@ each successfully written block and stops with an incomplete result when the
 declared fork ends early. The focused regression injects a failure at the
 second block and verifies that the corrected path stops before requesting it;
 compiled HFS+ corpus, sanitizer, and production qualification remain open.
+
+## UDF logical information-length accounting — 2026-08-22
+
+UDF file-entry allocation descriptors have a format-defined information length
+that must equal the sum of their per-extent information lengths. The previous
+extractor ignored the file-entry declaration and could materialize a mismatched
+allocation list. Extraction now requires exact aggregate accounting before
+materialization and marks an `ext_ad` transformation unsupported when recorded
+bytes differ from logical bytes. A focused synthetic descriptor regression
+covers the shorter-than-declared case. Static guards and whitespace validation
+remain the available local evidence; compiled transformed-extent/read-fault,
+sanitizer, and supported-build Sonic1 qualification remain release gates.

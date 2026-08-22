@@ -198,6 +198,11 @@
 - UDF file entries now support bounded lists of recorded allocation extents,
   aggregating their logical and temporary budgets before one child scan;
   fragmented UDF corpus qualification remains open.
+- UDF extraction now honors each file entry's declared logical `informationLength`,
+  requires exact aggregate allocation accounting, and fails closed when the
+  allocation list does not provide exactly the declared bytes; transformed
+  `ext_ad` content remains explicitly unsupported; add compiled transformed-
+  extent, read-fault, sanitizer, and production UDF corpus qualification.
 - UDF generic volume descriptor identifiers now use equality checks and reject
   unsupported identifiers as incomplete; add valid/invalid descriptor corpus
   coverage and supported-build qualification.
