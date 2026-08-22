@@ -5062,6 +5062,7 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
     struct pdf_array_node *node;
     json_object *pdfobj;
     size_t countsize = 0;
+    cl_error_t search_status;
 
     UNUSEDPARAM(act);
 
@@ -5077,7 +5078,11 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
     if (!(pdfobj))
         return;
 
-    begin = cli_memstr(objstart, obj->size, "/Kids", 5);
+    begin = pdf_memstr_deadline(pdf, objstart, obj->size, "/Kids", 5, &search_status);
+    if (CL_ETIMEOUT == search_status) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF page-tree /Kids search reached the configured time limit");
+        return;
+    }
     if (!(begin))
         return;
 
@@ -5097,7 +5102,11 @@ static void Pages_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname
             if (strchr((char *)(node->data), 'R'))
                 npages++;
 
-    begin = cli_memstr(objstart, obj->size, "/Count", 6);
+    begin = pdf_memstr_deadline(pdf, objstart, obj->size, "/Count", 6, &search_status);
+    if (CL_ETIMEOUT == search_status) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF page-tree /Count search reached the configured time limit");
+        goto cleanup;
+    }
     if (!(begin)) {
         cli_jsonbool(pdfobj, "IncorrectPagesCount", 1);
         goto cleanup;
@@ -5138,6 +5147,7 @@ static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfnam
     char *p1;
     const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
                                          : (const char *)(obj->start + pdf->map);
+    cl_error_t search_status;
 
     UNUSEDPARAM(act);
 
@@ -5149,7 +5159,11 @@ static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfnam
     if (!(SCAN_COLLECT_METADATA))
         return;
 
-    p1 = (char *)cli_memstr(objstart, obj->size, "/Colors", 7);
+    p1 = (char *)pdf_memstr_deadline(pdf, objstart, obj->size, "/Colors", 7, &search_status);
+    if (CL_ETIMEOUT == search_status) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF /Colors search reached the configured time limit");
+        return;
+    }
     if (!(p1))
         return;
 
@@ -5165,7 +5179,7 @@ static void Colors_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfnam
     if ((size_t)(p1 - objstart) == obj->size)
         return;
 
-    if (CL_SUCCESS != cli_strntol_wrap(p1, (size_t)((p1 - objstart) - obj->size), 0, 10, &temp_long)) {
+    if (CL_SUCCESS != cli_strntol_wrap(p1, obj->size - (size_t)(p1 - objstart), 0, 10, &temp_long)) {
         return;
     } else if (temp_long < 0) {
         return;
@@ -5223,6 +5237,10 @@ static void URI_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_a
     // Advance forward to the first '(' character
     size_t start = 0;
     while (bytesleft > 0 && objstart[start] != '(') {
+        if (0 == (start % PDF_SEARCH_WINDOW) && cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "PDF URI search reached the configured time limit");
+            return;
+        }
         start++;
         bytesleft--;
     }
@@ -5236,6 +5254,10 @@ static void URI_cb(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdfname_a
     // Advance forward to the first ')' character
     size_t end = 0;
     while (bytesleft > 0 && uri_start[end] != ')') {
+        if (0 == (end % PDF_SEARCH_WINDOW) && cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "PDF URI search reached the configured time limit");
+            return;
+        }
         end++;
         bytesleft--;
     }

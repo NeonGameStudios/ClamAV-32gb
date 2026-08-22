@@ -11692,24 +11692,24 @@ native-width-integer	libclamav/pdf.c	492	        (size_t)objoff > objstm->stream
 native-width-integer	libclamav/pdf.c	5060	    unsigned long npages = 0, count;
 native-width-integer	libclamav/pdf.c	5061	    long temp_long;
 native-width-integer	libclamav/pdf.c	5064	    size_t countsize = 0;
-native-width-integer	libclamav/pdf.c	5107	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
-native-width-integer	libclamav/pdf.c	5110	    if ((size_t)(begin - objstart) >= obj->size) {
-native-width-integer	libclamav/pdf.c	5114	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
-native-width-integer	libclamav/pdf.c	5115	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
-native-width-integer	libclamav/pdf.c	5122	        count = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	5136	    unsigned long ncolors;
-native-width-integer	libclamav/pdf.c	5137	    long temp_long;
-native-width-integer	libclamav/pdf.c	5159	    if (obj->size - (size_t)(p1 - objstart) < 2)
-native-width-integer	libclamav/pdf.c	5162	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
-native-width-integer	libclamav/pdf.c	5165	    if ((size_t)(p1 - objstart) == obj->size)
-native-width-integer	libclamav/pdf.c	5168	    if (CL_SUCCESS != cli_strntol_wrap(p1, (size_t)((p1 - objstart) - obj->size), 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	5173	    ncolors = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	5116	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
+native-width-integer	libclamav/pdf.c	5119	    if ((size_t)(begin - objstart) >= obj->size) {
+native-width-integer	libclamav/pdf.c	5123	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
+native-width-integer	libclamav/pdf.c	5124	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
+native-width-integer	libclamav/pdf.c	5131	        count = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	5145	    unsigned long ncolors;
+native-width-integer	libclamav/pdf.c	5146	    long temp_long;
+native-width-integer	libclamav/pdf.c	5173	    if (obj->size - (size_t)(p1 - objstart) < 2)
+native-width-integer	libclamav/pdf.c	5176	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
+native-width-integer	libclamav/pdf.c	5179	    if ((size_t)(p1 - objstart) == obj->size)
+native-width-integer	libclamav/pdf.c	5182	    if (CL_SUCCESS != cli_strntol_wrap(p1, obj->size - (size_t)(p1 - objstart), 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	5187	    ncolors = (unsigned long)temp_long;
 native-width-integer	libclamav/pdf.c	519	    objstm->current_pair = (size_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
-native-width-integer	libclamav/pdf.c	5193	    off_t bytesleft      = 0;
-native-width-integer	libclamav/pdf.c	5224	    size_t start = 0;
-native-width-integer	libclamav/pdf.c	5237	    size_t end = 0;
+native-width-integer	libclamav/pdf.c	5207	    off_t bytesleft      = 0;
+native-width-integer	libclamav/pdf.c	5238	    size_t start = 0;
 native-width-integer	libclamav/pdf.c	524	        unsigned long next_objoff = 0;
-native-width-integer	libclamav/pdf.c	5330	    unsigned long i;
+native-width-integer	libclamav/pdf.c	5255	    size_t end = 0;
+native-width-integer	libclamav/pdf.c	5352	    unsigned long i;
 native-width-integer	libclamav/pdf.c	548	        // next_objid = (unsigned long)temp_long;
 native-width-integer	libclamav/pdf.c	568	        next_objoff = (unsigned long)temp_long;
 native-width-integer	libclamav/pdf.c	576	                   (size_t)next_objoff > objstm->streambuf_len - objstm->first) {
@@ -27051,31 +27051,31 @@ offset-size-arithmetic	libclamav/pdf.c	5008	                                    
 offset-size-arithmetic	libclamav/pdf.c	5015	        pdf->stats.subject->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Subject", NULL, &(pdf->stats.subject->meta));
 offset-size-arithmetic	libclamav/pdf.c	5057	    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
 offset-size-arithmetic	libclamav/pdf.c	5058	                                         : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	5080	    begin = cli_memstr(objstart, obj->size, "/Kids", 5);
-offset-size-arithmetic	libclamav/pdf.c	5087	    array = pdf_parse_array(pdf, obj, obj->size, (char *)begin, NULL);
+offset-size-arithmetic	libclamav/pdf.c	5081	    begin = pdf_memstr_deadline(pdf, objstart, obj->size, "/Kids", 5, &search_status);
+offset-size-arithmetic	libclamav/pdf.c	5092	    array = pdf_parse_array(pdf, obj, obj->size, (char *)begin, NULL);
 offset-size-arithmetic	libclamav/pdf.c	510	    obj->start = objstm->current;
-offset-size-arithmetic	libclamav/pdf.c	5100	    begin = cli_memstr(objstart, obj->size, "/Count", 6);
-offset-size-arithmetic	libclamav/pdf.c	5107	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
-offset-size-arithmetic	libclamav/pdf.c	5110	    if ((size_t)(begin - objstart) >= obj->size) {
-offset-size-arithmetic	libclamav/pdf.c	5114	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
-offset-size-arithmetic	libclamav/pdf.c	5115	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
-offset-size-arithmetic	libclamav/pdf.c	5139	    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	5140	                                         : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	5105	    begin = pdf_memstr_deadline(pdf, objstart, obj->size, "/Count", 6, &search_status);
+offset-size-arithmetic	libclamav/pdf.c	5116	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
+offset-size-arithmetic	libclamav/pdf.c	5119	    if ((size_t)(begin - objstart) >= obj->size) {
+offset-size-arithmetic	libclamav/pdf.c	5123	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
+offset-size-arithmetic	libclamav/pdf.c	5124	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
+offset-size-arithmetic	libclamav/pdf.c	5148	    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	5149	                                         : (const char *)(obj->start + pdf->map);
 offset-size-arithmetic	libclamav/pdf.c	515	    while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {
-offset-size-arithmetic	libclamav/pdf.c	5152	    p1 = (char *)cli_memstr(objstart, obj->size, "/Colors", 7);
-offset-size-arithmetic	libclamav/pdf.c	5159	    if (obj->size - (size_t)(p1 - objstart) < 2)
-offset-size-arithmetic	libclamav/pdf.c	5162	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
-offset-size-arithmetic	libclamav/pdf.c	5165	    if ((size_t)(p1 - objstart) == obj->size)
-offset-size-arithmetic	libclamav/pdf.c	5168	    if (CL_SUCCESS != cli_strntol_wrap(p1, (size_t)((p1 - objstart) - obj->size), 0, 10, &temp_long)) {
+offset-size-arithmetic	libclamav/pdf.c	5162	    p1 = (char *)pdf_memstr_deadline(pdf, objstart, obj->size, "/Colors", 7, &search_status);
+offset-size-arithmetic	libclamav/pdf.c	5173	    if (obj->size - (size_t)(p1 - objstart) < 2)
+offset-size-arithmetic	libclamav/pdf.c	5176	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
+offset-size-arithmetic	libclamav/pdf.c	5179	    if ((size_t)(p1 - objstart) == obj->size)
+offset-size-arithmetic	libclamav/pdf.c	5182	    if (CL_SUCCESS != cli_strntol_wrap(p1, obj->size - (size_t)(p1 - objstart), 0, 10, &temp_long)) {
 offset-size-arithmetic	libclamav/pdf.c	519	    objstm->current_pair = (size_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
-offset-size-arithmetic	libclamav/pdf.c	5205	    objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	5206	                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	5218	        bytesleft = MIN(obj->size, obj->objstm->streambuf_len - obj->start);
-offset-size-arithmetic	libclamav/pdf.c	5220	        bytesleft = MIN(obj->size, pdf->size - obj->start);
-offset-size-arithmetic	libclamav/pdf.c	5226	        start++;
-offset-size-arithmetic	libclamav/pdf.c	5233	    uri_start = (char *)(objstart + start + 1);
-offset-size-arithmetic	libclamav/pdf.c	5239	        end++;
-offset-size-arithmetic	libclamav/pdf.c	5247	    CLI_MAX_MALLOC_OR_GOTO_DONE(uri_heap, end + 1,
+offset-size-arithmetic	libclamav/pdf.c	5219	    objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	5220	                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	5232	        bytesleft = MIN(obj->size, obj->objstm->streambuf_len - obj->start);
+offset-size-arithmetic	libclamav/pdf.c	5234	        bytesleft = MIN(obj->size, pdf->size - obj->start);
+offset-size-arithmetic	libclamav/pdf.c	5244	        start++;
+offset-size-arithmetic	libclamav/pdf.c	5251	    uri_start = (char *)(objstart + start + 1);
+offset-size-arithmetic	libclamav/pdf.c	5261	        end++;
+offset-size-arithmetic	libclamav/pdf.c	5269	    CLI_MAX_MALLOC_OR_GOTO_DONE(uri_heap, end + 1,
 offset-size-arithmetic	libclamav/pdf.c	534	        bytes_remaining = objstm->streambuf + objstm->streambuf_len - index;
 offset-size-arithmetic	libclamav/pdf.c	550	        /* Find the obj offset that appears just after the objid*/
 offset-size-arithmetic	libclamav/pdf.c	551	        while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {

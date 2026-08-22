@@ -1026,6 +1026,9 @@
 - Legacy PDF `/Length`, JavaScript, `/XRef`, and trailer encryption searches
   now use deadline windows; make the dictionary helper and metadata tree
   searches context-aware and add compiled timeout coverage.
+- PDF page-tree metadata searches now use deadline windows, `/Colors` passes
+  the remaining length correctly, and URI delimiter scans check timeouts; add
+  compiled metadata malformed-object and timeout coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.

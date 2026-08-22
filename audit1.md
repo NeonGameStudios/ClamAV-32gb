@@ -4478,6 +4478,13 @@ mark the scan incomplete on timeout. The classic dictionary helper and
 metadata tree searches still need a context-aware pass, with compiled timeout
 qualification remaining open.
 
+The PDF page-tree `/Kids`, `/Count`, and `/Colors` metadata searches now use
+the same deadline windows. The `/Colors` numeric parse also now passes the
+remaining object length instead of a reversed pointer subtraction, avoiding a
+large unsigned length on that callback. URI metadata extraction now checks the
+deadline during both bytewise delimiter searches; compiled metadata timeout
+and malformed-object qualification remain open.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one
