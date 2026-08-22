@@ -394,9 +394,11 @@
 - OLE2 property-tree, VBA/XLM, MSO-inflation, embedded-stream, and
   encrypted-stream traversal now honor the shared scan deadline; add compiled
   timeout-injection and large Office/VBA corpus qualification.
-- 7-Zip member extraction now checks the shared deadline in its streaming output
-  callback, including long solid-folder decoder work; add compiled solid-archive
-  timeout-injection and production corpus qualification.
+- 7-Zip member extraction now checks the shared deadline in its streaming
+  output callback and fmap input read/seek callbacks, including long
+  solid-folder decoder work, preserving `CL_ETIMEOUT` through decoder read
+  errors; add compiled solid-archive timeout-injection and production corpus
+  qualification.
 - OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed
   MSO stream corpus coverage during Office-parser qualification.
 - ZWS/SWF compressed-input length fields are now enforced before LZMA setup; add

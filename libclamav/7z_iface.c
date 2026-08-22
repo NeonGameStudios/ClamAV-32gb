@@ -97,6 +97,13 @@ typedef struct
     int fd;
 } CClamFileOutStream;
 
+typedef struct
+{
+    CFileInStream stream;
+    cli_ctx *ctx;
+    cl_error_t status;
+} CClamFileInStream;
+
 static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 {
     CClamFileOutStream *p = (CClamFileOutStream *)pp;
@@ -158,19 +165,27 @@ static void cli_7z_cleanup_temp(cli_ctx *ctx, int fd, const char *tmp_name, cl_e
 
 static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
 {
-    CFileInStream *p = (CFileInStream *)pp;
+    CClamFileInStream *p = (CClamFileInStream *)pp;
     size_t read_sz;
 
+    if (p == NULL || p->stream.file.fmap == NULL || size == NULL)
+        return SZ_ERROR_READ;
     if (*size == 0)
         return 0;
 
-    read_sz = fmap_readn(p->file.fmap, buf, p->s.curpos, *size);
+    if (p->ctx != NULL &&
+        (p->status = cli_7z_checktimelimit(p->ctx, "7-Zip archive input reached the configured time limit")) != CL_SUCCESS) {
+        *size = 0;
+        return SZ_ERROR_READ;
+    }
+
+    read_sz = fmap_readn(p->stream.file.fmap, buf, p->stream.s.curpos, *size);
     if (read_sz == (size_t)-1) {
         *size = 0;
         return SZ_ERROR_READ;
     }
 
-    p->s.curpos += read_sz;
+    p->stream.s.curpos += read_sz;
 
     *size = read_sz;
     return SZ_OK;
@@ -178,15 +193,19 @@ static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
 
 static SRes FileInStream_fmap_Seek(void *pp, Int64 *pos, ESzSeek origin)
 {
-    CFileInStream *p = (CFileInStream *)pp;
+    CClamFileInStream *p = (CClamFileInStream *)pp;
     Int64 map_length;
     Int64 base;
 
-    if (p == NULL || p->file.fmap == NULL || pos == NULL)
+    if (p == NULL || p->stream.file.fmap == NULL || pos == NULL)
         return 1;
 
-    map_length = (Int64)p->file.fmap->len;
-    if (map_length < 0 || p->s.curpos < 0 || (Int64)p->s.curpos > map_length)
+    if (p->ctx != NULL &&
+        (p->status = cli_7z_checktimelimit(p->ctx, "7-Zip archive input reached the configured time limit")) != CL_SUCCESS)
+        return 1;
+
+    map_length = (Int64)p->stream.file.fmap->len;
+    if (map_length < 0 || p->stream.s.curpos < 0 || (Int64)p->stream.s.curpos > map_length)
         return 1;
 
     switch (origin) {
@@ -194,7 +213,7 @@ static SRes FileInStream_fmap_Seek(void *pp, Int64 *pos, ESzSeek origin)
             base = 0;
             break;
         case SZ_SEEK_CUR:
-            base = (Int64)p->s.curpos;
+            base = (Int64)p->stream.s.curpos;
             break;
         case SZ_SEEK_END:
             base = map_length;
@@ -209,14 +228,14 @@ static SRes FileInStream_fmap_Seek(void *pp, Int64 *pos, ESzSeek origin)
         return 1;
 
     *pos         = base + *pos;
-    p->s.curpos  = (off_t)*pos;
+    p->stream.s.curpos = (off_t)*pos;
     return 0;
 }
 
 #define UTFBUFSZ 256
 int cli_7unz(cli_ctx *ctx, size_t offset)
 {
-    CFileInStream archiveStream;
+    CClamFileInStream archiveStream;
     CLookToRead lookStream;
     CSzArEx db;
     SRes res;
@@ -233,24 +252,28 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
 
     /* Replacement for
        FileInStream_CreateVTable(&archiveStream); */
-    archiveStream.s.Read    = FileInStream_fmap_Read;
-    archiveStream.s.Seek    = FileInStream_fmap_Seek;
-    archiveStream.s.curpos  = 0;
-    archiveStream.file.fmap = ctx->fmap;
+    archiveStream.stream.s.Read    = FileInStream_fmap_Read;
+    archiveStream.stream.s.Seek    = FileInStream_fmap_Seek;
+    archiveStream.stream.s.curpos  = 0;
+    archiveStream.stream.file.fmap = ctx->fmap;
+    archiveStream.ctx              = ctx;
+    archiveStream.status            = CL_SUCCESS;
 
     LookToRead_CreateVTable(&lookStream, False);
 
-    if (archiveStream.s.Seek(&archiveStream.s, &begin_of_archive, SZ_SEEK_SET) != 0) {
+    if (archiveStream.stream.s.Seek(&archiveStream.stream.s, &begin_of_archive, SZ_SEEK_SET) != 0) {
         cli_mark_scan_incomplete(ctx, "7-Zip archive start could not be reached");
-        return CL_ESEEK;
+        return archiveStream.status != CL_SUCCESS ? archiveStream.status : CL_ESEEK;
     }
 
-    lookStream.realStream = &archiveStream.s;
+    lookStream.realStream = &archiveStream.stream.s;
     LookToRead_Init(&lookStream);
 
     SzArEx_Init(&db);
     res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
-    if (res == SZ_ERROR_ENCRYPTED && SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
+    if (archiveStream.status != CL_SUCCESS) {
+        found = archiveStream.status;
+    } else if (res == SZ_ERROR_ENCRYPTED && SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) {
         cli_dbgmsg("cli_7unz: Encrypted header found in archive.\n");
         cli_mark_scan_incomplete(ctx, "7-Zip encrypted archive header prevents inspection");
         found = cli_append_potentially_unwanted(ctx, "Heuristics.Encrypted.7Zip");
@@ -350,6 +373,12 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 free(tmp_name);
                 break;
             }
+            if (archiveStream.status != CL_SUCCESS) {
+                found = archiveStream.status;
+                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
+                free(tmp_name);
+                break;
+            }
             if (res == SZ_ERROR_UNSUPPORTED) {
                 UInt32 folderIndex = db.FileIndexToFolderIndexMap[i];
                 UInt64 folderSize = 0;
@@ -364,6 +393,12 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                     res = SzArEx_Extract(&db, &lookStream.s, i, &blockIndex,
                                          &outBuffer, &outBufferSize, &legacyOffset,
                                          &legacySize, &allocImp, &allocTempImp);
+                    if (archiveStream.status != CL_SUCCESS) {
+                        found = archiveStream.status;
+                        cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
+                        free(tmp_name);
+                        break;
+                    }
                     if (res == SZ_OK && legacySize != 0) {
                         if (cli_writen(fd, outBuffer + legacyOffset, legacySize) != legacySize) {
                             cli_mark_scan_incomplete(ctx, "7-Zip legacy member output could not be written completely");

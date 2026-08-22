@@ -2369,12 +2369,13 @@ OLE2/VBA corpus, sanitizer, and Sonic1 qualification remain release gates.
 
 ## 7-Zip extraction deadline — 2026-08-22
 
-The 7-Zip interface already checked limits between members, but a long
-`SzArEx_ExtractToStream` operation could run without returning to ClamAV. Its
-stream output callback now checks the shared deadline and returns a preserved
-`CL_ETIMEOUT` through temporary-output cleanup; parser entry also fails fast
-for an expired context. A direct regression and source guards cover the
-boundary; compiled solid-archive corpus, sanitizer, and Sonic1 qualification
+The 7-Zip interface already checked limits between members, but long
+`SzArEx_Open` and extraction operations could run without returning to ClamAV.
+Its streaming output callback and fmap input read/seek callbacks now check the
+shared deadline and preserve `CL_ETIMEOUT` through temporary-output and decoder
+read cleanup; parser entry still fails fast for an expired context. Direct
+entry and deterministic input-timeout regressions plus source guards cover the
+boundaries; compiled solid-archive corpus, sanitizer, and Sonic1 qualification
 remain release gates.
 
 ## Clamscan directory-entry inspection closeout — 2026-08-20
