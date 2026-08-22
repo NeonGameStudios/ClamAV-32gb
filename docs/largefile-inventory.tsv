@@ -422,25 +422,28 @@ fixed-width-integer	libclamav/asn1.c	2440	cl_error_t asn1_check_mscat(struct cl_
 fixed-width-integer	libclamav/asn1.c	536	static int asn1_get_time(fmap_t *map, const void **asn1data, unsigned int *size, int64_t *tm)
 fixed-width-integer	libclamav/asn1.h	49	cl_error_t cli_hash_mapped_regions(fmap_t *map, void *hash_ctx, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx);
 fixed-width-integer	libclamav/asn1.h	52	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx);
-fixed-width-integer	libclamav/aspack.c	136	    uint32_t sum = 0, counter = 23, i, endoff = 0, bus[18], dict[18];
-fixed-width-integer	libclamav/aspack.c	138	    uint32_t *d3 = stream->decarray3[which];
-fixed-width-integer	libclamav/aspack.c	139	    uint32_t *d4 = stream->decarray4[which];
-fixed-width-integer	libclamav/aspack.c	162	            uint32_t old = endoff;
-fixed-width-integer	libclamav/aspack.c	166	            uint32_t remaining = endoff - old;
-fixed-width-integer	libclamav/aspack.c	193	static uint8_t getbits(struct ASPK *stream, uint32_t num, int *err)
-fixed-width-integer	libclamav/aspack.c	212	    uint32_t ret;
-fixed-width-integer	libclamav/aspack.c	273	static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *output)
-fixed-width-integer	libclamav/aspack.c	276	    uint32_t gen, backsize, backbytes, useold, counter = 0;
-fixed-width-integer	libclamav/aspack.c	277	    uint32_t hist[4] = {0, 0, 0, 0};
-fixed-width-integer	libclamav/aspack.c	348	static int decomp_block(struct ASPK *stream, uint32_t size, uint8_t *stuff, uint8_t *output)
-fixed-width-integer	libclamav/aspack.c	359	    stream.dict_helper[n].starts = (uint32_t *)wrkbuf;             \
-fixed-width-integer	libclamav/aspack.c	360	    stream.dict_helper[n].ends   = &wrkbuf[sz * sizeof(uint32_t)]; \
-fixed-width-integer	libclamav/aspack.c	362	    wrkbuf                       = &wrkbuf[sz * sizeof(uint32_t) + 0x100];
-fixed-width-integer	libclamav/aspack.c	364	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, cli_ctx *ctx)
-fixed-width-integer	libclamav/aspack.c	367	    uint32_t i = 0, j = 0;
-fixed-width-integer	libclamav/aspack.c	369	    uint32_t block_rva = 1, block_size;
-fixed-width-integer	libclamav/aspack.c	372	    uint32_t blocks_offset, stream_init_multiplier_offset, comp_block_offset, wrkbuf_offset, oep_offset;
-fixed-width-integer	libclamav/aspack.c	459	                        uint32_t target = cli_readint32(wrkbuf) & 0xffffff00;
+fixed-width-integer	libclamav/aspack.c	101	    uint32_t ret;
+fixed-width-integer	libclamav/aspack.c	103	    uint32_t *d3 = stream->decarray3[which];
+fixed-width-integer	libclamav/aspack.c	104	    uint32_t *d4 = stream->decarray4[which];
+fixed-width-integer	libclamav/aspack.c	153	    uint32_t sum = 0, counter = 23, i, endoff = 0, bus[18], dict[18];
+fixed-width-integer	libclamav/aspack.c	155	    uint32_t *d3 = stream->decarray3[which];
+fixed-width-integer	libclamav/aspack.c	156	    uint32_t *d4 = stream->decarray4[which];
+fixed-width-integer	libclamav/aspack.c	179	            uint32_t old = endoff;
+fixed-width-integer	libclamav/aspack.c	183	            uint32_t remaining = endoff - old;
+fixed-width-integer	libclamav/aspack.c	210	static uint8_t getbits(struct ASPK *stream, uint32_t num, int *err)
+fixed-width-integer	libclamav/aspack.c	229	    uint32_t ret;
+fixed-width-integer	libclamav/aspack.c	290	static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *output)
+fixed-width-integer	libclamav/aspack.c	293	    uint32_t gen, backsize, backbytes, useold, counter = 0;
+fixed-width-integer	libclamav/aspack.c	294	    uint32_t hist[4] = {0, 0, 0, 0};
+fixed-width-integer	libclamav/aspack.c	369	static int decomp_block(struct ASPK *stream, uint32_t size, uint8_t *stuff, uint8_t *output)
+fixed-width-integer	libclamav/aspack.c	380	    stream.dict_helper[n].starts = (uint32_t *)wrkbuf;             \
+fixed-width-integer	libclamav/aspack.c	381	    stream.dict_helper[n].ends   = &wrkbuf[sz * sizeof(uint32_t)]; \
+fixed-width-integer	libclamav/aspack.c	383	    wrkbuf                       = &wrkbuf[sz * sizeof(uint32_t) + 0x100];
+fixed-width-integer	libclamav/aspack.c	385	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, cli_ctx *ctx)
+fixed-width-integer	libclamav/aspack.c	388	    uint32_t i = 0, j = 0;
+fixed-width-integer	libclamav/aspack.c	390	    uint32_t block_rva = 1, block_size;
+fixed-width-integer	libclamav/aspack.c	393	    uint32_t blocks_offset, stream_init_multiplier_offset, comp_block_offset, wrkbuf_offset, oep_offset;
+fixed-width-integer	libclamav/aspack.c	485	                        uint32_t target = cli_readint32(wrkbuf) & 0xffffff00;
 fixed-width-integer	libclamav/aspack.c	51	    uint32_t *starts;
 fixed-width-integer	libclamav/aspack.c	53	    uint32_t size;
 fixed-width-integer	libclamav/aspack.c	57	    uint32_t bitpos;
@@ -448,10 +451,8 @@ fixed-width-integer	libclamav/aspack.c	58	    uint32_t hash;
 fixed-width-integer	libclamav/aspack.c	59	    uint32_t init_array[58];
 fixed-width-integer	libclamav/aspack.c	64	    uint32_t decarray3[4][24];
 fixed-width-integer	libclamav/aspack.c	65	    uint32_t decarray4[4][24];
-fixed-width-integer	libclamav/aspack.c	82	static uint32_t getdec(struct ASPK *stream, uint8_t which, int *err)
-fixed-width-integer	libclamav/aspack.c	84	    uint32_t ret;
-fixed-width-integer	libclamav/aspack.c	86	    uint32_t *d3 = stream->decarray3[which];
-fixed-width-integer	libclamav/aspack.c	87	    uint32_t *d4 = stream->decarray4[which];
+fixed-width-integer	libclamav/aspack.c	70	    uint32_t ticks;
+fixed-width-integer	libclamav/aspack.c	99	static uint32_t getdec(struct ASPK *stream, uint8_t which, int *err)
 fixed-width-integer	libclamav/aspack.h	45	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, struct cli_ctx_tag *);
 fixed-width-integer	libclamav/autoit.c	1010	    uint32_t s, m4sum = 0;
 fixed-width-integer	libclamav/autoit.c	1015	    uint64_t temporary_reserved = 0;
@@ -8384,17 +8385,18 @@ native-width-integer	libclamav/asn1.h	29	    size_t offset;
 native-width-integer	libclamav/asn1.h	30	    size_t size;
 native-width-integer	libclamav/asn1.h	51	int asn1_load_mscat(fmap_t *map, struct cl_engine *engine);
 native-width-integer	libclamav/asn1.h	52	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx);
-native-width-integer	libclamav/aspack.c	193	static uint8_t getbits(struct ASPK *stream, uint32_t num, int *err)
-native-width-integer	libclamav/aspack.c	209	static int build_decrypt_dictionaries(struct ASPK *stream)
-native-width-integer	libclamav/aspack.c	211	    unsigned int counter;
-native-width-integer	libclamav/aspack.c	213	    int oob;
-native-width-integer	libclamav/aspack.c	273	static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *output)
-native-width-integer	libclamav/aspack.c	278	    int oob;
-native-width-integer	libclamav/aspack.c	348	static int decomp_block(struct ASPK *stream, uint32_t size, uint8_t *stuff, uint8_t *output)
-native-width-integer	libclamav/aspack.c	364	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, cli_ctx *ctx)
+native-width-integer	libclamav/aspack.c	210	static uint8_t getbits(struct ASPK *stream, uint32_t num, int *err)
+native-width-integer	libclamav/aspack.c	226	static int build_decrypt_dictionaries(struct ASPK *stream)
+native-width-integer	libclamav/aspack.c	228	    unsigned int counter;
+native-width-integer	libclamav/aspack.c	230	    int oob;
+native-width-integer	libclamav/aspack.c	290	static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *output)
+native-width-integer	libclamav/aspack.c	295	    int oob;
+native-width-integer	libclamav/aspack.c	369	static int decomp_block(struct ASPK *stream, uint32_t size, uint8_t *stuff, uint8_t *output)
+native-width-integer	libclamav/aspack.c	385	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, cli_ctx *ctx)
 native-width-integer	libclamav/aspack.c	66	    int dict_ok;
-native-width-integer	libclamav/aspack.c	71	static inline int readstream(struct ASPK *stream)
-native-width-integer	libclamav/aspack.c	82	static uint32_t getdec(struct ASPK *stream, uint8_t which, int *err)
+native-width-integer	libclamav/aspack.c	73	static int aspack_checktimelimit(struct ASPK *stream)
+native-width-integer	libclamav/aspack.c	88	static inline int readstream(struct ASPK *stream)
+native-width-integer	libclamav/aspack.c	99	static uint32_t getdec(struct ASPK *stream, uint8_t which, int *err)
 native-width-integer	libclamav/aspack.h	45	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, struct cli_ctx_tag *);
 native-width-integer	libclamav/autoit.c	1011	    int i;
 native-width-integer	libclamav/autoit.c	1012	    unsigned int files          = 0;
@@ -22173,47 +22175,47 @@ offset-size-arithmetic	libclamav/asn1.c	862	        if (asn1_expect_objtype(map,
 offset-size-arithmetic	libclamav/asn1.c	870	        if (asn1_get_rsa_pubkey(map, &obj.next, &tbs.size, &x509)) { /* subjectPublicKeyInfo */
 offset-size-arithmetic	libclamav/asn1.c	962	                        if (keyusage[0] != 0x03 || keyusage[1] != value.size - 2 || keyusage[2] > 7) {
 offset-size-arithmetic	libclamav/asn1.h	52	cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset, unsigned int size, const struct cli_mapped_region *regions, uint32_t nregions, cli_ctx *ctx);
-offset-size-arithmetic	libclamav/aspack.c	124	    stream->bitpos += pos;
-offset-size-arithmetic	libclamav/aspack.c	125	    ret = ((ret - d3[pos - 1]) >> (24 - pos)) + d4[pos];
-offset-size-arithmetic	libclamav/aspack.c	163	            endoff       = d3[i + 1] >> 0x10;
-offset-size-arithmetic	libclamav/aspack.c	166	            uint32_t remaining = endoff - old;
-offset-size-arithmetic	libclamav/aspack.c	169	                if (!CLI_ISCONTAINED(stream->dict_helper[which].ends, 0x100, stream->dict_helper[which].ends + old, remaining)) return 0;
-offset-size-arithmetic	libclamav/aspack.c	170	                memset((stream->dict_helper[which].ends + old), i + 1, remaining);
-offset-size-arithmetic	libclamav/aspack.c	203	    retvalue = ((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (24 - num);
-offset-size-arithmetic	libclamav/aspack.c	204	    stream->bitpos += num;
-offset-size-arithmetic	libclamav/aspack.c	223	    if (!build_decrypt_array(stream, stream->array1, 3)) return 0; /* array1[19] - [3].size=19 */
-offset-size-arithmetic	libclamav/aspack.c	258	    if (!build_decrypt_array(stream, &stream->array2[1], 0) /* array2[758-1=757] - [0].size=721 */ || !build_decrypt_array(stream, &stream->array2[722], 1) /* array2[758-722=36] - [1].size=28 */ || !build_decrypt_array(stream, &stream->array2[750], 2) /* array2[758-750=8] - [2].size=8 */) return 0;
-offset-size-arithmetic	libclamav/aspack.c	273	static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *output)
-offset-size-arithmetic	libclamav/aspack.c	297	        backsize = ((gen - 256) & 7) + 2;
-offset-size-arithmetic	libclamav/aspack.c	298	        if ((backsize - 2) == 7) {
-offset-size-arithmetic	libclamav/aspack.c	304	            backsize += stuff[gen] + (((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (0x18 - hlp));
-offset-size-arithmetic	libclamav/aspack.c	305	            stream->bitpos += hlp;
-offset-size-arithmetic	libclamav/aspack.c	313	            useold += ((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (24 - gen);
-offset-size-arithmetic	libclamav/aspack.c	314	            stream->bitpos += gen;
-offset-size-arithmetic	libclamav/aspack.c	318	            useold += ((((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (24 - gen)) * 8);
-offset-size-arithmetic	libclamav/aspack.c	319	            stream->bitpos += gen;
-offset-size-arithmetic	libclamav/aspack.c	338	        if (!backbytes || backbytes > counter || backsize > size - counter) return 0;
-offset-size-arithmetic	libclamav/aspack.c	339	        while (backsize--) {
-offset-size-arithmetic	libclamav/aspack.c	348	static int decomp_block(struct ASPK *stream, uint32_t size, uint8_t *stuff, uint8_t *output)
-offset-size-arithmetic	libclamav/aspack.c	350	    memset(stream->decarray3, 0, sizeof(stream->decarray3));
-offset-size-arithmetic	libclamav/aspack.c	351	    memset(stream->decarray4, 0, sizeof(stream->decarray4));
-offset-size-arithmetic	libclamav/aspack.c	359	    stream.dict_helper[n].starts = (uint32_t *)wrkbuf;             \
-offset-size-arithmetic	libclamav/aspack.c	360	    stream.dict_helper[n].ends   = &wrkbuf[sz * sizeof(uint32_t)]; \
-offset-size-arithmetic	libclamav/aspack.c	362	    wrkbuf                       = &wrkbuf[sz * sizeof(uint32_t) + 0x100];
-offset-size-arithmetic	libclamav/aspack.c	364	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, cli_ctx *ctx)
-offset-size-arithmetic	libclamav/aspack.c	430	    while (CLI_ISCONTAINED(image, size, blocks, 8) && (block_rva = cli_readint32(blocks)) && (block_size = cli_readint32(blocks + 4)) && CLI_ISCONTAINED(image, size, image + block_rva, block_size)) {
-offset-size-arithmetic	libclamav/aspack.c	433	        wrkbuf = (uint8_t *)cli_max_calloc(block_size + 0x10e, sizeof(uint8_t));
-offset-size-arithmetic	libclamav/aspack.c	440	        stream.iend  = &wrkbuf[block_size + 0x10e];
-offset-size-arithmetic	libclamav/aspack.c	444	        if (!decomp_block(&stream, block_size, &image[ep + comp_block_offset], image + block_rva)) {
-offset-size-arithmetic	libclamav/aspack.c	453	        if (i == 0 && block_size > 7) { /* first sect j/c unrolling */
-offset-size-arithmetic	libclamav/aspack.c	454	            while (i < block_size - 6) {
-offset-size-arithmetic	libclamav/aspack.c	472	            block_size = cli_readint32(blocks + 4);
-offset-size-arithmetic	libclamav/aspack.c	473	            while (!((block_size + 0x10e) & 0xffffffff)) {
-offset-size-arithmetic	libclamav/aspack.c	475	                block_size = cli_readint32(blocks + 4);
-offset-size-arithmetic	libclamav/aspack.c	491	    if (!(outsects = cli_max_malloc(sizeof(struct cli_exe_section) * sectcount))) {
-offset-size-arithmetic	libclamav/aspack.c	503	    memcpy(outsects, sections, sizeof(struct cli_exe_section) * sectcount);
-offset-size-arithmetic	libclamav/aspack.c	77	        stream->bitpos -= 8;
-offset-size-arithmetic	libclamav/aspack.c	97	        if (!(pos = stream->dict_helper[which].ends[ret >> 16]) || pos >= 24) return 0; /* 0<pos<24 */
+offset-size-arithmetic	libclamav/aspack.c	114	        if (!(pos = stream->dict_helper[which].ends[ret >> 16]) || pos >= 24) return 0; /* 0<pos<24 */
+offset-size-arithmetic	libclamav/aspack.c	141	    stream->bitpos += pos;
+offset-size-arithmetic	libclamav/aspack.c	142	    ret = ((ret - d3[pos - 1]) >> (24 - pos)) + d4[pos];
+offset-size-arithmetic	libclamav/aspack.c	180	            endoff       = d3[i + 1] >> 0x10;
+offset-size-arithmetic	libclamav/aspack.c	183	            uint32_t remaining = endoff - old;
+offset-size-arithmetic	libclamav/aspack.c	186	                if (!CLI_ISCONTAINED(stream->dict_helper[which].ends, 0x100, stream->dict_helper[which].ends + old, remaining)) return 0;
+offset-size-arithmetic	libclamav/aspack.c	187	                memset((stream->dict_helper[which].ends + old), i + 1, remaining);
+offset-size-arithmetic	libclamav/aspack.c	220	    retvalue = ((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (24 - num);
+offset-size-arithmetic	libclamav/aspack.c	221	    stream->bitpos += num;
+offset-size-arithmetic	libclamav/aspack.c	240	    if (!build_decrypt_array(stream, stream->array1, 3)) return 0; /* array1[19] - [3].size=19 */
+offset-size-arithmetic	libclamav/aspack.c	275	    if (!build_decrypt_array(stream, &stream->array2[1], 0) /* array2[758-1=757] - [0].size=721 */ || !build_decrypt_array(stream, &stream->array2[722], 1) /* array2[758-722=36] - [1].size=28 */ || !build_decrypt_array(stream, &stream->array2[750], 2) /* array2[758-750=8] - [2].size=8 */) return 0;
+offset-size-arithmetic	libclamav/aspack.c	290	static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *output)
+offset-size-arithmetic	libclamav/aspack.c	316	        backsize = ((gen - 256) & 7) + 2;
+offset-size-arithmetic	libclamav/aspack.c	317	        if ((backsize - 2) == 7) {
+offset-size-arithmetic	libclamav/aspack.c	323	            backsize += stuff[gen] + (((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (0x18 - hlp));
+offset-size-arithmetic	libclamav/aspack.c	324	            stream->bitpos += hlp;
+offset-size-arithmetic	libclamav/aspack.c	332	            useold += ((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (24 - gen);
+offset-size-arithmetic	libclamav/aspack.c	333	            stream->bitpos += gen;
+offset-size-arithmetic	libclamav/aspack.c	337	            useold += ((((stream->hash >> (8 - stream->bitpos)) & 0xffffff) >> (24 - gen)) * 8);
+offset-size-arithmetic	libclamav/aspack.c	338	            stream->bitpos += gen;
+offset-size-arithmetic	libclamav/aspack.c	357	        if (!backbytes || backbytes > counter || backsize > size - counter) return 0;
+offset-size-arithmetic	libclamav/aspack.c	358	        while (backsize--) {
+offset-size-arithmetic	libclamav/aspack.c	369	static int decomp_block(struct ASPK *stream, uint32_t size, uint8_t *stuff, uint8_t *output)
+offset-size-arithmetic	libclamav/aspack.c	371	    memset(stream->decarray3, 0, sizeof(stream->decarray3));
+offset-size-arithmetic	libclamav/aspack.c	372	    memset(stream->decarray4, 0, sizeof(stream->decarray4));
+offset-size-arithmetic	libclamav/aspack.c	380	    stream.dict_helper[n].starts = (uint32_t *)wrkbuf;             \
+offset-size-arithmetic	libclamav/aspack.c	381	    stream.dict_helper[n].ends   = &wrkbuf[sz * sizeof(uint32_t)]; \
+offset-size-arithmetic	libclamav/aspack.c	383	    wrkbuf                       = &wrkbuf[sz * sizeof(uint32_t) + 0x100];
+offset-size-arithmetic	libclamav/aspack.c	385	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, cli_ctx *ctx)
+offset-size-arithmetic	libclamav/aspack.c	453	    while (CLI_ISCONTAINED(image, size, blocks, 8) && (block_rva = cli_readint32(blocks)) && (block_size = cli_readint32(blocks + 4)) && CLI_ISCONTAINED(image, size, image + block_rva, block_size)) {
+offset-size-arithmetic	libclamav/aspack.c	459	        wrkbuf = (uint8_t *)cli_max_calloc(block_size + 0x10e, sizeof(uint8_t));
+offset-size-arithmetic	libclamav/aspack.c	466	        stream.iend  = &wrkbuf[block_size + 0x10e];
+offset-size-arithmetic	libclamav/aspack.c	470	        if (!decomp_block(&stream, block_size, &image[ep + comp_block_offset], image + block_rva)) {
+offset-size-arithmetic	libclamav/aspack.c	479	        if (i == 0 && block_size > 7) { /* first sect j/c unrolling */
+offset-size-arithmetic	libclamav/aspack.c	480	            while (i < block_size - 6) {
+offset-size-arithmetic	libclamav/aspack.c	498	            block_size = cli_readint32(blocks + 4);
+offset-size-arithmetic	libclamav/aspack.c	499	            while (!((block_size + 0x10e) & 0xffffffff)) {
+offset-size-arithmetic	libclamav/aspack.c	501	                block_size = cli_readint32(blocks + 4);
+offset-size-arithmetic	libclamav/aspack.c	517	    if (!(outsects = cli_max_malloc(sizeof(struct cli_exe_section) * sectcount))) {
+offset-size-arithmetic	libclamav/aspack.c	529	    memcpy(outsects, sections, sizeof(struct cli_exe_section) * sectcount);
+offset-size-arithmetic	libclamav/aspack.c	94	        stream->bitpos -= 8;
 offset-size-arithmetic	libclamav/aspack.h	45	int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections, uint16_t sectcount, uint32_t ep, uint32_t base, int f, aspack_version_t version, struct cli_ctx_tag *);
 offset-size-arithmetic	libclamav/autoit.c	1098	        UNP.csize = cli_readint32(base + 1) ^ 0x45aa;
 offset-size-arithmetic	libclamav/autoit.c	1100	            cli_dbgmsg("autoit: bad file size - giving up\n");

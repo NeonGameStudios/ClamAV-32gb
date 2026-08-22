@@ -4585,3 +4585,13 @@ now checkpoint the shared deadline at bounded progress intervals and return a
 fail-visible `CL_ETIMEOUT` without handing partial output to the nested scan.
 Compiled WWPack timeout injection, short-write coverage, production PE corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## Aspack decompression deadline checkpoints — 2026-08-22
+
+The legacy Aspack decoder already propagated `cli_ctx` through its public
+entry point, but its block-output and large back-copy loops did not observe
+the shared `MaxScanTime`. The decoder state now carries the context and checks
+the deadline at bounded progress intervals; expiry marks the layer incomplete,
+stops decompression, and prevents partial output from reaching PE rebuild or
+nested scanning. Compiled Aspack timeout injection, short-write coverage,
+production PE corpus, sanitizer, and Sonic1 qualification remain release gates.

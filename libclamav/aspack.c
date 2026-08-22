@@ -66,7 +66,24 @@ struct ASPK {
     int dict_ok;
     uint8_t array2[758];
     uint8_t array1[19];
+    cli_ctx *ctx;
+    uint32_t ticks;
 };
+
+static int aspack_checktimelimit(struct ASPK *stream)
+{
+    if (stream->ctx == NULL)
+        return 0;
+
+    if (!(++stream->ticks & 0xfffU) || stream->ticks == 0) {
+        if (cli_checktimelimit(stream->ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(stream->ctx, "Aspack decompression reached the configured time limit");
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 static inline int readstream(struct ASPK *stream)
 {
@@ -279,6 +296,8 @@ static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *
 
     cli_dbgmsg("Aspack: decrypt size:%x\n", size);
     while (counter < size) {
+        if (aspack_checktimelimit(stream))
+            return 0;
         gen = getdec(stream, 0, &oob);
         if (oob) return 0;
         if (gen < 256) { /* implied within bounds */
@@ -337,6 +356,8 @@ static int decrypt(struct ASPK *stream, uint8_t *stuff, uint32_t size, uint8_t *
 
         if (!backbytes || backbytes > counter || backsize > size - counter) return 0;
         while (backsize--) {
+            if (aspack_checktimelimit(stream))
+                return 0;
             output[counter] = output[counter - backbytes];
             counter++;
         }
@@ -413,6 +434,8 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
     INIT_DICT_HELPER(2, 8);   /* dictionary + db4 -> dictionary + dd4 */
     INIT_DICT_HELPER(3, 19);  /* dictionary + ed4 -> dictionary + f20 */
     stream.decrypt_dict = wrkbuf;
+    stream.ctx          = ctx;
+    stream.ticks        = 0;
 
     stream.hash = 0x10000;
 
@@ -428,6 +451,9 @@ int unaspack(uint8_t *image, unsigned int size, struct cli_exe_section *sections
 
     i = 0;
     while (CLI_ISCONTAINED(image, size, blocks, 8) && (block_rva = cli_readint32(blocks)) && (block_size = cli_readint32(blocks + 4)) && CLI_ISCONTAINED(image, size, image + block_rva, block_size)) {
+
+        if (aspack_checktimelimit(&stream))
+            break;
 
         cli_dbgmsg("Aspack: unpacking block rva:%x - sz:%x\n", block_rva, block_size);
         wrkbuf = (uint8_t *)cli_max_calloc(block_size + 0x10e, sizeof(uint8_t));
