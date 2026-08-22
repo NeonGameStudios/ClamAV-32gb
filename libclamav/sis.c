@@ -80,6 +80,17 @@ sis_read_failure(cli_ctx *ctx, size_t nread, const char *read_reason, const char
     return CL_EPARSE;
 }
 
+static cl_error_t
+sis_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static void
 sis_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status, int failed, const char *reason)
 {
@@ -256,8 +267,18 @@ cl_error_t cli_scansis(cli_ctx *ctx)
 {
     char *tmpd;
     unsigned int i;
+    cl_error_t status;
     uint32_t uid[4];
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
+
+    if ((ctx == NULL) || (ctx->fmap == NULL))
+        return CL_ENULLARG;
+
+    status = sis_checktimelimit(ctx, "SIS inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
+
+    map = ctx->fmap;
 
     cli_dbgmsg("in scansis()\n");
 
@@ -338,6 +359,10 @@ enum {
 #define GETD2(VAR)                                                                             \
     {                                                                                          \
         /* cli_dbgmsg("GETD2 smax: %d sleft: %d\n", smax, sleft); */                           \
+        if (sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit") != CL_SUCCESS) { \
+            status = CL_ETIMEOUT;                                                              \
+            goto done;                                                                         \
+        }                                                                                        \
         if (sleft < 4) {                                                                       \
             memcpy(buff, buff + smax - sleft, sleft);                                          \
             size_t tmp = fmap_readn(map, buff + sleft, pos, BUFSIZ - sleft);                   \
@@ -450,7 +475,14 @@ static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t l
 
     for (j = 0; j < langs; j++) {
         char *name = NULL;
-        cl_error_t status = getsistring(ctx, map, EC32(ptrs[j]), EC32(lens[j]), &name);
+        cl_error_t status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+
+        if (status != CL_SUCCESS) {
+            free(values);
+            return status;
+        }
+
+        status = getsistring(ctx, map, EC32(ptrs[j]), EC32(lens[j]), &name);
 
         if (status != CL_SUCCESS) {
             free(values);
@@ -507,6 +539,10 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
     char *original_filepath = NULL;
     char *install_filepath  = NULL;
 
+    status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+    if (status != CL_SUCCESS)
+        goto done;
+
     {
         size_t nread = fmap_readn(map, &sis, SIZEOF_HEADER_UUIDS, sizeof(sis));
 
@@ -550,8 +586,12 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
         cli_dbgmsg("SIS: OOM\n");
         goto done;
     }
-    for (i = 0; i < sis.langs; i++)
+    for (i = 0; i < sis.langs; i++) {
+        status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
         alangs[i] = (size_t)EC16(llangs[i]) < MAXLANG ? sislangs[EC16(llangs[i])] : sislangs[0];
+    }
 
     if (!sis.pnames) {
         cli_dbgmsg("SIS: Application without a name?\n");
@@ -584,6 +624,10 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
                 uint16_t verlo;
                 uint32_t versub;
             } dep;
+
+            status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+            if (status != CL_SUCCESS)
+                goto done;
 
             pos = sis.pdeps + i * (sizeof(dep) + sis.langs * 2 * sizeof(uint32_t));
             {
@@ -623,6 +667,10 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
     for (i = 0; i < sis.files; i++) {
         uint32_t pkgtype, fcount = 1;
         uint32_t j;
+
+        status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
 
         GETD2(pkgtype);
         cli_dbgmsg("SIS: Pkgtype: %d\n", pkgtype);
@@ -699,12 +747,24 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
                 }
                 lens  = &ptrs[fcount];
                 olens = &ptrs[fcount * 2];
-                for (j = 0; j < fcount; j++)
+                for (j = 0; j < fcount; j++) {
+                    status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+                    if (status != CL_SUCCESS)
+                        goto done;
                     GETD2(lens[j]);
-                for (j = 0; j < fcount; j++)
+                }
+                for (j = 0; j < fcount; j++) {
+                    status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+                    if (status != CL_SUCCESS)
+                        goto done;
                     GETD2(ptrs[j]);
-                for (j = 0; j < fcount; j++)
+                }
+                for (j = 0; j < fcount; j++) {
+                    status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+                    if (status != CL_SUCCESS)
+                        goto done;
                     GETD2(olens[j]);
+                }
 
                 if (ftype != FTnull) {
                     char ofn[1024];
@@ -715,6 +775,10 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
                     for (j = 0; j < fcount; j++) {
                         uint64_t member_output_size;
                         bool temporary_reserved = false;
+
+                        status = sis_checktimelimit(ctx, "SIS metadata traversal reached the configured time limit");
+                        if (status != CL_SUCCESS)
+                            goto done;
 
                         if (!lens[j]) {
                             cli_dbgmsg("\tSkipping empty file\n");
@@ -920,6 +984,19 @@ struct SISTREAM {
     cl_error_t failure;
 };
 
+static cl_error_t sis9x_checktimelimit(cli_ctx *ctx, struct SISTREAM *s)
+{
+    cl_error_t status = sis_checktimelimit(ctx, "SIS 9.x field traversal reached the configured time limit");
+
+    if (status != CL_SUCCESS) {
+        s->incomplete = 1;
+        if (s->failure == CL_CLEAN)
+            s->failure = status;
+    }
+
+    return status;
+}
+
 static inline int getd(struct SISTREAM *s, uint32_t *v)
 {
     if (s->sleft < 4) {
@@ -1025,13 +1102,23 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
     s->incomplete = 0;
     s->failure    = CL_CLEAN;
 
+    ret = sis_checktimelimit(ctx, "SIS 9.x inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     if (getfield(s, &field) || field != T_CONTENTS)
         return sis_incomplete(ctx, "SIS 9.x contents field was truncated or invalid");
     s->level++;
 
     for (i = 0; i < 3;) {
+        ret = sis9x_checktimelimit(ctx, s);
+        if (ret != CL_SUCCESS)
+            return ret;
         if (getfield(s, &field)) return sis_incomplete(ctx, "SIS 9.x option field was truncated");
         for (; i < 3; i++) {
+            ret = sis9x_checktimelimit(ctx, s);
+            if (ret != CL_SUCCESS)
+                return ret;
             if (field == optst[i]) {
                 if (skipthis(s)) return sis_incomplete(ctx, "SIS 9.x option field could not be skipped completely");
                 i++;
@@ -1044,16 +1131,22 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
 
     i = 0;
     while (1) { /* 1DATA */
+        if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS)
+            break;
         if (getfield(s, &field) || field != T_DATA) break;
 
         s->level++;
         while (1) { /* DATA::ARRAY */
             uint32_t atype;
+            if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS)
+                break;
             if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_DATAUNIT || s->fsize[s->level] < 4) break;
             s->fsize[s->level] -= 4;
 
             s->level++;
-            while (s->fsize[s->level - 1] && !getsize(s)) { /* FOREACH DATA::ARRAY::DATAUNITs */
+            while (s->fsize[s->level - 1]) { /* FOREACH DATA::ARRAY::DATAUNITs */
+                if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS || getsize(s))
+                    break;
                 cli_dbgmsg("SIS: %d:Got dataunit element with size %x\n", s->level, s->fsize[s->level]);
                 if (ALIGN4(s->fsize[s->level]) < s->fsize[s->level - 1])
                     s->fsize[s->level - 1] -= ALIGN4(s->fsize[s->level]);
@@ -1062,17 +1155,22 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
 
                 s->level++;
                 while (1) { /* DATA::ARRAY::DATAUNIT[x]::ARRAY */
+                    if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS)
+                        break;
                     if (getfield(s, &field) || field != T_ARRAY || getd(s, &atype) || atype != T_FILEDATA || s->fsize[s->level] < 4) break;
                     s->fsize[s->level] -= 4;
 
                     s->level++;
-                    while (s->fsize[s->level - 1] && !getsize(s)) { /* FOREACH DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA */
+                    while (s->fsize[s->level - 1]) { /* FOREACH DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA */
                         uint32_t usize, usizeh, len;
                         char tempf[1024];
                         int fd;
                         uint64_t member_input_size;
                         uint64_t member_output_size;
                         bool temporary_reserved = false;
+
+                        if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS || getsize(s))
+                            break;
 
                         cli_dbgmsg("SIS: %d:Got filedata element with size %x\n", s->level, s->fsize[s->level]);
                         if (ALIGN4(s->fsize[s->level]) < s->fsize[s->level - 1])
@@ -1082,6 +1180,8 @@ static cl_error_t real_scansis9x(cli_ctx *ctx, const char *tmpd)
 
                         s->level++;
                         while (1) { /* DATA::ARRAY::DATAUNIT[x]::ARRAY::FILEDATA[x]::COMPRESSED */
+                            if (sis9x_checktimelimit(ctx, s) != CL_SUCCESS)
+                                break;
                             if (getfield(s, &field) || field != T_COMPRESSED || getd(s, &field) || getd(s, &usize) || getd(s, &usizeh) || usizeh) break;
                             s->fsize[s->level] -= 12;
                             cli_dbgmsg("SIS: File is%s compressed - size %x -> %x\n", (field) ? "" : " not", s->fsize[s->level], usize);

@@ -3421,3 +3421,14 @@ existing cleanup and incomplete-result paths. A focused expired-context
 regression covers all three entry points, with source guards and capability
 manifest updates; compiled partition-image corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## SIS metadata and field traversal deadlines — 2026-08-22
+
+SIS member copy and inflate loops already checked the shared deadline, but
+old-format language/dependency/file metadata walks and the nested 9.x field
+traversal could continue without a cancellation boundary. Parser entry,
+metadata reads/loops, and every 9.x structural traversal level now check the
+shared deadline and preserve `CL_ETIMEOUT` while existing temporary cleanup
+remains active. A direct expired-context regression and source guards cover
+the parser entry and timeout contract; compiled SIS corpus, malformed nesting,
+sanitizer, and Sonic1 qualification remain release gates.

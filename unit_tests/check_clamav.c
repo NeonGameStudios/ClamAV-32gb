@@ -9688,6 +9688,37 @@ START_TEST(test_sis_truncated_contents_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_sis_time_limit_is_fail_visible)
+{
+    static const uint8_t data[16] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_scansis(&ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "SIS inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_sis_name_table_read_failure_is_fail_visible)
 {
     uint8_t data[92] = {0};
@@ -18616,6 +18647,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_binhex_cleanup_close_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_sis_truncated_contents_is_fail_visible);
+    tcase_add_test(tc_cl, test_sis_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_name_table_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_python_compiled_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_ai_model_parser_is_explicitly_unsupported);

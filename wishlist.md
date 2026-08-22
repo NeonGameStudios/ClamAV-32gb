@@ -559,6 +559,9 @@
   language-table failures now remain incomplete/non-cacheable with distinct
   `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and
   production SIS corpus qualification.
+- Old-format SIS metadata and 9.x nested field traversal now honor the shared
+  scan deadline and preserve fail-visible `CL_ETIMEOUT`; add compiled timeout,
+  malformed-nesting, sanitizer, and production SIS corpus qualification.
 - Python bytecode magic is now an explicit unsupported parser boundary:
   raw matching continues, but non-detection results are incomplete and
   non-cacheable until a bounded version-aware parser is implemented.
