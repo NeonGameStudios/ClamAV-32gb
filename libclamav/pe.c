@@ -3257,6 +3257,7 @@ int cli_scanpe(cli_ctx *ctx)
     bc_ctx = cli_bytecode_context_alloc();
     if (!bc_ctx) {
         cli_errmsg("cli_scanpe: can't allocate memory for bc_ctx\n");
+        cli_mark_scan_incomplete(ctx, "PE bytecode hook context could not be allocated");
         cli_exe_info_destroy(peinfo);
         return CL_EMEM;
     }
@@ -4788,6 +4789,7 @@ int cli_scanpe(cli_ctx *ctx)
     bc_ctx = cli_bytecode_context_alloc();
     if (!bc_ctx) {
         cli_errmsg("cli_scanpe: can't allocate memory for bc_ctx\n");
+        cli_mark_scan_incomplete(ctx, "PE bytecode unpacker context could not be allocated");
         return CL_EMEM;
     }
 

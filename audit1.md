@@ -4884,3 +4884,16 @@ returning, including the two direct MSXML callback/base64 staging branches.
 The source guards and non-clang regression gates pass. Compiled fault
 injection, sanitizer runs, production corpora, and Sonic1 qualification remain
 open.
+
+## Bytecode hook-context allocation failures — 2026-08-22
+
+PDF, PE, ELF, Mach-O, and root-metadata preclass bytecode entry points now
+mark their scan context incomplete when the required hook context cannot be
+allocated. The error remains `CL_EMEM`, cleanup ownership is unchanged, and a
+failed hook cannot be mistaken for a clean parser result while raw matching or
+other independent work continues.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled hook fault injection, interpreter/JIT qualification,
+production executable corpora, sanitizer runs, and Sonic1 qualification
+remain open.

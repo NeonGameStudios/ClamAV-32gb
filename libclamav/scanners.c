@@ -6431,6 +6431,7 @@ static cl_error_t run_root_metadata_preclass_hook(cli_ctx *ctx)
     bc_ctx = cli_bytecode_context_alloc();
     if (NULL == bc_ctx) {
         cli_errmsg("cli_magic_scan: can't allocate memory for bc_ctx\n");
+        cli_mark_scan_incomplete(ctx, "root metadata bytecode hook context could not be allocated");
         status = CL_EMEM;
         goto done;
     }

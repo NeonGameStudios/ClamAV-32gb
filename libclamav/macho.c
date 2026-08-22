@@ -860,6 +860,7 @@ cl_error_t cli_unpackmacho(cli_ctx *ctx)
     bc_ctx = cli_bytecode_context_alloc();
     if (!bc_ctx) {
         cli_errmsg("cli_unpackmacho: can't allocate memory for bc_ctx\n");
+        cli_mark_scan_incomplete(ctx, "Mach-O bytecode unpacker context could not be allocated");
         ret = CL_EMEM;
         goto done;
     }

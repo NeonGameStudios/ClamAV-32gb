@@ -1296,6 +1296,7 @@ static int run_pdf_hooks(struct pdf_struct *pdf, enum pdf_phase phase, int fd, c
     bc_ctx = cli_bytecode_context_alloc();
     if (!bc_ctx) {
         cli_errmsg("run_pdf_hooks: can't allocate memory for bc_ctx\n");
+        cli_mark_scan_incomplete(ctx, "PDF bytecode hook context could not be allocated");
         return CL_EMEM;
     }
 

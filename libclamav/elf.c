@@ -1025,6 +1025,7 @@ cl_error_t cli_unpackelf(cli_ctx *ctx)
     bc_ctx = cli_bytecode_context_alloc();
     if (!bc_ctx) {
         cli_errmsg("cli_scanelf: can't allocate memory for bc_ctx\n");
+        cli_mark_scan_incomplete(ctx, "ELF bytecode unpacker context could not be allocated");
         ret = CL_EMEM;
         goto done;
     }

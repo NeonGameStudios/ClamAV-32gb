@@ -13,6 +13,10 @@
   non-success or detection status with a previously complete report, so close,
   aggregation, and transport-boundary failures cannot be published as clean.
   Compiled daemon and Sonic1 qualification remain open.
+- PDF, PE, ELF, Mach-O, and root-metadata bytecode hook-context allocation
+  failures now mark required hook work incomplete before returning `CL_EMEM`;
+  compiled hook fault injection, interpreter/JIT qualification, production
+  executable corpora, and Sonic1 qualification remain open.
 - AutoIt EA06 script decompilation now marks its bounded output-buffer
   allocation failure as incomplete before returning `CL_EMEM`; compiled fault
   injection, parser corpus, sanitizer, and Sonic1 qualification remain open.
