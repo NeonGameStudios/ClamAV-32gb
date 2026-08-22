@@ -2429,6 +2429,7 @@ contains libclamav/packlibs.c 'FSG decompression reached the configured time lim
 contains libclamav/fsg.c 'cli_unfsg_ctx'
 contains libclamav/packlibs.c 'MEW decompression reached the configured time limit'
 contains libclamav/mew.c 'unmew_ctx'
+contains libclamav/petite.c 'Petite decompression reached the configured time limit'
 contains libclamav/wwunpack.c 'WWPack output reached the configured time limit'
 contains libclamav/wwunpack.c 'WWPack output could not be written completely'
 contains libclamav/wwunpack.c 'WWPack decompression reached the configured time limit'

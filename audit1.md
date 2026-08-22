@@ -4625,3 +4625,14 @@ progress, large copies, and MEW section traversal before PE rebuild. The
 separate `mew_lzma()` decoder is not covered by this slice and remains an
 explicit qualification item. Compiled MEW timeout injection, production
 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## Petite decompression deadline checkpoints — 2026-08-22
+
+The legacy Petite decoder already propagated `cli_ctx` to PE rebuild, but its
+compressed-section output, import-table walks, variable-length bitstream
+reads, and large back-copy loops did not independently observe
+`MaxScanTime`. Those loops now checkpoint progress and return Petite's existing
+fail-visible failure convention on expiry, preventing partial output from
+reaching rebuild or nested scanning. Compiled Petite timeout injection,
+malformed-section coverage, sanitizer, and Sonic1 qualification remain
+release gates.

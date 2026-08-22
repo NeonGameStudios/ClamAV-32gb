@@ -4115,18 +4115,20 @@ fixed-width-integer	libclamav/perflogging.h	63	extern uint64_t cli_perf_sum[__LA
 fixed-width-integer	libclamav/perflogging.h	64	extern uint64_t cli_perf_count[__LAST_COUNTABLE][256];
 fixed-width-integer	libclamav/perflogging.h	78	static inline void cli_perf_log_add(enum perf_log_sumable kind, uint64_t add)
 fixed-width-integer	libclamav/perflogging.h	85	static inline void cli_perf_log_count2(enum perf_log_countable kind, uint8_t event, uint64_t cnt)
-fixed-width-integer	libclamav/petite.c	108	        uint32_t size, srva;
-fixed-width-integer	libclamav/petite.c	130	                    uint32_t trva, trsz, tvsz;
-fixed-width-integer	libclamav/petite.c	161	                uint32_t virtaddr = pep + 5 + Imagebase, tmpep;
-fixed-width-integer	libclamav/petite.c	169	                        uint32_t api;
-fixed-width-integer	libclamav/petite.c	257	            bottom = (uint32_t)cli_readint32(packed + 8);
-fixed-width-integer	libclamav/petite.c	279	            uint32_t check1, check2;
-fixed-width-integer	libclamav/petite.c	485	                uint32_t reloc;
-fixed-width-integer	libclamav/petite.c	505	                    uint32_t test1, test2;
-fixed-width-integer	libclamav/petite.c	515	                        mangled = ((uint32_t)cli_readint32(ddst - grown + 0x1c0 - reloc) != 0x90909090); /* FIXME: Magic's too short??? */
+fixed-width-integer	libclamav/petite.c	100	    uint32_t thisrva = 0, bottom = 0, enc_ep = 0, irva = 0, workdone = 0, grown = 0x355, skew = 0x35;
+fixed-width-integer	libclamav/petite.c	102	    uint32_t ticks = 0;
+fixed-width-integer	libclamav/petite.c	132	        uint32_t size, srva;
+fixed-width-integer	libclamav/petite.c	160	                    uint32_t trva, trsz, tvsz;
+fixed-width-integer	libclamav/petite.c	191	                uint32_t virtaddr = pep + 5 + Imagebase, tmpep;
+fixed-width-integer	libclamav/petite.c	199	                        uint32_t api;
+fixed-width-integer	libclamav/petite.c	296	            bottom = (uint32_t)cli_readint32(packed + 8);
+fixed-width-integer	libclamav/petite.c	318	            uint32_t check1, check2;
+fixed-width-integer	libclamav/petite.c	536	                uint32_t reloc;
+fixed-width-integer	libclamav/petite.c	556	                    uint32_t test1, test2;
+fixed-width-integer	libclamav/petite.c	566	                        mangled = ((uint32_t)cli_readint32(ddst - grown + 0x1c0 - reloc) != 0x90909090); /* FIXME: Magic's too short??? */
 fixed-width-integer	libclamav/petite.c	61	static int doubledl(char **scur, uint8_t *mydlptr, char *buffer, uint32_t buffersize)
-fixed-width-integer	libclamav/petite.c	78	int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, cli_ctx *ctx)
-fixed-width-integer	libclamav/petite.c	82	    uint32_t thisrva = 0, bottom = 0, enc_ep = 0, irva = 0, workdone = 0, grown = 0x355, skew = 0x35;
+fixed-width-integer	libclamav/petite.c	78	static int petite_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+fixed-width-integer	libclamav/petite.c	96	int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, cli_ctx *ctx)
 fixed-width-integer	libclamav/petite.h	30	int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, struct cli_ctx_tag *);
 fixed-width-integer	libclamav/png.c	103	    uint64_t chunk_data_length = 0;
 fixed-width-integer	libclamav/png.c	105	    uint32_t chunk_crc;
@@ -12217,17 +12219,18 @@ native-width-integer	libclamav/perflogging.c	58	static int dummy;
 native-width-integer	libclamav/perflogging.h	57	extern __thread int last_flushed;
 native-width-integer	libclamav/perflogging.h	58	extern __thread int cli_perf_registered;
 native-width-integer	libclamav/perflogging.h	61	extern __thread int last_flushed;
-native-width-integer	libclamav/petite.c	109	        int backbytes, oldback, addsize;
-native-width-integer	libclamav/petite.c	110	        unsigned int backsize;
-native-width-integer	libclamav/petite.c	121	            int t, upd = 1;
-native-width-integer	libclamav/petite.c	162	                int rndm = 0, dummy = 1;
-native-width-integer	libclamav/petite.c	282	            unsigned int q;
-native-width-integer	libclamav/petite.c	312	            if ((int)(bottom - thisrva) > 0)
-native-width-integer	libclamav/petite.c	430	                        addsize += 1 + (backbytes < (int)check2) + (backbytes < (int)check1);
-native-width-integer	libclamav/petite.c	484	                int strippetite = 0;
+native-width-integer	libclamav/petite.c	101	    int j = 0, oob, mangled = 0, check4resources = 0;
+native-width-integer	libclamav/petite.c	133	        int backbytes, oldback, addsize;
+native-width-integer	libclamav/petite.c	134	        unsigned int backsize;
+native-width-integer	libclamav/petite.c	151	            int t, upd = 1;
+native-width-integer	libclamav/petite.c	192	                int rndm = 0, dummy = 1;
+native-width-integer	libclamav/petite.c	321	            unsigned int q;
+native-width-integer	libclamav/petite.c	351	            if ((int)(bottom - thisrva) > 0)
+native-width-integer	libclamav/petite.c	477	                        addsize += 1 + (backbytes < (int)check2) + (backbytes < (int)check1);
+native-width-integer	libclamav/petite.c	535	                int strippetite = 0;
 native-width-integer	libclamav/petite.c	61	static int doubledl(char **scur, uint8_t *mydlptr, char *buffer, uint32_t buffersize)
-native-width-integer	libclamav/petite.c	78	int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, cli_ctx *ctx)
-native-width-integer	libclamav/petite.c	83	    int j = 0, oob, mangled = 0, check4resources = 0;
+native-width-integer	libclamav/petite.c	78	static int petite_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+native-width-integer	libclamav/petite.c	96	int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, cli_ctx *ctx)
 native-width-integer	libclamav/petite.h	30	int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, struct cli_ctx_tag *);
 native-width-integer	libclamav/phish_allow_list.c	45	cl_error_t allow_list_match(const struct cl_engine* engine, char* real_url, const char* display_url, int hostOnly)
 native-width-integer	libclamav/phish_allow_list.c	68	int is_allow_list_ok(const struct cl_engine* engine)
@@ -17816,9 +17819,9 @@ boundary-constant	libclamav/pe.c	6161	    if (hlen > SIZE_MAX - 4) {
 boundary-constant	libclamav/pe.c	6180	    if (hlen > SIZE_MAX - 8 || at > SIZE_MAX - (hlen + 8)) {
 boundary-constant	libclamav/pe.c	711	            if (base > UINT32_MAX - child_rva) {
 boundary-constant	libclamav/pe.c	721	            if (base > UINT32_MAX - offs) {
-boundary-constant	libclamav/petite.c	258	            if (bottom > UINT32_MAX - 4) {
-boundary-constant	libclamav/petite.c	400	                        if (backbytes >= INT_MAX / 2) {
-boundary-constant	libclamav/petite.c	421	                            if (backbytes >= INT_MAX / 2) {
+boundary-constant	libclamav/petite.c	297	            if (bottom > UINT32_MAX - 4) {
+boundary-constant	libclamav/petite.c	447	                        if (backbytes >= INT_MAX / 2) {
+boundary-constant	libclamav/petite.c	468	                            if (backbytes >= INT_MAX / 2) {
 boundary-constant	libclamav/regex_list.c	365	            max = INT_MAX;
 boundary-constant	libclamav/scanners.c	5503	                                if ((uint64_t)fpt->offset > UINT32_MAX) {
 boundary-constant	libclamav/scanners.c	8427	            (scanned_out / CL_COUNT_PRECISION > UINT32_MAX)) {
@@ -19795,9 +19798,9 @@ format-width	libclamav/pe_icons.c	281	                    cli_dbgmsg("cli_scanic
 format-width	libclamav/pe_icons.c	283	                    cli_dbgmsg("cli_scanicon: could not parse %u bytes of icon entries\n", gsz);
 format-width	libclamav/pe_icons.c	963	        cli_errmsg("getmetrics: Unable to allocate memory for tmp %u\n", (side * side * 4 * 2));
 format-width	libclamav/perflogging.c	116	                printf(" %u -> %ju", k, cli_perf_count[j][k]);
-format-width	libclamav/petite.c	221	                        cli_dbgmsg("Petite: Skipping section %d, Raw: %x, RSize:%x\n", t, usects[t].raw, usects[t].rsz);
-format-width	libclamav/petite.c	231	                cli_dbgmsg("Petite: .SECT%d RVA:%x VSize:%x ROffset: %x, RSize:%x\n", t, usects[t].rva, usects[t].vsz, usects[t].raw, usects[t].rsz);
-format-width	libclamav/petite.c	511	                    cli_dbgmsg("Petite: Found petite code in sect%d(%x). Let's strip it.\n", j - 1, usects[j - 1].rva);
+format-width	libclamav/petite.c	260	                        cli_dbgmsg("Petite: Skipping section %d, Raw: %x, RSize:%x\n", t, usects[t].raw, usects[t].rsz);
+format-width	libclamav/petite.c	270	                cli_dbgmsg("Petite: .SECT%d RVA:%x VSize:%x ROffset: %x, RSize:%x\n", t, usects[t].rva, usects[t].vsz, usects[t].raw, usects[t].rsz);
+format-width	libclamav/petite.c	562	                    cli_dbgmsg("Petite: Found petite code in sect%d(%x). Let's strip it.\n", j - 1, usects[j - 1].rva);
 format-width	libclamav/phish_allow_list.c	48	    cli_dbgmsg("Phishing: looking up in allow list: %s:%s; host-only:%d\n", real_url, display_url, hostOnly);
 format-width	libclamav/phishcheck.c	1191	        cli_dbgmsg("Looking up hash %s for %s(%u)%s(%u)\n", h, host, (unsigned)hlen, path, (unsigned)plen);
 format-width	libclamav/phishcheck.c	462	    sscanf(host, "%d.%d.%d.%d%n", &a, &b, &c, &d, &n);
@@ -27788,35 +27791,35 @@ offset-size-arithmetic	libclamav/pe_structs.h	139	    uint32_t PointerToRawData;
 offset-size-arithmetic	libclamav/pe_structs.h	154	    uint32_t length; /** length of the certificate data, including the header */
 offset-size-arithmetic	libclamav/pe_structs.h	35	    uint16_t Machine;              /**< CPU this executable runs on, see libclamav/pe.c for possible values */
 offset-size-arithmetic	libclamav/perflogging.h	28	 * it must have as little overhead as possible */
-offset-size-arithmetic	libclamav/petite.c	123	            if (j <= 0) /* Some non petite compressed files will get here */
-offset-size-arithmetic	libclamav/petite.c	147	            /* Computes virtualsize... we try to guess, actually :O */
-offset-size-arithmetic	libclamav/petite.c	216	                usects[t].raw = (t > 0) ? (usects[t - 1].raw + usects[t - 1].rsz) : 0;
-offset-size-arithmetic	libclamav/petite.c	219	                        memmove(buf + usects[t].raw, adjbuf + usects[t].rva, usects[t].rsz);
-offset-size-arithmetic	libclamav/petite.c	222	                        usects[t].raw = t > 0 ? usects[t - 1].raw : 0;
-offset-size-arithmetic	libclamav/petite.c	242	        if (srva != size) { /* Test and clear bit 31 */
-offset-size-arithmetic	libclamav/petite.c	256	            /* Save the end of current packed section for later use */
-offset-size-arithmetic	libclamav/petite.c	266	            ssrc = adjbuf + cli_readint32(packed + 4) - (size - 1) * 4;
-offset-size-arithmetic	libclamav/petite.c	267	            ddst = adjbuf + cli_readint32(packed + 8) - (size - 1) * 4;
-offset-size-arithmetic	libclamav/petite.c	269	            if (!CLI_ISCONTAINED(buf, bufsz, ssrc, size * 4) || !CLI_ISCONTAINED(buf, bufsz, ddst, size * 4)) {
-offset-size-arithmetic	libclamav/petite.c	275	            /* Copy packed data to the end of the current packed section */
-offset-size-arithmetic	libclamav/petite.c	276	            memmove(ddst, ssrc, size * 4);
-offset-size-arithmetic	libclamav/petite.c	292	            size    = cli_readint32(packed + 4); /* How many bytes to unpack */
-offset-size-arithmetic	libclamav/petite.c	302	            if (!(tmpsct = cli_max_realloc(usects, sizeof(struct cli_exe_section) * (j + 1)))) {
-offset-size-arithmetic	libclamav/petite.c	318	            if (!size) { /* That's a ghost section! reloc any1? :P */
-offset-size-arithmetic	libclamav/petite.c	373	            size--;
-offset-size-arithmetic	libclamav/petite.c	391	                    size--;
-offset-size-arithmetic	libclamav/petite.c	427	                            backsize--;
-offset-size-arithmetic	libclamav/petite.c	430	                        addsize += 1 + (backbytes < (int)check2) + (backbytes < (int)check1);
-offset-size-arithmetic	libclamav/petite.c	433	                        backsize  = backbytes + 1;
-offset-size-arithmetic	libclamav/petite.c	441	                    backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/petite.c	446	                    backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/petite.c	448	                        backsize++;
-offset-size-arithmetic	libclamav/petite.c	454	                            backsize = backsize * 2 + oob;
-offset-size-arithmetic	libclamav/petite.c	462	                        backsize += 2;
-offset-size-arithmetic	libclamav/petite.c	464	                    backsize += addsize;
-offset-size-arithmetic	libclamav/petite.c	465	                    size -= backsize;
-offset-size-arithmetic	libclamav/petite.c	466	                    if (!CLI_ISCONTAINED(buf, bufsz, ddst, backsize) || !CLI_ISCONTAINED(buf, bufsz, ddst + backbytes, backsize)) {
-offset-size-arithmetic	libclamav/petite.c	470	                    while (backsize--) {
+offset-size-arithmetic	libclamav/petite.c	153	            if (j <= 0) /* Some non petite compressed files will get here */
+offset-size-arithmetic	libclamav/petite.c	177	            /* Computes virtualsize... we try to guess, actually :O */
+offset-size-arithmetic	libclamav/petite.c	255	                usects[t].raw = (t > 0) ? (usects[t - 1].raw + usects[t - 1].rsz) : 0;
+offset-size-arithmetic	libclamav/petite.c	258	                        memmove(buf + usects[t].raw, adjbuf + usects[t].rva, usects[t].rsz);
+offset-size-arithmetic	libclamav/petite.c	261	                        usects[t].raw = t > 0 ? usects[t - 1].raw : 0;
+offset-size-arithmetic	libclamav/petite.c	281	        if (srva != size) { /* Test and clear bit 31 */
+offset-size-arithmetic	libclamav/petite.c	295	            /* Save the end of current packed section for later use */
+offset-size-arithmetic	libclamav/petite.c	305	            ssrc = adjbuf + cli_readint32(packed + 4) - (size - 1) * 4;
+offset-size-arithmetic	libclamav/petite.c	306	            ddst = adjbuf + cli_readint32(packed + 8) - (size - 1) * 4;
+offset-size-arithmetic	libclamav/petite.c	308	            if (!CLI_ISCONTAINED(buf, bufsz, ssrc, size * 4) || !CLI_ISCONTAINED(buf, bufsz, ddst, size * 4)) {
+offset-size-arithmetic	libclamav/petite.c	314	            /* Copy packed data to the end of the current packed section */
+offset-size-arithmetic	libclamav/petite.c	315	            memmove(ddst, ssrc, size * 4);
+offset-size-arithmetic	libclamav/petite.c	331	            size    = cli_readint32(packed + 4); /* How many bytes to unpack */
+offset-size-arithmetic	libclamav/petite.c	341	            if (!(tmpsct = cli_max_realloc(usects, sizeof(struct cli_exe_section) * (j + 1)))) {
+offset-size-arithmetic	libclamav/petite.c	357	            if (!size) { /* That's a ghost section! reloc any1? :P */
+offset-size-arithmetic	libclamav/petite.c	412	            size--;
+offset-size-arithmetic	libclamav/petite.c	434	                    size--;
+offset-size-arithmetic	libclamav/petite.c	474	                            backsize--;
+offset-size-arithmetic	libclamav/petite.c	477	                        addsize += 1 + (backbytes < (int)check2) + (backbytes < (int)check1);
+offset-size-arithmetic	libclamav/petite.c	480	                        backsize  = backbytes + 1;
+offset-size-arithmetic	libclamav/petite.c	488	                    backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/petite.c	493	                    backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/petite.c	495	                        backsize++;
+offset-size-arithmetic	libclamav/petite.c	501	                            backsize = backsize * 2 + oob;
+offset-size-arithmetic	libclamav/petite.c	509	                        backsize += 2;
+offset-size-arithmetic	libclamav/petite.c	511	                    backsize += addsize;
+offset-size-arithmetic	libclamav/petite.c	512	                    size -= backsize;
+offset-size-arithmetic	libclamav/petite.c	513	                    if (!CLI_ISCONTAINED(buf, bufsz, ddst, backsize) || !CLI_ISCONTAINED(buf, bufsz, ddst + backbytes, backsize)) {
+offset-size-arithmetic	libclamav/petite.c	517	                    while (backsize--) {
 offset-size-arithmetic	libclamav/petite.c	68	        if (*scur < buffer || *scur >= buffer + buffersize - 1)
 offset-size-arithmetic	libclamav/phishcheck.c	1001	                start++;
 offset-size-arithmetic	libclamav/phishcheck.c	1008	    end = strchr(p, '/');

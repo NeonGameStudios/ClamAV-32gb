@@ -75,12 +75,31 @@ static int doubledl(char **scur, uint8_t *mydlptr, char *buffer, uint32_t buffer
     return (olddl >> 7) & 1;
 }
 
+static int petite_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+{
+    if (ctx == NULL)
+        return 0;
+
+    (*ticks)++;
+    if (*ticks < 4096)
+        return 0;
+
+    *ticks = 0;
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Petite decompression reached the configured time limit");
+        return 1;
+    }
+
+    return 0;
+}
+
 int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli_exe_section *sections, unsigned int sectcount, uint32_t Imagebase, uint32_t pep, int desc, int version, uint32_t ResRva, uint32_t ResSize, cli_ctx *ctx)
 {
     char *adjbuf     = buf - minrva;
     char *packed     = NULL;
     uint32_t thisrva = 0, bottom = 0, enc_ep = 0, irva = 0, workdone = 0, grown = 0x355, skew = 0x35;
     int j = 0, oob, mangled = 0, check4resources = 0;
+    uint32_t ticks = 0;
     struct cli_exe_section *usects = NULL;
     void *tmpsct                   = NULL;
 
@@ -103,11 +122,22 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
         skew   = 0x34;
     }
 
+    if (ctx != NULL && cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Petite decompression reached the configured time limit");
+        return 1;
+    }
+
     while (1) {
         char *ssrc, *ddst;
         uint32_t size, srva;
         int backbytes, oldback, addsize;
         unsigned int backsize;
+
+        if (petite_checktimelimit(ctx, &ticks)) {
+            if (usects)
+                free(usects);
+            return 1;
+        }
 
         if (!CLI_ISCONTAINED(buf, bufsz, packed, 4)) {
             if (usects)
@@ -168,6 +198,11 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                     while (dummy && CLI_ISCONTAINED(buf, bufsz, thunk, 4)) {
                         uint32_t api;
 
+                        if (petite_checktimelimit(ctx, &ticks)) {
+                            free(usects);
+                            return 1;
+                        }
+
                         if (!cli_readint32(thunk)) {
                             workdone = 1;
                             break;
@@ -178,6 +213,10 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                         dummy = 0;
 
                         while (CLI_ISCONTAINED(buf, bufsz, imports, 4)) {
+                            if (petite_checktimelimit(ctx, &ticks)) {
+                                free(usects);
+                                return 1;
+                            }
                             dummy = 0;
 
                             imports += 4;
@@ -377,6 +416,10 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
 
             /* No surprises here... NRV any1??? ;) */
             while (size > 0) {
+                if (petite_checktimelimit(ctx, &ticks)) {
+                    free(usects);
+                    return 1;
+                }
                 oob = doubledl(&ssrc, &mydl, buf, bufsz);
                 if (oob == -1) {
                     free(usects);
@@ -393,6 +436,10 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                     addsize = 0;
                     backbytes++;
                     while (1) {
+                        if (petite_checktimelimit(ctx, &ticks)) {
+                            free(usects);
+                            return 1;
+                        }
                         if ((oob = doubledl(&ssrc, &mydl, buf, bufsz)) == -1) {
                             free(usects);
                             return 1;
@@ -468,6 +515,10 @@ int petite_inflate2x_1to9(char *buf, uint32_t minrva, uint32_t bufsz, struct cli
                         return 1;
                     }
                     while (backsize--) {
+                        if (petite_checktimelimit(ctx, &ticks)) {
+                            free(usects);
+                            return 1;
+                        }
                         *ddst = *(ddst + backbytes);
                         ddst++;
                     }

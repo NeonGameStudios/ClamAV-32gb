@@ -1073,3 +1073,6 @@
 - Non-LZMA MEW bitstream, back-copy, and section-traversal loops now use a
   context-aware decoder entry; add compiled MEW timeout injection and retain
   separate LZMA-path, production corpus, sanitizer, and Sonic1 qualification.
+- Petite compressed-section output, import walks, and back-copy loops now
+  checkpoint the shared `MaxScanTime`; add compiled Petite timeout injection,
+  malformed-section coverage, sanitizer, and Sonic1 qualification.
