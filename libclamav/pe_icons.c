@@ -1420,9 +1420,10 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
     unsigned int width, height, depth, x, y;
     unsigned int err, scalemode = 2, enginesize;
     fmap_t *map;
-    uint32_t icoff;
+    size_t icoff;
     struct icon_matcher *matcher;
     unsigned int special_32_is_32 = 0;
+    size_t bitmap_header_size;
 
     if (!ctx || !ctx->engine || !(matcher = ctx->engine->iconcheck))
         return CL_SUCCESS;
@@ -1446,7 +1447,10 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
     }
 
     /* seek to the end of v4/v5 header */
-    icoff += READ32(bmphdr.sz);
+    bitmap_header_size = READ32(bmphdr.sz);
+    if (icoff > map->len || bitmap_header_size > map->len - icoff)
+        return icon_parse_error(icon_env, NULL, "PE icon bitmap header extends beyond the input map");
+    icoff += bitmap_header_size;
 
     width  = READ32(bmphdr.w);
     height = READ32(bmphdr.h) / 2;

@@ -4596,6 +4596,17 @@ resource work, and attacker-declared group lengths are not mapped as one large
 contiguous window. Static guards and whitespace validation pass; compiled PE
 icon corpus, sanitizer, and large-file qualification remain release gates.
 
+## PE icon bitmap-header range validation — 2026-08-21
+
+PE icon parsing now validates the declared bitmap-header size against the
+containing fmap before advancing to palettes or pixel data. The offset uses
+the native map-coordinate width, and a header that would extend past the map
+is an explicit incomplete/non-cacheable parse result rather than a wrapped
+32-bit coordinate that can cause unrelated bytes to be interpreted as icon
+metadata. The focused regression and source guards are registered; compiled
+Linux/Sonic1, sanitizer, and broader PE/icon corpus qualification remain
+open.
+
 ## Forced nested-fmap read failures — 2026-08-21
 
 After a nested range passes bounds and resource admission, a source-window
