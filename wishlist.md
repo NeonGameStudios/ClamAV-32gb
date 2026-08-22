@@ -207,6 +207,9 @@
   now distinguish in-range fmap callback failures (`CL_EREAD`) from genuinely
   out-of-map/truncated ranges; add callback-fault, sanitizer, and production
   ISO9660 corpus qualification.
+- ISO9660 volume, directory-entry, and file-extent traversal now honors the
+  shared scan deadline; add compiled timeout-injection and large-directory
+  corpus qualification.
 - UDF generic and required volume-descriptor reads now distinguish in-range
   fmap callback failures (`CL_EREAD`) from short or out-of-map descriptors
   (`CL_EPARSE`); add callback-fault, sanitizer, and production UDF corpus

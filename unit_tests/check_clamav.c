@@ -10327,6 +10327,31 @@ START_TEST(test_cpio_initial_read_failure_is_read_error)
 }
 END_TEST
 
+START_TEST(test_iso_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(cli_scaniso(&ctx, 32768), CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ISO inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_iso_truncated_directory_is_fail_visible)
 {
     enum { ISO_OFFSET = 32768, ISO_DESCRIPTOR_BYTES = 2454 };
@@ -17723,6 +17748,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cpio_initial_read_failure_is_read_error);
     tcase_add_test(tc_cl, test_parser_temporary_directory_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);
+    tcase_add_test(tc_cl, test_iso_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_volume_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);

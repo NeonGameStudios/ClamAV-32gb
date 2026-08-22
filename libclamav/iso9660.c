@@ -115,8 +115,18 @@ static cl_error_t iso_scan_file(const iso9660_t *iso, unsigned int block, unsign
     cli_dbgmsg("iso_scan_file: dumping to %s\n", tmpf);
     while (len) {
         cl_error_t read_status;
-        const void *buf   = needblock(iso, block, 1, &read_status);
-        unsigned int todo = MIN(len, iso->blocksz);
+        const void *buf;
+        unsigned int todo;
+
+        ret = cli_checktimelimit(iso->ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(iso->ctx, "ISO file extent traversal reached the configured time limit");
+            break;
+        }
+
+        buf  = needblock(iso, block, 1, &read_status);
+        todo = MIN(len, iso->blocksz);
+
         if (!buf) {
             if (read_status == CL_EREAD) {
                 cli_dbgmsg("iso_scan_file: cannot read file data block\n");
@@ -205,6 +215,12 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
         uint8_t dir_block[2048];
         unsigned int dirsz;
 
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "ISO directory traversal reached the configured time limit");
+            break;
+        }
+
         if (iso->dir_blocks.count > 1024) {
             cli_dbgmsg("iso_parse_dir: Breaking out due to too many dir records\n");
             return CL_BREAK;
@@ -238,8 +254,16 @@ static cl_error_t iso_parse_dir(iso9660_t *iso, unsigned int block, unsigned int
         }
 
         for (dirsz = MIN(iso->blocksz, len);;) {
-            unsigned int entrysz = *dir, fileoff, filesz;
+            unsigned int entrysz, fileoff, filesz;
             char *sep;
+
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "ISO directory-entry traversal reached the configured time limit");
+                break;
+            }
+
+            entrysz = *dir;
 
             if (!dirsz || !entrysz) /* continuing on next block, if any */
                 break;
@@ -331,6 +355,15 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     cl_error_t status   = CL_SUCCESS;
     cl_error_t ret      = CL_SUCCESS;
     uint32_t nextJoliet = 0;
+
+    if (ctx == NULL || ctx->fmap == NULL)
+        return CL_ENULLARG;
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "ISO inspection reached the configured time limit");
+        return status;
+    }
 
     if (offset < 32768) {
         /* Need 16 sectors at least 2048 bytes long */
@@ -429,6 +462,12 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     iso.joliet = 0;
 
     do {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "ISO volume walk reached the configured time limit");
+            goto done;
+        }
+
         cli_dbgmsg("in cli_scaniso\n");
         if (cli_debug_flag) {
             cli_dbgmsg("cli_scaniso: Raw sector size: %u\n", iso.sectsz);

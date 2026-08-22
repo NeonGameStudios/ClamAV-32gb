@@ -5063,6 +5063,14 @@ resource blocks. A timeout marks the partition incomplete and prevents a clean
 result after a partial traversal. Compiled timeout injection, sanitizer, and
 large-volume HFS+ qualification remain open.
 
+## ISO9660 traversal deadlines — 2026-08-22
+
+ISO9660 now checks the shared deadline at scan entry, volume walking, directory
+blocks, directory entries, and file-extent staging. Timeout expiry marks the
+confirmed image incomplete and prevents a clean result after partial traversal.
+Compiled timeout injection, sanitizer, and production ISO9660 qualification
+remain open.
+
 ## TIFF IFD traversal deadline — 2026-08-22
 
 TIFF now checks the shared scan deadline before each linked IFD is entered and
