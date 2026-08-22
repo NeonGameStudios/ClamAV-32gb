@@ -1956,6 +1956,35 @@ START_TEST(test_fileblob_temporary_spool_accounting)
 }
 END_TEST
 
+START_TEST(test_fileblob_time_limit_is_fail_visible)
+{
+    static const unsigned char payload[] = "12345";
+    struct cl_engine *engine;
+    cli_ctx ctx;
+    fileblob *fb;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = engine;
+    ctx.this_layer_tmpdir = tmpdir;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    fb = fileblobCreate();
+    ck_assert_ptr_nonnull(fb);
+    fileblobSetCTX(fb, &ctx);
+    fileblobSetFilename(fb, tmpdir, "time-limit");
+    ck_assert_int_eq(fileblobAddData(fb, payload, sizeof(payload) - 1), -1);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    fileblobDestructiveDestroy(fb);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_fileblob_scan_errors_are_fail_visible)
 {
     struct cl_engine *engine;
@@ -20437,6 +20466,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_largefile_default_profile_values);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
+    tcase_add_test(tc_cl, test_fileblob_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_scan_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);
     tcase_add_test(tc_cl, test_engine_set_num_rejects_narrowing_and_negative_values);

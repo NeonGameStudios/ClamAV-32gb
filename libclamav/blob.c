@@ -471,6 +471,12 @@ fileblobReserveTemporary(fileblob *fb, cli_ctx *ctx, uint64_t bytes)
     if (bytes == 0)
         return 0;
 
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        fileblobMarkIncomplete(fb,
+                               "fileblob temporary spool reached the configured time limit");
+        return -1;
+    }
+
     if (UINT64_MAX - fb->temporary_bytes < bytes ||
         cli_scan_reserve_temporary(ctx, bytes) != CL_SUCCESS) {
         fileblobMarkIncomplete(fb,
@@ -712,8 +718,9 @@ int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
     assert(data != NULL);
 
     if (fb->fp) {
+        cli_ctx *write_ctx = fb->ctx ? fb->ctx : fb->temporary_ctx;
 #if defined(MAX_SCAN_SIZE) && (MAX_SCAN_SIZE > 0)
-        const cli_ctx *ctx = fb->ctx;
+        cli_ctx *ctx = fb->ctx;
 
         if (fb->isIncomplete)
             return -1;
@@ -797,6 +804,16 @@ int fileblobAddData(fileblob *fb, const unsigned char *data, size_t len)
             fileblobReserveTemporary(fb, fb->ctx ? fb->ctx : fb->temporary_ctx, (uint64_t)len) < 0)
             return -1;
 #endif
+
+        if (write_ctx && cli_checktimelimit(write_ctx) != CL_SUCCESS) {
+            if (fb->temporary_ctx && fb->temporary_bytes >= (uint64_t)len) {
+                cli_scan_release_temporary(write_ctx, (uint64_t)len);
+                fb->temporary_bytes -= (uint64_t)len;
+            }
+            fileblobMarkIncomplete(fb,
+                                   "fileblob temporary spool reached the configured time limit");
+            return -1;
+        }
 
         if (fwrite(data, len, 1, fb->fp) != 1) {
             cli_errmsg("fileblobAddData: Can't write %lu bytes to temporary file %s\n",

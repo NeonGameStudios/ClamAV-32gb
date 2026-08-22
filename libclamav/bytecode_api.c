@@ -339,6 +339,11 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
     if (cctx && write_len) {
         if (cli_scan_reserve_temporary(cctx, write_len) != CL_SUCCESS)
             return -1;
+        if (cli_checktimelimit(cctx) != CL_SUCCESS) {
+            cli_scan_release_temporary(cctx, write_len);
+            cli_mark_scan_incomplete(cctx, "Bytecode temporary output reached the configured time limit");
+            return -1;
+        }
         if (UINT64_MAX - ctx->temporary_reserved < write_len) {
             cli_scan_release_temporary(cctx, write_len);
             cli_bcapi_mark_map_read_error(ctx, "Bytecode temporary output accounting overflowed");

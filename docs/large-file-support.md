@@ -5557,3 +5557,14 @@ extraction to nested scanning now perform explicit checks as well, preserving
 decoder callback. Source guards cover both families; deterministic
 admission/handoff timeout injection, compiled CAB/CHM corpus, sanitizer, and
 Sonic1 qualification remain release gates.
+
+## Bytecode and fileblob output deadlines — 2026-08-22
+
+Bytecode unpacked output and the shared MIME/fileblob spool now check the
+shared deadline after temporary quota admission and immediately before the
+materialized write. Expired contexts release the current reservation and
+return an incomplete result instead of writing output that could later be
+treated as complete. Focused expired-context regressions and source guards
+cover the admission path; deterministic post-admission injection, compiled
+bytecode/mail corpus, sanitizer, and Sonic1 qualification remain release
+gates.

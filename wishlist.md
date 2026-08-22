@@ -96,6 +96,9 @@
 - Bundled CAB/CHM member temporary admission and nested-scan handoff now
   re-check the shared deadline outside decoder callbacks; add deterministic
   admission/handoff timeout injection and complete CAB/CHM corpus qualification.
+- Bytecode output and shared MIME/fileblob spool paths now re-check the shared
+  deadline after temporary admission and before writing; add post-admission
+  timeout injection and complete bytecode/mail corpus qualification.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
   copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
   keeping provenance binding consistent with the actual workload; full

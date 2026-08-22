@@ -659,6 +659,19 @@ START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
 
     memset(&cctx, 0, sizeof(cctx));
     cctx.engine = engine;
+    ck_assert_int_eq(gettimeofday(&cctx.time_limit, NULL), 0);
+    cctx.time_limit.tv_sec--;
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert(cctx.scan_timed_out);
+    ck_assert_uint_eq(cctx.temporary_bytes, 0);
+    cli_bytecode_context_destroy(bcctx);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
     bcctx       = cli_bytecode_context_alloc();
     ck_assert_ptr_nonnull(bcctx);
     bcctx->ctx     = &cctx;
