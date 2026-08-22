@@ -783,6 +783,9 @@
 - GPT sector-size auto-detection now uses bounded `fmap_readn()` probes and
   preserves an in-range backing-read failure as `CL_EREAD`; add compiled
   auto-detection fault-injection and partition-image qualification.
+- APM, MBR, and GPT partition-intersection list allocation failures now mark
+  the required walk incomplete before returning `CL_EMEM`; add allocation
+  fault-injection and compiled partition-image qualification.
 - Legacy clamd FILDES and INSTREAM command workers now preserve parser, limit,
   read, and format failures instead of normalizing them to successful command
   completion; add daemon IDSESSION and malformed/limit integration coverage.

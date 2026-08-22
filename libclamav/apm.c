@@ -387,6 +387,8 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
                     goto done;
                 }
             } else {
+                if (ret == CL_EMEM)
+                    cli_mark_scan_incomplete(ctx, "APM partition intersection tracking could not be allocated");
                 status = ret;
                 goto done;
             }

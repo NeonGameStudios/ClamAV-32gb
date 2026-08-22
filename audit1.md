@@ -4955,3 +4955,15 @@ own returned error as before.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled allocation fault injection, malformed Mach-O corpus,
 sanitizer runs, and Sonic1 qualification remain open.
+
+## Partition-intersection tracking allocation failures — 2026-08-22
+
+APM, primary/extended MBR, and GPT intersection walks now mark the current
+partition layer incomplete when their required tracking-node allocation
+returns `CL_EMEM`. The helper still owns list cleanup and the parser-specific
+error remains the returned status, but a required intersection walk can no
+longer be mistaken for a completed clean layer.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation fault injection, malformed and valid partition
+image corpora, sanitizer runs, and Sonic1 qualification remain open.

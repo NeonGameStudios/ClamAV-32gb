@@ -572,6 +572,8 @@ static cl_error_t mbr_primary_partition_intersection(cli_ctx *ctx, struct mbr_bo
                         goto done;
                     }
                 } else {
+                    if (ret == CL_EMEM)
+                        cli_mark_scan_incomplete(ctx, "MBR partition intersection tracking could not be allocated");
                     status = ret;
                     goto done;
                 }
@@ -649,6 +651,8 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
                     goto done;
                 }
             } else {
+                if (ret == CL_EMEM)
+                    cli_mark_scan_incomplete(ctx, "MBR partition intersection tracking could not be allocated");
                 status = ret;
                 goto done;
             }

@@ -10687,9 +10687,9 @@ native-width-integer	libclamav/mbr.c	473	static cl_error_t mbr_check_mbr(struct 
 native-width-integer	libclamav/mbr.c	477	    size_t partoff    = 0;
 native-width-integer	libclamav/mbr.c	478	    size_t partsize   = 0;
 native-width-integer	libclamav/mbr.c	545	static cl_error_t mbr_primary_partition_intersection(cli_ctx *ctx, struct mbr_boot_record mbr, size_t sectorsize)
-native-width-integer	libclamav/mbr.c	600	static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize)
-native-width-integer	libclamav/mbr.c	607	    int mbr_base = 0;
-native-width-integer	libclamav/mbr.c	608	    size_t pos = 0, logiclba = 0;
+native-width-integer	libclamav/mbr.c	602	static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize)
+native-width-integer	libclamav/mbr.c	609	    int mbr_base = 0;
+native-width-integer	libclamav/mbr.c	610	    size_t pos = 0, logiclba = 0;
 native-width-integer	libclamav/mbr.c	63	static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extlba,
 native-width-integer	libclamav/mbr.c	64	                                  size_t extlbasize, size_t sectorsize);
 native-width-integer	libclamav/mbr.c	65	static cl_error_t mbr_check_mbr(struct mbr_boot_record *record, size_t maplen, size_t sectorsize);
@@ -19437,7 +19437,7 @@ format-width	libclamav/mbr.c	344	                cli_dbgmsg("Blocks: [%u, +%u), 
 format-width	libclamav/mbr.c	435	                               "entry at index %u\n",
 format-width	libclamav/mbr.c	452	    cli_dbgmsg("cli_scanmbr: examined %u logical partitions\n", i);
 format-width	libclamav/mbr.c	568	                               "[%u, %u]\n",
-format-width	libclamav/mbr.c	643	                           "[%u, %u]\n",
+format-width	libclamav/mbr.c	645	                           "[%u, %u]\n",
 format-width	libclamav/message.c	1028	                cli_dbgmsg("Encoding type %d is \"%s\"\n", m->numberOfEncTypes, type);
 format-width	libclamav/message.c	1045	                cli_dbgmsg("Unknown encoding type \"%s\" - guessing as %s (%u%% certainty)\n",
 format-width	libclamav/message.c	1401	    cli_dbgmsg("messageExport: numberOfEncTypes == %d\n", m->numberOfEncTypes);
@@ -22114,8 +22114,8 @@ offset-size-arithmetic	libclamav/apm.c	280	        if ((partoff == 0) || (partof
 offset-size-arithmetic	libclamav/apm.c	296	        /* send the partition to cli_magic_scan_nested_fmap_type */
 offset-size-arithmetic	libclamav/apm.c	297	        status = cli_magic_scan_nested_fmap_type(ctx->fmap, partoff, partsize, ctx, CL_TYPE_PART_ANY, (const char *)apentry.name, LAYER_ATTRIBUTES_NONE);
 offset-size-arithmetic	libclamav/apm.c	355	        /* convert necessary info big endian to host */
-offset-size-arithmetic	libclamav/apm.c	395	        /* increment the offsets to next partition entry */
-offset-size-arithmetic	libclamav/apm.c	396	        pos += sectorsize;
+offset-size-arithmetic	libclamav/apm.c	397	        /* increment the offsets to next partition entry */
+offset-size-arithmetic	libclamav/apm.c	398	        pos += sectorsize;
 offset-size-arithmetic	libclamav/apm.c	50	static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
 offset-size-arithmetic	libclamav/apm.c	52	    if ((NULL == bytes) || (0 == sectorsize) || (blocks > SIZE_MAX / sectorsize))
 offset-size-arithmetic	libclamav/apm.c	55	    *bytes = (size_t)blocks * sectorsize;
@@ -23936,9 +23936,9 @@ offset-size-arithmetic	libclamav/gpt.c	754	    pos = (size_t)hdr.tableStartLBA *
 offset-size-arithmetic	libclamav/gpt.c	771	        /* convert the endian to host */
 offset-size-arithmetic	libclamav/gpt.c	781	                   gpe.lastLBA + 1 > (uint64_t)maplen / sectorsize) {
 offset-size-arithmetic	libclamav/gpt.c	79	        if (fmap_readn(ctx->fmap, buffer, offset + done, chunk) != chunk) {
-offset-size-arithmetic	libclamav/gpt.c	801	        /* increment the offsets to next partition entry */
-offset-size-arithmetic	libclamav/gpt.c	802	        if (pos > maplen || hdr.tableEntrySize > maplen - pos) {
-offset-size-arithmetic	libclamav/gpt.c	806	        pos += hdr.tableEntrySize;
+offset-size-arithmetic	libclamav/gpt.c	803	        /* increment the offsets to next partition entry */
+offset-size-arithmetic	libclamav/gpt.c	804	        if (pos > maplen || hdr.tableEntrySize > maplen - pos) {
+offset-size-arithmetic	libclamav/gpt.c	808	        pos += hdr.tableEntrySize;
 offset-size-arithmetic	libclamav/gpt.h	52	/* 92-byte gpt_header, these are little endian */
 offset-size-arithmetic	libclamav/gpt.h	75	    /* zeroes fill remainder of sector (420 bytes in 512 sector size) */
 offset-size-arithmetic	libclamav/gpt.h	78	/* 128-byte partition entry, part of an array of 128+ entries, in little_endian */
@@ -25889,15 +25889,15 @@ offset-size-arithmetic	libclamav/mbr.c	491	        if (partoff + partsize > mapl
 offset-size-arithmetic	libclamav/mbr.c	505	    /* check the maplen */
 offset-size-arithmetic	libclamav/mbr.c	506	    if ((maplen / sectorsize) < 2) {
 offset-size-arithmetic	libclamav/mbr.c	544	/* this includes the overall bounds of extended partitions */
-offset-size-arithmetic	libclamav/mbr.c	600	static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize)
-offset-size-arithmetic	libclamav/mbr.c	610	    mbr_base = sectorsize - sizeof(struct mbr_boot_record);
-offset-size-arithmetic	libclamav/mbr.c	621	        pos = extlba * sectorsize; /* start of extended partition */
-offset-size-arithmetic	libclamav/mbr.c	623	        /* read the extended boot record */
-offset-size-arithmetic	libclamav/mbr.c	624	        pos += (logiclba * sectorsize) + mbr_base;
-offset-size-arithmetic	libclamav/mbr.c	632	        /* convert the little endian to host */
-offset-size-arithmetic	libclamav/mbr.c	638	        /* assume that logical record is first and extended is second */
-offset-size-arithmetic	libclamav/mbr.c	647	                 * following the extended-partition chain. */
-offset-size-arithmetic	libclamav/mbr.c	657	        /* assume extended is second entry */
+offset-size-arithmetic	libclamav/mbr.c	602	static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize)
+offset-size-arithmetic	libclamav/mbr.c	612	    mbr_base = sectorsize - sizeof(struct mbr_boot_record);
+offset-size-arithmetic	libclamav/mbr.c	623	        pos = extlba * sectorsize; /* start of extended partition */
+offset-size-arithmetic	libclamav/mbr.c	625	        /* read the extended boot record */
+offset-size-arithmetic	libclamav/mbr.c	626	        pos += (logiclba * sectorsize) + mbr_base;
+offset-size-arithmetic	libclamav/mbr.c	634	        /* convert the little endian to host */
+offset-size-arithmetic	libclamav/mbr.c	640	        /* assume that logical record is first and extended is second */
+offset-size-arithmetic	libclamav/mbr.c	649	                 * following the extended-partition chain. */
+offset-size-arithmetic	libclamav/mbr.c	661	        /* assume extended is second entry */
 offset-size-arithmetic	libclamav/mbr.c	68	static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize);
 offset-size-arithmetic	libclamav/mbr.c	70	static cl_error_t mbr_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
 offset-size-arithmetic	libclamav/mbr.c	74	    if (at > ctx->fmap->len || len > ctx->fmap->len - at)

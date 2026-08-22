@@ -792,6 +792,8 @@ static cl_error_t gpt_partition_intersection(cli_ctx *ctx, struct gpt_header hdr
                         goto done;
                     }
                 } else {
+                    if (ret == CL_EMEM)
+                        cli_mark_scan_incomplete(ctx, "GPT partition intersection tracking could not be allocated");
                     status = ret;
                     goto done;
                 }
