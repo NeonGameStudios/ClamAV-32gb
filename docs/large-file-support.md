@@ -5656,3 +5656,13 @@ write and preserve the timeout through their existing cleanup paths. Source
 guards cover the shared writer and each family-specific timeout reason;
 deterministic output-timeout injection, compiled compressed/script/CryptFF
 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## Shared child-output and staging deadlines — 2026-08-22
+
+Shared descriptor-child and force-to-disk nested-fmap paths now re-check the
+deadline after temporary admission, immediately before each materialized write,
+and immediately before nested handoff. EGG member output, RAR temporary-input
+admission, legacy VBA project output, and UTF-16 HTML output now use the same
+fail-closed boundaries. Source guards cover the shared and family-specific
+reasons; deterministic timeout injection, compiled archive/Office/HTML corpus,
+sanitizer, and Sonic1 qualification remain release gates.

@@ -133,6 +133,9 @@ static cl_error_t cli_cleanup_compressed_temp(cli_ctx *ctx, int *fd, char *tempf
                                               const char *close_reason,
                                               const char *remove_reason);
 
+static cl_error_t cli_write_temp_output(cli_ctx *ctx, int fd, const void *data, size_t bytes,
+                                        const char *time_reason, const char *write_reason);
+
 static cl_error_t cli_magic_scan_dir_internal(const char *dir, cli_ctx *ctx, uint32_t attributes,
                                               bool temporary_already_reserved);
 
@@ -799,6 +802,11 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
         if (status != CL_SUCCESS)
             goto done;
         temporary_reserved = true;
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "RAR temporary input admission reached the configured time limit");
+            goto done;
+        }
         status             = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
@@ -826,6 +834,11 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
         if (status != CL_SUCCESS)
             goto done;
         temporary_reserved = true;
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "RAR fallback input admission reached the configured time limit");
+            goto done;
+        }
         status             = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
@@ -890,19 +903,14 @@ typedef struct {
 static cl_error_t cli_egg_write_temp(void *opaque, const void *data, size_t length)
 {
     cli_egg_temp_output *output = (cli_egg_temp_output *)opaque;
-    cl_error_t status;
 
     if (output == NULL || output->ctx == NULL || output->fd < 0 || (data == NULL && length != 0))
         return CL_EARG;
 
-    status = cli_checktimelimit(output->ctx);
-    if (status != CL_SUCCESS)
-        return status;
-
-    if (length != 0 && cli_writen(output->fd, data, length) != length) {
-        cli_mark_scan_incomplete(output->ctx, "EGG member temporary spool write was incomplete");
-        return CL_EWRITE;
-    }
+    if (length != 0)
+        return cli_write_temp_output(output->ctx, output->fd, data, length,
+                                     "EGG member temporary output reached the configured time limit",
+                                     "EGG member temporary spool write was incomplete");
 
     return CL_SUCCESS;
 }
@@ -926,6 +934,11 @@ static cl_error_t cli_egg_scan_member(void *hArchive, const cl_egg_metadata *met
         return status;
     temporary_reserved = true;
 
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "EGG member temporary admission reached the configured time limit");
+        goto done;
+    }
     status = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "egg", &tempfile, &fd);
     if (status != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "EGG member temporary spool could not be created");
@@ -947,8 +960,13 @@ static cl_error_t cli_egg_scan_member(void *hArchive, const cl_egg_metadata *met
         goto done;
     }
 
-    status = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, CL_TYPE_ANY, filename,
-                                               LAYER_ATTRIBUTES_NONE);
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "EGG nested member handoff reached the configured time limit");
+    } else {
+        status = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, CL_TYPE_ANY, filename,
+                                                   LAYER_ATTRIBUTES_NONE);
+    }
     if (status != CL_SUCCESS && status != CL_VIRUS)
         cli_mark_scan_incomplete(ctx, "EGG nested member scan did not complete");
 
@@ -2670,9 +2688,11 @@ static cl_error_t cli_ole2_tempdir_scan_vba(const char *dir, cli_ctx *ctx, struc
                             goto done;
                         }
 
-                        if (cli_writen(proj_contents_fd, data, data_len) != data_len) {
+                        if ((status = cli_write_temp_output(ctx, proj_contents_fd, data, data_len,
+                                                            "VBA project temporary output reached the configured time limit",
+                                                            "VBA project temporary output could not be written completely")) !=
+                            CL_SUCCESS) {
                             cli_warnmsg("WARNING: VBA project '%s_%u' failed to write to file\n", vba_project->name[i], j);
-                            status = CL_EWRITE;
                             goto done;
                         }
 
@@ -3850,7 +3870,11 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
     if (status != CL_SUCCESS)
         goto done;
     temporary_reserved = true;
-
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary admission reached the configured time limit");
+        goto done;
+    }
     if (!(tempname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "html-utf16-tmp"))) {
         cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary file could not be created");
         status = CL_EMEM;
@@ -3891,10 +3915,10 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
             status = CL_EMEM;
             goto done;
         }
-        if (write(fd, decoded, bytes / 2) != (ssize_t)(bytes / 2)) {
+        if ((status = cli_write_temp_output(ctx, fd, decoded, bytes / 2,
+                                            "UTF-16 HTML normalized output reached the configured time limit",
+                                            "UTF-16 HTML normalized output could not be written completely")) != CL_SUCCESS) {
             cli_errmsg("cli_scanhtml_utf16: Can't write file %s completely\n", tempname);
-            cli_mark_scan_incomplete(ctx, "UTF-16 HTML normalized output could not be written completely");
-            status = CL_EWRITE;
             goto done;
         }
         free(decoded);
@@ -7447,6 +7471,11 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
         if (status != CL_SUCCESS)
             goto done;
         temporary_reserved = true;
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "child descriptor temporary admission reached the configured time limit");
+            goto done;
+        }
     }
 
     perf_start(ctx, PERFT_MAP);
@@ -7456,6 +7485,12 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
         cli_errmsg("cli_magic_scan_desc_type: CRITICAL: fmap_new() failed\n");
         cli_mark_scan_incomplete(ctx, "child descriptor map could not be created");
         status = CL_EMEM;
+        goto done;
+    }
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "child descriptor nested-scan handoff reached the configured time limit");
         goto done;
     }
 
@@ -7600,6 +7635,12 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         ret = cli_scan_reserve_temporary(ctx, temporary_size);
         if (ret != CL_SUCCESS)
             return ret;
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "nested fmap temporary admission reached the configured time limit");
+            cli_scan_release_temporary(ctx, temporary_size);
+            return ret;
+        }
         temporary_reserved = true;
 
         ret = cli_gentempfd(ctx->this_layer_tmpdir, &tempfile, &fd);
@@ -7628,9 +7669,10 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
                 ret = CL_EREAD;
                 break;
             }
-            if (cli_writen(fd, copybuf, chunk) != chunk) {
+            if ((ret = cli_write_temp_output(ctx, fd, copybuf, chunk,
+                                             "nested fmap temporary output reached the configured time limit",
+                                             "nested fmap temporary output could not be written completely")) != CL_SUCCESS) {
                 cli_errmsg("cli_magic_scan_nested_fmap_type: cli_writen error writing subdoc temporary file.\n");
-                ret = CL_EWRITE;
                 break;
             }
             copied += chunk;
@@ -7639,7 +7681,11 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
         if (ret == CL_SUCCESS) {
             /* Scan only a complete copy. A partial tempfile must never be
              * treated as a faithful representation of the nested layer. */
-            ret = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, type, name, attributes);
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS)
+                cli_mark_scan_incomplete(ctx, "nested fmap nested-scan handoff reached the configured time limit");
+            else
+                ret = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, type, name, attributes);
         }
 
         ret = cli_cleanup_compressed_temp(ctx, &fd, tempfile, ret,

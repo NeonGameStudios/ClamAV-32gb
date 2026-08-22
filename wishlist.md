@@ -367,6 +367,11 @@
   after quota admission, and the GZip, BZip2, XZ, script-normalization, and
   CryptFF spool writers re-check it immediately before writing; add compiled
   output-timeout injection across those decoder families.
+- Shared child-descriptor and force-to-disk nested-fmap paths now re-check the
+  deadline after temporary admission, before materialized writes, and before
+  nested handoff; EGG member output, RAR staging admission, legacy VBA project
+  output, and UTF-16 HTML output receive the same boundary checks. Add compiled
+  timeout injection and parser-family corpus qualification.
 - BZip2 extraction now consumes concatenated streams and rejects decoder
   no-progress states while input remains; add compiled malformed-stream,
   sanitizer, and production BZip2 corpus qualification.
