@@ -142,6 +142,14 @@ cl_error_t cli_scan_structured(cli_ctx *ctx);
 bool cli_scan_result_should_halt(cli_ctx *ctx, cl_error_t result_in, cl_error_t *result_out);
 
 /**
+ * @brief Identify scan results that must stop later parser or matcher work.
+ *
+ * Non-critical parser, decoder, and ABI failures remain fail-visible but do
+ * not suppress independent later matcher signatures.
+ */
+bool cli_scan_status_is_critical(cl_error_t status);
+
+/**
  * @brief   Preserve a prior parser result while merging sequential passes.
  */
 cl_error_t cli_merge_scan_status(cl_error_t prior, cl_error_t current);

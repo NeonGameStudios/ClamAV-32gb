@@ -894,6 +894,57 @@ START_TEST(test_logical_root_status_merge_preserves_incomplete_result)
 }
 END_TEST
 
+START_TEST(test_logical_failure_does_not_suppress_later_detection)
+{
+    static char logic[] = "0";
+    struct cli_ac_lsig first_lsig;
+    struct cli_ac_lsig second_lsig;
+    struct cli_ac_lsig *lsigtable[2];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&first_lsig, 0, sizeof(first_lsig));
+    memset(&second_lsig, 0, sizeof(second_lsig));
+    memset(&root, 0, sizeof(root));
+    first_lsig.id             = 0;
+    first_lsig.bc_idx         = 1;
+    first_lsig.type           = CLI_LSIG_NORMAL;
+    first_lsig.u.logic        = logic;
+    first_lsig.virname        = (char *)"UnavailableLogicalBytecode";
+    first_lsig.tdb.subsigs    = 1;
+    second_lsig.id            = 1;
+    second_lsig.type          = CLI_LSIG_NORMAL;
+    second_lsig.u.logic       = logic;
+    second_lsig.virname       = (char *)"LaterLogicalDetection";
+    second_lsig.tdb.subsigs   = 1;
+    lsigtable[0]              = &first_lsig;
+    lsigtable[1]              = &second_lsig;
+    root.ac_lsigs             = 2;
+    root.ac_lsigtable         = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 2, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    mdata.lsigcnt[0][0] = 1;
+    mdata.lsigcnt[1][0] = 1;
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                    = map;
+    ctx.recursion_stack[0].fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert(evidence_num_alerts(ctx.this_layer_evidence) > 0);
+
+    cli_ac_freedata(&mdata);
+    cl_fmap_close(map);
+    ctx.fmap                    = &thefmap;
+    ctx.recursion_stack[0].fmap = &thefmap;
+}
+END_TEST
+
 START_TEST(test_logical_bytecode_v1_large_file_is_fail_visible)
 {
 #if SIZE_MAX > UINT32_MAX
@@ -1633,6 +1684,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_root_status_merge_preserves_incomplete_result);
+    tcase_add_test(tc_matchers, test_logical_failure_does_not_suppress_later_detection);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);

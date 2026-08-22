@@ -1318,11 +1318,12 @@ cl_error_t cli_exp_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_da
 {
     uint32_t i;
     cl_error_t status = CL_SUCCESS;
+    cl_error_t current;
     bool yara_work_accounted = false;
 
     for (i = 0; i < root->ac_lsigs; i++) {
         if (root->ac_lsigtable[i]->type == CLI_LSIG_NORMAL) {
-            status = lsig_eval(ctx, root, acdata, target_info, i);
+            current = lsig_eval(ctx, root, acdata, target_info, i);
         }
 #ifdef HAVE_YARA
         else if (root->ac_lsigtable[i]->type == CLI_YARA_NORMAL || root->ac_lsigtable[i]->type == CLI_YARA_OFFSET) {
@@ -1332,19 +1333,25 @@ cl_error_t cli_exp_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_da
              * than allowing those reads to bypass MaxMatcherWork. */
             if (!yara_work_accounted) {
                 if (!ctx || !ctx->fmap) {
-                    status = CL_ENULLARG;
+                    current = CL_ENULLARG;
                 } else {
-                    status = cli_scan_account_matcher_work(ctx, (uint64_t)ctx->fmap->len);
+                    current = cli_scan_account_matcher_work(ctx, (uint64_t)ctx->fmap->len);
                 }
-                if (status != CL_SUCCESS)
+                if (current != CL_SUCCESS) {
+                    status = cli_merge_scan_status(status, current);
                     break;
+                }
                 yara_work_accounted = true;
             }
-            status = yara_eval(ctx, root, acdata, target_info, i);
+            current = yara_eval(ctx, root, acdata, target_info, i);
         }
 #endif
+        else {
+            current = CL_SUCCESS;
+        }
 
-        if (CL_SUCCESS != status) {
+        status = cli_merge_scan_status(status, current);
+        if (current == CL_VIRUS || cli_scan_status_is_critical(current)) {
             break;
         }
 
@@ -1352,8 +1359,9 @@ cl_error_t cli_exp_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_da
             // Check the time limit every n'th lsig.
             // In testing with a large signature set, we found n = 10 to be just as fast as 100 or
             // 1000 and has a significant performance improvement over checking with every lsig.
-            status = cli_checktimelimit(ctx);
-            if (CL_SUCCESS != status) {
+            current = cli_checktimelimit(ctx);
+            if (CL_SUCCESS != current) {
+                status = cli_merge_scan_status(status, current);
                 cli_dbgmsg("Exceeded scan time limit while evaluating logical and yara signatures (max: %u)\n", ctx->engine->maxscantime);
                 break;
             }

@@ -4313,3 +4313,15 @@ The optional TNEF debug-dump path now re-checks the shared deadline immediately
 before each materialized write and preserves incomplete write failures instead
 of ignoring them. Deterministic debug-output fault injection, compiled TNEF
 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## Logical matcher continuation after non-critical failure — 2026-08-22
+
+Logical-signature evaluation previously stopped at the first non-success
+status. That made an unavailable bytecode entry, legacy-ABI incompatibility,
+or other non-critical logical failure suppress independent later signatures
+that could still detect the file. The evaluator now merges each result,
+continues after non-critical failures, and stops only for detections or
+critical timeout/resource/I/O failures. A focused regression verifies that an
+unavailable first bytecode entry remains incomplete and non-cacheable while a
+later logical signature still produces `CL_VIRUS`; compiled logical-signature,
+interpreter/JIT, sanitizer, and production qualification remain open.

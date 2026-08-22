@@ -5995,7 +5995,7 @@ static bool cli_parser_result_allows_raw_fallback(cl_error_t result)
     }
 }
 
-static bool cli_scan_status_is_critical(cl_error_t status)
+bool cli_scan_status_is_critical(cl_error_t status)
 {
     switch (status) {
         case CL_VIRUS:

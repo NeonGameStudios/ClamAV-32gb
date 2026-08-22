@@ -952,3 +952,11 @@
   the oracle offset. Parser, hash, callback, and child-layer detections remain
   offset-less until they have a stable coordinate contract; compiled report,
   service, and Sonic1 qualification remain open.
+
+- Logical matcher evaluation now continues after non-critical parser, decoder,
+  or bytecode failures while retaining the first incomplete status; detections
+  and critical timeout/resource/I/O failures still halt evaluation. This keeps
+  a required incomplete result fail-visible without suppressing an independent
+  later logical detection. The focused regression is registered; compiled
+  logical-signature, interpreter/JIT, sanitizer, and production qualification
+  remain open.
