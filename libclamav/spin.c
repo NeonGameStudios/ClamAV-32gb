@@ -423,7 +423,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
             blobsz += sections[j].vsz;
             memset(sects[j], 0, sections[j].vsz);
             cli_dbgmsg("spin: Growing sect%d: was %x will be %x\n", j, sections[j].rsz, sections[j].vsz);
-            if (cli_unfsg(src + sections[j].raw, sects[j], sections[j].rsz, sections[j].vsz, NULL, NULL) == -1) {
+            if (cli_unfsg_ctx(src + sections[j].raw, sects[j], sections[j].rsz, sections[j].vsz, NULL, NULL, ctx) == -1) {
                 len++;
                 cli_dbgmsg("spin: Unpack failure\n");
             }
@@ -463,7 +463,7 @@ int unspin(char *src, int ssize, struct cli_exe_section *sections, int sectcnt, 
             if ((curr = (char *)cli_max_malloc(sections[j].vsz)) != NULL) {
                 memcpy(curr, src + sections[j].raw, key32 - sections[j].rva);                           /* Uncompressed part */
                 memset(curr + key32 - sections[j].rva, 0, sections[j].vsz - (key32 - sections[j].rva)); /* bzero */
-                if (cli_unfsg(src + sections[j].raw + key32 - sections[j].rva, curr + key32 - sections[j].rva, sections[j].rsz - (key32 - sections[j].rva), sections[j].vsz - (key32 - sections[j].rva), NULL, NULL)) {
+                if (cli_unfsg_ctx(src + sections[j].raw + key32 - sections[j].rva, curr + key32 - sections[j].rva, sections[j].rsz - (key32 - sections[j].rva), sections[j].vsz - (key32 - sections[j].rva), NULL, NULL, ctx)) {
 
                     free(curr);
                     cli_dbgmsg("spin: Failed to grow resources, continuing anyway\n");

@@ -4636,3 +4636,11 @@ fail-visible failure convention on expiry, preventing partial output from
 reaching rebuild or nested scanning. Compiled Petite timeout injection,
 malformed-section coverage, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## PEspin context-aware decompression handoffs — 2026-08-22
+
+PEspin already carried the scan context but routed its compressed section and
+resource-section handoffs through the context-free FSG wrapper. Both handoffs
+now use `cli_unfsg_ctx()`, so FSG timeout and partial-output failures remain
+visible to PEspin. PEspin's emulator/XOR loops, compiled timeout injection,
+production corpus, sanitizer, and Sonic1 qualification remain release gates.

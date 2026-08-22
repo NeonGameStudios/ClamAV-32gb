@@ -1076,3 +1076,6 @@
 - Petite compressed-section output, import walks, and back-copy loops now
   checkpoint the shared `MaxScanTime`; add compiled Petite timeout injection,
   malformed-section coverage, sanitizer, and Sonic1 qualification.
+- PEspin compressed-section handoffs now use the context-aware FSG decoder;
+  add compiled PEspin timeout injection and retain separate emulation/XOR,
+  production corpus, sanitizer, and Sonic1 qualification.
