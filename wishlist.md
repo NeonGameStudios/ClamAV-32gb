@@ -129,6 +129,11 @@
   contiguous-subject admission and releases the reservation on expiry; add
   deterministic contiguous-PCRE timeout injection and complete PCRE corpus
   qualification.
+- Shared in-memory blob growth now checks cumulative native-width sizes before
+  page rounding, reallocation, and final length updates; requests beyond the
+  1 GiB individual-allocation boundary fail explicitly instead of wrapping.
+  Add compiled overflow/fault-injection coverage for legacy text/VBA blob
+  callers and complete their parser-family qualification.
 - MSEXPAND, TAR, SIS, ISO9660, and UDF materialized-output paths now re-check
   the shared deadline at output boundaries; add deterministic post-admission
   timeout injection and complete archive/filesystem corpus qualification.

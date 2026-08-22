@@ -1956,6 +1956,18 @@ START_TEST(test_fileblob_temporary_spool_accounting)
 }
 END_TEST
 
+START_TEST(test_blob_allocation_boundaries)
+{
+    unsigned char byte = 0;
+    blob *b             = blobCreate();
+
+    ck_assert_ptr_nonnull(b);
+    ck_assert_int_eq(blobGrow(b, (size_t)CLI_MAX_ALLOCATION + 1U), CL_ERESOURCE);
+    ck_assert_int_eq(blobAddData(b, &byte, (size_t)CLI_MAX_ALLOCATION + 1U), -1);
+    blobDestroy(b);
+}
+END_TEST
+
 START_TEST(test_fileblob_time_limit_is_fail_visible)
 {
     static const unsigned char payload[] = "12345";
@@ -20466,6 +20478,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_largefile_default_profile_values);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);
+    tcase_add_test(tc_cl, test_blob_allocation_boundaries);
     tcase_add_test(tc_cl, test_fileblob_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_scan_errors_are_fail_visible);
     tcase_add_test(tc_cl, test_parser_gate_limits_reject_above_32g);

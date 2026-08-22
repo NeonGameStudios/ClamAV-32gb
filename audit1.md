@@ -4357,3 +4357,16 @@ that are actually ready, and continues with the other raw matcher. Critical
 memory, timeout, resource, and I/O failures still halt immediately. Static
 guards cover root readiness, independent hash accumulation, and cleanup;
 compiled fault-injection and production-signature qualification remain open.
+
+## Shared blob allocation arithmetic — 2026-08-22
+
+The compatibility `blob` helper used by legacy text/VBA paths rounded each
+append before checking the shared individual-allocation ceiling. Its
+`b->size + growth` and `b->len + len` expressions could therefore wrap before
+`cli_max_realloc()` or the final copy, potentially turning an oversized request
+into a smaller allocation. `blobAddData()` and `blobGrow()` now validate the
+existing native-width counters and the cumulative required size first, bound
+page/legacy growth arithmetic to `CLI_MAX_ALLOCATION`, and commit the checked
+length. Oversized requests return an explicit failure, with a focused unit
+regression and source guards. Compiled overflow/fault-injection coverage and
+legacy parser-family qualification remain open.

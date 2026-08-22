@@ -62,6 +62,20 @@
 
 static const char *blobGetFilename(const blob *b);
 
+static int blob_checked_required_size(const blob *b, size_t additional, size_t *required)
+{
+    if (NULL == b || NULL == required || b->len < 0 || b->size < 0 ||
+        (uint64_t)b->len > (uint64_t)CLI_MAX_ALLOCATION ||
+        (uint64_t)b->size > (uint64_t)CLI_MAX_ALLOCATION ||
+        additional > (size_t)CLI_MAX_ALLOCATION ||
+        (uint64_t)b->len > (uint64_t)CLI_MAX_ALLOCATION - (uint64_t)additional ||
+        b->size < b->len)
+        return -1;
+
+    *required = (size_t)b->len + additional;
+    return 0;
+}
+
 blob *
 blobCreate(void)
 {
@@ -179,8 +193,11 @@ int blobAddData(blob *b, const unsigned char *data, size_t len)
 {
 #if HAVE_CLI_GETPAGESIZE
     static int pagesize = 0;
-    int growth;
 #endif
+    size_t required;
+    size_t growth;
+    size_t allocation;
+    unsigned char *p;
 
     assert(b != NULL);
 #ifdef CL_DEBUG
@@ -190,6 +207,11 @@ int blobAddData(blob *b, const unsigned char *data, size_t len)
 
     if (len == 0)
         return 0;
+
+    if (blob_checked_required_size(b, len, &required) < 0) {
+        cli_warnmsg("blobAddData: requested blob allocation exceeds the individual allocation boundary\n");
+        return -1;
+    }
 
     if (b->isClosed) {
         /*
@@ -214,9 +236,11 @@ int blobAddData(blob *b, const unsigned char *data, size_t len)
         if (pagesize <= 0)
             pagesize = 4096;
     }
-    growth = pagesize;
+    growth = (size_t)pagesize;
     if (len >= (size_t)pagesize)
-        growth = ((len / pagesize) + 1) * pagesize;
+        growth = (len > (size_t)CLI_MAX_ALLOCATION - (size_t)pagesize)
+                     ? len
+                     : ((len / (size_t)pagesize) + 1) * (size_t)pagesize;
 
     /*cli_dbgmsg("blobGrow: b->size %lu, b->len %lu, len %lu, growth = %u\n",
                 b->size, b->len, len, growth);*/
@@ -225,46 +249,63 @@ int blobAddData(blob *b, const unsigned char *data, size_t len)
         assert(b->len == 0);
         assert(b->size == 0);
 
-        b->size = growth;
-        b->data = cli_max_malloc(growth);
+        allocation = growth < required ? required : growth;
+        b->size   = (off_t)allocation;
+        b->data   = cli_max_malloc(allocation);
         if (NULL == b->data) {
             b->size = 0;
             return -1;
         }
-    } else if (b->size < b->len + (off_t)len) {
-        unsigned char *p = cli_max_realloc(b->data, b->size + growth);
+    } else if (b->size < (off_t)required) {
+        if ((size_t)b->size > (size_t)CLI_MAX_ALLOCATION - growth)
+            allocation = required;
+        else
+            allocation = (size_t)b->size + growth;
+        if (allocation < required)
+            allocation = required;
+
+        p = cli_max_realloc(b->data, allocation);
 
         if (p == NULL)
             return -1;
 
-        b->size += growth;
+        b->size = (off_t)allocation;
         b->data = p;
     }
 #else
+    growth = len > (size_t)CLI_MAX_ALLOCATION / 4 ? len : len * 4;
     if (b->data == NULL) {
         assert(b->len == 0);
         assert(b->size == 0);
 
-        b->size = (off_t)len * 4;
-        b->data = cli_max_malloc(b->size);
+        allocation = growth < required ? required : growth;
+        b->size   = (off_t)allocation;
+        b->data   = cli_max_malloc(allocation);
         if (NULL == b->data) {
             b->size = 0;
             return -1;
         }
-    } else if (b->size < b->len + (off_t)len) {
-        unsigned char *p = cli_max_realloc(b->data, b->size + (len * 4));
+    } else if (b->size < (off_t)required) {
+        if ((size_t)b->size > (size_t)CLI_MAX_ALLOCATION - growth)
+            allocation = required;
+        else
+            allocation = (size_t)b->size + growth;
+        if (allocation < required)
+            allocation = required;
+
+        p = cli_max_realloc(b->data, allocation);
 
         if (p == NULL)
             return -1;
 
-        b->size += (off_t)len * 4;
+        b->size = (off_t)allocation;
         b->data = p;
     }
 #endif
 
     if (b->data) {
         memcpy(&b->data[b->len], data, len);
-        b->len += (off_t)len;
+        b->len = (off_t)required;
     } else {
         b->size = 0;
         return -1;
@@ -366,6 +407,10 @@ int blobcmp(const blob *b1, const blob *b2)
  */
 int blobGrow(blob *b, size_t len)
 {
+    size_t required;
+    size_t allocation;
+    unsigned char *ptr;
+
     assert(b != NULL);
 #ifdef CL_DEBUG
     assert(b->magic == BLOBCLASS);
@@ -373,6 +418,11 @@ int blobGrow(blob *b, size_t len)
 
     if (len == 0)
         return CL_SUCCESS;
+
+    if (blob_checked_required_size(b, len, &required) < 0) {
+        cli_warnmsg("blobGrow: requested blob allocation exceeds the individual allocation boundary\n");
+        return CL_ERESOURCE;
+    }
 
     if (b->isClosed) {
         /*
@@ -386,14 +436,22 @@ int blobGrow(blob *b, size_t len)
         assert(b->len == 0);
         assert(b->size == 0);
 
-        b->data = cli_max_malloc(len);
+        allocation = required;
+        b->data   = cli_max_malloc(allocation);
         if (b->data)
-            b->size = (off_t)len;
+            b->size = (off_t)allocation;
     } else {
-        unsigned char *ptr = cli_max_realloc(b->data, b->size + len);
+        if ((size_t)b->size > (size_t)CLI_MAX_ALLOCATION - len)
+            allocation = required;
+        else
+            allocation = (size_t)b->size + len;
+        if (allocation < required)
+            allocation = required;
+
+        ptr = cli_max_realloc(b->data, allocation);
 
         if (ptr) {
-            b->size += (off_t)len;
+            b->size = (off_t)allocation;
             b->data = ptr;
         }
     }
