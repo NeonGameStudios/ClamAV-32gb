@@ -975,15 +975,18 @@ done:
  * @param [out] table       Will be allocated and populated with table data.
  * @return cl_error_t  CL_SUCCESS on success, CL_E* on failure.
  */
-static cl_error_t hfsplus_read_block_table(int fd, uint32_t *numBlocks, hfsPlusResourceBlockTable **table)
+static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBlocks, hfsPlusResourceBlockTable **table)
 {
     cl_error_t status = CL_SUCCESS;
     uint32_t i;
+    size_t table_size;
 
     if (!table || !numBlocks) {
         status = CL_ENULLARG;
         goto done;
     }
+
+    *table = NULL;
 
     if (cli_readn(fd, numBlocks, sizeof(*numBlocks)) != sizeof(*numBlocks)) {
         cli_dbgmsg("hfsplus_read_block_table: Failed to read block count\n");
@@ -992,14 +995,21 @@ static cl_error_t hfsplus_read_block_table(int fd, uint32_t *numBlocks, hfsPlusR
     }
 
     *numBlocks = le32_to_host(*numBlocks); // Let's do a little little endian just for fun, shall we?
-    *table     = cli_max_malloc(sizeof(hfsPlusResourceBlockTable) * *numBlocks);
+    if (*numBlocks > CLI_MAX_ALLOCATION / sizeof(hfsPlusResourceBlockTable)) {
+        cli_mark_scan_incomplete(ctx, "HFS+ resource block table exceeds the allocation ceiling");
+        status = CL_ERESOURCE;
+        goto done;
+    }
+
+    table_size = (size_t)*numBlocks * sizeof(hfsPlusResourceBlockTable);
+    *table     = cli_max_malloc(table_size);
     if (!*table) {
         cli_dbgmsg("hfsplus_read_block_table: Failed to allocate memory for block table\n");
         status = CL_EMEM;
         goto done;
     }
 
-    if (cli_readn(fd, *table, *numBlocks * sizeof(hfsPlusResourceBlockTable)) != *numBlocks * sizeof(hfsPlusResourceBlockTable)) {
+    if (cli_readn(fd, *table, table_size) != table_size) {
         cli_dbgmsg("hfsplus_read_block_table: Failed to read table\n");
         status = CL_EREAD;
         goto done;
@@ -1382,7 +1392,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                         goto done;
                                     }
 
-                                    if (CL_SUCCESS != (status = hfsplus_read_block_table(ifd, &numBlocks, &table))) {
+                                    if (CL_SUCCESS != (status = hfsplus_read_block_table(ctx, ifd, &numBlocks, &table))) {
                                         cli_dbgmsg("hfsplus_walk_catalog: Failed to read block table\n");
                                     } else {
                                         uint8_t block[4096];

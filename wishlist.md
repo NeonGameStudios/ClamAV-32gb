@@ -149,6 +149,10 @@
 - HFS+ catalog node-size validation and catalog block coordinates now retain
   64-bit arithmetic through fmap admission; large-volume corpus qualification
   remains open.
+- HFS+ resource-compression block-table counts now use checked native-width
+  allocation/read sizing and fail with `CL_ERESOURCE` before a wrapped table
+  can be allocated or read; compressed-resource corpus qualification remains
+  open.
 - PDF Flate, RunLength, and LZW decoder output now retains native-width
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial

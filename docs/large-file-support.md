@@ -2345,9 +2345,11 @@ arithmetic, preventing a large node count multiplied by node size from
 wrapping to a small value and allowing a false clean walk. Catalog block
 coordinates are also retained as 64-bit values until native fmap-range
 validation, avoiding truncation for catalogs whose logical offsets exceed
-4 GiB. A focused synthetic catalog-size regression covers the former
-32-bit-product wrap; compiled large-volume corpus and Sonic1 qualification
-remain release gates.
+4 GiB. Resource-compression block-table counts now use checked native-width
+allocation/read sizing and return `CL_ERESOURCE` before a wrapped table can be
+allocated or read. A focused synthetic catalog-size regression covers the
+former 32-bit-product wrap; compiled large-volume corpus and Sonic1
+qualification remain release gates.
 
 ## Structured service-oracle invariants — 2026-08-20
 
