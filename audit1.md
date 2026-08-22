@@ -4049,3 +4049,13 @@ check `MaxScanTime` before reserving or writing attachment output, preserving
 `CL_ETIMEOUT` and fail-closed status when resident attachment data would
 otherwise bypass the reader deadline. Compiled timeout injection, modern-parser
 size-boundary, corpus, sanitizer, and Sonic1 qualification remain open.
+
+## MIME body-spool export deadline — 2026-08-22
+
+The mail parser already checked its fmap and multipart traversal loops, but the
+disk-backed body path could spend additional time copying raw data or decoding
+base64/quoted-printable output during reassembly/export without returning to the
+shared deadline helper. Body-spool writes and each bounded raw/encoded export
+chunk now check `MaxScanTime`, preserving `CL_ETIMEOUT` and fail-closed status
+through mail materialization. Compiled timeout injection during reassembly,
+mail corpus, sanitizer, and Sonic1 qualification remain open.

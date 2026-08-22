@@ -652,6 +652,9 @@
 - Oversized MIME lines now fail closed instead of being split or skipped by the
   bounded legacy parser; add compiled long-header/body and production mail
   corpus coverage.
+- MIME body-spool writes and bounded raw/encoded body exports now check the
+  shared deadline before each write/read chunk; add compiled timeout injection
+  during mail reassembly/export and production mail corpus coverage.
 - TNEF attribute headers now distinguish in-range fmap callback failures
   (`CL_EREAD`) from genuinely short headers (`CL_EPARSE`); add compiled
   callback-fault, exact-EOF, sanitizer, and production TNEF corpus coverage.

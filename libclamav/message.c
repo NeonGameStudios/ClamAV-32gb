@@ -100,6 +100,16 @@ static void messageMarkMaterializationFailure(message *m, const char *reason)
     cli_mark_scan_incomplete(m->ctx, reason);
 }
 
+static int messageCheckDeadline(message *m)
+{
+    if (m == NULL || m->ctx == NULL || cli_checktimelimit(m->ctx) == CL_SUCCESS)
+        return 0;
+
+    cli_mark_scan_incomplete(m->ctx,
+                             "MIME body processing reached the configured time limit");
+    return 1;
+}
+
 static int messageReserveMaterializedBytes(message *m, size_t bytes, const char *caller)
 {
     if ((bytes > MESSAGE_MAX_MATERIALIZED_BYTES) ||
@@ -271,6 +281,11 @@ static int messageAddSpoolLine(message *m, const char *data)
 
     if (m == NULL || m->body_spool == NULL)
         return -1;
+
+    if (messageCheckDeadline(m)) {
+        m->isTruncated = 1;
+        return -1;
+    }
 
     if ((len && fileblobAddData(m->body_spool, line, len) < 0) ||
         fileblobAddData(m->body_spool, (const unsigned char *)"\n", 1) < 0) {
@@ -1736,7 +1751,13 @@ static int messageCopyBodySpool(message *m, fileblob *out)
             goto copy_fail;
 
         while (!feof(input)) {
-            size_t n = fread(line, 1, sizeof(line), input);
+            size_t n;
+
+            if (messageCheckDeadline(m)) {
+                failed = 1;
+                break;
+            }
+            n = fread(line, 1, sizeof(line), input);
             if (n != 0 && fileblobAddData(out, (const unsigned char *)line, n) < 0) {
                 failed = 1;
                 break;
@@ -1770,6 +1791,11 @@ static int messageCopyBodySpool(message *m, fileblob *out)
         unsigned char decoded[sizeof(line) + 4];
         unsigned char *end;
         size_t line_len = strlen(line);
+
+        if (messageCheckDeadline(m)) {
+            failed = 1;
+            break;
+        }
 
         if (line_len == sizeof(line) - 1 && line[line_len - 1] != '\n' && !feof(input)) {
             cli_mark_scan_incomplete(m->ctx,
