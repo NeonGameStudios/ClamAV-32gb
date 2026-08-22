@@ -300,6 +300,7 @@ static const char *findNextNonWS(const char *q, const char *end)
  *
  * @param start             start address of search space.
  * @param size              size of search space
+ * @param pdf               PDF context used for deadline-aware searches.
  * @param[out] stream       output param, address of start of stream data
  * @param[out] stream_size  output param, size of stream data
  * @param newline_hack      hack to support newlines that are \r\n, and not just \n or just \r.
@@ -310,6 +311,7 @@ static const char *findNextNonWS(const char *q, const char *end)
  * @return cl_error_t       CL_EARG if invalid args were provided.
  */
 static cl_error_t find_stream_bounds(
+    struct pdf_struct *pdf,
     const char *start,
     size_t size,
     const char **stream,
@@ -321,6 +323,7 @@ static cl_error_t find_stream_bounds(
     const char *idx;
     const char *stream_begin;
     const char *endstream_begin;
+    cl_error_t search_status;
     size_t bytesleft = size;
 
     if ((NULL == start) || (0 == bytesleft) || (NULL == stream) || (NULL == stream_size)) {
@@ -332,7 +335,11 @@ static cl_error_t find_stream_bounds(
     *stream_size = 0;
 
     /* Begin by finding the "stream" string that prefixes stream data. */
-    if ((stream_begin = cli_memstr(start, bytesleft, "stream", strlen("stream")))) {
+    stream_begin = pdf_memstr_deadline(pdf, start, bytesleft, "stream", strlen("stream"), &search_status);
+    if (CL_ETIMEOUT == search_status)
+        return CL_ETIMEOUT;
+
+    if (stream_begin) {
         idx = stream_begin + strlen("stream");
         if ((size_t)(idx - start) >= bytesleft)
             goto done;
@@ -355,7 +362,9 @@ static cl_error_t find_stream_bounds(
         *stream = idx;
 
         /* Now find the "endstream" string that suffixes stream data. */
-        endstream_begin = cli_memstr(idx, bytesleft, "endstream", strlen("endstream"));
+        endstream_begin = pdf_memstr_deadline(pdf, idx, bytesleft, "endstream", strlen("endstream"), &search_status);
+        if (CL_ETIMEOUT == search_status)
+            return CL_ETIMEOUT;
         if (!endstream_begin) {
             /* Couldn't find "endstream", but that's ok --
              * -- we'll just count the rest of the provided buffer. */
@@ -2459,11 +2468,17 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
         size_t stream_size = 0;
 
         has_stream = find_stream_bounds(
+            pdf,
             start,
             obj->size,
             &stream,
             &stream_size,
             (pdf->enc_method_stream <= ENC_IDENTITY) && (pdf->enc_method_embeddedfile <= ENC_IDENTITY));
+
+        if (CL_ETIMEOUT == has_stream) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF stream-boundary search reached the configured time limit");
+            return;
+        }
 
         if ((CL_SUCCESS == has_stream) ||
             (CL_EFORMAT == has_stream)) {

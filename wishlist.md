@@ -1021,6 +1021,8 @@
   decoder-fault coverage, and production PDF qualification.
 - Legacy PDF dictionary parsing now checks for a missing next token before
   pointer subtraction; add malformed-object and timeout regression coverage.
+- Legacy PDF stream-boundary searches now use overlapping 64 KiB deadline
+  windows; add compiled timeout and malformed-stream regression coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.

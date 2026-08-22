@@ -4466,6 +4466,12 @@ subtracting pointer coordinates, preventing malformed large objects from
 reaching undefined pointer arithmetic; compiled malformed-object and timeout
 qualification remain open.
 
+Legacy PDF stream-boundary detection also now searches for `stream` and
+`endstream` through overlapping 64 KiB windows with the shared deadline. A
+timeout is reported as an incomplete scan instead of silently treating the
+object as a truncated stream; compiled timeout and malformed-stream
+qualification remain release gates.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one
