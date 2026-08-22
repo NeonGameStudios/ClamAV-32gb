@@ -4923,6 +4923,18 @@ The source guards and non-clang regression gates remain the available local
 evidence. Compiled allocation fault injection, long and malformed attachment
 corpora, sanitizer runs, and Sonic1 qualification remain open.
 
+## TNEF attachment materialization failures — 2026-08-22
+
+TNEF attachment-title allocation, attachment output-blob creation, and
+attachment-data materialization failures now mark the current layer
+incomplete before returning their operational status. Existing read, format,
+deadline, and cleanup behavior is unchanged, but a required attachment can no
+longer fail through an unmarked `CL_EMEM` or `CL_ERESOURCE` path.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation fault injection, malformed attachment corpus,
+sanitizer runs, and Sonic1 qualification remain open.
+
 ## Sonic1 qualification connectivity recheck — 2026-08-22
 
 The administrator-provided `sonic1` host and `sonic1-camera-key` profile were

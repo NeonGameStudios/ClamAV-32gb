@@ -4670,21 +4670,21 @@ fixed-width-integer	libclamav/tnef.c	370	    uint32_t todo;
 fixed-width-integer	libclamav/tnef.c	42	static int tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize);
 fixed-width-integer	libclamav/tnef.c	43	static cl_error_t tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize);
 fixed-width-integer	libclamav/tnef.c	44	static int tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length);
-fixed-width-integer	libclamav/tnef.c	452	                todo -= (uint32_t)got;
-fixed-width-integer	libclamav/tnef.c	476	tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length)
-fixed-width-integer	libclamav/tnef.c	478	    uint32_t i32;
-fixed-width-integer	libclamav/tnef.c	484	    if (*pos < 0 || (uint64_t)*pos > (uint64_t)map->len)
-fixed-width-integer	libclamav/tnef.c	486	    if ((uint64_t)*pos == (uint64_t)map->len)
-fixed-width-integer	libclamav/tnef.c	496	    rc = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
-fixed-width-integer	libclamav/tnef.c	497	    if (rc != sizeof(uint32_t)) {
-fixed-width-integer	libclamav/tnef.c	509	    (*pos) += sizeof(uint32_t);
-fixed-width-integer	libclamav/tnef.c	512	    *tag  = (uint16_t)(i32 & 0xFFFF);
-fixed-width-integer	libclamav/tnef.c	513	    *type = (uint16_t)((i32 & 0xFFFF0000) >> 16);
-fixed-width-integer	libclamav/tnef.c	515	    rc = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
-fixed-width-integer	libclamav/tnef.c	516	    if (rc != sizeof(uint32_t))
-fixed-width-integer	libclamav/tnef.c	518	    (*pos) += sizeof(uint32_t);
-fixed-width-integer	libclamav/tnef.c	519	    *length = (int32_t)host32(i32);
-fixed-width-integer	libclamav/tnef.c	533	    if (at < 0 || (uint64_t)at > (uint64_t)map->len)
+fixed-width-integer	libclamav/tnef.c	458	                todo -= (uint32_t)got;
+fixed-width-integer	libclamav/tnef.c	482	tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length)
+fixed-width-integer	libclamav/tnef.c	484	    uint32_t i32;
+fixed-width-integer	libclamav/tnef.c	490	    if (*pos < 0 || (uint64_t)*pos > (uint64_t)map->len)
+fixed-width-integer	libclamav/tnef.c	492	    if ((uint64_t)*pos == (uint64_t)map->len)
+fixed-width-integer	libclamav/tnef.c	502	    rc = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
+fixed-width-integer	libclamav/tnef.c	503	    if (rc != sizeof(uint32_t)) {
+fixed-width-integer	libclamav/tnef.c	515	    (*pos) += sizeof(uint32_t);
+fixed-width-integer	libclamav/tnef.c	518	    *tag  = (uint16_t)(i32 & 0xFFFF);
+fixed-width-integer	libclamav/tnef.c	519	    *type = (uint16_t)((i32 & 0xFFFF0000) >> 16);
+fixed-width-integer	libclamav/tnef.c	521	    rc = tnef_readn(map, &i32, *pos, sizeof(uint32_t));
+fixed-width-integer	libclamav/tnef.c	522	    if (rc != sizeof(uint32_t))
+fixed-width-integer	libclamav/tnef.c	524	    (*pos) += sizeof(uint32_t);
+fixed-width-integer	libclamav/tnef.c	525	    *length = (int32_t)host32(i32);
+fixed-width-integer	libclamav/tnef.c	539	    if (at < 0 || (uint64_t)at > (uint64_t)map->len)
 fixed-width-integer	libclamav/tnef.c	68	#define MIN_SIZE (sizeof(uint32_t) + sizeof(uint16_t))
 fixed-width-integer	libclamav/tnef.c	82	    uint32_t i32;
 fixed-width-integer	libclamav/tnef.c	83	    uint16_t i16;
@@ -13481,28 +13481,28 @@ native-width-integer	libclamav/tnef.c	371	    off_t offset;
 native-width-integer	libclamav/tnef.c	373	    size_t string_len;
 native-width-integer	libclamav/tnef.c	376	               (int)length);
 native-width-integer	libclamav/tnef.c	384	            string_len = (size_t)length;
-native-width-integer	libclamav/tnef.c	397	            (*pos) += (off_t)string_len;
+native-width-integer	libclamav/tnef.c	398	            (*pos) += (off_t)string_len;
 native-width-integer	libclamav/tnef.c	42	static int tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize);
 native-width-integer	libclamav/tnef.c	43	static cl_error_t tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize);
-native-width-integer	libclamav/tnef.c	436	                size_t wanted = MIN(sizeof(buf), todo);
-native-width-integer	libclamav/tnef.c	437	                size_t got;
 native-width-integer	libclamav/tnef.c	44	static int tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length);
-native-width-integer	libclamav/tnef.c	448	                (*pos) += (off_t)got;
+native-width-integer	libclamav/tnef.c	440	                size_t wanted = MIN(sizeof(buf), todo);
+native-width-integer	libclamav/tnef.c	441	                size_t got;
 native-width-integer	libclamav/tnef.c	45	static size_t tnef_readn(fmap_t *map, void *dst, off_t at, size_t len);
-native-width-integer	libclamav/tnef.c	457	                       tag, type, (int)length);
-native-width-integer	libclamav/tnef.c	461	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
-native-width-integer	libclamav/tnef.c	468	    (*pos) = offset + (off_t)length; /* shouldn't be needed */
-native-width-integer	libclamav/tnef.c	475	static int
-native-width-integer	libclamav/tnef.c	476	tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length)
-native-width-integer	libclamav/tnef.c	479	    size_t rc;
-native-width-integer	libclamav/tnef.c	490	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
-native-width-integer	libclamav/tnef.c	507	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
-native-width-integer	libclamav/tnef.c	517	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
-native-width-integer	libclamav/tnef.c	522	               *tag, *type, (int)*length);
-native-width-integer	libclamav/tnef.c	527	static size_t
-native-width-integer	libclamav/tnef.c	528	tnef_readn(fmap_t *map, void *dst, off_t at, size_t len)
-native-width-integer	libclamav/tnef.c	530	    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
-native-width-integer	libclamav/tnef.c	535	    return fmap_readn(map, dst, (size_t)at, len);
+native-width-integer	libclamav/tnef.c	452	                (*pos) += (off_t)got;
+native-width-integer	libclamav/tnef.c	463	                       tag, type, (int)length);
+native-width-integer	libclamav/tnef.c	467	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
+native-width-integer	libclamav/tnef.c	474	    (*pos) = offset + (off_t)length; /* shouldn't be needed */
+native-width-integer	libclamav/tnef.c	481	static int
+native-width-integer	libclamav/tnef.c	482	tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length)
+native-width-integer	libclamav/tnef.c	485	    size_t rc;
+native-width-integer	libclamav/tnef.c	496	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
+native-width-integer	libclamav/tnef.c	513	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
+native-width-integer	libclamav/tnef.c	523	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
+native-width-integer	libclamav/tnef.c	528	               *tag, *type, (int)*length);
+native-width-integer	libclamav/tnef.c	533	static size_t
+native-width-integer	libclamav/tnef.c	534	tnef_readn(fmap_t *map, void *dst, off_t at, size_t len)
+native-width-integer	libclamav/tnef.c	536	    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
+native-width-integer	libclamav/tnef.c	541	    return fmap_readn(map, dst, (size_t)at, len);
 native-width-integer	libclamav/tnef.c	80	int cli_tnef(const char *dir, cli_ctx *ctx)
 native-width-integer	libclamav/tnef.c	86	    int alldone;
 native-width-integer	libclamav/tnef.c	87	    off_t fsize, pos = 0;
@@ -18222,7 +18222,7 @@ narrowing-cast	libclamav/regex_list.c	708	    new->length[0]  = (uint16_t)len;
 narrowing-cast	libclamav/tnef.c	161	                        (int)length);
 narrowing-cast	libclamav/tnef.c	294	               (int)length);
 narrowing-cast	libclamav/tnef.c	376	               (int)length);
-narrowing-cast	libclamav/tnef.c	457	                       tag, type, (int)length);
+narrowing-cast	libclamav/tnef.c	463	                       tag, type, (int)length);
 narrowing-cast	libclamav/unarj.c	348	        if ((int)len <= tablebits) {
 narrowing-cast	libclamav/untar.c	239	        cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
 narrowing-cast	libclamav/vba_extract.c	2178	            cli_dbgmsg("length: %d\n", (int)length);
@@ -20133,9 +20133,9 @@ format-width	libclamav/tnef.c	321	            cli_dbgmsg("TNEF codepage %d\n", i
 format-width	libclamav/tnef.c	347	            cli_dbgmsg("TNEF - unsupported message tag 0x%x type 0x%d length %d\n", tag, type, length);
 format-width	libclamav/tnef.c	352	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
 format-width	libclamav/tnef.c	375	    cli_dbgmsg("attachment tag 0x%x, type 0x%x, length %d\n", tag, type,
-format-width	libclamav/tnef.c	456	            cli_dbgmsg("TNEF - unsupported attachment tag 0x%x type 0x%d length %d\n",
-format-width	libclamav/tnef.c	461	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
-format-width	libclamav/tnef.c	521	    cli_dbgmsg("message tag 0x%x, type 0x%x, length %d\n",
+format-width	libclamav/tnef.c	462	            cli_dbgmsg("TNEF - unsupported attachment tag 0x%x type 0x%d length %d\n",
+format-width	libclamav/tnef.c	467	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
+format-width	libclamav/tnef.c	527	    cli_dbgmsg("message tag 0x%x, type 0x%x, length %d\n",
 format-width	libclamav/udf.c	1364	        cli_dbgmsg("UDF Descriptor Tag ID: %d\n", tagId);
 format-width	libclamav/udf.c	1414	                cli_dbgmsg("cli_scanudf: Parsing %d file entries.\n", fileEntryList.cnt);
 format-width	libclamav/udf.c	1438	                        cli_dbgmsg("cli_scanudf: Failed to extract or scan file %zu: %s\n", i, cl_strerror(ret));
@@ -29159,29 +29159,29 @@ offset-size-arithmetic	libclamav/tnef.c	361	    (*pos) += 2;
 offset-size-arithmetic	libclamav/tnef.c	367	tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize)
 offset-size-arithmetic	libclamav/tnef.c	378	    offset = *pos;
 offset-size-arithmetic	libclamav/tnef.c	387	            string = cli_max_malloc(string_len + 1);
-offset-size-arithmetic	libclamav/tnef.c	397	            (*pos) += (off_t)string_len;
-offset-size-arithmetic	libclamav/tnef.c	412	            fileblobSetFilename(*fbref, dir, string);
+offset-size-arithmetic	libclamav/tnef.c	398	            (*pos) += (off_t)string_len;
+offset-size-arithmetic	libclamav/tnef.c	414	            fileblobSetFilename(*fbref, dir, string);
 offset-size-arithmetic	libclamav/tnef.c	42	static int tnef_message(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, off_t fsize);
-offset-size-arithmetic	libclamav/tnef.c	428	            if (fileblobGetFilename(*fbref) == NULL) {
-offset-size-arithmetic	libclamav/tnef.c	429	                fileblobSetFilename(*fbref, dir, "tnef");
 offset-size-arithmetic	libclamav/tnef.c	43	static cl_error_t tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t length, const char *dir, cli_ctx *ctx, fileblob **fbref, off_t fsize);
+offset-size-arithmetic	libclamav/tnef.c	432	            if (fileblobGetFilename(*fbref) == NULL) {
+offset-size-arithmetic	libclamav/tnef.c	433	                fileblobSetFilename(*fbref, dir, "tnef");
 offset-size-arithmetic	libclamav/tnef.c	44	static int tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length);
-offset-size-arithmetic	libclamav/tnef.c	448	                (*pos) += (off_t)got;
 offset-size-arithmetic	libclamav/tnef.c	45	static size_t tnef_readn(fmap_t *map, void *dst, off_t at, size_t len);
-offset-size-arithmetic	libclamav/tnef.c	461	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
-offset-size-arithmetic	libclamav/tnef.c	468	    (*pos) = offset + (off_t)length; /* shouldn't be needed */
-offset-size-arithmetic	libclamav/tnef.c	470	    (*pos) += 2;
-offset-size-arithmetic	libclamav/tnef.c	476	tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length)
-offset-size-arithmetic	libclamav/tnef.c	481	    /* An exact end-of-map is the normal end of a TNEF attribute list. An
-offset-size-arithmetic	libclamav/tnef.c	484	    if (*pos < 0 || (uint64_t)*pos > (uint64_t)map->len)
-offset-size-arithmetic	libclamav/tnef.c	486	    if ((uint64_t)*pos == (uint64_t)map->len)
-offset-size-arithmetic	libclamav/tnef.c	490	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
-offset-size-arithmetic	libclamav/tnef.c	491	    (*pos)++;
-offset-size-arithmetic	libclamav/tnef.c	507	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
-offset-size-arithmetic	libclamav/tnef.c	509	    (*pos) += sizeof(uint32_t);
-offset-size-arithmetic	libclamav/tnef.c	517	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
-offset-size-arithmetic	libclamav/tnef.c	518	    (*pos) += sizeof(uint32_t);
-offset-size-arithmetic	libclamav/tnef.c	530	    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
+offset-size-arithmetic	libclamav/tnef.c	452	                (*pos) += (off_t)got;
+offset-size-arithmetic	libclamav/tnef.c	467	    /*cli_dbgmsg("%lu %lu\n", (long)(offset + length), ftell(fp));*/
+offset-size-arithmetic	libclamav/tnef.c	474	    (*pos) = offset + (off_t)length; /* shouldn't be needed */
+offset-size-arithmetic	libclamav/tnef.c	476	    (*pos) += 2;
+offset-size-arithmetic	libclamav/tnef.c	482	tnef_header(fmap_t *map, off_t *pos, uint8_t *part, uint16_t *type, uint16_t *tag, int32_t *length)
+offset-size-arithmetic	libclamav/tnef.c	487	    /* An exact end-of-map is the normal end of a TNEF attribute list. An
+offset-size-arithmetic	libclamav/tnef.c	490	    if (*pos < 0 || (uint64_t)*pos > (uint64_t)map->len)
+offset-size-arithmetic	libclamav/tnef.c	492	    if ((uint64_t)*pos == (uint64_t)map->len)
+offset-size-arithmetic	libclamav/tnef.c	496	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
+offset-size-arithmetic	libclamav/tnef.c	497	    (*pos)++;
+offset-size-arithmetic	libclamav/tnef.c	513	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
+offset-size-arithmetic	libclamav/tnef.c	515	    (*pos) += sizeof(uint32_t);
+offset-size-arithmetic	libclamav/tnef.c	523	        return rc == (size_t)-1 ? TNEF_HEADER_READ_ERROR : TNEF_HEADER_TRUNCATED;
+offset-size-arithmetic	libclamav/tnef.c	524	    (*pos) += sizeof(uint32_t);
+offset-size-arithmetic	libclamav/tnef.c	536	    /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
 offset-size-arithmetic	libclamav/tnef.c	67	/* a TNEF file must be at least this size */
 offset-size-arithmetic	libclamav/tnef.c	68	#define MIN_SIZE (sizeof(uint32_t) + sizeof(uint16_t))
 offset-size-arithmetic	libclamav/tnef.c	93	    fsize = ctx->fmap->len;

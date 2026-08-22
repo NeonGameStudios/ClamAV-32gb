@@ -387,6 +387,7 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
             string = cli_max_malloc(string_len + 1);
             if (string == NULL) {
                 cli_errmsg("tnef_attachment: Unable to allocate memory for string\n");
+                cli_mark_scan_incomplete(ctx, "TNEF attachment title could not be allocated");
                 return CL_EMEM;
             }
             if (fmap_readn(map, string, *pos, string_len) != string_len) {
@@ -400,6 +401,7 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
             if (*fbref == NULL) {
                 *fbref = fileblobCreate();
                 if (*fbref == NULL) {
+                    cli_mark_scan_incomplete(ctx, "TNEF attachment output blob could not be allocated");
                     free(string);
                     return CL_EMEM;
                 }
@@ -419,8 +421,10 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
         case attATTACHDATA:
             if (*fbref == NULL) {
                 *fbref = fileblobCreate();
-                if (*fbref == NULL)
+                if (*fbref == NULL) {
+                    cli_mark_scan_incomplete(ctx, "TNEF attachment output blob could not be allocated");
                     return CL_EMEM;
+                }
             }
             fileblobSetCTX(*fbref, ctx);
             if ((*fbref)->isIncomplete)
@@ -447,8 +451,10 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
                 }
                 (*pos) += (off_t)got;
 
-                if (fileblobAddData(*fbref, buf, got) < 0)
+                if (fileblobAddData(*fbref, buf, got) < 0) {
+                    cli_mark_scan_incomplete(ctx, "TNEF attachment data could not be materialized completely");
                     return CL_ERESOURCE;
+                }
                 todo -= (uint32_t)got;
             }
             break;

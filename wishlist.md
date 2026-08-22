@@ -460,6 +460,10 @@
   shared scan deadline and preserve timeout as an incomplete, non-cacheable
   result; add compiled timeout-injection and long-attribute/attachment corpus
   qualification.
+- TNEF attachment-title/output-blob allocation and attachment-data
+  materialization failures now mark required attachment inspection incomplete;
+  add compiled allocation fault injection, malformed attachment corpus,
+  sanitizer, and Sonic1 qualification.
 - Standalone and mail-embedded UUEncode decoding now checks the shared deadline
   before each input line and preserves timeout through mbox result handling;
   add compiled timeout-injection and long-attachment corpus qualification.
