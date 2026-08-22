@@ -1511,7 +1511,7 @@ done:
     return status;
 }
 
-cl_error_t fmap_get_hash(fmap_t *map, unsigned char **hash, cli_hash_type_t type)
+cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned char **hash, cli_hash_type_t type, cli_ctx *ctx)
 {
     cl_error_t status = CL_ERROR;
     size_t todo, at = 0;
@@ -1526,6 +1526,12 @@ cl_error_t fmap_get_hash(fmap_t *map, unsigned char **hash, cli_hash_type_t type
     if (type >= CLI_HASH_AVAIL_TYPES) {
         cli_errmsg("fmap_get_hash: Unsupported hash type %u\n", type);
         status = CL_EARG;
+        goto done;
+    }
+
+    if (ctx && cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "fmap hash calculation reached the configured time limit");
+        status = CL_ETIMEOUT;
         goto done;
     }
 
@@ -1567,6 +1573,12 @@ cl_error_t fmap_get_hash(fmap_t *map, unsigned char **hash, cli_hash_type_t type
     while (todo) {
         const void *buf;
         size_t readme = todo < 1024 * 1024 * 10 ? todo : 1024 * 1024 * 10;
+
+        if (ctx && cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "fmap hash calculation reached the configured time limit");
+            status = CL_ETIMEOUT;
+            goto done;
+        }
 
         if (!(buf = fmap_need_off_once(map, at, readme))) {
             cli_errmsg("fmap_get_hash: error reading while generating hash!\n");
@@ -1628,6 +1640,11 @@ done:
     }
 
     return status;
+}
+
+cl_error_t fmap_get_hash(fmap_t *map, unsigned char **hash, cli_hash_type_t type)
+{
+    return fmap_get_hash_ctx(map, hash, type, NULL);
 }
 
 /*

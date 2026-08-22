@@ -985,6 +985,17 @@ the child uses the already-held reservation rather than double-counting the
 same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
 qualification remain open.
 
+## Fmap hash deadline coverage — 2026-08-22
+
+Internal scan and cache callers now use a context-aware fmap hash helper that
+checks `MaxScanTime` before hashing and between each bounded 10 MiB read window.
+On expiry it records the timeout as an incomplete scan and returns
+`CL_ETIMEOUT`; partially initialized hash contexts are discarded without
+publishing a digest. The public `cl_fmap_get_hash()` API has no scan context,
+so it retains its legacy behavior. Source-level coverage is complete for the
+internal call sites; compiled timeout injection and large-file parser/matcher
+qualification remain release gates.
+
 ## Rust reader timeout status preservation — 2026-08-22
 
 The generic Rust reader-to-spool helper converted every `Read` error to

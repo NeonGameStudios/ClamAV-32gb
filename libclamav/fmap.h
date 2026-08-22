@@ -41,6 +41,7 @@
 
 struct cl_fmap;
 typedef cl_fmap_t fmap_t;
+struct cli_ctx_tag;
 
 struct cl_fmap {
     /* handle interface */
@@ -483,6 +484,21 @@ cl_error_t fmap_will_need_hash_later(fmap_t *map, cli_hash_type_t type);
  * @return cl_error_t CL_SUCCESS if was able to get the hash, else some error.
  */
 cl_error_t fmap_get_hash(fmap_t *map, uint8_t **hash, cli_hash_type_t type);
+
+/**
+ * @brief Get a fmap hash while honoring an optional scan context deadline.
+ *
+ * The public cl_fmap_get_hash() API has no scan context and therefore retains
+ * its legacy no-deadline behavior. Internal scan paths should use this helper
+ * so hashing a large fmap cannot bypass MaxScanTime between read windows.
+ *
+ * @param map       The map in question.
+ * @param[out] hash A pointer to the hash.
+ * @param type      The type of hash to calculate.
+ * @param ctx       The internal scan context, or NULL for legacy behavior.
+ * @return cl_error_t CL_SUCCESS if able to get the hash, else some error.
+ */
+cl_error_t fmap_get_hash_ctx(fmap_t *map, uint8_t **hash, cli_hash_type_t type, struct cli_ctx_tag *ctx);
 
 /**
  * @brief Set the hash for the fmap that was previously calculated.

@@ -836,7 +836,7 @@ cl_error_t cli_check_fp(cli_ctx *ctx, const char *vname)
                 size_t hash_len = cli_hash_len(hash_type);
 
                 /* If we need a hash, we will calculate it now */
-                ret = fmap_get_hash(map, &hash, hash_type);
+                ret = fmap_get_hash_ctx(map, &hash, hash_type, ctx);
                 if (CL_SUCCESS != ret) {
                     cli_dbgmsg("cli_check_fp: Failed to get hash for the map at stack index # %u\n", stack_index);
                     cli_mark_scan_incomplete(ctx, "false-positive hash could not be read");
@@ -1809,7 +1809,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             /* Get the hash for the current type.
              * We already calculated all the needed ones, so this is a simple lookup.
              * Yes, I know there is the digest[] array, but that one may be hashes calculated before this function. */
-            ret = fmap_get_hash(ctx->fmap, &hash, hash_type);
+            ret = fmap_get_hash_ctx(ctx->fmap, &hash, hash_type, ctx);
             if (CL_SUCCESS != ret) {
                 cli_dbgmsg("cli_scan_fmap: Error getting hash for type %d\n", hash_type);
                 goto done;

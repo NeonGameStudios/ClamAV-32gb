@@ -6610,7 +6610,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                 size_t hash_len = cli_hash_len(hash_type);
 
                 /* If we need a hash, we will calculate it now */
-                ret = fmap_get_hash(ctx->fmap, &hash, hash_type);
+                ret = fmap_get_hash_ctx(ctx->fmap, &hash, hash_type, ctx);
                 if (CL_SUCCESS != ret || hash == NULL) {
                     cli_dbgmsg("cli_magic_scan: Failed to get a hash for the current fmap.\n");
                     cli_mark_scan_incomplete(ctx, "file metadata hash could not be calculated completely");
@@ -8258,7 +8258,7 @@ static cl_error_t scan_common(
         } else {
             // Get the hash from the fmap.
             uint8_t *hash = NULL;
-            ret           = fmap_get_hash(map, &hash, requested_hash_type);
+            ret           = fmap_get_hash_ctx(map, &hash, requested_hash_type, &ctx);
             if (CL_SUCCESS != ret || hash == NULL) {
                 cli_errmsg("scan_common: fmap_get_hash failed: %d\n", ret);
                 status = ret;

@@ -5,6 +5,9 @@
 - The 32 GiB ingress policy, shared accounting/fail-closed controls, and
   capability manifest are implemented and source-guarded; release defaults
   remain gated on qualification.
+- Internal fmap hashing now checks `MaxScanTime` before and between bounded
+  read windows, including matcher and cache callers; public no-context hash
+  APIs retain legacy behavior, and compiled timeout qualification remains open.
 - An opt-in `largefile_library_exact_32g` CTest now creates a sparse exact-
   32-GiB file, detects a marker in its final 64 bytes through
   `cl_scanfile_ex2()`, and verifies the structured report and full matcher

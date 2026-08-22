@@ -700,7 +700,7 @@ void clean_cache_add(cli_ctx *ctx)
     }
 
     /* Get the hash */
-    ret = fmap_get_hash(ctx->fmap, &sha2_256, CLI_HASH_SHA2_256);
+    ret = fmap_get_hash_ctx(ctx->fmap, &sha2_256, CLI_HASH_SHA2_256, ctx);
     if (CL_SUCCESS != ret || NULL == sha2_256) {
         cli_dbgmsg("clean_cache_add: Failed to get SHA2-256 hash.\n");
         goto done;
@@ -824,7 +824,7 @@ cl_error_t clean_cache_check(cli_ctx *ctx)
         goto done;
     }
 
-    status = fmap_get_hash(ctx->fmap, &sha2_256, CLI_HASH_SHA2_256);
+    status = fmap_get_hash_ctx(ctx->fmap, &sha2_256, CLI_HASH_SHA2_256, ctx);
     if (status != CL_SUCCESS || !sha2_256) {
         cli_dbgmsg("clean_cache_check: Failed to get SHA2-256 hash. Cannot check in cache.\n");
         status = CL_VIRUS;

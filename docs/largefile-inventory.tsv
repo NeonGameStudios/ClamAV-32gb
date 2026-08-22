@@ -2129,14 +2129,14 @@ fixed-width-integer	libclamav/fmap.c	96	static void fmap_release_gets_pages(fmap
 fixed-width-integer	libclamav/fmap.c	965	static void fmap_unneed_page(fmap_t *m, uint64_t page)
 fixed-width-integer	libclamav/fmap.c	967	    uint64_t s = fmap_bitmap[page];
 fixed-width-integer	libclamav/fmap.c	986	    uint64_t i, first_page, last_page;
-fixed-width-integer	libclamav/fmap.h	103	    uint64_t *bitmap;
-fixed-width-integer	libclamav/fmap.h	54	    uint64_t mtime;
-fixed-width-integer	libclamav/fmap.h	55	    uint64_t pages;
-fixed-width-integer	libclamav/fmap.h	56	    uint64_t pgsz;
-fixed-width-integer	libclamav/fmap.h	57	    uint64_t paged;
-fixed-width-integer	libclamav/fmap.h	58	    uint64_t aging_cursor;        /** Page at which the next bounded aging pass begins. */
-fixed-width-integer	libclamav/fmap.h	59	    uint64_t aging_scanned_last;  /** Bitmap entries inspected by the most recent aging pass. Test-visible diagnostic. */
-fixed-width-integer	libclamav/fmap.h	60	    uint64_t aging_released_last; /** Pages released by the most recent aging pass. Test-visible diagnostic. */
+fixed-width-integer	libclamav/fmap.h	104	    uint64_t *bitmap;
+fixed-width-integer	libclamav/fmap.h	55	    uint64_t mtime;
+fixed-width-integer	libclamav/fmap.h	56	    uint64_t pages;
+fixed-width-integer	libclamav/fmap.h	57	    uint64_t pgsz;
+fixed-width-integer	libclamav/fmap.h	58	    uint64_t paged;
+fixed-width-integer	libclamav/fmap.h	59	    uint64_t aging_cursor;        /** Page at which the next bounded aging pass begins. */
+fixed-width-integer	libclamav/fmap.h	60	    uint64_t aging_scanned_last;  /** Bitmap entries inspected by the most recent aging pass. Test-visible diagnostic. */
+fixed-width-integer	libclamav/fmap.h	61	    uint64_t aging_released_last; /** Pages released by the most recent aging pass. Test-visible diagnostic. */
 fixed-width-integer	libclamav/fsg.c	50	int unfsg_200(const char *source, char *dest, int ssize, int dsize, uint32_t rva, uint32_t base, uint32_t ep, int file, cli_ctx *ctx)
 fixed-width-integer	libclamav/fsg.c	68	int unfsg_133(const char *source, char *dest, int ssize, int dsize, struct cli_exe_section *sections, int sectcount, uint32_t base, uint32_t ep, int file, cli_ctx *ctx)
 fixed-width-integer	libclamav/fsg.c	90	            uint32_t trva, trsz, traw;
@@ -9452,21 +9452,21 @@ native-width-integer	libclamav/fmap.c	1441	    fd = (int)(ptrdiff_t)m->handle;
 native-width-integer	libclamav/fmap.c	1474	        size_t hash_len                           = cli_hash_len(type);
 native-width-integer	libclamav/fmap.c	1477	        size_t i;
 native-width-integer	libclamav/fmap.c	1517	    size_t todo, at = 0;
-native-width-integer	libclamav/fmap.c	1569	        size_t readme = todo < 1024 * 1024 * 10 ? todo : 1024 * 1024 * 10;
-native-width-integer	libclamav/fmap.c	1603	                size_t hash_len                           = cli_hash_len(hash_type);
-native-width-integer	libclamav/fmap.c	1606	                size_t i;
-native-width-integer	libclamav/fmap.c	1639	    size_t offset,
-native-width-integer	libclamav/fmap.c	1640	    size_t len,
-native-width-integer	libclamav/fmap.c	1642	    int use_aging)
-native-width-integer	libclamav/fmap.c	1647	extern cl_fmap_t *cl_fmap_open_memory(const void *start, size_t len)
-native-width-integer	libclamav/fmap.c	1714	extern cl_error_t cl_fmap_get_path(cl_fmap_t *map, const char **path_out, size_t *offset_out, size_t *len_out)
-native-width-integer	libclamav/fmap.c	1743	extern cl_error_t cl_fmap_get_fd(const cl_fmap_t *map, int *fd_out, size_t *offset_out, size_t *len_out)
-native-width-integer	libclamav/fmap.c	1772	extern cl_error_t cl_fmap_get_size(const cl_fmap_t *map, size_t *size_out)
+native-width-integer	libclamav/fmap.c	1575	        size_t readme = todo < 1024 * 1024 * 10 ? todo : 1024 * 1024 * 10;
+native-width-integer	libclamav/fmap.c	1615	                size_t hash_len                           = cli_hash_len(hash_type);
+native-width-integer	libclamav/fmap.c	1618	                size_t i;
+native-width-integer	libclamav/fmap.c	1656	    size_t offset,
+native-width-integer	libclamav/fmap.c	1657	    size_t len,
+native-width-integer	libclamav/fmap.c	1659	    int use_aging)
+native-width-integer	libclamav/fmap.c	1664	extern cl_fmap_t *cl_fmap_open_memory(const void *start, size_t len)
+native-width-integer	libclamav/fmap.c	1731	extern cl_error_t cl_fmap_get_path(cl_fmap_t *map, const char **path_out, size_t *offset_out, size_t *len_out)
+native-width-integer	libclamav/fmap.c	1760	extern cl_error_t cl_fmap_get_fd(const cl_fmap_t *map, int *fd_out, size_t *offset_out, size_t *len_out)
+native-width-integer	libclamav/fmap.c	1789	extern cl_error_t cl_fmap_get_size(const cl_fmap_t *map, size_t *size_out)
 native-width-integer	libclamav/fmap.c	184	fmap_t *fmap_check_empty(int fd, off_t offset, size_t len, int *empty, const char *name, const char *path)
 native-width-integer	libclamav/fmap.c	187	    int pgsz = cli_getpagesize();
-native-width-integer	libclamav/fmap.c	1889	    size_t hash_len;
-native-width-integer	libclamav/fmap.c	1890	    size_t i;
-native-width-integer	libclamav/fmap.c	1944	extern cl_error_t cl_fmap_get_data(const cl_fmap_t *map, size_t offset, size_t len, const uint8_t **data_out, size_t *data_len_out)
+native-width-integer	libclamav/fmap.c	1906	    size_t hash_len;
+native-width-integer	libclamav/fmap.c	1907	    size_t i;
+native-width-integer	libclamav/fmap.c	1961	extern cl_error_t cl_fmap_get_data(const cl_fmap_t *map, size_t offset, size_t len, const uint8_t **data_out, size_t *data_len_out)
 native-width-integer	libclamav/fmap.c	235	    m->handle              = (void *)(size_t)fd;
 native-width-integer	libclamav/fmap.c	263	static bool fmap_add_size(size_t left, size_t right, size_t *result)
 native-width-integer	libclamav/fmap.c	273	    size_t base,
@@ -9499,42 +9499,42 @@ native-width-integer	libclamav/fmap.c	92	static inline uint64_t fmap_which_page(
 native-width-integer	libclamav/fmap.c	936	static const void *handle_need(fmap_t *m, size_t at, size_t len, int lock)
 native-width-integer	libclamav/fmap.c	984	static void handle_unneed_off(fmap_t *m, size_t at, size_t len)
 native-width-integer	libclamav/fmap.c	99	static const void *handle_need(fmap_t *m, size_t at, size_t len, int lock);
-native-width-integer	libclamav/fmap.h	118	fmap_t *fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path);
-native-width-integer	libclamav/fmap.h	134	fmap_t *fmap_check_empty(int fd, off_t offset, size_t len, int *empty, const char *name, const char *path);
-native-width-integer	libclamav/fmap.h	144	fmap_t *fmap_open_memory(const void *start, size_t len, const char *name);
-native-width-integer	libclamav/fmap.h	155	fmap_t *fmap_duplicate(cl_fmap_t *map, size_t offset, size_t length, const char *name);
-native-width-integer	libclamav/fmap.h	190	static inline const void *fmap_need_off(fmap_t *m, size_t at, size_t len)
-native-width-integer	libclamav/fmap.h	208	static inline const void *fmap_need_off_once(fmap_t *m, size_t at, size_t len)
-native-width-integer	libclamav/fmap.h	220	 *   size_t off = fmap_need_ptr(m, ptr, 10);
-native-width-integer	libclamav/fmap.h	225	 * @return size_t The offset into the fmap
-native-width-integer	libclamav/fmap.h	227	static inline size_t fmap_ptr2off(const fmap_t *m, const void *ptr)
-native-width-integer	libclamav/fmap.h	229	    return (size_t)((const char *)ptr - (const char *)m->data) - m->nested_offset;
-native-width-integer	libclamav/fmap.h	246	static inline const void *fmap_need_ptr(fmap_t *m, const void *ptr, size_t len)
-native-width-integer	libclamav/fmap.h	264	static inline const void *fmap_need_ptr_once(fmap_t *m, const void *ptr, size_t len)
-native-width-integer	libclamav/fmap.h	279	static inline void fmap_unneed_off(fmap_t *m, size_t at, size_t len)
-native-width-integer	libclamav/fmap.h	294	static inline void fmap_unneed_ptr(fmap_t *m, const void *ptr, size_t len)
-native-width-integer	libclamav/fmap.h	318	 * @return size_t   # of bytes read
-native-width-integer	libclamav/fmap.h	319	 * @return size_t   (size_t)-1 if error
-native-width-integer	libclamav/fmap.h	321	static inline size_t fmap_readn(fmap_t *m, void *dst, size_t at, size_t len)
-native-width-integer	libclamav/fmap.h	328	        return (size_t)-1;
-native-width-integer	libclamav/fmap.h	333	        return (size_t)-1;
-native-width-integer	libclamav/fmap.h	336	     * INT_MAX. Both the map and destination buffer use size_t. */
-native-width-integer	libclamav/fmap.h	351	static inline const void *fmap_need_str(fmap_t *m, const void *ptr, size_t len_hint)
-native-width-integer	libclamav/fmap.h	366	static inline const void *fmap_need_offstr(fmap_t *m, size_t at, size_t len_hint)
-native-width-integer	libclamav/fmap.h	385	static inline const void *fmap_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
-native-width-integer	libclamav/fmap.h	402	static inline const void *fmap_need_off_once_len(fmap_t *m, size_t at, size_t len, size_t *lenout)
-native-width-integer	libclamav/fmap.h	428	static inline const void *fmap_need_ptr_once_len(fmap_t *m, const void *ptr, size_t len, size_t *lenout)
-native-width-integer	libclamav/fmap.h	445	cl_error_t fmap_dump_to_file(fmap_t *map, const char *filepath, const char *tmpdir, char **outname, int *outfd, size_t start_offset, size_t end_offset);
-native-width-integer	libclamav/fmap.h	455	 * @return int  The file descriptor, or -1 if not available.
-native-width-integer	libclamav/fmap.h	457	int fmap_fd(fmap_t *m);
-native-width-integer	libclamav/fmap.h	66	    size_t offset;                /** File offset representing start of original fmap, if the fmap created reading from a file starting at offset other than 0.
-native-width-integer	libclamav/fmap.h	68	    size_t nested_offset;         /** Offset from start of original fmap (data) for nested scan. 0 for orig fmap. */
-native-width-integer	libclamav/fmap.h	69	    size_t real_len;              /** Length from start of original fmap (data) to end of current (possibly nested) map.
-native-width-integer	libclamav/fmap.h	75	    size_t len; /** Length of data from nested_offset, accessible via current fmap */
-native-width-integer	libclamav/fmap.h	87	    const void *(*need)(fmap_t *, size_t at, size_t len, int lock);
-native-width-integer	libclamav/fmap.h	88	    const void *(*need_offstr)(fmap_t *, size_t at, size_t len_hint);
-native-width-integer	libclamav/fmap.h	89	    const void *(*gets)(fmap_t *, char *dst, size_t *at, size_t max_len);
-native-width-integer	libclamav/fmap.h	90	    void (*unneed_off)(fmap_t *, size_t at, size_t len);
+native-width-integer	libclamav/fmap.h	119	fmap_t *fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path);
+native-width-integer	libclamav/fmap.h	135	fmap_t *fmap_check_empty(int fd, off_t offset, size_t len, int *empty, const char *name, const char *path);
+native-width-integer	libclamav/fmap.h	145	fmap_t *fmap_open_memory(const void *start, size_t len, const char *name);
+native-width-integer	libclamav/fmap.h	156	fmap_t *fmap_duplicate(cl_fmap_t *map, size_t offset, size_t length, const char *name);
+native-width-integer	libclamav/fmap.h	191	static inline const void *fmap_need_off(fmap_t *m, size_t at, size_t len)
+native-width-integer	libclamav/fmap.h	209	static inline const void *fmap_need_off_once(fmap_t *m, size_t at, size_t len)
+native-width-integer	libclamav/fmap.h	221	 *   size_t off = fmap_need_ptr(m, ptr, 10);
+native-width-integer	libclamav/fmap.h	226	 * @return size_t The offset into the fmap
+native-width-integer	libclamav/fmap.h	228	static inline size_t fmap_ptr2off(const fmap_t *m, const void *ptr)
+native-width-integer	libclamav/fmap.h	230	    return (size_t)((const char *)ptr - (const char *)m->data) - m->nested_offset;
+native-width-integer	libclamav/fmap.h	247	static inline const void *fmap_need_ptr(fmap_t *m, const void *ptr, size_t len)
+native-width-integer	libclamav/fmap.h	265	static inline const void *fmap_need_ptr_once(fmap_t *m, const void *ptr, size_t len)
+native-width-integer	libclamav/fmap.h	280	static inline void fmap_unneed_off(fmap_t *m, size_t at, size_t len)
+native-width-integer	libclamav/fmap.h	295	static inline void fmap_unneed_ptr(fmap_t *m, const void *ptr, size_t len)
+native-width-integer	libclamav/fmap.h	319	 * @return size_t   # of bytes read
+native-width-integer	libclamav/fmap.h	320	 * @return size_t   (size_t)-1 if error
+native-width-integer	libclamav/fmap.h	322	static inline size_t fmap_readn(fmap_t *m, void *dst, size_t at, size_t len)
+native-width-integer	libclamav/fmap.h	329	        return (size_t)-1;
+native-width-integer	libclamav/fmap.h	334	        return (size_t)-1;
+native-width-integer	libclamav/fmap.h	337	     * INT_MAX. Both the map and destination buffer use size_t. */
+native-width-integer	libclamav/fmap.h	352	static inline const void *fmap_need_str(fmap_t *m, const void *ptr, size_t len_hint)
+native-width-integer	libclamav/fmap.h	367	static inline const void *fmap_need_offstr(fmap_t *m, size_t at, size_t len_hint)
+native-width-integer	libclamav/fmap.h	386	static inline const void *fmap_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
+native-width-integer	libclamav/fmap.h	403	static inline const void *fmap_need_off_once_len(fmap_t *m, size_t at, size_t len, size_t *lenout)
+native-width-integer	libclamav/fmap.h	429	static inline const void *fmap_need_ptr_once_len(fmap_t *m, const void *ptr, size_t len, size_t *lenout)
+native-width-integer	libclamav/fmap.h	446	cl_error_t fmap_dump_to_file(fmap_t *map, const char *filepath, const char *tmpdir, char **outname, int *outfd, size_t start_offset, size_t end_offset);
+native-width-integer	libclamav/fmap.h	456	 * @return int  The file descriptor, or -1 if not available.
+native-width-integer	libclamav/fmap.h	458	int fmap_fd(fmap_t *m);
+native-width-integer	libclamav/fmap.h	67	    size_t offset;                /** File offset representing start of original fmap, if the fmap created reading from a file starting at offset other than 0.
+native-width-integer	libclamav/fmap.h	69	    size_t nested_offset;         /** Offset from start of original fmap (data) for nested scan. 0 for orig fmap. */
+native-width-integer	libclamav/fmap.h	70	    size_t real_len;              /** Length from start of original fmap (data) to end of current (possibly nested) map.
+native-width-integer	libclamav/fmap.h	76	    size_t len; /** Length of data from nested_offset, accessible via current fmap */
+native-width-integer	libclamav/fmap.h	88	    const void *(*need)(fmap_t *, size_t at, size_t len, int lock);
+native-width-integer	libclamav/fmap.h	89	    const void *(*need_offstr)(fmap_t *, size_t at, size_t len_hint);
+native-width-integer	libclamav/fmap.h	90	    const void *(*gets)(fmap_t *, char *dst, size_t *at, size_t max_len);
+native-width-integer	libclamav/fmap.h	91	    void (*unneed_off)(fmap_t *, size_t at, size_t len);
 native-width-integer	libclamav/fpu.c	27	int get_fpu_endian(void)
 native-width-integer	libclamav/fpu.h	37	extern int get_fpu_endian(void);
 native-width-integer	libclamav/fsg.c	50	int unfsg_200(const char *source, char *dest, int ssize, int dsize, uint32_t rva, uint32_t base, uint32_t ep, int file, cli_ctx *ctx)
@@ -17654,8 +17654,8 @@ boundary-constant	libclamav/fmap.c	288	    if (length > extent || sub > SIZE_MAX
 boundary-constant	libclamav/fmap.c	473	    if (len > SIZE_MAX - offset) {
 boundary-constant	libclamav/fmap.c	480	    if (pages > SIZE_MAX / sizeof(uint64_t) || pages > SIZE_MAX / (uint64_t)pgsz) {
 boundary-constant	libclamav/fmap.c	571	    if (first_page > SIZE_MAX / m->pgsz || page_count > SIZE_MAX / m->pgsz)
-boundary-constant	libclamav/fmap.h	336	     * INT_MAX. Both the map and destination buffer use size_t. */
-boundary-constant	libclamav/fmap.h	442	 * @param end_offset    The end offset of the data you wish to write to the temp file.  May be larger than the size of the fmap.  Use SIZE_MAX to write the entire fmap.
+boundary-constant	libclamav/fmap.h	337	     * INT_MAX. Both the map and destination buffer use size_t. */
+boundary-constant	libclamav/fmap.h	443	 * @param end_offset    The end offset of the data you wish to write to the temp file.  May be larger than the size of the fmap.  Use SIZE_MAX to write the entire fmap.
 boundary-constant	libclamav/gpt.c	207	    if (sectorsize < sizeof(struct mbr_boot_record) || sectorsize > SIZE_MAX / 2 ||
 boundary-constant	libclamav/gpt.c	383	    if (hdr.tableStartLBA > SIZE_MAX / sectorsize) {
 boundary-constant	libclamav/gpt.c	517	        hdr.tableStartLBA > SIZE_MAX / sectorsize ||
@@ -18908,7 +18908,7 @@ format-width	libclamav/fmap.c	1369	            snprintf(prefix, prefix_len, "%s.
 format-width	libclamav/fmap.c	1462	        cli_errmsg("fmap_set_hash: Unsupported hash type %u\n", type);
 format-width	libclamav/fmap.c	1501	        cli_errmsg("fmap_will_need_hash_later: Unsupported hash type %u\n", type);
 format-width	libclamav/fmap.c	1527	        cli_errmsg("fmap_get_hash: Unsupported hash type %u\n", type);
-format-width	libclamav/fmap.c	1955	        cli_errmsg("cl_fmap_get_data: Offset %zu is beyond end of file (file length %zu)\n", offset, map->len);
+format-width	libclamav/fmap.c	1972	        cli_errmsg("cl_fmap_get_data: Offset %zu is beyond end of file (file length %zu)\n", offset, map->len);
 format-width	libclamav/fmap.c	217	        cli_errmsg("fmap: cannot get a valid handle for descriptor %d\n", fd);
 format-width	libclamav/fmap.c	221	        cli_errmsg("fmap: cannot create a map of descriptor %d\n", fd);
 format-width	libclamav/fmap.c	225	        cli_errmsg("fmap: cannot map file descriptor %d\n", fd);
@@ -23586,27 +23586,27 @@ offset-size-arithmetic	libclamav/fmap.c	1369	            snprintf(prefix, prefix
 offset-size-arithmetic	libclamav/fmap.c	1402	        pos += len;
 offset-size-arithmetic	libclamav/fmap.c	1421	    if (lseek(tmpfd, 0, SEEK_SET) == -1) {
 offset-size-arithmetic	libclamav/fmap.c	1481	        hash_string[hash_len * 2] = 0;
-offset-size-arithmetic	libclamav/fmap.c	1538	     * carry the subject size but intentionally have no data-access callback,
-offset-size-arithmetic	libclamav/fmap.c	1569	        size_t readme = todo < 1024 * 1024 * 10 ? todo : 1024 * 1024 * 10;
-offset-size-arithmetic	libclamav/fmap.c	1610	                hash_string[hash_len * 2] = 0;
-offset-size-arithmetic	libclamav/fmap.c	1714	extern cl_error_t cl_fmap_get_path(cl_fmap_t *map, const char **path_out, size_t *offset_out, size_t *len_out)
-offset-size-arithmetic	libclamav/fmap.c	1730	        *offset_out = map->offset;
-offset-size-arithmetic	libclamav/fmap.c	1734	        *len_out = map->len;
-offset-size-arithmetic	libclamav/fmap.c	1743	extern cl_error_t cl_fmap_get_fd(const cl_fmap_t *map, int *fd_out, size_t *offset_out, size_t *len_out)
-offset-size-arithmetic	libclamav/fmap.c	1759	        *offset_out = map->offset;
-offset-size-arithmetic	libclamav/fmap.c	1763	        *len_out = map->len;
-offset-size-arithmetic	libclamav/fmap.c	1772	extern cl_error_t cl_fmap_get_size(const cl_fmap_t *map, size_t *size_out)
-offset-size-arithmetic	libclamav/fmap.c	1781	    *size_out = map->len;
+offset-size-arithmetic	libclamav/fmap.c	1544	     * carry the subject size but intentionally have no data-access callback,
+offset-size-arithmetic	libclamav/fmap.c	1575	        size_t readme = todo < 1024 * 1024 * 10 ? todo : 1024 * 1024 * 10;
+offset-size-arithmetic	libclamav/fmap.c	1622	                hash_string[hash_len * 2] = 0;
+offset-size-arithmetic	libclamav/fmap.c	1731	extern cl_error_t cl_fmap_get_path(cl_fmap_t *map, const char **path_out, size_t *offset_out, size_t *len_out)
+offset-size-arithmetic	libclamav/fmap.c	1747	        *offset_out = map->offset;
+offset-size-arithmetic	libclamav/fmap.c	1751	        *len_out = map->len;
+offset-size-arithmetic	libclamav/fmap.c	1760	extern cl_error_t cl_fmap_get_fd(const cl_fmap_t *map, int *fd_out, size_t *offset_out, size_t *len_out)
+offset-size-arithmetic	libclamav/fmap.c	1776	        *offset_out = map->offset;
+offset-size-arithmetic	libclamav/fmap.c	1780	        *len_out = map->len;
+offset-size-arithmetic	libclamav/fmap.c	1789	extern cl_error_t cl_fmap_get_size(const cl_fmap_t *map, size_t *size_out)
+offset-size-arithmetic	libclamav/fmap.c	1798	    *size_out = map->len;
 offset-size-arithmetic	libclamav/fmap.c	184	fmap_t *fmap_check_empty(int fd, off_t offset, size_t len, int *empty, const char *name, const char *path)
-offset-size-arithmetic	libclamav/fmap.c	1918	    hash_string = malloc(hash_len * 2 + 1);
-offset-size-arithmetic	libclamav/fmap.c	1928	    hash_string[hash_len * 2] = 0;
-offset-size-arithmetic	libclamav/fmap.c	1944	extern cl_error_t cl_fmap_get_data(const cl_fmap_t *map, size_t offset, size_t len, const uint8_t **data_out, size_t *data_len_out)
-offset-size-arithmetic	libclamav/fmap.c	1954	    if (offset > map->len) {
-offset-size-arithmetic	libclamav/fmap.c	1955	        cli_errmsg("cl_fmap_get_data: Offset %zu is beyond end of file (file length %zu)\n", offset, map->len);
-offset-size-arithmetic	libclamav/fmap.c	1962	        len = map->len - offset;
-offset-size-arithmetic	libclamav/fmap.c	1965	    if (len > map->len - offset) {
-offset-size-arithmetic	libclamav/fmap.c	1967	        len = map->len - offset;
-offset-size-arithmetic	libclamav/fmap.c	1970	    data = fmap_need_off_once_len((fmap_t *)map, offset, len, &len);
+offset-size-arithmetic	libclamav/fmap.c	1935	    hash_string = malloc(hash_len * 2 + 1);
+offset-size-arithmetic	libclamav/fmap.c	1945	    hash_string[hash_len * 2] = 0;
+offset-size-arithmetic	libclamav/fmap.c	1961	extern cl_error_t cl_fmap_get_data(const cl_fmap_t *map, size_t offset, size_t len, const uint8_t **data_out, size_t *data_len_out)
+offset-size-arithmetic	libclamav/fmap.c	1971	    if (offset > map->len) {
+offset-size-arithmetic	libclamav/fmap.c	1972	        cli_errmsg("cl_fmap_get_data: Offset %zu is beyond end of file (file length %zu)\n", offset, map->len);
+offset-size-arithmetic	libclamav/fmap.c	1979	        len = map->len - offset;
+offset-size-arithmetic	libclamav/fmap.c	1982	    if (len > map->len - offset) {
+offset-size-arithmetic	libclamav/fmap.c	1984	        len = map->len - offset;
+offset-size-arithmetic	libclamav/fmap.c	1987	    data = fmap_need_off_once_len((fmap_t *)map, offset, len, &len);
 offset-size-arithmetic	libclamav/fmap.c	203	    if (!len) len = st.st_size - offset; /* bound checked later */
 offset-size-arithmetic	libclamav/fmap.c	220	    if (!(windows_map_handle = CreateFileMapping(windows_file_handle, NULL, PAGE_READONLY, (DWORD)((len >> 31) >> 1), (DWORD)len, NULL))) {
 offset-size-arithmetic	libclamav/fmap.c	224	    if (!(data = MapViewOfFile(windows_map_handle, FILE_MAP_READ, (DWORD)((offset >> 31) >> 1), (DWORD)(offset), len))) {
@@ -23665,55 +23665,55 @@ offset-size-arithmetic	libclamav/fmap.c	951	    last_page  = fmap_which_page(m, 
 offset-size-arithmetic	libclamav/fmap.c	984	static void handle_unneed_off(fmap_t *m, size_t at, size_t len)
 offset-size-arithmetic	libclamav/fmap.c	993	    if (!fmap_add_size(at, m->nested_offset, &at) ||
 offset-size-arithmetic	libclamav/fmap.c	994	        !fmap_range_contained(m->nested_offset, m->len, at, len, false)) {
-offset-size-arithmetic	libclamav/fmap.h	118	fmap_t *fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path);
-offset-size-arithmetic	libclamav/fmap.h	134	fmap_t *fmap_check_empty(int fd, off_t offset, size_t len, int *empty, const char *name, const char *path);
-offset-size-arithmetic	libclamav/fmap.h	144	fmap_t *fmap_open_memory(const void *start, size_t len, const char *name);
-offset-size-arithmetic	libclamav/fmap.h	155	fmap_t *fmap_duplicate(cl_fmap_t *map, size_t offset, size_t length, const char *name);
-offset-size-arithmetic	libclamav/fmap.h	182	 * You must call fmap_unneed_off() / fmap_unneed_ptr() when you're done accessing the data to
-offset-size-arithmetic	libclamav/fmap.h	188	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
-offset-size-arithmetic	libclamav/fmap.h	190	static inline const void *fmap_need_off(fmap_t *m, size_t at, size_t len)
-offset-size-arithmetic	libclamav/fmap.h	201	 * to call fmap_unneed_off() / fmap_unneed_ptr() to release the page locks.
-offset-size-arithmetic	libclamav/fmap.h	206	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
-offset-size-arithmetic	libclamav/fmap.h	208	static inline const void *fmap_need_off_once(fmap_t *m, size_t at, size_t len)
-offset-size-arithmetic	libclamav/fmap.h	227	static inline size_t fmap_ptr2off(const fmap_t *m, const void *ptr)
-offset-size-arithmetic	libclamav/fmap.h	229	    return (size_t)((const char *)ptr - (const char *)m->data) - m->nested_offset;
-offset-size-arithmetic	libclamav/fmap.h	238	 * You must call fmap_unneed_off() / fmap_unneed_ptr() when you're done accessing the data to
-offset-size-arithmetic	libclamav/fmap.h	244	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
-offset-size-arithmetic	libclamav/fmap.h	257	 * to call fmap_unneed_off() / fmap_unneed_ptr() to release the page locks.
-offset-size-arithmetic	libclamav/fmap.h	262	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
-offset-size-arithmetic	libclamav/fmap.h	279	static inline void fmap_unneed_off(fmap_t *m, size_t at, size_t len)
-offset-size-arithmetic	libclamav/fmap.h	319	 * @return size_t   (size_t)-1 if error
-offset-size-arithmetic	libclamav/fmap.h	321	static inline size_t fmap_readn(fmap_t *m, void *dst, size_t at, size_t len)
-offset-size-arithmetic	libclamav/fmap.h	328	        return (size_t)-1;
-offset-size-arithmetic	libclamav/fmap.h	329	    if (len > m->len - at)
-offset-size-arithmetic	libclamav/fmap.h	330	        len = m->len - at;
-offset-size-arithmetic	libclamav/fmap.h	333	        return (size_t)-1;
-offset-size-arithmetic	libclamav/fmap.h	336	     * INT_MAX. Both the map and destination buffer use size_t. */
-offset-size-arithmetic	libclamav/fmap.h	366	static inline const void *fmap_need_offstr(fmap_t *m, size_t at, size_t len_hint)
-offset-size-arithmetic	libclamav/fmap.h	385	static inline const void *fmap_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
-offset-size-arithmetic	libclamav/fmap.h	391	 * @brief Get a pointer to the file data if the requested offset & max-len are within the fmap.
-offset-size-arithmetic	libclamav/fmap.h	393	 * Just like `fmap_need_off_once()` except the `len` param is a maximum-len.
-offset-size-arithmetic	libclamav/fmap.h	400	 * @return const void*  A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
-offset-size-arithmetic	libclamav/fmap.h	402	static inline const void *fmap_need_off_once_len(fmap_t *m, size_t at, size_t len, size_t *lenout)
-offset-size-arithmetic	libclamav/fmap.h	409	    if (len > m->len - at)
-offset-size-arithmetic	libclamav/fmap.h	410	        len = m->len - at;
-offset-size-arithmetic	libclamav/fmap.h	417	 * @brief Get a pointer to the file data if the requested offset & max-len are within the fmap.
-offset-size-arithmetic	libclamav/fmap.h	419	 * Just like `fmap_need_off_once()` except the `len` param is a maximum-len.
-offset-size-arithmetic	libclamav/fmap.h	426	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
-offset-size-arithmetic	libclamav/fmap.h	428	static inline const void *fmap_need_ptr_once_len(fmap_t *m, const void *ptr, size_t len, size_t *lenout)
-offset-size-arithmetic	libclamav/fmap.h	62	    bool aging;                   /** Indicates if we should age off memory mapped pages */
-offset-size-arithmetic	libclamav/fmap.h	67	                                      `offset` & `len` are critical information for anyone using the file descriptor/handle */
-offset-size-arithmetic	libclamav/fmap.h	68	    size_t nested_offset;         /** Offset from start of original fmap (data) for nested scan. 0 for orig fmap. */
-offset-size-arithmetic	libclamav/fmap.h	70	                                      `real_len == nested_offset + len`.
-offset-size-arithmetic	libclamav/fmap.h	72	                                      We convert caller's fmap offsets & lengths to real data offsets using `nested_offset` & `real_len`. */
-offset-size-arithmetic	libclamav/fmap.h	75	    size_t len; /** Length of data from nested_offset, accessible via current fmap */
-offset-size-arithmetic	libclamav/fmap.h	77	    /* real_len = nested_offset + len
-offset-size-arithmetic	libclamav/fmap.h	78	     * file_offset = offset + nested_offset + need_offset
-offset-size-arithmetic	libclamav/fmap.h	80	     * offset in cached buffer: nested_offset + need_offset
-offset-size-arithmetic	libclamav/fmap.h	83	     * to disk and remapping (for uncompressed archives for example) */
-offset-size-arithmetic	libclamav/fmap.h	88	    const void *(*need_offstr)(fmap_t *, size_t at, size_t len_hint);
-offset-size-arithmetic	libclamav/fmap.h	89	    const void *(*gets)(fmap_t *, char *dst, size_t *at, size_t max_len);
-offset-size-arithmetic	libclamav/fmap.h	90	    void (*unneed_off)(fmap_t *, size_t at, size_t len);
+offset-size-arithmetic	libclamav/fmap.h	119	fmap_t *fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path);
+offset-size-arithmetic	libclamav/fmap.h	135	fmap_t *fmap_check_empty(int fd, off_t offset, size_t len, int *empty, const char *name, const char *path);
+offset-size-arithmetic	libclamav/fmap.h	145	fmap_t *fmap_open_memory(const void *start, size_t len, const char *name);
+offset-size-arithmetic	libclamav/fmap.h	156	fmap_t *fmap_duplicate(cl_fmap_t *map, size_t offset, size_t length, const char *name);
+offset-size-arithmetic	libclamav/fmap.h	183	 * You must call fmap_unneed_off() / fmap_unneed_ptr() when you're done accessing the data to
+offset-size-arithmetic	libclamav/fmap.h	189	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
+offset-size-arithmetic	libclamav/fmap.h	191	static inline const void *fmap_need_off(fmap_t *m, size_t at, size_t len)
+offset-size-arithmetic	libclamav/fmap.h	202	 * to call fmap_unneed_off() / fmap_unneed_ptr() to release the page locks.
+offset-size-arithmetic	libclamav/fmap.h	207	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
+offset-size-arithmetic	libclamav/fmap.h	209	static inline const void *fmap_need_off_once(fmap_t *m, size_t at, size_t len)
+offset-size-arithmetic	libclamav/fmap.h	228	static inline size_t fmap_ptr2off(const fmap_t *m, const void *ptr)
+offset-size-arithmetic	libclamav/fmap.h	230	    return (size_t)((const char *)ptr - (const char *)m->data) - m->nested_offset;
+offset-size-arithmetic	libclamav/fmap.h	239	 * You must call fmap_unneed_off() / fmap_unneed_ptr() when you're done accessing the data to
+offset-size-arithmetic	libclamav/fmap.h	245	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
+offset-size-arithmetic	libclamav/fmap.h	258	 * to call fmap_unneed_off() / fmap_unneed_ptr() to release the page locks.
+offset-size-arithmetic	libclamav/fmap.h	263	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
+offset-size-arithmetic	libclamav/fmap.h	280	static inline void fmap_unneed_off(fmap_t *m, size_t at, size_t len)
+offset-size-arithmetic	libclamav/fmap.h	320	 * @return size_t   (size_t)-1 if error
+offset-size-arithmetic	libclamav/fmap.h	322	static inline size_t fmap_readn(fmap_t *m, void *dst, size_t at, size_t len)
+offset-size-arithmetic	libclamav/fmap.h	329	        return (size_t)-1;
+offset-size-arithmetic	libclamav/fmap.h	330	    if (len > m->len - at)
+offset-size-arithmetic	libclamav/fmap.h	331	        len = m->len - at;
+offset-size-arithmetic	libclamav/fmap.h	334	        return (size_t)-1;
+offset-size-arithmetic	libclamav/fmap.h	337	     * INT_MAX. Both the map and destination buffer use size_t. */
+offset-size-arithmetic	libclamav/fmap.h	367	static inline const void *fmap_need_offstr(fmap_t *m, size_t at, size_t len_hint)
+offset-size-arithmetic	libclamav/fmap.h	386	static inline const void *fmap_gets(fmap_t *m, char *dst, size_t *at, size_t max_len)
+offset-size-arithmetic	libclamav/fmap.h	392	 * @brief Get a pointer to the file data if the requested offset & max-len are within the fmap.
+offset-size-arithmetic	libclamav/fmap.h	394	 * Just like `fmap_need_off_once()` except the `len` param is a maximum-len.
+offset-size-arithmetic	libclamav/fmap.h	401	 * @return const void*  A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
+offset-size-arithmetic	libclamav/fmap.h	403	static inline const void *fmap_need_off_once_len(fmap_t *m, size_t at, size_t len, size_t *lenout)
+offset-size-arithmetic	libclamav/fmap.h	410	    if (len > m->len - at)
+offset-size-arithmetic	libclamav/fmap.h	411	        len = m->len - at;
+offset-size-arithmetic	libclamav/fmap.h	418	 * @brief Get a pointer to the file data if the requested offset & max-len are within the fmap.
+offset-size-arithmetic	libclamav/fmap.h	420	 * Just like `fmap_need_off_once()` except the `len` param is a maximum-len.
+offset-size-arithmetic	libclamav/fmap.h	427	 * @return const void* A pointer into to the fmap->data at the requested offset. NULL if offset/len are not contained in the fmap.
+offset-size-arithmetic	libclamav/fmap.h	429	static inline const void *fmap_need_ptr_once_len(fmap_t *m, const void *ptr, size_t len, size_t *lenout)
+offset-size-arithmetic	libclamav/fmap.h	63	    bool aging;                   /** Indicates if we should age off memory mapped pages */
+offset-size-arithmetic	libclamav/fmap.h	68	                                      `offset` & `len` are critical information for anyone using the file descriptor/handle */
+offset-size-arithmetic	libclamav/fmap.h	69	    size_t nested_offset;         /** Offset from start of original fmap (data) for nested scan. 0 for orig fmap. */
+offset-size-arithmetic	libclamav/fmap.h	71	                                      `real_len == nested_offset + len`.
+offset-size-arithmetic	libclamav/fmap.h	73	                                      We convert caller's fmap offsets & lengths to real data offsets using `nested_offset` & `real_len`. */
+offset-size-arithmetic	libclamav/fmap.h	76	    size_t len; /** Length of data from nested_offset, accessible via current fmap */
+offset-size-arithmetic	libclamav/fmap.h	78	    /* real_len = nested_offset + len
+offset-size-arithmetic	libclamav/fmap.h	79	     * file_offset = offset + nested_offset + need_offset
+offset-size-arithmetic	libclamav/fmap.h	81	     * offset in cached buffer: nested_offset + need_offset
+offset-size-arithmetic	libclamav/fmap.h	84	     * to disk and remapping (for uncompressed archives for example) */
+offset-size-arithmetic	libclamav/fmap.h	89	    const void *(*need_offstr)(fmap_t *, size_t at, size_t len_hint);
+offset-size-arithmetic	libclamav/fmap.h	90	    const void *(*gets)(fmap_t *, char *dst, size_t *at, size_t max_len);
+offset-size-arithmetic	libclamav/fmap.h	91	    void (*unneed_off)(fmap_t *, size_t at, size_t len);
 offset-size-arithmetic	libclamav/fpu.c	26	   whether floating point little endian or big endian(IEEE-754) is in effect. */
 offset-size-arithmetic	libclamav/fpu.h	30	/* get_fpu_endian() - identify float point byteorder
 offset-size-arithmetic	libclamav/fsg.c	107	    /* Cure Vsizes and debugspam */
