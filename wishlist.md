@@ -138,6 +138,9 @@
   additional quota reservation and before `libc::write()`, releasing only the
   new reservation on expiry. Add compiled timeout injection for the generic
   reader, OneNote root, and Rust archive output paths.
+- Generic Rust reader-to-spool errors now preserve `io::ErrorKind::TimedOut`
+  as `CL_ETIMEOUT` instead of collapsing it to `CL_EREAD`; add a compiled CSS
+  embedded-image timeout regression and complete Rust parser qualification.
 - MSEXPAND, TAR, SIS, ISO9660, and UDF materialized-output paths now re-check
   the shared deadline at output boundaries; add deterministic post-admission
   timeout injection and complete archive/filesystem corpus qualification.

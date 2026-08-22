@@ -985,6 +985,16 @@ the child uses the already-held reservation rather than double-counting the
 same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
 qualification remain open.
 
+## Rust reader timeout status preservation — 2026-08-22
+
+The generic Rust reader-to-spool helper converted every `Read` error to
+`CL_EREAD`, even though the context-aware fmap adapter deliberately reports a
+deadline expiry as `io::ErrorKind::TimedOut`. CSS embedded-image extraction uses
+this helper, so a timed-out decode could lose the specific timeout status while
+remaining incomplete. The helper now maps the error through
+`rust_reader_status()`, preserving `CL_ETIMEOUT`; compiled CSS timeout
+injection and Rust parser-family qualification remain open.
+
 ## File-count counter boundary — 2026-08-22
 
 The internal `cli_ctx.scannedfiles` field remains a 32-bit ABI field, while

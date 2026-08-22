@@ -105,7 +105,9 @@ pub(crate) unsafe fn scan_reader_via_temp_spool<R: Read>(
         }
         let read = match reader.read(&mut buffer) {
             Ok(read) => read,
-            Err(err) => return parser_failure(ctx, parser, cl_error_t_CL_EREAD, err),
+            Err(err) => {
+                return parser_failure(ctx, parser, rust_reader_status(&err, cl_error_t_CL_EREAD), err);
+            }
         };
         if read == 0 {
             break;
