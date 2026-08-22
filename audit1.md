@@ -4020,3 +4020,13 @@ output loop now checks the shared scan deadline before every bounded decoder
 read, preserving `CL_ETIMEOUT` and the incomplete/non-cacheable result even in
 that no-new-input interval. Compiled timeout injection, malformed/multi-member
 corpus, sanitizer, and Sonic1 qualification remain open.
+
+## ALZ extracted-output deadline — 2026-08-22
+
+The bounded ALZ reader already checked the shared deadline while consuming fmap
+input, but decoder-emitted member chunks enter the extraction sink through a
+separate callback. That callback now checks `MaxScanTime` before temporary
+reservation or output writes, preserving `CL_ETIMEOUT` and fail-closed status
+when a decoder produces data without another input read. Compiled timeout
+injection, malformed/multi-member corpus, sanitizer, and Sonic1 qualification
+remain open.

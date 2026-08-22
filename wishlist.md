@@ -788,6 +788,10 @@
   oversized, cumulative-size, or internally counted skipped members, rather
   than only recording a heuristic and returning success. Full ALZ limit-edge
   and production qualification remain open.
+- ALZ extracted-member callbacks now check the shared scan deadline before
+  reserving or writing each decoder-emitted chunk, preserving timeout status
+  even when the decoder does not request another fmap window; compiled timeout
+  injection and full ALZ qualification remain open.
 
 - Keep `clamd_stream_limit()` as the single hard 32-GiB ingress ceiling for
   both daemon staging and client preflight, including integrations that pass a

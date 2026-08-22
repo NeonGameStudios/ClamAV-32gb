@@ -378,6 +378,13 @@ impl ExtractSink for AlzScanSink {
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), AlzError> {
+        let deadline_status = check_scan_time_limit(self.ctx);
+        if deadline_status != cl_error_t_CL_SUCCESS {
+            return Err(self.record_failure(
+                deadline_status,
+                "member output reached the configured time limit",
+            ));
+        }
         let status = match self.spool.as_mut() {
             Some(spool) => spool.write_all(data),
             None => Err(cl_error_t_CL_EWRITE),
