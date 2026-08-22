@@ -369,7 +369,7 @@
   output-timeout injection across those decoder families.
 - Shared child-descriptor and force-to-disk nested-fmap paths now re-check the
   deadline after temporary admission, before materialized writes, and before
-  nested handoff; EGG member output, RAR staging admission, legacy VBA project
+  nested handoff; EGG member output, per-chunk RAR staging, legacy VBA project
   output, and UTF-16 HTML output receive the same boundary checks. Add compiled
   timeout injection and parser-family corpus qualification.
 - BZip2 extraction now consumes concatenated streams and rejects decoder

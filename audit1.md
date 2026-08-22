@@ -4265,8 +4265,8 @@ corpus, sanitizer, and Sonic1 qualification remain release gates.
 
 Shared descriptor-child and force-to-disk nested-fmap paths now re-check the
 deadline after temporary admission, immediately before each materialized write,
-and immediately before nested handoff. EGG member output, RAR temporary-input
-admission, legacy VBA project output, and UTF-16 HTML output now use the same
+  and immediately before nested handoff. EGG member output, per-chunk RAR
+  temporary-input staging, legacy VBA project output, and UTF-16 HTML output now use the same
 fail-closed boundaries. Source guards cover the shared and family-specific
 reasons; deterministic timeout injection, compiled archive/Office/HTML corpus,
 sanitizer, and Sonic1 qualification remain release gates.

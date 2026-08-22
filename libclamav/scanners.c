@@ -779,6 +779,49 @@ done:
     return status;
 }
 
+static cl_error_t cli_rar_stage_fmap(cli_ctx *ctx, char **tmpname, int *tmpfd)
+{
+    uint8_t buffer[FILEBUFF];
+    size_t copied = 0;
+    cl_error_t status;
+
+    if (!ctx || !ctx->fmap || !tmpname || !tmpfd)
+        return CL_EARG;
+
+    *tmpname = NULL;
+    *tmpfd   = -1;
+
+    status = cli_gentempfd(ctx->this_layer_tmpdir, tmpname, tmpfd);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "RAR temporary input could not be created");
+        return status;
+    }
+
+    while (copied < ctx->fmap->len) {
+        size_t chunk = MIN(sizeof(buffer), ctx->fmap->len - copied);
+        size_t nread;
+
+        status = cli_rar_checktimelimit(ctx, "RAR temporary input staging reached the configured time limit");
+        if (status != CL_SUCCESS)
+            return status;
+
+        nread = fmap_readn(ctx->fmap, buffer, copied, chunk);
+        if (nread != chunk) {
+            cli_mark_scan_incomplete(ctx, "RAR input could not be staged completely");
+            return CL_EREAD;
+        }
+
+        status = cli_write_temp_output(ctx, *tmpfd, buffer, chunk,
+                                       "RAR temporary input staging reached the configured time limit",
+                                       "RAR input could not be staged completely");
+        if (status != CL_SUCCESS)
+            return status;
+        copied += chunk;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t cli_scanrar(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -807,12 +850,15 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "RAR temporary input admission reached the configured time limit");
             goto done;
         }
-        status             = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
+        status             = cli_rar_stage_fmap(ctx, &tmpname, &tmpfd);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
             cli_mark_scan_incomplete(ctx, "RAR input could not be staged completely");
             goto done;
         }
+        status = cli_rar_checktimelimit(ctx, "RAR temporary input handoff reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
         filepath = tmpname;
         fd       = tmpfd;
     } else {
@@ -839,12 +885,15 @@ static cl_error_t cli_scanrar(cli_ctx *ctx)
             cli_mark_scan_incomplete(ctx, "RAR fallback input admission reached the configured time limit");
             goto done;
         }
-        status             = fmap_dump_to_file(ctx->fmap, ctx->fmap->path, ctx->this_layer_tmpdir, &tmpname, &tmpfd, 0, SIZE_MAX);
+        status             = cli_rar_stage_fmap(ctx, &tmpname, &tmpfd);
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_magic_scan: failed to generate temporary file.\n");
             cli_mark_scan_incomplete(ctx, "RAR fallback input could not be staged completely");
             goto done;
         }
+        status = cli_rar_checktimelimit(ctx, "RAR fallback input handoff reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
         filepath = tmpname;
         fd       = tmpfd;
 
