@@ -260,6 +260,15 @@ impl TempSpool {
             self.reserved = new_reserved;
         }
 
+        let deadline_status = unsafe { check_scan_time_limit(self.ctx) };
+        if deadline_status != cl_error_t_CL_SUCCESS {
+            if additional != 0 {
+                unsafe { sys::cli_scan_release_temporary(self.ctx, additional) };
+                self.reserved -= additional;
+            }
+            return Err(deadline_status);
+        }
+
         let mut offset = 0usize;
         while offset < bytes.len() {
             let written = unsafe {

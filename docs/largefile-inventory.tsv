@@ -30338,19 +30338,19 @@ offset-size-arithmetic	libclamav_rust/src/onenote.rs	365	                       
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	596	        fixture.truncate(fixture.len() - 1);
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	622	        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 5));
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	91	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1034	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1046	            engine.maxscansize.saturating_sub((*ctx).scansize)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1102	fn alz_metadata_size(size: u64) -> Option<usize> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1043	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1055	            engine.maxscansize.saturating_sub((*ctx).scansize)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1111	fn alz_metadata_size(size: u64) -> Option<usize> {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	129	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1401	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1410	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	197	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	269	                    bytes.len() - offset,
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	416	    fn last_size(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	522	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	597	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	636	                    "OneNote input size is not representable in the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	701	                    "attachment size does not fit the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	842	            // size-limit hint: propagate detections, cancellation, and
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	278	                    bytes.len() - offset,
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	425	    fn last_size(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	531	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	606	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	645	                    "OneNote input size is not representable in the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	710	                    "attachment size does not fit the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	851	            // size-limit hint: propagate detections, cancellation, and
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1067	    #[doc = " @brief Increment the count for a subsignature of a logical signature.\n\n This is and alternative to lsig_increment_subsig_match() for use in subsigs that don't have a specific offset,\n like byte-compare subsigs and fuzzy-hash subsigs."]
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1104	    pub sizehashes64: [*mut cli_sz_hash64; 3usize],
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1177	    pub filesize_range: *mut u64,

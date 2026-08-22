@@ -4370,3 +4370,14 @@ page/legacy growth arithmetic to `CLI_MAX_ALLOCATION`, and commit the checked
 length. Oversized requests return an explicit failure, with a focused unit
 regression and source guards. Compiled overflow/fault-injection coverage and
 legacy parser-family qualification remain open.
+
+## Rust temporary-spool output deadline — 2026-08-22
+
+The shared Rust `TempSpool::write_all()` helper reserved additional temporary
+bytes before issuing its raw `libc::write()`. Several decoder callbacks checked
+the deadline before entering the helper, but generic reader, OneNote root, and
+other shared spool paths had no final check after that reservation. The helper
+now re-checks `MaxScanTime` after quota admission and before writing; if the
+deadline expires, it releases only the newly added reservation and returns the
+timeout to the caller. Compiled timeout injection and Rust parser-family
+qualification remain open.

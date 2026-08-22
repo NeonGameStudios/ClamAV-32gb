@@ -134,6 +134,10 @@
   1 GiB individual-allocation boundary fail explicitly instead of wrapping.
   Add compiled overflow/fault-injection coverage for legacy text/VBA blob
   callers and complete their parser-family qualification.
+- The shared Rust temporary spool now re-checks `MaxScanTime` after any
+  additional quota reservation and before `libc::write()`, releasing only the
+  new reservation on expiry. Add compiled timeout injection for the generic
+  reader, OneNote root, and Rust archive output paths.
 - MSEXPAND, TAR, SIS, ISO9660, and UDF materialized-output paths now re-check
   the shared deadline at output boundaries; add deterministic post-admission
   timeout injection and complete archive/filesystem corpus qualification.
