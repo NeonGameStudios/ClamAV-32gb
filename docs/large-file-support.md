@@ -4957,7 +4957,8 @@ host run remains required.
 
 The unit suite now includes a dedicated sparse exact-32-GiB library test. It
 creates a file with the marker in the final 64 bytes, loads a private
-signature, scans through `cl_scanfile_ex2()`, and requires the exact
+signature, and scans it independently through `cl_scanfile_ex2()`,
+`cl_scandesc_ex2()`, and `cl_scanmap_ex2()`. Each API must produce the exact
 detection, `DETECTION_TERMINATED` report, 32-GiB root size, and at least one
 complete 32-GiB matcher pass. The ordinary unit suite does not run this
 four-hour-scale test.

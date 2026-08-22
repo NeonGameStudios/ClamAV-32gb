@@ -1250,6 +1250,52 @@ START_TEST(test_scan_report_complete_and_json)
 END_TEST
 
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+static off_t largefile_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    return pread(*((int *)handle), buf, count, offset);
+}
+
+static void assert_library_exact_edge_result(
+    const char *api,
+    uint64_t file_size,
+    uint64_t marker_offset,
+    cl_error_t status,
+    cl_verdict_t verdict,
+    uint64_t scanned,
+    const char *last_alert,
+    cl_scan_report_t *report)
+{
+    cl_scan_report_metrics_t metrics;
+    cl_scan_report_limits_t limits;
+    cl_scan_completion_t completion;
+    cl_error_t report_status;
+
+    ck_assert_msg(status == CL_SUCCESS, "%s returned %d", api, status);
+    ck_assert_msg(verdict == CL_VERDICT_STRONG_INDICATOR,
+                  "%s did not return the strong-indicator verdict", api);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "LargeFile.Library.32G.UNOFFICIAL");
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &report_status), CL_SUCCESS);
+    ck_assert_int_eq(report_status, CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_limits(report, &limits), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.root_size, file_size);
+    ck_assert_uint_ge(metrics.matcher_bytes, file_size);
+    ck_assert_uint_ge(scanned, marker_offset + sizeof("CLAMAV-LF-32G-EDGE") - 1);
+    ck_assert_msg(metrics.logical_bytes >= marker_offset + sizeof("CLAMAV-LF-32G-EDGE") - 1,
+                  "%s stopped before the exact-tail marker: " STDu64,
+                  api,
+                  metrics.logical_bytes);
+    ck_assert_uint_eq(limits.max_file_size, file_size);
+    ck_assert_uint_eq(limits.max_scan_size, CLI_MAX_LOGICAL_SCAN_SIZE);
+    ck_assert_uint_eq(limits.max_matcher_work, CLI_MAX_MATCHER_WORK);
+    ck_assert_uint_eq(limits.max_temporary_size, CLI_MAX_TEMPORARY_SIZE);
+    ck_assert_uint_eq(limits.max_contiguous_size, CLI_MAX_CONTIGUOUS_SIZE);
+}
+
 START_TEST(test_library_exact_32g_tail_detection)
 {
     static const uint64_t file_size       = UINT64_C(32) * 1024 * 1024 * 1024;
@@ -1260,17 +1306,16 @@ START_TEST(test_library_exact_32g_tail_detection)
     struct cl_engine *engine;
     struct cl_scan_options options;
     cl_scan_report_t *report = NULL;
-    cl_scan_report_metrics_t metrics;
-    cl_scan_report_limits_t limits;
-    cl_scan_completion_t completion;
     cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
     const char *last_alert = NULL;
     char signature_path[PATH_MAX];
     char *path = NULL;
     unsigned int sigs = 0;
     cl_error_t status;
+    uint64_t scanned = 0;
     int fd = -1;
     int sigfd = -1;
+    cl_fmap_t *map = NULL;
 
     ck_assert_msg(getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL,
                   "the exact-32-GiB test requires CLAMAV_LARGEFILE_QUALIFY=1");
@@ -1288,6 +1333,7 @@ START_TEST(test_library_exact_32g_tail_detection)
     ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
     ck_assert_uint_eq(sigs, 1);
     ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_DISABLE_CACHE, 1), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, (long long)file_size), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, (long long)CLI_MAX_LOGICAL_SCAN_SIZE), CL_SUCCESS);
     ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANTIME, 1000U * 60U * 240U), CL_SUCCESS);
@@ -1307,30 +1353,47 @@ START_TEST(test_library_exact_32g_tail_detection)
 
     memset(&options, 0, sizeof(options));
     options.parse = ~0U;
-    status = cl_scanfile_ex2(path, &verdict, &last_alert, NULL,
+    status = cl_scanfile_ex2(path, &verdict, &last_alert, &scanned,
                              engine, &options, NULL, NULL, NULL, NULL,
                              NULL, NULL, &report);
-    ck_assert_int_eq(status, CL_SUCCESS);
-    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
-    ck_assert_ptr_nonnull(last_alert);
-    ck_assert_str_eq(last_alert, "LargeFile.Library.32G.UNOFFICIAL");
-    ck_assert_ptr_nonnull(report);
-    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
-    ck_assert_int_eq(status, CL_SUCCESS);
-    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
-    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
-    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
-    ck_assert_int_eq(cl_scan_report_get_limits(report, &limits), CL_SUCCESS);
-    ck_assert_uint_eq(metrics.root_size, file_size);
-    ck_assert_uint_ge(metrics.matcher_bytes, file_size);
-    ck_assert_msg(metrics.logical_bytes >= marker_offset + sizeof(marker) - 1,
-                  "library scan stopped before the exact-tail marker: " STDu64,
-                  metrics.logical_bytes);
-    ck_assert_uint_eq(limits.max_file_size, file_size);
-    ck_assert_uint_eq(limits.max_scan_size, CLI_MAX_LOGICAL_SCAN_SIZE);
-    ck_assert_uint_eq(limits.max_matcher_work, CLI_MAX_MATCHER_WORK);
-    ck_assert_uint_eq(limits.max_temporary_size, CLI_MAX_TEMPORARY_SIZE);
-    ck_assert_uint_eq(limits.max_contiguous_size, CLI_MAX_CONTIGUOUS_SIZE);
+    assert_library_exact_edge_result("cl_scanfile_ex2", file_size, marker_offset,
+                                     status, verdict, scanned, last_alert, report);
+
+    cl_scan_report_free(report);
+    report = NULL;
+    verdict = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned = 0;
+
+    fd = open(path, O_RDONLY | O_BINARY);
+    ck_assert_int_ge(fd, 0);
+    status = cl_scandesc_ex2(fd, path, &verdict, &last_alert, &scanned,
+                             engine, &options, NULL, NULL, NULL, NULL,
+                             NULL, NULL, &report);
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    assert_library_exact_edge_result("cl_scandesc_ex2", file_size, marker_offset,
+                                     status, verdict, scanned, last_alert, report);
+
+    cl_scan_report_free(report);
+    report = NULL;
+    verdict = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned = 0;
+
+    fd = open(path, O_RDONLY | O_BINARY);
+    ck_assert_int_ge(fd, 0);
+    map = cl_fmap_open_handle(&fd, 0, (size_t)file_size, largefile_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    status = cl_scanmap_ex2(map, path, &verdict, &last_alert, &scanned,
+                             engine, &options, NULL, NULL, NULL, NULL,
+                             NULL, NULL, &report);
+    cl_fmap_close(map);
+    map = NULL;
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    assert_library_exact_edge_result("cl_scanmap_ex2", file_size, marker_offset,
+                                     status, verdict, scanned, last_alert, report);
 
     cl_scan_report_free(report);
     cl_engine_free(engine);
