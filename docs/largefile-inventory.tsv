@@ -3323,27 +3323,27 @@ fixed-width-integer	libclamav/ole2_extract.c	125	    int32_t sbat_root_start __a
 fixed-width-integer	libclamav/ole2_extract.c	126	    uint32_t max_block_no;
 fixed-width-integer	libclamav/ole2_extract.c	1305	        if (current_block > (int32_t)hdr->max_block_no) {
 fixed-width-integer	libclamav/ole2_extract.c	1327	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
-fixed-width-integer	libclamav/ole2_extract.c	1410	    uint16_t opcode;
-fixed-width-integer	libclamav/ole2_extract.c	1411	    uint16_t length;
-fixed-width-integer	libclamav/ole2_extract.c	1412	    uint16_t data_offset;
+fixed-width-integer	libclamav/ole2_extract.c	1418	    uint16_t opcode;
+fixed-width-integer	libclamav/ole2_extract.c	1419	    uint16_t length;
+fixed-width-integer	libclamav/ole2_extract.c	1420	    uint16_t data_offset;
 fixed-width-integer	libclamav/ole2_extract.c	147	    uint16_t name_size __attribute__((packed));
 fixed-width-integer	libclamav/ole2_extract.c	150	    uint32_t prev __attribute__((packed));
 fixed-width-integer	libclamav/ole2_extract.c	151	    uint32_t next __attribute__((packed));
 fixed-width-integer	libclamav/ole2_extract.c	152	    uint32_t child __attribute__((packed));
 fixed-width-integer	libclamav/ole2_extract.c	155	    uint32_t user_flags __attribute__((packed));
-fixed-width-integer	libclamav/ole2_extract.c	1569	    int32_t current_block = 0;
 fixed-width-integer	libclamav/ole2_extract.c	157	    uint32_t create_lowdate __attribute__((packed));
+fixed-width-integer	libclamav/ole2_extract.c	1577	    int32_t current_block = 0;
 fixed-width-integer	libclamav/ole2_extract.c	158	    uint32_t create_highdate __attribute__((packed));
 fixed-width-integer	libclamav/ole2_extract.c	159	    uint32_t mod_lowdate __attribute__((packed));
-fixed-width-integer	libclamav/ole2_extract.c	1599	        if (current_block > (int32_t)hdr->max_block_no) {
 fixed-width-integer	libclamav/ole2_extract.c	160	    uint32_t mod_highdate __attribute__((packed));
+fixed-width-integer	libclamav/ole2_extract.c	1607	        if (current_block > (int32_t)hdr->max_block_no) {
 fixed-width-integer	libclamav/ole2_extract.c	161	    uint32_t start_block __attribute__((packed));
-fixed-width-integer	libclamav/ole2_extract.c	1612	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
 fixed-width-integer	libclamav/ole2_extract.c	162	    uint32_t size __attribute__((packed));
-fixed-width-integer	libclamav/ole2_extract.c	1664	    int32_t offset           = 0;
+fixed-width-integer	libclamav/ole2_extract.c	1620	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+fixed-width-integer	libclamav/ole2_extract.c	1672	    int32_t offset           = 0;
 fixed-width-integer	libclamav/ole2_extract.c	172	    uint16_t wIdent;
-fixed-width-integer	libclamav/ole2_extract.c	1726	                    if (prop->size < (int64_t)hdr->sbat_cutoff) {
 fixed-width-integer	libclamav/ole2_extract.c	173	    uint16_t nFib;
+fixed-width-integer	libclamav/ole2_extract.c	1734	                    if (prop->size < (int64_t)hdr->sbat_cutoff) {
 fixed-width-integer	libclamav/ole2_extract.c	174	    uint16_t unused;
 fixed-width-integer	libclamav/ole2_extract.c	175	    uint16_t lid;
 fixed-width-integer	libclamav/ole2_extract.c	176	    uint16_t pnNext;
@@ -3352,67 +3352,67 @@ fixed-width-integer	libclamav/ole2_extract.c	178	    uint16_t nFibBack;
 fixed-width-integer	libclamav/ole2_extract.c	179	    uint32_t lKey;
 fixed-width-integer	libclamav/ole2_extract.c	182	    uint16_t reserved3;
 fixed-width-integer	libclamav/ole2_extract.c	183	    uint16_t reserved4;
-fixed-width-integer	libclamav/ole2_extract.c	1833	    uint32_t prefix;
-fixed-width-integer	libclamav/ole2_extract.c	1835	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/ole2_extract.c	184	    uint32_t reserved5;
+fixed-width-integer	libclamav/ole2_extract.c	1841	    uint32_t prefix;
+fixed-width-integer	libclamav/ole2_extract.c	1843	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/ole2_extract.c	185	    uint32_t reserved6;
-fixed-width-integer	libclamav/ole2_extract.c	1890	    off_in += sizeof(uint32_t);
+fixed-width-integer	libclamav/ole2_extract.c	1898	    off_in += sizeof(uint32_t);
 fixed-width-integer	libclamav/ole2_extract.c	191	    uint32_t Val;
-fixed-width-integer	libclamav/ole2_extract.c	1929	            if (cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
-fixed-width-integer	libclamav/ole2_extract.c	1934	            temporary_reserved += (uint64_t)count;
+fixed-width-integer	libclamav/ole2_extract.c	1937	            if (cli_scan_reserve_temporary(ctx, (uint64_t)count) != CL_SUCCESS) {
+fixed-width-integer	libclamav/ole2_extract.c	1942	            temporary_reserved += (uint64_t)count;
 fixed-width-integer	libclamav/ole2_extract.c	196	    uint32_t Size;
-fixed-width-integer	libclamav/ole2_extract.c	1989	    int32_t current_block = 0;
-fixed-width-integer	libclamav/ole2_extract.c	1994	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2006	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
-fixed-width-integer	libclamav/ole2_extract.c	2011	    temporary_reserved = (uint64_t)prop->size;
+fixed-width-integer	libclamav/ole2_extract.c	2001	    int32_t current_block = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2006	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2018	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
 fixed-width-integer	libclamav/ole2_extract.c	202	uint32_t ole2_list_size(ole2_list_t *list);
+fixed-width-integer	libclamav/ole2_extract.c	2023	    temporary_reserved = (uint64_t)prop->size;
 fixed-width-integer	libclamav/ole2_extract.c	203	int ole2_list_push(ole2_list_t *list, uint32_t val);
 fixed-width-integer	libclamav/ole2_extract.c	204	uint32_t ole2_list_pop(ole2_list_t *list);
-fixed-width-integer	libclamav/ole2_extract.c	2049	        if (current_block > (int32_t)hdr->max_block_no) {
-fixed-width-integer	libclamav/ole2_extract.c	2068	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+fixed-width-integer	libclamav/ole2_extract.c	2065	        if (current_block > (int32_t)hdr->max_block_no) {
+fixed-width-integer	libclamav/ole2_extract.c	2084	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
 fixed-width-integer	libclamav/ole2_extract.c	219	uint32_t
-fixed-width-integer	libclamav/ole2_extract.c	2214	    int32_t current_block = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2223	    uint32_t *rk          = NULL;
-fixed-width-integer	libclamav/ole2_extract.c	2224	    uint32_t bytesRead    = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2225	    uint64_t actualFileLength;
-fixed-width-integer	libclamav/ole2_extract.c	2226	    uint64_t bytesWritten    = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2228	    uint32_t leftover        = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2229	    uint32_t readIdx         = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2230	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2246	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
+fixed-width-integer	libclamav/ole2_extract.c	2238	    int32_t current_block = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2247	    uint32_t *rk          = NULL;
+fixed-width-integer	libclamav/ole2_extract.c	2248	    uint32_t bytesRead    = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2249	    uint64_t actualFileLength;
 fixed-width-integer	libclamav/ole2_extract.c	225	int ole2_list_push(ole2_list_t *list, uint32_t val)
-fixed-width-integer	libclamav/ole2_extract.c	2250	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
-fixed-width-integer	libclamav/ole2_extract.c	2255	    temporary_reserved = (uint64_t)prop->size;
-fixed-width-integer	libclamav/ole2_extract.c	2280	    uint32_t blockSize = 1 << hdr->log2_big_block_size;
-fixed-width-integer	libclamav/ole2_extract.c	2281	    CLI_MAX_MALLOC_OR_GOTO_DONE(buff, blockSize + sizeof(uint64_t), ret = CL_EMEM);
-fixed-width-integer	libclamav/ole2_extract.c	2302	        if (current_block > (int32_t)hdr->max_block_no) {
-fixed-width-integer	libclamav/ole2_extract.c	2309	        if (cli_bitset_test(blk_bitset, (uint64_t)current_block)) {
-fixed-width-integer	libclamav/ole2_extract.c	2316	        if (!cli_bitset_set(blk_bitset, (uint64_t)current_block)) {
-fixed-width-integer	libclamav/ole2_extract.c	2321	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
-fixed-width-integer	libclamav/ole2_extract.c	2343	            uint32_t bytesToWrite  = MIN(len - bytesRead, blockSize);
-fixed-width-integer	libclamav/ole2_extract.c	2344	            uint32_t writeIdx      = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2345	            uint32_t decryptDstIdx = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2354	                writeIdx += sizeof(uint64_t);
+fixed-width-integer	libclamav/ole2_extract.c	2250	    uint64_t bytesWritten    = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2252	    uint32_t leftover        = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2253	    uint32_t readIdx         = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2254	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2270	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
+fixed-width-integer	libclamav/ole2_extract.c	2274	    ret = cli_scan_reserve_temporary(ctx, (uint64_t)prop->size);
+fixed-width-integer	libclamav/ole2_extract.c	2279	    temporary_reserved = (uint64_t)prop->size;
+fixed-width-integer	libclamav/ole2_extract.c	2308	    uint32_t blockSize = 1 << hdr->log2_big_block_size;
+fixed-width-integer	libclamav/ole2_extract.c	2309	    CLI_MAX_MALLOC_OR_GOTO_DONE(buff, blockSize + sizeof(uint64_t), ret = CL_EMEM);
+fixed-width-integer	libclamav/ole2_extract.c	2330	        if (current_block > (int32_t)hdr->max_block_no) {
+fixed-width-integer	libclamav/ole2_extract.c	2337	        if (cli_bitset_test(blk_bitset, (uint64_t)current_block)) {
+fixed-width-integer	libclamav/ole2_extract.c	2344	        if (!cli_bitset_set(blk_bitset, (uint64_t)current_block)) {
+fixed-width-integer	libclamav/ole2_extract.c	2349	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+fixed-width-integer	libclamav/ole2_extract.c	2375	            uint32_t bytesToWrite  = MIN(len - bytesRead, blockSize);
+fixed-width-integer	libclamav/ole2_extract.c	2376	            uint32_t writeIdx      = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2377	            uint32_t decryptDstIdx = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2386	                writeIdx += sizeof(uint64_t);
 fixed-width-integer	libclamav/ole2_extract.c	244	uint32_t
 fixed-width-integer	libclamav/ole2_extract.c	247	    uint32_t val;
-fixed-width-integer	libclamav/ole2_extract.c	2576	static inline bool key_length_valid_aes_bits(const uint32_t keyLength)
-fixed-width-integer	libclamav/ole2_extract.c	2610	    uint32_t i                                                         = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2612	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
-fixed-width-integer	libclamav/ole2_extract.c	2613	    uint8_t *sha1Dst                                                   = &(sha1[sizeof(uint32_t)]);
-fixed-width-integer	libclamav/ole2_extract.c	2617	    uint32_t tmp         = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2715	        uint32_t eye = ole2_endian_convert_32(i);
-fixed-width-integer	libclamav/ole2_extract.c	2718	        SHA1_HASH_WITH_CTX(sha1, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
-fixed-width-integer	libclamav/ole2_extract.c	2721	    memset(&(sha1Dst[SHA1_HASH_SIZE]), 0, sizeof(uint32_t));
-fixed-width-integer	libclamav/ole2_extract.c	2723	    SHA1_HASH_WITH_CTX(sha1Dst, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
-fixed-width-integer	libclamav/ole2_extract.c	2770	    uint32_t rk[RKLENGTH(128)];
-fixed-width-integer	libclamav/ole2_extract.c	2814	    uint32_t actual_hash_size                = 0;
-fixed-width-integer	libclamav/ole2_extract.c	2901	    uint16_t *encryptionInfo_CSPName                 = NULL;
-fixed-width-integer	libclamav/ole2_extract.c	3028	    encryptionInfo_CSPName = (uint16_t *)(encryptionInfoStreamPtr + sizeof(encryption_info_stream_standard_t));
-fixed-width-integer	libclamav/ole2_extract.c	3108	    uint64_t scansize, scansize2;
-fixed-width-integer	libclamav/ole2_extract.c	3142	               sizeof(int32_t) -        // sbat_root_start
-fixed-width-integer	libclamav/ole2_extract.c	3143	               sizeof(uint32_t) -       // max_block_no
+fixed-width-integer	libclamav/ole2_extract.c	2612	static inline bool key_length_valid_aes_bits(const uint32_t keyLength)
+fixed-width-integer	libclamav/ole2_extract.c	2646	    uint32_t i                                                         = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2648	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
+fixed-width-integer	libclamav/ole2_extract.c	2649	    uint8_t *sha1Dst                                                   = &(sha1[sizeof(uint32_t)]);
+fixed-width-integer	libclamav/ole2_extract.c	2653	    uint32_t tmp         = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2751	        uint32_t eye = ole2_endian_convert_32(i);
+fixed-width-integer	libclamav/ole2_extract.c	2754	        SHA1_HASH_WITH_CTX(sha1, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
+fixed-width-integer	libclamav/ole2_extract.c	2757	    memset(&(sha1Dst[SHA1_HASH_SIZE]), 0, sizeof(uint32_t));
+fixed-width-integer	libclamav/ole2_extract.c	2759	    SHA1_HASH_WITH_CTX(sha1Dst, SHA1_HASH_SIZE + sizeof(uint32_t), sha1Dst);
+fixed-width-integer	libclamav/ole2_extract.c	2806	    uint32_t rk[RKLENGTH(128)];
+fixed-width-integer	libclamav/ole2_extract.c	2850	    uint32_t actual_hash_size                = 0;
+fixed-width-integer	libclamav/ole2_extract.c	2937	    uint16_t *encryptionInfo_CSPName                 = NULL;
+fixed-width-integer	libclamav/ole2_extract.c	3064	    encryptionInfo_CSPName = (uint16_t *)(encryptionInfoStreamPtr + sizeof(encryption_info_stream_standard_t));
+fixed-width-integer	libclamav/ole2_extract.c	3144	    uint64_t scansize, scansize2;
+fixed-width-integer	libclamav/ole2_extract.c	3178	               sizeof(int32_t) -        // sbat_root_start
+fixed-width-integer	libclamav/ole2_extract.c	3179	               sizeof(uint32_t) -       // max_block_no
 fixed-width-integer	libclamav/ole2_extract.c	319	                const uint16_t x = (((uint16_t)name[i]) << 8) | name[i + 1];
-fixed-width-integer	libclamav/ole2_extract.c	3199	        // To allow for future changes, and prevent overflowing an int32_t, we're limiting to 28.
+fixed-width-integer	libclamav/ole2_extract.c	3235	        // To allow for future changes, and prevent overflowing an int32_t, we're limiting to 28.
 fixed-width-integer	libclamav/ole2_extract.c	357	        uint16_t lo, hi, u = cli_readint16(oname) - 0x3800;
 fixed-width-integer	libclamav/ole2_extract.c	452	static bool ole2_read_block(ole2_header_t *hdr, void *buff, size_t size, int32_t blockno)
 fixed-width-integer	libclamav/ole2_extract.c	454	    uint64_t block_offset;
@@ -11143,73 +11143,73 @@ native-width-integer	libclamav/ole2_extract.c	127	    size_t m_length;
 native-width-integer	libclamav/ole2_extract.c	1313	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
 native-width-integer	libclamav/ole2_extract.c	1321	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
 native-width-integer	libclamav/ole2_extract.c	1337	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-native-width-integer	libclamav/ole2_extract.c	1431	    size_t len,
-native-width-integer	libclamav/ole2_extract.c	1437	    size_t i;
-native-width-integer	libclamav/ole2_extract.c	1534	                        cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Unexpected state value %d\n", (int)state->state);
-native-width-integer	libclamav/ole2_extract.c	1570	    size_t len = 0, offset = 0;
-native-width-integer	libclamav/ole2_extract.c	1604	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
-native-width-integer	libclamav/ole2_extract.c	1609	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
-native-width-integer	libclamav/ole2_extract.c	1794	static int
-native-width-integer	libclamav/ole2_extract.c	1795	likely_mso_stream(int fd)
-native-width-integer	libclamav/ole2_extract.c	1797	    off_t fsize;
-native-width-integer	libclamav/ole2_extract.c	1824	static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
-native-width-integer	libclamav/ole2_extract.c	1826	    int zret, ofd;
-native-width-integer	libclamav/ole2_extract.c	1829	    off_t off_in = 0;
-native-width-integer	libclamav/ole2_extract.c	1830	    size_t count, outsize = 0;
-native-width-integer	libclamav/ole2_extract.c	1901	            size_t bytes_read;
-native-width-integer	libclamav/ole2_extract.c	1905	            if (bytes_read == (size_t)-1) {
-native-width-integer	libclamav/ole2_extract.c	1952	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
-native-width-integer	libclamav/ole2_extract.c	1956	                    (long long unsigned)prefix, (long long unsigned)outsize);
-native-width-integer	libclamav/ole2_extract.c	1962	               (long long unsigned)prefix, (long long unsigned)outsize);
-native-width-integer	libclamav/ole2_extract.c	1990	    size_t len = 0, offset = 0;
-native-width-integer	libclamav/ole2_extract.c	1991	    int ofd              = -1;
-native-width-integer	libclamav/ole2_extract.c	1992	    int is_mso           = 0;
+native-width-integer	libclamav/ole2_extract.c	1439	    size_t len,
+native-width-integer	libclamav/ole2_extract.c	1445	    size_t i;
+native-width-integer	libclamav/ole2_extract.c	1542	                        cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Unexpected state value %d\n", (int)state->state);
+native-width-integer	libclamav/ole2_extract.c	1578	    size_t len = 0, offset = 0;
+native-width-integer	libclamav/ole2_extract.c	1612	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
+native-width-integer	libclamav/ole2_extract.c	1617	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
+native-width-integer	libclamav/ole2_extract.c	1802	static int
+native-width-integer	libclamav/ole2_extract.c	1803	likely_mso_stream(int fd)
+native-width-integer	libclamav/ole2_extract.c	1805	    off_t fsize;
+native-width-integer	libclamav/ole2_extract.c	1832	static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
+native-width-integer	libclamav/ole2_extract.c	1834	    int zret, ofd;
+native-width-integer	libclamav/ole2_extract.c	1837	    off_t off_in = 0;
+native-width-integer	libclamav/ole2_extract.c	1838	    size_t count, outsize = 0;
+native-width-integer	libclamav/ole2_extract.c	1909	            size_t bytes_read;
+native-width-integer	libclamav/ole2_extract.c	1913	            if (bytes_read == (size_t)-1) {
+native-width-integer	libclamav/ole2_extract.c	1964	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
+native-width-integer	libclamav/ole2_extract.c	1968	                    (long long unsigned)prefix, (long long unsigned)outsize);
+native-width-integer	libclamav/ole2_extract.c	1974	               (long long unsigned)prefix, (long long unsigned)outsize);
 native-width-integer	libclamav/ole2_extract.c	200	int ole2_list_init(ole2_list_t *list);
+native-width-integer	libclamav/ole2_extract.c	2002	    size_t len = 0, offset = 0;
+native-width-integer	libclamav/ole2_extract.c	2003	    int ofd              = -1;
+native-width-integer	libclamav/ole2_extract.c	2004	    int is_mso           = 0;
 native-width-integer	libclamav/ole2_extract.c	201	int ole2_list_is_empty(ole2_list_t *list);
 native-width-integer	libclamav/ole2_extract.c	203	int ole2_list_push(ole2_list_t *list, uint32_t val);
 native-width-integer	libclamav/ole2_extract.c	205	int ole2_list_delete(ole2_list_t *list);
-native-width-integer	libclamav/ole2_extract.c	2056	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
-native-width-integer	libclamav/ole2_extract.c	2063	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
 native-width-integer	libclamav/ole2_extract.c	207	int ole2_list_init(ole2_list_t *list)
+native-width-integer	libclamav/ole2_extract.c	2072	        if (cli_bitset_test(blk_bitset, (unsigned long)current_block)) {
+native-width-integer	libclamav/ole2_extract.c	2079	        if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
 native-width-integer	libclamav/ole2_extract.c	214	int ole2_list_is_empty(ole2_list_t *list)
-native-width-integer	libclamav/ole2_extract.c	2215	    size_t len            = 0;
-native-width-integer	libclamav/ole2_extract.c	2216	    size_t offset         = 0;
-native-width-integer	libclamav/ole2_extract.c	2217	    int ofd               = -1;
-native-width-integer	libclamav/ole2_extract.c	2218	    int is_mso            = 0;
-native-width-integer	libclamav/ole2_extract.c	2220	    int nrounds           = 0;
-native-width-integer	libclamav/ole2_extract.c	2227	    size_t stream_bytes_read = 0;
+native-width-integer	libclamav/ole2_extract.c	2239	    size_t len            = 0;
+native-width-integer	libclamav/ole2_extract.c	2240	    size_t offset         = 0;
+native-width-integer	libclamav/ole2_extract.c	2241	    int ofd               = -1;
+native-width-integer	libclamav/ole2_extract.c	2242	    int is_mso            = 0;
+native-width-integer	libclamav/ole2_extract.c	2244	    int nrounds           = 0;
 native-width-integer	libclamav/ole2_extract.c	225	int ole2_list_push(ole2_list_t *list, uint32_t val)
+native-width-integer	libclamav/ole2_extract.c	2251	    size_t stream_bytes_read = 0;
 native-width-integer	libclamav/ole2_extract.c	228	    int status                 = CL_EMEM;
-native-width-integer	libclamav/ole2_extract.c	2330	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-native-width-integer	libclamav/ole2_extract.c	2489	static bool ole2_read_header(int fd, ole2_header_t *hdr)
-native-width-integer	libclamav/ole2_extract.c	2491	    int i;
-native-width-integer	libclamav/ole2_extract.c	2607	    size_t bufLen                                                      = 0;
-native-width-integer	libclamav/ole2_extract.c	2608	    size_t passwordLen                                                 = 0;
-native-width-integer	libclamav/ole2_extract.c	2611	    size_t j                                                           = 0;
+native-width-integer	libclamav/ole2_extract.c	2358	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+native-width-integer	libclamav/ole2_extract.c	2525	static bool ole2_read_header(int fd, ole2_header_t *hdr)
+native-width-integer	libclamav/ole2_extract.c	2527	    int i;
 native-width-integer	libclamav/ole2_extract.c	264	int ole2_list_delete(ole2_list_t *list)
-native-width-integer	libclamav/ole2_extract.c	2768	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
-native-width-integer	libclamav/ole2_extract.c	2771	    int nrounds;
-native-width-integer	libclamav/ole2_extract.c	2772	    size_t i;
+native-width-integer	libclamav/ole2_extract.c	2643	    size_t bufLen                                                      = 0;
+native-width-integer	libclamav/ole2_extract.c	2644	    size_t passwordLen                                                 = 0;
+native-width-integer	libclamav/ole2_extract.c	2647	    size_t j                                                           = 0;
+native-width-integer	libclamav/ole2_extract.c	2804	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
+native-width-integer	libclamav/ole2_extract.c	2807	    int nrounds;
+native-width-integer	libclamav/ole2_extract.c	2808	    size_t i;
 native-width-integer	libclamav/ole2_extract.c	288	char *cli_ole2_get_property_name2(const char *name, int size)
-native-width-integer	libclamav/ole2_extract.c	2890	    size_t remainingBytes,
-native-width-integer	libclamav/ole2_extract.c	2895	    size_t idx              = 0;
-native-width-integer	libclamav/ole2_extract.c	2896	    size_t csp_name_max_u16 = 0;
 native-width-integer	libclamav/ole2_extract.c	290	    int i, j;
-native-width-integer	libclamav/ole2_extract.c	2902	    size_t CSPName_length                            = 0;
-native-width-integer	libclamav/ole2_extract.c	3102	cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **files, int *has_vba, int *has_xlm, int *has_image)
-native-width-integer	libclamav/ole2_extract.c	3106	    size_t hdr_size;
-native-width-integer	libclamav/ole2_extract.c	3107	    unsigned int file_count = 0;
-native-width-integer	libclamav/ole2_extract.c	3113	    size_t encryption_offset              = 0;
-native-width-integer	libclamav/ole2_extract.c	3144	               sizeof(size_t) -         // m_length
-native-width-integer	libclamav/ole2_extract.c	3153	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
-native-width-integer	libclamav/ole2_extract.c	3216	     * header window is only hdr_size bytes long; it cannot be reused for the
-native-width-integer	libclamav/ole2_extract.c	3218	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
-native-width-integer	libclamav/ole2_extract.c	3221	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
-native-width-integer	libclamav/ole2_extract.c	3222	                                       (size_t)OLE2_ENCRYPTION_INFO_READ_WINDOW);
-native-width-integer	libclamav/ole2_extract.c	3237	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
-native-width-integer	libclamav/ole2_extract.c	3238	        const size_t data_start     = MAX((size_t)512, big_block_size);
-native-width-integer	libclamav/ole2_extract.c	3246	        hdr.max_block_no = (hdr.map->len - data_start) / ((size_t)1 << hdr.log2_small_block_size);
-native-width-integer	libclamav/ole2_extract.c	3256	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
+native-width-integer	libclamav/ole2_extract.c	2926	    size_t remainingBytes,
+native-width-integer	libclamav/ole2_extract.c	2931	    size_t idx              = 0;
+native-width-integer	libclamav/ole2_extract.c	2932	    size_t csp_name_max_u16 = 0;
+native-width-integer	libclamav/ole2_extract.c	2938	    size_t CSPName_length                            = 0;
+native-width-integer	libclamav/ole2_extract.c	3138	cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **files, int *has_vba, int *has_xlm, int *has_image)
+native-width-integer	libclamav/ole2_extract.c	3142	    size_t hdr_size;
+native-width-integer	libclamav/ole2_extract.c	3143	    unsigned int file_count = 0;
+native-width-integer	libclamav/ole2_extract.c	3149	    size_t encryption_offset              = 0;
+native-width-integer	libclamav/ole2_extract.c	3180	               sizeof(size_t) -         // m_length
+native-width-integer	libclamav/ole2_extract.c	3189	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
+native-width-integer	libclamav/ole2_extract.c	3252	     * header window is only hdr_size bytes long; it cannot be reused for the
+native-width-integer	libclamav/ole2_extract.c	3254	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
+native-width-integer	libclamav/ole2_extract.c	3257	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
+native-width-integer	libclamav/ole2_extract.c	3258	                                       (size_t)OLE2_ENCRYPTION_INFO_READ_WINDOW);
+native-width-integer	libclamav/ole2_extract.c	3273	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
+native-width-integer	libclamav/ole2_extract.c	3274	        const size_t data_start     = MAX((size_t)512, big_block_size);
+native-width-integer	libclamav/ole2_extract.c	3282	        hdr.max_block_no = (hdr.map->len - data_start) / ((size_t)1 << hdr.log2_small_block_size);
+native-width-integer	libclamav/ole2_extract.c	3292	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
 native-width-integer	libclamav/ole2_extract.c	340	get_property_name(char *name, int size)
 native-width-integer	libclamav/ole2_extract.c	343	    int csize          = size >> 1;
 native-width-integer	libclamav/ole2_extract.c	452	static bool ole2_read_block(ole2_header_t *hdr, void *buff, size_t size, int32_t blockno)
@@ -17641,7 +17641,7 @@ boundary-constant	libclamav/nsis/nulsft.c	372	        if ((size_t)size > SIZE_MA
 boundary-constant	libclamav/nsis/nulsft.c	768	        if (ctx->fmap->offset > SIZE_MAX - ctx->fmap->nested_offset ||
 boundary-constant	libclamav/nsis/nulsft.c	769	            ctx->fmap->offset + ctx->fmap->nested_offset > SIZE_MAX - (size_t)offset)
 boundary-constant	libclamav/nsis/nulsft.c	825	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset > ctx->fmap->len) {
-boundary-constant	libclamav/ole2_extract.c	2651	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
+boundary-constant	libclamav/ole2_extract.c	2687	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
 boundary-constant	libclamav/ole2_extract.c	467	    if (block_offset > SIZE_MAX || (size_t)block_offset >= hdr->m_length) {
 boundary-constant	libclamav/ole2_extract.c	746	            return SIZE_MAX;
 boundary-constant	libclamav/ole2_extract.c	754	    return fib_offset > SIZE_MAX ? SIZE_MAX : (size_t)fib_offset;
@@ -19351,21 +19351,21 @@ format-width	libclamav/ole2_extract.c	1250	        cli_dbgmsg("OLE2 [handler_wri
 format-width	libclamav/ole2_extract.c	1272	    snprintf(newname, sizeof(newname), "%s" PATHSEP "%s_%u", dir, hash, cnt);
 format-width	libclamav/ole2_extract.c	1288	                                cli_errmsg("OLE2 [handler_writefile]: Unable to allocate memory for buff: %u\n", 1 << hdr->log2_big_block_size);
 format-width	libclamav/ole2_extract.c	1306	            cli_dbgmsg("OLE2 [handler_writefile]: Max block number for file size exceeded: %d\n", current_block);
-format-width	libclamav/ole2_extract.c	1534	                        cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Unexpected state value %d\n", (int)state->state);
-format-width	libclamav/ole2_extract.c	1585	                                cli_errmsg("OLE2 [scan_for_xlm_macros_and_images]: Unable to allocate memory for buff: %u\n", 1 << hdr->log2_big_block_size);
-format-width	libclamav/ole2_extract.c	1600	            cli_dbgmsg("OLE2 [scan_for_xlm_macros_and_images]: Max block number for file size exceeded: %d\n", current_block);
-format-width	libclamav/ole2_extract.c	1891	    cli_dbgmsg("scan_mso_stream: stream prefix = %08x(%d)\n", prefix, prefix);
-format-width	libclamav/ole2_extract.c	1952	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
-format-width	libclamav/ole2_extract.c	1955	        cli_warnmsg("scan_mso_stream: declared prefix != inflated stream size, %llu != %llu\n",
-format-width	libclamav/ole2_extract.c	1961	    cli_dbgmsg("scan_mso_stream: declared prefix == inflated stream size, %llu == %llu\n",
-format-width	libclamav/ole2_extract.c	2050	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
-format-width	libclamav/ole2_extract.c	2235	        cli_errmsg("%s::%d::key NULL\n", __FUNCTION__, __LINE__);
-format-width	libclamav/ole2_extract.c	2303	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
+format-width	libclamav/ole2_extract.c	1542	                        cli_dbgmsg("[scan_biff_for_xlm_macros_and_images] Unexpected state value %d\n", (int)state->state);
+format-width	libclamav/ole2_extract.c	1593	                                cli_errmsg("OLE2 [scan_for_xlm_macros_and_images]: Unable to allocate memory for buff: %u\n", 1 << hdr->log2_big_block_size);
+format-width	libclamav/ole2_extract.c	1608	            cli_dbgmsg("OLE2 [scan_for_xlm_macros_and_images]: Max block number for file size exceeded: %d\n", current_block);
+format-width	libclamav/ole2_extract.c	1899	    cli_dbgmsg("scan_mso_stream: stream prefix = %08x(%d)\n", prefix, prefix);
+format-width	libclamav/ole2_extract.c	1964	    cli_dbgmsg("scan_mso_stream: Decompressed %llu bytes to %s\n", (long long unsigned)outsize, tmpname);
+format-width	libclamav/ole2_extract.c	1967	        cli_warnmsg("scan_mso_stream: declared prefix != inflated stream size, %llu != %llu\n",
+format-width	libclamav/ole2_extract.c	1973	    cli_dbgmsg("scan_mso_stream: declared prefix == inflated stream size, %llu == %llu\n",
+format-width	libclamav/ole2_extract.c	2066	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
+format-width	libclamav/ole2_extract.c	2259	        cli_errmsg("%s::%d::key NULL\n", __FUNCTION__, __LINE__);
+format-width	libclamav/ole2_extract.c	2331	            cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
 format-width	libclamav/ole2_extract.c	301	                                cli_errmsg("OLE2 [cli_ole2_get_property_name2]: Unable to allocate memory for newname: %u\n", size * 5));
-format-width	libclamav/ole2_extract.c	3200	        cli_dbgmsg("CAN'T PARSE: Invalid big block size (2^%u)\n", hdr.log2_big_block_size);
-format-width	libclamav/ole2_extract.c	3206	        cli_dbgmsg("CAN'T PARSE: Invalid small block size (2^%u)\n", hdr.log2_small_block_size);
-format-width	libclamav/ole2_extract.c	3212	        cli_dbgmsg("WARNING: Untested sbat cutoff (%u); data may not extract correctly\n", hdr.sbat_cutoff);
-format-width	libclamav/ole2_extract.c	3256	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
+format-width	libclamav/ole2_extract.c	3236	        cli_dbgmsg("CAN'T PARSE: Invalid big block size (2^%u)\n", hdr.log2_big_block_size);
+format-width	libclamav/ole2_extract.c	3242	        cli_dbgmsg("CAN'T PARSE: Invalid small block size (2^%u)\n", hdr.log2_small_block_size);
+format-width	libclamav/ole2_extract.c	3248	        cli_dbgmsg("WARNING: Untested sbat cutoff (%u); data may not extract correctly\n", hdr.sbat_cutoff);
+format-width	libclamav/ole2_extract.c	3292	    cli_dbgmsg("Max block number: %lu\n", (unsigned long int)hdr.max_block_no);
 format-width	libclamav/ole2_extract.c	353	                                cli_errmsg("OLE2 [get_property_name]: Unable to allocate memory for newname %u\n", size));
 format-width	libclamav/ole2_extract.c	383	        cli_dbgmsg("[err name len: %d]\n", property->name_size);
 format-width	libclamav/ole2_extract.c	438	    cli_dbgmsg("Byte Order:\t\t%d\n", hdr->byte_order);
@@ -26191,126 +26191,126 @@ offset-size-arithmetic	libclamav/ole2_extract.c	1273	    newname[sizeof(newname)
 offset-size-arithmetic	libclamav/ole2_extract.c	1285	    len           = prop->size;
 offset-size-arithmetic	libclamav/ole2_extract.c	1327	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
 offset-size-arithmetic	libclamav/ole2_extract.c	1337	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-offset-size-arithmetic	libclamav/ole2_extract.c	1339	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1345	            len -= MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	1355	            if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1362	            len -= MIN(len, (1 << hdr->log2_big_block_size));
-offset-size-arithmetic	libclamav/ole2_extract.c	1454	                state->length |= buff[i] << 8;
-offset-size-arithmetic	libclamav/ole2_extract.c	1479	                        } else if ((state->data_offset == 14 || state->data_offset == 15) && state->tmp) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1499	                        } else if (state->data_offset == 5 && buff[i] == 1) { // Excel 4.0 macro sheet
-offset-size-arithmetic	libclamav/ole2_extract.c	1537	                state->data_offset += 1;
-offset-size-arithmetic	libclamav/ole2_extract.c	1539	                if (state->data_offset >= state->length) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1582	    len           = prop->size;
-offset-size-arithmetic	libclamav/ole2_extract.c	1612	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1619	            offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-offset-size-arithmetic	libclamav/ole2_extract.c	1621	            (void)scan_biff_for_xlm_macros_and_images(&state, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size), ctx, found_macro, found_image);
-offset-size-arithmetic	libclamav/ole2_extract.c	1622	            len -= MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	1630	            (void)scan_biff_for_xlm_macros_and_images(&state, buff, MIN(len, (1 << hdr->log2_big_block_size)), ctx, found_macro, found_image);
-offset-size-arithmetic	libclamav/ole2_extract.c	1632	            len -= MIN(len, (1 << hdr->log2_big_block_size));
+offset-size-arithmetic	libclamav/ole2_extract.c	1343	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1349	            len -= MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	1363	            if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1370	            len -= MIN(len, (1 << hdr->log2_big_block_size));
+offset-size-arithmetic	libclamav/ole2_extract.c	1462	                state->length |= buff[i] << 8;
+offset-size-arithmetic	libclamav/ole2_extract.c	1487	                        } else if ((state->data_offset == 14 || state->data_offset == 15) && state->tmp) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1507	                        } else if (state->data_offset == 5 && buff[i] == 1) { // Excel 4.0 macro sheet
+offset-size-arithmetic	libclamav/ole2_extract.c	1545	                state->data_offset += 1;
+offset-size-arithmetic	libclamav/ole2_extract.c	1547	                if (state->data_offset >= state->length) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1590	    len           = prop->size;
+offset-size-arithmetic	libclamav/ole2_extract.c	1620	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1627	            offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+offset-size-arithmetic	libclamav/ole2_extract.c	1629	            (void)scan_biff_for_xlm_macros_and_images(&state, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size), ctx, found_macro, found_image);
+offset-size-arithmetic	libclamav/ole2_extract.c	1630	            len -= MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	1638	            (void)scan_biff_for_xlm_macros_and_images(&state, buff, MIN(len, (1 << hdr->log2_big_block_size)), ctx, found_macro, found_image);
+offset-size-arithmetic	libclamav/ole2_extract.c	1640	            len -= MIN(len, (1 << hdr->log2_big_block_size));
 offset-size-arithmetic	libclamav/ole2_extract.c	169	 * https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-doc/26fb6c06-4e5c-4778-ab4e-edbf26a545bb
-offset-size-arithmetic	libclamav/ole2_extract.c	1721	                    if (prop->start_block > hdr->max_block_no)
-offset-size-arithmetic	libclamav/ole2_extract.c	1726	                    if (prop->size < (int64_t)hdr->sbat_cutoff) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1730	                        offset = (1 << hdr->log2_small_block_size) *
-offset-size-arithmetic	libclamav/ole2_extract.c	1731	                                 (prop->start_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-offset-size-arithmetic	libclamav/ole2_extract.c	1734	                        if (offset + 40 >= 1 << hdr->log2_big_block_size)
-offset-size-arithmetic	libclamav/ole2_extract.c	1737	                        if (!ole2_read_block(hdr, hwp_check, 1 << hdr->log2_big_block_size, prop->start_block)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1755	                        hwp_new->version = ole2_endian_convert_32(hwp_new->version);
-offset-size-arithmetic	libclamav/ole2_extract.c	1756	                        hwp_new->flags   = ole2_endian_convert_32(hwp_new->flags);
-offset-size-arithmetic	libclamav/ole2_extract.c	1801	    if (fsize == -1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1808	    if (lseek(fd, 4, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1890	    off_in += sizeof(uint32_t);
-offset-size-arithmetic	libclamav/ole2_extract.c	1905	            if (bytes_read == (size_t)-1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	1917	            off_in += bytes_read;
-offset-size-arithmetic	libclamav/ole2_extract.c	1922	            cl_error_t limitret = cli_checklimits("MSO", ctx, outsize + count, 0, 0);
-offset-size-arithmetic	libclamav/ole2_extract.c	1940	            outsize += count;
+offset-size-arithmetic	libclamav/ole2_extract.c	1729	                    if (prop->start_block > hdr->max_block_no)
+offset-size-arithmetic	libclamav/ole2_extract.c	1734	                    if (prop->size < (int64_t)hdr->sbat_cutoff) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1738	                        offset = (1 << hdr->log2_small_block_size) *
+offset-size-arithmetic	libclamav/ole2_extract.c	1739	                                 (prop->start_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+offset-size-arithmetic	libclamav/ole2_extract.c	1742	                        if (offset + 40 >= 1 << hdr->log2_big_block_size)
+offset-size-arithmetic	libclamav/ole2_extract.c	1745	                        if (!ole2_read_block(hdr, hwp_check, 1 << hdr->log2_big_block_size, prop->start_block)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1763	                        hwp_new->version = ole2_endian_convert_32(hwp_new->version);
+offset-size-arithmetic	libclamav/ole2_extract.c	1764	                        hwp_new->flags   = ole2_endian_convert_32(hwp_new->flags);
+offset-size-arithmetic	libclamav/ole2_extract.c	1809	    if (fsize == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1816	    if (lseek(fd, 4, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1898	    off_in += sizeof(uint32_t);
+offset-size-arithmetic	libclamav/ole2_extract.c	1913	            if (bytes_read == (size_t)-1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	1925	            off_in += bytes_read;
+offset-size-arithmetic	libclamav/ole2_extract.c	1930	            cl_error_t limitret = cli_checklimits("MSO", ctx, outsize + count, 0, 0);
+offset-size-arithmetic	libclamav/ole2_extract.c	1952	            outsize += count;
 offset-size-arithmetic	libclamav/ole2_extract.c	202	uint32_t ole2_list_size(ole2_list_t *list);
-offset-size-arithmetic	libclamav/ole2_extract.c	2025	    len           = prop->size;
-offset-size-arithmetic	libclamav/ole2_extract.c	2068	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2077	            offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-offset-size-arithmetic	libclamav/ole2_extract.c	2078	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2083	            len -= MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2092	            if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2098	            len -= MIN(len, (1 << hdr->log2_big_block_size));
-offset-size-arithmetic	libclamav/ole2_extract.c	2113	    if (lseek(ofd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2041	    len           = prop->size;
+offset-size-arithmetic	libclamav/ole2_extract.c	2084	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2093	            offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+offset-size-arithmetic	libclamav/ole2_extract.c	2098	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2103	            len -= MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2116	            if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2122	            len -= MIN(len, (1 << hdr->log2_big_block_size));
+offset-size-arithmetic	libclamav/ole2_extract.c	2137	    if (lseek(ofd, 0, SEEK_SET) == -1) {
 offset-size-arithmetic	libclamav/ole2_extract.c	220	ole2_list_size(ole2_list_t *list)
-offset-size-arithmetic	libclamav/ole2_extract.c	2206	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
-offset-size-arithmetic	libclamav/ole2_extract.c	2246	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
-offset-size-arithmetic	libclamav/ole2_extract.c	2271	    len           = prop->size;
-offset-size-arithmetic	libclamav/ole2_extract.c	2321	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2330	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
-offset-size-arithmetic	libclamav/ole2_extract.c	2332	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2337	            stream_bytes_read += MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2338	            len -= MIN(len, 1 << hdr->log2_small_block_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2343	            uint32_t bytesToWrite  = MIN(len - bytesRead, blockSize);
-offset-size-arithmetic	libclamav/ole2_extract.c	2371	            /*Make sure we don't write more data than the file is actually supposed to be.*/
-offset-size-arithmetic	libclamav/ole2_extract.c	2404	    if (lseek(ofd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2553	    dst->version_major = ole2_endian_convert_16(dst->version_major);
-offset-size-arithmetic	libclamav/ole2_extract.c	2554	    dst->version_minor = ole2_endian_convert_16(dst->version_minor);
-offset-size-arithmetic	libclamav/ole2_extract.c	2556	    dst->flags = ole2_endian_convert_32(dst->flags);
-offset-size-arithmetic	libclamav/ole2_extract.c	2557	    dst->size  = ole2_endian_convert_32(dst->size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2559	    dst->encryptionInfo.flags           = ole2_endian_convert_32(dst->encryptionInfo.flags);
-offset-size-arithmetic	libclamav/ole2_extract.c	2560	    dst->encryptionInfo.sizeExtra       = ole2_endian_convert_32(dst->encryptionInfo.sizeExtra);
-offset-size-arithmetic	libclamav/ole2_extract.c	2561	    dst->encryptionInfo.algorithmID     = ole2_endian_convert_32(dst->encryptionInfo.algorithmID);
-offset-size-arithmetic	libclamav/ole2_extract.c	2562	    dst->encryptionInfo.algorithmIDHash = ole2_endian_convert_32(dst->encryptionInfo.algorithmIDHash);
-offset-size-arithmetic	libclamav/ole2_extract.c	2563	    dst->encryptionInfo.keySize         = ole2_endian_convert_32(dst->encryptionInfo.keySize);
-offset-size-arithmetic	libclamav/ole2_extract.c	2564	    dst->encryptionInfo.providerType    = ole2_endian_convert_32(dst->encryptionInfo.providerType);
-offset-size-arithmetic	libclamav/ole2_extract.c	2565	    dst->encryptionInfo.reserved1       = ole2_endian_convert_32(dst->encryptionInfo.reserved1);
-offset-size-arithmetic	libclamav/ole2_extract.c	2566	    dst->encryptionInfo.reserved2       = ole2_endian_convert_32(dst->encryptionInfo.reserved2);
-offset-size-arithmetic	libclamav/ole2_extract.c	2572	    dst->salt_size          = ole2_endian_convert_32(dst->salt_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2573	    dst->verifier_hash_size = ole2_endian_convert_32(dst->verifier_hash_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2612	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
-offset-size-arithmetic	libclamav/ole2_extract.c	2643	    if (!key_length_valid_aes_bits(key->key_length_bits)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2644	        cli_errmsg("ole2: Invalid key length '0x%x'\n", key->key_length_bits / 8);
-offset-size-arithmetic	libclamav/ole2_extract.c	2648	    memset(key->key, 0, key->key_length_bits / 8);
-offset-size-arithmetic	libclamav/ole2_extract.c	2651	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2656	    bufLen = verifier->salt_size + (passwordLen * 2);
-offset-size-arithmetic	libclamav/ole2_extract.c	2701	    if (verifier->salt_size > sizeof(verifier->salt)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2702	        cli_dbgmsg("ole2: Invalid salt length '0x%x'\n", verifier->salt_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2703	        tmp = sizeof(verifier->salt);
-offset-size-arithmetic	libclamav/ole2_extract.c	2709	        buffer[verifier->salt_size + (j * 2)] = (uint8_t)password[j];
-offset-size-arithmetic	libclamav/ole2_extract.c	2740	    tmp = key->key_length_bits / 8;
-offset-size-arithmetic	libclamav/ole2_extract.c	2741	    if (tmp > sizeof(key->key)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2742	        cli_warnmsg("ole2: Invalid key length 0x%x\n", key->key_length_bits / 8);
-offset-size-arithmetic	libclamav/ole2_extract.c	2743	        tmp = sizeof(key->key);
-offset-size-arithmetic	libclamav/ole2_extract.c	2768	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
-offset-size-arithmetic	libclamav/ole2_extract.c	2806	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
-offset-size-arithmetic	libclamav/ole2_extract.c	2818	    actual_hash_size = verifier->verifier_hash_size;
-offset-size-arithmetic	libclamav/ole2_extract.c	2819	    if (actual_hash_size > sizeof(verifier->encrypted_verifier_hash)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2820	        cli_dbgmsg("ole2: Invalid encrypted verifier hash length 0x%x\n", verifier->verifier_hash_size);
-offset-size-arithmetic	libclamav/ole2_extract.c	2821	        actual_hash_size = sizeof(verifier->encrypted_verifier_hash);
-offset-size-arithmetic	libclamav/ole2_extract.c	2828	            if (!aes_128ecb_decrypt(verifier->encrypted_verifier, sizeof(verifier->encrypted_verifier), decrypted, key)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	2834	            (void)cl_sha1(decrypted, sizeof(verifier->encrypted_verifier), sha, NULL);
-offset-size-arithmetic	libclamav/ole2_extract.c	2884	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/dca653b5-b93b-48df-8e1e-0fb9e1c83b0f
-offset-size-arithmetic	libclamav/ole2_extract.c	2885	 * https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/2895eba1-acb1-4624-9bde-2cdad3fea015
-offset-size-arithmetic	libclamav/ole2_extract.c	2927	    // https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/200a3d61-1ab4-4402-ae11-0290b28ab9cb
+offset-size-arithmetic	libclamav/ole2_extract.c	2230	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
+offset-size-arithmetic	libclamav/ole2_extract.c	2270	    CLI_MAX_MALLOC_OR_GOTO_DONE(rk, RKLENGTH(key->key_length_bits) * sizeof(uint32_t), ret = CL_EMEM);
+offset-size-arithmetic	libclamav/ole2_extract.c	2299	    len           = prop->size;
+offset-size-arithmetic	libclamav/ole2_extract.c	2349	        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2358	            offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+offset-size-arithmetic	libclamav/ole2_extract.c	2364	            if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2369	            stream_bytes_read += MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2370	            len -= MIN(len, 1 << hdr->log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2375	            uint32_t bytesToWrite  = MIN(len - bytesRead, blockSize);
+offset-size-arithmetic	libclamav/ole2_extract.c	2403	            /*Make sure we don't write more data than the file is actually supposed to be.*/
+offset-size-arithmetic	libclamav/ole2_extract.c	2440	    if (lseek(ofd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2589	    dst->version_major = ole2_endian_convert_16(dst->version_major);
+offset-size-arithmetic	libclamav/ole2_extract.c	2590	    dst->version_minor = ole2_endian_convert_16(dst->version_minor);
+offset-size-arithmetic	libclamav/ole2_extract.c	2592	    dst->flags = ole2_endian_convert_32(dst->flags);
+offset-size-arithmetic	libclamav/ole2_extract.c	2593	    dst->size  = ole2_endian_convert_32(dst->size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2595	    dst->encryptionInfo.flags           = ole2_endian_convert_32(dst->encryptionInfo.flags);
+offset-size-arithmetic	libclamav/ole2_extract.c	2596	    dst->encryptionInfo.sizeExtra       = ole2_endian_convert_32(dst->encryptionInfo.sizeExtra);
+offset-size-arithmetic	libclamav/ole2_extract.c	2597	    dst->encryptionInfo.algorithmID     = ole2_endian_convert_32(dst->encryptionInfo.algorithmID);
+offset-size-arithmetic	libclamav/ole2_extract.c	2598	    dst->encryptionInfo.algorithmIDHash = ole2_endian_convert_32(dst->encryptionInfo.algorithmIDHash);
+offset-size-arithmetic	libclamav/ole2_extract.c	2599	    dst->encryptionInfo.keySize         = ole2_endian_convert_32(dst->encryptionInfo.keySize);
+offset-size-arithmetic	libclamav/ole2_extract.c	2600	    dst->encryptionInfo.providerType    = ole2_endian_convert_32(dst->encryptionInfo.providerType);
+offset-size-arithmetic	libclamav/ole2_extract.c	2601	    dst->encryptionInfo.reserved1       = ole2_endian_convert_32(dst->encryptionInfo.reserved1);
+offset-size-arithmetic	libclamav/ole2_extract.c	2602	    dst->encryptionInfo.reserved2       = ole2_endian_convert_32(dst->encryptionInfo.reserved2);
+offset-size-arithmetic	libclamav/ole2_extract.c	2608	    dst->salt_size          = ole2_endian_convert_32(dst->salt_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2609	    dst->verifier_hash_size = ole2_endian_convert_32(dst->verifier_hash_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2648	    uint8_t sha1[sizeof(uint32_t) + SHA1_HASH_SIZE + sizeof(uint32_t)] = {0};
+offset-size-arithmetic	libclamav/ole2_extract.c	2679	    if (!key_length_valid_aes_bits(key->key_length_bits)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2680	        cli_errmsg("ole2: Invalid key length '0x%x'\n", key->key_length_bits / 8);
+offset-size-arithmetic	libclamav/ole2_extract.c	2684	    memset(key->key, 0, key->key_length_bits / 8);
+offset-size-arithmetic	libclamav/ole2_extract.c	2687	    if (passwordLen > ((SIZE_MAX - verifier->salt_size) / 2)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2692	    bufLen = verifier->salt_size + (passwordLen * 2);
+offset-size-arithmetic	libclamav/ole2_extract.c	2737	    if (verifier->salt_size > sizeof(verifier->salt)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2738	        cli_dbgmsg("ole2: Invalid salt length '0x%x'\n", verifier->salt_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2739	        tmp = sizeof(verifier->salt);
+offset-size-arithmetic	libclamav/ole2_extract.c	2745	        buffer[verifier->salt_size + (j * 2)] = (uint8_t)password[j];
+offset-size-arithmetic	libclamav/ole2_extract.c	2776	    tmp = key->key_length_bits / 8;
+offset-size-arithmetic	libclamav/ole2_extract.c	2777	    if (tmp > sizeof(key->key)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2778	        cli_warnmsg("ole2: Invalid key length 0x%x\n", key->key_length_bits / 8);
+offset-size-arithmetic	libclamav/ole2_extract.c	2779	        tmp = sizeof(key->key);
+offset-size-arithmetic	libclamav/ole2_extract.c	2804	static bool aes_128ecb_decrypt(const unsigned char *in, size_t length, unsigned char *out, const encryption_key_t *const key)
+offset-size-arithmetic	libclamav/ole2_extract.c	2842	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/e5ad39b8-9bc1-4a19-bad3-44e6246d21e6
+offset-size-arithmetic	libclamav/ole2_extract.c	2854	    actual_hash_size = verifier->verifier_hash_size;
+offset-size-arithmetic	libclamav/ole2_extract.c	2855	    if (actual_hash_size > sizeof(verifier->encrypted_verifier_hash)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2856	        cli_dbgmsg("ole2: Invalid encrypted verifier hash length 0x%x\n", verifier->verifier_hash_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	2857	        actual_hash_size = sizeof(verifier->encrypted_verifier_hash);
+offset-size-arithmetic	libclamav/ole2_extract.c	2864	            if (!aes_128ecb_decrypt(verifier->encrypted_verifier, sizeof(verifier->encrypted_verifier), decrypted, key)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	2870	            (void)cl_sha1(decrypted, sizeof(verifier->encrypted_verifier), sha, NULL);
+offset-size-arithmetic	libclamav/ole2_extract.c	2920	 * https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/dca653b5-b93b-48df-8e1e-0fb9e1c83b0f
+offset-size-arithmetic	libclamav/ole2_extract.c	2921	 * https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/2895eba1-acb1-4624-9bde-2cdad3fea015
+offset-size-arithmetic	libclamav/ole2_extract.c	2963	    // https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-offcrypto/200a3d61-1ab4-4402-ae11-0290b28ab9cb
 offset-size-arithmetic	libclamav/ole2_extract.c	300	    CLI_MAX_MALLOC_OR_GOTO_DONE(newname, size * 5 + 1,
 offset-size-arithmetic	libclamav/ole2_extract.c	301	                                cli_errmsg("OLE2 [cli_ole2_get_property_name2]: Unable to allocate memory for newname: %u\n", size * 5));
-offset-size-arithmetic	libclamav/ole2_extract.c	3036	    csp_name_max_u16 = remainingBytes / sizeof(*encryptionInfo_CSPName);
 offset-size-arithmetic	libclamav/ole2_extract.c	304	    /* size-2 to ignore trailing NULL */
-offset-size-arithmetic	libclamav/ole2_extract.c	3049	    CSPName_length = (idx + 1) * sizeof(*encryptionInfo_CSPName);
 offset-size-arithmetic	libclamav/ole2_extract.c	305	    for (i = 0; i < size - 2; i += 2) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3128	        if (ctx->engine->maxscansize > ctx->scansize) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3129	            scansize = ctx->engine->maxscansize - ctx->scansize;
-offset-size-arithmetic	libclamav/ole2_extract.c	3140	    /* size of header - size of other values in struct */
-offset-size-arithmetic	libclamav/ole2_extract.c	3141	    hdr_size = sizeof(struct ole2_header_tag) -
-offset-size-arithmetic	libclamav/ole2_extract.c	3142	               sizeof(int32_t) -        // sbat_root_start
-offset-size-arithmetic	libclamav/ole2_extract.c	3143	               sizeof(uint32_t) -       // max_block_no
-offset-size-arithmetic	libclamav/ole2_extract.c	3144	               sizeof(size_t) -         // m_length
-offset-size-arithmetic	libclamav/ole2_extract.c	3145	               sizeof(bitset_t *) -     // bitset
-offset-size-arithmetic	libclamav/ole2_extract.c	3146	               sizeof(struct uniq *) -  // U
-offset-size-arithmetic	libclamav/ole2_extract.c	3147	               sizeof(fmap_t *) -       // map
-offset-size-arithmetic	libclamav/ole2_extract.c	3148	               sizeof(bool) -           // has_vba
-offset-size-arithmetic	libclamav/ole2_extract.c	3149	               sizeof(bool) -           // has_xlm
-offset-size-arithmetic	libclamav/ole2_extract.c	3150	               sizeof(bool) -           // has_image
-offset-size-arithmetic	libclamav/ole2_extract.c	3151	               sizeof(hwp5_header_t *); // is_hwp
-offset-size-arithmetic	libclamav/ole2_extract.c	3153	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3158	    hdr.m_length = hdr.map->len;
-offset-size-arithmetic	libclamav/ole2_extract.c	3182	    hdr.sbat_root_start = -1;
-offset-size-arithmetic	libclamav/ole2_extract.c	3218	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
-offset-size-arithmetic	libclamav/ole2_extract.c	3220	        sizeof(encryption_info_stream_standard_t) <= hdr.m_length - encryption_offset) {
-offset-size-arithmetic	libclamav/ole2_extract.c	3221	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
-offset-size-arithmetic	libclamav/ole2_extract.c	3237	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
-offset-size-arithmetic	libclamav/ole2_extract.c	3246	        hdr.max_block_no = (hdr.map->len - data_start) / ((size_t)1 << hdr.log2_small_block_size);
+offset-size-arithmetic	libclamav/ole2_extract.c	3072	    csp_name_max_u16 = remainingBytes / sizeof(*encryptionInfo_CSPName);
+offset-size-arithmetic	libclamav/ole2_extract.c	3085	    CSPName_length = (idx + 1) * sizeof(*encryptionInfo_CSPName);
+offset-size-arithmetic	libclamav/ole2_extract.c	3164	        if (ctx->engine->maxscansize > ctx->scansize) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3165	            scansize = ctx->engine->maxscansize - ctx->scansize;
+offset-size-arithmetic	libclamav/ole2_extract.c	3176	    /* size of header - size of other values in struct */
+offset-size-arithmetic	libclamav/ole2_extract.c	3177	    hdr_size = sizeof(struct ole2_header_tag) -
+offset-size-arithmetic	libclamav/ole2_extract.c	3178	               sizeof(int32_t) -        // sbat_root_start
+offset-size-arithmetic	libclamav/ole2_extract.c	3179	               sizeof(uint32_t) -       // max_block_no
+offset-size-arithmetic	libclamav/ole2_extract.c	3180	               sizeof(size_t) -         // m_length
+offset-size-arithmetic	libclamav/ole2_extract.c	3181	               sizeof(bitset_t *) -     // bitset
+offset-size-arithmetic	libclamav/ole2_extract.c	3182	               sizeof(struct uniq *) -  // U
+offset-size-arithmetic	libclamav/ole2_extract.c	3183	               sizeof(fmap_t *) -       // map
+offset-size-arithmetic	libclamav/ole2_extract.c	3184	               sizeof(bool) -           // has_vba
+offset-size-arithmetic	libclamav/ole2_extract.c	3185	               sizeof(bool) -           // has_xlm
+offset-size-arithmetic	libclamav/ole2_extract.c	3186	               sizeof(bool) -           // has_image
+offset-size-arithmetic	libclamav/ole2_extract.c	3187	               sizeof(hwp5_header_t *); // is_hwp
+offset-size-arithmetic	libclamav/ole2_extract.c	3189	    if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3194	    hdr.m_length = hdr.map->len;
+offset-size-arithmetic	libclamav/ole2_extract.c	3218	    hdr.sbat_root_start = -1;
+offset-size-arithmetic	libclamav/ole2_extract.c	3254	    encryption_offset = ((size_t)4) << hdr.log2_big_block_size;
+offset-size-arithmetic	libclamav/ole2_extract.c	3256	        sizeof(encryption_info_stream_standard_t) <= hdr.m_length - encryption_offset) {
+offset-size-arithmetic	libclamav/ole2_extract.c	3257	        size_t encryption_window = MIN(hdr.m_length - encryption_offset,
+offset-size-arithmetic	libclamav/ole2_extract.c	3273	        const size_t big_block_size = (size_t)1 << hdr.log2_big_block_size;
+offset-size-arithmetic	libclamav/ole2_extract.c	3282	        hdr.max_block_no = (hdr.map->len - data_start) / ((size_t)1 << hdr.log2_small_block_size);
 offset-size-arithmetic	libclamav/ole2_extract.c	343	    int csize          = size >> 1;
 offset-size-arithmetic	libclamav/ole2_extract.c	383	        cli_dbgmsg("[err name len: %d]\n", property->name_size);
 offset-size-arithmetic	libclamav/ole2_extract.c	388	    spam[sizeof(spam) - 1] = '\0';
@@ -33005,7 +33005,7 @@ large-file-option	libclamav/libmspack.c	796	                cli_mark_scan_incomp
 large-file-option	libclamav/matcher.h	365	 * On qualifying 64-bit fmap builds, PCREMaxFileSize values are constrained to
 large-file-option	libclamav/ole2_extract.c	1113	                    limit_name    = "Heuristics.Limits.Exceeded.MaxFileSize";
 large-file-option	libclamav/ole2_extract.c	1116	                    limit_name    = "Heuristics.Limits.Exceeded.MaxScanSize";
-large-file-option	libclamav/ole2_extract.c	3131	            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
+large-file-option	libclamav/ole2_extract.c	3167	            cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
 large-file-option	libclamav/others.c	1038	                cli_errmsg("PCREMaxFileSize: negative values are not allowed\n");
 large-file-option	libclamav/others.c	1098	        case CL_ENGINE_MAX_SCANSIZE:
 large-file-option	libclamav/others.c	1100	        case CL_ENGINE_MAX_FILESIZE:

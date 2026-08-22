@@ -1336,6 +1336,10 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
             /* buff now contains the block with N small blocks in it */
             offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
 
+            if (ole2_checktimelimit(ctx, "OLE2 VBA stream output reached the configured time limit") != CL_SUCCESS) {
+                ret = CL_ETIMEOUT;
+                goto done;
+            }
             if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
                 cli_mark_scan_incomplete(ctx, "OLE2 VBA stream could not be written completely");
                 ret = CL_EWRITE;
@@ -1352,6 +1356,10 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
                 break;
             }
 
+            if (ole2_checktimelimit(ctx, "OLE2 VBA stream output reached the configured time limit") != CL_SUCCESS) {
+                ret = CL_ETIMEOUT;
+                goto done;
+            }
             if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
                 cli_mark_scan_incomplete(ctx, "OLE2 VBA stream could not be written completely");
                 ret = CL_EWRITE;
@@ -1932,6 +1940,10 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
                 goto mso_end;
             }
             temporary_reserved += (uint64_t)count;
+            if (ole2_checktimelimit(ctx, "MSO stream output reached the configured time limit") != CL_SUCCESS) {
+                ret = CL_ETIMEOUT;
+                goto mso_end;
+            }
             if (cli_writen(ofd, outbuf, count) != count) {
                 cli_errmsg("scan_mso_stream: Can't write to file %s\n", tmpname);
                 ret = CL_EWRITE;
@@ -2010,6 +2022,10 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
     }
     temporary_reserved = (uint64_t)prop->size;
 
+    ret = ole2_checktimelimit(ctx, "OLE2 embedded stream temporary admission reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        goto done;
+
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
         ret = CL_EMEM;
         goto done;
@@ -2075,6 +2091,10 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
 
             /* buff now contains the block with N small blocks in it */
             offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
+            if (ole2_checktimelimit(ctx, "OLE2 embedded stream output reached the configured time limit") != CL_SUCCESS) {
+                ret = CL_ETIMEOUT;
+                break;
+            }
             if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
                 ret = CL_EWRITE;
                 break;
@@ -2089,6 +2109,10 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
                 break;
             }
 
+            if (ole2_checktimelimit(ctx, "OLE2 embedded stream output reached the configured time limit") != CL_SUCCESS) {
+                ret = CL_ETIMEOUT;
+                goto done;
+            }
             if (cli_writen(ofd, buff, MIN(len, (1 << hdr->log2_big_block_size))) != MIN(len, (1 << hdr->log2_big_block_size))) {
                 ret = CL_EWRITE;
                 goto done;
@@ -2254,6 +2278,10 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     }
     temporary_reserved = (uint64_t)prop->size;
 
+    ret = ole2_checktimelimit(ctx, "OLE2 encrypted stream temporary admission reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        goto done;
+
     nrounds = rijndaelSetupDecrypt(rk, key->key, key->key_length_bits);
 
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
@@ -2329,6 +2357,10 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             /* buff now contains the block with N small blocks in it */
             offset = (((size_t)1) << hdr->log2_small_block_size) * (((size_t)current_block) % (((size_t)1) << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
 
+            if (ole2_checktimelimit(ctx, "OLE2 encrypted stream output reached the configured time limit") != CL_SUCCESS) {
+                ret = CL_ETIMEOUT;
+                break;
+            }
             if (cli_writen(ofd, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size)) != MIN(len, 1 << hdr->log2_small_block_size)) {
                 ret = CL_EWRITE;
                 break;
@@ -2371,6 +2403,10 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             /*Make sure we don't write more data than the file is actually supposed to be.*/
             if ((decryptDstIdx + bytesWritten) > actualFileLength) {
                 decryptDstIdx = actualFileLength - bytesWritten;
+            }
+            if (ole2_checktimelimit(ctx, "OLE2 encrypted stream output reached the configured time limit") != CL_SUCCESS) {
+                ret = CL_ETIMEOUT;
+                goto done;
             }
             if (cli_writen(ofd, decryptDst, decryptDstIdx) != decryptDstIdx) {
                 cli_errmsg("ole2: Error writing to file '%s'\n", tempfile);

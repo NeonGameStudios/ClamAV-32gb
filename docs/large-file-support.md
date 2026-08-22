@@ -5578,3 +5578,12 @@ stored member sinks preserve timeout cleanup through their shared streaming
 helper. Source guards cover these boundaries; deterministic post-admission
 injection, compiled archive/filesystem corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## OLE2 stream output deadlines — 2026-08-22
+
+OLE2 VBA, MSO-inflated, embedded, and encrypted stream materialization now
+re-checks the shared deadline after temporary admission and immediately before
+each output write. Timeout cleanup preserves reservations and prevents partial
+Office/VBA streams from reaching nested scans. Source guards cover all four
+paths; deterministic post-admission injection, compiled Office/VBA corpus,
+sanitizer, and Sonic1 qualification remain release gates.
