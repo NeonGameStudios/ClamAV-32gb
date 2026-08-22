@@ -3908,3 +3908,13 @@ native command lacking ASan or UBSan, while preserving the existing Rust archive
 and loader checks. This closes the specific “flags appear somewhere” verifier
 weakness; self-contained release attestation, full sanitizer execution, and
 service qualification remain open.
+
+## Detection verdict binding in service evidence — 2026-08-22
+
+The service qualification oracle previously bound a detection report to its
+`last_alert` string but did not require a non-clean verdict. The direct clamd
+report probe, service shell gate, and post-run workload verifier now require
+`CL_VERDICT_STRONG_INDICATOR` or `CL_VERDICT_POTENTIALLY_UNWANTED` for every
+detection-shaped oracle row; the synthetic regression mutates a valid alert to
+a clean verdict and requires rejection. Full Linux/Sonic1 service execution
+remains open.

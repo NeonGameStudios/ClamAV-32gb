@@ -132,6 +132,8 @@ def validate_report(report, oracle, mode, expected_size):
             fail(f"{mode} clean oracle has an unexpected verdict")
     elif last_alert not in (expected_signature, f"{expected_signature}.UNOFFICIAL"):
         fail(f"{mode} report alert does not exactly match the oracle")
+    elif report.get("verdict") not in (2, 3):
+        fail(f"{mode} detection report does not carry a non-clean verdict")
     if expected_exit in (0, 1) and report["status"] != 0:
         fail(f"{mode} report status is non-success for expected exit {expected_exit}")
     if expected_exit == 2 and report["status"] == 0:

@@ -9,15 +9,34 @@ set -eu
 
 verify_native_sanitizer_compile_graph()
 {
-    awk '
-        /"command"[[:space:]]*:/ {
-            entries++
-            if ($0 !~ /-fsanitize=[^"[:space:]]*address/ ||
-                $0 !~ /-fsanitize=[^"[:space:]]*undefined/)
-                bad = 1
-        }
-        END { exit (entries == 0 || bad) }
-    ' "$1"
+    command -v python3 >/dev/null 2>&1 || return 1
+    python3 - "$1" <<'PY'
+import json
+import shlex
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as stream:
+        entries = json.load(stream)
+except (OSError, ValueError):
+    raise SystemExit(1)
+
+if not isinstance(entries, list) or not entries:
+    raise SystemExit(1)
+for entry in entries:
+    if not isinstance(entry, dict) or not isinstance(entry.get("command"), str):
+        raise SystemExit(1)
+    try:
+        tokens = shlex.split(entry["command"])
+    except ValueError:
+        raise SystemExit(1)
+    sanitizers = []
+    for token in tokens:
+        if token.startswith("-fsanitize="):
+            sanitizers.extend(token.split("=", 1)[1].split(","))
+    if "address" not in sanitizers or "undefined" not in sanitizers:
+        raise SystemExit(1)
+PY
 }
 
 if [ "$#" -ne 4 ]; then

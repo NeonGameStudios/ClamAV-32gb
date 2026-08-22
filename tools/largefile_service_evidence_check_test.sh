@@ -51,12 +51,19 @@ workload_hash=$(sha256sum "$workload_input" | awk '{ print $1 }')
 qualification_oracle=$out/provenance/qualification-oracle.tsv
 printf 'role\texpected_size\texpected_sha256\texpected_exit\texpected_completion\texpected_signature\texpected_offset\texpected_type\n' > "$qualification_oracle"
 for role in production materialized expansion edge; do
-    printf '%s\t%s\t%s\t0\tCOMPLETE\t-\t-\tCL_TYPE_DATA\n' \
-        "$role" "$workload_size" "$workload_hash" >> "$qualification_oracle"
+    if [ "$role" = edge ]; then
+        printf '%s\t%s\t%s\t1\tDETECTION_TERMINATED\tSynthetic.Detection\t123\tCL_TYPE_DATA\n' \
+            "$role" "$workload_size" "$workload_hash" >> "$qualification_oracle"
+    else
+        printf '%s\t%s\t%s\t0\tCOMPLETE\t-\t-\tCL_TYPE_DATA\n' \
+            "$role" "$workload_size" "$workload_hash" >> "$qualification_oracle"
+    fi
 done
 workload_results=$out/provenance/service-workload-results.tsv
 printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > "$workload_results"
-report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
+clean_report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
+detection_report_json=$(printf '{"version":1,"completion":"DETECTION_TERMINATED","file_type":"CL_TYPE_DATA","status":0,"verdict":2,"last_alert":"Synthetic.Detection","root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
+report_json=$clean_report_json
 workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-multiworker-1 clamd-multiworker-2 clamd-multiworker-3 clamd-multiworker-4'
 for label in $workload_labels; do
     case "$label" in
@@ -103,10 +110,20 @@ for label in $workload_labels; do
     esac
     log_rel="logs/$label.log"
     report_rel="reports/$label.jsonl"
-    printf 'clean\n' > "$out/$log_rel"
-    printf '%s' "$report_json" > "$out/$report_rel"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t0\t%s\n' \
-        "$label" "$kind" "$role" "$workload_input" "$log_rel" "$report_rel" "$check_offset" >> "$workload_results"
+    workload_status=0
+    report_for_role=$clean_report_json
+    if [ "$role" = edge ]; then
+        printf 'Synthetic.Detection: %s: FOUND\n' "$workload_input" > "$out/$log_rel"
+        printf 'signature Synthetic.Detection matched at 123\n' >> "$out/$log_rel"
+        report_for_role=$detection_report_json
+        workload_status=1
+    else
+        printf 'clean\n' > "$out/$log_rel"
+    fi
+    printf '%s' "$report_for_role" > "$out/$report_rel"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$label" "$kind" "$role" "$workload_input" "$log_rel" "$report_rel" \
+        "$workload_status" "$check_offset" >> "$workload_results"
 done
 printf 'milter manual wire: body_bytes=1 message_bytes=1 limit_bytes=34359738368 result=r chunk_bytes=1 fill_byte=65\n' > \
     "$out/logs/milter-exact-edge.log"
@@ -151,6 +168,15 @@ workload_hash_manifest=$(sha256sum "$workload_results" | awk '{ print $1 }')
 ) > "$out/SHA256SUMS"
 
 sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null
+
+cp "$out/reports/edge-clamscan.jsonl" "$out/reports/edge-clamscan.good"
+sed 's/"verdict":2/"verdict":0/' "$out/reports/edge-clamscan.good" > \
+    "$out/reports/edge-clamscan.jsonl"
+if python3 "$root/tools/largefile_service_workload_check.py" "$out" >/dev/null 2>&1; then
+    echo 'service workload verifier accepted a detection report with a clean verdict' >&2
+    exit 1
+fi
+mv "$out/reports/edge-clamscan.good" "$out/reports/edge-clamscan.jsonl"
 
 printf '%s' "$report_json" > "$out/reports/production_cvd_scanreport.jsonl"
 printf 'mutated structured report\n' >> "$out/reports/production_cvd_scanreport.jsonl"

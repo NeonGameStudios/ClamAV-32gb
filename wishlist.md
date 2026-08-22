@@ -673,6 +673,10 @@
   UnRAR interface/backend artifacts, and puts those artifacts first in the
   loader path; synthetic verifier controls reject missing or mismatched
   components. Authorized production-CVD and service qualification remain open.
+- Service report evidence now requires detection-shaped reports to carry a
+  non-clean verdict as well as the oracle's exact `last_alert`; a clean verdict
+  paired with a matching alert is rejected by all report verifiers. Production
+  CVD and Sonic1 qualification remain open.
 - MIME/mbox raw line reads, materialized-header traversal, and disk-backed
   multipart/related traversal now honor the shared `MaxScanTime` deadline and
   preserve `CL_ETIMEOUT`; add compiled timeout injection and production mail

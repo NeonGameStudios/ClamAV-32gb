@@ -454,6 +454,8 @@ if expected_signature == "-":
         raise SystemExit("structured report contains an unexpected verdict")
 elif last_alert not in (expected_signature, expected_signature + ".UNOFFICIAL"):
     raise SystemExit("structured report alert does not exactly match the oracle")
+elif report.get("verdict") not in (2, 3):
+    raise SystemExit("structured report detection does not carry a non-clean verdict")
 if expected_exit in (0, 1) and report["status"] != 0:
     raise SystemExit("structured report status is non-success for expected exit")
 if expected_exit == 2 and report["status"] == 0:

@@ -4917,6 +4917,12 @@ status, signature/offset, and the milter rejection marker. Missing, duplicate,
 or unexpected workload records fail the evidence gate. Production CVD and
 Sonic1 qualification remain release gates.
 
+Detection-shaped reports are also required to carry a non-clean verdict
+(`CL_VERDICT_STRONG_INDICATOR` or `CL_VERDICT_POTENTIALLY_UNWANTED`) in addition
+to the oracle's exact alert name. A matching `last_alert` paired with a clean
+verdict is rejected by the service qualification, direct report-protocol, and
+post-run workload verifiers.
+
 ## FILDES unavailable-build failure semantics — 2026-08-21
 
 The legacy clamd `FILDES` worker now returns a non-clean completion when the

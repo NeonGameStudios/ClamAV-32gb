@@ -193,6 +193,8 @@ def validate_report(report: dict, label: str, oracle_row: tuple) -> None:
             fail(f"{label} clean report contains an unexpected alert or verdict")
     elif last_alert not in (expected_signature, f"{expected_signature}.UNOFFICIAL"):
         fail(f"{label} report alert does not exactly match the oracle")
+    elif report.get("verdict") not in (2, 3):
+        fail(f"{label} detection report does not carry a non-clean verdict")
     if expected_exit in (0, 1) and report["status"] != 0:
         fail(f"{label} report status is non-success for expected exit {expected_exit}")
     if expected_exit == 2 and report["status"] == 0:
