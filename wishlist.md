@@ -20,6 +20,10 @@
   failures now mark required inspection incomplete before returning `CL_EMEM`;
   compiled allocation fault injection, parser corpus, sanitizer, and Sonic1
   qualification remain open.
+- OLE2 per-directory extraction-path allocation failures now mark the layer
+  incomplete before returning `CL_EMEM`, matching the existing directory-create
+  failure behavior; compiled Office fault injection, corpus, sanitizer, and
+  Sonic1 qualification remain open.
 - MHTML preclassification now bounds each comment value before the legacy
   in-memory XML reader, checks bounded tag searches, and rejects oversized
   metadata as an explicit resource-incomplete result; add compiled oversized-

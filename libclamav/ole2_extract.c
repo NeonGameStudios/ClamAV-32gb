@@ -1170,6 +1170,7 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                     dirname = (char *)cli_max_malloc(strlen(dir) + 8);
                     if (!dirname) {
                         ole2_listmsg("OLE2: malloc failed for dirname\n");
+                        cli_mark_scan_incomplete(ctx, "OLE2 temporary directory name could not be allocated");
                         ole2_list_delete(&node_list);
                         return CL_EMEM;
                     }

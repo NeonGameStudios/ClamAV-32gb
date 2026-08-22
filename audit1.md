@@ -4789,6 +4789,14 @@ allocation faults non-cacheable and visible even when they occur before
 temporary-object admission. Compiled allocation fault injection, parser
 corpus, sanitizer, and Sonic1 qualification remain open.
 
+## OLE2 extraction-path allocation failure — 2026-08-22
+
+OLE2 property-tree directory extraction now marks the layer incomplete when a
+per-directory temporary path cannot be allocated, before returning `CL_EMEM`.
+This aligns path-name allocation with the existing `mkdir()` failure handling
+and keeps required embedded-stream inspection non-cacheable. Compiled Office
+fault injection, corpus, sanitizer, and Sonic1 qualification remain open.
+
 ## Scan-level temporary-directory setup failures — 2026-08-22
 
 `scan_common()` and recursive child-layer setup previously returned allocation
