@@ -396,6 +396,22 @@ add_test(NAME libclamav COMMAND ${PythonTest_COMMAND};libclamav_test.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 set_property(TEST libclamav PROPERTY ENVIRONMENT ${ENVIRONMENT})
 
+if(ENABLE_LARGE_FILE_QUALIFICATION_TEST)
+    add_test(NAME largefile_library_exact_32g
+        COMMAND check_clamav
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_property(TEST largefile_library_exact_32g PROPERTY
+        ENVIRONMENT
+            ${ENVIRONMENT}
+            CLAMAV_LARGEFILE_QUALIFY=1
+            CK_RUN_SUITE=cl_suite
+            CK_RUN_CASE=largefile_qualification)
+    set_tests_properties(largefile_library_exact_32g PROPERTIES
+        LABELS "largefile;qualification"
+        RUN_SERIAL TRUE
+        TIMEOUT 14400)
+endif()
+
 # The large-file harness must accept a valid per-row detection and fail closed
 # when the scanner returns no detection. This test uses a synthetic corpus and
 # executable scanner stubs, so it does not require a ClamAV binary or large

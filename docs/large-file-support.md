@@ -4952,3 +4952,25 @@ The Linux raw runtime gate also schedules a sparse 32-GiB-plus-one stdin
 boundary and rejects a clean-prefix result, while a separate exact-32-GiB
 stdin run must detect the final marker at offset `34359738304`; the dedicated
 host run remains required.
+
+## Opt-in library exact-edge qualification
+
+The unit suite now includes a dedicated sparse exact-32-GiB library test. It
+creates a file with the marker in the final 64 bytes, loads a private
+signature, scans through `cl_scanfile_ex2()`, and requires the exact
+detection, `DETECTION_TERMINATED` report, 32-GiB root size, and at least one
+complete 32-GiB matcher pass. The ordinary unit suite does not run this
+four-hour-scale test.
+
+Enable it only on a qualified Linux x86-64 build:
+
+```sh
+cmake -S . -B build -DENABLE_TESTS=ON \
+  -DENABLE_LARGE_FILE_QUALIFICATION_TEST=ON
+cmake --build build --target check_clamav
+ctest --test-dir build -R '^largefile_library_exact_32g$' -V
+```
+
+The CTest entry supplies `CLAMAV_LARGEFILE_QUALIFY=1` and selects only the
+dedicated Check case. This is library-path evidence; it does not replace the
+front-end, production-database, sanitizer, or Sonic1 service gates.

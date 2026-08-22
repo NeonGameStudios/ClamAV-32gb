@@ -5,6 +5,10 @@
 - The 32 GiB ingress policy, shared accounting/fail-closed controls, and
   capability manifest are implemented and source-guarded; release defaults
   remain gated on qualification.
+- An opt-in `largefile_library_exact_32g` CTest now creates a sparse exact-
+  32-GiB file, detects a marker in its final 64 bytes through
+  `cl_scanfile_ex2()`, and verifies the structured report and full matcher
+  accounting; the compiled Linux/Sonic1 execution remains open.
 - The generated size/type/offset inventory has been refreshed from the current
   source tree and now remains reproducible through `tools/largefile_inventory.sh`;
   the 158-entry capability manifest validates against the refreshed dispatch

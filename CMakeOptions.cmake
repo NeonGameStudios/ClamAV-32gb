@@ -36,6 +36,10 @@ option(ENABLE_LARGE_FILE_DEFAULTS
     "Use the gated 32 GiB/64 GiB large-file defaults. Requires Linux x86-64 qualification."
     OFF)
 
+option(ENABLE_LARGE_FILE_QUALIFICATION_TEST
+    "Enable the opt-in sparse exact-32-GiB libclamav qualification test. Requires a qualified Linux x86-64 runner."
+    OFF)
+
 set(BYTECODE_RUNTIME
     "interpreter" CACHE STRING
     "Bytecode Runtime, may be: 'llvm', 'interpreter', 'none'.")

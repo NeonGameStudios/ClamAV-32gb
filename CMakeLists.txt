@@ -860,6 +860,18 @@ if(ENABLE_LARGE_FILE_DEFAULTS)
     add_definitions(-DCLAMAV_LARGE_FILE_DEFAULTS=1)
 endif()
 
+if(ENABLE_LARGE_FILE_QUALIFICATION_TEST)
+    if(NOT ENABLE_TESTS)
+        message(FATAL_ERROR
+            "ENABLE_LARGE_FILE_QUALIFICATION_TEST requires ENABLE_TESTS")
+    endif()
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
+       NOT CLAMAV_LARGE_FILE_PROCESSOR MATCHES "^(x86_64|amd64)$")
+        message(FATAL_ERROR
+            "ENABLE_LARGE_FILE_QUALIFICATION_TEST is restricted to the qualified Linux x86-64 profile")
+    endif()
+endif()
+
 # Checks for library functions.
 include(CheckSymbolExists)
 check_symbol_exists(_Exit           "stdlib.h"      HAVE__EXIT)
@@ -1216,6 +1228,7 @@ ${b}        Shared library:     ${e}${ENABLE_SHARED_LIB}
 ${b}        Static library:     ${e}${ENABLE_STATIC_LIB}
 ${b}        Enable UnRAR:       ${e}${ENABLE_UNRAR}
 ${b}        Large-file defaults: ${e}${ENABLE_LARGE_FILE_DEFAULTS}
+${b}        Large-file qualification test: ${e}${ENABLE_LARGE_FILE_QUALIFICATION_TEST}
 ${b}        Examples:           ${e}${ENABLE_EXAMPLES}
 ${b}        Tests:              ${e}${ENABLE_TESTS}
 ${b}        Build man pages:    ${e}${ENABLE_MAN_PAGES}

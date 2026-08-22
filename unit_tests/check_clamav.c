@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <stdlib.h>
 #include <limits.h>
@@ -1247,6 +1248,97 @@ START_TEST(test_scan_report_complete_and_json)
     free(path);
 }
 END_TEST
+
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+START_TEST(test_library_exact_32g_tail_detection)
+{
+    static const uint64_t file_size       = UINT64_C(32) * 1024 * 1024 * 1024;
+    static const uint64_t marker_offset   = file_size - 64;
+    static const char marker[]            = "CLAMAV-LF-32G-EDGE";
+    static const char signature[]         =
+        "LargeFile.Library.32G:0:*:434c414d41562d4c462d3332472d4544474500\n";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_scan_report_limits_t limits;
+    cl_scan_completion_t completion;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    char signature_path[PATH_MAX];
+    char *path = NULL;
+    unsigned int sigs = 0;
+    cl_error_t status;
+    int fd = -1;
+    int sigfd = -1;
+
+    ck_assert_msg(getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL,
+                  "the exact-32-GiB test requires CLAMAV_LARGEFILE_QUALIFY=1");
+
+    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path), "%s/largefile-library-edge.ndb", tmpdir),
+                     (int)strlen(tmpdir) + (int)strlen("/largefile-library-edge.ndb"));
+    sigfd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_int_ge(sigfd, 0);
+    ck_assert_int_eq(write(sigfd, signature, sizeof(signature) - 1), (ssize_t)(sizeof(signature) - 1));
+    ck_assert_int_eq(close(sigfd), 0);
+    sigfd = -1;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, (long long)file_size), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, (long long)CLI_MAX_LOGICAL_SCAN_SIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANTIME, 1000U * 60U * 240U), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_MATCHER_WORK, (long long)CLI_MAX_MATCHER_WORK), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_TEMPORARY_SIZE, (long long)CLI_MAX_TEMPORARY_SIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_CONTIGUOUS_SIZE, (long long)CLI_MAX_CONTIGUOUS_SIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, (long long)CLI_MAX_CONTIGUOUS_SIZE), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_int_eq(ftruncate(fd, (off_t)file_size), 0);
+    ck_assert_int_eq(lseek(fd, (off_t)marker_offset, SEEK_SET), (off_t)marker_offset);
+    ck_assert_int_eq(write(fd, marker, sizeof(marker) - 1), (ssize_t)(sizeof(marker) - 1));
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    status = cl_scanfile_ex2(path, &verdict, &last_alert, NULL,
+                             engine, &options, NULL, NULL, NULL, NULL,
+                             NULL, NULL, &report);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "LargeFile.Library.32G.UNOFFICIAL");
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_DETECTION_TERMINATED);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_limits(report, &limits), CL_SUCCESS);
+    ck_assert_uint_eq(metrics.root_size, file_size);
+    ck_assert_uint_ge(metrics.matcher_bytes, file_size);
+    ck_assert_msg(metrics.logical_bytes >= marker_offset + sizeof(marker) - 1,
+                  "library scan stopped before the exact-tail marker: " STDu64,
+                  metrics.logical_bytes);
+    ck_assert_uint_eq(limits.max_file_size, file_size);
+    ck_assert_uint_eq(limits.max_scan_size, CLI_MAX_LOGICAL_SCAN_SIZE);
+    ck_assert_uint_eq(limits.max_matcher_work, CLI_MAX_MATCHER_WORK);
+    ck_assert_uint_eq(limits.max_temporary_size, CLI_MAX_TEMPORARY_SIZE);
+    ck_assert_uint_eq(limits.max_contiguous_size, CLI_MAX_CONTIGUOUS_SIZE);
+
+    cl_scan_report_free(report);
+    cl_engine_free(engine);
+    cli_unlink(path);
+    free(path);
+}
+END_TEST
+#endif
 
 START_TEST(test_descriptor_temporary_reservation_is_reported)
 {
@@ -17024,6 +17116,9 @@ static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+    TCase *tc_largefile;
+#endif
     TCase *tc_cl_scan  = tcase_create("cl_scan_api");
     TCase *tc_dmg      = tcase_create("dmg");
     TCase *tc_gif      = tcase_create("gif");
@@ -17037,6 +17132,14 @@ static Suite *test_cl_suite(void)
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+    if (getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL) {
+        tc_largefile = tcase_create("largefile_qualification");
+        suite_add_tcase(s, tc_largefile);
+        tcase_add_checked_fixture(tc_largefile, cl_setup, cl_teardown);
+        tcase_add_test(tc_largefile, test_library_exact_32g_tail_detection);
+    }
+#endif
     suite_add_tcase(s, tc_dmg);
     tcase_add_checked_fixture(tc_dmg, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_gif);
