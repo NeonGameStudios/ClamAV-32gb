@@ -5193,6 +5193,57 @@ START_TEST(test_cryptff_temporary_quota_is_fail_visible)
 }
 END_TEST
 
+#ifndef _WIN32
+START_TEST(test_cryptff_time_limit_is_fail_visible)
+{
+    static const uint8_t cryptff[] = {
+        0xb6, 0xb9, 0xac, 0xae, 0xfe, 0xff, 0xff, 0xff,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x9c, 0x8d, 0x86, 0x8f, 0x8b, 0x99, 0x8a, 0x8b,
+    };
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(cryptff, sizeof(cryptff));
+    ck_assert_ptr_nonnull(map);
+    layers[0].fmap           = map;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_magic_scan(&ctx, CL_TYPE_CRYPTFF);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "CryptFF inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+#endif
+
 START_TEST(test_gzip_staging_failures_are_fail_visible)
 {
     static const uint8_t input[] = "GZip staging fault injection";
@@ -19092,6 +19143,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_output_close_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_cryptff_staging_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_cryptff_temporary_quota_is_fail_visible);
+#ifndef _WIN32
+    tcase_add_test(tc_cl, test_cryptff_time_limit_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_gzip_staging_failures_are_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_zip_truncated_entry_paths_are_fail_visible);

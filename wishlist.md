@@ -571,6 +571,10 @@
   being flattened into truncation, while parser entry and chunk traversal
   honor the shared deadline and preserve `CL_ETIMEOUT`; add compiled
   callback/timeout-fault and production RIFF corpus qualification.
+- CryptFF’s bounded decrypt-and-spool path now checks the shared deadline at
+  parser entry and for each source chunk, preserving `CL_ETIMEOUT` through
+  temporary-file cleanup; add compiled timeout-fault and production CryptFF
+  corpus qualification.
 - Old-format SIS metadata table, dependency-header, string, header, and
   language-table failures now remain incomplete/non-cacheable with distinct
   `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and

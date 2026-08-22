@@ -3298,6 +3298,16 @@ Timeouts release decoder state and temporary output before returning
 regression and source guards cover the change; compiled SWF corpus, sanitizer,
 and Sonic1 qualification remain release gates.
 
+## CryptFF traversal deadlines — 2026-08-22
+
+CryptFF already decrypted through a fixed buffer and quota-accounted temporary
+output, but it could spend an unbounded time walking source chunks. The parser
+now checks the shared deadline before admission and before each source read,
+marks timeout as incomplete, and preserves `CL_ETIMEOUT` through its existing
+temporary close/removal cleanup. A dispatch-level expired-context regression
+and source guards cover the contract; compiled CryptFF corpus, sanitizer, and
+Sonic1 qualification remain release gates.
+
 ## JPEG segment and Photoshop-resource deadlines — 2026-08-22
 
 JPEG now checks the shared scan deadline before initial header inspection,

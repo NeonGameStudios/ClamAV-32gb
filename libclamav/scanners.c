@@ -4344,6 +4344,12 @@ static cl_error_t cli_scancryptff(cli_ctx *ctx)
     /* Skip the CryptFF file header */
     pos = 0x10;
 
+    ret = cli_checktimelimit(ctx);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "CryptFF inspection reached the configured time limit");
+        return ret;
+    }
+
     if (ctx->fmap->len < pos) {
         cli_mark_scan_incomplete(ctx, "CryptFF file header is truncated");
         return CL_EPARSE;
@@ -4370,6 +4376,12 @@ static cl_error_t cli_scancryptff(cli_ctx *ctx)
     }
 
     while (pos < ctx->fmap->len) {
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "CryptFF inspection reached the configured time limit");
+            break;
+        }
+
         src = fmap_need_off_once_len(ctx->fmap, pos, FILEBUFF, &bread);
         if (!src || !bread) {
             cli_dbgmsg("CryptFF: Can't read source at offset %zu\n", pos);
