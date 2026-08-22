@@ -2358,6 +2358,15 @@ Source guards and `git diff --check` are the current local evidence.
 Fault-injected cleanup, dependency-complete builds, and supported-build
 Sonic1 qualification remain release gates.
 
+## PE unpacked-output deadlines — 2026-08-22
+
+The direct UPX/FSG materialization path now re-checks the shared deadline
+immediately before writing its bounded output, and the common rebuilt-PE macro
+re-checks it immediately before handing the staged descriptor to nested scan.
+Write and timeout failures remain incomplete and non-cacheable; deterministic
+timeout injection, compiled PE unpacker corpus, sanitizer, and Sonic1
+qualification remain release gates.
+
 ## Structured-text traversal deadlines — 2026-08-22
 
 The structured credit-card/SSN detector consumed 8 KiB fmap windows without a
@@ -4121,7 +4130,8 @@ and could be rejected by the 1 GiB individual-allocation boundary even though
 no filter decoding was required. They now copy to the extracted child in
 64 KiB chunks while preserving native-width containing-file coordinates.
 Decoded/filtered stream output is admitted through the same caller-owned
-temporary reservation used by `pdf_extract_obj`. Filtered decoder input and
+temporary reservation used by `pdf_extract_obj`, with both paths re-checking the
+shared deadline after admission and immediately before each write. Filtered decoder input and
 decoder growth above the 1 GiB individual-allocation boundary remain an
 explicit unsupported/incomplete result; full streaming filter conversion,
 compiled PDF corpus, sanitizer, and Sonic1 qualification remain open.

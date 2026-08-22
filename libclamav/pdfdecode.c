@@ -116,6 +116,10 @@ static cl_error_t pdf_write_output(struct pdf_struct *pdf, int fout, const void 
     if (pdf == NULL || pdf->ctx == NULL || data == NULL || fout < 0)
         return CL_ENULLARG;
 
+    status = pdf_checktimelimit(pdf, "PDF stream output admission reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
+
     if (pdf->temporary_reserved != NULL) {
         if (UINT64_MAX - *pdf->temporary_reserved < (uint64_t)length) {
             cli_mark_scan_incomplete(pdf->ctx, "PDF stream temporary output size overflowed");
@@ -128,6 +132,15 @@ static cl_error_t pdf_write_output(struct pdf_struct *pdf, int fout, const void 
             return status;
         }
         *pdf->temporary_reserved += (uint64_t)length;
+    }
+
+    status = pdf_checktimelimit(pdf, "PDF stream output write reached the configured time limit");
+    if (status != CL_SUCCESS) {
+        if (pdf->temporary_reserved != NULL) {
+            cli_scan_release_temporary(pdf->ctx, (uint64_t)length);
+            *pdf->temporary_reserved -= (uint64_t)length;
+        }
+        return status;
     }
 
     if (cli_writen(fout, data, length) != length) {

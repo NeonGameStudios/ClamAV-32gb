@@ -58,6 +58,9 @@
 - PDF packed object references now reject object-number and generation-width
   overflow instead of aliasing another object; full malformed-reference corpus
   and parser-family qualification remain open.
+- PDF raw and decoded stream output now re-checks the shared deadline after
+  temporary admission and immediately before each write; add deterministic
+  output-timeout injection and full PDF corpus qualification.
 - XLM BIFF data and OfficeArt drawing groups now use the shared bounded
   allocator with checked cumulative growth; allocation-ceiling and arithmetic
   failures remain explicit incomplete results.
@@ -85,6 +88,9 @@
 - PE32 MEW, Upack, FSG, UPX, WWPack, and Aspack paths now reject checked
   32-bit size/coordinate additions that would wrap before allocation or
   unpacked scanning.
+- PE UPX/FSG direct output and generic rebuilt-PE nested handoffs now re-check
+  the shared deadline; add deterministic output-timeout injection and complete
+  PE unpacker corpus qualification.
 - HFS+ inline compressed output above its 64 KiB decoder buffer is now an
   explicit resource-incomplete result, and supported output uses the shared
   allocation guard.

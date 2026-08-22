@@ -243,6 +243,15 @@ static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
                 return CL_ESEEK;                                                                                \
             }                                                                                                   \
             cli_dbgmsg("***** Scanning rebuilt PE file *****\n");                                               \
+            ret = cli_checktimelimit(ctx);                                                                        \
+            if (ret != CL_SUCCESS) {                                                                              \
+                cli_mark_scan_incomplete(ctx, NAME ": unpacked output nested-scan handoff reached the configured time limit"); \
+                CLI_UNP_RELEASE();                                                                                \
+                close(ndesc);                                                                                     \
+                CLI_TMPUNLK();                                                                                    \
+                free(tempfile);                                                                                   \
+                return ret;                                                                                        \
+            }                                                                                                     \
             if (temporary_reserved) \
                 ret = cli_magic_scan_desc_type_reserved(ndesc, tempfile, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE); \
             else \
@@ -4279,7 +4288,19 @@ int cli_scanpe(cli_ctx *ctx)
         if (pe_json != NULL)
             cli_jsonstr(pe_json, "Packer", "UPX");
 
-        if ((unsigned int)write(ndesc, dest, dsize) != dsize) {
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "PE UPX/FSG output reached the configured time limit");
+            free(dest);
+            close(ndesc);
+            if (!ctx->engine->keeptmp && cli_unlink(tempfile))
+                cli_mark_scan_incomplete(ctx, "PE unpacked output temporary file could not be removed");
+            CLI_UNP_RELEASE();
+            free(tempfile);
+            return ret;
+        }
+
+        if (cli_writen(ndesc, dest, (size_t)dsize) != (size_t)dsize) {
             cli_dbgmsg("cli_scanpe: UPX/FSG: Can't write %d bytes\n", dsize);
             cli_mark_scan_incomplete(ctx, "PE UPX/FSG unpacked output could not be written completely");
             free(dest);
