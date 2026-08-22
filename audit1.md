@@ -2201,6 +2201,16 @@ misreported as confirmed malformed content. A focused report regression covers
 the encrypted-header reason; compiled current-head and service qualification
 remain release gates.
 
+## Script normalization deadlines — 2026-08-22
+
+Script normalization had two large-map paths that could continue through
+bounded fmap windows and normalized-output writes without checking the shared
+deadline. Parser entry, file-backed normalization, and in-memory matcher-window
+processing now preserve `CL_ETIMEOUT` and run the existing buffer, matcher, file,
+and temporary-reservation cleanup. A dispatch-level expired-context regression
+and source guards cover the contract; compiled large-script corpus, sanitizer,
+and Sonic1 qualification remain release gates.
+
 ## ZIP variable-header regression expansion — 2026-08-20
 
 The focused ZIP truncation regression now exercises all three variable local

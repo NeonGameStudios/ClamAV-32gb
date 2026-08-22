@@ -583,6 +583,10 @@
   now check the shared deadline at bounded input boundaries and preserve
   `CL_ETIMEOUT` through normalized-output cleanup; add compiled HTML timeout,
   script-encoder, UTF-16, sanitizer, and production corpus qualification.
+- Script normalization now checks the shared deadline at parser entry and in
+  both file-backed and in-memory bounded-map paths, preserving `CL_ETIMEOUT`
+  through matcher-buffer and temporary-output cleanup; add compiled large-script
+  timeout and production corpus qualification.
 - Old-format SIS metadata table, dependency-header, string, header, and
   language-table failures now remain incomplete/non-cacheable with distinct
   `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and

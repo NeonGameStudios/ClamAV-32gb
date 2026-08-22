@@ -3663,6 +3663,12 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_scanscript()\n");
 
+    ret = cli_checktimelimit(ctx);
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Script normalization reached the configured time limit");
+        goto done;
+    }
+
     /* CL_ENGINE_MAX_SCRIPTNORMALIZE */
     if (curr_len > ctx->engine->maxscriptnormalize) {
         cli_dbgmsg("cli_scanscript: exiting (file larger than MaxScriptSize)\n");
@@ -3710,6 +3716,13 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
         size_t map_off = 0;
         while (map_off < map->len) {
             size_t written;
+
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "Script normalization reached the configured time limit");
+                goto done;
+            }
+
             if (!(written = text_normalize_map(&state, map, map_off)))
                 break;
             map_off += written;
@@ -3771,6 +3784,12 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
         }
 
         while (1) {
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "Script normalization reached the configured time limit");
+                goto done;
+            }
+
             size_t len = MIN(map->pgsz, map->len - at);
             buff       = fmap_need_off_once(map, at, len);
             if (len && !buff) {
