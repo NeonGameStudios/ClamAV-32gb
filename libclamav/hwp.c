@@ -360,6 +360,7 @@ cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
         header = cli_jsonobj(ctx->this_layer_metadata_json, "Hwp5Header");
         if (!header) {
             cli_errmsg("HWP5.x: No memory for Hwp5Header object\n");
+            cli_mark_scan_incomplete(ctx, "HWP5 header metadata could not be allocated");
             return CL_EMEM;
         }
 
@@ -372,6 +373,7 @@ cl_error_t cli_hwp5header(cli_ctx *ctx, hwp5_header_t *hwp5)
         flags = cli_jsonarray(header, "Flags");
         if (!flags) {
             cli_errmsg("HWP5.x: No memory for Hwp5Header/Flags array\n");
+            cli_mark_scan_incomplete(ctx, "HWP5 header flags metadata could not be allocated");
             return CL_EMEM;
         }
 
@@ -607,12 +609,14 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
         header = cli_jsonobj(ctx->this_layer_metadata_json, "Hwp3Header");
         if (!header) {
             cli_errmsg("HWP3.x: No memory for Hwp3Header object\n");
+            cli_mark_scan_incomplete(ctx, "HWP3 header metadata could not be allocated");
             return CL_EMEM;
         }
 
         flags = cli_jsonarray(header, "Flags");
         if (!flags) {
             cli_errmsg("HWP5.x: No memory for Hwp5Header/Flags array\n");
+            cli_mark_scan_incomplete(ctx, "HWP3 header flags metadata could not be allocated");
             return CL_EMEM;
         }
 
@@ -631,8 +635,10 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
 
         /* Printed File Name */
         str = convert_hstr_to_utf8((char *)(hwp3_ptr + DI_PNAME), 40, "HWP3.x", &iret);
-        if (!str)
+        if (!str) {
+            cli_mark_scan_incomplete(ctx, "HWP3 document-info name metadata could not be allocated");
             return CL_EMEM;
+        }
 
         if (iret == CL_VIRUS)
             cli_jsonbool(header, "PrintName_base64", 1);
@@ -643,8 +649,10 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
 
         /* Annotation */
         str = convert_hstr_to_utf8((char *)(hwp3_ptr + DI_ANNOTE), 24, "HWP3.x", &iret);
-        if (!str)
+        if (!str) {
+            cli_mark_scan_incomplete(ctx, "HWP3 document-info annotation metadata could not be allocated");
             return CL_EMEM;
+        }
 
         if (iret == CL_VIRUS)
             cli_jsonbool(header, "Annotation_base64", 1);
@@ -681,13 +689,16 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
     summary = cli_jsonobj(ctx->this_layer_metadata_json, "Hwp3SummaryInfo");
     if (!summary) {
         cli_errmsg("HWP3.x: No memory for json object\n");
+        cli_mark_scan_incomplete(ctx, "HWP3 document-summary metadata could not be allocated");
         return CL_EMEM;
     }
 
     for (i = 0; i < NUM_DOCSUMMARY_FIELDS; i++) {
         str = convert_hstr_to_utf8((char *)(hwp3_ptr + hwp3_docsummary_fields[i].offset), 112, "HWP3.x", &iret);
-        if (!str)
+        if (!str) {
+            cli_mark_scan_incomplete(ctx, "HWP3 document-summary field could not be allocated");
             return CL_EMEM;
+        }
 
         if (iret == CL_VIRUS) {
             char *b64;
@@ -696,6 +707,7 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
             if (!b64) {
                 cli_errmsg("HWP3.x: Failed to allocate memory for b64 boolean\n");
                 free(str);
+                cli_mark_scan_incomplete(ctx, "HWP3 document-summary base64 metadata could not be allocated");
                 return CL_EMEM;
             }
             snprintf(b64, b64len, "%s_base64", hwp3_docsummary_fields[i].name);
@@ -706,8 +718,10 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
         hwp3_debug("HWP3.x: %s, %s\n", hwp3_docsummary_fields[i].name, str);
         ret = cli_jsonstr(summary, hwp3_docsummary_fields[i].name, str);
         free(str);
-        if (ret != CL_SUCCESS)
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HWP3 document-summary field could not be recorded");
             return ret;
+        }
     }
 
     return CL_SUCCESS;
@@ -1609,12 +1623,14 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         infoblk_1 = cli_jsonobj(ctx->this_layer_metadata_json, "InfoBlk_1");
         if (!infoblk_1) {
             cli_errmsg("HWP5.x: No memory for information block object\n");
+            cli_mark_scan_incomplete(ctx, "HWP3 information-block metadata could not be allocated");
             return CL_EMEM;
         }
 
         contents = cli_jsonarray(infoblk_1, "Contents");
         if (!contents) {
             cli_errmsg("HWP5.x: No memory for information block contents array\n");
+            cli_mark_scan_incomplete(ctx, "HWP3 information-block contents metadata could not be allocated");
             return CL_EMEM;
         }
 
@@ -1637,6 +1653,7 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         entry = cli_jsonobj(contents, NULL);
         if (!entry) {
             cli_errmsg("HWP5.x: No memory for information block entry object\n");
+            cli_mark_scan_incomplete(ctx, "HWP3 information-block entry metadata could not be allocated");
             return CL_EMEM;
         }
 

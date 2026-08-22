@@ -4797,6 +4797,15 @@ This aligns path-name allocation with the existing `mkdir()` failure handling
 and keeps required embedded-stream inspection non-cacheable. Compiled Office
 fault injection, corpus, sanitizer, and Sonic1 qualification remain open.
 
+## HWP metadata allocation failures — 2026-08-22
+
+HWP3/HWP5 metadata objects, converted strings, information-block entries, and
+summary-field recording now mark the layer incomplete with explicit reasons
+before returning allocation or JSON-recording errors. This preserves the
+fail-visible contract for metadata collection without changing raw or nested
+content scanning behavior. Compiled HWP fault injection, corpus, sanitizer,
+and Sonic1 qualification remain open.
+
 ## Scan-level temporary-directory setup failures — 2026-08-22
 
 `scan_common()` and recursive child-layer setup previously returned allocation

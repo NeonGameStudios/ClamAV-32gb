@@ -24,6 +24,10 @@
   incomplete before returning `CL_EMEM`, matching the existing directory-create
   failure behavior; compiled Office fault injection, corpus, sanitizer, and
   Sonic1 qualification remain open.
+- HWP3/HWP5 metadata object, converted-string, information-block, and record
+  allocation failures now retain explicit incomplete reasons instead of relying
+  on a generic parser unwind; compiled HWP fault injection, corpus, sanitizer,
+  and Sonic1 qualification remain open.
 - MHTML preclassification now bounds each comment value before the legacy
   in-memory XML reader, checks bounded tag searches, and rejects oversized
   metadata as an explicit resource-incomplete result; add compiled oversized-
