@@ -139,6 +139,10 @@
   payload read/coordinate failures as non-cacheable `CL_EREAD`/`CL_EFORMAT`
   results instead of silently omitting version metadata; compiled PE metadata
   corpus and callback-fault qualification remain open.
+- The enabled PE Swizzor resource heuristic now propagates recursive resource
+  read failures and malformed coordinates instead of treating them as an
+  ignorable clean heuristic result; compiled Swizzor corpus and callback-fault
+  qualification remain open.
 - PE icon bitmap headers now use native-width map coordinates and reject
   declared header ranges that extend beyond the input; add compiled PE/icon
   corpus and sanitizer qualification.

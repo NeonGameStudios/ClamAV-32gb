@@ -601,7 +601,7 @@ void findres(uint32_t by_type, uint32_t by_name, fmap_t *map, struct cli_exe_inf
     (void)findres_ex(by_type, by_name, map, peinfo, cb, opaque);
 }
 
-static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struct cli_exe_info *peinfo, size_t fsize, unsigned int level, uint32_t type, unsigned int *maxres, struct swizz_stats *stats)
+static cl_error_t cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struct cli_exe_info *peinfo, size_t fsize, unsigned int level, uint32_t type, unsigned int *maxres, struct swizz_stats *stats)
 {
     unsigned int err = 0, i;
     const uint8_t *resdir;
@@ -612,16 +612,21 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
     size_t entry_base;
     size_t entry_bytes;
 
-    if (level > 2 || !*maxres) return;
+    if (level > 2 || !*maxres)
+        return CL_SUCCESS;
     *maxres -= 1;
-    if (err || !(resdir = fmap_need_off_once(map, rawaddr, 16)))
-        return;
+    if (err)
+        return CL_EFORMAT;
+    if ((size_t)rawaddr > fsize || fsize - (size_t)rawaddr < 16)
+        return CL_EFORMAT;
+    if (!(resdir = fmap_need_off_once(map, rawaddr, 16)))
+        return CL_EREAD;
     named   = (uint16_t)cli_readint16(resdir + 12);
     unnamed = (uint16_t)cli_readint16(resdir + 14);
 
     entries = /*named+*/ unnamed;
     if (!entries)
-        return;
+        return CL_SUCCESS;
 
     /* The resource directory header is 16 bytes, followed by named and
      * unnamed 8-byte entries. Read each unnamed entry independently so a
@@ -629,18 +634,18 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
      * window across nested fmap operations. */
     if ((size_t)rawaddr > fsize || fsize - (size_t)rawaddr < 16) {
         cli_dbgmsg("cli_parseres_special: resource directory header coordinate is out of range\n");
-        return;
+        return CL_EFORMAT;
     }
     entry_base = (size_t)rawaddr + 16;
     if ((size_t)named > (fsize - entry_base) / sizeof(uint32_t) / 2) {
         cli_dbgmsg("cli_parseres_special: named resource entries exceed the containing map\n");
-        return;
+        return CL_EFORMAT;
     }
     entry_base += (size_t)named * sizeof(uint32_t) * 2;
     entry_bytes = (size_t)entries * sizeof(uint32_t) * 2;
     if (entry_bytes > fsize - entry_base) {
         cli_dbgmsg("cli_parseres_special: unnamed resource entries exceed the containing map\n");
-        return;
+        return CL_EFORMAT;
     }
 
     /*for (i=0; i<named; i++) {
@@ -663,8 +668,7 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
         entry = fmap_need_off_once(map, entry_offset, sizeof(uint32_t) * 2);
         if (!entry) {
             cli_dbgmsg("cli_parseres_special: resource entry could not be read at:%zu\n", entry_offset);
-            stats->errors++;
-            break;
+            return CL_EREAD;
         }
         id = cli_readint32(entry) & 0x7fffffff;
         if (level == 0) {
@@ -696,17 +700,28 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
             uint32_t child_rva = offs & 0x7fffffff;
 
             if (base > UINT32_MAX - child_rva) {
-                stats->errors++;
-                continue;
+                cli_dbgmsg("cli_parseres_special: child resource RVA overflowed\n");
+                return CL_EFORMAT;
             }
-            cli_parseres_special(base, base + child_rva, map, peinfo, fsize, level + 1, type, maxres, stats);
+            {
+                cl_error_t status = cli_parseres_special(base, base + child_rva, map, peinfo, fsize, level + 1, type, maxres, stats);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
         } else {
             if (base > UINT32_MAX - offs) {
-                stats->errors++;
-                continue;
+                cli_dbgmsg("cli_parseres_special: resource RVA overflowed\n");
+                return CL_EFORMAT;
             }
             rawaddr = cli_rawaddr(base + offs, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size);
-            if (!err && (resdir = fmap_need_off_once(map, rawaddr, 16))) {
+            if (err)
+                return CL_EFORMAT;
+            if ((size_t)rawaddr > fsize || fsize - (size_t)rawaddr < 16)
+                return CL_EFORMAT;
+            if (!(resdir = fmap_need_off_once(map, rawaddr, 16)))
+                return CL_EREAD;
+
+            {
                 uint32_t isz = cli_readint32(resdir + 4);
                 const uint8_t *str;
 
@@ -715,19 +730,21 @@ static void cli_parseres_special(uint32_t base, uint32_t rva, fmap_t *map, struc
                     cli_dbgmsg("cli_parseres_special: invalid resource table entry: %lu + %lu\n",
                                (unsigned long)rawaddr,
                                (unsigned long)isz);
-                    stats->errors++;
-                    continue;
+                    return CL_EFORMAT;
                 }
                 if ((id & 0xff) != 0x09) /* english res only */
                     continue;
                 {
                     uint32_t inspect_size = (uint32_t)MIN((size_t)isz, (size_t)PE_SWIZZ_MAX_READ);
-                    if ((str = fmap_need_off_once(map, rawaddr, inspect_size)))
-                        cli_detect_swizz_str(str, inspect_size, stats, type);
+                    if (!(str = fmap_need_off_once(map, rawaddr, inspect_size)))
+                        return CL_EREAD;
+                    cli_detect_swizz_str(str, inspect_size, stats, type);
                 }
             }
         }
     }
+
+    return CL_SUCCESS;
 }
 
 static cl_error_t cli_hashsect(cli_ctx *ctx, const struct cli_exe_section *s, uint8_t **digest, const bool *generate)
@@ -3552,7 +3569,16 @@ int cli_scanpe(cli_ctx *ctx)
                 cli_exe_info_destroy(peinfo);
                 return CL_EMEM;
             } else {
-                cli_parseres_special(peinfo->dirs[2].VirtualAddress, peinfo->dirs[2].VirtualAddress, map, peinfo, fsize, 0, 0, &m, stats);
+                ret = cli_parseres_special(peinfo->dirs[2].VirtualAddress, peinfo->dirs[2].VirtualAddress, map, peinfo, fsize, 0, 0, &m, stats);
+                if (ret != CL_SUCCESS) {
+                    if (ret == CL_EREAD)
+                        cli_mark_scan_incomplete(ctx, "PE Swizzor resource could not be read completely");
+                    else
+                        cli_mark_scan_incomplete(ctx, "PE Swizzor resource tree is malformed or out of range");
+                    free(stats);
+                    cli_exe_info_destroy(peinfo);
+                    return ret;
+                }
                 if ((ret = cli_detect_swizz(stats)) == CL_VIRUS) {
                     ret = cli_append_potentially_unwanted(ctx, "Heuristics.Trojan.Swizzor.Gen");
                     if (ret != CL_SUCCESS) {

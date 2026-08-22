@@ -5327,3 +5327,14 @@ backing-read failures as non-cacheable `CL_EFORMAT` or `CL_EREAD` results. A
 focused callback regression covers a confirmed resource-tree read failure;
 compiled PE metadata corpus, sanitizer, and supported-build qualification
 remain release gates.
+
+## PE Swizzor resource read failures — 2026-08-22
+
+The enabled Swizzor resource heuristic previously treated failed recursive
+resource windows and malformed resource coordinates as ignorable heuristic
+noise, allowing a clean result after incomplete inspection. Its bounded walk
+now propagates `CL_EREAD` for backing-read failures and `CL_EFORMAT` for
+malformed or out-of-range coordinates to `cli_scanpe`, which marks the layer
+incomplete and non-cacheable. A focused normal-scan callback regression covers
+the confirmed resource-tree root; compiled Swizzor corpus, sanitizer, and
+supported-build qualification remain release gates.

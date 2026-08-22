@@ -3880,3 +3880,13 @@ and non-cacheable before relative version metadata can be omitted. The focused
 regression faults the confirmed resource-tree root in the checked-in PE
 fixture; compiled PE metadata corpus, sanitizer, and supported-build
 qualification remain release gates.
+
+## PE Swizzor resource read failures — 2026-08-22
+
+The enabled Swizzor heuristic used to return a clean heuristic result after a
+recursive resource read failed or a resource coordinate was malformed. The
+resource walker now returns `CL_EREAD` for in-range fmap callback failures and
+`CL_EFORMAT` for malformed/out-of-range coordinates; `cli_scanpe` records the
+failure as incomplete and non-cacheable before returning. The focused normal
+PE scan regression faults the confirmed resource-tree root; compiled Swizzor
+corpus, sanitizer, and supported-build qualification remain release gates.
