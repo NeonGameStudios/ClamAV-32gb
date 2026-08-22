@@ -27,7 +27,12 @@ use std::{
 
 use log::debug;
 
-use crate::{sys, util::str_from_ptr};
+use crate::{
+    sys,
+    util::{check_scan_time_limit, str_from_ptr},
+};
+
+const RUST_FMAP_TIME_LIMIT_REASON: &[u8] = b"Rust fmap reader reached the configured time limit\0";
 
 /// Error enumerates all possible errors returned by this library.
 #[derive(thiserror::Error, Debug)]
@@ -60,16 +65,67 @@ pub enum Error {
 pub struct FMapReader<'a> {
     map: &'a FMap,
     position: u64,
+    scan_ctx: Option<*mut sys::cli_ctx>,
+    deadline_status: Option<sys::cl_error_t>,
 }
 
 impl<'a> FMapReader<'a> {
     const MAX_READ_CHUNK: usize = 1024 * 1024;
 
     pub fn new(map: &'a FMap) -> Self {
-        Self { map, position: 0 }
+        Self {
+            map,
+            position: 0,
+            scan_ctx: None,
+            deadline_status: None,
+        }
     }
 
-    fn read_window(&self, at: usize, dst: &mut [u8]) -> io::Result<usize> {
+    /// Create a reader that checks the shared C scan deadline before every
+    /// fmap read and seek. The context-free constructor remains available for
+    /// parser/library callers that do not own a scan context.
+    pub fn new_with_context(map: &'a FMap, scan_ctx: *mut sys::cli_ctx) -> Self {
+        Self {
+            map,
+            position: 0,
+            scan_ctx: (!scan_ctx.is_null()).then_some(scan_ctx),
+            deadline_status: None,
+        }
+    }
+
+    fn check_scan_deadline(&mut self) -> io::Result<()> {
+        if let Some(status) = self.deadline_status {
+            return Err(io::Error::new(
+                ErrorKind::TimedOut,
+                format!("Rust fmap reader stopped with status {status}"),
+            ));
+        }
+
+        if let Some(scan_ctx) = self.scan_ctx {
+            let status = unsafe { check_scan_time_limit(scan_ctx) };
+            if status != sys::cl_error_t_CL_SUCCESS {
+                self.deadline_status = Some(status);
+                unsafe {
+                    sys::cli_mark_scan_incomplete(
+                        scan_ctx,
+                        RUST_FMAP_TIME_LIMIT_REASON.as_ptr().cast(),
+                    );
+                }
+                return Err(io::Error::new(
+                    ErrorKind::TimedOut,
+                    "Rust fmap reader reached the configured time limit",
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn deadline_status(&self) -> Option<sys::cl_error_t> {
+        self.deadline_status
+    }
+
+    fn read_window(&mut self, at: usize, dst: &mut [u8]) -> io::Result<usize> {
         if dst.is_empty() {
             return Ok(0);
         }
@@ -117,6 +173,10 @@ impl<'a> FMapReader<'a> {
 
 impl Read for FMapReader<'_> {
     fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
+        if !dst.is_empty() {
+            self.check_scan_deadline()?;
+        }
+
         let len = self.map.len() as u64;
         if self.position >= len || dst.is_empty() {
             return Ok(0);
@@ -140,6 +200,8 @@ impl Read for FMapReader<'_> {
 
 impl Seek for FMapReader<'_> {
     fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+        self.check_scan_deadline()?;
+
         let next = match from {
             SeekFrom::Start(offset) => offset,
             SeekFrom::Current(offset) => Self::checked_position(self.position, offset)?,

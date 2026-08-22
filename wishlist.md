@@ -78,7 +78,9 @@
   their operational status instead of becoming generic parse errors; add
   compiled malformed/archive-corpus and sanitizer qualification.
 - The Rust fmap adapter now rejects out-of-range `need_off()` windows before
-  callback or slice formation; add compiled Rust/layout qualification.
+  callback or slice formation, and its scanner-facing reader checks shared
+  read/seek deadlines while preserving `CL_ETIMEOUT`; add compiled
+  Rust/layout and parser-corpus qualification.
 - Rust OneNote fixed-prefix truncation versus fmap read failure, and ALZ field
   read failures, now retain distinct non-clean statuses; add compiled Rust and
   parser-corpus qualification.

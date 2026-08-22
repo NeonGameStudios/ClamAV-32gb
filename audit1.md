@@ -3397,3 +3397,15 @@ callback. RAR archive open, header, skip, and extraction boundaries now retain
 decoder work. A callback-injected public scan regression and source guards
 cover the contract; compiled UnRAR backend, malformed/corpus, sanitizer, and
 Sonic1 qualification remain release gates.
+
+## Rust fmap reader deadlines — 2026-08-22
+
+The scanner-facing Rust `FMapReader` previously bounded coordinates and
+window residency but did not check the shared scan deadline during reads or
+seeks. It now has an opt-in scan-context constructor, checks before every
+non-empty read and seek, marks the scan incomplete, and preserves
+`CL_ETIMEOUT` through OneNote, LHA/LZH, ALZ, and Rust root-spool error
+handling. The context-free constructor remains available for parser/library
+tests. Focused source guards and Rust status-mapping coverage are present;
+compiled Rust/layout, parser-corpus, sanitizer, and Sonic1 qualification
+remain release gates.

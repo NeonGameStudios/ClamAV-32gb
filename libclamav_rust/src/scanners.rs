@@ -22,7 +22,7 @@
 
 use std::{
     ffi::{c_char, CStr, CString},
-    io::Read,
+    io::{self, Read},
     panic,
     path::Path,
     ptr::null_mut,
@@ -41,7 +41,7 @@ use crate::{
     sys::{
         cl_error_t, cl_error_t_CL_EFORMAT, cl_error_t_CL_EMAXFILES, cl_error_t_CL_EMAXSIZE,
         cl_error_t_CL_EMEM, cl_error_t_CL_EREAD, cl_error_t_CL_EPARSE, cl_error_t_CL_ERROR,
-        cl_error_t_CL_ERESOURCE,
+        cl_error_t_CL_ETIMEOUT, cl_error_t_CL_ERESOURCE,
         cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNPACK, cl_error_t_CL_EUNLINK,
         cl_error_t_CL_EWRITE,
         cl_error_t_CL_BREAK, cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
@@ -75,6 +75,14 @@ unsafe fn parser_input_failure(ctx: *mut cli_ctx, parser: &str, err: impl std::f
     parser_failure(ctx, parser, cl_error_t_CL_EPARSE, err)
 }
 
+fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
+    if err.kind() == io::ErrorKind::TimedOut {
+        cl_error_t_CL_ETIMEOUT
+    } else {
+        fallback
+    }
+}
+
 /// Decode or otherwise produce a child through a bounded reader and scan it
 /// from a quota-accounted temporary spool.  The reservation remains held
 /// through the nested scan so child parser scratch space cannot hide behind
@@ -91,6 +99,10 @@ pub(crate) unsafe fn scan_reader_via_temp_spool<R: Read>(
     let mut buffer = [0u8; 64 * 1024];
 
     loop {
+        let deadline_status = check_scan_time_limit(ctx);
+        if deadline_status != cl_error_t_CL_SUCCESS {
+            return parser_failure(ctx, parser, deadline_status, "reader reached the configured time limit");
+        }
         let read = match reader.read(&mut buffer) {
             Ok(read) => read,
             Err(err) => return parser_failure(ctx, parser, cl_error_t_CL_EREAD, err),
@@ -544,14 +556,14 @@ impl Drop for MappedInput {
 unsafe fn spool_fmap(ctx: *mut cli_ctx, fmap: &FMap) -> Result<TempSpool, cl_error_t> {
     let expected_size = u64::try_from(fmap.len()).map_err(|_| cl_error_t_CL_ERESOURCE)?;
     let mut spool = TempSpool::new(ctx, expected_size)?;
-    let mut reader = FMapReader::new(fmap);
+    let mut reader = FMapReader::new_with_context(fmap, ctx);
     let mut buffer = [0u8; 1024 * 1024];
     let mut copied = 0u64;
 
     loop {
         let read = reader
             .read(&mut buffer)
-            .map_err(|_| cl_error_t_CL_EREAD)?;
+            .map_err(|err| rust_reader_status(&err, cl_error_t_CL_EREAD))?;
         if read == 0 {
             break;
         }
@@ -586,7 +598,7 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         }
     };
 
-    let mut reader = FMapReader::new(&fmap);
+    let mut reader = FMapReader::new_with_context(&fmap, ctx);
     let mut prefix = [0u8; 16];
     if fmap.len() < prefix.len() {
         return parser_failure(
@@ -597,7 +609,7 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         );
     }
     if let Err(err) = reader.read_exact(&mut prefix) {
-        return parser_failure(ctx, "OneNote", cl_error_t_CL_EREAD, err);
+        return parser_failure(ctx, "OneNote", rust_reader_status(&err, cl_error_t_CL_EREAD), err);
     }
     if onenote::is_legacy_magic(&prefix) {
         let file_len = match u64::try_from(fmap.len()) {
@@ -615,6 +627,9 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         let parse_result = onenote::scan_legacy_reader(&mut reader, file_len, &mut sink);
         if sink.scan_result != cl_error_t_CL_SUCCESS {
             return sink.scan_result;
+        }
+        if let Some(status) = reader.deadline_status() {
+            return parser_failure(ctx, "OneNote", status, "reader reached the configured time limit");
         }
         if sink.attachments_seen {
             return match parse_result {
@@ -738,10 +753,20 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
     // Try to parse the LHA/LZH file data using the delharc crate.
     debug!("Attempting to parse the LHA/LZH file data using the delharc crate.");
 
-    let mut decoder = match LhaDecodeReader::new(FMapReader::new(&fmap)) {
+    let mut decoder = match LhaDecodeReader::new(FMapReader::new_with_context(&fmap, ctx)) {
         Ok(result) => result,
         Err(err) => {
-            return parser_failure(ctx, "LHA/LZH", cl_error_t_CL_EFORMAT, err);
+            let status = check_scan_time_limit(ctx);
+            return parser_failure(
+                ctx,
+                "LHA/LZH",
+                if status == cl_error_t_CL_ETIMEOUT {
+                    status
+                } else {
+                    cl_error_t_CL_EFORMAT
+                },
+                err,
+            );
         }
     };
 
@@ -881,10 +906,15 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                         };
                     }
                     Err(err) => {
+                        let status = check_scan_time_limit(ctx);
                         return parser_failure(
                             ctx,
                             "LHA/LZH",
-                            cl_error_t_CL_EFORMAT,
+                            if status == cl_error_t_CL_ETIMEOUT {
+                                status
+                            } else {
+                                cl_error_t_CL_EFORMAT
+                            },
                             format!("member read failed: {err}"),
                         );
                     }
@@ -937,7 +967,17 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 break;
             }
             Err(err) => {
-                return parser_failure(ctx, "LHA/LZH", cl_error_t_CL_EFORMAT, err);
+                let status = check_scan_time_limit(ctx);
+                return parser_failure(
+                    ctx,
+                    "LHA/LZH",
+                    if status == cl_error_t_CL_ETIMEOUT {
+                        status
+                    } else {
+                        cl_error_t_CL_EFORMAT
+                    },
+                    err,
+                );
             }
         }
     }
@@ -1058,7 +1098,7 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
     let mut alz_metadata_ret = cl_error_t_CL_SUCCESS;
     let mut sink = AlzScanSink::new(ctx);
     let alz_result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-        Alz::from_reader_with_filter_stream(FMapReader::new(&fmap), |metadata| {
+        Alz::from_reader_with_filter_stream(FMapReader::new_with_context(&fmap, ctx), |metadata| {
             if alz_metadata_ret != cl_error_t_CL_SUCCESS {
                 return AlzExtractionDecision::Stop;
             }
@@ -1135,7 +1175,17 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
             );
         }
         Ok(Err(AlzError::Read(field))) => {
-            return parser_failure(ctx, "ALZ", cl_error_t_CL_EREAD, field);
+            let status = check_scan_time_limit(ctx);
+            return parser_failure(
+                ctx,
+                "ALZ",
+                if status == cl_error_t_CL_ETIMEOUT {
+                    status
+                } else {
+                    cl_error_t_CL_EREAD
+                },
+                field,
+            );
         }
         Ok(Err(err)) => {
             return parser_failure(ctx, "ALZ", cl_error_t_CL_EFORMAT, err);
@@ -1324,6 +1374,21 @@ mod tests {
         assert!(!lha_output_chunk_fits(65, 64, 0));
         assert!(!lha_output_chunk_fits(64, 64, 1));
         assert!(!lha_output_chunk_fits(u64::MAX, u64::MAX, 1));
+    }
+
+    #[test]
+    fn rust_reader_timeout_status_is_preserved() {
+        let timeout = io::Error::new(io::ErrorKind::TimedOut, "deadline");
+        let read_error = io::Error::new(io::ErrorKind::Other, "read");
+
+        assert_eq!(
+            rust_reader_status(&timeout, cl_error_t_CL_EREAD),
+            cl_error_t_CL_ETIMEOUT
+        );
+        assert_eq!(
+            rust_reader_status(&read_error, cl_error_t_CL_EREAD),
+            cl_error_t_CL_EREAD
+        );
     }
 
     #[test]
