@@ -1013,3 +1013,7 @@
 - PDFNG referenced-object reloads now check `MaxScanTime` immediately before
   and after their bounded contiguous read; add compiled reload-timeout and
   broader PDFNG parser-loop qualification.
+- PDFNG string, dictionary, array, and indirect-reference scans now checkpoint
+  `MaxScanTime` at bounded progress intervals and discard partial parser
+  structures on expiry; add compiled parser-loop timeout injection and full
+  PDF corpus qualification.

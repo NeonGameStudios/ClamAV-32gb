@@ -4456,3 +4456,13 @@ The path now checks the shared deadline immediately before and after the read,
 cleans up the temporary object and buffer on expiry, and leaves the broader
 PDFNG in-memory parsing loops as a separate qualification item. Compiled
 timeout injection, sanitizer, and Sonic1 qualification remain release gates.
+
+## PDFNG parser-loop deadline checkpoints — 2026-08-22
+
+PDFNG string finalization, UTF conversion, indirect-reference tokenization, and
+the large boundary/key/value scans used by dictionary and array parsing could
+previously traverse attacker-controlled buffers without parser-owned
+`MaxScanTime` checkpoints. These loops now check the shared deadline at bounded
+progress intervals, propagate a distinct timeout result from indirect-reference
+recognition, and discard partial dictionary/array structures on expiry. Compiled
+timeout injection, sanitizer, and Sonic1 qualification remain release gates.

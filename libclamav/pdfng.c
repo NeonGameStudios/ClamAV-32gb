@@ -71,7 +71,10 @@
 #include "conv.h"
 #include "entconv.h"
 
-char *pdf_convert_utf(char *begin, size_t sz);
+#define PDFNG_TIME_CHECK_INTERVAL (64U * 1024U)
+#define PDFNG_OBJECT_REFERENCE_TIMEOUT (-2)
+
+static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz);
 
 static int pdfng_checktimelimit(struct pdf_struct *pdf, const char *reason)
 {
@@ -82,7 +85,15 @@ static int pdfng_checktimelimit(struct pdf_struct *pdf, const char *reason)
     return 1;
 }
 
-char *pdf_convert_utf(char *begin, size_t sz)
+static int pdfng_checktimelimit_at(struct pdf_struct *pdf, const char *reason, size_t progress)
+{
+    if ((progress % PDFNG_TIME_CHECK_INTERVAL) > 2U)
+        return 0;
+
+    return pdfng_checktimelimit(pdf, reason);
+}
+
+static char *pdf_convert_utf(struct pdf_struct *pdf, char *begin, size_t sz)
 {
     char *res = NULL;
     char *buf, *outbuf;
@@ -98,7 +109,17 @@ char *pdf_convert_utf(char *begin, size_t sz)
     buf = cli_max_calloc(1, sz + 1);
     if (!(buf))
         return NULL;
+
+    if (pdfng_checktimelimit(pdf, "PDF UTF string conversion reached the configured time limit")) {
+        free(buf);
+        return NULL;
+    }
     memcpy(buf, begin, sz);
+
+    if (pdfng_checktimelimit(pdf, "PDF UTF string conversion reached the configured time limit")) {
+        free(buf);
+        return NULL;
+    }
 
 #if HAVE_ICONV
     p1 = buf;
@@ -124,6 +145,11 @@ char *pdf_convert_utf(char *begin, size_t sz)
 
         iconv(cd, (char **)(&p1), &inlen, &p2, &outlen);
 
+        if (pdfng_checktimelimit(pdf, "PDF UTF string conversion reached the configured time limit")) {
+            iconv_close(cd);
+            break;
+        }
+
         if (outlen == sz) {
             /* Decoding unsuccessful right from the start */
             iconv_close(cd);
@@ -143,6 +169,12 @@ char *pdf_convert_utf(char *begin, size_t sz)
         return NULL;
     }
 
+    if (pdfng_checktimelimit(pdf, "PDF UTF string conversion reached the configured time limit")) {
+        free(buf);
+        free(outbuf);
+        return NULL;
+    }
+
     res = strdup(outbuf);
 #endif
     free(buf);
@@ -151,7 +183,7 @@ char *pdf_convert_utf(char *begin, size_t sz)
     return res;
 }
 
-int is_object_reference(char *begin, char **endchar, uint32_t *id)
+int is_object_reference(struct pdf_struct *pdf, char *begin, char **endchar, uint32_t *id)
 {
     char *end = *endchar;
     char *p1  = begin, *p2;
@@ -169,8 +201,14 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
      */
 
     /* Skip whitespace */
-    while (p1 < end && isspace(p1[0]))
+    while (p1 < end) {
+        if (pdfng_checktimelimit_at(pdf, "PDF indirect object reference parsing reached the configured time limit",
+                                    (size_t)(p1 - begin)))
+            return PDFNG_OBJECT_REFERENCE_TIMEOUT;
+        if (!isspace(p1[0]))
+            break;
         p1++;
+    }
 
     if (p1 == end)
         return 0;
@@ -180,8 +218,14 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
 
     /* Ensure strtoul() isn't going to go past our buffer */
     p2 = p1 + 1;
-    while (p2 < end && !isspace(p2[0]))
+    while (p2 < end) {
+        if (pdfng_checktimelimit_at(pdf, "PDF indirect object reference parsing reached the configured time limit",
+                                    (size_t)(p2 - begin)))
+            return PDFNG_OBJECT_REFERENCE_TIMEOUT;
+        if (isspace(p2[0]))
+            break;
         p2++;
+    }
 
     if (p2 == end)
         return 0;
@@ -194,8 +238,14 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
 
     /* Skip more whitespace */
     p1 = p2;
-    while (p1 < end && isspace(p1[0]))
+    while (p1 < end) {
+        if (pdfng_checktimelimit_at(pdf, "PDF indirect object reference parsing reached the configured time limit",
+                                    (size_t)(p1 - begin)))
+            return PDFNG_OBJECT_REFERENCE_TIMEOUT;
+        if (!isspace(p1[0]))
+            break;
         p1++;
+    }
 
     if (p1 == end)
         return 0;
@@ -205,8 +255,14 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
 
     /* Ensure strtoul() is going to go past our buffer */
     p2 = p1 + 1;
-    while (p2 < end && !isspace(p2[0]))
+    while (p2 < end) {
+        if (pdfng_checktimelimit_at(pdf, "PDF indirect object reference parsing reached the configured time limit",
+                                    (size_t)(p2 - begin)))
+            return PDFNG_OBJECT_REFERENCE_TIMEOUT;
+        if (isspace(p2[0]))
+            break;
         p2++;
+    }
 
     if (p2 == end)
         return 0;
@@ -217,8 +273,14 @@ int is_object_reference(char *begin, char **endchar, uint32_t *id)
 
     /* Skip even more whitespace */
     p1 = p2;
-    while (p1 < end && isspace(p1[0]))
+    while (p1 < end) {
+        if (pdfng_checktimelimit_at(pdf, "PDF indirect object reference parsing reached the configured time limit",
+                                    (size_t)(p1 - begin)))
+            return PDFNG_OBJECT_REFERENCE_TIMEOUT;
+        if (!isspace(p1[0]))
+            break;
         p1++;
+    }
 
     if (p1 == end)
         return 0;
@@ -347,6 +409,12 @@ char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
 
         outlen = 0;
         for (i = 0; i < wrklen; ++i) {
+            if (pdfng_checktimelimit_at(pdf, "PDF string escape conversion reached the configured time limit", i)) {
+                free(output);
+                free(wrkstr);
+                return NULL;
+            }
+
             if ((i + 1 < wrklen) && wrkstr[i] == '\\') {
                 if ((i + 3 < wrklen) &&
                     (isdigit(wrkstr[i + 1]) && isdigit(wrkstr[i + 2]) && isdigit(wrkstr[i + 3]))) {
@@ -437,6 +505,11 @@ char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
 
     /* check for UTF-* and convert to UTF-8 */
     for (i = 0; i < wrklen; ++i) {
+        if (pdfng_checktimelimit_at(pdf, "PDF string encoding inspection reached the configured time limit", i)) {
+            free(wrkstr);
+            return NULL;
+        }
+
         if (((unsigned char)wrkstr[i] > (unsigned char)0x7f) || (wrkstr[i] == '\0')) {
             likelyutf = 1;
             break;
@@ -444,7 +517,7 @@ char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
     }
 
     if (likelyutf) {
-        output = pdf_convert_utf(wrkstr, wrklen);
+        output = pdf_convert_utf(pdf, wrkstr, wrklen);
         free(wrkstr);
         wrkstr = output;
     }
@@ -501,9 +574,13 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
         if (objsize < strlen(str) + 3)
             return NULL;
 
-        for (p1 = (char *)q; (size_t)(p1 - q) < objsize - checklen; p1++)
+        for (p1 = (char *)q; (size_t)(p1 - q) < objsize - checklen; p1++) {
+            if (pdfng_checktimelimit_at(pdf, "PDF string key search reached the configured time limit",
+                                        (size_t)(p1 - q)))
+                return NULL;
             if (!strncmp(p1, str, checklen))
                 break;
+        }
 
         if ((size_t)(p1 - q) == objsize - checklen)
             return NULL;
@@ -513,8 +590,14 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
         p1 = (char *)q;
     }
 
-    while ((size_t)(p1 - q) < objsize && isspace(p1[0]))
+    while ((size_t)(p1 - q) < objsize) {
+        if (pdfng_checktimelimit_at(pdf, "PDF string whitespace scan reached the configured time limit",
+                                    (size_t)(p1 - q)))
+            return NULL;
+        if (!isspace(p1[0]))
+            break;
         p1++;
+    }
 
     if ((size_t)(p1 - q) == objsize)
         return NULL;
@@ -527,7 +610,9 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
      */
 
     p2 = (char *)(q + objsize);
-    object_reference = is_object_reference(p1, &p2, &objid);
+    object_reference = is_object_reference(pdf, p1, &p2, &objid);
+    if (object_reference == PDFNG_OBJECT_REFERENCE_TIMEOUT)
+        return NULL;
     if (object_reference < 0) {
         cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
         return NULL;
@@ -640,7 +725,18 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
 
             p3       = begin;
             objsize2 = sb.st_size;
-            while ((size_t)(p3 - begin) < objsize2 && isspace(p3[0])) {
+            while ((size_t)(p3 - begin) < objsize2) {
+                if (pdfng_checktimelimit_at(pdf, "PDF referenced-object whitespace scan reached the configured time limit",
+                                            (size_t)(p3 - begin))) {
+                    close(fd);
+                    cli_unlink(newobj->path);
+                    free(newobj->path);
+                    newobj->path = NULL;
+                    free(begin);
+                    return NULL;
+                }
+                if (!isspace(p3[0]))
+                    break;
                 p3++;
                 objsize2--;
             }
@@ -696,8 +792,14 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
         /* Hex string */
 
         p2 = p1 + 1;
-        while ((size_t)(p2 - objstart) < objsize && *p2 != '>')
+        while ((size_t)(p2 - objstart) < objsize) {
+            if (pdfng_checktimelimit_at(pdf, "PDF hex string scan reached the configured time limit",
+                                        (size_t)(p2 - objstart)))
+                return NULL;
+            if (*p2 == '>')
+                break;
             p2++;
+        }
 
         if ((size_t)(p2 - objstart) == objsize) {
             return NULL;
@@ -737,6 +839,10 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
 
     while (p2 < objstart + objsize) {
         int shouldbreak = 0;
+
+        if (pdfng_checktimelimit_at(pdf, "PDF literal string scan reached the configured time limit",
+                                    (size_t)(p2 - p1)))
+            return NULL;
 
         switch (*p2) {
             case '\\':
@@ -815,6 +921,11 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
     end = begin;
     while ((size_t)(end - objstart) < objsize) {
         int increment = 1;
+
+        if (pdfng_checktimelimit_at(pdf, "PDF dictionary boundary scan reached the configured time limit",
+                                    (size_t)(end - objstart)))
+            return NULL;
+
         if (in_string) {
             if (*end == '\\') {
                 end += 2;
@@ -870,17 +981,40 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
         struct pdf_array *arr = NULL;
         unsigned int nhex     = 0, i;
 
+        if (pdfng_checktimelimit_at(pdf, "PDF dictionary traversal reached the configured time limit",
+                                    (size_t)(begin - objstart))) {
+            pdf_free_dict(res);
+            return NULL;
+        }
+
         /* Skip any whitespaces */
-        while (begin < end && isspace(begin[0]))
+        while (begin < end) {
+            if (pdfng_checktimelimit_at(pdf, "PDF dictionary whitespace scan reached the configured time limit",
+                                        (size_t)(begin - objstart))) {
+                pdf_free_dict(res);
+                return NULL;
+            }
+            if (!isspace(begin[0]))
+                break;
             begin++;
+        }
 
         if (begin == end)
             break;
 
         /* Get the key */
         p1 = begin + 1;
-        while (p1 < end && !isspace(p1[0])) {
+        while (p1 < end) {
             int breakout = 0;
+
+            if (pdfng_checktimelimit_at(pdf, "PDF dictionary key scan reached the configured time limit",
+                                        (size_t)(p1 - objstart))) {
+                pdf_free_dict(res);
+                return NULL;
+            }
+
+            if (isspace(p1[0]))
+                break;
 
             switch (*p1) {
                 case '<':
@@ -925,6 +1059,12 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
             key[p1 - begin] = '\0';
         } else {
             for (i = 0, p2 = begin; p2 < p1; p2++, i++) {
+                if (pdfng_checktimelimit_at(pdf, "PDF dictionary key decoding reached the configured time limit",
+                                            (size_t)(p2 - objstart))) {
+                    free(key);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
                 if (*p2 == '#') {
                     cli_hex2str_to(p2 + 1, key + i, 2);
                     p2 += 2;
@@ -938,8 +1078,17 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
         begin = p1;
 
         /* Skip any whitespaces */
-        while (begin < end && isspace(begin[0]))
+        while (begin < end) {
+            if (pdfng_checktimelimit_at(pdf, "PDF dictionary value whitespace scan reached the configured time limit",
+                                        (size_t)(begin - objstart))) {
+                free(key);
+                pdf_free_dict(res);
+                return NULL;
+            }
+            if (!isspace(begin[0]))
+                break;
             begin++;
+        }
 
         if (begin == end) {
             free(key);
@@ -951,12 +1100,26 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                 pdf->parse_recursion_depth++;
                 val = pdf_parse_string(pdf, obj, begin, end - objstart, NULL, &p1, NULL);
                 pdf->parse_recursion_depth--;
+                if (pdfng_checktimelimit(pdf, "PDF dictionary string parsing reached the configured time limit")) {
+                    free(key);
+                    if (val)
+                        free(val);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
                 begin = p1 + 2;
                 break;
             case '[':
                 pdf->parse_recursion_depth++;
                 arr = pdf_parse_array(pdf, obj, end - objstart, begin, &p1);
                 pdf->parse_recursion_depth--;
+                if (pdfng_checktimelimit(pdf, "PDF dictionary array parsing reached the configured time limit")) {
+                    free(key);
+                    if (arr)
+                        pdf_free_array(arr);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
                 begin = p1 + 1;
                 break;
             case '<':
@@ -965,6 +1128,13 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                         pdf->parse_recursion_depth++;
                         dict = pdf_parse_dict(pdf, obj, end - objstart, begin, &p1);
                         pdf->parse_recursion_depth--;
+                        if (pdfng_checktimelimit(pdf, "PDF nested dictionary parsing reached the configured time limit")) {
+                            free(key);
+                            if (dict)
+                                pdf_free_dict(dict);
+                            pdf_free_dict(res);
+                            return NULL;
+                        }
                         begin = p1 + 2;
                         break;
                     }
@@ -973,12 +1143,29 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                 pdf->parse_recursion_depth++;
                 val = pdf_parse_string(pdf, obj, begin, end - objstart, NULL, &p1, NULL);
                 pdf->parse_recursion_depth--;
+                if (pdfng_checktimelimit(pdf, "PDF dictionary string parsing reached the configured time limit")) {
+                    free(key);
+                    if (val)
+                        free(val);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
                 begin = p1 + 2;
                 break;
-            default:
+            default: {
+                int object_reference;
+
                 p1 = (begin[0] == '/') ? begin + 1 : begin;
                 while (p1 < end) {
                     int shouldbreak = 0;
+
+                    if (pdfng_checktimelimit_at(pdf, "PDF dictionary value scan reached the configured time limit",
+                                                (size_t)(p1 - objstart))) {
+                        free(key);
+                        pdf_free_dict(res);
+                        return NULL;
+                    }
+
                     switch (p1[0]) {
                         case '>':
                         case '/':
@@ -992,7 +1179,13 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     p1++;
                 }
 
-                if (is_object_reference(begin, &p1, NULL) < 0)
+                object_reference = is_object_reference(pdf, begin, &p1, NULL);
+                if (object_reference == PDFNG_OBJECT_REFERENCE_TIMEOUT) {
+                    free(key);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
+                if (object_reference < 0)
                     cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
 
                 val = cli_max_calloc((p1 - begin) + 2, 1);
@@ -1008,6 +1201,19 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     begin = p1;
 
                 break;
+            }
+        }
+
+        if (pdfng_checktimelimit(pdf, "PDF dictionary value parsing reached the configured time limit")) {
+            free(key);
+            if (dict)
+                pdf_free_dict(dict);
+            if (val)
+                free(val);
+            if (arr)
+                pdf_free_array(arr);
+            pdf_free_dict(res);
+            return NULL;
         }
 
         if (!(val) && !(dict) && !(arr)) {
@@ -1097,6 +1303,10 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
     /* Find the end of the array */
     end = begin;
     while ((size_t)(end - objstart) < objsize) {
+        if (pdfng_checktimelimit_at(pdf, "PDF array boundary scan reached the configured time limit",
+                                    (size_t)(end - objstart)))
+            return NULL;
+
         if (in_string) {
             if (*end == '\\') {
                 end += 2;
@@ -1145,8 +1355,22 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
         struct pdf_array *arr = NULL;
         struct pdf_dict *dict = NULL;
 
-        while (begin < end && isspace(begin[0]))
+        if (pdfng_checktimelimit_at(pdf, "PDF array traversal reached the configured time limit",
+                                    (size_t)(begin - objstart))) {
+            pdf_free_array(res);
+            return NULL;
+        }
+
+        while (begin < end) {
+            if (pdfng_checktimelimit_at(pdf, "PDF array whitespace scan reached the configured time limit",
+                                        (size_t)(begin - objstart))) {
+                pdf_free_array(res);
+                return NULL;
+            }
+            if (!isspace(begin[0]))
+                break;
             begin++;
+        }
 
         if (begin == end)
             break;
@@ -1177,7 +1401,12 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 break;
             default: {
                 p1 = end;
-                int object_reference = is_object_reference(begin, &p1, NULL);
+                int object_reference = is_object_reference(pdf, begin, &p1, NULL);
+
+                if (object_reference == PDFNG_OBJECT_REFERENCE_TIMEOUT) {
+                    pdf_free_array(res);
+                    return NULL;
+                }
 
                 if (object_reference < 0) {
                     cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
@@ -1186,8 +1415,16 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
                 if (object_reference == 0) {
                     p1 = begin + 1;
-                    while (p1 < end && !isspace(p1[0]))
+                    while (p1 < end) {
+                        if (pdfng_checktimelimit_at(pdf, "PDF array value scan reached the configured time limit",
+                                                    (size_t)(p1 - objstart))) {
+                            pdf_free_array(res);
+                            return NULL;
+                        }
+                        if (isspace(p1[0]))
+                            break;
                         p1++;
+                    }
                 }
 
                 val = cli_max_calloc((p1 - begin) + 2, 1);
@@ -1200,6 +1437,17 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 begin = p1;
                 break;
             }
+        }
+
+        if (pdfng_checktimelimit(pdf, "PDF array value parsing reached the configured time limit")) {
+            if (dict)
+                pdf_free_dict(dict);
+            if (val)
+                free(val);
+            if (arr)
+                pdf_free_array(arr);
+            pdf_free_array(res);
+            return NULL;
         }
 
         /* Parse error, just return what we could */
