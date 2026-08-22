@@ -412,6 +412,9 @@
   Rust-parser qualification.
 - Legacy CPIO/TAR/RAR/EGG/ARJ/InstallShield metadata callback failures now
   propagate; add callback-fault and malformed archive corpus coverage.
+- TAR parser entry and member traversal now honor the shared scan deadline and
+  preserve fail-visible `CL_ETIMEOUT`; add compiled timeout-injection,
+  malformed archive, sanitizer, and production TAR corpus qualification.
 - All CPIO legacy/newc header, name, padding, and member-data cursor advances
   now use checked native-width arithmetic; an overflow remains an explicit
   incomplete parse instead of wrapping to an attacker-selected earlier range.

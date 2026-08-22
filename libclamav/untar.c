@@ -108,6 +108,17 @@ getchecksum(const char *header)
     return (int)checksum;
 }
 
+static cl_error_t
+cli_untar_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static cl_error_t cli_untar_finish_member(cli_ctx *ctx, int *fd, const char *fullname, const char *name,
                                           bool scan, uint64_t temporary_reserved)
 {
@@ -201,12 +212,28 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
     size_t pos      = 0;
     char zero[BLOCKSIZE];
 
+    if ((ctx == NULL) || (ctx->fmap == NULL))
+        return CL_ENULLARG;
+
+    ret = cli_untar_checktimelimit(ctx, "TAR inspection reached the configured time limit");
+    if (ret != CL_SUCCESS)
+        return ret;
+
     cli_dbgmsg("In untar(%s)\n", dir);
     memset(zero, 0, sizeof(zero));
 
     for (;;) {
         const char *block;
         size_t nread;
+
+        ret = cli_untar_checktimelimit(ctx, "TAR member traversal reached the configured time limit");
+        if (ret != CL_SUCCESS) {
+            if (fout >= 0) {
+                (void)cli_untar_finish_member(ctx, &fout, fullname, name, false, temporary_reserved);
+                temporary_reserved = 0;
+            }
+            return ret;
+        }
 
         block = fmap_need_off_once_len(ctx->fmap, pos, BLOCKSIZE, &nread);
         cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);

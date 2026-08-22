@@ -3295,6 +3295,17 @@ results remain sticky incomplete and non-cacheable. A direct expired-context
 regression and source guards cover the new boundaries; compiled JPEG corpus,
 sanitizer, and Sonic1 qualification remain release gates.
 
+## TAR member traversal deadlines — 2026-08-22
+
+TAR staging already bounded member output and preserved malformed-header and
+short-member failures, but the archive loop could process an unbounded number
+of headers and 512-byte content blocks without checking the shared deadline.
+The parser now checks at entry and before each member/block iteration; an
+expired scan cleans up any active temporary member and preserves
+`CL_ETIMEOUT`. A direct expired-context regression and source guards cover the
+contract; compiled POSIX/legacy TAR corpus, sanitizer, and Sonic1 qualification
+remain release gates.
+
 ## TNEF traversal deadline — 2026-08-22
 
 TNEF attribute-list iteration, attachment-data copying, and the debug-only
