@@ -37,6 +37,9 @@ struct mspack_name {
 struct mspack_system_ex {
     struct mspack_system ops;
     uint64_t max_size;
+    cli_ctx *ctx;
+    bool time_limit_exceeded;
+    const char *time_limit_reason;
 };
 
 struct mspack_handle {
@@ -49,7 +52,22 @@ struct mspack_handle {
     FILE *f;
     uint64_t max_size;
     bool limit_exceeded;
+    struct mspack_system_ex *system_ex;
 };
+
+static bool mspack_deadline_ok(struct mspack_system_ex *system_ex)
+{
+    if (system_ex == NULL || system_ex->ctx == NULL)
+        return true;
+
+    if (cli_checktimelimit(system_ex->ctx) == CL_SUCCESS)
+        return true;
+
+    system_ex->time_limit_exceeded = true;
+    cli_mark_scan_incomplete(system_ex->ctx,
+                             system_ex->time_limit_reason ? system_ex->time_limit_reason : "MSPack decoder reached the configured time limit");
+    return false;
+}
 
 static int mspack_fmap_length(const fmap_t *map, off_t *length)
 {
@@ -94,6 +112,7 @@ static struct mspack_file *mspack_fmap_open(struct mspack_system *self,
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         return NULL;
     }
+    self_ex = (struct mspack_system_ex *)((char *)mptr - offsetof(struct mspack_system_ex, ops));
     mspack_handle = malloc(sizeof(*mspack_handle));
     if (!mspack_handle) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
@@ -109,6 +128,7 @@ static struct mspack_file *mspack_fmap_open(struct mspack_system *self,
             mspack_handle->fmap   = mspack_name->fmap;
             mspack_handle->org    = mspack_name->org;
             mspack_handle->offset = 0;
+            mspack_handle->system_ex = self_ex;
 
             return (struct mspack_file *)mspack_handle;
 
@@ -134,8 +154,8 @@ static struct mspack_file *mspack_fmap_open(struct mspack_system *self,
         goto out_err;
     }
 
-    self_ex                 = (struct mspack_system_ex *)((char *)mptr - offsetof(struct mspack_system_ex, ops));
     mspack_handle->max_size = self_ex->max_size;
+    mspack_handle->system_ex = self_ex;
     return (struct mspack_file *)mspack_handle;
 
 out_err:
@@ -177,6 +197,8 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
         cli_dbgmsg("%s() %d\n", __func__, __LINE__);
         return -1;
     }
+    if (!mspack_deadline_ok(mspack_handle->system_ex))
+        return -1;
 
     if (mspack_handle->type == FILETYPE_FMAP) {
         /* Use fmap */
@@ -220,6 +242,8 @@ static int mspack_fmap_write(struct mspack_file *file, void *buffer, int bytes)
         cli_dbgmsg("%s() err %d\n", __func__, __LINE__);
         return -1;
     }
+    if (!mspack_deadline_ok(mspack_handle->system_ex))
+        return -1;
 
     if (mspack_handle->type == FILETYPE_FMAP) {
         cli_dbgmsg("%s() err %d\n", __func__, __LINE__);
@@ -271,6 +295,8 @@ static int mspack_fmap_seek(struct mspack_file *file, off_t offset, int mode)
         cli_dbgmsg("%s() err %d\n", __func__, __LINE__);
         return -1;
     }
+    if (!mspack_deadline_ok(mspack_handle->system_ex))
+        return -1;
 
     if (mspack_handle->type == FILETYPE_FMAP) {
         off_t base;
@@ -487,6 +513,12 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     mspack_fmap.org = (off_t)offset;
 
     ops_ex.ops = mspack_sys_fmap_ops;
+    ops_ex.ctx = ctx;
+    ops_ex.time_limit_reason = "CAB header inspection reached the configured time limit";
+    if (!mspack_deadline_ok(&ops_ex)) {
+        status = CL_ETIMEOUT;
+        goto done;
+    }
 
     cab_d = mspack_create_cab_decompressor(&ops_ex.ops);
     if (NULL == cab_d) {
@@ -500,7 +532,11 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     if (NULL == cab_h) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive header could not be inspected completely");
-        status = CL_EPARSE;
+        status = ops_ex.time_limit_exceeded ? CL_ETIMEOUT : CL_EPARSE;
+        goto done;
+    }
+    if (ops_ex.time_limit_exceeded) {
+        status = CL_ETIMEOUT;
         goto done;
     }
 
@@ -546,6 +582,12 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
 
     memset(&ops_ex, 0, sizeof(struct mspack_system_ex));
     ops_ex.ops = mspack_sys_fmap_ops;
+    ops_ex.ctx = ctx;
+    ops_ex.time_limit_reason = "CAB decoder reached the configured time limit";
+    if (!mspack_deadline_ok(&ops_ex)) {
+        ret = CL_ETIMEOUT;
+        goto done;
+    }
 
     cab_d = mspack_create_cab_decompressor(&ops_ex.ops);
     if (!cab_d) {
@@ -564,7 +606,11 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     if (NULL == cab_h) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive could not be opened for inspection");
-        ret = CL_EFORMAT;
+        ret = ops_ex.time_limit_exceeded ? CL_ETIMEOUT : CL_EFORMAT;
+        goto done;
+    }
+    if (ops_ex.time_limit_exceeded) {
+        ret = CL_ETIMEOUT;
         goto done;
     }
 
@@ -617,6 +663,10 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         /* scan */
         ret             = cab_d->extract(cab_d, cab_f, tmp_fname);
         tempfile_exists = (access(tmp_fname, F_OK) == 0);
+        if (ops_ex.time_limit_exceeded) {
+            ret = CL_ETIMEOUT;
+            goto done;
+        }
         if (ret) {
             /* Salvage mode may leave a truncated member on disk. Never let
              * that partial object replace an extraction failure: content
@@ -682,6 +732,12 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
 
     memset(&ops_ex, 0, sizeof(struct mspack_system_ex));
     ops_ex.ops = mspack_sys_fmap_ops;
+    ops_ex.ctx = ctx;
+    ops_ex.time_limit_reason = "CHM decoder reached the configured time limit";
+    if (!mspack_deadline_ok(&ops_ex)) {
+        ret = CL_ETIMEOUT;
+        goto done;
+    }
 
     mschm_d = mspack_create_chm_decompressor(&ops_ex.ops);
     if (!mschm_d) {
@@ -695,7 +751,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
     if (!mschm_h) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CHM archive could not be opened for inspection");
-        ret = CL_EFORMAT;
+        ret = ops_ex.time_limit_exceeded ? CL_ETIMEOUT : CL_EFORMAT;
+        goto done;
+    }
+    if (ops_ex.time_limit_exceeded) {
+        ret = CL_ETIMEOUT;
         goto done;
     }
 
@@ -753,6 +813,10 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         /* scan */
         ret             = mschm_d->extract(mschm_d, mschm_f, tmp_fname);
         tempfile_exists = (access(tmp_fname, F_OK) == 0);
+        if (ops_ex.time_limit_exceeded) {
+            ret = CL_ETIMEOUT;
+            goto done;
+        }
         if (ret) {
             /* Failed to extract. Never scan the partial output. */
             cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);

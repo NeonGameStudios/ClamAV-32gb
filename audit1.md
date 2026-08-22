@@ -3361,3 +3361,13 @@ each bounded chunk and returns fail-visible read, write, or temporary-resource
 errors instead of silently continuing to XML parsing. A direct expired-context
 regression and source guards cover the staging entry; compiled XDP staging and
 Sonic1 qualification remain release gates.
+
+## CAB/CHM decoder deadlines — 2026-08-22
+
+The bundled libmspack adapter now carries the scanning context into its fmap
+callbacks and checks the shared deadline before decoder reads, seeks, and
+writes. Timeout state is shared across decoder-owned handles, marks the layer
+incomplete, and is preserved as `CL_ETIMEOUT` through CAB/CHM archive opening
+and member extraction. A direct expired-context CAB-header regression and
+source guards cover the entry boundary; callback-injected timeout, compiled
+CAB/CHM corpus, sanitizer, and Sonic1 qualification remain release gates.

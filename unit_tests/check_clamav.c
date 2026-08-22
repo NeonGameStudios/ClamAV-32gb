@@ -15809,6 +15809,38 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mspack_time_limit_is_fail_visible)
+{
+    uint8_t data[36] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    size_t cab_size = 0;
+    cl_error_t ret;
+
+    memcpy(data, "MSCF", 4);
+    mspack_test_write_u32(data + 8, sizeof(data));
+    mspack_test_write_u32(data + 16, sizeof(data));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_mscab_header_check(&ctx, 0, &cab_size);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB header inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mscab_truncated_fixed_header_is_fail_visible)
 {
     static const uint8_t weak_data[] = {'M', 'S', 'C', 'F'};
@@ -18410,6 +18442,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_script_normalization_cleanup_close_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_mspack_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_time_limit_is_fail_visible);
