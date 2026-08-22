@@ -4739,3 +4739,15 @@ unchanged.
 The source guards and non-clang regression gates pass. Compiled fault
 injection, sanitizer runs, production document/filesystem corpora, and Sonic1
 qualification remain open.
+
+## RTF, SWF, InstallShield, and AutoIt staging failures — 2026-08-22
+
+Several parser helpers could return directly when a temporary directory,
+temporary filename, or output file could not be allocated/opened. Those paths
+now mark the scan incomplete before cleanup or return for RTF, SWF,
+InstallShield, and AutoIt. Existing resource/deadline/write accounting is
+unchanged.
+
+The source guards and non-clang regression gates pass. Compiled fault
+injection, sanitizer runs, production corpora, and Sonic1 qualification remain
+open.

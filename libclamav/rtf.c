@@ -666,12 +666,14 @@ int cli_scanrtf(cli_ctx* ctx)
     }
 
     if (!(tempname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "rtf-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "RTF temporary directory could not be created");
         free(stack.states);
         return CL_EMEM;
     }
 
     if (mkdir(tempname, 0700)) {
         cli_dbgmsg("ScanRTF -> Can't create temporary directory %s\n", tempname);
+        cli_mark_scan_incomplete(ctx, "RTF temporary directory could not be created");
         free(stack.states);
         free(tempname);
         return CL_ETMPDIR;

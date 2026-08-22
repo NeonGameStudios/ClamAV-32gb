@@ -254,6 +254,7 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_errmsg("scanzws: Can't generate temporary file\n");
+        cli_mark_scan_incomplete(ctx, "SWF LZMA temporary output could not be created");
         return ret;
     }
 
@@ -402,6 +403,7 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &tmpname, &fd)) != CL_SUCCESS) {
         cli_errmsg("scancws: Can't generate temporary file\n");
+        cli_mark_scan_incomplete(ctx, "SWF zlib temporary output could not be created");
         return ret;
     }
 

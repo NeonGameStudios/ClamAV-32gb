@@ -344,6 +344,10 @@
   output allocation/open failures incomplete before returning; source gates
   cover the new reasons, while compiled document/filesystem fault injection,
   production corpora, and Sonic1 qualification remain open.
+- RTF, SWF, InstallShield, and AutoIt temporary-directory/output setup and
+  open failures now mark required parser work incomplete before returning;
+  compiled fault injection, production corpora, and Sonic1 qualification
+  remain open.
 - PDF Flate, RunLength, and LZW decoder output now retains native-width
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial

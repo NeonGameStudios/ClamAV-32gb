@@ -2299,6 +2299,7 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
         if ((i = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
             cli_dbgmsg("autoit: Can't create file %s\n", tempfile);
+            cli_mark_scan_incomplete(ctx, "AutoIt temporary output could not be opened");
             cli_scan_release_temporary(ctx, temporary_reserved);
             temporary_reserved = 0;
             free(buf);

@@ -305,6 +305,7 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
         /* FIXMEISHIELD: cleanup the spam below */
         cli_dbgmsg("ishield-msi: File %s (csize: %llx, unk1:%x unk2:%x unk3:%x unk4:%x unk5:%x unk6:%x unk7:%x unk8:%x unk9:%x unk10:%x unk11:%x)\n", key, (long long)csize, fb.unk1, fb.unk2, fb.unk3, fb.unk4, fb.unk5, fb.unk6, fb.unk7, fb.unk8, fb.unk9, fb.unk10, fb.unk11);
         if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
+            cli_mark_scan_incomplete(ctx, "InstallShield MSI temporary output could not be created");
             if (NULL != filename) {
                 free(filename);
             }
@@ -313,6 +314,7 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
 
         if ((ofd = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
             cli_dbgmsg("ishield-msi: failed to create file %s\n", tempfile);
+            cli_mark_scan_incomplete(ctx, "InstallShield MSI temporary output could not be opened");
             free(tempfile);
             if (NULL != filename) {
                 free(filename);
@@ -671,12 +673,14 @@ static cl_error_t is_dump_and_scan(cli_ctx *ctx, off_t off, size_t fsize)
     }
 
     if (!(fname = cli_gentemp(ctx->this_layer_tmpdir))) {
+        cli_mark_scan_incomplete(ctx, "InstallShield embedded file temporary output could not be created");
         cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_EMEM;
     }
 
     if ((ofd = open(fname, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
         cli_errmsg("ishield: failed to create file %s\n", fname);
+        cli_mark_scan_incomplete(ctx, "InstallShield embedded file temporary output could not be opened");
         free(fname);
         cli_scan_release_temporary(ctx, temporary_reserved);
         return CL_ECREAT;
@@ -1043,12 +1047,14 @@ static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint
     temporary_reserved = size;
 
     if (!(tempfile = cli_gentemp(ctx->this_layer_tmpdir))) {
+        cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be created");
         cli_scan_release_temporary(ctx, temporary_reserved);
         free(outbuf);
         return CL_EMEM;
     }
     if ((ofd = open(tempfile, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
         cli_errmsg("is_extract_cab: failed to create file %s\n", tempfile);
+        cli_mark_scan_incomplete(ctx, "InstallShield CAB temporary output could not be opened");
         free(tempfile);
         free(outbuf);
         cli_scan_release_temporary(ctx, temporary_reserved);
