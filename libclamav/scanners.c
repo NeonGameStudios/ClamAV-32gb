@@ -4556,6 +4556,7 @@ done:
 
 cl_error_t cli_scan_structured(cli_ctx *ctx)
 {
+    cl_error_t status;
     char buf[8192];
     size_t result          = 0;
     unsigned int cc_count  = 0;
@@ -4568,6 +4569,12 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
 
     if (ctx == NULL)
         return CL_ENULLARG;
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "Structured data detector reached the configured time limit");
+        return status;
+    }
 
     map = ctx->fmap;
 
@@ -4602,7 +4609,17 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
             ssnfunc = NULL;
     }
 
-    while (!done && ((result = fmap_readn(map, buf, pos, 8191)) > 0) && (result != (size_t)-1)) {
+    while (!done) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "Structured data detector reached the configured time limit");
+            return status;
+        }
+
+        result = fmap_readn(map, buf, pos, 8191);
+        if (result == 0 || result == (size_t)-1)
+            break;
+
         pos += result;
         if ((cc_count += ccfunc((const unsigned char *)buf, result,
                                 (ctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED_CC) ? 1 : 0)) >= ctx->engine->min_cc_count) {

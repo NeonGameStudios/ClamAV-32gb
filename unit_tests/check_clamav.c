@@ -13294,6 +13294,41 @@ START_TEST(test_structured_detector_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifndef _WIN32
+START_TEST(test_structured_detector_time_limit_is_fail_visible)
+{
+    static const uint8_t input[] = "structured detector timeout";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.min_cc_count = 1;
+    options.heuristic   = CL_SCAN_HEURISTIC_STRUCTURED;
+    ctx.engine           = &engine;
+    ctx.options          = &options;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(cli_scan_structured(&ctx), CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Structured data detector reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_tnef_exact_eof_ends_attribute_list)
 {
     static const uint8_t input[] = {
@@ -18975,6 +19010,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_riff_time_limit_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);
+#ifndef _WIN32
+    tcase_add_test(tc_cl, test_structured_detector_time_limit_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_tnef_exact_eof_ends_attribute_list);
     tcase_add_test(tc_cl, test_tnef_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_initial_read_failure_is_fail_visible);

@@ -485,6 +485,8 @@ contains unit_tests/check_clamav.c 'test_riff_chunk_read_failure_is_fail_visible
 contains unit_tests/check_clamav.c 'test_riff_time_limit_is_fail_visible'
 contains libclamav/scanners.c 'Structured data detector input could not be read completely'
 contains unit_tests/check_clamav.c 'test_structured_detector_read_failure_is_fail_visible'
+contains libclamav/scanners.c 'Structured data detector reached the configured time limit'
+contains unit_tests/check_clamav.c 'test_structured_detector_time_limit_is_fail_visible'
 contains libclamav/tnef.c 'TNEF signature could not be read completely'
 contains libclamav/tnef.c 'TNEF inspection reached the configured time limit'
 contains libclamav/tnef.c 'TNEF attribute traversal reached the configured time limit'

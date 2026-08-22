@@ -2337,6 +2337,15 @@ Source guards and `git diff --check` are the current local evidence.
 Fault-injected cleanup, dependency-complete builds, and supported-build
 Sonic1 qualification remain release gates.
 
+## Structured-text traversal deadlines — 2026-08-22
+
+The structured credit-card/SSN detector consumed 8 KiB fmap windows without a
+shared cancellation checkpoint. It now checks the deadline at parser entry and
+before every window, marks timeout as incomplete, and preserves `CL_ETIMEOUT`
+instead of returning clean after a partial scan. A focused expired-context
+regression and source guards cover the contract; compiled large-text corpus,
+sanitizer, and Sonic1 qualification remain release gates.
+
 ## PDF filter traversal deadlines — 2026-08-22
 
 The legacy PDF filter path enforced allocation and decoded-output limits but

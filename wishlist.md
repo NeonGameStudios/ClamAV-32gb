@@ -575,6 +575,10 @@
   parser entry and for each source chunk, preserving `CL_ETIMEOUT` through
   temporary-file cleanup; add compiled timeout-fault and production CryptFF
   corpus qualification.
+- Structured-text detection now checks the shared deadline before each bounded
+  fmap window and preserves `CL_ETIMEOUT` as an incomplete, non-cacheable
+  result; add compiled large-text timeout and production structured-data
+  corpus qualification.
 - Old-format SIS metadata table, dependency-header, string, header, and
   language-table failures now remain incomplete/non-cacheable with distinct
   `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and
