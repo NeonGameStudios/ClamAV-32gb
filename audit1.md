@@ -985,6 +985,17 @@ the child uses the already-held reservation rather than double-counting the
 same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
 qualification remain open.
 
+## File-count counter boundary — 2026-08-22
+
+The internal `cli_ctx.scannedfiles` field remains a 32-bit ABI field, while
+`MaxFiles=0` intentionally permits an unlimited configured count. Before this
+fix, incrementing the counter at `UINT32_MAX` could wrap to zero and let a
+later object pass file-count admission. `cli_updatelimits()` now stops at the
+native counter boundary with `CL_ERESOURCE`, marks the scan incomplete, and
+preserves non-cacheability without changing the established context layout. A
+focused limit regression covers the boundary; normal MaxFiles qualification,
+sanitizer, and production corpus evidence remain open.
+
 ## EGG SFX candidate admission — 2026-08-19
 
 The embedded EGG path now requires the complete fixed header, supported

@@ -5141,3 +5141,9 @@ release gates.
   preflight therefore retain the same hard ingress bound; a focused clamd unit
   regression covers the bypass case, while compiled service and Sonic1
   qualification remain open.
+
+- The established 32-bit `cli_ctx.scannedfiles` counter now fails closed at
+  `UINT32_MAX` when `MaxFiles=0` is used, returning `CL_ERESOURCE` and marking
+  the scan incomplete instead of wrapping and admitting another object. The
+  internal ABI is unchanged; the focused limit regression covers this native
+  counter boundary, while production file-count qualification remains open.

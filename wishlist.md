@@ -704,3 +704,8 @@
   both daemon staging and client preflight, including integrations that pass a
   directly constructed option object; compiled service and Sonic1 evidence
   remain required.
+
+- Preserve fail-closed file-count accounting at the established
+  `cli_ctx.scannedfiles` native ceiling: an unlimited `MaxFiles=0` policy must
+  return an incomplete resource result at `UINT32_MAX`, never wrap and admit a
+  new object; production file-count qualification remains required.

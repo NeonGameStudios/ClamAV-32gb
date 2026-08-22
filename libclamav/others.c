@@ -1540,12 +1540,23 @@ done:
     return ret;
 }
 
+static cl_error_t cli_scan_resource_failure(cli_ctx *ctx, const char *reason);
+
 cl_error_t cli_updatelimits(cli_ctx *ctx, uint64_t needed)
 {
     cl_error_t ret = cli_checklimits("cli_updatelimits", ctx, needed, 0, 0);
 
     if (ret != CL_SUCCESS) {
         return ret;
+    }
+
+    /* scannedfiles is intentionally kept at its established ABI width. An
+     * unlimited MaxFiles setting must not turn its native counter wrap into
+     * a second pass through the file-count admission check. Stop before the
+     * increment and make the accounting boundary an explicit incomplete
+     * resource result instead. */
+    if (ctx->scannedfiles == UINT32_MAX) {
+        return cli_scan_resource_failure(ctx, "scan file-count accounting reached its native counter limit");
     }
 
     ctx->scannedfiles++;

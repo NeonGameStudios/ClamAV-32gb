@@ -2792,6 +2792,21 @@ START_TEST(test_maxfiles_exact_and_crossing_are_fail_visible)
     ck_assert_int_eq(cli_magic_scan(&ctx, CL_TYPE_ANY), CL_EMAXFILES);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map.dont_cache_flag);
+
+    /* MaxFiles=0 means unlimited, but the established 32-bit internal
+     * counter still has a representability boundary. Reaching it must return
+     * an incomplete resource result instead of wrapping to zero and allowing
+     * another object to be counted as clean. */
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 1, &map);
+    engine.maxfiles  = 0;
+    ctx.scannedfiles = UINT32_MAX;
+    ctx.scansize     = 19;
+    ck_assert_int_eq(cli_updatelimits(&ctx, 7), CL_ERESOURCE);
+    ck_assert_uint_eq(ctx.scannedfiles, UINT32_MAX);
+    ck_assert_uint_eq(ctx.scansize, 19);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(ctx.limit_exceeded);
+    ck_assert(map.dont_cache_flag);
 }
 END_TEST
 
