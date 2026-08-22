@@ -3583,3 +3583,14 @@ source after the parser and resource-hardening slices. It has been regenerated
 to 32,608 lines from `tools/largefile_inventory.sh`; a byte-for-byte
 reproducibility check now runs inside `tools/largefile_source_guards.sh`, so
 stale inventory evidence fails the local guard instead of being accepted.
+
+## Logical matcher root status merge — 2026-08-22
+
+`cli_scan_fmap()` evaluates target-specific and generic matcher roots in
+sequence. Before this fix, the second `cli_exp_eval()` return value replaced
+the first, so a target-root `CL_EPARSE`, `CL_EREAD`, or resource failure could
+become `CL_SUCCESS` when the generic root had no matching failure. The two
+results now use `cli_merge_scan_status()`: detections retain precedence, and a
+later clean root cannot erase an earlier incomplete status. A focused
+target-failure/generic-clean regression covers the status contract; complete
+logical-signature corpus and production qualification remain open.

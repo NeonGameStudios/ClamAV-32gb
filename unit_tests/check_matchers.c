@@ -843,6 +843,57 @@ START_TEST(test_logical_bytecode_missing_entry_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_logical_root_status_merge_preserves_incomplete_result)
+{
+    static char logic[] = "0";
+    struct cli_ac_lsig target_lsig;
+    struct cli_ac_lsig *target_lsigtable[1];
+    struct cli_matcher target_root;
+    struct cli_matcher generic_root;
+    struct cli_ac_data target_data;
+    struct cli_ac_data generic_data;
+    fmap_t *map;
+    cl_error_t target_status;
+    cl_error_t generic_status;
+
+    memset(&target_lsig, 0, sizeof(target_lsig));
+    memset(&target_root, 0, sizeof(target_root));
+    memset(&generic_root, 0, sizeof(generic_root));
+    target_lsig.id           = 0;
+    target_lsig.bc_idx       = 1;
+    target_lsig.type         = CLI_LSIG_NORMAL;
+    target_lsig.u.logic      = logic;
+    target_lsig.virname      = (char *)"TargetLogicalBytecodeFailure";
+    target_lsig.tdb.subsigs  = 1;
+    target_lsigtable[0]      = &target_lsig;
+    target_root.ac_lsigs     = 1;
+    target_root.ac_lsigtable = target_lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&target_data, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    target_data.lsigcnt[0][0] = 1;
+    ck_assert_int_eq(cli_ac_initdata(&generic_data, 0, 0, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                    = map;
+    ctx.recursion_stack[0].fmap = map;
+
+    target_status = cli_exp_eval(&ctx, &target_root, &target_data, NULL);
+    ck_assert_int_eq(target_status, CL_EPARSE);
+    generic_status = cli_exp_eval(&ctx, &generic_root, &generic_data, NULL);
+    ck_assert_int_eq(generic_status, CL_SUCCESS);
+    ck_assert_int_eq(cli_merge_scan_status(target_status, generic_status), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cli_ac_freedata(&target_data);
+    cli_ac_freedata(&generic_data);
+    cl_fmap_close(map);
+    ctx.fmap                    = &thefmap;
+    ctx.recursion_stack[0].fmap = &thefmap;
+}
+END_TEST
+
 START_TEST(test_logical_bytecode_v1_large_file_is_fail_visible)
 {
 #if SIZE_MAX > UINT32_MAX
@@ -1533,6 +1584,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_trust_layers_rejects_missing_reason);
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
+    tcase_add_test(tc_matchers, test_logical_root_status_merge_preserves_incomplete_result);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
     tcase_add_test(tc_matchers, test_yara_map_read_failure_is_fail_visible);

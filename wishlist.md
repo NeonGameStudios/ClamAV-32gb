@@ -675,3 +675,10 @@
    - Test authorized real clean/infected files, materialized workloads,
      parser-expansion inputs, cold-cache behavior, daemon paths, and resource
      budgets.
+
+- Matcher evaluation now merges target-specific and generic logical/YARA-root
+  statuses. A target-root parser, bytecode, or resource failure cannot be
+  overwritten by a later generic-root `CL_SUCCESS`; detections still take
+  precedence. A focused two-root regression and source guards cover the
+  fail-closed status contract, while full logical-signature and production
+  qualification remain open.

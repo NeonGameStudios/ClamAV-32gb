@@ -5097,3 +5097,13 @@ cannot spend unbounded time in line/header/multipart handling before reaching
 the common scan-result policy. A focused expired-context regression verifies
 the fail-visible result and cache suppression; compiled MIME timeout injection,
 sanitizer, and production mail-corpus qualification remain open.
+
+## Logical matcher root status merge — 2026-08-22
+
+Target-specific and generic logical/YARA matcher roots are evaluated
+sequentially. Their statuses now pass through `cli_merge_scan_status()` rather
+than allowing the later root to overwrite the earlier result. This preserves a
+target-root parser, bytecode, read, or resource failure when the generic root
+returns clean, while retaining detection precedence. A focused two-root
+regression and source guards cover the fail-closed merge; complete logical
+signature corpus and production qualification remain release gates.

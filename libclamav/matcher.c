@@ -1705,14 +1705,19 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
     // Evaluate for the target-specific signature AC matches.
     if (scan_viruses && NULL != target_ac_root) {
         if (ret != CL_VIRUS) {
-            ret = cli_exp_eval(ctx, target_ac_root, &target_ac_data, &info);
+            /* A target-root evaluation may be incomplete even when the
+             * generic root still has useful work to do. Preserve that status
+             * across the second root; a later clean result must never turn a
+             * partially evaluated layer into a clean scan. Detections remain
+             * stronger than all non-detection statuses. */
+            ret = cli_merge_scan_status(ret, cli_exp_eval(ctx, target_ac_root, &target_ac_data, &info));
         }
     }
 
     // Evaluate for the generic signature AC matches.
     if (scan_viruses && NULL != generic_ac_root) {
         if (ret != CL_VIRUS) {
-            ret = cli_exp_eval(ctx, generic_ac_root, &generic_ac_data, &info);
+            ret = cli_merge_scan_status(ret, cli_exp_eval(ctx, generic_ac_root, &generic_ac_data, &info));
         }
     }
 
