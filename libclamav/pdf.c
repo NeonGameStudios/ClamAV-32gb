@@ -3612,7 +3612,8 @@ done:
     return;
 }
 
-enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key, enum enc_method def)
+static enum enc_method parse_enc_method_ctx(struct pdf_struct *pdf, const char *dict, unsigned len, const char *key,
+                                            enum enc_method def)
 {
     const char *q;
     char *CFM           = NULL;
@@ -3624,11 +3625,11 @@ enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key
     if (!strcmp(key, "Identity"))
         return ENC_IDENTITY;
 
-    q = pdf_getdict(NULL, dict, (int *)(&len), key);
+    q = pdf_getdict(pdf, dict, (int *)(&len), key);
     if (!q)
         return def;
 
-    CFM = pdf_readval(NULL, q, len, "/CFM");
+    CFM = pdf_readval(pdf, q, len, "/CFM");
     if (CFM) {
         cli_dbgmsg("parse_enc_method: %s CFM: %s\n", key, CFM);
         if (!strncmp(CFM, "V2", 2))
@@ -3644,6 +3645,11 @@ enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key
     }
 
     return ret;
+}
+
+enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key, enum enc_method def)
+{
+    return parse_enc_method_ctx(NULL, dict, len, key, def);
 }
 
 void pdf_handle_enc(struct pdf_struct *pdf)
@@ -3781,9 +3787,9 @@ void pdf_handle_enc(struct pdf_struct *pdf)
             cli_dbgmsg("pdf_handle_enc: EFF: %s\n", EFF);
         }
 
-        pdf->enc_method_stream       = parse_enc_method(pdf->CF, n, StmF, ENC_IDENTITY);
-        pdf->enc_method_string       = parse_enc_method(pdf->CF, n, StrF, ENC_IDENTITY);
-        pdf->enc_method_embeddedfile = parse_enc_method(pdf->CF, n, EFF, pdf->enc_method_stream);
+        pdf->enc_method_stream       = parse_enc_method_ctx(pdf, pdf->CF, n, StmF, ENC_IDENTITY);
+        pdf->enc_method_string       = parse_enc_method_ctx(pdf, pdf->CF, n, StrF, ENC_IDENTITY);
+        pdf->enc_method_embeddedfile = parse_enc_method_ctx(pdf, pdf->CF, n, EFF, pdf->enc_method_stream);
 
         cli_dbgmsg("pdf_handle_enc: EncryptMetadata: %s\n", EM ? "true" : "false");
 

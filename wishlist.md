@@ -1036,6 +1036,9 @@
   windows; add compiled encrypted-PDF timeout and malformed-dictionary tests.
 - Legacy PDF token scanning now checkpoints long comments, whitespace, and line
   endings; add compiled token-timeout and malformed-object coverage.
+- Active PDF encryption crypt-filter parsing now supplies scan context while
+  the public compatibility wrapper remains; add compiled malformed-filter and
+  timeout coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.

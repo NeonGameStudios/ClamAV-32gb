@@ -4502,6 +4502,11 @@ while walking long comments, whitespace, and line endings. Context-free
 compatibility callers retain the original behavior; compiled token-timeout and
 malformed-object qualification remain release gates.
 
+The active encryption scanner now routes its crypt-filter lookups through a
+context-aware `parse_enc_method_ctx()` while preserving the public
+context-free `parse_enc_method()` wrapper for ABI compatibility. Compiled
+encrypted-PDF timeout and malformed-filter qualification remain open.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one
