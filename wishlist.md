@@ -1007,3 +1007,6 @@
   after each bounded fmap window, so URL scanning cannot silently consume a
   large HTML body past the shared deadline; compiled HTML timeout injection
   and production qualification remain open.
+- RAR `keeptmp` archive-comment staging now uses bounded writes with shared
+  deadline checks and fail-visible short-write handling; add compiled RAR
+  comment-timeout and optional-backend corpus qualification.

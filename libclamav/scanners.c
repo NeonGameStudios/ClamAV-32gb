@@ -328,6 +328,29 @@ static cl_error_t cli_rar_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+#define RAR_COMMENT_WRITE_CHUNK (64U * 1024U)
+
+static cl_error_t cli_rar_write_comment(cli_ctx *ctx, int fd, const char *comment, uint32_t comment_size)
+{
+    uint32_t offset = 0;
+
+    while (offset < comment_size) {
+        uint32_t remaining = comment_size - offset;
+        size_t chunk       = (remaining > RAR_COMMENT_WRITE_CHUNK) ? RAR_COMMENT_WRITE_CHUNK : (size_t)remaining;
+        cl_error_t status  = cli_rar_checktimelimit(ctx, "RAR archive comment output reached the configured time limit");
+
+        if (status != CL_SUCCESS)
+            return status;
+        if (cli_writen(fd, comment + offset, chunk) != chunk) {
+            cli_mark_scan_incomplete(ctx, "RAR archive comment could not be written completely");
+            return CL_EWRITE;
+        }
+        offset += (uint32_t)chunk;
+    }
+
+    return cli_rar_checktimelimit(ctx, "RAR archive comment output reached the configured time limit");
+}
+
 static int cli_rar_progress_callback(void *opaque)
 {
     return cli_rar_checktimelimit((cli_ctx *)opaque, "RAR decoder reached the configured time limit") != CL_SUCCESS;
@@ -424,8 +447,11 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                 cli_dbgmsg("RAR: ERROR: Failed to open output file\n");
             } else {
                 cli_dbgmsg("RAR: Writing the archive comment to temp file: %s\n", comment_fullpath);
-                if (0 == write(comment_fd, comment, comment_size)) {
+                status = cli_rar_write_comment(ctx, comment_fd, comment, comment_size);
+                if (status != CL_SUCCESS) {
                     cli_dbgmsg("RAR: ERROR: Failed to write to output file\n");
+                    close(comment_fd);
+                    goto done;
                 }
                 close(comment_fd);
             }

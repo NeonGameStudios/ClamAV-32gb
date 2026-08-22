@@ -4426,3 +4426,12 @@ before publishing the trailing URL, returning an incomplete result on expiry.
 The read remains bounded and short/in-range fmap failures remain fail-visible.
 Compiled HTML timeout injection, parser corpus, sanitizer, and supported-build
 Sonic1 qualification remain release gates.
+
+## RAR archive-comment staging deadline — 2026-08-22
+
+The optional UnRAR backend's `keeptmp` archive-comment path previously used one
+unchecked direct `write()` and ignored partial writes. It now stages comments in
+64 KiB chunks, checks the shared deadline before and after the bounded output,
+and preserves a fail-visible timeout or short-write result. Compiled optional
+backend coverage, deterministic comment-timeout injection, sanitizer, and
+Sonic1 qualification remain release gates.
