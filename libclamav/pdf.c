@@ -81,8 +81,8 @@
 
 struct pdf_struct;
 
-static const char *pdf_nextlinestart(const char *ptr, size_t len);
-static const char *pdf_nextobject(const char *ptr, size_t len);
+static const char *pdf_nextlinestart(struct pdf_struct *pdf, const char *ptr, size_t len);
+static const char *pdf_nextobject(struct pdf_struct *pdf, const char *ptr, size_t len);
 
 static const char *pdf_memstr_deadline(struct pdf_struct *pdf, const char *start, size_t len,
                                        const char *needle, size_t needle_len, cl_error_t *status)
@@ -1148,7 +1148,7 @@ static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
 
     /* Find the start of the next direct or indirect object.
      * pdf_nextobject() assumes we started searching from within a previous object */
-    obj_start = pdf_nextobject(index, bytes_remaining);
+    obj_start = pdf_nextobject(pdf, index, bytes_remaining);
     if (!obj_start)
         return 0;
 
@@ -1249,7 +1249,7 @@ static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const cha
             }
 
             /* Ok so we found the indirect object, lets read the value. */
-            index = pdf_nextobject(indirect_obj_start, bytes_remaining);
+            index = pdf_nextobject(pdf, indirect_obj_start, bytes_remaining);
             if (!index) {
                 cli_dbgmsg("find_length: next object not found\n");
                 return 0;
@@ -2093,7 +2093,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
                 cli_dbgmsg("pdf_extract_obj: bytesleft: %d\n", (int)bytesleft);
 
                 if (bytesleft > 0) {
-                    q2 = pdf_nextobject(q, bytesleft);
+                    q2 = pdf_nextobject(pdf, q, bytesleft);
                     if (!q2)
                         q2 = q + bytesleft - 1;
 
@@ -2360,7 +2360,7 @@ static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
 
     q = enc + 8;
     len -= 8;
-    q2 = pdf_nextobject(q, len);
+    q2 = pdf_nextobject(pdf, q, len);
     if (!q2 || !isdigit(*q2))
         return;
     len -= q2 - q;
@@ -2382,7 +2382,7 @@ static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
     }
 
     objid = objid << 8;
-    q2    = pdf_nextobject(q, len);
+    q2    = pdf_nextobject(pdf, q, len);
     if (!q2 || !isdigit(*q2))
         return;
     len -= q2 - q;
@@ -2404,7 +2404,7 @@ static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
     }
 
     objid |= genid;
-    q2 = pdf_nextobject(q, len);
+    q2 = pdf_nextobject(pdf, q, len);
     if (!q2 || *q2 != 'R')
         return;
 
@@ -2520,7 +2520,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
 
     /* find start of dictionary */
     do {
-        nextobj = pdf_nextobject(q, bytesleft);
+        nextobj = pdf_nextobject(pdf, q, bytesleft);
         if (!nextobj)
             bytesleft = -1;
         else
@@ -2741,7 +2741,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
             if (objstate == STATE_OPENACTION)
                 pdfobj_flag(pdf, obj, HAS_OPENACTION);
 
-            q2 = pdf_nextobject(q, dict_remaining);
+            q2 = pdf_nextobject(pdf, q, dict_remaining);
             if (q2 && isdigit(*q2)) {
                 const char *q2_old = NULL;
                 unsigned long objid;
@@ -2773,7 +2773,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
                 }
 
                 q2_old = q2;
-                q2     = pdf_nextobject(q2, dict_remaining);
+                q2     = pdf_nextobject(pdf, q2, dict_remaining);
                 if (q2 && isdigit(*q2)) {
                     dict_remaining -= (off_t)(q2 - q2_old);
                     if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)dict_remaining, 0, 10, &temp_long)) {
@@ -2793,7 +2793,7 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
 
                     objid |= genid;
 
-                    q2 = pdf_nextobject(q2, dict_remaining);
+                    q2 = pdf_nextobject(pdf, q2, dict_remaining);
                     if (q2 && *q2 == 'R') {
                         struct pdf_obj *obj2;
 
@@ -2900,7 +2900,7 @@ static const char *pdf_getdict(struct pdf_struct *pdf, const char *q0, int *len,
     q0 = q;
 
     /* find the start of the value object */
-    q = pdf_nextobject(q0 + 1, *len - 1);
+    q = pdf_nextobject(pdf, q0 + 1, *len - 1);
     if (!q) {
         cli_dbgmsg("pdf_getdict: %s is invalid in dict\n", key);
         return NULL;
@@ -4516,20 +4516,27 @@ err:
 /**
  * @brief   Skip the rest of the current line, and find the start of the next line.
  *
+ * @param pdf  PDF context used for deadline checkpoints, or NULL for compatibility callers.
  * @param ptr   Current offset into buffer.
  * @param len   Remaining bytes in buffer.
  *
  * @return const char*  Address of next line, or NULL if no next line in buffer.
  */
 static const char *
-pdf_nextlinestart(const char *ptr, size_t len)
+pdf_nextlinestart(struct pdf_struct *pdf, const char *ptr, size_t len)
 {
+    const char *start = ptr;
+
     if (!ptr || (0 == len)) {
         /* Invalid args */
         return NULL;
     }
 
     while (strchr("\r\n", *ptr) == NULL) {
+        if (pdf && 0 == ((size_t)(ptr - start) % PDF_SEARCH_WINDOW) && cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object-token search reached the configured time limit");
+            return NULL;
+        }
         if (--len == 0L)
             return NULL;
 
@@ -4537,6 +4544,10 @@ pdf_nextlinestart(const char *ptr, size_t len)
     }
 
     while (strchr("\r\n", *ptr) != NULL) {
+        if (pdf && 0 == ((size_t)(ptr - start) % PDF_SEARCH_WINDOW) && cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object-token search reached the configured time limit");
+            return NULL;
+        }
         if (--len == 0L)
             return NULL;
 
@@ -4551,23 +4562,29 @@ pdf_nextlinestart(const char *ptr, size_t len)
  *
  * This assumes that we're not in a stream.
  *
+ * @param pdf  PDF context used for deadline checkpoints, or NULL for compatibility callers.
  * @param ptr   Current offset into buffer.
  * @param len   Remaining bytes in buffer.
  *
  * @return const char*  Address of next object in the buffer, or NULL if there is none in the buffer.
  */
 static const char *
-pdf_nextobject(const char *ptr, size_t len)
+pdf_nextobject(struct pdf_struct *pdf, const char *ptr, size_t len)
 {
     const char *p;
+    const char *start = ptr;
     int inobject = 1;
 
     while (len) {
+        if (pdf && 0 == ((size_t)(ptr - start) % PDF_SEARCH_WINDOW) && cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object-token search reached the configured time limit");
+            return NULL;
+        }
         switch (*ptr) {
             case '\n':
             case '\r':
             case '%': /* comment */
-                p = pdf_nextlinestart(ptr, len);
+                p = pdf_nextlinestart(pdf, ptr, len);
                 if (p == NULL)
                     return NULL;
 

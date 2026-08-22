@@ -2785,6 +2785,7 @@ contains libclamav/pdf.c 'PDF literal string search reached the configured time 
 contains libclamav/pdf.c 'PDF hexadecimal string search reached the configured time limit'
 contains libclamav/pdf.c 'PDF dictionary value search reached the configured time limit'
 contains libclamav/pdf.c 'PDF encryption standard search reached the configured time limit'
+contains libclamav/pdf.c 'PDF object-token search reached the configured time limit'
 contains libclamav/pdf.c 'if (!nextobj)'
 contains libclamav/pdf.c 'bytesleft = -1;'
 contains tools/largefile_runtime_gate.sh 'unset LD_PRELOAD LD_AUDIT'

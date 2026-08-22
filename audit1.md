@@ -4497,6 +4497,11 @@ deadline-aware window helper; the PDF version-header search remains bounded to
 the existing 1032-byte probe. Compiled encrypted-PDF timeout and malformed
 dictionary qualification remain release gates.
 
+The legacy PDF token scanner now receives the PDF context and checkpoints
+while walking long comments, whitespace, and line endings. Context-free
+compatibility callers retain the original behavior; compiled token-timeout and
+malformed-object qualification remain release gates.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one

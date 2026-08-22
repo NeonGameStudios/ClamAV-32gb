@@ -1034,6 +1034,8 @@
   and add compiled malformed-value and timeout coverage.
 - The context-bearing encryption-object `/Standard` search now uses deadline
   windows; add compiled encrypted-PDF timeout and malformed-dictionary tests.
+- Legacy PDF token scanning now checkpoints long comments, whitespace, and line
+  endings; add compiled token-timeout and malformed-object coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.
