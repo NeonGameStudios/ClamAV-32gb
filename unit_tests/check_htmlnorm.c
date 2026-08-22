@@ -27,6 +27,9 @@
 
 #include <stdio.h>
 #include <errno.h>
+#ifndef _WIN32
+#include <sys/time.h>
+#endif
 
 #include <check.h>
 #include <fcntl.h>
@@ -202,6 +205,38 @@ START_TEST(test_htmlnorm_mapped_read_failure_is_fail_visible)
 }
 END_TEST
 
+#ifndef _WIN32
+START_TEST(test_htmlnorm_time_limit_is_fail_visible)
+{
+    static const unsigned char input[] = "<html><body>timeout</body></html>";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ck_assert_msg(mkdir(dir, 0700) == 0, "mkdir failed: %s", dir);
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert(!html_normalise_map(&ctx, map, dir, NULL, NULL));
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HTML normalization reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ck_assert_msg(cli_rmdirs(dir) == 0, "rmdirs failed: %s", dir);
+}
+END_TEST
+#endif
+
 START_TEST(test_screnc_nullterminate)
 {
     int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
@@ -227,6 +262,42 @@ START_TEST(test_screnc_nullterminate)
     cl_engine_free(engine);
 }
 END_TEST
+
+#ifndef _WIN32
+START_TEST(test_screnc_time_limit_is_fail_visible)
+{
+    int fd = open_testfile("input" PATHSEP "other_scanfiles" PATHSEP "screnc_test", O_RDONLY | O_BINARY);
+    fmap_t *map;
+    cli_ctx ctx;
+    struct cl_engine *engine;
+    uint64_t temporary_reserved = 0;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = engine;
+    ck_assert_msg(mkdir(dir, 0700) == 0, "mkdir failed");
+    map = fmap_new(fd, 0, 0, "screnc_test", NULL);
+    ck_assert_ptr_nonnull(map);
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert(!html_screnc_decode_ctx(&ctx, map, dir, &temporary_reserved));
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HTML script-encoded inspection reached the configured time limit");
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert(map->dont_cache_flag);
+
+    fmap_free(map);
+    ck_assert_msg(cli_rmdirs(dir) == 0, "rmdirs failed");
+    close(fd);
+    cl_engine_free(engine);
+}
+END_TEST
+#endif
 
 START_TEST(test_screnc_temporary_limit_is_fail_visible)
 {
@@ -268,7 +339,13 @@ Suite *test_htmlnorm_suite(void)
     tcase_add_unchecked_fixture(tc_htmlnorm_api,
                                 htmlnorm_setup, htmlnorm_teardown);
     tcase_add_test(tc_htmlnorm_api, test_htmlnorm_mapped_read_failure_is_fail_visible);
+#ifndef _WIN32
+    tcase_add_test(tc_htmlnorm_api, test_htmlnorm_time_limit_is_fail_visible);
+#endif
     tcase_add_test(tc_htmlnorm_api, test_screnc_nullterminate);
+#ifndef _WIN32
+    tcase_add_test(tc_htmlnorm_api, test_screnc_time_limit_is_fail_visible);
+#endif
     tcase_add_test(tc_htmlnorm_api, test_screnc_temporary_limit_is_fail_visible);
 
     return s;

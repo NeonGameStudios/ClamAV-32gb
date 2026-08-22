@@ -2522,7 +2522,49 @@ START_TEST(test_html_normalize_cleanup_close_failure_is_fail_visible)
     cl_engine_free(engine);
 }
 END_TEST
-#endif
+
+START_TEST(test_html_utf16_time_limit_is_fail_visible)
+{
+    static const uint8_t input[] = {'<', 0x00, 'h', 0x00};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    layers[0].fmap           = map;
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ck_assert_int_eq(cli_magic_scan(&ctx, CL_TYPE_HTML_UTF16), CL_ETIMEOUT);
+    ck_assert(ctx.scan_timed_out);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "UTF-16 HTML inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
 #endif
 
 #ifndef _WIN32
@@ -18858,6 +18900,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_fmap_get_data_clamps_wrapped_length);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
+    tcase_add_test(tc_cl, test_html_utf16_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_html_normalize_cap_does_not_skip_raw_matching);
     tcase_add_test(tc_cl, test_html_notags_cap_is_fail_visible);
     tcase_add_test(tc_cl, test_html_notags_cap_uses_generated_size);

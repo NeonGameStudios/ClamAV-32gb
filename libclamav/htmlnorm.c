@@ -726,6 +726,16 @@ void html_form_data_tag_free(form_data_t *tags)
     CLI_FREE_AND_SET_NULL(tags->urls);
 }
 
+static bool htmlnorm_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    if (ctx && cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return false;
+    }
+
+    return true;
+}
+
 static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const char *dirname, tag_arguments_t *hrefs, const struct cli_dconf *dconf, form_data_t *form_data)
 {
     int fd_tmp, tag_length = 0, tag_arg_length = 0;
@@ -846,9 +856,15 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
 
     binary = false;
 
+    if (!htmlnorm_checktimelimit(ctx, "HTML normalization reached the configured time limit"))
+        goto done;
+
     ptr = line = cli_readchunk(stream_in, m_area, 8192);
 
     while (line) {
+        if (!htmlnorm_checktimelimit(ctx, "HTML normalization reached the configured time limit"))
+            goto done;
+
         if (href_contents_begin)
             href_contents_begin = ptr; /*start of a new line, last line already appended to contents see below*/
         while (*ptr && isspace(*ptr)) {
@@ -2185,6 +2201,9 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     m_area.map    = map;
     m_area.read_error = false;
 
+    if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded inspection reached the configured time limit"))
+        return false;
+
     snprintf((char *)filename, 1024, "%s" PATHSEP "screnc.html", dirname);
     ofd = open((const char *)filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IWUSR | S_IRUSR);
 
@@ -2193,7 +2212,14 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
         return false;
     }
 
-    while ((line = cli_readchunk(NULL, &m_area, 8192)) != NULL) {
+    while (true) {
+        if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded inspection reached the configured time limit"))
+            goto done;
+
+        line = cli_readchunk(NULL, &m_area, 8192);
+        if (line == NULL)
+            break;
+
         ptr = (unsigned char *)strstr((char *)line, "#@~^");
         if (ptr) {
             break;
@@ -2210,6 +2236,9 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     count = 0;
     do {
         if (!*ptr) {
+            if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded inspection reached the configured time limit"))
+                goto done;
+
             free(line);
             ptr = line = cli_readchunk(NULL, &m_area, 8192);
             if (!line) {
@@ -2234,6 +2263,9 @@ static bool html_screnc_decode_impl(cli_ctx *ctx, fmap_t *map, const char *dirna
     if (!html_screnc_write(ctx, ofd, "<script>", strlen("<script>"), temporary_reserved))
         goto done;
     while (screnc_state.length && line) {
+        if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded inspection reached the configured time limit"))
+            goto done;
+
         screnc_decode(ptr, &screnc_state);
         if (!html_screnc_write(ctx, ofd, ptr, strlen((const char *)ptr), temporary_reserved))
             goto done;

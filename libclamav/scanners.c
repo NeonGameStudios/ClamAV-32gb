@@ -3430,6 +3430,12 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_scanhtml()\n");
 
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "HTML inspection reached the configured time limit");
+        goto done;
+    }
+
     /* CL_ENGINE_MAX_HTMLNORMALIZE */
     if (curr_len > ctx->engine->maxhtmlnormalize) {
         cli_dbgmsg("cli_scanhtml: exiting (file larger than MaxHTMLNormalize)\n");
@@ -3468,14 +3474,21 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
     }
 
     if (!normalization_ok) {
-        cli_mark_scan_incomplete(ctx, "HTML normalization did not complete");
-        status = CL_EPARSE;
+        if (!ctx->scan_timed_out)
+            cli_mark_scan_incomplete(ctx, "HTML normalization did not complete");
+        status = ctx->scan_timed_out ? CL_ETIMEOUT : CL_EPARSE;
         goto done;
     }
 
     /* A failed HTML normalization must not be scanned as a complete layer. */
     if (ctx->scan_incomplete) {
         status = CL_EPARSE;
+        goto done;
+    }
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "HTML inspection reached the configured time limit");
         goto done;
     }
 
@@ -3916,6 +3929,12 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_scanhtml_utf16()\n");
 
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML inspection reached the configured time limit");
+        goto done;
+    }
+
     if (ctx->fmap->len & 1U) {
         cli_mark_scan_incomplete(ctx, "UTF-16 HTML input has an incomplete code unit");
         status = CL_EPARSE;
@@ -3944,6 +3963,12 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
     cli_dbgmsg("cli_scanhtml_utf16: using tempfile %s\n", tempname);
 
     while (at < ctx->fmap->len) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "UTF-16 HTML inspection reached the configured time limit");
+            goto done;
+        }
+
         bytes = MIN(ctx->fmap->len - at, ctx->fmap->pgsz * 16);
         if (bytes == 0) {
             cli_mark_scan_incomplete(ctx, "UTF-16 HTML reader made no progress");
@@ -4296,8 +4321,9 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
     }
 
     if (!html_screnc_decode_ctx(ctx, ctx->fmap, tempname, &temporary_reserved)) {
-        cli_mark_scan_incomplete(ctx, "HTML script-encoded content could not be decoded completely");
-        ret = CL_EPARSE;
+        if (!ctx->scan_timed_out)
+            cli_mark_scan_incomplete(ctx, "HTML script-encoded content could not be decoded completely");
+        ret = ctx->scan_timed_out ? CL_ETIMEOUT : CL_EPARSE;
     } else {
         cli_scan_release_temporary(ctx, temporary_reserved);
         temporary_reserved = 0;

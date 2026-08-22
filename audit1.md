@@ -2346,6 +2346,17 @@ instead of returning clean after a partial scan. A focused expired-context
 regression and source guards cover the contract; compiled large-text corpus,
 sanitizer, and Sonic1 qualification remain release gates.
 
+## HTML normalization deadlines — 2026-08-22
+
+HTML normalization and script-encoded extraction previously consumed 8 KiB
+input chunks without a shared cancellation checkpoint, while UTF-16 conversion
+could continue through its full input after the deadline. The normalizer,
+script-encoder, UTF-16 converter, and HTML wrappers now preserve timeout as
+`CL_ETIMEOUT`, mark the layer incomplete, and retain temporary-file cleanup.
+Focused normalizer, script-encoder, and dispatch regressions plus source guards
+cover the contract; compiled HTML corpus, sanitizer, and Sonic1 qualification
+remain release gates.
+
 ## PDF filter traversal deadlines — 2026-08-22
 
 The legacy PDF filter path enforced allocation and decoded-output limits but
