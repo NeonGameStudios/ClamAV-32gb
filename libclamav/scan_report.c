@@ -365,6 +365,37 @@ void cli_scan_report_finish(
     if ((NULL == report) || report->finalized)
         return;
 
+    if (NULL != ctx)
+        reason = ctx->scan_incomplete_reason;
+
+    /* A sticky incomplete marker is itself a required-operation failure. Do
+     * not serialize a clean/trusted status alongside a non-complete outcome:
+     * structured consumers must be able to reject the report without having
+     * to infer a status from the human-readable reason. Preserve a more
+     * specific caller status, but derive a non-clean status when older paths
+     * supplied only the sticky context flag. Detection remains authoritative
+     * and intentionally keeps its historical CL_SUCCESS status convention. */
+    if ((NULL != ctx) && ctx->scan_incomplete &&
+        (status == CL_SUCCESS || status == CL_VERIFIED) &&
+        (verdict != CL_VERDICT_STRONG_INDICATOR) &&
+        (verdict != CL_VERDICT_POTENTIALLY_UNWANTED)) {
+        if ((ctx->limit_exceeded_result != CL_SUCCESS) &&
+            (ctx->limit_exceeded_result != CL_VERIFIED))
+            status = ctx->limit_exceeded_result;
+        else if (ctx->abort_scan)
+            status = CL_BREAK;
+        else if (report_reason_is_unsupported(reason))
+            status = CL_EUNPACK;
+        else if (report_reason_contains(reason, "malformed") ||
+                 report_reason_contains(reason, "truncated") ||
+                 report_reason_contains(reason, "invalid") ||
+                 report_reason_contains(reason, "broken") ||
+                 report_reason_contains(reason, "could not be parsed"))
+            status = CL_EPARSE;
+        else
+            status = CL_ERROR;
+    }
+
     report->status  = status;
     report->verdict = verdict;
 
@@ -377,7 +408,6 @@ void cli_scan_report_finish(
         report->verdict = CL_VERDICT_STRONG_INDICATOR;
 
     if (NULL != ctx) {
-        reason                             = ctx->scan_incomplete_reason;
         report->metrics.skipped_operations = ctx->skipped_operations;
         /* Preserve the old manually-constructed cli_ctx contract for callers
          * that set only the sticky flag. */

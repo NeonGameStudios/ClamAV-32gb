@@ -59,6 +59,14 @@ detection and an incomplete sibling; contradictory clean/error combinations
 are rejected. Compiled multi-frame and exact milter-action qualification
 remains a release gate.
 
+Report producers also normalize a sticky incomplete context before
+serialization: a legacy `CL_SUCCESS`/`CL_VERIFIED` status becomes the most
+specific available non-clean status (`CL_ERESOURCE`, `CL_BREAK`, `CL_EUNPACK`,
+`CL_EPARSE`, or `CL_ERROR`). Daemon unsupported-file skips explicitly use
+`CL_EUNPACK`, so the framed parser never receives an `UNSUPPORTED` or resource
+completion paired with a clean numeric status. Compiled daemon skip and wire
+qualification remains a release gate.
+
 The clamd INSTREAM receiver also fails closed on staging writes: a failed
 temporary-file write stops the stream immediately, emits one protocol-matched
 error, and removes the partial descriptor without dispatching it to the

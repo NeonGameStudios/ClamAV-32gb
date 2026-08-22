@@ -1720,6 +1720,7 @@ START_TEST(test_scan_report_sticky_resource_failure_is_not_a_scan_limit)
 {
     cl_scan_report_t *report = NULL;
     cl_scan_completion_t completion;
+    cl_error_t status;
     cli_ctx ctx;
 
     memset(&ctx, 0, sizeof(ctx));
@@ -1730,6 +1731,8 @@ START_TEST(test_scan_report_sticky_resource_failure_is_not_a_scan_limit)
 
     ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
     cli_scan_report_finish(report, &ctx, CL_SUCCESS, CL_VERDICT_NOTHING_FOUND, NULL);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
+    ck_assert_int_eq(status, CL_ERESOURCE);
     ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
     ck_assert_int_eq(completion, CL_SCAN_COMPLETION_RESOURCE_FAILURE);
     cl_scan_report_free(report);
@@ -1740,6 +1743,7 @@ START_TEST(test_scan_report_counts_skipped_operations)
 {
     cl_scan_report_t *report = NULL;
     cl_scan_report_metrics_t metrics;
+    cl_error_t status;
     cli_ctx ctx;
 
     memset(&ctx, 0, sizeof(ctx));
@@ -1750,8 +1754,31 @@ START_TEST(test_scan_report_counts_skipped_operations)
     ck_assert_uint_eq(ctx.skipped_operations, 2);
     ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
     cli_scan_report_finish(report, &ctx, CL_SUCCESS, CL_VERDICT_NOTHING_FOUND, NULL);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
+    ck_assert_int_eq(status, CL_ERROR);
     ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
     ck_assert_uint_eq(metrics.skipped_operations, 2);
+    cl_scan_report_free(report);
+}
+END_TEST
+
+START_TEST(test_scan_report_sticky_incomplete_status_is_nonclean)
+{
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    cl_error_t status;
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.scan_incomplete        = true;
+    ctx.scan_incomplete_reason = "unsupported parser feature was skipped";
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    cli_scan_report_finish(report, &ctx, CL_SUCCESS, CL_VERDICT_NOTHING_FOUND, NULL);
+    ck_assert_int_eq(cl_scan_report_get_status(report, &status), CL_SUCCESS);
+    ck_assert_int_eq(status, CL_EUNPACK);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_UNSUPPORTED);
     cl_scan_report_free(report);
 }
 END_TEST
@@ -20221,6 +20248,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_operational_failure_is_resource_failure);
     tcase_add_test(tc_cl, test_scan_report_sticky_resource_failure_is_not_a_scan_limit);
     tcase_add_test(tc_cl, test_scan_report_counts_skipped_operations);
+    tcase_add_test(tc_cl, test_scan_report_sticky_incomplete_status_is_nonclean);
     tcase_add_test(tc_cl, test_scan_report_post_scan_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_descriptor_temporary_reservation_is_reported);

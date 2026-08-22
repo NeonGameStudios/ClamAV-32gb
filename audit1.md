@@ -3944,3 +3944,16 @@ precedence across sibling frames; malformed reports still fail closed. The
 focused parser regression covers explicit and implicit string incomplete
 reports and contradictory numeric statuses. Compiled fanotify, multi-frame,
 exact milter-action, sanitizer, and Sonic1 qualification remain open.
+
+## Structured incomplete status normalization — 2026-08-22
+
+The report producer could serialize `status: 0` or `CL_VERIFIED` alongside a
+sticky incomplete completion when older callers supplied only the context
+marker. That contradicted the framed consumer contract and caused a strict
+consumer to reject otherwise meaningful `UNSUPPORTED` or resource reports.
+`cli_scan_report_finish()` now derives the most specific non-clean status from
+the limit/abort state and reason (`CL_ERESOURCE`, `CL_BREAK`, `CL_EUNPACK`,
+`CL_EPARSE`, or `CL_ERROR`) without changing detection precedence. Daemon
+unsupported-file skips explicitly use `CL_EUNPACK`; focused report tests cover
+resource, generic, and unsupported normalization. Compiled daemon skip, wire,
+sanitizer, and Sonic1 qualification remain open.

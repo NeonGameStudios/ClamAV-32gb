@@ -388,6 +388,11 @@
   remain authoritative when a multi-frame response also contains an incomplete
   result, while contradictory clean/error combinations fail closed. Add
   compiled multi-frame timeout/resource and exact milter-action qualification.
+- Structured report producers now normalize sticky incomplete clean/trusted
+  statuses to a specific non-clean `CL_EUNPACK`, `CL_EPARSE`, `CL_ERESOURCE`,
+  `CL_BREAK`, or generic `CL_ERROR` result before serialization; unsupported
+  daemon skips use `CL_EUNPACK`. Add compiled daemon skip and report-wire
+  qualification.
 - On-access requests that cannot be sent, including a file disappearing before
   open, now become explicit non-clean `CL_EOPEN`/write failures instead of a
   zero-length soft skip that could be labeled clean; compiled fanotify and

@@ -374,7 +374,7 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
                 conn_reply(scandata->conn, msg, "Not supported file type", "ERROR");
             logg(LOGG_DEBUG, "Not supported file type: %s\n", msg);
             scandata->errors++;
-            record_structured_scan_skip(scandata, CL_SUCCESS,
+            record_structured_scan_skip(scandata, CL_EUNPACK,
                                         "unsupported file type was skipped");
             free(filename);
             return CL_SUCCESS;
