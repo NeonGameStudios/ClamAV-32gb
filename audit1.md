@@ -4605,3 +4605,13 @@ back-copy loops, while the caller checks the fix-up traversal before rebuilding
 the PE. Timeout is fail-visible and partial output is not handed to rebuild or
 nested scanning. Compiled Upack timeout injection, production PE corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## FSG decompression deadline checkpoints — 2026-08-22
+
+The shared FSG bitstream decoder previously had no scan context, so FSG 2.0
+and multi-section FSG 1.33 output and back-copy loops could run past the
+shared `MaxScanTime`. A context-aware `cli_unfsg_ctx()` path now checkpoints
+decoder progress and large copies, while the existing context-free wrapper is
+retained for MEW and Spin callers. FSG timeout is fail-visible before PE
+rebuild or nested scanning. Compiled timeout injection, multi-section corpus,
+sanitizer, and Sonic1 qualification remain release gates.

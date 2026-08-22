@@ -2425,6 +2425,8 @@ contains libclamav/aspack.c 'Aspack fallback output could not be written complet
 contains libclamav/aspack.c 'Aspack decompression reached the configured time limit'
 contains libclamav/upack.c 'Upack decompression reached the configured time limit'
 contains libclamav/upack.c 'Upack fix-up reached the configured time limit'
+contains libclamav/packlibs.c 'FSG decompression reached the configured time limit'
+contains libclamav/fsg.c 'cli_unfsg_ctx'
 contains libclamav/wwunpack.c 'WWPack output reached the configured time limit'
 contains libclamav/wwunpack.c 'WWPack output could not be written completely'
 contains libclamav/wwunpack.c 'WWPack decompression reached the configured time limit'

@@ -46,18 +46,43 @@ static int doubledl(const char **scur, uint8_t *mydlptr, const char *buffer, uin
     return (olddl >> 7) & 1;
 }
 
-int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
+static int fsg_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
+{
+    if (ctx == NULL)
+        return 0;
+
+    (*ticks)++;
+    if (*ticks < 4096)
+        return 0;
+
+    *ticks = 0;
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "FSG decompression reached the configured time limit");
+        return 1;
+    }
+
+    return 0;
+}
+
+int cli_unfsg_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
 {
     uint8_t mydl = 0x80;
     uint32_t backbytes, backsize, oldback = 0;
+    uint32_t ticks = 0;
     const char *csrc = source;
     char *cdst       = dest;
     int oob, lostbit = 1;
 
     if (ssize <= 0 || dsize <= 0) return -1;
+    if (ctx != NULL && cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "FSG decompression reached the configured time limit");
+        return -1;
+    }
     *cdst++ = *csrc++;
 
     while (1) {
+        if (fsg_checktimelimit(ctx, &ticks))
+            return -1;
         if ((oob = doubledl(&csrc, &mydl, source, ssize))) {
             if (oob == -1)
                 return -1;
@@ -76,6 +101,8 @@ int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char *
                     backsize++;
                     backbytes = 0x10;
                     while (backbytes < 0x100) {
+                        if (fsg_checktimelimit(ctx, &ticks))
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                         backbytes = backbytes * 2 + oob;
@@ -105,6 +132,8 @@ int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char *
                 /* 180 */
                 backsize = 1;
                 do {
+                    if (fsg_checktimelimit(ctx, &ticks))
+                        return -1;
                     if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                         return -1;
                     backsize = backsize * 2 + oob;
@@ -117,6 +146,8 @@ int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char *
                     /* 18a */
                     backsize = 1;
                     do {
+                        if (fsg_checktimelimit(ctx, &ticks))
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                         backsize = backsize * 2 + oob;
@@ -134,6 +165,8 @@ int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char *
                     backsize = 1;
                     csrc++;
                     do {
+                        if (fsg_checktimelimit(ctx, &ticks))
+                            return -1;
                         if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
                             return -1;
                         backsize = backsize * 2 + oob;
@@ -155,6 +188,8 @@ int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char *
             if (!CLI_ISCONTAINED(dest, dsize, cdst, backsize) || !CLI_ISCONTAINED(dest, dsize, cdst - backbytes, backsize))
                 return -1;
             while (backsize--) {
+                if (fsg_checktimelimit(ctx, &ticks))
+                    return -1;
                 *cdst = *(cdst - backbytes);
                 cdst++;
             }
@@ -171,6 +206,11 @@ int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char *
     if (endsrc) *endsrc = csrc;
     if (enddst) *enddst = cdst;
     return 0;
+}
+
+int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
+{
+    return cli_unfsg_ctx(source, dest, ssize, dsize, endsrc, enddst, NULL);
 }
 
 int unmew(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)

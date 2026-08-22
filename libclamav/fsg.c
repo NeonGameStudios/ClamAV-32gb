@@ -51,7 +51,7 @@ int unfsg_200(const char *source, char *dest, int ssize, int dsize, uint32_t rva
 {
     struct cli_exe_section section; /* Yup, just one ;) */
 
-    if (cli_unfsg(source, dest, ssize, dsize, NULL, NULL)) return -1;
+    if (cli_unfsg_ctx(source, dest, ssize, dsize, NULL, NULL, ctx)) return -1;
 
     section.raw = 0;
     section.rsz = dsize;
@@ -73,7 +73,7 @@ int unfsg_133(const char *source, char *dest, int ssize, int dsize, struct cli_e
 
     for (i = 0; i <= sectcount; i++) {
         char *startd = tdst;
-        if (cli_unfsg(tsrc, tdst, ssize - (tsrc - source), dsize - (tdst - dest), &tsrc, &tdst) == -1)
+        if (cli_unfsg_ctx(tsrc, tdst, ssize - (tsrc - source), dsize - (tdst - dest), &tsrc, &tdst, ctx) == -1)
             return -1;
 
         /* RVA has been filled already in pe.c */

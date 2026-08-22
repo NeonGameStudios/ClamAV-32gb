@@ -1067,3 +1067,6 @@
 - Legacy Upack output, LZMA back-copy, and call-fix loops now receive the
   shared scan context and checkpoint `MaxScanTime`; add compiled Upack timeout
   injection, production PE corpus, sanitizer, and Sonic1 qualification.
+- FSG decompression and back-copy loops now use a context-aware decoder entry
+  while retaining a compatibility wrapper for other packers; add compiled FSG
+  timeout injection, multi-section corpus, sanitizer, and Sonic1 qualification.
