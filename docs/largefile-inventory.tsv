@@ -3664,49 +3664,49 @@ fixed-width-integer	libclamav/others_common.c	387	    if ((uint32_t)(*timep) > 0
 fixed-width-integer	libclamav/packlibs.c	179	    uint32_t myeax_backbytes, myecx_backsize, oldback = 0;
 fixed-width-integer	libclamav/packlibs.c	32	static int doubledl(const char **scur, uint8_t *mydlptr, const char *buffer, uint32_t buffersize)
 fixed-width-integer	libclamav/packlibs.c	52	    uint32_t backbytes, backsize, oldback = 0;
-fixed-width-integer	libclamav/pdf.c	1144	            obj = find_obj(pdf, obj, (uint32_t)(length << 8) | (uint32_t)genid);
-fixed-width-integer	libclamav/pdf.c	1249	    uint32_t rk[RKLENGTH(256)];
-fixed-width-integer	libclamav/pdf.c	132	                                          bool remove_file, uint64_t temporary_reserved,
-fixed-width-integer	libclamav/pdf.c	1337	    uint32_t rk[RKLENGTH(128)];
-fixed-width-integer	libclamav/pdf.c	1384	char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
-fixed-width-integer	libclamav/pdf.c	1507	                          size_t length, int fout, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/pdf.c	1571	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/pdf.c	1624	cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t flags)
-fixed-width-integer	libclamav/pdf.c	1633	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/pdf.c	199	    if (offset < 0 || (uint64_t)offset > map->len)
-fixed-width-integer	libclamav/pdf.c	2121	    uint32_t nameflags;
-fixed-width-integer	libclamav/pdf.c	2316	    pdf->enc_objid = (uint32_t)objid;
-fixed-width-integer	libclamav/pdf.c	3075	    int32_t block_size = 32;
-fixed-width-integer	libclamav/pdf.c	3077	    int32_t i, j, sum;
-fixed-width-integer	libclamav/pdf.c	3248	                                const char *U, int32_t P, int EM,
-fixed-width-integer	libclamav/pdf.c	3281	                uint32_t v = 0xFFFFFFFF;
-fixed-width-integer	libclamav/pdf.c	3512	    uint32_t len, n, R, P, length, EM = 1, i, oulen;
-fixed-width-integer	libclamav/pdf.c	3759	    uint32_t badobjects = 0;
-fixed-width-integer	libclamav/pdf.c	3836	    int32_t rv          = 0;
-fixed-width-integer	libclamav/pdf.c	3838	    uint32_t badobjects = 0;
-fixed-width-integer	libclamav/pdf.c	3958	    uint64_t pdf_input_reserved = 0;
-fixed-width-integer	libclamav/pdf.c	3971	    if (offset < 0 || (uint64_t)offset > map->len)
-fixed-width-integer	libclamav/pdf.c	4118	                if ((uint64_t)xref > map->len - (size_t)offset) {
-fixed-width-integer	libclamav/pdf.c	4152	    rc = cli_scan_reserve_temporary(ctx, (uint64_t)size);
-fixed-width-integer	libclamav/pdf.c	4157	    pdf_input_reserved = (uint64_t)size;
-fixed-width-integer	libclamav/pdf.c	449	    obj->id    = (uint32_t)(objid << 8);
-fixed-width-integer	libclamav/pdf.c	745	    obj->id    = (uint32_t)(objid << 8) | (uint32_t)genid;
-fixed-width-integer	libclamav/pdf.c	808	                                            uint64_t *temporary_reserved, const char *quota_reason,
-fixed-width-integer	libclamav/pdf.c	823	    status = cli_scan_reserve_temporary(pdf->ctx, (uint64_t)len);
-fixed-width-integer	libclamav/pdf.c	829	    if (*temporary_reserved > UINT64_MAX - (uint64_t)len) {
-fixed-width-integer	libclamav/pdf.c	830	        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
-fixed-width-integer	libclamav/pdf.c	834	    *temporary_reserved += (uint64_t)len;
-fixed-width-integer	libclamav/pdf.c	838	        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
-fixed-width-integer	libclamav/pdf.c	839	        *temporary_reserved -= (uint64_t)len;
-fixed-width-integer	libclamav/pdf.c	845	        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
-fixed-width-integer	libclamav/pdf.c	846	        *temporary_reserved -= (uint64_t)len;
-fixed-width-integer	libclamav/pdf.c	855	                                size_t *sum, uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/pdf.c	857	    uint64_t needed;
-fixed-width-integer	libclamav/pdf.c	862	    if (UINT64_MAX - (uint64_t)*sum < (uint64_t)len)
-fixed-width-integer	libclamav/pdf.c	865	        needed = (uint64_t)*sum + (uint64_t)len;
-fixed-width-integer	libclamav/pdf.c	966	struct pdf_obj *find_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t objid)
-fixed-width-integer	libclamav/pdf.c	968	    uint32_t j;
-fixed-width-integer	libclamav/pdf.c	969	    uint32_t i;
+fixed-width-integer	libclamav/pdf.c	1031	struct pdf_obj *find_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t objid)
+fixed-width-integer	libclamav/pdf.c	1033	    uint32_t j;
+fixed-width-integer	libclamav/pdf.c	1034	    uint32_t i;
+fixed-width-integer	libclamav/pdf.c	1209	            obj = find_obj(pdf, obj, (uint32_t)(length << 8) | (uint32_t)genid);
+fixed-width-integer	libclamav/pdf.c	1314	    uint32_t rk[RKLENGTH(256)];
+fixed-width-integer	libclamav/pdf.c	1402	    uint32_t rk[RKLENGTH(128)];
+fixed-width-integer	libclamav/pdf.c	1449	char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
+fixed-width-integer	libclamav/pdf.c	1572	                          size_t length, int fout, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/pdf.c	1636	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/pdf.c	1689	cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t flags)
+fixed-width-integer	libclamav/pdf.c	1698	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/pdf.c	183	                                          bool remove_file, uint64_t temporary_reserved,
+fixed-width-integer	libclamav/pdf.c	2186	    uint32_t nameflags;
+fixed-width-integer	libclamav/pdf.c	2381	    pdf->enc_objid = (uint32_t)objid;
+fixed-width-integer	libclamav/pdf.c	250	    if (offset < 0 || (uint64_t)offset > map->len)
+fixed-width-integer	libclamav/pdf.c	3140	    int32_t block_size = 32;
+fixed-width-integer	libclamav/pdf.c	3142	    int32_t i, j, sum;
+fixed-width-integer	libclamav/pdf.c	3313	                                const char *U, int32_t P, int EM,
+fixed-width-integer	libclamav/pdf.c	3346	                uint32_t v = 0xFFFFFFFF;
+fixed-width-integer	libclamav/pdf.c	3577	    uint32_t len, n, R, P, length, EM = 1, i, oulen;
+fixed-width-integer	libclamav/pdf.c	3824	    uint32_t badobjects = 0;
+fixed-width-integer	libclamav/pdf.c	3901	    int32_t rv          = 0;
+fixed-width-integer	libclamav/pdf.c	3903	    uint32_t badobjects = 0;
+fixed-width-integer	libclamav/pdf.c	4023	    uint64_t pdf_input_reserved = 0;
+fixed-width-integer	libclamav/pdf.c	4036	    if (offset < 0 || (uint64_t)offset > map->len)
+fixed-width-integer	libclamav/pdf.c	4183	                if ((uint64_t)xref > map->len - (size_t)offset) {
+fixed-width-integer	libclamav/pdf.c	4217	    rc = cli_scan_reserve_temporary(ctx, (uint64_t)size);
+fixed-width-integer	libclamav/pdf.c	4222	    pdf_input_reserved = (uint64_t)size;
+fixed-width-integer	libclamav/pdf.c	500	    obj->id    = (uint32_t)(objid << 8);
+fixed-width-integer	libclamav/pdf.c	803	    obj->id    = (uint32_t)(objid << 8) | (uint32_t)genid;
+fixed-width-integer	libclamav/pdf.c	873	                                            uint64_t *temporary_reserved, const char *quota_reason,
+fixed-width-integer	libclamav/pdf.c	888	    status = cli_scan_reserve_temporary(pdf->ctx, (uint64_t)len);
+fixed-width-integer	libclamav/pdf.c	894	    if (*temporary_reserved > UINT64_MAX - (uint64_t)len) {
+fixed-width-integer	libclamav/pdf.c	895	        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
+fixed-width-integer	libclamav/pdf.c	899	    *temporary_reserved += (uint64_t)len;
+fixed-width-integer	libclamav/pdf.c	903	        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
+fixed-width-integer	libclamav/pdf.c	904	        *temporary_reserved -= (uint64_t)len;
+fixed-width-integer	libclamav/pdf.c	910	        cli_scan_release_temporary(pdf->ctx, (uint64_t)len);
+fixed-width-integer	libclamav/pdf.c	911	        *temporary_reserved -= (uint64_t)len;
+fixed-width-integer	libclamav/pdf.c	920	                                size_t *sum, uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/pdf.c	922	    uint64_t needed;
+fixed-width-integer	libclamav/pdf.c	927	    if (UINT64_MAX - (uint64_t)*sum < (uint64_t)len)
+fixed-width-integer	libclamav/pdf.c	930	        needed = (uint64_t)*sum + (uint64_t)len;
 fixed-width-integer	libclamav/pdf.h	118	    int32_t ninvalidobjs;                     /* Number of invalid objects */
 fixed-width-integer	libclamav/pdf.h	119	    int32_t njs;                              /* Number of javascript objects */
 fixed-width-integer	libclamav/pdf.h	120	    int32_t nflate;                           /* Number of flate-encoded objects */
@@ -11533,199 +11533,207 @@ native-width-integer	libclamav/partition_intersection.h	33	    off_t Start;
 native-width-integer	libclamav/partition_intersection.h	34	    size_t Size;
 native-width-integer	libclamav/partition_intersection.h	40	    size_t Size; /* for debug */
 native-width-integer	libclamav/partition_intersection.h	44	cl_error_t partition_intersection_list_check(partition_intersection_list_t *list, unsigned *pitxn, off_t start, size_t size);
-native-width-integer	libclamav/pdf.c	1038	 * @return size_t   Unsigned integer value of the "/Length" key
-native-width-integer	libclamav/pdf.c	1040	static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const char *dict_start, size_t dict_len)
-native-width-integer	libclamav/pdf.c	1042	    size_t length          = 0;
-native-width-integer	libclamav/pdf.c	1044	    size_t bytes_remaining = dict_len;
-native-width-integer	libclamav/pdf.c	1045	    long temp_long         = 0;
-native-width-integer	libclamav/pdf.c	1075	    if (bytes_remaining < (size_t)(obj_start - index)) {
-native-width-integer	libclamav/pdf.c	1090	    length = (size_t)temp_long; /* length or maybe object id */
-native-width-integer	libclamav/pdf.c	1103	        unsigned long genid;
-native-width-integer	libclamav/pdf.c	1115	        genid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	1132	            unsigned long objid            = length;
-native-width-integer	libclamav/pdf.c	1178	            if (bytes_remaining < (size_t)(index - indirect_obj_start)) {
-native-width-integer	libclamav/pdf.c	1183	            /* Found the value, so lets parse it as a long, but prohibit negative lengths. */
-native-width-integer	libclamav/pdf.c	1191	            length = (size_t)temp_long;
-native-width-integer	libclamav/pdf.c	1196	    if ((size_t)(obj_start - pdf->map) + length + 5 > pdf->size)
-native-width-integer	libclamav/pdf.c	1204	static int run_pdf_hooks(struct pdf_struct *pdf, enum pdf_phase phase, int fd, const char *filepath)
-native-width-integer	libclamav/pdf.c	1206	    int ret;
-native-width-integer	libclamav/pdf.c	1247	static void aes_256cbc_decrypt(const unsigned char *in, size_t *length, unsigned char *q, char *key, unsigned key_n, int has_iv)
-native-width-integer	libclamav/pdf.c	1251	    size_t len = 0;
-native-width-integer	libclamav/pdf.c	1253	    int nrounds;
-native-width-integer	libclamav/pdf.c	126	static int pdf_readint(const char *q0, int len, const char *key);
-native-width-integer	libclamav/pdf.c	127	static const char *pdf_getdict(const char *q0, int *len, const char *key);
-native-width-integer	libclamav/pdf.c	128	static char *pdf_readval(const char *q, int len, const char *key);
-native-width-integer	libclamav/pdf.c	129	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape);
-native-width-integer	libclamav/pdf.c	131	static cl_error_t pdf_cleanup_temp_output(cli_ctx *ctx, int *fd, const char *filename, cl_error_t status,
-native-width-integer	libclamav/pdf.c	1335	static void aes_128cbc_encrypt(const unsigned char *in, size_t in_length, unsigned char *out, size_t *out_length, const unsigned char *key, size_t key_n, const unsigned char *iv)
-native-width-integer	libclamav/pdf.c	1339	    int nrounds;
-native-width-integer	libclamav/pdf.c	1384	char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
-native-width-integer	libclamav/pdf.c	1507	                          size_t length, int fout, uint64_t *temporary_reserved)
-native-width-integer	libclamav/pdf.c	1521	                    if ((size_t)(nl - buf) > length) {
-native-width-integer	libclamav/pdf.c	156	static int xrefCheck(const char *xref, const char *eof)
-native-width-integer	libclamav/pdf.c	1562	static int pdf_scan_contents(int fd, struct pdf_struct *pdf, struct pdf_obj *obj)
-native-width-integer	libclamav/pdf.c	1568	    int fout;
-native-width-integer	libclamav/pdf.c	1569	    size_t n;
-native-width-integer	libclamav/pdf.c	1586	        if (n == (size_t)-1) {
-native-width-integer	libclamav/pdf.c	1607	    if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
-native-width-integer	libclamav/pdf.c	1631	    int fout                 = -1;
-native-width-integer	libclamav/pdf.c	1632	    size_t sum               = 0;
-native-width-integer	libclamav/pdf.c	1725	        size_t length;
-native-width-integer	libclamav/pdf.c	1726	        size_t orig_length;
-native-width-integer	libclamav/pdf.c	1727	        int dict_len = obj->stream - start; /* Dictionary should end where the stream begins */
-native-width-integer	libclamav/pdf.c	1731	        int xref                     = 0;
-native-width-integer	libclamav/pdf.c	1769	            if (obj->stream_size > (size_t)length + 2) {
-native-width-integer	libclamav/pdf.c	1835	            int objstm_first  = -1;
-native-width-integer	libclamav/pdf.c	1836	            int objstm_length = -1;
-native-width-integer	libclamav/pdf.c	1837	            int objstm_n      = -1;
-native-width-integer	libclamav/pdf.c	1865	                objstm->first        = (size_t)objstm_first;
-native-width-integer	libclamav/pdf.c	1866	                objstm->current      = (size_t)objstm_first;
-native-width-integer	libclamav/pdf.c	1868	                objstm->length       = (size_t)objstm_length;
-native-width-integer	libclamav/pdf.c	1869	                objstm->n            = (size_t)objstm_n;
-native-width-integer	libclamav/pdf.c	193	cl_error_t cli_pdf_header_check(fmap_t *map, off_t offset)
-native-width-integer	libclamav/pdf.c	1944	        off_t bytesleft = obj->size;
-native-width-integer	libclamav/pdf.c	1952	            size_t js_len = 0;
-native-width-integer	libclamav/pdf.c	2002	                cli_dbgmsg("pdf_extract_obj: bytesleft: %d\n", (int)bytesleft);
-native-width-integer	libclamav/pdf.c	201	    if (map->len - (size_t)offset < 8)
-native-width-integer	libclamav/pdf.c	2029	        off_t bytesleft = obj->size;
-native-width-integer	libclamav/pdf.c	2176	static void handle_pdfname(struct pdf_struct *pdf, struct pdf_obj *obj, const char *pdfname, int escapes, enum objstate *state)
-native-width-integer	libclamav/pdf.c	2248	static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
-native-width-integer	libclamav/pdf.c	2251	    unsigned long objid;
-native-width-integer	libclamav/pdf.c	2252	    unsigned long genid;
-native-width-integer	libclamav/pdf.c	2253	    long temp_long;
-native-width-integer	libclamav/pdf.c	2272	    if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)len, 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	2279	    objid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	2294	    if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)len, 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	2301	    genid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	2319	static void pdf_parse_trailer(struct pdf_struct *pdf, const char *s, long length)
-native-width-integer	libclamav/pdf.c	2326	        unsigned int newIDlen = 0;
-native-width-integer	libclamav/pdf.c	2348	    off_t dict_length = 0, full_dict_length = 0, bytesleft = 0;
-native-width-integer	libclamav/pdf.c	2349	    size_t i         = 0;
-native-width-integer	libclamav/pdf.c	2363	        if ((size_t)obj->start > obj->objstm->streambuf_len) {
-native-width-integer	libclamav/pdf.c	2370	        if ((size_t)obj->start > pdf->size) {
-native-width-integer	libclamav/pdf.c	2372	                       obj->id >> 8, obj->id & 0xff, obj->start, (long long)pdf->size);
-native-width-integer	libclamav/pdf.c	2394	        size_t stream_size = 0;
-native-width-integer	libclamav/pdf.c	2558	        int escapes = 0, breakout = 0;
-native-width-integer	libclamav/pdf.c	2604	            long trailer_end, trailer;
-native-width-integer	libclamav/pdf.c	2609	            if ((trailer_end > 0) && ((size_t)trailer_end < pdf->size)) {
-native-width-integer	libclamav/pdf.c	2628	            off_t dict_remaining = dict_length;
-native-width-integer	libclamav/pdf.c	263	    size_t size,
-native-width-integer	libclamav/pdf.c	2636	                unsigned long objid;
-native-width-integer	libclamav/pdf.c	2637	                unsigned long genid;
-native-width-integer	libclamav/pdf.c	2638	                long temp_long;
-native-width-integer	libclamav/pdf.c	2640	                dict_remaining -= (off_t)(q2 - q);
-native-width-integer	libclamav/pdf.c	2642	                if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)dict_remaining, 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	2649	                objid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	265	    size_t *stream_size,
-native-width-integer	libclamav/pdf.c	266	    int newline_hack)
-native-width-integer	libclamav/pdf.c	2667	                    dict_remaining -= (off_t)(q2 - q2_old);
-native-width-integer	libclamav/pdf.c	2668	                    if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)dict_remaining, 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	2675	                    genid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	273	    size_t bytesleft = size;
-native-width-integer	libclamav/pdf.c	2761	static const char *pdf_getdict(const char *q0, int *len, const char *key)
-native-width-integer	libclamav/pdf.c	2809	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape)
-native-width-integer	libclamav/pdf.c	2824	        int paren = 1;
-native-width-integer	libclamav/pdf.c	286	        if ((size_t)(idx - start) >= bytesleft)
-native-width-integer	libclamav/pdf.c	2970	static char *pdf_readval(const char *q, int len, const char *key)
-native-width-integer	libclamav/pdf.c	2974	    int origlen = len;
-native-width-integer	libclamav/pdf.c	3013	static int pdf_readint(const char *q0, int len, const char *key)
-native-width-integer	libclamav/pdf.c	3015	    long value    = 0;
-native-width-integer	libclamav/pdf.c	3020	    } else if (CL_SUCCESS != cli_strntol_wrap(q, (size_t)len, 0, 10, &value)) {
-native-width-integer	libclamav/pdf.c	3026	static int pdf_readbool(const char *q0, int len, const char *key, int Default)
-native-width-integer	libclamav/pdf.c	3071	static void compute_hash_r6(const char *password, size_t pwlen, const unsigned char salt[16], unsigned char hash[32], const char *U)
-native-width-integer	libclamav/pdf.c	3076	    size_t in_data_len = 0, out_data_len;
-native-width-integer	libclamav/pdf.c	3153	static void check_owner_password(struct pdf_struct *pdf, int R,
-native-width-integer	libclamav/pdf.c	3155	                                 const char *OE, size_t OE_len)
-native-width-integer	libclamav/pdf.c	3166	            size_t pwlen    = 0;
-native-width-integer	libclamav/pdf.c	3247	static void check_user_password(struct pdf_struct *pdf, int R, const char *O,
-native-width-integer	libclamav/pdf.c	3248	                                const char *U, int32_t P, int EM,
-native-width-integer	libclamav/pdf.c	3249	                                const char *UE, size_t UE_len,
-native-width-integer	libclamav/pdf.c	3266	            size_t sz = 68 + pdf->fileIDlen + (R >= 4 && !EM ? 4 : 0);
-native-width-integer	libclamav/pdf.c	3394	            size_t pwlen    = 0;
-native-width-integer	libclamav/pdf.c	3487	    q = pdf_getdict(dict, (int *)(&len), key);
-native-width-integer	libclamav/pdf.c	3516	    size_t OE_len = 0;
-native-width-integer	libclamav/pdf.c	3520	    size_t UE_len = 0;
-native-width-integer	libclamav/pdf.c	361	int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, struct pdf_obj **obj_found)
-native-width-integer	libclamav/pdf.c	3627	        pdf->CF   = pdf_getdict(q, (int *)(&n), "/CF");
-native-width-integer	libclamav/pdf.c	365	    unsigned long objid = 0, objoff = 0;
-native-width-integer	libclamav/pdf.c	366	    long temp_long         = 0;
-native-width-integer	libclamav/pdf.c	368	    size_t bytes_remaining = 0;
-native-width-integer	libclamav/pdf.c	3687	                dbg_printhex("pdf_handle_enc: too long O", O, n);
-native-width-integer	libclamav/pdf.c	3688	                noisy_warnmsg("pdf_handle_enc: too long O: %u", n);
-native-width-integer	libclamav/pdf.c	3712	                dbg_printhex("too long U", U, n);
-native-width-integer	libclamav/pdf.c	3760	    size_t i            = 0;
-native-width-integer	libclamav/pdf.c	3837	    unsigned int i      = 0;
-native-width-integer	libclamav/pdf.c	3938	 * @return int      Returns cl_error_t status value.
-native-width-integer	libclamav/pdf.c	3940	cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
-native-width-integer	libclamav/pdf.c	3947	    size_t size;
-native-width-integer	libclamav/pdf.c	3948	    off_t versize;
-native-width-integer	libclamav/pdf.c	3949	    off_t map_off, bytesleft;
-native-width-integer	libclamav/pdf.c	3950	    unsigned long xref;
-native-width-integer	libclamav/pdf.c	3951	    long temp_long;
-native-width-integer	libclamav/pdf.c	3954	    unsigned int objs_found     = 0;
-native-width-integer	libclamav/pdf.c	3957	    int pdf_tempfd              = -1;
-native-width-integer	libclamav/pdf.c	3962	    size_t copied;
-native-width-integer	libclamav/pdf.c	3963	    size_t wanted;
-native-width-integer	libclamav/pdf.c	3964	    size_t nread;
-native-width-integer	libclamav/pdf.c	3974	    size = map->len - (size_t)offset;
-native-width-integer	libclamav/pdf.c	3977	    versize = size > 1032 ? 1032 : (off_t)size;
-native-width-integer	libclamav/pdf.c	4041	        cli_dbgmsg("cli_pdf: PDF header is not at position 0: %lld\n", (long long)(pdfver - start + offset));
-native-width-integer	libclamav/pdf.c	4050	    map_off = (off_t)map->len - 2048;
-native-width-integer	libclamav/pdf.c	409	    objid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	4117	                xref = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	4118	                if ((uint64_t)xref > map->len - (size_t)offset) {
-native-width-integer	libclamav/pdf.c	4123	                    bytesleft = map->len - (size_t)offset - xref;
-native-width-integer	libclamav/pdf.c	4132	                        q = fmap_need_off_once(map, (size_t)offset + xref, bytesleft);
-native-width-integer	libclamav/pdf.c	4148	    size = map->len - (size_t)offset;
-native-width-integer	libclamav/pdf.c	4181	            wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
-native-width-integer	libclamav/pdf.c	4182	            nread  = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
-native-width-integer	libclamav/pdf.c	4221	    if (!pdf_input || lseek(pdf_tempfd, 0, SEEK_SET) == (off_t)-1 ||
-native-width-integer	libclamav/pdf.c	429	    objoff = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	432	        (size_t)objoff > objstm->streambuf_len - objstm->first) {
-native-width-integer	libclamav/pdf.c	4381	pdf_nextlinestart(const char *ptr, size_t len)
-native-width-integer	libclamav/pdf.c	4416	pdf_nextobject(const char *ptr, size_t len)
-native-width-integer	libclamav/pdf.c	4419	    int inobject = 1;
-native-width-integer	libclamav/pdf.c	4430	                len -= (size_t)(p - ptr);
-native-width-integer	libclamav/pdf.c	459	    objstm->current_pair = (size_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
-native-width-integer	libclamav/pdf.c	464	        unsigned long next_objoff = 0;
-native-width-integer	libclamav/pdf.c	488	        // next_objid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	4951	    unsigned long npages = 0, count;
-native-width-integer	libclamav/pdf.c	4952	    long temp_long;
-native-width-integer	libclamav/pdf.c	4955	    size_t countsize = 0;
-native-width-integer	libclamav/pdf.c	4998	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
-native-width-integer	libclamav/pdf.c	5001	    if ((size_t)(begin - objstart) >= obj->size) {
-native-width-integer	libclamav/pdf.c	5005	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
-native-width-integer	libclamav/pdf.c	5006	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
-native-width-integer	libclamav/pdf.c	5013	        count = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	5027	    unsigned long ncolors;
-native-width-integer	libclamav/pdf.c	5028	    long temp_long;
-native-width-integer	libclamav/pdf.c	5050	    if (obj->size - (size_t)(p1 - objstart) < 2)
-native-width-integer	libclamav/pdf.c	5053	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
-native-width-integer	libclamav/pdf.c	5056	    if ((size_t)(p1 - objstart) == obj->size)
-native-width-integer	libclamav/pdf.c	5059	    if (CL_SUCCESS != cli_strntol_wrap(p1, (size_t)((p1 - objstart) - obj->size), 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	5064	    ncolors = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	508	        next_objoff = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	5084	    off_t bytesleft      = 0;
-native-width-integer	libclamav/pdf.c	5115	    size_t start = 0;
-native-width-integer	libclamav/pdf.c	5128	    size_t end = 0;
-native-width-integer	libclamav/pdf.c	516	                   (size_t)next_objoff > objstm->streambuf_len - objstm->first) {
-native-width-integer	libclamav/pdf.c	5221	    unsigned long i;
-native-width-integer	libclamav/pdf.c	593	    size_t bytesleft;
-native-width-integer	libclamav/pdf.c	594	    unsigned long genid, objid;
-native-width-integer	libclamav/pdf.c	595	    long temp_long;
-native-width-integer	libclamav/pdf.c	634	        bytesleft = (pdf->size - pdf->offset) - (size_t)(idx - start);
-native-width-integer	libclamav/pdf.c	661	    if (CL_SUCCESS != cli_strntol_wrap(genid_search_index, (size_t)((obj_begin)-genid_search_index), 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	673	    genid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	680	    if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index)-objid_search_index), 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	705	            cli_dbgmsg("pdf_findobj: %%%%EOF detected before end of file, at offset: %zu\n", (size_t)(objid_search_index - pdf->map));
-native-width-integer	libclamav/pdf.c	715	        if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index - 1) - objid_search_index), 0, 10, &temp_long)) {
-native-width-integer	libclamav/pdf.c	735	    objid = (unsigned long)temp_long;
-native-width-integer	libclamav/pdf.c	784	        cli_dbgmsg("pdf_findobj: found %d %d obj @%lld, size: %zu bytes.\n", obj->id >> 8, obj->id & 0xff, (long long)(obj->start + pdf->startoff), obj->size);
-native-width-integer	libclamav/pdf.c	807	static cl_error_t pdf_write_reserved_output(struct pdf_struct *pdf, int fout, const void *buf, size_t len,
-native-width-integer	libclamav/pdf.c	83	static const char *pdf_nextlinestart(const char *ptr, size_t len);
-native-width-integer	libclamav/pdf.c	84	static const char *pdf_nextobject(const char *ptr, size_t len);
-native-width-integer	libclamav/pdf.c	854	static cl_error_t filter_writen(struct pdf_struct *pdf, struct pdf_obj *obj, int fout, const char *buf, size_t len,
-native-width-integer	libclamav/pdf.c	855	                                size_t *sum, uint64_t *temporary_reserved)
+native-width-integer	libclamav/pdf.c	108	        if (len - searched > (size_t)PDF_SEARCH_WINDOW) {
+native-width-integer	libclamav/pdf.c	109	            if (overlap > (size_t)-1 - (size_t)PDF_SEARCH_WINDOW) {
+native-width-integer	libclamav/pdf.c	1103	 * @return size_t   Unsigned integer value of the "/Length" key
+native-width-integer	libclamav/pdf.c	1105	static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const char *dict_start, size_t dict_len)
+native-width-integer	libclamav/pdf.c	1107	    size_t length          = 0;
+native-width-integer	libclamav/pdf.c	1109	    size_t bytes_remaining = dict_len;
+native-width-integer	libclamav/pdf.c	1110	    long temp_long         = 0;
+native-width-integer	libclamav/pdf.c	114	            window = (size_t)PDF_SEARCH_WINDOW + overlap;
+native-width-integer	libclamav/pdf.c	1140	    if (bytes_remaining < (size_t)(obj_start - index)) {
+native-width-integer	libclamav/pdf.c	1155	    length = (size_t)temp_long; /* length or maybe object id */
+native-width-integer	libclamav/pdf.c	1168	        unsigned long genid;
+native-width-integer	libclamav/pdf.c	1180	        genid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	1197	            unsigned long objid            = length;
+native-width-integer	libclamav/pdf.c	1243	            if (bytes_remaining < (size_t)(index - indirect_obj_start)) {
+native-width-integer	libclamav/pdf.c	1248	            /* Found the value, so lets parse it as a long, but prohibit negative lengths. */
+native-width-integer	libclamav/pdf.c	1256	            length = (size_t)temp_long;
+native-width-integer	libclamav/pdf.c	1261	    if ((size_t)(obj_start - pdf->map) + length + 5 > pdf->size)
+native-width-integer	libclamav/pdf.c	1269	static int run_pdf_hooks(struct pdf_struct *pdf, enum pdf_phase phase, int fd, const char *filepath)
+native-width-integer	libclamav/pdf.c	1271	    int ret;
+native-width-integer	libclamav/pdf.c	1312	static void aes_256cbc_decrypt(const unsigned char *in, size_t *length, unsigned char *q, char *key, unsigned key_n, int has_iv)
+native-width-integer	libclamav/pdf.c	1316	    size_t len = 0;
+native-width-integer	libclamav/pdf.c	1318	    int nrounds;
+native-width-integer	libclamav/pdf.c	1400	static void aes_128cbc_encrypt(const unsigned char *in, size_t in_length, unsigned char *out, size_t *out_length, const unsigned char *key, size_t key_n, const unsigned char *iv)
+native-width-integer	libclamav/pdf.c	1404	    int nrounds;
+native-width-integer	libclamav/pdf.c	1449	char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
+native-width-integer	libclamav/pdf.c	1572	                          size_t length, int fout, uint64_t *temporary_reserved)
+native-width-integer	libclamav/pdf.c	1586	                    if ((size_t)(nl - buf) > length) {
+native-width-integer	libclamav/pdf.c	1627	static int pdf_scan_contents(int fd, struct pdf_struct *pdf, struct pdf_obj *obj)
+native-width-integer	libclamav/pdf.c	1633	    int fout;
+native-width-integer	libclamav/pdf.c	1634	    size_t n;
+native-width-integer	libclamav/pdf.c	1651	        if (n == (size_t)-1) {
+native-width-integer	libclamav/pdf.c	1672	    if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/pdf.c	1696	    int fout                 = -1;
+native-width-integer	libclamav/pdf.c	1697	    size_t sum               = 0;
+native-width-integer	libclamav/pdf.c	177	static int pdf_readint(const char *q0, int len, const char *key);
+native-width-integer	libclamav/pdf.c	178	static const char *pdf_getdict(const char *q0, int *len, const char *key);
+native-width-integer	libclamav/pdf.c	179	static char *pdf_readval(const char *q, int len, const char *key);
+native-width-integer	libclamav/pdf.c	1790	        size_t length;
+native-width-integer	libclamav/pdf.c	1791	        size_t orig_length;
+native-width-integer	libclamav/pdf.c	1792	        int dict_len = obj->stream - start; /* Dictionary should end where the stream begins */
+native-width-integer	libclamav/pdf.c	1796	        int xref                     = 0;
+native-width-integer	libclamav/pdf.c	180	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape);
+native-width-integer	libclamav/pdf.c	182	static cl_error_t pdf_cleanup_temp_output(cli_ctx *ctx, int *fd, const char *filename, cl_error_t status,
+native-width-integer	libclamav/pdf.c	1834	            if (obj->stream_size > (size_t)length + 2) {
+native-width-integer	libclamav/pdf.c	1900	            int objstm_first  = -1;
+native-width-integer	libclamav/pdf.c	1901	            int objstm_length = -1;
+native-width-integer	libclamav/pdf.c	1902	            int objstm_n      = -1;
+native-width-integer	libclamav/pdf.c	1930	                objstm->first        = (size_t)objstm_first;
+native-width-integer	libclamav/pdf.c	1931	                objstm->current      = (size_t)objstm_first;
+native-width-integer	libclamav/pdf.c	1933	                objstm->length       = (size_t)objstm_length;
+native-width-integer	libclamav/pdf.c	1934	                objstm->n            = (size_t)objstm_n;
+native-width-integer	libclamav/pdf.c	2009	        off_t bytesleft = obj->size;
+native-width-integer	libclamav/pdf.c	2017	            size_t js_len = 0;
+native-width-integer	libclamav/pdf.c	2067	                cli_dbgmsg("pdf_extract_obj: bytesleft: %d\n", (int)bytesleft);
+native-width-integer	libclamav/pdf.c	207	static int xrefCheck(const char *xref, const char *eof)
+native-width-integer	libclamav/pdf.c	2094	        off_t bytesleft = obj->size;
+native-width-integer	libclamav/pdf.c	2241	static void handle_pdfname(struct pdf_struct *pdf, struct pdf_obj *obj, const char *pdfname, int escapes, enum objstate *state)
+native-width-integer	libclamav/pdf.c	2313	static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
+native-width-integer	libclamav/pdf.c	2316	    unsigned long objid;
+native-width-integer	libclamav/pdf.c	2317	    unsigned long genid;
+native-width-integer	libclamav/pdf.c	2318	    long temp_long;
+native-width-integer	libclamav/pdf.c	2337	    if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)len, 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	2344	    objid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	2359	    if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)len, 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	2366	    genid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	2384	static void pdf_parse_trailer(struct pdf_struct *pdf, const char *s, long length)
+native-width-integer	libclamav/pdf.c	2391	        unsigned int newIDlen = 0;
+native-width-integer	libclamav/pdf.c	2413	    off_t dict_length = 0, full_dict_length = 0, bytesleft = 0;
+native-width-integer	libclamav/pdf.c	2414	    size_t i         = 0;
+native-width-integer	libclamav/pdf.c	2428	        if ((size_t)obj->start > obj->objstm->streambuf_len) {
+native-width-integer	libclamav/pdf.c	2435	        if ((size_t)obj->start > pdf->size) {
+native-width-integer	libclamav/pdf.c	2437	                       obj->id >> 8, obj->id & 0xff, obj->start, (long long)pdf->size);
+native-width-integer	libclamav/pdf.c	244	cl_error_t cli_pdf_header_check(fmap_t *map, off_t offset)
+native-width-integer	libclamav/pdf.c	2459	        size_t stream_size = 0;
+native-width-integer	libclamav/pdf.c	252	    if (map->len - (size_t)offset < 8)
+native-width-integer	libclamav/pdf.c	2623	        int escapes = 0, breakout = 0;
+native-width-integer	libclamav/pdf.c	2669	            long trailer_end, trailer;
+native-width-integer	libclamav/pdf.c	2674	            if ((trailer_end > 0) && ((size_t)trailer_end < pdf->size)) {
+native-width-integer	libclamav/pdf.c	2693	            off_t dict_remaining = dict_length;
+native-width-integer	libclamav/pdf.c	2701	                unsigned long objid;
+native-width-integer	libclamav/pdf.c	2702	                unsigned long genid;
+native-width-integer	libclamav/pdf.c	2703	                long temp_long;
+native-width-integer	libclamav/pdf.c	2705	                dict_remaining -= (off_t)(q2 - q);
+native-width-integer	libclamav/pdf.c	2707	                if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)dict_remaining, 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	2714	                objid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	2732	                    dict_remaining -= (off_t)(q2 - q2_old);
+native-width-integer	libclamav/pdf.c	2733	                    if (CL_SUCCESS != cli_strntol_wrap(q2, (size_t)dict_remaining, 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	2740	                    genid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	2826	static const char *pdf_getdict(const char *q0, int *len, const char *key)
+native-width-integer	libclamav/pdf.c	2874	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape)
+native-width-integer	libclamav/pdf.c	2889	        int paren = 1;
+native-width-integer	libclamav/pdf.c	3035	static char *pdf_readval(const char *q, int len, const char *key)
+native-width-integer	libclamav/pdf.c	3039	    int origlen = len;
+native-width-integer	libclamav/pdf.c	3078	static int pdf_readint(const char *q0, int len, const char *key)
+native-width-integer	libclamav/pdf.c	3080	    long value    = 0;
+native-width-integer	libclamav/pdf.c	3085	    } else if (CL_SUCCESS != cli_strntol_wrap(q, (size_t)len, 0, 10, &value)) {
+native-width-integer	libclamav/pdf.c	3091	static int pdf_readbool(const char *q0, int len, const char *key, int Default)
+native-width-integer	libclamav/pdf.c	3136	static void compute_hash_r6(const char *password, size_t pwlen, const unsigned char salt[16], unsigned char hash[32], const char *U)
+native-width-integer	libclamav/pdf.c	314	    size_t size,
+native-width-integer	libclamav/pdf.c	3141	    size_t in_data_len = 0, out_data_len;
+native-width-integer	libclamav/pdf.c	316	    size_t *stream_size,
+native-width-integer	libclamav/pdf.c	317	    int newline_hack)
+native-width-integer	libclamav/pdf.c	3218	static void check_owner_password(struct pdf_struct *pdf, int R,
+native-width-integer	libclamav/pdf.c	3220	                                 const char *OE, size_t OE_len)
+native-width-integer	libclamav/pdf.c	3231	            size_t pwlen    = 0;
+native-width-integer	libclamav/pdf.c	324	    size_t bytesleft = size;
+native-width-integer	libclamav/pdf.c	3312	static void check_user_password(struct pdf_struct *pdf, int R, const char *O,
+native-width-integer	libclamav/pdf.c	3313	                                const char *U, int32_t P, int EM,
+native-width-integer	libclamav/pdf.c	3314	                                const char *UE, size_t UE_len,
+native-width-integer	libclamav/pdf.c	3331	            size_t sz = 68 + pdf->fileIDlen + (R >= 4 && !EM ? 4 : 0);
+native-width-integer	libclamav/pdf.c	337	        if ((size_t)(idx - start) >= bytesleft)
+native-width-integer	libclamav/pdf.c	3459	            size_t pwlen    = 0;
+native-width-integer	libclamav/pdf.c	3552	    q = pdf_getdict(dict, (int *)(&len), key);
+native-width-integer	libclamav/pdf.c	3581	    size_t OE_len = 0;
+native-width-integer	libclamav/pdf.c	3585	    size_t UE_len = 0;
+native-width-integer	libclamav/pdf.c	3692	        pdf->CF   = pdf_getdict(q, (int *)(&n), "/CF");
+native-width-integer	libclamav/pdf.c	3752	                dbg_printhex("pdf_handle_enc: too long O", O, n);
+native-width-integer	libclamav/pdf.c	3753	                noisy_warnmsg("pdf_handle_enc: too long O: %u", n);
+native-width-integer	libclamav/pdf.c	3777	                dbg_printhex("too long U", U, n);
+native-width-integer	libclamav/pdf.c	3825	    size_t i            = 0;
+native-width-integer	libclamav/pdf.c	3902	    unsigned int i      = 0;
+native-width-integer	libclamav/pdf.c	4003	 * @return int      Returns cl_error_t status value.
+native-width-integer	libclamav/pdf.c	4005	cl_error_t cli_pdf(const char *dir, cli_ctx *ctx, off_t offset)
+native-width-integer	libclamav/pdf.c	4012	    size_t size;
+native-width-integer	libclamav/pdf.c	4013	    off_t versize;
+native-width-integer	libclamav/pdf.c	4014	    off_t map_off, bytesleft;
+native-width-integer	libclamav/pdf.c	4015	    unsigned long xref;
+native-width-integer	libclamav/pdf.c	4016	    long temp_long;
+native-width-integer	libclamav/pdf.c	4019	    unsigned int objs_found     = 0;
+native-width-integer	libclamav/pdf.c	4022	    int pdf_tempfd              = -1;
+native-width-integer	libclamav/pdf.c	4027	    size_t copied;
+native-width-integer	libclamav/pdf.c	4028	    size_t wanted;
+native-width-integer	libclamav/pdf.c	4029	    size_t nread;
+native-width-integer	libclamav/pdf.c	4039	    size = map->len - (size_t)offset;
+native-width-integer	libclamav/pdf.c	4042	    versize = size > 1032 ? 1032 : (off_t)size;
+native-width-integer	libclamav/pdf.c	4106	        cli_dbgmsg("cli_pdf: PDF header is not at position 0: %lld\n", (long long)(pdfver - start + offset));
+native-width-integer	libclamav/pdf.c	4115	    map_off = (off_t)map->len - 2048;
+native-width-integer	libclamav/pdf.c	412	int pdf_findobj_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm, struct pdf_obj **obj_found)
+native-width-integer	libclamav/pdf.c	416	    unsigned long objid = 0, objoff = 0;
+native-width-integer	libclamav/pdf.c	417	    long temp_long         = 0;
+native-width-integer	libclamav/pdf.c	4182	                xref = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	4183	                if ((uint64_t)xref > map->len - (size_t)offset) {
+native-width-integer	libclamav/pdf.c	4188	                    bytesleft = map->len - (size_t)offset - xref;
+native-width-integer	libclamav/pdf.c	419	    size_t bytes_remaining = 0;
+native-width-integer	libclamav/pdf.c	4197	                        q = fmap_need_off_once(map, (size_t)offset + xref, bytesleft);
+native-width-integer	libclamav/pdf.c	4213	    size = map->len - (size_t)offset;
+native-width-integer	libclamav/pdf.c	4246	            wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
+native-width-integer	libclamav/pdf.c	4247	            nread  = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
+native-width-integer	libclamav/pdf.c	4286	    if (!pdf_input || lseek(pdf_tempfd, 0, SEEK_SET) == (off_t)-1 ||
+native-width-integer	libclamav/pdf.c	4446	pdf_nextlinestart(const char *ptr, size_t len)
+native-width-integer	libclamav/pdf.c	4481	pdf_nextobject(const char *ptr, size_t len)
+native-width-integer	libclamav/pdf.c	4484	    int inobject = 1;
+native-width-integer	libclamav/pdf.c	4495	                len -= (size_t)(p - ptr);
+native-width-integer	libclamav/pdf.c	460	    objid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	480	    objoff = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	483	        (size_t)objoff > objstm->streambuf_len - objstm->first) {
+native-width-integer	libclamav/pdf.c	5016	    unsigned long npages = 0, count;
+native-width-integer	libclamav/pdf.c	5017	    long temp_long;
+native-width-integer	libclamav/pdf.c	5020	    size_t countsize = 0;
+native-width-integer	libclamav/pdf.c	5063	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
+native-width-integer	libclamav/pdf.c	5066	    if ((size_t)(begin - objstart) >= obj->size) {
+native-width-integer	libclamav/pdf.c	5070	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
+native-width-integer	libclamav/pdf.c	5071	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
+native-width-integer	libclamav/pdf.c	5078	        count = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	5092	    unsigned long ncolors;
+native-width-integer	libclamav/pdf.c	5093	    long temp_long;
+native-width-integer	libclamav/pdf.c	510	    objstm->current_pair = (size_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
+native-width-integer	libclamav/pdf.c	5115	    if (obj->size - (size_t)(p1 - objstart) < 2)
+native-width-integer	libclamav/pdf.c	5118	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
+native-width-integer	libclamav/pdf.c	5121	    if ((size_t)(p1 - objstart) == obj->size)
+native-width-integer	libclamav/pdf.c	5124	    if (CL_SUCCESS != cli_strntol_wrap(p1, (size_t)((p1 - objstart) - obj->size), 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	5129	    ncolors = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	5149	    off_t bytesleft      = 0;
+native-width-integer	libclamav/pdf.c	515	        unsigned long next_objoff = 0;
+native-width-integer	libclamav/pdf.c	5180	    size_t start = 0;
+native-width-integer	libclamav/pdf.c	5193	    size_t end = 0;
+native-width-integer	libclamav/pdf.c	5286	    unsigned long i;
+native-width-integer	libclamav/pdf.c	539	        // next_objid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	559	        next_objoff = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	567	                   (size_t)next_objoff > objstm->streambuf_len - objstm->first) {
+native-width-integer	libclamav/pdf.c	644	    size_t bytesleft;
+native-width-integer	libclamav/pdf.c	646	    unsigned long genid, objid;
+native-width-integer	libclamav/pdf.c	647	    long temp_long;
+native-width-integer	libclamav/pdf.c	692	        bytesleft = (pdf->size - pdf->offset) - (size_t)(idx - start);
+native-width-integer	libclamav/pdf.c	719	    if (CL_SUCCESS != cli_strntol_wrap(genid_search_index, (size_t)((obj_begin)-genid_search_index), 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	731	    genid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	738	    if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index)-objid_search_index), 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	763	            cli_dbgmsg("pdf_findobj: %%%%EOF detected before end of file, at offset: %zu\n", (size_t)(objid_search_index - pdf->map));
+native-width-integer	libclamav/pdf.c	773	        if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index - 1) - objid_search_index), 0, 10, &temp_long)) {
+native-width-integer	libclamav/pdf.c	793	    objid = (unsigned long)temp_long;
+native-width-integer	libclamav/pdf.c	84	static const char *pdf_nextlinestart(const char *ptr, size_t len);
+native-width-integer	libclamav/pdf.c	849	        cli_dbgmsg("pdf_findobj: found %d %d obj @%lld, size: %zu bytes.\n", obj->id >> 8, obj->id & 0xff, (long long)(obj->start + pdf->startoff), obj->size);
+native-width-integer	libclamav/pdf.c	85	static const char *pdf_nextobject(const char *ptr, size_t len);
+native-width-integer	libclamav/pdf.c	87	static const char *pdf_memstr_deadline(struct pdf_struct *pdf, const char *start, size_t len,
+native-width-integer	libclamav/pdf.c	872	static cl_error_t pdf_write_reserved_output(struct pdf_struct *pdf, int fout, const void *buf, size_t len,
+native-width-integer	libclamav/pdf.c	88	                                       const char *needle, size_t needle_len, cl_error_t *status)
+native-width-integer	libclamav/pdf.c	91	    size_t searched  = 0;
+native-width-integer	libclamav/pdf.c	919	static cl_error_t filter_writen(struct pdf_struct *pdf, struct pdf_obj *obj, int fout, const char *buf, size_t len,
+native-width-integer	libclamav/pdf.c	92	    size_t overlap;
+native-width-integer	libclamav/pdf.c	920	                                size_t *sum, uint64_t *temporary_reserved)
+native-width-integer	libclamav/pdf.c	93	    size_t window;
 native-width-integer	libclamav/pdf.h	111	        int length;
 native-width-integer	libclamav/pdf.h	113	        int success; /* if finalize succeeds */
 native-width-integer	libclamav/pdf.h	170	    long CF_n;
@@ -17736,7 +17744,7 @@ boundary-constant	libclamav/others.c	1558	    if (ctx->scannedfiles == UINT32_MA
 boundary-constant	libclamav/others.c	757	    if (requested < 0 || (uint64_t)requested > UINT32_MAX) {
 boundary-constant	libclamav/others.c	758	        cli_errmsg("%s: value must be between 0 and " STDu64 "\n", name, (uint64_t)UINT32_MAX);
 boundary-constant	libclamav/others.h	158	#if defined(ANONYMOUS_MAP) && (SIZE_MAX > 0xffffffffU)
-boundary-constant	libclamav/pdf.c	881	    if (len > SIZE_MAX - *sum) {
+boundary-constant	libclamav/pdf.c	946	    if (len > SIZE_MAX - *sum) {
 boundary-constant	libclamav/pdfdecode.c	1267	            if (declen > SIZE_MAX - INFLATE_CHUNK_SIZE) {
 boundary-constant	libclamav/pdfdecode.c	1293	    if (declen > (UINT32_MAX - (INFLATE_CHUNK_SIZE - stream.avail_out))) {
 boundary-constant	libclamav/pdfdecode.c	257	    if (streamlen > UINT32_MAX) {
@@ -18034,7 +18042,7 @@ quantity-parser	libclamav/matcher.c	470	    parsed = strtoull(text, &end, 10);
 quantity-parser	libclamav/mbox.c	4412	    n = atoi(number);
 quantity-parser	libclamav/mbox.c	4432	        int t   = atoi(total);
 quantity-parser	libclamav/msxml_parser.c	174	    val2 = strtol(value, &endptr, 10);
-quantity-parser	libclamav/pdf.c	4028	            strtoul(end, &end, 10);
+quantity-parser	libclamav/pdf.c	4093	            strtoul(end, &end, 10);
 quantity-parser	libclamav/pdfdecode.c	1170	                        set = strtol(value, &end, 10);
 quantity-parser	libclamav/pdfng.c	219	    /* Ensure strtoul() isn't going to go past our buffer */
 quantity-parser	libclamav/pdfng.c	233	    n = strtoul(p1, &p2, 10);
@@ -19511,108 +19519,108 @@ format-width	libclamav/others_common.c	336	        cli_warnmsg("cli_max_realloc_
 format-width	libclamav/others_common.c	345	        cli_errmsg("cli_max_realloc_or_free(): Can't re-allocate memory to %zu bytes.\n", size);
 format-width	libclamav/others_common.c	371	        cli_errmsg("cli_safer_strdup(): Can't allocate memory (%u bytes).\n", (unsigned int)strlen(s));
 format-width	libclamav/packlibs.c	285	                cli_dbgmsg("MEW: rete: %p %d %p %d %d || %p %d %p %d %d\n", dest, dsize, cdst, myecx_backsize,
-format-width	libclamav/pdf.c	1087	        cli_dbgmsg("find_length: Encountered invalid negative object length or objid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	1112	            cli_dbgmsg("find_length: Encountered invalid negative object genid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	1135	            cli_dbgmsg("find_length: length is in indirect object %lu %lu\n", objid, genid);
-format-width	libclamav/pdf.c	1188	                cli_dbgmsg("find_length: Encountered invalid negative obj length (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	1263	    cli_dbgmsg("aes_256cbc_decrypt: key length: %d, data length: %zu\n", key_n, *length);
-format-width	libclamav/pdf.c	1265	        cli_dbgmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
-format-width	libclamav/pdf.c	1266	        noisy_warnmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
-format-width	libclamav/pdf.c	1271	        cli_dbgmsg("aes_256cbc_decrypt: len is <32: %zu\n", len);
-format-width	libclamav/pdf.c	1272	        noisy_warnmsg("aes_256cbc_decrypt: len is <32: %zu\n", len);
-format-width	libclamav/pdf.c	1310	            cli_dbgmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
-format-width	libclamav/pdf.c	1311	            noisy_warnmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
-format-width	libclamav/pdf.c	1332	    cli_dbgmsg("aes_256cbc_decrypt: length is %zu\n", *length);
-format-width	libclamav/pdf.c	1342	    cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: key length: %zu, data length: %zu\n", key_n, in_length);
-format-width	libclamav/pdf.c	1344	        cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: key length is %zu!\n", key_n * 8);
-format-width	libclamav/pdf.c	1349	        cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: in_length is <16: %zu\n", in_length);
-format-width	libclamav/pdf.c	1350	        noisy_warnmsg("cli_pdf: aes_128cbc_encrypt: in_length is <16: %zu\n", in_length);
-format-width	libclamav/pdf.c	1381	    cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: length is %zu\n", *out_length);
-format-width	libclamav/pdf.c	1391	        noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  Invalid arguments.\n", id >> 8, id & 0xff);
-format-width	libclamav/pdf.c	1396	        noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  PDF key never identified.\n", id >> 8, id & 0xff);
-format-width	libclamav/pdf.c	1480	            noisy_warnmsg("decrypt_any: unknown encryption method for obj %u %u\n",
-format-width	libclamav/pdf.c	1574	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d contents", pdf->dir, obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	1639	    cli_dbgmsg("pdf_extract_obj: obj %u %u\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	1693	    cli_dbgmsg("pdf_extract_obj: dumping obj %u %u\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	1695	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d", pdf->dir, obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	1721	        cli_dbgmsg("pdf_extract_obj: parsing a stream in obj %u %u\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	1739	            cli_dbgmsg("cli_pdf: Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
-format-width	libclamav/pdf.c	1740	            noisy_warnmsg("Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
-format-width	libclamav/pdf.c	1767	            cli_dbgmsg("pdf_extract_obj: calculated length %zu\n", length);
-format-width	libclamav/pdf.c	1770	                cli_dbgmsg("cli_pdf: calculated length %zu < %zu\n",
-format-width	libclamav/pdf.c	1777	            cli_dbgmsg("pdf_extract_obj: orig length: %zu, length: %zu, size: %zu\n",
-format-width	libclamav/pdf.c	1853	                    cli_warnmsg("pdf_extract_obj: out of memory parsing object stream (%u)\n", pdf->nobjstms);
-format-width	libclamav/pdf.c	1860	                    cli_warnmsg("pdf_extract_obj: out of memory parsing object stream (%u)\n", pdf->nobjstms),
-format-width	libclamav/pdf.c	1871	                cli_dbgmsg("pdf_extract_obj: ObjStm first obj at offset %zu\n", objstm->first);
-format-width	libclamav/pdf.c	1872	                cli_dbgmsg("pdf_extract_obj: ObjStm length is %zu bytes\n", objstm->length);
-format-width	libclamav/pdf.c	1873	                cli_dbgmsg("pdf_extract_obj: ObjStm should contain %zu objects\n", objstm->n);
-format-width	libclamav/pdf.c	1879	            cli_dbgmsg("Error decoding stream! Error code: %d\n", status);
-format-width	libclamav/pdf.c	1975	                        noisy_msg(pdf, "pdf_extract_obj: decrypted Javascript string from obj %u %u\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	2002	                cli_dbgmsg("pdf_extract_obj: bytesleft: %d\n", (int)bytesleft);
-format-width	libclamav/pdf.c	2045	    cli_dbgmsg("pdf_extract_obj: extracted %td bytes %u %u obj\n", sum, obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	2072	            cli_dbgmsg("pdf_extract_obj: dumping contents from obj %u %u\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	2276	        cli_dbgmsg("pdf_parse_encrypt: Encountered invalid negative objid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	2298	        cli_dbgmsg("pdf_parse_encrypt: Encountered invalid negative genid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	2314	    cli_dbgmsg("pdf_parse_encrypt: Encrypt dictionary in obj %lu %lu\n", objid >> 8, objid & 0xff);
-format-width	libclamav/pdf.c	2360	    cli_dbgmsg("pdf_parseobj: Parsing object %u %u\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	2364	            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%zu) is greater than size of object stream (%zu).\n",
-format-width	libclamav/pdf.c	2371	            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%zu) is greater than size of PDF (%lld).\n",
-format-width	libclamav/pdf.c	2406	            cli_dbgmsg("pdf_parseobj: %u %u contains stream, size: %zu\n", obj->id >> 8, obj->id & 0xff, stream_size);
-format-width	libclamav/pdf.c	2419	            cli_dbgmsg("pdf_parseobj: %u %u obj: no dictionary\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	2466	        cli_dbgmsg("pdf_parseobj: %u %u obj: broken dictionary\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	2515	        cli_dbgmsg("pdf_parseobj: %u %u obj broken dictionary\n", obj->id >> 8, obj->id & 0xff);
-format-width	libclamav/pdf.c	2615	                cli_dbgmsg("pdf_parseobj: looking for trailer in linearized pdf: %ld - %ld\n", trailer, trailer_end);
-format-width	libclamav/pdf.c	2646	                    cli_dbgmsg("pdf_parseobj: Encountered invalid negative genid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	2672	                        cli_dbgmsg("pdf_parseobj: Encountered invalid negative genid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	2689	                        cli_dbgmsg("pdf_parseobj: found %s stored in indirect object %lu %lu\n", pdfname, objid >> 8, objid & 0xff);
-format-width	libclamav/pdf.c	2748	    cli_dbgmsg("pdf_parseobj: %u %u obj flags: %02x\n", obj->id >> 8, obj->id & 0xff, obj->flags);
-format-width	libclamav/pdf.c	2766	        cli_dbgmsg("pdf_getdict: bad length %d\n", *len);
-format-width	libclamav/pdf.c	3206	                cli_dbgmsg("check_owner_password: OE length is not 32: %zu\n", OE_len);
-format-width	libclamav/pdf.c	3207	                noisy_warnmsg("check_owner_password: OE length is not 32: %zu\n", OE_len);
-format-width	libclamav/pdf.c	3225	            cli_dbgmsg("check_owner_password: Unknown or unsupported encryption version. R: %d\n", R);
-format-width	libclamav/pdf.c	3226	            noisy_warnmsg("check_owner_password: Unknown or unsupported encryption version. R: %d\n", R);
-format-width	libclamav/pdf.c	3372	                    cli_dbgmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
-format-width	libclamav/pdf.c	3373	                    noisy_warnmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
-format-width	libclamav/pdf.c	3434	                cli_dbgmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
-format-width	libclamav/pdf.c	3435	                noisy_warnmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
-format-width	libclamav/pdf.c	3538	        cli_dbgmsg("pdf_handle_enc: can't find encryption object %d %d\n", pdf->enc_objid >> 8, pdf->enc_objid & 0xff);
-format-width	libclamav/pdf.c	3539	        noisy_warnmsg("pdf_handle_enc: can't find encryption object %d %d\n", pdf->enc_objid >> 8, pdf->enc_objid & 0xff);
-format-width	libclamav/pdf.c	3585	        cli_dbgmsg("pdf_handle_enc: invalid length: %d\n", length);
-format-width	libclamav/pdf.c	3676	        cli_dbgmsg("pdf_handle_enc: invalid O: %d\n", n);
-format-width	libclamav/pdf.c	3677	        noisy_warnmsg("pdf_handle_enc: invalid O: %d\n", n);
-format-width	libclamav/pdf.c	3688	                noisy_warnmsg("pdf_handle_enc: too long O: %u", n);
-format-width	libclamav/pdf.c	3700	        cli_dbgmsg("pdf_handle_enc: invalid U: %u\n", n);
-format-width	libclamav/pdf.c	3701	        noisy_warnmsg("pdf_handle_enc: invalid U: %u\n", n);
-format-width	libclamav/pdf.c	3718	    cli_dbgmsg("pdf_handle_enc: Encrypt R: %d, P %x, length: %u\n", R, P, length);
-format-width	libclamav/pdf.c	3795	                cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Fewer objects in stream than expected: %zu found, %zu expected.\n",
-format-width	libclamav/pdf.c	3803	        cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Found object %u %u in object stream at offset: %zu\n", obj->id >> 8, obj->id & 0xff, obj->start);
-format-width	libclamav/pdf.c	3888	        cli_dbgmsg("pdf_find_and_extract_objs: (parsed hooks) returned %d\n", status);
-format-width	libclamav/pdf.c	4041	        cli_dbgmsg("cli_pdf: PDF header is not at position 0: %lld\n", (long long)(pdfver - start + offset));
-format-width	libclamav/pdf.c	405	        cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative objid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	4113	                cli_dbgmsg("cli_pdf: Encountered invalid negative PDF trailer xref (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	4184	                cli_errmsg("cli_pdf: bounded input read failed at offset %zu\n", copied);
-format-width	libclamav/pdf.c	4195	                cli_errmsg("cli_pdf: staged input write failed at offset %zu\n", copied);
-format-width	libclamav/pdf.c	4238	        cli_dbgmsg("cli_pdf: (pre hooks) returning %d\n", rc);
-format-width	libclamav/pdf.c	425	        cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative obj offset (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	4257	        cli_dbgmsg("cli_pdf: pdf_find_and_extract_objs found %d new objects.\n", pdf.nobjs - objs_found);
-format-width	libclamav/pdf.c	4368	    cli_dbgmsg("cli_pdf: returning %d\n", rc);
-format-width	libclamav/pdf.c	480	        //     cli_dbgmsg("pdf_findobj_in_objstm: Failed to find next objid for obj in object stream though there should be {%u} more.\n", objstm->n - objstm->nobjs_found);
-format-width	libclamav/pdf.c	484	        //     cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative objid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	500	            cli_dbgmsg("pdf_findobj_in_objstm: Failed to find next obj offset for obj in object stream though there should be {%zu} more.\n", objstm->n - objstm->nobjs_found);
-format-width	libclamav/pdf.c	504	            cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative obj offset (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	662	        cli_dbgmsg("pdf_findobj: Failed to parse object genid (# objects found: %u)\n", pdf->nobjs);
-format-width	libclamav/pdf.c	668	        cli_dbgmsg("pdf_findobj: Encountered invalid negative obj genid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	696	                cli_dbgmsg("pdf_findobj: Failed to parse object objid (# objects found: %u)\n", pdf->nobjs);
-format-width	libclamav/pdf.c	705	            cli_dbgmsg("pdf_findobj: %%%%EOF detected before end of file, at offset: %zu\n", (size_t)(objid_search_index - pdf->map));
-format-width	libclamav/pdf.c	708	            cli_dbgmsg("pdf_findobj: Failed to parse object objid (# objects found: %u)\n", pdf->nobjs);
-format-width	libclamav/pdf.c	716	            cli_dbgmsg("pdf_findobj: Failed to parse object objid (# objects found: %u)\n", pdf->nobjs);
-format-width	libclamav/pdf.c	722	            cli_dbgmsg("pdf_findobj: Encountered invalid negative objid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	730	        cli_dbgmsg("pdf_findobj: Encountered invalid negative objid (%ld).\n", temp_long);
-format-width	libclamav/pdf.c	784	        cli_dbgmsg("pdf_findobj: found %d %d obj @%lld, size: %zu bytes.\n", obj->id >> 8, obj->id & 0xff, (long long)(obj->start + pdf->startoff), obj->size);
-format-width	libclamav/pdf.c	796	            cli_dbgmsg("pdf_findobj: No more objects (# objects found: %u)\n", pdf->nobjs);
-format-width	libclamav/pdf.c	798	            cli_warnmsg("pdf_findobj: Error allocating memory (# objects found: %u)\n", pdf->nobjs);
-format-width	libclamav/pdf.c	800	            cli_dbgmsg("pdf_findobj: Unexpected status code %d.\n", status);
-format-width	libclamav/pdf.c	963	    cli_dbgmsg("pdfobj_flag: %s flagged in object %u %u\n", s, obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	1028	    cli_dbgmsg("pdfobj_flag: %s flagged in object %u %u\n", s, obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	1152	        cli_dbgmsg("find_length: Encountered invalid negative object length or objid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	1177	            cli_dbgmsg("find_length: Encountered invalid negative object genid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	1200	            cli_dbgmsg("find_length: length is in indirect object %lu %lu\n", objid, genid);
+format-width	libclamav/pdf.c	1253	                cli_dbgmsg("find_length: Encountered invalid negative obj length (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	1328	    cli_dbgmsg("aes_256cbc_decrypt: key length: %d, data length: %zu\n", key_n, *length);
+format-width	libclamav/pdf.c	1330	        cli_dbgmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
+format-width	libclamav/pdf.c	1331	        noisy_warnmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
+format-width	libclamav/pdf.c	1336	        cli_dbgmsg("aes_256cbc_decrypt: len is <32: %zu\n", len);
+format-width	libclamav/pdf.c	1337	        noisy_warnmsg("aes_256cbc_decrypt: len is <32: %zu\n", len);
+format-width	libclamav/pdf.c	1375	            cli_dbgmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
+format-width	libclamav/pdf.c	1376	            noisy_warnmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
+format-width	libclamav/pdf.c	1397	    cli_dbgmsg("aes_256cbc_decrypt: length is %zu\n", *length);
+format-width	libclamav/pdf.c	1407	    cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: key length: %zu, data length: %zu\n", key_n, in_length);
+format-width	libclamav/pdf.c	1409	        cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: key length is %zu!\n", key_n * 8);
+format-width	libclamav/pdf.c	1414	        cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: in_length is <16: %zu\n", in_length);
+format-width	libclamav/pdf.c	1415	        noisy_warnmsg("cli_pdf: aes_128cbc_encrypt: in_length is <16: %zu\n", in_length);
+format-width	libclamav/pdf.c	1446	    cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: length is %zu\n", *out_length);
+format-width	libclamav/pdf.c	1456	        noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  Invalid arguments.\n", id >> 8, id & 0xff);
+format-width	libclamav/pdf.c	1461	        noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  PDF key never identified.\n", id >> 8, id & 0xff);
+format-width	libclamav/pdf.c	1545	            noisy_warnmsg("decrypt_any: unknown encryption method for obj %u %u\n",
+format-width	libclamav/pdf.c	1639	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d contents", pdf->dir, obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	1704	    cli_dbgmsg("pdf_extract_obj: obj %u %u\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	1758	    cli_dbgmsg("pdf_extract_obj: dumping obj %u %u\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	1760	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d", pdf->dir, obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	1786	        cli_dbgmsg("pdf_extract_obj: parsing a stream in obj %u %u\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	1804	            cli_dbgmsg("cli_pdf: Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
+format-width	libclamav/pdf.c	1805	            noisy_warnmsg("Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
+format-width	libclamav/pdf.c	1832	            cli_dbgmsg("pdf_extract_obj: calculated length %zu\n", length);
+format-width	libclamav/pdf.c	1835	                cli_dbgmsg("cli_pdf: calculated length %zu < %zu\n",
+format-width	libclamav/pdf.c	1842	            cli_dbgmsg("pdf_extract_obj: orig length: %zu, length: %zu, size: %zu\n",
+format-width	libclamav/pdf.c	1918	                    cli_warnmsg("pdf_extract_obj: out of memory parsing object stream (%u)\n", pdf->nobjstms);
+format-width	libclamav/pdf.c	1925	                    cli_warnmsg("pdf_extract_obj: out of memory parsing object stream (%u)\n", pdf->nobjstms),
+format-width	libclamav/pdf.c	1936	                cli_dbgmsg("pdf_extract_obj: ObjStm first obj at offset %zu\n", objstm->first);
+format-width	libclamav/pdf.c	1937	                cli_dbgmsg("pdf_extract_obj: ObjStm length is %zu bytes\n", objstm->length);
+format-width	libclamav/pdf.c	1938	                cli_dbgmsg("pdf_extract_obj: ObjStm should contain %zu objects\n", objstm->n);
+format-width	libclamav/pdf.c	1944	            cli_dbgmsg("Error decoding stream! Error code: %d\n", status);
+format-width	libclamav/pdf.c	2040	                        noisy_msg(pdf, "pdf_extract_obj: decrypted Javascript string from obj %u %u\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	2067	                cli_dbgmsg("pdf_extract_obj: bytesleft: %d\n", (int)bytesleft);
+format-width	libclamav/pdf.c	2110	    cli_dbgmsg("pdf_extract_obj: extracted %td bytes %u %u obj\n", sum, obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	2137	            cli_dbgmsg("pdf_extract_obj: dumping contents from obj %u %u\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	2341	        cli_dbgmsg("pdf_parse_encrypt: Encountered invalid negative objid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	2363	        cli_dbgmsg("pdf_parse_encrypt: Encountered invalid negative genid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	2379	    cli_dbgmsg("pdf_parse_encrypt: Encrypt dictionary in obj %lu %lu\n", objid >> 8, objid & 0xff);
+format-width	libclamav/pdf.c	2425	    cli_dbgmsg("pdf_parseobj: Parsing object %u %u\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	2429	            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%zu) is greater than size of object stream (%zu).\n",
+format-width	libclamav/pdf.c	2436	            cli_dbgmsg("pdf_parseobj: %u %u obj: obj start (%zu) is greater than size of PDF (%lld).\n",
+format-width	libclamav/pdf.c	2471	            cli_dbgmsg("pdf_parseobj: %u %u contains stream, size: %zu\n", obj->id >> 8, obj->id & 0xff, stream_size);
+format-width	libclamav/pdf.c	2484	            cli_dbgmsg("pdf_parseobj: %u %u obj: no dictionary\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	2531	        cli_dbgmsg("pdf_parseobj: %u %u obj: broken dictionary\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	2580	        cli_dbgmsg("pdf_parseobj: %u %u obj broken dictionary\n", obj->id >> 8, obj->id & 0xff);
+format-width	libclamav/pdf.c	2680	                cli_dbgmsg("pdf_parseobj: looking for trailer in linearized pdf: %ld - %ld\n", trailer, trailer_end);
+format-width	libclamav/pdf.c	2711	                    cli_dbgmsg("pdf_parseobj: Encountered invalid negative genid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	2737	                        cli_dbgmsg("pdf_parseobj: Encountered invalid negative genid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	2754	                        cli_dbgmsg("pdf_parseobj: found %s stored in indirect object %lu %lu\n", pdfname, objid >> 8, objid & 0xff);
+format-width	libclamav/pdf.c	2813	    cli_dbgmsg("pdf_parseobj: %u %u obj flags: %02x\n", obj->id >> 8, obj->id & 0xff, obj->flags);
+format-width	libclamav/pdf.c	2831	        cli_dbgmsg("pdf_getdict: bad length %d\n", *len);
+format-width	libclamav/pdf.c	3271	                cli_dbgmsg("check_owner_password: OE length is not 32: %zu\n", OE_len);
+format-width	libclamav/pdf.c	3272	                noisy_warnmsg("check_owner_password: OE length is not 32: %zu\n", OE_len);
+format-width	libclamav/pdf.c	3290	            cli_dbgmsg("check_owner_password: Unknown or unsupported encryption version. R: %d\n", R);
+format-width	libclamav/pdf.c	3291	            noisy_warnmsg("check_owner_password: Unknown or unsupported encryption version. R: %d\n", R);
+format-width	libclamav/pdf.c	3437	                    cli_dbgmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
+format-width	libclamav/pdf.c	3438	                    noisy_warnmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
+format-width	libclamav/pdf.c	3499	                cli_dbgmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
+format-width	libclamav/pdf.c	3500	                noisy_warnmsg("check_user_password: UE length is not 32: %zu\n", UE_len);
+format-width	libclamav/pdf.c	3603	        cli_dbgmsg("pdf_handle_enc: can't find encryption object %d %d\n", pdf->enc_objid >> 8, pdf->enc_objid & 0xff);
+format-width	libclamav/pdf.c	3604	        noisy_warnmsg("pdf_handle_enc: can't find encryption object %d %d\n", pdf->enc_objid >> 8, pdf->enc_objid & 0xff);
+format-width	libclamav/pdf.c	3650	        cli_dbgmsg("pdf_handle_enc: invalid length: %d\n", length);
+format-width	libclamav/pdf.c	3741	        cli_dbgmsg("pdf_handle_enc: invalid O: %d\n", n);
+format-width	libclamav/pdf.c	3742	        noisy_warnmsg("pdf_handle_enc: invalid O: %d\n", n);
+format-width	libclamav/pdf.c	3753	                noisy_warnmsg("pdf_handle_enc: too long O: %u", n);
+format-width	libclamav/pdf.c	3765	        cli_dbgmsg("pdf_handle_enc: invalid U: %u\n", n);
+format-width	libclamav/pdf.c	3766	        noisy_warnmsg("pdf_handle_enc: invalid U: %u\n", n);
+format-width	libclamav/pdf.c	3783	    cli_dbgmsg("pdf_handle_enc: Encrypt R: %d, P %x, length: %u\n", R, P, length);
+format-width	libclamav/pdf.c	3860	                cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Fewer objects in stream than expected: %zu found, %zu expected.\n",
+format-width	libclamav/pdf.c	3868	        cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Found object %u %u in object stream at offset: %zu\n", obj->id >> 8, obj->id & 0xff, obj->start);
+format-width	libclamav/pdf.c	3953	        cli_dbgmsg("pdf_find_and_extract_objs: (parsed hooks) returned %d\n", status);
+format-width	libclamav/pdf.c	4106	        cli_dbgmsg("cli_pdf: PDF header is not at position 0: %lld\n", (long long)(pdfver - start + offset));
+format-width	libclamav/pdf.c	4178	                cli_dbgmsg("cli_pdf: Encountered invalid negative PDF trailer xref (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	4249	                cli_errmsg("cli_pdf: bounded input read failed at offset %zu\n", copied);
+format-width	libclamav/pdf.c	4260	                cli_errmsg("cli_pdf: staged input write failed at offset %zu\n", copied);
+format-width	libclamav/pdf.c	4303	        cli_dbgmsg("cli_pdf: (pre hooks) returning %d\n", rc);
+format-width	libclamav/pdf.c	4322	        cli_dbgmsg("cli_pdf: pdf_find_and_extract_objs found %d new objects.\n", pdf.nobjs - objs_found);
+format-width	libclamav/pdf.c	4433	    cli_dbgmsg("cli_pdf: returning %d\n", rc);
+format-width	libclamav/pdf.c	456	        cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative objid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	476	        cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative obj offset (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	531	        //     cli_dbgmsg("pdf_findobj_in_objstm: Failed to find next objid for obj in object stream though there should be {%u} more.\n", objstm->n - objstm->nobjs_found);
+format-width	libclamav/pdf.c	535	        //     cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative objid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	551	            cli_dbgmsg("pdf_findobj_in_objstm: Failed to find next obj offset for obj in object stream though there should be {%zu} more.\n", objstm->n - objstm->nobjs_found);
+format-width	libclamav/pdf.c	555	            cli_dbgmsg("pdf_findobj_in_objstm: Encountered invalid negative obj offset (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	720	        cli_dbgmsg("pdf_findobj: Failed to parse object genid (# objects found: %u)\n", pdf->nobjs);
+format-width	libclamav/pdf.c	726	        cli_dbgmsg("pdf_findobj: Encountered invalid negative obj genid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	754	                cli_dbgmsg("pdf_findobj: Failed to parse object objid (# objects found: %u)\n", pdf->nobjs);
+format-width	libclamav/pdf.c	763	            cli_dbgmsg("pdf_findobj: %%%%EOF detected before end of file, at offset: %zu\n", (size_t)(objid_search_index - pdf->map));
+format-width	libclamav/pdf.c	766	            cli_dbgmsg("pdf_findobj: Failed to parse object objid (# objects found: %u)\n", pdf->nobjs);
+format-width	libclamav/pdf.c	774	            cli_dbgmsg("pdf_findobj: Failed to parse object objid (# objects found: %u)\n", pdf->nobjs);
+format-width	libclamav/pdf.c	780	            cli_dbgmsg("pdf_findobj: Encountered invalid negative objid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	788	        cli_dbgmsg("pdf_findobj: Encountered invalid negative objid (%ld).\n", temp_long);
+format-width	libclamav/pdf.c	849	        cli_dbgmsg("pdf_findobj: found %d %d obj @%lld, size: %zu bytes.\n", obj->id >> 8, obj->id & 0xff, (long long)(obj->start + pdf->startoff), obj->size);
+format-width	libclamav/pdf.c	861	            cli_dbgmsg("pdf_findobj: No more objects (# objects found: %u)\n", pdf->nobjs);
+format-width	libclamav/pdf.c	863	            cli_warnmsg("pdf_findobj: Error allocating memory (# objects found: %u)\n", pdf->nobjs);
+format-width	libclamav/pdf.c	865	            cli_dbgmsg("pdf_findobj: Unexpected status code %d.\n", status);
 format-width	libclamav/pdfdecode.c	1021	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
 format-width	libclamav/pdfdecode.c	1069	        cli_dbgmsg("cli_pdf: deflated %zu bytes from %zu total bytes\n",
 format-width	libclamav/pdfdecode.c	1078	        cli_dbgmsg("cli_pdf: error occurred parsing byte %zu of %zu\n",
@@ -26726,394 +26734,401 @@ offset-size-arithmetic	libclamav/packlibs.c	95	                    backsize  = b
 offset-size-arithmetic	libclamav/partition_intersection.c	52	        if (start > check_node->Start) {
 offset-size-arithmetic	libclamav/partition_intersection.c	57	        } else if (start < check_node->Start) {
 offset-size-arithmetic	libclamav/partition_intersection.c	58	            if (start + size > (unsigned long)(check_node->Start)) {
-offset-size-arithmetic	libclamav/pdf.c	1038	 * @return size_t   Unsigned integer value of the "/Length" key
-offset-size-arithmetic	libclamav/pdf.c	1040	static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const char *dict_start, size_t dict_len)
-offset-size-arithmetic	libclamav/pdf.c	1055	    index = cli_memstr(obj_start, bytes_remaining, "/Length", 7);
-offset-size-arithmetic	libclamav/pdf.c	1070	     * pdf_nextobject() assumes we started searching from within a previous object */
-offset-size-arithmetic	libclamav/pdf.c	1075	    if (bytes_remaining < (size_t)(obj_start - index)) {
-offset-size-arithmetic	libclamav/pdf.c	1078	    bytes_remaining -= obj_start - index;
-offset-size-arithmetic	libclamav/pdf.c	1082	       or the object id of the indirect object that has the length */
-offset-size-arithmetic	libclamav/pdf.c	1090	    length = (size_t)temp_long; /* length or maybe object id */
-offset-size-arithmetic	libclamav/pdf.c	1144	            obj = find_obj(pdf, obj, (uint32_t)(length << 8) | (uint32_t)genid);
-offset-size-arithmetic	libclamav/pdf.c	1151	                indirect_obj_start = (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	1153	                if (!CLI_ISCONTAINED(pdf->map, pdf->size, indirect_obj_start, obj->size)) {
-offset-size-arithmetic	libclamav/pdf.c	1158	                bytes_remaining = pdf->size - obj->start;
-offset-size-arithmetic	libclamav/pdf.c	1161	                indirect_obj_start = (const char *)(obj->start + obj->objstm->streambuf);
-offset-size-arithmetic	libclamav/pdf.c	1163	                if (!CLI_ISCONTAINED(obj->objstm->streambuf, obj->objstm->streambuf_len, indirect_obj_start, obj->size)) {
-offset-size-arithmetic	libclamav/pdf.c	1168	                bytes_remaining = obj->objstm->streambuf_len - obj->start;
-offset-size-arithmetic	libclamav/pdf.c	1178	            if (bytes_remaining < (size_t)(index - indirect_obj_start)) {
-offset-size-arithmetic	libclamav/pdf.c	1183	            /* Found the value, so lets parse it as a long, but prohibit negative lengths. */
-offset-size-arithmetic	libclamav/pdf.c	1195	    /* limit length */
-offset-size-arithmetic	libclamav/pdf.c	1196	    if ((size_t)(obj_start - pdf->map) + length + 5 > pdf->size)
-offset-size-arithmetic	libclamav/pdf.c	1197	        length = pdf->size - (obj_start - pdf->map) - 5;
-offset-size-arithmetic	libclamav/pdf.c	1234	    cli_bytecode_context_setpdf(bc_ctx, phase, pdf->nobjs, pdf->objs, &pdf->flags, pdf->size, pdf->startoff);
-offset-size-arithmetic	libclamav/pdf.c	1247	static void aes_256cbc_decrypt(const unsigned char *in, size_t *length, unsigned char *q, char *key, unsigned key_n, int has_iv)
-offset-size-arithmetic	libclamav/pdf.c	126	static int pdf_readint(const char *q0, int len, const char *key);
-offset-size-arithmetic	libclamav/pdf.c	1261	    len = *length;
-offset-size-arithmetic	libclamav/pdf.c	1263	    cli_dbgmsg("aes_256cbc_decrypt: key length: %d, data length: %zu\n", key_n, *length);
-offset-size-arithmetic	libclamav/pdf.c	1265	        cli_dbgmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
-offset-size-arithmetic	libclamav/pdf.c	1266	        noisy_warnmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
-offset-size-arithmetic	libclamav/pdf.c	127	static const char *pdf_getdict(const char *q0, int *len, const char *key);
-offset-size-arithmetic	libclamav/pdf.c	1279	        len -= 16;
-offset-size-arithmetic	libclamav/pdf.c	128	static char *pdf_readval(const char *q, int len, const char *key);
-offset-size-arithmetic	libclamav/pdf.c	129	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape);
-offset-size-arithmetic	libclamav/pdf.c	1303	        len -= 16;
-offset-size-arithmetic	libclamav/pdf.c	1306	        len += 16;
-offset-size-arithmetic	libclamav/pdf.c	1310	            cli_dbgmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
-offset-size-arithmetic	libclamav/pdf.c	1311	            noisy_warnmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
-offset-size-arithmetic	libclamav/pdf.c	1312	            *length -= len;
-offset-size-arithmetic	libclamav/pdf.c	1321	                *length -= len;
-offset-size-arithmetic	libclamav/pdf.c	1327	        len += pad;
-offset-size-arithmetic	libclamav/pdf.c	1330	    *length -= len;
-offset-size-arithmetic	libclamav/pdf.c	1332	    cli_dbgmsg("aes_256cbc_decrypt: length is %zu\n", *length);
-offset-size-arithmetic	libclamav/pdf.c	1335	static void aes_128cbc_encrypt(const unsigned char *in, size_t in_length, unsigned char *out, size_t *out_length, const unsigned char *key, size_t key_n, const unsigned char *iv)
-offset-size-arithmetic	libclamav/pdf.c	1344	        cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: key length is %zu!\n", key_n * 8);
-offset-size-arithmetic	libclamav/pdf.c	1376	        *out_length += 16;
-offset-size-arithmetic	libclamav/pdf.c	1378	        in_length -= 16;
-offset-size-arithmetic	libclamav/pdf.c	1381	    cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: length is %zu\n", *out_length);
-offset-size-arithmetic	libclamav/pdf.c	1384	char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
-offset-size-arithmetic	libclamav/pdf.c	1390	    if (!length || !*length || !in) {
-offset-size-arithmetic	libclamav/pdf.c	1400	    n = pdf->keylen + 5;
-offset-size-arithmetic	libclamav/pdf.c	1423	    n = pdf->keylen + 5;
-offset-size-arithmetic	libclamav/pdf.c	1449	            aes_256cbc_decrypt((const unsigned char *)in, length, q, (char *)result, n, 1);
-offset-size-arithmetic	libclamav/pdf.c	1457	            aes_256cbc_decrypt((const unsigned char *)in, length, q, pdf->key, pdf->keylen, 1);
-offset-size-arithmetic	libclamav/pdf.c	1507	                          size_t length, int fout, uint64_t *temporary_reserved)
-offset-size-arithmetic	libclamav/pdf.c	1521	                    if ((size_t)(nl - buf) > length) {
-offset-size-arithmetic	libclamav/pdf.c	1524	                        length -= nl - buf;
-offset-size-arithmetic	libclamav/pdf.c	1556	            length--;
-offset-size-arithmetic	libclamav/pdf.c	1574	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d contents", pdf->dir, obj->id >> 8, obj->id & 0xff);
-offset-size-arithmetic	libclamav/pdf.c	1586	        if (n == (size_t)-1) {
-offset-size-arithmetic	libclamav/pdf.c	1607	    if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
-offset-size-arithmetic	libclamav/pdf.c	1695	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d", pdf->dir, obj->id >> 8, obj->id & 0xff);
-offset-size-arithmetic	libclamav/pdf.c	1709	         * and so we need to save off the path in obj->path for the caller to use.
-offset-size-arithmetic	libclamav/pdf.c	1723	        const char *start = pdf->map + obj->start;
-offset-size-arithmetic	libclamav/pdf.c	1727	        int dict_len = obj->stream - start; /* Dictionary should end where the stream begins */
-offset-size-arithmetic	libclamav/pdf.c	173	        if (!memcmp(q, "/XRef", strlen("/XRef"))) {
-offset-size-arithmetic	libclamav/pdf.c	1733	        /* Find and interpret the length dictionary value */
-offset-size-arithmetic	libclamav/pdf.c	1738	        if (length > obj->stream_size) {
-offset-size-arithmetic	libclamav/pdf.c	1739	            cli_dbgmsg("cli_pdf: Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
-offset-size-arithmetic	libclamav/pdf.c	1740	            noisy_warnmsg("Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
-offset-size-arithmetic	libclamav/pdf.c	1742	            length = obj->stream_size;
-offset-size-arithmetic	libclamav/pdf.c	1749	             * off any newline/carriage returns from the end of the stream.
-offset-size-arithmetic	libclamav/pdf.c	1751	            const char *q = start + obj->stream_size;
-offset-size-arithmetic	libclamav/pdf.c	1752	            length        = obj->stream_size;
-offset-size-arithmetic	libclamav/pdf.c	1758	                    length--;
-offset-size-arithmetic	libclamav/pdf.c	1760	                    if (length > 0 && *q == '\r')
-offset-size-arithmetic	libclamav/pdf.c	1761	                        length--;
-offset-size-arithmetic	libclamav/pdf.c	1763	                    length--;
-offset-size-arithmetic	libclamav/pdf.c	1769	            if (obj->stream_size > (size_t)length + 2) {
-offset-size-arithmetic	libclamav/pdf.c	1771	                           length, obj->stream_size);
-offset-size-arithmetic	libclamav/pdf.c	1772	                length = obj->stream_size;
-offset-size-arithmetic	libclamav/pdf.c	1776	        if ((0 != orig_length) && (obj->stream_size > orig_length + 20)) {
-offset-size-arithmetic	libclamav/pdf.c	1778	                       orig_length, length, obj->stream_size);
-offset-size-arithmetic	libclamav/pdf.c	1783	            length = obj->stream_size;
-offset-size-arithmetic	libclamav/pdf.c	1794	        if (cli_memstr(start, dict_len, "/XRef", strlen("/XRef"))) {
-offset-size-arithmetic	libclamav/pdf.c	1801	        if (NULL != (pstr = pdf_getdict(start, &dict_len, "/DecodeParms"))) {
-offset-size-arithmetic	libclamav/pdf.c	1803	        } else if (NULL != (pstr = pdf_getdict(start, &dict_len, "/DP"))) {
-offset-size-arithmetic	libclamav/pdf.c	1811	                dict_len++;
-offset-size-arithmetic	libclamav/pdf.c	1817	                dict_len--;
-offset-size-arithmetic	libclamav/pdf.c	1822	                dparams = pdf_parse_dict(pdf, obj, obj->size, (char *)pstr, NULL);
-offset-size-arithmetic	libclamav/pdf.c	1833	        dict_len = obj->stream - start;
-offset-size-arithmetic	libclamav/pdf.c	1834	        if (NULL != (pstr = pdf_getdict(start, &dict_len, "/Type/ObjStm"))) {
-offset-size-arithmetic	libclamav/pdf.c	1836	            int objstm_length = -1;
-offset-size-arithmetic	libclamav/pdf.c	1841	            dict_len = obj->stream - start;
-offset-size-arithmetic	libclamav/pdf.c	1842	            if (-1 == (objstm_first = pdf_readint(start, dict_len, "/First"))) {
-offset-size-arithmetic	libclamav/pdf.c	1844	            } else if (-1 == (objstm_length = pdf_readint(start, dict_len, "/Length"))) {
-offset-size-arithmetic	libclamav/pdf.c	1846	            } else if (-1 == (objstm_n = pdf_readint(start, dict_len, "/N"))) {
-offset-size-arithmetic	libclamav/pdf.c	1851	                pdf->objstms = cli_max_realloc_or_free(pdf->objstms, sizeof(struct objstm_struct *) * pdf->nobjstms);
-offset-size-arithmetic	libclamav/pdf.c	1871	                cli_dbgmsg("pdf_extract_obj: ObjStm first obj at offset %zu\n", objstm->first);
-offset-size-arithmetic	libclamav/pdf.c	1872	                cli_dbgmsg("pdf_extract_obj: ObjStm length is %zu bytes\n", objstm->length);
-offset-size-arithmetic	libclamav/pdf.c	1905	                    /* Pop the objstm off the end of the pdf->objstms array. */
-offset-size-arithmetic	libclamav/pdf.c	1912	                            pdf->objstms = cli_max_realloc_or_free(pdf->objstms, sizeof(struct objstm_struct *) * pdf->nobjstms);
-offset-size-arithmetic	libclamav/pdf.c	1934	            /* skip post-filter scan */
-offset-size-arithmetic	libclamav/pdf.c	1940	        const char *q = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	1941	                                      : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	1943	        /* TODO: get obj-endobj size */
-offset-size-arithmetic	libclamav/pdf.c	1944	        off_t bytesleft = obj->size;
-offset-size-arithmetic	libclamav/pdf.c	1972	                    decrypted = decrypt_any(pdf, obj->id, js, &js_len, pdf->enc_method_string);
-offset-size-arithmetic	libclamav/pdf.c	199	    if (offset < 0 || (uint64_t)offset > map->len)
-offset-size-arithmetic	libclamav/pdf.c	201	    if (map->len - (size_t)offset < 8)
-offset-size-arithmetic	libclamav/pdf.c	2029	        off_t bytesleft = obj->size;
-offset-size-arithmetic	libclamav/pdf.c	2195	    for (j = 0; j < sizeof(pdfname_actions) / sizeof(pdfname_actions[0]); j++) {
-offset-size-arithmetic	libclamav/pdf.c	222	    while (q > start && (*q == 0 || *q == 9 || *q == 0xa || *q == 0xc || *q == 0xd || *q == 0x20))
-offset-size-arithmetic	libclamav/pdf.c	2255	    if (len >= 16 && !strncmp(enc, "/EncryptMetadata", 16)) {
-offset-size-arithmetic	libclamav/pdf.c	2256	        q = cli_memstr(enc + 16, len - 16, "/Encrypt", 8);
-offset-size-arithmetic	libclamav/pdf.c	2260	        len -= q - enc;
-offset-size-arithmetic	libclamav/pdf.c	2265	    len -= 8;
-offset-size-arithmetic	libclamav/pdf.c	2269	    len -= q2 - q;
-offset-size-arithmetic	libclamav/pdf.c	2291	    len -= q2 - q;
-offset-size-arithmetic	libclamav/pdf.c	2323	    enc = cli_memstr(s, length, "/Encrypt", 8);
-offset-size-arithmetic	libclamav/pdf.c	2329	        pdf_parse_encrypt(pdf, enc, s + length - enc);
-offset-size-arithmetic	libclamav/pdf.c	2330	        newID = pdf_readstring(s, length, "/ID", &newIDlen, NULL, false);
-offset-size-arithmetic	libclamav/pdf.c	2347	    const char *dict = NULL, *enddict = NULL, *start = NULL;
-offset-size-arithmetic	libclamav/pdf.c	2363	        if ((size_t)obj->start > obj->objstm->streambuf_len) {
-offset-size-arithmetic	libclamav/pdf.c	2365	                       obj->id >> 8, obj->id & 0xff, obj->start, obj->objstm->streambuf_len);
-offset-size-arithmetic	libclamav/pdf.c	2368	        q = (const char *)(obj->start + obj->objstm->streambuf);
-offset-size-arithmetic	libclamav/pdf.c	2370	        if ((size_t)obj->start > pdf->size) {
-offset-size-arithmetic	libclamav/pdf.c	2372	                       obj->id >> 8, obj->id & 0xff, obj->start, (long long)pdf->size);
-offset-size-arithmetic	libclamav/pdf.c	2375	        q = (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	238	    while (q < end && (*q == 0 || *q == 9 || *q == 0xa || *q == 0xc || *q == 0xd || *q == 0x20))
-offset-size-arithmetic	libclamav/pdf.c	2383	        bytesleft = MIN(obj->size, obj->objstm->streambuf_len - obj->start);
-offset-size-arithmetic	libclamav/pdf.c	2385	        bytesleft = MIN(obj->size, pdf->size - obj->start);
-offset-size-arithmetic	libclamav/pdf.c	2389	     * ^Objects in object streams aren't supposed to contain streams, so we don't check them. */
-offset-size-arithmetic	libclamav/pdf.c	2406	            cli_dbgmsg("pdf_parseobj: %u %u contains stream, size: %zu\n", obj->id >> 8, obj->id & 0xff, stream_size);
-offset-size-arithmetic	libclamav/pdf.c	2413	    /* find start of dictionary */
-offset-size-arithmetic	libclamav/pdf.c	2461	    bytesleft = obj->size - (q - start);
-offset-size-arithmetic	libclamav/pdf.c	2462	    enddict   = q + bytesleft - 1;
-offset-size-arithmetic	libclamav/pdf.c	2464	    /* find end of dictionary block */
-offset-size-arithmetic	libclamav/pdf.c	2485	    while ((q < enddict - 1) && (blockopens > 0)) {
-offset-size-arithmetic	libclamav/pdf.c	2487	        nextclose = memchr(q, '>', enddict - q);
-offset-size-arithmetic	libclamav/pdf.c	2512	    /* Was end of dictionary found? */
-offset-size-arithmetic	libclamav/pdf.c	2535	    full_dict_length = dict_length = enddict - dict;
-offset-size-arithmetic	libclamav/pdf.c	2539	        char * dictionary = malloc(dict_length + 1);
-offset-size-arithmetic	libclamav/pdf.c	2563	        dict_length -= q2 - q;
-offset-size-arithmetic	libclamav/pdf.c	2566	        for (i = 0; dict_length > 0 && (i < sizeof(pdfname) - 1); i++) {
-offset-size-arithmetic	libclamav/pdf.c	2568	            dict_length--;
-offset-size-arithmetic	libclamav/pdf.c	2575	                dict_length -= 2;
-offset-size-arithmetic	libclamav/pdf.c	2608	            trailer_end = pdf_readint(dict, full_dict_length, "/H");
-offset-size-arithmetic	libclamav/pdf.c	2609	            if ((trailer_end > 0) && ((size_t)trailer_end < pdf->size)) {
-offset-size-arithmetic	libclamav/pdf.c	2610	                trailer = trailer_end - 1024;
-offset-size-arithmetic	libclamav/pdf.c	2616	                pdf_parse_trailer(pdf, q2, trailer_end - trailer);
-offset-size-arithmetic	libclamav/pdf.c	2640	                dict_remaining -= (off_t)(q2 - q);
-offset-size-arithmetic	libclamav/pdf.c	265	    size_t *stream_size,
-offset-size-arithmetic	libclamav/pdf.c	2667	                    dict_remaining -= (off_t)(q2 - q2_old);
-offset-size-arithmetic	libclamav/pdf.c	2725	    for (i = 0; i < sizeof(pdfname_actions) / sizeof(pdfname_actions[0]); i++) {
-offset-size-arithmetic	libclamav/pdf.c	2761	static const char *pdf_getdict(const char *q0, int *len, const char *key)
-offset-size-arithmetic	libclamav/pdf.c	2766	        cli_dbgmsg("pdf_getdict: bad length %d\n", *len);
-offset-size-arithmetic	libclamav/pdf.c	2780	    *len -= q - q0;
-offset-size-arithmetic	libclamav/pdf.c	2783	    /* find the start of the value object */
-offset-size-arithmetic	libclamav/pdf.c	2784	    q = pdf_nextobject(q0 + 1, *len - 1);
-offset-size-arithmetic	libclamav/pdf.c	2794	    *len -= q - q0;
-offset-size-arithmetic	libclamav/pdf.c	2809	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape)
-offset-size-arithmetic	libclamav/pdf.c	2812	    const char *start, *q, *end;
-offset-size-arithmetic	libclamav/pdf.c	2825	        start     = ++q;
-offset-size-arithmetic	libclamav/pdf.c	2826	        len--;
-offset-size-arithmetic	libclamav/pdf.c	2827	        for (; paren > 0 && len > 0; q++, len--) {
-offset-size-arithmetic	libclamav/pdf.c	2837	                    len--;
-offset-size-arithmetic	libclamav/pdf.c	2853	        len = q - start;
-offset-size-arithmetic	libclamav/pdf.c	2854	        s0 = s = cli_max_malloc(len + 1);
-offset-size-arithmetic	libclamav/pdf.c	286	        if ((size_t)(idx - start) >= bytesleft)
-offset-size-arithmetic	libclamav/pdf.c	2860	        end = start + len;
-offset-size-arithmetic	libclamav/pdf.c	2927	            *slen = s - s0 - 1;
-offset-size-arithmetic	libclamav/pdf.c	2933	        start = ++q;
-offset-size-arithmetic	libclamav/pdf.c	2934	        len -= 1;
-offset-size-arithmetic	libclamav/pdf.c	2936	        while (len > 0 && *start == '\n') {
-offset-size-arithmetic	libclamav/pdf.c	2937	            start = ++q;
-offset-size-arithmetic	libclamav/pdf.c	2938	            len -= 1;
-offset-size-arithmetic	libclamav/pdf.c	2940	        q = memchr(q + 1, '>', len - 1);
-offset-size-arithmetic	libclamav/pdf.c	2947	        s = cli_max_malloc((q - start) / 2 + 1);
-offset-size-arithmetic	libclamav/pdf.c	2953	        if (cli_hex2str_to(start, s, q - start)) {
-offset-size-arithmetic	libclamav/pdf.c	2959	        s[(q - start) / 2] = '\0';
-offset-size-arithmetic	libclamav/pdf.c	2961	            *slen = (q - start) / 2;
-offset-size-arithmetic	libclamav/pdf.c	2970	static char *pdf_readval(const char *q, int len, const char *key)
-offset-size-arithmetic	libclamav/pdf.c	2980	    while (len > 0 && *q && *q == ' ') {
-offset-size-arithmetic	libclamav/pdf.c	2982	        len--;
-offset-size-arithmetic	libclamav/pdf.c	2989	    len--;
-offset-size-arithmetic	libclamav/pdf.c	2992	    while (len > 0 && *end && !(*end == '/' || (len > 1 && end[0] == '>' && end[1] == '>'))) {
-offset-size-arithmetic	libclamav/pdf.c	2993	        end++;
-offset-size-arithmetic	libclamav/pdf.c	2994	        len--;
-offset-size-arithmetic	libclamav/pdf.c	2997	    /* end-of-buffer whitespace trimming */
-offset-size-arithmetic	libclamav/pdf.c	2998	    while (len < origlen && isspace(*(end - 1))) {
-offset-size-arithmetic	libclamav/pdf.c	2999	        end--;
-offset-size-arithmetic	libclamav/pdf.c	3000	        len++;
-offset-size-arithmetic	libclamav/pdf.c	3003	    s = cli_max_malloc(end - q + 1);
-offset-size-arithmetic	libclamav/pdf.c	3007	    memcpy(s, q, end - q);
-offset-size-arithmetic	libclamav/pdf.c	3008	    s[end - q] = '\0';
-offset-size-arithmetic	libclamav/pdf.c	3013	static int pdf_readint(const char *q0, int len, const char *key)
-offset-size-arithmetic	libclamav/pdf.c	3026	static int pdf_readbool(const char *q0, int len, const char *key, int Default)
-offset-size-arithmetic	libclamav/pdf.c	303	        /* Pass back start of the stream data. */
-offset-size-arithmetic	libclamav/pdf.c	306	        /* Now find the "endstream" string that suffixes stream data. */
-offset-size-arithmetic	libclamav/pdf.c	3071	static void compute_hash_r6(const char *password, size_t pwlen, const unsigned char salt[16], unsigned char hash[32], const char *U)
-offset-size-arithmetic	libclamav/pdf.c	3088	        memcpy(data + pwlen + 8, U, 48);
-offset-size-arithmetic	libclamav/pdf.c	309	            /* Couldn't find "endstream", but that's ok --
-offset-size-arithmetic	libclamav/pdf.c	3090	        cl_sha256(data, pwlen + 8 + 48, block, NULL);
-offset-size-arithmetic	libclamav/pdf.c	3092	        cl_sha256(data, pwlen + 8, block, NULL);
-offset-size-arithmetic	libclamav/pdf.c	3095	    for (i = 0; i < 64 || i < (data[(in_data_len * 64) - 1] + 32); i++) {
-offset-size-arithmetic	libclamav/pdf.c	3099	        in_data_len = pwlen + block_size;
-offset-size-arithmetic	libclamav/pdf.c	3103	            memcpy(data + pwlen + block_size, U, 48);
-offset-size-arithmetic	libclamav/pdf.c	3104	            in_data_len += 48;
-offset-size-arithmetic	libclamav/pdf.c	3110	        aes_128cbc_encrypt(data, in_data_len * 64, data, &out_data_len, block, 16, block + 16);
-offset-size-arithmetic	libclamav/pdf.c	3115	        block_size = 32 + (sum % 3) * 16;
-offset-size-arithmetic	libclamav/pdf.c	3118	                cl_sha256(data, in_data_len * 64, sha2_256, NULL);
-offset-size-arithmetic	libclamav/pdf.c	312	            endstream_begin = start + size;
-offset-size-arithmetic	libclamav/pdf.c	3123	                cl_sha384(data, in_data_len * 64, sha2_384, NULL);
-offset-size-arithmetic	libclamav/pdf.c	3128	                cl_sha512(data, in_data_len * 64, sha2_512, NULL);
-offset-size-arithmetic	libclamav/pdf.c	3151	 * @param OE_len    The length of the /OE string.
-offset-size-arithmetic	libclamav/pdf.c	316	        /* Pass back end of the stream data, as offset from start. */
-offset-size-arithmetic	libclamav/pdf.c	317	        *stream_size = endstream_begin - *stream;
-offset-size-arithmetic	libclamav/pdf.c	3216	                aes_256cbc_decrypt((const unsigned char *)OE, &OE_len, (unsigned char *)(pdf->key), (char *)hash, 32, 0);
-offset-size-arithmetic	libclamav/pdf.c	3266	            size_t sz = 68 + pdf->fileIDlen + (R >= 4 && !EM ? 4 : 0);
-offset-size-arithmetic	libclamav/pdf.c	3290	                /* Yes, this really is on purpose */
-offset-size-arithmetic	libclamav/pdf.c	3292	                    cl_hash_data("md5", result, length / 8, result, NULL);
-offset-size-arithmetic	libclamav/pdf.c	3297	            pdf->keylen = length / 8;
-offset-size-arithmetic	libclamav/pdf.c	3320	                unsigned len = pdf->keylen;
-offset-size-arithmetic	libclamav/pdf.c	3382	                    aes_256cbc_decrypt((const unsigned char *)UE, &UE_len, (unsigned char *)(pdf->key), (char *)result2, 32, 0);
-offset-size-arithmetic	libclamav/pdf.c	3444	                aes_256cbc_decrypt((const unsigned char *)UE, &UE_len, (unsigned char *)(pdf->key), (char *)hash, 32, 0);
-offset-size-arithmetic	libclamav/pdf.c	3475	enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key, enum enc_method def)
-offset-size-arithmetic	libclamav/pdf.c	3491	    CFM = pdf_readval(q, len, "/CFM");
-offset-size-arithmetic	libclamav/pdf.c	3543	    len = obj->size;
-offset-size-arithmetic	libclamav/pdf.c	3546	        q = (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	3554	        q = (const char *)(obj->start + obj->objstm->streambuf);
-offset-size-arithmetic	libclamav/pdf.c	3569	    q2 = cli_memstr(q, len, "/Standard", 9);
-offset-size-arithmetic	libclamav/pdf.c	3579	     * make sure we don't mistake AES's length for Standard's */
-offset-size-arithmetic	libclamav/pdf.c	3580	    length = pdf_readint(q2, len - (q2 - q), "/Length");
-offset-size-arithmetic	libclamav/pdf.c	3582	        length = pdf_readint(q, len, "/Length");
-offset-size-arithmetic	libclamav/pdf.c	3589	    R = pdf_readint(q, len, "/R");
-offset-size-arithmetic	libclamav/pdf.c	3602	    P = pdf_readint(q, len, "/P");
-offset-size-arithmetic	libclamav/pdf.c	3622	        EM        = pdf_readbool(q, len, "/EncryptMetadata", 1);
-offset-size-arithmetic	libclamav/pdf.c	3623	        StmF      = pdf_readval(q, len, "/StmF");
-offset-size-arithmetic	libclamav/pdf.c	3624	        StrF      = pdf_readval(q, len, "/StrF");
-offset-size-arithmetic	libclamav/pdf.c	3625	        EFF       = pdf_readval(q, len, "/EFF");
-offset-size-arithmetic	libclamav/pdf.c	3655	            UE     = pdf_readstring(q, len, "/UE", &n, NULL, false);
-offset-size-arithmetic	libclamav/pdf.c	3662	            OE     = pdf_readstring(q, len, "/OE", &n, NULL, false);
-offset-size-arithmetic	libclamav/pdf.c	3674	    O = pdf_readstring(q, len, "/O", &n, NULL, false);
-offset-size-arithmetic	libclamav/pdf.c	3698	    U = pdf_readstring(q, len, "/U", &n, NULL, false);
-offset-size-arithmetic	libclamav/pdf.c	3803	        cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Found object %u %u in object stream at offset: %zu\n", obj->id >> 8, obj->id & 0xff, obj->start);
-offset-size-arithmetic	libclamav/pdf.c	3849	    /* parse PDF and find obj offsets */
-offset-size-arithmetic	libclamav/pdf.c	386	    bytes_remaining = objstm->streambuf_len - objstm->current_pair;
-offset-size-arithmetic	libclamav/pdf.c	3883	        status = cli_append_potentially_unwanted(pdf->ctx, "Heuristics.Encrypted.PDF");
-offset-size-arithmetic	libclamav/pdf.c	3936	 * @param offset    offset of pdf in ctx->fmap
-offset-size-arithmetic	libclamav/pdf.c	3952	    const char *pdfver, *tmp, *start, *eofmap, *q, *eof;
-offset-size-arithmetic	libclamav/pdf.c	3967	    char *begin, *end, *p1;
-offset-size-arithmetic	libclamav/pdf.c	3971	    if (offset < 0 || (uint64_t)offset > map->len)
-offset-size-arithmetic	libclamav/pdf.c	3974	    size = map->len - (size_t)offset;
-offset-size-arithmetic	libclamav/pdf.c	3998	    /* offset is 0 when coming from filetype2 */
-offset-size-arithmetic	libclamav/pdf.c	3999	    tmp = cli_memstr(pdfver, versize, "%PDF-", 5);
-offset-size-arithmetic	libclamav/pdf.c	4008	    versize -= tmp - pdfver;
-offset-size-arithmetic	libclamav/pdf.c	4027	            end   = begin + 2;
-offset-size-arithmetic	libclamav/pdf.c	4029	            p1 = cli_max_calloc((end - begin) + 2, 1);
-offset-size-arithmetic	libclamav/pdf.c	4031	                strncpy(p1, begin, end - begin);
-offset-size-arithmetic	libclamav/pdf.c	4032	                p1[end - begin] = '\0';
-offset-size-arithmetic	libclamav/pdf.c	4041	        cli_dbgmsg("cli_pdf: PDF header is not at position 0: %lld\n", (long long)(pdfver - start + offset));
-offset-size-arithmetic	libclamav/pdf.c	4047	    offset += pdfver - start;
-offset-size-arithmetic	libclamav/pdf.c	4050	    map_off = (off_t)map->len - 2048;
-offset-size-arithmetic	libclamav/pdf.c	4054	    bytesleft = map->len - map_off;
-offset-size-arithmetic	libclamav/pdf.c	4081	        /*size = q - eofmap + map_off;*/
-offset-size-arithmetic	libclamav/pdf.c	411	    /* Find the obj offset that appears just after the objid*/
-offset-size-arithmetic	libclamav/pdf.c	4118	                if ((uint64_t)xref > map->len - (size_t)offset) {
-offset-size-arithmetic	libclamav/pdf.c	412	    while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {
-offset-size-arithmetic	libclamav/pdf.c	4123	                    bytesleft = map->len - (size_t)offset - xref;
-offset-size-arithmetic	libclamav/pdf.c	4132	                        q = fmap_need_off_once(map, (size_t)offset + xref, bytesleft);
-offset-size-arithmetic	libclamav/pdf.c	4148	    size = map->len - (size_t)offset;
-offset-size-arithmetic	libclamav/pdf.c	4150	     * shared temporary quota and expose a disk-backed virtual mapping instead
-offset-size-arithmetic	libclamav/pdf.c	417	    bytes_remaining = objstm->streambuf + objstm->streambuf_len - index;
-offset-size-arithmetic	libclamav/pdf.c	4181	            wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
-offset-size-arithmetic	libclamav/pdf.c	4182	            nread  = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
-offset-size-arithmetic	libclamav/pdf.c	420	        /* Failed to find obj offset */
-offset-size-arithmetic	libclamav/pdf.c	4221	    if (!pdf_input || lseek(pdf_tempfd, 0, SEEK_SET) == (off_t)-1 ||
-offset-size-arithmetic	libclamav/pdf.c	432	        (size_t)objoff > objstm->streambuf_len - objstm->first) {
-offset-size-arithmetic	libclamav/pdf.c	433	        /* Alleged obj location is further than the length of the stream */
-offset-size-arithmetic	libclamav/pdf.c	4381	pdf_nextlinestart(const char *ptr, size_t len)
-offset-size-arithmetic	libclamav/pdf.c	4430	                len -= (size_t)(p - ptr);
-offset-size-arithmetic	libclamav/pdf.c	4443	                len--;
-offset-size-arithmetic	libclamav/pdf.c	4448	            case '(': /* start of JS */
-offset-size-arithmetic	libclamav/pdf.c	4457	                len--;
-offset-size-arithmetic	libclamav/pdf.c	450	    obj->start = objstm->current;
-offset-size-arithmetic	libclamav/pdf.c	4539	    pdf->stats.nrunlengthdecode++;
-offset-size-arithmetic	libclamav/pdf.c	455	    while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {
-offset-size-arithmetic	libclamav/pdf.c	459	    objstm->current_pair = (size_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
-offset-size-arithmetic	libclamav/pdf.c	4702	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4703	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	4710	        pdf->stats.author->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Author", NULL, &(pdf->stats.author->meta));
-offset-size-arithmetic	libclamav/pdf.c	4730	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4731	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	4738	        pdf->stats.creator->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Creator", NULL, &(pdf->stats.creator->meta));
-offset-size-arithmetic	libclamav/pdf.c	474	        bytes_remaining = objstm->streambuf + objstm->streambuf_len - index;
-offset-size-arithmetic	libclamav/pdf.c	4758	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4759	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	4766	        pdf->stats.modificationdate->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/ModDate", NULL, &(pdf->stats.modificationdate->meta));
-offset-size-arithmetic	libclamav/pdf.c	4786	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4787	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	4794	        pdf->stats.creationdate->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/CreationDate", NULL, &(pdf->stats.creationdate->meta));
-offset-size-arithmetic	libclamav/pdf.c	4814	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4815	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	4822	        pdf->stats.producer->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Producer", NULL, &(pdf->stats.producer->meta));
-offset-size-arithmetic	libclamav/pdf.c	4842	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4843	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	4850	        pdf->stats.title->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Title", NULL, &(pdf->stats.title->meta));
-offset-size-arithmetic	libclamav/pdf.c	4870	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4871	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	4878	        pdf->stats.keywords->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Keywords", NULL, &(pdf->stats.keywords->meta));
-offset-size-arithmetic	libclamav/pdf.c	4898	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4899	                                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	490	        /* Find the obj offset that appears just after the objid*/
-offset-size-arithmetic	libclamav/pdf.c	4906	        pdf->stats.subject->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Subject", NULL, &(pdf->stats.subject->meta));
-offset-size-arithmetic	libclamav/pdf.c	491	        while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {
-offset-size-arithmetic	libclamav/pdf.c	4948	    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	4949	                                         : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	496	        bytes_remaining = objstm->streambuf + objstm->streambuf_len - index;
-offset-size-arithmetic	libclamav/pdf.c	4971	    begin = cli_memstr(objstart, obj->size, "/Kids", 5);
-offset-size-arithmetic	libclamav/pdf.c	4978	    array = pdf_parse_array(pdf, obj, obj->size, (char *)begin, NULL);
-offset-size-arithmetic	libclamav/pdf.c	499	            /* Failed to find obj offset for next obj */
-offset-size-arithmetic	libclamav/pdf.c	4991	    begin = cli_memstr(objstart, obj->size, "/Count", 6);
-offset-size-arithmetic	libclamav/pdf.c	4998	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
-offset-size-arithmetic	libclamav/pdf.c	500	            cli_dbgmsg("pdf_findobj_in_objstm: Failed to find next obj offset for obj in object stream though there should be {%zu} more.\n", objstm->n - objstm->nobjs_found);
-offset-size-arithmetic	libclamav/pdf.c	5001	    if ((size_t)(begin - objstart) >= obj->size) {
-offset-size-arithmetic	libclamav/pdf.c	5005	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
-offset-size-arithmetic	libclamav/pdf.c	5006	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
-offset-size-arithmetic	libclamav/pdf.c	5030	    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	5031	                                         : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	5043	    p1 = (char *)cli_memstr(objstart, obj->size, "/Colors", 7);
-offset-size-arithmetic	libclamav/pdf.c	5050	    if (obj->size - (size_t)(p1 - objstart) < 2)
-offset-size-arithmetic	libclamav/pdf.c	5053	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
-offset-size-arithmetic	libclamav/pdf.c	5056	    if ((size_t)(p1 - objstart) == obj->size)
-offset-size-arithmetic	libclamav/pdf.c	5059	    if (CL_SUCCESS != cli_strntol_wrap(p1, (size_t)((p1 - objstart) - obj->size), 0, 10, &temp_long)) {
-offset-size-arithmetic	libclamav/pdf.c	5096	    objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
-offset-size-arithmetic	libclamav/pdf.c	5097	                             : (const char *)(obj->start + pdf->map);
-offset-size-arithmetic	libclamav/pdf.c	5109	        bytesleft = MIN(obj->size, obj->objstm->streambuf_len - obj->start);
-offset-size-arithmetic	libclamav/pdf.c	511	            /* Failed to find obj offset for next obj */
-offset-size-arithmetic	libclamav/pdf.c	5111	        bytesleft = MIN(obj->size, pdf->size - obj->start);
-offset-size-arithmetic	libclamav/pdf.c	5117	        start++;
-offset-size-arithmetic	libclamav/pdf.c	5124	    uri_start = (char *)(objstart + start + 1);
-offset-size-arithmetic	libclamav/pdf.c	5130	        end++;
-offset-size-arithmetic	libclamav/pdf.c	5138	    CLI_MAX_MALLOC_OR_GOTO_DONE(uri_heap, end + 1,
-offset-size-arithmetic	libclamav/pdf.c	516	                   (size_t)next_objoff > objstm->streambuf_len - objstm->first) {
-offset-size-arithmetic	libclamav/pdf.c	517	            /* Failed to find obj offset for next obj */
-offset-size-arithmetic	libclamav/pdf.c	523	        obj->size = next_objoff - objoff;
-offset-size-arithmetic	libclamav/pdf.c	535	        obj->size = objstm->streambuf_len - obj->start;
-offset-size-arithmetic	libclamav/pdf.c	540	    CLI_MAX_REALLOC_OR_GOTO_DONE(pdf->objs, sizeof(struct pdf_obj *) * pdf->nobjs,
-offset-size-arithmetic	libclamav/pdf.c	574	 * If truncated, pdf->offset will == pdf->size.
-offset-size-arithmetic	libclamav/pdf.c	587	    const char *start, *idx, *genid_search_index, *objid_search_index;
-offset-size-arithmetic	libclamav/pdf.c	590	    const char *endobj_begin = NULL, *endobj_end = NULL;
-offset-size-arithmetic	libclamav/pdf.c	605	    CLI_MAX_REALLOC_OR_GOTO_DONE(pdf->objs, sizeof(struct pdf_obj *) * pdf->nobjs, status = CL_EMEM);
-offset-size-arithmetic	libclamav/pdf.c	614	    memset(obj, 0, sizeof(*obj));
-offset-size-arithmetic	libclamav/pdf.c	616	    start     = pdf->map + pdf->offset;
-offset-size-arithmetic	libclamav/pdf.c	617	    bytesleft = pdf->size - pdf->offset;
-offset-size-arithmetic	libclamav/pdf.c	622	    idx = start + 1;
-offset-size-arithmetic	libclamav/pdf.c	624	        /* `- 1` accounts for size of white space before obj */
-offset-size-arithmetic	libclamav/pdf.c	634	        bytesleft = (pdf->size - pdf->offset) - (size_t)(idx - start);
-offset-size-arithmetic	libclamav/pdf.c	646	        obj_end   = idx + 1 + strlen("obj");
-offset-size-arithmetic	libclamav/pdf.c	658	    while (genid_search_index > start && isdigit(*genid_search_index))
-offset-size-arithmetic	libclamav/pdf.c	661	    if (CL_SUCCESS != cli_strntol_wrap(genid_search_index, (size_t)((obj_begin)-genid_search_index), 0, 10, &temp_long)) {
-offset-size-arithmetic	libclamav/pdf.c	664	        pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	669	        pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	677	    while (objid_search_index > start && isdigit(*objid_search_index))
-offset-size-arithmetic	libclamav/pdf.c	680	    if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index)-objid_search_index), 0, 10, &temp_long)) {
-offset-size-arithmetic	libclamav/pdf.c	698	                pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	705	            cli_dbgmsg("pdf_findobj: %%%%EOF detected before end of file, at offset: %zu\n", (size_t)(objid_search_index - pdf->map));
-offset-size-arithmetic	libclamav/pdf.c	710	            pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	714	        /* Try again, with offset slightly adjusted */
-offset-size-arithmetic	libclamav/pdf.c	715	        if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index - 1) - objid_search_index), 0, 10, &temp_long)) {
-offset-size-arithmetic	libclamav/pdf.c	718	            pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	723	            pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	731	        pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	740	        pdf->offset = obj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	746	    obj->start = obj_end - pdf->map; /* obj start begins just after the "obj" string */
-offset-size-arithmetic	libclamav/pdf.c	753	    /* `- 1` accounts for size of white space before obj */
-offset-size-arithmetic	libclamav/pdf.c	754	    endobj_begin = cli_memstr(obj_end, pdf->map + pdf->size - obj_end, "endobj", strlen("endobj"));
-offset-size-arithmetic	libclamav/pdf.c	763	        obj->size   = (pdf->map + pdf->size) - obj_end;
-offset-size-arithmetic	libclamav/pdf.c	764	        pdf->offset = pdf->size;
-offset-size-arithmetic	libclamav/pdf.c	771	    endobj_end = endobj_begin + strlen("endobj");
-offset-size-arithmetic	libclamav/pdf.c	773	    /* Size of the object goes from "obj" <-> "endobject". */
-offset-size-arithmetic	libclamav/pdf.c	774	    obj->size   = endobj_begin - obj_end;
-offset-size-arithmetic	libclamav/pdf.c	775	    pdf->offset = endobj_end - pdf->map;
-offset-size-arithmetic	libclamav/pdf.c	780	    status = CL_SUCCESS; /* truncated file, no end to obj. */
-offset-size-arithmetic	libclamav/pdf.c	784	        cli_dbgmsg("pdf_findobj: found %d %d obj @%lld, size: %zu bytes.\n", obj->id >> 8, obj->id & 0xff, (long long)(obj->start + pdf->startoff), obj->size);
-offset-size-arithmetic	libclamav/pdf.c	83	static const char *pdf_nextlinestart(const char *ptr, size_t len);
-offset-size-arithmetic	libclamav/pdf.c	855	                                size_t *sum, uint64_t *temporary_reserved)
-offset-size-arithmetic	libclamav/pdf.c	881	    if (len > SIZE_MAX - *sum) {
-offset-size-arithmetic	libclamav/pdf.c	971	    /* search starting at previous obj (if exists) */
-offset-size-arithmetic	libclamav/pdf.c	983	    /* restart search from beginning if not found */
+offset-size-arithmetic	libclamav/pdf.c	100	    overlap = needle_len - 1;
+offset-size-arithmetic	libclamav/pdf.c	1036	    /* search starting at previous obj (if exists) */
+offset-size-arithmetic	libclamav/pdf.c	1048	    /* restart search from beginning if not found */
+offset-size-arithmetic	libclamav/pdf.c	108	        if (len - searched > (size_t)PDF_SEARCH_WINDOW) {
+offset-size-arithmetic	libclamav/pdf.c	109	            if (overlap > (size_t)-1 - (size_t)PDF_SEARCH_WINDOW) {
+offset-size-arithmetic	libclamav/pdf.c	1103	 * @return size_t   Unsigned integer value of the "/Length" key
+offset-size-arithmetic	libclamav/pdf.c	1105	static size_t find_length(struct pdf_struct *pdf, struct pdf_obj *obj, const char *dict_start, size_t dict_len)
+offset-size-arithmetic	libclamav/pdf.c	1120	    index = cli_memstr(obj_start, bytes_remaining, "/Length", 7);
+offset-size-arithmetic	libclamav/pdf.c	1135	     * pdf_nextobject() assumes we started searching from within a previous object */
+offset-size-arithmetic	libclamav/pdf.c	114	            window = (size_t)PDF_SEARCH_WINDOW + overlap;
+offset-size-arithmetic	libclamav/pdf.c	1140	    if (bytes_remaining < (size_t)(obj_start - index)) {
+offset-size-arithmetic	libclamav/pdf.c	1143	    bytes_remaining -= obj_start - index;
+offset-size-arithmetic	libclamav/pdf.c	1147	       or the object id of the indirect object that has the length */
+offset-size-arithmetic	libclamav/pdf.c	1155	    length = (size_t)temp_long; /* length or maybe object id */
+offset-size-arithmetic	libclamav/pdf.c	116	            window = len - searched;
+offset-size-arithmetic	libclamav/pdf.c	1209	            obj = find_obj(pdf, obj, (uint32_t)(length << 8) | (uint32_t)genid);
+offset-size-arithmetic	libclamav/pdf.c	1216	                indirect_obj_start = (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	1218	                if (!CLI_ISCONTAINED(pdf->map, pdf->size, indirect_obj_start, obj->size)) {
+offset-size-arithmetic	libclamav/pdf.c	122	        match = cli_memstr(start + searched, window, needle, needle_len);
+offset-size-arithmetic	libclamav/pdf.c	1223	                bytes_remaining = pdf->size - obj->start;
+offset-size-arithmetic	libclamav/pdf.c	1226	                indirect_obj_start = (const char *)(obj->start + obj->objstm->streambuf);
+offset-size-arithmetic	libclamav/pdf.c	1228	                if (!CLI_ISCONTAINED(obj->objstm->streambuf, obj->objstm->streambuf_len, indirect_obj_start, obj->size)) {
+offset-size-arithmetic	libclamav/pdf.c	1233	                bytes_remaining = obj->objstm->streambuf_len - obj->start;
+offset-size-arithmetic	libclamav/pdf.c	1243	            if (bytes_remaining < (size_t)(index - indirect_obj_start)) {
+offset-size-arithmetic	libclamav/pdf.c	1248	            /* Found the value, so lets parse it as a long, but prohibit negative lengths. */
+offset-size-arithmetic	libclamav/pdf.c	1260	    /* limit length */
+offset-size-arithmetic	libclamav/pdf.c	1261	    if ((size_t)(obj_start - pdf->map) + length + 5 > pdf->size)
+offset-size-arithmetic	libclamav/pdf.c	1262	        length = pdf->size - (obj_start - pdf->map) - 5;
+offset-size-arithmetic	libclamav/pdf.c	1299	    cli_bytecode_context_setpdf(bc_ctx, phase, pdf->nobjs, pdf->objs, &pdf->flags, pdf->size, pdf->startoff);
+offset-size-arithmetic	libclamav/pdf.c	1312	static void aes_256cbc_decrypt(const unsigned char *in, size_t *length, unsigned char *q, char *key, unsigned key_n, int has_iv)
+offset-size-arithmetic	libclamav/pdf.c	1326	    len = *length;
+offset-size-arithmetic	libclamav/pdf.c	1328	    cli_dbgmsg("aes_256cbc_decrypt: key length: %d, data length: %zu\n", key_n, *length);
+offset-size-arithmetic	libclamav/pdf.c	1330	        cli_dbgmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
+offset-size-arithmetic	libclamav/pdf.c	1331	        noisy_warnmsg("aes_256cbc_decrypt: invalid key length: %u!\n", key_n * 8);
+offset-size-arithmetic	libclamav/pdf.c	1344	        len -= 16;
+offset-size-arithmetic	libclamav/pdf.c	1368	        len -= 16;
+offset-size-arithmetic	libclamav/pdf.c	1371	        len += 16;
+offset-size-arithmetic	libclamav/pdf.c	1375	            cli_dbgmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
+offset-size-arithmetic	libclamav/pdf.c	1376	            noisy_warnmsg("aes_256cbc_decrypt: bad pad: %x (extra len: %zu)\n", pad, len - 16);
+offset-size-arithmetic	libclamav/pdf.c	1377	            *length -= len;
+offset-size-arithmetic	libclamav/pdf.c	1386	                *length -= len;
+offset-size-arithmetic	libclamav/pdf.c	1392	        len += pad;
+offset-size-arithmetic	libclamav/pdf.c	1395	    *length -= len;
+offset-size-arithmetic	libclamav/pdf.c	1397	    cli_dbgmsg("aes_256cbc_decrypt: length is %zu\n", *length);
+offset-size-arithmetic	libclamav/pdf.c	1400	static void aes_128cbc_encrypt(const unsigned char *in, size_t in_length, unsigned char *out, size_t *out_length, const unsigned char *key, size_t key_n, const unsigned char *iv)
+offset-size-arithmetic	libclamav/pdf.c	1409	        cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: key length is %zu!\n", key_n * 8);
+offset-size-arithmetic	libclamav/pdf.c	1441	        *out_length += 16;
+offset-size-arithmetic	libclamav/pdf.c	1443	        in_length -= 16;
+offset-size-arithmetic	libclamav/pdf.c	1446	    cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: length is %zu\n", *out_length);
+offset-size-arithmetic	libclamav/pdf.c	1449	char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
+offset-size-arithmetic	libclamav/pdf.c	1455	    if (!length || !*length || !in) {
+offset-size-arithmetic	libclamav/pdf.c	1465	    n = pdf->keylen + 5;
+offset-size-arithmetic	libclamav/pdf.c	1488	    n = pdf->keylen + 5;
+offset-size-arithmetic	libclamav/pdf.c	1514	            aes_256cbc_decrypt((const unsigned char *)in, length, q, (char *)result, n, 1);
+offset-size-arithmetic	libclamav/pdf.c	1522	            aes_256cbc_decrypt((const unsigned char *)in, length, q, pdf->key, pdf->keylen, 1);
+offset-size-arithmetic	libclamav/pdf.c	1572	                          size_t length, int fout, uint64_t *temporary_reserved)
+offset-size-arithmetic	libclamav/pdf.c	1586	                    if ((size_t)(nl - buf) > length) {
+offset-size-arithmetic	libclamav/pdf.c	1589	                        length -= nl - buf;
+offset-size-arithmetic	libclamav/pdf.c	1621	            length--;
+offset-size-arithmetic	libclamav/pdf.c	1639	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d contents", pdf->dir, obj->id >> 8, obj->id & 0xff);
+offset-size-arithmetic	libclamav/pdf.c	1651	        if (n == (size_t)-1) {
+offset-size-arithmetic	libclamav/pdf.c	1672	    if (lseek(fout, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/pdf.c	1760	    snprintf(fullname, sizeof(fullname), "%s" PATHSEP "pdf obj %d %d", pdf->dir, obj->id >> 8, obj->id & 0xff);
+offset-size-arithmetic	libclamav/pdf.c	177	static int pdf_readint(const char *q0, int len, const char *key);
+offset-size-arithmetic	libclamav/pdf.c	1774	         * and so we need to save off the path in obj->path for the caller to use.
+offset-size-arithmetic	libclamav/pdf.c	178	static const char *pdf_getdict(const char *q0, int *len, const char *key);
+offset-size-arithmetic	libclamav/pdf.c	1788	        const char *start = pdf->map + obj->start;
+offset-size-arithmetic	libclamav/pdf.c	179	static char *pdf_readval(const char *q, int len, const char *key);
+offset-size-arithmetic	libclamav/pdf.c	1792	        int dict_len = obj->stream - start; /* Dictionary should end where the stream begins */
+offset-size-arithmetic	libclamav/pdf.c	1798	        /* Find and interpret the length dictionary value */
+offset-size-arithmetic	libclamav/pdf.c	180	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape);
+offset-size-arithmetic	libclamav/pdf.c	1803	        if (length > obj->stream_size) {
+offset-size-arithmetic	libclamav/pdf.c	1804	            cli_dbgmsg("cli_pdf: Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
+offset-size-arithmetic	libclamav/pdf.c	1805	            noisy_warnmsg("Stream length exceeds object length by %zu bytes. Length truncated to %zu bytes\n", length - obj->stream_size, obj->stream_size);
+offset-size-arithmetic	libclamav/pdf.c	1807	            length = obj->stream_size;
+offset-size-arithmetic	libclamav/pdf.c	1814	             * off any newline/carriage returns from the end of the stream.
+offset-size-arithmetic	libclamav/pdf.c	1816	            const char *q = start + obj->stream_size;
+offset-size-arithmetic	libclamav/pdf.c	1817	            length        = obj->stream_size;
+offset-size-arithmetic	libclamav/pdf.c	1823	                    length--;
+offset-size-arithmetic	libclamav/pdf.c	1825	                    if (length > 0 && *q == '\r')
+offset-size-arithmetic	libclamav/pdf.c	1826	                        length--;
+offset-size-arithmetic	libclamav/pdf.c	1828	                    length--;
+offset-size-arithmetic	libclamav/pdf.c	1834	            if (obj->stream_size > (size_t)length + 2) {
+offset-size-arithmetic	libclamav/pdf.c	1836	                           length, obj->stream_size);
+offset-size-arithmetic	libclamav/pdf.c	1837	                length = obj->stream_size;
+offset-size-arithmetic	libclamav/pdf.c	1841	        if ((0 != orig_length) && (obj->stream_size > orig_length + 20)) {
+offset-size-arithmetic	libclamav/pdf.c	1843	                       orig_length, length, obj->stream_size);
+offset-size-arithmetic	libclamav/pdf.c	1848	            length = obj->stream_size;
+offset-size-arithmetic	libclamav/pdf.c	1859	        if (cli_memstr(start, dict_len, "/XRef", strlen("/XRef"))) {
+offset-size-arithmetic	libclamav/pdf.c	1866	        if (NULL != (pstr = pdf_getdict(start, &dict_len, "/DecodeParms"))) {
+offset-size-arithmetic	libclamav/pdf.c	1868	        } else if (NULL != (pstr = pdf_getdict(start, &dict_len, "/DP"))) {
+offset-size-arithmetic	libclamav/pdf.c	1876	                dict_len++;
+offset-size-arithmetic	libclamav/pdf.c	1882	                dict_len--;
+offset-size-arithmetic	libclamav/pdf.c	1887	                dparams = pdf_parse_dict(pdf, obj, obj->size, (char *)pstr, NULL);
+offset-size-arithmetic	libclamav/pdf.c	1898	        dict_len = obj->stream - start;
+offset-size-arithmetic	libclamav/pdf.c	1899	        if (NULL != (pstr = pdf_getdict(start, &dict_len, "/Type/ObjStm"))) {
+offset-size-arithmetic	libclamav/pdf.c	1901	            int objstm_length = -1;
+offset-size-arithmetic	libclamav/pdf.c	1906	            dict_len = obj->stream - start;
+offset-size-arithmetic	libclamav/pdf.c	1907	            if (-1 == (objstm_first = pdf_readint(start, dict_len, "/First"))) {
+offset-size-arithmetic	libclamav/pdf.c	1909	            } else if (-1 == (objstm_length = pdf_readint(start, dict_len, "/Length"))) {
+offset-size-arithmetic	libclamav/pdf.c	1911	            } else if (-1 == (objstm_n = pdf_readint(start, dict_len, "/N"))) {
+offset-size-arithmetic	libclamav/pdf.c	1916	                pdf->objstms = cli_max_realloc_or_free(pdf->objstms, sizeof(struct objstm_struct *) * pdf->nobjstms);
+offset-size-arithmetic	libclamav/pdf.c	1936	                cli_dbgmsg("pdf_extract_obj: ObjStm first obj at offset %zu\n", objstm->first);
+offset-size-arithmetic	libclamav/pdf.c	1937	                cli_dbgmsg("pdf_extract_obj: ObjStm length is %zu bytes\n", objstm->length);
+offset-size-arithmetic	libclamav/pdf.c	1970	                    /* Pop the objstm off the end of the pdf->objstms array. */
+offset-size-arithmetic	libclamav/pdf.c	1977	                            pdf->objstms = cli_max_realloc_or_free(pdf->objstms, sizeof(struct objstm_struct *) * pdf->nobjstms);
+offset-size-arithmetic	libclamav/pdf.c	1999	            /* skip post-filter scan */
+offset-size-arithmetic	libclamav/pdf.c	2005	        const char *q = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	2006	                                      : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	2008	        /* TODO: get obj-endobj size */
+offset-size-arithmetic	libclamav/pdf.c	2009	        off_t bytesleft = obj->size;
+offset-size-arithmetic	libclamav/pdf.c	2037	                    decrypted = decrypt_any(pdf, obj->id, js, &js_len, pdf->enc_method_string);
+offset-size-arithmetic	libclamav/pdf.c	2094	        off_t bytesleft = obj->size;
+offset-size-arithmetic	libclamav/pdf.c	224	        if (!memcmp(q, "/XRef", strlen("/XRef"))) {
+offset-size-arithmetic	libclamav/pdf.c	2260	    for (j = 0; j < sizeof(pdfname_actions) / sizeof(pdfname_actions[0]); j++) {
+offset-size-arithmetic	libclamav/pdf.c	2320	    if (len >= 16 && !strncmp(enc, "/EncryptMetadata", 16)) {
+offset-size-arithmetic	libclamav/pdf.c	2321	        q = cli_memstr(enc + 16, len - 16, "/Encrypt", 8);
+offset-size-arithmetic	libclamav/pdf.c	2325	        len -= q - enc;
+offset-size-arithmetic	libclamav/pdf.c	2330	    len -= 8;
+offset-size-arithmetic	libclamav/pdf.c	2334	    len -= q2 - q;
+offset-size-arithmetic	libclamav/pdf.c	2356	    len -= q2 - q;
+offset-size-arithmetic	libclamav/pdf.c	2388	    enc = cli_memstr(s, length, "/Encrypt", 8);
+offset-size-arithmetic	libclamav/pdf.c	2394	        pdf_parse_encrypt(pdf, enc, s + length - enc);
+offset-size-arithmetic	libclamav/pdf.c	2395	        newID = pdf_readstring(s, length, "/ID", &newIDlen, NULL, false);
+offset-size-arithmetic	libclamav/pdf.c	2412	    const char *dict = NULL, *enddict = NULL, *start = NULL;
+offset-size-arithmetic	libclamav/pdf.c	2428	        if ((size_t)obj->start > obj->objstm->streambuf_len) {
+offset-size-arithmetic	libclamav/pdf.c	2430	                       obj->id >> 8, obj->id & 0xff, obj->start, obj->objstm->streambuf_len);
+offset-size-arithmetic	libclamav/pdf.c	2433	        q = (const char *)(obj->start + obj->objstm->streambuf);
+offset-size-arithmetic	libclamav/pdf.c	2435	        if ((size_t)obj->start > pdf->size) {
+offset-size-arithmetic	libclamav/pdf.c	2437	                       obj->id >> 8, obj->id & 0xff, obj->start, (long long)pdf->size);
+offset-size-arithmetic	libclamav/pdf.c	2440	        q = (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	2448	        bytesleft = MIN(obj->size, obj->objstm->streambuf_len - obj->start);
+offset-size-arithmetic	libclamav/pdf.c	2450	        bytesleft = MIN(obj->size, pdf->size - obj->start);
+offset-size-arithmetic	libclamav/pdf.c	2454	     * ^Objects in object streams aren't supposed to contain streams, so we don't check them. */
+offset-size-arithmetic	libclamav/pdf.c	2471	            cli_dbgmsg("pdf_parseobj: %u %u contains stream, size: %zu\n", obj->id >> 8, obj->id & 0xff, stream_size);
+offset-size-arithmetic	libclamav/pdf.c	2478	    /* find start of dictionary */
+offset-size-arithmetic	libclamav/pdf.c	250	    if (offset < 0 || (uint64_t)offset > map->len)
+offset-size-arithmetic	libclamav/pdf.c	252	    if (map->len - (size_t)offset < 8)
+offset-size-arithmetic	libclamav/pdf.c	2526	    bytesleft = obj->size - (q - start);
+offset-size-arithmetic	libclamav/pdf.c	2527	    enddict   = q + bytesleft - 1;
+offset-size-arithmetic	libclamav/pdf.c	2529	    /* find end of dictionary block */
+offset-size-arithmetic	libclamav/pdf.c	2550	    while ((q < enddict - 1) && (blockopens > 0)) {
+offset-size-arithmetic	libclamav/pdf.c	2552	        nextclose = memchr(q, '>', enddict - q);
+offset-size-arithmetic	libclamav/pdf.c	2577	    /* Was end of dictionary found? */
+offset-size-arithmetic	libclamav/pdf.c	2600	    full_dict_length = dict_length = enddict - dict;
+offset-size-arithmetic	libclamav/pdf.c	2604	        char * dictionary = malloc(dict_length + 1);
+offset-size-arithmetic	libclamav/pdf.c	2628	        dict_length -= q2 - q;
+offset-size-arithmetic	libclamav/pdf.c	2631	        for (i = 0; dict_length > 0 && (i < sizeof(pdfname) - 1); i++) {
+offset-size-arithmetic	libclamav/pdf.c	2633	            dict_length--;
+offset-size-arithmetic	libclamav/pdf.c	2640	                dict_length -= 2;
+offset-size-arithmetic	libclamav/pdf.c	2673	            trailer_end = pdf_readint(dict, full_dict_length, "/H");
+offset-size-arithmetic	libclamav/pdf.c	2674	            if ((trailer_end > 0) && ((size_t)trailer_end < pdf->size)) {
+offset-size-arithmetic	libclamav/pdf.c	2675	                trailer = trailer_end - 1024;
+offset-size-arithmetic	libclamav/pdf.c	2681	                pdf_parse_trailer(pdf, q2, trailer_end - trailer);
+offset-size-arithmetic	libclamav/pdf.c	2705	                dict_remaining -= (off_t)(q2 - q);
+offset-size-arithmetic	libclamav/pdf.c	273	    while (q > start && (*q == 0 || *q == 9 || *q == 0xa || *q == 0xc || *q == 0xd || *q == 0x20))
+offset-size-arithmetic	libclamav/pdf.c	2732	                    dict_remaining -= (off_t)(q2 - q2_old);
+offset-size-arithmetic	libclamav/pdf.c	2790	    for (i = 0; i < sizeof(pdfname_actions) / sizeof(pdfname_actions[0]); i++) {
+offset-size-arithmetic	libclamav/pdf.c	2826	static const char *pdf_getdict(const char *q0, int *len, const char *key)
+offset-size-arithmetic	libclamav/pdf.c	2831	        cli_dbgmsg("pdf_getdict: bad length %d\n", *len);
+offset-size-arithmetic	libclamav/pdf.c	2845	    *len -= q - q0;
+offset-size-arithmetic	libclamav/pdf.c	2848	    /* find the start of the value object */
+offset-size-arithmetic	libclamav/pdf.c	2849	    q = pdf_nextobject(q0 + 1, *len - 1);
+offset-size-arithmetic	libclamav/pdf.c	2859	    *len -= q - q0;
+offset-size-arithmetic	libclamav/pdf.c	2874	static char *pdf_readstring(const char *q0, int len, const char *key, unsigned *slen, const char **qend, bool noescape)
+offset-size-arithmetic	libclamav/pdf.c	2877	    const char *start, *q, *end;
+offset-size-arithmetic	libclamav/pdf.c	289	    while (q < end && (*q == 0 || *q == 9 || *q == 0xa || *q == 0xc || *q == 0xd || *q == 0x20))
+offset-size-arithmetic	libclamav/pdf.c	2890	        start     = ++q;
+offset-size-arithmetic	libclamav/pdf.c	2891	        len--;
+offset-size-arithmetic	libclamav/pdf.c	2892	        for (; paren > 0 && len > 0; q++, len--) {
+offset-size-arithmetic	libclamav/pdf.c	2902	                    len--;
+offset-size-arithmetic	libclamav/pdf.c	2918	        len = q - start;
+offset-size-arithmetic	libclamav/pdf.c	2919	        s0 = s = cli_max_malloc(len + 1);
+offset-size-arithmetic	libclamav/pdf.c	2925	        end = start + len;
+offset-size-arithmetic	libclamav/pdf.c	2992	            *slen = s - s0 - 1;
+offset-size-arithmetic	libclamav/pdf.c	2998	        start = ++q;
+offset-size-arithmetic	libclamav/pdf.c	2999	        len -= 1;
+offset-size-arithmetic	libclamav/pdf.c	3001	        while (len > 0 && *start == '\n') {
+offset-size-arithmetic	libclamav/pdf.c	3002	            start = ++q;
+offset-size-arithmetic	libclamav/pdf.c	3003	            len -= 1;
+offset-size-arithmetic	libclamav/pdf.c	3005	        q = memchr(q + 1, '>', len - 1);
+offset-size-arithmetic	libclamav/pdf.c	3012	        s = cli_max_malloc((q - start) / 2 + 1);
+offset-size-arithmetic	libclamav/pdf.c	3018	        if (cli_hex2str_to(start, s, q - start)) {
+offset-size-arithmetic	libclamav/pdf.c	3024	        s[(q - start) / 2] = '\0';
+offset-size-arithmetic	libclamav/pdf.c	3026	            *slen = (q - start) / 2;
+offset-size-arithmetic	libclamav/pdf.c	3035	static char *pdf_readval(const char *q, int len, const char *key)
+offset-size-arithmetic	libclamav/pdf.c	3045	    while (len > 0 && *q && *q == ' ') {
+offset-size-arithmetic	libclamav/pdf.c	3047	        len--;
+offset-size-arithmetic	libclamav/pdf.c	3054	    len--;
+offset-size-arithmetic	libclamav/pdf.c	3057	    while (len > 0 && *end && !(*end == '/' || (len > 1 && end[0] == '>' && end[1] == '>'))) {
+offset-size-arithmetic	libclamav/pdf.c	3058	        end++;
+offset-size-arithmetic	libclamav/pdf.c	3059	        len--;
+offset-size-arithmetic	libclamav/pdf.c	3062	    /* end-of-buffer whitespace trimming */
+offset-size-arithmetic	libclamav/pdf.c	3063	    while (len < origlen && isspace(*(end - 1))) {
+offset-size-arithmetic	libclamav/pdf.c	3064	        end--;
+offset-size-arithmetic	libclamav/pdf.c	3065	        len++;
+offset-size-arithmetic	libclamav/pdf.c	3068	    s = cli_max_malloc(end - q + 1);
+offset-size-arithmetic	libclamav/pdf.c	3072	    memcpy(s, q, end - q);
+offset-size-arithmetic	libclamav/pdf.c	3073	    s[end - q] = '\0';
+offset-size-arithmetic	libclamav/pdf.c	3078	static int pdf_readint(const char *q0, int len, const char *key)
+offset-size-arithmetic	libclamav/pdf.c	3091	static int pdf_readbool(const char *q0, int len, const char *key, int Default)
+offset-size-arithmetic	libclamav/pdf.c	3136	static void compute_hash_r6(const char *password, size_t pwlen, const unsigned char salt[16], unsigned char hash[32], const char *U)
+offset-size-arithmetic	libclamav/pdf.c	3153	        memcpy(data + pwlen + 8, U, 48);
+offset-size-arithmetic	libclamav/pdf.c	3155	        cl_sha256(data, pwlen + 8 + 48, block, NULL);
+offset-size-arithmetic	libclamav/pdf.c	3157	        cl_sha256(data, pwlen + 8, block, NULL);
+offset-size-arithmetic	libclamav/pdf.c	316	    size_t *stream_size,
+offset-size-arithmetic	libclamav/pdf.c	3160	    for (i = 0; i < 64 || i < (data[(in_data_len * 64) - 1] + 32); i++) {
+offset-size-arithmetic	libclamav/pdf.c	3164	        in_data_len = pwlen + block_size;
+offset-size-arithmetic	libclamav/pdf.c	3168	            memcpy(data + pwlen + block_size, U, 48);
+offset-size-arithmetic	libclamav/pdf.c	3169	            in_data_len += 48;
+offset-size-arithmetic	libclamav/pdf.c	3175	        aes_128cbc_encrypt(data, in_data_len * 64, data, &out_data_len, block, 16, block + 16);
+offset-size-arithmetic	libclamav/pdf.c	3180	        block_size = 32 + (sum % 3) * 16;
+offset-size-arithmetic	libclamav/pdf.c	3183	                cl_sha256(data, in_data_len * 64, sha2_256, NULL);
+offset-size-arithmetic	libclamav/pdf.c	3188	                cl_sha384(data, in_data_len * 64, sha2_384, NULL);
+offset-size-arithmetic	libclamav/pdf.c	3193	                cl_sha512(data, in_data_len * 64, sha2_512, NULL);
+offset-size-arithmetic	libclamav/pdf.c	3216	 * @param OE_len    The length of the /OE string.
+offset-size-arithmetic	libclamav/pdf.c	3281	                aes_256cbc_decrypt((const unsigned char *)OE, &OE_len, (unsigned char *)(pdf->key), (char *)hash, 32, 0);
+offset-size-arithmetic	libclamav/pdf.c	3331	            size_t sz = 68 + pdf->fileIDlen + (R >= 4 && !EM ? 4 : 0);
+offset-size-arithmetic	libclamav/pdf.c	3355	                /* Yes, this really is on purpose */
+offset-size-arithmetic	libclamav/pdf.c	3357	                    cl_hash_data("md5", result, length / 8, result, NULL);
+offset-size-arithmetic	libclamav/pdf.c	3362	            pdf->keylen = length / 8;
+offset-size-arithmetic	libclamav/pdf.c	337	        if ((size_t)(idx - start) >= bytesleft)
+offset-size-arithmetic	libclamav/pdf.c	3385	                unsigned len = pdf->keylen;
+offset-size-arithmetic	libclamav/pdf.c	3447	                    aes_256cbc_decrypt((const unsigned char *)UE, &UE_len, (unsigned char *)(pdf->key), (char *)result2, 32, 0);
+offset-size-arithmetic	libclamav/pdf.c	3509	                aes_256cbc_decrypt((const unsigned char *)UE, &UE_len, (unsigned char *)(pdf->key), (char *)hash, 32, 0);
+offset-size-arithmetic	libclamav/pdf.c	354	        /* Pass back start of the stream data. */
+offset-size-arithmetic	libclamav/pdf.c	3540	enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key, enum enc_method def)
+offset-size-arithmetic	libclamav/pdf.c	3556	    CFM = pdf_readval(q, len, "/CFM");
+offset-size-arithmetic	libclamav/pdf.c	357	        /* Now find the "endstream" string that suffixes stream data. */
+offset-size-arithmetic	libclamav/pdf.c	360	            /* Couldn't find "endstream", but that's ok --
+offset-size-arithmetic	libclamav/pdf.c	3608	    len = obj->size;
+offset-size-arithmetic	libclamav/pdf.c	3611	        q = (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	3619	        q = (const char *)(obj->start + obj->objstm->streambuf);
+offset-size-arithmetic	libclamav/pdf.c	363	            endstream_begin = start + size;
+offset-size-arithmetic	libclamav/pdf.c	3634	    q2 = cli_memstr(q, len, "/Standard", 9);
+offset-size-arithmetic	libclamav/pdf.c	3644	     * make sure we don't mistake AES's length for Standard's */
+offset-size-arithmetic	libclamav/pdf.c	3645	    length = pdf_readint(q2, len - (q2 - q), "/Length");
+offset-size-arithmetic	libclamav/pdf.c	3647	        length = pdf_readint(q, len, "/Length");
+offset-size-arithmetic	libclamav/pdf.c	3654	    R = pdf_readint(q, len, "/R");
+offset-size-arithmetic	libclamav/pdf.c	3667	    P = pdf_readint(q, len, "/P");
+offset-size-arithmetic	libclamav/pdf.c	367	        /* Pass back end of the stream data, as offset from start. */
+offset-size-arithmetic	libclamav/pdf.c	368	        *stream_size = endstream_begin - *stream;
+offset-size-arithmetic	libclamav/pdf.c	3687	        EM        = pdf_readbool(q, len, "/EncryptMetadata", 1);
+offset-size-arithmetic	libclamav/pdf.c	3688	        StmF      = pdf_readval(q, len, "/StmF");
+offset-size-arithmetic	libclamav/pdf.c	3689	        StrF      = pdf_readval(q, len, "/StrF");
+offset-size-arithmetic	libclamav/pdf.c	3690	        EFF       = pdf_readval(q, len, "/EFF");
+offset-size-arithmetic	libclamav/pdf.c	3720	            UE     = pdf_readstring(q, len, "/UE", &n, NULL, false);
+offset-size-arithmetic	libclamav/pdf.c	3727	            OE     = pdf_readstring(q, len, "/OE", &n, NULL, false);
+offset-size-arithmetic	libclamav/pdf.c	3739	    O = pdf_readstring(q, len, "/O", &n, NULL, false);
+offset-size-arithmetic	libclamav/pdf.c	3763	    U = pdf_readstring(q, len, "/U", &n, NULL, false);
+offset-size-arithmetic	libclamav/pdf.c	3868	        cli_dbgmsg("pdf_find_and_parse_objs_in_objstm: Found object %u %u in object stream at offset: %zu\n", obj->id >> 8, obj->id & 0xff, obj->start);
+offset-size-arithmetic	libclamav/pdf.c	3914	    /* parse PDF and find obj offsets */
+offset-size-arithmetic	libclamav/pdf.c	3948	        status = cli_append_potentially_unwanted(pdf->ctx, "Heuristics.Encrypted.PDF");
+offset-size-arithmetic	libclamav/pdf.c	4001	 * @param offset    offset of pdf in ctx->fmap
+offset-size-arithmetic	libclamav/pdf.c	4017	    const char *pdfver, *tmp, *start, *eofmap, *q, *eof;
+offset-size-arithmetic	libclamav/pdf.c	4032	    char *begin, *end, *p1;
+offset-size-arithmetic	libclamav/pdf.c	4036	    if (offset < 0 || (uint64_t)offset > map->len)
+offset-size-arithmetic	libclamav/pdf.c	4039	    size = map->len - (size_t)offset;
+offset-size-arithmetic	libclamav/pdf.c	4063	    /* offset is 0 when coming from filetype2 */
+offset-size-arithmetic	libclamav/pdf.c	4064	    tmp = cli_memstr(pdfver, versize, "%PDF-", 5);
+offset-size-arithmetic	libclamav/pdf.c	4073	    versize -= tmp - pdfver;
+offset-size-arithmetic	libclamav/pdf.c	4092	            end   = begin + 2;
+offset-size-arithmetic	libclamav/pdf.c	4094	            p1 = cli_max_calloc((end - begin) + 2, 1);
+offset-size-arithmetic	libclamav/pdf.c	4096	                strncpy(p1, begin, end - begin);
+offset-size-arithmetic	libclamav/pdf.c	4097	                p1[end - begin] = '\0';
+offset-size-arithmetic	libclamav/pdf.c	4106	        cli_dbgmsg("cli_pdf: PDF header is not at position 0: %lld\n", (long long)(pdfver - start + offset));
+offset-size-arithmetic	libclamav/pdf.c	4112	    offset += pdfver - start;
+offset-size-arithmetic	libclamav/pdf.c	4115	    map_off = (off_t)map->len - 2048;
+offset-size-arithmetic	libclamav/pdf.c	4119	    bytesleft = map->len - map_off;
+offset-size-arithmetic	libclamav/pdf.c	4146	        /*size = q - eofmap + map_off;*/
+offset-size-arithmetic	libclamav/pdf.c	4183	                if ((uint64_t)xref > map->len - (size_t)offset) {
+offset-size-arithmetic	libclamav/pdf.c	4188	                    bytesleft = map->len - (size_t)offset - xref;
+offset-size-arithmetic	libclamav/pdf.c	4197	                        q = fmap_need_off_once(map, (size_t)offset + xref, bytesleft);
+offset-size-arithmetic	libclamav/pdf.c	4213	    size = map->len - (size_t)offset;
+offset-size-arithmetic	libclamav/pdf.c	4215	     * shared temporary quota and expose a disk-backed virtual mapping instead
+offset-size-arithmetic	libclamav/pdf.c	4246	            wanted = MIN((size_t)PDF_INPUT_WINDOW_SIZE, size - copied);
+offset-size-arithmetic	libclamav/pdf.c	4247	            nread  = fmap_readn(map, buffer, (size_t)offset + copied, wanted);
+offset-size-arithmetic	libclamav/pdf.c	4286	    if (!pdf_input || lseek(pdf_tempfd, 0, SEEK_SET) == (off_t)-1 ||
+offset-size-arithmetic	libclamav/pdf.c	437	    bytes_remaining = objstm->streambuf_len - objstm->current_pair;
+offset-size-arithmetic	libclamav/pdf.c	4446	pdf_nextlinestart(const char *ptr, size_t len)
+offset-size-arithmetic	libclamav/pdf.c	4495	                len -= (size_t)(p - ptr);
+offset-size-arithmetic	libclamav/pdf.c	4508	                len--;
+offset-size-arithmetic	libclamav/pdf.c	4513	            case '(': /* start of JS */
+offset-size-arithmetic	libclamav/pdf.c	4522	                len--;
+offset-size-arithmetic	libclamav/pdf.c	4604	    pdf->stats.nrunlengthdecode++;
+offset-size-arithmetic	libclamav/pdf.c	462	    /* Find the obj offset that appears just after the objid*/
+offset-size-arithmetic	libclamav/pdf.c	463	    while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {
+offset-size-arithmetic	libclamav/pdf.c	468	    bytes_remaining = objstm->streambuf + objstm->streambuf_len - index;
+offset-size-arithmetic	libclamav/pdf.c	471	        /* Failed to find obj offset */
+offset-size-arithmetic	libclamav/pdf.c	4767	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4768	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	4775	        pdf->stats.author->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Author", NULL, &(pdf->stats.author->meta));
+offset-size-arithmetic	libclamav/pdf.c	4795	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4796	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	4803	        pdf->stats.creator->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Creator", NULL, &(pdf->stats.creator->meta));
+offset-size-arithmetic	libclamav/pdf.c	4823	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4824	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	483	        (size_t)objoff > objstm->streambuf_len - objstm->first) {
+offset-size-arithmetic	libclamav/pdf.c	4831	        pdf->stats.modificationdate->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/ModDate", NULL, &(pdf->stats.modificationdate->meta));
+offset-size-arithmetic	libclamav/pdf.c	484	        /* Alleged obj location is further than the length of the stream */
+offset-size-arithmetic	libclamav/pdf.c	4851	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4852	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	4859	        pdf->stats.creationdate->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/CreationDate", NULL, &(pdf->stats.creationdate->meta));
+offset-size-arithmetic	libclamav/pdf.c	4879	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4880	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	4887	        pdf->stats.producer->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Producer", NULL, &(pdf->stats.producer->meta));
+offset-size-arithmetic	libclamav/pdf.c	4907	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4908	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	4915	        pdf->stats.title->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Title", NULL, &(pdf->stats.title->meta));
+offset-size-arithmetic	libclamav/pdf.c	4935	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4936	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	4943	        pdf->stats.keywords->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Keywords", NULL, &(pdf->stats.keywords->meta));
+offset-size-arithmetic	libclamav/pdf.c	4963	        const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	4964	                                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	4971	        pdf->stats.subject->data = pdf_parse_string(pdf, obj, objstart, obj->size, "/Subject", NULL, &(pdf->stats.subject->meta));
+offset-size-arithmetic	libclamav/pdf.c	501	    obj->start = objstm->current;
+offset-size-arithmetic	libclamav/pdf.c	5013	    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	5014	                                         : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	5036	    begin = cli_memstr(objstart, obj->size, "/Kids", 5);
+offset-size-arithmetic	libclamav/pdf.c	5043	    array = pdf_parse_array(pdf, obj, obj->size, (char *)begin, NULL);
+offset-size-arithmetic	libclamav/pdf.c	5056	    begin = cli_memstr(objstart, obj->size, "/Count", 6);
+offset-size-arithmetic	libclamav/pdf.c	506	    while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {
+offset-size-arithmetic	libclamav/pdf.c	5063	    while (((size_t)(begin - objstart) < obj->size) && isspace(begin[0]))
+offset-size-arithmetic	libclamav/pdf.c	5066	    if ((size_t)(begin - objstart) >= obj->size) {
+offset-size-arithmetic	libclamav/pdf.c	5070	    countsize = (obj->objstm) ? (size_t)(obj->start + obj->objstm->streambuf + obj->size - begin)
+offset-size-arithmetic	libclamav/pdf.c	5071	                              : (size_t)(obj->start + pdf->map + obj->size - begin);
+offset-size-arithmetic	libclamav/pdf.c	5095	    const char *objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	5096	                                         : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	510	    objstm->current_pair = (size_t)(findNextNonWS(index, objstm->streambuf + objstm->first) - objstm->streambuf);
+offset-size-arithmetic	libclamav/pdf.c	5108	    p1 = (char *)cli_memstr(objstart, obj->size, "/Colors", 7);
+offset-size-arithmetic	libclamav/pdf.c	5115	    if (obj->size - (size_t)(p1 - objstart) < 2)
+offset-size-arithmetic	libclamav/pdf.c	5118	    while (((size_t)(p1 - objstart) < obj->size) && isspace(p1[0]))
+offset-size-arithmetic	libclamav/pdf.c	5121	    if ((size_t)(p1 - objstart) == obj->size)
+offset-size-arithmetic	libclamav/pdf.c	5124	    if (CL_SUCCESS != cli_strntol_wrap(p1, (size_t)((p1 - objstart) - obj->size), 0, 10, &temp_long)) {
+offset-size-arithmetic	libclamav/pdf.c	5161	    objstart = (obj->objstm) ? (const char *)(obj->start + obj->objstm->streambuf)
+offset-size-arithmetic	libclamav/pdf.c	5162	                             : (const char *)(obj->start + pdf->map);
+offset-size-arithmetic	libclamav/pdf.c	5174	        bytesleft = MIN(obj->size, obj->objstm->streambuf_len - obj->start);
+offset-size-arithmetic	libclamav/pdf.c	5176	        bytesleft = MIN(obj->size, pdf->size - obj->start);
+offset-size-arithmetic	libclamav/pdf.c	5182	        start++;
+offset-size-arithmetic	libclamav/pdf.c	5189	    uri_start = (char *)(objstart + start + 1);
+offset-size-arithmetic	libclamav/pdf.c	5195	        end++;
+offset-size-arithmetic	libclamav/pdf.c	5203	    CLI_MAX_MALLOC_OR_GOTO_DONE(uri_heap, end + 1,
+offset-size-arithmetic	libclamav/pdf.c	525	        bytes_remaining = objstm->streambuf + objstm->streambuf_len - index;
+offset-size-arithmetic	libclamav/pdf.c	541	        /* Find the obj offset that appears just after the objid*/
+offset-size-arithmetic	libclamav/pdf.c	542	        while ((index < objstm->streambuf + objstm->streambuf_len) && isdigit(*index)) {
+offset-size-arithmetic	libclamav/pdf.c	547	        bytes_remaining = objstm->streambuf + objstm->streambuf_len - index;
+offset-size-arithmetic	libclamav/pdf.c	550	            /* Failed to find obj offset for next obj */
+offset-size-arithmetic	libclamav/pdf.c	551	            cli_dbgmsg("pdf_findobj_in_objstm: Failed to find next obj offset for obj in object stream though there should be {%zu} more.\n", objstm->n - objstm->nobjs_found);
+offset-size-arithmetic	libclamav/pdf.c	562	            /* Failed to find obj offset for next obj */
+offset-size-arithmetic	libclamav/pdf.c	567	                   (size_t)next_objoff > objstm->streambuf_len - objstm->first) {
+offset-size-arithmetic	libclamav/pdf.c	568	            /* Failed to find obj offset for next obj */
+offset-size-arithmetic	libclamav/pdf.c	574	        obj->size = next_objoff - objoff;
+offset-size-arithmetic	libclamav/pdf.c	586	        obj->size = objstm->streambuf_len - obj->start;
+offset-size-arithmetic	libclamav/pdf.c	591	    CLI_MAX_REALLOC_OR_GOTO_DONE(pdf->objs, sizeof(struct pdf_obj *) * pdf->nobjs,
+offset-size-arithmetic	libclamav/pdf.c	625	 * If truncated, pdf->offset will == pdf->size.
+offset-size-arithmetic	libclamav/pdf.c	638	    const char *start, *idx, *genid_search_index, *objid_search_index;
+offset-size-arithmetic	libclamav/pdf.c	641	    const char *endobj_begin = NULL, *endobj_end = NULL;
+offset-size-arithmetic	libclamav/pdf.c	657	    CLI_MAX_REALLOC_OR_GOTO_DONE(pdf->objs, sizeof(struct pdf_obj *) * pdf->nobjs, status = CL_EMEM);
+offset-size-arithmetic	libclamav/pdf.c	666	    memset(obj, 0, sizeof(*obj));
+offset-size-arithmetic	libclamav/pdf.c	668	    start     = pdf->map + pdf->offset;
+offset-size-arithmetic	libclamav/pdf.c	669	    bytesleft = pdf->size - pdf->offset;
+offset-size-arithmetic	libclamav/pdf.c	674	    idx = start + 1;
+offset-size-arithmetic	libclamav/pdf.c	676	        /* `- 1` accounts for size of white space before obj */
+offset-size-arithmetic	libclamav/pdf.c	692	        bytesleft = (pdf->size - pdf->offset) - (size_t)(idx - start);
+offset-size-arithmetic	libclamav/pdf.c	704	        obj_end   = idx + 1 + strlen("obj");
+offset-size-arithmetic	libclamav/pdf.c	716	    while (genid_search_index > start && isdigit(*genid_search_index))
+offset-size-arithmetic	libclamav/pdf.c	719	    if (CL_SUCCESS != cli_strntol_wrap(genid_search_index, (size_t)((obj_begin)-genid_search_index), 0, 10, &temp_long)) {
+offset-size-arithmetic	libclamav/pdf.c	722	        pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	727	        pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	735	    while (objid_search_index > start && isdigit(*objid_search_index))
+offset-size-arithmetic	libclamav/pdf.c	738	    if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index)-objid_search_index), 0, 10, &temp_long)) {
+offset-size-arithmetic	libclamav/pdf.c	756	                pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	763	            cli_dbgmsg("pdf_findobj: %%%%EOF detected before end of file, at offset: %zu\n", (size_t)(objid_search_index - pdf->map));
+offset-size-arithmetic	libclamav/pdf.c	768	            pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	772	        /* Try again, with offset slightly adjusted */
+offset-size-arithmetic	libclamav/pdf.c	773	        if (CL_SUCCESS != cli_strntol_wrap(objid_search_index, (size_t)((genid_search_index - 1) - objid_search_index), 0, 10, &temp_long)) {
+offset-size-arithmetic	libclamav/pdf.c	776	            pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	781	            pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	789	        pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	798	        pdf->offset = obj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	804	    obj->start = obj_end - pdf->map; /* obj start begins just after the "obj" string */
+offset-size-arithmetic	libclamav/pdf.c	811	    /* `- 1` accounts for size of white space before obj */
+offset-size-arithmetic	libclamav/pdf.c	812	    endobj_begin = pdf_memstr_deadline(pdf, obj_end, pdf->map + pdf->size - obj_end,
+offset-size-arithmetic	libclamav/pdf.c	828	        obj->size   = (pdf->map + pdf->size) - obj_end;
+offset-size-arithmetic	libclamav/pdf.c	829	        pdf->offset = pdf->size;
+offset-size-arithmetic	libclamav/pdf.c	836	    endobj_end = endobj_begin + strlen("endobj");
+offset-size-arithmetic	libclamav/pdf.c	838	    /* Size of the object goes from "obj" <-> "endobject". */
+offset-size-arithmetic	libclamav/pdf.c	839	    obj->size   = endobj_begin - obj_end;
+offset-size-arithmetic	libclamav/pdf.c	84	static const char *pdf_nextlinestart(const char *ptr, size_t len);
+offset-size-arithmetic	libclamav/pdf.c	840	    pdf->offset = endobj_end - pdf->map;
+offset-size-arithmetic	libclamav/pdf.c	845	    status = CL_SUCCESS; /* truncated file, no end to obj. */
+offset-size-arithmetic	libclamav/pdf.c	849	        cli_dbgmsg("pdf_findobj: found %d %d obj @%lld, size: %zu bytes.\n", obj->id >> 8, obj->id & 0xff, (long long)(obj->start + pdf->startoff), obj->size);
+offset-size-arithmetic	libclamav/pdf.c	88	                                       const char *needle, size_t needle_len, cl_error_t *status)
+offset-size-arithmetic	libclamav/pdf.c	920	                                size_t *sum, uint64_t *temporary_reserved)
+offset-size-arithmetic	libclamav/pdf.c	946	    if (len > SIZE_MAX - *sum) {
 offset-size-arithmetic	libclamav/pdf.h	205	char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method);
 offset-size-arithmetic	libclamav/pdf.h	207	enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key, enum enc_method def);
 offset-size-arithmetic	libclamav/pdf.h	211	char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *objstart, size_t objsize, const char *str, char **endchar, struct pdf_stats_metadata *meta);

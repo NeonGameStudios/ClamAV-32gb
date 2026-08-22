@@ -4438,6 +4438,16 @@ checks the shared deadline before each candidate, marks the scan incomplete on
 expiry, and preserves `CL_ETIMEOUT` for the final result. Parser-specific
 qualification and Sonic1 runtime evidence remain release gates.
 
+## Legacy PDF object-search deadline — 2026-08-22
+
+The legacy PDF parser staged the input for stable pointers, but its object
+header and `endobj` searches still called `cli_memstr()` over the entire
+remaining document. A large or malformed PDF could therefore spend a required
+parser pass without observing `MaxScanTime`. Those searches now use overlapping
+64 KiB windows with deadline checks and return `CL_ETIMEOUT` as an incomplete
+scan. Compiled timeout injection, decoder fault coverage, and Sonic1 PDF
+qualification remain release gates.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one

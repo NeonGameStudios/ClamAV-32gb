@@ -1016,6 +1016,9 @@
 - Raw embedded-type dispatch now checks `MaxScanTime` before each candidate so
   a large matcher result list cannot delay parser admission; add compiled
   candidate-list timeout injection and production qualification.
+- Legacy PDF object-header and `endobj` searches now use overlapping 64 KiB
+  windows with shared deadline checks; add compiled timeout injection,
+  decoder-fault coverage, and production PDF qualification.
 - PDFNG string, dictionary, array, and indirect-reference scans now checkpoint
   `MaxScanTime` at bounded progress intervals and discard partial parser
   structures on expiry; add compiled parser-loop timeout injection and full

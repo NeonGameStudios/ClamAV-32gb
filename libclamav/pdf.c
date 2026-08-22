@@ -77,11 +77,62 @@
 #endif
 
 #define MAX_PDF_OBJECTS (64 * 1024)
+#define PDF_SEARCH_WINDOW (64U * 1024U)
 
 struct pdf_struct;
 
 static const char *pdf_nextlinestart(const char *ptr, size_t len);
 static const char *pdf_nextobject(const char *ptr, size_t len);
+
+static const char *pdf_memstr_deadline(struct pdf_struct *pdf, const char *start, size_t len,
+                                       const char *needle, size_t needle_len, cl_error_t *status)
+{
+    const char *match = NULL;
+    size_t searched  = 0;
+    size_t overlap;
+    size_t window;
+
+    if (status != NULL)
+        *status = CL_SUCCESS;
+    if (pdf == NULL || start == NULL || needle == NULL || needle_len == 0 || needle_len > len)
+        return NULL;
+
+    overlap = needle_len - 1;
+    while (searched < len) {
+        if (cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+            if (status != NULL)
+                *status = CL_ETIMEOUT;
+            return NULL;
+        }
+
+        if (len - searched > (size_t)PDF_SEARCH_WINDOW) {
+            if (overlap > (size_t)-1 - (size_t)PDF_SEARCH_WINDOW) {
+                if (status != NULL)
+                    *status = CL_EPARSE;
+                return NULL;
+            }
+            window = (size_t)PDF_SEARCH_WINDOW + overlap;
+        } else {
+            window = len - searched;
+        }
+
+        if (window < needle_len)
+            break;
+
+        match = cli_memstr(start + searched, window, needle, needle_len);
+        if (match != NULL)
+            return match;
+        if (window <= overlap)
+            break;
+        searched += window - overlap;
+    }
+
+    if (cli_checktimelimit(pdf->ctx) != CL_SUCCESS) {
+        if (status != NULL)
+            *status = CL_ETIMEOUT;
+    }
+    return NULL;
+}
 
 /* PDF statistics callbacks and related */
 struct pdfname_action;
@@ -591,6 +642,7 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf)
 
     struct pdf_obj *obj = NULL;
     size_t bytesleft;
+    cl_error_t search_status;
     unsigned long genid, objid;
     long temp_long;
 
@@ -622,7 +674,13 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf)
     idx = start + 1;
     while (bytesleft > 1 + strlen("obj")) {
         /* `- 1` accounts for size of white space before obj */
-        idx = cli_memstr(idx, bytesleft - 1, "obj", strlen("obj"));
+        idx = pdf_memstr_deadline(pdf, idx, bytesleft - 1, "obj", strlen("obj"), &search_status);
+        if (search_status != CL_SUCCESS) {
+            if (search_status == CL_ETIMEOUT)
+                cli_mark_scan_incomplete(pdf->ctx, "PDF object-header search reached the configured time limit");
+            status = search_status;
+            goto done;
+        }
         if (NULL == idx) {
             status = CL_BREAK;
             goto done; /* No more objs. */
@@ -751,7 +809,14 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf)
      * Find the object end ("endobj").
      */
     /* `- 1` accounts for size of white space before obj */
-    endobj_begin = cli_memstr(obj_end, pdf->map + pdf->size - obj_end, "endobj", strlen("endobj"));
+    endobj_begin = pdf_memstr_deadline(pdf, obj_end, pdf->map + pdf->size - obj_end,
+                                       "endobj", strlen("endobj"), &search_status);
+    if (search_status != CL_SUCCESS) {
+        if (search_status == CL_ETIMEOUT)
+            cli_mark_scan_incomplete(pdf->ctx, "PDF object-end search reached the configured time limit");
+        status = search_status;
+        goto done;
+    }
     if (NULL == endobj_begin) {
         /* No end to object.
          * PDF appears to be malformed or truncated.
