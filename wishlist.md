@@ -737,3 +737,9 @@
   incomplete, and keep checked RVA-extent arithmetic from wrapping. The
   synthetic boundary regression is registered; compiled PE corpus, unpacker,
   sanitizer, and supported-Linux qualification remain required.
+- Retain PE alignment-up extents and overlay starts in native width when a
+  legal 32-bit section size rounds above 4 GiB; legacy PE hashing and
+  inspection must return an explicit incomplete result rather than a narrowed
+  partial view. The sparse logical-map boundary regression is registered;
+  compiled PE corpus, unpacker, sanitizer, and supported-Linux qualification
+  remain required.

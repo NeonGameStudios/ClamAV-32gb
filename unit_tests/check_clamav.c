@@ -3925,6 +3925,7 @@ END_TEST
 START_TEST(test_pe_overlay_range_preserves_native_size)
 {
     struct cli_exe_section sections[2];
+    struct cli_exe_section64 sections64[2];
     size_t file_size = (size_t)UINT32_MAX + 65536;
     size_t overlay_start;
     size_t overlay_size;
@@ -3936,12 +3937,25 @@ START_TEST(test_pe_overlay_range_preserves_native_size)
     sections[1].raw = 16384;
     sections[1].rsz = 8192;
 
+    memset(sections64, 0, sizeof(sections64));
+    sections64[0].raw = sections[0].raw;
+    sections64[0].rsz = sections[0].rsz;
+    sections64[1].raw = sections[1].raw;
+    sections64[1].rsz = sections[1].rsz;
+
     status = cli_pe_calculate_overlay_range(sections, 2, file_size, &overlay_start, &overlay_size);
     ck_assert_int_eq(status, CL_SUCCESS);
     ck_assert_msg(overlay_start == 24576, "PE overlay start was %zu", overlay_start);
     ck_assert_msg(overlay_size == file_size - overlay_start,
                   "PE overlay length was narrowed from %zu to %zu", file_size - overlay_start, overlay_size);
     ck_assert_msg(overlay_size > UINT32_MAX, "synthetic PE overlay did not cross the 32-bit boundary");
+
+    sections64[1].raw = UINT32_MAX - 3U;
+    sections64[1].rsz = 8;
+    status = cli_pe_calculate_overlay_range64(sections64, 2, (size_t)UINT32_MAX + 16U, &overlay_start, &overlay_size);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_uint_eq(overlay_start, (size_t)UINT32_MAX + 5U);
+    ck_assert_uint_eq(overlay_size, 11U);
 
     sections[1].raw = UINT32_MAX - 3;
     sections[1].rsz = 8;
@@ -3989,6 +4003,7 @@ START_TEST(test_pe_header_preserves_unsigned_high_bit_section_fields)
     size_t pe_offset;
     size_t section_offset;
     size_t source_offset = (size_t)UINT32_MAX + 4096U;
+    size_t logical_length = (size_t)UINT32_MAX + 0x20000U;
     uint16_t nsections;
     uint16_t opt_hdr_size;
     cl_error_t ret;
@@ -4000,6 +4015,8 @@ START_TEST(test_pe_header_preserves_unsigned_high_bit_section_fields)
     ck_assert_msg(FSTAT(fd, &st) == 0, "fstat(%s) failed: %s", file_path, strerror(errno));
     ck_assert_msg((uintmax_t)st.st_size <= SIZE_MAX - source_offset,
                   "PE fixture cannot be placed at the synthetic native offset");
+    ck_assert_msg(logical_length <= SIZE_MAX - source_offset,
+                  "synthetic PE logical length cannot be placed at the native offset");
 
     data = malloc((size_t)st.st_size);
     ck_assert_ptr_nonnull(data);
@@ -4024,9 +4041,13 @@ START_TEST(test_pe_header_preserves_unsigned_high_bit_section_fields)
                   "PE section table is outside the fixture");
 
     /* VirtualAddress is an unsigned DWORD; its high bit is not a malformed
-     * signed value. Keep all raw bytes and exercise the native section view. */
+     * signed value. Keep all raw bytes and exercise the native section view.
+     * The raw size rounds up to exactly 4 GiB, which must remain native-width
+     * even though the on-disk field is a 32-bit DWORD. */
     cli_writeint32(data + section_offset + sizeof(struct pe_image_section_hdr) + offsetof(struct pe_image_section_hdr, VirtualAddress),
                    0x80002000U);
+    cli_writeint32(data + section_offset + sizeof(struct pe_image_section_hdr) + offsetof(struct pe_image_section_hdr, SizeOfRawData),
+                   0xfffffe01U);
 
     memset(&options, 0, sizeof(options));
     memset(&header_ctx, 0, sizeof(header_ctx));
@@ -4037,10 +4058,10 @@ START_TEST(test_pe_header_preserves_unsigned_high_bit_section_fields)
     ck_assert_ptr_nonnull(parent);
     parent->handle      = &state;
     parent->need        = pe_native_offset_map_need;
-    parent->len         = source_offset + state.length;
+    parent->len         = source_offset + logical_length;
     parent->real_len    = parent->len;
 
-    nested = fmap_duplicate(parent, source_offset, state.length, "unsigned-pe-field-test");
+    nested = fmap_duplicate(parent, source_offset, logical_length, "unsigned-pe-field-test");
     ck_assert_ptr_nonnull(nested);
 
     header_ctx.fmap              = nested;
@@ -4053,6 +4074,8 @@ START_TEST(test_pe_header_preserves_unsigned_high_bit_section_fields)
     ck_assert(peinfo.legacy_metadata_incomplete);
     ck_assert_uint_eq(peinfo.sections[1].urva, 0x80002000U);
     ck_assert_uint_eq(peinfo.sections64[1].urva, 0x80002000U);
+    ck_assert_uint_eq(peinfo.sections64[1].rsz, (uint64_t)UINT32_MAX + 1U);
+    ck_assert_uint_eq(peinfo.overlay_start, (size_t)0x100008a00ULL);
 
     cli_exe_info_destroy(&peinfo);
     free_duplicate_fmap(nested);

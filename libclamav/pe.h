@@ -99,6 +99,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
 
 cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo);
 cl_error_t cli_pe_calculate_overlay_range(const struct cli_exe_section *sections, uint16_t nsections, size_t file_size, size_t *overlay_start, size_t *overlay_size);
+cl_error_t cli_pe_calculate_overlay_range64(const struct cli_exe_section64 *sections, uint16_t nsections, size_t file_size, size_t *overlay_start, size_t *overlay_size);
 cl_error_t cli_genhash_pe(cli_ctx *ctx, unsigned int class, cli_hash_type_t type, stats_section_t *hashes);
 
 uint64_t cli_rawaddr64(uint32_t, const struct cli_exe_section *, uint16_t, unsigned int *, size_t, uint32_t);

@@ -118,6 +118,22 @@
 #define PEALIGN(o, a) (((a)) ? (((o) / (a)) * (a)) : (o))
 #define PESALIGN(o, a) (((a)) ? (((o) / (a) + ((o) % (a) != 0)) * (a)) : (o))
 
+static uint64_t cli_pe_align_down_u64(uint64_t value, uint32_t alignment)
+{
+    return alignment ? (value / alignment) * alignment : value;
+}
+
+static uint64_t cli_pe_align_up_u64(uint64_t value, uint32_t alignment)
+{
+    uint64_t remainder;
+
+    if (!alignment)
+        return value;
+
+    remainder = value % alignment;
+    return remainder ? value + alignment - remainder : value;
+}
+
 // TODO Replace all of these with static inline functions
 #define CLI_UNPSIZELIMITS(NAME, CHK)                                                             \
     do {                                                                                         \
@@ -5444,24 +5460,41 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         struct cli_exe_section *section          = &(peinfo->sections[i]);
         struct pe_image_section_hdr *section_hdr = &(section_hdrs[i]);
         char sname[9];
+        uint64_t section_rva64;
+        uint64_t section_vsz64;
+        uint64_t section_raw64;
+        uint64_t section_rsz64;
+        uint64_t section_urva64;
+        uint64_t section_uvsz64;
+        uint64_t section_uraw64;
+        uint64_t section_ursz64;
         uint32_t section_rva_end;
 
         // TODO I don't see any documentation that says VirtualAddress and VirtualSize must be aligned
-        section->rva  = PEALIGN(EC32(section_hdr->VirtualAddress), salign);
-        section->vsz  = PESALIGN(EC32(section_hdr->VirtualSize), salign);
-        section->raw  = PEALIGN(EC32(section_hdr->PointerToRawData), falign);
-        section->rsz  = PESALIGN(EC32(section_hdr->SizeOfRawData), falign);
+        section_urva64 = EC32(section_hdr->VirtualAddress);
+        section_uvsz64 = EC32(section_hdr->VirtualSize);
+        section_uraw64 = EC32(section_hdr->PointerToRawData);
+        section_ursz64 = EC32(section_hdr->SizeOfRawData);
+        section_rva64  = cli_pe_align_down_u64(section_urva64, salign);
+        section_vsz64  = cli_pe_align_up_u64(section_uvsz64, salign);
+        section_raw64  = cli_pe_align_down_u64(section_uraw64, falign);
+        section_rsz64  = cli_pe_align_up_u64(section_ursz64, falign);
+
+        section->rva  = (uint32_t)section_rva64;
+        section->vsz  = section_vsz64 > UINT32_MAX ? UINT32_MAX : (uint32_t)section_vsz64;
+        section->raw  = (uint32_t)section_raw64;
+        section->rsz  = section_rsz64 > UINT32_MAX ? UINT32_MAX : (uint32_t)section_rsz64;
         section->chr  = EC32(section_hdr->Characteristics);
-        section->urva = EC32(section_hdr->VirtualAddress); /* Just in case */
-        section->uvsz = EC32(section_hdr->VirtualSize);
-        section->uraw = EC32(section_hdr->PointerToRawData);
-        section->ursz = EC32(section_hdr->SizeOfRawData);
+        section->urva = (uint32_t)section_urva64; /* Just in case */
+        section->uvsz = (uint32_t)section_uvsz64;
+        section->uraw = (uint32_t)section_uraw64;
+        section->ursz = (uint32_t)section_ursz64;
 
         /* First, if a section exists totally outside of a file, remove the
          * section from the list or zero out its size. */
-        if (section->rsz) { /* Don't bother with virtual only sections */
-            if (section->raw >= fsize || section->uraw >= fsize) {
-                cli_dbgmsg("cli_peheader: Broken PE file - Section %zu starts or exists beyond the end of file (Offset@ %lu, Total filesize %lu)\n", section_pe_idx, (unsigned long)section->raw, (unsigned long)fsize);
+        if (section_rsz64) { /* Don't bother with virtual only sections */
+            if (section_raw64 >= fsize || section_uraw64 >= fsize) {
+                cli_dbgmsg("cli_peheader: Broken PE file - Section %zu starts or exists beyond the end of file (Offset@ " STDu64 ", Total filesize %lu)\n", section_pe_idx, section_raw64, (unsigned long)fsize);
 
                 if (opts & CLI_PEHEADER_OPT_REMOVE_MISSING_SECTIONS) {
                     if (peinfo->nsections == 1) {
@@ -5485,23 +5518,30 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
                     continue;
 
                 } else {
+                    section_rsz64  = 0;
+                    section_ursz64 = 0;
                     section->rsz  = 0;
                     section->ursz = 0;
                 }
             } else {
 
                 /* If a section is truncated, adjust its size value */
-                if (!CLI_ISCONTAINED_0_TO(fsize, section->raw, section->rsz)) {
-                    cli_dbgmsg("cli_peheader: PE Section %zu raw+rsz extends past the end of the file by %lu bytes\n", section_pe_idx, (section->raw + section->rsz) - fsize);
-                    section->rsz = fsize - section->raw;
+                if (section_rsz64 > (uint64_t)fsize - section_raw64) {
+                    cli_dbgmsg("cli_peheader: PE Section %zu raw+rsz extends past the end of the file by " STDu64 " bytes\n",
+                               section_pe_idx, section_rsz64 - ((uint64_t)fsize - section_raw64));
+                    section_rsz64 = (uint64_t)fsize - section_raw64;
                 }
 
-                if (!CLI_ISCONTAINED_0_TO(fsize, section->uraw, section->ursz)) {
-                    cli_dbgmsg("cli_peheader: PE Section %zu uraw+ursz extends past the end of the file by %lu bytes\n", section_pe_idx, (section->uraw + section->ursz) - fsize);
-                    section->ursz = fsize - section->uraw;
+                if (section_ursz64 > (uint64_t)fsize - section_uraw64) {
+                    cli_dbgmsg("cli_peheader: PE Section %zu uraw+ursz extends past the end of the file by " STDu64 " bytes\n",
+                               section_pe_idx, section_ursz64 - ((uint64_t)fsize - section_uraw64));
+                    section_ursz64 = (uint64_t)fsize - section_uraw64;
                 }
             }
         }
+
+        section->rsz  = section_rsz64 > UINT32_MAX ? UINT32_MAX : (uint32_t)section_rsz64;
+        section->ursz = section_ursz64 > UINT32_MAX ? UINT32_MAX : (uint32_t)section_ursz64;
 
         strncpy(sname, (char *)section_hdr->Name, 8);
         sname[8] = '\0';
@@ -5517,18 +5557,25 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
 
         // TODO Why do we do this
         // TODO Should this be done before we dump the json
-        if (!section->vsz && section->rsz)
-            section->vsz = PESALIGN(section->ursz, salign);
+        if (!section_vsz64 && section_rsz64)
+            section_vsz64 = cli_pe_align_up_u64(section_ursz64, salign);
 
-        peinfo->sections64[i].rva  = section->rva;
-        peinfo->sections64[i].vsz  = section->vsz;
-        peinfo->sections64[i].raw  = section->raw;
-        peinfo->sections64[i].rsz  = section->rsz;
+        if (section_vsz64 > UINT32_MAX || section_rsz64 > UINT32_MAX) {
+            cli_dbgmsg("cli_peheader: Aligned PE section metadata exceeds the legacy 32-bit range; PE-specific legacy analysis will be skipped\n");
+            peinfo->legacy_metadata_incomplete = 1;
+        }
+
+        section->vsz = section_vsz64 > UINT32_MAX ? UINT32_MAX : (uint32_t)section_vsz64;
+
+        peinfo->sections64[i].rva  = section_rva64;
+        peinfo->sections64[i].vsz  = section_vsz64;
+        peinfo->sections64[i].raw  = section_raw64;
+        peinfo->sections64[i].rsz  = section_rsz64;
         peinfo->sections64[i].chr  = section->chr;
-        peinfo->sections64[i].urva = section->urva;
-        peinfo->sections64[i].uvsz = section->uvsz;
-        peinfo->sections64[i].uraw = section->uraw;
-        peinfo->sections64[i].ursz = section->ursz;
+        peinfo->sections64[i].urva = section_urva64;
+        peinfo->sections64[i].uvsz = section_uvsz64;
+        peinfo->sections64[i].uraw = section_uraw64;
+        peinfo->sections64[i].ursz = section_ursz64;
 
         if (opts & CLI_PEHEADER_OPT_DBG_PRINT_INFO) {
             cli_dbgmsg("Section %zu\n", section_pe_idx);
@@ -5577,10 +5624,13 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             peinfo->legacy_metadata_incomplete = 1;
         }
 
-        if (cli_pe_add_u32(section->rva, section->rsz, &section_rva_end) < 0) {
+        if (section_rva64 > UINT32_MAX || section_rsz64 > UINT32_MAX ||
+            section_rva64 > UINT32_MAX - section_rsz64) {
             cli_dbgmsg("cli_peheader: PE section RVA extent exceeds the legacy 32-bit coordinate range\n");
             peinfo->legacy_metadata_incomplete = 1;
             section_rva_end = UINT32_MAX;
+        } else {
+            section_rva_end = (uint32_t)(section_rva64 + section_rsz64);
         }
 
         if (!i) {
@@ -5595,7 +5645,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             peinfo->min = section->rva;
             peinfo->max = section_rva_end;
         } else {
-            size_t section_end = (size_t)section->raw + (size_t)section->rsz;
+            uint64_t section_end = section_raw64 + section_rsz64;
 
             if (section->urva - peinfo->sections[i - 1].urva != peinfo->sections[i - 1].vsz) { /* No holes, no overlapping, no virtual disorder */
                 cli_dbgmsg("cli_peheader: Virtually misplaced section (wrong order, overlapping, non contiguous)\n");
@@ -5614,14 +5664,14 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
 
             // TODO This case might be possible, which would lead to us
             // mislabelling the overlay
-            if (section_end > (size_t)peinfo->max) {
+            if (section_end > (uint64_t)peinfo->max) {
                 cli_dbgmsg("cli_peheader: Assumption Violated: Last section end RVA isn't tied to the last section\n");
             }
         }
     }
 
-    ret = cli_pe_calculate_overlay_range(peinfo->sections, peinfo->nsections, fsize,
-                                         &peinfo->overlay_start, &peinfo->overlay_size);
+    ret = cli_pe_calculate_overlay_range64(peinfo->sections64, peinfo->nsections, fsize,
+                                           &peinfo->overlay_start, &peinfo->overlay_size);
     if (CL_SUCCESS != ret) {
         cli_mark_scan_incomplete(ctx, "PE overlay offset is outside the mapped file");
         goto done;
@@ -5869,7 +5919,39 @@ done:
 static int sort_sects(const void *first, const void *second)
 {
     const struct cli_exe_section *a = first, *b = second;
-    return (a->raw - b->raw);
+
+    if (a->raw < b->raw)
+        return -1;
+    if (a->raw > b->raw)
+        return 1;
+    return 0;
+}
+
+cl_error_t cli_pe_calculate_overlay_range64(const struct cli_exe_section64 *sections, uint16_t nsections, size_t file_size, size_t *overlay_start, size_t *overlay_size)
+{
+    size_t end = 0;
+    uint16_t i;
+
+    if ((0 != nsections && NULL == sections) || NULL == overlay_start || NULL == overlay_size)
+        return CL_ENULLARG;
+
+    for (i = 0; i < nsections; i++) {
+        uint64_t section_end64;
+        size_t section_end;
+
+        section_end64 = (uint64_t)sections[i].raw + (uint64_t)sections[i].rsz;
+        if (section_end64 > (uint64_t)SIZE_MAX)
+            return CL_EFORMAT;
+        section_end = (size_t)section_end64;
+        if (section_end > file_size)
+            return CL_EFORMAT;
+        if (section_end > end)
+            end = section_end;
+    }
+
+    *overlay_start = end;
+    *overlay_size  = file_size - end;
+    return CL_SUCCESS;
 }
 
 cl_error_t cli_pe_calculate_overlay_range(const struct cli_exe_section *sections, uint16_t nsections, size_t file_size, size_t *overlay_start, size_t *overlay_size)
@@ -6245,6 +6327,12 @@ cl_error_t cli_genhash_pe(cli_ctx *ctx, unsigned int class, cli_hash_type_t type
     if (cli_peheader(ctx, peinfo, CLI_PEHEADER_OPT_NONE) != CL_SUCCESS) {
         cli_exe_info_destroy(peinfo);
         return CL_EFORMAT;
+    }
+
+    if (peinfo->legacy_metadata_incomplete) {
+        cli_mark_scan_incomplete(ctx, "PE section metadata exceeds the legacy 32-bit ABI");
+        cli_exe_info_destroy(peinfo);
+        return CL_EPARSE;
     }
 
     cli_qsort(peinfo->sections, peinfo->nsections, sizeof(*(peinfo->sections)), sort_sects);

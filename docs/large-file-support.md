@@ -5218,3 +5218,14 @@ overflow becomes an explicit incomplete result rather than a wrapped bound. A
 synthetic high-bit section-header regression and source guards cover the
 disposition; compiled PE corpus, unpacker, sanitizer, and supported-build
 qualification remain open.
+
+## PE32 aligned section extents — 2026-08-22
+
+PE alignment-up can turn a legal 32-bit raw-size or virtual-size field into a
+native extent above 4 GiB. Section alignment, file-range truncation, and
+overlay calculation now retain those values in the native section view; the
+legacy section view is narrowed only with an explicit incomplete marker. PE
+hash generation refuses to produce a partial legacy result when that bridge is
+incomplete. A sparse logical-map regression covers a 4-GiB aligned section
+size and native overlay start; compiled PE corpus, unpacker, sanitizer, and
+supported-build qualification remain open.
