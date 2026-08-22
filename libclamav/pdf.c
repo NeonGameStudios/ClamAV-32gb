@@ -2478,7 +2478,10 @@ void pdf_parseobj(struct pdf_struct *pdf, struct pdf_obj *obj)
     /* find start of dictionary */
     do {
         nextobj = pdf_nextobject(q, bytesleft);
-        bytesleft -= nextobj - q;
+        if (!nextobj)
+            bytesleft = -1;
+        else
+            bytesleft -= nextobj - q;
 
         if (!nextobj || bytesleft < 0) {
             cli_dbgmsg("pdf_parseobj: %u %u obj: no dictionary\n", obj->id >> 8, obj->id & 0xff);

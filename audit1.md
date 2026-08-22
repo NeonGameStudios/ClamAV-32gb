@@ -4461,6 +4461,11 @@ parser pass without observing `MaxScanTime`. Those searches now use overlapping
 scan. Compiled timeout injection, decoder fault coverage, and Sonic1 PDF
 qualification remain release gates.
 
+The legacy PDF dictionary loop also now checks for a missing next token before
+subtracting pointer coordinates, preventing malformed large objects from
+reaching undefined pointer arithmetic; compiled malformed-object and timeout
+qualification remain open.
+
 ## RAR archive-comment staging deadline — 2026-08-22
 
 The optional UnRAR backend's `keeptmp` archive-comment path previously used one

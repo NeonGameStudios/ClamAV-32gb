@@ -1019,6 +1019,8 @@
 - Legacy PDF object-header and `endobj` searches now use overlapping 64 KiB
   windows with shared deadline checks; add compiled timeout injection,
   decoder-fault coverage, and production PDF qualification.
+- Legacy PDF dictionary parsing now checks for a missing next token before
+  pointer subtraction; add malformed-object and timeout regression coverage.
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.
