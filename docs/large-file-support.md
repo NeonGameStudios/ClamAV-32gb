@@ -4975,3 +4975,14 @@ ctest --test-dir build -R '^largefile_library_exact_32g$' -V
 The CTest entry supplies `CLAMAV_LARGEFILE_QUALIFY=1` and selects only the
 dedicated Check case. This is library-path evidence; it does not replace the
 front-end, production-database, sanitizer, or Sonic1 service gates.
+
+## On-access unsent-request fail-closed handling — 2026-08-21
+
+The on-access client no longer treats a zero-length send result as a successful
+soft skip. A file can disappear between the event preflight and `safe_open()`;
+that request now increments the error count, receives `CL_EOPEN` (or preserves
+the more specific existing error), and returns a non-clean result. Monitoring-
+only mode can still allow the event, but it receives an explicit incomplete
+status for logging; prevention mode can therefore deny the permission event.
+This closes a clean-prefix/unsent-request fail-open path. Compiled fanotify,
+monitoring-mode, and mutation integration qualification remain open.

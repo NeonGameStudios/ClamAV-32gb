@@ -361,18 +361,19 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
 
     if (len <= 0) {
         *printok = 0;
-        if (errors && ((len < 0) || (NULL != action_source))) {
-            /*
-             * Keep len == 0 as a soft skip for mutable path scans where a file
-             * disappeared before opening. Treat opened action-source failures
-             * as errors because the later action depends on that same object.
-             */
+        /* A request that was not sent is never a clean scan.  In particular,
+         * a mutable path can disappear between the event and safe_open(), but
+         * treating that zero-length result as a successful skip would let the
+         * caller label an uninspected file clean.  Monitoring-only mode may
+         * still allow the event; it must receive an explicit non-clean status
+         * so the omission remains visible, and prevention mode can deny it. */
+        if (errors) {
             (*errors)++;
         }
-        if (ret_code && (CL_SUCCESS == *ret_code) && ((len < 0) || (NULL != action_source))) {
-            *ret_code = CL_EWRITE;
+        if (ret_code && (CL_SUCCESS == *ret_code)) {
+            *ret_code = (len == 0) ? CL_EOPEN : CL_EWRITE;
         }
-        infected = ((NULL != action_source) && (0 == len)) ? -1 : len;
+        infected = -1;
         goto done;
     }
 

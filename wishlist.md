@@ -252,6 +252,10 @@
   visible through the client return value instead of becoming clean or generic
   connection failures; add compiled fanotify and monitoring-mode integration
   coverage.
+- On-access requests that cannot be sent, including a file disappearing before
+  open, now become explicit non-clean `CL_EOPEN`/write failures instead of a
+  zero-length soft skip that could be labeled clean; compiled fanotify and
+  monitoring-mode coverage remains open.
 - On-access regular-file streams now reject post-stat growth in both ordinary
   and quarantine modes, preventing a clean prefix from being reported; add
   compiled file-mutation and monitoring-mode coverage.
