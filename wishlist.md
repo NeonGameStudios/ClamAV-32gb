@@ -360,6 +360,10 @@
   normalized-JavaScript-directory setup failures now mark required work
   incomplete before returning; compiled backend/runtime fault injection,
   production corpora, and Sonic1 qualification remain open.
+- UDF extracted-file and VBA project temporary-output creation failures now
+  mark required work incomplete before returning; compiled allocation-fault
+  injection, production Office/UDF corpora, and Sonic1 qualification remain
+  open.
 - PDF Flate, RunLength, and LZW decoder output now retains native-width
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial

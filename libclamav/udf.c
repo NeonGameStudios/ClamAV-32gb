@@ -102,6 +102,7 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
     /* Not sure if I care about the name that is actually created. */
     if (cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, fileName, &tmpf, &fd) != CL_SUCCESS) {
         cli_warnmsg("writeWholeFile: Can't create temp file\n");
+        cli_mark_scan_incomplete(ctx, "UDF temporary output could not be created");
         status = CL_ETMPFILE;
         goto done;
     }

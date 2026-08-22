@@ -4764,6 +4764,17 @@ The source guards and non-clang regression gates pass. Compiled UnRAR and
 interpreter/JIT fault injection, production corpora, and Sonic1 qualification
 remain open.
 
+## UDF and VBA project staging setup failures — 2026-08-22
+
+UDF extracted-file materialization and VBA project temporary-output creation
+could return a parser error without setting sticky incomplete state. Both
+required staging paths now mark the layer incomplete before cleanup or return,
+preserving the non-cacheable result contract.
+
+The source guards and non-clang regression gates pass. Compiled allocation
+fault injection, production Office/UDF corpora, and Sonic1 qualification
+remain open.
+
 ## HFS+ and InstallShield setup allocation failures — 2026-08-22
 
 HFS+ temporary-directory allocation/creation and InstallShield MSI member-name

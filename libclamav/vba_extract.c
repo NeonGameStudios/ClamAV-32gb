@@ -414,6 +414,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
 
     if ((ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "vba_project", tempfile, tempfd)) != CL_SUCCESS) {
         cli_warnmsg("vba_readdir_new: VBA project cannot be dumped to file\n");
+        cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be created");
         goto done;
     }
 
