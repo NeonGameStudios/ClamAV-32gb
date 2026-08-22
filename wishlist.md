@@ -221,6 +221,10 @@
   milter workloads to the audited source/build manifest, compile graph,
   executable hashes, and resolved runtime dependency hashes; retain a real
   supported-Linux service run as the release gate.
+- The milter now fails closed if its local temporary-file descriptor cannot be
+  rewound before FILDES submission, preventing an indeterminate descriptor
+  position from reaching clamd; compiled exact-edge milter qualification
+  remains open.
 - ELF64 entrypoint and section coordinates now retain a native-width matcher
   view, while legacy bytecode metadata above 4 GiB is explicitly incomplete;
   checked program-header arithmetic and sparse-map regressions cover the

@@ -374,7 +374,12 @@ sfsistat clamfi_eom(SMFICTX *ctx)
     }
 
     if (cf->local) {
-        lseek(cf->alt, 0, SEEK_SET);
+        if (lseek(cf->alt, 0, SEEK_SET) < 0) {
+            logg(LOGG_ERROR, "Failed to rewind temporary file before FD submission\n");
+            nullify(ctx, cf, CF_BOTH);
+            free(cf);
+            return FailAction;
+        }
 
         if (nc_sendmsg(cf->main, cf->alt) == -1) {
             logg(LOGG_ERROR, "FD send failed\n");

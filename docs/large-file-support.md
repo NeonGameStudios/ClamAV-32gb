@@ -4976,6 +4976,14 @@ The CTest entry supplies `CLAMAV_LARGEFILE_QUALIFY=1` and selects only the
 dedicated Check case. This is library-path evidence; it does not replace the
 front-end, production-database, sanitizer, or Sonic1 service gates.
 
+## Milter descriptor rewind fail-closed handling — 2026-08-21
+
+The local milter path now checks the temporary-file `lseek()` used immediately
+before FILDES submission. A rewind failure closes the request and returns the
+configured failure action rather than submitting a descriptor whose scan
+position is unknown. This preserves the milter completeness contract; compiled
+exact-edge, mutation, and production-database qualification remain open.
+
 ## On-access unsent-request fail-closed handling — 2026-08-21
 
 The on-access client no longer treats a zero-length send result as a successful
