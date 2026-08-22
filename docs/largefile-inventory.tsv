@@ -3521,7 +3521,7 @@ fixed-width-integer	libclamav/others.c	2395	        status = cli_jsonuint64(ctx-
 fixed-width-integer	libclamav/others.c	2779	    } else if (ctx->recursion_level < (uint32_t)index_ignoring_normalized_layers) {
 fixed-width-integer	libclamav/others.c	2798	    } else if (ctx->recursion_level < (uint32_t)index_ignoring_normalized_layers) {
 fixed-width-integer	libclamav/others.c	335	    if ((NULL == (cli_unrar_open = (cl_unrar_error_t(*)(const char *, void **, char **, uint32_t *, uint8_t))get_module_function(rhandle, "libclamunrar_iface_LTX_unrar_open"))) ||
-fixed-width-integer	libclamav/others.c	3481	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
+fixed-width-integer	libclamav/others.c	3483	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
 fixed-width-integer	libclamav/others.c	675	static cl_error_t cli_validate_maxfilesize(uint64_t requested, uint64_t *validated)
 fixed-width-integer	libclamav/others.c	694	static cl_error_t cli_validate_pcre_maxfilesize(uint64_t requested, uint64_t *validated)
 fixed-width-integer	libclamav/others.c	699	    if (requested == 0 || requested > (uint64_t)CLI_MAX_PCRE_CONTIGUOUS_FILESIZE) {
@@ -11390,8 +11390,8 @@ native-width-integer	libclamav/others.c	3390	            size_t num_objects = js
 native-width-integer	libclamav/others.c	3405	            size_t i;
 native-width-integer	libclamav/others.c	3406	            size_t num_objects = json_object_array_length(embedded_objects);
 native-width-integer	libclamav/others.c	3433	    size_t reason_len = 0;
-native-width-integer	libclamav/others.c	3484	    size_t i;
-native-width-integer	libclamav/others.c	3487	    size_t reason_len = 0;
+native-width-integer	libclamav/others.c	3486	    size_t i;
+native-width-integer	libclamav/others.c	3489	    size_t reason_len = 0;
 native-width-integer	libclamav/others.c	363	unsigned int cl_retflevel(void)
 native-width-integer	libclamav/others.c	452	cl_error_t cl_init(unsigned int initoptions)
 native-width-integer	libclamav/others.c	456	    unsigned int pid = (unsigned int)getpid();
@@ -19580,7 +19580,7 @@ format-width	libclamav/others.c	3016	        cli_errmsg("cli_bitset_init: Unable
 format-width	libclamav/others.c	3099	            cli_errmsg("cl_engine_set_scan_callback: Invalid scan callback location %d\n", location);
 format-width	libclamav/others.c	3250	            cli_warnmsg("dispatch_scan_callback: preserving callback return code %d\n", status);
 format-width	libclamav/others.c	3462	        snprintf(reason, reason_len, "Object %zu trusted by %s",
-format-width	libclamav/others.c	3517	            snprintf(reason, reason_len, "Object %zu trusted by %s",
+format-width	libclamav/others.c	3520	            snprintf(reason, reason_len, "Object %zu trusted by %s",
 format-width	libclamav/others.c	772	        cli_errmsg("%s: value must be between 0 and %u\n", name, (unsigned)UINT8_MAX);
 format-width	libclamav/others.c	811	                cli_warnmsg("MaxRecursion: the value of 0 is not allowed, using default: %u\n", CLI_DEFAULT_MAXRECLEVEL);
 format-width	libclamav/others_common.c	1438	        cli_errmsg("cli_get_filepath_from_filedesc: Failed to allocate %u bytes to store filename\n", dwRet + 1);
@@ -26645,9 +26645,9 @@ offset-size-arithmetic	libclamav/others.c	3074	    if (char_offset >= bs->length
 offset-size-arithmetic	libclamav/others.c	3077	    return (bs->bitset[char_offset] & ((unsigned char)1 << bit_offset));
 offset-size-arithmetic	libclamav/others.c	3117	            return "post-scan application callback";
 offset-size-arithmetic	libclamav/others.c	3274	void cl_engine_set_clcb_post_scan(struct cl_engine *engine, clcb_post_scan callback)
-offset-size-arithmetic	libclamav/others.c	3455	        reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
-offset-size-arithmetic	libclamav/others.c	3481	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
-offset-size-arithmetic	libclamav/others.c	3511	            reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
+offset-size-arithmetic	libclamav/others.c	3454	        reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
+offset-size-arithmetic	libclamav/others.c	3483	cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_layer, const char *source)
+offset-size-arithmetic	libclamav/others.c	3512	            reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
 offset-size-arithmetic	libclamav/others.c	503	    /* Engine Max sizes */
 offset-size-arithmetic	libclamav/others.c	537	    new->root = MPOOL_CALLOC(new->mempool, CLI_MTARGETS, sizeof(struct cli_matcher *));
 offset-size-arithmetic	libclamav/others.c	549	    new->pwdbs = MPOOL_CALLOC(new->mempool, CLI_PWDB_COUNT, sizeof(struct cli_pwdb *));

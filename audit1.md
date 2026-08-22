@@ -4806,6 +4806,14 @@ fail-visible contract for metadata collection without changing raw or nested
 content scanning behavior. Compiled HWP fault injection, corpus, sanitizer,
 and Sonic1 qualification remain open.
 
+## Trust-layer status commit and cleanup — 2026-08-22
+
+Trusting a layer now commits `CL_VERDICT_TRUSTED` only after the optional
+metadata/evidence update succeeds. Multi-layer trust reasons use each target
+layer's object ID, and missing, allocation, or metadata-update failures mark
+the scan incomplete before the shared cleanup path runs. Compiled callback
+fault injection and Sonic1 qualification remain open.
+
 ## Scan-level temporary-directory setup failures — 2026-08-22
 
 `scan_common()` and recursive child-layer setup previously returned allocation

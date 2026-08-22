@@ -28,6 +28,11 @@
   allocation failures now retain explicit incomplete reasons instead of relying
   on a generic parser unwind; compiled HWP fault injection, corpus, sanitizer,
   and Sonic1 qualification remain open.
+- Trust-layer verdicts now commit only after evidence/metadata updates succeed;
+  multi-layer trust reasons use the target layer's object ID, and allocation or
+  metadata-update failures remain incomplete instead of returning directly from
+  cleanup. Compiled trust-callback fault injection and Sonic1 qualification
+  remain open.
 - MHTML preclassification now bounds each comment value before the legacy
   in-memory XML reader, checks bounded tag searches, and rejects oversized
   metadata as an explicit resource-incomplete result; add compiled oversized-

@@ -3444,11 +3444,10 @@ cl_error_t cli_trust_this_layer(cli_ctx *ctx, const char *source)
         ctx->this_layer_evidence                            = NULL;
     }
 
-    ctx->recursion_stack[ctx->recursion_level].verdict = CL_VERDICT_TRUSTED;
-
     if (SCAN_COLLECT_METADATA && ctx->this_layer_metadata_json) {
         if (NULL == source) {
             cli_errmsg("cli_trust_this_layer: missing trust reason\n");
+            cli_mark_scan_incomplete(ctx, "trust-layer metadata reason is missing");
             status = CL_ENULLARG;
             goto done;
         }
@@ -3456,6 +3455,7 @@ cl_error_t cli_trust_this_layer(cli_ctx *ctx, const char *source)
         reason     = malloc(reason_len);
         if (!reason) {
             cli_errmsg("cli_trust_this_layer: no memory for reason string\n");
+            cli_mark_scan_incomplete(ctx, "trust-layer metadata reason could not be allocated");
             status = CL_EMEM;
             goto done;
         }
@@ -3465,10 +3465,12 @@ cl_error_t cli_trust_this_layer(cli_ctx *ctx, const char *source)
         status = metadata_json_trust_this_layer(ctx->this_layer_metadata_json, reason);
         if (status != CL_SUCCESS) {
             cli_errmsg("cli_trust_this_layer: failed to update metadata JSON to reflect trusted layer: %s\n", cl_strerror(status));
+            cli_mark_scan_incomplete(ctx, "trust-layer metadata could not be updated");
             goto done;
         }
     }
 
+    ctx->recursion_stack[ctx->recursion_level].verdict = CL_VERDICT_TRUSTED;
     status = CL_SUCCESS;
 
 done:
@@ -3500,29 +3502,34 @@ cl_error_t cli_trust_layers(cli_ctx *ctx, uint32_t start_layer, uint32_t end_lay
             ctx->this_layer_evidence         = NULL;
         }
 
-        ctx->recursion_stack[i].verdict = CL_VERDICT_TRUSTED;
-
         if (SCAN_COLLECT_METADATA && ctx->recursion_stack[i].metadata_json) {
             if (NULL == source) {
                 cli_errmsg("cli_trust_layers: missing trust reason\n");
+                cli_mark_scan_incomplete(ctx, "trusted-layer metadata reason is missing");
                 status = CL_ENULLARG;
                 goto done;
             }
             reason_len = strlen("Object ") + SIZE_T_CHARLEN + strlen(" trusted by ") + strlen(source) + 1;
             reason     = malloc(reason_len);
             if (!reason) {
-                cli_errmsg("dispatch_scan_callback: no memory for reason string\n");
-                return CL_EMEM;
+                cli_errmsg("cli_trust_layers: no memory for reason string\n");
+                cli_mark_scan_incomplete(ctx, "trusted-layer metadata reason could not be allocated");
+                status = CL_EMEM;
+                goto done;
             }
             snprintf(reason, reason_len, "Object %zu trusted by %s",
-                     ctx->recursion_stack[ctx->recursion_level].object_id, source);
+                     ctx->recursion_stack[i].object_id, source);
 
             status = metadata_json_trust_this_layer(ctx->recursion_stack[i].metadata_json, reason);
             if (status != CL_SUCCESS) {
                 cli_errmsg("cli_trust_this_layer: failed to update metadata JSON to reflect trusted layer: %s\n", cl_strerror(status));
+                cli_mark_scan_incomplete(ctx, "trusted-layer metadata could not be updated");
                 goto done;
             }
+            CLI_FREE_AND_SET_NULL(reason);
         }
+
+        ctx->recursion_stack[i].verdict = CL_VERDICT_TRUSTED;
     }
 
     status = CL_SUCCESS;
