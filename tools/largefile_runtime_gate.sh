@@ -437,6 +437,8 @@ fi
 
 runtime_clamscan=$artifacts/clamscan
 runtime_sanitizer_clamscan=$artifacts/clamscan-sanitizer
+runtime_component_dir=$artifacts/runtime-components
+mkdir -p "$runtime_component_dir"
 runtime_library_path="$runtime_component_dir"
 if [ -n "$unrar_component_dir" ]; then
     runtime_library_path="$runtime_library_path:$unrar_component_dir"
@@ -454,8 +456,6 @@ if grep -F 'not found' "$provenance/ldd-clamscan.txt" >/dev/null 2>&1; then
 fi
 awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' \
     "$provenance/ldd-clamscan.txt" | LC_ALL=C sort -u > "$provenance/runtime-dependencies.txt"
-runtime_component_dir=$artifacts/runtime-components
-mkdir -p "$runtime_component_dir"
 : > "$provenance/runtime-dependency-artifacts.txt"
 : > "$provenance/runtime-dependency-hashes.txt"
 while IFS= read -r dependency; do

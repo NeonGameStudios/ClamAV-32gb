@@ -4466,3 +4466,13 @@ previously traverse attacker-controlled buffers without parser-owned
 progress intervals, propagate a distinct timeout result from indirect-reference
 recognition, and discard partial dictionary/array structures on expiry. Compiled
 timeout injection, sanitizer, and Sonic1 qualification remain release gates.
+
+## Runtime evidence gate initialization ordering — 2026-08-22
+
+Static review found that `tools/largefile_runtime_gate.sh` referenced
+`runtime_component_dir` while building the initial loader path before assigning
+it. Because the gate uses `set -u`, a real Linux qualification run could abort
+before dependency evidence and workload execution. The component directory is
+now initialized before its first use, and the source guard enforces that order.
+The gate still requires the authorized Linux release/sanitizer and service
+qualification inputs described above.

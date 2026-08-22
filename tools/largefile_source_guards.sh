@@ -1374,6 +1374,7 @@ contains libclamav/pdfng.c 'PDF array boundary scan reached the configured time 
 contains libclamav/pdf.h 'when the parser deadline expires'
 contains libclamav/pdfng.c 'begin = cli_max_calloc(1, (size_t)sb.st_size + 1);'
 not_contains libclamav/pdfng.c 'begin = calloc(1, sb.st_size + 1)'
+ordered_after tools/largefile_runtime_gate.sh 'runtime_component_dir=$artifacts/runtime-components' 'runtime_library_path="$runtime_component_dir"'
 contains libclamav/pdf.c 'PDF normalized contents could not be closed'
 contains libclamav/pdf.c 'PDF normalized contents could not be removed'
 contains libclamav/pdf.c 'cli_scan_reserve_temporary(pdf->ctx, (uint64_t)len)'

@@ -1017,3 +1017,6 @@
   `MaxScanTime` at bounded progress intervals and discard partial parser
   structures on expiry; add compiled parser-loop timeout injection and full
   PDF corpus qualification.
+- The runtime evidence gate now initializes its copied dependency directory
+  before constructing the loader path under `set -u`; retain Linux release,
+  sanitizer, service, and production-corpus qualification as release gates.
