@@ -3828,3 +3828,24 @@ read failure rather than truncation. The parser now preserves `CL_EREAD` and
 the incomplete/non-cacheable state; a focused callback regression covers it.
 Static guards and whitespace validation remain local evidence; compiled JPEG
 corpus, sanitizer, and supported-build qualification remain release gates.
+
+## JPEG Photoshop marker-prefix callback failures — 2026-08-22
+
+APP13 Photoshop recognition is a required read once the segment range has
+been admitted. The probe now checks the prefix against the segment payload
+length before reading, preventing cross-segment inspection, and preserves an
+in-range fmap callback failure as `CL_EREAD` with incomplete/non-cacheable
+state. Static guards and whitespace validation remain local evidence;
+compiled JPEG corpus, sanitizer, and supported-build qualification remain
+release gates. The exact-EOF Photoshop-resource regression remains complete
+when the resource list ends at the admitted segment boundary.
+
+## JPEG Photoshop resource segment boundaries — 2026-08-22
+
+The Photoshop resource walker now receives the admitted APP13 segment end and
+uses it for resource headers, names, sizes, data, and nested thumbnail bounds.
+It no longer treats a later JPEG segment as Photoshop data. The focused
+regression places an injected seven-byte read fault at that boundary and
+expects the following SOS to remain complete. Static guards and whitespace
+validation remain local evidence; compiled thumbnail corpus, sanitizer, and
+supported-build qualification remain release gates.

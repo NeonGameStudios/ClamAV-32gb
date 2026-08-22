@@ -120,6 +120,11 @@
 - JPEG Photoshop 8BIM resource-header fmap callback failures now preserve
   `CL_EREAD` after an in-range boundary check; add compiled Photoshop-resource
   and production JPEG corpus qualification.
+- JPEG APP13 Photoshop-marker probes now stay within the segment and preserve
+  in-range fmap callback failures as `CL_EREAD`; add compiled marker-fault and
+  production JPEG corpus qualification.
+- JPEG Photoshop-resource and thumbnail traversal now stays inside its APP13
+  segment; add compiled cross-segment boundary and thumbnail corpus coverage.
 - OLE2 summary-property metadata now reads only the bounded property table and
   bounded per-property windows instead of mapping the full attacker-declared
   property-set size; malformed/truncated windows remain fail-visible.

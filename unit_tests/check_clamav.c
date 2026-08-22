@@ -13448,12 +13448,24 @@ static const void *jpeg_required_read_failure(fmap_t *map, size_t at, size_t len
     return (const uint8_t *)map->data + at;
 }
 
-static size_t jpeg_photoshop_header_failure_offset = SIZE_MAX;
+static size_t jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
 
-static const void *jpeg_photoshop_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+static const void *jpeg_photoshop_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
-    if (at == jpeg_photoshop_header_failure_offset)
+    if (at == jpeg_photoshop_targeted_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static size_t jpeg_photoshop_boundary_failure_offset = SIZE_MAX;
+
+static const void *jpeg_photoshop_boundary_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == jpeg_photoshop_boundary_failure_offset && len == 7U)
         return NULL;
     if (len == 0 || at > map->len || len > map->len - at)
         return NULL;
@@ -19365,8 +19377,8 @@ START_TEST(test_jpeg_photoshop_header_read_failure_is_fail_visible)
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    jpeg_photoshop_header_failure_offset = 19U;
-    map->need                              = jpeg_photoshop_header_read_failure;
+    jpeg_photoshop_targeted_failure_offset = 19U;
+    map->need                              = jpeg_photoshop_targeted_read_failure;
     ctx.fmap                               = map;
 
     ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EREAD);
@@ -19374,7 +19386,63 @@ START_TEST(test_jpeg_photoshop_header_read_failure_is_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.JPEG.PhotoshopResourceRead");
     ck_assert(map->dont_cache_flag);
 
-    jpeg_photoshop_header_failure_offset = SIZE_MAX;
+    jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_jpeg_photoshop_marker_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0xff, 0xd8, 0xff, 0xed, 0x00, 0x10,
+        'P',  'h',  'o',  't',  'o',  's',  'h',  'o',  'p',  ' ',
+        '3',  '.',  '0',  '\0',
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    jpeg_photoshop_targeted_failure_offset = 6U;
+    map->need                              = jpeg_photoshop_targeted_read_failure;
+    ctx.fmap                               = map;
+
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.JPEG.PhotoshopMarkerRead");
+    ck_assert(map->dont_cache_flag);
+
+    jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_jpeg_photoshop_resources_stay_within_segment)
+{
+    static const uint8_t data[] = {
+        0xff, 0xd8, 0xff, 0xed, 0x00, 0x1d,
+        'P',  'h',  'o',  't',  'o',  's',  'h',  'o',  'p',  ' ',
+        '3',  '.',  '0',  '\0',
+        '8',  'B',  'I',  'M', 0x00, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x02, 0xaa, 0xbb,
+        0xff, 0xda, 0x00, 0x02, 0x00, 0x00, 0x00,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    jpeg_photoshop_boundary_failure_offset = 33U;
+    map->need                              = jpeg_photoshop_boundary_read_failure;
+    ctx.fmap                               = map;
+
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
+
+    jpeg_photoshop_boundary_failure_offset = SIZE_MAX;
     cl_fmap_close(map);
 }
 END_TEST
@@ -20058,6 +20126,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_jpeg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_required_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_photoshop_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_jpeg_photoshop_marker_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_jpeg_photoshop_resources_stay_within_segment);
     tcase_add_test(tc_cl, test_jpeg_photoshop_exact_eof_is_complete);
     tcase_add_test(tc_cl, test_text_normalize_map_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_parser_read_failure_is_fail_visible);

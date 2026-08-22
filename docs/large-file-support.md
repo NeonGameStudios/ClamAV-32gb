@@ -5277,3 +5277,23 @@ resource-header window converted a callback failure into a parse result. That
 window now preserves `CL_EREAD` and remains non-cacheable; a focused callback
 regression covers the boundary. Compiled Photoshop-resource, sanitizer, and
 production JPEG corpus qualification remain open.
+
+## JPEG Photoshop marker-prefix read failures — 2026-08-22
+
+The APP13 Photoshop marker probe now requires the complete marker prefix to be
+inside the APP13 segment before reading it, so a short APP13 payload cannot
+borrow bytes from the following JPEG segment. An in-range fmap callback
+failure while reading that confirmed marker prefix now remains `CL_EREAD` and
+non-cacheable. A focused callback regression covers the boundary; compiled
+marker-fault, sanitizer, and production JPEG corpus qualification remain open.
+The existing exact-EOF Photoshop-resource regression continues to classify a
+resource list ending at the segment boundary as complete.
+
+## JPEG Photoshop resource segment boundaries — 2026-08-22
+
+Photoshop `8BIM` resources and nested thumbnail JPEGs are now bounded by the
+containing APP13 segment rather than the whole fmap. A resource that reaches
+the segment boundary ends normally, while a resource or thumbnail that claims
+bytes beyond it remains a non-cacheable parse failure. A focused boundary
+regression injects a callback fault at the following segment; compiled
+thumbnail corpus, sanitizer, and production JPEG qualification remain open.

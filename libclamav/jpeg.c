@@ -275,7 +275,7 @@ static cl_error_t jpeg_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
-static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
+static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off, size_t segment_end)
 {
     cl_error_t retval;
     const unsigned char *buf;
@@ -283,6 +283,7 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
     uint8_t nlength, id[2];
     uint32_t raw_size;
     uint64_t size;
+    size_t resource_end;
     size_t offset = *off;
     fmap_t *map   = ctx->fmap;
 
@@ -290,15 +291,14 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
     if (retval != CL_SUCCESS)
         return retval;
 
-    /* Reaching the exact end means that the resource list has ended. Any
-     * bytes still inside the map must contain a complete resource header; a
-     * failed fmap read here is not an ordinary end-of-list condition. */
-    if (offset > map->len || offset == map->len) {
-        return (offset == map->len)
-                   ? CL_BREAK
-                   : jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceHeader");
-    }
-    if (map->len - offset < 4 + 2 + 1)
+    /* Reaching the exact segment end means that the resource list has ended.
+     * Any bytes still inside the segment must contain a complete resource
+     * header; bytes in later JPEG segments are not Photoshop resources. */
+    if (segment_end > map->len || offset > segment_end)
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceHeader");
+    if (offset == segment_end)
+        return CL_BREAK;
+    if (segment_end - offset < 4 + 2 + 1)
         return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceHeader");
 
     if (!(buf = fmap_need_off_once(map, offset, 4 + 2 + 1))) {
@@ -316,11 +316,11 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
     cli_dbgmsg("ID: 0x%.2x%.2x\n", id[0], id[1]);
     nlength = buf[6];
     ntmp    = nlength + ((((uint16_t)nlength) + 1) & 0x01);
-    if ((size_t)ntmp > map->len - offset - (4 + 2 + 1))
+    if ((size_t)ntmp > segment_end - offset - (4 + 2 + 1))
         return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceName");
     offset += 4 + 2 + 1 + ntmp;
 
-    if (offset > map->len || map->len - offset < sizeof(raw_size)) {
+    if (offset > segment_end || segment_end - offset < sizeof(raw_size)) {
         return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceSize");
     }
     {
@@ -337,11 +337,12 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
         size++;
     }
 
-    if (offset > map->len || map->len - offset < sizeof(raw_size) ||
-        size > (uint64_t)(map->len - offset - sizeof(raw_size)))
+    if (offset > segment_end || segment_end - offset < sizeof(raw_size) ||
+        size > (uint64_t)(segment_end - offset - sizeof(raw_size)))
         return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceData");
 
-    *off = offset + sizeof(raw_size) + (size_t)size;
+    resource_end = offset + sizeof(raw_size) + (size_t)size;
+    *off        = resource_end;
     /* Is it a thumbnail image: 0x0409 or 0x040c */
     if ((id[0] == 0x04) && ((id[1] == 0x09) || (id[1] == 0x0c))) {
         /* Yes */
@@ -351,11 +352,17 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
         return CL_CLEAN;
     }
 
-    /* Jump past header */
+    /* Jump past the thumbnail header. */
+    if (size < 28)
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceData");
     offset += 4 + 28;
+    if (offset > resource_end)
+        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceData");
+    if (offset == resource_end)
+        return CL_CLEAN;
 
     /* Scan the thumbnail JPEG */
-    retval = cli_magic_scan_nested_fmap_type(map, offset, 0, ctx, CL_TYPE_JPEG,
+    retval = cli_magic_scan_nested_fmap_type(map, offset, resource_end - offset, ctx, CL_TYPE_JPEG,
                                              "photoshop-thumbnail", LAYER_ATTRIBUTES_NONE);
 
     return retval;
@@ -638,27 +645,49 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                  * Check for Photoshop information
                  * Example file to test with: 2c5883a964917aa54c8b3e2c70dabf0a7b06ba8c21bcbaf6f1c19501be9d9196
                  */
-                if ((fmap_readn(map, buff, offset - len + sizeof(len_u16), strlen("Photoshop 3.0") + 1) == strlen("Photoshop 3.0") + 1) &&
-                    (0 == memcmp(buff, "Photoshop 3.0\0", strlen("Photoshop 3.0") + 1))) {
-                    /* Found a Photoshop file */
-                    size_t photoshop_data_offset = offset - len + sizeof(len_u16) + strlen("Photoshop 3.0") + 1;
-                    size_t old_offset;
+                {
+                    const size_t photoshop_marker_length = strlen("Photoshop 3.0") + 1;
+                    size_t photoshop_marker_read        = 0;
 
-                    cli_dbgmsg("Found Photoshop segment\n");
-                    do {
-                        old_offset = photoshop_data_offset;
-                        status     = jpeg_check_photoshop_8bim(ctx, &photoshop_data_offset);
-                        if (photoshop_data_offset <= old_offset)
-                            break;
-                    } while (status == CL_CLEAN);
-
-                    if (status == CL_BREAK) {
-                        status = CL_CLEAN;
+                    /* Do not inspect beyond this segment while deciding
+                     * whether its optional payload is Photoshop data. Once
+                     * the segment range is admitted, a failed in-range fmap
+                     * callback is an operational read failure, not an
+                     * unfamiliar application marker. */
+                    if ((size_t)len >= sizeof(len_u16) + photoshop_marker_length) {
+                        photoshop_marker_read = fmap_readn(map, buff, offset - len + sizeof(len_u16),
+                                                           photoshop_marker_length);
+                        if (photoshop_marker_read == (size_t)-1) {
+                            status = jpeg_read_status(ctx, photoshop_marker_read, photoshop_marker_length,
+                                                      "Heuristics.Broken.Media.JPEG.PhotoshopMarkerRead");
+                            goto done;
+                        }
                     }
-                    if (status != CL_SUCCESS)
-                        goto done;
-                } else {
-                    cli_dbgmsg(" Unfamiliar use of application marker: 0x%02x\n", marker);
+
+                    if (photoshop_marker_read == photoshop_marker_length &&
+                        (0 == memcmp(buff, "Photoshop 3.0\0", photoshop_marker_length))) {
+                        /* Found a Photoshop file */
+                        size_t photoshop_data_offset = offset - len + sizeof(len_u16) + photoshop_marker_length;
+                        size_t old_offset;
+
+                        cli_dbgmsg("Found Photoshop segment\n");
+                        do {
+                            old_offset = photoshop_data_offset;
+                            status     = jpeg_check_photoshop_8bim(ctx, &photoshop_data_offset, offset);
+                            if (photoshop_data_offset <= old_offset)
+                                break;
+                        } while (status == CL_CLEAN);
+
+                        if (status == CL_BREAK) {
+                            status = CL_CLEAN;
+                        }
+                        if (status != CL_SUCCESS)
+                            goto done;
+                        if (offset == map->len)
+                            goto done;
+                    } else {
+                        cli_dbgmsg(" Unfamiliar use of application marker: 0x%02x\n", marker);
+                    }
                 }
                 found_comment = true;
                 break;
