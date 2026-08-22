@@ -13644,6 +13644,18 @@ START_TEST(test_parser_temporary_directory_failures_are_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "NSIS temporary directory could not be created");
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = invalid_tmpdir;
+    map                   = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_binhex(&ctx), CL_ECREAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "BinHex data temporary output could not be created");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
 }
 END_TEST
 

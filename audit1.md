@@ -4714,3 +4714,16 @@ unusable-output-directory boundary and verifies the fmap is non-cacheable.
 The source guards and non-clang regression gates pass. Compiled CHM coverage,
 sanitizer runs, production CAB/CHM corpora, and Sonic1 qualification remain
 open.
+
+## BinHex temporary-output creation failure — 2026-08-22
+
+BinHex opened its data and resource temporary files before decoding, but a
+cli_gentempfd() failure returned directly without marking the required
+encoded layer incomplete. Both temporary-output branches now set sticky
+incomplete state before returning or cleaning up. The existing parser
+temporary-directory regression now covers the data-output branch and verifies
+that the input fmap is non-cacheable.
+
+The source guards and non-clang regression gates pass. Compiled BinHex
+coverage, sanitizer runs, production corpus, and Sonic1 qualification remain
+open.

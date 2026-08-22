@@ -337,6 +337,9 @@
   before returning an allocation error, so a required member cannot be skipped
   after quota admission and still appear clean; compiled CAB/CHM corpus and
   Sonic1 qualification remain open.
+- BinHex data/resource temporary-output creation failures now mark the layer
+  incomplete before cleanup or return, with a focused invalid-directory
+  regression; compiled BinHex corpus and Sonic1 qualification remain open.
 - PDF Flate, RunLength, and LZW decoder output now retains native-width
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial

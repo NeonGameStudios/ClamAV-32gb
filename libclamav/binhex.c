@@ -94,10 +94,13 @@ int cli_binhex(cli_ctx *ctx)
         return ret;
     if (!map->len) return CL_CLEAN;
 
-    if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &dname, &datafd)) != CL_SUCCESS)
+    if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &dname, &datafd)) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "BinHex data temporary output could not be created");
         return ret;
+    }
 
     if ((ret = cli_gentempfd(ctx->this_layer_tmpdir, &rname, &resfd)) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "BinHex resource temporary output could not be created");
         if (close(datafd) == -1)
             binhex_note_cleanup_failure(ctx, &ret, "BinHex data temporary output could not be closed");
         if (cli_unlink(dname))
