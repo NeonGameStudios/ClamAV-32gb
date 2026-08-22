@@ -71,6 +71,10 @@ static cl_error_t gpt_crc32_fmap(cli_ctx *ctx, size_t offset, size_t length, uin
 
     while (done < length) {
         size_t chunk = MIN(sizeof(buffer), length - done);
+        cl_error_t time_status = cli_checktimelimit(ctx);
+
+        if (time_status != CL_SUCCESS)
+            return time_status;
 
         if (fmap_readn(ctx->fmap, buffer, offset + done, chunk) != chunk) {
             cli_mark_scan_incomplete(ctx, "GPT partition table could not be read completely");
@@ -157,6 +161,10 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
         status = CL_ENULLARG;
         goto done;
     }
+
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS)
+        goto done;
 
     /* sector size calculation */
     if (sectorsize == 0) {
@@ -357,6 +365,10 @@ static cl_error_t gpt_scan_partitions(cli_ctx *ctx, struct gpt_header hdr, size_
         return CL_EFORMAT;
     }
     for (i = 0; i < max_prtns; ++i) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         /* read in partition entry */
         status = gpt_read(ctx, &gpe, pos, sizeof(gpe), "GPT partition entry could not be read completely");
         if (status != CL_SUCCESS) {
@@ -720,6 +732,10 @@ static cl_error_t gpt_partition_intersection(cli_ctx *ctx, struct gpt_header hdr
         goto done;
     }
     for (i = 0; i < max_prtns; ++i) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         /* read in partition entry */
         status = gpt_read(ctx, &gpe, pos, sizeof(gpe), "GPT intersection entry could not be read completely");
         if (status != CL_SUCCESS) {

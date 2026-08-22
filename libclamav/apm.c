@@ -77,6 +77,10 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         goto done;
     }
 
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS)
+        goto done;
+
     /* read driver description map at sector 0  */
     status = apm_read(ctx, &ddm, pos, sizeof(ddm), "APM driver description map could not be read completely");
     if (status != CL_SUCCESS) {
@@ -190,6 +194,10 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
 
     /* partition table is a partition [at index 1], so skip it */
     for (i = 2; i <= max_prtns; ++i) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         /* read partition table entry */
         pos = i * sectorsize;
         status = apm_read(ctx, &apentry, pos, sizeof(apentry), "APM partition entry could not be read completely");
@@ -295,6 +303,10 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
     }
 
     for (i = 1; i <= max_prtns; ++i) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         /* read partition table entry */
         pos = i * sectorsize;
         status = apm_read(ctx, &apentry, pos, sizeof(apentry), "APM partition intersection entry could not be read completely");

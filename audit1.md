@@ -3409,3 +3409,15 @@ handling. The context-free constructor remains available for parser/library
 tests. Focused source guards and Rust status-mapping coverage are present;
 compiled Rust/layout, parser-corpus, sanitizer, and Sonic1 qualification
 remain release gates.
+
+## Partition-image traversal deadlines — 2026-08-22
+
+APM, GPT, and MBR already had checked partition coordinates, read-failure
+propagation, and explicit MaxPartitions incompleteness, but their table,
+extended-chain, checksum, and intersection walks did not share the parser
+deadline boundary. The parser entry points and attacker-controlled traversal
+loops now check `cli_checktimelimit()` and preserve `CL_ETIMEOUT` through their
+existing cleanup and incomplete-result paths. A focused expired-context
+regression covers all three entry points, with source guards and capability
+manifest updates; compiled partition-image corpus, sanitizer, and Sonic1
+qualification remain release gates.

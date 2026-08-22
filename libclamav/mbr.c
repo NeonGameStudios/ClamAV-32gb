@@ -167,6 +167,10 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
         goto done;
     }
 
+    status = cli_checktimelimit(ctx);
+    if (status != CL_SUCCESS)
+        goto done;
+
     /* sector size calculation, actual value is OS dependent */
     if (sectorsize == 0)
         sectorsize = MBR_SECTOR_SIZE;
@@ -219,6 +223,10 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
     prtncount = 0;
     cli_dbgmsg("MBR Signature: %x\n", mbr.signature);
     for (i = 0; i < MBR_MAX_PARTITION_ENTRIES && prtncount < ctx->engine->maxpartitions; ++i) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         cli_dbgmsg("MBR Partition Entry %u:\n", i);
         cli_dbgmsg("Status: %u\n", mbr.entries[i].status);
         cli_dbgmsg("Type: %x\n", mbr.entries[i].type);
@@ -298,6 +306,10 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
     extoff   = extlba * sectorsize;
     extsize  = extlbasize * sectorsize;
     do {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         pos = extlba * sectorsize; /* start of extended partition */
 
         /* read the extended boot record */
@@ -540,6 +552,10 @@ static cl_error_t mbr_primary_partition_intersection(cli_ctx *ctx, struct mbr_bo
     partition_intersection_list_init(&prtncheck);
 
     for (i = 0; i < MBR_MAX_PARTITION_ENTRIES && prtncount < ctx->engine->maxpartitions; ++i) {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         if (mbr.entries[i].type == MBR_EMPTY) {
             /* empty partition entry */
             prtncount++;
@@ -598,6 +614,10 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
     logiclba = 0;
     i        = 0;
     do {
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
         pos = extlba * sectorsize; /* start of extended partition */
 
         /* read the extended boot record */
