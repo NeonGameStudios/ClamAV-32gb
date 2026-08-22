@@ -1311,6 +1311,21 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
         }
 
         if (metadata.ofd >= 0) {
+            STATBUF extracted_stat;
+
+            if (FSTAT(metadata.ofd, &extracted_stat) != 0 || extracted_stat.st_size < 0 ||
+                !S_ISREG(extracted_stat.st_mode) || (uint64_t)extracted_stat.st_size != metadata.orig_size) {
+                cli_dbgmsg("ARJ: extracted member size or type did not match its declaration; refusing to scan\n");
+                cli_mark_scan_incomplete(ctx, "ARJ extracted member size or type did not match its declaration");
+                ret = CL_EUNPACK;
+                cli_arj_close_output(ctx, &metadata.ofd, &ret);
+                if (temporary_reserved) {
+                    cli_scan_release_temporary(ctx, temporary_reserved);
+                    temporary_reserved = 0;
+                }
+                break;
+            }
+
             if (lseek(metadata.ofd, 0, SEEK_SET) == -1) {
                 cli_dbgmsg("ARJ: call to lseek() failed; refusing to scan extracted output\n");
                 cli_mark_scan_incomplete(ctx, "ARJ extracted member could not be rewound for scanning");

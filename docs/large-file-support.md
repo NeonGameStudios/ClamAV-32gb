@@ -5045,3 +5045,12 @@ fail-visible `CL_EPARSE` result with the layer marked incomplete. Existing
 header/name callback-fault and impossible-next-header regressions remain
 applicable; compiled CPIO coordinate-boundary and production-corpus
 qualification remain open.
+
+## ARJ extracted-size admission — 2026-08-22
+
+ARJ materialized members are now checked with `fstat()` before nested scanning:
+the output must be a regular file whose native-width size exactly matches the
+declared original size. A mismatch is marked incomplete and returns
+`CL_EUNPACK`, so stored members cannot scan a short output as if extraction had
+completed. The compiled malformed-output, filesystem-fault, sanitizer, and
+production ARJ qualification gates remain open.
