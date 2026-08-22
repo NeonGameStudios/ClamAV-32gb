@@ -77,7 +77,9 @@
   keeping provenance binding consistent with the actual workload; full
   sanitizer qualification remains a release gate.
 - AutoIt EA05 decoded and stored members now use bounded output/temp spooling;
-  EA06 script decompilation remains an explicit random-access boundary.
+  EA06 parser entry, member traversal, compressed decoding, and script-token
+  traversal now honor the shared scan deadline; EA06 script decompilation
+  remains an explicit random-access boundary.
 - 7-Zip fmap input-read, output-write, and allocation failures now preserve
   their operational status instead of becoming generic parse errors; add
   compiled malformed/archive-corpus and sanitizer qualification.

@@ -3465,3 +3465,14 @@ The parser now checks at entry and across those traversal boundaries, preserves
 reservation release, and directory cleanup paths active. A direct expired-context
 regression and source guards cover parser entry; compiled NSIS decoder-state,
 malformed-stream, sanitizer, and Sonic1 qualification remain release gates.
+
+## AutoIt EA06 traversal deadlines — 2026-08-22
+
+AutoIt EA06 member extraction previously relied on generic scan-limit checks;
+compressed decoding, long back-reference copies, and script-token decompilation
+could continue without consulting the shared deadline. The parser now checks at
+entry and across member, decoder, back-reference, and script-token traversal,
+preserves `CL_ETIMEOUT`, and releases any allocated member buffers on timeout.
+A direct expired-context regression and source guards cover parser entry; the
+existing random-access/1 GiB EA06 boundary, compiled AutoIt corpus, sanitizer,
+and Sonic1 qualification remain release gates.

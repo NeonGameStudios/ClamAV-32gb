@@ -640,6 +640,16 @@ struct UNP {
     uint32_t error;
 };
 
+static cl_error_t autoit_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static void autoit_output_destroy(struct UNP *UNP)
 {
     free(UNP->output_history);
@@ -778,6 +788,8 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
 
     if (!ctx || !ctx->fmap)
         return CL_ENULLARG;
+    if (autoit_checktimelimit(ctx, "AutoIt header inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
     if (offset < 0 || (uint64_t)offset > ctx->fmap->len)
         return CL_EFORMAT;
 
@@ -825,6 +837,11 @@ static bool autoit_input_refill(struct UNP *UNP, cli_ctx *ctx)
 {
     size_t chunk;
     size_t i;
+
+    if (autoit_checktimelimit(ctx, "AutoIt compressed input reached the configured time limit") != CL_SUCCESS) {
+        UNP->error = 1;
+        return false;
+    }
 
     if (UNP->input_source_remaining == 0 || UNP->input_capacity == 0 ||
         UNP->input_map == NULL || UNP->input_key_next == NULL) {
@@ -1476,6 +1493,10 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
     while (CL_SUCCESS == (ret = cli_checklimits("cli_autoit", ctx, 0, 0, 0))) {
         bool script = false;
 
+        ret = autoit_checktimelimit(ctx, "AutoIt member traversal reached the configured time limit");
+        if (ret != CL_SUCCESS)
+            break;
+
         if (base == NULL)
             break;
 
@@ -1609,7 +1630,7 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             if (!autoit_input_read(&UNP, ctx, decoded_header, sizeof(decoded_header))) {
                 free(UNP.inputbuf);
                 UNP.inputbuf = NULL;
-                return CL_EREAD;
+                return ctx->scan_timed_out ? CL_ETIMEOUT : CL_EREAD;
             }
 
             if (cli_readint32(decoded_header) != 0x36304145) {
@@ -1651,6 +1672,11 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             UNP.error       = 0;
 
             while (!UNP.error && UNP.cur_output < UNP.usize) {
+                ret = autoit_checktimelimit(ctx, "AutoIt EA06 decompression reached the configured time limit");
+                if (ret != CL_SUCCESS) {
+                    UNP.error = 1;
+                    break;
+                }
                 if (!getbits(&UNP, 1)) {
                     uint32_t bb, bs, addme = 0;
                     bb = getbits(&UNP, 15);
@@ -1693,6 +1719,10 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     }
 
                     while (bs--) {
+                        if (autoit_checktimelimit(ctx, "AutoIt EA06 decompression reached the configured time limit") != CL_SUCCESS) {
+                            UNP.error = 1;
+                            break;
+                        }
                         UNP.outputbuf[UNP.cur_output] = UNP.outputbuf[UNP.cur_output - bb];
                         UNP.cur_output++;
                     }
@@ -1709,6 +1739,10 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             UNP.inputbuf = NULL;
             if (UNP.error) {
                 cli_dbgmsg("autoit: decompression error after %u bytes - partial file may exist\n", UNP.cur_output);
+                if (ctx->scan_timed_out) {
+                    free(UNP.outputbuf);
+                    return CL_ETIMEOUT;
+                }
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 member decompression was incomplete");
                 free(UNP.outputbuf);
                 return CL_EFORMAT;
@@ -1771,6 +1805,12 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
             while (!UNP.error && UNP.bits_avail && UNP.cur_input < UNP.usize) {
                 uint8_t op;
+
+                ret = autoit_checktimelimit(ctx, "AutoIt EA06 script traversal reached the configured time limit");
+                if (ret != CL_SUCCESS) {
+                    UNP.error = 1;
+                    break;
+                }
 
                 switch ((op = UNP.outputbuf[UNP.cur_input++])) {
                     case 0: /* keyword ID */ {
@@ -2025,6 +2065,11 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
             if (UNP.error) {
                 cli_dbgmsg("autoit: decompilation aborted - partial script may exist\n");
+                if (ctx->scan_timed_out) {
+                    free(UNP.outputbuf);
+                    free(buf);
+                    return CL_ETIMEOUT;
+                }
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 script decompilation was incomplete");
                 free(UNP.outputbuf);
                 free(buf);
@@ -2121,9 +2166,16 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
     cl_error_t status = CL_SUCCESS;
     const uint8_t *version;
     char *tmpd;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
 
     cli_dbgmsg("in scanautoit()\n");
+
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+    if (autoit_checktimelimit(ctx, "AutoIt inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
+
+    map = ctx->fmap;
 
     if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
         cli_mark_scan_incomplete(ctx, "AutoIt layer offset is outside the input map");
