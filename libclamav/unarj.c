@@ -260,12 +260,18 @@ static cl_error_t decode_start(arj_decode_t *decode_data)
     return init_getbits(decode_data);
 }
 
-static cl_error_t write_text(int ofd, unsigned char *data, size_t length)
+static cl_error_t write_text(cli_ctx *ctx, int ofd, unsigned char *data, size_t length)
 {
     size_t count;
+    cl_error_t status;
+
+    status = arj_checktimelimit(ctx, "ARJ member output reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
 
     count = cli_writen(ofd, data, length);
     if (count != length) {
+        cli_mark_scan_incomplete(ctx, "ARJ member output could not be written completely");
         return CL_EWRITE;
     }
     return CL_SUCCESS;
@@ -621,10 +627,10 @@ static cl_error_t decode(arj_metadata_t *metadata)
             count++;
             if (++out_ptr >= DDICSIZ) {
                 out_ptr = 0;
-                if (write_text(metadata->ofd, decode_data.text, DDICSIZ) != CL_SUCCESS) {
+                if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
                     free(decode_data.text);
                     metadata->offset = decode_data.offset;
-                    return CL_EWRITE;
+                    return ret;
                 }
             }
         } else {
@@ -653,10 +659,10 @@ static cl_error_t decode(arj_metadata_t *metadata)
                     decode_data.text[out_ptr] = decode_data.text[i];
                     if (++out_ptr >= DDICSIZ) {
                         out_ptr = 0;
-                        if (write_text(metadata->ofd, decode_data.text, DDICSIZ) != CL_SUCCESS) {
+                        if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
                             free(decode_data.text);
                             metadata->offset = decode_data.offset;
-                            return CL_EWRITE;
+                            return ret;
                         }
                     }
                     if (++i >= DDICSIZ) {
@@ -672,8 +678,8 @@ static cl_error_t decode(arj_metadata_t *metadata)
         }
     }
     if (decode_data.status == CL_SUCCESS && out_ptr != 0) {
-        if (write_text(metadata->ofd, decode_data.text, out_ptr) != CL_SUCCESS)
-            decode_data.status = CL_EWRITE;
+        if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, out_ptr)) != CL_SUCCESS)
+            decode_data.status = ret;
     }
     if (decode_data.status != CL_SUCCESS) {
         free(decode_data.text);
@@ -808,10 +814,10 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
             count++;
             if (++out_ptr >= DDICSIZ) {
                 out_ptr = 0;
-                if (write_text(metadata->ofd, decode_data.text, DDICSIZ) != CL_SUCCESS) {
+                if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
                     free(decode_data.text);
                     metadata->offset = decode_data.offset;
-                    return CL_EWRITE;
+                    return ret;
                 }
             }
         } else {
@@ -840,10 +846,10 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
                 decode_data.text[out_ptr] = decode_data.text[i];
                 if (++out_ptr >= DDICSIZ) {
                     out_ptr = 0;
-                    if (write_text(metadata->ofd, decode_data.text, DDICSIZ) != CL_SUCCESS) {
+                    if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, DDICSIZ)) != CL_SUCCESS) {
                         free(decode_data.text);
                         metadata->offset = decode_data.offset;
-                        return CL_EWRITE;
+                        return ret;
                     }
                 }
                 if (++i >= DDICSIZ) {
@@ -853,8 +859,8 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
         }
     }
     if (decode_data.status == CL_SUCCESS && out_ptr != 0) {
-        if (write_text(metadata->ofd, decode_data.text, out_ptr) != CL_SUCCESS)
-            decode_data.status = CL_EWRITE;
+        if ((ret = write_text(metadata->ctx, metadata->ofd, decode_data.text, out_ptr)) != CL_SUCCESS)
+            decode_data.status = ret;
     }
     if (decode_data.status != CL_SUCCESS) {
         free(decode_data.text);
@@ -890,8 +896,11 @@ static cl_error_t arj_unstore(arj_metadata_t *metadata, int ofd, uint32_t len)
             return read_status;
         }
         metadata->offset += count;
+        if (arj_checktimelimit(metadata->ctx, "ARJ stored member output reached the configured time limit") != CL_SUCCESS)
+            return CL_ETIMEOUT;
         if (cli_writen(ofd, data, count) != count) {
             /* File writing problem */
+            cli_mark_scan_incomplete(metadata->ctx, "ARJ stored member output could not be written completely");
             return CL_EWRITE;
         }
         rem -= count;

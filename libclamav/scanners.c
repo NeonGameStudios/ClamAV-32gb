@@ -1441,6 +1441,14 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
         }
         temporary_reserved = metadata.orig_size;
 
+        ret = cli_checktimelimit(ctx);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "ARJ member temporary admission reached the configured time limit");
+            cli_scan_release_temporary(ctx, temporary_reserved);
+            temporary_reserved = 0;
+            break;
+        }
+
         ret = cli_unarj_extract_file(dir, &metadata);
         if (ret != CL_SUCCESS) {
             cli_dbgmsg("ARJ: cli_unarj_extract_file Error: %s; refusing to scan partial output\n", cl_strerror(ret));
@@ -1484,8 +1492,12 @@ static cl_error_t cli_scanarj(cli_ctx *ctx)
                 break;
             }
 
-            ret = cli_magic_scan_desc_type_reserved(metadata.ofd, NULL, ctx, CL_TYPE_ANY, metadata.filename,
-                                                     LAYER_ATTRIBUTES_NONE);
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS)
+                cli_mark_scan_incomplete(ctx, "ARJ nested-scan handoff reached the configured time limit");
+            else
+                ret = cli_magic_scan_desc_type_reserved(metadata.ofd, NULL, ctx, CL_TYPE_ANY, metadata.filename,
+                                                         LAYER_ATTRIBUTES_NONE);
             cli_arj_close_output(ctx, &metadata.ofd, &ret);
             if (temporary_reserved) {
                 cli_scan_release_temporary(ctx, temporary_reserved);

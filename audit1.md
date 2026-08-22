@@ -4265,9 +4265,9 @@ corpus, sanitizer, and Sonic1 qualification remain release gates.
 
 Shared descriptor-child and force-to-disk nested-fmap paths now re-check the
 deadline after temporary admission, immediately before each materialized write,
-  and immediately before nested handoff. EGG member output, per-chunk RAR
-  temporary-input staging, legacy VBA project output, and UTF-16 HTML output now use the same
-fail-closed boundaries. Source guards cover the shared and family-specific
+and immediately before nested handoff. EGG member output, per-chunk RAR
+temporary-input staging, legacy VBA project output, and UTF-16 HTML output now
+use the same fail-closed boundaries. Source guards cover the shared and family-specific
 reasons; deterministic timeout injection, compiled archive/Office/HTML corpus,
 sanitizer, and Sonic1 qualification remain release gates.
 
@@ -4279,3 +4279,12 @@ timeout releases the current reservation and propagates an incomplete result
 to HTML and bytecode normalization callers. Source guards cover both deadline
 boundaries; deterministic timeout injection, compiled HTML/bytecode corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## ARJ output deadlines — 2026-08-22
+
+ARJ stored-member and decompressor output now re-checks the shared scan
+deadline immediately before each materialized write. ARJ temporary admission
+and the nested-scan handoff are also explicit, while the existing declared-size
+and cleanup checks remain in force. Source guards cover these boundaries;
+deterministic output-timeout injection, compiled ARJ corpus, sanitizer, and
+Sonic1 qualification remain release gates.

@@ -348,6 +348,10 @@
   honor the shared scan deadline and preserve fail-visible `CL_ETIMEOUT`; add
   compiled timeout-injection, decoder-state, sanitizer, and production ARJ
   corpus qualification.
+- ARJ stored and decompressor output now re-checks the shared deadline
+  immediately before writes, and ARJ temporary admission and nested handoff are
+  explicit; add deterministic output-timeout injection and full ARJ corpus
+  qualification.
 - CPIO fixed-header and member-name reads now distinguish in-range fmap
   callback failures (`CL_EREAD`) from impossible/truncated coordinates
   (`CL_EPARSE`) across all four legacy variants; add compiled callback-fault,
