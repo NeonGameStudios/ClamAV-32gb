@@ -779,6 +779,9 @@
 - DMG XML staging, partition reconstruction, and the shared bounded stripe
   writer now check the scan deadline, preserving `CL_ETIMEOUT`; add compiled
   DMG timeout-injection and production corpus qualification.
+- DMG `blkx` metadata is now handled and released one callback at a time,
+  removing whole-resource-fork heap retention; add compiled multi-block corpus,
+  callback-timeout injection, sanitizer, and production DMG qualification.
 - XAR’s shared temporary-output writer now checks the deadline after admission
   and immediately before TOC, subdocument, compressed-member, and raw-member
   spool writes while preserving short writes; add compiled XAR output-timeout

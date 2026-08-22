@@ -4664,3 +4664,14 @@ propagates a distinct `CL_ETIMEOUT` result instead of treating timeout as a
 virus or generic unpack failure. Compiled timeout injection, hostile jump-loop
 coverage, production yC corpus, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## DMG blkx metadata retention — 2026-08-22
+
+The streaming DMG callback now validates and handles each completed `blkx`
+metadata block before the XML parser can decode the next one. The decoded
+metadata and stripe array are released on every callback return, including
+timeout, resource, detection, and parser failures; the implementation no
+longer queues the complete metadata list in heap memory. The existing 64 MiB
+per-block cap remains an explicit unsupported boundary. Compiled multi-block
+DMG corpus, deterministic callback-timeout, sanitizer, and supported-build
+Sonic1 qualification remain release gates.

@@ -2710,6 +2710,19 @@ unsupported input.
 The deliberate metadata ceiling is recorded as
 `dmg-blkx-metadata-over-64m`; it is independent of the outer file-size limit.
 
+## DMG blkx metadata retention — 2026-08-22
+
+The streaming DMG callback now validates and handles each completed `blkx`
+metadata block before the XML parser can decode the next one. The decoded
+metadata and stripe array are released on every callback return, including
+timeout, resource, detection, and parser failures; the implementation no
+longer queues the complete metadata list in heap memory. The existing 64 MiB
+per-block cap remains an explicit unsupported boundary, while the outer XML
+range remains streamed and quota-accounted.
+
+Compiled multi-block DMG corpus, deterministic callback-timeout, sanitizer,
+and supported-build Sonic1 qualification remain release gates.
+
 ## PDF file-backed staging — 2026-08-19
 
 The PDF entry path no longer allocates the complete deep-parser input on the

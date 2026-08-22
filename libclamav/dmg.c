@@ -67,8 +67,10 @@
 
 struct dmg_xml_scan_state {
     unsigned int mishblocknum;
-    struct dmg_mish_with_stripes *mish_list;
-    struct dmg_mish_with_stripes *mish_list_tail;
+    unsigned int file;
+    char *dirname;
+    uint64_t dataForkOffset;
+    uint64_t dataForkLength;
 };
 
 static int dmg_extract_xml(cli_ctx *, char *, struct dmg_koly_block *);
@@ -167,8 +169,6 @@ int cli_scandmg(cli_ctx *ctx)
     size_t pos = 0;
     size_t trailer_read;
     char *dirname;
-    unsigned int file = 0;
-    struct dmg_mish_with_stripes *mish_list;
     static const struct key_entry dmg_xml_keys[] = {
         {"data", "DMGData", MSXML_SCAN_B64}};
 
@@ -278,6 +278,9 @@ int cli_scandmg(cli_ctx *ctx)
     }
 
     memset(&xml_state, 0, sizeof(xml_state));
+    xml_state.dirname        = dirname;
+    xml_state.dataForkOffset = hdr.dataForkOffset;
+    xml_state.dataForkLength = hdr.dataForkLength;
     memset(&mxctx, 0, sizeof(mxctx));
     mxctx.decoded_cb       = dmg_mish_decoded_cb;
     mxctx.decoded_max_size = DMG_XML_PARSE_MAX_SIZE;
@@ -287,35 +290,9 @@ int cli_scandmg(cli_ctx *ctx)
                                                                 MSXML_FLAG_FAIL_INCOMPLETE, &mxctx);
     free_duplicate_fmap(xml_map);
 
-    mish_list = xml_state.mish_list;
-    if (ret == CL_CLEAN && mish_list == NULL) {
+    if (ret == CL_CLEAN && xml_state.mishblocknum == 0) {
         cli_mark_scan_incomplete(ctx, "DMG XML did not provide any decodable blkx metadata");
         ret = CL_EPARSE;
-    }
-
-    /* Reconstruct and scan each parsed partition. */
-    while (ret == CL_CLEAN && mish_list != NULL) {
-        struct dmg_mish_with_stripes *next = mish_list->next;
-
-        if (cli_checktimelimit(ctx) != CL_SUCCESS) {
-            ret = CL_ETIMEOUT;
-            cli_mark_scan_incomplete(ctx, "DMG partition reconstruction reached the configured time limit");
-        } else {
-            ret = dmg_handle_mish(ctx, file++, dirname, hdr.dataForkOffset,
-                                  hdr.dataForkLength, mish_list);
-        }
-        free(mish_list->mish);
-        free(mish_list);
-        mish_list = next;
-    }
-
-    /* Free parsed metadata that was not reached after a failure or detection. */
-    while (mish_list != NULL) {
-        struct dmg_mish_with_stripes *next = mish_list->next;
-
-        free(mish_list->mish);
-        free(mish_list);
-        mish_list = next;
     }
 
     return dmg_cleanup_temp_dir(ctx, &dirname, ret);
@@ -468,39 +445,39 @@ static int dmg_decode_mish_fd(cli_ctx *ctx, unsigned int *mishblocknum, int fd,
 static cl_error_t dmg_mish_decoded_cb(int fd, const char *filepath, cli_ctx *ctx, void *cbdata)
 {
     struct dmg_xml_scan_state *state = cbdata;
-    struct dmg_mish_with_stripes *mish_set;
+    struct dmg_mish_with_stripes mish_set;
     cl_error_t ret;
 
     UNUSEDPARAM(filepath);
 
-    if (!state || !ctx || fd < 0)
+    if (!state || !ctx || fd < 0 || !state->dirname)
         return CL_ENULLARG;
 
-    mish_set = calloc(1, sizeof(*mish_set));
-    if (!mish_set) {
-        cli_mark_scan_incomplete(ctx, "DMG mish metadata could not be allocated");
-        return CL_EMEM;
-    }
-
-    ret = dmg_decode_mish_fd(ctx, &state->mishblocknum, fd, mish_set);
+    memset(&mish_set, 0, sizeof(mish_set));
+    ret = dmg_decode_mish_fd(ctx, &state->mishblocknum, fd, &mish_set);
     if (ret == CL_EFORMAT) {
         cli_mark_scan_incomplete(ctx, "DMG blkx mish metadata is malformed or unsupported");
-        free(mish_set);
         return CL_EPARSE;
     }
-    if (ret != CL_CLEAN) {
-        free(mish_set);
+    if (ret != CL_CLEAN)
         return ret;
+
+    /* Process one completed blkx block before the streaming XML parser can
+     * decode the next one. This keeps decoded metadata bounded to one block
+     * instead of retaining the entire DMG XML resource fork in heap memory. */
+    if (cli_checktimelimit(ctx) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "DMG partition reconstruction reached the configured time limit");
+        ret = CL_ETIMEOUT;
+    } else if (state->file == UINT_MAX) {
+        cli_mark_scan_incomplete(ctx, "DMG partition file numbering exceeded its native limit");
+        ret = CL_ERESOURCE;
+    } else {
+        ret = dmg_handle_mish(ctx, state->file++, state->dirname, state->dataForkOffset,
+                              state->dataForkLength, &mish_set);
     }
 
-    if (state->mish_list_tail) {
-        state->mish_list_tail->next = mish_set;
-        state->mish_list_tail       = mish_set;
-    } else {
-        state->mish_list      = mish_set;
-        state->mish_list_tail = mish_set;
-    }
-    return CL_SUCCESS;
+    free(mish_set.mish);
+    return ret == CL_CLEAN ? CL_SUCCESS : ret;
 }
 static int cmp_mish_stripes(const void *stripe_a, const void *stripe_b)
 {
