@@ -4335,3 +4335,14 @@ Both raw ingress helpers now merge non-critical target-root failures, continue
 with the generic root, and retain the merged non-clean result; detections and
 critical failures still stop immediately. Static guards cover both paths;
 compiled fault-injection and production-signature qualification remain open.
+
+## Raw matcher-root setup isolation — 2026-08-22
+
+`cli_scan_fmap()` now treats matcher-root initialization, relative-offset
+calculation, Boyer-Moore offset preparation, and PCRE offset preparation as
+independent setup stages. A non-critical failure disables only the affected
+root, preserves its specific status, recomputes the overlap window from roots
+that are actually ready, and continues with the other raw matcher. Critical
+memory, timeout, resource, and I/O failures still halt immediately. Static
+guards cover root readiness, independent hash accumulation, and cleanup;
+compiled fault-injection and production-signature qualification remain open.

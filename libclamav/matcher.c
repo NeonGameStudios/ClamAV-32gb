@@ -1409,6 +1409,8 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
     bool target_pcre_offsets_table_initialized = false;
 
     struct cli_matcher *generic_ac_root = NULL, *target_ac_root = NULL;
+    bool generic_match_ready = false;
+    bool target_match_ready  = false;
 
     struct cli_target_info info;
     bool info_initialized = false;
@@ -1449,17 +1451,6 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             // Nothing to do!
             ret = CL_CLEAN;
             goto done;
-        }
-
-        // Only have a matcher root for target-specific signatures.
-        maxpatlen = target_ac_root->maxpatlen;
-    } else {
-        if (target_ac_root) {
-            // Have both generic and target-specific signatures.
-            maxpatlen = MAX(target_ac_root->maxpatlen, generic_ac_root->maxpatlen);
-        } else {
-            // Only have generic signatures.
-            maxpatlen = generic_ac_root->maxpatlen;
         }
     }
 
@@ -1516,25 +1507,41 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
            So initialize the ac data for the generic signatures root. */
 
         if (generic_ac_root) {
-            ret = cli_ac_initdata(&generic_ac_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs, generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
-            if (CL_SUCCESS != ret) {
-                goto done;
-            }
-            gdata_initialized = true;
+            current = cli_ac_initdata(&generic_ac_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs,
+                                      generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
+            if (CL_SUCCESS != current) {
+                status = cli_merge_scan_status(status, current);
+                if (cli_scan_status_is_critical(current)) {
+                    ret = current;
+                    goto done;
+                }
+            } else {
+                gdata_initialized = true;
 
-            /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
-            ret = cli_ac_caloff(generic_ac_root, &generic_ac_data, &info);
-            if (CL_SUCCESS != ret) {
-                goto done;
+                /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
+                current = cli_ac_caloff(generic_ac_root, &generic_ac_data, &info);
+                if (CL_SUCCESS != current) {
+                    status = cli_merge_scan_status(status, current);
+                    if (cli_scan_status_is_critical(current)) {
+                        ret = current;
+                        goto done;
+                    }
+                } else {
+                    /* Recalculate the pcre offsets.
+                       This does an allocation, that we will need to free later. */
+                    current = cli_pcre_recaloff(generic_ac_root, &generic_pcre_offsets_table, &info, ctx);
+                    if (CL_SUCCESS != current) {
+                        status = cli_merge_scan_status(status, current);
+                        if (cli_scan_status_is_critical(current)) {
+                            ret = current;
+                            goto done;
+                        }
+                    } else {
+                        generic_pcre_offsets_table_initialized = true;
+                        generic_match_ready                      = true;
+                    }
+                }
             }
-
-            /* Recalculate the pcre offsets.
-               This does an allocation, that we will need to free later. */
-            ret = cli_pcre_recaloff(generic_ac_root, &generic_pcre_offsets_table, &info, ctx);
-            if (CL_SUCCESS != ret) {
-                goto done;
-            }
-            generic_pcre_offsets_table_initialized = true;
         }
     }
 
@@ -1542,37 +1549,69 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         /* We have to match against target-specific signatures.
            So initialize the ac data for the target-specific signatures root. */
 
-        ret = cli_ac_initdata(&target_ac_data, target_ac_root->ac_partsigs, target_ac_root->ac_lsigs, target_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
-        if (CL_SUCCESS != ret) {
-            goto done;
-        }
-        tdata_initialized = true;
+        current = cli_ac_initdata(&target_ac_data, target_ac_root->ac_partsigs, target_ac_root->ac_lsigs,
+                                  target_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
+        if (CL_SUCCESS != current) {
+            status = cli_merge_scan_status(status, current);
+            if (cli_scan_status_is_critical(current)) {
+                ret = current;
+                goto done;
+            }
+        } else {
+            tdata_initialized = true;
 
-        /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
-        ret = cli_ac_caloff(target_ac_root, &target_ac_data, &info);
-        if (CL_SUCCESS != ret) {
-            goto done;
-        }
-
-        if (target_ac_root->bm_offmode) {
-            if (ctx->fmap->len >= CLI_DEFAULT_BM_OFFMODE_FSIZE) {
-                /* Recalculate the relative offsets in boyer-moore signatures (e.g. those that are based on pe/elf/macho section start/end). */
-                ret = cli_bm_initoff(target_ac_root, &bm_offsets_table, &info);
-                if (CL_SUCCESS != ret) {
+            /* Recalculate the relative offsets in ac sigs (e.g. those that are based on pe/elf/macho section start/end). */
+            current = cli_ac_caloff(target_ac_root, &target_ac_data, &info);
+            if (CL_SUCCESS != current) {
+                status = cli_merge_scan_status(status, current);
+                if (cli_scan_status_is_critical(current)) {
+                    ret = current;
                     goto done;
                 }
-                bm_offsets_table_initialized = true;
+            } else {
+                if (target_ac_root->bm_offmode) {
+                    if (ctx->fmap->len >= CLI_DEFAULT_BM_OFFMODE_FSIZE) {
+                        /* Recalculate the relative offsets in boyer-moore signatures (e.g. those that are based on pe/elf/macho section start/end). */
+                        current = cli_bm_initoff(target_ac_root, &bm_offsets_table, &info);
+                        if (CL_SUCCESS != current) {
+                            status = cli_merge_scan_status(status, current);
+                            if (cli_scan_status_is_critical(current)) {
+                                ret = current;
+                                goto done;
+                            }
+                        } else {
+                            bm_offsets_table_initialized = true;
+                        }
+                    }
+                }
+
+                /* Recalculate the pcre offsets.
+                   This does an allocation, that we will need to free later. */
+                if (current == CL_SUCCESS) {
+                    current = cli_pcre_recaloff(target_ac_root, &target_pcre_offsets_table, &info, ctx);
+                    if (CL_SUCCESS != current) {
+                        status = cli_merge_scan_status(status, current);
+                        if (cli_scan_status_is_critical(current)) {
+                            ret = current;
+                            goto done;
+                        }
+                    } else {
+                        target_pcre_offsets_table_initialized = true;
+                        target_match_ready                      = true;
+                    }
+                }
             }
         }
-
-        /* Recalculate the pcre offsets.
-           This does an allocation, that we will need to free later. */
-        ret = cli_pcre_recaloff(target_ac_root, &target_pcre_offsets_table, &info, ctx);
-        if (CL_SUCCESS != ret) {
-            goto done;
-        }
-        target_pcre_offsets_table_initialized = true;
     }
+
+    /* A non-critical setup failure disables only that matcher root. Recompute
+     * the overlap window from roots that are actually ready so an unavailable
+     * root cannot alter the independent root's scan coordinates. */
+    maxpatlen = 0;
+    if (generic_match_ready)
+        maxpatlen = generic_ac_root->maxpatlen;
+    if (target_match_ready)
+        maxpatlen = MAX(maxpatlen, target_ac_root->maxpatlen);
 
     hdb = ctx->engine->hm_hdb;
     fp  = ctx->engine->hm_fp;
@@ -1637,7 +1676,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         if (ctx->scanned)
             *ctx->scanned += bytes;
 
-        if (target_ac_root) {
+        if (target_match_ready) {
             const char *virname = NULL;
 
             current = matcher_run(target_ac_root, buff, bytes, &virname, &target_ac_data, offset,
@@ -1655,7 +1694,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             }
         }
 
-        if (!filetype_only && generic_ac_root) {
+        if (!filetype_only && generic_match_ready) {
             const char *virname = NULL;
 
             current = matcher_run(generic_ac_root, buff, bytes, &virname, &generic_ac_data, offset,
@@ -1675,23 +1714,25 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                     type = current;
             }
 
-            /* if (bytes <= (maxpatlen * (offset!=0))), it means the last window finished the file hashing *
-             *   since the last window is responsible for adding intersection between windows (maxpatlen)  */
-            if (scan_viruses && hdb && (bytes > (maxpatlen * (offset != 0)))) {
-                const void *data  = buff + maxpatlen * (offset != 0);
-                uint32_t data_len = bytes - maxpatlen * (offset != 0);
+        }
 
-                for (hash_type = CLI_HASH_MD5; hash_type < CLI_HASH_AVAIL_TYPES; hash_type++) {
-                    /*
-                     * Compute the hash for the current data chunk, if we need to.
-                     */
-                    if (need_hash[hash_type] && !ctx->fmap->have_hash[hash_type]) {
-                        if (cl_update_hash(hashctx[hash_type], data, data_len)) {
-                            const char *hash_name = cli_hash_name(hash_type);
-                            cli_errmsg("cli_scan_fmap: Error calculating %s hash!\n", hash_name);
-                            ret = CL_EREAD;
-                            goto done;
-                        }
+        /* Hash-signature accumulation is independent of AC/BM/PCRE root
+         * readiness. A non-critical matcher setup failure must not leave an
+         * initialized hash context empty while the other raw root continues. */
+        if (!filetype_only && scan_viruses && hdb && (bytes > (maxpatlen * (offset != 0)))) {
+            const void *data  = buff + maxpatlen * (offset != 0);
+            uint32_t data_len = bytes - maxpatlen * (offset != 0);
+
+            for (hash_type = CLI_HASH_MD5; hash_type < CLI_HASH_AVAIL_TYPES; hash_type++) {
+                /*
+                 * Compute the hash for the current data chunk, if we need to.
+                 */
+                if (need_hash[hash_type] && !ctx->fmap->have_hash[hash_type]) {
+                    if (cl_update_hash(hashctx[hash_type], data, data_len)) {
+                        const char *hash_name = cli_hash_name(hash_type);
+                        cli_errmsg("cli_scan_fmap: Error calculating %s hash!\n", hash_name);
+                        ret = CL_EREAD;
+                        goto done;
                     }
                 }
             }
@@ -1771,7 +1812,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
      * Evaluate the logical expressions for clamav logical signatures and YARA rules.
      */
     // Evaluate for the target-specific signature AC matches.
-    if (scan_viruses && NULL != target_ac_root) {
+    if (scan_viruses && target_match_ready) {
         if (ret != CL_VIRUS) {
             /* A target-root evaluation may be incomplete even when the
              * generic root still has useful work to do. Preserve that status
@@ -1783,7 +1824,7 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
     }
 
     // Evaluate for the generic signature AC matches.
-    if (scan_viruses && NULL != generic_ac_root) {
+    if (scan_viruses && generic_match_ready) {
         if (ret != CL_VIRUS) {
             ret = cli_merge_scan_status(ret, cli_exp_eval(ctx, generic_ac_root, &generic_ac_data, &info));
         }
