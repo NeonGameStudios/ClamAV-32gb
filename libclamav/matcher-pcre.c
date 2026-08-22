@@ -716,6 +716,7 @@ cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const ch
 
                         // ctx is not provided in the unit tests.
                         if (ctx) {
+                            cli_set_match_offset(ctx, (uint64_t)(adjbuffer + p_res.match[0]));
                             ret = cli_append_virus(ctx, "test");
                             if (ret != CL_SUCCESS) {
                                 break;

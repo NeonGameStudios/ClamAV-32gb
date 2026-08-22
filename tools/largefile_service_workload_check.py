@@ -174,7 +174,7 @@ def load_report(path: Path, label: str) -> dict:
 
 
 def validate_report(report: dict, label: str, oracle_row: tuple) -> None:
-    expected_size, _, expected_exit, expected_completion, expected_signature, _, expected_type = oracle_row
+    expected_size, _, expected_exit, expected_completion, expected_signature, expected_offset, expected_type = oracle_row
     if report.get("version") != 1:
         fail(f"{label} report schema version is not 1")
     if report.get("completion") != expected_completion:
@@ -191,10 +191,16 @@ def validate_report(report: dict, label: str, oracle_row: tuple) -> None:
     if expected_signature == "-":
         if last_alert not in (None, "") or report.get("verdict") not in (0, 1):
             fail(f"{label} clean report contains an unexpected alert or verdict")
+        if report.get("last_alert_offset") is not None:
+            fail(f"{label} clean report contains an unexpected alert offset")
     elif last_alert not in (expected_signature, f"{expected_signature}.UNOFFICIAL"):
         fail(f"{label} report alert does not exactly match the oracle")
     elif report.get("verdict") not in (2, 3):
         fail(f"{label} detection report does not carry a non-clean verdict")
+    elif type(report.get("last_alert_offset")) is not int or report["last_alert_offset"] < 0:
+        fail(f"{label} detection report does not carry a native-width alert offset")
+    elif report["last_alert_offset"] != int(expected_offset):
+        fail(f"{label} report alert offset does not exactly match the oracle")
     if expected_exit in (0, 1) and report["status"] != 0:
         fail(f"{label} report status is non-success for expected exit {expected_exit}")
     if expected_exit == 2 and report["status"] == 0:

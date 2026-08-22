@@ -3918,3 +3918,16 @@ report probe, service shell gate, and post-run workload verifier now require
 detection-shaped oracle row; the synthetic regression mutates a valid alert to
 a clean verdict and requires rejection. Full Linux/Sonic1 service execution
 remains open.
+
+## Structured detection offset binding — 2026-08-22
+
+The structured report path previously exposed only the retained alert name, so
+direct clamd report probes silently ignored the oracle's exact match offset.
+Root-level AC, BM, and PCRE matcher alerts now preserve a native-width offset in
+the structured report when the evidence retains that alert. Parser, hash,
+callback, and child-layer alerts intentionally do not publish a guessed
+coordinate. The direct protocol checker, shell gate, and post-run workload
+verifier now require `last_alert_offset` to be present and equal to the
+detection oracle. A synthetic mismatch regression rejects an incorrect
+offset; compiled report, service, sanitizer, parser-corpus, and Sonic1
+qualification remain release gates.

@@ -397,6 +397,8 @@ cl_error_t cli_bm_scanbuff(const unsigned char *buffer, uint32_t length, const c
                 }
 
                 if (found && p->length + p->prefix_length == j) {
+                    uint64_t match_offset = offset + i - p->prefix_length - BM_MIN_LENGTH + BM_BLOCK_SIZE;
+
                     if (!offdata && (p->offset_min != CLI_OFF_ANY64)) {
                         if (p->offdata[0] != CLI_OFF_ABSOLUTE) {
                             if (!info) {
@@ -412,7 +414,7 @@ cl_error_t cli_bm_scanbuff(const unsigned char *buffer, uint32_t length, const c
                             off_min = p->offset_min;
                             off_max = p->offset_max;
                         }
-                        off = offset + i - p->prefix_length - BM_MIN_LENGTH + BM_BLOCK_SIZE;
+                        off = match_offset;
                         if (off_min == CLI_OFF_NONE64 || off_max < off || off_min > off) {
                             p = p->next;
                             continue;
@@ -420,6 +422,8 @@ cl_error_t cli_bm_scanbuff(const unsigned char *buffer, uint32_t length, const c
                     }
 
                     viruses_found += 1;
+                    if (ctx != NULL)
+                        cli_set_match_offset(ctx, match_offset);
                     if (virname) {
                         *virname = p->virname;
                         if (ctx != NULL && SCAN_ALLMATCHES) {
@@ -440,7 +444,7 @@ cl_error_t cli_bm_scanbuff(const unsigned char *buffer, uint32_t length, const c
                         *patt = p;
 
                     cli_dbgmsg("cli_bm_scanbuff: signature %s matched at " STDu64 "\n", p->virname,
-                               offset + i - p->prefix_length - BM_MIN_LENGTH + BM_BLOCK_SIZE);
+                               match_offset);
 
                     if (ctx != NULL && !SCAN_ALLMATCHES)
                         return CL_VIRUS;

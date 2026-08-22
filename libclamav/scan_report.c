@@ -325,6 +325,33 @@ void cli_scan_report_note_detector_operation(
         report->metrics.detector_operations++;
 }
 
+void cli_scan_report_note_match_offset(
+    cl_scan_report_t *report,
+    uint64_t offset)
+{
+    if (NULL == report)
+        return;
+
+    report->pending_alert_offset       = offset;
+    report->pending_alert_offset_valid = true;
+}
+
+bool cli_scan_report_take_match_offset(
+    cl_scan_report_t *report,
+    uint64_t *offset_out)
+{
+    bool present;
+
+    if ((NULL == report) || (NULL == offset_out))
+        return false;
+
+    present = report->pending_alert_offset_valid;
+    if (present)
+        *offset_out = report->pending_alert_offset;
+    report->pending_alert_offset_valid = false;
+    return present;
+}
+
 void cli_scan_report_finish(
     cl_scan_report_t *report,
     const struct cli_ctx_tag *ctx,
@@ -373,6 +400,16 @@ void cli_scan_report_finish(
 
     report_replace_string(&report->reason, reason);
     report_replace_string(&report->last_alert, last_alert);
+    report->last_alert_offset_valid = false;
+    if ((NULL != ctx) && (NULL != ctx->this_layer_evidence) &&
+        (NULL != last_alert)) {
+        uint64_t last_alert_offset;
+
+        if (evidence_get_last_alert_offset(ctx->this_layer_evidence, &last_alert_offset)) {
+            report->last_alert_offset       = last_alert_offset;
+            report->last_alert_offset_valid = true;
+        }
+    }
 
     finished_usec = report_now_usec();
     if (finished_usec >= report->started_usec)
@@ -509,6 +546,8 @@ void cli_scan_report_merge(
         destination->completion = source->completion;
         report_replace_string(&destination->reason, source->reason);
         report_replace_string(&destination->last_alert, source->last_alert);
+        destination->last_alert_offset       = source->last_alert_offset;
+        destination->last_alert_offset_valid = source->last_alert_offset_valid;
         destination->has_result = true;
         return;
     }
@@ -524,14 +563,19 @@ void cli_scan_report_merge(
         destination->completion = source->completion;
         report_replace_string(&destination->reason, source->reason);
         report_replace_string(&destination->last_alert, source->last_alert);
+        destination->last_alert_offset       = source->last_alert_offset;
+        destination->last_alert_offset_valid = source->last_alert_offset_valid;
     } else if ((NULL == destination->reason) && (NULL != source->reason)) {
         report_replace_string(&destination->reason, source->reason);
     }
 
     if (report_verdict_rank(source->verdict) > report_verdict_rank(destination->verdict)) {
         destination->verdict = source->verdict;
-        if (source->completion == CL_SCAN_COMPLETION_DETECTION_TERMINATED)
+        if (source->completion == CL_SCAN_COMPLETION_DETECTION_TERMINATED) {
             report_replace_string(&destination->last_alert, source->last_alert);
+            destination->last_alert_offset       = source->last_alert_offset;
+            destination->last_alert_offset_valid = source->last_alert_offset_valid;
+        }
     }
 }
 
@@ -621,6 +665,19 @@ cl_error_t cl_scan_report_get_last_alert(
         return CL_ENULLARG;
 
     *alert_out = report->last_alert;
+    return CL_SUCCESS;
+}
+
+cl_error_t cl_scan_report_get_last_alert_offset(
+    const cl_scan_report_t *report,
+    uint64_t *offset_out,
+    bool *present_out)
+{
+    if ((NULL == report) || (NULL == offset_out) || (NULL == present_out))
+        return CL_ENULLARG;
+
+    *offset_out = report->last_alert_offset;
+    *present_out = report->last_alert_offset_valid;
     return CL_SUCCESS;
 }
 
@@ -736,6 +793,11 @@ cl_error_t cl_scan_report_to_json(
         json_object_object_add(object, "reason", json_object_new_string(report->reason));
     if (NULL != report->last_alert)
         json_object_object_add(object, "last_alert", json_object_new_string(report->last_alert));
+    if (report->last_alert_offset_valid) {
+        status = report_json_add_u64(object, "last_alert_offset", report->last_alert_offset);
+        if (CL_SUCCESS != status)
+            goto json_error;
+    }
 
     serialized = json_object_to_json_string_ext(object, 0);
     if (NULL != serialized)

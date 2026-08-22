@@ -24,6 +24,11 @@ struct cl_scan_report {
     char *target;
     char *file_type;
 
+    uint64_t pending_alert_offset;
+    uint64_t last_alert_offset;
+    bool pending_alert_offset_valid;
+    bool last_alert_offset_valid;
+
     cl_scan_report_metrics_t metrics;
     cl_scan_report_limits_t limits;
 
@@ -66,6 +71,17 @@ void cli_scan_report_note_parser_operation(
 
 void cli_scan_report_note_detector_operation(
     cl_scan_report_t *report);
+
+/* Matchers may provide a native-width coordinate before appending an alert.
+ * The offset is committed to the report only when the retained last alert is
+ * a root-level native matcher result. */
+void cli_scan_report_note_match_offset(
+    cl_scan_report_t *report,
+    uint64_t offset);
+
+bool cli_scan_report_take_match_offset(
+    cl_scan_report_t *report,
+    uint64_t *offset_out);
 
 void cli_scan_report_finish(
     cl_scan_report_t *report,

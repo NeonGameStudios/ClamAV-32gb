@@ -44,7 +44,11 @@ ceiling. If report serialization would exceed that bound or its transport
 buffer cannot be allocated, clamd sends a small schema-shaped
 `RESOURCE_FAILURE` report with `skipped_operations` set instead of a clean
 fallback; clients reject any larger received frame and require a successful
-status on `COMPLETE`.
+status on `COMPLETE`. Detection reports also include the optional native-width
+`last_alert_offset` when the retained alert is a root-object AC, BM, or PCRE
+matcher result. Structured qualification rejects detection evidence that
+omits or mismatches the oracle offset; parser, hash, callback, and child-layer
+alerts remain offset-less rather than publishing an unverified coordinate.
 
 The clamd INSTREAM receiver also fails closed on staging writes: a failed
 temporary-file write stops the stream immediately, emits one protocol-matched

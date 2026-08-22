@@ -739,6 +739,14 @@ static inline void cli_writeint32(void *offset, uint32_t value)
 cl_error_t cli_append_virus(cli_ctx *ctx, const char *virname);
 
 /**
+ * @brief Provide the native-width coordinate for the next matcher alert.
+ *
+ * The coordinate is consumed when the alert is recorded. It is retained in
+ * structured reports only for root-object matcher detections.
+ */
+void cli_set_match_offset(cli_ctx *ctx, uint64_t offset);
+
+/**
  * @brief Append a PUA (low severity) alert.
  *
  * This function will return CLEAN unless in all-match or Heuristic-precedence

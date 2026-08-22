@@ -62,7 +62,7 @@ done
 workload_results=$out/provenance/service-workload-results.tsv
 printf 'label\tkind\trole\tinput\tlog\treport\tstatus\tcheck_offset\n' > "$workload_results"
 clean_report_json=$(printf '{"version":1,"completion":"COMPLETE","file_type":"CL_TYPE_DATA","status":0,"verdict":0,"root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
-detection_report_json=$(printf '{"version":1,"completion":"DETECTION_TERMINATED","file_type":"CL_TYPE_DATA","status":0,"verdict":2,"last_alert":"Synthetic.Detection","root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
+detection_report_json=$(printf '{"version":1,"completion":"DETECTION_TERMINATED","file_type":"CL_TYPE_DATA","status":0,"verdict":2,"last_alert":"Synthetic.Detection","last_alert_offset":123,"root_size":%s,"logical_bytes":%s,"matcher_bytes":0,"contiguous_bytes":0,"temporary_bytes":0,"files_scanned":1,"max_recursion_depth":0,"elapsed_ms":1,"parser_operations":1,"detector_operations":1,"skipped_operations":0}\n' "$workload_size" "$workload_size")
 report_json=$clean_report_json
 workload_labels='production_cvd_scanreport production_cvd_contscanreport production_cvd_multiscanreport production_cvd_allmatchscan production_cvd_fildesreport production_cvd_instreamreport production-clamscan clamd-serial-queue-1 clamd-serial-queue-2 production_cvd production_cvd_fildes production_cvd_instream materialized_warm materialized_cold parser_expansion edge-clamscan edge-clamscan-stdin edge-clamdscan-stdin edge_contscan edge_multiscan edge_allmatch edge_fildes edge_instream clamd-multiworker-1 clamd-multiworker-2 clamd-multiworker-3 clamd-multiworker-4'
 for label in $workload_labels; do
@@ -174,6 +174,15 @@ sed 's/"verdict":2/"verdict":0/' "$out/reports/edge-clamscan.good" > \
     "$out/reports/edge-clamscan.jsonl"
 if python3 "$root/tools/largefile_service_workload_check.py" "$out" >/dev/null 2>&1; then
     echo 'service workload verifier accepted a detection report with a clean verdict' >&2
+    exit 1
+fi
+mv "$out/reports/edge-clamscan.good" "$out/reports/edge-clamscan.jsonl"
+
+cp "$out/reports/edge-clamscan.jsonl" "$out/reports/edge-clamscan.good"
+sed 's/"last_alert_offset":123/"last_alert_offset":122/' "$out/reports/edge-clamscan.good" > \
+    "$out/reports/edge-clamscan.jsonl"
+if python3 "$root/tools/largefile_service_workload_check.py" "$out" >/dev/null 2>&1; then
+    echo 'service workload verifier accepted a mismatched detection offset' >&2
     exit 1
 fi
 mv "$out/reports/edge-clamscan.good" "$out/reports/edge-clamscan.jsonl"

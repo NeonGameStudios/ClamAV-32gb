@@ -1933,7 +1933,14 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
     cl_error_t callback_ret       = CL_VIRUS;
     FFIError *add_indicator_error = NULL;
     bool add_successful;
+    bool has_match_offset = false;
+    uint64_t match_offset = 0;
     char *location = NULL;
+
+    if (NULL != ctx->report)
+        has_match_offset = cli_scan_report_take_match_offset(ctx->report, &match_offset);
+    if ((NULL == ctx->recursion_stack) || (ctx->recursion_level != 0))
+        has_match_offset = false;
 
     if (NULL == ctx->recursion_stack[ctx->recursion_level].evidence) {
         // evidence storage for this layer not initialized, initialize a new evidence store.
@@ -1951,6 +1958,8 @@ static cl_error_t append_virus(cli_ctx *ctx, const char *virname, IndicatorType 
         virname,
         type,
         ctx->recursion_stack[ctx->recursion_level].object_id,
+        has_match_offset,
+        match_offset,
         &add_indicator_error);
     if (!add_successful) {
         cli_errmsg("Failed to add indicator to scan evidence: %s\n", ffierror_fmt(add_indicator_error));
@@ -2111,15 +2120,25 @@ cl_error_t cli_append_potentially_unwanted(cli_ctx *ctx, const char *virname)
 
 cl_error_t cli_append_virus(cli_ctx *ctx, const char *virname)
 {
+    cl_error_t status;
+
     if ((strncmp(virname, "PUA.", 4) == 0) ||
         (strncmp(virname, "Heuristics.", 11) == 0) ||
         (strncmp(virname, "BC.Heuristics.", 14) == 0)) {
-        return cli_append_potentially_unwanted(ctx, virname);
+        status = cli_append_potentially_unwanted(ctx, virname);
     } else if (strncmp(virname, "Weak.", 5) == 0) {
-        return append_virus(ctx, virname, IndicatorType_Weak);
+        status = append_virus(ctx, virname, IndicatorType_Weak);
     } else {
-        return append_virus(ctx, virname, IndicatorType_Strong);
+        status = append_virus(ctx, virname, IndicatorType_Strong);
     }
+
+    return status;
+}
+
+void cli_set_match_offset(cli_ctx *ctx, uint64_t offset)
+{
+    if ((NULL != ctx) && (NULL != ctx->report))
+        cli_scan_report_note_match_offset(ctx->report, offset);
 }
 
 const char *cli_get_last_virus(const cli_ctx *ctx)

@@ -2114,6 +2114,8 @@ cl_error_t cli_ac_scanbuff(
                                         ptN = ptN->next_same;
                                         continue;
                                     } else {
+                                        if (ctx)
+                                            cli_set_match_offset(ctx, offmatrix[pt->parts - 1][1]);
                                         if (ctx && SCAN_ALLMATCHES) {
                                             ret = cli_append_virus(ctx, (const char *)pt->virname);
                                             if (ret != CL_SUCCESS && ret != CL_VERIFIED && ret != CL_VIRUS) {
@@ -2227,6 +2229,8 @@ cl_error_t cli_ac_scanbuff(
                                     ptN = ptN->next_same;
                                     continue;
                                 } else {
+                                    if (ctx)
+                                        cli_set_match_offset(ctx, realoff);
                                     if (ctx && SCAN_ALLMATCHES) {
                                         ret = cli_append_virus(ctx, (const char *)pt->virname);
                                         if (ret != CL_SUCCESS && ret != CL_VERIFIED && ret != CL_VIRUS) {

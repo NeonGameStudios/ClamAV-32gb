@@ -416,11 +416,11 @@ check_oracle_output()
             echo "$oracle_label did not produce a structured report" >&2
             return 1
         fi
-        if ! python3 - "$oracle_report" "$expected_completion" "$expected_signature" "$expected_type" "$expected_size" "$expected_exit" <<'PY'
+        if ! python3 - "$oracle_report" "$expected_completion" "$expected_signature" "$expected_offset" "$expected_type" "$expected_size" "$expected_exit" <<'PY'
 import json
 import sys
 
-report_path, expected_completion, expected_signature, expected_type, expected_size, expected_exit = sys.argv[1:]
+report_path, expected_completion, expected_signature, expected_offset, expected_type, expected_size, expected_exit = sys.argv[1:]
 expected_exit = int(expected_exit)
 if expected_exit not in (0, 1, 2):
     raise SystemExit("structured report oracle has an unsupported expected exit status")
@@ -450,12 +450,18 @@ last_alert = report.get("last_alert")
 if expected_signature == "-":
     if last_alert not in (None, ""):
         raise SystemExit("structured report contains an unexpected alert")
+    if report.get("last_alert_offset") is not None:
+        raise SystemExit("structured report contains an unexpected alert offset")
     if report.get("verdict") not in (0, 1):
         raise SystemExit("structured report contains an unexpected verdict")
 elif last_alert not in (expected_signature, expected_signature + ".UNOFFICIAL"):
     raise SystemExit("structured report alert does not exactly match the oracle")
 elif report.get("verdict") not in (2, 3):
     raise SystemExit("structured report detection does not carry a non-clean verdict")
+elif type(report.get("last_alert_offset")) is not int or report["last_alert_offset"] < 0:
+    raise SystemExit("structured report detection does not carry a native-width alert offset")
+elif report["last_alert_offset"] != int(expected_offset):
+    raise SystemExit("structured report alert offset does not exactly match the oracle")
 if expected_exit in (0, 1) and report["status"] != 0:
     raise SystemExit("structured report status is non-success for expected exit")
 if expected_exit == 2 and report["status"] == 0:

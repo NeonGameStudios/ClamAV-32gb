@@ -1253,6 +1253,36 @@ START_TEST(test_scan_report_complete_and_json)
 }
 END_TEST
 
+START_TEST(test_scan_report_last_alert_offset_contract)
+{
+    cl_scan_report_t *report = NULL;
+    uint64_t offset          = 0;
+    bool present             = true;
+    char *json               = NULL;
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+    ck_assert_int_eq(cl_scan_report_get_last_alert_offset(report, &offset, &present), CL_SUCCESS);
+    ck_assert(!present);
+
+    cli_scan_report_note_match_offset(report, 34359738304ULL);
+    ck_assert(cli_scan_report_take_match_offset(report, &offset));
+    ck_assert_uint_eq(offset, 34359738304ULL);
+    ck_assert(!cli_scan_report_take_match_offset(report, &offset));
+
+    report->last_alert              = strdup("Test.Offset");
+    report->last_alert_offset       = 34359738304ULL;
+    report->last_alert_offset_valid = true;
+    ck_assert_int_eq(cl_scan_report_get_last_alert_offset(report, &offset, &present), CL_SUCCESS);
+    ck_assert(present);
+    ck_assert_uint_eq(offset, 34359738304ULL);
+    ck_assert_int_eq(cl_scan_report_to_json(report, &json), CL_SUCCESS);
+    ck_assert_ptr_nonnull(strstr(json, "\"last_alert_offset\":34359738304"));
+
+    free(json);
+    cl_scan_report_free(report);
+}
+END_TEST
+
 START_TEST(test_scan_report_json_preserves_unsigned_boundaries)
 {
     cl_scan_report_t *report = NULL;
@@ -20182,6 +20212,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
+    tcase_add_test(tc_cl, test_scan_report_last_alert_offset_contract);
     tcase_add_test(tc_cl, test_scan_report_json_preserves_unsigned_boundaries);
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_scan_report_unsupported_encryption_is_not_malformed);

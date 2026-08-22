@@ -1788,6 +1788,17 @@ extern cl_error_t cl_scan_report_get_last_alert(
     const cl_scan_report_t *report,
     const char **alert_out);
 
+/**
+ * @brief Return the exact root-object offset for the retained last alert.
+ *
+ * `present_out` is false when the alert came from a parser/child object, from
+ * a detector without a stable byte coordinate, or when no alert was retained.
+ */
+extern cl_error_t cl_scan_report_get_last_alert_offset(
+    const cl_scan_report_t *report,
+    uint64_t *offset_out,
+    bool *present_out);
+
 extern cl_error_t cl_scan_report_get_target(
     const cl_scan_report_t *report,
     const char **target_out);

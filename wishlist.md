@@ -796,3 +796,10 @@
   buffer and preserve its explicit incomplete/non-cacheable result; the
   synthetic 260-byte identifier regression is registered, with compiled ISO
   corpus, sanitizer, and parser-family qualification still required.
+
+- Structured detection reports now carry an optional native-width
+  `last_alert_offset` for retained root-level AC, BM, and PCRE matcher alerts;
+  service qualification rejects a detection report that omits or mismatches
+  the oracle offset. Parser, hash, callback, and child-layer detections remain
+  offset-less until they have a stable coordinate contract; compiled report,
+  service, and Sonic1 qualification remain open.

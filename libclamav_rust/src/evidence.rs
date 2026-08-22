@@ -70,6 +70,10 @@ pub struct IndicatorMeta {
 
     /// Object ID for the layer this indicator was found in.
     object_id: usize,
+
+    /// Native-width offset when this alert came from a root-object matcher.
+    /// Parser and child-object alerts intentionally carry no offset.
+    match_offset: Option<u64>,
 }
 
 /// Initialize a match vector
@@ -197,6 +201,34 @@ pub unsafe extern "C" fn _evidence_get_last_alert(evidence: sys::evidence_t) -> 
     } else {
         // no alerts, return NULL
         std::ptr::null()
+    }
+}
+
+/// C interface for the native-width coordinate of the retained last alert.
+///
+/// Returns false when the retained alert has no stable root-object offset.
+#[export_name = "evidence_get_last_alert_offset"]
+pub unsafe extern "C" fn _evidence_get_last_alert_offset(
+    evidence: sys::evidence_t,
+    offset_out: *mut u64,
+) -> bool {
+    if evidence.is_null() || offset_out.is_null() {
+        return false;
+    }
+
+    let evidence = ManuallyDrop::new(Box::from_raw(evidence as *mut Evidence));
+    let meta = evidence
+        .strong
+        .values()
+        .last()
+        .and_then(|meta| meta.last())
+        .or_else(|| evidence.pua.values().last().and_then(|meta| meta.last()));
+
+    if let Some(offset) = meta.and_then(|meta| meta.match_offset) {
+        *offset_out = offset;
+        true
+    } else {
+        false
     }
 }
 
@@ -329,6 +361,8 @@ pub unsafe extern "C" fn _evidence_add_indicator(
     name: *const c_char,
     indicator_type: IndicatorType,
     object_id: usize,
+    has_match_offset: bool,
+    match_offset: u64,
     err: *mut *mut FFIError,
 ) -> bool {
     let name_str = validate_str_param!(name, err = err);
@@ -342,7 +376,8 @@ pub unsafe extern "C" fn _evidence_add_indicator(
             name,
             indicator_type,
             0, // depth is always 0 when first adding an indicator
-            object_id
+            object_id,
+            has_match_offset.then_some(match_offset)
         )
     )
 }
@@ -394,11 +429,13 @@ impl Evidence {
         indicator_type: IndicatorType,
         depth: usize,
         object_id: usize,
+        match_offset: Option<u64>,
     ) -> Result<(), Error> {
         let meta: IndicatorMeta = IndicatorMeta {
             static_virname,
             depth,
             object_id,
+            match_offset,
         };
 
         match indicator_type {
@@ -462,6 +499,7 @@ impl Evidence {
                     IndicatorType::Strong,
                     meta.depth + depth_increment,
                     meta.object_id,
+                    meta.match_offset,
                 )?;
             }
         }
@@ -474,6 +512,7 @@ impl Evidence {
                     IndicatorType::PotentiallyUnwanted,
                     meta.depth + depth_increment,
                     meta.object_id,
+                    meta.match_offset,
                 )?;
             }
         }
@@ -485,6 +524,7 @@ impl Evidence {
                     IndicatorType::Weak,
                     meta.depth + depth_increment,
                     meta.object_id,
+                    meta.match_offset,
                 )?;
             }
         }

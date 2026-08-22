@@ -109,6 +109,7 @@ def validate_report(report, oracle, mode, expected_size):
     expected_exit = int(oracle[3])
     expected_completion = oracle[4]
     expected_signature = oracle[5]
+    expected_offset = oracle[6]
     expected_type = oracle[7]
     if expected_exit not in (0, 1, 2):
         fail(f"{mode} oracle has an unsupported expected exit status")
@@ -128,12 +129,18 @@ def validate_report(report, oracle, mode, expected_size):
     if expected_signature == "-":
         if last_alert not in (None, ""):
             fail(f"{mode} clean oracle has an unexpected alert")
+        if report.get("last_alert_offset") is not None:
+            fail(f"{mode} clean oracle has an unexpected alert offset")
         if report.get("verdict") not in (0, 1):
             fail(f"{mode} clean oracle has an unexpected verdict")
     elif last_alert not in (expected_signature, f"{expected_signature}.UNOFFICIAL"):
         fail(f"{mode} report alert does not exactly match the oracle")
     elif report.get("verdict") not in (2, 3):
         fail(f"{mode} detection report does not carry a non-clean verdict")
+    elif type(report.get("last_alert_offset")) is not int or report["last_alert_offset"] < 0:
+        fail(f"{mode} detection report does not carry a native-width alert offset")
+    elif report["last_alert_offset"] != int(expected_offset):
+        fail(f"{mode} report alert offset does not exactly match the oracle")
     if expected_exit in (0, 1) and report["status"] != 0:
         fail(f"{mode} report status is non-success for expected exit {expected_exit}")
     if expected_exit == 2 and report["status"] == 0:
