@@ -625,7 +625,8 @@
 - Old-format SIS metadata table, dependency-header, string, header, and
   language-table failures now remain incomplete/non-cacheable with distinct
   `CL_EREAD` versus `CL_EPARSE` results; add compiled callback-fault and
-  production SIS corpus qualification.
+  production SIS corpus qualification. A focused in-range language-table
+  callback regression now covers the `CL_EREAD` branch.
 - Old-format SIS metadata and 9.x nested field traversal now honor the shared
   scan deadline and preserve fail-visible `CL_ETIMEOUT`; add compiled timeout,
   malformed-nesting, sanitizer, and production SIS corpus qualification.

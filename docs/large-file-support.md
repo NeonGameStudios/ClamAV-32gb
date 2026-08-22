@@ -5308,3 +5308,12 @@ incomplete before the parser exits. A focused auto-detection callback
 regression covers the 512-byte candidate; static guards remain local evidence,
 while compiled partition-image, sanitizer, and supported-build qualification
 remain release gates.
+
+## SIS language-table read failures — 2026-08-22
+
+Old-format SIS language metadata is a required borrowed fmap window. Its
+admission now checks the native map range before borrowing and distinguishes an
+in-range backing-read failure (`CL_EREAD`) from a genuinely truncated table
+(`CL_EPARSE`), preserving the sticky incomplete/non-cacheable result in both
+cases. A focused callback regression covers the in-range failure; compiled SIS
+corpus, sanitizer, and supported-build qualification remain release gates.

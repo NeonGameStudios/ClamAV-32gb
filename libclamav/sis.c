@@ -80,6 +80,32 @@ sis_read_failure(cli_ctx *ctx, size_t nread, const char *read_reason, const char
     return CL_EPARSE;
 }
 
+static const void *
+sis_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *status,
+             const char *read_reason, const char *short_reason)
+{
+    const void *ptr;
+
+    if (ctx == NULL || ctx->fmap == NULL || status == NULL)
+        return NULL;
+
+    if (offset > ctx->fmap->len || length > ctx->fmap->len - offset) {
+        cli_mark_scan_incomplete(ctx, short_reason);
+        *status = CL_EPARSE;
+        return NULL;
+    }
+
+    ptr = fmap_need_off_once(ctx->fmap, offset, length);
+    if (ptr == NULL) {
+        cli_mark_scan_incomplete(ctx, read_reason);
+        *status = CL_EREAD;
+        return NULL;
+    }
+
+    *status = CL_SUCCESS;
+    return ptr;
+}
+
 static cl_error_t
 sis_checktimelimit(cli_ctx *ctx, const char *reason)
 {
@@ -576,9 +602,10 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
     pos = sis.plangs;
 
-    if (!(llangs = fmap_need_off_once(map, pos, sis.langs * sizeof(uint16_t)))) {
+    if (!(llangs = sis_need_off(ctx, pos, sis.langs * sizeof(uint16_t), &status,
+                                "SIS language table could not be read completely",
+                                "SIS language table was truncated"))) {
         cli_dbgmsg("SIS: Unable to read languages\n");
-        status = sis_incomplete(ctx, "SIS language table was truncated or unavailable");
         goto done;
     }
     pos += sis.langs * sizeof(uint16_t);
