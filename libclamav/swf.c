@@ -204,6 +204,36 @@ static cl_error_t swf_reserve_output(cli_ctx *ctx, uint64_t *reserved, size_t by
     return CL_SUCCESS;
 }
 
+static cl_error_t swf_write_output(cli_ctx *ctx, int fd, const void *data, size_t bytes,
+                                   uint64_t *reserved, const char *failure_reason)
+{
+    cl_error_t status;
+
+    status = swf_reserve_output(ctx, reserved, bytes);
+    if (status != CL_SUCCESS)
+        return status;
+
+    status = swf_checktimelimit(ctx, "SWF output write reached the configured time limit");
+    if (status != CL_SUCCESS) {
+        if (reserved != NULL && *reserved >= (uint64_t)bytes) {
+            cli_scan_release_temporary(ctx, (uint64_t)bytes);
+            *reserved -= (uint64_t)bytes;
+        }
+        return status;
+    }
+
+    if (cli_writen(fd, data, bytes) != bytes) {
+        if (reserved != NULL && *reserved >= (uint64_t)bytes) {
+            cli_scan_release_temporary(ctx, (uint64_t)bytes);
+            *reserved -= (uint64_t)bytes;
+        }
+        cli_mark_scan_incomplete(ctx, failure_reason);
+        return CL_EWRITE;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
 {
     struct CLI_LZMA lz;
@@ -227,14 +257,10 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         return ret;
     }
 
-    if ((ret = swf_reserve_output(ctx, &temporary_reserved, sizeof(struct swf_file_hdr))) != CL_SUCCESS) {
-        return swf_cleanup_temp(ctx, fd, tmpname, ret, 0);
-    }
-
     hdr->signature[0] = 'F';
-    if (cli_writen(fd, hdr, sizeof(struct swf_file_hdr)) != sizeof(struct swf_file_hdr)) {
-        cli_errmsg("scanzws: Can't write to file %s\n", tmpname);
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
+    if ((ret = swf_write_output(ctx, fd, hdr, sizeof(struct swf_file_hdr), &temporary_reserved,
+                                "SWF LZMA header could not be written completely")) != CL_SUCCESS) {
+        return swf_cleanup_temp(ctx, fd, tmpname, ret, 0);
     }
 
     /* read 4 bytes (for compressed 32-bit filesize) [not used for LZMA] */
@@ -318,14 +344,11 @@ static cl_error_t scanzws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         if (count) {
             if ((decode_status = cli_checklimits("SWF", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
                 break;
-            if ((decode_status = swf_reserve_output(ctx, &temporary_reserved, count)) != CL_SUCCESS)
-                break;
-            if (cli_writen(fd, outbuff, count) != count) {
+            if ((decode_status = swf_write_output(ctx, fd, outbuff, count, &temporary_reserved,
+                                                  "SWF LZMA output could not be written completely")) != CL_SUCCESS) {
                 cli_errmsg("scanzws: Can't write to file %s\n", tmpname);
-                cli_mark_scan_incomplete(ctx, "SWF LZMA output could not be written completely");
-                decode_status = CL_EWRITE;
                 cli_LzmaShutdown(&lz);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
+                return swf_cleanup_temp(ctx, fd, tmpname, decode_status, temporary_reserved);
             }
             outsize += count;
         }
@@ -382,14 +405,10 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         return ret;
     }
 
-    if ((ret = swf_reserve_output(ctx, &temporary_reserved, sizeof(struct swf_file_hdr))) != CL_SUCCESS) {
-        return swf_cleanup_temp(ctx, fd, tmpname, ret, 0);
-    }
-
     hdr->signature[0] = 'F';
-    if (cli_writen(fd, hdr, sizeof(struct swf_file_hdr)) != sizeof(struct swf_file_hdr)) {
-        cli_errmsg("scancws: Can't write to file %s\n", tmpname);
-        return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
+    if ((ret = swf_write_output(ctx, fd, hdr, sizeof(struct swf_file_hdr), &temporary_reserved,
+                                "SWF zlib header could not be written completely")) != CL_SUCCESS) {
+        return swf_cleanup_temp(ctx, fd, tmpname, ret, 0);
     }
 
     stream.avail_in  = 0;
@@ -433,14 +452,11 @@ static cl_error_t scancws(cli_ctx *ctx, struct swf_file_hdr *hdr)
         if (count) {
             if ((decode_status = cli_checklimits("SWF", ctx, outsize + count, 0, 0)) != CL_SUCCESS)
                 break;
-            if ((decode_status = swf_reserve_output(ctx, &temporary_reserved, count)) != CL_SUCCESS)
-                break;
-            if (cli_writen(fd, outbuff, count) != count) {
+            if ((decode_status = swf_write_output(ctx, fd, outbuff, count, &temporary_reserved,
+                                                  "SWF zlib output could not be written completely")) != CL_SUCCESS) {
                 cli_errmsg("scancws: Can't write to file %s\n", tmpname);
-                cli_mark_scan_incomplete(ctx, "SWF zlib output could not be written completely");
-                decode_status = CL_EWRITE;
                 inflateEnd(&stream);
-                return swf_cleanup_temp(ctx, fd, tmpname, CL_EWRITE, temporary_reserved);
+                return swf_cleanup_temp(ctx, fd, tmpname, decode_status, temporary_reserved);
             }
             outsize += count;
         }

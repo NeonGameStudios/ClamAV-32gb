@@ -3360,12 +3360,15 @@ and Sonic1 qualification remain release gates.
 
 ## SWF temporary-output admission deadline — 2026-08-22
 
-SWF CWS/ZWS temporary-output reservations now re-check the shared deadline
-before quota admission, closing the interval between decoder-loop checks and
-the output write. An expired context releases the temporary file and returns
-`CL_ETIMEOUT` without treating partial output as scannable. A source guard
-covers this boundary; deterministic output-timeout injection, compiled SWF
-corpus, sanitizer, and Sonic1 qualification remain release gates.
+SWF CWS/ZWS temporary-output writes now re-check the shared deadline after
+quota admission and immediately before each header or decoded-chunk write,
+closing the interval between decoder-loop checks and the actual output. An
+expired context releases the current reservation and temporary file and
+returns `CL_ETIMEOUT`; short writes release the current reservation, mark the
+layer incomplete, and return `CL_EWRITE`, without treating partial output as
+scannable. Source guards cover the boundary; deterministic output-timeout
+injection, compiled SWF corpus, sanitizer, and Sonic1 qualification remain
+release gates.
 
 ## XLM temporary-output deadlines — 2026-08-22
 
