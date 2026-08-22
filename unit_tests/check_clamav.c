@@ -9566,9 +9566,95 @@ START_TEST(test_ai_model_parser_is_explicitly_unsupported)
 }
 END_TEST
 
-START_TEST(test_generic_graphics_parser_is_explicitly_unsupported)
+START_TEST(test_graphics_bmp_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {0x42, 0x4d, 0, 0, 0, 0, 0, 0};
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_IMAGE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GRAPHICS", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_bmp_structural_admission_remains_incomplete)
+{
+    uint8_t data[58] = {0};
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    data[0]  = 'B';
+    data[1]  = 'M';
+    data[2]  = 58;
+    data[10] = 54;
+    data[14] = 40;
+    data[18] = 1;
+    data[22] = 1;
+    data[26] = 1;
+    data[28] = 24;
+    data[34] = 4;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_IMAGE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GRAPHICS", NULL);
+    ck_assert_msg((ret == CL_EUNPACK) || (ret == CL_EPARSE),
+                  "expected explicit BMP incompleteness, got %d", ret);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_generic_graphics_parser_is_explicitly_unsupported)
+{
+    static const uint8_t data[] = {
+        0x00, 0x00, 0x00, 0x0c, 0x6a, 0x50,
+        0x20, 0x20, 0x0d, 0x0a, 0x87, 0x0a};
     struct cl_scan_options options;
     fmap_t *map;
     struct cl_engine *scan_engine;
@@ -17304,6 +17390,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_sis_name_table_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_python_compiled_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_ai_model_parser_is_explicitly_unsupported);
+    tcase_add_test(tc_cl, test_graphics_bmp_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_bmp_structural_admission_remains_incomplete);
     tcase_add_test(tc_cl, test_generic_graphics_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_compressed_member_streams_to_nested_scan);

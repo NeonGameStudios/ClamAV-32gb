@@ -391,6 +391,8 @@ set(LIBCLAMAV_SOURCES
     openioc.c           openioc.h
     # JPEG image format checker
     jpeg.c              jpeg.h
+    # BMP image format structural admission
+    bmp.c               bmp.h
     # PNG image format checker
     png.c               png.h
     # TIFF image format checker

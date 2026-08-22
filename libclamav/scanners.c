@@ -96,6 +96,7 @@
 #include "cache.h"
 #include "events.h"
 #include "swf.h"
+#include "bmp.h"
 #include "jpeg.h"
 #include "gif.h"
 #include "png.h"
@@ -6794,11 +6795,16 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         case CL_TYPE_GRAPHICS: {
             if (SCAN_PARSE_IMAGE) {
                 /*
-                 * This case is for unhandled graphics types such as BMP, JPEG 2000, etc.
+                 * This case remains the fallback for graphics types such as
+                 * JPEG 2000 that do not yet have a structural parser.
                  *
                  * Note: JPEG 2000 is a very different format from JPEG, JPEG/JFIF, JPEG/Exif, JPEG/SPIFF (1994, 1997)
                  * JPEG 2000 is not handled by cli_parsejpeg.
                  */
+
+                ret = cli_scanbmp(ctx);
+                if (ret != CL_EFORMAT)
+                    break;
 
                 if (SCAN_PARSE_IMAGE_FUZZY_HASH && (DCONF_OTHER & OTHER_CONF_IMAGE_FUZZY_HASH)) {
                     ret = calculate_fuzzy_image_hash(ctx, type);
@@ -6807,8 +6813,8 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
                 }
 
                 /* CL_TYPE_GRAPHICS is the catch-all for recognized image
-                 * formats without a structural parser (for example BMP and
-                 * JPEG 2000). Raw matching and optional fuzzy matching do not
+                 * formats without a structural parser (for example JPEG
+                 * 2000). Raw matching and optional fuzzy matching do not
                  * constitute complete inspection of the image layer. Keep a
                  * detection/terminal matcher result, but make a non-detecting
                  * scan explicitly incomplete instead of returning clean. */

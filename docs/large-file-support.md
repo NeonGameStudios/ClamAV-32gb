@@ -4953,6 +4953,18 @@ boundary and rejects a clean-prefix result, while a separate exact-32-GiB
 stdin run must detect the final marker at offset `34359738304`; the dedicated
 host run remains required.
 
+## BMP structural admission remains fail-visible — 2026-08-21
+
+Recognized BMP inputs now receive bounded structural validation of the file
+header, DIB dimensions, compression, pixel offset, declared file size, and
+pixel range without mapping the attacker-declared image payload. This does not
+claim complete BMP decoding: valid structurally admitted BMPs return an
+explicit unsupported/incomplete result, while malformed/truncated inputs
+preserve `CL_EPARSE` and backing callback failures preserve `CL_EREAD`.
+JPEG 2000 and other generic graphics remain on the explicit unsupported
+boundary. Full BMP/JPEG 2000 parser and production-corpus qualification remain
+open.
+
 ## Opt-in library exact-edge qualification
 
 The unit suite now includes a dedicated sparse exact-32-GiB library test. It
