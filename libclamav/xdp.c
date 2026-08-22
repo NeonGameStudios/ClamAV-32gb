@@ -82,8 +82,10 @@ static cl_error_t dump_xdp(cli_ctx *ctx, fmap_t *map, char **filename)
         return ret;
 
     ret = cli_gentempfd(ctx->this_layer_tmpdir, filename, &fd);
-    if (ret != CL_SUCCESS)
+    if (ret != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "XDP temporary output could not be created");
         return ret;
+    }
 
     while (offset < map->len) {
         ret = xdp_checktimelimit(ctx, "XDP temporary dump reached the configured time limit");

@@ -4243,12 +4243,14 @@ static cl_error_t cli_scanole2(cli_ctx *ctx)
 
     /* generate the temporary directory */
     if (NULL == (dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "ole2-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "OLE2 temporary directory could not be allocated");
         ret = CL_EMEM;
         goto done;
     }
 
     if (mkdir(dir, 0700)) {
         cli_dbgmsg("OLE2: Can't create temporary directory %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "OLE2 temporary directory could not be created");
         free(dir);
         dir = NULL;
         ret = CL_ETMPDIR;
@@ -4301,11 +4303,14 @@ static cl_error_t cli_scantar(cli_ctx *ctx, unsigned int posix)
     cli_dbgmsg("in cli_scantar()\n");
 
     /* generate temporary directory */
-    if (!(dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "tar-tmp")))
+    if (!(dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "tar-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "TAR temporary directory could not be allocated");
         return CL_EMEM;
+    }
 
     if (mkdir(dir, 0700)) {
         cli_errmsg("Tar: Can't create temporary directory %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "TAR temporary directory could not be created");
         free(dir);
         return CL_ETMPDIR;
     }
@@ -4326,11 +4331,14 @@ static cl_error_t cli_scanscrenc(cli_ctx *ctx)
 
     cli_dbgmsg("in cli_scanscrenc()\n");
 
-    if (!(tempname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "screnc-tmp")))
+    if (!(tempname = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "screnc-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "HTML script-encoded temporary directory could not be allocated");
         return CL_EMEM;
+    }
 
     if (mkdir(tempname, 0700)) {
         cli_dbgmsg("CHM: Can't create temporary directory %s\n", tempname);
+        cli_mark_scan_incomplete(ctx, "HTML script-encoded temporary directory could not be created");
         free(tempname);
         return CL_ETMPDIR;
     }
@@ -4483,11 +4491,14 @@ static cl_error_t cli_scanpdf(cli_ctx *ctx, off_t offset)
     cl_error_t ret;
     char *dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "pdf-tmp");
 
-    if (!dir)
+    if (!dir) {
+        cli_mark_scan_incomplete(ctx, "PDF temporary directory could not be allocated");
         return CL_EMEM;
+    }
 
     if (mkdir(dir, 0700)) {
         cli_dbgmsg("Can't create temporary directory for PDF file %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "PDF temporary directory could not be created");
         free(dir);
         return CL_ETMPDIR;
     }
@@ -4505,11 +4516,14 @@ static cl_error_t cli_scantnef(cli_ctx *ctx)
     cl_error_t ret;
     char *dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "tnef-tmp");
 
-    if (!dir)
+    if (!dir) {
+        cli_mark_scan_incomplete(ctx, "TNEF temporary directory could not be allocated");
         return CL_EMEM;
+    }
 
     if (mkdir(dir, 0700)) {
         cli_dbgmsg("Can't create temporary directory for tnef file %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "TNEF temporary directory could not be created");
         free(dir);
         return CL_ETMPDIR;
     }
@@ -4530,11 +4544,14 @@ static cl_error_t cli_scanuuencoded(cli_ctx *ctx)
     cl_error_t ret;
     char *dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "uuencoded-tmp");
 
-    if (!dir)
+    if (!dir) {
+        cli_mark_scan_incomplete(ctx, "UUEncode temporary directory could not be allocated");
         return CL_EMEM;
+    }
 
     if (mkdir(dir, 0700)) {
         cli_dbgmsg("Can't create temporary directory for uuencoded file %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "UUEncode temporary directory could not be created");
         free(dir);
         return CL_ETMPDIR;
     }
@@ -4562,12 +4579,14 @@ static cl_error_t cli_scanmail(cli_ctx *ctx)
 
     /* generate the temporary directory */
     if (NULL == (dir = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "mail-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "mail temporary directory could not be allocated");
         ret = CL_EMEM;
         goto done;
     }
 
     if (mkdir(dir, 0700)) {
         cli_dbgmsg("Mail: Can't create temporary directory %s\n", dir);
+        cli_mark_scan_incomplete(ctx, "mail temporary directory could not be created");
         ret = CL_ETMPDIR;
         goto done;
     }

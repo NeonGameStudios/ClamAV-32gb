@@ -1879,6 +1879,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         file_tmp_o1 = (file_buff_t *)malloc(sizeof(file_buff_t));
                         if (!file_tmp_o1) {
                             cli_errmsg("cli_html_normalise: Unable to allocate memory for file_tmp_o1\n");
+                            cli_mark_scan_incomplete(ctx, "HTML embedded data output state could not be allocated");
                             goto done;
                         }
                         file_tmp_o1->ctx                = ctx;
@@ -1892,12 +1893,14 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         if (LSTAT(filename, &statbuf) == -1) {
                             if (mkdir(filename, 0700) && errno != EEXIST) {
                                 cli_errmsg("Failed to create directory: %s\n", dirname);
+                                cli_mark_scan_incomplete(ctx, "HTML RFC2397 temporary directory could not be created");
                                 goto done;
                             }
                         }
 
                         tmp_file = cli_gentemp(filename);
                         if (!tmp_file) {
+                            cli_mark_scan_incomplete(ctx, "HTML embedded data output could not be created");
                             goto done;
                         }
                         cli_dbgmsg("RFC2397 data file: %s\n", tmp_file);
@@ -1905,6 +1908,7 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         free(tmp_file);
                         if (file_tmp_o1->fd < 0) {
                             cli_dbgmsg("open failed: %s\n", filename);
+                            cli_mark_scan_incomplete(ctx, "HTML embedded data output could not be opened");
                             goto done;
                         }
                         file_tmp_o1->length = 0;

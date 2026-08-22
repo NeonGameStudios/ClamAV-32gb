@@ -318,10 +318,13 @@ cl_error_t cli_scansis(cli_ctx *ctx)
 
     cli_dbgmsg("in scansis()\n");
 
-    if (!(tmpd = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "sis-tmp")))
+    if (!(tmpd = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "sis-tmp"))) {
+        cli_mark_scan_incomplete(ctx, "SIS temporary directory could not be allocated");
         return CL_ETMPDIR;
+    }
     if (mkdir(tmpd, 0700)) {
         cli_dbgmsg("SIS: Can't create temporary directory %s\n", tmpd);
+        cli_mark_scan_incomplete(ctx, "SIS temporary directory could not be created");
         free(tmpd);
         return CL_ETMPDIR;
     }

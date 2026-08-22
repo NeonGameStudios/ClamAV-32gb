@@ -10413,6 +10413,52 @@ START_TEST(test_sis_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_parser_staging_directory_failures_are_fail_visible)
+{
+    static const uint8_t sis_data[16] = {0};
+    static const uint8_t xdp_document[] = "<chunk>QUJD</chunk>";
+    char invalid_tmpdir[PATH_MAX];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/legacy-staging-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
+                  "temporary directory test path was truncated");
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(sis_data, sizeof(sis_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = invalid_tmpdir;
+
+    ret = cli_scansis(&ctx);
+    ck_assert_int_eq(ret, CL_ETMPDIR);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "SIS temporary directory could not be created");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.keeptmp = 1;
+    map             = cl_fmap_open_memory(xdp_document, sizeof(xdp_document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = invalid_tmpdir;
+
+    ret = cli_scanxdp(&ctx);
+    ck_assert_int_eq(ret, CL_ECREAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "XDP temporary output could not be created");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_sis_name_table_read_failure_is_fail_visible)
 {
     uint8_t data[92] = {0};
@@ -20793,6 +20839,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_sis_truncated_contents_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_parser_staging_directory_failures_are_fail_visible);
     tcase_add_test(tc_cl, test_sis_name_table_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_language_table_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_python_compiled_parser_is_explicitly_unsupported);

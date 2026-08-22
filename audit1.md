@@ -4762,3 +4762,15 @@ when setup fails before temporary-file creation or quota admission.
 The source guards and non-clang regression gates pass. Compiled allocation
 fault injection, sanitizer runs, production corpora, and Sonic1 qualification
 remain open.
+
+## Legacy parser staging setup failures — 2026-08-22
+
+The legacy parser entry points for HTML RFC2397, XDP, SIS, MSXML, OLE2, TAR,
+script-encoded HTML, PDF, TNEF, UUEncode, and mail could return directly when
+their required temporary state, directory, or output file could not be
+allocated or created. Those paths now mark the layer incomplete before
+returning, including the two direct MSXML callback/base64 staging branches.
+
+The source guards and non-clang regression gates pass. Compiled fault
+injection, sanitizer runs, production corpora, and Sonic1 qualification remain
+open.
