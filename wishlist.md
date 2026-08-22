@@ -88,6 +88,9 @@
   is fail-visible instead of using an unaccounted whole-image buffer.
 - PNG large ancillary and IDAT chunks now skip their payload without a whole-
   chunk fmap mapping; only the fixed-size IHDR is borrowed.
+- JPEG 2000 structural box admission now checks the shared deadline at parser
+  entry and before each top-level box; add compiled timeout-injection and
+  production image-corpus qualification.
 - OLE2 summary-property metadata now reads only the bounded property table and
   bounded per-property windows instead of mapping the full attacker-declared
   property-set size; malformed/truncated windows remain fail-visible.

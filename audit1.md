@@ -3219,3 +3219,11 @@ Direct expired-context regressions cover ELF, Mach-O, Mach-O universal-binary,
 and UDF entry points; source guards and the capability manifest record the new
 coverage. Compiled parser corpus, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## JPEG 2000 box traversal deadline — 2026-08-22
+
+The bounded JPEG 2000 structural-admission parser now checks the shared scan
+deadline at entry and before each top-level box, preserving `CL_ETIMEOUT` as
+an incomplete, non-cacheable result. A direct expired-context regression and
+source guards cover the new behavior; compiled image corpus, sanitizer, and
+Sonic1 qualification remain release gates.

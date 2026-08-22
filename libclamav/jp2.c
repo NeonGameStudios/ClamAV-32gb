@@ -70,6 +70,16 @@ static cl_error_t jp2_unsupported(cli_ctx *ctx, const char *reason)
     return CL_EUNPACK;
 }
 
+static cl_error_t jp2_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 cl_error_t cli_scanjp2(cli_ctx *ctx)
 {
     uint8_t signature[JP2_SIGNATURE_SIZE];
@@ -90,6 +100,10 @@ cl_error_t cli_scanjp2(cli_ctx *ctx)
     if ((NULL == ctx) || (NULL == ctx->fmap))
         return CL_ENULLARG;
 
+    status = jp2_checktimelimit(ctx, "JP2 inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
+
     status = jp2_read_exact(ctx, signature, 0, sizeof(signature),
                             "JP2 signature could not be read completely");
     if (status != CL_SUCCESS)
@@ -101,6 +115,10 @@ cl_error_t cli_scanjp2(cli_ctx *ctx)
     offset     = JP2_SIGNATURE_SIZE;
 
     while (offset < map_length) {
+        status = jp2_checktimelimit(ctx, "JP2 box traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            return status;
+
         if (map_length - offset < JP2_BOX_HEADER_SIZE)
             return jp2_parse_error(ctx, "JP2 box header is truncated");
         if (offset > (uint64_t)SIZE_MAX)
