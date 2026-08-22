@@ -60,7 +60,8 @@ write_synthetic_elf "$out/artifacts/clamscan"
 write_synthetic_elf "$out/artifacts/clamscan-sanitizer"
 printf 'synthetic runtime component\n' > "$out/artifacts/runtime-components/libclamav.so"
 printf 'synthetic sanitizer runtime component\n' > "$out/artifacts/runtime-components-sanitizer/libclamav.so"
-printf 'synthetic Rust archive\n' > "$out/artifacts/clamav_rust.a"
+printf 'synthetic release Rust archive\n' > "$out/artifacts/clamav_rust-release.a"
+printf 'synthetic sanitizer Rust archive\n' > "$out/artifacts/clamav_rust-sanitizer.a"
 printf 'CMAKE_BUILD_TYPE:STRING=Release\nCMAKE_HOME_DIRECTORY:INTERNAL=%s\n' "$root" > "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_COMMIT:INTERNAL=%s\n' "$source_commit" >> "$out/provenance/CMakeCache.txt"
 printf 'CLAMAV_SOURCE_MANIFEST_SHA256:INTERNAL=%s\n' "$source_manifest_hash" >> "$out/provenance/CMakeCache.txt"
@@ -161,10 +162,23 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'
     printf 'sanitizer_loaded_dependencies=provenance/loaded-dependencies-sanitizer.txt\n'
     printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
-    rust_library_hash=$(sha256sum "$out/artifacts/clamav_rust.a" | awk '{ print $1 }')
-    printf 'sanitizer_rust_library_path=artifacts/clamav_rust.a\n'
-    printf 'sanitizer_rust_library_sha256=%s\n' "$rust_library_hash"
+    release_rust_library_hash=$(sha256sum "$out/artifacts/clamav_rust-release.a" | awk '{ print $1 }')
+    sanitizer_rust_library_hash=$(sha256sum "$out/artifacts/clamav_rust-sanitizer.a" | awk '{ print $1 }')
+    printf 'release_rust_library_path=artifacts/clamav_rust-release.a\n'
+    printf 'release_rust_library_sha256=%s\n' "$release_rust_library_hash"
+    printf 'unrar_status=disabled\n'
+    printf 'unrar_library_path=none\n'
+    printf 'unrar_library_sha256=none\n'
+    printf 'unrar_backend_path=none\n'
+    printf 'unrar_backend_sha256=none\n'
+    printf 'sanitizer_rust_library_path=artifacts/clamav_rust-sanitizer.a\n'
+    printf 'sanitizer_rust_library_sha256=%s\n' "$sanitizer_rust_library_hash"
     printf 'sanitizer_rust_symbols=provenance/rust-sanitizer-symbols.txt\n'
+    printf 'sanitizer_unrar_status=disabled\n'
+    printf 'sanitizer_unrar_library_path=none\n'
+    printf 'sanitizer_unrar_library_sha256=none\n'
+    printf 'sanitizer_unrar_backend_path=none\n'
+    printf 'sanitizer_unrar_backend_sha256=none\n'
     printf 'sanitizer_compile_graph=pass\n'
     printf 'sanitizer_rust_instrumentation=pass\n'
     printf 'sanitizer_instrumentation=pass\n'
@@ -391,6 +405,25 @@ if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
 fi
 mv "$out/provenance/loaded-dependencies-sanitizer.good" \
     "$out/provenance/loaded-dependencies-sanitizer.txt"
+
+cp "$out/artifacts/clamav_rust-release.a" "$out/artifacts/clamav_rust-release.good"
+printf 'tampered release Rust archive\n' > "$out/artifacts/clamav_rust-release.a"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted a release Rust artifact with a mismatched identity hash' >&2
+    exit 1
+fi
+mv "$out/artifacts/clamav_rust-release.good" "$out/artifacts/clamav_rust-release.a"
+
+cp "$out/build-identity.txt" "$out/build-identity.good"
+sed 's/^unrar_status=disabled$/unrar_status=enabled/; s#^unrar_library_path=none$#unrar_library_path=artifacts/optional-components/missing.so#; s#^unrar_library_sha256=none$#unrar_library_sha256=deadbeef#' \
+    "$out/build-identity.good" > "$out/build-identity.txt"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted enabled UnRAR without a copied component artifact' >&2
+    exit 1
+fi
+mv "$out/build-identity.good" "$out/build-identity.txt"
 
 refresh_manifest
 printf 'tampered scanner\n' >> "$out/artifacts/clamscan"

@@ -3550,3 +3550,16 @@ propagates that status instead of allowing a timeout to become a clean result.
 A dispatch-level expired-context regression and source guards cover the
 contract; compiled RIFF corpus, callback/timeout fault injection, sanitizer,
 and Sonic1 qualification remain release gates.
+
+## Runtime component provenance — 2026-08-22
+
+The release evidence gate previously captured the scanner and ldd-selected
+libraries but could omit the Rust static archive and optional UnRAR
+interface/backend, which may be statically linked or loaded with dlopen. It
+now preserves release and sanitizer Rust archives, records the exact
+ENABLE_UNRAR disposition, copies enabled UnRAR interface/backend artifacts,
+and places those copied optional artifacts first in the loader path used for
+evidence. The verifier hashes and validates every recorded component, while
+synthetic controls reject missing or mismatched Rust or enabled-UnRAR
+evidence. This closes the component-identity gap structurally; production-CVD,
+service, sanitizer-runtime, and Sonic1 qualification remain release gates.

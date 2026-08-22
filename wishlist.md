@@ -616,6 +616,11 @@
 - clamd FILDES now returns a non-clean worker result when descriptor passing is
   unavailable after sending its explicit wire error; add a compiled
   no-FD-passing integration fixture before claiming that build variant.
+- Runtime release evidence now preserves and hashes the release and sanitizer
+  Rust archives, records the exact ENABLE_UNRAR disposition, copies enabled
+  UnRAR interface/backend artifacts, and puts those artifacts first in the
+  loader path; synthetic verifier controls reject missing or mismatched
+  components. Authorized production-CVD and service qualification remain open.
 
 ## Large-file validation and expansion progression
 

@@ -68,6 +68,7 @@ policy_edge_stdin_log=$out/32g-edge-stdin.log
 cancellation_log=$out/cancellation.log
 manifest=$out/SHA256SUMS
 scanner_copy=$out/artifacts/clamscan
+release_rust_library=$out/artifacts/clamav_rust-release.a
 cmake_cache=$out/provenance/CMakeCache.txt
 compile_commands=$out/provenance/compile_commands.json
 sanitizer_cmake_cache=$out/provenance/CMakeCache-sanitizer.txt
@@ -81,7 +82,7 @@ source_manifest=$out/provenance/source-manifest.txt
 build_source_manifest=$out/provenance/build-source-manifest.txt
 for required in "$metadata" "$host_preflight" "$results" "$policy_log" \
     "$policy_stdin_log" "$policy_edge_stdin_log" "$cancellation_log" \
-    "$manifest" "$scanner_copy" "$cmake_cache" "$compile_commands" "$cargo_lock" \
+    "$manifest" "$scanner_copy" "$release_rust_library" "$cmake_cache" "$compile_commands" "$cargo_lock" \
     "$repository_metadata" "$repository_tree" "$repository_index" \
     "$source_manifest" "$build_source_manifest"; do
     if [ ! -s "$required" ]; then
@@ -472,6 +473,69 @@ grep -Fx 'runtime_component_dir=artifacts/runtime-components' "$metadata" >/dev/
     echo 'evidence does not identify copied runtime component artifacts' >&2
     exit 1
 }
+grep -Fx 'release_rust_library_path=artifacts/clamav_rust-release.a' "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not identify the release Rust component artifact' >&2
+    exit 1
+}
+release_rust_library_sha256=$(sha256sum "$release_rust_library" | awk '{ print $1 }')
+grep -Fx "release_rust_library_sha256=$release_rust_library_sha256" "$metadata" >/dev/null 2>&1 || {
+    echo 'release Rust component hash does not match build identity' >&2
+    exit 1
+}
+unrar_status=$(sed -n 's/^unrar_status=//p' "$metadata")
+case "$unrar_status" in
+    enabled|disabled) ;;
+    *)
+        echo 'evidence does not identify the release UnRAR disposition' >&2
+        exit 1
+        ;;
+esac
+unrar_library_path=$(sed -n 's/^unrar_library_path=//p' "$metadata")
+unrar_library_sha256=$(sed -n 's/^unrar_library_sha256=//p' "$metadata")
+unrar_backend_path=$(sed -n 's/^unrar_backend_path=//p' "$metadata")
+unrar_backend_sha256=$(sed -n 's/^unrar_backend_sha256=//p' "$metadata")
+if [ "$unrar_status" = enabled ]; then
+    case "$unrar_library_path" in
+        artifacts/optional-components/*) ;;
+        *)
+            echo 'enabled UnRAR evidence does not identify a copied component artifact' >&2
+            exit 1
+            ;;
+    esac
+    if [ ! -s "$out/$unrar_library_path" ]; then
+        echo 'enabled UnRAR component artifact is missing' >&2
+        exit 1
+    fi
+    unrar_actual_sha256=$(sha256sum "$out/$unrar_library_path" | awk '{ print $1 }')
+    if [ "$unrar_library_sha256" != "$unrar_actual_sha256" ]; then
+        echo 'enabled UnRAR component hash does not match build identity' >&2
+        exit 1
+    fi
+    case "$unrar_backend_path" in
+        none) ;;
+        artifacts/optional-components/*)
+            if [ ! -s "$out/$unrar_backend_path" ]; then
+                echo 'enabled UnRAR backend artifact is missing' >&2
+                exit 1
+            fi
+            unrar_backend_actual_sha256=$(sha256sum "$out/$unrar_backend_path" | awk '{ print $1 }')
+            if [ "$unrar_backend_sha256" != "$unrar_backend_actual_sha256" ]; then
+                echo 'enabled UnRAR backend hash does not match build identity' >&2
+                exit 1
+            fi
+            ;;
+        *)
+            echo 'enabled UnRAR evidence has an invalid backend artifact path' >&2
+            exit 1
+            ;;
+    esac
+else
+    if [ "$unrar_library_path" != none ] || [ "$unrar_library_sha256" != none ] ||
+        [ "$unrar_backend_path" != none ] || [ "$unrar_backend_sha256" != none ]; then
+        echo 'disabled UnRAR evidence unexpectedly carries a component artifact' >&2
+        exit 1
+    fi
+fi
 grep -Fx 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt' "$metadata" >/dev/null 2>&1 || {
     echo 'evidence does not identify runtime dependency artifact mapping' >&2
     exit 1
@@ -592,16 +656,69 @@ if [ "$require_sanitizer" = yes ]; then
         echo 'sanitizer evidence does not prove Rust instrumentation' >&2
         exit 1
     }
-    sanitizer_rust_library=$out/artifacts/clamav_rust.a
+    sanitizer_rust_library=$out/artifacts/clamav_rust-sanitizer.a
     if [ ! -s "$sanitizer_rust_library" ]; then
         echo 'sanitizer Rust archive is missing' >&2
         exit 1
     fi
+    grep -Fx 'sanitizer_rust_library_path=artifacts/clamav_rust-sanitizer.a' "$metadata" >/dev/null 2>&1 || {
+        echo 'sanitizer Rust archive identity is missing' >&2
+        exit 1
+    }
     sanitizer_rust_library_sha256=$(sha256sum "$sanitizer_rust_library" | awk '{ print $1 }')
     grep -Fx "sanitizer_rust_library_sha256=$sanitizer_rust_library_sha256" "$metadata" >/dev/null 2>&1 || {
         echo 'sanitizer Rust archive hash does not match build identity' >&2
         exit 1
     }
+    sanitizer_unrar_status=$(sed -n 's/^sanitizer_unrar_status=//p' "$metadata")
+    if [ "$sanitizer_unrar_status" != "$unrar_status" ]; then
+        echo 'release and sanitizer UnRAR dispositions do not match' >&2
+        exit 1
+    fi
+    sanitizer_unrar_library_path=$(sed -n 's/^sanitizer_unrar_library_path=//p' "$metadata")
+    sanitizer_unrar_library_sha256=$(sed -n 's/^sanitizer_unrar_library_sha256=//p' "$metadata")
+    sanitizer_unrar_backend_path=$(sed -n 's/^sanitizer_unrar_backend_path=//p' "$metadata")
+    sanitizer_unrar_backend_sha256=$(sed -n 's/^sanitizer_unrar_backend_sha256=//p' "$metadata")
+    if [ "$sanitizer_unrar_status" = enabled ]; then
+        case "$sanitizer_unrar_library_path" in
+            artifacts/optional-components-sanitizer/*) ;;
+            *)
+                echo 'enabled sanitizer UnRAR evidence does not identify a copied component artifact' >&2
+                exit 1
+                ;;
+        esac
+        if [ ! -s "$out/$sanitizer_unrar_library_path" ]; then
+            echo 'enabled sanitizer UnRAR component artifact is missing' >&2
+            exit 1
+        fi
+        sanitizer_unrar_actual_sha256=$(sha256sum "$out/$sanitizer_unrar_library_path" | awk '{ print $1 }')
+        if [ "$sanitizer_unrar_library_sha256" != "$sanitizer_unrar_actual_sha256" ]; then
+            echo 'enabled sanitizer UnRAR component hash does not match build identity' >&2
+            exit 1
+        fi
+        case "$sanitizer_unrar_backend_path" in
+            none) ;;
+            artifacts/optional-components-sanitizer/*)
+                if [ ! -s "$out/$sanitizer_unrar_backend_path" ]; then
+                    echo 'enabled sanitizer UnRAR backend artifact is missing' >&2
+                    exit 1
+                fi
+                sanitizer_unrar_backend_actual_sha256=$(sha256sum "$out/$sanitizer_unrar_backend_path" | awk '{ print $1 }')
+                if [ "$sanitizer_unrar_backend_sha256" != "$sanitizer_unrar_backend_actual_sha256" ]; then
+                    echo 'enabled sanitizer UnRAR backend hash does not match build identity' >&2
+                    exit 1
+                fi
+                ;;
+            *)
+                echo 'enabled sanitizer UnRAR evidence has an invalid backend artifact path' >&2
+                exit 1
+                ;;
+        esac
+    elif [ "$sanitizer_unrar_library_path" != none ] || [ "$sanitizer_unrar_library_sha256" != none ] ||
+        [ "$sanitizer_unrar_backend_path" != none ] || [ "$sanitizer_unrar_backend_sha256" != none ]; then
+        echo 'disabled sanitizer UnRAR evidence unexpectedly carries a component artifact' >&2
+        exit 1
+    fi
 fi
 grep -F "rss_budget_kb=$rss_budget_kb" "$metadata" >/dev/null 2>&1 || {
     echo 'evidence RSS budget does not match the verifier budget' >&2

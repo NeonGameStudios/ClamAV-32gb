@@ -319,6 +319,69 @@ if [ -n "$sanitizer_clamscan" ]; then
     cp "$san_build_source_manifest" "$provenance/build-source-manifest-sanitizer.txt"
 fi
 cp "$root/Cargo.lock" "$provenance/Cargo.lock"
+
+# Rust and optional UnRAR are not reliably visible in the clamscan ldd graph:
+# Rust is normally linked through the libclamav target and UnRAR may be
+# loaded through its private interface at runtime. Preserve the exact build
+# outputs as evidence instead of treating ldd as a complete component list.
+release_rust_library=$(find "$build_dir" -type f -name 'libclamav_rust.a' -print |
+    LC_ALL=C sort | head -n 1)
+if [ -z "$release_rust_library" ] || [ ! -s "$release_rust_library" ]; then
+    echo 'release Rust static library is missing from the build graph' >&2
+    exit 2
+fi
+cp "$release_rust_library" "$artifacts/clamav_rust-release.a"
+release_rust_library_sha256=$(sha256sum "$artifacts/clamav_rust-release.a" | awk '{ print $1 }')
+
+enable_unrar=$(sed -n 's/^ENABLE_UNRAR:BOOL=//p' "$cmake_cache")
+case "$enable_unrar" in
+    ON|OFF) ;;
+    *)
+        echo 'runtime-gate requires an explicit ENABLE_UNRAR CMake setting' >&2
+        exit 2
+        ;;
+esac
+unrar_library_path=none
+unrar_library_sha256=none
+unrar_backend_path=none
+unrar_backend_sha256=none
+unrar_component_dir=
+if [ "$enable_unrar" = ON ]; then
+    unrar_library=$(find "$build_dir" -type f \( \
+        -name 'libclamunrar_iface.so' -o -name 'libclamunrar_iface.so.*' \
+        -o -name 'libclamunrar_iface_static.a' -o -name 'libclamunrar_iface.a' \
+        \) -print | LC_ALL=C sort | head -n 1)
+    if [ -z "$unrar_library" ] || [ ! -s "$unrar_library" ]; then
+        echo 'ENABLE_UNRAR is ON but the UnRAR interface artifact is missing' >&2
+        exit 2
+    fi
+    unrar_component_dir=$artifacts/optional-components
+    mkdir -p "$unrar_component_dir"
+    unrar_basename=$(basename "$unrar_library")
+    cp -L "$unrar_library" "$unrar_component_dir/$unrar_basename"
+    unrar_library_path="artifacts/optional-components/$unrar_basename"
+    unrar_library_sha256=$(sha256sum "$out/$unrar_library_path" | awk '{ print $1 }')
+    unrar_backend=$(find "$build_dir" -type f \( \
+        -name 'libclamunrar.so' -o -name 'libclamunrar.so.*' \
+        -o -name 'libclamunrar_static.a' -o -name 'libclamunrar.a' \
+        \) -print | LC_ALL=C sort | head -n 1)
+    case "$unrar_basename" in
+        *.a) ;;
+        *)
+            if [ -z "$unrar_backend" ] || [ ! -s "$unrar_backend" ]; then
+                echo 'shared UnRAR interface is missing its backend artifact' >&2
+                exit 2
+            fi
+            ;;
+    esac
+    if [ -n "$unrar_backend" ] && [ -s "$unrar_backend" ]; then
+        unrar_backend_basename=$(basename "$unrar_backend")
+        cp -L "$unrar_backend" "$unrar_component_dir/$unrar_backend_basename"
+        unrar_backend_path="artifacts/optional-components/$unrar_backend_basename"
+        unrar_backend_sha256=$(sha256sum "$out/$unrar_backend_path" | awk '{ print $1 }')
+    fi
+fi
+
 if [ "$git_checkout" = yes ]; then
     git -C "$root" ls-tree -r --full-tree "$source_commit" > "$provenance/repository-tree.txt"
     git -C "$root" ls-files --stage > "$provenance/repository-index.txt"
@@ -342,7 +405,11 @@ fi
 
 runtime_clamscan=$artifacts/clamscan
 runtime_sanitizer_clamscan=$artifacts/clamscan-sanitizer
-runtime_library_path="$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
+runtime_library_path="$runtime_component_dir"
+if [ -n "$unrar_component_dir" ]; then
+    runtime_library_path="$runtime_library_path:$unrar_component_dir"
+fi
+runtime_library_path="$runtime_library_path:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
 if [ -n "${LD_LIBRARY_PATH:-}" ]; then
     runtime_library_path="$runtime_library_path:$LD_LIBRARY_PATH"
 fi
@@ -398,6 +465,7 @@ while IFS= read -r dependency; do
 done < "$provenance/runtime-dependencies.txt"
 
 if [ -n "$sanitizer_clamscan" ]; then
+    sanitizer_unrar_component_dir=
     ldd "$runtime_sanitizer_clamscan" > "$provenance/ldd-clamscan-sanitizer.txt" 2>&1
     if grep -F 'not found' "$provenance/ldd-clamscan-sanitizer.txt" >/dev/null 2>&1; then
         echo "sanitizer scanner has unresolved runtime dependencies" >&2
@@ -427,7 +495,11 @@ if [ -n "$sanitizer_clamscan" ]; then
         printf '%s -> %s\n' "$dependency" "$dependency_artifact" >> "$provenance/runtime-dependency-artifacts-sanitizer.txt"
         (cd "$out" && sha256sum "$dependency_artifact") >> "$provenance/runtime-dependency-hashes-sanitizer.txt"
     done < "$provenance/runtime-dependencies-sanitizer.txt"
-    sanitizer_loader_path="$sanitizer_component_dir:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
+    sanitizer_loader_path="$sanitizer_component_dir"
+    if [ -n "$sanitizer_unrar_component_dir" ]; then
+        sanitizer_loader_path="$sanitizer_loader_path:$sanitizer_unrar_component_dir"
+    fi
+    sanitizer_loader_path="$sanitizer_loader_path:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
     LD_LIBRARY_PATH="$sanitizer_loader_path" ldd "$runtime_sanitizer_clamscan" > "$provenance/loaded-dependencies-sanitizer.txt" 2>&1
     if grep -F 'not found' "$provenance/loaded-dependencies-sanitizer.txt" >/dev/null 2>&1; then
         echo "copied sanitizer dependencies do not resolve: $provenance/loaded-dependencies-sanitizer.txt" >&2
@@ -459,22 +531,73 @@ if [ -n "$sanitizer_clamscan" ]; then
         echo 'sanitizer compile graph does not contain both ASan and UBSan instrumentation' >&2
         exit 2
     fi
-    rust_library=$(find "$san_build_dir" -type f -name 'libclamav_rust.a' -print | LC_ALL=C sort | head -n 1)
-    if [ -z "$rust_library" ] || [ ! -s "$rust_library" ]; then
+    sanitizer_rust_library=$(find "$san_build_dir" -type f -name 'libclamav_rust.a' -print |
+        LC_ALL=C sort | head -n 1)
+    if [ -z "$sanitizer_rust_library" ] || [ ! -s "$sanitizer_rust_library" ]; then
         echo 'sanitizer Rust static library is missing from the build graph' >&2
         exit 2
     fi
-    cp "$rust_library" "$artifacts/clamav_rust.a"
-    if ! nm -u "$rust_library" > "$provenance/rust-sanitizer-symbols.txt" 2>&1 ||
+    cp "$sanitizer_rust_library" "$artifacts/clamav_rust-sanitizer.a"
+    sanitizer_rust_library_sha256=$(sha256sum "$artifacts/clamav_rust-sanitizer.a" | awk '{ print $1 }')
+    if ! nm -u "$sanitizer_rust_library" > "$provenance/rust-sanitizer-symbols.txt" 2>&1 ||
         ! grep -E '__asan' "$provenance/rust-sanitizer-symbols.txt" >/dev/null 2>&1; then
         echo 'sanitizer Rust archive does not prove address instrumentation' >&2
         exit 2
+    fi
+    sanitizer_enable_unrar=$(sed -n 's/^ENABLE_UNRAR:BOOL=//p' "$san_cmake_cache")
+    if [ "$sanitizer_enable_unrar" != "$enable_unrar" ]; then
+        echo 'release and sanitizer builds disagree on ENABLE_UNRAR' >&2
+        exit 2
+    fi
+    sanitizer_unrar_library_path=none
+    sanitizer_unrar_library_sha256=none
+    sanitizer_unrar_backend_path=none
+    sanitizer_unrar_backend_sha256=none
+    sanitizer_unrar_component_dir=
+    if [ "$sanitizer_enable_unrar" = ON ]; then
+        sanitizer_unrar_library=$(find "$san_build_dir" -type f \( \
+            -name 'libclamunrar_iface.so' -o -name 'libclamunrar_iface.so.*' \
+            -o -name 'libclamunrar_iface_static.a' -o -name 'libclamunrar_iface.a' \
+            \) -print | LC_ALL=C sort | head -n 1)
+        if [ -z "$sanitizer_unrar_library" ] || [ ! -s "$sanitizer_unrar_library" ]; then
+            echo 'sanitizer ENABLE_UNRAR is ON but the UnRAR interface artifact is missing' >&2
+            exit 2
+        fi
+        sanitizer_unrar_component_dir=$artifacts/optional-components-sanitizer
+        mkdir -p "$sanitizer_unrar_component_dir"
+        sanitizer_unrar_basename=$(basename "$sanitizer_unrar_library")
+        cp -L "$sanitizer_unrar_library" "$sanitizer_unrar_component_dir/$sanitizer_unrar_basename"
+        sanitizer_unrar_library_path="artifacts/optional-components-sanitizer/$sanitizer_unrar_basename"
+        sanitizer_unrar_library_sha256=$(sha256sum "$out/$sanitizer_unrar_library_path" | awk '{ print $1 }')
+        sanitizer_unrar_backend=$(find "$san_build_dir" -type f \( \
+            -name 'libclamunrar.so' -o -name 'libclamunrar.so.*' \
+            -o -name 'libclamunrar_static.a' -o -name 'libclamunrar.a' \
+            \) -print | LC_ALL=C sort | head -n 1)
+        case "$sanitizer_unrar_basename" in
+            *.a) ;;
+            *)
+                if [ -z "$sanitizer_unrar_backend" ] || [ ! -s "$sanitizer_unrar_backend" ]; then
+                    echo 'sanitizer shared UnRAR interface is missing its backend artifact' >&2
+                    exit 2
+                fi
+                ;;
+        esac
+        if [ -n "$sanitizer_unrar_backend" ] && [ -s "$sanitizer_unrar_backend" ]; then
+            sanitizer_unrar_backend_basename=$(basename "$sanitizer_unrar_backend")
+            cp -L "$sanitizer_unrar_backend" "$sanitizer_unrar_component_dir/$sanitizer_unrar_backend_basename"
+            sanitizer_unrar_backend_path="artifacts/optional-components-sanitizer/$sanitizer_unrar_backend_basename"
+            sanitizer_unrar_backend_sha256=$(sha256sum "$out/$sanitizer_unrar_backend_path" | awk '{ print $1 }')
+        fi
     fi
 fi
 
 # Run both scanners with the copied component set first in the loader path so
 # the evidence records and exercises the same engine artifacts it verifies.
-runtime_library_path="$runtime_component_dir:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
+runtime_library_path="$runtime_component_dir"
+if [ -n "$unrar_component_dir" ]; then
+    runtime_library_path="$runtime_library_path:$unrar_component_dir"
+fi
+runtime_library_path="$runtime_library_path:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
 export LD_LIBRARY_PATH=$runtime_library_path
 
 # Capture the dynamic-loader decision before the workload starts. Hashing a
@@ -494,7 +617,11 @@ fi
 sanitizer_loader_trace=
 if [ -n "$sanitizer_clamscan" ]; then
     sanitizer_loader_trace=$provenance/loader-clamscan-sanitizer.txt
-    sanitizer_loader_path="$sanitizer_component_dir:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
+    sanitizer_loader_path="$sanitizer_component_dir"
+    if [ -n "$sanitizer_unrar_component_dir" ]; then
+        sanitizer_loader_path="$sanitizer_loader_path:$sanitizer_unrar_component_dir"
+    fi
+    sanitizer_loader_path="$sanitizer_loader_path:$scanner_dir:$build_dir:$build_dir/libclamav:$build_dir/libclamav_rust:$build_dir/libclammspack:$build_dir/libclamunrar_iface"
     if ! LD_LIBRARY_PATH="$sanitizer_loader_path" LD_DEBUG=libs \
         "$runtime_sanitizer_clamscan" --version > "$provenance/scanner-version-sanitizer.txt" 2> "$sanitizer_loader_trace"; then
         echo 'sanitizer scanner could not produce a loader-bound version trace' >&2
@@ -589,6 +716,13 @@ metadata=$out/build-identity.txt
     printf 'runtime_dependency_hashes=provenance/runtime-dependency-hashes.txt\n'
     printf 'runtime_dependency_artifacts=provenance/runtime-dependency-artifacts.txt\n'
     printf 'runtime_component_dir=artifacts/runtime-components\n'
+    printf 'release_rust_library_path=artifacts/clamav_rust-release.a\n'
+    printf 'release_rust_library_sha256=%s\n' "$release_rust_library_sha256"
+    printf 'unrar_status=%s\n' "$( [ "$enable_unrar" = ON ] && printf enabled || printf disabled )"
+    printf 'unrar_library_path=%s\n' "$unrar_library_path"
+    printf 'unrar_library_sha256=%s\n' "$unrar_library_sha256"
+    printf 'unrar_backend_path=%s\n' "$unrar_backend_path"
+    printf 'unrar_backend_sha256=%s\n' "$unrar_backend_sha256"
     printf 'loaded_dependencies=provenance/loaded-dependencies.txt\n'
     printf 'loader_trace=provenance/loader-clamscan.txt\n'
     cat "$provenance/scanner-version.txt"
@@ -605,10 +739,14 @@ metadata=$out/build-identity.txt
         printf 'sanitizer_loaded_dependencies=provenance/loaded-dependencies-sanitizer.txt\n'
         printf 'sanitizer_loader_trace=provenance/loader-clamscan-sanitizer.txt\n'
         cat "$provenance/scanner-version-sanitizer.txt"
-        sanitizer_rust_sha256=$(sha256sum "$artifacts/clamav_rust.a" | awk '{ print $1 }')
-        printf 'sanitizer_rust_library_path=artifacts/clamav_rust.a\n'
-        printf 'sanitizer_rust_library_sha256=%s\n' "$sanitizer_rust_sha256"
+        printf 'sanitizer_rust_library_path=artifacts/clamav_rust-sanitizer.a\n'
+        printf 'sanitizer_rust_library_sha256=%s\n' "$sanitizer_rust_library_sha256"
         printf 'sanitizer_rust_symbols=provenance/rust-sanitizer-symbols.txt\n'
+        printf 'sanitizer_unrar_status=%s\n' "$( [ "$sanitizer_enable_unrar" = ON ] && printf enabled || printf disabled )"
+        printf 'sanitizer_unrar_library_path=%s\n' "$sanitizer_unrar_library_path"
+        printf 'sanitizer_unrar_library_sha256=%s\n' "$sanitizer_unrar_library_sha256"
+        printf 'sanitizer_unrar_backend_path=%s\n' "$sanitizer_unrar_backend_path"
+        printf 'sanitizer_unrar_backend_sha256=%s\n' "$sanitizer_unrar_backend_sha256"
         printf 'sanitizer_compile_graph=pass\n'
         printf 'sanitizer_rust_instrumentation=pass\n'
         printf 'sanitizer_instrumentation=pass\n'
