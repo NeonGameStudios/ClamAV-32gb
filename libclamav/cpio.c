@@ -119,6 +119,16 @@ static int cpio_advance(size_t *position, size_t amount)
     return 0;
 }
 
+static cl_error_t cpio_checktimelimit(cli_ctx *ctx)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, "CPIO member traversal reached the configured time limit");
+
+    return status;
+}
+
 static void sanitname(char *name)
 {
     while (*name) {
@@ -139,12 +149,20 @@ cl_error_t cli_scancpio_old(cli_ctx *ctx)
     uint32_t parsed_filesize;
     int conv;
     int complete = 0;
-    size_t hdr_read;
+    size_t hdr_read = 0;
     size_t pos = 0;
 
     memset(name, 0, sizeof(name));
 
-    while ((hdr_read = cpio_readn(ctx->fmap, &hdr_old, pos, sizeof(hdr_old))) == sizeof(hdr_old)) {
+    while (1) {
+        status = cpio_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
+        hdr_read = cpio_readn(ctx->fmap, &hdr_old, pos, sizeof(hdr_old));
+        if (hdr_read != sizeof(hdr_old))
+            break;
+
         if (cpio_advance(&pos, sizeof(hdr_old)) < 0) {
             cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
             status = CL_EPARSE;
@@ -267,12 +285,20 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
     size_t filesize = 0, namesize = 0, hdr_namesize = 0;
     uint32_t parsed_filesize = 0, parsed_namesize = 0;
     int complete = 0;
-    size_t hdr_read;
+    size_t hdr_read = 0;
     size_t pos = 0;
 
     memset(&hdr_odc, 0, sizeof(hdr_odc));
 
-    while ((hdr_read = cpio_readn(ctx->fmap, &hdr_odc, pos, sizeof(hdr_odc))) == sizeof(hdr_odc)) {
+    while (1) {
+        status = cpio_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
+        hdr_read = cpio_readn(ctx->fmap, &hdr_odc, pos, sizeof(hdr_odc));
+        if (hdr_read != sizeof(hdr_odc))
+            break;
+
         if (cpio_advance(&pos, sizeof(hdr_odc)) < 0) {
             cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
             status = CL_EPARSE;
@@ -385,12 +411,20 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
     size_t filesize, namesize, hdr_namesize, pad;
     uint32_t parsed_filesize, parsed_namesize;
     int complete = 0;
-    size_t hdr_read;
+    size_t hdr_read = 0;
     size_t pos = 0;
 
     memset(name, 0, 513);
 
-    while ((hdr_read = cpio_readn(ctx->fmap, &hdr_newc, pos, sizeof(hdr_newc))) == sizeof(hdr_newc)) {
+    while (1) {
+        status = cpio_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            goto done;
+
+        hdr_read = cpio_readn(ctx->fmap, &hdr_newc, pos, sizeof(hdr_newc));
+        if (hdr_read != sizeof(hdr_newc))
+            break;
+
         if (cpio_advance(&pos, sizeof(hdr_newc)) < 0) {
             cli_mark_scan_incomplete(ctx, "CPIO coordinate arithmetic overflowed");
             status = CL_EPARSE;

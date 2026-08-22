@@ -3227,3 +3227,12 @@ deadline at entry and before each top-level box, preserving `CL_ETIMEOUT` as
 an incomplete, non-cacheable result. A direct expired-context regression and
 source guards cover the new behavior; compiled image corpus, sanitizer, and
 Sonic1 qualification remain release gates.
+
+## CPIO member traversal deadline — 2026-08-22
+
+The old, ODC, newc, and CRC CPIO walkers now check the shared scan deadline
+before each member-header read and preserve timeout as an incomplete,
+non-cacheable result without conflating it with a truncated header. A direct
+regression exercises all four entry points; source guards and the capability
+manifest record the coverage. Compiled archive corpus, sanitizer, and Sonic1
+qualification remain release gates.
