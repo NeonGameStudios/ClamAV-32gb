@@ -1103,6 +1103,10 @@
   after each bounded fmap window, so URL scanning cannot silently consume a
   large HTML body past the shared deadline; compiled HTML timeout injection
   and production qualification remain open.
+- HTML phishing URL normalization, host construction, hash lookup, and
+  temporary-copy allocation failures now mark the scan incomplete instead of
+  being discarded or falling through as heuristic phishing detections; add
+  allocation fault-injection and compiled URL-corpus qualification.
 - RAR `keeptmp` archive-comment staging now uses bounded writes with shared
   deadline checks and fail-visible short-write handling; add compiled RAR
   comment-timeout and optional-backend corpus qualification.

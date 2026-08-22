@@ -1071,11 +1071,21 @@ static int isNumericURL(const struct phishcheck* pchk, const char* URL)
  * @param urls
  * @return enum phish_status
  */
-static enum phish_status cleanupURLs(struct url_check* urls)
+static enum phish_status cleanupURLs(cli_ctx* ctx, struct url_check* urls)
 {
+    int rc;
+
     if (urls->flags & CLEANUP_URL) {
-        cleanupURL(&urls->realLink, NULL, 1);
-        cleanupURL(&urls->displayLink, &urls->pre_fixup.pre_displayLink, 0);
+        rc = cleanupURL(&urls->realLink, NULL, 1);
+        if (rc != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HTML phishing URL normalization could not be allocated");
+            return CL_PHISH_CLEAN;
+        }
+        rc = cleanupURL(&urls->displayLink, &urls->pre_fixup.pre_displayLink, 0);
+        if (rc != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HTML phishing URL normalization could not be allocated");
+            return CL_PHISH_CLEAN;
+        }
         if (!urls->displayLink.data || !urls->realLink.data)
             return CL_PHISH_NODECISION;
         if (!strcmp(urls->realLink.data, urls->displayLink.data))
@@ -1417,8 +1427,11 @@ static cl_error_t url_hash_match(
                             pp[ki],
                             need_prefixmatch ? &prefix_matched : NULL,
                             phishing_verdict);
-            if ((CL_SUCCESS == rc) &&
-                (CL_PHISH_NODECISION != *phishing_verdict)) {
+            if (CL_SUCCESS != rc) {
+                status = rc;
+                goto done;
+            }
+            if (CL_PHISH_NODECISION != *phishing_verdict) {
                 return rc;
             }
             count++;
@@ -1482,6 +1495,8 @@ static enum phish_status phishingCheck(cli_ctx* ctx, struct url_check* urls)
                                                strlen(urls->realLink.data),
                                                &phishing_verdict))) {
         cli_dbgmsg("Error occurred in url_hash_match\n");
+        cli_mark_scan_incomplete(ctx, "HTML phishing URL hash lookup could not be completed");
+        phishing_verdict = CL_PHISH_CLEAN;
         goto done;
     } else if (phishing_verdict != CL_PHISH_NODECISION) {
         if (phishing_verdict == CL_PHISH_CLEAN) {
@@ -1504,7 +1519,7 @@ static enum phish_status phishingCheck(cli_ctx* ctx, struct url_check* urls)
         goto done;
     }
 
-    if ((phishing_verdict = cleanupURLs(urls)) == CL_PHISH_CLEAN) {
+    if ((phishing_verdict = cleanupURLs(ctx, urls)) == CL_PHISH_CLEAN) {
         /* displayed and real URL are identical after cleanup -> clean */
         goto done;
     }
@@ -1540,12 +1555,14 @@ static enum phish_status phishingCheck(cli_ctx* ctx, struct url_check* urls)
     realData = cli_safer_strdup(urls->realLink.data);
     if (!realData) {
         cli_errmsg("Phishcheck: Failed to allocate memory for temporary real link string.\n");
+        cli_mark_scan_incomplete(ctx, "HTML phishing real URL copy could not be allocated");
         phishing_verdict = CL_PHISH_CLEAN;
         goto done;
     }
     displayData = cli_safer_strdup(urls->displayLink.data);
     if (!displayData) {
         cli_errmsg("Phishcheck: Failed to allocate memory for temporary display link string.\n");
+        cli_mark_scan_incomplete(ctx, "HTML phishing display URL copy could not be allocated");
         phishing_verdict = CL_PHISH_CLEAN;
         goto done;
     }
@@ -1557,11 +1574,17 @@ static enum phish_status phishingCheck(cli_ctx* ctx, struct url_check* urls)
      * Get copy of URLs stripped down to just the FQDN.
      */
     if ((phishing_verdict = url_get_host(urls, &host_url, DOMAIN_DISPLAY, &phishy))) {
-        phishing_verdict = phishing_verdict < 0 ? phishing_verdict : CL_PHISH_CLEAN;
+        if (phishing_verdict < 0) {
+            cli_mark_scan_incomplete(ctx, "HTML phishing URL host could not be allocated");
+        }
+        phishing_verdict = CL_PHISH_CLEAN;
         goto done;
     }
     if ((phishing_verdict = url_get_host(urls, &host_url, DOMAIN_REAL, &phishy))) {
-        phishing_verdict = phishing_verdict < 0 ? phishing_verdict : CL_PHISH_CLEAN;
+        if (phishing_verdict < 0) {
+            cli_mark_scan_incomplete(ctx, "HTML phishing URL host could not be allocated");
+        }
+        phishing_verdict = CL_PHISH_CLEAN;
         goto done;
     }
 

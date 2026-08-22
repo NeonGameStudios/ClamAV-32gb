@@ -4967,3 +4967,17 @@ longer be mistaken for a completed clean layer.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled allocation fault injection, malformed and valid partition
 image corpora, sanitizer runs, and Sonic1 qualification remain open.
+
+## HTML phishing allocation failures — 2026-08-22
+
+The HTML phishing path previously discarded URL-normalization allocation
+errors, allowed host-construction failures to propagate as negative internal
+phishing enum values, ignored hash-state allocation failures inside the URL
+hash loop, and treated temporary URL-copy allocation failures as clean. Those
+paths now mark the scan incomplete and return a neutral per-URL result so the
+failure cannot be reclassified as a phishing heuristic alert; hash lookup
+errors are now propagated to the scan-context boundary.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation fault injection, production HTML/mail corpora,
+sanitizer runs, and Sonic1 qualification remain open.
