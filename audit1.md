@@ -4922,3 +4922,12 @@ wrapper already used for embedded UUEncode failures.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled allocation fault injection, long and malformed attachment
 corpora, sanitizer runs, and Sonic1 qualification remain open.
+
+## Sonic1 qualification connectivity recheck — 2026-08-22
+
+The administrator-provided `sonic1` host and `sonic1-camera-key` profile were
+accepted by MCP-SSH policy and resolved to `192.168.1.216:4456`; the declared
+login is `camera` with key authentication and sudo capability. The 20-second
+connection check passed policy and address resolution but timed out during TCP
+connect with `remote_started: false` and a retryable transport result. No
+compiled or test result from Sonic1 is attributed to this worktree.
