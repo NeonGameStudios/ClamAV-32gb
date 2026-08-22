@@ -3841,6 +3841,16 @@ typedef struct xlm_output_tag {
     uint64_t reserved;
 } xlm_output_t;
 
+static cl_error_t xlm_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t status = cli_checktimelimit(ctx);
+
+    if (status != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return status;
+}
+
 static cl_error_t xlm_output_write(xlm_output_t *output, const void *data, size_t len)
 {
     cl_error_t status;
@@ -3849,6 +3859,9 @@ static cl_error_t xlm_output_write(xlm_output_t *output, const void *data, size_
         return CL_SUCCESS;
     if (output == NULL || output->file == NULL || output->ctx == NULL || data == NULL)
         return CL_EARG;
+    status = xlm_checktimelimit(output->ctx, "XLM macro temporary output reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
     if (UINT64_MAX - output->reserved < (uint64_t)len) {
         cli_mark_scan_incomplete(output->ctx, "XLM macro temporary output size accounting overflowed");
         return CL_ERESOURCE;
@@ -3860,6 +3873,13 @@ static cl_error_t xlm_output_write(xlm_output_t *output, const void *data, size_
         return status;
     }
     output->reserved += (uint64_t)len;
+
+    status = xlm_checktimelimit(output->ctx, "XLM macro temporary output reached the configured time limit");
+    if (status != CL_SUCCESS) {
+        cli_scan_release_temporary(output->ctx, (uint64_t)len);
+        output->reserved -= (uint64_t)len;
+        return status;
+    }
 
     if (fwrite(data, 1, len, output->file) != len) {
         cli_scan_release_temporary(output->ctx, (uint64_t)len);
@@ -4398,6 +4418,9 @@ cl_error_t process_blip_record(struct OfficeArtRecordHeader_Unpacked *rh, const 
          * Always stage them through the shared temporary quota so the
          * no-keeptmp path cannot bypass resource admission with a direct
          * whole-buffer child scan. */
+        status = xlm_checktimelimit(ctx, "XLM extracted image temporary output reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
         if (cli_scan_reserve_temporary(ctx, (uint64_t)size_of_image) != CL_SUCCESS) {
             cli_mark_scan_incomplete(ctx, "XLM extracted image exceeds temporary storage limits");
             status = CL_ERESOURCE;
@@ -4413,6 +4436,9 @@ cl_error_t process_blip_record(struct OfficeArtRecordHeader_Unpacked *rh, const 
             goto done;
         }
 
+        status = xlm_checktimelimit(ctx, "XLM extracted image temporary output reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto done;
         if (cli_writen(extracted_image_tempfd, start_of_image, size_of_image) != size_of_image) {
             cli_errmsg("failed to write output file\n");
             cli_mark_scan_incomplete(ctx, "XLM extracted image could not be written completely");

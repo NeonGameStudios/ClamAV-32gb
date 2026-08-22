@@ -3358,6 +3358,16 @@ the output write. An expired context releases the temporary file and returns
 covers this boundary; deterministic output-timeout injection, compiled SWF
 corpus, sanitizer, and Sonic1 qualification remain release gates.
 
+## XLM temporary-output deadlines — 2026-08-22
+
+XLM macro normalization and extracted-image staging now re-check the shared
+deadline before temporary quota admission and again before writing output.
+Expired contexts release any reservation during cleanup and return
+`CL_ETIMEOUT` without allowing partial macro or image output to be scanned as
+complete. A focused expired-context macro regression and source guards cover
+the boundary; compiled Office/XLM corpus, sanitizer, and Sonic1 qualification
+remain release gates.
+
 ## CryptFF traversal deadlines — 2026-08-22
 
 CryptFF already decrypted through a fixed buffer and quota-accounted temporary

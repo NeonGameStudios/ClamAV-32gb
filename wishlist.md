@@ -490,6 +490,9 @@
 - OLE2 property-tree, VBA/XLM, MSO-inflation, embedded-stream, and
   encrypted-stream traversal now honor the shared scan deadline; add compiled
   timeout-injection and large Office/VBA corpus qualification.
+- XLM macro and extracted-image temporary-output boundaries now re-check the
+  shared deadline before quota admission and before writing; retain deterministic
+  timeout injection and complete Office/XLM corpus qualification.
 - Decompressed VBA modules now enter the 64-bit fmap matcher path, preserving
   full-map PCRE and logical/YARA evaluation instead of rejecting lengths above
   4 GiB at the legacy buffer-matcher ABI; the decompressor's contiguous

@@ -5491,3 +5491,13 @@ the output write. An expired context therefore releases the temporary file and
 returns `CL_ETIMEOUT` without treating the partial output as scannable. A
 source guard covers this boundary; deterministic output-timeout injection,
 compiled corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## XLM temporary-output deadlines — 2026-08-22
+
+XLM macro normalization and extracted-image staging now re-check `MaxScanTime`
+before temporary quota admission and again before writing output. Expired
+contexts release any reservation during cleanup and return `CL_ETIMEOUT`
+without allowing partial macro or image output to be scanned as complete. A
+focused expired-context macro regression and source guards cover the boundary;
+compiled Office/XLM corpus, sanitizer, and Sonic1 qualification remain release
+gates.
