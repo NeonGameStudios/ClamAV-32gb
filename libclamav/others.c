@@ -2268,6 +2268,7 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
 
             if (NULL == new_temp_path) {
                 cli_errmsg("cli_magic_scan: Failed to generate temp directory name.\n");
+                cli_mark_scan_incomplete(ctx, "nested scan temporary directory could not be allocated");
                 status = CL_EMEM;
                 goto done;
             }
@@ -2278,6 +2279,7 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
             new_temp_path = cli_gentemp(parent_tmpdir);
             if (NULL == new_temp_path) {
                 cli_errmsg("cli_magic_scan: Failed to generate temp directory name.\n");
+                cli_mark_scan_incomplete(ctx, "nested scan temporary directory could not be allocated");
                 status = CL_EMEM;
                 goto done;
             }
@@ -2288,12 +2290,14 @@ cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t typ
         if (!mkdir_w32(new_temp_path, &mkdir_w32_error)) {
             cli_errmsg("cli_magic_scan: Can't create tmp sub-directory (%s) for scan. Error: %s\n", new_temp_path, ffierror_fmt(mkdir_w32_error));
             ffierror_free(mkdir_w32_error);
+            cli_mark_scan_incomplete(ctx, "nested scan temporary directory could not be created");
             status = CL_EACCES;
             goto done;
         }
 #else
         if (mkdir(new_temp_path, 0700)) {
             cli_errmsg("cli_magic_scan: Can't create tmp sub-directory (%s) for scan. Error: %s\n", new_temp_path, strerror(errno));
+            cli_mark_scan_incomplete(ctx, "nested scan temporary directory could not be created");
             status = CL_EACCES;
             goto done;
         }

@@ -1709,6 +1709,54 @@ START_TEST(test_scanfile_temporary_reservation_is_reported)
 }
 END_TEST
 
+START_TEST(test_scan_temporary_directory_failure_is_fail_visible)
+{
+    static const char payload[] = "scan temporary directory setup\n";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_completion_t completion;
+    const char *reason = NULL;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    char invalid_tmpdir[PATH_MAX];
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status;
+
+    ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/scan-temp-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
+                  "temporary directory test path was truncated");
+
+    memset(&options, 0, sizeof(options));
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, invalid_tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_TMPDIR_RECURSION, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_int_eq(write(fd, payload, sizeof(payload) - 1), (ssize_t)(sizeof(payload) - 1));
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+
+    status = cl_scanfile_ex2(path, &verdict, &last_alert, NULL, engine, &options,
+                             NULL, NULL, NULL, NULL, NULL, NULL, &report);
+    ck_assert_int_eq(status, CL_EACCES);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_completion(report, &completion), CL_SUCCESS);
+    ck_assert_int_eq(completion, CL_SCAN_COMPLETION_RESOURCE_FAILURE);
+    ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_str_eq(reason, "scan-level temporary directory could not be created");
+
+    cl_scan_report_free(report);
+    cl_engine_free(engine);
+    cli_unlink(path);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_scan_report_detection_precedes_incomplete_state)
 {
     cl_scan_report_t *report = NULL;
@@ -2976,6 +3024,37 @@ START_TEST(test_logical_views_do_not_consume_logical_scan_budget)
     ck_assert_uint_eq(ctx.scannedfiles, 1);
     ck_assert(!ctx.scan_incomplete);
     (void)cli_recursion_stack_pop(&ctx);
+}
+END_TEST
+
+START_TEST(test_nested_temporary_directory_failure_is_fail_visible)
+{
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t root_map;
+    fmap_t child_map;
+    char invalid_tmpdir[PATH_MAX];
+
+    ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/nested-temp-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
+                  "temporary directory test path was truncated");
+
+    init_synthetic_limit_ctx(&engine, &options, &ctx, layers, 2, &root_map);
+    memset(&child_map, 0, sizeof(child_map));
+    root_map.len = 1;
+    child_map.len = 1;
+    engine.engine_options = ENGINE_OPTIONS_TMPDIR_RECURSION;
+    layers[0].tmpdir = invalid_tmpdir;
+    ctx.this_layer_tmpdir = invalid_tmpdir;
+
+    ck_assert_int_eq(cli_recursion_stack_push(&ctx, &child_map, CL_TYPE_ANY, true,
+                                              LAYER_ATTRIBUTES_NONE),
+                     CL_EACCES);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "nested scan temporary directory could not be created");
+    ck_assert(root_map.dont_cache_flag);
+    ck_assert(child_map.dont_cache_flag);
 }
 END_TEST
 
@@ -20780,6 +20859,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_top_level_maxfilesize_is_fail_visible);
     tcase_add_test(tc_cl, test_maxscansize_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_logical_views_do_not_consume_logical_scan_budget);
+    tcase_add_test(tc_cl, test_nested_temporary_directory_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_maxfiles_exact_and_crossing_are_fail_visible);
     tcase_add_test(tc_cl, test_mbox_nested_maxfiles_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
@@ -20797,6 +20877,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
     tcase_add_test(tc_cl, test_descriptor_temporary_reservation_is_reported);
     tcase_add_test(tc_cl, test_scanfile_temporary_reservation_is_reported);
+    tcase_add_test(tc_cl, test_scan_temporary_directory_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_resource_limit_engine_fields_and_accounting);
     tcase_add_test(tc_cl, test_largefile_default_profile_values);
     tcase_add_test(tc_cl, test_fileblob_temporary_spool_accounting);

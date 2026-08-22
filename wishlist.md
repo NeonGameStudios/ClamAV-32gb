@@ -1131,3 +1131,13 @@
   check before each write, including large callback slices from Rust parsers;
   add deterministic short-write/timeout coverage and compiled Rust/Sonic1
   qualification.
+
+## Scan-level temporary-directory setup failures — 2026-08-22
+
+Top-level and recursive scans now mark required temporary-directory allocation
+and creation failures as incomplete before unwinding. Cleanup only attempts to
+remove a scan directory after its creation succeeded, preserving the original
+resource reason and preventing a cleanup error from obscuring the admission
+failure. Focused public-report and recursion-stack regressions are registered;
+compiled fault injection, sanitizer, production-corpus, and Sonic1 qualification
+remain open.

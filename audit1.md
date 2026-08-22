@@ -4752,6 +4752,18 @@ The source guards and non-clang regression gates pass. Compiled fault
 injection, sanitizer runs, production corpora, and Sonic1 qualification remain
 open.
 
+## Scan-level temporary-directory setup failures — 2026-08-22
+
+`scan_common()` and recursive child-layer setup previously returned allocation
+or `mkdir()` failures without setting the sticky incomplete state. They now
+record parser-independent reasons for temporary-directory name allocation and
+directory creation failures, and the top-level cleanup path only removes a
+directory after successful creation. Public structured-report and direct
+recursion-stack regressions verify non-clean, non-cacheable outcomes.
+
+The source guards and non-clang regression gates pass. Compiled fault injection,
+sanitizer runs, production corpora, and Sonic1 qualification remain open.
+
 ## RAR and bytecode handoff setup failures — 2026-08-22
 
 RAR member extraction now records an incomplete result when its required

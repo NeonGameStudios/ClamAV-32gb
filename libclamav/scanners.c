@@ -7896,6 +7896,7 @@ static cl_error_t scan_common(
     char *new_temp_prefix = NULL;
     size_t new_temp_prefix_len;
     char *new_temp_path = NULL;
+    bool scan_tempdir_created = false;
 
     time_t current_time;
     struct tm tm_struct;
@@ -8058,6 +8059,7 @@ static cl_error_t scan_common(
             new_temp_prefix     = cli_max_calloc(1, new_temp_prefix_len + 1);
             if (!new_temp_prefix) {
                 cli_errmsg("scan_common: Failed to allocate memory for temp directory name.\n");
+                cli_mark_scan_incomplete(&ctx, "scan-level temporary directory name could not be allocated");
                 status = CL_EMEM;
                 goto done;
             }
@@ -8069,6 +8071,7 @@ static cl_error_t scan_common(
             new_temp_prefix     = cli_max_calloc(1, new_temp_prefix_len + 1);
             if (!new_temp_prefix) {
                 cli_errmsg("scan_common: Failed to allocate memory for temp directory name.\n");
+                cli_mark_scan_incomplete(&ctx, "scan-level temporary directory name could not be allocated");
                 status = CL_EMEM;
                 goto done;
             }
@@ -8080,6 +8083,7 @@ static cl_error_t scan_common(
         free(new_temp_prefix);
         if (NULL == new_temp_path) {
             cli_errmsg("scan_common: Failed to generate temp directory name.\n");
+            cli_mark_scan_incomplete(&ctx, "scan-level temporary directory could not be allocated");
             status = CL_EMEM;
             goto done;
         }
@@ -8089,9 +8093,11 @@ static cl_error_t scan_common(
 
         if (mkdir(ctx.this_layer_tmpdir, 0700)) {
             cli_errmsg("Can't create temporary directory for scan: %s.\n", ctx.this_layer_tmpdir);
+            cli_mark_scan_incomplete(&ctx, "scan-level temporary directory could not be created");
             status = CL_EACCES;
             goto done;
         }
+        scan_tempdir_created = true;
     } else {
         /*
          * Use the configured temp directory.
@@ -8349,6 +8355,7 @@ done:
 
     if ((NULL != ctx.engine) &&
         (ctx.engine->engine_options & ENGINE_OPTIONS_TMPDIR_RECURSION) &&
+        scan_tempdir_created &&
         (NULL != ctx.this_layer_tmpdir)) {
 
         if (!ctx.engine->keeptmp && cli_rmdirs(ctx.this_layer_tmpdir) != 0) {
