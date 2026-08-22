@@ -2346,6 +2346,15 @@ entries, and information blocks. Timeout returns remain fail-visible
 expired-context regression and source guards cover parser entry; compiled
 HWP3 corpus, sanitizer, and Sonic1 qualification remain release gates.
 
+## OLE2/VBA traversal deadline — 2026-08-22
+
+OLE2 now checks the shared deadline while walking the property tree and sector
+chains, materializing VBA and embedded streams, scanning XLM/image streams,
+inflating MSO streams, and materializing encrypted streams. Timeout results
+retain `CL_ETIMEOUT` through temporary-file and decoder cleanup. A direct
+expired-context regression and source guards cover parser entry; compiled
+OLE2/VBA corpus, sanitizer, and Sonic1 qualification remain release gates.
+
 ## Clamscan directory-entry inspection closeout — 2026-08-20
 
 Directory scans now count failed per-entry `LSTAT()` and symlink-follow

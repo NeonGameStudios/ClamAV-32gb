@@ -381,6 +381,9 @@
 - HWP3 document-info, paragraph, font-table, and information-block traversal
   now honor the shared scan deadline; add compiled timeout-injection and large
   legacy-document corpus qualification.
+- OLE2 property-tree, VBA/XLM, MSO-inflation, embedded-stream, and
+  encrypted-stream traversal now honor the shared scan deadline; add compiled
+  timeout-injection and large Office/VBA corpus qualification.
 - OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed
   MSO stream corpus coverage during Office-parser qualification.
 - ZWS/SWF compressed-input length fields are now enforced before LZMA setup; add

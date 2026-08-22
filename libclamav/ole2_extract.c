@@ -61,6 +61,16 @@
 #define ole2_listmsg(...) ;
 #endif
 
+static cl_error_t ole2_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 #define ole2_endian_convert_16(v) le16_to_host((uint16_t)(v))
 #define ole2_endian_convert_32(v) le32_to_host((uint32_t)(v))
 #define ole2_endian_convert_64(v) le64_to_host((uint64_t)(v))
@@ -938,6 +948,11 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
     while (!ole2_list_is_empty(&node_list)) {
         ole2_listmsg("within working loop, worklist size: %d\n", ole2_list_size(&node_list));
 
+        if (ole2_checktimelimit(ctx, "OLE2 property-tree traversal reached the configured time limit") != CL_SUCCESS) {
+            ole2_list_delete(&node_list);
+            return CL_ETIMEOUT;
+        }
+
         if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS) {
             ole2_list_delete(&node_list);
             return CL_ETIMEOUT;
@@ -957,6 +972,11 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
         // read in the sector referenced by the current index
         idx = curindex / 4;
         for (i = 0; i < idx; i++) {
+            if (ole2_checktimelimit(ctx, "OLE2 property-sector traversal reached the configured time limit") != CL_SUCCESS) {
+                ole2_list_delete(&node_list);
+                return CL_ETIMEOUT;
+            }
+
             current_block = ole2_get_next_block_number(hdr, current_block);
             if (current_block < 0) {
                 cli_dbgmsg("OLE2: property sector chain could not be read\n");
@@ -1272,6 +1292,11 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
     }
 
     while ((current_block >= 0) && (len > 0)) {
+        if (ole2_checktimelimit(ctx, "OLE2 VBA stream traversal reached the configured time limit") != CL_SUCCESS) {
+            ret = CL_ETIMEOUT;
+            break;
+        }
+
         if (current_block > (int32_t)hdr->max_block_no) {
             cli_dbgmsg("OLE2 [handler_writefile]: Max block number for file size exceeded: %d\n", current_block);
             cli_mark_scan_incomplete(ctx, "OLE2 VBA stream block chain is outside the input map");
@@ -1561,6 +1586,11 @@ static cl_error_t scan_for_xlm_macros_and_images(ole2_header_t *hdr, property_t 
         goto done;
     }
     while ((current_block >= 0) && (len > 0)) {
+        if (ole2_checktimelimit(ctx, "OLE2 XLM/image stream traversal reached the configured time limit") != CL_SUCCESS) {
+            status = CL_ETIMEOUT;
+            goto done;
+        }
+
         if (current_block > (int32_t)hdr->max_block_no) {
             cli_dbgmsg("OLE2 [scan_for_xlm_macros_and_images]: Max block number for file size exceeded: %d\n", current_block);
             goto done;
@@ -1857,6 +1887,11 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
 
     /* inflation loop */
     do {
+        if (ole2_checktimelimit(ctx, "MSO stream decompression reached the configured time limit") != CL_SUCCESS) {
+            ret = CL_ETIMEOUT;
+            goto mso_end;
+        }
+
         if (zstrm.avail_in == 0) {
             size_t bytes_read;
 
@@ -2001,6 +2036,11 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
     }
 
     while ((current_block >= 0) && (len > 0)) {
+        if (ole2_checktimelimit(ctx, "OLE2 embedded stream traversal reached the configured time limit") != CL_SUCCESS) {
+            ret = CL_ETIMEOUT;
+            break;
+        }
+
         if (current_block > (int32_t)hdr->max_block_no) {
             cli_dbgmsg("OLE2 [handler_otf]: Max block number for file size exceeded: %d\n", current_block);
             ret = CL_EPARSE;
@@ -2244,6 +2284,11 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     }
 
     while (stream_bytes_read < prop->size) {
+        if (ole2_checktimelimit(ctx, "OLE2 encrypted stream traversal reached the configured time limit") != CL_SUCCESS) {
+            ret = CL_ETIMEOUT;
+            break;
+        }
+
         if (current_block < 0) {
             cli_dbgmsg("OLE2 [handler_otf]: negative block number in encrypted stream\n");
             ret = CL_EPARSE;
@@ -3067,6 +3112,9 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     if (!ctx) {
         return CL_ENULLARG;
     }
+
+    if (ole2_checktimelimit(ctx, "OLE2 inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
 
     hdr.is_hwp = NULL;
     hdr.bitset = NULL;

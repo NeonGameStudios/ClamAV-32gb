@@ -13663,6 +13663,33 @@ START_TEST(test_ole2_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_ole2_output_close_failure_is_fail_visible)
 {
@@ -18300,6 +18327,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_xlm_string_extensions_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_vba_materialization_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_temporary_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_ole2_time_limit_is_fail_visible);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_ole2_output_close_failure_is_fail_visible);
 #endif
