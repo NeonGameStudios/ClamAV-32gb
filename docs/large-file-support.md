@@ -4910,3 +4910,12 @@ Focused local-header and central-header callback-fault regressions and the
 source guard are registered. The current macOS checkout has no CMake/Ninja
 build tree, so the compiled unit tests remain a release qualification gate
 rather than a claimed local runtime result.
+
+## Current-head Sonic1 liveness attempt — 2026-08-21
+
+The MCP-SSH host inventory and the declared `sonic1-camera-key` capabilities
+were available, but a bounded `uname -a` command timed out during SSH connect
+after the effective 20-second limit. The response reported
+`remote_started=false` and no remote command output. This is a host-liveness
+failure, not build or scan evidence; current-head Linux/Sonic1 qualification
+remains open.
