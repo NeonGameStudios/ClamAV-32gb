@@ -79,6 +79,17 @@ static int read_uint32(int fd, uint32_t *u, int big_endian);
 static int seekandread(int fd, off_t offset, int whence, void *data, size_t len);
 static vba_project_t *create_vba_project(int record_count, const char *dir, struct uniq *U);
 
+static cl_error_t
+vba_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 static uint16_t
 vba_endian_convert_16(uint16_t value, int big_endian)
 {
@@ -418,6 +429,10 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             goto done;                                                        \
         }                                                                     \
         temporary_reserved += write_size;                                     \
+        if (vba_checktimelimit(ctx, "VBA project temporary output reached the configured time limit") != CL_SUCCESS) { \
+            ret = CL_ETIMEOUT;                                                 \
+            goto done;                                                        \
+        }                                                                     \
         if (cli_writen(*tempfd, msg, size) != size) {                         \
             cli_warnmsg("vba_readdir_new: Failed to write to output file\n"); \
             cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be written completely"); \
@@ -1742,7 +1757,7 @@ cli_vba_inflate(int fd, off_t offset, size_t *size)
  * See also cli_filecopy()
  */
 static cl_error_t
-ole_copy_file_data(int s, int d, uint32_t len)
+ole_copy_file_data(cli_ctx *ctx, int s, int d, uint32_t len)
 {
     unsigned char data[FILEBUFF];
 
@@ -1751,6 +1766,8 @@ ole_copy_file_data(int s, int d, uint32_t len)
 
         if (cli_readn(s, data, todo) != todo)
             return CL_EREAD;
+        if (vba_checktimelimit(ctx, "OLE10 embedded object output reached the configured time limit") != CL_SUCCESS)
+            return CL_ETIMEOUT;
         if (cli_writen(d, data, todo) != todo)
             return CL_EWRITE;
 
@@ -1863,6 +1880,12 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     }
     temporary_reserved = (uint64_t)object_size;
 
+    ret = vba_checktimelimit(ctx, "OLE10 embedded object temporary admission reached the configured time limit");
+    if (ret != CL_SUCCESS) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        return ret;
+    }
+
     if (!(fullname = cli_gentemp(ctx ? ctx->this_layer_tmpdir : NULL))) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object temporary output could not be allocated");
         cli_scan_release_temporary(ctx, temporary_reserved);
@@ -1880,7 +1903,7 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
 
     cli_dbgmsg("cli_decode_ole_object: decoding to %s\n", fullname);
 
-    ret = ole_copy_file_data(fd, ofd, object_size);
+    ret = ole_copy_file_data(ctx, fd, ofd, object_size);
     if (ret != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object payload could not be copied completely");
         ole10_cleanup_output(ctx, &ofd, fullname, &ret);
@@ -1897,7 +1920,9 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
         return CL_ESEEK;
     }
 
-    ret = cli_magic_scan_desc_type_reserved(ofd, fullname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+    ret = vba_checktimelimit(ctx, "OLE10 embedded object nested-scan handoff reached the configured time limit");
+    if (ret == CL_SUCCESS)
+        ret = cli_magic_scan_desc_type_reserved(ofd, fullname, ctx, CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
     if (ret != CL_SUCCESS && ret != CL_VIRUS)
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object scan did not complete");
 
@@ -1970,6 +1995,9 @@ static int
 ppt_write_output(cli_ctx *ctx, uint64_t *temporary_reserved, int ofd, const void *buffer, size_t size)
 {
     if (ppt_reserve_output(ctx, temporary_reserved, size) != CL_SUCCESS)
+        return FALSE;
+
+    if (vba_checktimelimit(ctx, "PowerPoint temporary output reached the configured time limit") != CL_SUCCESS)
         return FALSE;
 
     if (cli_writen(ofd, buffer, size) != size) {
@@ -2105,6 +2133,9 @@ ppt_stream_iter(int fd, const char *dir, cli_ctx *ctx, uint64_t *temporary_reser
 
     while (1) {
         off_t header_offset = lseek(fd, 0, SEEK_CUR);
+
+        if (vba_checktimelimit(ctx, "PowerPoint traversal reached the configured time limit") != CL_SUCCESS)
+            return NULL;
 
         if (header_offset < 0 || (uint64_t)header_offset > (uint64_t)statbuf.st_size) {
             cli_mark_scan_incomplete(ctx, "PowerPoint atom header could not be positioned");

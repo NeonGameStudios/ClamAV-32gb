@@ -109,6 +109,9 @@
 - OLE2 VBA, MSO-inflated, embedded, and encrypted stream outputs now re-check
   the shared deadline after admission and before writes; add deterministic
   post-admission injection and complete Office/VBA corpus qualification.
+- VBA project, OLE10, and PowerPoint materialization now re-check the shared
+  deadline after admission and immediately before writes; add deterministic
+  post-admission injection and complete Office/PPT corpus qualification.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
   copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
   keeping provenance binding consistent with the actual workload; full

@@ -4227,3 +4227,13 @@ RTF embedded-object admission and each materialized write use the same
 fail-closed deadline boundary. Source guards cover both families; deterministic
 post-admission injection, compiled BinHex/RTF corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## VBA, OLE10, and PowerPoint output deadlines — 2026-08-22
+
+The shared VBA project writer, OLE10 copy loop, and PowerPoint output helper
+now re-check the deadline after temporary admission and immediately before
+materialized writes. PowerPoint traversal and OLE10 nested-scan handoff also
+retain explicit timeout results; cleanup releases reservations before partial
+Office output can be scanned. Source guards cover these paths; deterministic
+post-admission injection, compiled Office/PPT corpus, sanitizer, and Sonic1
+qualification remain release gates.
