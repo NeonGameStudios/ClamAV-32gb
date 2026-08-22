@@ -29944,9 +29944,9 @@ offset-size-arithmetic	libclamav_rust/src/onenote.rs	622	        fixture.extend(
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	91	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	1001	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	1013	            engine.maxscansize.saturating_sub((*ctx).scansize)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1067	fn alz_metadata_size(size: u64) -> Option<usize> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1069	fn alz_metadata_size(size: u64) -> Option<usize> {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	129	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1364	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1366	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	197	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	269	                    bytes.len() - offset,
 offset-size-arithmetic	libclamav_rust/src/scanners.rs	409	    fn last_size(&self) -> u64 {

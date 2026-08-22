@@ -1054,13 +1054,15 @@ fn handle_alz_metadata_limit_result(
     limit_ret: cl_error_t,
     alz_metadata_ret: &mut cl_error_t,
 ) -> bool {
-    match limit_ret {
-        ret if ret == cl_error_t_CL_SUCCESS => true,
-        ret if ret == cl_error_t_CL_EMAXFILES => false,
-        _ => {
-            *alz_metadata_ret = limit_ret;
-            false
-        }
+    if limit_ret == cl_error_t_CL_SUCCESS {
+        true
+    } else {
+        /* A MaxFiles admission failure means this required member was not
+         * inspected. Return it from the Rust parser as well as leaving the
+         * shared C context incomplete; do not rely on outer unwinding to
+         * manufacture the non-clean result. */
+        *alz_metadata_ret = limit_ret;
+        false
     }
 }
 
@@ -1312,14 +1314,14 @@ mod tests {
     }
 
     #[test]
-    fn alz_metadata_limit_failure_stops_without_terminal_status() {
+    fn alz_metadata_limit_failure_is_fail_visible() {
         let mut alz_metadata_ret = cl_error_t_CL_SUCCESS;
 
         assert!(!handle_alz_metadata_limit_result(
             cl_error_t_CL_EMAXFILES,
             &mut alz_metadata_ret,
         ));
-        assert_eq!(alz_metadata_ret, cl_error_t_CL_SUCCESS);
+        assert_eq!(alz_metadata_ret, cl_error_t_CL_EMAXFILES);
     }
 
     #[test]

@@ -689,3 +689,8 @@
   (including `CL_EMAXFILES`); required failures are incomplete and
   non-cacheable. A focused overflow regression covers the contract; full YARA
   corpus and production qualification remain open.
+
+- ALZ now returns `CL_EMAXFILES` directly when member admission reaches the
+  configured file-count limit, instead of relying only on the outer sticky
+  incomplete state. A focused Rust helper regression covers the boundary;
+  full ALZ corpus and production qualification remain open.

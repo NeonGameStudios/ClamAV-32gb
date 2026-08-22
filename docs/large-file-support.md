@@ -5116,3 +5116,12 @@ from colliding with `CL_EMAXFILES`; unknown execution failures become
 `CL_EPARSE`, while timeout, memory, resource, and fmap-read failures remain
 fail-visible and non-cacheable. A focused overflow regression covers the
 boundary; full YARA corpus and production qualification remain release gates.
+
+## ALZ MaxFiles admission propagation — 2026-08-22
+
+The ALZ metadata callback now preserves `CL_EMAXFILES` when the shared file
+count limit prevents a recognized member from being inspected. The Rust
+parser no longer returns clean merely because the outer C context carries a
+sticky incomplete flag; the direct result and cache/report policy now agree.
+A focused helper regression covers the boundary, while full ALZ corpus,
+sanitizer, and supported-build qualification remain release gates.

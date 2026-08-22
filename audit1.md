@@ -3605,3 +3605,13 @@ maps timeout/memory/resource errors to ClamAV statuses, maps unknown execution
 errors to `CL_EPARSE`, and marks every required non-detection failure
 incomplete/non-cacheable. A focused stack-overflow regression covers the
 collision; full YARA corpus and production qualification remain open.
+
+## ALZ MaxFiles admission propagation — 2026-08-22
+
+The ALZ scanner stopped its metadata callback when `cli_checklimits()` returned
+`CL_EMAXFILES`, but its helper left the parser return status as `CL_SUCCESS`.
+The shared C context was already sticky-incomplete, yet the Rust parser now
+also returns `CL_EMAXFILES` directly so each layer of the boundary preserves
+the required non-clean result. A focused Rust helper regression covers this
+admission path; full ALZ corpus, sanitizer, and production qualification
+remain open.
