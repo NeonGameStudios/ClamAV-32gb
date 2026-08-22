@@ -450,6 +450,10 @@
   metadata before recursive decompression, so archive fmap locks do not span
   child scans; compiled ZIP corpus and supported-build qualification remain
   open.
+- ZIP bounded member writers and ZipCrypto staging now re-check the shared
+  deadline after temporary admission and immediately before materialized writes;
+  add deterministic post-admission injection and complete ZIP corpus
+  qualification.
 - Windows memory scans no longer turn a failed descriptor scan into `OK`; the
   native Windows memory ingress remains outside the certified first-release
   platform boundary.

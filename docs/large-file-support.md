@@ -5605,3 +5605,12 @@ shared decoder flush and nested-member handoff are covered, and timeout paths
 release reservations before partial output can be scanned. Source guards cover
 the output families; deterministic post-admission injection, compiled AutoIt
 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## ZIP output deadlines — 2026-08-22
+
+Bounded stored, deflate, BZip2, Implode, legacy, and ZipCrypto output paths now
+re-check the shared deadline after temporary admission and immediately before
+materialized writes. Timeout cleanup preserves the existing member reservation
+and prevents partial output from reaching nested scans. Source guards cover
+the shared and encrypted writers; deterministic post-admission injection,
+compiled ZIP corpus, sanitizer, and Sonic1 qualification remain release gates.

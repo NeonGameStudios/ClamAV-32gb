@@ -336,6 +336,16 @@ static cl_error_t zip_check_output_limit(cli_ctx *ctx, uint64_t needed)
     return ret;
 }
 
+static cl_error_t zip_check_output_deadline(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (CL_SUCCESS != ret)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 static cl_error_t zip_write_output(int out_file, const void *buffer, size_t length, uint64_t *written, cli_ctx *ctx)
 {
     cl_error_t ret;
@@ -349,6 +359,10 @@ static cl_error_t zip_write_output(int out_file, const void *buffer, size_t leng
     }
 
     ret = zip_check_output_limit(ctx, *written + (uint64_t)length);
+    if (CL_SUCCESS != ret)
+        return ret;
+
+    ret = zip_check_output_deadline(ctx, "ZIP member output reached the configured time limit");
     if (CL_SUCCESS != ret)
         return ret;
 
@@ -456,6 +470,10 @@ static cl_error_t unz_stream(
         return ret;
     }
     temporary_reserved = temporary_size;
+
+    ret = zip_check_output_deadline(ctx, "ZIP member temporary admission reached the configured time limit");
+    if (CL_SUCCESS != ret)
+        goto done;
 
     if (tmpd) {
         if (ctx->engine->keeptmp && (NULL != original_filename)) {
@@ -897,6 +915,12 @@ static cl_error_t unz_legacy(
         return ret;
     }
     temporary_reserved = temporary_size;
+    ret = zip_check_output_deadline(ctx, "ZIP legacy member temporary admission reached the configured time limit");
+    if (CL_SUCCESS != ret) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        temporary_reserved = 0;
+        return ret;
+    }
     ret = CL_EUNPACK;
 
     if (tmpd) {
@@ -1349,6 +1373,12 @@ static cl_error_t zdecrypt_from_fmap(
             }
             temporary_reserved = csize - SIZEOF_ENCRYPTION_HEADER;
 
+            ret = zip_check_output_deadline(ctx, "ZIP encrypted member temporary admission reached the configured time limit");
+            if (CL_SUCCESS != ret) {
+                cli_scan_release_temporary(ctx, temporary_reserved);
+                return ret;
+            }
+
             if (tmpd) {
                 snprintf(name, sizeof(name), "%s" PATHSEP "zip.decrypt.%03zu", tmpd, *num_files_unzipped);
                 name[sizeof(name) - 1] = '\0';
@@ -1386,6 +1416,9 @@ static cl_error_t zdecrypt_from_fmap(
                     obuf[buffered++] = (char)plain;
 
                     if (buffered == sizeof(obuf)) {
+                        ret = zip_check_output_deadline(ctx, "ZIP encrypted member output reached the configured time limit");
+                        if (CL_SUCCESS != ret)
+                            break;
                         if (cli_writen(out_file, obuf, buffered) != buffered) {
                             cli_mark_scan_incomplete(ctx, "ZIP encrypted member could not be staged completely");
                             ret = CL_EWRITE;
@@ -1412,11 +1445,14 @@ static cl_error_t zdecrypt_from_fmap(
             }
 
             if (CL_SUCCESS == ret && buffered) {
-                if (cli_writen(out_file, obuf, buffered) != buffered) {
-                    cli_mark_scan_incomplete(ctx, "ZIP encrypted member could not be staged completely");
-                    ret = CL_EWRITE;
-                } else {
-                    total += buffered;
+                ret = zip_check_output_deadline(ctx, "ZIP encrypted member output reached the configured time limit");
+                if (CL_SUCCESS == ret) {
+                    if (cli_writen(out_file, obuf, buffered) != buffered) {
+                        cli_mark_scan_incomplete(ctx, "ZIP encrypted member could not be staged completely");
+                        ret = CL_EWRITE;
+                    } else {
+                        total += buffered;
+                    }
                 }
             }
 
