@@ -313,6 +313,10 @@
 - ALZ quota crossings and decoder failures now discard partial member output
   before nested scanning; only complete extracted members are dispatched, while
   the archive remains explicitly incomplete when a limit or decoder error occurs.
+- ALZ stored, deflate, and BZip2 members now require the decoder-produced output
+  count to equal the declared uncompressed member size before nested scanning;
+  mismatches discard the member output and remain fail-visible. Add compiled
+  Rust and malformed-archive corpus qualification.
 - MSEXPAND now rejects decoder output that exceeds its declared decompressed size;
   add broader malformed-SZDD corpus coverage during parser qualification.
 - OLE2/MSO zlib output-size prefixes are now enforced exactly; add malformed

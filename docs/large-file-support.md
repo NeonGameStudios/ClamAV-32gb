@@ -78,7 +78,10 @@ temporary quota and exposes a disk-backed `mmap` view to its third-party slice
 API, but its modern and legacy attachment callbacks now borrow member bytes
 directly into the scanner spool instead of creating an intermediate whole-member
 `Vec<u8>`. Bounded-read, temporary-reservation, mapping, parser, decoder, and
-extracted-member scan failures remain explicit incomplete results. The legacy
+extracted-member scan failures remain explicit incomplete results. ALZ stored,
+deflate, and BZip2 members must also produce exactly their declared
+uncompressed size before the child scan starts; a mismatch discards the output
+and leaves the archive incomplete. The legacy
 reader path is not subject to the modern parser's 256 MiB whole-input cap; the
 third-party modern parser still retains that explicit cap because its pinned
 API accepts only a borrowed whole-file slice. Third-party parser memory and

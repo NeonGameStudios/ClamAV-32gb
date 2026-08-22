@@ -413,6 +413,15 @@ impl AlzLocalFileHeader {
             output_size = needed;
         }
 
+        if output_size != self.uncompressed_size {
+            debug!(
+                "ALZ file {:?} produced {} bytes, expected {} bytes",
+                self.file_name, output_size, self.uncompressed_size
+            );
+            sink.abort();
+            return Err(Error::Extract);
+        }
+
         sink.finish()
     }
 
@@ -475,6 +484,15 @@ impl AlzLocalFileHeader {
         }
 
         if bounded.limit() != 0 {
+            sink.abort();
+            return Err(Error::Extract);
+        }
+
+        if output_size != self.uncompressed_size {
+            debug!(
+                "ALZ file {:?} produced {} bytes, expected {} bytes",
+                self.file_name, output_size, self.uncompressed_size
+            );
             sink.abort();
             return Err(Error::Extract);
         }
@@ -1340,6 +1358,65 @@ mod tests {
         .unwrap();
 
         assert_eq!(alz.file_limit_exceeded_size, Some(payload.len() as u64));
+        assert!(alz.embedded_files.is_empty());
+    }
+
+    #[test]
+    fn stored_output_size_mismatch_is_rejected_before_scan() {
+        const ALZ_COMP_NOCOMP: u8 = 0;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_entry_with_sizes(
+            &mut bytes,
+            "wrong-size.txt",
+            AlzFileAttribute::File as u8,
+            0x10,
+            ALZ_COMP_NOCOMP,
+            4,
+            5,
+            b"four",
+        );
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(extraction_limits())
+        })
+        .unwrap();
+
+        assert!(alz.has_parse_error());
+        assert!(alz.embedded_files.is_empty());
+    }
+
+    #[test]
+    fn deflate_output_size_mismatch_is_rejected_before_scan() {
+        const ALZ_COMP_DEFLATE: u8 = 2;
+        let payload = b"deflate payload";
+        let compressed = raw_deflate(payload);
+        assert!(compressed.len() <= u8::MAX.into());
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_entry_with_sizes(
+            &mut bytes,
+            "wrong-deflate-size.txt",
+            AlzFileAttribute::File as u8,
+            0x10,
+            ALZ_COMP_DEFLATE,
+            u8::try_from(compressed.len()).unwrap(),
+            u8::try_from(payload.len() - 1).unwrap(),
+            &compressed,
+        );
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let alz = Alz::from_bytes_with_filter(&bytes, |_| {
+            AlzExtractionDecision::Extract(extraction_limits())
+        })
+        .unwrap();
+
+        assert!(alz.has_parse_error());
         assert!(alz.embedded_files.is_empty());
     }
 
