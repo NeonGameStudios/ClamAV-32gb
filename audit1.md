@@ -4943,3 +4943,15 @@ login is `camera` with key authentication and sudo capability. The 20-second
 connection check passed policy and address resolution but timed out during TCP
 connect with `remote_started: false` and a retryable transport result. No
 compiled or test result from Sonic1 is attributed to this worktree.
+
+## Mach-O section-table allocation failures — 2026-08-22
+
+After confirmed load-command parsing, Mach-O section-table and native-width
+section-table growth could return `CL_EMEM` without marking a normal scan
+incomplete. Both allocation paths now record a parser-specific incomplete
+reason before cleanup; the metadata-only wrapper continues to reconcile its
+own returned error as before.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation fault injection, malformed Mach-O corpus,
+sanitizer runs, and Sonic1 qualification remain open.

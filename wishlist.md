@@ -44,6 +44,9 @@
 - Mach-O 32-bit entry-point and section-alignment arithmetic now rejects
   native-coordinate wraparound; add compiled malformed-Mach-O, sanitizer, and
   parser-family qualification.
+- Mach-O 32-bit and native-width section-table allocation failures now mark
+  required executable inspection incomplete; add compiled allocation-fault,
+  malformed-Mach-O, sanitizer, and parser-family qualification.
 - Internal fmap hashing now checks `MaxScanTime` before and between bounded
   read windows, including matcher and cache callers; public no-context hash
   APIs retain legacy behavior; a focused timeout regression is registered, and

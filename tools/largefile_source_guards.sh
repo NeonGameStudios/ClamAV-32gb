@@ -945,6 +945,8 @@ contains libclamav/macho.c 'Mach-O universal-binary inspection reached the confi
 contains libclamav/macho.c 'Mach-O universal-binary traversal reached the configured time limit'
 contains libclamav/macho.c 'Mach-O universal-binary member traversal reached the configured time limit'
 contains libclamav/macho.c 'Mach-O universal-binary parsing ended before inspection completed'
+contains libclamav/macho.c 'Mach-O section table could not be allocated'
+contains libclamav/macho.c 'Mach-O native-width section table could not be allocated'
 contains libclamav/macho.c 'Mach-O unpacked output could not be rewound'
 contains libclamav/macho.c 'Mach-O unpacked output could not be closed'
 contains libclamav/macho.c 'Mach-O unpacked output could not be removed'

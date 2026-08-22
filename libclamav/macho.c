@@ -483,6 +483,8 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
             sections = (struct cli_exe_section *)cli_max_realloc_or_free(sections, (sect + nsects) * sizeof(struct cli_exe_section));
             if (!sections) {
                 cli_errmsg("cli_scanmacho: Can't allocate memory for 'sections'\n");
+                if (!get_fileinfo)
+                    cli_mark_scan_incomplete(ctx, "Mach-O section table could not be allocated");
                 free(sections64);
                 return CL_EMEM;
             }
@@ -491,6 +493,8 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
                     sections64, (sect + nsects) * sizeof(struct cli_exe_section64));
                 if (!sections64) {
                     cli_errmsg("cli_scanmacho: Can't allocate memory for native-width sections\n");
+                    if (!get_fileinfo)
+                        cli_mark_scan_incomplete(ctx, "Mach-O native-width section table could not be allocated");
                     free(sections);
                     return CL_EMEM;
                 }

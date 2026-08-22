@@ -2756,44 +2756,44 @@ fixed-width-integer	libclamav/macho.c	50	    uint32_t magic;
 fixed-width-integer	libclamav/macho.c	51	    uint32_t cpu_type;
 fixed-width-integer	libclamav/macho.c	52	    uint32_t cpu_subtype;
 fixed-width-integer	libclamav/macho.c	53	    uint32_t filetype;
-fixed-width-integer	libclamav/macho.c	532	                        uint64_t align = UINT64_C(1) << EC32(section64.align, conv);
-fixed-width-integer	libclamav/macho.c	533	                        uint64_t padding = (align - (sections64[sect].vsz % align)) % align;
+fixed-width-integer	libclamav/macho.c	536	                        uint64_t align = UINT64_C(1) << EC32(section64.align, conv);
+fixed-width-integer	libclamav/macho.c	537	                        uint64_t padding = (align - (sections64[sect].vsz % align)) % align;
 fixed-width-integer	libclamav/macho.c	54	    uint32_t ncmds;
 fixed-width-integer	libclamav/macho.c	55	    uint32_t sizeofcmds;
-fixed-width-integer	libclamav/macho.c	552	                        sections[sect].rva = (uint32_t)sections64[sect].rva;
-fixed-width-integer	libclamav/macho.c	553	                        sections[sect].vsz = (uint32_t)sections64[sect].vsz;
-fixed-width-integer	libclamav/macho.c	554	                        sections[sect].raw = (uint32_t)sections64[sect].raw;
-fixed-width-integer	libclamav/macho.c	555	                        sections[sect].rsz = (uint32_t)sections64[sect].rsz;
+fixed-width-integer	libclamav/macho.c	556	                        sections[sect].rva = (uint32_t)sections64[sect].rva;
+fixed-width-integer	libclamav/macho.c	557	                        sections[sect].vsz = (uint32_t)sections64[sect].vsz;
+fixed-width-integer	libclamav/macho.c	558	                        sections[sect].raw = (uint32_t)sections64[sect].raw;
+fixed-width-integer	libclamav/macho.c	559	                        sections[sect].rsz = (uint32_t)sections64[sect].rsz;
 fixed-width-integer	libclamav/macho.c	56	    uint32_t flags;
-fixed-width-integer	libclamav/macho.c	584	                        uint64_t padding = ((uint64_t)section.align - ((uint64_t)sections[sect].vsz % section.align)) % section.align;
-fixed-width-integer	libclamav/macho.c	592	                        sections[sect].rsz = (uint32_t)((uint64_t)sections[sect].vsz + padding);
+fixed-width-integer	libclamav/macho.c	588	                        uint64_t padding = ((uint64_t)section.align - ((uint64_t)sections[sect].vsz % section.align)) % section.align;
+fixed-width-integer	libclamav/macho.c	596	                        sections[sect].rsz = (uint32_t)((uint64_t)sections[sect].vsz + padding);
 fixed-width-integer	libclamav/macho.c	60	    uint32_t cmd;
-fixed-width-integer	libclamav/macho.c	600	                    cli_dbgmsg("MACHO: Virtual address: 0x" STDx64 "\n", sections64 ? sections64[sect].rva : (uint64_t)sections[sect].rva);
+fixed-width-integer	libclamav/macho.c	604	                    cli_dbgmsg("MACHO: Virtual address: 0x" STDx64 "\n", sections64 ? sections64[sect].rva : (uint64_t)sections[sect].rva);
 fixed-width-integer	libclamav/macho.c	61	    uint32_t cmdsize;
 fixed-width-integer	libclamav/macho.c	66	    uint32_t vmaddr;
 fixed-width-integer	libclamav/macho.c	67	    uint32_t vmsize;
 fixed-width-integer	libclamav/macho.c	68	    uint32_t fileoff;
 fixed-width-integer	libclamav/macho.c	69	    uint32_t filesize;
-fixed-width-integer	libclamav/macho.c	694	                ep = cli_rawaddr((uint32_t)ep, sections, sect, &err);
+fixed-width-integer	libclamav/macho.c	698	                ep = cli_rawaddr((uint32_t)ep, sections, sect, &err);
 fixed-width-integer	libclamav/macho.c	70	    uint32_t maxprot;
 fixed-width-integer	libclamav/macho.c	71	    uint32_t initprot;
-fixed-width-integer	libclamav/macho.c	715	                fileinfo->ep = (uint32_t)ep;
+fixed-width-integer	libclamav/macho.c	719	                fileinfo->ep = (uint32_t)ep;
 fixed-width-integer	libclamav/macho.c	72	    uint32_t nsects;
-fixed-width-integer	libclamav/macho.c	723	            fileinfo->ep = (uint32_t)ep;
+fixed-width-integer	libclamav/macho.c	727	            fileinfo->ep = (uint32_t)ep;
 fixed-width-integer	libclamav/macho.c	73	    uint32_t flags;
-fixed-width-integer	libclamav/macho.c	755	    uint64_t at;
+fixed-width-integer	libclamav/macho.c	759	    uint64_t at;
 fixed-width-integer	libclamav/macho.c	78	    uint64_t vmaddr;
 fixed-width-integer	libclamav/macho.c	79	    uint64_t vmsize;
-fixed-width-integer	libclamav/macho.c	796	        uint64_t member_end;
 fixed-width-integer	libclamav/macho.c	80	    uint64_t fileoff;
+fixed-width-integer	libclamav/macho.c	800	        uint64_t member_end;
 fixed-width-integer	libclamav/macho.c	81	    uint64_t filesize;
 fixed-width-integer	libclamav/macho.c	82	    uint32_t maxprot;
-fixed-width-integer	libclamav/macho.c	828	        member_end = (uint64_t)fat_arch.offset + (uint64_t)fat_arch.size;
-fixed-width-integer	libclamav/macho.c	829	        if (member_end < fat_arch.offset || member_end > (uint64_t)map->len) {
 fixed-width-integer	libclamav/macho.c	83	    uint32_t initprot;
+fixed-width-integer	libclamav/macho.c	832	        member_end = (uint64_t)fat_arch.offset + (uint64_t)fat_arch.size;
+fixed-width-integer	libclamav/macho.c	833	        if (member_end < fat_arch.offset || member_end > (uint64_t)map->len) {
 fixed-width-integer	libclamav/macho.c	84	    uint32_t nsects;
 fixed-width-integer	libclamav/macho.c	85	    uint32_t flags;
-fixed-width-integer	libclamav/macho.c	856	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/macho.c	860	    uint64_t temporary_reserved = 0;
 fixed-width-integer	libclamav/macho.c	91	    uint32_t addr;
 fixed-width-integer	libclamav/macho.c	92	    uint32_t size;
 fixed-width-integer	libclamav/macho.c	93	    uint32_t offset;
@@ -10291,13 +10291,13 @@ native-width-integer	libclamav/macho.c	234	static uint64_t cli_rawaddr64(uint64_
 native-width-integer	libclamav/macho.c	236	    unsigned int i, found = 0;
 native-width-integer	libclamav/macho.c	262	    unsigned int i, j, sect = 0, conv, m64, nsects;
 native-width-integer	libclamav/macho.c	264	    unsigned int arch = 0, err;
-native-width-integer	libclamav/macho.c	601	                    cli_dbgmsg("MACHO: Virtual size: %u\n", (unsigned int)sections[sect].vsz);
-native-width-integer	libclamav/macho.c	602	                    cli_dbgmsg("MACHO: Raw size: %u\n", (unsigned int)sections[sect].rsz);
-native-width-integer	libclamav/macho.c	604	                        cli_dbgmsg("MACHO: File offset: %u\n", (unsigned int)sections[sect].raw);
-native-width-integer	libclamav/macho.c	751	    unsigned int conv, i;
-native-width-integer	libclamav/macho.c	794	    cli_dbgmsg("UNIBIN: Number of architectures: %u\n", (unsigned int)fat_header.nfats);
-native-width-integer	libclamav/macho.c	855	    int ndesc      = -1;
-native-width-integer	libclamav/macho.c	879	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
+native-width-integer	libclamav/macho.c	605	                    cli_dbgmsg("MACHO: Virtual size: %u\n", (unsigned int)sections[sect].vsz);
+native-width-integer	libclamav/macho.c	606	                    cli_dbgmsg("MACHO: Raw size: %u\n", (unsigned int)sections[sect].rsz);
+native-width-integer	libclamav/macho.c	608	                        cli_dbgmsg("MACHO: File offset: %u\n", (unsigned int)sections[sect].raw);
+native-width-integer	libclamav/macho.c	755	    unsigned int conv, i;
+native-width-integer	libclamav/macho.c	798	    cli_dbgmsg("UNIBIN: Number of architectures: %u\n", (unsigned int)fat_header.nfats);
+native-width-integer	libclamav/macho.c	859	    int ndesc      = -1;
+native-width-integer	libclamav/macho.c	883	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
 native-width-integer	libclamav/matcher-ac.c	1017	inline static int ac_findmatch_special(const unsigned char *buffer, uint32_t offset, uint32_t bp, uint64_t fileoffset, uint32_t length,
 native-width-integer	libclamav/matcher-ac.c	1018	                                       const struct cli_ac_patt *pattern, uint32_t pp, uint16_t specialcnt, uint32_t *start, uint32_t *end, int rev);
 native-width-integer	libclamav/matcher-ac.c	1019	static int ac_backward_match_branch(const unsigned char *buffer, uint32_t bp, uint32_t offset, uint64_t fileoffset, uint32_t length,
@@ -17787,11 +17787,11 @@ boundary-constant	libclamav/jp2.c	124	        if (offset > (uint64_t)SIZE_MAX)
 boundary-constant	libclamav/jp2.c	140	            if (offset > (uint64_t)SIZE_MAX - JP2_BOX_HEADER_SIZE)
 boundary-constant	libclamav/jp2.c	172	            if (offset > (uint64_t)SIZE_MAX - box_header_length)
 boundary-constant	libclamav/macho.c	225	    if (!found || UINT32_MAX - sects[i].raw < vaddr - sects[i].rva) {
-boundary-constant	libclamav/macho.c	546	                    if (sections64[sect].rva > UINT32_MAX || sections64[sect].vsz > UINT32_MAX ||
-boundary-constant	libclamav/macho.c	547	                        sections64[sect].raw > UINT32_MAX || sections64[sect].rsz > UINT32_MAX) {
-boundary-constant	libclamav/macho.c	586	                        if (padding > UINT32_MAX - sections[sect].vsz) {
-boundary-constant	libclamav/macho.c	693	            else if (ep <= UINT32_MAX)
-boundary-constant	libclamav/macho.c	714	            if (ep <= UINT32_MAX)
+boundary-constant	libclamav/macho.c	550	                    if (sections64[sect].rva > UINT32_MAX || sections64[sect].vsz > UINT32_MAX ||
+boundary-constant	libclamav/macho.c	551	                        sections64[sect].raw > UINT32_MAX || sections64[sect].rsz > UINT32_MAX) {
+boundary-constant	libclamav/macho.c	590	                        if (padding > UINT32_MAX - sections[sect].vsz) {
+boundary-constant	libclamav/macho.c	697	            else if (ep <= UINT32_MAX)
+boundary-constant	libclamav/macho.c	718	            if (ep <= UINT32_MAX)
 boundary-constant	libclamav/matcher-ac.c	1907	                            if (realoff > UINT32_MAX) {
 boundary-constant	libclamav/matcher-bm.c	308	        if (delta > (uint64_t)(UINT32_MAX - i))
 boundary-constant	libclamav/matcher-bm.c	330	                    if (delta > (uint64_t)(UINT32_MAX - i))
@@ -19327,15 +19327,15 @@ format-width	libclamav/macho.c	390	        cli_dbgmsg("MACHO: Size of load comma
 format-width	libclamav/macho.c	398	        cli_dbgmsg("cli_scanmacho: Invalid number of load commands (%u)\n", hdr.ncmds);
 format-width	libclamav/macho.c	426	            cli_dbgmsg("cli_scanmacho: Invalid command size (%u)\n", EC32(load_cmd.cmdsize, conv));
 format-width	libclamav/macho.c	470	                cli_dbgmsg("MACHO: Number of sections: %u\n", nsects);
-format-width	libclamav/macho.c	598	                    cli_dbgmsg("MACHO: --- Section %u ---\n", sect);
-format-width	libclamav/macho.c	601	                    cli_dbgmsg("MACHO: Virtual size: %u\n", (unsigned int)sections[sect].vsz);
-format-width	libclamav/macho.c	602	                    cli_dbgmsg("MACHO: Raw size: %u\n", (unsigned int)sections[sect].rsz);
-format-width	libclamav/macho.c	604	                        cli_dbgmsg("MACHO: File offset: %u\n", (unsigned int)sections[sect].raw);
-format-width	libclamav/macho.c	794	    cli_dbgmsg("UNIBIN: Number of architectures: %u\n", (unsigned int)fat_header.nfats);
-format-width	libclamav/macho.c	816	        cli_dbgmsg("UNIBIN: Binary %u of %u\n", i + 1, fat_header.nfats);
-format-width	libclamav/macho.c	817	        cli_dbgmsg("UNIBIN: File offset: %u\n", fat_arch.offset);
-format-width	libclamav/macho.c	818	        cli_dbgmsg("UNIBIN: File size: %u\n", fat_arch.size);
-format-width	libclamav/macho.c	824	            cli_dbgmsg("Invalid fat offset: %d\n", fat_arch.offset);
+format-width	libclamav/macho.c	602	                    cli_dbgmsg("MACHO: --- Section %u ---\n", sect);
+format-width	libclamav/macho.c	605	                    cli_dbgmsg("MACHO: Virtual size: %u\n", (unsigned int)sections[sect].vsz);
+format-width	libclamav/macho.c	606	                    cli_dbgmsg("MACHO: Raw size: %u\n", (unsigned int)sections[sect].rsz);
+format-width	libclamav/macho.c	608	                        cli_dbgmsg("MACHO: File offset: %u\n", (unsigned int)sections[sect].raw);
+format-width	libclamav/macho.c	798	    cli_dbgmsg("UNIBIN: Number of architectures: %u\n", (unsigned int)fat_header.nfats);
+format-width	libclamav/macho.c	820	        cli_dbgmsg("UNIBIN: Binary %u of %u\n", i + 1, fat_header.nfats);
+format-width	libclamav/macho.c	821	        cli_dbgmsg("UNIBIN: File offset: %u\n", fat_arch.offset);
+format-width	libclamav/macho.c	822	        cli_dbgmsg("UNIBIN: File size: %u\n", fat_arch.size);
+format-width	libclamav/macho.c	828	            cli_dbgmsg("Invalid fat offset: %d\n", fat_arch.offset);
 format-width	libclamav/matcher-ac.c	1669	        cli_dbgmsg("ac_addtype: added %s embedded object at offset " STDi64 ". Embedded object count: %d\n", cli_ftname(type), (uint64_t)offset, (*list)->cnt);
 format-width	libclamav/matcher-ac.c	1717	            cli_dbgmsg("lsig_sub_matched lsig %u:%u at " STDu64 "\n", lsig_id, subsig_id, realoff);
 format-width	libclamav/matcher-ac.c	1795	            cli_dbgmsg("Checking macro match: " STDu64 " + (%u - %u) == " STDu64 "\n",
@@ -25062,12 +25062,12 @@ offset-size-arithmetic	libclamav/macho.c	245	    if (!found || UINT64_MAX - sect
 offset-size-arithmetic	libclamav/macho.c	251	    return sects[i].raw + vaddr - sects[i].rva;
 offset-size-arithmetic	libclamav/macho.c	449	                name[sizeof(name) - 1] = '\0';
 offset-size-arithmetic	libclamav/macho.c	466	                name[sizeof(name) - 1] = '\0';
-offset-size-arithmetic	libclamav/macho.c	558	                    name[sizeof(name) - 1] = '\0';
-offset-size-arithmetic	libclamav/macho.c	595	                    name[sizeof(name) - 1] = '\0';
-offset-size-arithmetic	libclamav/macho.c	683	                at += EC32(load_cmd.cmdsize, conv) - sizeof(load_cmd);
-offset-size-arithmetic	libclamav/macho.c	828	        member_end = (uint64_t)fat_arch.offset + (uint64_t)fat_arch.size;
-offset-size-arithmetic	libclamav/macho.c	829	        if (member_end < fat_arch.offset || member_end > (uint64_t)map->len) {
-offset-size-arithmetic	libclamav/macho.c	879	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
+offset-size-arithmetic	libclamav/macho.c	562	                    name[sizeof(name) - 1] = '\0';
+offset-size-arithmetic	libclamav/macho.c	599	                    name[sizeof(name) - 1] = '\0';
+offset-size-arithmetic	libclamav/macho.c	687	                at += EC32(load_cmd.cmdsize, conv) - sizeof(load_cmd);
+offset-size-arithmetic	libclamav/macho.c	832	        member_end = (uint64_t)fat_arch.offset + (uint64_t)fat_arch.size;
+offset-size-arithmetic	libclamav/macho.c	833	        if (member_end < fat_arch.offset || member_end > (uint64_t)map->len) {
+offset-size-arithmetic	libclamav/macho.c	883	            if (lseek(ndesc, 0, SEEK_SET) == (off_t)-1) {
 offset-size-arithmetic	libclamav/matcher-ac.c	1018	                                       const struct cli_ac_patt *pattern, uint32_t pp, uint16_t specialcnt, uint32_t *start, uint32_t *end, int rev);
 offset-size-arithmetic	libclamav/matcher-ac.c	1020	                                    const struct cli_ac_patt *pattern, uint32_t pp, uint16_t specialcnt, uint32_t *start, uint32_t *end);
 offset-size-arithmetic	libclamav/matcher-ac.c	1022	                                   const struct cli_ac_patt *pattern, uint32_t pp, uint16_t specialcnt, uint32_t *start, uint32_t *end);
