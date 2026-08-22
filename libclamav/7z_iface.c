@@ -37,6 +37,16 @@
 
 static ISzAlloc allocImp = {__lzma_wrap_alloc, __lzma_wrap_free}, allocTempImp = {__lzma_wrap_alloc, __lzma_wrap_free};
 
+static cl_error_t cli_7z_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 /* File-type matching only proves the six-byte 7-Zip signature.  Embedded SFX
  * candidates need the complete start header before they are allowed to become
  * a nested layer; otherwise arbitrary payload bytes can be misclassified as a
@@ -82,13 +92,22 @@ cl_error_t cli_7z_header_check(cli_ctx *ctx, size_t offset)
 typedef struct
 {
     ISeqOutStream s;
+    cli_ctx *ctx;
+    cl_error_t status;
     int fd;
 } CClamFileOutStream;
 
 static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 {
     CClamFileOutStream *p = (CClamFileOutStream *)pp;
-    size_t written = cli_writen(p->fd, data, size);
+    size_t written;
+
+    if (p->ctx && cli_7z_checktimelimit(p->ctx, "7-Zip member extraction reached the configured time limit") != CL_SUCCESS) {
+        p->status = CL_ETIMEOUT;
+        return 0;
+    }
+
+    written = cli_writen(p->fd, data, size);
 
     /* ISeqOutStream uses a short write (zero here) to report failure. Do not
      * pass cli_writen()'s (size_t)-1 sentinel to the 7-Zip CRC wrapper: it
@@ -206,6 +225,12 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
     cl_error_t found       = CL_CLEAN;
     Int64 begin_of_archive = offset;
 
+    if (!ctx || !ctx->fmap)
+        return CL_ENULLARG;
+
+    if (cli_7z_checktimelimit(ctx, "7-Zip inspection reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
+
     /* Replacement for
        FileInStream_CreateVTable(&archiveStream); */
     archiveStream.s.Read    = FileInStream_fmap_Read;
@@ -314,9 +339,17 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 break;
             }
             output.s.Write = ClamFileOutStream_Write;
+            output.ctx      = ctx;
+            output.status   = CL_SUCCESS;
             output.fd       = fd;
             res = SzArEx_ExtractToStream(&db, &lookStream.s, i, &output.s,
                                          &outSizeProcessed, &allocImp, &allocTempImp);
+            if (output.status != CL_SUCCESS) {
+                found = output.status;
+                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
+                free(tmp_name);
+                break;
+            }
             if (res == SZ_ERROR_UNSUPPORTED) {
                 UInt32 folderIndex = db.FileIndexToFolderIndexMap[i];
                 UInt64 folderSize = 0;
