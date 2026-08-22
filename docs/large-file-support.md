@@ -4949,5 +4949,6 @@ library regression also verifies that
 the path-based helper reports the staged reservation at the exact quota and
 returns `CL_ERESOURCE` when the reservation crosses it.
 The Linux raw runtime gate also schedules a sparse 32-GiB-plus-one stdin
-boundary and rejects a clean-prefix result; the dedicated host run remains
-required.
+boundary and rejects a clean-prefix result, while a separate exact-32-GiB
+stdin run must detect the final marker at offset `34359738304`; the dedicated
+host run remains required.
