@@ -17704,6 +17704,7 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
     cli_ctx ctx;
     cl_fmap_t *map;
     cl_error_t ret;
+    char invalid_tmpdir[PATH_MAX];
 
     /* A minimal one-file, uncompressed CAB. The test starts with the
      * cumulative scan budget already exhausted, so the bridge must reject
@@ -17765,6 +17766,26 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
     ret = cli_scanmscab(&ctx, 0);
     ck_assert_int_eq(ret, CL_ERESOURCE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    /* Temporary admission can succeed while the output directory is no
+     * longer usable. The parser must not return a clean-looking extraction
+     * failure after it skipped the required member scan. */
+    ctx.temporary_bytes        = 0;
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.limit_exceeded         = false;
+    ctx.limit_exceeded_result  = CL_SUCCESS;
+    engine.maxtemporarysize    = 0;
+    ck_assert_msg(snprintf(invalid_tmpdir, sizeof(invalid_tmpdir), "%s/mspack-output-root-does-not-exist", tmpdir) < (int)sizeof(invalid_tmpdir),
+                  "temporary directory test path was truncated");
+    ctx.this_layer_tmpdir      = invalid_tmpdir;
+    map->dont_cache_flag       = false;
+
+    ret = cli_scanmscab(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB member extraction was incomplete");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);

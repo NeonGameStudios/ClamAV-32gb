@@ -867,6 +867,8 @@ contains unit_tests/check_clamav.c 'test_arj_truncated_main_header_is_fail_visib
 contains libclamav/libmspack.c 'CAB archive inspection reached MaxScanSize'
 contains libclamav/libmspack.c 'CHM archive inspection reached MaxScanSize'
 contains libclamav/libmspack.c 'cli_scan_reserve_temporary(ctx, member_size)'
+contains libclamav/libmspack.c 'CAB temporary output could not be created'
+contains libclamav/libmspack.c 'CHM temporary output could not be created'
 contains libclamav/libmspack.c 'CAB fixed header is malformed or truncated'
 contains libclamav/libmspack.c 'CAB fixed header could not be read completely'
 contains libclamav/libmspack.c 'CAB archive header could not be inspected completely'

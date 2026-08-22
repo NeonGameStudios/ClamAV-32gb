@@ -665,6 +665,7 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
 
         tmp_fname = cli_gentemp(ctx->this_layer_tmpdir);
         if (!tmp_fname) {
+            cli_mark_scan_incomplete(ctx, "CAB temporary output could not be created");
             ret = CL_EMEM;
             cli_scan_release_temporary(ctx, temporary_reserved);
             temporary_reserved = 0;
@@ -829,6 +830,7 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
 
         tmp_fname = cli_gentemp(ctx->this_layer_tmpdir);
         if (!tmp_fname) {
+            cli_mark_scan_incomplete(ctx, "CHM temporary output could not be created");
             ret = CL_EMEM;
             cli_scan_release_temporary(ctx, temporary_reserved);
             temporary_reserved = 0;

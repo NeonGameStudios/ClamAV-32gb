@@ -333,6 +333,10 @@
 - HFS+ ordinary fork, inline compressed, and compressed-resource output paths
   now re-check the shared deadline after admission and before writes; add
   deterministic post-admission injection and complete HFS+ corpus qualification.
+- CAB and CHM temporary-output creation failures now mark the layer incomplete
+  before returning an allocation error, so a required member cannot be skipped
+  after quota admission and still appear clean; compiled CAB/CHM corpus and
+  Sonic1 qualification remain open.
 - PDF Flate, RunLength, and LZW decoder output now retains native-width
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial

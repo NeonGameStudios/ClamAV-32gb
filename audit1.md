@@ -4700,3 +4700,17 @@ and section alignment uses a widened temporary and rejects an extent above
 `UINT32_MAX` as a broken executable. A focused malformed 32-bit section
 fixture and source guards are registered; compiled Mach-O, sanitizer, and
 Sonic1 qualification remain open.
+
+## MSPack temporary-output creation failure — 2026-08-22
+
+CAB and CHM member staging reserve temporary space before creating the output
+file. When the output directory became unusable after admission, the bridge
+returned `CL_EMEM` without setting sticky incomplete state, leaving the
+required member scan dependent on outer-layer behavior. Both CAB and CHM now
+mark the layer incomplete with a parser-specific reason before returning the
+allocation failure. The existing synthetic CAB fixture now exercises the
+unusable-output-directory boundary and verifies the fmap is non-cacheable.
+
+The source guards and non-clang regression gates pass. Compiled CHM coverage,
+sanitizer runs, production CAB/CHM corpora, and Sonic1 qualification remain
+open.
