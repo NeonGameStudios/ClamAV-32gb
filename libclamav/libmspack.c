@@ -644,10 +644,19 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
             max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
         }
 
+        if (!mspack_deadline_ok(&ops_ex)) {
+            ret = CL_ETIMEOUT;
+            goto done;
+        }
         ret = cli_scan_reserve_temporary(ctx, member_size);
         if (ret != CL_SUCCESS)
             goto done;
         temporary_reserved = member_size;
+
+        if (!mspack_deadline_ok(&ops_ex)) {
+            ret = CL_ETIMEOUT;
+            goto done;
+        }
 
         tmp_fname = cli_gentemp(ctx->this_layer_tmpdir);
         if (!tmp_fname) {
@@ -674,6 +683,11 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
             cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
             cli_mark_scan_incomplete(ctx, "CAB member extraction was incomplete");
             ret = CL_EPARSE;
+            goto done;
+        }
+
+        if (!mspack_deadline_ok(&ops_ex)) {
+            ret = CL_ETIMEOUT;
             goto done;
         }
 
@@ -794,10 +808,19 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
             max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
         }
 
+        if (!mspack_deadline_ok(&ops_ex)) {
+            ret = CL_ETIMEOUT;
+            goto done;
+        }
         ret = cli_scan_reserve_temporary(ctx, member_size);
         if (ret != CL_SUCCESS)
             goto done;
         temporary_reserved = member_size;
+
+        if (!mspack_deadline_ok(&ops_ex)) {
+            ret = CL_ETIMEOUT;
+            goto done;
+        }
 
         tmp_fname = cli_gentemp(ctx->this_layer_tmpdir);
         if (!tmp_fname) {
@@ -822,6 +845,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
             cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
             cli_mark_scan_incomplete(ctx, "CHM member extraction was incomplete");
             ret = CL_EPARSE;
+            goto done;
+        }
+
+        if (!mspack_deadline_ok(&ops_ex)) {
+            ret = CL_ETIMEOUT;
             goto done;
         }
 

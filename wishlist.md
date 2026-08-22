@@ -93,6 +93,9 @@
   decoder reads, seeks, and writes and preserve timeout through archive open and
   extraction; a constructor-injected callback-timeout regression now covers both
   decoder-owned read boundaries, while production corpus qualification remains.
+- Bundled CAB/CHM member temporary admission and nested-scan handoff now
+  re-check the shared deadline outside decoder callbacks; add deterministic
+  admission/handoff timeout injection and complete CAB/CHM corpus qualification.
 - Sanitizer runtime metadata now invokes the copied sanitizer scanner with the
   copied sanitizer dependency directory explicitly first in `LD_LIBRARY_PATH`,
   keeping provenance binding consistent with the actual workload; full

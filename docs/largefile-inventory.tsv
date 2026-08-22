@@ -2669,11 +2669,11 @@ fixed-width-integer	libclamav/libmspack.c	619	        uint64_t member_size;
 fixed-width-integer	libclamav/libmspack.c	620	        uint64_t max_size;
 fixed-width-integer	libclamav/libmspack.c	622	        member_size = (uint64_t)cab_f->length;
 fixed-width-integer	libclamav/libmspack.c	639	            uint64_t remaining = ctx->engine->maxscansize - ctx->scansize;
-fixed-width-integer	libclamav/libmspack.c	731	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/libmspack.c	764	        uint64_t member_size;
-fixed-width-integer	libclamav/libmspack.c	765	        uint64_t max_size;
-fixed-width-integer	libclamav/libmspack.c	772	        member_size = (uint64_t)mschm_f->length;
-fixed-width-integer	libclamav/libmspack.c	789	            uint64_t remaining = ctx->engine->maxscansize - ctx->scansize;
+fixed-width-integer	libclamav/libmspack.c	745	    uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/libmspack.c	778	        uint64_t member_size;
+fixed-width-integer	libclamav/libmspack.c	779	        uint64_t max_size;
+fixed-width-integer	libclamav/libmspack.c	786	        member_size = (uint64_t)mschm_f->length;
+fixed-width-integer	libclamav/libmspack.c	803	            uint64_t remaining = ctx->engine->maxscansize - ctx->scansize;
 fixed-width-integer	libclamav/lzma_iface.c	65	int cli_LzmaInit(struct CLI_LZMA *L, uint64_t size_override)
 fixed-width-integer	libclamav/lzma_iface.c	91	        uint64_t c = (uint64_t)lzma_getbyte(L, &fail);
 fixed-width-integer	libclamav/lzma_iface.h	41	    uint64_t usize;
@@ -10165,7 +10165,7 @@ native-width-integer	libclamav/libmspack.c	575	    if ((off_t)sfx_offset < 0 || 
 native-width-integer	libclamav/libmspack.c	576	        cli_dbgmsg("%s() offset cannot be represented by off_t: %zu\n", __func__, sfx_offset);
 native-width-integer	libclamav/libmspack.c	581	    mspack_fmap.org = (off_t)sfx_offset;
 native-width-integer	libclamav/libmspack.c	72	static int mspack_fmap_length(const fmap_t *map, off_t *length)
-native-width-integer	libclamav/libmspack.c	723	    int files;
+native-width-integer	libclamav/libmspack.c	737	    int files;
 native-width-integer	libclamav/libmspack.c	74	    off_t map_length;
 native-width-integer	libclamav/libmspack.c	79	    map_length = (off_t)map->len;
 native-width-integer	libclamav/libmspack.c	87	static int mspack_fmap_absolute_offset(const struct mspack_handle *handle, size_t *offset)
@@ -19135,10 +19135,10 @@ format-width	libclamav/libmspack.c	545	    cli_dbgmsg("%s(): Successfully read C
 format-width	libclamav/libmspack.c	576	        cli_dbgmsg("%s() offset cannot be represented by off_t: %zu\n", __func__, sfx_offset);
 format-width	libclamav/libmspack.c	594	        cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
 format-width	libclamav/libmspack.c	607	        cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
-format-width	libclamav/libmspack.c	674	            cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
-format-width	libclamav/libmspack.c	744	        cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
-format-width	libclamav/libmspack.c	752	        cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
-format-width	libclamav/libmspack.c	822	            cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
+format-width	libclamav/libmspack.c	683	            cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
+format-width	libclamav/libmspack.c	758	        cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
+format-width	libclamav/libmspack.c	766	        cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
+format-width	libclamav/libmspack.c	845	            cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
 format-width	libclamav/line.c	104	    /*printf("%d:\n\t'%s'\n", (int)line[0], &line[1]);*/
 format-width	libclamav/line.c	97	    /*printf("%d:\n\t'%s'\n", (int)line[0], &line[1]);*/
 format-width	libclamav/lzw/lzwdec.c	320	                cli_dbgmsg("%p <= %p, %p < %p(%ld)\n", &state->dec_codetab[0], free_entp, free_entp, &state->dec_codetab[CSIZE], CSIZE);
@@ -24835,13 +24835,13 @@ offset-size-arithmetic	libclamav/libmspack.c	639	            uint64_t remaining 
 offset-size-arithmetic	libclamav/libmspack.c	640	            max_size           = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
 offset-size-arithmetic	libclamav/libmspack.c	644	            max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
 offset-size-arithmetic	libclamav/libmspack.c	72	static int mspack_fmap_length(const fmap_t *map, off_t *length)
-offset-size-arithmetic	libclamav/libmspack.c	772	        member_size = (uint64_t)mschm_f->length;
-offset-size-arithmetic	libclamav/libmspack.c	781	            if (ctx->scansize >= ctx->engine->maxscansize) {
-offset-size-arithmetic	libclamav/libmspack.c	789	            uint64_t remaining = ctx->engine->maxscansize - ctx->scansize;
+offset-size-arithmetic	libclamav/libmspack.c	786	        member_size = (uint64_t)mschm_f->length;
 offset-size-arithmetic	libclamav/libmspack.c	79	    map_length = (off_t)map->len;
-offset-size-arithmetic	libclamav/libmspack.c	790	            max_size           = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
-offset-size-arithmetic	libclamav/libmspack.c	794	            max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
+offset-size-arithmetic	libclamav/libmspack.c	795	            if (ctx->scansize >= ctx->engine->maxscansize) {
 offset-size-arithmetic	libclamav/libmspack.c	80	    if (map_length < 0 || (uintmax_t)map_length != (uintmax_t)map->len)
+offset-size-arithmetic	libclamav/libmspack.c	803	            uint64_t remaining = ctx->engine->maxscansize - ctx->scansize;
+offset-size-arithmetic	libclamav/libmspack.c	804	            max_size           = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
+offset-size-arithmetic	libclamav/libmspack.c	808	            max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
 offset-size-arithmetic	libclamav/libmspack.c	87	static int mspack_fmap_absolute_offset(const struct mspack_handle *handle, size_t *offset)
 offset-size-arithmetic	libclamav/libmspack.c	93	        mspack_fmap_length(handle->fmap, &map_length) != 0 ||
 offset-size-arithmetic	libclamav/libmspack.c	95	        (uintmax_t)handle->offset > (uintmax_t)map_length - (uintmax_t)handle->org)
@@ -32995,7 +32995,7 @@ large-file-option	libclamav/clamav.h	2064	 *                           top-level
 large-file-option	libclamav/clamav.h	365	    CL_ENGINE_MAX_SCANSIZE,        /** uint64_t */
 large-file-option	libclamav/clamav.h	366	    CL_ENGINE_MAX_FILESIZE,        /** uint64_t */
 large-file-option	libclamav/libmspack.c	632	                cli_mark_scan_incomplete(ctx, "CAB archive inspection reached MaxScanSize");
-large-file-option	libclamav/libmspack.c	782	                cli_mark_scan_incomplete(ctx, "CHM archive inspection reached MaxScanSize");
+large-file-option	libclamav/libmspack.c	796	                cli_mark_scan_incomplete(ctx, "CHM archive inspection reached MaxScanSize");
 large-file-option	libclamav/matcher.h	365	 * On qualifying 64-bit fmap builds, PCREMaxFileSize values are constrained to
 large-file-option	libclamav/ole2_extract.c	1113	                    limit_name    = "Heuristics.Limits.Exceeded.MaxFileSize";
 large-file-option	libclamav/ole2_extract.c	1116	                    limit_name    = "Heuristics.Limits.Exceeded.MaxScanSize";

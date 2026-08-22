@@ -5547,3 +5547,13 @@ Timeout cleanup releases current or aggregate temporary reservations and keeps
 partial output from reaching a nested scan. Source guards cover all three
 paths; deterministic timeout injection, compiled InstallShield corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## MSPack member-boundary deadlines — 2026-08-22
+
+Bundled CAB/CHM decoder callbacks already checked `MaxScanTime` during reads,
+seeks, and writes. Member temporary admission and the handoff from a completed
+extraction to nested scanning now perform explicit checks as well, preserving
+`CL_ETIMEOUT` and reservation cleanup when the deadline expires outside the
+decoder callback. Source guards cover both families; deterministic
+admission/handoff timeout injection, compiled CAB/CHM corpus, sanitizer, and
+Sonic1 qualification remain release gates.
