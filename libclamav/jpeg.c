@@ -303,7 +303,8 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off)
 
     if (!(buf = fmap_need_off_once(map, offset, 4 + 2 + 1))) {
         cli_dbgmsg("read bim failed\n");
-        return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceRead");
+        return jpeg_read_status(ctx, (size_t)-1, 4 + 2 + 1,
+                                "Heuristics.Broken.Media.JPEG.PhotoshopResourceRead");
     }
     if (memcmp(buf, "8BIM", 4) != 0) {
         cli_dbgmsg("missed 8bim\n");
@@ -654,6 +655,8 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                     if (status == CL_BREAK) {
                         status = CL_CLEAN;
                     }
+                    if (status != CL_SUCCESS)
+                        goto done;
                 } else {
                     cli_dbgmsg(" Unfamiliar use of application marker: 0x%02x\n", marker);
                 }

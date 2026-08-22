@@ -3819,3 +3819,12 @@ and marks a decoder that consumes neither input nor output incomplete. A
 focused signature regression puts the marker in the second member. Static
 guards and whitespace validation are available locally; malformed corpus,
 sanitizer, and supported-build qualification remain release gates.
+
+## JPEG Photoshop resource-header callback failures — 2026-08-22
+
+The Photoshop resource walker first proves that its seven-byte `8BIM` header
+lies in the fmap, so a failed `fmap_need_off_once()` there is an operational
+read failure rather than truncation. The parser now preserves `CL_EREAD` and
+the incomplete/non-cacheable state; a focused callback regression covers it.
+Static guards and whitespace validation remain local evidence; compiled JPEG
+corpus, sanitizer, and supported-build qualification remain release gates.

@@ -5268,3 +5268,12 @@ bytes from the completed decoder window and reinitializing only after
 marked incomplete instead of spinning indefinitely. The focused regression
 places a signature marker in the second stream; malformed decoder-state,
 sanitizer, and production BZip2 corpus qualification remain open.
+
+## JPEG Photoshop resource-header read failures — 2026-08-22
+
+The JPEG parser already distinguished fmap callback failures while reading
+segment sizes and Photoshop resource sizes, but its in-range `8BIM`
+resource-header window converted a callback failure into a parse result. That
+window now preserves `CL_EREAD` and remains non-cacheable; a focused callback
+regression covers the boundary. Compiled Photoshop-resource, sanitizer, and
+production JPEG corpus qualification remain open.

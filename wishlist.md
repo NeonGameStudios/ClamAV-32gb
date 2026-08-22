@@ -117,6 +117,9 @@
 - JPEG 2000 structural box admission now checks the shared deadline at parser
   entry and before each top-level box; add compiled timeout-injection and
   production image-corpus qualification.
+- JPEG Photoshop 8BIM resource-header fmap callback failures now preserve
+  `CL_EREAD` after an in-range boundary check; add compiled Photoshop-resource
+  and production JPEG corpus qualification.
 - OLE2 summary-property metadata now reads only the bounded property table and
   bounded per-property windows instead of mapping the full attacker-declared
   property-set size; malformed/truncated windows remain fail-visible.
