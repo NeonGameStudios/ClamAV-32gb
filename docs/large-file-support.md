@@ -5107,3 +5107,12 @@ target-root parser, bytecode, read, or resource failure when the generic root
 returns clean, while retaining detection precedence. A focused two-root
 regression and source guards cover the fail-closed merge; complete logical
 signature corpus and production qualification remain release gates.
+
+## YARA execution-status normalization — 2026-08-22
+
+Bundled YARA execution errors are normalized before they enter ClamAV’s
+`cl_error_t` policy. This prevents `ERROR_EXEC_STACK_OVERFLOW` (numeric 25)
+from colliding with `CL_EMAXFILES`; unknown execution failures become
+`CL_EPARSE`, while timeout, memory, resource, and fmap-read failures remain
+fail-visible and non-cacheable. A focused overflow regression covers the
+boundary; full YARA corpus and production qualification remain release gates.

@@ -3594,3 +3594,14 @@ results now use `cli_merge_scan_status()`: detections retain precedence, and a
 later clean root cannot erase an earlier incomplete status. A focused
 target-failure/generic-clean regression covers the status contract; complete
 logical-signature corpus and production qualification remain open.
+
+## YARA execution-status normalization — 2026-08-22
+
+The bundled YARA interpreter returns its own numeric `ERROR_*` values for
+execution failures. `ERROR_EXEC_STACK_OVERFLOW` is 25, which is also
+`CL_EMAXFILES` in ClamAV; the old wrapper passed that integer through as a
+ClamAV status. The wrapper now normalizes bundled and REAL_YARA results,
+maps timeout/memory/resource errors to ClamAV statuses, maps unknown execution
+errors to `CL_EPARSE`, and marks every required non-detection failure
+incomplete/non-cacheable. A focused stack-overflow regression covers the
+collision; full YARA corpus and production qualification remain open.

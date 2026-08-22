@@ -1238,10 +1238,44 @@ done:
 }
 
 #ifdef HAVE_YARA
+static cl_error_t yara_normalize_execution_status(int result)
+{
+#if REAL_YARA
+    switch (result) {
+        case ERROR_SUCCESS:
+            return CL_SUCCESS;
+        case ERROR_SCAN_TIMEOUT:
+            return CL_ETIMEOUT;
+        case ERROR_INSUFICIENT_MEMORY:
+            return CL_EMEM;
+        case ERROR_TOO_MANY_SCAN_THREADS:
+        case ERROR_TOO_MANY_MATCHES:
+            return CL_ERESOURCE;
+        default:
+            return CL_EPARSE;
+    }
+#else
+    /* The bundled interpreter returns selected ClamAV statuses directly.
+     * Other YARA error numbers must not be cast to cl_error_t: for example,
+     * ERROR_EXEC_STACK_OVERFLOW is 25, which collides with CL_EMAXFILES. */
+    switch ((cl_error_t)result) {
+        case CL_SUCCESS:
+        case CL_VIRUS:
+        case CL_EREAD:
+        case CL_ETIMEOUT:
+        case CL_EPARSE:
+            return (cl_error_t)result;
+        default:
+            return CL_EPARSE;
+    }
+#endif
+}
+
 static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_data *acdata, struct cli_target_info *target_info, uint32_t lsid)
 {
     struct cli_ac_lsig *ac_lsig = root->ac_lsigtable[lsid];
     cl_error_t rc;
+    int execution_result;
     YR_SCAN_CONTEXT context;
 
     memset(&context, 0, sizeof(YR_SCAN_CONTEXT));
@@ -1253,13 +1287,8 @@ static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
             context.entry_point = cli_exe_entrypoint(&target_info->exeinfo);
     }
 
-    rc = yr_execute_code(ac_lsig, acdata, &context, 0, 0);
-
-    if (rc == CL_EREAD) {
-        cli_mark_scan_incomplete(ctx, "YARA matcher fmap read failed");
-        if (ctx->fmap != NULL)
-            ctx->fmap->dont_cache_flag = 1;
-    }
+    execution_result = yr_execute_code(ac_lsig, acdata, &context, 0, 0);
+    rc                = yara_normalize_execution_status(execution_result);
 
     if (rc == CL_VIRUS) {
         if (ac_lsig->flag & CLI_LSIG_FLAG_PRIVATE) {
@@ -1267,6 +1296,19 @@ static cl_error_t yara_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
         } else {
             rc = cli_append_virus(ctx, ac_lsig->virname);
         }
+    }
+
+    if (rc != CL_SUCCESS && rc != CL_VIRUS) {
+        if (rc == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "YARA matcher fmap read failed");
+        else if (rc == CL_ETIMEOUT)
+            cli_mark_scan_incomplete(ctx, "YARA matcher execution reached the configured time limit");
+        else if (rc == CL_EMEM)
+            cli_mark_scan_incomplete(ctx, "YARA matcher execution ran out of memory");
+        else
+            cli_mark_scan_incomplete(ctx, "YARA matcher execution failed");
+        if (ctx->fmap != NULL)
+            ctx->fmap->dont_cache_flag = 1;
     }
     return rc;
 }

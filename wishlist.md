@@ -682,3 +682,10 @@
   precedence. A focused two-root regression and source guards cover the
   fail-closed status contract, while full logical-signature and production
   qualification remain open.
+
+- Bundled YARA execution statuses are now normalized before crossing the
+  ClamAV error-code boundary. Interpreter stack overflow and other YARA
+  execution failures are no longer vulnerable to numeric status collisions
+  (including `CL_EMAXFILES`); required failures are incomplete and
+  non-cacheable. A focused overflow regression covers the contract; full YARA
+  corpus and production qualification remain open.
