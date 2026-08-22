@@ -143,6 +143,7 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
     printf 'service_binary_hashes_sha256=%s\n' "$binary_hashes_sha256"
     printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$dependency_hashes_sha256"
+    printf 'loader_injection=disabled\n'
     printf 'max_scan_time_ms=14400000\n'
     printf 'service_timeout_s=14400\n'
 } > "$out/provenance/service-build-identity.txt"

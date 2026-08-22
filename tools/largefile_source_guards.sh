@@ -2773,6 +2773,9 @@ contains libclamav/pdf.c 'PDF object-end search reached the configured time limi
 contains tools/largefile_runtime_gate.sh 'unset LD_PRELOAD LD_AUDIT'
 contains tools/largefile_runtime_gate.sh "printf 'loader_injection=disabled\\n'"
 contains tools/largefile_runtime_evidence_check.sh "grep -Fx 'loader_injection=disabled'"
+contains tools/largefile_service_qualification.sh 'unset LD_PRELOAD LD_AUDIT'
+contains tools/largefile_service_qualification.sh "printf 'loader_injection=disabled\\n'"
+contains tools/largefile_service_evidence_check.sh 'loader_injection=$(identity_field loader_injection)'
 contains unit_tests/check_clamav.c 'test_html_normalize_cap_does_not_skip_raw_matching'
 contains libclamav/message.c 'messageBeginBodySpool'
 contains libclamav/message.c 'MIME body uses an encoding without a streaming decoder'

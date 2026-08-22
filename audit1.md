@@ -4448,6 +4448,9 @@ scanner process starts and records `loader_injection=disabled`; the evidence
 verifier requires that disposition. The Linux build, sanitizer, and service
 qualification runs remain required.
 
+The service gate now applies the same isolation before starting clamd or any
+frontend and requires the same disposition in `service-build-identity.txt`.
+
 ## Legacy PDF object-search deadline — 2026-08-22
 
 The legacy PDF parser staged the input for stable pointers, but its object

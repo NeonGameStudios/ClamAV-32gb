@@ -1022,6 +1022,8 @@
 - Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
   loader-injection disposition; retain a hostile-environment gate in Linux
   release and sanitizer qualification.
+- Service qualification applies the same loader-injection isolation to clamd
+  and all frontends; retain hostile-environment service evidence coverage.
 - PDFNG string, dictionary, array, and indirect-reference scans now checkpoint
   `MaxScanTime` at bounded progress intervals and discard partial parser
   structures on expiry; add compiled parser-loop timeout injection and full

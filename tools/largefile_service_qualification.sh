@@ -12,6 +12,10 @@
 
 set -eu
 
+# Keep service binaries and dependency evidence bound to the qualified build;
+# inherited loader hooks could inject code into clamd or any frontend.
+unset LD_PRELOAD LD_AUDIT
+
 root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 
 if [ "$#" -ne 9 ]; then
@@ -208,6 +212,7 @@ service_dependency_hashes_sha256=$(sha256sum "$service_dependency_hashes" | awk 
     printf 'service_binary_hashes_sha256=%s\n' "$(sha256sum "$service_binary_hashes_before" | awk '{ print $1 }')"
     printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$service_dependency_hashes_sha256"
+    printf 'loader_injection=disabled\n'
 } > "$service_build_identity"
 
 # The oracle is deliberately separate from the source tree. It binds every

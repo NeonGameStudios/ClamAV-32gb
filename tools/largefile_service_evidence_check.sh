@@ -112,8 +112,11 @@ binary_reference=$(identity_field service_binary_hashes)
 binary_hashes_sha256=$(identity_field service_binary_hashes_sha256)
 dependency_reference=$(identity_field service_runtime_dependency_hashes)
 dependency_hashes_sha256=$(identity_field service_runtime_dependency_hashes_sha256)
+loader_injection=$(identity_field loader_injection)
 max_scan_time_ms=$(identity_field max_scan_time_ms)
 service_timeout_s=$(identity_field service_timeout_s)
+
+[ "$loader_injection" = disabled ] || fail 'service evidence does not prove inherited loader injection was disabled'
 
 case "$max_scan_time_ms" in
     ''|*[!0-9]*|0*) fail 'service MaxScanTime identity is not a positive integer' ;;
