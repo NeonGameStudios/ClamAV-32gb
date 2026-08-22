@@ -301,6 +301,9 @@
   `MaxScanTime` deadline during decompression instead of allowing CPU-heavy
   streams with little output to bypass the scan deadline; add compiled timeout,
   sanitizer, and production compressed-stream qualification.
+- BZip2 extraction now consumes concatenated streams and rejects decoder
+  no-progress states while input remains; add compiled malformed-stream,
+  sanitizer, and production BZip2 corpus qualification.
 - Script normalization now carries the text normalizer's specific fmap read
   status, preserving in-range callback failures as `CL_EREAD` instead of
   generic parse errors; add compiled scanner-level callback-fault and

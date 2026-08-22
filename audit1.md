@@ -3808,3 +3808,14 @@ state is traversed; the existing coordinate regression covers both child and
 root cases. Static guards and whitespace validation remain the available local
 evidence; compiled ISO corpus, sanitizer, and supported-build qualification
 remain release gates.
+
+## BZip2 concatenated-stream completion — 2026-08-22
+
+The BZip2 decoder previously stopped after the first `BZ_STREAM_END`, leaving
+valid concatenated streams uninspected, and had no explicit no-progress guard
+for malformed input. The scanner now preserves unread input, reinitializes a
+new stream only after a completed member, consumes all concatenated members,
+and marks a decoder that consumes neither input nor output incomplete. A
+focused signature regression puts the marker in the second member. Static
+guards and whitespace validation are available locally; malformed corpus,
+sanitizer, and supported-build qualification remain release gates.

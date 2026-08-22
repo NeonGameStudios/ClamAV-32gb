@@ -5868,6 +5868,78 @@ START_TEST(test_gzip_bzip_truncated_streams_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bzip_concatenated_stream_is_fully_inspected)
+{
+    static const uint8_t first[] = "bzip concatenated first stream";
+    static const uint8_t second[] = "BZIP-CONCATENATED-TAIL";
+    static const char signature[] =
+        "Bzip.Concat.Tail:0:*:425a49502d434f4e434154454e415445442d5441494c\n";
+    uint8_t *first_bzip;
+    uint8_t *second_bzip;
+    uint8_t *combined;
+    size_t first_length;
+    size_t second_length;
+    size_t combined_length;
+    char *signature_path = NULL;
+    int signature_fd       = -1;
+    unsigned int sigs      = 0;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    first_bzip  = zip_stream_bzip2(first, sizeof(first) - 1U, &first_length);
+    second_bzip = zip_stream_bzip2(second, sizeof(second) - 1U, &second_length);
+    combined_length = first_length + second_length;
+    combined        = malloc(combined_length);
+    ck_assert_ptr_nonnull(combined);
+    memcpy(combined, first_bzip, first_length);
+    memcpy(combined + first_length, second_bzip, second_length);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &signature_path, &signature_fd), CL_SUCCESS);
+    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1), (ssize_t)(sizeof(signature) - 1));
+    ck_assert_int_eq(close(signature_fd), 0);
+    signature_fd = -1;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_DISABLE_CACHE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
+    free(signature_path);
+    signature_path = NULL;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    map = cl_fmap_open_memory(combined, combined_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_BZ", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Bzip.Concat.Tail.UNOFFICIAL");
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(combined);
+    free(first_bzip);
+    free(second_bzip);
+}
+END_TEST
+
 START_TEST(test_compressed_input_read_failure_is_fail_visible)
 {
     static const uint8_t xz[] = {
@@ -19987,6 +20059,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_local_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_central_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
+    tcase_add_test(tc_cl, test_bzip_concatenated_stream_is_fully_inspected);
     tcase_add_test(tc_cl, test_compressed_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_xz_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_xz_truncated_stream_is_fail_visible);

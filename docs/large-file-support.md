@@ -5259,3 +5259,12 @@ cannot be represented by the ISO block coordinate; otherwise a wrapped value
 could redirect inspection to an earlier block. The existing coordinate
 regression now covers both child and root records; compiled ISO corpus,
 sanitizer, and parser-family qualification remain open.
+
+## BZip2 concatenated streams — 2026-08-22
+
+BZip2 extraction now continues through concatenated streams, preserving unread
+bytes from the completed decoder window and reinitializing only after
+`BZ_STREAM_END`. A decoder that makes no progress while input remains is
+marked incomplete instead of spinning indefinitely. The focused regression
+places a signature marker in the second stream; malformed decoder-state,
+sanitizer, and production BZip2 corpus qualification remain open.

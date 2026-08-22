@@ -1824,7 +1824,19 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
             }
         }
 
-        rc = BZ2_bzDecompress(&strm);
+        {
+            unsigned int before_avail_in  = strm.avail_in;
+            unsigned int before_avail_out = strm.avail_out;
+
+            rc = BZ2_bzDecompress(&strm);
+            if (BZ_OK == rc && before_avail_in != 0 && before_avail_in == strm.avail_in &&
+                before_avail_out == strm.avail_out) {
+                cli_dbgmsg("Bzip: decompressor made no progress; refusing partial output\n");
+                cli_mark_scan_incomplete(ctx, "Bzip decompressor made no progress");
+                decode_status = CL_EUNPACK;
+                break;
+            }
+        }
         if (BZ_OK != rc && BZ_STREAM_END != rc) {
             cli_dbgmsg("Bzip: decompress error: %d\n", rc);
             cli_mark_scan_incomplete(ctx, "Bzip stream did not reach a complete decoder state");
@@ -1866,8 +1878,38 @@ static cl_error_t cli_scanbzip(cli_ctx *ctx)
             strm.next_out  = buf;
             strm.avail_out = sizeof(buf);
         }
-        if (BZ_STREAM_END == rc)
+        if (BZ_STREAM_END == rc) {
+            if (strm.avail_in != 0 || off < ctx->fmap->len) {
+                char *next_in           = strm.next_in;
+                unsigned int avail_in   = strm.avail_in;
+                int init_status;
+
+                /* bzip2 permits concatenated streams. Reinitialize only
+                 * after the current stream has reached BZ_STREAM_END, while
+                 * preserving any unread bytes in the current fmap window. */
+                BZ2_bzDecompressEnd(&strm);
+                memset(&strm, 0, sizeof(strm));
+                init_status = BZ2_bzDecompressInit(&strm, 0, 0);
+                if (BZ_OK != init_status) {
+                    cli_dbgmsg("Bzip: concatenated stream could not be initialized: %d\n", init_status);
+                    if (BZ_MEM_ERROR == init_status) {
+                        cli_mark_scan_incomplete(ctx, "Bzip concatenated stream could not be allocated");
+                        decode_status = CL_EMEM;
+                    } else {
+                        cli_mark_scan_incomplete(ctx, "Bzip concatenated stream could not be initialized");
+                        decode_status = CL_EOPEN;
+                    }
+                    break;
+                }
+                strm.next_in   = next_in;
+                strm.avail_in  = avail_in;
+                strm.next_out  = buf;
+                strm.avail_out = sizeof(buf);
+                rc = BZ_OK;
+                continue;
+            }
             stream_complete = true;
+        }
     } while (BZ_STREAM_END != rc);
 
     BZ2_bzDecompressEnd(&strm);
