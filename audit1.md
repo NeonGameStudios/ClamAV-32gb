@@ -4438,6 +4438,16 @@ checks the shared deadline before each candidate, marks the scan incomplete on
 expiry, and preserves `CL_ETIMEOUT` for the final result. Parser-specific
 qualification and Sonic1 runtime evidence remain release gates.
 
+## Runtime loader injection isolation — 2026-08-22
+
+The runtime gate inherited `LD_PRELOAD` and `LD_AUDIT` while collecting loader
+traces and running the qualification workload. Either variable could inject
+unhashed code and make otherwise valid dependency/source provenance
+non-authoritative. The gate now clears both variables before any evidence or
+scanner process starts and records `loader_injection=disabled`; the evidence
+verifier requires that disposition. The Linux build, sanitizer, and service
+qualification runs remain required.
+
 ## Legacy PDF object-search deadline — 2026-08-22
 
 The legacy PDF parser staged the input for stable pointers, but its object

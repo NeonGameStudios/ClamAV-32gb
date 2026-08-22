@@ -1019,6 +1019,9 @@
 - Legacy PDF object-header and `endobj` searches now use overlapping 64 KiB
   windows with shared deadline checks; add compiled timeout injection,
   decoder-fault coverage, and production PDF qualification.
+- Runtime evidence now clears inherited `LD_PRELOAD`/`LD_AUDIT` and records the
+  loader-injection disposition; retain a hostile-environment gate in Linux
+  release and sanitizer qualification.
 - PDFNG string, dictionary, array, and indirect-reference scans now checkpoint
   `MaxScanTime` at bounded progress intervals and discard partial parser
   structures on expiry; add compiled parser-loop timeout injection and full

@@ -24,6 +24,11 @@
 
 set -eu
 
+# Keep dynamic-loader evidence bound to the copied build artifacts. Inherited
+# preload/audit hooks could otherwise inject untracked code into ldd, --version,
+# or the scanner workload while leaving the source and dependency hashes intact.
+unset LD_PRELOAD LD_AUDIT
+
 verify_native_sanitizer_compile_graph()
 {
     command -v python3 >/dev/null 2>&1 || return 1
@@ -756,6 +761,7 @@ metadata=$out/build-identity.txt
     printf 'unrar_backend_sha256=%s\n' "$unrar_backend_sha256"
     printf 'loaded_dependencies=provenance/loaded-dependencies.txt\n'
     printf 'loader_trace=provenance/loader-clamscan.txt\n'
+    printf 'loader_injection=disabled\n'
     cat "$provenance/scanner-version.txt"
     file "$artifacts/clamscan"
     if [ -n "$sanitizer_clamscan" ]; then

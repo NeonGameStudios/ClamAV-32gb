@@ -2770,6 +2770,9 @@ contains libclamav/pdf.c '#define PDF_SEARCH_WINDOW (64U * 1024U)'
 contains libclamav/pdf.c 'pdf_memstr_deadline'
 contains libclamav/pdf.c 'PDF object-header search reached the configured time limit'
 contains libclamav/pdf.c 'PDF object-end search reached the configured time limit'
+contains tools/largefile_runtime_gate.sh 'unset LD_PRELOAD LD_AUDIT'
+contains tools/largefile_runtime_gate.sh "printf 'loader_injection=disabled\\n'"
+contains tools/largefile_runtime_evidence_check.sh "grep -Fx 'loader_injection=disabled'"
 contains unit_tests/check_clamav.c 'test_html_normalize_cap_does_not_skip_raw_matching'
 contains libclamav/message.c 'messageBeginBodySpool'
 contains libclamav/message.c 'MIME body uses an encoding without a streaming decoder'

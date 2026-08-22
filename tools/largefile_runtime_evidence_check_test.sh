@@ -157,6 +157,7 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'runtime_component_dir=artifacts/runtime-components\n'
     printf 'loaded_dependencies=provenance/loaded-dependencies.txt\n'
     printf 'loader_trace=provenance/loader-clamscan.txt\n'
+    printf 'loader_injection=disabled\n'
     printf 'sanitizer_dependency_hashes=provenance/runtime-dependency-hashes-sanitizer.txt\n'
     printf 'sanitizer_dependency_artifacts=provenance/runtime-dependency-artifacts-sanitizer.txt\n'
     printf 'sanitizer_component_dir=artifacts/runtime-components-sanitizer\n'

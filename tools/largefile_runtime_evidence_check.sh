@@ -580,6 +580,10 @@ grep -Fx 'loader_trace=provenance/loader-clamscan.txt' "$metadata" >/dev/null 2>
     echo 'evidence does not identify the release loader trace' >&2
     exit 1
 }
+grep -Fx 'loader_injection=disabled' "$metadata" >/dev/null 2>&1 || {
+    echo 'evidence does not prove inherited loader injection was disabled' >&2
+    exit 1
+}
 grep -Fx 'concurrency_levels=1 2 4' "$metadata" >/dev/null 2>&1 || {
     echo 'build identity does not record the canonical concurrency matrix' >&2
     exit 1
