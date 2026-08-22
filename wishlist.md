@@ -19,6 +19,12 @@
 - Parser-specific limitations remain explicit unsupported results where a
   legacy ABI still requires a contiguous member or has an inherent format
   width. These are tracked in `docs/largefile-capabilities.tsv`.
+- RAR extraction now fails closed when UnRAR cannot provide the complete archive
+  comment, reports bad-CRC member output, materializes no member output, or
+  produces a non-regular/size-mismatched member; successful members are
+  inspected through their validated descriptor while temporary bytes remain
+  reserved. Backend-enabled RAR corpus and supported-build qualification remain
+  open.
 - InstallShield MSI layers with unsupported control metadata now fail closed as
   non-cacheable `CL_EUNPACK`; valid-parser corpus and supported-build
   qualification remain open.

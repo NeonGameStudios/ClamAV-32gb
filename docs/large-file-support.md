@@ -84,6 +84,13 @@ third-party modern parser still retains that explicit cap because its pinned
 API accepts only a borrowed whole-file slice. Third-party parser memory and
 large-corpus qualification remain release gates.
 
+The optional UnRAR path now treats incomplete archive comments and bad-CRC
+member extraction as incomplete rather than scanning a partial representation.
+Before a member is inspected, the extractor must materialize a regular file
+whose size matches the declared unpacked size; the validated descriptor is
+then scanned while its declared temporary reservation remains charged. RAR
+corpus and backend-enabled build qualification remain release gates.
+
 Local macOS validation has begun with a native host-preflight and runtime gate;
 its first result is documented in
 [`largefile-macos-20260818.md`](largefile-macos-20260818.md). The current

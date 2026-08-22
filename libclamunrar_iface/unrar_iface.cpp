@@ -205,6 +205,10 @@ cl_unrar_error_t unrar_open(const char* filename, void** hArchive, char** commen
         goto done;
     }
 
+    *hArchive    = NULL;
+    *comment     = NULL;
+    *comment_size = 0;
+
     /* Enable debug messages in unrar_iface.cpp */
     unrar_debug = debug_flag;
 
@@ -239,11 +243,13 @@ cl_unrar_error_t unrar_open(const char* filename, void** hArchive, char** commen
         }
         case ERAR_BAD_DATA: {
             unrar_dbgmsg("unrar_open: Archive Comments may be broken.\n");
-            break;
+            status = UNRAR_ERR;
+            goto done;
         }
         case ERAR_SMALL_BUF: {
             unrar_dbgmsg("unrar_open: Comment buffer was too small, comments are not read completely.\n");
-            break;
+            status = UNRAR_ERR;
+            goto done;
         }
         case 1: {
             unrar_dbgmsg("unrar_open: Archive Comments read completely.\n");
@@ -251,10 +257,13 @@ cl_unrar_error_t unrar_open(const char* filename, void** hArchive, char** commen
         }
         case ERAR_NO_MEMORY: {
             unrar_dbgmsg("unrar_open: Not enough memory to extract comments!\n");
-            break;
+            status = UNRAR_EMEM;
+            goto done;
         }
         default: {
             unrar_dbgmsg("unrar_open: Unknown archive comment state %u!\n", archiveData->CmtState);
+            status = UNRAR_ERR;
+            goto done;
         }
     }
 
@@ -263,7 +272,8 @@ cl_unrar_error_t unrar_open(const char* filename, void** hArchive, char** commen
         *comment      = unrar_strndup(archiveData->CmtBuf, *comment_size);
         if (NULL == *comment) {
             unrar_dbgmsg("unrar_open: Error duplicating comment buffer.\n");
-            *comment_size = 0;
+            status = UNRAR_EMEM;
+            goto done;
         }
     }
 
@@ -279,6 +289,7 @@ cl_unrar_error_t unrar_open(const char* filename, void** hArchive, char** commen
 
     unrar_dbgmsg("unrar_open: Opened archive: %s\n", filename);
     *hArchive = (void*)archiveHandle;
+    archiveHandle = NULL;
     status    = UNRAR_OK;
 
 done:
@@ -289,6 +300,11 @@ done:
             archiveData->CmtBuf = NULL;
         }
         free(archiveData);
+    }
+
+    if (NULL != archiveHandle) {
+        RARCloseArchive(archiveHandle);
+        archiveHandle = NULL;
     }
 
     return status;
@@ -388,7 +404,9 @@ cl_unrar_error_t unrar_extract_file(void* hArchive, const char* destPath, char* 
 
     process_file_ret = RARProcessFile(hArchive, RAR_EXTRACT, NULL, (char*)destPath);
     if (ERAR_BAD_DATA == process_file_ret) {
-        unrar_dbgmsg("unrar_extract_file: Warning: Bad data/Invalid CRC. Attempting to scan anyways...\n");
+        unrar_dbgmsg("unrar_extract_file: Bad data/Invalid CRC; refusing to scan a partial member.\n");
+        status = UNRAR_ERR;
+        goto done;
     } else if (ERAR_SUCCESS != process_file_ret) {
         status = unrar_retcode(process_file_ret);
         goto done;

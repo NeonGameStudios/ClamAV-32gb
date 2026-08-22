@@ -334,6 +334,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
     char *extract_fullpath = NULL;
     char *comment_fullpath = NULL;
     uint64_t temporary_reserved = 0;
+    int extracted_fd = -1;
 
     UNUSEDPARAM(desc);
 
@@ -539,6 +540,7 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                     temporary_reserved = 0;
                 } else {
                     bool extracted_file_exists;
+                    STATBUF extracted_stat;
 
                     /*
                      * File should be extracted...
@@ -560,26 +562,35 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
                      */
                     cli_dbgmsg("RAR: Extraction complete.  Scanning now...\n");
                     extracted_file_exists = (access(extract_fullpath, F_OK) == 0);
-                    if (temporary_reserved) {
-                        status = cli_magic_scan_file_reserved(extract_fullpath, ctx, filename_base,
-                                                              LAYER_ATTRIBUTES_NONE);
-                    } else {
-                        status = cli_magic_scan_file(extract_fullpath, ctx, filename_base, LAYER_ATTRIBUTES_NONE);
+                    if (!extracted_file_exists) {
+                        cli_mark_scan_incomplete(ctx, "RAR extracted member output was not materialized");
+                        status = CL_EUNPACK;
+                        goto done;
                     }
-                    if (CL_EOPEN == status && !extracted_file_exists) {
-                        /* A successful extractor may report no output for an
-                         * empty or unsupported member. Only that no-file case
-                         * is optional; an existing output that cannot be
-                         * opened means required content was not inspected. */
-                        status = CL_SUCCESS;
-                    } else if (CL_SUCCESS != status) {
-                        if (CL_EOPEN == status) {
-                            cli_mark_scan_incomplete(ctx, "RAR extracted member could not be opened");
-                            status = CL_EPARSE;
-                        }
-                        if (!ctx->engine->keeptmp && extracted_file_exists) {
+
+                    extracted_fd = safe_open(extract_fullpath, O_RDONLY | O_BINARY);
+                    if (extracted_fd < 0 || FSTAT(extracted_fd, &extracted_stat) != 0 ||
+                        extracted_stat.st_size < 0 || !S_ISREG(extracted_stat.st_mode) ||
+                        (uint64_t)extracted_stat.st_size != metadata.unpack_size) {
+                        cli_mark_scan_incomplete(ctx, "RAR extracted member size or type did not match its declaration");
+                        status = CL_EUNPACK;
+                        goto done;
+                    }
+
+                    status = cli_magic_scan_desc_type_reserved(extracted_fd, extract_fullpath, ctx, CL_TYPE_ANY,
+                                                               filename_base, LAYER_ATTRIBUTES_NONE);
+                    if (close(extracted_fd) != 0) {
+                        extracted_fd = -1;
+                        cli_mark_scan_incomplete(ctx, "RAR extracted member descriptor could not be closed");
+                        if (status == CL_SUCCESS || status == CL_VERIFIED || status == CL_BREAK)
+                            status = CL_EREAD;
+                    } else {
+                        extracted_fd = -1;
+                    }
+
+                    if (CL_SUCCESS != status) {
+                        if (!ctx->engine->keeptmp && extracted_file_exists)
                             (void)cli_unlink(extract_fullpath);
-                        }
                         goto done;
                     }
 
@@ -622,6 +633,14 @@ static cl_error_t cli_scanrar_file(const char *filepath, int desc, cli_ctx *ctx)
     }
 
 done:
+    if (extracted_fd != -1) {
+        if (close(extracted_fd) != 0 && (status == CL_SUCCESS || status == CL_VERIFIED)) {
+            cli_mark_scan_incomplete(ctx, "RAR extracted member descriptor could not be closed");
+            status = CL_EREAD;
+        }
+        extracted_fd = -1;
+    }
+
     if (NULL != comment) {
         free(comment);
         comment = NULL;
