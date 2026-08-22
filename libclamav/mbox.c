@@ -1640,6 +1640,11 @@ static const struct key_entry mhtml_comment_keys[] = {
     {"w:latentstyles", "LatentStyles", MSXML_IGNORE_ELEM}};
 static size_t num_mhtml_comment_keys = sizeof(mhtml_comment_keys) / sizeof(struct key_entry);
 
+/* MHTML comments are metadata only. Keep the legacy in-memory XML reader from
+ * turning an attacker-sized comment into an unaccounted contiguous allocation
+ * or an int-sized length conversion. */
+#define MHTML_COMMENT_XML_MAX_SIZE (64U * 1024U * 1024U)
+
 /*
  * The related multipart root HTML file comment parsing wrapper.
  *
@@ -1650,22 +1655,47 @@ static cl_error_t parseMHTMLComment(const char *comment, cli_ctx *ctx, void *wrk
 {
     cl_error_t ret = CL_SUCCESS;
 
-    const char *xmlsrt, *xmlend;
+    const char *xmlsrt, *xmlend, *search;
+    size_t comment_len, remaining, xml_offset, xml_remaining, fragment_len;
     xmlTextReaderPtr reader;
 
     UNUSEDPARAM(cbdata);
     UNUSEDPARAM(wrkjobj);
 
-    xmlend = comment;
-    while ((xmlsrt = strstr(xmlend, "<xml>"))) {
-        xmlend = strstr(xmlsrt, "</xml>");
+    if (comment == NULL) {
+        cli_dbgmsg("parseMHTMLComment: comment value is missing\n");
+        cli_mark_scan_incomplete(ctx, "MHTML comment XML value was unavailable");
+        return CL_EPARSE;
+    }
+
+    comment_len = CLI_STRNLEN(comment, (size_t)MHTML_COMMENT_XML_MAX_SIZE + 1U);
+    if (comment_len > MHTML_COMMENT_XML_MAX_SIZE) {
+        cli_dbgmsg("parseMHTMLComment: comment exceeds bounded metadata limit\n");
+        cli_mark_scan_incomplete(ctx, "MHTML comment XML exceeds bounded metadata limit");
+        return CL_ERESOURCE;
+    }
+
+    search    = comment;
+    remaining = comment_len;
+    while ((xmlsrt = CLI_STRNSTR(search, "<xml>", remaining)) != NULL) {
+        xml_offset   = (size_t)(xmlsrt - comment);
+        xml_remaining = comment_len - xml_offset;
+        xmlend       = CLI_STRNSTR(xmlsrt + sizeof("<xml>") - 1U, "</xml>",
+                             xml_remaining - (sizeof("<xml>") - 1U));
         if (xmlend == NULL) {
             cli_dbgmsg("parseMHTMLComment: unbounded xml tag\n");
             cli_mark_scan_incomplete(ctx, "MHTML comment XML element was not terminated");
             return CL_EPARSE;
         }
 
-        reader = xmlReaderForMemory(xmlsrt, xmlend - xmlsrt + 6, "comment.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
+        fragment_len = (size_t)(xmlend - xmlsrt) + (sizeof("</xml>") - 1U);
+        if (fragment_len > INT_MAX) {
+            cli_dbgmsg("parseMHTMLComment: XML fragment exceeds reader length limit\n");
+            cli_mark_scan_incomplete(ctx, "MHTML comment XML fragment exceeds reader length limit");
+            return CL_ERESOURCE;
+        }
+
+        reader = xmlReaderForMemory(xmlsrt, (int)fragment_len, "comment.xml", NULL, CLAMAV_MIN_XMLREADER_FLAGS);
         if (!reader) {
             cli_dbgmsg("parseMHTMLComment: cannot initialize xmlReader\n");
 
@@ -1687,6 +1717,9 @@ static cl_error_t parseMHTMLComment(const char *comment, cli_ctx *ctx, void *wrk
         xmlFreeTextReader(reader);
         if (ret != CL_SUCCESS)
             return ret;
+
+        search    = xmlend + (sizeof("</xml>") - 1U);
+        remaining = comment_len - (size_t)(search - comment);
     }
     return ret;
 }

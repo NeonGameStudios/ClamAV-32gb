@@ -3395,6 +3395,22 @@ The focused source guards cover each failure reason and the fail-incomplete
 XML-parser flag. A compiled MHTML regression, sanitizer run, and supported
 Linux/Sonic1 parser-family qualification remain release gates.
 
+## MHTML comment XML memory boundary — 2026-08-22
+
+MHTML preclassification comments are metadata only, but the legacy callback
+previously searched them with unbounded string operations and passed the
+entire discovered fragment to `xmlReaderForMemory()`. That allowed a large
+comment to create an unaccounted contiguous parser allocation and narrowed a
+pointer difference to libxml2's `int` length parameter. The callback now
+limits each comment to 64 MiB, searches `<xml>` and `</xml>` only within that
+bounded value, checks the fragment length before the reader call, and returns
+an explicit resource-incomplete result when the boundary is exceeded. Raw
+MIME/HTML scanning remains on its separate file-backed path.
+
+A focused oversized-comment unit fixture and source guards cover the new
+boundary. Compiled Linux execution, sanitizer coverage, and broader MHTML
+corpus/Sonic1 qualification remain release gates.
+
 ## RFC 1341 partial-message reassembly — 2026-08-19
 
 RFC 1341 `message/partial` reassembly now requires every numbered fragment

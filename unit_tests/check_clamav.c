@@ -922,6 +922,44 @@ static char *create_large_mhtml_fixture(void)
     return path;
 }
 
+static char *create_mhtml_oversized_comment_fixture(void)
+{
+    static const char header[] =
+        "From: sender@example.com\n"
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000\n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: multipart/related; boundary=mhtml-comment-limit\n"
+        "\n"
+        "--mhtml-comment-limit\n"
+        "Content-Type: text/html; charset=UTF-8\n"
+        "Content-Location: https://example.invalid/comment-limit.html\n"
+        "\n"
+        "<html><head><!-- <xml>";
+    static const char trailer[] =
+        "</xml> --></head><body>mhtml comment limit regression</body></html>\n"
+        "--mhtml-comment-limit--\n";
+    char block[64U * 1024U];
+    char *path = NULL;
+    const size_t target = 64U * 1024U * 1024U;
+    size_t comment_bytes = 0;
+    int fd = -1;
+
+    memset(block, 'C', sizeof(block));
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, header, sizeof(header) - 1), (ssize_t)(sizeof(header) - 1));
+    while (comment_bytes < target) {
+        const size_t write_bytes = MIN(sizeof(block), target - comment_bytes);
+
+        ck_assert_int_eq(write(fd, block, write_bytes), (ssize_t)write_bytes);
+        comment_bytes += write_bytes;
+    }
+    ck_assert_int_eq(write(fd, trailer, sizeof(trailer) - 1), (ssize_t)(sizeof(trailer) - 1));
+    ck_assert_int_eq(close(fd), 0);
+
+    return path;
+}
+
 static char *create_partial_message_missing_fragment_fixture(void)
 {
     static const char fixture[] =
@@ -1169,6 +1207,30 @@ START_TEST(test_mhtml_unterminated_comment_is_fail_visible)
                          NULL, NULL);
     ck_assert_msg(ret != CL_SUCCESS,
                   "unterminated MHTML preclassification returned clean");
+
+    free(path);
+}
+END_TEST
+
+START_TEST(test_mhtml_oversized_comment_is_fail_visible)
+{
+    struct cl_scan_options options;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    uint64_t scanned = 0;
+    char *path;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse   = ~0U;
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    path            = create_mhtml_oversized_comment_fixture();
+
+    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
+                         g_engine, &options, NULL, NULL, NULL, NULL,
+                         NULL, NULL);
+    ck_assert_msg(ret != CL_SUCCESS,
+                  "oversized MHTML preclassification comment returned clean");
 
     free(path);
 }
@@ -20883,6 +20945,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_disposition_notification_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_mbox_time_limit_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_mhtml_unterminated_comment_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_mhtml_oversized_comment_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_mhtml_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_uses_streaming_spool);
     tcase_add_test(tc_cl_scan, test_single_message_large_body_streams_without_alert);

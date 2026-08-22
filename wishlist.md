@@ -5,6 +5,10 @@
 - The 32 GiB ingress policy, shared accounting/fail-closed controls, and
   capability manifest are implemented and source-guarded; release defaults
   remain gated on qualification.
+- MHTML preclassification now bounds each comment value before the legacy
+  in-memory XML reader, checks bounded tag searches, and rejects oversized
+  metadata as an explicit resource-incomplete result; add compiled oversized-
+  comment, sanitizer, and supported-build MHTML qualification.
 - Internal fmap hashing now checks `MaxScanTime` before and between bounded
   read windows, including matcher and cache callers; public no-context hash
   APIs retain legacy behavior; a focused timeout regression is registered, and

@@ -4675,3 +4675,18 @@ longer queues the complete metadata list in heap memory. The existing 64 MiB
 per-block cap remains an explicit unsupported boundary. Compiled multi-block
 DMG corpus, deterministic callback-timeout, sanitizer, and supported-build
 Sonic1 qualification remain release gates.
+
+## MHTML comment XML memory boundary — 2026-08-22
+
+The MHTML preclassification callback previously used unbounded `strstr()`
+searches and passed an attacker-sized XML comment fragment to
+`xmlReaderForMemory()`, whose length parameter is an `int`. The callback now
+limits the complete comment value to 64 MiB, uses bounded `<xml>` and
+`</xml>` searches, checks the fragment length before the reader call, and
+returns `CL_ERESOURCE` with sticky incomplete state for oversized metadata.
+Missing comment values are also fail-visible. Raw MIME/HTML scanning remains
+file-backed and separate from this metadata-only boundary.
+
+The focused oversized-comment fixture and source guards are registered.
+Compiled MHTML execution, sanitizer coverage, and supported-build Sonic1
+qualification remain open.
