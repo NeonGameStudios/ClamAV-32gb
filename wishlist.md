@@ -463,6 +463,10 @@
   caller-owned chunk reservations against MaxTemporarySize through nested scans
   and cleanup; compiled quota-fault, sanitizer, and production HTML/MHTML corpus
   qualification remain open.
+- HTML normalized and script-encoded output now re-checks the shared deadline
+  before quota admission, after reservation, and immediately before writing;
+  add deterministic output-timeout injection and full HTML/MHTML corpus
+  qualification.
 - The mandatory service gate now directly exercises and oracle-validates all
   six structured clamd command families; full production qualification remains open.
 - CAB/CHM fmap callbacks now reject unrepresentable or wrapping origin/seek

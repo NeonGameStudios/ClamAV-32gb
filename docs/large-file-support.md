@@ -5529,3 +5529,12 @@ Timeout cleanup releases the reservation and returns `CL_ETIMEOUT` without
 scanning partial output. A source guard covers this boundary; deterministic
 timeout injection, compiled XDP corpus, sanitizer, and Sonic1 qualification
 remain release gates.
+
+## HTML output-boundary deadlines — 2026-08-22
+
+Buffered HTML normalized output and script-encoded output now re-check
+`MaxScanTime` before quota admission, after reserving bytes, and immediately
+before each direct write. Timeout paths release the reservation and retain the
+incomplete result without scanning partial normalized data. Source guards cover
+both output APIs; deterministic timeout injection, compiled HTML/MHTML corpus,
+sanitizer, and Sonic1 qualification remain release gates.

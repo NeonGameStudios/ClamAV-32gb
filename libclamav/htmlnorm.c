@@ -107,6 +107,8 @@ typedef struct file_buff_tag {
     uint64_t length;
 } file_buff_t;
 
+static bool htmlnorm_checktimelimit(cli_ctx *ctx, const char *reason);
+
 struct tag_contents {
     size_t pos;
     unsigned char contents[MAX_TAG_CONTENTS_LENGTH + 1];
@@ -330,6 +332,17 @@ static void html_output_mark_failure(file_buff_t *fbuff, cl_error_t status, cons
         cli_mark_scan_incomplete(fbuff->ctx, reason);
 }
 
+static bool html_output_checktimelimit(file_buff_t *fbuff, const char *reason)
+{
+    if (fbuff == NULL || fbuff->ctx == NULL)
+        return true;
+    if (!htmlnorm_checktimelimit(fbuff->ctx, reason)) {
+        html_output_mark_failure(fbuff, CL_ETIMEOUT, reason);
+        return false;
+    }
+    return true;
+}
+
 static bool html_output_reserve(file_buff_t *fbuff, size_t length)
 {
     cl_error_t status;
@@ -340,6 +353,8 @@ static bool html_output_reserve(file_buff_t *fbuff, size_t length)
         html_output_mark_failure(fbuff, CL_ERESOURCE, "HTML normalized output exceeds temporary storage limits");
         return false;
     }
+    if (!html_output_checktimelimit(fbuff, "HTML normalized output reached the configured time limit"))
+        return false;
 
     status = cli_scan_reserve_temporary(fbuff->ctx, (uint64_t)length);
     if (status != CL_SUCCESS) {
@@ -347,6 +362,11 @@ static bool html_output_reserve(file_buff_t *fbuff, size_t length)
         return false;
     }
     *fbuff->temporary_reserved += (uint64_t)length;
+    if (!html_output_checktimelimit(fbuff, "HTML normalized output reached the configured time limit")) {
+        cli_scan_release_temporary(fbuff->ctx, (uint64_t)length);
+        *fbuff->temporary_reserved -= (uint64_t)length;
+        return false;
+    }
     return true;
 }
 
@@ -367,6 +387,11 @@ static void html_output_flush(file_buff_t *fbuff)
         size_t length = (size_t)fbuff->length;
 
         if (!html_output_reserve(fbuff, length)) {
+            fbuff->length = 0;
+            return;
+        }
+        if (!html_output_checktimelimit(fbuff, "HTML normalized output reached the configured time limit")) {
+            html_output_release(fbuff, length);
             fbuff->length = 0;
             return;
         }
@@ -401,6 +426,10 @@ static void html_output_str(file_buff_t *fbuff, const unsigned char *str, size_t
         if (len >= HTML_FILE_BUFF_LEN) {
             if (!html_output_reserve(fbuff, len))
                 return;
+            if (!html_output_checktimelimit(fbuff, "HTML normalized output reached the configured time limit")) {
+                html_output_release(fbuff, len);
+                return;
+            }
             if (cli_writen(fbuff->fd, str, len) != len) {
                 html_output_release(fbuff, len);
                 html_output_mark_failure(fbuff, CL_EWRITE, "HTML normalized output could not be written completely");
@@ -2247,14 +2276,25 @@ static bool html_screnc_write(cli_ctx *ctx, int fd, const void *data, size_t len
         return cli_writen(fd, data, len) == len;
     }
 
-    if (ctx == NULL || temporary_reserved == NULL || UINT64_MAX - *temporary_reserved < (uint64_t)len ||
-        cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
+    if (ctx == NULL || temporary_reserved == NULL || UINT64_MAX - *temporary_reserved < (uint64_t)len) {
         if (ctx)
             cli_mark_scan_incomplete(ctx, "HTML script-encoded output exceeds temporary storage limits");
         return false;
     }
 
+    if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded output reached the configured time limit"))
+        return false;
+    if (cli_scan_reserve_temporary(ctx, (uint64_t)len) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "HTML script-encoded output exceeds temporary storage limits");
+        return false;
+    }
+
     *temporary_reserved += (uint64_t)len;
+    if (!htmlnorm_checktimelimit(ctx, "HTML script-encoded output reached the configured time limit")) {
+        cli_scan_release_temporary(ctx, (uint64_t)len);
+        *temporary_reserved -= (uint64_t)len;
+        return false;
+    }
     if (cli_writen(fd, data, len) != len) {
         cli_scan_release_temporary(ctx, (uint64_t)len);
         *temporary_reserved -= (uint64_t)len;
