@@ -3263,3 +3263,13 @@ timeouts preserve `CL_ETIMEOUT`, mark the layer incomplete, and prevent a
 cacheable clean result. A direct expired-context regression and source guards
 cover parser entry; compiled TNEF corpus, sanitizer, and Sonic1 qualification
 remain release gates.
+
+## UUEncode traversal deadline — 2026-08-22
+
+The UUEncode decoder previously consumed an unbounded sequence of encoded
+lines without a parser-local deadline checkpoint. It now checks the shared
+deadline before each line, marks timeout incomplete, and preserves
+`CL_ETIMEOUT` through standalone and mail-embedded callers rather than
+normalizing it to a generic parse result. A direct expired-context regression
+and source guards cover standalone entry; compiled UUEncode/mail corpus,
+sanitizer, and Sonic1 qualification remain release gates.

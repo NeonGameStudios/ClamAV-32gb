@@ -45,11 +45,26 @@
 /* Maximum line length according to RFC821 */
 #define RFC2821LENGTH 1000
 
+static cl_error_t uuencode_checktimelimit(cli_ctx *ctx, const char *reason)
+{
+    cl_error_t ret = cli_checktimelimit(ctx);
+
+    if (ret != CL_SUCCESS)
+        cli_mark_scan_incomplete(ctx, reason);
+
+    return ret;
+}
+
 int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 {
+    cl_error_t status;
     message *m;
     char buffer[RFC2821LENGTH + 1];
     size_t at = 0;
+
+    status = uuencode_checktimelimit(ctx, "UUencoded inspection reached the configured time limit");
+    if (status != CL_SUCCESS)
+        return status;
 
     if (!fmap_gets(map, buffer, &at, sizeof(buffer) - 1)) {
         /* EOF at the end of the map is an empty message. A nonempty map that
@@ -77,6 +92,8 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 
     if (uudecodeFile(m, buffer, dir, map, &at) < 0) {
         messageDestroy(m);
+        if (ctx->scan_timed_out)
+            return CL_ETIMEOUT;
         cli_dbgmsg("UUencoded attachment ended before its terminator or contained invalid data\n");
         return CL_EPARSE;
     }
@@ -112,10 +129,18 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     cli_dbgmsg("uudecode %s\n", filename);
     free(filename);
 
-    while (fmap_gets(map, buffer, at, sizeof(buffer) - 1)) {
+    while (1) {
         unsigned char data[1024];
         const unsigned char *uptr;
         size_t len;
+
+        if (uuencode_checktimelimit(m->ctx, "UUencoded attachment traversal reached the configured time limit") != CL_SUCCESS) {
+            materialization_failed = true;
+            break;
+        }
+
+        if (!fmap_gets(map, buffer, at, sizeof(buffer) - 1))
+            break;
 
         cli_chomp(buffer);
         if (strcasecmp(buffer, "end") == 0) {

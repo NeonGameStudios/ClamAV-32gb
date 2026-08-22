@@ -608,6 +608,10 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                  * TODO: binhex, yenc
                  */
                 if (uudecodeFile(m, buffer, dir, map, &at) < 0) {
+                    if (ctx->scan_timed_out) {
+                        retcode = CL_ETIMEOUT;
+                        break;
+                    }
                     cli_mark_scan_incomplete(ctx, "UUencoded attachment in mail was not terminated or decoded completely");
                     if (messageAddStr(m, buffer) < 0) {
                         break;
@@ -667,6 +671,8 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         body                = parseEmailFile(map, &at, rfc821, buffer, dir, ctx, &heuristicFound);
         if (heuristicFound) {
             retcode = CL_VIRUS;
+        } else if (ctx->scan_timed_out) {
+            retcode = CL_ETIMEOUT;
         }
     }
 
@@ -725,7 +731,9 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
     /* A parser may have already scanned a child successfully after skipping
      * required input. Do not allow that sticky state to collapse into a
      * clean mailbox result while unwinding to cli_scanmail(). */
-    if ((retcode == CL_SUCCESS) && ctx->scan_incomplete)
+    if ((retcode != CL_VIRUS) && ctx->scan_timed_out)
+        retcode = CL_ETIMEOUT;
+    else if ((retcode == CL_SUCCESS) && ctx->scan_incomplete)
         retcode = CL_EPARSE;
 
     cli_dbgmsg("cli_mbox returning %d\n", retcode);
@@ -1202,6 +1210,8 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
              */
             bodyIsEmpty = false;
             if (uudecodeFile(ret, line, dir, map, at) < 0) {
+                if (ctx->scan_timed_out)
+                    break;
                 cli_mark_scan_incomplete(ctx, "UUencoded attachment in mail was not terminated or decoded completely");
                 if (messageAddStr(ret, line) < 0) {
                     ret->isTruncated = true;

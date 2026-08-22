@@ -12705,6 +12705,33 @@ START_TEST(test_uuencode_initial_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_uuencode_time_limit_is_fail_visible)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_uuencode(&ctx, tmpdir, map);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UUencoded inspection reached the configured time limit");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_mbox_initial_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = "nonempty MIME input";
@@ -18054,6 +18081,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tnef_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_attribute_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_uuencode_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_line_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_oversized_line_is_fail_visible);

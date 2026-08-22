@@ -230,6 +230,9 @@
   shared scan deadline and preserve timeout as an incomplete, non-cacheable
   result; add compiled timeout-injection and long-attribute/attachment corpus
   qualification.
+- Standalone and mail-embedded UUEncode decoding now checks the shared deadline
+  before each input line and preserves timeout through mbox result handling;
+  add compiled timeout-injection and long-attachment corpus qualification.
 - ARJ compressed bit-window refills and stored-member reads now preserve
   in-range fmap callback failures as `CL_EREAD` instead of `CL_EFORMAT`; add
   callback-fault, sanitizer, and production ARJ corpus qualification.
