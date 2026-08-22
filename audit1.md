@@ -4191,3 +4191,12 @@ common temporary-output reservation as a separate output interval. That shared
 admission now rejects expired contexts before reserving bytes for a spool write,
 preserving `CL_ETIMEOUT` across the decoder families. Compiled output-timeout
 injection, corpus, sanitizer, and Sonic1 qualification remain open.
+
+## HFS+ output deadlines — 2026-08-22
+
+HFS+ ordinary fork, inline compressed, and compressed-resource output paths now
+re-check the shared deadline after temporary admission and immediately before
+materialized writes. Timeout cleanup releases the fork/resource reservation
+and prevents partial output from reaching nested scans. Source guards cover
+the output families; deterministic post-admission injection, compiled HFS+
+corpus, sanitizer, and Sonic1 qualification remain release gates.

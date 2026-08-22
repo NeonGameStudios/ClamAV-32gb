@@ -5587,3 +5587,12 @@ each output write. Timeout cleanup preserves reservations and prevents partial
 Office/VBA streams from reaching nested scans. Source guards cover all four
 paths; deterministic post-admission injection, compiled Office/VBA corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## HFS+ output deadlines — 2026-08-22
+
+HFS+ ordinary fork, inline compressed, and compressed-resource output paths now
+re-check the shared deadline after temporary admission and immediately before
+materialized writes. Timeout cleanup releases the fork/resource reservation
+and prevents partial output from reaching nested scans. Source guards cover
+the output families; deterministic post-admission injection, compiled HFS+
+corpus, sanitizer, and Sonic1 qualification remain release gates.

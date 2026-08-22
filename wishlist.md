@@ -271,6 +271,9 @@
 - HFS+ catalog, attribute-tree, fork, resource-table, and compressed-resource
   traversal now honor the shared scan deadline; add compiled timeout-injection
   and large-volume corpus qualification.
+- HFS+ ordinary fork, inline compressed, and compressed-resource output paths
+  now re-check the shared deadline after admission and before writes; add
+  deterministic post-admission injection and complete HFS+ corpus qualification.
 - PDF Flate, RunLength, and LZW decoder output now retains native-width
   accounting and fails explicitly when the legacy 4 GiB decoder boundary is
   exceeded, instead of wrapping the decoded length or exposing a partial
