@@ -623,6 +623,7 @@ START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
     cli_ctx cctx;
     uint8_t payload[5] = {0, 1, 2, 3, 4};
     uint8_t byte = 0;
+    int replacement_fd;
 
     engine = cl_engine_new();
     ck_assert_ptr_nonnull(engine);
@@ -654,6 +655,25 @@ START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
     ck_assert_uint_eq(bcctx->written, sizeof(payload));
     ck_assert_uint_eq(bcctx->temporary_reserved, sizeof(payload));
     ck_assert_uint_eq(cctx.temporary_bytes, sizeof(payload));
+    cli_bytecode_context_destroy(bcctx);
+    ck_assert_uint_eq(cctx.temporary_bytes, 0);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine = engine;
+    bcctx       = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), sizeof(payload));
+    ck_assert_int_eq(close(bcctx->outfd), 0);
+    ck_assert_int_eq(cli_bcapi_write(bcctx, payload, sizeof(payload)), -1);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_uint_eq(bcctx->written, sizeof(payload));
+    ck_assert_uint_eq(bcctx->temporary_reserved, sizeof(payload));
+    ck_assert_uint_eq(cctx.temporary_bytes, sizeof(payload));
+    ck_assert_int_eq(cli_bcapi_extract_new(bcctx, 0), -1);
+    replacement_fd = open("/dev/null", O_WRONLY | O_BINARY);
+    ck_assert_int_gt(replacement_fd, -1);
+    bcctx->outfd = replacement_fd;
     cli_bytecode_context_destroy(bcctx);
     ck_assert_uint_eq(cctx.temporary_bytes, 0);
 

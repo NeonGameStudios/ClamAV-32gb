@@ -306,6 +306,10 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
     uint64_t write_len;
 
     cli_ctx *cctx = (cli_ctx *)ctx->ctx;
+    if (ctx->output_failed) {
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode temporary output was already incomplete");
+        return -1;
+    }
     if (len < 0) {
         cli_warnmsg("Bytecode API: called with negative length!\n");
         API_MISUSE();
@@ -352,13 +356,23 @@ int32_t cli_bcapi_write(struct cli_bc_ctx *ctx, uint8_t *data, int32_t len)
         ctx->temporary_reserved += write_len;
     }
     res = cli_writen(ctx->outfd, data, (size_t)len);
-    if (res > 0) ctx->written += res;
-    if (res == (size_t)-1) {
-        cli_warnmsg("Bytecode API: write failed: %s\n", cli_strerror(errno, err, sizeof(err)));
+    if (res != (size_t)len) {
+        if (res == (size_t)-1)
+            cli_warnmsg("Bytecode API: write failed: %s\n", cli_strerror(errno, err, sizeof(err)));
+        else
+            cli_warnmsg("Bytecode API: short write: %zu of " STDu64 " bytes\n", res, write_len);
         cli_event_error_str(EV, "cli_bcapi_write: write failed");
-        if (cctx)
+        if (cctx) {
+            if (ctx->temporary_reserved >= write_len) {
+                cli_scan_release_temporary(cctx, write_len);
+                ctx->temporary_reserved -= write_len;
+            }
             cli_mark_scan_incomplete(cctx, "Bytecode temporary output could not be written completely");
+        }
+        ctx->output_failed = 1;
+        return -1;
     }
+    ctx->written += write_len;
     return (int32_t)res;
 }
 
@@ -691,6 +705,12 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
     int res = -1;
     bool discard_output;
 
+    cctx = (cli_ctx *)ctx->ctx;
+    if (ctx->output_failed) {
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode extracted output was incomplete");
+        return -1;
+    }
+
     cli_event_count(EV, BCEV_EXTRACTED);
     cli_dbgmsg("previous tempfile had " STDu64 " bytes\n", ctx->written);
     if (!ctx->written)
@@ -698,7 +718,6 @@ int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
     if (ctx->ctx && cli_updatelimits(ctx->ctx, ctx->written))
         return -1;
     ctx->written = 0;
-    cctx = (cli_ctx *)ctx->ctx;
     if (lseek(ctx->outfd, 0, SEEK_SET) == -1) {
         cli_dbgmsg("bytecode: call to lseek() has failed\n");
         if (cctx)

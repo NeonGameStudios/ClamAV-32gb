@@ -117,8 +117,10 @@
   re-check the shared deadline outside decoder callbacks; add deterministic
   admission/handoff timeout injection and complete CAB/CHM corpus qualification.
 - Bytecode output and shared MIME/fileblob spool paths now re-check the shared
-  deadline after temporary admission and before writing; add post-admission
-  timeout injection and complete bytecode/mail corpus qualification.
+  deadline after temporary admission and before writing; failed or short
+  bytecode writes release their current reservation and block extraction of
+  partial output; add post-admission timeout injection and complete
+  bytecode/mail corpus qualification.
 - MSEXPAND, TAR, SIS, ISO9660, and UDF materialized-output paths now re-check
   the shared deadline at output boundaries; add deterministic post-admission
   timeout injection and complete archive/filesystem corpus qualification.

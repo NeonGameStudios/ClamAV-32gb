@@ -3442,10 +3442,12 @@ Bytecode unpacked output and the shared MIME/fileblob spool now check the
 shared deadline after temporary quota admission and immediately before the
 materialized write. Expired contexts release the current reservation and
 return an incomplete result instead of writing output that could later be
-treated as complete. Focused expired-context regressions and source guards
-cover the admission path; deterministic post-admission injection, compiled
-bytecode/mail corpus, sanitizer, and Sonic1 qualification remain release
-gates.
+treated as complete. Bytecode short or failed writes now also release the
+current reservation, preserve the successful-byte count without sentinel
+wraparound, and block extraction of partial output. Focused expired-context
+and closed-output regressions plus source guards cover the admission path;
+deterministic post-admission injection, compiled bytecode/mail corpus,
+sanitizer, and Sonic1 qualification remain release gates.
 
 ## Archive and filesystem output deadlines — 2026-08-22
 

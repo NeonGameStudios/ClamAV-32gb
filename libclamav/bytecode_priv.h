@@ -202,6 +202,7 @@ struct cli_bc_ctx {
     void *ctx;
     uint64_t written;
     uint64_t temporary_reserved;
+    unsigned output_failed;
     unsigned filewritten;
     unsigned found;
     unsigned ninflates;

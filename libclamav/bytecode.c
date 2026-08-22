@@ -242,6 +242,7 @@ static void bytecode_context_reset(struct cli_bc_ctx *ctx)
      * timeout, pdf* */
     ctx->off           = 0;
     ctx->written       = 0;
+    ctx->output_failed = 0;
     ctx->jsnormwritten = 0;
 #if USE_MPOOL
     if (ctx->mpool) {
@@ -338,6 +339,14 @@ int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilen
                                         uint64_t *temporary_reserved)
 {
     int fd;
+
+    if (ctx->output_failed) {
+        if (ctx->ctx)
+            cli_mark_scan_incomplete((cli_ctx *)ctx->ctx, "Bytecode extracted output was incomplete");
+        *tempfilename       = NULL;
+        *temporary_reserved = 0;
+        return -1;
+    }
 
     *tempfilename = ctx->tempfile;
     *temporary_reserved = ctx->temporary_reserved;
