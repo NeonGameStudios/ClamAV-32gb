@@ -125,6 +125,10 @@
   after output-budget/accounting updates and immediately before materializing
   bytes; add deterministic expiry-window injection and complete CAB/CHM and
   bytecode corpus qualification.
+- PCRE full-map and buffer subject matching now re-checks MaxScanTime after
+  contiguous-subject admission and releases the reservation on expiry; add
+  deterministic contiguous-PCRE timeout injection and complete PCRE corpus
+  qualification.
 - MSEXPAND, TAR, SIS, ISO9660, and UDF materialized-output paths now re-check
   the shared deadline at output boundaries; add deterministic post-admission
   timeout injection and complete archive/filesystem corpus qualification.

@@ -620,6 +620,8 @@ contains libclamav/matcher.c 'cli_pcre_check_size_limit(ctx, maxfilesize, map->l
 contains libclamav/matcher.c 'scanned_to_map_end'
 contains libclamav/matcher.c 'cli_matcher_window_reaches_map_end(offset, length, map->len)'
 contains libclamav/matcher.c 'PCRE subject could not be mapped completely'
+contains libclamav/matcher.c 'PCRE subject mapping reached the configured time limit'
+contains libclamav/matcher.c 'PCRE subject scan reached the configured time limit'
 contains libclamav/matcher.c 'ret != CL_SUCCESS && ret < CL_TYPENO'
 not_contains libclamav/matcher.c 'if (offset + length >= map->len)'
 contains libclamav/matcher.h 'cli_matcher_window_reaches_map_end'

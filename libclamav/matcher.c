@@ -264,6 +264,12 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
                 ret = cli_scan_reserve_contiguous(ctx, map->len);
                 if (ret != CL_SUCCESS)
                     return ret;
+                ret = cli_checktimelimit(ctx);
+                if (ret != CL_SUCCESS) {
+                    cli_scan_release_contiguous(ctx, map->len);
+                    cli_mark_scan_incomplete(ctx, "PCRE subject mapping reached the configured time limit");
+                    return ret;
+                }
 
                 cli_dbgmsg("matcher_run: performing regex matching on full map after window at " STDu64 "+%u (map length %zu)\n",
                            offset, length, map->len);
@@ -293,6 +299,12 @@ static inline cl_error_t matcher_run(const struct cli_matcher *root,
             ret = cli_scan_reserve_contiguous(ctx, length);
             if (ret != CL_SUCCESS)
                 return ret;
+            ret = cli_checktimelimit(ctx);
+            if (ret != CL_SUCCESS) {
+                cli_scan_release_contiguous(ctx, length);
+                cli_mark_scan_incomplete(ctx, "PCRE subject scan reached the configured time limit");
+                return ret;
+            }
 
             cli_dbgmsg("matcher_run: performing regex matching on buffer with no map: " STDu64 "+%u(" STDu64 ")\n", offset, length, offset + length);
             /* scan the specified buffer */

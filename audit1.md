@@ -3454,6 +3454,10 @@ deadline after their output-budget/accounting updates and immediately before
 the underlying write, closing a narrow expiry window between admission and
 materialization.
 
+PCRE full-map and buffer subject matching now re-checks the deadline after
+contiguous-subject admission and releases that reservation before returning
+when the scan has expired.
+
 ## Archive and filesystem output deadlines — 2026-08-22
 
 MSEXPAND, TAR, SIS, ISO9660, and UDF staging paths now re-check the shared
