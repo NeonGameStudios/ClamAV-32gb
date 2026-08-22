@@ -603,11 +603,11 @@
   full-map PCRE and logical/YARA evaluation instead of rejecting lengths above
   4 GiB at the legacy buffer-matcher ABI; the decompressor's contiguous
   individual-allocation ceiling remains an explicit unsupported boundary.
-- 7-Zip member extraction now checks the shared deadline in its streaming
-  output callback and fmap input read/seek callbacks, including long
-  solid-folder decoder work, preserving `CL_ETIMEOUT` through decoder read
-  errors; add compiled solid-archive timeout-injection and production corpus
-  qualification.
+- 7-Zip member extraction now checks the shared deadline before and after each
+  bounded streaming-output callback write and in fmap input read/seek
+  callbacks, including long solid-folder decoder work, preserving
+  `CL_ETIMEOUT` through decoder read errors; add compiled solid-archive
+  timeout-injection and production corpus qualification.
 - The bounded 7-Zip legacy whole-buffer fallback now routes its output through
   the same deadline-aware callback, so a fallback write cannot bypass timeout
   admission; retain legacy-fallback and solid-folder corpus qualification.

@@ -119,7 +119,13 @@ static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
     /* ISeqOutStream uses a short write (zero here) to report failure. Do not
      * pass cli_writen()'s (size_t)-1 sentinel to the 7-Zip CRC wrapper: it
      * would be interpreted as an enormous successful write. */
-    return (written == (size_t)-1) ? 0 : written;
+    if (written == (size_t)-1)
+        return 0;
+    if (p->ctx && cli_7z_checktimelimit(p->ctx, "7-Zip member output reached the configured time limit") != CL_SUCCESS) {
+        p->status = CL_ETIMEOUT;
+        return 0;
+    }
+    return written;
 }
 
 static cl_error_t cli_7z_error_status(SRes res)

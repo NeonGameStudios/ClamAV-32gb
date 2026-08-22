@@ -4435,3 +4435,13 @@ unchecked direct `write()` and ignored partial writes. It now stages comments in
 and preserves a fail-visible timeout or short-write result. Compiled optional
 backend coverage, deterministic comment-timeout injection, sanitizer, and
 Sonic1 qualification remain release gates.
+
+## 7-Zip post-write deadline boundary — 2026-08-22
+
+The 7-Zip streaming output callback already checked `MaxScanTime` before each
+decoder write, but a deadline expiring during that write was not observed until
+the decoder made another callback. It now checks immediately after each bounded
+write as well, reports `CL_ETIMEOUT` through the callback status, and preserves
+the existing temporary cleanup and no-partial-child-scan behavior. Compiled
+solid-archive timeout injection, sanitizer, and Sonic1 qualification remain
+release gates.
