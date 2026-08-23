@@ -35,7 +35,7 @@ use log::{debug, error, warn};
 use crate::{
     alz::{Alz, AlzExtractionDecision, AlzExtractionLimits, Error as AlzError, ExtractSink},
     ctx,
-    fmap::{FMap, FMapReader},
+    fmap::{is_read_failure, FMap, FMapReader},
     sys,
     onenote::{self, LegacyAttachmentSink, OneNote},
     sys::{
@@ -78,6 +78,8 @@ unsafe fn parser_input_failure(ctx: *mut cli_ctx, parser: &str, err: impl std::f
 fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
     if err.kind() == io::ErrorKind::TimedOut {
         cl_error_t_CL_ETIMEOUT
+    } else if is_read_failure(err) {
+        cl_error_t_CL_EREAD
     } else {
         fallback
     }
@@ -816,16 +818,17 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
     let mut decoder = match LhaDecodeReader::new(FMapReader::new_with_context(&fmap, ctx)) {
         Ok(result) => result,
         Err(err) => {
+            let io_err: io::Error = err.into();
             let status = check_scan_time_limit(ctx);
             return parser_failure(
                 ctx,
                 "LHA/LZH",
-                if status == cl_error_t_CL_ETIMEOUT {
+                if status != cl_error_t_CL_SUCCESS {
                     status
                 } else {
-                    cl_error_t_CL_EFORMAT
+                    rust_reader_status(&io_err, cl_error_t_CL_EFORMAT)
                 },
-                err,
+                io_err,
             );
         }
     };
@@ -975,16 +978,17 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                         };
                     }
                     Err(err) => {
+                        let io_err: io::Error = err.into();
                         let status = check_scan_time_limit(ctx);
                         return parser_failure(
                             ctx,
                             "LHA/LZH",
-                            if status == cl_error_t_CL_ETIMEOUT {
+                            if status != cl_error_t_CL_SUCCESS {
                                 status
                             } else {
-                                cl_error_t_CL_EFORMAT
+                                rust_reader_status(&io_err, cl_error_t_CL_EFORMAT)
                             },
-                            format!("member read failed: {err}"),
+                            format!("member read failed: {io_err}"),
                         );
                     }
                 }
@@ -1036,16 +1040,17 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
                 break;
             }
             Err(err) => {
+                let io_err: io::Error = err.into();
                 let status = check_scan_time_limit(ctx);
                 return parser_failure(
                     ctx,
                     "LHA/LZH",
-                    if status == cl_error_t_CL_ETIMEOUT {
+                    if status != cl_error_t_CL_SUCCESS {
                         status
                     } else {
-                        cl_error_t_CL_EFORMAT
+                        rust_reader_status(&io_err, cl_error_t_CL_EFORMAT)
                     },
-                    err,
+                    io_err,
                 );
             }
         }
@@ -1460,6 +1465,19 @@ mod tests {
         );
         assert_eq!(
             rust_reader_status(&read_error, cl_error_t_CL_EREAD),
+            cl_error_t_CL_EREAD
+        );
+    }
+
+    #[test]
+    fn rust_fmap_callback_failure_status_is_preserved() {
+        let fmap_error = io::Error::new(
+            io::ErrorKind::Other,
+            crate::fmap::Error::ReadFailure(128, 64, 4096),
+        );
+
+        assert_eq!(
+            rust_reader_status(&fmap_error, cl_error_t_CL_EFORMAT),
             cl_error_t_CL_EREAD
         );
     }

@@ -46,6 +46,9 @@ pub enum Error {
     #[error("Offset {0} and length {1} not contained in FMap of size {2}")]
     NotContained(usize, usize, usize),
 
+    #[error("FMap need() failed for in-range offset {0}, length {1}, map size {2}")]
+    ReadFailure(usize, usize, usize),
+
     #[error("Whole-input parser request of {0} bytes exceeds the bounded parser cap of {1} bytes")]
     WholeInputTooLarge(usize, usize),
 
@@ -144,8 +147,8 @@ impl<'a> FMapReader<'a> {
         let ptr = unsafe { need_fn(self.map.fmap_ptr, at, requested, 1) } as *const u8;
         if ptr.is_null() {
             return Err(io::Error::new(
-                ErrorKind::UnexpectedEof,
-                Error::NotContained(at, requested, self.map.len()),
+                ErrorKind::Other,
+                Error::ReadFailure(at, requested, self.map.len()),
             ));
         }
 
@@ -264,7 +267,7 @@ impl<'a> FMap {
                 "need_off at {:?} len {:?} for fmap size {:?} returned NULL",
                 at, len, fmap_size
             );
-            return Err(Error::NotContained(at, len, fmap_size));
+            return Err(Error::ReadFailure(at, len, fmap_size));
         }
 
         let slice: &[u8] = unsafe { std::slice::from_raw_parts(ptr, len) };
@@ -295,6 +298,19 @@ impl<'a> FMap {
                 .unwrap_or(Some("<invalid-utf8>"))
                 .unwrap_or("<unnamed>")
         }
+    }
+}
+
+/// Return whether an `io::Error` came from an in-range C fmap backing-read
+/// failure.  Keeping this marker typed lets scanner callers distinguish a
+/// failed source read from a genuine parser EOF without parsing display text.
+pub fn is_read_failure(err: &io::Error) -> bool {
+    match err
+        .get_ref()
+        .and_then(|source| source.downcast_ref::<Error>())
+    {
+        Some(Error::ReadFailure(_, _, _)) => true,
+        _ => false,
     }
 }
 
@@ -352,7 +368,7 @@ mod tests {
     }
 
     #[test]
-    fn need_failure_is_reported_as_a_bounded_error() {
+    fn need_failure_is_reported_as_a_read_failure() {
         let _guard = NEED_TEST_LOCK.lock().expect("need test lock");
         NEED_CALLS.store(0, Ordering::Relaxed);
         let mut raw: sys::cl_fmap_t = unsafe { std::mem::zeroed() };
@@ -360,7 +376,25 @@ mod tests {
         raw.need = Some(null_need);
         let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
 
-        assert!(matches!(map.need_off(128, 64), Err(Error::NotContained(128, 64, 4096))));
+        assert!(matches!(map.need_off(128, 64), Err(Error::ReadFailure(128, 64, 4096))));
+        assert_eq!(NEED_CALLS.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn reader_in_range_callback_failure_is_distinct_from_eof() {
+        let _guard = NEED_TEST_LOCK.lock().expect("need test lock");
+        NEED_CALLS.store(0, Ordering::Relaxed);
+        let mut raw: sys::cl_fmap_t = unsafe { std::mem::zeroed() };
+        raw.len = 4096;
+        raw.need = Some(null_need);
+        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+
+        let mut reader = FMapReader::new(&map);
+        let mut output = [0u8; 64];
+        let err = reader.read(&mut output).expect_err("in-range callback failure");
+
+        assert_eq!(err.kind(), ErrorKind::Other);
+        assert!(is_read_failure(&err));
         assert_eq!(NEED_CALLS.load(Ordering::Relaxed), 1);
     }
 

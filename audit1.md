@@ -5650,3 +5650,16 @@ expansion beyond its fixed destination buffer as incomplete instead of silently
 scanning under an empty or truncated name. A focused Joliet fixture exercises
 the expansion boundary and preserves the non-cacheable `CL_EPARSE` result.
 Compiled ISO corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Rust fmap in-range read-failure classification — 2026-08-23
+
+The Rust `FMapReader` previously converted a null `need()` callback result into
+`UnexpectedEof`, even after clipping the request to a fully in-range fmap
+window. The adapter now carries a typed `ReadFailure` marker for that
+operational condition, while true end-of-input remains a zero-length read.
+Scanner-facing Rust status mapping preserves the failure as `CL_EREAD`, and
+focused Rust coverage exercises both the direct `need_off()` and reader paths.
+The LHA/LZH decoder's construction, member-read, and next-header error
+boundaries now convert the dependency's wrapped I/O error so this distinction
+survives the parser boundary as well. Compiled Rust/layout, parser-corpus,
+sanitizer, and Sonic1 qualification remain open.

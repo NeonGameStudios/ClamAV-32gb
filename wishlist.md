@@ -250,6 +250,11 @@
   callback or slice formation, and its scanner-facing reader checks shared
   read/seek deadlines while preserving `CL_ETIMEOUT`; add compiled
   Rust/layout and parser-corpus qualification.
+- The Rust fmap adapter now distinguishes an in-range `need()` callback failure
+  from genuine EOF and preserves it as `CL_EREAD` through scanner-facing Rust
+  readers; LHA/LZH construction, member-read, and next-header errors preserve
+  the same distinction through `delharc`; add compiled callback-fault and
+  parser-corpus qualification.
 - Rust OneNote fixed-prefix truncation versus fmap read failure, and ALZ field
   read failures, now retain distinct non-clean statuses; add compiled Rust and
   parser-corpus qualification.

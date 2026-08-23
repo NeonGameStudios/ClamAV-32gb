@@ -30769,30 +30769,31 @@ offset-size-arithmetic	libclamav_rust/src/evidence.rs	402	    let mut evidence =
 offset-size-arithmetic	libclamav_rust/src/evidence.rs	412	    pub fn render_verdict(&self) -> bool {
 offset-size-arithmetic	libclamav_rust/src/evidence.rs	415	        let num_alerting_indicators = self.strong.len() + self.pua.len();
 offset-size-arithmetic	libclamav_rust/src/evidence.rs	74	    /// Native-width offset when this alert came from a root-object matcher.
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	128	    fn read_window(&mut self, at: usize, dst: &mut [u8]) -> io::Result<usize> {
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	162	    fn checked_position(base: u64, offset: i64) -> io::Result<u64> {
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	167	                "fmap seek would overflow the 64-bit coordinate space",
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	185	        let remaining = len - self.position;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	202	    fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	237	    pub const WHOLE_INPUT_MAX: usize = 256 * 1024 * 1024;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	240	    pub fn need_off(&'a self, at: usize, len: usize) -> Result<&'a [u8], Error> {
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	241	        let fmap_size = unsafe { *self.fmap_ptr }.len;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	243	        if at > fmap_size || len > fmap_size - at {
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	260	        let ptr: *const u8 = unsafe { need_fn(self.fmap_ptr, at, len, 1) } as *const u8;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	275	    pub fn len(&self) -> usize {
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	326	        let raw = &*map;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	327	        if at.checked_add(len).is_none() || at + len > raw.len || raw.data.is_null() {
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	330	        (raw.data as *const u8).add(at) as *const std::os::raw::c_void
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	346	        raw.len = FMap::WHOLE_INPUT_MAX + 1;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	348	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	361	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	374	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	389	        raw.data = data.as_ptr() as *const std::os::raw::c_void;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	392	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	411	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	414	        assert!(reader.seek(SeekFrom::Current(-1)).is_err());
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	73	    const MAX_READ_CHUNK: usize = 1024 * 1024;
-offset-size-arithmetic	libclamav_rust/src/fmap.rs	85	    /// fmap read and seek. The context-free constructor remains available for
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	131	    fn read_window(&mut self, at: usize, dst: &mut [u8]) -> io::Result<usize> {
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	165	    fn checked_position(base: u64, offset: i64) -> io::Result<u64> {
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	170	                "fmap seek would overflow the 64-bit coordinate space",
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	188	        let remaining = len - self.position;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	205	    fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	240	    pub const WHOLE_INPUT_MAX: usize = 256 * 1024 * 1024;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	243	    pub fn need_off(&'a self, at: usize, len: usize) -> Result<&'a [u8], Error> {
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	244	        let fmap_size = unsafe { *self.fmap_ptr }.len;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	246	        if at > fmap_size || len > fmap_size - at {
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	263	        let ptr: *const u8 = unsafe { need_fn(self.fmap_ptr, at, len, 1) } as *const u8;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	278	    pub fn len(&self) -> usize {
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	342	        let raw = &*map;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	343	        if at.checked_add(len).is_none() || at + len > raw.len || raw.data.is_null() {
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	346	        (raw.data as *const u8).add(at) as *const std::os::raw::c_void
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	362	        raw.len = FMap::WHOLE_INPUT_MAX + 1;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	364	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	377	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	390	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	408	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	423	        raw.data = data.as_ptr() as *const std::os::raw::c_void;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	426	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	445	        let map = FMap::try_from(&mut raw as *mut sys::cl_fmap_t).expect("fmap wrapper");
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	448	        assert!(reader.seek(SeekFrom::Current(-1)).is_err());
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	76	    const MAX_READ_CHUNK: usize = 1024 * 1024;
+offset-size-arithmetic	libclamav_rust/src/fmap.rs	88	    /// fmap read and seek. The context-free constructor remains available for
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	136	        let _ = unsafe { Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap) };
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	154	    let hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	186	    let mut hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
@@ -30810,20 +30811,20 @@ offset-size-arithmetic	libclamav_rust/src/onenote.rs	365	                       
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	596	        fixture.truncate(fixture.len() - 1);
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	622	        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 5));
 offset-size-arithmetic	libclamav_rust/src/onenote.rs	91	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1070	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1082	            engine.maxscansize.saturating_sub((*ctx).scansize)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1138	fn alz_metadata_size(size: u64) -> Option<usize> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	131	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1437	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	199	    const WRITE_CHUNK: usize = 64 * 1024;
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	201	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	287	            let write_len = (bytes.len() - offset).min(Self::WRITE_CHUNK);
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	452	    fn last_size(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	558	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	633	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	672	                    "OneNote input size is not representable in the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	737	                    "attachment size does not fit the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	878	            // size-limit hint: propagate detections, cancellation, and
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1075	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1087	            engine.maxscansize.saturating_sub((*ctx).scansize)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1143	fn alz_metadata_size(size: u64) -> Option<usize> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	133	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1442	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	201	    const WRITE_CHUNK: usize = 64 * 1024;
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	203	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	289	            let write_len = (bytes.len() - offset).min(Self::WRITE_CHUNK);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	454	    fn last_size(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	560	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	635	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	674	                    "OneNote input size is not representable in the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	739	                    "attachment size does not fit the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	881	            // size-limit hint: propagate detections, cancellation, and
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1067	    #[doc = " @brief Increment the count for a subsignature of a logical signature.\n\n This is and alternative to lsig_increment_subsig_match() for use in subsigs that don't have a specific offset,\n like byte-compare subsigs and fuzzy-hash subsigs."]
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1104	    pub sizehashes64: [*mut cli_sz_hash64; 3usize],
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1177	    pub filesize_range: *mut u64,
