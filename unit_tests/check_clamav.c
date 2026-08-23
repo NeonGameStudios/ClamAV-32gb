@@ -17583,6 +17583,17 @@ START_TEST(test_mbox_initial_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbox_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MIME message input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_mbox_time_limit_is_fail_visible)
 {
     static const uint8_t input[] =
@@ -26007,6 +26018,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_uuencode_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_uuencode_attachment_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_mbox_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_line_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_header_lookahead_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_oversized_line_is_fail_visible);

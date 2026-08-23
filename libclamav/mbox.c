@@ -351,6 +351,14 @@ int cli_mbox(const char *dir, cli_ctx *ctx)
         cli_dbgmsg("cli_mbox called with NULL dir\n");
         return CL_ENULLARG;
     }
+    if (ctx == NULL) {
+        cli_dbgmsg("cli_mbox called with NULL context\n");
+        return CL_EARG;
+    }
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "MIME message input map is unavailable");
+        return CL_EPARSE;
+    }
     return cli_parse_mbox(dir, ctx);
 }
 

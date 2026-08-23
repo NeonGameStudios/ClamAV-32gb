@@ -6692,3 +6692,12 @@ entries now return explicit incomplete results for unavailable input maps
 before touching decoder or engine state. Focused direct-entry regressions are
 registered; compiled SZDD/detector corpora, sanitizer, raw-dispatch, and
 Sonic1 qualification remain release gates.
+
+## MIME/mbox missing-map admission — 2026-08-23
+
+The public `cli_mbox()` wrapper validated only its temporary-directory
+argument and forwarded a context with no fmap to the legacy MIME line reader,
+which dereferenced it immediately. The wrapper now returns an explicit
+incomplete result for an unavailable input map, with a focused direct-entry
+regression; compiled MIME corpus, sanitizer, and Sonic1 qualification remain
+release gates.
