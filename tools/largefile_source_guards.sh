@@ -3389,6 +3389,7 @@ contains libclamav/scanners.c 'A prior required-path failure belongs to the whol
 contains libclamav/cache.c 'scan incomplete or timed out, skipping cache'
 contains libclamav/scanners.c 'The outer raw matcher is mandatory for every non-ignored layer'
 contains libclamav/scanners.c 'raw embedded-type dispatch reached the configured time limit'
+contains libclamav/scanners.c 'raw embedded-type match offset is outside the input map'
 contains libclamav/pdf.c '#define PDF_SEARCH_WINDOW (64U * 1024U)'
 contains libclamav/pdf.c 'pdf_memstr_deadline'
 contains libclamav/pdf.c 'PDF object-header search reached the configured time limit'

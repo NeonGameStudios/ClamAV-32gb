@@ -6237,3 +6237,8 @@ APM entry reads now remain within the partition map's declared
 walk. Appended mapped bytes can no longer become partition metadata merely
 because they are readable. Compiled APM corpus, sanitizer, and Sonic1
 qualification remain open.
+
+
+## Embedded matcher-offset range admission — 2026-08-23
+
+Raw embedded-type dispatch now rejects negative or out-of-map matcher offsets before child-range subtraction or nested parser handoff. This prevents malformed internal coordinates from wrapping into a child fmap or being treated as a confirmed layer. Compiled embedded-candidate and production-SFX qualification remain open.

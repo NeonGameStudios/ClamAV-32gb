@@ -2122,3 +2122,10 @@ and Sonic1 qualification as release gates.
 - Bound APM normal and intersection entry reads by the declared partition-map
   extent, retaining the mapped-but-undeclared entry fixture, compiled corpus,
   sanitizer, and Sonic1 qualification as release gates.
+
+
+## Embedded matcher-offset range admission — 2026-08-23
+
+- Reject negative or out-of-map raw embedded-type matcher offsets before child
+  range subtraction or nested handoff; retain compiled embedded-candidate,
+  sanitizer, production-SFX, and Sonic1 qualification as release gates.

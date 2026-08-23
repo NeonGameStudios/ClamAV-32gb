@@ -5016,6 +5016,18 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                 break;
             }
 
+            /* Matcher offsets are internal coordinates, but every embedded
+             * handoff below subtracts them from the current fmap length. Do
+             * not let a malformed or unrepresentable match become a wrapped
+             * child range or a confirmed parser layer. */
+            if (fpt->offset < 0 || (uint64_t)fpt->offset >= (uint64_t)ctx->fmap->len) {
+                cli_mark_scan_incomplete(ctx, "raw embedded-type match offset is outside the input map");
+                if (nret == CL_SUCCESS)
+                    nret = CL_EPARSE;
+                fpt = fpt->next;
+                continue;
+            }
+
             if ((fpt->offset > 0) &&
                 // Only handle each offset once to prevent duplicate processing like if two signatures are found at the same offset.
                 ((size_t)fpt->offset > last_offset)) {
