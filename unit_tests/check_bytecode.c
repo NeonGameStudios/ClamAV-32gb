@@ -755,7 +755,6 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
     bcctx = cli_bytecode_context_alloc();
     ck_assert_ptr_nonnull(bcctx);
     bcctx->bc = &bc;
-    bcctx->ctx = &cctx;
     ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
     ck_assert_uint_eq(bcctx->file_size64, boundary + 1);
 
@@ -793,11 +792,13 @@ START_TEST(test_bytecode_pdf_object_access_does_not_retain_fmap_pages)
     struct pdf_obj first;
     struct pdf_obj second;
     struct pdf_obj *objects[2];
+    cli_ctx cctx;
     fmap_t *map;
 
     memset(&bc, 0, sizeof(bc));
     memset(&first, 0, sizeof(first));
     memset(&second, 0, sizeof(second));
+    memset(&cctx, 0, sizeof(cctx));
     pread_state.length  = 8192;
     pread_state.fail_at = INT64_MAX;
     map = cl_fmap_open_handle(&pread_state, 0, pread_state.length,
@@ -813,6 +814,8 @@ START_TEST(test_bytecode_pdf_object_access_does_not_retain_fmap_pages)
     bcctx = cli_bytecode_context_alloc();
     ck_assert_ptr_nonnull(bcctx);
     bcctx->bc = &bc;
+    bcctx->ctx = &cctx;
+    cctx.fmap = map;
     ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
     ck_assert_int_eq(cli_bytecode_context_setpdf(bcctx, PDF_PHASE_PARSED, 2,
                                                   objects, NULL, 16, 0),
