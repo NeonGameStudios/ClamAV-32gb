@@ -499,7 +499,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
          * Checking here because the exploit PoC will fail our length check, below.
          */
         if (JPEG_MARKER_SEGMENT_COM_COMMENT == marker) {
-            if (fmap_readn(map, buff, offset, 2) == 2) {
+            size_t exploit_probe_read = jpeg_readn(map, buff, offset, 2);
+
+            if (exploit_probe_read == (size_t)-1) {
+                status = jpeg_read_status(ctx, exploit_probe_read, 2,
+                                           "Heuristics.Broken.Media.JPEG.ExploitProbeRead");
+                goto done;
+            }
+            if (exploit_probe_read == 2) {
                 if (buff[0] == 0x00) {
                     if ((buff[1] == 0x00) || (buff[1] == 0x01)) {
                         /* Found exploit */

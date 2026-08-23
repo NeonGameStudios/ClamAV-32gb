@@ -6186,3 +6186,14 @@ releases the window before returning its legacy failure sentinel. A focused
 regression covers MaxFiles and confirms that the input pipe is drained;
 independently compiled interpreter/JIT fixtures, sanitizer, and Sonic1
 qualification remain open.
+
+## JPEG exploit-probe read classification — 2026-08-23
+
+The JPEG MS04-028 comment-marker probe ignored a failed `fmap_readn()` call
+before reading the segment length. A transient in-range callback fault could
+therefore suppress that exploit check while the parser continued. The probe
+now uses the parser's range-aware read helper and returns `CL_EREAD` with an
+incomplete, non-cacheable result for an in-range callback failure; genuinely
+short input remains classified by the following segment-length parse. A
+one-shot callback-fault regression covers this boundary, while compiled media
+corpus, sanitizer, and Sonic1 qualification remain open.

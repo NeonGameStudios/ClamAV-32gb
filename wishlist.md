@@ -1,5 +1,13 @@
 # Wishlist
 
+## JPEG exploit-probe read classification — 2026-08-23
+
+- The JPEG MS04-028 comment-marker probe now preserves an in-range fmap
+  callback failure as `CL_EREAD` instead of silently treating the probe as a
+  non-match. A one-shot callback-fault regression covers the distinction;
+  compiled media corpus, sanitizer, and Sonic1 qualification remain release
+  gates.
+
 ## Bytecode JavaScript-normalizer limit cleanup — 2026-08-23
 
 - JavaScript-normalizer API limit failures now release the borrowed input

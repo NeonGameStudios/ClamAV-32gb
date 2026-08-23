@@ -16153,6 +16153,21 @@ static const void *jpeg_segment_probe_read_failure(fmap_t *map, size_t at, size_
     return (const uint8_t *)map->data + at;
 }
 
+static size_t jpeg_exploit_probe_failure_offset = SIZE_MAX;
+static bool jpeg_exploit_probe_fail_once;
+
+static const void *jpeg_exploit_probe_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (jpeg_exploit_probe_fail_once && at == jpeg_exploit_probe_failure_offset) {
+        jpeg_exploit_probe_fail_once = false;
+        return NULL;
+    }
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static size_t jpeg_photoshop_targeted_failure_offset = SIZE_MAX;
 
 static const void *jpeg_photoshop_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -24167,6 +24182,34 @@ START_TEST(test_jpeg_segment_probe_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_jpeg_exploit_probe_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0xff, 0xd8, 0xff, 0xfe, 0x00, 0x04,
+        0x00, 0x00, 0xff, 0xd9,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    jpeg_exploit_probe_failure_offset = 4U;
+    jpeg_exploit_probe_fail_once      = true;
+    map->need                         = jpeg_exploit_probe_read_failure;
+    ctx.fmap                           = map;
+
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.JPEG.ExploitProbeRead");
+    ck_assert(map->dont_cache_flag);
+
+    jpeg_exploit_probe_failure_offset = SIZE_MAX;
+    jpeg_exploit_probe_fail_once       = false;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_jpeg_photoshop_header_read_failure_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -25302,6 +25345,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_jpeg_required_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_truncated_segment_size_is_parse_error);
     tcase_add_test(tc_cl, test_jpeg_segment_probe_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_jpeg_exploit_probe_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_photoshop_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_photoshop_marker_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_photoshop_resources_stay_within_segment);
