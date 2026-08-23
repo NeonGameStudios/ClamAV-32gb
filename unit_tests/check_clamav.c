@@ -19470,6 +19470,34 @@ START_TEST(test_pe_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_header_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {'M', 'Z'};
+    struct cl_engine engine;
+    struct cli_exe_info peinfo;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    cli_exe_info_init(&peinfo, 0);
+    ret = cli_peheader(&ctx, &peinfo, CLI_PEHEADER_OPT_NONE);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE DOS signature could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cli_exe_info_destroy(&peinfo);
+    cl_fmap_close(map);
+}
+END_TEST
+
 #if SIZE_MAX > UINT32_MAX
 START_TEST(test_pe_header_nested_fmap_accepts_native_offset)
 {
@@ -24618,6 +24646,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_arj_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_header_read_failure_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pe_rawaddr_preserves_native_coordinate);
     tcase_add_test(tc_cl, test_pe_header_preserves_unsigned_high_bit_section_fields);

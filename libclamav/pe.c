@@ -3064,6 +3064,29 @@ static cl_error_t pe_readn_full(cli_ctx *ctx,
     return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
 }
 
+/* Keep an in-range fmap callback failure distinct from a genuinely short PE
+ * header. Some callers intentionally use CL_ERROR for a short non-PE
+ * candidate, but an operational read failure must never be discarded as a
+ * candidate rejection. */
+static cl_error_t pe_header_readn_full(cli_ctx *ctx,
+                                       fmap_t *map,
+                                       void *destination,
+                                       size_t offset,
+                                       size_t length,
+                                       cl_error_t short_status,
+                                       const char *read_reason)
+{
+    size_t read_length = fmap_readn_full(map, destination, offset, length);
+
+    if (read_length == length)
+        return CL_SUCCESS;
+    if (read_length == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, read_reason);
+        return CL_EREAD;
+    }
+    return short_status;
+}
+
 static const char *pe_need_window(cli_ctx *ctx,
                                   fmap_t *map,
                                   size_t offset,
@@ -5082,7 +5105,6 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     uint32_t is_dll = 0;
     uint32_t is_exe = 0;
     int native      = 0;
-    size_t read;
     uint32_t temp;
 
     fmap_t *map = NULL;
@@ -5104,7 +5126,9 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     fsize = map->len - peinfo->offset;
-    if (fmap_readn_full(map, &e_magic, peinfo->offset, sizeof(e_magic)) != sizeof(e_magic)) {
+    ret = pe_header_readn_full(ctx, map, &e_magic, peinfo->offset, sizeof(e_magic), CL_ERROR,
+                               "PE DOS signature could not be read completely");
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("cli_peheader: Can't read DOS signature\n");
         goto done;
     }
@@ -5114,10 +5138,13 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    if (fmap_readn_full(map, &(peinfo->e_lfanew), peinfo->offset + 58 + sizeof(e_magic), sizeof(peinfo->e_lfanew)) != sizeof(peinfo->e_lfanew)) {
+    ret = pe_header_readn_full(ctx, map, &(peinfo->e_lfanew),
+                               peinfo->offset + 58 + sizeof(e_magic),
+                               sizeof(peinfo->e_lfanew), CL_EFORMAT,
+                               "PE e_lfanew field could not be read completely");
+    if (ret != CL_SUCCESS) {
         /* truncated header? */
         cli_dbgmsg("cli_peheader: Unable to read e_lfanew - truncated header?\n");
-        ret = CL_EFORMAT;
         goto done;
     }
 
@@ -5131,7 +5158,11 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    if (fmap_readn_full(map, &(peinfo->file_hdr), peinfo->offset + peinfo->e_lfanew, sizeof(struct pe_image_file_hdr)) != sizeof(struct pe_image_file_hdr)) {
+    ret = pe_header_readn_full(ctx, map, &(peinfo->file_hdr),
+                               peinfo->offset + peinfo->e_lfanew,
+                               sizeof(struct pe_image_file_hdr), CL_ERROR,
+                               "PE NT file header could not be read completely");
+    if (ret != CL_SUCCESS) {
         /* bad information in e_lfanew - probably not a PE file */
         cli_dbgmsg("cli_peheader: Can't read file header\n");
         goto done;
@@ -5340,9 +5371,11 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     at = peinfo->offset + peinfo->e_lfanew + sizeof(struct pe_image_file_hdr);
-    if (fmap_readn_full(map, &(peinfo->pe_opt.opt32), at, sizeof(struct pe_image_optional_hdr32)) != sizeof(struct pe_image_optional_hdr32)) {
+    ret = pe_header_readn_full(ctx, map, &(peinfo->pe_opt.opt32), at,
+                               sizeof(struct pe_image_optional_hdr32), CL_EFORMAT,
+                               "PE optional header could not be read completely");
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("cli_peheader: Can't read optional file header\n");
-        ret = CL_EFORMAT;
         goto done;
     }
     stored_opt_hdr_size = sizeof(struct pe_image_optional_hdr32);
@@ -5365,9 +5398,15 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             goto done;
         }
 
-        if (fmap_readn_full(map, (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)), at, OPT_HDR_SIZE_DIFF) != OPT_HDR_SIZE_DIFF) {
+        ret = pe_header_readn_full(ctx,
+                                   map,
+                                   (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)),
+                                   at,
+                                   OPT_HDR_SIZE_DIFF,
+                                   CL_EFORMAT,
+                                   "PE PE32+ optional-header extension could not be read completely");
+        if (ret != CL_SUCCESS) {
             cli_dbgmsg("cli_peheader: Can't read additional optional file header bytes\n");
-            ret = CL_EFORMAT;
             goto done;
         }
 
@@ -5586,8 +5625,9 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    read = fmap_readn_full(map, peinfo->dirs, at, data_dirs_size);
-    if ((read == (size_t)-1) || (read != data_dirs_size)) {
+    ret = pe_header_readn_full(ctx, map, peinfo->dirs, at, data_dirs_size, CL_EFORMAT,
+                               "PE data directories could not be read completely");
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("cli_peheader: Can't read optional file header data dirs\n");
         goto done;
     }
@@ -5649,10 +5689,15 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    read = fmap_readn_full(map, section_hdrs, at, peinfo->nsections * sizeof(struct pe_image_section_hdr));
-    if ((read == (size_t)-1) || (read != peinfo->nsections * sizeof(struct pe_image_section_hdr))) {
+    ret = pe_header_readn_full(ctx,
+                               map,
+                               section_hdrs,
+                               at,
+                               peinfo->nsections * sizeof(struct pe_image_section_hdr),
+                               CL_EFORMAT,
+                               "PE section headers could not be read completely");
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("cli_peheader: Can't read section header - possibly broken PE file\n");
-        ret = CL_EFORMAT;
         goto done;
     }
     at += sizeof(struct pe_image_section_hdr) * peinfo->nsections;

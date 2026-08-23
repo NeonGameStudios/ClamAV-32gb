@@ -5918,6 +5918,19 @@ test now directly exercises that callback boundary and verifies the status,
 reason, and non-cacheable map state. Compiled PE corpus, sanitizer, and
 Sonic1 qualification remain open.
 
+## PE header ingress read classification — 2026-08-23
+
+The PE header parser already claimed to distinguish in-range fmap callback
+failures from short DOS/NT/optional/data-directory/section-header ranges, but
+several direct reads still collapsed the callback failure into `CL_ERROR` or
+`CL_EFORMAT`. That was especially unsafe for embedded PE admission, where
+`CL_ERROR` intentionally means “not actually PE” and is not marked incomplete.
+A shared header-read helper now returns `CL_EREAD` and records a specific
+incomplete reason for operational callback failures while preserving the
+existing short-range status. A focused DOS-signature callback regression
+verifies the status and non-cacheable state. Compiled PE corpus, sanitizer,
+and Sonic1 qualification remain open.
+
 ## AutoIt header-window read classification — 2026-08-23
 
 The AutoIt header checker’s initial version-byte read was sticky, but its

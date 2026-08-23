@@ -5977,3 +5977,14 @@ MSI embedded-file records now distinguish a genuinely short fixed record
 (`CL_EPARSE`) from a fully in-range fmap callback failure (`CL_EREAD`).
 Focused MSI coverage exercises both outcomes; compiled InstallShield corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## PE header ingress read classification — 2026-08-23
+
+PE header admission now uses one bounded read-classification helper for the
+DOS/NT headers, optional-header extensions, data directories, and section
+headers. An in-range fmap callback failure returns `CL_EREAD` with an explicit
+incomplete reason, so embedded PE candidates cannot discard an operational
+read fault as “not actually PE”; genuinely short ranges retain their existing
+candidate or parse status. A focused DOS-signature callback regression covers
+the boundary. Compiled PE corpus, sanitizer, and Sonic1 qualification remain
+release gates.

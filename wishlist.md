@@ -1771,6 +1771,14 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   before the import-hash pass unwinds; retain the focused callback regression,
   compiled PE corpus, sanitizer, and Sonic1 qualification gates.
 
+## PE header ingress read classification — 2026-08-23
+
+- Preserve `CL_EREAD` and sticky incomplete state for in-range PE DOS/NT,
+  optional-header, data-directory, and section-header fmap callback failures;
+  retain existing short-range candidate/parse results and the focused DOS
+  signature regression, with compiled PE corpus, sanitizer, and Sonic1
+  qualification as release gates.
+
 ## AutoIt header-window read classification — 2026-08-23
 
 - Mark AutoIt signature and versioned-body header-window read failures
