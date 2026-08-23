@@ -3064,6 +3064,33 @@ static cl_error_t pe_readn_full(cli_ctx *ctx,
     return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
 }
 
+static const char *pe_need_window(cli_ctx *ctx,
+                                  fmap_t *map,
+                                  size_t offset,
+                                  size_t length,
+                                  cl_error_t *status,
+                                  const char *read_reason,
+                                  const char *range_reason)
+{
+    const char *window;
+
+    if (offset > map->len || length > map->len - offset) {
+        cli_mark_scan_incomplete(ctx, range_reason);
+        *status = CL_EPARSE;
+        return NULL;
+    }
+
+    window = fmap_need_off_once(map, offset, length);
+    if (NULL == window) {
+        cli_mark_scan_incomplete(ctx, read_reason);
+        *status = CL_EREAD;
+        return NULL;
+    }
+
+    *status = CL_SUCCESS;
+    return window;
+}
+
 int cli_scanpe(cli_ctx *ctx)
 {
     uint8_t polipos = 0;
@@ -3897,10 +3924,19 @@ int cli_scanpe(cli_ctx *ctx)
             break;
         }
 
-        if (!peinfo->sections[i + 1].rsz || !(src = fmap_need_off_once(map, peinfo->sections[i + 1].raw, ssize))) {
+        if (!peinfo->sections[i + 1].rsz) {
+            cli_mark_scan_incomplete(ctx, "PE FSG compressed section has no raw data");
             cli_dbgmsg("cli_scanpe: Can't read raw data of section %d\n", i + 1);
             cli_exe_info_destroy(peinfo);
-            return CL_ESEEK;
+            return CL_EPARSE;
+        }
+        src = pe_need_window(ctx, map, peinfo->sections[i + 1].raw, ssize, &ret,
+                             "PE FSG compressed section could not be read completely",
+                             "PE FSG compressed section is outside the input map");
+        if (NULL == src) {
+            cli_dbgmsg("cli_scanpe: Can't read raw data of section %d\n", i + 1);
+            cli_exe_info_destroy(peinfo);
+            return ret;
         }
 
         dst = src + newedx - peinfo->sections[i + 1].rva;
@@ -3991,10 +4027,13 @@ int cli_scanpe(cli_ctx *ctx)
 
         CLI_UNPSIZELIMITS("cli_scanpe: FSG", gp);
 
-        if (!(support = fmap_need_off_once(map, t, gp))) {
+        support = pe_need_window(ctx, map, t, gp, &ret,
+                                 "PE FSG support data could not be read completely",
+                                 "PE FSG support data is outside the input map");
+        if (NULL == support) {
             cli_dbgmsg("cli_scanpe: Can't read %d bytes from padding area\n", gp);
             cli_exe_info_destroy(peinfo);
-            return CL_EREAD;
+            return ret;
         }
 
         /* newebx = cli_readint32(support) - EC32(peinfo->pe_opt.opt32.ImageBase);  Unused */
@@ -4044,11 +4083,21 @@ int cli_scanpe(cli_ctx *ctx)
         for (t = 1; t <= (uint32_t)sectcnt; t++)
             sections[t].rva = cli_readint32(support + 8 + t * 4) - 1 - EC32(peinfo->pe_opt.opt32.ImageBase);
 
-        if (!peinfo->sections[i + 1].rsz || !(src = fmap_need_off_once(map, peinfo->sections[i + 1].raw, ssize))) {
+        if (!peinfo->sections[i + 1].rsz) {
+            cli_mark_scan_incomplete(ctx, "PE FSG compressed section has no raw data");
             cli_dbgmsg("cli_scanpe: Can't read raw data of section %d\n", i);
             cli_exe_info_destroy(peinfo);
             free(sections);
-            return CL_EREAD;
+            return CL_EPARSE;
+        }
+        src = pe_need_window(ctx, map, peinfo->sections[i + 1].raw, ssize, &ret,
+                             "PE FSG compressed section could not be read completely",
+                             "PE FSG compressed section is outside the input map");
+        if (NULL == src) {
+            cli_dbgmsg("cli_scanpe: Can't read raw data of section %d\n", i);
+            cli_exe_info_destroy(peinfo);
+            free(sections);
+            return ret;
         }
 
         if ((dest = (char *)cli_max_calloc(dsize, sizeof(char))) == NULL) {
@@ -4117,10 +4166,13 @@ int cli_scanpe(cli_ctx *ctx)
 
         CLI_UNPSIZELIMITS("cli_scanpe: FSG", gp);
 
-        if (!(support = fmap_need_off_once(map, t, gp))) {
+        support = pe_need_window(ctx, map, t, gp, &ret,
+                                 "PE FSG support data could not be read completely",
+                                 "PE FSG support data is outside the input map");
+        if (NULL == support) {
             cli_dbgmsg("cli_scanpe: Can't read %d bytes from padding area\n", gp);
             cli_exe_info_destroy(peinfo);
-            return CL_EREAD;
+            return ret;
         }
 
         /* Counting original sections */
@@ -4152,11 +4204,21 @@ int cli_scanpe(cli_ctx *ctx)
         for (t = 0; t < (uint32_t)sectcnt; t++)
             sections[t + 1].rva = (((support[t * 2] | (support[t * 2 + 1] << 8)) - 2) << 12) - EC32(peinfo->pe_opt.opt32.ImageBase);
 
-        if (!peinfo->sections[i + 1].rsz || !(src = fmap_need_off_once(map, peinfo->sections[i + 1].raw, ssize))) {
+        if (!peinfo->sections[i + 1].rsz) {
+            cli_mark_scan_incomplete(ctx, "PE FSG compressed section has no raw data");
             cli_dbgmsg("cli_scanpe: FSG: Can't read raw data of section %d\n", i);
             cli_exe_info_destroy(peinfo);
             free(sections);
-            return CL_EREAD;
+            return CL_EPARSE;
+        }
+        src = pe_need_window(ctx, map, peinfo->sections[i + 1].raw, ssize, &ret,
+                             "PE FSG compressed section could not be read completely",
+                             "PE FSG compressed section is outside the input map");
+        if (NULL == src) {
+            cli_dbgmsg("cli_scanpe: FSG: Can't read raw data of section %d\n", i);
+            cli_exe_info_destroy(peinfo);
+            free(sections);
+            return ret;
         }
 
         if ((dest = (char *)cli_max_calloc(dsize, sizeof(char))) == NULL) {
@@ -4208,10 +4270,18 @@ int cli_scanpe(cli_ctx *ctx)
             return CL_CLEAN;
         }
 
-        if (!peinfo->sections[i + 1].rsz || !(src = fmap_need_off_once(map, peinfo->sections[i + 1].raw, ssize))) {
+        if (!peinfo->sections[i + 1].rsz) {
+            cli_mark_scan_incomplete(ctx, "PE UPX compressed section has no raw data");
+            cli_exe_info_destroy(peinfo);
+            return CL_EPARSE;
+        }
+        src = pe_need_window(ctx, map, peinfo->sections[i + 1].raw, ssize, &ret,
+                             "PE UPX compressed section could not be read completely",
+                             "PE UPX compressed section is outside the input map");
+        if (NULL == src) {
             cli_dbgmsg("cli_scanpe: UPX: Can't read raw data of section %d\n", i + 1);
             cli_exe_info_destroy(peinfo);
-            return CL_EREAD;
+            return ret;
         }
 
         if ((dest = (char *)cli_max_calloc(dsize + 8192, sizeof(char))) == NULL) {

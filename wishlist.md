@@ -1739,6 +1739,12 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   signed-fixture callback regression; hash mismatches remain verification
   failures rather than parser failures.
 
+## FSG and UPX confirmed-read failure classification — 2026-08-23
+
+- Mark legacy FSG source/support windows and UPX compressed-section windows
+  incomplete/non-cacheable on in-range callback failure; retain packed-fixture
+  regressions, full PE corpus, sanitizer, and Sonic1 qualification gates.
+
 ## Context-aware fmap hash read classification — 2026-08-23
 
 - Make context-aware fmap hash input, initialization, and digest failures

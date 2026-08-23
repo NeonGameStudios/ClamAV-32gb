@@ -5864,6 +5864,16 @@ focused callback-backed parser regression covers both the initial in-range
 read failure and a post-parser hash-container read failure on the signed PE
 fixture; compiled PE corpus, sanitizer, and Sonic1 qualification remain open.
 
+## FSG and UPX confirmed-read failure classification — 2026-08-23
+
+Legacy FSG source/support windows and the UPX compressed-section window could
+previously return after a failed `fmap` request without marking the packed PE
+layer incomplete. The paths now preflight native ranges, distinguish an
+in-range callback failure (`CL_EREAD`) from an unavailable range (`CL_EPARSE`),
+and record sticky incomplete state before unwinding. Packed FSG and UPX fixture
+regressions target the compressed-section window; full PE corpus, sanitizer,
+and Sonic1 qualification remain open.
+
 ## Context-aware fmap hash read classification — 2026-08-23
 
 The context-aware fmap hash helper returned `CL_EREAD` when a bounded hash
