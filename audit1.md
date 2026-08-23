@@ -6164,3 +6164,15 @@ failure from the documented out-of-range malformed-icon fallback; the former
 frees the decoded image, marks the layer incomplete, and returns `CL_EREAD`.
 A focused callback regression verifies the reason and non-cacheable map state.
 Compiled PE/icon corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Legacy bytecode coordinate narrowing — 2026-08-23
+
+The legacy bytecode ABI exposed signed 32-bit results for `seek` and
+`file_find`, plus the PDF object-offset API. A valid native coordinate above
+`INT32_MAX` was previously narrowed to the historical `-1` sentinel without
+recording that required bytecode inspection had been skipped. The v1 wrappers
+now reject those coordinates before narrowing and mark the scan incomplete and
+non-cacheable; the v2 APIs retain native-width results. A synthetic
+2-GiB-plus fmap regression covers the seek, search, and PDF-offset boundaries.
+Independently compiled v1/v2 fixtures, interpreter/JIT execution, sanitizer,
+and Sonic1 qualification remain open.

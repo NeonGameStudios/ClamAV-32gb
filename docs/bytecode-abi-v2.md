@@ -16,6 +16,9 @@ run in either the interpreter or the LLVM JIT.
 - The legacy `read` entry rejects negative offsets and ranges that cannot be
   represented by the host `size_t` before passing them to fmap; it never lets
   malformed v1 state wrap into a different input coordinate.
+- Legacy `seek`, `file_find`, and PDF-offset results reject coordinates above
+  `INT32_MAX` and mark the scan incomplete; they never narrow a valid native
+  coordinate to the v1 `-1` sentinel.
 - v2 bytecode receives the full mapped file size and native 64-bit logical
   match offsets. The byte buffer argument and allocation sizes remain bounded
   by their existing 32-bit API contracts.

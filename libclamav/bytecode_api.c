@@ -75,6 +75,17 @@ static void cli_bcapi_mark_map_read_error(struct cli_bc_ctx *ctx, const char *re
     cli_mark_scan_incomplete(cctx, reason);
 }
 
+static void cli_bcapi_mark_coordinate_error(struct cli_bc_ctx *ctx, const char *reason)
+{
+    cli_ctx *cctx;
+
+    if (!ctx || !ctx->ctx)
+        return;
+
+    cctx = (cli_ctx *)ctx->ctx;
+    cli_mark_scan_incomplete(cctx, reason);
+}
+
 static void cli_bcapi_note_cleanup_failure(cli_ctx *cctx, cl_error_t *status,
                                            cl_error_t failure, const char *reason)
 {
@@ -212,9 +223,13 @@ int32_t cli_bcapi_seek(struct cli_bc_ctx *ctx, int32_t pos, uint32_t whence)
                    (long long)off, ctx->file_size);
         return -1;
     }
+    if ((uint64_t)off > (uint64_t)INT32_MAX) {
+        cli_bcapi_mark_coordinate_error(ctx, "Bytecode v1 seek result requires 64-bit file coordinates");
+        return -1;
+    }
     cli_event_int(EV, BCEV_OFFSET, off);
     ctx->off = off;
-    return off;
+    return (int32_t)off;
 }
 
 int64_t cli_bcapi_seek64(struct cli_bc_ctx *ctx, int64_t pos, uint32_t whence)
@@ -602,8 +617,10 @@ static int64_t cli_bcapi_file_find_limit_common(struct cli_bc_ctx *ctx, const ui
 int32_t cli_bcapi_file_find(struct cli_bc_ctx *ctx, const uint8_t *data, uint32_t len)
 {
     int64_t result = cli_bcapi_file_find_limit_common(ctx, data, len, ctx->fmap ? ctx->fmap->len : 0);
-    if (result > INT32_MAX)
+    if (result > INT32_MAX) {
+        cli_bcapi_mark_coordinate_error(ctx, "Bytecode v1 file-find result requires 64-bit matcher offsets");
         return -1;
+    }
     return (int32_t)result;
 }
 
@@ -618,8 +635,10 @@ int32_t cli_bcapi_file_find_limit(struct cli_bc_ctx *ctx, const uint8_t *data, u
     if (limit <= 0)
         return -1;
     result = cli_bcapi_file_find_limit_common(ctx, data, len, (uint32_t)limit);
-    if (result > INT32_MAX)
+    if (result > INT32_MAX) {
+        cli_bcapi_mark_coordinate_error(ctx, "Bytecode v1 file-find result requires 64-bit matcher offsets");
         return -1;
+    }
     return (int32_t)result;
 }
 
@@ -2390,7 +2409,11 @@ int32_t cli_bcapi_pdf_get_offset(struct cli_bc_ctx *ctx, int32_t objidx)
 {
     uint64_t offset = cli_bcapi_pdf_get_offset64(ctx, objidx);
 
-    return offset > INT32_MAX ? -1 : (int32_t)offset;
+    if (offset > INT32_MAX) {
+        cli_bcapi_mark_coordinate_error(ctx, "Bytecode v1 PDF offset requires 64-bit coordinates");
+        return -1;
+    }
+    return (int32_t)offset;
 }
 
 uint64_t cli_bcapi_pdf_get_offset64(struct cli_bc_ctx *ctx, int32_t objidx)

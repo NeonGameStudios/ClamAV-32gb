@@ -1,5 +1,12 @@
 # Wishlist
 
+## Legacy bytecode coordinate narrowing — 2026-08-23
+
+- Legacy `seek`, `file_find`, and PDF-offset results now fail visibly when a
+  valid native coordinate exceeds `INT32_MAX`, instead of returning the v1
+  `-1` sentinel without an incomplete/non-cacheable status. Retain independently
+  compiled v1/v2 fixture and interpreter/JIT qualification as release gates.
+
 ## PE icon alpha-mask read failures — 2026-08-23
 
 - A 32-bit PE icon's required alpha-mask window now fails closed when its

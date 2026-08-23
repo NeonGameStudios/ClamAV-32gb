@@ -646,6 +646,73 @@ START_TEST(test_bytecode_v1_read_rejects_invalid_offsets)
 }
 END_TEST
 
+START_TEST(test_bytecode_v1_coordinate_narrowing_is_fail_visible)
+{
+#if SIZE_MAX > UINT32_MAX
+    const uint64_t boundary = (uint64_t)INT32_MAX + 1;
+    struct bytecode_failing_pread_state pread_state;
+    struct cli_bc_ctx *bcctx;
+    struct cli_bc bc;
+    struct pdf_obj object;
+    struct pdf_obj *objects[1];
+    cli_ctx cctx;
+    fmap_t *map;
+    unsigned char byte = 0x5a;
+
+    memset(&bc, 0, sizeof(bc));
+    memset(&object, 0, sizeof(object));
+    memset(&cctx, 0, sizeof(cctx));
+    pread_state.length  = (size_t)(boundary + 1);
+    pread_state.fail_at = INT64_MAX;
+    map = cl_fmap_open_handle(&pread_state, 0, pread_state.length,
+                              bytecode_failing_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->bc  = &bc;
+    bcctx->ctx = &cctx;
+    cctx.fmap  = map;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+
+    ck_assert_int_eq(cli_bcapi_seek(bcctx, 0, SEEK_END), -1);
+    ck_assert_uint_eq((uint64_t)bcctx->off, 0);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_str_eq(cctx.scan_incomplete_reason,
+                     "Bytecode v1 seek result requires 64-bit file coordinates");
+    ck_assert(map->dont_cache_flag);
+
+    cctx.scan_incomplete        = false;
+    cctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag        = false;
+    bcctx->off                  = (off_t)boundary;
+    ck_assert_int_eq(cli_bcapi_file_find(bcctx, &byte, 1), -1);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_str_eq(cctx.scan_incomplete_reason,
+                     "Bytecode v1 file-find result requires 64-bit matcher offsets");
+    ck_assert(map->dont_cache_flag);
+
+    cctx.scan_incomplete        = false;
+    cctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag        = false;
+    objects[0]                  = &object;
+    ck_assert_int_eq(cli_bytecode_context_setpdf(bcctx, PDF_PHASE_PARSED, 1,
+                                                  objects, NULL, 1, (off_t)boundary),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_bcapi_pdf_get_offset(bcctx, 0), -1);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_str_eq(cctx.scan_incomplete_reason,
+                     "Bytecode v1 PDF offset requires 64-bit coordinates");
+    ck_assert(map->dont_cache_flag);
+
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+#else
+    ck_assert(1);
+#endif
+}
+END_TEST
+
 START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
 {
     struct cl_engine *engine;
@@ -1309,6 +1376,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
+    tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
