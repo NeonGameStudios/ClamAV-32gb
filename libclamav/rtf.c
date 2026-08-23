@@ -422,8 +422,8 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
             }
             case WAIT_ZERO: {
                 if (out_cnt < 8 - data->bread) {
-                    out_cnt = 0;
                     data->bread += out_cnt;
+                    out_cnt = 0;
                 } else {
                     out_cnt -= 8 - data->bread;
                     data->bread = 8;

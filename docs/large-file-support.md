@@ -2868,6 +2868,16 @@ deadline, close, and nested-scan checks remain in force; compiled allocation
 fault injection, sanitizer, and full HTML/MHTML corpus qualification remain
 release gates.
 
+## RTF split reserved-field accounting — 2026-08-23
+
+When an embedded RTF object’s eight-byte reserved field crosses an 8 KiB fmap
+chunk boundary, the parser now retains the bytes already consumed before
+reading the next chunk. This prevents the following payload-size field from
+being interpreted as padding and keeps object extraction aligned with the
+format state machine. The focused boundary regression and existing fail-closed
+object cleanup remain part of the source evidence; compiled RTF/OLE, sanitizer,
+and Sonic1 corpus qualification remain open.
+
 ## OneNote bounded legacy extraction — 2026-08-19
 
 The scanner-facing OneNote callback now borrows modern-parser attachment bytes

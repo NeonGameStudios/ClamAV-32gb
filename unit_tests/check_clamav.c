@@ -7345,6 +7345,60 @@ START_TEST(test_rtf_split_object_data_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rtf_split_object_zero_field_preserves_payload_size)
+{
+    static const char object_prefix[] = "{\\object{\\objdata ";
+    static const char object_header[] = "010500000200000000000000000000000000000002000000";
+    static const char object_payload[] = "ffffffffffff";
+    static const char object_suffix[] = "}}}";
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    char *document;
+    size_t length = 0;
+    size_t padding;
+
+    document = calloc(1, 20000);
+    ck_assert_ptr_nonnull(document);
+    memcpy(document + length, "{\\rtf1 ", strlen("{\\rtf1 "));
+    length += strlen("{\\rtf1 ");
+    /* End the first fmap chunk after the first four bytes of WAIT_ZERO. */
+    padding = (8192U - (length + strlen(object_prefix) + 32U) % 8192U) % 8192U;
+    memset(document + length, 'a', padding);
+    length += padding;
+    memcpy(document + length, object_prefix, strlen(object_prefix));
+    length += strlen(object_prefix);
+    memcpy(document + length, object_header, strlen(object_header));
+    length += strlen(object_header);
+    memcpy(document + length, object_payload, strlen(object_payload));
+    length += strlen(object_payload);
+    memcpy(document + length, object_suffix, strlen(object_suffix));
+    length += strlen(object_suffix);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    engine.maxtemporarysize = 1024;
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanrtf(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(document);
+}
+END_TEST
+
 START_TEST(test_rtf_implicit_object_close_status_is_fail_visible)
 {
     static const char document[] = "{\\object{\\objdata 0105000002000000 \\object}}";
@@ -25591,6 +25645,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_rtf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_split_object_data_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_rtf_split_object_zero_field_preserves_payload_size);
     tcase_add_test(tc_cl, test_rtf_implicit_object_close_status_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_temporary_limit_is_fail_visible);

@@ -1075,6 +1075,20 @@ the child uses the already-held reservation rather than double-counting the
 same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
 qualification remain open.
 
+## RTF split reserved-field accounting — 2026-08-23
+
+The RTF embedded-object state machine lost progress when its eight-byte
+reserved field was split across two fmap chunks: it set the available-byte
+count to zero before adding that count to the partial-field counter. The next
+chunk was therefore interpreted at the wrong state boundary, allowing the
+payload-size field to be consumed as reserved data.
+
+`WAIT_ZERO` now advances `bread` before clearing the consumed chunk count. A
+focused 8 KiB boundary regression confirms that the payload-size field remains
+in its intended state and that the resulting malformed embedded object stays
+an explicit incomplete parse. Compiled RTF/OLE, sanitizer, and Sonic1 corpus
+qualification remain release gates.
+
 ## Fmap hash deadline coverage — 2026-08-22
 
 Internal scan and cache callers now use a context-aware fmap hash helper that

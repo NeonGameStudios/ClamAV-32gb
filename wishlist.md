@@ -1425,6 +1425,13 @@ scan-thread preflight is not the caller, while retaining the protocol-level
 32-GiB defensive check. Compiled option-parity/fault-injection and Sonic1
 qualification remain open.
 
+## RTF split reserved-field accounting — 2026-08-23
+
+- Preserve partial progress when an embedded RTF object’s eight-byte reserved
+  field crosses an 8 KiB fmap chunk boundary, keeping the payload-size field
+  aligned; retain the focused boundary regression, compiled RTF/OLE corpus,
+  sanitizer, and Sonic1 qualification as release gates.
+
 ## ELF fixed-range truncation classification — 2026-08-22
 
 - Preflight the complete range of every fixed-size ELF metadata request before
