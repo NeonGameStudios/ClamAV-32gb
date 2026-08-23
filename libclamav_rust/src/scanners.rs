@@ -1273,6 +1273,12 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
                 field,
             );
         }
+        Ok(Err(AlzError::ReadFailure(field))) => {
+            return parser_failure(ctx, "ALZ", cl_error_t_CL_EREAD, field);
+        }
+        Ok(Err(AlzError::Timeout(field))) => {
+            return parser_failure(ctx, "ALZ", cl_error_t_CL_ETIMEOUT, field);
+        }
         Ok(Err(err)) => {
             return parser_failure(ctx, "ALZ", cl_error_t_CL_EFORMAT, err);
         }

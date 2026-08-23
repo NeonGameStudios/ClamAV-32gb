@@ -5732,3 +5732,15 @@ the callback, so a genuinely short record remains `CL_EPARSE` while a fully
 in-range fmap callback failure remains `CL_EREAD`. Focused MSI coverage
 exercises both outcomes; compiled InstallShield corpus, sanitizer, and Sonic1
 qualification remain open.
+
+## ALZ reader read-failure propagation — 2026-08-23
+
+The Rust ALZ reader previously swallowed callback failures at the initial
+signature, archive-signature, central-directory, and extracted-member read
+boundaries. Header truncation now remains an incomplete parse result, while an
+in-range fmap backing-read failure is carried as a typed `ReadFailure` and
+returns `CL_EREAD`; deadline expiry remains `CL_ETIMEOUT`. Stored, deflate, and
+BZip2 member reads use the same operational classification, and later-member
+failures are no longer downgraded to a generic parse flag. Focused Rust reader
+tests cover header and stored-member callback faults. Compiled ALZ corpus,
+sanitizer, and Sonic1 qualification remain open.

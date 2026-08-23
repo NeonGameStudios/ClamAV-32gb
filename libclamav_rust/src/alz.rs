@@ -30,7 +30,7 @@
 )]
 */
 
-use std::io::{Cursor, Read, Seek, SeekFrom};
+use std::io::{self, Cursor, Read, Seek, SeekFrom};
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use bzip2_rs::DecoderReader;
@@ -77,6 +77,34 @@ pub enum Error {
 
     #[error("Failed to read field: {0}")]
     Read(&'static str),
+
+    #[error("Failed to read field from the fmap backing store: {0}")]
+    ReadFailure(&'static str),
+
+    #[error("Timed out while reading field: {0}")]
+    Timeout(&'static str),
+}
+
+fn classify_read_error(err: io::Error, field: &'static str) -> Error {
+    if err.kind() == io::ErrorKind::UnexpectedEof {
+        Error::Parse(field)
+    } else if err.kind() == io::ErrorKind::TimedOut {
+        Error::Timeout(field)
+    } else if crate::fmap::is_read_failure(&err) {
+        Error::ReadFailure(field)
+    } else {
+        Error::Read(field)
+    }
+}
+
+fn classify_extraction_read_error(err: io::Error, field: &'static str) -> Error {
+    if err.kind() == io::ErrorKind::TimedOut {
+        Error::Timeout(field)
+    } else if crate::fmap::is_read_failure(&err) {
+        Error::ReadFailure(field)
+    } else {
+        Error::Extract
+    }
 }
 
 struct AlzLocalFileHeaderHead {
@@ -244,17 +272,19 @@ impl AlzLocalFileHeader {
     pub fn parse<R: Read + Seek>(&mut self, reader: &mut R, source_len: u64) -> Result<(), Error> {
         self.head.file_name_length = reader
             .read_u16::<LittleEndian>()
-            .map_err(|_| Error::Read("file_name_length"))?;
+            .map_err(|err| classify_read_error(err, "file_name_length"))?;
         self.head.file_attribute = reader
             .read_u8()
-            .map_err(|_| Error::Read("file_attribute"))?;
+            .map_err(|err| classify_read_error(err, "file_attribute"))?;
         self.head.file_time_date = reader
             .read_u32::<LittleEndian>()
-            .map_err(|_| Error::Read("file_time_date"))?;
+            .map_err(|err| classify_read_error(err, "file_time_date"))?;
         self.head.file_descriptor = reader
             .read_u8()
-            .map_err(|_| Error::Read("file_descriptor"))?;
-        self.head.unknown = reader.read_u8().map_err(|_| Error::Read("unknown u8"))?;
+            .map_err(|err| classify_read_error(err, "file_descriptor"))?;
+        self.head.unknown = reader
+            .read_u8()
+            .map_err(|err| classify_read_error(err, "unknown u8"))?;
 
         if 0 == self.head.file_name_length {
             return Err(Error::Parse("File Name Length is zero"));
@@ -264,56 +294,58 @@ impl AlzLocalFileHeader {
         if byte_len > 0 {
             self.compression_method = reader
                 .read_u8()
-                .map_err(|_| Error::Read("compression_method"))?;
-            self.unknown = reader.read_u8().map_err(|_| Error::Read("unknown u8"))?;
+                .map_err(|err| classify_read_error(err, "compression_method"))?;
+            self.unknown = reader
+                .read_u8()
+                .map_err(|err| classify_read_error(err, "unknown u8"))?;
             self.file_crc = reader
                 .read_u32::<LittleEndian>()
-                .map_err(|_| Error::Read("file_crc"))?;
+                .map_err(|err| classify_read_error(err, "file_crc"))?;
 
             match byte_len {
                 1 => {
                     self.compressed_size = u64::from(
                         reader
                             .read_u8()
-                            .map_err(|_| Error::Read("compressed_size"))?,
+                            .map_err(|err| classify_read_error(err, "compressed_size"))?,
                     );
                     self.uncompressed_size = u64::from(
                         reader
                             .read_u8()
-                            .map_err(|_| Error::Read("uncompressed_size"))?,
+                            .map_err(|err| classify_read_error(err, "uncompressed_size"))?,
                     );
                 }
                 2 => {
                     self.compressed_size = u64::from(
                         reader
                             .read_u16::<LittleEndian>()
-                            .map_err(|_| Error::Read("compressed_size"))?,
+                            .map_err(|err| classify_read_error(err, "compressed_size"))?,
                     );
                     self.uncompressed_size = u64::from(
                         reader
                             .read_u16::<LittleEndian>()
-                            .map_err(|_| Error::Read("uncompressed_size"))?,
+                            .map_err(|err| classify_read_error(err, "uncompressed_size"))?,
                     );
                 }
                 4 => {
                     self.compressed_size = u64::from(
                         reader
                             .read_u32::<LittleEndian>()
-                            .map_err(|_| Error::Read("compressed_size"))?,
+                            .map_err(|err| classify_read_error(err, "compressed_size"))?,
                     );
                     self.uncompressed_size = u64::from(
                         reader
                             .read_u32::<LittleEndian>()
-                            .map_err(|_| Error::Read("uncompressed_size"))?,
+                            .map_err(|err| classify_read_error(err, "uncompressed_size"))?,
                     );
                 }
                 8 => {
                     self.compressed_size = reader
                         .read_u64::<LittleEndian>()
-                        .map_err(|_| Error::Read("compressed_size"))?;
+                        .map_err(|err| classify_read_error(err, "compressed_size"))?;
                     self.uncompressed_size = reader
                         .read_u64::<LittleEndian>()
-                        .map_err(|_| Error::Read("uncompressed_size"))?;
+                        .map_err(|err| classify_read_error(err, "uncompressed_size"))?;
                 }
                 _ => return Err(Error::Parse("Unsupported File Descriptor")),
             }
@@ -322,19 +354,19 @@ impl AlzLocalFileHeader {
         let mut filename = vec![0u8; usize::from(self.head.file_name_length)];
         reader
             .read_exact(&mut filename)
-            .map_err(|_| Error::Read("file name"))?;
+            .map_err(|err| classify_read_error(err, "file name"))?;
 
         self.file_name = String::from_utf8_lossy(&filename).into_owned();
 
         if self.is_encrypted() {
             reader
                 .read_exact(&mut self.enc_chk)
-                .map_err(|_| Error::Read("encrypted buffer"))?;
+                .map_err(|err| classify_read_error(err, "encrypted buffer"))?;
         }
 
         self.start_of_compressed_data = reader
             .stream_position()
-            .map_err(|_| Error::Read("compressed data offset"))?;
+            .map_err(|err| classify_read_error(err, "compressed data offset"))?;
         let end_of_compressed_data = self
             .start_of_compressed_data
             .checked_add(self.compressed_size)
@@ -344,7 +376,7 @@ impl AlzLocalFileHeader {
 
         reader
             .seek(SeekFrom::Start(end_of_compressed_data))
-            .map_err(|_| Error::Read("compressed data seek"))?;
+            .map_err(|err| classify_read_error(err, "compressed data seek"))?;
 
         Ok(())
     }
@@ -388,10 +420,10 @@ impl AlzLocalFileHeader {
         loop {
             let len = match decompressor.read(&mut buffer) {
                 Ok(len) => len,
-                Err(_) => {
+                Err(err) => {
                     debug!("Unable to decompress deflate data");
                     sink.abort();
-                    return Err(Error::Extract);
+                    return Err(classify_extraction_read_error(err, "compressed member data"));
                 }
             };
             if len == 0 {
@@ -436,7 +468,7 @@ impl AlzLocalFileHeader {
     ) -> Result<(), Error> {
         reader
             .seek(SeekFrom::Start(self.start_of_compressed_data))
-            .map_err(|_| Error::Extract)?;
+            .map_err(|err| classify_extraction_read_error(err, "compressed data seek"))?;
         let mut bounded = reader.take(self.compressed_size);
         let mut decompressor = DeflateDecoder::new(&mut bounded);
         self.extract_file_deflate_reader(&mut decompressor, sink, max_extracted_size)
@@ -454,16 +486,19 @@ impl AlzLocalFileHeader {
 
         reader
             .seek(SeekFrom::Start(self.start_of_compressed_data))
-            .map_err(|_| Error::Extract)?;
+            .map_err(|err| classify_extraction_read_error(err, "compressed data seek"))?;
         let mut bounded = reader.take(self.compressed_size);
         sink.begin(Some(&self.file_name))?;
         let mut output_size = 0u64;
         let mut buffer = [0u8; 8192];
         loop {
-            let len = bounded.read(&mut buffer).map_err(|_| {
-                sink.abort();
-                Error::Extract
-            })?;
+            let len = match bounded.read(&mut buffer) {
+                Ok(len) => len,
+                Err(err) => {
+                    sink.abort();
+                    return Err(classify_extraction_read_error(err, "stored member data"));
+                }
+            };
             if len == 0 {
                 break;
             }
@@ -508,7 +543,7 @@ impl AlzLocalFileHeader {
     ) -> Result<(), Error> {
         reader
             .seek(SeekFrom::Start(self.start_of_compressed_data))
-            .map_err(|_| Error::Extract)?;
+            .map_err(|err| classify_extraction_read_error(err, "compressed data seek"))?;
         let mut bounded = reader.take(self.compressed_size);
         let mut decompressor = DecoderReader::new(&mut bounded);
         self.extract_file_deflate_reader(&mut decompressor, sink, max_extracted_size)
@@ -664,10 +699,12 @@ pub struct Alz {
 impl<'aa> Alz {
     /* Check for the ALZ file header. */
     #[allow(clippy::unused_self)]
-    fn is_alz<R: Read>(&self, reader: &mut R) -> bool {
-        reader
-            .read_u32::<LittleEndian>()
-            .map_or(false, |n| ALZ_FILE_HEADER == n)
+    fn is_alz<R: Read>(&self, reader: &mut R) -> Result<bool, Error> {
+        match reader.read_u32::<LittleEndian>() {
+            Ok(n) => Ok(ALZ_FILE_HEADER == n),
+            Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => Ok(false),
+            Err(err) => Err(classify_read_error(err, "ALZ file header")),
+        }
     }
 
     fn parse_local_fileheader<R, F>(
@@ -786,7 +823,7 @@ impl<'aa> Alz {
                 .ok_or(Error::Parse("Invalid compressed data length"))?;
             reader
                 .seek(SeekFrom::Start(data_end))
-                .map_err(|_| Error::Read("compressed data seek"))?;
+                .map_err(|err| classify_read_error(err, "compressed data seek"))?;
 
             match extraction_result {
                 Ok(()) => self.account_extracted(sink),
@@ -843,15 +880,21 @@ impl<'aa> Alz {
     }
 
     #[allow(clippy::unused_self)]
-    fn parse_central_directoryheader<R: Read>(&self, reader: &mut R) -> bool {
+    fn parse_central_directoryheader<R: Read>(
+        &self,
+        reader: &mut R,
+    ) -> Result<bool, Error> {
         /*
          * This is ignored in unalz (UnAlz.cpp ReadCentralDirectoryStructure).
          *
          * It actually reads 12 bytes, and I think it happens to work because EOF is hit on the next
          * read, which it does not consider an error.
          */
-        let ret = reader.read_u64::<LittleEndian>();
-        ret.is_ok()
+        match reader.read_u64::<LittleEndian>() {
+            Ok(_) => Ok(true),
+            Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => Ok(false),
+            Err(err) => Err(classify_read_error(err, "central directory header")),
+        }
     }
 
     #[must_use]
@@ -956,35 +999,35 @@ impl<'aa> Alz {
     {
         let source_len = reader
             .seek(SeekFrom::End(0))
-            .map_err(|_| Error::Read("source length"))?;
+            .map_err(|err| classify_read_error(err, "source length"))?;
         reader
             .seek(SeekFrom::Start(0))
-            .map_err(|_| Error::Read("source rewind"))?;
+            .map_err(|err| classify_read_error(err, "source rewind"))?;
 
         let mut alz: Self = Self::new();
         let mut filepos: usize = 1;
         let mut saw_end_marker = false;
         let mut stopped_early = false;
 
-        if !alz.is_alz(&mut reader) {
+        if !alz.is_alz(&mut reader)? {
             return Err(Error::Parse("No ALZ file header"));
         }
 
         //What these bytes are supposed to be in unspecified, but they need to be there.
-        let ret = reader.read_u32::<LittleEndian>();
-        if ret.is_err() {
-            return Err(Error::Parse("Error reading uint32 from file"));
-        }
+        reader
+            .read_u32::<LittleEndian>()
+            .map_err(|err| classify_read_error(err, "ALZ header padding"))?;
 
         loop {
             let sig = match reader.read_u32::<LittleEndian>() {
                 Ok(sig) => sig,
-                Err(_) => {
+                Err(err) if err.kind() == io::ErrorKind::UnexpectedEof => {
                     if !stopped_early {
                         alz.parse_error = true;
                     }
                     break;
                 }
+                Err(err) => return Err(classify_read_error(err, "archive signature")),
             };
 
             match sig {
@@ -1002,6 +1045,9 @@ impl<'aa> Alz {
                             break;
                         }
                         Err(Error::Alloc) => return Err(Error::Alloc),
+                        Err(err @ (Error::Read(_)
+                        | Error::ReadFailure(_)
+                        | Error::Timeout(_))) => return Err(err),
                         Err(err) => {
                             if filepos == 1 {
                                 return Err(err);
@@ -1015,8 +1061,9 @@ impl<'aa> Alz {
                     continue;
                 }
                 ALZ_CENTRAL_DIRECTORY_HEADER => {
-                    if alz.parse_central_directoryheader(&mut reader) {
-                        continue;
+                    match alz.parse_central_directoryheader(&mut reader)? {
+                        true => continue,
+                        false => {}
                     }
                 }
                 ALZ_END_OF_CENTRAL_DIRECTORY_HEADER => {
@@ -1050,6 +1097,42 @@ impl<'aa> Alz {
 mod tests {
     use super::*;
     use std::io::Write;
+
+    struct FmapFailureReader {
+        inner: Cursor<Vec<u8>>,
+        fail_at: u64,
+    }
+
+    impl Read for FmapFailureReader {
+        fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+            if buf.is_empty() {
+                return Ok(0);
+            }
+
+            let position = self.inner.position();
+            if position >= self.fail_at {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    crate::fmap::Error::ReadFailure(
+                        usize::try_from(position).unwrap(),
+                        buf.len(),
+                        self.inner.get_ref().len(),
+                    ),
+                ));
+            }
+
+            let available = usize::try_from(self.fail_at - position)
+                .unwrap()
+                .min(buf.len());
+            self.inner.read(&mut buf[..available])
+        }
+    }
+
+    impl Seek for FmapFailureReader {
+        fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+            self.inner.seek(position)
+        }
+    }
 
     fn append_local_file(
         alz: &mut Vec<u8>,
@@ -1128,6 +1211,50 @@ mod tests {
             max_total_size: u64::MAX,
             max_files_remaining: usize::MAX,
         }
+    }
+
+    #[test]
+    fn reader_stream_preserves_in_range_header_read_failure() {
+        let reader = FmapFailureReader {
+            inner: Cursor::new(ALZ_FILE_HEADER.to_le_bytes().to_vec()),
+            fail_at: 0,
+        };
+        let mut files = Vec::new();
+
+        let result = Alz::from_reader_with_filter_stream(
+            reader,
+            |_| AlzExtractionDecision::Extract(extraction_limits()),
+            &mut files,
+        );
+
+        assert!(matches!(result, Err(Error::ReadFailure("ALZ file header"))));
+    }
+
+    #[test]
+    fn reader_stream_preserves_in_range_member_read_failure() {
+        const ALZ_COMP_NOCOMP: u8 = 0;
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&ALZ_FILE_HEADER.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        append_local_file(&mut bytes, "reader.txt", ALZ_COMP_NOCOMP, 4, b"read");
+        let member_data_start = u64::try_from(bytes.len() - 4).unwrap();
+        bytes.extend_from_slice(&ALZ_END_OF_CENTRAL_DIRECTORY_HEADER.to_le_bytes());
+
+        let reader = FmapFailureReader {
+            inner: Cursor::new(bytes),
+            fail_at: member_data_start,
+        };
+        let mut files = Vec::new();
+
+        let result = Alz::from_reader_with_filter_stream(
+            reader,
+            |_| AlzExtractionDecision::Extract(extraction_limits()),
+            &mut files,
+        );
+
+        assert!(matches!(result, Err(Error::ReadFailure("stored member data"))));
+        assert!(files.is_empty());
     }
 
     #[test]
