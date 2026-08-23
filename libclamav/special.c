@@ -51,10 +51,20 @@ int cli_check_mydoom_log(cli_ctx *ctx)
     uint32_t record[16];
     const uint32_t *ptr;
     uint32_t check, key;
-    fmap_t *map         = ctx->fmap;
-    unsigned int blocks = map->len / (8 * 4);
+    fmap_t *map;
+    unsigned int blocks;
 
     cli_dbgmsg("in cli_check_mydoom_log()\n");
+    if (ctx == NULL) {
+        cli_dbgmsg("Mydoom log detector: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "Mydoom log detector input map is unavailable");
+        return CL_EPARSE;
+    }
+    blocks = map->len / (8 * 4);
     if (blocks < 2)
         return CL_CLEAN;
     if (blocks > 5)

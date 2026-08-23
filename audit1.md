@@ -6674,3 +6674,12 @@ explicit incomplete result, while a null context remains an argument error.
 Focused direct-entry regressions cover both paths; compiled encoded-document
 and archive corpora, sanitizer, and Sonic1 qualification remain release
 gates.
+
+## Mydoom detector missing-map admission — 2026-08-23
+
+The Mydoom log detector was the remaining standalone raw-detector entry that
+initialized `ctx->fmap` before validating the scan context. It now reports an
+explicit incomplete result for an unavailable input map, while a null context
+remains an argument error. A focused direct-detector regression is
+registered; compiled detector corpus, raw-dispatch, sanitizer, and Sonic1
+qualification remain release gates.
