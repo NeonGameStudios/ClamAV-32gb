@@ -2090,3 +2090,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   nonzero checksum cannot shift the next-header boundary; retain exact-EOF,
   callback-fault, malformed-container, sanitizer, and Sonic1 qualification as
   release gates.
+
+## RIFF declared-container boundary accounting — 2026-08-23
+
+- Bound RIFF root and nested `LIST` traversal to declared container ranges,
+  including padding and coordinate overflow checks; retain empty-list,
+  malformed-range, callback-fault, sanitizer, and Sonic1 qualification as
+  release gates.

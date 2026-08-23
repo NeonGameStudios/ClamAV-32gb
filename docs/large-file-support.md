@@ -2877,6 +2877,15 @@ results when the checksum cannot be consumed. The focused exact-EOF regression
 is recorded in the source evidence; compiled TNEF corpus, sanitizer, and
 Sonic1 qualification remain open.
 
+## RIFF declared-container boundary accounting — 2026-08-23
+
+RIFF exploit inspection now honors the root RIFF size and each nested `LIST`
+chunk's declared payload range. Child headers cannot escape their containing
+list into a sibling or overlay, and padding/coordinate overflow is explicitly
+incomplete. The focused empty-list boundary regression is recorded in the
+source evidence; compiled RIFF corpus, fault injection, sanitizer, and Sonic1
+qualification remain open.
+
 ## RTF split reserved-field accounting — 2026-08-23
 
 When an embedded RTF object’s eight-byte reserved field crosses an 8 KiB fmap

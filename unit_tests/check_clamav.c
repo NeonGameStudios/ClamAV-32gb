@@ -16640,7 +16640,7 @@ START_TEST(test_riff_chunk_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {
         'R', 'I', 'F', 'F',
-        0x00, 0x00, 0x00, 0x00,
+        0x0c, 0x00, 0x00, 0x00,
         'A', 'C', 'O', 'N',
         'a', 'n', 'i', 'h',
         0x24, 0x00, 0x00, 0x00,
@@ -24628,7 +24628,7 @@ START_TEST(test_riff_truncated_chunk_is_fail_visible)
 {
     static const uint8_t truncated_chunk[] = {
         'R', 'I', 'F', 'F',
-        0x00, 0x00, 0x00, 0x00,
+        0x0c, 0x00, 0x00, 0x00,
         'A', 'C', 'O', 'N',
     };
     cli_ctx ctx;
@@ -24642,6 +24642,32 @@ START_TEST(test_riff_truncated_chunk_is_fail_visible)
     ck_assert_int_eq(cli_check_riff_exploit(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_riff_list_respects_declared_boundary)
+{
+    static const uint8_t input[] = {
+        'R', 'I', 'F', 'F',
+        0x10, 0x00, 0x00, 0x00, /* ACON + one empty LIST chunk */
+        'A', 'C', 'O', 'N',
+        'L', 'I', 'S', 'T',
+        0x04, 0x00, 0x00, 0x00, /* list-type only; no child chunk */
+        'I', 'N', 'F', 'O'
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_check_riff_exploit(&ctx), CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
 }
@@ -25600,6 +25626,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tiff, test_tiff_ifd_cursor_does_not_wrap_above_uint32);
 #endif
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
+    tcase_add_test(tc_cl, test_riff_list_respects_declared_boundary);
     tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_required_read_failure_is_fail_visible);

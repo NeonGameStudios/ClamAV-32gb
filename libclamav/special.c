@@ -152,7 +152,8 @@ static const void *riff_need_off(cli_ctx *ctx, off_t offset, size_t length, cl_e
     return ptr;
 }
 
-static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_level, cl_error_t *read_status)
+static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_level, uint64_t limit,
+                           cl_error_t *read_status)
 {
     cl_error_t time_status;
     uint32_t cache_buf;
@@ -160,6 +161,7 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
     const uint32_t *buf;
     uint32_t chunk_size;
     uint64_t next_offset;
+    uint64_t list_end;
     off_t cur_offset = *offset;
     fmap_t *map      = ctx->fmap;
 
@@ -170,6 +172,13 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
     if (rec_level > 1000) {
         cli_dbgmsg("riff_read_chunk: recursion level exceeded\n");
         cli_mark_scan_incomplete(ctx, "RIFF inspection exceeded the nested-list limit");
+        return CL_EPARSE;
+    }
+
+    if (cur_offset < 0 || (uint64_t)cur_offset > limit || 8 > limit - (uint64_t)cur_offset) {
+        cli_mark_scan_incomplete(ctx, "RIFF chunk header exceeded its containing range");
+        if (read_status != NULL)
+            *read_status = CL_EPARSE;
         return CL_EPARSE;
     }
 
@@ -185,16 +194,24 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
     chunk_size = riff_endian_convert_32(cache_buf, big_endian);
 
     next_offset = (uint64_t)cur_offset + chunk_size;
-    if (next_offset < (uint64_t)cur_offset || next_offset > map->len) {
+    if (next_offset < (uint64_t)cur_offset || next_offset > limit || next_offset > map->len) {
         cli_mark_scan_incomplete(ctx, "RIFF chunk data was truncated");
         return CL_EPARSE;
     }
     if (chunk_size & 1) {
+        if (next_offset == UINT64_MAX) {
+            cli_mark_scan_incomplete(ctx, "RIFF chunk padding coordinate overflowed");
+            return CL_EPARSE;
+        }
         next_offset++;
-        if (next_offset > map->len) {
+        if (next_offset > limit || next_offset > map->len) {
             cli_mark_scan_incomplete(ctx, "RIFF chunk padding was truncated");
             return CL_EPARSE;
         }
+    }
+    if (next_offset > (uint64_t)INT64_MAX) {
+        cli_mark_scan_incomplete(ctx, "RIFF chunk coordinate exceeded the supported range");
+        return CL_EPARSE;
     }
     *offset = (off_t)next_offset;
 
@@ -216,8 +233,20 @@ static int riff_read_chunk(cli_ctx *ctx, off_t *offset, int big_endian, int rec_
             cli_mark_scan_incomplete(ctx, "RIFF list type was truncated");
             return (*read_status == CL_EREAD) ? CL_EREAD : CL_EPARSE;
         }
+        list_end = (uint64_t)cur_offset + chunk_size;
         *offset = cur_offset + 4;
-        return riff_read_chunk(ctx, offset, big_endian, ++rec_level, read_status);
+        while ((uint64_t)*offset < list_end) {
+            int child_ret = riff_read_chunk(ctx, offset, big_endian, rec_level + 1, list_end, read_status);
+
+            if (child_ret != 1)
+                return child_ret;
+        }
+        if ((uint64_t)*offset != list_end) {
+            cli_mark_scan_incomplete(ctx, "RIFF list contents did not end at the declared boundary");
+            return CL_EPARSE;
+        }
+        *offset = (off_t)next_offset;
+        return 1;
     }
 
     /* FIXME: WTF!?
@@ -236,6 +265,8 @@ int cli_check_riff_exploit(cli_ctx *ctx)
     cl_error_t read_status = CL_SUCCESS;
     off_t offset;
     fmap_t *map;
+    uint32_t riff_size_raw;
+    uint64_t riff_end;
 
     cli_dbgmsg("in cli_check_riff_exploit()\n");
 
@@ -272,10 +303,24 @@ int cli_check_riff_exploit(cli_ctx *ctx)
         return 0;
     }
 
+    memcpy(&riff_size_raw, &buf[1], sizeof(riff_size_raw));
+    riff_end = 8U + riff_endian_convert_32(riff_size_raw, big_endian);
+    if (riff_end < 12U || riff_end > map->len) {
+        cli_mark_scan_incomplete(ctx, "RIFF container range was truncated");
+        return CL_EPARSE;
+    }
+
     offset = 4 * 3;
-    do {
-        retval = riff_read_chunk(ctx, &offset, big_endian, 1, &read_status);
-    } while (retval == 1);
+    if ((uint64_t)offset < riff_end) {
+        do {
+            retval = riff_read_chunk(ctx, &offset, big_endian, 1, riff_end, &read_status);
+        } while (retval == 1 && (uint64_t)offset < riff_end);
+
+        if (retval == 1 && (uint64_t)offset == riff_end)
+            retval = 0;
+    } else {
+        retval = 0;
+    }
 
     return retval;
 }

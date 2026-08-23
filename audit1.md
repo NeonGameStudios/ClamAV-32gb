@@ -1089,6 +1089,18 @@ in its intended state and that the resulting malformed embedded object stays
 an explicit incomplete parse. Compiled RTF/OLE, sanitizer, and Sonic1 corpus
 qualification remain release gates.
 
+## RIFF declared-container boundary accounting — 2026-08-23
+
+The RIFF exploit walk previously recursed through a `LIST` chunk without
+limiting child headers to that list's declared payload, and it used the whole
+fmap rather than the root RIFF size as the top-level boundary. A valid empty
+list could therefore make the detector inspect the next sibling or overlay as
+if it were a child. The walk now validates the root range, bounds every child
+to its containing list, accounts for padding and coordinate overflow, and
+requires each list walk to finish exactly at its declared end. A focused empty
+list regression covers the boundary; compiled RIFF corpus, fault injection,
+sanitizer, and Sonic1 qualification remain release gates.
+
 ## Fmap hash deadline coverage — 2026-08-22
 
 Internal scan and cache callers now use a context-aware fmap hash helper that
