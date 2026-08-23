@@ -5777,3 +5777,15 @@ out-of-range requests remain format/incomplete results. A focused CWS
 regression covers the one-byte-final-prefix fault, while the existing
 fully-in-range callback regression remains unchanged. Compiled SWF corpus,
 sanitizer, and Sonic1 qualification remain open.
+
+## MSPack clipped decoder-read classification — 2026-08-23
+
+The bundled MSPack fmap bridge previously set its operational-read sentinel
+for every fmap_readn() failure. Since fmap_readn() clips requests that cross
+EOF, a callback failure while servicing that clipped prefix was misclassified
+as CL_EREAD instead of decoder truncation. The bridge now returns decoder EOF
+semantics for clipped requests and retains CL_EREAD only for fully in-range
+callback failures. A focused CAB fixture reaches a folder read beginning at
+the final byte and verifies that the result remains CL_EFORMAT; the existing
+fully in-range callback-fault regression remains unchanged. Compiled CAB/CHM
+corpus, sanitizer, and Sonic1 qualification remain open.

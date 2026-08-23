@@ -1688,3 +1688,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   crosses the fmap boundary as truncated SWF input rather than `CL_EREAD`;
   retain the distinct in-range callback-fault regression and compiled SWF
   corpus, sanitizer, and Sonic1 qualification gates.
+
+## MSPack clipped decoder-read classification — 2026-08-23
+
+- Preserve decoder truncation semantics when a CAB/CHM fmap request crosses
+  EOF and its clipped backing read fails, while retaining CL_EREAD for
+  fully in-range callback faults; retain compiled CAB/CHM corpus, sanitizer,
+  and Sonic1 qualification gates.

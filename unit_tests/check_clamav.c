@@ -19412,6 +19412,16 @@ static const void *mspack_targeted_read_failure(fmap_t *map, size_t at, size_t l
     return (const uint8_t *)map->data + at;
 }
 
+static const void *mspack_clipped_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 36U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 #ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
 struct mspack_system;
 struct mscab_decompressor;
@@ -19592,6 +19602,44 @@ START_TEST(test_mspack_decoder_read_failure_is_fail_visible)
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB archive header could not be inspected completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_mspack_clipped_read_failure_is_truncation)
+{
+    uint8_t data[37] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memcpy(data, "MSCF", 4);
+    mspack_test_write_u32(data + 8, sizeof(data));
+    mspack_test_write_u32(data + 16, 36U);
+    data[24] = 3U;
+    data[25] = 1U;
+    mspack_test_write_u16(data + 26, 1U);
+    mspack_test_write_u16(data + 28, 1U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need  = mspack_clipped_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    /* The CAB header fits, but the first folder request starts at byte 36
+     * and crosses EOF. A callback failure for that clipped request is a
+     * truncated cabinet, not an in-range callback failure. */
+    ret = cli_scanmscab(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "CAB archive could not be opened for inspection");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -23617,6 +23665,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mspack_decoder_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_mspack_clipped_read_failure_is_truncation);
     tcase_add_test(tc_cl, test_mspack_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);

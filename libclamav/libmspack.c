@@ -218,12 +218,19 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
             return -1;
         }
 
+        /* fmap_readn() clips requests that cross the end of the map. Keep
+         * that distinction: a callback failure for the clipped prefix is
+         * decoder EOF/truncation, while a failure for a fully contained
+         * request is an operational read failure. */
+        bool request_in_range = offset <= mspack_handle->fmap->len &&
+                                (size_t)bytes <= mspack_handle->fmap->len - offset;
+
         count = fmap_readn(mspack_handle->fmap, buffer, offset, (size_t)bytes);
         if (count == (size_t)-1) {
-            if (mspack_handle->system_ex != NULL)
+            if (request_in_range && mspack_handle->system_ex != NULL)
                 mspack_handle->system_ex->read_failure = true;
             cli_dbgmsg("%s() %d requested %d bytes, read failed (-1)\n", __func__, __LINE__, bytes);
-            return -1;
+            return request_in_range ? -1 : 0;
         } else if ((int)count < bytes) {
             cli_dbgmsg("%s() %d requested %d bytes, read %zu bytes\n", __func__, __LINE__, bytes, count);
         }
