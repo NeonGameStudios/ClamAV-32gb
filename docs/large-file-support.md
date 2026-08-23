@@ -6381,3 +6381,23 @@ ASan/UBSan executions passed. The focused writer harness also verifies exact
 output and one-byte-short file and temporary-budget failures. The former
 `autoit-ea06-script-over-1g` exception is removed; compiled corpus and
 supported-build Sonic1 qualification remain release gates.
+
+## EGG oversized extra-field bounded traversal — 2026-08-23
+
+EGG no longer rejects every archive or file extra field above the 1 GiB
+individual-allocation ceiling. Each declared payload span is first validated
+against the containing fmap without requesting it as one mapping. Dummy,
+solid, split, unknown, and other skippable fields advance directly across the
+validated span. Windows/POSIX metadata reads only its fixed structure, and
+encryption metadata selects a bounded method-specific prefix of at most 29
+bytes while preserving the format's header-inclusive size accounting.
+
+The index parser also replaced its unaligned 16/32-bit pointer loads with
+ClamAV's safe little-endian readers. A sparse logical-map regression covers
+archive and file dummy fields, AES metadata, and Windows metadata with payloads
+more than 1 GiB without allocating the holes; its largest contiguous request
+is 21 bytes. The same production paths pass normal and ASan/UBSan harnesses.
+The former broad `egg-extra-field-over-1g` exception is replaced by
+`egg-string-metadata-over-1g`: archive/file comments and filenames still use
+legacy contiguous UTF-8 string interfaces. Compiled EGG corpus and
+supported-build Sonic1 qualification remain release gates.

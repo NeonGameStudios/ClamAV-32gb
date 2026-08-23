@@ -424,6 +424,22 @@ static const uint8_t* egg_read_extra_range(egg_handle* handle, size_t offset, si
                           "EGG extra-field data could not be read completely");
 }
 
+static bool egg_extra_span_present(egg_handle* handle, size_t offset, size_t length, cl_error_t* status)
+{
+    if (handle == NULL || handle->map == NULL || offset > handle->map->len ||
+        length > handle->map->len - offset) {
+        if (status != NULL)
+            *status = CL_EPARSE;
+        if (handle != NULL && handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG extra-field data is truncated");
+        return false;
+    }
+
+    if (status != NULL)
+        *status = CL_SUCCESS;
+    return true;
+}
+
 #define EGG_VALIDATE_HANDLE(h) \
     ((!handle || !handle->map || (handle->offset > handle->map->len)) ? CL_EARG : CL_SUCCESS)
 
@@ -648,6 +664,53 @@ done:
     return status;
 }
 
+static cl_error_t egg_parse_encrypt_header_bounded(egg_handle* handle, size_t offset, size_t size,
+                                                   egg_encrypt** encryptInfo)
+{
+    const uint8_t* index;
+    const encrypt_header* header;
+    size_t required;
+    cl_error_t status = CL_EPARSE;
+
+    if (handle == NULL || encryptInfo == NULL || size < sizeof(encrypt_header))
+        return CL_EPARSE;
+    if (!egg_extra_span_present(handle, offset, size, &status))
+        return status;
+
+    index = egg_read_extra_range(handle, offset, sizeof(encrypt_header), &status);
+    if (index == NULL)
+        return status;
+
+    header   = (const encrypt_header*)index;
+    required = sizeof(encrypt_header);
+    switch (header->encrypt_method) {
+        case ENCRYPT_HEADER_ENCRYPT_METHOD_XOR:
+            required += sizeof(zip2_xor_keybase);
+            if (size != required)
+                return CL_EPARSE;
+            break;
+        case ENCRYPT_HEADER_ENCRYPT_METHOD_AES128:
+        case ENCRYPT_HEADER_ENCRYPT_METHOD_LEA128:
+            required += sizeof(aes_lea_128);
+            if (size < required)
+                return CL_EPARSE;
+            break;
+        case ENCRYPT_HEADER_ENCRYPT_METHOD_AES256:
+        case ENCRYPT_HEADER_ENCRYPT_METHOD_LEA256:
+            required += sizeof(aes_lea_256);
+            if (size < required)
+                return CL_EPARSE;
+            break;
+        default:
+            break;
+    }
+
+    index = egg_read_extra_range(handle, offset, required, &status);
+    if (index == NULL)
+        return status;
+    return egg_parse_encrypt_header(index, size, encryptInfo);
+}
+
 static cl_error_t egg_parse_comment_header(const uint8_t* index, size_t size, extra_field* extraField, char** commentInfo)
 {
     cl_error_t status = CL_EPARSE;
@@ -788,7 +851,7 @@ static cl_error_t egg_parse_block_headers(egg_handle* handle, egg_block** block)
         goto done;
     }
 
-    magic = le32_to_host(*((uint32_t*)index));
+    magic = (uint32_t)cli_readint32(index);
     if (EOFARC != magic) {
         cli_dbgmsg("egg_parse_block_headers: EOFARC missing after block header.  Found these bytes instead: %08x. (%s)\n", magic, getMagicHeaderName(magic));
         goto done;
@@ -859,6 +922,9 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
     extra_field* extraField = NULL;
     uint32_t magic          = 0;
     uint32_t size           = 0;
+    size_t size_field_size  = 0;
+    size_t payload_offset   = 0;
+    size_t payload_size     = 0;
 
     if (!handle) {
         cli_errmsg("egg_parse_archive_extra_field: Invalid args!\n");
@@ -892,9 +958,10 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
             goto done;
         }
 
-        size = le32_to_host(*(uint32_t*)index);
+        size = (uint32_t)cli_readint32(index);
 
         handle->offset += sizeof(uint32_t);
+        size_field_size = sizeof(uint32_t);
     } else {
         /* size is uint16_t */
         index = egg_read_extra_range(handle, handle->offset, sizeof(uint16_t), &status);
@@ -903,21 +970,31 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
             goto done;
         }
 
-        size = le16_to_host(*(uint16_t*)index);
+        size = (uint16_t)cli_readint16(index);
 
         handle->offset += sizeof(uint16_t);
+        size_field_size = sizeof(uint16_t);
     }
 
     cli_dbgmsg("egg_parse_archive_extra_field: extra_field->size:     %u\n", size);
 
-    if (size > CLI_MAX_ALLOCATION) {
-        cli_warnmsg("egg_parse_archive_extra_field: extra field exceeds bounded metadata limit\n");
-        status = CL_EMAXSIZE;
-        goto done;
+    magic          = le32_to_host(extraField->magic);
+    payload_offset = handle->offset;
+    payload_size   = size;
+    if (magic == ENCRYPT_HEADER_MAGIC) {
+        size_t header_size = sizeof(extra_field) + size_field_size;
+
+        if (payload_size < header_size) {
+            cli_warnmsg("egg_parse_archive_extra_field: encryption header size underflow\n");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        payload_size -= header_size;
     }
+    if (!egg_extra_span_present(handle, payload_offset, payload_size, &status))
+        goto done;
 
-    magic = le32_to_host(extraField->magic);
-
+    status = CL_EFORMAT;
     switch (magic) {
         case SOLID_COMPRESSION_MAGIC: {
             /*
@@ -957,10 +1034,10 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
             handle->bSplit = 1;
             cli_warnmsg("egg_parse_archive_extra_field: Split archive. Split archives are single archives split into multiple .egg volumes.\n");
 
-            if (sizeof(split_compression) != size) {
-                cli_dbgmsg("egg_parse_archive_extra_field: size in extra_field is different than size of split_compression (%zu != %u).\n", sizeof(split_compression), size);
+            if (sizeof(split_compression) != payload_size) {
+                cli_dbgmsg("egg_parse_archive_extra_field: size in extra_field is different than size of split_compression (%zu != %zu).\n", sizeof(split_compression), payload_size);
             } else {
-                index = egg_read_extra_range(handle, handle->offset, sizeof(split_compression), &status);
+                index = egg_read_extra_range(handle, payload_offset, sizeof(split_compression), &status);
                 if (!index) {
                     cli_dbgmsg("egg_parse_archive_extra_field: File buffer too small to contain split compression header.\n");
                     goto done;
@@ -986,25 +1063,8 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
                 goto done;
             }
 
-            /*
-             * Fudge factor.
-             * The documentation is hazy about how the encrypt header works.
-             * From testing, it seems that for encrypted files, the size in the extra_field includes the size OF the extra field.
-             */
-            if (size < sizeof(extra_field) + sizeof(uint16_t)) {
-                cli_warnmsg("egg_parse_archive_extra_field: encryption header size underflow\n");
-                status = CL_EFORMAT;
-                goto done;
-            }
-            size -= sizeof(extra_field) + sizeof(uint16_t);
-
-            index = egg_read_extra_range(handle, handle->offset, size, &status);
-            if (!index) {
-                cli_errmsg("egg_parse_archive_extra_field: File buffer too small to contain encryption headers.\n");
-                goto done;
-            }
-
-            if (CL_SUCCESS != egg_parse_encrypt_header(index, size, &handle->encrypt)) {
+            if (CL_SUCCESS != (status = egg_parse_encrypt_header_bounded(handle, payload_offset,
+                                                                         payload_size, &handle->encrypt))) {
                 cli_errmsg("egg_parse_archive_extra_field: Failed to parse encryption headers.\n");
                 goto done;
             }
@@ -1015,7 +1075,7 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
         }
     }
 
-    handle->offset += size;
+    handle->offset = payload_offset + payload_size;
 
     status = CL_SUCCESS;
 
@@ -1110,6 +1170,9 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
     extra_field* extraField = NULL;
     uint32_t magic          = 0;
     uint32_t size           = 0;
+    size_t size_field_size  = 0;
+    size_t payload_offset   = 0;
+    size_t payload_size     = 0;
 
     if (!handle || !eggFile) {
         cli_errmsg("egg_parse_file_extra_field: Invalid args!\n");
@@ -1143,9 +1206,10 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
             goto done;
         }
 
-        size = le32_to_host(*(uint32_t*)index);
+        size = (uint32_t)cli_readint32(index);
 
         handle->offset += sizeof(uint32_t);
+        size_field_size = sizeof(uint32_t);
     } else {
         /* size is uint16_t */
         index = egg_read_extra_range(handle, handle->offset, sizeof(uint16_t), &status);
@@ -1154,21 +1218,39 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
             goto done;
         }
 
-        size = le16_to_host(*(uint16_t*)index);
+        size = (uint16_t)cli_readint16(index);
 
         handle->offset += sizeof(uint16_t);
+        size_field_size = sizeof(uint16_t);
     }
 
     cli_dbgmsg("egg_parse_file_extra_field: extra_field->size:     %u\n", size);
 
-    if (size > CLI_MAX_ALLOCATION) {
-        cli_warnmsg("egg_parse_file_extra_field: extra field exceeds bounded metadata limit\n");
+    magic          = le32_to_host(extraField->magic);
+    payload_offset = handle->offset;
+    payload_size   = size;
+    if (magic == ENCRYPT_HEADER_MAGIC) {
+        size_t header_size = sizeof(extra_field) + size_field_size;
+
+        if (payload_size < header_size) {
+            cli_warnmsg("egg_parse_file_extra_field: encryption header size underflow\n");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        payload_size -= header_size;
+    }
+    if (!egg_extra_span_present(handle, payload_offset, payload_size, &status))
+        goto done;
+    if ((magic == FILENAME_HEADER_MAGIC || magic == COMMENT_HEADER_MAGIC) &&
+        payload_size > CLI_MAX_ALLOCATION) {
+        cli_warnmsg("egg_parse_file_extra_field: string metadata exceeds bounded materialization limit\n");
+        if (handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG filename or comment exceeds the bounded string-metadata limit");
         status = CL_EMAXSIZE;
         goto done;
     }
 
-    magic = le32_to_host(extraField->magic);
-
+    status = CL_EFORMAT;
     switch (magic) {
         case FILENAME_HEADER_MAGIC: {
             /*
@@ -1176,7 +1258,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
              */
             uint16_t codepage       = 0; /* Windows code page https://docs.microsoft.com/en-us/windows/desktop/Intl/code-page-identifiers) */
             uint32_t name_size      = 0;
-            uint32_t remaining_size = size;
+            uint32_t remaining_size = (uint32_t)payload_size;
 
             char* name_utf8       = NULL;
             size_t name_utf8_size = 0;
@@ -1186,7 +1268,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 goto done;
             }
 
-            index = egg_read_extra_range(handle, handle->offset, size, &status);
+            index = egg_read_extra_range(handle, payload_offset, payload_size, &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain name fields.\n");
                 goto done;
@@ -1214,10 +1296,9 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                     cli_dbgmsg("egg_parse_file_extra_field: size too small for locale information.\n");
                     goto done;
                 }
-                codepage = *(uint16_t*)index;
+                codepage = (uint16_t)cli_readint16(index);
                 cli_dbgmsg("egg_parse_file_extra_field: filename_header->codepage:       %u\n", codepage);
                 index += sizeof(uint16_t);
-                handle->offset += sizeof(uint16_t);
                 remaining_size -= sizeof(uint16_t);
             }
 
@@ -1228,10 +1309,9 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                     cli_dbgmsg("egg_parse_file_extra_field: size too small for parent_path_id.\n");
                     goto done;
                 }
-                eggFile->filename.parent_path_id = *(uint16_t*)index;
+                eggFile->filename.parent_path_id = (uint32_t)cli_readint32(index);
                 cli_dbgmsg("egg_parse_file_extra_field: filename_header->parent_path_id: %u\n", eggFile->filename.parent_path_id);
                 index += sizeof(uint32_t);
-                handle->offset += sizeof(uint32_t);
                 remaining_size -= sizeof(uint32_t);
             }
 
@@ -1281,13 +1361,13 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
             cl_error_t retval = CL_EPARSE;
             char* comment     = NULL;
 
-            index = egg_read_extra_range(handle, handle->offset, size, &status);
+            index = egg_read_extra_range(handle, payload_offset, payload_size, &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain comment fields.\n");
                 goto done;
             }
 
-            if (CL_SUCCESS != (retval = egg_parse_comment_header(index, size, extraField, &comment))) {
+            if (CL_SUCCESS != (retval = egg_parse_comment_header(index, payload_size, extraField, &comment))) {
                 cli_dbgmsg("egg_parse_file_extra_field: Issue parsing comment header. Error code: %u\n", retval);
                 status = retval;
                 goto done;
@@ -1322,25 +1402,8 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 goto done;
             }
 
-            /*
-             * Fudge factor.
-             * The documentation is hazy about how the encrypt header works.
-             * From testing, it seems that for encrypted files, the size in the extra_field includes the size OF the extra field.
-             */
-            if (size < sizeof(extra_field) + sizeof(uint16_t)) {
-                cli_warnmsg("egg_parse_file_extra_field: encryption header size underflow\n");
-                status = CL_EFORMAT;
-                goto done;
-            }
-            size -= sizeof(extra_field) + sizeof(uint16_t);
-
-            index = egg_read_extra_range(handle, handle->offset, size, &status);
-            if (!index) {
-                cli_errmsg("egg_parse_file_extra_field: File buffer too small to contain encryption fields.\n");
-                goto done;
-            }
-
-            if (CL_SUCCESS != egg_parse_encrypt_header(index, size, &eggFile->encrypt)) {
+            if (CL_SUCCESS != (status = egg_parse_encrypt_header_bounded(handle, payload_offset,
+                                                                         payload_size, &eggFile->encrypt))) {
                 cli_errmsg("egg_parse_file_extra_field: Failed to parse encrypt_header.\n");
                 goto done;
             }
@@ -1354,11 +1417,16 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 goto done;
             }
 
-            if (sizeof(windows_file_information) != size) {
+            if (payload_size < sizeof(windows_file_information)) {
+                cli_warnmsg("egg_parse_file_extra_field: windows_file_information is truncated by its declared size!\n");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            if (sizeof(windows_file_information) != payload_size) {
                 cli_warnmsg("egg_parse_file_extra_field: Invalid size of windows_file_information!\n");
             }
 
-            index = egg_read_extra_range(handle, handle->offset, sizeof(windows_file_information), &status);
+            index = egg_read_extra_range(handle, payload_offset, sizeof(windows_file_information), &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain windows info.\n");
                 goto done;
@@ -1379,11 +1447,16 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 goto done;
             }
 
-            if (sizeof(posix_file_information) != size) {
+            if (payload_size < sizeof(posix_file_information)) {
+                cli_warnmsg("egg_parse_file_extra_field: posix_file_information is truncated by its declared size!\n");
+                status = CL_EFORMAT;
+                goto done;
+            }
+            if (sizeof(posix_file_information) != payload_size) {
                 cli_warnmsg("egg_parse_file_extra_field: Invalid size of posix_file_information!\n");
             }
 
-            index = egg_read_extra_range(handle, handle->offset, sizeof(posix_file_information), &status);
+            index = egg_read_extra_range(handle, payload_offset, sizeof(posix_file_information), &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain posix info.\n");
                 goto done;
@@ -1415,7 +1488,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
         }
     }
 
-    handle->offset += size;
+    handle->offset = payload_offset + payload_size;
 
     status = CL_SUCCESS;
 
@@ -1508,7 +1581,7 @@ static cl_error_t egg_parse_file_headers(egg_handle* handle, egg_file** file)
             goto done;
         }
 
-        magic = le32_to_host(*((uint32_t*)index));
+        magic = (uint32_t)cli_readint32(index);
 
         if (EOFARC == magic) {
             /*
@@ -1662,7 +1735,7 @@ static cl_error_t egg_parse_archive_headers(egg_handle* handle)
             goto done;
         }
 
-        magic = le32_to_host(*((uint32_t*)index));
+        magic = (uint32_t)cli_readint32(index);
 
         if (EOFARC == magic) {
             /*
@@ -1788,7 +1861,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
             goto done;
         }
 
-        magic = le32_to_host(*((uint32_t*)index));
+        magic = (uint32_t)cli_readint32(index);
 
         if (EOFARC == magic) {
             /*
@@ -1914,7 +1987,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
                     goto done;
                 }
 
-                size = le32_to_host(*(uint32_t*)index);
+                size = (uint32_t)cli_readint32(index);
 
                 handle->offset += sizeof(uint32_t);
             } else {
@@ -1925,15 +1998,19 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
                     goto done;
                 }
 
-                size = le16_to_host(*(uint16_t*)index);
+                size = (uint16_t)cli_readint16(index);
 
                 handle->offset += sizeof(uint16_t);
             }
 
             cli_dbgmsg("cli_egg_open: archive comment extra_field->size:     %u\n", size);
 
+            if (!egg_extra_span_present(handle, handle->offset, size, &status))
+                goto done;
             if (size > CLI_MAX_ALLOCATION) {
-                cli_warnmsg("cli_egg_open: archive comment exceeds bounded metadata limit\n");
+                cli_warnmsg("cli_egg_open: archive comment exceeds bounded string-metadata limit\n");
+                if (handle->ctx != NULL)
+                    cli_mark_scan_incomplete(handle->ctx, "EGG archive comment exceeds the bounded string-metadata limit");
                 status = CL_EMAXSIZE;
                 goto done;
             }

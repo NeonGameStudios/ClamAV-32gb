@@ -1048,12 +1048,13 @@ EGG archive and file extra-field handlers accepted attacker-controlled
 windows. The encryption-header compatibility adjustment also subtracted its
 fixed overhead without first proving that the declared size contained it.
 
-The handlers now return an explicit `CL_EMAXSIZE` result above the global
-individual-allocation ceiling, and both encryption paths reject undersized
-headers before subtraction. The new
-`egg-extra-field-over-1g` capability entry records this deliberate
-parser-specific unsupported boundary. Compiled EGG, sanitizer, parser-corpus,
-and supported-build qualification remain open.
+At this checkpoint the handlers returned an explicit `CL_EMAXSIZE` result
+above the global individual-allocation ceiling, and both encryption paths
+rejected undersized headers before subtraction. The then-current
+`egg-extra-field-over-1g` capability entry recorded that broad boundary; the
+later bounded extra-field milestone narrows it to legacy filename/comment
+string materialization. Compiled EGG, sanitizer, parser-corpus, and
+supported-build qualification remain open.
 
 ## XAR subdocument streaming — 2026-08-23
 
@@ -6798,3 +6799,23 @@ temporary-budget cases. Source guards cover the bounded writer and reject the
 retired contiguous-output machinery. The
 `autoit-ea06-script-over-1g` capability exception is removed; compiled corpus
 and supported-build Sonic1 qualification remain release gates.
+
+## EGG oversized extra-field bounded traversal — 2026-08-23
+
+The archive and file extra-field parsers no longer apply a blanket 1 GiB
+materialization check. They validate the complete declared span arithmetically,
+then skip semantically unused payloads or read only the fixed structure needed
+for split, OS, and encryption metadata. Encryption parsing requests a
+method-specific prefix no larger than 29 bytes and accounts for either encoded
+size-field width before subtracting header-inclusive overhead. Fixed OS
+metadata rejects declared truncation before reading, while oversized trailing
+payload remains skippable.
+
+All unaligned index size/magic loads now use ClamAV's safe little-endian
+readers. The focused sparse regression represents four payloads above 1 GiB—
+archive/file dummy fields, AES metadata, and Windows metadata—without backing
+the holes and asserts bounded contiguous requests. An actual-production-source
+harness passed those paths normally and under ASan/UBSan. The broad
+`egg-extra-field-over-1g` exception is retired in favor of the narrower
+`egg-string-metadata-over-1g` boundary for legacy filename/comment strings.
+Compiled EGG corpus and supported-build Sonic1 qualification remain open.

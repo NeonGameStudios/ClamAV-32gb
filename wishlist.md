@@ -416,8 +416,10 @@
   in-range fmap backing-read failure (`CL_EREAD`) from an out-of-range or
   truncated coordinate (`CL_EPARSE`); add compiled ZIP callback-fault and
   parser-corpus qualification.
-- EGG metadata extra fields now reject sizes above the individual-allocation
-  ceiling explicitly, and encryption-header size subtraction is underflow-safe.
+- EGG skippable and fixed metadata extra fields now validate oversized spans
+  without mapping them contiguously; only legacy filename/comment string
+  materialization retains the individual-allocation ceiling, and encryption
+  size subtraction remains underflow-safe.
 - EGG archive indexing, block metadata traversal, and streamed decoder loops now
   honor the shared scan deadline; add compiled timeout-injection and production
   EGG corpus qualification.
@@ -2166,3 +2168,11 @@ and Sonic1 qualification as release gates.
   quota-accounted 64 KiB output window, overlapping input/output reservation
   accounting, and reservation-aware nested scanning. Retain compiled AutoIt
   corpus and supported-build Sonic1 qualification as release gates.
+
+## EGG oversized extra-field bounded traversal — 2026-08-23
+
+- Replace the blanket oversized-extra-field rejection with full-span
+  validation plus bounded fixed-prefix reads for skippable, OS, and encryption
+  metadata. Retain only legacy filename/comment strings as an explicit
+  contiguous-materialization boundary, with compiled EGG corpus and Sonic1
+  qualification still required.

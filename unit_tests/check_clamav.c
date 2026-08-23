@@ -16040,7 +16040,7 @@ START_TEST(test_egg_extra_field_admission_is_fail_visible)
     handle    = NULL;
     comments  = NULL;
     ncomments = 0;
-    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EMAXSIZE);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EPARSE);
     ck_assert_ptr_null(handle);
     cl_fmap_close(map);
 
@@ -16065,9 +16065,159 @@ START_TEST(test_egg_extra_field_admission_is_fail_visible)
     handle    = NULL;
     comments  = NULL;
     ncomments = 0;
-    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EMAXSIZE);
+    ck_assert_int_eq(cli_egg_open(map, &handle, &comments, &ncomments), CL_EPARSE);
     ck_assert_ptr_null(handle);
     cl_fmap_close(map);
+}
+END_TEST
+
+struct egg_sparse_extra_map {
+    uint8_t prefix[64];
+    size_t prefix_length;
+    size_t extra_offset;
+    size_t payload_offset;
+    uint8_t suffix[8];
+    size_t suffix_offset;
+    size_t max_request;
+};
+
+static const void *egg_sparse_extra_need(fmap_t *map, size_t at, size_t length, int lock)
+{
+    struct egg_sparse_extra_map *state = map->handle;
+
+    UNUSEDPARAM(lock);
+    if (state == NULL || length == 0 || at > map->len || length > map->len - at)
+        return NULL;
+    if (length > state->max_request)
+        state->max_request = length;
+    if (at <= state->prefix_length && length <= state->prefix_length - at)
+        return state->prefix + at;
+    if (at >= state->suffix_offset && at - state->suffix_offset <= sizeof(state->suffix) &&
+        length <= sizeof(state->suffix) - (at - state->suffix_offset))
+        return state->suffix + (at - state->suffix_offset);
+    return NULL;
+}
+
+static void egg_sparse_extra_map_init(fmap_t *map, struct egg_sparse_extra_map *state,
+                                      uint32_t payload_size, bool file_extra)
+{
+    size_t offset = 0;
+
+    memset(map, 0, sizeof(*map));
+    memset(state, 0, sizeof(*state));
+    zip_stream_write_u32(state->prefix + offset, 0x41474745U); /* EGG_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u16(state->prefix + offset, 0x0100U);
+    offset += 2;
+    zip_stream_write_u32(state->prefix + offset, 1U);
+    offset += 4;
+    zip_stream_write_u32(state->prefix + offset, 0U);
+    offset += 4;
+
+    if (file_extra) {
+        zip_stream_write_u32(state->prefix + offset, 0x08E28222U); /* EOFARC */
+        offset += 4;
+        zip_stream_write_u32(state->prefix + offset, 0x0A8590E3U); /* FILE_HEADER_MAGIC */
+        offset += 4;
+        zip_stream_write_u32(state->prefix + offset, 1U);
+        offset += 4;
+        zip_stream_write_u64(state->prefix + offset, 0U);
+        offset += 8;
+    }
+
+    state->extra_offset = offset;
+    zip_stream_write_u32(state->prefix + offset, 0x07463307U); /* DUMMY_HEADER_MAGIC */
+    offset += 4;
+    state->prefix[offset++] = 1U; /* EXTRA_FIELD_FLAGS_SIZE_IS_4BYTES */
+    zip_stream_write_u32(state->prefix + offset, payload_size);
+    offset += 4;
+
+    state->payload_offset = offset;
+    state->prefix_length = offset;
+    state->suffix_offset = offset + payload_size;
+    zip_stream_write_u32(state->suffix, 0x08E28222U);     /* header EOFARC */
+    zip_stream_write_u32(state->suffix + 4, 0x08E28222U); /* archive EOFARC */
+
+    map->data     = state->prefix;
+    map->handle   = state;
+    map->len      = state->suffix_offset + sizeof(state->suffix);
+    map->real_len = map->len;
+    map->need     = egg_sparse_extra_need;
+}
+
+START_TEST(test_egg_oversized_skippable_extra_fields_are_bounded)
+{
+    const uint32_t payload_size = (uint32_t)CLI_MAX_ALLOCATION + 4096U;
+    struct egg_sparse_extra_map state;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+
+    ck_assert_msg(CLI_MAX_ALLOCATION <= UINT32_MAX - 4096U,
+                  "test payload does not fit EGG's 32-bit extra-field size");
+
+    egg_sparse_extra_map_init(&map, &state, payload_size, false);
+    ck_assert_int_eq(cli_egg_open(&map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_ptr_null(comments);
+    ck_assert_uint_eq(ncomments, 0);
+    ck_assert_msg(state.max_request <= 14U,
+                  "archive extra-field parser requested %zu contiguous bytes", state.max_request);
+    cli_egg_close(handle);
+
+    handle = NULL;
+    egg_sparse_extra_map_init(&map, &state, payload_size, false);
+    zip_stream_write_u32(state.prefix + state.extra_offset, 0x08D1470FU); /* ENCRYPT_HEADER_MAGIC */
+    state.prefix[state.payload_offset] = 1U; /* ENCRYPT_HEADER_ENCRYPT_METHOD_AES128 */
+    memset(state.prefix + state.payload_offset + 1U, 0x5a, 20U);
+    state.prefix_length = state.payload_offset + 21U;
+    state.suffix_offset -= 9U; /* encrypted size includes the 5-byte header and 4-byte size */
+    map.len = state.suffix_offset + sizeof(state.suffix);
+    map.real_len = map.len;
+    ck_assert_int_eq(cli_egg_open(&map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_msg(state.max_request <= 21U,
+                  "archive encryption parser requested %zu contiguous bytes", state.max_request);
+    cli_egg_close(handle);
+
+    handle = NULL;
+    egg_sparse_extra_map_init(&map, &state, payload_size, true);
+    ck_assert_int_eq(cli_egg_open(&map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_ptr_null(comments);
+    ck_assert_uint_eq(ncomments, 0);
+    ck_assert_msg(state.max_request <= 16U,
+                  "file extra-field parser requested %zu contiguous bytes", state.max_request);
+    cli_egg_close(handle);
+
+    handle = NULL;
+    egg_sparse_extra_map_init(&map, &state, payload_size, true);
+    zip_stream_write_u32(state.prefix + state.extra_offset, 0x2C86950BU); /* WINDOWS_INFO_MAGIC */
+    memset(state.prefix + state.payload_offset, 0, 9U);
+    state.prefix_length = state.payload_offset + 9U;
+    ck_assert_int_eq(cli_egg_open(&map, &handle, &comments, &ncomments), CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_msg(state.max_request <= 16U,
+                  "file OS-info parser requested %zu contiguous bytes", state.max_request);
+    cli_egg_close(handle);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    handle = NULL;
+    egg_sparse_extra_map_init(&map, &state, payload_size, true);
+    zip_stream_write_u32(state.prefix + state.extra_offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    ctx.engine = &engine;
+    ctx.fmap   = &map;
+    ck_assert_int_eq(cli_egg_open_ex(&map, &handle, &comments, &ncomments, &ctx), CL_EMAXSIZE);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "EGG filename or comment exceeds the bounded string-metadata limit");
+    ck_assert_msg(state.max_request <= 16U,
+                  "oversized filename parser requested %zu contiguous bytes", state.max_request);
 }
 END_TEST
 
@@ -26196,6 +26346,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_egg_extra_field_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_egg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_extra_field_admission_is_fail_visible);
+    tcase_add_test(tc_cl, test_egg_oversized_skippable_extra_fields_are_bounded);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
     tcase_add_test(tc_cl, test_autoit_ea06_missing_member_is_fail_visible);
     tcase_add_test(tc_cl, test_autoit_time_limit_is_fail_visible);
