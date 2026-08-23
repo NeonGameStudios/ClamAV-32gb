@@ -72,6 +72,20 @@ static int icon_parse_error(struct ICON_ENV *icon_env, uint32_t *counter, const 
     return CL_EPARSE;
 }
 
+static int icon_map_read_error(struct ICON_ENV *icon_env, uint32_t *counter,
+                               size_t offset, size_t length,
+                               const char *range_reason, const char *read_reason)
+{
+    fmap_t *map = icon_env->ctx->fmap;
+
+    if (map != NULL && offset <= map->len && length <= map->len - offset) {
+        cli_mark_scan_incomplete(icon_env->ctx, read_reason);
+        return CL_EREAD;
+    }
+
+    return icon_parse_error(icon_env, counter, range_reason);
+}
+
 static int groupicon_scan_cb(void *ptr, uint32_t type, uint32_t name, uint32_t lang, uint32_t rva)
 {
     struct ICON_ENV *icon_env = ptr;
@@ -198,9 +212,14 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
     int err            = 0;
     cl_error_t status;
     fmap_t *map        = ctx->fmap;
-    const uint8_t *grp = fmap_need_off_once(map, cli_rawaddr(rva, peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size), 16);
+    size_t group_offset;
+    const uint8_t *grp = NULL;
 
-    if (grp && !err) {
+    group_offset = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size);
+    if (!err)
+        grp = fmap_need_off_once(map, group_offset, 16);
+
+    if (!err && grp) {
         uint32_t gsz = cli_readint32(grp + 4);
         if (gsz >= 6) {
             uint32_t icnt, raddr;
@@ -288,8 +307,12 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
                 return icon_parse_error(icon_env, NULL, "PE icon group data was outside the input map");
         } else
             return icon_parse_error(icon_env, NULL, "PE icon group header was truncated");
-    } else
+    } else if (err)
         return icon_parse_error(icon_env, NULL, "PE icon group resource was outside the input map");
+    else
+        return icon_map_read_error(icon_env, NULL, group_offset, 16,
+                                   "PE icon group resource was outside the input map",
+                                   "PE icon group resource could not be read completely");
 
     return icon_env->result;
 }
@@ -1432,9 +1455,12 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
     icoff = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, &err, map->len, peinfo->hdr_size);
 
     /* read the bitmap header */
-    if (err || !(rawimage = fmap_need_off_once(map, icoff, 4))) {
+    if (err)
         return icon_parse_error(icon_env, &icon_env->err_oof, "PE icon data offset was outside the input map");
-    }
+    if (!(rawimage = fmap_need_off_once(map, icoff, 4)))
+        return icon_map_read_error(icon_env, &icon_env->err_oof, icoff, 4,
+                                   "PE icon data offset was outside the input map",
+                                   "PE icon data offset could not be read completely");
 
     rva   = cli_readint32(rawimage);
     icoff = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, &err, map->len, peinfo->hdr_size);
@@ -1493,9 +1519,17 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
         case 4:
         case 8:
             /* HAVE PALETTE */
-            if (!(palette = fmap_need_off(map, icoff, (1 << depth) * sizeof(int))))
-                return icon_parse_error(icon_env, NULL, "PE icon palette was truncated");
-            icoff += (1 << depth) * sizeof(int);
+            {
+                size_t palette_size = (size_t)(1U << depth) * sizeof(int);
+
+                if (icoff > map->len || palette_size > map->len - icoff)
+                    return icon_parse_error(icon_env, NULL, "PE icon palette was truncated");
+                if (!(palette = fmap_need_off(map, icoff, palette_size))) {
+                    cli_mark_scan_incomplete(ctx, "PE icon palette could not be read completely");
+                    return CL_EREAD;
+                }
+                icoff += palette_size;
+            }
             /* for(j=0; j<pcolcnt; j++) */
             /* cli_dbgmsg("Palette[%u] = %08x\n", j, palette[j]); */
             break;
@@ -1512,10 +1546,22 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
 
     /* read the raw image */
 
-    if (!(rawimage = fmap_need_off_once(map, icoff, height * (scanlinesz + andlinesz)))) {
-        if (palette)
-            fmap_unneed_ptr(map, palette, (1 << depth) * sizeof(int));
-        return icon_parse_error(icon_env, NULL, "PE icon pixel data was truncated");
+    {
+        size_t line_size;
+        size_t pixel_size;
+
+        line_size = (size_t)scanlinesz + (size_t)andlinesz;
+        if (line_size != 0 && (size_t)height > SIZE_MAX / line_size)
+            return icon_parse_error(icon_env, NULL, "PE icon pixel data size overflow");
+        pixel_size = (size_t)height * line_size;
+        if (icoff > map->len || pixel_size > map->len - icoff)
+            return icon_parse_error(icon_env, NULL, "PE icon pixel data was truncated");
+        if (!(rawimage = fmap_need_off_once(map, icoff, pixel_size))) {
+            if (palette)
+                fmap_unneed_ptr(map, palette, (1 << depth) * sizeof(int));
+            cli_mark_scan_incomplete(ctx, "PE icon pixel data could not be read completely");
+            return CL_EREAD;
+        }
     }
     if (!(imagedata = cli_max_malloc((size_t)width * (size_t)height * sizeof(*imagedata)))) {
         if (palette)

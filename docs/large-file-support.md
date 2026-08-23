@@ -5818,3 +5818,13 @@ Regular-file on-access streams now require a successful rewind before sending
 preventing a stale descriptor position from producing a partial or unrelated
 scan; non-seekable non-regular inputs retain their existing behavior. Compiled
 read/seek fault injection, sanitizer, and Sonic1 qualification remain open.
+
+## PE icon nested-window read classification — 2026-08-23
+
+PE icon group headers, icon data pointers, palettes, and pixel windows now
+preflight their complete ranges before invoking fmap callbacks. Short ranges
+remain parse/incomplete results, while fully in-range callback failures remain
+`CL_EREAD` with explicit incomplete reasons. Pixel-window size arithmetic is
+checked before admission, and the intentionally tolerated broken 32-bit mask
+fallback remains unchanged. Compiled PE/icon corpus, sanitizer, and Sonic1
+qualification remain release gates.

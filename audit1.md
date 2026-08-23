@@ -5553,3 +5553,15 @@ returned as `CL_EREAD` with an explicit reason instead of bypassing sticky
 state; the focused callback regression also verifies that the map cannot be
 cached. Compiled scanner, sanitizer, production HWP3 corpus, and Sonic1
 qualification remain open.
+
+## PE icon nested-window read classification — 2026-08-23
+
+PE icon group headers, icon data pointers, palettes, and pixel windows now
+preflight their requested ranges before invoking fmap callbacks. A genuinely
+short range remains a parse/incomplete result, while a fully in-range callback
+failure remains `CL_EREAD` with an explicit incomplete reason. Pixel-window
+size multiplication is checked before the range request, and the intentionally
+tolerated broken 32-bit icon-mask fallback remains unchanged. A focused
+resource-tree regression covers callback failure at the group-header boundary.
+Compiled scanner, sanitizer, production PE/icon corpus, and Sonic1
+qualification remain open.

@@ -1540,3 +1540,12 @@ production RIFF corpus, and Sonic1 qualification as release gates.
   helper so in-range fmap callback failures remain `CL_EREAD` with sticky
   incomplete state and an explicit reason; retain compiled callback,
   sanitizer, production HWP3 corpus, and Sonic1 qualification as release gates.
+
+## PE icon nested-window read classification — 2026-08-23
+
+- Preflight PE icon group headers, icon data pointers, palettes, and pixel
+  windows, preserving parse results for short ranges and `CL_EREAD` for fully
+  in-range fmap callback failures; reject pixel-size arithmetic overflow while
+  retaining the documented broken 32-bit mask fallback; retain compiled
+  scanner, sanitizer, production PE/icon corpus, and Sonic1 qualification as
+  release gates.
