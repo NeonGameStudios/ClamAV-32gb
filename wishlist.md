@@ -1883,3 +1883,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Preserve initial PE icon-group header callback and range failures as explicit
   `CL_EREAD` or `CL_EPARSE` incomplete results; retain compiled icon corpus,
   sanitizer, and Sonic1 qualification as release gates.
+
+## ISO volume-descriptor terminator classification — 2026-08-23
+
+- Require a complete `0xFF/CD001` ISO volume-descriptor terminator and classify
+  missing, malformed, out-of-map, and callback-failed termination as explicit
+  incomplete results; retain compiled ISO/Joliet corpus, sanitizer, and Sonic1
+  qualification as release gates.

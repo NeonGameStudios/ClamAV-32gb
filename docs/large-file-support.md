@@ -6024,3 +6024,13 @@ failure (`CL_EREAD`) from an out-of-map coordinate (`CL_EPARSE`) before icon
 traversal can fall through as clean. The existing focused icon-group callback
 regression covers the corrected branch, while compiled icon corpus, sanitizer,
 and Sonic1 qualification remain release gates.
+
+## ISO volume-descriptor terminator classification — 2026-08-23
+
+ISO volume traversal now requires a complete `0xFF/CD001` terminator after the
+primary/secondary descriptor sequence. Missing, malformed, or out-of-map
+termination returns `CL_EPARSE`; an in-range fmap callback failure remains
+`CL_EREAD`, and the root directory is not scanned after an incomplete
+descriptor walk. Focused missing-terminator coverage is registered, while
+compiled ISO/Joliet corpus, sanitizer, and Sonic1 qualification remain release
+gates.

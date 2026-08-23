@@ -6103,3 +6103,15 @@ uses the same range/read classification as later icon windows, preserving
 coordinate. The existing focused icon-group fault regression now exercises the
 corrected branch; compiled icon corpus, sanitizer, and Sonic1 qualification
 remain open.
+
+## ISO volume-descriptor terminator classification — 2026-08-23
+
+The ISO descriptor walk previously stopped on a non-descriptor block or on an
+out-of-map request and continued into the root directory. A truncated image
+could therefore reach a clean empty-directory result without proving that the
+volume-descriptor sequence ended correctly. The walk now requires a complete
+`0xFF/CD001` terminator, preserves in-range fmap callback failures as
+`CL_EREAD`, and returns `CL_EPARSE` for missing, malformed, or out-of-map
+termination. A focused empty-root regression covers the missing-terminator
+case; compiled ISO/Joliet corpus, sanitizer, and Sonic1 qualification remain
+open.

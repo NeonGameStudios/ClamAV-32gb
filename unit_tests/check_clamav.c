@@ -12575,6 +12575,62 @@ START_TEST(test_iso_truncated_directory_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_missing_volume_descriptor_terminator_is_fail_visible)
+{
+    enum {
+        ISO_OFFSET = 32768,
+        ROOT_BLOCK = 32,
+        ROOT_OFFSET = ROOT_BLOCK * 2048,
+        ISO_LENGTH = ROOT_OFFSET + 2048
+    };
+    uint8_t data[ISO_LENGTH] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    /* The primary descriptor is followed by a descriptor-shaped block but no
+     * 0xff/CD001 terminator. The root directory is otherwise empty and valid,
+     * so a descriptor walk that silently accepts EOF would return clean. */
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08; /* 2048-byte logical blocks */
+    data[ISO_OFFSET + 2048] = 0;
+    memcpy(data + ISO_OFFSET + 2049, "CD001", 5);
+    data[ISO_OFFSET + 156] = 34;
+    data[ISO_OFFSET + 158] = ROOT_BLOCK;
+    data[ISO_OFFSET + 166] = 0x00;
+    data[ISO_OFFSET + 167] = 0x08;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_ISO9660", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 struct iso_volume_read_failure_state {
     const uint8_t *data;
     size_t length;
@@ -24781,6 +24837,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_nsis_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_nsis_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);
+    tcase_add_test(tc_cl, test_iso_missing_volume_descriptor_terminator_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_volume_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);

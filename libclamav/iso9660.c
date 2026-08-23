@@ -425,12 +425,16 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     iso.base_offset = offset - iso.sectsz * 16;
     iso.joliet      = 0;
 
+    bool descriptor_terminated = false;
     for (i = 16; i < 32; i++) { /* scan for a joliet secondary volume descriptor */
         uint64_t descriptor_offset64 = (uint64_t)iso.base_offset + (uint64_t)i * iso.sectsz;
         size_t descriptor_offset;
 
-        if (descriptor_offset64 > SIZE_MAX)
-            break;
+        if (descriptor_offset64 > SIZE_MAX) {
+            fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+            status = iso_incomplete(ctx, "ISO volume descriptor coordinate exceeded the input map");
+            goto done;
+        }
         descriptor_offset = (size_t)descriptor_offset64;
         next             = fmap_need_off_once(ctx->fmap, descriptor_offset, 2048);
         if (!next) {
@@ -440,10 +444,24 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
                 status = CL_EREAD;
                 goto done;
             }
-            break; /* Out of disk */
+            fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+            status = iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
+            goto done;
         }
-        if (*next == 0xff || memcmp(next + 1, "CD001", 5))
-            break; /* Not a volume descriptor */
+        if (*next == 0xff) {
+            if (memcmp(next + 1, "CD001", 5)) {
+                fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+                status = iso_incomplete(ctx, "ISO volume descriptor terminator was malformed");
+                goto done;
+            }
+            descriptor_terminated = true;
+            break;
+        }
+        if (memcmp(next + 1, "CD001", 5)) {
+            fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+            status = iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
+            goto done;
+        }
         if (*next != 2)
             continue; /* Not a secondary volume descriptor */
         if (next[88] != 0x25 || next[89] != 0x2f)
@@ -464,7 +482,12 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
                 continue;
         }
         memcpy(joliet_descriptor, next, sizeof(joliet_descriptor));
-        break;
+    }
+
+    if (!descriptor_terminated) {
+        fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
+        status = iso_incomplete(ctx, "ISO volume descriptor sequence was truncated");
+        goto done;
     }
 
     /* TODO rr, el torito, udf ? */
