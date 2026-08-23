@@ -2035,3 +2035,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   compressed metadata validation, fork writes, and inline compressed output
   sticky-incomplete and non-cacheable; add compiled HFS+ fault-injection and
   corpus coverage.
+
+## HFS+ metadata and node format failures — 2026-08-23
+
+- Preserve HFS+ malformed tree headers, catalog/attribute records, extents,
+  node coordinates, and catalog-fork geometry as sticky-incomplete; add
+  compiled malformed-volume and allocation fault coverage.

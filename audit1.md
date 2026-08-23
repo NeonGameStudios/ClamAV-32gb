@@ -34,6 +34,17 @@ non-cacheable instead of allowing parser status reconciliation to expose a
 clean result. Static source guards pass; compiled HFS+ fault injection,
 sanitizer, corpus, and supported-build Sonic1 qualification remain open.
 
+## HFS+ metadata and node format failures — 2026-08-23
+
+The HFS+ tree-header, catalog, attribute-tree, extent, and node-coordinate
+validation paths previously returned format or allocation errors that relied
+only on the generic outer-parser fallback. They now record parser-specific
+sticky-incomplete reasons, including unsupported ExtentOverflow node lookup,
+before returning. The top-level null-context path also returns directly
+without dereferencing an invalid context. Static source guards pass; compiled
+malformed-volume and allocation fault injection, sanitizer, corpus, and
+supported-build Sonic1 qualification remain open.
+
 ## HFS+ non-empty fork block admission — 2026-08-23
 
 `hfsplus_scanfile()` previously returned success for a fork with a non-zero

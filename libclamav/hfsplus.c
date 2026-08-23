@@ -254,11 +254,13 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     }
     if (offset64 > SIZE_MAX) {
         cli_dbgmsg("hfsplus_readheader: %s: header offset exceeds the native fmap range\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header coordinate is not representable");
         return CL_EFORMAT;
     }
     offset = (size_t)offset64;
     if (offset > ctx->fmap->len || volHeader->blockSize > ctx->fmap->len - offset) {
         cli_dbgmsg("hfsplus_readheader: %s: headerNode is out-of-range\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is outside the input map");
         return CL_EFORMAT;
     }
     mPtr   = fmap_need_off_once(ctx->fmap, offset, volHeader->blockSize);
@@ -274,10 +276,12 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     nodedescriptor_print(name, nodeDesc);
     if (nodeDesc->kind != HFS_NODEKIND_HEADER) {
         cli_dbgmsg("hfsplus_readheader: %s: headerNode not header kind\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is malformed");
         return CL_EFORMAT;
     }
     if ((nodeDesc->bLink != 0) || (nodeDesc->height != 0) || (nodeDesc->numRecords != 3)) {
         cli_dbgmsg("hfsplus_readheader: %s: Invalid headerNode\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is malformed");
         return CL_EFORMAT;
     }
 
@@ -288,25 +292,30 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
 
     if ((headerRec->nodeSize < minSize) || (headerRec->nodeSize > maxSize)) {
         cli_dbgmsg("hfsplus_readheader: %s: Invalid nodesize\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is malformed");
         return CL_EFORMAT;
     }
     if (headerRec->nodeSize & (headerRec->nodeSize - 1)) {
         cli_dbgmsg("hfsplus_readheader: %s: Invalid nodesize\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is malformed");
         return CL_EFORMAT;
     }
     /* KeyLength must be between 6 and 516 for catalog */
     if (headerType == HFS_FILETREE_CATALOG) {
         if ((headerRec->maxKeyLength < 6) || (headerRec->maxKeyLength > 516)) {
             cli_dbgmsg("hfsplus_readheader: %s: Invalid cat maxKeyLength\n", name);
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is malformed");
             return CL_EFORMAT;
         }
         if (headerRec->maxKeyLength > (headerRec->nodeSize / 2)) {
             cli_dbgmsg("hfsplus_readheader: %s: Invalid cat maxKeyLength based on nodeSize\n", name);
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is malformed");
             return CL_EFORMAT;
         }
     } else if (headerType == HFS_FILETREE_EXTENTS) {
         if (headerRec->maxKeyLength != 10) {
             cli_dbgmsg("hfsplus_readheader: %s: Invalid ext maxKeyLength\n", name);
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is malformed");
             return CL_EFORMAT;
         }
     }
@@ -371,6 +380,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
 #if SIZEOF_LONG < 8
     if (targetSize > ULONG_MAX) {
         cli_dbgmsg("hfsplus_scanfile: File too large for limit check.\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ fork size cannot be represented for limit checking");
         status = CL_EFORMAT;
         goto done;
     }
@@ -438,6 +448,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
 
         if ((currExt->startBlock & 0x10000000) && (currExt->blockCount & 0x10000000)) {
             cli_dbgmsg("hfsplus_scanfile: next extent illegal!\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ fork extent is malformed");
             status = CL_EFORMAT;
             goto done;
         }
@@ -446,6 +457,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
         if ((currBlock > volHeader->totalBlocks) ||
             (currExt->blockCount > volHeader->totalBlocks - currBlock)) {
             cli_dbgmsg("hfsplus_scanfile: bad extent!\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ fork extent is outside the volume");
             status = CL_EFORMAT;
             goto done;
         }
@@ -466,6 +478,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
             if (blockOffset > SIZE_MAX || blockOffset > ctx->fmap->len ||
                 volHeader->blockSize > ctx->fmap->len - (size_t)blockOffset) {
                 cli_dbgmsg("hfsplus_scanfile: block offset exceeds the input map\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ fork block is outside the input map");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -577,20 +590,21 @@ static cl_error_t hfsplus_validate_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *vo
     hfsPlusForkData *catFork;
     uint64_t requiredSize;
 
-    UNUSEDPARAM(ctx);
-
     catFork = &(volHeader->catalogFile);
     if (catFork->totalBlocks >= volHeader->totalBlocks) {
         cli_dbgmsg("hfsplus_validate_catalog: catFork totalBlocks too large!\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ catalog fork is outside the volume");
         return CL_EFORMAT;
     }
     if (catFork->logicalSize > (uint64_t)catFork->totalBlocks * volHeader->blockSize) {
         cli_dbgmsg("hfsplus_validate_catalog: catFork logicalSize too large!\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ catalog fork size is inconsistent");
         return CL_EFORMAT;
     }
     requiredSize = (uint64_t)catHeader->totalNodes * catHeader->nodeSize;
     if (catFork->logicalSize < requiredSize) {
         cli_dbgmsg("hfsplus_validate_catalog: too many nodes for catFile\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ catalog fork ends before its declared nodes");
         return CL_EFORMAT;
     }
 
@@ -625,6 +639,7 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
         cli_dbgmsg("hfsplus_check_attribute: failed to acquire node buffer, "
                    "size " STDu32 "\n",
                    nodeSize);
+        cli_mark_scan_incomplete(ctx, "HFS+ attributes tree node buffer could not be allocated");
         status = CL_EMEM;
         goto done;
     }
@@ -665,11 +680,13 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
         nodedescriptor_print("leaf attribute node", &nodeDesc);
         if ((nodeDesc.kind != HFS_NODEKIND_LEAF) || (nodeDesc.height != 1)) {
             cli_dbgmsg("hfsplus_check_attribute: invalid leaf node!\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ attributes tree node is malformed");
             status = CL_EFORMAT;
             goto done;
         }
         if ((nodeSize / 4) < nodeDesc.numRecords) {
             cli_dbgmsg("hfsplus_check_attribute: too many leaf records for one node!\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ attributes tree node is malformed");
             status = CL_EFORMAT;
             goto done;
         }
@@ -689,6 +706,7 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
             /* Check record location */
             if ((nextStart > topOfOffsets - 1) || (nextStart < recordStart)) {
                 cli_dbgmsg("hfsplus_check_attribute: bad record location %x for %u!\n", nextStart, recordNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ attributes tree record is malformed");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -696,6 +714,7 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
             if (recordStart + sizeof(attrKey) >= topOfOffsets) {
                 cli_dbgmsg("hfsplus_check_attribute: Not enough data for an attribute key at location %x for %u!\n",
                            nextStart, recordNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ attributes tree record is incomplete");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -713,12 +732,14 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
             if (recordStart + attrKey.keyLength + 4 >= topOfOffsets) {
                 cli_dbgmsg("hfsplus_check_attribute: key too long for location %x for %u!\n",
                            nextStart, recordNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ attributes tree key is malformed");
                 status = CL_EFORMAT;
                 goto done;
             }
 
             if (recordStart + sizeof(hfsPlusAttributeKey) + attrKey.nameLength >= topOfOffsets) {
                 cli_dbgmsg("hfsplus_check_attribute: Attribute name is longer than expected: %u\n", attrKey.nameLength);
+                cli_mark_scan_incomplete(ctx, "HFS+ attributes tree name is malformed");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -734,6 +755,7 @@ static cl_error_t hfsplus_check_attribute(cli_ctx *ctx, hfsPlusVolumeHeader *vol
                 }
 
                 if (attrRec.attributeSize > *recordSize) {
+                    cli_mark_scan_incomplete(ctx, "HFS+ compressed-file attribute is larger than its buffer");
                     status = CL_EFORMAT;
                     goto done;
                 }
@@ -783,6 +805,7 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     /* Make sure node is in range */
     if (node >= catHeader->totalNodes) {
         cli_dbgmsg("hfsplus_fetch_node: invalid node number " STDu32 "\n", node);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree node number is invalid");
         return CL_EFORMAT;
     }
 
@@ -797,6 +820,7 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     cli_dbgmsg("hfsplus_fetch_node: need catalog block " STDu64 "\n", startBlock);
     if (startBlock >= catFork->totalBlocks || endBlock >= catFork->totalBlocks) {
         cli_dbgmsg("hfsplus_fetch_node: block number invalid!\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree node block is invalid");
         return CL_EFORMAT;
     }
 
@@ -811,16 +835,19 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
             /* Beware empty extent */
             if ((currExt->startBlock == 0) || (currExt->blockCount == 0)) {
                 cli_dbgmsg("hfsplus_fetch_node: extent " STDu32 " empty!\n", extentNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ file-tree extent is incomplete");
                 return CL_EFORMAT;
             }
             /* Beware too long extent */
             if ((currExt->startBlock & 0x10000000) && (currExt->blockCount & 0x10000000)) {
                 cli_dbgmsg("hfsplus_fetch_node: extent " STDu32 " illegal!\n", extentNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ file-tree extent is malformed");
                 return CL_EFORMAT;
             }
             if (currExt->startBlock >= volHeader->totalBlocks ||
                 currExt->blockCount > volHeader->totalBlocks - currExt->startBlock) {
                 cli_dbgmsg("hfsplus_fetch_node: extent " STDu32 " exceeds the volume\n", extentNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ file-tree extent is outside the volume");
                 return CL_EFORMAT;
             }
             /* Check if block found in current extent */
@@ -838,18 +865,21 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
         if (foundBlock == false) {
             cli_dbgmsg("hfsplus_fetch_node: not in first 8 extents\n");
             cli_dbgmsg("hfsplus_fetch_node: finding this node requires extent overflow support\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree node requires unsupported ExtentOverflow records");
             return CL_EFORMAT;
         }
 
         /* Block found */
         if (realFileBlock >= volHeader->totalBlocks) {
             cli_dbgmsg("hfsplus_fetch_node: block past end of volume\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree node block is outside the volume");
             return CL_EFORMAT;
         }
         {
             uint64_t fileOffset64 = (uint64_t)realFileBlock * volHeader->blockSize;
             if (fileOffset64 > SIZE_MAX) {
                 cli_dbgmsg("hfsplus_fetch_node: file offset exceeds the native fmap range\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ file-tree node coordinate is not representable");
                 return CL_EFORMAT;
             }
             fileOffset = (size_t)fileOffset64;
@@ -859,6 +889,7 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
         if (curBlock == startBlock) {
             if (startOffset > SIZE_MAX - fileOffset) {
                 cli_dbgmsg("hfsplus_fetch_node: node offset exceeds the native fmap range\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ file-tree node coordinate is not representable");
                 return CL_EFORMAT;
             }
             fileOffset += (size_t)startOffset;
@@ -868,6 +899,7 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
 
         if ((buffOffset + readSize) > buffSize) {
             cli_dbgmsg("hfsplus_fetch_node: Not enough space for read\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree node buffer is too small");
             return CL_EFORMAT;
         }
 
@@ -887,6 +919,7 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
             }
             if (bytesRead != readSize) {
                 cli_dbgmsg("hfsplus_fetch_node: not all bytes read\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ file-tree node is incomplete");
                 return CL_EFORMAT;
             }
         }
@@ -1056,6 +1089,7 @@ static cl_error_t hfsplus_read_block_table(cli_ctx *ctx, int fd, uint32_t *numBl
     *table     = cli_max_malloc(table_size);
     if (!*table) {
         cli_dbgmsg("hfsplus_read_block_table: Failed to allocate memory for block table\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ resource block table could not be allocated");
         status = CL_EMEM;
         goto done;
     }
@@ -1160,11 +1194,13 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
         nodedescriptor_print("leaf node", &nodeDesc);
         if ((nodeDesc.kind != HFS_NODEKIND_LEAF) || (nodeDesc.height != 1)) {
             cli_dbgmsg("hfsplus_walk_catalog: invalid leaf node!\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ catalog leaf node is malformed");
             status = CL_EFORMAT;
             goto done;
         }
         if ((nodeSize / 4) < nodeDesc.numRecords) {
             cli_dbgmsg("hfsplus_walk_catalog: too many leaf records for one node!\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ catalog leaf node is malformed");
             status = CL_EFORMAT;
             goto done;
         }
@@ -1185,6 +1221,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
             /* Check record location */
             if ((nextStart > topOfOffsets - 1) || (nextStart < recordStart)) {
                 cli_dbgmsg("hfsplus_walk_catalog: bad record location %x for %u!\n", nextStart, recordNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ catalog record is malformed");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -1196,6 +1233,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
             if (recordStart + keylen + 4 >= topOfOffsets) {
                 cli_dbgmsg("hfsplus_walk_catalog: key too long for location %x for %u!\n",
                            nextStart, recordNum);
+                cli_mark_scan_incomplete(ctx, "HFS+ catalog record key is malformed");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -1230,6 +1268,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
             /* Check file record location */
             if (recordStart + keylen + 2 + sizeof(hfsPlusCatalogFile) >= topOfOffsets) {
                 cli_dbgmsg("hfsplus_walk_catalog: not enough bytes for file record!\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ catalog file record is incomplete");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -1755,6 +1794,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
         if (thisNode == nodeDesc.fLink) {
             /* TODO: Add heuristic alert? */
             cli_warnmsg("hfsplus_walk_catalog: simple cycle detected!\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ catalog traversal contains a cycle");
             status = CL_EFORMAT;
             goto done;
         } else {
@@ -1839,8 +1879,7 @@ cl_error_t cli_scanhfsplus(cli_ctx *ctx)
 
     if (!ctx || !ctx->fmap) {
         cli_errmsg("cli_scanhfsplus: Invalid context\n");
-        status = CL_ENULLARG;
-        goto done;
+        return CL_ENULLARG;
     }
 
     status = cli_checktimelimit(ctx);

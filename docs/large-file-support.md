@@ -6115,3 +6115,13 @@ and inspect the compressed child; preserving the reason prevents parser status
 reconciliation from exposing a clean result after a partial handoff. Static
 source guards pass; compiled HFS+ fault injection, sanitizer, corpus, and
 supported-build Sonic1 qualification remain release gates.
+
+## HFS+ metadata and node format failures — 2026-08-23
+
+HFS+ tree-header, catalog, attribute-tree, extent, and node-coordinate
+validation failures now record parser-specific sticky-incomplete reasons
+before returning, including unsupported ExtentOverflow node lookup. Catalog
+fork geometry failures are also fail-visible, and the null-context entry path
+now returns without dereferencing an invalid context. Static source guards
+pass; compiled malformed-volume and allocation fault injection, sanitizer,
+corpus, and supported-build Sonic1 qualification remain release gates.
