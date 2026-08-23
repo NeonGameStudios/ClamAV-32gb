@@ -2283,6 +2283,7 @@ contains unit_tests/check_clamav.c 'test_word_macro_directory_truncation_is_fail
 contains libclamav/scanners.c 'RAR file header ended before archive inspection completed'
 contains libclamav/scanners.c 'cli_rar_sfx_header_check'
 contains libclamav/scanners.c 'RAR SFX candidate rejected before layer admission'
+contains libclamav/scanners.c 'RAR SFX main header could not be read completely'
 contains libclamav/scanners.c 'RAR SFX main header is malformed or truncated'
 contains libclamav/scanners.c 'RAR encrypted member contents were not inspected'
 contains libclamav/scanners.c 'RAR decoder reached the configured time limit'

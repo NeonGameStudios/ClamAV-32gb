@@ -6017,3 +6017,15 @@ evidence is typed as `content-manifest` and must use the source-manifest digest
 as both revision identifiers. A synthetic negative regression confirms that a
 source/tree path mismatch is rejected. Full semantic build/runtime binding and
 external attestation remain open.
+
+## Embedded RAR SFX read-result classification — 2026-08-23
+
+The embedded RAR SFX admission helper already preflighted the confirmed
+fourteen-byte main-header range and returned `CL_EREAD` for an in-range fmap
+callback failure. The scanner-facing branch still assigned that result the
+generic malformed/truncated reason used for parse failures. It now preserves a
+dedicated incomplete reason for `CL_EREAD`, while leaving weak-candidate
+rejection and malformed-header classification unchanged. A focused callback
+regression verifies that the embedded scan remains `CL_EREAD` and
+non-cacheable. Compiled scanner, production RAR corpus, and backend/Sonic1
+qualification remain open.

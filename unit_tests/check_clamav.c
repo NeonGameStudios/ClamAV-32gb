@@ -7743,6 +7743,72 @@ START_TEST(test_rar_without_backend_is_explicitly_unsupported)
 }
 END_TEST
 
+static size_t rar_sfx_header_read_failure_offset = SIZE_MAX;
+static size_t rar_sfx_header_read_failure_length = SIZE_MAX;
+
+static const void *rar_sfx_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == rar_sfx_header_read_failure_offset && len == rar_sfx_header_read_failure_length)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_rar_sfx_header_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {
+        0x58,                                      /* parent payload prefix */
+        0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00, /* RAR signature */
+        0x00, 0x00,                               /* header CRC16 */
+        0x73, 0x00, 0x00,                         /* RAR4 main header */
+        0x07, 0x00};                               /* header size */
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    int saved_sdb;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    rar_sfx_header_read_failure_offset = 1U;
+    rar_sfx_header_read_failure_length = 14U;
+    map->need                         = rar_sfx_header_read_failure;
+
+    saved_sdb        = scan_engine->sdb;
+    scan_engine->sdb = 1;
+    verdict           = CL_VERDICT_STRONG_INDICATOR;
+    last_alert        = "stale";
+    scanned           = UINT64_MAX;
+    ret               = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                                      scan_engine, &options, NULL, NULL, NULL, NULL,
+                                      "CL_TYPE_TEXT_ASCII", NULL);
+    scan_engine->sdb = saved_sdb;
+
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    rar_sfx_header_read_failure_offset = SIZE_MAX;
+    rar_sfx_header_read_failure_length = SIZE_MAX;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_swf_zlib_truncated_stream_is_fail_visible)
 {
     static const uint8_t body[6] = {0};
@@ -24427,6 +24493,7 @@ static Suite *test_cl_suite(void)
 #endif
 #endif
     tcase_add_test(tc_cl, test_rar_without_backend_is_explicitly_unsupported);
+    tcase_add_test(tc_cl, test_rar_sfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_sector_range_classes_are_fail_visible);

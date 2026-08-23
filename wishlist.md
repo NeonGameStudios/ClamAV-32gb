@@ -1831,3 +1831,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   manifest digest; add a negative verifier regression for path disagreement.
   Runtime/build semantic qualification and external attestation remain
   release gates.
+
+## Embedded RAR SFX read-result classification — 2026-08-23
+
+- Preserve a distinct `RAR SFX main header could not be read completely`
+  reason for confirmed embedded-header fmap failures, while retaining the
+  malformed/truncated result for parse failures and candidate rejection for
+  weak signatures. Compiled scanner, production RAR corpus, and backend/Sonic1
+  qualification remain release gates.

@@ -5234,7 +5234,10 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     break;
                                 }
                                 if (ret != CL_SUCCESS) {
-                                    cli_mark_scan_incomplete(ctx, "RAR SFX main header is malformed or truncated");
+                                    cli_mark_scan_incomplete(ctx,
+                                                             ret == CL_EREAD
+                                                                 ? "RAR SFX main header could not be read completely"
+                                                                 : "RAR SFX main header is malformed or truncated");
                                     if (nret == CL_SUCCESS)
                                         nret = ret;
                                     break;
