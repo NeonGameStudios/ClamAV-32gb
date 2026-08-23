@@ -2153,3 +2153,9 @@ and Sonic1 qualification as release gates.
   `size=` overrides in addition to legacy octal, while rejecting
   negative/overflow values; retain compiled TAR, sanitizer, corpus, and Sonic1
   qualification as release gates.
+
+## TIFF BigTIFF unsupported classification — 2026-08-23
+
+- Keep recognized BigTIFF (`II+\0`/`MM\0+`) inputs explicit unsupported/incomplete
+  until a bounded 64-bit IFD parser is implemented; retain compiled media,
+  sanitizer, corpus, and Sonic1 qualification as release gates.

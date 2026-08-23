@@ -130,6 +130,10 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
         big_endian = 1;
     else if (!memcmp(magic, "\x49\x49\x2a\x00", 4))
         big_endian = 0;
+    else if (!memcmp(magic, "\x4d\x4d\x00\x2b", 4) || !memcmp(magic, "\x49\x49\x2b\x00", 4)) {
+        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.UnsupportedBigTIFF");
+        goto done;
+    }
     else {
         status = CL_CLEAN; /* Not a TIFF file */
         goto done;

@@ -6252,3 +6252,11 @@ overflowing encodings before temporary admission. Focused valid POSIX TAR
 regressions cover both encodings and complete end markers. Malformed/oversized
 PAX records, compiled TAR corpus, sanitizer, and supported-build Sonic1
 qualification remain release gates.
+
+## TIFF BigTIFF unsupported classification — 2026-08-23
+
+The TIFF parser now distinguishes classic TIFF from BigTIFF magic. BigTIFF's
+64-bit IFD layout is not implemented, so recognized `II+\0` and `MM\0+` inputs
+return an explicit unsupported/incomplete result instead of falling through as
+clean. Focused direct-parser coverage is present; compiled media corpus,
+sanitizer, and supported-build Sonic1 qualification remain release gates.

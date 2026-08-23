@@ -6542,3 +6542,13 @@ overflowing values, and retains the existing native-width and shared-limit
 checks. Focused valid POSIX TAR regressions cover both encodings and complete
 two-block termination. Malformed/oversized PAX records, compiled TAR corpus,
 sanitizer, and Sonic1 qualification remain open.
+
+## TIFF BigTIFF unsupported classification — 2026-08-23
+
+The TIFF parser recognized only classic TIFF magic and treated BigTIFF's
+`II+\0`/`MM\0+` signatures as an unrelated clean input. BigTIFF uses a
+different 64-bit IFD layout that this parser does not implement, so the
+recognized format now returns an explicit unsupported/incomplete result and
+cannot be cached as clean. A focused direct-parser regression covers the
+little-endian BigTIFF signature; compiled media corpus, sanitizer, and Sonic1
+qualification remain open.
