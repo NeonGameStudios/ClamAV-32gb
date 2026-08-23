@@ -21518,12 +21518,22 @@ START_TEST(test_tiff_truncated_structures_are_fail_visible)
         0x00, 0x10, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
     };
+    static const uint8_t unsupported_ifd_type[] = {
+        'I', 'I', 0x2a, 0x00,
+        0x08, 0x00, 0x00, 0x00,
+        0x01, 0x00,
+        0x00, 0x01, 0x13, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    };
     const uint8_t *cases[] = {
         truncated_first_ifd_offset,
         invalid_first_ifd_offset,
         truncated_ifd_entry,
         truncated_next_ifd_offset,
         out_of_range_ifd_value,
+        unsupported_ifd_type,
     };
     const size_t lengths[] = {
         sizeof(truncated_first_ifd_offset),
@@ -21531,6 +21541,7 @@ START_TEST(test_tiff_truncated_structures_are_fail_visible)
         sizeof(truncated_ifd_entry),
         sizeof(truncated_next_ifd_offset),
         sizeof(out_of_range_ifd_value),
+        sizeof(unsupported_ifd_type),
     };
     cli_ctx ctx;
     fmap_t *map;

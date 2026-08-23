@@ -485,10 +485,22 @@ static void dumpTag (DescriptorTag *dt)
  * volume. */
 static const void *udf_need_off(cli_ctx *ctx, size_t offset, size_t length, cl_error_t *read_status)
 {
-    const void *ptr = fmap_need_off(ctx->fmap, offset, length);
+    const void *ptr;
 
-    if (NULL == ptr && offset <= ctx->fmap->len && length <= ctx->fmap->len - offset)
-        *read_status = CL_EREAD;
+    if (read_status != NULL)
+        *read_status = CL_EPARSE;
+    if (ctx == NULL || ctx->fmap == NULL || length == 0 || offset > ctx->fmap->len ||
+        length > ctx->fmap->len - offset)
+        return NULL;
+
+    ptr = fmap_need_off(ctx->fmap, offset, length);
+
+    if (NULL == ptr) {
+        if (read_status != NULL)
+            *read_status = CL_EREAD;
+    } else if (read_status != NULL) {
+        *read_status = CL_SUCCESS;
+    }
 
     return ptr;
 }

@@ -91,6 +91,7 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     size_t value_size;
     size_t value_width;
     size_t last_offset = 0;
+    bool value_type_known;
 
     cli_dbgmsg("in cli_parsetiff()\n");
 
@@ -100,6 +101,11 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
         goto done;
     }
     map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "TIFF input map is unavailable");
+        status = CL_EARG;
+        goto done;
+    }
 
     /* A map shorter than the fixed magic cannot be a confirmed TIFF. Once
      * those bytes are present, however, a failed fmap read is an operational
@@ -201,6 +207,7 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
             // cli_dbgmsg("%02u: %u %u %u %u\n", i, entry.tag, entry.type, entry.numval, entry.value);
 
+            value_type_known = true;
             switch (entry.type) {
                 case 1: /* BYTE */
                     value_width = 1;
@@ -243,7 +250,14 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
                 default: /* INVALID or NEW Type */
                     value_width = 0;
+                    value_type_known = false;
                     break;
+            }
+
+            if (!value_type_known) {
+                cli_warnmsg("cli_parsetiff: TFD entry field %u has an unsupported type %u\n", i, entry.type);
+                status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.UnsupportedType");
+                goto done;
             }
 
             if (!tiff_value_size(entry.numval, value_width, &value_size)) {

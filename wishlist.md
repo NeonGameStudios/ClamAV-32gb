@@ -1409,7 +1409,8 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   drawing fields before callback admission, preserving parse results for short
   payload prefixes and `CL_EREAD` for fully in-range callback failures; retain
   compiled scanner, sanitizer, production HWP3 corpus, and Sonic1
-  qualification as release gates.
+qualification as release gates.
+
 
 ## Shared fixed-range reader and PE fixed-metadata classification — 2026-08-22
 
@@ -1507,3 +1508,16 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   range helper and retain `CL_EREAD` for fully in-range fmap callback failures;
   add compiled fault-injection coverage and retain encrypted-Office corpus,
   sanitizer, and Sonic1 qualification as release gates.
+
+## UDF descriptor status reset — 2026-08-23
+
+- Reset UDF descriptor read status for every range attempt and distinguish
+  short/out-of-map ranges from in-range callback failures; retain compiled
+  descriptor/read-fault, sanitizer, production UDF corpus, and Sonic1
+  qualification as release gates.
+
+## TIFF unknown-field rejection — 2026-08-23
+
+- Reject unknown TIFF IFD field types as explicit incomplete parse results and
+  preserve the missing-map guard; retain compiled malformed-IFD, sanitizer,
+  production TIFF corpus, and Sonic1 qualification as release gates.

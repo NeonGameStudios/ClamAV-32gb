@@ -5508,3 +5508,21 @@ the layer incomplete, and prevents caching; an unavailable probe range remains
 a parse/truncation result. The compiled fault-injection regression now asserts
 the callback-failure status and reason. Compiled scanner, sanitizer, encrypted
 Office corpus, and Sonic1 qualification remain open.
+
+## UDF descriptor status reset — 2026-08-23
+
+The UDF descriptor fmap helper now preflights every requested range, resets the
+caller-visible status before each attempt, reports `CL_SUCCESS` for a successful
+read, preserves `CL_EPARSE` for a short/out-of-map range, and reports `CL_EREAD`
+only for an in-range backing-read failure. This prevents stale status from
+changing a later descriptor result. Compiled scanner, sanitizer, UDF corpus,
+and Sonic1 qualification remain open.
+
+## TIFF unknown-field rejection — 2026-08-23
+
+TIFF IFD entries with an unknown field type are now explicit incomplete parse
+results instead of silently becoming zero-width values and allowing a clean
+parser return. The parser also rejects a missing input fmap before dereferencing
+it. A malformed-IFD regression covers the unsupported-type path. Compiled
+scanner, sanitizer, production TIFF corpus, and Sonic1 qualification remain
+open.
