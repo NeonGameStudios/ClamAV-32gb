@@ -6070,3 +6070,14 @@ fixture regression covers the Magistr and Polipos code-section read failures;
 the Polipos jump-target branch remains covered by the same source guard and
 requires compiled corpus qualification. Compiled PE corpus, sanitizer, and
 Sonic1 qualification remain open.
+
+## TAR end-of-archive classification — 2026-08-23
+
+The TAR parser previously treated exact EOF after a member as clean and stopped
+after only one zero block. That allowed a missing or incomplete
+end-of-archive marker sequence to bypass the parser's fail-closed contract.
+The parser now requires two complete zero blocks, marks missing/single-block
+termination as `CL_EPARSE`, and distinguishes a truncated marker block from an
+in-range header callback failure. A focused regression covers no marker, one
+marker, and the valid two-marker boundary. Compiled TAR corpus, sanitizer, and
+Sonic1 qualification remain open.

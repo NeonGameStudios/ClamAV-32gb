@@ -1864,3 +1864,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   skipping confirmed PE-specific inspection; retain compiled PE corpus,
   sanitizer, Polipos jump-target coverage, and Sonic1 qualification as release
   gates.
+
+## TAR end-of-archive classification — 2026-08-23
+
+- Require the complete two-block TAR end marker; classify missing, single-block,
+  and truncated termination as explicit parse-incomplete results, with
+  compiled TAR corpus, sanitizer, and Sonic1 qualification retained as release
+  gates.

@@ -204,6 +204,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
     int in_block        = 0;
     int last_header_bad = 0;
     bool incomplete     = false;
+    bool saw_zero_block = false;
     bool member_incomplete = false;
     uint64_t temporary_reserved = 0;
     unsigned int files  = 0;
@@ -243,7 +244,9 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 cli_mark_scan_incomplete(ctx, "TAR header could not be read completely");
                 return CL_EREAD;
             }
-            break;
+            cli_mark_scan_incomplete(ctx, saw_zero_block ? "TAR end-of-archive marker was incomplete"
+                                                          : "TAR end-of-archive marker was missing");
+            return CL_EPARSE;
         }
 
         if (!nread)
@@ -277,8 +280,17 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 }
             }
 
-            if (block[0] == '\0') /* We're done */
-                break;
+            if (block[0] == '\0') {
+                if (nread < TARHEADERSIZE) {
+                    cli_mark_scan_incomplete(ctx, "TAR end-of-archive marker was truncated");
+                    return CL_EPARSE;
+                }
+                if (saw_zero_block)
+                    break;
+                saw_zero_block = true;
+                continue;
+            }
+            saw_zero_block = false;
             if ((ret = cli_checklimits("cli_untar", ctx, 0, 0, 0)) != CL_CLEAN)
                 return ret;
 
