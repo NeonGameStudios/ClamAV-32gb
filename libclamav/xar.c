@@ -659,7 +659,7 @@ int cli_scanxar(cli_ctx *ctx)
 
     int fd = -1;
     struct xar_header hdr;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
     size_t length, offset, size, at, heap_start, data_end;
     int encoding;
     z_stream strm;
@@ -674,6 +674,16 @@ int cli_scanxar(cli_ctx *ctx)
     void *a_hash_ctx = NULL, *e_hash_ctx = NULL;
     char e_hash_result[SHA1_HASH_SIZE];
     char a_hash_result[SHA1_HASH_SIZE];
+
+    if (ctx == NULL) {
+        cli_dbgmsg("XAR: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "XAR input map is unavailable");
+        return CL_EPARSE;
+    }
 
     memset(&strm, 0x00, sizeof(z_stream));
 

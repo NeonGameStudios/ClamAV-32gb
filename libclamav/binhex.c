@@ -71,10 +71,10 @@ static void binhex_note_cleanup_failure(cli_ctx *ctx, cl_error_t *status,
 
 int cli_binhex(cli_ctx *ctx)
 {
-    fmap_t *map            = ctx->fmap;
+    fmap_t *map;
     const uint8_t *encoded = NULL;
     uint8_t decoded[BUFSIZ], spare_bits = 0, last_byte = 0, this_byte = 0, offset = 0;
-    size_t enc_done = 0, enc_todo = map->len;
+    size_t enc_done = 0, enc_todo;
     unsigned int dec_done = 0, chunksz = 0, chunkoff = 0;
     uint32_t datalen = 0, reslen = 0;
     uint64_t data_size = 0, resource_size = 0;
@@ -89,6 +89,16 @@ int cli_binhex(cli_ctx *ctx)
     char *dname, *rname;
 
     cli_dbgmsg("in cli_binhex\n");
+    if (ctx == NULL) {
+        cli_dbgmsg("BinHex: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "BinHex input map is unavailable");
+        return CL_EPARSE;
+    }
+    enc_todo = map->len;
     ret = binhex_checktimelimit(ctx, "BinHex inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
         return ret;

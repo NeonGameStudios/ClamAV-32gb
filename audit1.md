@@ -6665,3 +6665,12 @@ for an unavailable map, while a null context remains an argument error.
 Focused direct-entry regressions cover all three paths; compiled executable,
 archive, and HWP3 corpora, sanitizer, and Sonic1 qualification remain release
 gates.
+
+## BinHex and XAR missing-map admission — 2026-08-23
+
+The BinHex and XAR public parser entries also initialized `ctx->fmap` before
+validating the scan context. They now reject an unavailable input map with an
+explicit incomplete result, while a null context remains an argument error.
+Focused direct-entry regressions cover both paths; compiled encoded-document
+and archive corpora, sanitizer, and Sonic1 qualification remain release
+gates.

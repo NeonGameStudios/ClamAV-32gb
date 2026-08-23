@@ -11126,6 +11126,17 @@ START_TEST(test_binhex_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_binhex_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_binhex(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "BinHex input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -13423,6 +13434,17 @@ START_TEST(test_xar_header_read_failure_is_fail_visible)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_xar_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanxar(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "XAR input map is unavailable");
 }
 END_TEST
 
@@ -25802,6 +25824,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbox_truncated_binhex_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_binhex_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_output_temporary_limit_is_fail_visible);
@@ -25858,6 +25881,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_iso_file_extent_respects_volume_space);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_xar_missing_map_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_compressed_member_read_failure_is_fail_visible);
