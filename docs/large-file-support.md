@@ -6015,3 +6015,11 @@ in-range fmap callback failure (`CL_EREAD`) from an out-of-map coordinate
 (`CL_EPARSE`) and stops PE-specific inspection before the result can look clean.
 The focused NsPack callback regression covers this boundary, while compiled PE
 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## PE initial icon-group read classification — 2026-08-23
+
+The initial PE icon-group header now distinguishes an in-range fmap callback
+failure (`CL_EREAD`) from an out-of-map coordinate (`CL_EPARSE`) before icon
+traversal can fall through as clean. The existing focused icon-group callback
+regression covers the corrected branch, while compiled icon corpus, sanitizer,
+and Sonic1 qualification remain release gates.

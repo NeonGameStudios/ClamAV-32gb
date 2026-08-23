@@ -1877,3 +1877,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Preserve confirmed bitched NsPack entry-metadata read failures as explicit
   `CL_EREAD` or `CL_EPARSE` incomplete results; retain compiled PE corpus,
   sanitizer, and Sonic1 qualification as release gates.
+
+## PE initial icon-group read classification — 2026-08-23
+
+- Preserve initial PE icon-group header callback and range failures as explicit
+  `CL_EREAD` or `CL_EPARSE` incomplete results; retain compiled icon corpus,
+  sanitizer, and Sonic1 qualification as release gates.

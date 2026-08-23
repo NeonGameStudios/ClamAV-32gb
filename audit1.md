@@ -6092,3 +6092,14 @@ bounded range/read classifier, returning `CL_EREAD` for callback failures and
 `CL_EPARSE` for out-of-map coordinates. The existing NsPack fault-injection
 regression also covers this entry boundary; compiled PE corpus, sanitizer, and
 Sonic1 qualification remain open.
+
+## PE initial icon-group read classification — 2026-08-23
+
+The PE icon parser's initial group-header callback failure previously left the
+group callback as if no group had been found, allowing the icon pass to return
+clean after skipping confirmed icon inspection. The initial group header now
+uses the same range/read classification as later icon windows, preserving
+`CL_EREAD` for an in-range callback failure and `CL_EPARSE` for an out-of-map
+coordinate. The existing focused icon-group fault regression now exercises the
+corrected branch; compiled icon corpus, sanitizer, and Sonic1 qualification
+remain open.

@@ -216,10 +216,16 @@ int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
     const uint8_t *grp = NULL;
 
     group_offset = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size);
-    if (!err)
-        grp = fmap_need_off_once(map, group_offset, 16);
+    if (err)
+        return icon_parse_error(icon_env, NULL, "PE icon group resource was outside the input map");
 
-    if (!err && grp) {
+    grp = fmap_need_off_once(map, group_offset, 16);
+    if (grp == NULL)
+        return icon_map_read_error(icon_env, NULL, group_offset, 16,
+                                   "PE icon group resource was outside the input map",
+                                   "PE icon group resource could not be read completely");
+
+    if (grp) {
         uint32_t gsz = cli_readint32(grp + 4);
         if (gsz >= 6) {
             uint32_t icnt, raddr;
