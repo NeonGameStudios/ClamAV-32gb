@@ -122,11 +122,21 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
     const unsigned char *rbuff = NULL; // rbuff will be set to a real address by READBYTES
                                        // in the first iteration of the loop.
     unsigned int j = B_SIZE - 16, k, l, r = 0, w = 0, rbytes = 0, wbytes = 0;
-    fmap_t *map   = ctx->fmap;
+    fmap_t *map;
     off_t cur_off = sizeof(*hdr);
     unsigned int fsize;
     cl_error_t status;
     size_t ret;
+
+    if (ctx == NULL) {
+        cli_dbgmsg("MSEXPAND: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "MSEXPAND input map is unavailable");
+        return CL_EPARSE;
+    }
 
     status = msexpand_checktimelimit(ctx, "MSEXPAND inspection reached the configured time limit");
     if (status != CL_SUCCESS)

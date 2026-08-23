@@ -10857,6 +10857,18 @@ START_TEST(test_msexpand_header_range_classes_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msexpand_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+    uint64_t temporary_reserved = 0;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_msexpand(&ctx, -1, &temporary_reserved), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSEXPAND input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_msexpand_truncated_output_is_fail_visible)
 {
     uint8_t data[14] = {
@@ -17169,6 +17181,18 @@ START_TEST(test_structured_detector_read_failure_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_structured_detector_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scan_structured(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Structured data detector input map is unavailable");
 }
 END_TEST
 
@@ -25821,6 +25845,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_cl, test_msexpand_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_cleanup_failures_are_fail_visible);
@@ -25965,6 +25990,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_riff_time_limit_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_structured_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_structured_detector_clipped_read_failure_is_truncation);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_structured_detector_time_limit_is_fail_visible);

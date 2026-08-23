@@ -6683,3 +6683,12 @@ explicit incomplete result for an unavailable input map, while a null context
 remains an argument error. A focused direct-detector regression is
 registered; compiled detector corpus, raw-dispatch, sanitizer, and Sonic1
 qualification remain release gates.
+
+## MSEXPAND and structured-detector missing-map admission — 2026-08-23
+
+The exported MSEXPAND decoder and structured-data detector previously
+validated only the context pointer, then dereferenced a missing fmap. Both
+entries now return explicit incomplete results for unavailable input maps
+before touching decoder or engine state. Focused direct-entry regressions are
+registered; compiled SZDD/detector corpora, sanitizer, raw-dispatch, and
+Sonic1 qualification remain release gates.

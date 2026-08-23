@@ -4630,6 +4630,10 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
 
     if (ctx == NULL)
         return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "Structured data detector input map is unavailable");
+        return CL_EPARSE;
+    }
 
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS) {
