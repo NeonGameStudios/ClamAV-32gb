@@ -467,6 +467,31 @@ static void ole2_mark_block_read_failure(ole2_header_t *hdr, cl_error_t status)
     }
 }
 
+/* fmap_need_off_once() uses NULL for both an unavailable range and a failed
+ * backing read. Keep the bounded encryption probe fail-visible without
+ * borrowing the whole remaining OLE2 map. */
+static const uint8_t *ole2_need_range(ole2_header_t *hdr, size_t offset, size_t length, cl_error_t *read_status)
+{
+    const uint8_t *ptr;
+
+    if (read_status != NULL)
+        *read_status = CL_EPARSE;
+    if (hdr == NULL || hdr->map == NULL || length == 0 || offset > hdr->m_length ||
+        length > hdr->m_length - offset)
+        return NULL;
+
+    ptr = fmap_need_off_once(hdr->map, offset, length);
+    if (ptr == NULL) {
+        if (read_status != NULL)
+            *read_status = CL_EREAD;
+        return NULL;
+    }
+
+    if (read_status != NULL)
+        *read_status = CL_SUCCESS;
+    return ptr;
+}
+
 static bool ole2_read_block(ole2_header_t *hdr, void *buff, size_t size, int32_t blockno)
 {
     uint64_t block_offset;
@@ -3196,6 +3221,7 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     encryption_key_t key;
     bool bEncrypted                       = false;
     size_t encryption_offset              = 0;
+    cl_error_t encryption_read_status     = CL_EPARSE;
     encryption_status_t encryption_status = {0};
 
     cli_dbgmsg("in cli_ole2_extract()\n");
@@ -3300,11 +3326,14 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         sizeof(encryption_info_stream_standard_t) <= hdr.m_length - encryption_offset) {
         size_t encryption_window = MIN(hdr.m_length - encryption_offset,
                                        (size_t)OLE2_ENCRYPTION_INFO_READ_WINDOW);
-        const uint8_t *encryption_info = fmap_need_off_once(hdr.map, encryption_offset, encryption_window);
+        const uint8_t *encryption_info = ole2_need_range(&hdr, encryption_offset, encryption_window,
+                                                         &encryption_read_status);
 
         if (encryption_info == NULL) {
-            cli_mark_scan_incomplete(ctx, "OLE2 encryption metadata could not be read completely");
-            ret = CL_EREAD;
+            cli_mark_scan_incomplete(ctx, encryption_read_status == CL_EREAD
+                                               ? "OLE2 encryption metadata could not be read completely"
+                                               : "OLE2 encryption metadata is truncated");
+            ret = encryption_read_status;
             goto done;
         }
 

@@ -5499,3 +5499,12 @@ in-range fmap callback failure, while the decoder path marks the compressed
 member incomplete before temporary cleanup. A synthetic gzip-member callback
 regression covers the in-range failure path. Compiled scanner, sanitizer,
 production XAR corpus, and Sonic1 qualification remain open.
+
+## OLE2 encryption-window read classification — 2026-08-23
+
+The bounded native-width OLE2 encryption probe now uses an explicit checked
+range helper. A fully in-range fmap callback failure remains `CL_EREAD`, marks
+the layer incomplete, and prevents caching; an unavailable probe range remains
+a parse/truncation result. The compiled fault-injection regression now asserts
+the callback-failure status and reason. Compiled scanner, sanitizer, encrypted
+Office corpus, and Sonic1 qualification remain open.

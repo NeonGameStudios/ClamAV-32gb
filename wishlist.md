@@ -1500,3 +1500,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   `CL_EREAD` when a fully in-range fmap callback fails, preserving sticky
   incomplete state through decoder cleanup; retain compiled scanner,
   sanitizer, production XAR corpus, and Sonic1 qualification as release gates.
+
+## OLE2 encryption-window read classification — 2026-08-23
+
+- Route the bounded native-width encryption metadata probe through a checked
+  range helper and retain `CL_EREAD` for fully in-range fmap callback failures;
+  add compiled fault-injection coverage and retain encrypted-Office corpus,
+  sanitizer, and Sonic1 qualification as release gates.

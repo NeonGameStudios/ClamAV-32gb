@@ -3412,6 +3412,7 @@ contains libclamav/ole2_extract.c 'encryption stream, which begins several secto
 contains libclamav/ole2_extract.c 'OLE2 encryption metadata could not be read completely'
 not_contains libclamav/ole2_extract.c '&(((const uint8_t *)phdr)[encryption_offset])'
 contains unit_tests/check_clamav.c 'test_ole2_encryption_probe_uses_native_window'
+contains unit_tests/check_clamav.c 'test_ole2_encryption_probe_read_failure_is_fail_visible'
 contains libclamav/hfsplus.c 'outputBlocks++'
 contains unit_tests/check_clamav.c 'hfsplus_second_fork_read_failure'
 contains unit_tests/check_clamav.c 'HFS+ fork ended before its declared size'

@@ -16292,6 +16292,7 @@ struct ole2_encryption_probe_state {
     size_t length;
     size_t encryption_offset;
     unsigned int encryption_reads;
+    int fail_encryption_read;
     uint8_t header[512];
 };
 
@@ -16301,6 +16302,8 @@ static off_t ole2_encryption_probe_pread_cb(void *handle, void *buf, size_t coun
     size_t copy_length;
 
     if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (state->fail_encryption_read && (size_t)offset == state->encryption_offset)
         return 0;
     if ((uint64_t)offset >= state->encryption_offset ||
         count > state->encryption_offset - (size_t)offset)
@@ -16315,35 +16318,41 @@ static off_t ole2_encryption_probe_pread_cb(void *handle, void *buf, size_t coun
     return (off_t)count;
 }
 
-START_TEST(test_ole2_encryption_probe_uses_native_window)
+static void ole2_encryption_probe_init_state(struct ole2_encryption_probe_state *state)
 {
     static const uint8_t magic[] = {0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
+
+    memset(state, 0, sizeof(*state));
+    state->length            = 65536;
+    state->encryption_offset = 16384; /* four 4096-byte CFB sectors */
+    memcpy(state->header, magic, sizeof(magic));
+    state->header[30] = 12; /* 4096-byte CFB sectors */
+    state->header[32] = 6; /* 64-byte mini-sectors */
+    state->header[56] = 0x00;
+    state->header[57] = 0x10; /* 4096-byte mini-stream cutoff */
+    state->header[48] = 0xfe; /* no property-sector chain */
+    state->header[49] = 0xff;
+    state->header[50] = 0xff;
+    state->header[51] = 0xff;
+    state->header[60] = 0xfe; /* no mini-stream chain */
+    state->header[61] = 0xff;
+    state->header[62] = 0xff;
+    state->header[63] = 0xff;
+    state->header[68] = 0xfe; /* no DIFAT chain */
+    state->header[69] = 0xff;
+    state->header[70] = 0xff;
+    state->header[71] = 0xff;
+}
+
+START_TEST(test_ole2_encryption_probe_uses_native_window)
+{
     struct ole2_encryption_probe_state state;
     struct cl_engine engine;
     struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
-    memset(&state, 0, sizeof(state));
-    state.length           = 65536;
-    state.encryption_offset = 16384; /* four 4096-byte CFB sectors */
-    memcpy(state.header, magic, sizeof(magic));
-    state.header[30] = 12; /* 4096-byte CFB sectors */
-    state.header[32] = 6; /* 64-byte mini-sectors */
-    state.header[56] = 0x00;
-    state.header[57] = 0x10; /* 4096-byte mini-stream cutoff */
-    state.header[48] = 0xfe; /* no property-sector chain */
-    state.header[49] = 0xff;
-    state.header[50] = 0xff;
-    state.header[51] = 0xff;
-    state.header[60] = 0xfe; /* no mini-stream chain */
-    state.header[61] = 0xff;
-    state.header[62] = 0xff;
-    state.header[63] = 0xff;
-    state.header[68] = 0xfe; /* no DIFAT chain */
-    state.header[69] = 0xff;
-    state.header[70] = 0xff;
-    state.header[71] = 0xff;
+    ole2_encryption_probe_init_state(&state);
 
     memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
@@ -16357,6 +16366,38 @@ START_TEST(test_ole2_encryption_probe_uses_native_window)
     (void)cli_ole2_extract(NULL, &ctx, NULL, NULL, NULL, NULL);
     ck_assert_msg(state.encryption_reads > 0,
                   "OLE2 encryption metadata was not read through its native fmap range");
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_ole2_encryption_probe_read_failure_is_fail_visible)
+{
+    struct ole2_encryption_probe_state state;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ole2_encryption_probe_init_state(&state);
+    state.fail_encryption_read = 1;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_handle(&state, 0, state.length, ole2_encryption_probe_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    ret = cli_ole2_extract(NULL, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OLE2 encryption metadata could not be read completely");
+    ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
 }
@@ -22547,6 +22588,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole2_invalid_block_geometry_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_ole2_encryption_probe_uses_native_window);
+    tcase_add_test(tc_cl, test_ole2_encryption_probe_read_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_ole2_truncated_property_tree_is_fail_visible);
     tcase_add_test(tc_cl, test_xlm_missing_input_is_fail_visible);
