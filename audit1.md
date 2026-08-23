@@ -6654,3 +6654,14 @@ architecture checks ran. Both entries now return explicit incomplete results
 for unavailable input maps, with separate diagnostics for thin and universal
 binary input. A focused regression covers both paths; compiled Mach-O corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## ELF, ZIP, and HWP3 missing-map admission — 2026-08-23
+
+The direct ELF, ZIP central-directory, and HWP3 parser entries each loaded
+`ctx->fmap` before validating the caller's input. A direct library call with
+no map could therefore crash before the parser's existing range and
+completion checks ran. Each entry now returns an explicit incomplete result
+for an unavailable map, while a null context remains an argument error.
+Focused direct-entry regressions cover all three paths; compiled executable,
+archive, and HWP3 corpora, sanitizer, and Sonic1 qualification remain release
+gates.

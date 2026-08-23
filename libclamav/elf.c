@@ -845,11 +845,21 @@ static void cli_elf_sectionlog(uint32_t sh_type, uint32_t sh_flags)
 cl_error_t cli_scanelf(cli_ctx *ctx)
 {
     union elf_file_hdr file_hdr;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
     cl_error_t ret;
     uint8_t conv = 0, is64 = 0;
 
     cli_dbgmsg("in cli_scanelf\n");
+
+    if (ctx == NULL) {
+        cli_dbgmsg("ELF: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "ELF input map is unavailable");
+        return CL_EPARSE;
+    }
 
     ret = cli_elf_checktimelimit(ctx, "ELF inspection reached the configured time limit");
     if (ret != CL_SUCCESS)

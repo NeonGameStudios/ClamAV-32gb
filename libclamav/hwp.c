@@ -2080,7 +2080,17 @@ cl_error_t cli_scanhwp3(cli_ctx *ctx)
 
     struct hwp3_docinfo docinfo;
     size_t offset = 0, new_offset = 0;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
+
+    if (ctx == NULL) {
+        cli_dbgmsg("HWP3: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "HWP3 input map is unavailable");
+        return CL_EPARSE;
+    }
 
     if (hwp3_checktimelimit(ctx, "HWP3 inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;

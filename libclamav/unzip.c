@@ -3112,7 +3112,7 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     size_t fsize;
     size_t coff = 0;
 
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
 
     char *tmpd = NULL;
 
@@ -3125,6 +3125,15 @@ cl_error_t cli_unzip(cli_ctx *ctx)
     cl_error_t deferred_index_result  = CL_SUCCESS;
 
     cli_dbgmsg("in cli_unzip\n");
+    if (ctx == NULL) {
+        cli_dbgmsg("cli_unzip: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "ZIP input map is unavailable");
+        return CL_EPARSE;
+    }
     fsize = map->len;
     if (fsize < SIZEOF_CENTRAL_HEADER) {
         cli_dbgmsg("cli_unzip: file too short\n");

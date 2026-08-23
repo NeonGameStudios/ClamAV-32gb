@@ -5574,6 +5574,17 @@ START_TEST(test_zip_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_zip_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_unzip(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ZIP input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_zip_stream_deflate_refill_bound_and_tail)
 {
     const size_t length = CLI_ZIP_INPUT_CHUNK_SIZE * 2U + 37U;
@@ -14642,6 +14653,17 @@ START_TEST(test_hwp3_parser_errors_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp3_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP3 input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_hwp3_truncated_font_table_is_parse_error)
 {
     enum { HWP3_CONTENT_OFFSET = 30 + 128 + 1008 };
@@ -22181,6 +22203,17 @@ START_TEST(test_elf_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_elf_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanelf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ELF input map is unavailable");
+}
+END_TEST
+
 static const void *elf_truncated_program_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -25856,6 +25889,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_truncated_information_header_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_information_header_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp3_missing_map_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_document_info_is_parse_error);
@@ -25872,6 +25906,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_zip_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_fixed_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_egg_extra_field_range_classes_are_fail_visible);
@@ -26034,6 +26069,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_program_header_is_parse_error);
     tcase_add_test(tc_cl, test_elf_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_elf_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_metadata_read_failure_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
