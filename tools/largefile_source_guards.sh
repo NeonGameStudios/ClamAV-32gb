@@ -1709,6 +1709,7 @@ contains unit_tests/check_clamav.c 'test_pdf_stream_width_boundary_is_fail_visib
 contains unit_tests/check_clamav.c 'test_format_width_limits_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_cl_fmap_set_hash_accepts_full_hash'
 contains unit_tests/check_clamav.c 'test_html_normalize_cap_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_html_normalized_view_uses_matcher_work_budget'
 contains unit_tests/check_clamav.c 'test_html_notags_cap_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_html_notags_cap_uses_generated_size'
 contains libclamav/scanners.c 'generated view itself rather than using the input length'

@@ -6329,3 +6329,13 @@ is used. A direct caller with no map receives an explicit incomplete parse
 instead of an invalid dereference. A focused direct-entry regression is
 registered; compiled media corpus, sanitizer, and supported-build Sonic1
 qualification remain release gates.
+
+## HTML normalized-view matcher-work accounting — 2026-08-23
+
+Required HTML normalized children are scanned as file-backed normalized maps,
+so their bytes contribute to the shared `MaxMatcherWork` budget instead of
+being treated as free parser output. A compiled `cl_scanmap_ex2` regression
+loads a non-matching signature to force the root raw pass and verifies through
+the structured report that matcher bytes exceed the root size after the
+normalized views are scanned. Full HTML corpus, sanitizer, and supported-build
+Sonic1 qualification remain release gates.
