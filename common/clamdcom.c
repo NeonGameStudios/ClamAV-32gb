@@ -236,27 +236,28 @@ static int send_fdpass_fd_command(int sockd, int fd, const char *command)
 }
 
 /* FILDES carries a complete descriptor rather than a length-framed stream.
- * Reject a known regular file before sending it when the client has the
- * daemon's MaxFileSize policy available.  The daemon still rechecks the
- * descriptor after receipt because the file can change between these two
- * observations.  A zero value is the fork's bounded 32-GiB ceiling, never an
- * unbounded client-side policy. */
+ * Reject a known regular file before sending it.  When the daemon's
+ * MaxFileSize policy is available, use it; otherwise use the fork's hard
+ * 32-GiB ceiling.  The daemon still rechecks the descriptor after receipt
+ * because the file can change between these two observations. */
 static int fdpass_size_preflight(int fd, const char *display_filename,
                                  const struct optstruct *clamdopts)
 {
     const struct optstruct *max_file_size;
     STATBUF sb;
-    uint64_t limit;
+    uint64_t limit = CLI_MAX_LARGE_FILESIZE;
 
     if (fd < 0)
         return 0;
-    if (!clamdopts)
-        return 1;
 
-    max_file_size = optget(clamdopts, "MaxFileSize");
-    if (!max_file_size)
-        return 1;
-    limit = max_file_size->numarg > 0 ? (uint64_t)max_file_size->numarg : CLI_MAX_LARGE_FILESIZE;
+    if (clamdopts) {
+        max_file_size = optget(clamdopts, "MaxFileSize");
+        if (max_file_size && max_file_size->numarg > 0) {
+            limit = (uint64_t)max_file_size->numarg;
+            if (limit > CLI_MAX_LARGE_FILESIZE)
+                limit = CLI_MAX_LARGE_FILESIZE;
+        }
+    }
 
     if (FSTAT(fd, &sb) != 0) {
         logg(LOGG_ERROR, "%s: Failed to stat FILDES input: %s\n",
@@ -264,6 +265,11 @@ static int fdpass_size_preflight(int fd, const char *display_filename,
         return -1;
     }
     if (!S_ISREG(sb.st_mode)) {
+        /* The legacy wrappers historically let the daemon report this
+         * protocol error.  Keep that behavior for unknown-size descriptors;
+         * only regular files have a client-side size that can be admitted. */
+        if (!clamdopts)
+            return 1;
         logg(LOGG_ERROR, "%s: FILDES input is not a regular file. ERROR\n",
              display_filename ? display_filename : "FD");
         return 0;
@@ -293,12 +299,12 @@ static int send_fdpass_fd_checked_common(int sockd, int fd, const char *display_
 
 int send_fdpass_fd(int sockd, int fd)
 {
-    return send_fdpass_fd_command(sockd, fd, "zFILDES");
+    return send_fdpass_fd_checked_common(sockd, fd, NULL, NULL, false);
 }
 
 int send_fdpass_fd_report(int sockd, int fd)
 {
-    return send_fdpass_fd_command(sockd, fd, "zFILDESREPORT");
+    return send_fdpass_fd_checked_common(sockd, fd, NULL, NULL, true);
 }
 
 /* Issues a FILDES command and pass a FD to clamd

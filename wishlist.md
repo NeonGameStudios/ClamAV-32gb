@@ -1269,3 +1269,10 @@ remain open.
   StreamMaxLength without sending a normal terminator, fail closed on ordinary
   and exact-limit read errors, and add compiled read-fault plus daemon-side
   partial-request qualification.
+
+## Legacy FILDES client hard-ceiling preflight — 2026-08-22
+
+- Public `send_fdpass*` wrappers now preflight known regular files through the
+  shared checked helper and enforce the hard 32-GiB ceiling when daemon options
+  are unavailable; add compiled FILDES and Sonic1 qualification for sparse
+  exact-edge and over-limit inputs.

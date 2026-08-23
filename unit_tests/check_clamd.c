@@ -784,6 +784,40 @@ START_TEST(test_fildes_client_rejects_over_limit)
     fclose(regular);
 }
 END_TEST
+
+START_TEST(test_fildes_legacy_client_enforces_large_file_ceiling)
+{
+#if SIZE_MAX > UINT32_MAX
+    int sockets[2];
+    FILE *regular;
+    unsigned char wire[sizeof("zFILDES")];
+    off_t exact_size = (off_t)CLI_MAX_LARGE_FILESIZE;
+    off_t over_size  = exact_size + 1;
+
+    regular = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq(ftruncate(fileno(regular), over_size), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    ck_assert_int_eq(send_fdpass_fd(sockets[0], fileno(regular)), 0);
+    ck_assert_int_eq(recv(sockets[1], wire, sizeof(wire), MSG_DONTWAIT), -1);
+    ck_assert(errno == EAGAIN || errno == EWOULDBLOCK);
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+
+    regular = tmpfile();
+    ck_assert_ptr_nonnull(regular);
+    ck_assert_int_eq(ftruncate(fileno(regular), exact_size), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    ck_assert_int_eq(send_fdpass_fd(sockets[0], fileno(regular)), 1);
+    ck_assert_int_eq(recv(sockets[1], wire, sizeof(wire), 0), (ssize_t)sizeof("zFILDES"));
+    ck_assert_mem_eq(wire, "zFILDES", sizeof("zFILDES"));
+    close(sockets[0]);
+    close(sockets[1]);
+    fclose(regular);
+#endif
+}
+END_TEST
 #endif
 #ifndef _WIN32
 START_TEST(test_dsresult_error_updates_error_counter)
@@ -1654,6 +1688,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_client, test_stream_client_rejects_read_error_before_terminator);
 #if defined(HAVE_FD_PASSING)
     tcase_add_test(tc_client, test_fildes_client_rejects_over_limit);
+    tcase_add_test(tc_client, test_fildes_legacy_client_enforces_large_file_ceiling);
 #endif
 #endif
     tc_commands = tcase_create("clamd commands");

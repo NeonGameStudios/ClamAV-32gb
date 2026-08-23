@@ -5206,3 +5206,14 @@ The source guards and non-clang regression gates remain the available local
 evidence. Compiled API counter-overflow and allocation-fault coverage,
 interpreter/JIT qualification, sanitizer runs, and Sonic1 qualification
 remain open.
+
+## Legacy FILDES client hard-ceiling preflight — 2026-08-22
+
+The public `send_fdpass*` wrappers previously bypassed the client-side size
+preflight, so a known regular file larger than the fork's 32-GiB ceiling could
+be handed to clamd before the daemon rechecked it. The wrappers now share the
+checked helper and use the hard ceiling when no daemon option structure is
+available. Unknown/non-regular descriptors retain their historical handoff so
+the daemon can report the protocol error. A sparse exact-32-GiB and
+32-GiB-plus-one regression covers the boundary; compiled FILDES and Sonic1
+qualification remain open.
