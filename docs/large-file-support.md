@@ -5828,3 +5828,11 @@ remain parse/incomplete results, while fully in-range callback failures remain
 checked before admission, and the intentionally tolerated broken 32-bit mask
 fallback remains unchanged. Compiled PE/icon corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## JPEG application-marker probe classification — 2026-08-23
+
+JPEG APP metadata probes now stay within their declared segment. Short optional
+payloads remain ordinary non-matches, while fully in-range fmap callback
+failures remain `CL_EREAD` with explicit incomplete state instead of being
+silently ignored. Compiled JPEG corpus, sanitizer, and Sonic1 qualification
+remain release gates.

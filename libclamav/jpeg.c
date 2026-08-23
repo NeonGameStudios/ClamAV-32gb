@@ -273,6 +273,22 @@ static cl_error_t jpeg_read_status(cli_ctx *ctx, size_t bytes_read, size_t expec
     return jpeg_parse_error(ctx, reason);
 }
 
+static cl_error_t jpeg_read_segment_probe(cli_ctx *ctx, size_t offset, size_t segment_end,
+                                          void *dst, size_t length, const char *reason)
+{
+    size_t bytes_read;
+
+    if (offset > segment_end || length > segment_end - offset)
+        return CL_BREAK;
+
+    bytes_read = jpeg_readn(ctx->fmap, dst, offset, length);
+    if (bytes_read == length)
+        return CL_SUCCESS;
+    if (bytes_read == (size_t)-1)
+        return jpeg_read_status(ctx, bytes_read, length, reason);
+    return jpeg_parse_error(ctx, reason);
+}
+
 static cl_error_t jpeg_checktimelimit(cli_ctx *ctx, const char *reason)
 {
     cl_error_t status = cli_checktimelimit(ctx);
@@ -392,6 +408,7 @@ static cl_error_t jpeg_parse_error(cli_ctx *ctx, const char *reason)
 cl_error_t cli_parsejpeg(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
+    cl_error_t probe_status;
 
     fmap_t *map          = NULL;
     jpeg_marker_t marker = JPEG_MARKER_NOT_A_MARKER_0x00, prev_marker, prev_segment = JPEG_MARKER_NOT_A_MARKER_0x00;
@@ -522,7 +539,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                 /*
                  * JFIF, maybe
                  */
-                if ((fmap_readn(map, buff, offset - len + sizeof(len_u16), strlen("JFIF") + 1) == strlen("JFIF") + 1) &&
+                probe_status = jpeg_read_segment_probe(ctx, offset - len + sizeof(len_u16), offset, buff,
+                                                        strlen("JFIF") + 1,
+                                                        "Heuristics.Broken.Media.JPEG.ApplicationMarkerRead");
+                if (probe_status != CL_SUCCESS && probe_status != CL_BREAK) {
+                    status = probe_status;
+                    goto done;
+                }
+                if (probe_status == CL_SUCCESS &&
                     (0 == memcmp(buff, "JFIF\0", strlen("JFIF") + 1))) {
                     /* Found a JFIF marker */
                     cli_dbgmsg(" JFIF application marker\n");
@@ -565,7 +589,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                 /*
                  * Exif, or maybe XMP data
                  */
-                if ((fmap_readn(map, buff, offset - len + sizeof(len_u16), strlen("Exif") + 2) == strlen("Exif") + 2) &&
+                probe_status = jpeg_read_segment_probe(ctx, offset - len + sizeof(len_u16), offset, buff,
+                                                        strlen("Exif") + 2,
+                                                        "Heuristics.Broken.Media.JPEG.ApplicationMarkerRead");
+                if (probe_status != CL_SUCCESS && probe_status != CL_BREAK) {
+                    status = probe_status;
+                    goto done;
+                }
+                if (probe_status == CL_SUCCESS &&
                     (0 == memcmp(buff, "Exif\0\0", strlen("Exif") + 2))) {
                     /* Found an Exif marker */
                     cli_dbgmsg(" Exif application marker\n");
@@ -591,7 +622,16 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                     }
                     found_app = true;
                     num_Exif += 1;
-                } else if ((fmap_readn(map, buff, offset - len + sizeof(len_u16), strlen("http://")) == strlen("http://")) &&
+                } else {
+                    probe_status = jpeg_read_segment_probe(ctx, offset - len + sizeof(len_u16), offset, buff,
+                                                            strlen("http://"),
+                                                            "Heuristics.Broken.Media.JPEG.ApplicationMarkerRead");
+                    if (probe_status != CL_SUCCESS && probe_status != CL_BREAK) {
+                        status = probe_status;
+                        goto done;
+                    }
+                }
+                if (probe_status == CL_SUCCESS &&
                            (0 == memcmp(buff, "http://", strlen("http://")))) {
                     cli_dbgmsg(" XMP metadata\n");
                     found_comment = true;
@@ -604,7 +644,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                 /*
                  * ICC Profile
                  */
-                if ((fmap_readn(map, buff, offset - len + sizeof(len_u16), strlen("ICC_PROFILE") + 2) == strlen("ICC_PROFILE") + 2) &&
+                probe_status = jpeg_read_segment_probe(ctx, offset - len + sizeof(len_u16), offset, buff,
+                                                        strlen("ICC_PROFILE") + 2,
+                                                        "Heuristics.Broken.Media.JPEG.ApplicationMarkerRead");
+                if (probe_status != CL_SUCCESS && probe_status != CL_BREAK) {
+                    status = probe_status;
+                    goto done;
+                }
+                if (probe_status == CL_SUCCESS &&
                     (0 == memcmp(buff, "ICC_PROFILE\0", strlen("ICC_PROFILE") + 1))) {
                     /* Found ICC Profile Chunk. Let's print out the chunk #, which follows "ICC_PROFILE\0"... */
                     uint8_t chunk_no = buff[strlen("ICC_PROFILE") + 1];
@@ -618,7 +665,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                 /*
                  * SPIFF
                  */
-                if ((fmap_readn(map, buff, offset - len + sizeof(len_u16), strlen("SPIFF") + 1) == strlen("SPIFF") + 1) &&
+                probe_status = jpeg_read_segment_probe(ctx, offset - len + sizeof(len_u16), offset, buff,
+                                                        strlen("SPIFF") + 1,
+                                                        "Heuristics.Broken.Media.JPEG.ApplicationMarkerRead");
+                if (probe_status != CL_SUCCESS && probe_status != CL_BREAK) {
+                    status = probe_status;
+                    goto done;
+                }
+                if (probe_status == CL_SUCCESS &&
                     (0 == memcmp(buff, "SPIFF\0", strlen("SPIFF") + 1))) {
                     /* Found SPIFF application marker */
                     cli_dbgmsg(" SPIFF application marker\n");
@@ -704,7 +758,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                 /*
                  * Adobe RGB, probably
                  */
-                if ((fmap_readn(map, buff, offset - len + sizeof(len_u16), strlen("Adobe") + 1) == strlen("Adobe") + 1) &&
+                probe_status = jpeg_read_segment_probe(ctx, offset - len + sizeof(len_u16), offset, buff,
+                                                        strlen("Adobe") + 1,
+                                                        "Heuristics.Broken.Media.JPEG.ApplicationMarkerRead");
+                if (probe_status != CL_SUCCESS && probe_status != CL_BREAK) {
+                    status = probe_status;
+                    goto done;
+                }
+                if (probe_status == CL_SUCCESS &&
                     (0 == memcmp(buff, "Adobe\0", strlen("Adobe") + 1))) {
                     cli_dbgmsg(" AdobeRGB application marker\n");
                 } else {

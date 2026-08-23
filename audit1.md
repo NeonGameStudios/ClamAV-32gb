@@ -5565,3 +5565,13 @@ tolerated broken 32-bit icon-mask fallback remains unchanged. A focused
 resource-tree regression covers callback failure at the group-header boundary.
 Compiled scanner, sanitizer, production PE/icon corpus, and Sonic1
 qualification remain open.
+
+## JPEG application-marker probe classification — 2026-08-23
+
+JPEG APP0, APP1, APP2, APP8, and APP14 metadata probes now use a segment-bounded
+reader. A genuinely short optional payload remains an ordinary non-match, but
+an in-range fmap callback failure is returned as `CL_EREAD`, marked incomplete,
+and made non-cacheable instead of being silently treated as unfamiliar
+metadata. The focused APP0 regression covers the callback-failure boundary.
+Compiled scanner, sanitizer, production JPEG corpus, and Sonic1 qualification
+remain open.

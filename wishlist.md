@@ -1549,3 +1549,10 @@ production RIFF corpus, and Sonic1 qualification as release gates.
   retaining the documented broken 32-bit mask fallback; retain compiled
   scanner, sanitizer, production PE/icon corpus, and Sonic1 qualification as
   release gates.
+
+## JPEG application-marker probe classification — 2026-08-23
+
+- Keep short APP0/APP1/APP2/APP8/APP14 payloads as ordinary non-matches while
+  preserving `CL_EREAD`, sticky incomplete state, and non-cacheability for
+  fully in-range fmap callback failures; retain compiled scanner, sanitizer,
+  production JPEG corpus, and Sonic1 qualification as release gates.
