@@ -1290,15 +1290,16 @@ metadata exceeds 64 MiB, and it no longer assembles a complete `<data>` text
 node or Base64 string in heap memory. The XML range is exposed as a duplicate
 fmap and consumed by the bounded SAX reader; each Base64 value is decoded into
 a temporary spool charged against the shared temporary quota. A completed
-spool is retained only as one decoded `mish` metadata block, with the existing
-64 MiB per-block cap, strict terminal `END` validation, and fail-visible
+spool was retained only as one decoded `mish` metadata block, with the then-
+existing 64 MiB per-block cap, strict terminal `END` validation, and fail-visible
 malformed/unsupported handling. Reconstructed partitions remain quota-charged
 while their nested scans run, and retained XML copies use bounded writes.
 
 This closes the specific DMG root-XML and whole-text-node materialization gap.
 Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
 qualification remain release gates; multi-segment DMGs remain explicit
-unsupported input.
+unsupported input. The decoded-value cap was superseded by the 2026-08-23
+file-backed stripe-reader change below.
 
 ## MHTML root preclassification failure visibility — 2026-08-19
 
@@ -4912,8 +4913,9 @@ The streaming DMG callback now validates and handles each completed `blkx`
 metadata block before the XML parser can decode the next one. The decoded
 metadata and stripe array are released on every callback return, including
 timeout, resource, detection, and parser failures; the implementation no
-longer queues the complete metadata list in heap memory. The existing 64 MiB
-per-block cap remains an explicit unsupported boundary. Compiled multi-block
+longer queues the complete metadata list in heap memory. At this checkpoint,
+the 64 MiB per-block cap remained explicit; the 2026-08-23 file-backed
+stripe-reader change below supersedes that decoded-value cap. Compiled multi-block
 DMG corpus, deterministic callback-timeout, sanitizer, and supported-build
 Sonic1 qualification remain release gates.
 
@@ -6732,3 +6734,22 @@ which dereferenced it immediately. The wrapper now returns an explicit
 incomplete result for an unavailable input map, with a focused direct-entry
 regression; compiled MIME corpus, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## DMG large blkx metadata fmap streaming — 2026-08-23
+
+The DMG XML decoder no longer applies the independent 64 MiB decoded-value
+cap. Base64 output remains in the shared quota-accounted temporary spool. A
+blkx metadata block within the legacy 64 MiB sort boundary retains the existing
+validated array path; larger blocks are exposed through a bounded fmap and
+their fixed-width stripe records are read and endian-normalized one at a time.
+Terminal `END`, exact decoded length, data-fork bounds, stripe geometry, and
+shared deadline checks remain fail-visible. Sorted large metadata therefore
+does not require a contiguous heap allocation; unsorted metadata above the
+legacy sort boundary remains an explicit incomplete result because preserving
+the prior qsort behavior would require an external sort implementation.
+
+The callback releases both the file-backed fmap and fixed header on every
+return. Source guards and the capability manifest now record
+`dmg-blkx-metadata-unsorted-over-64m`. Compiled DMG corpus, large-metadata
+fixture, sanitizer, and supported-build Sonic1 qualification remain release
+gates.

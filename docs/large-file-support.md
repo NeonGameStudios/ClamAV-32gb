@@ -1405,9 +1405,9 @@ or waive them.
   configured-limit crossings are incomplete/non-clean rather than a scan of a
   partial prefix. Other format-specific boundaries still require dedicated
   adversarial and large-payload fixtures before an upstream support claim.
-- Contiguous metadata/decompression remains intentionally capped: one decoded
-  DMG `blkx` metadata block at 64 MiB and compatibility EGG byte-buffer
-  callers at the 1 GiB allocation ceiling. The scanner-facing EGG path now
+- Contiguous metadata/decompression remains intentionally capped for
+  compatibility EGG byte-buffer callers at the 1 GiB allocation ceiling. The
+  scanner-facing EGG path now
   consumes fmap input and decoder output in 64 KiB windows, writing members to
   a quota-accounted temporary spool. NSIS members now consume fmap input in
   64 KiB windows and charge extracted bytes to the shared temporary quota. The DMG XML
@@ -1416,9 +1416,11 @@ or waive them.
   limit is fail-visible; it is not full deep-parser qualification through
   32 GiB.
 - DMG blkx Base64 is decoded incrementally across XML callback boundaries into
-  a quota-accounted spool. The completed block is retained only within the
-  per-block 64 MiB cap, then its complete alphabet, quartet, padding, suffix,
-  stripe geometry, and terminal `END` record are validated. Focused valid and
+  a quota-accounted spool. Blocks through 64 MiB retain the bounded sortable
+  array; larger sorted blocks are read from the spool one fixed-width stripe
+  at a time. Complete alphabet, quartet, padding, suffix, stripe geometry, and
+  terminal `END` records are validated. Unsorted metadata above 64 MiB is an
+  explicit incomplete result pending external-sort support. Focused valid and
   malformed fixtures guard these rules; full DMG corpus and supported-build
   qualification remain release gates.
 - BM offset mode now carries 64-bit runtime coordinates, but its bounded
@@ -2746,8 +2748,10 @@ memory, sanitizer, and supported-build Sonic1 qualification remain open.
 DMG resource-fork XML is now parsed through a bounded SAX reader over an fmap
 range. `<data>` Base64 text is decoded across XML callback boundaries into a
 temporary spool charged against `MaxTemporarySize`; the parser retains only
-one completed `mish` metadata block at a time within the 64 MiB per-block
-decoded cap. Reconstructed partitions reserve their expected temporary output
+one completed `mish` metadata block at a time. Metadata within the legacy
+64 MiB sort boundary uses the existing validated array, while larger metadata
+is exposed through a quota-accounted fmap and consumed one fixed-width stripe
+at a time. Reconstructed partitions reserve their expected temporary output
 while the nested scan runs, and optional retained XML copies use bounded,
 quota-accounted writes. Malformed XML/Base64, temporary admission, write,
 decoder, allocation, temporary-file, cleanup, and nested-scan failures remain
@@ -2758,22 +2762,21 @@ from the ADC, deflate, and BZIP2 stripe decoders, plus XML temporary-path
 allocation failure, mark the containing DMG scan incomplete before returning
 the resource error.
 
-This removes the former root-XML 64 MiB gate and whole-text-node allocation.
-Real Apple DMG corpus, large metadata, sanitizer, and supported-build Sonic1
-qualification remain release gates; multi-segment DMGs remain explicit
-unsupported input.
-The deliberate metadata ceiling is recorded as
-`dmg-blkx-metadata-over-64m`; it is independent of the outer file-size limit.
+This removes the former root-XML and decoded-metadata 64 MiB gates and
+whole-text-node allocation. Real Apple DMG corpus, large metadata, sanitizer,
+and supported-build Sonic1 qualification remain release gates; multi-segment
+DMGs remain explicit unsupported input. Unsorted metadata above the legacy
+sort boundary remains explicit as `dmg-blkx-metadata-unsorted-over-64m`.
 
 ## DMG blkx metadata retention — 2026-08-22
 
 The streaming DMG callback now validates and handles each completed `blkx`
 metadata block before the XML parser can decode the next one. The decoded
 metadata and stripe array are released on every callback return, including
-timeout, resource, detection, and parser failures; the implementation no
-longer queues the complete metadata list in heap memory. The existing 64 MiB
-per-block cap remains an explicit unsupported boundary, while the outer XML
-range remains streamed and quota-accounted.
+timeout, resource, detection, and parser failures; large blocks remain
+file-backed and are read one stripe at a time, while the bounded legacy array
+is retained only where sorting is required. The outer XML range remains
+streamed and quota-accounted.
 
 Compiled multi-block DMG corpus, deterministic callback-timeout, sanitizer,
 and supported-build Sonic1 qualification remain release gates.

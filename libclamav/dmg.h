@@ -44,9 +44,10 @@
 /* So far, this has been constant */
 #define DMG_SECTOR_SIZE 512
 
-/* Maximum decoded metadata accepted for one DMG blkx mish block. The XML
- * resource fork itself is streamed and is not subject to this allocation cap. */
-#define DMG_XML_PARSE_MAX_SIZE (64ULL * 1024ULL * 1024ULL)
+/* Maximum decoded metadata retained in the legacy sortable array. Larger
+ * blkx blocks are read from their quota-accounted temporary spool through a
+ * bounded fmap reader. */
+#define DMG_MISH_SORT_MAX_SIZE (64ULL * 1024ULL * 1024ULL)
 
 #ifndef HAVE_ATTRIB_PACKED
 #define __attribute__(x)
@@ -121,6 +122,10 @@ struct dmg_mish_with_stripes {
     struct dmg_mish_block *mish;
     struct dmg_block_data *stripes;
     struct dmg_mish_with_stripes *next;
+    fmap_t *metadata_map;
+    struct dmg_block_data current_stripe;
+    uint32_t current_index;
+    uint8_t current_valid;
 };
 
 #ifdef HAVE_PRAGMA_PACK

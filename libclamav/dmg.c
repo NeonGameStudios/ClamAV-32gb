@@ -76,12 +76,20 @@ struct dmg_xml_scan_state {
 static int dmg_extract_xml(cli_ctx *, char *, struct dmg_koly_block *);
 static int dmg_parse_mish_bytes(cli_ctx *, unsigned int *, uint8_t *, size_t,
                                 struct dmg_mish_with_stripes *);
+static int dmg_parse_mish_stream(cli_ctx *, unsigned int *, int, size_t,
+                                 struct dmg_mish_with_stripes *);
 static int dmg_decode_mish_fd(cli_ctx *, unsigned int *, int, struct dmg_mish_with_stripes *);
 static cl_error_t dmg_mish_decoded_cb(int, const char *, cli_ctx *, void *);
 static int cmp_mish_stripes(const void *stripe_a, const void *stripe_b);
 static int dmg_track_sectors(uint64_t *, uint8_t *, uint32_t, uint32_t, uint64_t);
+static int dmg_prepare_stripe(cli_ctx *, struct dmg_mish_with_stripes *, uint32_t,
+                              struct dmg_block_data *, uint64_t, uint64_t);
 static int dmg_handle_mish(cli_ctx *, unsigned int, char *, uint64_t, uint64_t,
                            struct dmg_mish_with_stripes *);
+static int dmg_read_stream_stripe(cli_ctx *, struct dmg_mish_with_stripes *, uint32_t,
+                                  struct dmg_block_data *);
+static const struct dmg_block_data *dmg_current_stripe(const struct dmg_mish_with_stripes *, uint32_t);
+static void dmg_release_mish(struct dmg_mish_with_stripes *);
 
 static int dmg_cleanup_temp_dir(cli_ctx *ctx, char **dirname, int status)
 {
@@ -283,7 +291,10 @@ int cli_scandmg(cli_ctx *ctx)
     xml_state.dataForkLength = hdr.dataForkLength;
     memset(&mxctx, 0, sizeof(mxctx));
     mxctx.decoded_cb       = dmg_mish_decoded_cb;
-    mxctx.decoded_max_size = DMG_XML_PARSE_MAX_SIZE;
+    /* The decoded value is written to a temporary spool and admitted against
+     * the shared temporary quota. DMG validates its fixed-width blkx records
+     * from that spool instead of imposing an independent small cap. */
+    mxctx.decoded_max_size = 0;
     mxctx.scan_data        = &xml_state;
     ret                    = cli_msxml_parse_document_streaming(ctx, xml_map, dmg_xml_keys,
                                                                 sizeof(dmg_xml_keys) / sizeof(dmg_xml_keys[0]),
@@ -313,6 +324,8 @@ static int dmg_parse_mish_bytes(cli_ctx *ctx, unsigned int *mishblocknum, uint8_
     mish_set->mish    = NULL;
     mish_set->stripes = NULL;
     mish_set->next    = NULL;
+    mish_set->metadata_map = NULL;
+    mish_set->current_valid = 0;
     (*mishblocknum)++;
 
     dmg_parsemsg("dmg_parse_mish_bytes: decoded block %u is %lu bytes\n",
@@ -401,6 +414,155 @@ static int dmg_parse_mish_bytes(cli_ctx *ctx, unsigned int *mishblocknum, uint8_
     return CL_CLEAN;
 }
 
+static int dmg_read_stream_stripe(cli_ctx *ctx, struct dmg_mish_with_stripes *mish_set,
+                                  uint32_t index, struct dmg_block_data *stripe)
+{
+    uint64_t offset;
+
+    if (!ctx || !mish_set || !mish_set->metadata_map || !mish_set->mish || !stripe ||
+        index >= mish_set->mish->blockDataCount)
+        return CL_ENULLARG;
+
+    if ((uint64_t)sizeof(struct dmg_mish_block) > UINT64_MAX -
+                                                    (uint64_t)index * sizeof(struct dmg_block_data)) {
+        cli_mark_scan_incomplete(ctx, "DMG blkx stripe offset overflowed");
+        return CL_EPARSE;
+    }
+    offset = (uint64_t)sizeof(struct dmg_mish_block) +
+             (uint64_t)index * (uint64_t)sizeof(struct dmg_block_data);
+    if (offset > (uint64_t)SIZE_MAX ||
+        fmap_readn(mish_set->metadata_map, stripe, (size_t)offset, sizeof(*stripe)) != sizeof(*stripe)) {
+        cli_mark_scan_incomplete(ctx, "DMG blkx stripe metadata could not be read completely");
+        return CL_EREAD;
+    }
+
+    stripe->type        = be32_to_host(stripe->type);
+    stripe->startSector = be64_to_host(stripe->startSector);
+    stripe->sectorCount = be64_to_host(stripe->sectorCount);
+    stripe->dataOffset  = be64_to_host(stripe->dataOffset);
+    stripe->dataLength  = be64_to_host(stripe->dataLength);
+    return CL_CLEAN;
+}
+
+static int dmg_parse_mish_stream(cli_ctx *ctx, unsigned int *mishblocknum, int fd,
+                                 size_t decoded_len, struct dmg_mish_with_stripes *mish_set)
+{
+    static const uint8_t mish_magic[4] = {0x6d, 0x69, 0x73, 0x68};
+    struct dmg_mish_block header;
+    struct dmg_block_data stripe;
+    uint64_t expected_len;
+    uint32_t i;
+    unsigned int end_count = 0;
+    int ret;
+
+    if (!ctx || !mishblocknum || fd < 0 || !mish_set || decoded_len < sizeof(header))
+        return CL_ENULLARG;
+
+    memset(mish_set, 0, sizeof(*mish_set));
+    mish_set->metadata_map = fmap_new(fd, 0, decoded_len, "dmg-mish", NULL);
+    if (!mish_set->metadata_map) {
+        cli_mark_scan_incomplete(ctx, "DMG decoded mish spool could not be exposed through a bounded fmap");
+        return CL_ERESOURCE;
+    }
+    if (fmap_readn(mish_set->metadata_map, &header, 0, sizeof(header)) != sizeof(header)) {
+        cli_mark_scan_incomplete(ctx, "DMG decoded mish header could not be read completely");
+        dmg_release_mish(mish_set);
+        return CL_EREAD;
+    }
+
+    (*mishblocknum)++;
+    if (memcmp(&header.magic, mish_magic, sizeof(mish_magic)) != 0) {
+        cli_dbgmsg("dmg_parse_mish_stream: block %u does not have mish magic\n", *mishblocknum);
+        dmg_release_mish(mish_set);
+        return CL_EFORMAT;
+    }
+
+    header.startSector    = be64_to_host(header.startSector);
+    header.sectorCount    = be64_to_host(header.sectorCount);
+    header.dataOffset     = be64_to_host(header.dataOffset);
+    header.blockDataCount = be32_to_host(header.blockDataCount);
+    if (header.blockDataCount == 0) {
+        cli_dbgmsg("dmg_parse_mish_stream: block %u has no stripe records\n", *mishblocknum);
+        dmg_release_mish(mish_set);
+        return CL_EFORMAT;
+    }
+
+    expected_len = (uint64_t)sizeof(struct dmg_mish_block) +
+                   (uint64_t)header.blockDataCount * (uint64_t)sizeof(struct dmg_block_data);
+    if (expected_len != (uint64_t)decoded_len) {
+        cli_dbgmsg("dmg_parse_mish_stream: block %u has an invalid decoded length\n", *mishblocknum);
+        dmg_release_mish(mish_set);
+        return CL_EFORMAT;
+    }
+
+    mish_set->mish = cli_max_malloc(sizeof(header));
+    if (!mish_set->mish) {
+        cli_mark_scan_incomplete(ctx, "DMG decoded mish header could not be allocated");
+        dmg_release_mish(mish_set);
+        return CL_EMEM;
+    }
+    *mish_set->mish = header;
+
+    for (i = 0; i < header.blockDataCount; i++) {
+        if ((i & 0xfffU) == 0 && cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "DMG blkx metadata validation reached the configured time limit");
+            dmg_release_mish(mish_set);
+            return CL_ETIMEOUT;
+        }
+
+        ret = dmg_read_stream_stripe(ctx, mish_set, i, &stripe);
+        if (ret != CL_CLEAN) {
+            dmg_release_mish(mish_set);
+            return ret;
+        }
+        if (stripe.type != DMG_STRIPE_END)
+            continue;
+
+        end_count++;
+        if (end_count != 1 || i + 1 != header.blockDataCount || stripe.sectorCount != 0 ||
+            stripe.dataLength != 0) {
+            cli_dbgmsg("dmg_parse_mish_stream: block %u has an invalid or non-terminal END stripe\n", *mishblocknum);
+            dmg_release_mish(mish_set);
+            return CL_EFORMAT;
+        }
+    }
+
+    if (end_count != 1) {
+        cli_dbgmsg("dmg_parse_mish_stream: block %u has no terminal END stripe\n", *mishblocknum);
+        dmg_release_mish(mish_set);
+        return CL_EFORMAT;
+    }
+
+    fmap_release_unlocked(mish_set->metadata_map);
+    return CL_CLEAN;
+}
+
+static const struct dmg_block_data *dmg_current_stripe(const struct dmg_mish_with_stripes *mish_set,
+                                                       uint32_t index)
+{
+    if (!mish_set)
+        return NULL;
+    if (mish_set->stripes)
+        return &mish_set->stripes[index];
+    if (mish_set->current_valid && mish_set->current_index == index)
+        return &mish_set->current_stripe;
+    return NULL;
+}
+
+static void dmg_release_mish(struct dmg_mish_with_stripes *mish_set)
+{
+    if (!mish_set)
+        return;
+    if (mish_set->metadata_map) {
+        fmap_free(mish_set->metadata_map);
+        mish_set->metadata_map = NULL;
+    }
+    free(mish_set->mish);
+    mish_set->mish          = NULL;
+    mish_set->stripes       = NULL;
+    mish_set->current_valid = 0;
+}
+
 static int dmg_decode_mish_fd(cli_ctx *ctx, unsigned int *mishblocknum, int fd,
                               struct dmg_mish_with_stripes *mish_set)
 {
@@ -415,12 +577,19 @@ static int dmg_decode_mish_fd(cli_ctx *ctx, unsigned int *mishblocknum, int fd,
         cli_mark_scan_incomplete(ctx, "DMG decoded mish spool could not be sized");
         return CL_ESTAT;
     }
-    if (statbuf.st_size == 0 || (uint64_t)statbuf.st_size > DMG_XML_PARSE_MAX_SIZE) {
-        cli_mark_scan_incomplete(ctx, "DMG decoded mish metadata exceeds its 64 MiB per-block limit");
+    if (statbuf.st_size == 0) {
+        cli_mark_scan_incomplete(ctx, "DMG decoded mish metadata is empty");
         return CL_EFORMAT;
+    }
+    if ((uint64_t)statbuf.st_size > (uint64_t)SIZE_MAX) {
+        cli_mark_scan_incomplete(ctx, "DMG decoded mish metadata exceeds the addressable fmap range");
+        return CL_ERESOURCE;
     }
 
     decoded_len = (size_t)statbuf.st_size;
+    if ((uint64_t)decoded_len > (uint64_t)DMG_MISH_SORT_MAX_SIZE)
+        return dmg_parse_mish_stream(ctx, mishblocknum, fd, decoded_len, mish_set);
+
     decoded     = cli_max_malloc(decoded_len);
     if (!decoded) {
         cli_mark_scan_incomplete(ctx, "DMG decoded mish metadata could not be allocated");
@@ -476,7 +645,7 @@ static cl_error_t dmg_mish_decoded_cb(int fd, const char *filepath, cli_ctx *ctx
                               state->dataForkLength, &mish_set);
     }
 
-    free(mish_set.mish);
+    dmg_release_mish(&mish_set);
     return ret == CL_CLEAN ? CL_SUCCESS : ret;
 }
 static int cmp_mish_stripes(const void *stripe_a, const void *stripe_b)
@@ -551,7 +720,7 @@ static int dmg_stripe_zeroes(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mi
     uint8_t obuf[BUFSIZ];
 
     cli_dbgmsg("dmg_stripe_zeroes: stripe " STDu32 "\n", index);
-    ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected);
+    ret = dmg_expected_output(ctx, index, dmg_current_stripe(mish_set, index)->sectorCount, &expected);
     if (ret != CL_CLEAN)
         return ret;
 
@@ -578,14 +747,15 @@ static int dmg_stripe_zeroes(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mi
 static int dmg_stripe_store(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_with_stripes *mish_set)
 {
     const uint8_t *input;
-    uint64_t off       = mish_set->stripes[index].dataOffset;
-    uint64_t remaining = mish_set->stripes[index].dataLength;
+    uint64_t off       = dmg_current_stripe(mish_set, index)->dataOffset;
+    uint64_t remaining = dmg_current_stripe(mish_set, index)->dataLength;
     uint64_t expected;
     uint64_t written = 0;
+    int read_failed;
     int ret;
 
     cli_dbgmsg("dmg_stripe_store: stripe " STDu32 "\n", index);
-    ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected);
+    ret = dmg_expected_output(ctx, index, dmg_current_stripe(mish_set, index)->sectorCount, &expected);
     if (ret != CL_CLEAN)
         return ret;
     if (remaining != expected) {
@@ -627,14 +797,14 @@ static int dmg_stripe_adc(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_
     int adcret;
     int ret;
     adc_stream strm;
-    uint64_t off       = mish_set->stripes[index].dataOffset;
-    uint64_t remaining = mish_set->stripes[index].dataLength;
+    uint64_t off       = dmg_current_stripe(mish_set, index)->dataOffset;
+    uint64_t remaining = dmg_current_stripe(mish_set, index)->dataLength;
     uint64_t expected_len;
     uint64_t size_so_far = 0;
     uint8_t obuf[BUFSIZ];
     int read_failed;
 
-    ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected_len);
+    ret = dmg_expected_output(ctx, index, dmg_current_stripe(mish_set, index)->sectorCount, &expected_len);
     if (ret != CL_CLEAN)
         return ret;
     cli_dbgmsg("dmg_stripe_adc: stripe " STDu32 " initial len " STDu64 " expected len " STDu64 "\n",
@@ -735,15 +905,15 @@ static int dmg_stripe_inflate(cli_ctx *ctx, int fd, uint32_t index, struct dmg_m
     int zstat;
     int ret;
     z_stream strm;
-    uint64_t off         = mish_set->stripes[index].dataOffset;
-    uint64_t remaining   = mish_set->stripes[index].dataLength;
+    uint64_t off         = dmg_current_stripe(mish_set, index)->dataOffset;
+    uint64_t remaining   = dmg_current_stripe(mish_set, index)->dataLength;
     uint64_t size_so_far = 0;
     uint64_t expected_len;
     uint8_t obuf[BUFSIZ];
     int read_failed;
 
     cli_dbgmsg("dmg_stripe_inflate: stripe " STDu32 "\n", index);
-    ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected_len);
+    ret = dmg_expected_output(ctx, index, dmg_current_stripe(mish_set, index)->sectorCount, &expected_len);
     if (ret != CL_CLEAN)
         return ret;
     if (remaining == 0) {
@@ -840,8 +1010,8 @@ static int dmg_stripe_inflate(cli_ctx *ctx, int fd, uint32_t index, struct dmg_m
 static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish_with_stripes *mish_set)
 {
     int ret;
-    uint64_t off         = mish_set->stripes[index].dataOffset;
-    uint64_t remaining   = mish_set->stripes[index].dataLength;
+    uint64_t off         = dmg_current_stripe(mish_set, index)->dataOffset;
+    uint64_t remaining   = dmg_current_stripe(mish_set, index)->dataLength;
     uint64_t size_so_far = 0;
     uint64_t expected_len;
     int rc;
@@ -849,7 +1019,7 @@ static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish
     uint8_t obuf[BUFSIZ];
     int read_failed;
 
-    ret = dmg_expected_output(ctx, index, mish_set->stripes[index].sectorCount, &expected_len);
+    ret = dmg_expected_output(ctx, index, dmg_current_stripe(mish_set, index)->sectorCount, &expected_len);
     if (ret != CL_CLEAN)
         return ret;
     cli_dbgmsg("dmg_stripe_bzip: stripe " STDu32 " initial len " STDu64 " expected len " STDu64 "\n",
@@ -939,69 +1109,115 @@ static int dmg_stripe_bzip(cli_ctx *ctx, int fd, uint32_t index, struct dmg_mish
     return ret;
 }
 
+static int dmg_prepare_stripe(cli_ctx *ctx, struct dmg_mish_with_stripes *mish_set, uint32_t index,
+                              struct dmg_block_data *stripe, uint64_t dataForkOffset,
+                              uint64_t dataForkLength)
+{
+    uint64_t sourceBase;
+    int ret;
+
+    if (!ctx || !mish_set || !mish_set->mish || !stripe)
+        return CL_ENULLARG;
+
+    if (mish_set->stripes) {
+        stripe->type        = be32_to_host(stripe->type);
+        stripe->startSector = be64_to_host(stripe->startSector);
+        stripe->sectorCount = be64_to_host(stripe->sectorCount);
+        stripe->dataOffset  = be64_to_host(stripe->dataOffset);
+        stripe->dataLength  = be64_to_host(stripe->dataLength);
+    } else {
+        ret = dmg_read_stream_stripe(ctx, mish_set, index, stripe);
+        if (ret != CL_CLEAN)
+            return ret;
+    }
+
+    /* UDIF chunk offsets are relative to both the koly data-fork offset and
+     * this mish block's dataOffset. Resolve them once for the current view. */
+    if (mish_set->mish->dataOffset > dataForkLength ||
+        stripe->dataOffset > dataForkLength - mish_set->mish->dataOffset) {
+        cli_mark_scan_incomplete(ctx, "DMG stripe source base is outside the declared data fork");
+        return CL_EPARSE;
+    }
+    sourceBase = mish_set->mish->dataOffset + stripe->dataOffset;
+    if (stripe->dataLength > dataForkLength - sourceBase ||
+        dataForkOffset > UINT64_MAX - sourceBase) {
+        cli_mark_scan_incomplete(ctx, "DMG stripe data is outside the declared data fork");
+        return CL_EPARSE;
+    }
+    stripe->dataOffset = dataForkOffset + sourceBase;
+    if ((stripe->type == DMG_STRIPE_SKIP || stripe->type == DMG_STRIPE_END ||
+         (stripe->type != DMG_STRIPE_EMPTY && stripe->type != DMG_STRIPE_ZEROES &&
+          stripe->type != DMG_STRIPE_STORED && stripe->type != DMG_STRIPE_ADC &&
+          stripe->type != DMG_STRIPE_DEFLATE && stripe->type != DMG_STRIPE_BZ)) &&
+        stripe->dataLength != 0) {
+        cli_mark_scan_incomplete(ctx, "DMG unsupported or control stripe references uninspected data");
+        return CL_EPARSE;
+    }
+
+    if (!mish_set->stripes) {
+        mish_set->current_stripe = *stripe;
+        mish_set->current_index  = index;
+        mish_set->current_valid  = 1;
+    }
+    return CL_CLEAN;
+}
+
 /* Given mish data, reconstruct the partition details */
 static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
                            uint64_t dataForkOffset, uint64_t dataForkLength,
                            struct dmg_mish_with_stripes *mish_set)
 {
     struct dmg_block_data *blocklist = mish_set->stripes;
+    struct dmg_block_data streamed_stripe;
+    uint64_t previous_start = 0;
     uint64_t totalSectors            = 0;
     uint64_t outputEnd               = 0;
-    uint64_t sourceBase;
     uint32_t i;
     uint64_t projected_size;
     uint64_t temporary_reserved = 0;
     int ret                     = CL_CLEAN, ofd;
-    uint8_t sorted = 1, writeable_data = 0;
+    uint8_t sorted = 1, have_previous_start = 0, writeable_data = 0;
     char outfile[PATH_MAX + 1];
 
-    /* First loop, fix endian-ness and check if already sorted */
+    /* First loop, fix endian-ness and check if already sorted. A large
+     * metadata spool is read one fixed-width stripe at a time; only the
+     * legacy bounded path retains a sortable in-memory array. */
     for (i = 0; i < mish_set->mish->blockDataCount; i++) {
-        blocklist[i].type = be32_to_host(blocklist[i].type);
-        // blocklist[i].reserved = be32_to_host(blocklist[i].reserved);
-        blocklist[i].startSector = be64_to_host(blocklist[i].startSector);
-        blocklist[i].sectorCount = be64_to_host(blocklist[i].sectorCount);
-        blocklist[i].dataOffset  = be64_to_host(blocklist[i].dataOffset);
-        blocklist[i].dataLength  = be64_to_host(blocklist[i].dataLength);
+        struct dmg_block_data *stripe = blocklist ? &blocklist[i] : &streamed_stripe;
+
+        if ((i & 0xfffU) == 0 && cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "DMG blkx metadata traversal reached the configured time limit");
+            return CL_ETIMEOUT;
+        }
+        ret = dmg_prepare_stripe(ctx, mish_set, i, stripe, dataForkOffset, dataForkLength);
+        if (ret != CL_CLEAN)
+            return ret;
         cli_dbgmsg("mish %u stripe " STDu32 " type " STDx32 " start " STDu64
                    " count " STDu64 " source " STDu64 " length " STDu64 "\n",
-                   mishblocknum, i, blocklist[i].type, blocklist[i].startSector, blocklist[i].sectorCount,
-                   blocklist[i].dataOffset, blocklist[i].dataLength);
-        /* UDIF chunk offsets are relative to both the koly data-fork offset
-         * and this mish block's dataOffset. Resolve the native file coordinate
-         * once, using subtraction-form bounds against the declared data fork.
-         */
-        if (mish_set->mish->dataOffset > dataForkLength ||
-            blocklist[i].dataOffset > dataForkLength - mish_set->mish->dataOffset) {
-            cli_mark_scan_incomplete(ctx, "DMG stripe source base is outside the declared data fork");
-            return CL_EPARSE;
+                   mishblocknum, i, stripe->type, stripe->startSector, stripe->sectorCount,
+                   stripe->dataOffset, stripe->dataLength);
+        if (stripe->type != DMG_STRIPE_SKIP && stripe->type != DMG_STRIPE_END) {
+            if (have_previous_start && sorted && stripe->startSector < previous_start) {
+                cli_dbgmsg("dmg_handle_mish: data stripes not in order, will have to sort\n");
+                sorted = 0;
+            }
+            previous_start      = stripe->startSector;
+            have_previous_start = 1;
         }
-        sourceBase = mish_set->mish->dataOffset + blocklist[i].dataOffset;
-        if (blocklist[i].dataLength > dataForkLength - sourceBase ||
-            dataForkOffset > UINT64_MAX - sourceBase) {
-            cli_mark_scan_incomplete(ctx, "DMG stripe data is outside the declared data fork");
-            return CL_EPARSE;
-        }
-        blocklist[i].dataOffset = dataForkOffset + sourceBase;
-        if ((blocklist[i].type == DMG_STRIPE_SKIP || blocklist[i].type == DMG_STRIPE_END ||
-             (blocklist[i].type != DMG_STRIPE_EMPTY && blocklist[i].type != DMG_STRIPE_ZEROES &&
-              blocklist[i].type != DMG_STRIPE_STORED && blocklist[i].type != DMG_STRIPE_ADC &&
-              blocklist[i].type != DMG_STRIPE_DEFLATE && blocklist[i].type != DMG_STRIPE_BZ)) &&
-            blocklist[i].dataLength != 0) {
-            cli_mark_scan_incomplete(ctx, "DMG unsupported or control stripe references uninspected data");
-            return CL_EPARSE;
-        }
-        if ((i > 0) && sorted && (blocklist[i].startSector < blocklist[i - 1].startSector)) {
-            cli_dbgmsg("dmg_handle_mish: stripes not in order, will have to sort\n");
-            sorted = 0;
-        }
-        if (dmg_track_sectors(&totalSectors, &writeable_data, i, blocklist[i].type, blocklist[i].sectorCount)) {
+        if (dmg_track_sectors(&totalSectors, &writeable_data, i, stripe->type, stripe->sectorCount)) {
             /* reason was logged from dmg_track_sector_count */
             cli_mark_scan_incomplete(ctx, "DMG contains invalid or unsupported non-empty stripe metadata");
             return CL_EPARSE;
         }
     }
 
+    if (!blocklist)
+        fmap_release_unlocked(mish_set->metadata_map);
+
+    if (!sorted && !blocklist) {
+        cli_mark_scan_incomplete(ctx, "DMG unsorted blkx metadata exceeds the bounded in-memory sort path");
+        return CL_ERESOURCE;
+    }
     if (!sorted) {
         cli_qsort(blocklist, mish_set->mish->blockDataCount, sizeof(struct dmg_block_data), cmp_mish_stripes);
     }
@@ -1012,16 +1228,32 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
      * into a different byte stream and scanning it as if it were complete.
      */
     for (i = 0; i < mish_set->mish->blockDataCount; i++) {
-        if (blocklist[i].type == DMG_STRIPE_SKIP || blocklist[i].type == DMG_STRIPE_END)
+        const struct dmg_block_data *stripe;
+
+        if ((i & 0xfffU) == 0 && cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "DMG blkx geometry validation reached the configured time limit");
+            return CL_ETIMEOUT;
+        }
+        if (blocklist) {
+            stripe = &blocklist[i];
+        } else {
+            ret = dmg_prepare_stripe(ctx, mish_set, i, &streamed_stripe, dataForkOffset, dataForkLength);
+            if (ret != CL_CLEAN)
+                return ret;
+            stripe = &streamed_stripe;
+        }
+        if (stripe->type == DMG_STRIPE_SKIP || stripe->type == DMG_STRIPE_END)
             continue;
         if (outputEnd > mish_set->mish->sectorCount ||
-            blocklist[i].startSector != outputEnd ||
-            blocklist[i].sectorCount > mish_set->mish->sectorCount - outputEnd) {
+            stripe->startSector != outputEnd ||
+            stripe->sectorCount > mish_set->mish->sectorCount - outputEnd) {
             cli_mark_scan_incomplete(ctx, "DMG stripe geometry has a gap, overlap, or out-of-range sector span");
             return CL_EPARSE;
         }
-        outputEnd += blocklist[i].sectorCount;
+        outputEnd += stripe->sectorCount;
     }
+    if (!blocklist)
+        fmap_release_unlocked(mish_set->metadata_map);
     if (outputEnd != mish_set->mish->sectorCount) {
         cli_mark_scan_incomplete(ctx, "DMG stripe geometry does not cover the declared mish sector span");
         return CL_EPARSE;
@@ -1071,7 +1303,22 @@ static int dmg_handle_mish(cli_ctx *ctx, unsigned int mishblocknum, char *dir,
 
     /* Push data, stripe by stripe */
     for (i = 0; i < mish_set->mish->blockDataCount && ret == CL_CLEAN; i++) {
-        switch (blocklist[i].type) {
+        const struct dmg_block_data *stripe;
+
+        if ((i & 0xfffU) == 0 && cli_checktimelimit(ctx) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "DMG blkx reconstruction reached the configured time limit");
+            ret = CL_ETIMEOUT;
+            break;
+        }
+        if (blocklist) {
+            stripe = &blocklist[i];
+        } else {
+            ret = dmg_prepare_stripe(ctx, mish_set, i, &streamed_stripe, dataForkOffset, dataForkLength);
+            if (ret != CL_CLEAN)
+                break;
+            stripe = &streamed_stripe;
+        }
+        switch (stripe->type) {
             case DMG_STRIPE_EMPTY:
             case DMG_STRIPE_ZEROES:
                 ret = dmg_stripe_zeroes(ctx, ofd, i, mish_set);
