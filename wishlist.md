@@ -1477,3 +1477,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   preserving parse results for short ranges and `CL_EREAD` for fully in-range
   fmap callback failures; retain compiled scanner, sanitizer, production EGG
   corpus, and Sonic1 qualification as release gates.
+
+## EGG extra-field and compressed-range read classification — 2026-08-23
+
+- Preflight EGG extra-field headers, size fields, declared payloads, legacy
+  whole-block extraction, and streamed compressed ranges, preserving parse
+  results for short ranges and `CL_EREAD` for fully in-range fmap callback
+  failures; retain compiled scanner, sanitizer, production EGG corpus, and
+  Sonic1 qualification as release gates.

@@ -5470,3 +5470,13 @@ incomplete result, while a fully in-range fmap callback failure remains
 `CL_EREAD` with an explicit incomplete reason. Focused archive-header
 regressions cover both outcomes. Compiled scanner, sanitizer, production EGG
 corpus, and Sonic1 qualification remain open.
+
+## EGG extra-field and compressed-range read classification — 2026-08-23
+
+EGG archive/file extra-field headers, size fields, declared payloads, and
+legacy whole-block extraction now preflight their ranges. Streaming block reads
+also distinguish a short compressed stream from an in-range fmap callback
+failure. Short ranges remain parse/incomplete results; callback failures remain
+`CL_EREAD` with explicit incomplete reasons. Focused archive-comment regressions
+cover header and payload callback failures plus truncation. Compiled scanner,
+sanitizer, production EGG corpus, and Sonic1 qualification remain open.

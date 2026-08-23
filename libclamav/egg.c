@@ -382,15 +382,17 @@ static cl_error_t egg_checktimelimit(const egg_handle* handle)
     return status;
 }
 
-static const uint8_t* egg_read_fixed_range(egg_handle* handle, size_t offset, size_t length, cl_error_t* status)
+static const uint8_t* egg_read_range(egg_handle* handle, size_t offset, size_t length, cl_error_t* status,
+                                     const char* truncated_reason, const char* read_failure_reason)
 {
     const uint8_t* data;
 
-    if (handle == NULL || handle->map == NULL || offset > handle->map->len || length > handle->map->len - offset) {
+    if (handle == NULL || handle->map == NULL || length == 0 || offset > handle->map->len ||
+        length > handle->map->len - offset) {
         if (status != NULL)
             *status = CL_EPARSE;
         if (handle != NULL && handle->ctx != NULL)
-            cli_mark_scan_incomplete(handle->ctx, "EGG fixed metadata is truncated");
+            cli_mark_scan_incomplete(handle->ctx, truncated_reason);
         return NULL;
     }
 
@@ -399,13 +401,27 @@ static const uint8_t* egg_read_fixed_range(egg_handle* handle, size_t offset, si
         if (status != NULL)
             *status = CL_EREAD;
         if (handle->ctx != NULL)
-            cli_mark_scan_incomplete(handle->ctx, "EGG fixed metadata could not be read completely");
+            cli_mark_scan_incomplete(handle->ctx, read_failure_reason);
         return NULL;
     }
 
     if (status != NULL)
         *status = CL_SUCCESS;
     return data;
+}
+
+static const uint8_t* egg_read_fixed_range(egg_handle* handle, size_t offset, size_t length, cl_error_t* status)
+{
+    return egg_read_range(handle, offset, length, status,
+                          "EGG fixed metadata is truncated",
+                          "EGG fixed metadata could not be read completely");
+}
+
+static const uint8_t* egg_read_extra_range(egg_handle* handle, size_t offset, size_t length, cl_error_t* status)
+{
+    return egg_read_range(handle, offset, length, status,
+                          "EGG extra-field data is truncated",
+                          "EGG extra-field data could not be read completely");
 }
 
 #define EGG_VALIDATE_HANDLE(h) \
@@ -855,7 +871,7 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
         goto done;
     }
 
-    index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(extra_field));
+    index = egg_read_extra_range(handle, handle->offset, sizeof(extra_field), &status);
     if (!index) {
         cli_dbgmsg("egg_parse_archive_extra_field: File buffer too small to contain extra_field header.\n");
         goto done;
@@ -870,7 +886,7 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
 
     if (extraField->bit_flag & EXTRA_FIELD_FLAGS_SIZE_IS_4BYTES) {
         /* size is uint32_t */
-        index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(uint32_t));
+        index = egg_read_extra_range(handle, handle->offset, sizeof(uint32_t), &status);
         if (!index) {
             cli_dbgmsg("egg_parse_archive_extra_field: File buffer too small to contain extra_field header.\n");
             goto done;
@@ -881,7 +897,7 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
         handle->offset += sizeof(uint32_t);
     } else {
         /* size is uint16_t */
-        index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(uint16_t));
+        index = egg_read_extra_range(handle, handle->offset, sizeof(uint16_t), &status);
         if (!index) {
             cli_dbgmsg("egg_parse_archive_extra_field: File buffer too small to contain extra_field header.\n");
             goto done;
@@ -944,7 +960,7 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
             if (sizeof(split_compression) != size) {
                 cli_dbgmsg("egg_parse_archive_extra_field: size in extra_field is different than size of split_compression (%zu != %u).\n", sizeof(split_compression), size);
             } else {
-                index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(split_compression));
+                index = egg_read_extra_range(handle, handle->offset, sizeof(split_compression), &status);
                 if (!index) {
                     cli_dbgmsg("egg_parse_archive_extra_field: File buffer too small to contain split compression header.\n");
                     goto done;
@@ -982,7 +998,7 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
             }
             size -= sizeof(extra_field) + sizeof(uint16_t);
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
+            index = egg_read_extra_range(handle, handle->offset, size, &status);
             if (!index) {
                 cli_errmsg("egg_parse_archive_extra_field: File buffer too small to contain encryption headers.\n");
                 goto done;
@@ -1106,7 +1122,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
         goto done;
     }
 
-    index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(extra_field));
+    index = egg_read_extra_range(handle, handle->offset, sizeof(extra_field), &status);
     if (!index) {
         cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain extra_field header.\n");
         goto done;
@@ -1121,7 +1137,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
 
     if (extraField->bit_flag & EXTRA_FIELD_FLAGS_SIZE_IS_4BYTES) {
         /* size is uint32_t */
-        index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(uint32_t));
+        index = egg_read_extra_range(handle, handle->offset, sizeof(uint32_t), &status);
         if (!index) {
             cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain extra_field header.\n");
             goto done;
@@ -1132,7 +1148,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
         handle->offset += sizeof(uint32_t);
     } else {
         /* size is uint16_t */
-        index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(uint16_t));
+        index = egg_read_extra_range(handle, handle->offset, sizeof(uint16_t), &status);
         if (!index) {
             cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain extra_field header.\n");
             goto done;
@@ -1170,7 +1186,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 goto done;
             }
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
+            index = egg_read_extra_range(handle, handle->offset, size, &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain name fields.\n");
                 goto done;
@@ -1265,7 +1281,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
             cl_error_t retval = CL_EPARSE;
             char* comment     = NULL;
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
+            index = egg_read_extra_range(handle, handle->offset, size, &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain comment fields.\n");
                 goto done;
@@ -1318,7 +1334,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
             }
             size -= sizeof(extra_field) + sizeof(uint16_t);
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
+            index = egg_read_extra_range(handle, handle->offset, size, &status);
             if (!index) {
                 cli_errmsg("egg_parse_file_extra_field: File buffer too small to contain encryption fields.\n");
                 goto done;
@@ -1342,7 +1358,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 cli_warnmsg("egg_parse_file_extra_field: Invalid size of windows_file_information!\n");
             }
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(windows_file_information));
+            index = egg_read_extra_range(handle, handle->offset, sizeof(windows_file_information), &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain windows info.\n");
                 goto done;
@@ -1367,7 +1383,7 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 cli_warnmsg("egg_parse_file_extra_field: Invalid size of posix_file_information!\n");
             }
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(posix_file_information));
+            index = egg_read_extra_range(handle, handle->offset, sizeof(posix_file_information), &status);
             if (!index) {
                 cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain posix info.\n");
                 goto done;
@@ -1877,7 +1893,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
             char* comment           = NULL;
             uint32_t size           = 0;
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(extra_field));
+            index = egg_read_extra_range(handle, handle->offset, sizeof(extra_field), &status);
             if (!index) {
                 cli_dbgmsg("cli_egg_open: File buffer too small to contain extra_field header.\n");
                 goto done;
@@ -1892,7 +1908,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
 
             if (extraField->bit_flag & EXTRA_FIELD_FLAGS_SIZE_IS_4BYTES) {
                 /* size is uint32_t */
-                index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(uint32_t));
+                index = egg_read_extra_range(handle, handle->offset, sizeof(uint32_t), &status);
                 if (!index) {
                     cli_dbgmsg("cli_egg_open: File buffer too small to contain archive comment extra_field header.\n");
                     goto done;
@@ -1903,7 +1919,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
                 handle->offset += sizeof(uint32_t);
             } else {
                 /* size is uint16_t */
-                index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(uint16_t));
+                index = egg_read_extra_range(handle, handle->offset, sizeof(uint16_t), &status);
                 if (!index) {
                     cli_dbgmsg("cli_egg_open: File buffer too small to contain archive comment extra_field header.\n");
                     goto done;
@@ -1922,7 +1938,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
                 goto done;
             }
 
-            index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, size);
+            index = egg_read_extra_range(handle, handle->offset, size, &status);
             if (!index) {
                 cli_dbgmsg("cli_egg_open: File buffer too small to contain extra_field header.\n");
                 goto done;
@@ -2156,11 +2172,17 @@ static cl_error_t egg_stream_read(const egg_handle* handle, const egg_block* blo
     chunk  = (available < (size_t)EGG_STREAM_CHUNK) ? available : (size_t)EGG_STREAM_CHUNK;
     offset = block->compressedDataOffset;
     if (offset > handle->map->len || *input_offset > handle->map->len - offset ||
-        chunk > handle->map->len - offset - *input_offset)
-        return CL_EREAD;
+        chunk > handle->map->len - offset - *input_offset) {
+        if (handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG compressed stream is truncated");
+        return CL_EPARSE;
+    }
 
-    if (fmap_readn(handle->map, buffer, offset + *input_offset, chunk) != chunk)
+    if (fmap_readn(handle->map, buffer, offset + *input_offset, chunk) != chunk) {
+        if (handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG compressed stream could not be read completely");
         return CL_EREAD;
+    }
 
     *input_offset += chunk;
     *buffer_length = chunk;
@@ -3011,11 +3033,14 @@ cl_error_t cli_egg_extract_file(void* hArchive, const char** filename, const cha
                 status = CL_EMAXSIZE;
                 goto done;
             }
-            if (currBlock->compressedDataOffset > handle->map->len ||
-                currBlock->compressedSize > handle->map->len - currBlock->compressedDataOffset ||
-                (compressedData = fmap_need_off_once(handle->map, currBlock->compressedDataOffset, currBlock->compressedSize)) == NULL) {
-                cli_warnmsg("cli_egg_extract_file: compressed block is outside the input map\n");
-                status = CL_EREAD;
+            compressedData = (const char*)egg_read_range(handle,
+                                                        currBlock->compressedDataOffset,
+                                                        currBlock->compressedSize,
+                                                        &status,
+                                                        "EGG compressed block is truncated",
+                                                        "EGG compressed block could not be read completely");
+            if (compressedData == NULL) {
+                cli_warnmsg("cli_egg_extract_file: compressed block could not be read completely\n");
                 goto done;
             }
             switch (currBlock->compressionAlgorithm) {

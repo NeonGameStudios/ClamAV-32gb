@@ -13905,6 +13905,117 @@ START_TEST(test_egg_fixed_header_range_classes_are_fail_visible)
 }
 END_TEST
 
+static size_t egg_read_failure_offset = SIZE_MAX;
+static size_t egg_read_failure_length = SIZE_MAX;
+
+static const void *egg_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == egg_read_failure_offset && len == egg_read_failure_length)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_egg_extra_field_range_classes_are_fail_visible)
+{
+    static const uint8_t valid_header[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00  /* reserved */
+    };
+    static const uint8_t comment[] = "abc";
+    uint8_t archive[64];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    size_t comment_data_offset;
+    size_t archive_length;
+    size_t offset;
+    cl_error_t ret;
+
+    memset(archive, 0, sizeof(archive));
+    memcpy(archive, valid_header, sizeof(valid_header));
+    offset = sizeof(valid_header);
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* EOFARC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x04C63672U); /* COMMENT_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = 0;
+    zip_stream_write_u16(archive + offset, sizeof(comment) - 1U);
+    offset += 2;
+    comment_data_offset = offset;
+    memcpy(archive + offset, comment, sizeof(comment) - 1U);
+    offset += sizeof(comment) - 1U;
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* EOFARC */
+    offset += 4;
+    archive_length = offset;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    egg_read_failure_offset = sizeof(valid_header) + 4U;
+    egg_read_failure_length = 5U; /* extra_field */
+    map->need = egg_targeted_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG extra-field data could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    egg_read_failure_offset = comment_data_offset;
+    egg_read_failure_length = sizeof(comment) - 1U;
+    map->need = egg_targeted_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    handle   = NULL;
+    comments = NULL;
+    ncomments = 0;
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG extra-field data could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, comment_data_offset);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    handle   = NULL;
+    comments = NULL;
+    ncomments = 0;
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG extra-field data is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    egg_read_failure_offset = SIZE_MAX;
+    egg_read_failure_length = SIZE_MAX;
+}
+END_TEST
+
 typedef struct {
     uint8_t *buffer;
     size_t capacity;
@@ -22257,6 +22368,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_fixed_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_cl, test_egg_extra_field_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_egg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
