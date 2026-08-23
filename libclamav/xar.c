@@ -24,10 +24,12 @@
 #endif
 
 #include <errno.h>
+#include <stdio.h>
 #include "xar.h"
 #include "fmap.h"
 
 #include <libxml/xmlreader.h>
+#include <libxml/xmlwriter.h>
 #include "clamav.h"
 #include "str.h"
 #include "scanners.h"
@@ -174,26 +176,234 @@ static cl_error_t xar_write_output(cli_ctx *ctx, int fd, const void *data, size_
     return CL_SUCCESS;
 }
 
-static cl_error_t xar_bounded_xml_length(const xmlChar *data, size_t limit, size_t *length)
-{
-    size_t i;
+typedef struct {
+    cli_ctx* ctx;
+    int fd;
+    uint64_t* reserved;
+    cl_error_t status;
+    bool wrote_data;
+} xar_xml_spool;
 
-    if (NULL == data || NULL == length)
+static int xar_xml_spool_write(void* opaque, const char* buffer, int len)
+{
+    xar_xml_spool* spool = (xar_xml_spool*)opaque;
+
+    if (NULL == spool || NULL == buffer || len < 0)
+        return -1;
+    if (0 == len)
+        return 0;
+    if (CL_SUCCESS != spool->status)
+        return -1;
+
+    spool->status = xar_write_output(spool->ctx, spool->fd, buffer, (size_t)len, spool->reserved,
+                                     "XAR subdocument temporary output exceeds storage limits",
+                                     "XAR subdocument temporary output write reached the configured time limit",
+                                     "XAR subdocument temporary output could not be written completely");
+    if (CL_SUCCESS != spool->status)
+        return -1;
+
+    spool->wrote_data = true;
+    return len;
+}
+
+static int xar_xml_spool_close(void* opaque)
+{
+    UNUSEDPARAM(opaque);
+    return 0;
+}
+
+static cl_error_t xar_write_xml_reader_node(xmlTextWriterPtr writer, xmlTextReaderPtr reader)
+{
+    const xmlChar* local_name;
+    const xmlChar* prefix;
+    const xmlChar* namespace_uri;
+    const xmlChar* value;
+    int node_type;
+    int ret;
+
+    if (NULL == writer || NULL == reader)
         return CL_ENULLARG;
 
-    for (i = 0; i < limit; i++) {
-        if (data[i] == 0) {
-            *length = i;
-            return CL_SUCCESS;
-        }
-    }
+    node_type = xmlTextReaderNodeType(reader);
+    switch (node_type) {
+        case XML_READER_TYPE_ELEMENT:
+            local_name   = xmlTextReaderConstLocalName(reader);
+            prefix       = xmlTextReaderConstPrefix(reader);
+            namespace_uri = xmlTextReaderConstNamespaceUri(reader);
+            if (NULL == local_name)
+                return CL_EFORMAT;
 
-    if (data[limit] == 0) {
-        *length = limit;
+            ret = xmlTextWriterStartElementNS(writer, prefix, local_name, namespace_uri);
+            if (ret < 0)
+                return CL_EWRITE;
+
+            if (xmlTextReaderMoveToFirstAttribute(reader) == 1) {
+                do {
+                    const xmlChar* attribute_name;
+                    const xmlChar* attribute_prefix;
+                    const xmlChar* attribute_namespace;
+                    const xmlChar* attribute_value;
+
+                    attribute_name      = xmlTextReaderConstLocalName(reader);
+                    attribute_prefix    = xmlTextReaderConstPrefix(reader);
+                    attribute_namespace = xmlTextReaderConstNamespaceUri(reader);
+                    attribute_value     = xmlTextReaderConstValue(reader);
+                    if (NULL == attribute_name || NULL == attribute_value)
+                        return CL_EFORMAT;
+
+                    /* xmlTextWriterStartElementNS() emits namespace bindings
+                     * as needed. Re-emitting xmlns attributes would duplicate
+                     * bindings and can create an invalid fragment. */
+                    if ((attribute_prefix != NULL &&
+                         xmlStrEqual(attribute_prefix, (const xmlChar*)"xmlns")) ||
+                        (attribute_prefix == NULL &&
+                         xmlStrEqual(attribute_name, (const xmlChar*)"xmlns"))) {
+                        continue;
+                    }
+
+                    if (attribute_prefix != NULL || attribute_namespace != NULL)
+                        ret = xmlTextWriterWriteAttributeNS(writer, attribute_prefix, attribute_name,
+                                                            attribute_namespace, attribute_value);
+                    else
+                        ret = xmlTextWriterWriteAttribute(writer, attribute_name, attribute_value);
+                    if (ret < 0)
+                        return CL_EWRITE;
+                } while (xmlTextReaderMoveToNextAttribute(reader) == 1);
+
+                if (xmlTextReaderMoveToElement(reader) != 1)
+                    return CL_EFORMAT;
+            }
+
+            if (xmlTextReaderIsEmptyElement(reader) == 1 && xmlTextWriterEndElement(writer) < 0)
+                return CL_EWRITE;
+            return CL_SUCCESS;
+
+        case XML_READER_TYPE_END_ELEMENT:
+            return xmlTextWriterEndElement(writer) < 0 ? CL_EWRITE : CL_SUCCESS;
+
+        case XML_READER_TYPE_TEXT:
+        case XML_READER_TYPE_WHITESPACE:
+        case XML_READER_TYPE_SIGNIFICANT_WHITESPACE:
+            value = xmlTextReaderConstValue(reader);
+            if (NULL == value)
+                return CL_EFORMAT;
+            return xmlTextWriterWriteString(writer, value) < 0 ? CL_EWRITE : CL_SUCCESS;
+
+        case XML_READER_TYPE_CDATA:
+            value = xmlTextReaderConstValue(reader);
+            if (NULL == value)
+                return CL_EFORMAT;
+            return xmlTextWriterWriteCDATA(writer, value) < 0 ? CL_EWRITE : CL_SUCCESS;
+
+        case XML_READER_TYPE_COMMENT:
+            value = xmlTextReaderConstValue(reader);
+            if (NULL == value)
+                return CL_EFORMAT;
+            return xmlTextWriterWriteComment(writer, value) < 0 ? CL_EWRITE : CL_SUCCESS;
+
+        case XML_READER_TYPE_PROCESSING_INSTRUCTION:
+            local_name = xmlTextReaderConstName(reader);
+            value      = xmlTextReaderConstValue(reader);
+            if (NULL == local_name)
+                return CL_EFORMAT;
+            return xmlTextWriterWritePI(writer, local_name, value) < 0 ? CL_EWRITE : CL_SUCCESS;
+
+        case XML_READER_TYPE_ENTITY_REFERENCE: {
+            char entity[256];
+            local_name = xmlTextReaderConstName(reader);
+            if (NULL == local_name ||
+                (size_t)snprintf(entity, sizeof(entity), "&%s;", (const char*)local_name) >= sizeof(entity))
+                return CL_EFORMAT;
+            return xmlTextWriterWriteRaw(writer, (const xmlChar*)entity) < 0 ? CL_EWRITE : CL_SUCCESS;
+        }
+
+        case XML_READER_TYPE_END_ENTITY:
+            return CL_SUCCESS;
+
+        default:
+            /* DTDs, declarations, and entity nodes are not valid content for
+             * a nested XAR document under the bounded reader contract. */
+            return CL_EUNPACK;
+    }
+}
+
+static cl_error_t xar_stream_subdocument(xmlTextReaderPtr reader, cli_ctx* ctx, int fd,
+                                         uint64_t* reserved, bool* wrote_data)
+{
+    xmlOutputBufferPtr output = NULL;
+    xmlTextWriterPtr writer   = NULL;
+    xar_xml_spool spool       = {ctx, fd, reserved, CL_SUCCESS, false};
+    cl_error_t status         = CL_SUCCESS;
+    int reader_status;
+    int subdoc_depth;
+    bool closed = false;
+
+    if (NULL == reader || NULL == ctx || fd < 0 || NULL == reserved || NULL == wrote_data)
+        return CL_EARG;
+
+    *wrote_data  = false;
+    subdoc_depth = xmlTextReaderDepth(reader);
+    if (xmlTextReaderIsEmptyElement(reader) == 1) {
+        *wrote_data = false;
         return CL_SUCCESS;
     }
 
-    return CL_ERESOURCE;
+    output = xmlOutputBufferCreateIO(xar_xml_spool_write, xar_xml_spool_close, &spool, NULL);
+    if (NULL == output) {
+        cli_mark_scan_incomplete(ctx, "XAR subdocument XML output could not be initialized");
+        return CL_EMEM;
+    }
+
+    writer = xmlNewTextWriter(output);
+    if (NULL == writer) {
+        xmlOutputBufferClose(output);
+        cli_mark_scan_incomplete(ctx, "XAR subdocument XML writer could not be initialized");
+        return CL_EMEM;
+    }
+
+    while ((reader_status = xmlTextReaderRead(reader)) == 1) {
+        status = xar_checktimelimit(ctx, "XAR subdocument traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            break;
+
+        if (xmlTextReaderNodeType(reader) == XML_READER_TYPE_END_ELEMENT &&
+            xmlTextReaderDepth(reader) == subdoc_depth) {
+            closed = true;
+            break;
+        }
+
+        status = xar_write_xml_reader_node(writer, reader);
+        if (status != CL_SUCCESS)
+            break;
+    }
+
+    if (CL_SUCCESS == status && !closed) {
+        if (reader_status < 0)
+            status = xar_incomplete(ctx, "XAR subdocument XML reader failed before the element closed");
+        else
+            status = xar_incomplete(ctx, "XAR subdocument XML ended before the element closed");
+    }
+
+    if (CL_SUCCESS == status && xmlTextWriterFlush(writer) < 0)
+        status = (spool.status == CL_SUCCESS) ? CL_EWRITE : spool.status;
+    if (status == CL_EWRITE && spool.status != CL_SUCCESS)
+        status = spool.status;
+    if (CL_SUCCESS == status && spool.status != CL_SUCCESS)
+        status = spool.status;
+    if (CL_SUCCESS == status && !spool.wrote_data)
+        *wrote_data = false;
+    else if (CL_SUCCESS == status)
+        *wrote_data = true;
+
+    if (status == CL_EWRITE)
+        cli_mark_scan_incomplete(ctx, "XAR subdocument XML could not be written completely");
+    else if (status == CL_EUNPACK)
+        cli_mark_scan_incomplete(ctx, "XAR subdocument contains an unsupported XML node");
+    else if (status == CL_EFORMAT)
+        cli_mark_scan_incomplete(ctx, "XAR subdocument XML contains malformed node data");
+
+    xmlFreeTextWriter(writer);
+    return status;
 }
 
 static cl_error_t xar_spool_toc(cli_ctx *ctx, int fd, const unsigned char *data, size_t len,
@@ -456,14 +666,14 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
 }
 
 /*
-  xar_process_subdocument - check TOC for xml subdocument. If found, extract and
-                            scan in memory.
+  xar_process_subdocument - check TOC for xml subdocument. If found, stream it
+                            to a quota-accounted temporary file and scan it.
   Parameters:
      reader - xmlTextReaderPtr
      ctx - pointer to cli_ctx
   Returns:
      CL_SUCCESS - subdoc found and clean scan (or virus found and SCAN_ALLMATCHES), or no subdocument
-     other - error return code from cli_magic_scan_buff()
+     other - error return code from cli_magic_scan_desc_type_reserved()
 */
 static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
 {
@@ -472,11 +682,10 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
     int temp_rc;
     int reader_status;
     cl_error_t time_status;
-    size_t subdoc_len;
     uint64_t subdoc_reserved;
-    xmlChar *subdoc;
     const xmlChar *name;
     char *tmpname;
+    bool wrote_data;
 
     while (1) {
         time_status = xar_checktimelimit(ctx, "XAR subdocument traversal reached the configured time limit");
@@ -499,25 +708,6 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
             return CL_SUCCESS;
         if (xmlStrEqual(name, (const xmlChar *)"subdoc") &&
             xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
-            subdoc = xmlTextReaderReadInnerXml(reader);
-            if (subdoc == NULL) {
-                cli_dbgmsg("cli_scanxar: no content in subdoc element.\n");
-                xmlTextReaderNext(reader);
-                continue;
-            }
-
-            /* xmlTextReaderReadInnerXml() necessarily materializes this one
-             * XML fragment, but the old path then scanned that allocation
-             * directly and used an int length. Bound the legacy API, account
-             * the handoff against temporary storage, and keep the nested scan
-             * on the reservation-aware descriptor path. */
-            if (xar_bounded_xml_length(subdoc, CLI_MAX_ALLOCATION, &subdoc_len) != CL_SUCCESS) {
-                cli_mark_scan_incomplete(ctx, "XAR subdocument exceeds the bounded allocation limit");
-                xmlFree(subdoc);
-                return CL_ERESOURCE;
-            }
-            cli_dbgmsg("cli_scanxar: staged XML subdocument, len %zu.\n", subdoc_len);
-
             subdoc_reserved = 0;
             fd      = -1;
             tmpname = NULL;
@@ -529,12 +719,14 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
                 goto subdocument_cleanup;
             }
 
-            rc = xar_write_output(ctx, fd, subdoc, subdoc_len, &subdoc_reserved,
-                                  "XAR subdocument temporary output exceeds storage limits",
-                                  "XAR subdocument temporary output write reached the configured time limit",
-                                  "XAR subdocument temporary output could not be written completely");
+            rc = xar_stream_subdocument(reader, ctx, fd, &subdoc_reserved, &wrote_data);
             if (rc != CL_SUCCESS) {
-                cli_dbgmsg("cli_scanxar: cli_writen error writing subdoc temporary file.\n");
+                cli_dbgmsg("cli_scanxar: streaming subdocument failed with status %d.\n", rc);
+                goto subdocument_cleanup;
+            }
+
+            if (!wrote_data) {
+                cli_dbgmsg("cli_scanxar: no content in subdoc element.\n");
                 goto subdocument_cleanup;
             }
 
@@ -554,10 +746,12 @@ static int xar_scan_subdocuments(xmlTextReaderPtr reader, cli_ctx *ctx)
             if (CL_SUCCESS == rc && CL_SUCCESS != cleanup_rc)
                 rc = cleanup_rc;
 
-            xmlFree(subdoc);
             if (rc != CL_SUCCESS)
                 return rc;
-            xmlTextReaderNext(reader);
+            if (xmlTextReaderNext(reader) < 0) {
+                rc = xar_incomplete(ctx, "XAR subdocument XML reader could not advance after the element");
+                return rc;
+            }
         }
     }
 

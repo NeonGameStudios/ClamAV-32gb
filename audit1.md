@@ -1053,6 +1053,21 @@ headers before subtraction. The new
 parser-specific unsupported boundary. Compiled EGG, sanitizer, parser-corpus,
 and supported-build qualification remain open.
 
+## XAR subdocument streaming — 2026-08-23
+
+XAR subdocument handling no longer calls libxml2's `ReadInnerXml`, which
+materialized one complete fragment before the existing temporary spool could
+account it. The XML reader now serializes elements, attributes, text, CDATA,
+comments, processing instructions, and entity references directly through an
+`xmlOutputBuffer` into the quota-accounted temporary file. Each writer flush
+uses the shared temporary and deadline checks, and malformed, unsupported, or
+failed nodes remain explicit incomplete results. The prior whole-fragment
+allocation boundary is removed; a single oversized XML node and unsupported
+libxml2 node types remain the documented `xar-subdocument-over-1g` boundary.
+
+Source guards and the capability manifest were updated. Compiled XAR corpus,
+sanitizer, large-node, and supported-build Sonic1 qualification remain open.
+
 ## clamdscan wrapper/session failure reports — 2026-08-20
 
 `clamdscan --report-json` now emits a structured fallback for path
