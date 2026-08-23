@@ -440,6 +440,22 @@ The raw 64-bit matching work appears substantial and several central fail-visibl
 
 The current tree should remain non-production and should not be described as providing complete scan coverage through 32 GiB. audit.md’s final conservative verdict should be retained, but its remediation table, current-source closure statements, production-CVD conclusion, and evidence-binding claims require correction.
 
+## HTML normalized metadata allocation propagation — 2026-08-23
+
+The HTML normalizer previously exposed tag-argument insertion as a `void`
+helper. Allocation failures could therefore clear or partially construct the
+attribute state used for normalized output and phishing URL extraction while
+the normalizer still reached its successful completion path. Link-content,
+form-data, and text-URL accumulation had the same silent-discard risk.
+
+`html_tag_arg_add()`, tag replacement, and link-content finalization now return
+status. The normalizer checks every required internal and phishing-state
+allocation, form-data insertion, and copied link-content value; the file-backed
+MHTML text-URL extractor checks its insertions as well. Any failure marks the
+scan incomplete and prevents a partial normalized layer from being treated as
+complete. Normal successful output is unchanged. Compiled allocation-fault,
+sanitizer, and broad HTML/MHTML corpus qualification remain release gates.
+
 ## Implementation follow-up — 2026-08-16
 
 The findings above were reviewed against the source and the actionable fixes

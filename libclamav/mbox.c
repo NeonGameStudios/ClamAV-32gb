@@ -4769,14 +4769,20 @@ static bool extract_text_urls_map(cli_ctx *ctx, fmap_t *map, tag_arguments_t *hr
             if (url_len) {
                 if (c == ' ' || c == '\n' || c == '\t') {
                     url[url_len] = '\0';
-                    html_tag_arg_add(hrefs, "href", url);
+                    if (!html_tag_arg_add(hrefs, "href", url)) {
+                        cli_mark_scan_incomplete(ctx, "HTML phishing URL state could not be allocated");
+                        return false;
+                    }
                     url_len     = 0;
                     history_len = 0;
                 } else if (url_len < sizeof(url) - 1) {
                     url[url_len++] = (char)c;
                 } else {
                     url[url_len] = '\0';
-                    html_tag_arg_add(hrefs, "href", url);
+                    if (!html_tag_arg_add(hrefs, "href", url)) {
+                        cli_mark_scan_incomplete(ctx, "HTML phishing URL state could not be allocated");
+                        return false;
+                    }
                     url_len     = 0;
                     history_len = 0;
                 }
@@ -4826,7 +4832,10 @@ static bool extract_text_urls_map(cli_ctx *ctx, fmap_t *map, tag_arguments_t *hr
 
     if (url_len) {
         url[url_len] = '\0';
-        html_tag_arg_add(hrefs, "href", url);
+        if (!html_tag_arg_add(hrefs, "href", url)) {
+            cli_mark_scan_incomplete(ctx, "HTML phishing URL state could not be allocated");
+            return false;
+        }
     }
 
     return true;

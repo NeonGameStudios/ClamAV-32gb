@@ -2857,6 +2857,17 @@ non-cacheable, and visible to the caller. The focused unit regression covers
 both the over-limit failure and the input-versus-generated-size distinction;
 supported-build and parser-corpus qualification remain open.
 
+## HTML normalized metadata allocation propagation — 2026-08-23
+
+HTML tag-argument insertion, tag-value replacement, link-content finalization,
+form-data insertion, and the file-backed phishing text-URL extractor now
+propagate allocation failures. The normalizer marks those failures incomplete
+instead of silently dropping an attribute or URL and later publishing a
+partial normalized view as successful. The existing chunked output quota,
+deadline, close, and nested-scan checks remain in force; compiled allocation
+fault injection, sanitizer, and full HTML/MHTML corpus qualification remain
+release gates.
+
 ## OneNote bounded legacy extraction — 2026-08-19
 
 The scanner-facing OneNote callback now borrows modern-parser attachment bytes

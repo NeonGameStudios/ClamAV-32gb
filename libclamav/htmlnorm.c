@@ -453,27 +453,37 @@ static char *html_tag_arg_value(tag_arguments_t *tags, const char *tag)
     return NULL;
 }
 
-static void html_tag_arg_set(tag_arguments_t *tags, const char *tag, const char *value)
+static bool html_tag_arg_set(tag_arguments_t *tags, const char *tag, const char *value)
 {
     int i;
+
+    if (!tags || !tag || !value)
+        return false;
 
     for (i = 0; i < tags->count; i++) {
         if (strcmp((const char *)tags->tag[i], tag) == 0) {
             free(tags->value[i]);
             tags->value[i] = (unsigned char *)cli_safer_strdup(value);
-            return;
+            return tags->value[i] != NULL;
         }
     }
-    return;
+    return true;
 }
-void html_tag_arg_add(tag_arguments_t *tags,
+bool html_tag_arg_add(tag_arguments_t *tags,
                       const char *tag, char *value)
 {
     int len, i;
-    int tagCnt          = tags->count;
-    int valueCnt        = tags->count;
-    int contentCnt      = 0;
+    int tagCnt;
+    int valueCnt;
+    int contentCnt;
     unsigned char **tmp = NULL;
+
+    if (!tags || !tag)
+        return false;
+
+    tagCnt     = tags->count;
+    valueCnt   = tags->count;
+    contentCnt = tags->scanContents ? tags->count : 0;
 
     tmp = (unsigned char **)cli_max_realloc(tags->tag, (tagCnt + 1) * sizeof(char *));
     if (!tmp) {
@@ -501,6 +511,8 @@ void html_tag_arg_add(tag_arguments_t *tags,
     }
 
     tags->tag[tags->count] = (unsigned char *)cli_safer_strdup(tag);
+    if (!tags->tag[tags->count])
+        goto done;
     if (value) {
         if (*value == '"') {
             tags->value[tags->count] = (unsigned char *)cli_safer_strdup(value + 1);
@@ -513,13 +525,15 @@ void html_tag_arg_add(tag_arguments_t *tags,
             }
         } else {
             tags->value[tags->count] = (unsigned char *)cli_safer_strdup(value);
+            if (!tags->value[tags->count])
+                goto done;
         }
     } else {
         tags->value[tags->count] = NULL;
     }
 
     tags->count++;
-    return;
+    return true;
 
 done:
     /* Bad error - can't do 100% recovery */
@@ -550,7 +564,7 @@ done:
     tags->contents = NULL;
     tags->tag = tags->value = NULL;
     tags->count             = 0;
-    return;
+    return false;
 }
 
 static void html_output_tag(file_buff_t *fbuff, char *tag, tag_arguments_t *tags)
@@ -642,18 +656,24 @@ static inline void html_tag_contents_append(struct tag_contents *cont, const uns
     cont->pos = i;
 }
 
-static inline void html_tag_contents_done(tag_arguments_t *tags, int idx, struct tag_contents *cont)
+static inline bool html_tag_contents_done(tag_arguments_t *tags, int idx, struct tag_contents *cont)
 {
     unsigned char *p;
+
+    if (!tags || !cont || !tags->contents || idx <= 0 || idx > tags->count ||
+        cont->pos >= sizeof(cont->contents))
+        return false;
+
     cont->contents[cont->pos++] = '\0';
     p                           = cli_max_malloc(cont->pos);
     if (!p) {
         cli_errmsg("html_tag_contents_done: Unable to allocate memory for p\n");
-        return;
+        return false;
     }
     memcpy(p, cont->contents, cont->pos);
     tags->contents[idx - 1] = p;
     cont->pos               = 0;
+    return true;
 }
 
 struct screnc_state {
@@ -1145,7 +1165,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         html_output_c(file_buff_o2, '>');
                         if (tag_arg_length > 0) {
                             tag_arg[tag_arg_length] = '\0';
-                            html_tag_arg_add(&tag_args, tag_arg, NULL);
+                            if (!html_tag_arg_add(&tag_args, tag_arg, NULL)) {
+                                cli_mark_scan_incomplete(ctx, "HTML tag argument state could not be allocated");
+                                retval = false;
+                                goto done;
+                            }
                         }
                         ptr++;
                         state      = HTML_PROCESS_TAG;
@@ -1174,7 +1198,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                     } else {
                         if (tag_arg_length > 0) {
                             tag_arg[tag_arg_length] = '\0';
-                            html_tag_arg_add(&tag_args, tag_arg, NULL);
+                            if (!html_tag_arg_add(&tag_args, tag_arg, NULL)) {
+                                cli_mark_scan_incomplete(ctx, "HTML tag argument state could not be allocated");
+                                retval = false;
+                                goto done;
+                            }
                         }
                         tag_arg_length = 0;
                         state          = HTML_TAG_ARG;
@@ -1230,7 +1258,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                                     tag_val[tag_val_length++] = '"';
                                 }
                                 tag_val[tag_val_length] = '\0';
-                                html_tag_arg_add(&tag_args, tag_arg, tag_val);
+                                if (!html_tag_arg_add(&tag_args, tag_arg, tag_val)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML tag argument state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
                                 ptr++;
                                 state          = HTML_SKIP_WS;
                                 tag_arg_length = 0;
@@ -1258,7 +1290,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                                     tag_val[tag_val_length++] = '"';
                                 }
                                 tag_val[tag_val_length] = '\0';
-                                html_tag_arg_add(&tag_args, tag_arg, tag_val);
+                                if (!html_tag_arg_add(&tag_args, tag_arg, tag_val)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML tag argument state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
                                 ptr++;
                                 state          = HTML_SKIP_WS;
                                 tag_arg_length = 0;
@@ -1274,7 +1310,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                     } else if (isspace(*ptr) || (*ptr == '>')) {
                         if (quoted == NOT_QUOTED) {
                             tag_val[tag_val_length] = '\0';
-                            html_tag_arg_add(&tag_args, tag_arg, tag_val);
+                            if (!html_tag_arg_add(&tag_args, tag_arg, tag_val)) {
+                                cli_mark_scan_incomplete(ctx, "HTML tag argument state could not be allocated");
+                                retval = false;
+                                goto done;
+                            }
                             state          = HTML_SKIP_WS;
                             tag_arg_length = 0;
                             next_state     = HTML_TAG_ARG;
@@ -1409,7 +1449,11 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
 
                         if (hrefs && hrefs->scanContents && in_ahref) {
                             if (strcmp(tag, "/a") == 0) {
-                                html_tag_contents_done(hrefs, in_ahref, &contents);
+                                if (!html_tag_contents_done(hrefs, in_ahref, &contents)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
                                 in_ahref = 0; /* we are no longer inside an <a href>
                                                         nesting <a> tags not supported, and shouldn't be supported*/
                             }
@@ -1425,13 +1469,21 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                         arg_value = html_tag_arg_value(&tag_args, "language");
                         /* TODO: maybe we can output all tags only via html_output_tag */
                         if (arg_value && (strcasecmp((const char *)arg_value, "jscript.encode") == 0)) {
-                            html_tag_arg_set(&tag_args, "language", "javascript");
+                            if (!html_tag_arg_set(&tag_args, "language", "javascript")) {
+                                cli_mark_scan_incomplete(ctx, "HTML script tag state could not be allocated");
+                                retval = false;
+                                goto done;
+                            }
                             state      = HTML_SKIP_WS;
                             next_state = HTML_JSDECODE;
                             /* we already output the old tag, output the new tag now */
                             html_output_tag(file_buff_o2, tag, &tag_args);
                         } else if (arg_value && (strcasecmp((const char *)arg_value, "vbscript.encode") == 0)) {
-                            html_tag_arg_set(&tag_args, "language", "vbscript");
+                            if (!html_tag_arg_set(&tag_args, "language", "vbscript")) {
+                                cli_mark_scan_incomplete(ctx, "HTML script tag state could not be allocated");
+                                retval = false;
+                                goto done;
+                            }
                             state      = HTML_SKIP_WS;
                             next_state = HTML_JSDECODE;
                             /* we already output the old tag, output the new tag now */
@@ -1477,26 +1529,50 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                                         if (href_contents_begin) {
                                             html_tag_contents_append(&contents, href_contents_begin, ptrend);
                                             /*add pending contents between tags*/
-                                            html_tag_contents_done(hrefs, in_ahref, &contents);
+                                            if (!html_tag_contents_done(hrefs, in_ahref, &contents)) {
+                                                cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                                retval = false;
+                                                goto done;
+                                            }
                                             in_ahref = 0;
                                         }
                                     if (arg_value_title) {
                                         /* title is a 'displayed link'*/
-                                        html_tag_arg_add(hrefs, "href_title", arg_value_title);
+                                        if (!html_tag_arg_add(hrefs, "href_title", arg_value_title)) {
+                                            cli_mark_scan_incomplete(ctx, "HTML link state could not be allocated");
+                                            retval = false;
+                                            goto done;
+                                        }
                                         html_tag_contents_append(&contents, (const unsigned char *)arg_value,
                                                                  (const unsigned char *)arg_value + strlen(arg_value));
-                                        html_tag_contents_done(hrefs, hrefs->count, &contents);
+                                        if (!html_tag_contents_done(hrefs, hrefs->count, &contents)) {
+                                            cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                            retval = false;
+                                            goto done;
+                                        }
                                     }
                                     if (in_form_action) {
                                         /* form action is the real URL, and href is the 'displayed' */
-                                        html_tag_arg_add(hrefs, "form", arg_value);
+                                        if (!html_tag_arg_add(hrefs, "form", arg_value)) {
+                                            cli_mark_scan_incomplete(ctx, "HTML form-link state could not be allocated");
+                                            retval = false;
+                                            goto done;
+                                        }
                                         contents.pos = 0;
                                         html_tag_contents_append(&contents, in_form_action,
                                                                  in_form_action + strlen((const char *)in_form_action));
-                                        html_tag_contents_done(hrefs, hrefs->count, &contents);
+                                        if (!html_tag_contents_done(hrefs, hrefs->count, &contents)) {
+                                            cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                            retval = false;
+                                            goto done;
+                                        }
                                     }
                                 }
-                                html_tag_arg_add(hrefs, "href", arg_value);
+                                if (!html_tag_arg_add(hrefs, "href", arg_value)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML link state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
                                 if (hrefs->scanContents) {
                                     in_ahref            = hrefs->count; /* index of this tag (counted from 1) */
                                     href_contents_begin = ptr;          /* contents begin after <a ..> ends */
@@ -1510,71 +1586,152 @@ static bool cli_html_normalise(cli_ctx *ctx, int fd, m_area_t *m_area, const cha
                                     free(in_form_action);
                                 }
                                 in_form_action = (unsigned char *)cli_safer_strdup(arg_action_value);
+                                if (!in_form_action) {
+                                    cli_mark_scan_incomplete(ctx, "HTML form-action state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
                                 if (form_data) {
-                                    html_insert_form_data((const char *const)in_form_action, form_data);
+                                    if (!html_insert_form_data((const char *const)in_form_action, form_data)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML form-action metadata could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                 }
                             }
                         } else if (strcmp(tag, "img") == 0) {
                             arg_value = html_tag_arg_value(&tag_args, "src");
                             if (arg_value && strlen(arg_value) > 0) {
-                                html_tag_arg_add(hrefs, "src", arg_value);
-                                if (hrefs->scanContents && in_ahref)
+                                if (!html_tag_arg_add(hrefs, "src", arg_value)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML image-link state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
+                                if (hrefs->scanContents && in_ahref) {
                                     /* "contents" of an img tag, is the URL of its parent <a> tag */
                                     hrefs->contents[hrefs->count - 1] = (unsigned char *)cli_safer_strdup((const char *)hrefs->value[in_ahref - 1]);
+                                    if (!hrefs->contents[hrefs->count - 1]) {
+                                        cli_mark_scan_incomplete(ctx, "HTML image-link content could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
+                                }
                                 if (in_form_action) {
                                     /* form action is the real URL, and href is the 'displayed' */
-                                    html_tag_arg_add(hrefs, "form", arg_value);
+                                    if (!html_tag_arg_add(hrefs, "form", arg_value)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML form-link state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                     contents.pos = 0;
                                     html_tag_contents_append(&contents, in_form_action,
                                                              in_form_action + strlen((const char *)in_form_action));
-                                    html_tag_contents_done(hrefs, hrefs->count, &contents);
+                                    if (!html_tag_contents_done(hrefs, hrefs->count, &contents)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                 }
                             }
                             arg_value = html_tag_arg_value(&tag_args, "dynsrc");
                             if (arg_value && strlen(arg_value) > 0) {
-                                html_tag_arg_add(hrefs, "dynsrc", arg_value);
-                                if (hrefs->scanContents && in_ahref)
+                                if (!html_tag_arg_add(hrefs, "dynsrc", arg_value)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML dynamic-image-link state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
+                                if (hrefs->scanContents && in_ahref) {
                                     /* see above */
                                     hrefs->contents[hrefs->count - 1] = (unsigned char *)cli_safer_strdup((const char *)hrefs->value[in_ahref - 1]);
+                                    if (!hrefs->contents[hrefs->count - 1]) {
+                                        cli_mark_scan_incomplete(ctx, "HTML dynamic-image-link content could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
+                                }
                                 if (in_form_action) {
                                     /* form action is the real URL, and href is the 'displayed' */
-                                    html_tag_arg_add(hrefs, "form", arg_value);
+                                    if (!html_tag_arg_add(hrefs, "form", arg_value)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML form-link state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                     contents.pos = 0;
                                     html_tag_contents_append(&contents, in_form_action,
                                                              in_form_action + strlen((const char *)in_form_action));
-                                    html_tag_contents_done(hrefs, hrefs->count, &contents);
+                                    if (!html_tag_contents_done(hrefs, hrefs->count, &contents)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                 }
                             }
                         } else if (strcmp(tag, "iframe") == 0) {
                             arg_value = html_tag_arg_value(&tag_args, "src");
                             if (arg_value && strlen(arg_value) > 0) {
-                                html_tag_arg_add(hrefs, "iframe", arg_value);
-                                if (hrefs->scanContents && in_ahref)
+                                if (!html_tag_arg_add(hrefs, "iframe", arg_value)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML iframe-link state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
+                                if (hrefs->scanContents && in_ahref) {
                                     /* see above */
                                     hrefs->contents[hrefs->count - 1] = (unsigned char *)cli_safer_strdup((const char *)hrefs->value[in_ahref - 1]);
+                                    if (!hrefs->contents[hrefs->count - 1]) {
+                                        cli_mark_scan_incomplete(ctx, "HTML iframe-link content could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
+                                }
                                 if (in_form_action) {
                                     /* form action is the real URL, and href is the 'displayed' */
-                                    html_tag_arg_add(hrefs, "form", arg_value);
+                                    if (!html_tag_arg_add(hrefs, "form", arg_value)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML form-link state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                     contents.pos = 0;
                                     html_tag_contents_append(&contents, in_form_action,
                                                              in_form_action + strlen((const char *)in_form_action));
-                                    html_tag_contents_done(hrefs, hrefs->count, &contents);
+                                    if (!html_tag_contents_done(hrefs, hrefs->count, &contents)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                 }
                             }
                         } else if (strcmp(tag, "area") == 0) {
                             arg_value = html_tag_arg_value(&tag_args, "href");
                             if (arg_value && strlen(arg_value) > 0) {
-                                html_tag_arg_add(hrefs, "area", arg_value);
-                                if (hrefs->scanContents && in_ahref)
+                                if (!html_tag_arg_add(hrefs, "area", arg_value)) {
+                                    cli_mark_scan_incomplete(ctx, "HTML area-link state could not be allocated");
+                                    retval = false;
+                                    goto done;
+                                }
+                                if (hrefs->scanContents && in_ahref) {
                                     /* see above */
                                     hrefs->contents[hrefs->count - 1] = (unsigned char *)cli_safer_strdup((const char *)hrefs->value[in_ahref - 1]);
+                                    if (!hrefs->contents[hrefs->count - 1]) {
+                                        cli_mark_scan_incomplete(ctx, "HTML area-link content could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
+                                }
                                 if (in_form_action) {
                                     /* form action is the real URL, and href is the 'displayed' */
-                                    html_tag_arg_add(hrefs, "form", arg_value);
+                                    if (!html_tag_arg_add(hrefs, "form", arg_value)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML form-link state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                     contents.pos = 0;
                                     html_tag_contents_append(&contents, in_form_action,
                                                              in_form_action + strlen((const char *)in_form_action));
-                                    html_tag_contents_done(hrefs, hrefs->count, &contents);
+                                    if (!html_tag_contents_done(hrefs, hrefs->count, &contents)) {
+                                        cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+                                        retval = false;
+                                        goto done;
+                                    }
                                 }
                             }
                         }
@@ -2147,8 +2304,12 @@ done:
     if (in_form_action) {
         free(in_form_action);
     }
-    if (in_ahref) /* tag not closed, force closing */
-        html_tag_contents_done(hrefs, in_ahref, &contents);
+    if (in_ahref) { /* tag not closed, force closing */
+        if (!html_tag_contents_done(hrefs, in_ahref, &contents)) {
+            cli_mark_scan_incomplete(ctx, "HTML link-content state could not be allocated");
+            retval = false;
+        }
+    }
 
     if (js_state) {
         /*  output script so far */

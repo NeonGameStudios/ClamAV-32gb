@@ -2068,3 +2068,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   instead of treating them as malformed-header fallback and allowing a
   secondary-only scan to look clean; retain compiled GPT fault injection,
   sanitizer, corpus, and Sonic1 qualification as release gates.
+
+## HTML normalized metadata allocation propagation — 2026-08-23
+
+- Propagate tag-argument, tag replacement, link-content, form-data, and
+  file-backed phishing URL allocation failures as incomplete/non-cacheable
+  results instead of allowing partial normalized output or metadata to look
+  complete; retain compiled allocation-fault, sanitizer, HTML/MHTML corpus,
+  and Sonic1 qualification as release gates.
