@@ -2549,7 +2549,7 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
             size_t name_offset;
             size_t name_window;
             const char *name_end;
-            size_t nread = fmap_readn(map, &thunk32, thuoff, sizeof(struct pe_image_thunk32));
+            size_t nread = fmap_readn_full(map, &thunk32, thuoff, sizeof(struct pe_image_thunk32));
 
             if (nread != sizeof(struct pe_image_thunk32)) {
                 cli_mark_scan_incomplete(ctx, "PE import thunk table could not be read completely");
@@ -2620,7 +2620,7 @@ static inline int hash_impfns(cli_ctx *ctx, void **hashctx, uint32_t *impsz, str
             size_t name_offset;
             size_t name_window;
             const char *name_end;
-            size_t nread = fmap_readn(map, &thunk64, thuoff, sizeof(struct pe_image_thunk64));
+            size_t nread = fmap_readn_full(map, &thunk64, thuoff, sizeof(struct pe_image_thunk64));
 
             // Temporary variable so we don't have overlapping writes with the EC32 reads.
             uint64_t temp;
@@ -2748,7 +2748,7 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
         uint32_t temp;
 
         /* Get copy of image import descriptor to work with */
-        size_t nread = fmap_readn(map, &image, descriptor_offset, sizeof(image));
+        size_t nread = fmap_readn_full(map, &image, descriptor_offset, sizeof(image));
         if (nread != sizeof(image)) {
             cli_dbgmsg("scan_pe: failed to read import descriptor\n");
             cli_mark_scan_incomplete(ctx, "PE import descriptor could not be read completely");

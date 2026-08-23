@@ -1410,3 +1410,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   payload prefixes and `CL_EREAD` for fully in-range callback failures; retain
   compiled scanner, sanitizer, production HWP3 corpus, and Sonic1
   qualification as release gates.
+
+## Shared fixed-range reader and PE import-table classification — 2026-08-22
+
+- Add and adopt `fmap_readn_full()` for fixed-range admission, preserving
+  parse results for short ranges and `CL_EREAD` for fully in-range callback
+  failures; apply it to PE import descriptors and 32/64-bit thunk entries,
+  while retaining compiled scanner, sanitizer, production PE corpus, and
+  Sonic1 qualification as release gates.

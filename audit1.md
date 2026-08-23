@@ -5385,3 +5385,13 @@ header remains a parse/incomplete result even when an injected callback would
 fail on its available prefix; a fully in-range callback failure remains
 `CL_EREAD`. Focused regressions cover both outcomes. Compiled scanner,
 sanitizer, production HWP3 corpus, and Sonic1 qualification remain open.
+
+## Shared fixed-range reader and PE import-table classification — 2026-08-22
+
+The fmap layer now exposes `fmap_readn_full()`, which refuses to shorten a
+request that extends beyond the map while preserving `(size_t)-1` for a
+fully in-range backing-read failure. HWP3 fixed reads use the shared helper,
+and PE import descriptors plus 32/64-bit thunk entries now use it as well.
+The focused fmap regression proves that a short range and an in-range
+callback failure remain distinguishable. Compiled scanner, sanitizer,
+production PE corpus, and Sonic1 qualification remain open.

@@ -523,11 +523,9 @@ struct hwp3_docinfo {
 
 static size_t hwp3_readn(fmap_t *map, void *dst, size_t at, size_t len)
 {
-    /* fmap_readn() truncates a request that crosses EOF. Preflight fixed
-     * table headers so only a fully in-range callback failure is CL_EREAD. */
-    if (map == NULL || at > map->len || len > map->len - at)
-        return 0;
-    return fmap_readn(map, dst, at, len);
+    /* fmap_readn() truncates a request that crosses EOF. Use the shared
+     * full-range helper so only a fully in-range callback failure is CL_EREAD. */
+    return fmap_readn_full(map, dst, at, len);
 }
 
 static cl_error_t hwp3_read_fixed(cli_ctx *ctx, fmap_t *map, void *dst, size_t at, size_t len,

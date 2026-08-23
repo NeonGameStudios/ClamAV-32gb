@@ -339,6 +339,21 @@ static inline size_t fmap_readn(fmap_t *m, void *dst, size_t at, size_t len)
 }
 
 /**
+ * @brief Read a complete fmap range without truncating at EOF.
+ *
+ * Unlike fmap_readn(), this helper does not shorten a request that extends
+ * beyond the map. A return value of zero means the requested range was not
+ * contained in the map; (size_t)-1 still means that an in-range backing read
+ * failed.
+ */
+static inline size_t fmap_readn_full(fmap_t *m, void *dst, size_t at, size_t len)
+{
+    if (m == NULL || at > m->len || len > m->len - at)
+        return 0;
+    return fmap_readn(m, dst, at, len);
+}
+
+/**
  * @brief Given a pointer into the map data, return that pointer if there is a NULL terminator
  *        between ptr and the len_hint.
  *

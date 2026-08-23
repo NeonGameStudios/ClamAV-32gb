@@ -210,6 +210,37 @@ START_TEST(test_cl_fmap_get_data_clamps_wrapped_length)
 }
 END_TEST
 
+static const void *fmap_readn_full_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_fmap_readn_full_preserves_range_failure_classes)
+{
+    static const uint8_t data[] = {0x10, 0x20, 0x30, 0x40};
+    uint8_t output[2]            = {0};
+    fmap_t *map;
+
+    map = fmap_open_memory(data, sizeof(data), NULL);
+    ck_assert_ptr_nonnull(map);
+
+    /* The two-byte request has only one byte remaining. It must not be
+     * shortened into a successful one-byte read. */
+    ck_assert(fmap_readn_full(map, output, 3, sizeof(output)) == 0);
+
+    /* A fully contained request still exposes a backing callback failure. */
+    map->need = fmap_readn_full_read_failure;
+    ck_assert(fmap_readn_full(map, output, 0, sizeof(output)) == (size_t)-1);
+
+    fmap_free(map);
+}
+END_TEST
+
 /* extern void cl_free(struct cl_engine *engine); */
 START_TEST(test_cl_free)
 {
@@ -21567,6 +21598,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cl_fmap_set_hash_accepts_full_hash);
     tcase_add_test(tc_cl, test_fmap_hash_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cl_fmap_get_data_clamps_wrapped_length);
+    tcase_add_test(tc_cl, test_fmap_readn_full_preserves_range_failure_classes);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
     tcase_add_test(tc_cl, test_html_utf16_time_limit_is_fail_visible);
