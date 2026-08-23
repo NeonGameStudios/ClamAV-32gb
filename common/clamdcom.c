@@ -404,8 +404,7 @@ int send_fdpass_report_checked(int sockd, const char *filename,
 /* Issues an INSTREAM-family command to clamd and streams the given file
  * Returns >0 on success, 0 soft fail, -1 hard fail */
 static int send_stream_fd_common(int sockd, int fd, const char *display_filename,
-                                 struct optstruct *clamdopts, bool reject_over_limit,
-                                 const char *command)
+                                 struct optstruct *clamdopts, const char *command)
 {
     uint32_t buf[BUFSIZ / sizeof(uint32_t)];
     int len;
@@ -432,8 +431,7 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
             return -1;
         }
 
-        if (reject_over_limit &&
-            S_ISREG(sb.st_mode) &&
+        if (S_ISREG(sb.st_mode) &&
             (sb.st_size > 0) &&
             ((uint64_t)sb.st_size > (uint64_t)todo)) {
             logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
@@ -458,34 +456,33 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
     }
 
     while ((len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t))) > 0) {
-        if (reject_over_limit && ((uint64_t)len > todo)) {
+        if ((uint64_t)len > todo) {
             logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
                  display_filename ? display_filename : "STDIN");
             return -1;
         }
-        if ((uint64_t)len > todo) len = (int)todo;
         buf[0] = htonl(len);
         if (sendln(sockd, (const char *)buf, len + sizeof(uint32_t))) {
             return -1;
         }
         todo -= len;
         if (!todo) {
-            if (reject_over_limit) {
-                len = read(fd, &buf[1], 1);
-                if (len > 0) {
-                    logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
-                         display_filename ? display_filename : "STDIN");
-                    return -1;
-                }
-            } else {
-                len = 0;
+            len = read(fd, &buf[1], 1);
+            if (len > 0) {
+                logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
+                     display_filename ? display_filename : "STDIN");
+                return -1;
+            }
+            if (len < 0) {
+                logg(LOGG_ERROR, "Failed to read from %s.\n", display_filename ? display_filename : "STDIN");
+                return -1;
             }
             break;
         }
     }
     if (len) {
         logg(LOGG_ERROR, "Failed to read from %s.\n", display_filename ? display_filename : "STDIN");
-        return reject_over_limit ? -1 : 0;
+        return -1;
     }
     *buf = 0;
     if (sendln(sockd, (const char *)buf, 4))
@@ -500,17 +497,17 @@ int send_stream_fd(int sockd, int fd, const char *display_filename, struct optst
      * terminator, and could therefore report a clean verdict for only a file
      * prefix.  Apply the same fail-closed accounting used by action streams to
      * every stream, including pipes/stdin where no size preflight is possible. */
-    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true, "zINSTREAM");
+    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, "zINSTREAM");
 }
 
 int send_stream_fd_action(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
 {
-    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true, "zINSTREAM");
+    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, "zINSTREAM");
 }
 
 int send_stream_fd_report(int sockd, int fd, const char *display_filename, struct optstruct *clamdopts)
 {
-    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, true, "zINSTREAMREPORT");
+    return send_stream_fd_common(sockd, fd, display_filename, clamdopts, "zINSTREAMREPORT");
 }
 
 /* Issues an INSTREAM command to clamd and streams the given file

@@ -714,6 +714,41 @@ START_TEST(test_stream_client_rejects_invalid_descriptor_before_command)
     close(sockets[1]);
 }
 END_TEST
+
+START_TEST(test_stream_client_rejects_read_error_before_terminator)
+{
+    struct optstruct stream_limit;
+    int input[2];
+    int output[2];
+    int flags;
+    unsigned char wire[sizeof("zINSTREAM") + sizeof(uint32_t)];
+    ssize_t received;
+
+    memset(&stream_limit, 0, sizeof(stream_limit));
+    stream_limit.name   = "StreamMaxLength";
+    stream_limit.numarg = 1024;
+
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, input), 0);
+    flags = fcntl(input[0], F_GETFL, 0);
+    ck_assert_int_ge(flags, 0);
+    ck_assert_int_eq(fcntl(input[0], F_SETFL, flags | O_NONBLOCK), 0);
+    ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, output), 0);
+
+    /* No input is available, so the nonblocking descriptor makes read()
+     * fail after the INSTREAM command but before a protocol terminator. */
+    ck_assert_int_eq(send_stream_fd(output[0], input[0], "read-error", &stream_limit), -1);
+    received = recv(output[1], wire, sizeof(wire), MSG_DONTWAIT);
+    ck_assert_int_eq(received, (ssize_t)sizeof("zINSTREAM"));
+    ck_assert_mem_eq(wire, "zINSTREAM", sizeof("zINSTREAM"));
+    ck_assert_int_eq(recv(output[1], wire, sizeof(wire), MSG_DONTWAIT), -1);
+    ck_assert(errno == EAGAIN || errno == EWOULDBLOCK);
+
+    close(input[0]);
+    close(input[1]);
+    close(output[0]);
+    close(output[1]);
+}
+END_TEST
 #endif
 #if defined(HAVE_FD_PASSING) && !defined(_WIN32)
 START_TEST(test_fildes_client_rejects_over_limit)
@@ -1616,6 +1651,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_client, test_stream_client_rejects_over_limit);
     tcase_add_test(tc_client, test_stream_client_rewinds_regular_input);
     tcase_add_test(tc_client, test_stream_client_rejects_invalid_descriptor_before_command);
+    tcase_add_test(tc_client, test_stream_client_rejects_read_error_before_terminator);
 #if defined(HAVE_FD_PASSING)
     tcase_add_test(tc_client, test_fildes_client_rejects_over_limit);
 #endif

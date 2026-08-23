@@ -1262,3 +1262,10 @@ resource reason and preventing a cleanup error from obscuring the admission
 failure. Focused public-report and recursion-stack regressions are registered;
 compiled fault injection, sanitizer, production-corpus, and Sonic1 qualification
 remain open.
+
+## INSTREAM client partial-stream boundary — 2026-08-22
+
+- clamdscan INSTREAM submission now has one strict path: reject bytes beyond
+  StreamMaxLength without sending a normal terminator, fail closed on ordinary
+  and exact-limit read errors, and add compiled read-fault plus daemon-side
+  partial-request qualification.

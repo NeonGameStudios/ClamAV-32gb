@@ -5166,6 +5166,18 @@ evidence. Compiled malformed-loader and allocation-fault coverage,
 interpreter/JIT qualification, sanitizer runs, and Sonic1 qualification
 remain open.
 
+## INSTREAM client partial-stream fail-closed boundary — 2026-08-22
+
+The clamd client stream helper had already routed current callers through its
+strict limit mode, but retained a dormant boolean that could allow a future
+caller to clamp a chunk to the remaining quota and send a normal terminator.
+That escape hatch is removed. Every INSTREAM-family submission now rejects
+over-limit bytes, treats both ordinary read errors and the exact-limit EOF
+probe as hard failures, and sends the protocol terminator only after a complete
+input is established. Static guards cover the strict call shape and the
+absence of truncation assignment. Compiled read-fault and daemon-side
+partial-request qualification remain release gates.
+
 ## Bytecode VM pointer-registration allocation failures — 2026-08-22
 
 The interpreter's stack and global pointer-registration tables used unbounded
