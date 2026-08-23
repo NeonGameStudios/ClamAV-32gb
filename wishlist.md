@@ -1741,3 +1741,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Make context-aware fmap hash input, initialization, and digest failures
   sticky incomplete/non-cacheable, with a two-window callback regression;
   retain compiled matcher/hash, sanitizer, and Sonic1 qualification gates.
+
+## AutoIt version-byte read classification — 2026-08-23
+
+- Mark confirmed AutoIt version-byte read failures incomplete and
+  non-cacheable, with a focused callback regression; retain compiled AutoIt
+  corpus, sanitizer, and Sonic1 qualification gates.

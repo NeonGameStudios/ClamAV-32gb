@@ -2400,8 +2400,10 @@ cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset)
         cli_mark_scan_incomplete(ctx, "AutoIt layer offset is outside the input map");
         return CL_EREAD;
     }
-    if (!(version = fmap_need_off_once(map, offset, sizeof(*version))))
+    if (!(version = fmap_need_off_once(map, offset, sizeof(*version)))) {
+        cli_mark_scan_incomplete(ctx, "AutoIt version byte could not be read completely");
         return CL_EREAD;
+    }
 
     if (!(tmpd = cli_gentemp_with_prefix(ctx->this_layer_tmpdir, "autoit-tmp"))) {
         cli_mark_scan_incomplete(ctx, "AutoIt temporary directory could not be created");

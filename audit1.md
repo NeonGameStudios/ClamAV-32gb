@@ -5874,3 +5874,12 @@ incomplete; the public no-context hash API remains behaviorally unchanged.
 A two-window injected-read regression verifies `CL_EREAD`, the reason, and the
 non-cacheable map state. Compiled matcher/hash qualification, sanitizer, and
 Sonic1 qualification remain open.
+
+## AutoIt version-byte read classification — 2026-08-23
+
+The confirmed AutoIt parser entry previously returned `CL_EREAD` when its
+version-byte fmap request failed, but did not mark the layer incomplete. The
+entry now records an explicit incomplete reason before returning, preserving
+the non-cacheable invariant. A focused callback regression covers the
+version-byte boundary; compiled AutoIt corpus, sanitizer, and Sonic1
+qualification remain open.
