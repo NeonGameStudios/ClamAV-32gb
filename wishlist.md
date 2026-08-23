@@ -1766,3 +1766,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   non-cacheable in the direct admission helper, with a focused callback
   regression; retain compiled InstallShield corpus, sanitizer, and Sonic1
   qualification gates.
+
+## Bytecode PDF-object read classification — 2026-08-23
+
+- Mark bounded bytecode PDF object-window fmap failures incomplete and
+  non-cacheable, with an injected-read regression alongside the page-lifetime
+  test; retain compiled bytecode/PDF corpus, sanitizer, and Sonic1 gates.

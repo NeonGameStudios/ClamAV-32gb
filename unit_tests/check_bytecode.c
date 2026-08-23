@@ -755,6 +755,7 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
     bcctx = cli_bytecode_context_alloc();
     ck_assert_ptr_nonnull(bcctx);
     bcctx->bc = &bc;
+    bcctx->ctx = &cctx;
     ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
     ck_assert_uint_eq(bcctx->file_size64, boundary + 1);
 
@@ -819,6 +820,15 @@ START_TEST(test_bytecode_pdf_object_access_does_not_retain_fmap_pages)
     ck_assert_ptr_nonnull(cli_bcapi_pdf_getobj(bcctx, 0, 4));
     fmap_release_unlocked(map);
     ck_assert_uint_eq(map->paged, 0);
+
+    pread_state.fail_at        = 0;
+    cctx.scan_incomplete       = false;
+    cctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    ck_assert_ptr_null(cli_bcapi_pdf_getobj(bcctx, 0, 4));
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_str_eq(cctx.scan_incomplete_reason, "Bytecode PDF object could not be read completely");
+    ck_assert(map->dont_cache_flag);
 
     cli_bytecode_context_destroy(bcctx);
     cl_fmap_close(map);

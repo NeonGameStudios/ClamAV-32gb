@@ -2335,12 +2335,17 @@ uint32_t cli_bcapi_pdf_getobjsize(struct cli_bc_ctx *ctx, int32_t objidx)
 const uint8_t *cli_bcapi_pdf_getobj(struct cli_bc_ctx *ctx, int32_t objidx, uint32_t amount)
 {
     uint32_t size = cli_bcapi_pdf_getobjsize(ctx, objidx);
+    const uint8_t *object;
+
     if (amount > size)
         return NULL;
     /* The ABI has no matching release call for this borrowed pointer. Keep
      * the access bounded and unlocked; the bytecode hook consumes it during
      * the call and cannot safely retain a page lock across hooks. */
-    return fmap_need_off_once(ctx->fmap, ctx->pdf_objs[objidx]->start, amount);
+    object = fmap_need_off_once(ctx->fmap, ctx->pdf_objs[objidx]->start, amount);
+    if (object == NULL)
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode PDF object could not be read completely");
+    return object;
 }
 
 int32_t cli_bcapi_pdf_getobjid(struct cli_bc_ctx *ctx, int32_t objidx)

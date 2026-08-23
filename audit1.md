@@ -5914,3 +5914,13 @@ reasons before returning. The embedded-admission regression injects the magic
 window failure and verifies the status, reason, and non-cacheable map state.
 Compiled InstallShield corpus, sanitizer, and Sonic1 qualification remain
 open.
+
+## Bytecode PDF-object read classification — 2026-08-23
+
+The bytecode PDF `pdf_getobj()` API returned a NULL borrowed pointer when its
+bounded fmap window could not be supplied, but did not notify the owning scan
+context. Required PDF bytecode inspection could therefore lose the sticky
+incomplete/non-cacheable state. The API now records an explicit incomplete
+reason on that failure. The existing page-lifetime regression now also injects
+an object-window read failure and verifies the context and map state. Compiled
+bytecode/PDF corpus, sanitizer, and Sonic1 qualification remain open.

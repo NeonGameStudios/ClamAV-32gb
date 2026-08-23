@@ -3104,6 +3104,7 @@ contains libclamav/jsparse/js-norm.c 'JavaScript normalization temporary admissi
 contains libclamav/jsparse/js-norm.c 'JavaScript normalization output reached the configured time limit'
 contains libclamav/bytecode_api.c 'Bytecode normalized JavaScript directory could not be allocated'
 contains libclamav/bytecode_api.c 'Bytecode normalized JavaScript directory could not be created'
+contains libclamav/bytecode_api.c 'Bytecode PDF object could not be read completely'
 contains libclamav/bytecode_priv.h 'uint64_t jsnormwritten'
 contains libclamav/bytecode_priv.h 'uint64_t written'
 contains libclamav/bytecode_priv.h 'uint64_t temporary_reserved'
