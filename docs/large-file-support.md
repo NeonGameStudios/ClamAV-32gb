@@ -6260,3 +6260,12 @@ The TIFF parser now distinguishes classic TIFF from BigTIFF magic. BigTIFF's
 return an explicit unsupported/incomplete result instead of falling through as
 clean. Focused direct-parser coverage is present; compiled media corpus,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
+
+## clamd path-walk status propagation — 2026-08-23
+
+The daemon path/directory command now preserves a non-success result returned
+by `cli_ftw()` when traversal fails before `scan_callback()` can increment the
+per-request error counter. Structured requests also retain that status for the
+final report, preventing a traversal failure from becoming a clean result with
+no scanned object. Static source guards pass; compiled daemon fault injection,
+protocol, sanitizer, and Sonic1 qualification remain release gates.

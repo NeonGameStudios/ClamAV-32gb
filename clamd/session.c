@@ -554,6 +554,14 @@ int command(client_conn_t *conn, int *virus)
         else
             return 1;
     }
+    /* cli_ftw() can fail before scan_callback() has a chance to record the
+     * failure in scandata.errors. Preserve that status so a path or directory
+     * request cannot be reduced to a clean result with no scanned object. */
+    if (ret != CL_SUCCESS && ret != CL_VIRUS && scandata.errors == 0) {
+        scandata.errors++;
+        if (conn->structured_report && conn->structured_status == CL_SUCCESS)
+            conn->structured_status = ret;
+    }
     if (scandata.group && type == TYPE_MULTISCAN) {
         thrmgr_group_waitforall(group, &ok, &error, &total);
         conn->structured_report_group = NULL;

@@ -6552,3 +6552,12 @@ recognized format now returns an explicit unsupported/incomplete result and
 cannot be cached as clean. A focused direct-parser regression covers the
 little-endian BigTIFF signature; compiled media corpus, sanitizer, and Sonic1
 qualification remain open.
+
+## clamd path-walk status propagation — 2026-08-23
+
+The daemon path/directory command now preserves a non-success result returned
+by `cli_ftw()` when traversal fails before `scan_callback()` can increment the
+per-request error counter. Structured requests also retain that status for the
+final report, preventing a traversal failure from becoming a clean result with
+no scanned object. Static source guards pass; compiled daemon fault injection,
+protocol, sanitizer, and Sonic1 qualification remain release gates.
