@@ -1493,3 +1493,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   callback failures, with sticky incomplete state and top-level reconciliation;
   retain compiled scanner, sanitizer, production OLE2 corpus, and Sonic1
   qualification as release gates.
+
+## XAR compressed-member range read classification — 2026-08-23
+
+- Classify XAR gzip/LZMA member input windows as `CL_EPARSE` when truncated and
+  `CL_EREAD` when a fully in-range fmap callback fails, preserving sticky
+  incomplete state through decoder cleanup; retain compiled scanner,
+  sanitizer, production XAR corpus, and Sonic1 qualification as release gates.

@@ -12371,6 +12371,67 @@ static uint8_t *xar_test_make_archive(size_t *data_length)
     return xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, data_length);
 }
 
+static size_t xar_member_failure_offset = SIZE_MAX;
+static size_t xar_member_failure_length = SIZE_MAX;
+
+static const void *xar_member_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == xar_member_failure_offset && len == xar_member_failure_length)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_xar_compressed_member_read_failure_is_fail_visible)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>4</length><size>4</size>"
+        "<encoding style=\"application/x-gzip\"/>"
+        "</data></file></toc></xar>";
+    static const uint8_t heap[] = {0x1f, 0x8b, 0x08, 0x00};
+    uint8_t *data;
+    size_t data_length;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    data = realloc(data, data_length + sizeof(heap));
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + data_length, heap, sizeof(heap));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, data_length + sizeof(heap));
+    ck_assert_ptr_nonnull(map);
+    map->need = xar_member_read_failure;
+    xar_member_failure_offset = data_length;
+    xar_member_failure_length = sizeof(heap);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanxar(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "XAR compressed member input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+    xar_member_failure_offset = SIZE_MAX;
+    xar_member_failure_length = SIZE_MAX;
+}
+END_TEST
+
 START_TEST(test_xar_xml_reader_error_is_fail_visible)
 {
     uint8_t *data;
@@ -22401,6 +22462,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_compressed_member_read_failure_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_xml_reader_error_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_subdocument_temporary_quota_is_fail_visible);

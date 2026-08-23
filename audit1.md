@@ -5490,3 +5490,12 @@ sector versus `CL_EREAD` for a fully in-range fmap callback failure. The
 top-level extractor reconciles an ignored sector-walk failure before returning
 clean. A fixture-backed regression covers both classes. Compiled scanner,
 sanitizer, production OLE2 corpus, and Sonic1 qualification remain open.
+
+## XAR compressed-member range read classification — 2026-08-23
+
+XAR gzip and LZMA member input windows now pass through a checked range helper.
+The helper preserves `CL_EPARSE` for a short range and `CL_EREAD` for a fully
+in-range fmap callback failure, while the decoder path marks the compressed
+member incomplete before temporary cleanup. A synthetic gzip-member callback
+regression covers the in-range failure path. Compiled scanner, sanitizer,
+production XAR corpus, and Sonic1 qualification remain open.

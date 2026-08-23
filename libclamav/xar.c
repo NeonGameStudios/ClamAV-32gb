@@ -47,6 +47,27 @@ static size_t xar_readn(fmap_t *map, void *dst, size_t at, size_t len)
     return fmap_readn(map, dst, at, len);
 }
 
+static const void *xar_need_range(fmap_t *map, size_t at, size_t len, cl_error_t *status)
+{
+    const void *data;
+
+    if (status != NULL)
+        *status = CL_EPARSE;
+    if (map == NULL || len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+
+    data = fmap_need_off_once(map, at, len);
+    if (data == NULL) {
+        if (status != NULL)
+            *status = CL_EREAD;
+        return NULL;
+    }
+
+    if (status != NULL)
+        *status = CL_SUCCESS;
+    return data;
+}
+
 static cl_error_t xar_incomplete(cli_ctx *ctx, const char *reason)
 {
     cli_mark_scan_incomplete(ctx, reason);
@@ -896,6 +917,7 @@ int cli_scanxar(cli_ctx *ctx)
             case CL_TYPE_GZ: {
                 uint64_t total_out   = 0;
                 bool stream_complete = false;
+                cl_error_t read_status;
                 /* inflate gzip directly because file segments do not contain magic */
                 memset(&strm, 0, sizeof(strm));
                 if ((rc = inflateInit(&strm)) != Z_OK) {
@@ -916,10 +938,13 @@ int cli_scanxar(cli_ctx *ctx)
                         goto exit_tmpfile;
                     }
 
-                    if (!(strm.next_in = next_in = (void *)fmap_need_off_once(map, at, bytes))) {
+                    if (!(strm.next_in = next_in = (void *)xar_need_range(map, at, bytes, &read_status))) {
                         cli_dbgmsg("cli_scanxar: Can't read %u bytes @ %lu.\n", bytes, (long unsigned)at);
+                        cli_mark_scan_incomplete(ctx, read_status == CL_EREAD
+                                                       ? "XAR compressed member input could not be read completely"
+                                                       : "XAR compressed member input is truncated");
                         inflateEnd(&strm);
-                        rc = CL_EREAD;
+                        rc = read_status;
                         goto exit_tmpfile;
                     }
                     at += bytes;
@@ -1016,6 +1041,7 @@ int cli_scanxar(cli_ctx *ctx)
                 unsigned char *buff = __lzma_wrap_alloc(NULL, CLI_LZMA_OBUF_SIZE);
                 int lret;
                 bool stream_complete = false;
+                cl_error_t read_status;
 
                 if (length > in_remaining)
                     length = in_remaining;
@@ -1034,13 +1060,16 @@ int cli_scanxar(cli_ctx *ctx)
                     goto exit_tmpfile;
                 }
 
-                blockp = (void *)fmap_need_off_once(map, at, CLI_LZMA_HDR_SIZE);
+                blockp = (void *)xar_need_range(map, at, CLI_LZMA_HDR_SIZE, &read_status);
                 if (blockp == NULL) {
                     char errbuff[128];
                     cli_strerror(errno, errbuff, sizeof(errbuff));
                     cli_dbgmsg("cli_scanxar: Can't read %i bytes @ %zu, errno:%s.\n",
                                CLI_LZMA_HDR_SIZE, at, errbuff);
-                    rc = CL_EREAD;
+                    cli_mark_scan_incomplete(ctx, read_status == CL_EREAD
+                                                   ? "XAR compressed member input could not be read completely"
+                                                   : "XAR compressed member input is truncated");
+                    rc = read_status;
                     __lzma_wrap_free(NULL, buff);
                     goto exit_tmpfile;
                 }
@@ -1078,13 +1107,16 @@ int cli_scanxar(cli_ctx *ctx)
                     lz.next_out  = buff;
                     lz.avail_out = CLI_LZMA_OBUF_SIZE;
                     lz.avail_in = avail_in = MIN(CLI_LZMA_IBUF_SIZE, in_remaining);
-                    lz.next_in = next_in = (void *)fmap_need_off_once(map, at, lz.avail_in);
+                    lz.next_in = next_in = (void *)xar_need_range(map, at, lz.avail_in, &read_status);
                     if (lz.next_in == NULL) {
                         char errbuff[128];
                         cli_strerror(errno, errbuff, sizeof(errbuff));
                         cli_dbgmsg("cli_scanxar: Can't read %zu bytes @ %zu, errno: %s.\n",
                                    lz.avail_in, at, errbuff);
-                        rc = CL_EREAD;
+                        cli_mark_scan_incomplete(ctx, read_status == CL_EREAD
+                                                       ? "XAR compressed member input could not be read completely"
+                                                       : "XAR compressed member input is truncated");
+                        rc = read_status;
                         __lzma_wrap_free(NULL, buff);
                         cli_LzmaShutdown(&lz);
                         goto exit_tmpfile;
