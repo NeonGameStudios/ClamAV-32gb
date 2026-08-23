@@ -6015,8 +6015,10 @@ across all three manifests and rejects duplicate, absolute, or traversal
 paths. Git-backed evidence is explicitly typed as `git-commit`; snapshot
 evidence is typed as `content-manifest` and must use the source-manifest digest
 as both revision identifiers. A synthetic negative regression confirms that a
-source/tree path mismatch is rejected. Full semantic build/runtime binding and
-external attestation remain open.
+source/tree path mismatch is rejected. The verifier accepts both Git's tab-
+delimited tree/index output and the Git-less producer's copied source-manifest
+format. Full semantic build/runtime binding and external attestation remain
+open.
 
 ## Embedded RAR SFX read-result classification — 2026-08-23
 

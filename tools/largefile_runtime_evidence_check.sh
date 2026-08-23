@@ -47,7 +47,7 @@ import sys
 
 source_path, tree_path, index_path = sys.argv[1:]
 
-def read_paths(path, separator):
+def read_paths(path, separators):
     paths = []
     seen = set()
     with open(path, encoding="utf-8") as stream:
@@ -55,7 +55,8 @@ def read_paths(path, separator):
             line = line.rstrip("\n")
             if not line:
                 raise ValueError(f"empty manifest line: {path}:{line_number}")
-            if separator not in line:
+            separator = next((candidate for candidate in separators if candidate in line), None)
+            if separator is None:
                 raise ValueError(f"malformed manifest line: {path}:{line_number}")
             value = line.split(separator, 1)[1]
             if not value or value.startswith("/") or "\x00" in value:
@@ -71,9 +72,9 @@ def read_paths(path, separator):
         raise ValueError(f"empty manifest: {path}")
     return paths
 
-source = read_paths(source_path, "  ")
-tree = read_paths(tree_path, "\t")
-index = read_paths(index_path, "\t")
+source = read_paths(source_path, ("  ",))
+tree = read_paths(tree_path, ("\t", "  "))
+index = read_paths(index_path, ("\t", "  "))
 if source != sorted(source) or tree != sorted(tree) or index != sorted(index):
     raise ValueError("source manifests are not canonically sorted")
 if source != tree or source != index:

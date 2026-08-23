@@ -1828,9 +1828,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 
 - Require source, Git tree, and index manifests to contain the same canonical,
   sorted path set, and require content-manifest revisions to equal the source
-  manifest digest; add a negative verifier regression for path disagreement.
-  Runtime/build semantic qualification and external attestation remain
-  release gates.
+  manifest digest; accept the Git-less producer's source-manifest copies for
+  tree/index files; add a negative verifier regression for path disagreement.
+  Runtime/build semantic qualification and external attestation remain release
+  gates.
 
 ## Embedded RAR SFX read-result classification — 2026-08-23
 
