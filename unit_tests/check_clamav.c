@@ -4298,6 +4298,42 @@ START_TEST(test_authenticode_parse_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_fmap_hash_read_failure_is_fail_visible)
+{
+    size_t length = (size_t)10 * 1024 * 1024 + 1;
+    uint8_t *data;
+    struct authenticode_hash_map_state state;
+    cli_ctx ctx;
+    fmap_t map;
+    uint8_t *hash = NULL;
+    cl_error_t status;
+
+    data = calloc(1, length);
+    ck_assert_ptr_nonnull(data);
+    memset(&state, 0, sizeof(state));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&map, 0, sizeof(map));
+    state.data        = data;
+    state.data_length = (size_t)10 * 1024 * 1024;
+    state.fail_at     = state.data_length;
+    state.repeat_data = true;
+    map.handle        = &state;
+    map.need          = authenticode_hash_test_need;
+    map.len           = length;
+    ctx.fmap          = &map;
+
+    status = fmap_get_hash_ctx(&map, &hash, CLI_HASH_SHA2_256, &ctx);
+    ck_assert_int_eq(status, CL_EREAD);
+    ck_assert_ptr_null(hash);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "fmap hash input could not be read completely");
+    ck_assert(map.dont_cache_flag);
+    ck_assert(!map.have_hash[CLI_HASH_SHA2_256]);
+    ck_assert_uint_eq(state.calls, 2);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_pe_overlay_range_preserves_native_size)
 {
     struct cli_exe_section sections[2];
@@ -24160,6 +24196,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_authenticode_hash_regions_are_native_and_bounded);
     tcase_add_test(tc_cl_scan, test_authenticode_hash_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_authenticode_parse_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_fmap_hash_read_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
 
     user_timeout = getenv("T");

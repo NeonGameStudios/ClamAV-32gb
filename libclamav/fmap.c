@@ -1545,6 +1545,7 @@ cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned char **hash, cli_hash_type_t 
      * so hashing them would otherwise call through a NULL function pointer. */
     if (NULL == map->need) {
         cli_dbgmsg("fmap_get_hash: map has no data-access callback\n");
+        cli_mark_scan_incomplete(ctx, "fmap hash input could not be read completely");
         return CL_EREAD;
     }
 
@@ -1564,6 +1565,7 @@ cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned char **hash, cli_hash_type_t 
             hashctx[hash_type] = cl_hash_init(hash_name);
             if (NULL == hashctx[hash_type]) {
                 cli_errmsg("fmap_get_hash: error initializing %s hash context\n", hash_name);
+                cli_mark_scan_incomplete(ctx, "fmap hash digest could not be initialized");
                 status = CL_EARG;
                 goto done;
             }
@@ -1582,6 +1584,7 @@ cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned char **hash, cli_hash_type_t 
 
         if (!(buf = fmap_need_off_once(map, at, readme))) {
             cli_errmsg("fmap_get_hash: error reading while generating hash!\n");
+            cli_mark_scan_incomplete(ctx, "fmap hash input could not be read completely");
             status = CL_EREAD;
             goto done;
         }
@@ -1594,6 +1597,7 @@ cl_error_t fmap_get_hash_ctx(fmap_t *map, unsigned char **hash, cli_hash_type_t 
                 if (cl_update_hash(hashctx[hash_type], buf, readme)) {
                     const char *hash_name = cli_hash_name(hash_type);
                     cli_errmsg("fmap_get_hash: error calculating %s hash!\n", hash_name);
+                    cli_mark_scan_incomplete(ctx, "fmap hash digest could not be calculated completely");
                     status = CL_EREAD;
                     goto done;
                 }

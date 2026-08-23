@@ -5862,3 +5862,15 @@ layer. A focused callback-backed parser regression covers the initial
 in-range read failure. This conservative classification intentionally does
 not claim to distinguish every ASN.1 helper's read fault from malformed DER;
 compiled PE corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Context-aware fmap hash read classification — 2026-08-23
+
+The context-aware fmap hash helper returned `CL_EREAD` when a bounded hash
+window could not be obtained, but did not itself set sticky incomplete state.
+That left callers which propagated the status without an additional mark
+vulnerable to losing the non-cacheable invariant. Context-aware missing-map,
+window-read, hash-initialization, and digest-update failures now mark the scan
+incomplete; the public no-context hash API remains behaviorally unchanged.
+A two-window injected-read regression verifies `CL_EREAD`, the reason, and the
+non-cacheable map state. Compiled matcher/hash qualification, sanitizer, and
+Sonic1 qualification remain open.
