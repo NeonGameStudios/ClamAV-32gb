@@ -733,6 +733,8 @@ contains libclamav/mbox.c 'MIME message header lookahead could not be read compl
 contains libclamav/mbox.c 'MIME message line exceeds bounded parser representation'
 contains libclamav/mbox.c 'MIME parser reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_mbox_line_read_failure_is_fail_visible'
+contains libclamav/mbox.c 'cl_error_t *failure_status'
+contains libclamav/mbox.c '*failure_status = CL_EREAD'
 contains unit_tests/check_clamav.c 'test_mbox_header_lookahead_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_mbox_oversized_line_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_mbox_time_limit_is_fail_visible'

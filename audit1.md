@@ -5716,6 +5716,15 @@ The Rust OneNote legacy reader previously mapped every `Read`/`Seek` error to
 reader regression exercises the distinction. Compiled OneNote corpus,
 sanitizer, and Sonic1 qualification remain open.
 
+## MIME line read-failure propagation — 2026-08-23
+
+The mail parser now carries an in-range fmap callback failure from its bounded
+MIME line reader to `cli_mbox()`, preserving `CL_EREAD` instead of collapsing
+that operational failure into the generic incomplete `CL_EPARSE` result. EOF
+at the map boundary remains normal termination, and the existing focused line
+fault-injection regression now expects `CL_EREAD`; compiled mail corpus,
+sanitizer, and Sonic1 qualification remain open.
+
 ## InstallShield MSI file-record read classification — 2026-08-23
 
 The MSI embedded-file record path now range-preflights its fixed record before

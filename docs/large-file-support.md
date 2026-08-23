@@ -5959,6 +5959,15 @@ The Rust OneNote legacy reader now preserves source I/O failures as
 `CL_EPARSE`. Focused reader coverage exercises the distinction, while compiled
 OneNote corpus, sanitizer, and Sonic1 qualification remain release gates.
 
+## MIME line read-failure propagation — 2026-08-23
+
+The mail parser now carries an in-range fmap callback failure from its bounded
+MIME line reader to `cli_mbox()`, preserving `CL_EREAD` instead of collapsing
+that operational failure into generic incomplete `CL_EPARSE`. EOF at the map
+boundary remains normal termination; the focused line fault-injection
+regression covers the distinction, while compiled mail corpus, sanitizer, and
+Sonic1 qualification remain release gates.
+
 ## InstallShield MSI file-record read classification — 2026-08-23
 
 MSI embedded-file records now distinguish a genuinely short fixed record

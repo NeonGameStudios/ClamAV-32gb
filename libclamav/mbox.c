@@ -204,7 +204,8 @@ static char *rfc2047(const char *in, cli_ctx *ctx);
 static char *rfc822comments(const char *in, char *out);
 static int rfc1341(mbox_ctx *mctx, message *m);
 static bool usefulHeader(int commandNumber, const char *cmd);
-static char *getline_from_mbox(char *buffer, size_t len, fmap_t *map, size_t *at, cli_ctx *ctx);
+static char *getline_from_mbox(char *buffer, size_t len, fmap_t *map, size_t *at, cli_ctx *ctx,
+                               cl_error_t *failure_status);
 static bool isBounceStart(mbox_ctx *mctx, const char *line);
 static mbox_status exportBinhexMessage(mbox_ctx *mctx, message *m);
 static int exportBounceMessage(mbox_ctx *ctx, text *start);
@@ -408,6 +409,7 @@ static int
 cli_parse_mbox(const char *dir, cli_ctx *ctx)
 {
     int retcode;
+    cl_error_t line_failure = CL_SUCCESS;
     message *body;
     char buffer[RFC2821LENGTH + 1];
     mbox_ctx mctx;
@@ -647,7 +649,10 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                     break;
                 }
             }
-        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx) != NULL);
+        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx, &line_failure) != NULL);
+
+        if (retcode == CL_SUCCESS && line_failure != CL_SUCCESS)
+            retcode = line_failure;
 
         if (retcode == CL_SUCCESS) {
             cli_dbgmsg("Extract attachments from email %d\n", messagenumber);
@@ -697,21 +702,27 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
          * Ignore any blank lines at the top of the message
          */
         while (strchr("\r\n", buffer[0]) &&
-               (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx) != NULL)) {
+               (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx, &line_failure) != NULL)) {
             ;
         }
+
+        if (retcode == CL_SUCCESS && line_failure != CL_SUCCESS)
+            retcode = line_failure;
 
         buffer[sizeof(buffer) - 1] = '\0';
 
         bool heuristicFound = false;
         cl_error_t parse_status = CL_SUCCESS;
-        body                = parseEmailFile(map, &at, rfc821, buffer, dir, ctx, &heuristicFound, &parse_status);
-        if (heuristicFound) {
-            retcode = CL_VIRUS;
-        } else if (parse_status != CL_SUCCESS) {
-            retcode = parse_status;
-        } else if (ctx->scan_timed_out) {
-            retcode = CL_ETIMEOUT;
+        body                = NULL;
+        if (retcode == CL_SUCCESS) {
+            body = parseEmailFile(map, &at, rfc821, buffer, dir, ctx, &heuristicFound, &parse_status);
+            if (heuristicFound) {
+                retcode = CL_VIRUS;
+            } else if (parse_status != CL_SUCCESS) {
+                retcode = parse_status;
+            } else if (ctx->scan_timed_out) {
+                retcode = CL_ETIMEOUT;
+            }
         }
     }
 
@@ -1309,7 +1320,7 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                 break;
             }
         }
-    } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, at, ctx) != NULL);
+    } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, at, ctx, failure_status) != NULL);
 
     err = 0;
 done:
@@ -5025,7 +5036,8 @@ usefulHeader(int commandNumber, const char *cmd)
  * Like fgets but cope with end of line by "\n", "\r\n", "\n\r", "\r"
  */
 static char *
-getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx)
+getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx,
+                  cl_error_t *failure_status)
 {
     const char *src, *cursrc;
     char *curbuf;
@@ -5048,8 +5060,11 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
         return NULL;*/
     if (!src) {
         cli_dbgmsg("getline_from_mbox: fmap need failed\n");
-        if (*at < map->len)
+        if (*at < map->len) {
             cli_mark_scan_incomplete(ctx, "MIME message line input could not be read completely");
+            if (failure_status)
+                *failure_status = CL_EREAD;
+        }
         return NULL;
     }
     if ((buffer_len == 0) || (buffer == NULL)) {
@@ -5103,6 +5118,8 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
 
         if (!next) {
             cli_mark_scan_incomplete(ctx, "MIME message line input could not be read completely");
+            if (failure_status)
+                *failure_status = CL_EREAD;
             return NULL;
         }
         if (*next != '\n' && *next != '\r') {

@@ -1656,6 +1656,12 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   `CL_EPARSE` for genuine EOF/truncation; retain compiled corpus, sanitizer,
   and Sonic1 qualification gates.
 
+## MIME line read-failure propagation — 2026-08-23
+
+- Preserve in-range fmap callback failures from the bounded MIME line reader
+  as `CL_EREAD` while retaining EOF/truncation classification; retain compiled
+  mail corpus, sanitizer, and Sonic1 qualification gates.
+
 ## InstallShield MSI file-record read classification — 2026-08-23
 
 - Preserve `CL_EPARSE` for short MSI file records and `CL_EREAD` for in-range

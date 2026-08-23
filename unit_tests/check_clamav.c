@@ -16105,7 +16105,7 @@ START_TEST(test_mbox_line_read_failure_is_fail_visible)
     map->need = embedded_header_read_failure;
     ctx.fmap = map;
 
-    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_EPARSE);
+    ck_assert_int_eq(cli_mbox(tmpdir, &ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "MIME message line input could not be read completely");
