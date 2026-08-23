@@ -170,12 +170,13 @@ int mdprintf(int desc, const char *str, ...)
     pthread_mutex_lock(&mdprintf_mutex);
 #endif
     while (todo > 0) {
-        ret = send(desc, buff, bytes, 0);
+        ret = send(desc, buff, (size_t)todo, 0);
         if (ret < 0) {
-            struct timeval tv;
-            if (errno != EWOULDBLOCK)
+            if (errno == EINTR)
+                continue;
+            if (errno != EAGAIN && errno != EWOULDBLOCK)
                 break;
-                /* didn't send anything yet */
+            struct timeval tv;
 #ifdef CL_THREAD_SAFE
             pthread_mutex_unlock(&mdprintf_mutex);
 #endif
@@ -195,6 +196,9 @@ int mdprintf(int desc, const char *str, ...)
                 ret = -1;
                 break;
             }
+        } else if (ret == 0) {
+            ret = -1;
+            break;
         } else {
             todo -= ret;
             buff += ret;

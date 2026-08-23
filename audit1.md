@@ -6303,3 +6303,13 @@ could accept a partial chunk and later dispatch an incomplete staged file. The
 caller now requires the exact chunk length and tears down the request on any
 short or failed write. Compiled daemon fault injection, sanitizer, and Sonic1
 qualification remain open.
+
+## clamd response send progress — 2026-08-23
+
+`mdprintf()` previously passed the original formatted length to every
+`send()` call, so a partial socket write could resend bytes already delivered
+and read beyond the response buffer. A zero-byte send also left its loop
+counter unchanged. It now sends the unsent suffix, retries `EINTR`, waits for
+both nonblocking errno variants, and treats zero progress as a failed response.
+Compiled protocol fault injection, sanitizer, and Sonic1 qualification remain
+open.

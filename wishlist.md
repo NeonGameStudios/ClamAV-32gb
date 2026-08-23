@@ -2018,3 +2018,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Require the active INSTREAM receiver to accept a chunk only when the shared
   writer returns its exact length; add compiled daemon zero-progress/fault
   injection and Sonic1 qualification for partial staged streams.
+
+## clamd response send progress — 2026-08-23
+
+- Make `mdprintf()` send only the unsent response suffix, retry `EINTR`, wait
+  for both nonblocking errno variants, and reject zero-byte progress; add
+  compiled protocol fault injection and Sonic1 qualification.

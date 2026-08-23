@@ -7786,17 +7786,18 @@ native-width-integer	common/output.c	133	int mdprintf(int desc, const char *str,
 native-width-integer	common/output.c	137	    int bytes, todo, ret = 0;
 native-width-integer	common/output.c	138	    size_t len;
 native-width-integer	common/output.c	163	    if ((size_t)bytes >= len)
-native-width-integer	common/output.c	213	static int rename_logg(STATBUF *sb)
-native-width-integer	common/output.c	216	    size_t rotate_file_len;
-native-width-integer	common/output.c	222	            fprintf(logg_fp, "Log size = %lld, max = %lld\n", (long long int)sb->st_size, (long long int)logg_size);
-native-width-integer	common/output.c	274	static int logg_open(void)
-native-width-integer	common/output.c	307	int logg(loglevel_t loglevel, const char *str, ...)
-native-width-integer	common/output.c	312	    size_t len;
-native-width-integer	common/output.c	346	        int logg_file_fd = -1;
-native-width-integer	common/output.c	483	    size_t len;
-native-width-integer	common/output.c	537	    int code;
-native-width-integer	common/output.c	607	int logg_facility(const char *name)
-native-width-integer	common/output.c	609	    int i;
+native-width-integer	common/output.c	173	        ret = send(desc, buff, (size_t)todo, 0);
+native-width-integer	common/output.c	217	static int rename_logg(STATBUF *sb)
+native-width-integer	common/output.c	220	    size_t rotate_file_len;
+native-width-integer	common/output.c	226	            fprintf(logg_fp, "Log size = %lld, max = %lld\n", (long long int)sb->st_size, (long long int)logg_size);
+native-width-integer	common/output.c	278	static int logg_open(void)
+native-width-integer	common/output.c	311	int logg(loglevel_t loglevel, const char *str, ...)
+native-width-integer	common/output.c	316	    size_t len;
+native-width-integer	common/output.c	350	        int logg_file_fd = -1;
+native-width-integer	common/output.c	487	    size_t len;
+native-width-integer	common/output.c	541	    int code;
+native-width-integer	common/output.c	611	int logg_facility(const char *name)
+native-width-integer	common/output.c	613	    int i;
 native-width-integer	common/output.c	90	short int logg_verbose = 0, logg_nowarn = 0, logg_lock = 1, logg_time = 0, logg_foreground = 1, logg_noflush = 0, logg_rotate = 0;
 native-width-integer	common/output.c	91	off_t logg_size       = 0;
 native-width-integer	common/output.c	97	short int mprintf_disabled = 0, mprintf_verbose = 0, mprintf_quiet = 0,
@@ -18999,9 +19000,9 @@ format-width	common/optparser.c	1581	                            fprintf(stderr,
 format-width	common/optparser.c	1649	                    fprintf(stderr, "WARNING: Numerical value for option %s too high, resetting to %lld\n", name, lnumlimit);
 format-width	common/optparser.c	842	        printf("OPT_NUMARG: %d\n", opts->numarg);
 format-width	common/optparser.c	846	            printf("SUBARG_OPT_NUMARG: %d\n", h->numarg);
-format-width	common/output.c	222	            fprintf(logg_fp, "Log size = %lld, max = %lld\n", (long long int)sb->st_size, (long long int)logg_size);
-format-width	common/output.c	253	    strftime(rotate_file + strlen(rotate_file) - strlen(".log"), rotate_file_len - strlen(rotate_file), "-%Y%m%d_%H%M%S.log", &tmp);
-format-width	common/output.c	262	        fprintf(stderr, "Failed to rename file with error code: %d\n", GetLastError());
+format-width	common/output.c	226	            fprintf(logg_fp, "Log size = %lld, max = %lld\n", (long long int)sb->st_size, (long long int)logg_size);
+format-width	common/output.c	257	    strftime(rotate_file + strlen(rotate_file) - strlen(".log"), rotate_file_len - strlen(rotate_file), "-%Y%m%d_%H%M%S.log", &tmp);
+format-width	common/output.c	266	        fprintf(stderr, "Failed to rename file with error code: %d\n", GetLastError());
 format-width	common/scanmem.c	144	        fprintf(stderr, "WideCharToMultiByte() failed with %d\n", GetLastError());
 format-width	common/scanmem.c	292	                logg(LOGG_WARNING, "Expected ERROR_INVALID_NAME/ERROR_PATH_NOT_FOUND but got %d\n",
 format-width	common/scanmem.c	301	                logg(LOGG_WARNING, "GetModuleFileNameExW() failed %d\n", GetLastError());
@@ -22114,17 +22115,16 @@ offset-size-arithmetic	common/output.c	124	                        arglen += 10;
 offset-size-arithmetic	common/output.c	130	        len += arglen;                             \
 offset-size-arithmetic	common/output.c	156	    buff[len - 1] = 0;
 offset-size-arithmetic	common/output.c	164	        bytes = len - 1;
-offset-size-arithmetic	common/output.c	178	                /* didn't send anything yet */
-offset-size-arithmetic	common/output.c	183	            tv.tv_usec = mprintf_send_timeout * 1000;
-offset-size-arithmetic	common/output.c	222	            fprintf(logg_fp, "Log size = %lld, max = %lld\n", (long long int)sb->st_size, (long long int)logg_size);
-offset-size-arithmetic	common/output.c	229	    rotate_file_len = strlen(logg_file) + strlen("-YYYY-MM-DD_HH:MM:SS.log");
-offset-size-arithmetic	common/output.c	230	    rotate_file     = calloc(1, rotate_file_len + 1);
-offset-size-arithmetic	common/output.c	253	    strftime(rotate_file + strlen(rotate_file) - strlen(".log"), rotate_file_len - strlen(rotate_file), "-%Y%m%d_%H%M%S.log", &tmp);
-offset-size-arithmetic	common/output.c	337	    buff[len - 1] = 0;
-offset-size-arithmetic	common/output.c	381	            if (fcntl(fileno(logg_fp), F_SETLK, &fl) == -1) {
-offset-size-arithmetic	common/output.c	416	            timestr[strlen(timestr) - 1] = '\0';
-offset-size-arithmetic	common/output.c	445	                timestr[strlen(timestr) - 1] = '\0';
-offset-size-arithmetic	common/output.c	506	    buff[len - 1] = 0;
+offset-size-arithmetic	common/output.c	184	            tv.tv_usec = mprintf_send_timeout * 1000;
+offset-size-arithmetic	common/output.c	226	            fprintf(logg_fp, "Log size = %lld, max = %lld\n", (long long int)sb->st_size, (long long int)logg_size);
+offset-size-arithmetic	common/output.c	233	    rotate_file_len = strlen(logg_file) + strlen("-YYYY-MM-DD_HH:MM:SS.log");
+offset-size-arithmetic	common/output.c	234	    rotate_file     = calloc(1, rotate_file_len + 1);
+offset-size-arithmetic	common/output.c	257	    strftime(rotate_file + strlen(rotate_file) - strlen(".log"), rotate_file_len - strlen(rotate_file), "-%Y%m%d_%H%M%S.log", &tmp);
+offset-size-arithmetic	common/output.c	341	    buff[len - 1] = 0;
+offset-size-arithmetic	common/output.c	385	            if (fcntl(fileno(logg_fp), F_SETLK, &fl) == -1) {
+offset-size-arithmetic	common/output.c	420	            timestr[strlen(timestr) - 1] = '\0';
+offset-size-arithmetic	common/output.c	449	                timestr[strlen(timestr) - 1] = '\0';
+offset-size-arithmetic	common/output.c	510	    buff[len - 1] = 0;
 offset-size-arithmetic	common/scanmem.c	142	    len = WideCharToMultiByte(CP_ACP, flags, wc, -1, NULL, 0, NULL, &invalid);
 offset-size-arithmetic	common/scanmem.c	148	    mb = malloc(len + 1);
 offset-size-arithmetic	common/scanmem.c	192	    wchar_t comprev[MAX_PATH + 1] = L"", compose[MAX_PATH + 1];

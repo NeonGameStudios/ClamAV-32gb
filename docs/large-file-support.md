@@ -6085,3 +6085,12 @@ cannot be acknowledged as a successful chunk and later scanned as a complete
 file; the request is reported as a write failure and cleaned up instead.
 Compiled daemon fault injection, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## clamd response send progress — 2026-08-23
+
+`mdprintf()` now sends only the unsent response suffix after a partial socket
+write, retries `EINTR`, waits for both nonblocking errno variants, and rejects
+zero-byte progress. This prevents duplicate or out-of-bounds response bytes
+and prevents a stalled clamd response from being reported as successful.
+Compiled protocol fault injection, sanitizer, and Sonic1 qualification remain
+release gates.
