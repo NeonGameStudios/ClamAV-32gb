@@ -1391,28 +1391,37 @@ START_TEST(test_exact_hash_at_large_size)
         &engine->hm_mdb,
         &engine->hm_fp,
         &engine->hm_imp};
-    const uint64_t size = 5000000000ULL;
+    static const uint64_t sizes[] = {
+        5000000000ULL,
+        32ULL * 1024ULL * 1024ULL * 1024ULL,
+        (32ULL * 1024ULL * 1024ULL * 1024ULL) + 1ULL};
     uint8_t digest[MD5_HASH_SIZE] = {0};
-    char *names[4];
     const char *matched = NULL;
-    size_t i;
+    size_t i, j;
 
     for (i = 0; i < sizeof(labels) / sizeof(labels[0]); i++) {
-        names[i] = MPOOL_CALLOC(ctx.engine->mempool, strlen(labels[i]) + 1, 1);
-        ck_assert_ptr_nonnull(names[i]);
-        memcpy(names[i], labels[i], strlen(labels[i]));
+        for (j = 0; j < sizeof(sizes) / sizeof(sizes[0]); j++) {
+            char label[96];
+            char *name;
 
-        digest[0] = (uint8_t)(i + 1);
-        ck_assert_int_eq(hm_addhash_bin(engine, purposes[i], digest, CLI_HASH_MD5,
-                                        size, names[i]),
-                         CL_SUCCESS);
-        ck_assert_ptr_nonnull(*roots[i]);
-        hm_flush(*roots[i]);
-        ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, size));
-        ck_assert_int_eq(cli_hm_scan(digest, size, &matched, *roots[i], CLI_HASH_MD5),
-                         CL_VIRUS);
-        ck_assert_str_eq(matched, labels[i]);
-        matched = NULL;
+            snprintf(label, sizeof(label), "%s-%zu", labels[i], j);
+            name = MPOOL_CALLOC(ctx.engine->mempool, strlen(label) + 1, 1);
+            ck_assert_ptr_nonnull(name);
+            memcpy(name, label, strlen(label));
+
+            digest[0] = (uint8_t)(i + 1);
+            digest[1] = (uint8_t)(j + 1);
+            ck_assert_int_eq(hm_addhash_bin(engine, purposes[i], digest, CLI_HASH_MD5,
+                                            sizes[j], name),
+                             CL_SUCCESS);
+            ck_assert_ptr_nonnull(*roots[i]);
+            hm_flush(*roots[i]);
+            ck_assert(cli_hm_have_size(*roots[i], CLI_HASH_MD5, sizes[j]));
+            ck_assert_int_eq(cli_hm_scan(digest, sizes[j], &matched, *roots[i], CLI_HASH_MD5),
+                             CL_VIRUS);
+            ck_assert_str_eq(matched, label);
+            matched = NULL;
+        }
     }
 #else
     ck_assert(1);

@@ -323,7 +323,8 @@
 - Byte-compare logical-signature matching now has a >4 GiB window regression;
   production-signature qualification remains open.
 - Exact-size hash lookup now has a 5 GB regression across all four hash
-  purposes; parser and fuzzy-image qualification remains open.
+  purposes, extended to exact 32 GiB and 32 GiB plus one byte; parser and
+  fuzzy-image qualification remains open.
 - PCRE subject admission now tests the lower `MaxContiguousSize` override;
   full-size execution and RSS qualification remains open.
 - The public `cl_fmap_get_data()` range clamp now uses subtraction-form

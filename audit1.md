@@ -2878,11 +2878,12 @@ remain open.
 
 The hash matcher keeps legacy sub-`UINT32_MAX` keys in its existing table and
 routes larger exact sizes through a 64-bit side table. `test_exact_hash_at_large_size`
-now inserts and looks up a 5,000,000,000-byte MD5 entry for each supported hash
-purpose: whole-file detection, PE-section detection, false-positive checking,
-and PE-import detection. This closes the shared table/admission/lookup slice;
-actual PE section/import materialization, production signatures, and fuzzy-image
-qualification remain open.
+now inserts and looks up 5,000,000,000-byte, exactly 32-GiB, and 32-GiB-plus-one
+MD5 entries for each supported hash purpose: whole-file detection, PE-section
+detection, false-positive checking, and PE-import detection. This closes the
+shared table/admission/lookup boundary slice; actual PE section/import
+materialization, production signatures, and fuzzy-image qualification remain
+open.
 
 ## PCRE effective contiguous-limit qualification slice — 2026-08-20
 
