@@ -6401,3 +6401,23 @@ The former broad `egg-extra-field-over-1g` exception is replaced by
 `egg-string-metadata-over-1g`: archive/file comments and filenames still use
 legacy contiguous UTF-8 string interfaces. Compiled EGG corpus and
 supported-build Sonic1 qualification remain release gates.
+
+## Bounded BigTIFF IFD traversal — 2026-08-23
+
+BigTIFF is now structurally inspected rather than classified as unsupported.
+Both byte orders use the specified 16-byte header, 64-bit IFD counts and links,
+fixed 20-byte entries, and LONG8/SLONG8/IFD8 field widths. The walker retains
+only one entry, validates count multiplication and every external value range,
+and preserves native 64-bit coordinates above 4 GiB. It never maps an external
+value payload merely to validate the directory.
+
+Malformed header extensions, truncated structures, unsupported field types,
+out-of-range or host-unrepresentable coordinates, backing-read failures, and
+deadline expiry remain explicit incomplete results. Focused little-/big-endian,
+fault-injection, malformed-layout, and sparse-above-4-GiB tests are present;
+compiled TIFF corpus and Sonic1 qualification remain release gates. All nine
+TIFF files in libtiff's archived BigTIFF sample bundle also pass the production
+parser normally and under ASan/UBSan; the 9,497-byte bundle SHA-256 is
+`aa2960126b3904732742e674ac16d06c219c7c359898cfd5eb0af5822b598090`.
+The layout follows the
+[libtiff BigTIFF design](https://libtiff.gitlab.io/libtiff/specification/bigtiff.html).

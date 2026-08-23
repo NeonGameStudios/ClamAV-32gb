@@ -2156,11 +2156,10 @@ and Sonic1 qualification as release gates.
   negative/overflow values; retain compiled TAR, sanitizer, corpus, and Sonic1
   qualification as release gates.
 
-## TIFF BigTIFF unsupported classification — 2026-08-23
+## TIFF BigTIFF unsupported classification (historical) — 2026-08-23
 
-- Keep recognized BigTIFF (`II+\0`/`MM\0+`) inputs explicit unsupported/incomplete
-  until a bounded 64-bit IFD parser is implemented; retain compiled media,
-  sanitizer, corpus, and Sonic1 qualification as release gates.
+- This fail-closed placeholder was superseded by the bounded BigTIFF IFD
+  implementation below.
 
 ## AutoIt EA06 bounded decompiled-output spool — 2026-08-23
 
@@ -2176,3 +2175,12 @@ and Sonic1 qualification as release gates.
   metadata. Retain only legacy filename/comment strings as an explicit
   contiguous-materialization boundary, with compiled EGG corpus and Sonic1
   qualification still required.
+
+## Bounded BigTIFF IFD traversal — 2026-08-23
+
+- Parse both endian variants of the 16-byte BigTIFF header, 64-bit entry counts
+  and IFD links, fixed 20-byte entries, and LONG8/SLONG8/IFD8 fields without
+  retaining a directory or mapped value payload. Keep malformed extensions,
+  count/size overflow, out-of-range values, callback failures, and deadlines
+  fail-visible. Retain compiled TIFF corpus and Sonic1 qualification as release
+  gates.

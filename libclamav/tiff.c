@@ -27,13 +27,11 @@
 
 #define tiff32_to_host(be, x) (be ? be32_to_host(x) : le32_to_host(x))
 #define tiff16_to_host(be, x) (be ? be16_to_host(x) : le16_to_host(x))
+#define tiff64_to_host(be, x) (be ? be64_to_host(x) : le64_to_host(x))
 
-struct tiff_ifd {
-    uint16_t tag;
-    uint16_t type;
-    uint32_t numval;
-    uint32_t value;
-};
+#define TIFF_CLASSIC_ENTRY_SIZE 12U
+#define TIFF_BIG_ENTRY_SIZE 20U
+#define TIFF_ENTRY_DEADLINE_INTERVAL 4096U
 
 static cl_error_t tiff_parse_error(cli_ctx *ctx, const char *reason)
 {
@@ -65,15 +63,48 @@ static size_t tiff_readn(fmap_t *map, void *dst, size_t at, size_t len)
     return fmap_readn(map, dst, at, len);
 }
 
-static int tiff_value_size(uint32_t count, size_t width, size_t *value_size)
+static uint16_t tiff_read_u16(int big_endian, const unsigned char *data)
+{
+    uint16_t value;
+
+    memcpy(&value, data, sizeof(value));
+    return tiff16_to_host(big_endian, value);
+}
+
+static uint32_t tiff_read_u32(int big_endian, const unsigned char *data)
+{
+    uint32_t value;
+
+    memcpy(&value, data, sizeof(value));
+    return tiff32_to_host(big_endian, value);
+}
+
+static uint64_t tiff_read_u64(int big_endian, const unsigned char *data)
+{
+    uint64_t value;
+
+    memcpy(&value, data, sizeof(value));
+    return tiff64_to_host(big_endian, value);
+}
+
+static int tiff_value_size(uint64_t count, size_t width, size_t *value_size)
 {
     if (NULL == value_size)
         return 0;
 
-    if (width != 0 && (uint64_t)count > (uint64_t)(SIZE_MAX / width))
+    if (width != 0 && count > (uint64_t)(SIZE_MAX / width))
         return 0;
 
     *value_size = (size_t)count * width;
+    return 1;
+}
+
+static int tiff_offset_to_size(uint64_t disk_offset, size_t *offset)
+{
+    if (offset == NULL || disk_offset > (uint64_t)SIZE_MAX)
+        return 0;
+
+    *offset = (size_t)disk_offset;
     return 1;
 }
 
@@ -83,11 +114,21 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
     fmap_t *map = NULL;
     unsigned char magic[4];
+    unsigned char entry_data[TIFF_BIG_ENTRY_SIZE];
     int big_endian;
+    bool big_tiff = false;
     size_t offset = 0;
-    uint32_t ifd_count = 0, offset32 = 0, next_offset32 = 0;
-    uint16_t i, num_entries;
-    struct tiff_ifd entry;
+    size_t entry_size;
+    size_t inline_value_size;
+    size_t next_offset_size;
+    uint64_t disk_offset;
+    uint64_t next_disk_offset;
+    uint64_t ifd_count = 0;
+    uint64_t i;
+    uint64_t num_entries;
+    uint64_t entry_numval;
+    uint64_t entry_value;
+    uint16_t entry_type;
     size_t value_size;
     size_t value_width;
     size_t last_offset = 0;
@@ -126,35 +167,80 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
     }
     offset += 4;
 
-    if (!memcmp(magic, "\x4d\x4d\x00\x2a", 4))
+    if (!memcmp(magic, "\x4d\x4d\x00\x2a", 4)) {
         big_endian = 1;
-    else if (!memcmp(magic, "\x49\x49\x2a\x00", 4))
+    } else if (!memcmp(magic, "\x49\x49\x2a\x00", 4)) {
         big_endian = 0;
-    else if (!memcmp(magic, "\x4d\x4d\x00\x2b", 4) || !memcmp(magic, "\x49\x49\x2b\x00", 4)) {
-        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.UnsupportedBigTIFF");
-        goto done;
-    }
-    else {
+    } else if (!memcmp(magic, "\x4d\x4d\x00\x2b", 4)) {
+        big_endian = 1;
+        big_tiff   = true;
+    } else if (!memcmp(magic, "\x49\x49\x2b\x00", 4)) {
+        big_endian = 0;
+        big_tiff   = true;
+    } else {
         status = CL_CLEAN; /* Not a TIFF file */
         goto done;
     }
 
-    cli_dbgmsg("cli_parsetiff: %s-endian tiff file\n", big_endian ? "big" : "little");
+    cli_dbgmsg("cli_parsetiff: %s-endian %sTIFF file\n",
+               big_endian ? "big" : "little", big_tiff ? "Big" : "classic ");
+
+    if (big_tiff) {
+        unsigned char extension[4];
+        size_t bytes_read = tiff_readn(map, extension, offset, sizeof(extension));
+
+        if (bytes_read != sizeof(extension)) {
+            status = (bytes_read == (size_t)-1)
+                         ? tiff_read_error(ctx, "BigTIFF header extension could not be read completely")
+                         : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingBigTIFFHeader");
+            goto done;
+        }
+        if (tiff_read_u16(big_endian, extension) != 8 ||
+            tiff_read_u16(big_endian, extension + sizeof(uint16_t)) != 0) {
+            status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.InvalidBigTIFFHeader");
+            goto done;
+        }
+        offset += sizeof(extension);
+        entry_size       = TIFF_BIG_ENTRY_SIZE;
+        inline_value_size = sizeof(uint64_t);
+        next_offset_size  = sizeof(uint64_t);
+    } else {
+        entry_size        = TIFF_CLASSIC_ENTRY_SIZE;
+        inline_value_size = sizeof(uint32_t);
+        next_offset_size  = sizeof(uint32_t);
+    }
 
     /* acquire offset of first IFD */
-    {
-        size_t bytes_read = tiff_readn(map, &offset32, offset, 4);
+    if (big_tiff) {
+        unsigned char offset_data[sizeof(uint64_t)];
+        size_t bytes_read = tiff_readn(map, offset_data, offset, sizeof(offset_data));
 
-        if (bytes_read != 4) {
+        if (bytes_read != sizeof(offset_data)) {
             cli_dbgmsg("cli_parsetiff: Failed to acquire offset of first IFD, file appears to be truncated.\n");
             status = (bytes_read == (size_t)-1)
                          ? tiff_read_error(ctx, "TIFF first IFD offset could not be read completely")
                          : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingFirstIFDOffset");
             goto done;
         }
+        disk_offset = tiff_read_u64(big_endian, offset_data);
+    } else {
+        unsigned char offset_data[sizeof(uint32_t)];
+        size_t bytes_read = tiff_readn(map, offset_data, offset, sizeof(offset_data));
+
+        if (bytes_read != sizeof(offset_data)) {
+            cli_dbgmsg("cli_parsetiff: Failed to acquire offset of first IFD, file appears to be truncated.\n");
+            status = (bytes_read == (size_t)-1)
+                         ? tiff_read_error(ctx, "TIFF first IFD offset could not be read completely")
+                         : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingFirstIFDOffset");
+            goto done;
+        }
+        disk_offset = tiff_read_u32(big_endian, offset_data);
     }
-    /* offset of the first IFD */
-    offset = (size_t)tiff32_to_host(big_endian, offset32);
+
+    if (!tiff_offset_to_size(disk_offset, &offset)) {
+        status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.UnrepresentableIFDOffset");
+        goto done;
+    }
 
     cli_dbgmsg("cli_parsetiff: first IFD located @ offset %zu\n", offset);
 
@@ -172,47 +258,79 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
             goto done;
         }
 
-        /* acquire number of directory entries in current IFD */
-        {
-            size_t bytes_read = tiff_readn(map, &num_entries, offset, 2);
+        /* Acquire the number of directory entries. BigTIFF widens this field
+         * from 16 to 64 bits but still permits traversal one fixed entry at a
+         * time, so an attacker-controlled count never becomes an allocation. */
+        if (big_tiff) {
+            unsigned char count_data[sizeof(uint64_t)];
+            size_t bytes_read = tiff_readn(map, count_data, offset, sizeof(count_data));
 
-            if (bytes_read != 2) {
+            if (bytes_read != sizeof(count_data)) {
                 cli_dbgmsg("cli_parsetiff: Failed to acquire number of directory entries in current IFD, file appears to be truncated.\n");
                 status = (bytes_read == (size_t)-1)
                              ? tiff_read_error(ctx, "TIFF directory-entry count could not be read completely")
                              : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingNumIFDDirectoryEntries");
                 goto done;
             }
+            num_entries = tiff_read_u64(big_endian, count_data);
+            offset += sizeof(count_data);
+        } else {
+            unsigned char count_data[sizeof(uint16_t)];
+            size_t bytes_read = tiff_readn(map, count_data, offset, sizeof(count_data));
+
+            if (bytes_read != sizeof(count_data)) {
+                cli_dbgmsg("cli_parsetiff: Failed to acquire number of directory entries in current IFD, file appears to be truncated.\n");
+                status = (bytes_read == (size_t)-1)
+                             ? tiff_read_error(ctx, "TIFF directory-entry count could not be read completely")
+                             : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingNumIFDDirectoryEntries");
+                goto done;
+            }
+            num_entries = tiff_read_u16(big_endian, count_data);
+            offset += sizeof(count_data);
         }
-        offset += 2;
-        num_entries = tiff16_to_host(big_endian, num_entries);
 
-        cli_dbgmsg("cli_parsetiff: IFD %u declared %u directory entries\n", ifd_count, num_entries);
+        cli_dbgmsg("cli_parsetiff: IFD %" PRIu64 " declared %" PRIu64 " directory entries\n",
+                   ifd_count, num_entries);
 
-        /* transverse IFD entries */
+        if (num_entries > (uint64_t)(SIZE_MAX / entry_size) ||
+            (size_t)num_entries * entry_size > map->len - offset) {
+            status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingIFDEntry");
+            goto done;
+        }
+
+        /* Traverse each fixed-size entry without retaining the directory. */
         for (i = 0; i < num_entries; i++) {
-            {
-                size_t bytes_read = tiff_readn(map, &entry, offset, sizeof(entry));
+            size_t bytes_read;
 
-                if (bytes_read != sizeof(entry)) {
-                    cli_dbgmsg("cli_parsetiff: Failed to read next IFD entry, file appears to be truncated.\n");
-                    status = (bytes_read == (size_t)-1)
-                                 ? tiff_read_error(ctx, "TIFF IFD entry could not be read completely")
-                                 : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingIFDEntry");
+            if (i != 0 && i % TIFF_ENTRY_DEADLINE_INTERVAL == 0) {
+                status = cli_checktimelimit(ctx);
+                if (status != CL_SUCCESS) {
+                    cli_mark_scan_incomplete(ctx, "TIFF IFD traversal reached the configured time limit");
                     goto done;
                 }
             }
-            offset += sizeof(entry);
 
-            entry.tag    = tiff16_to_host(big_endian, entry.tag);
-            entry.type   = tiff16_to_host(big_endian, entry.type);
-            entry.numval = tiff32_to_host(big_endian, entry.numval);
-            entry.value  = tiff32_to_host(big_endian, entry.value);
+            bytes_read = tiff_readn(map, entry_data, offset, entry_size);
+            if (bytes_read != entry_size) {
+                cli_dbgmsg("cli_parsetiff: Failed to read next IFD entry, file appears to be truncated.\n");
+                status = (bytes_read == (size_t)-1)
+                             ? tiff_read_error(ctx, "TIFF IFD entry could not be read completely")
+                             : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingIFDEntry");
+                goto done;
+            }
+            offset += entry_size;
 
-            // cli_dbgmsg("%02u: %u %u %u %u\n", i, entry.tag, entry.type, entry.numval, entry.value);
+            entry_type = tiff_read_u16(big_endian, entry_data + sizeof(uint16_t));
+            if (big_tiff) {
+                entry_numval = tiff_read_u64(big_endian, entry_data + 2U * sizeof(uint16_t));
+                entry_value  = tiff_read_u64(big_endian, entry_data + 2U * sizeof(uint16_t) + sizeof(uint64_t));
+            } else {
+                entry_numval = tiff_read_u32(big_endian, entry_data + 2U * sizeof(uint16_t));
+                entry_value  = tiff_read_u32(big_endian, entry_data + 2U * sizeof(uint16_t) + sizeof(uint32_t));
+            }
 
             value_type_known = true;
-            switch (entry.type) {
+            switch (entry_type) {
                 case 1: /* BYTE */
                     value_width = 1;
                     break;
@@ -251,30 +369,40 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
                 case 12: /* DOUBLE */
                     value_width = 8;
                     break;
+                case 13: /* IFD */
+                    value_width = 4;
+                    break;
+                case 16: /* LONG8 (BigTIFF) */
+                case 17: /* SLONG8 (BigTIFF) */
+                case 18: /* IFD8 (BigTIFF) */
+                    value_width      = 8;
+                    value_type_known = big_tiff;
+                    break;
 
                 default: /* INVALID or NEW Type */
-                    value_width = 0;
+                    value_width      = 0;
                     value_type_known = false;
                     break;
             }
 
             if (!value_type_known) {
-                cli_warnmsg("cli_parsetiff: TFD entry field %u has an unsupported type %u\n", i, entry.type);
+                cli_warnmsg("cli_parsetiff: TIFF entry field %" PRIu64 " has an unsupported type %u\n",
+                            i, entry_type);
                 status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.UnsupportedType");
                 goto done;
             }
 
-            if (!tiff_value_size(entry.numval, value_width, &value_size)) {
-                cli_warnmsg("cli_parsetiff: TFD entry field %u has an unrepresentable value size\n", i);
+            if (!tiff_value_size(entry_numval, value_width, &value_size)) {
+                cli_warnmsg("cli_parsetiff: TIFF entry field %" PRIu64 " has an unrepresentable value size\n", i);
                 status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.ValueSizeOverflow");
                 goto done;
             }
 
-            if (value_size > sizeof(entry.value)) {
-                if ((uint64_t)entry.value > (uint64_t)map->len ||
-                    value_size > map->len - (size_t)entry.value) {
-                    cli_warnmsg("cli_parsetiff: TFD entry field %u exceeds bounds of TIFF file [offset=%u size=%zu map=%zu]\n",
-                                i, entry.value, value_size, map->len);
+            if (value_size > inline_value_size) {
+                if (entry_value > (uint64_t)map->len ||
+                    value_size > map->len - (size_t)entry_value) {
+                    cli_warnmsg("cli_parsetiff: TIFF entry field %" PRIu64 " exceeds bounds of TIFF file [offset=%" PRIu64 " size=%zu map=%zu]\n",
+                                i, entry_value, value_size, map->len);
                     status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.OutOfBoundsAccess");
                     goto done;
                 }
@@ -285,19 +413,25 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
         last_offset = offset;
 
-        /* acquire next IFD location, gets 0 if last IFD */
+        /* Acquire the next IFD location, which is zero for the final IFD. */
         {
-            size_t bytes_read = tiff_readn(map, &next_offset32, offset, sizeof(next_offset32));
+            unsigned char next_offset_data[sizeof(uint64_t)];
+            size_t bytes_read = tiff_readn(map, next_offset_data, offset, next_offset_size);
 
-            if (bytes_read != sizeof(next_offset32)) {
+            if (bytes_read != next_offset_size) {
                 cli_dbgmsg("cli_parsetiff: Failed to acquire next IFD location, file appears to be truncated.\n");
                 status = (bytes_read == (size_t)-1)
                              ? tiff_read_error(ctx, "TIFF next IFD offset could not be read completely")
                              : tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.EOFReadingChunkCRC");
                 goto done;
             }
+            next_disk_offset = big_tiff ? tiff_read_u64(big_endian, next_offset_data)
+                                        : tiff_read_u32(big_endian, next_offset_data);
         }
-        offset = (size_t)tiff32_to_host(big_endian, next_offset32);
+        if (!tiff_offset_to_size(next_disk_offset, &offset)) {
+            status = tiff_parse_error(ctx, "Heuristics.Broken.Media.TIFF.UnrepresentableIFDOffset");
+            goto done;
+        }
 
         if (offset) {
             /*If the offsets are not in order, that is suspicious.*/
@@ -309,7 +443,7 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
         }
     } while (offset);
 
-    cli_dbgmsg("cli_parsetiff: examined %u IFD(s)\n", ifd_count);
+    cli_dbgmsg("cli_parsetiff: examined %" PRIu64 " IFD(s)\n", ifd_count);
 
     status = CL_CLEAN;
 

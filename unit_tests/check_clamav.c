@@ -16994,6 +16994,18 @@ static const void *tiff_truncated_ifd_read_failure(fmap_t *map, size_t at, size_
     return (const uint8_t *)map->data + at;
 }
 
+static size_t tiff_targeted_read_failure_offset = SIZE_MAX;
+
+static const void *tiff_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == tiff_targeted_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *gif_version_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -25102,23 +25114,160 @@ START_TEST(test_tiff_ifd_value_size_is_fail_visible)
 }
 END_TEST
 
-START_TEST(test_tiff_bigtiff_is_explicitly_unsupported)
+START_TEST(test_tiff_bigtiff_endian_variants_are_bounded)
 {
-    static const uint8_t data[] = {'I', 'I', '+', '\0'};
+    static const uint8_t little_endian[] = {
+        'I', 'I', '+', '\0',
+        0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x10, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x34, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t big_endian[] = {
+        'M', 'M', '\0', '+',
+        0x00, 0x08, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    const uint8_t *cases[] = {little_endian, big_endian};
+    const size_t lengths[] = {sizeof(little_endian), sizeof(big_endian)};
     cli_ctx ctx;
     fmap_t *map;
+    size_t i;
 
-    memset(&ctx, 0, sizeof(ctx));
-    map = cl_fmap_open_memory(data, sizeof(data));
-    ck_assert_ptr_nonnull(map);
-    ctx.fmap = map;
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(cases[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        ctx.fmap = map;
 
-    ck_assert_int_eq(cli_parsetiff(&ctx), CL_EPARSE);
-    ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Broken.Media.TIFF.UnsupportedBigTIFF");
-    ck_assert(map->dont_cache_flag);
+        ck_assert_int_eq(cli_parsetiff(&ctx), CL_CLEAN);
+        ck_assert(!ctx.scan_incomplete);
 
-    cl_fmap_close(map);
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
+START_TEST(test_tiff_bigtiff_malformed_structures_are_fail_visible)
+{
+    static const uint8_t truncated_extension[] = {
+        'I', 'I', '+', '\0', 0x08, 0x00,
+    };
+    static const uint8_t invalid_offset_width[] = {
+        'I', 'I', '+', '\0', 0x04, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t nonzero_reserved[] = {
+        'I', 'I', '+', '\0', 0x08, 0x00, 0x01, 0x00,
+    };
+    static const uint8_t zero_first_ifd[] = {
+        'I', 'I', '+', '\0', 0x08, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t truncated_entry[] = {
+        'I', 'I', '+', '\0', 0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t out_of_range_value[] = {
+        'I', 'I', '+', '\0', 0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x10, 0x00,
+        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    static const uint8_t unsupported_type[] = {
+        'I', 'I', '+', '\0', 0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x13, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    const uint8_t *cases[] = {
+        truncated_extension,
+        invalid_offset_width,
+        nonzero_reserved,
+        zero_first_ifd,
+        truncated_entry,
+        out_of_range_value,
+        unsupported_type,
+    };
+    const size_t lengths[] = {
+        sizeof(truncated_extension),
+        sizeof(invalid_offset_width),
+        sizeof(nonzero_reserved),
+        sizeof(zero_first_ifd),
+        sizeof(truncated_entry),
+        sizeof(out_of_range_value),
+        sizeof(unsupported_type),
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(cases[i], lengths[i]);
+        ck_assert_ptr_nonnull(map);
+        ctx.fmap = map;
+
+        ck_assert_int_eq(cli_parsetiff(&ctx), CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+}
+END_TEST
+
+START_TEST(test_tiff_bigtiff_read_failures_are_fail_visible)
+{
+    static const uint8_t data[] = {
+        'I', 'I', '+', '\0',
+        0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x10, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x34, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    static const size_t offsets[] = {4U, 8U, 16U, 24U, 44U};
+    static const char *reasons[] = {
+        "BigTIFF header extension could not be read completely",
+        "TIFF first IFD offset could not be read completely",
+        "TIFF directory-entry count could not be read completely",
+        "TIFF IFD entry could not be read completely",
+        "TIFF next IFD offset could not be read completely",
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t i;
+
+    for (i = 0; i < sizeof(offsets) / sizeof(offsets[0]); i++) {
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        tiff_targeted_read_failure_offset = offsets[i];
+        map->need                         = tiff_targeted_read_failure;
+        ctx.fmap                          = map;
+
+        ck_assert_int_eq(cli_parsetiff(&ctx), CL_EREAD);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, reasons[i]);
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
+    tiff_targeted_read_failure_offset = SIZE_MAX;
 }
 END_TEST
 
@@ -25153,15 +25302,12 @@ END_TEST
 struct tiff_large_cursor_state {
     size_t length;
     size_t max_offset;
-    unsigned int header_reads;
+    const uint8_t *prefix;
+    size_t prefix_length;
 };
 
 static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, off_t offset)
 {
-    static const uint8_t prefix[] = {
-        'I', 'I', 0x2a, 0x00,
-        0xfe, 0xff, 0xff, 0xff,
-    };
     struct tiff_large_cursor_state *state = handle;
     size_t copy_length;
 
@@ -25175,10 +25321,9 @@ static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, o
         count = state->length - (size_t)offset;
     memset(buf, 0, count);
 
-    if ((offset == 0 && state->header_reads++ == 0) ||
-        (offset > 0 && (size_t)offset < sizeof(prefix))) {
-        copy_length = MIN(count, sizeof(prefix) - (size_t)offset);
-        memcpy(buf, prefix + (size_t)offset, copy_length);
+    if ((size_t)offset < state->prefix_length) {
+        copy_length = MIN(count, state->prefix_length - (size_t)offset);
+        memcpy(buf, state->prefix + (size_t)offset, copy_length);
     }
 
     return (off_t)count;
@@ -25186,12 +25331,18 @@ static off_t tiff_large_cursor_pread_cb(void *handle, void *buf, size_t count, o
 
 START_TEST(test_tiff_ifd_cursor_does_not_wrap_above_uint32)
 {
+    static const uint8_t prefix[] = {
+        'I', 'I', 0x2a, 0x00,
+        0xfe, 0xff, 0xff, 0xff,
+    };
     struct tiff_large_cursor_state state;
     cli_ctx ctx;
     fmap_t *map;
 
     memset(&state, 0, sizeof(state));
-    state.length = (size_t)UINT32_MAX + 8U;
+    state.length        = (size_t)UINT32_MAX + 8U;
+    state.prefix        = prefix;
+    state.prefix_length = sizeof(prefix);
     memset(&ctx, 0, sizeof(ctx));
 
     map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 0);
@@ -25201,6 +25352,71 @@ START_TEST(test_tiff_ifd_cursor_does_not_wrap_above_uint32)
     ck_assert_int_eq(cli_parsetiff(&ctx), CL_CLEAN);
     ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
                   "TIFF IFD cursor wrapped below the 4 GiB boundary");
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_tiff_bigtiff_ifd_cursor_reaches_above_uint32)
+{
+    static const uint8_t prefix[] = {
+        'I', 'I', '+', '\0',
+        0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    };
+    struct tiff_large_cursor_state state;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&state, 0, sizeof(state));
+    state.length        = (size_t)UINT32_MAX + 64U;
+    state.prefix        = prefix;
+    state.prefix_length = sizeof(prefix);
+    memset(&ctx, 0, sizeof(ctx));
+
+    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_parsetiff(&ctx), CL_CLEAN);
+    ck_assert_msg(state.max_offset > (size_t)UINT32_MAX,
+                  "BigTIFF IFD cursor did not reach the 64-bit coordinate");
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_tiff_bigtiff_external_value_above_uint32_is_not_mapped)
+{
+    static const uint8_t prefix[] = {
+        'I', 'I', '+', '\0',
+        0x08, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x10, 0x00,
+        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    struct tiff_large_cursor_state state;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&state, 0, sizeof(state));
+    state.length        = (size_t)UINT32_MAX + 64U;
+    state.prefix        = prefix;
+    state.prefix_length = sizeof(prefix);
+    memset(&ctx, 0, sizeof(ctx));
+
+    map = cl_fmap_open_handle(&state, 0, state.length, tiff_large_cursor_pread_cb, 0);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_parsetiff(&ctx), CL_CLEAN);
+    ck_assert_msg(state.max_offset < (size_t)UINT32_MAX,
+                  "BigTIFF external value payload was unexpectedly mapped");
+    ck_assert(!ctx.scan_incomplete);
 
     cl_fmap_close(map);
 }
@@ -26560,10 +26776,14 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tiff, test_tiff_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_truncated_ifd_header_is_parse_error);
     tcase_add_test(tc_tiff, test_tiff_ifd_value_size_is_fail_visible);
-    tcase_add_test(tc_tiff, test_tiff_bigtiff_is_explicitly_unsupported);
+    tcase_add_test(tc_tiff, test_tiff_bigtiff_endian_variants_are_bounded);
+    tcase_add_test(tc_tiff, test_tiff_bigtiff_malformed_structures_are_fail_visible);
+    tcase_add_test(tc_tiff, test_tiff_bigtiff_read_failures_are_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_ifd_timeout_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_tiff, test_tiff_ifd_cursor_does_not_wrap_above_uint32);
+    tcase_add_test(tc_tiff, test_tiff_bigtiff_ifd_cursor_reaches_above_uint32);
+    tcase_add_test(tc_tiff, test_tiff_bigtiff_external_value_above_uint32_is_not_mapped);
 #endif
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_list_respects_declared_boundary);

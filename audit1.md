@@ -6579,7 +6579,7 @@ checks. Focused valid POSIX TAR regressions cover both encodings and complete
 two-block termination. Malformed/oversized PAX records, compiled TAR corpus,
 sanitizer, and Sonic1 qualification remain open.
 
-## TIFF BigTIFF unsupported classification — 2026-08-23
+## TIFF BigTIFF unsupported classification (historical) — 2026-08-23
 
 The TIFF parser recognized only classic TIFF magic and treated BigTIFF's
 `II+\0`/`MM\0+` signatures as an unrelated clean input. BigTIFF uses a
@@ -6587,7 +6587,8 @@ different 64-bit IFD layout that this parser does not implement, so the
 recognized format now returns an explicit unsupported/incomplete result and
 cannot be cached as clean. A focused direct-parser regression covers the
 little-endian BigTIFF signature; compiled media corpus, sanitizer, and Sonic1
-qualification remain open.
+qualification remained open. This placeholder was superseded by the bounded
+BigTIFF implementation recorded below.
 
 ## clamd path-walk status propagation — 2026-08-23
 
@@ -6819,3 +6820,31 @@ harness passed those paths normally and under ASan/UBSan. The broad
 `egg-extra-field-over-1g` exception is retired in favor of the narrower
 `egg-string-metadata-over-1g` boundary for legacy filename/comment strings.
 Compiled EGG corpus and supported-build Sonic1 qualification remain open.
+
+## Bounded BigTIFF IFD traversal — 2026-08-23
+
+The TIFF parser now implements the BigTIFF structural layout documented by
+libtiff: a 16-byte header with validated eight-byte offset width and reserved
+field, 64-bit IFD entry counts and links, 20-byte fixed entries, an eight-byte
+inline-value threshold, and LONG8, SLONG8, and IFD8 field types. Classic TIFF
+continues through the same bounded walker with its original 16/32-bit fields.
+
+Neither variant retains an attacker-declared directory or maps external value
+payloads. Entry-count multiplication is checked and preflighted against the
+fmap; each entry is read into one 20-byte buffer; 64-bit coordinates are
+validated before native-width conversion; and long directories re-check the
+shared deadline every 4,096 entries. Malformed BigTIFF header extensions,
+unknown types, unrepresentable offsets, out-of-map values, truncation, and
+in-range fmap callback failures remain explicit incomplete results.
+
+Focused tests cover little- and big-endian valid files, inline LONG8 metadata,
+malformed fixed structures, all five fixed-read callback boundaries, and a
+pair of sparse logical BigTIFFs whose first IFD and external value range are
+above 4 GiB; the latter verifies that validation does not map the payload.
+Compiled media corpus,
+sanitizer, and Sonic1 qualification remain release gates. As an additional
+production-source corpus check, all nine TIFF files in libtiff's archived
+`BigTIFFSamples.zip` passed normal and ASan/UBSan traversal, including classic,
+Motorola-endian, LONG/LONG8, tiled, long-strip, and IFD4/IFD8 SubIFD variants.
+The downloaded bundle is 9,497 bytes with SHA-256
+`aa2960126b3904732742e674ac16d06c219c7c359898cfd5eb0af5822b598090`.
