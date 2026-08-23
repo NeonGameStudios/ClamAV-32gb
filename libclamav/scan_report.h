@@ -35,6 +35,7 @@ struct cl_scan_report {
     uint64_t started_usec;
     bool finalized;
     bool has_result;
+    bool string_allocation_failed;
 };
 
 cl_error_t cli_scan_report_create(

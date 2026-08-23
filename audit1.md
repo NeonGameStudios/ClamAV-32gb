@@ -5069,6 +5069,20 @@ The source guards and non-clang regression gates remain the available local
 evidence. Compiled json-c allocation fault injection, shared/static JSON-C
 qualification, sanitizer runs, and Sonic1 qualification remain open.
 
+## Structured report metadata allocation failures — 2026-08-22
+
+Report `strdup` failures for target, file type, reason, or last alert could
+silently replace required metadata with `NULL`. The report now retains the
+existing value when replacement allocation fails, carries a sticky failure
+flag through directory aggregation, converts finalized non-detection reports
+to `CL_EMEM`/`RESOURCE_FAILURE`, and rejects JSON serialization before a
+partial report can be published. Detections remain authoritative while their
+legacy result path unwinds.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Fault-injected metadata and merge coverage, sanitizer runs, shared
+and static JSON-C qualification, and Sonic1 qualification remain open.
+
 ## AC matcher-state allocation ceiling — 2026-08-22
 
 Per-scan AC state, partial-signature offset tables, logical match-offset lists,

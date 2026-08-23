@@ -1056,6 +1056,10 @@
 - Structured report JSON now checks every json-c integer and string node
   allocation and returns `CL_EMEM` instead of serializing a partial report;
   add compiled allocation-fault and shared/static JSON-C qualification.
+- Structured report metadata-string allocation failures are now sticky across
+  report aggregation, force non-detection reports to `CL_EMEM` resource
+  failure, and make JSON serialization fail closed; add fault-injected target,
+  reason, alert, and directory-merge coverage.
 - Mixed ABI bytecode hooks now continue after a v1 logical-match offset exceeds
   its 32-bit bridge, preserving the explicit incomplete/non-cacheable result
   while allowing a later v2 hook to use native offsets; retain mixed

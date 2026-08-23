@@ -34,9 +34,25 @@ static char *report_strdup(const char *value)
     return strdup(value);
 }
 
-static void report_replace_string(char **destination, const char *value)
+static void report_replace_string(
+    cl_scan_report_t *report,
+    char **destination,
+    const char *value)
 {
-    char *copy = report_strdup(value);
+    char *copy;
+
+    if (NULL == value) {
+        free(*destination);
+        *destination = NULL;
+        return;
+    }
+
+    copy = report_strdup(value);
+    if (NULL == copy) {
+        if (NULL != report)
+            report->string_allocation_failed = true;
+        return;
+    }
 
     free(*destination);
     *destination = copy;
@@ -297,7 +313,7 @@ void cli_scan_report_set_target(
     const char *target)
 {
     if (NULL != report)
-        report_replace_string(&report->target, target);
+        report_replace_string(report, &report->target, target);
 }
 
 void cli_scan_report_note_logical(
@@ -460,12 +476,12 @@ void cli_scan_report_finish(
             /* Match the public *_ex2 file_type_out contract for an unknown root. */
             if ((NULL == file_type) || (strcmp(file_type, "CL_TYPE_ANY") == 0))
                 file_type = "CL_TYPE_BINARY_DATA";
-            report_replace_string(&report->file_type, file_type);
+            report_replace_string(report, &report->file_type, file_type);
         }
     }
 
-    report_replace_string(&report->reason, reason);
-    report_replace_string(&report->last_alert, last_alert);
+    report_replace_string(report, &report->reason, reason);
+    report_replace_string(report, &report->last_alert, last_alert);
     report->last_alert_offset_valid = false;
     if ((NULL != ctx) && (NULL != ctx->this_layer_evidence) &&
         (NULL != last_alert)) {
@@ -534,6 +550,17 @@ void cli_scan_report_finish(
         report->completion = CL_SCAN_COMPLETION_COMPLETE;
     }
 
+    /* Missing report metadata is itself a serialization failure. Preserve a
+     * detection as authoritative, but never expose a clean/trusted or other
+     * non-detection report whose required explanatory strings were lost. */
+    if (report->string_allocation_failed &&
+        report->completion != CL_SCAN_COMPLETION_DETECTION_TERMINATED) {
+        report->status     = CL_EMEM;
+        report->completion = CL_SCAN_COMPLETION_RESOURCE_FAILURE;
+        if (report->metrics.skipped_operations != UINT64_MAX)
+            report->metrics.skipped_operations++;
+    }
+
     report->finalized  = true;
     report->has_result = true;
 }
@@ -562,7 +589,7 @@ void cli_scan_report_note_post_scan_failure(
     if (report->metrics.skipped_operations != UINT64_MAX)
         report->metrics.skipped_operations++;
     report->status     = status;
-    report_replace_string(&report->reason, reason);
+    report_replace_string(report, &report->reason, reason);
     report->completion = (status == CL_BREAK) ? CL_SCAN_COMPLETION_APPLICATION_ABORT
                                               : CL_SCAN_COMPLETION_RESOURCE_FAILURE;
     report->finalized  = true;
@@ -594,11 +621,12 @@ void cli_scan_report_merge(
     report_add_u64(&destination->metrics.parser_operations, source->metrics.parser_operations);
     report_add_u64(&destination->metrics.detector_operations, source->metrics.detector_operations);
     report_add_u64(&destination->metrics.skipped_operations, source->metrics.skipped_operations);
+    destination->string_allocation_failed |= source->string_allocation_failed;
 
     if (NULL == destination->target && NULL != source->target)
-        report_replace_string(&destination->target, source->target);
+        report_replace_string(destination, &destination->target, source->target);
     if (NULL == destination->file_type && NULL != source->file_type) {
-        report_replace_string(&destination->file_type, source->file_type);
+        report_replace_string(destination, &destination->file_type, source->file_type);
     } else if ((NULL != destination->file_type) && (NULL != source->file_type) &&
                strcmp(destination->file_type, source->file_type) != 0) {
         /* A directory has no single top-level file type. */
@@ -610,8 +638,8 @@ void cli_scan_report_merge(
         destination->status     = source->status;
         destination->verdict    = source->verdict;
         destination->completion = source->completion;
-        report_replace_string(&destination->reason, source->reason);
-        report_replace_string(&destination->last_alert, source->last_alert);
+        report_replace_string(destination, &destination->reason, source->reason);
+        report_replace_string(destination, &destination->last_alert, source->last_alert);
         destination->last_alert_offset       = source->last_alert_offset;
         destination->last_alert_offset_valid = source->last_alert_offset_valid;
         destination->has_result = true;
@@ -627,18 +655,18 @@ void cli_scan_report_merge(
     if (replace_outcome) {
         destination->status     = source->status;
         destination->completion = source->completion;
-        report_replace_string(&destination->reason, source->reason);
-        report_replace_string(&destination->last_alert, source->last_alert);
+        report_replace_string(destination, &destination->reason, source->reason);
+        report_replace_string(destination, &destination->last_alert, source->last_alert);
         destination->last_alert_offset       = source->last_alert_offset;
         destination->last_alert_offset_valid = source->last_alert_offset_valid;
     } else if ((NULL == destination->reason) && (NULL != source->reason)) {
-        report_replace_string(&destination->reason, source->reason);
+        report_replace_string(destination, &destination->reason, source->reason);
     }
 
     if (report_verdict_rank(source->verdict) > report_verdict_rank(destination->verdict)) {
         destination->verdict = source->verdict;
         if (source->completion == CL_SCAN_COMPLETION_DETECTION_TERMINATED) {
-            report_replace_string(&destination->last_alert, source->last_alert);
+            report_replace_string(destination, &destination->last_alert, source->last_alert);
             destination->last_alert_offset       = source->last_alert_offset;
             destination->last_alert_offset_valid = source->last_alert_offset_valid;
         }
@@ -781,6 +809,8 @@ cl_error_t cl_scan_report_to_json(
         return CL_ENULLARG;
 
     *json_out = NULL;
+    if (report->string_allocation_failed)
+        return CL_EMEM;
     object    = json_object_new_object();
     if (NULL == object)
         return CL_EMEM;

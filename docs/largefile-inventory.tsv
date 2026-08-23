@@ -4296,38 +4296,38 @@ fixed-width-integer	libclamav/scan_layer.h	38	    uint32_t recursion_level;     
 fixed-width-integer	libclamav/scan_layer.h	39	    uint32_t recursion_level_buffer;      /* Which buffer layer in scan recursion. */
 fixed-width-integer	libclamav/scan_layer.h	40	    uint32_t recursion_level_buffer_fmap; /* Which fmap layer in this buffer. */
 fixed-width-integer	libclamav/scan_layer.h	41	    uint32_t attributes;                  /* layer attributes. */
-fixed-width-integer	libclamav/scan_report.c	153	static void report_add_u64(uint64_t *destination, uint64_t value)
-fixed-width-integer	libclamav/scan_report.c	164	    uint64_t value)
-fixed-width-integer	libclamav/scan_report.c	178	    number = json_object_new_int64((int64_t)value);
+fixed-width-integer	libclamav/scan_report.c	169	static void report_add_u64(uint64_t *destination, uint64_t value)
+fixed-width-integer	libclamav/scan_report.c	180	    uint64_t value)
 fixed-width-integer	libclamav/scan_report.c	19	static uint64_t report_now_usec(void)
+fixed-width-integer	libclamav/scan_report.c	194	    number = json_object_new_int64((int64_t)value);
 fixed-width-integer	libclamav/scan_report.c	26	    return ((uint64_t)now.tv_sec * 1000000ULL) + (uint64_t)now.tv_usec;
-fixed-width-integer	libclamav/scan_report.c	275	            report->limits.max_files = (uint32_t)value;
-fixed-width-integer	libclamav/scan_report.c	280	            report->limits.max_recursion = (uint32_t)value;
-fixed-width-integer	libclamav/scan_report.c	289	    uint64_t root_size)
-fixed-width-integer	libclamav/scan_report.c	305	    uint64_t bytes,
-fixed-width-integer	libclamav/scan_report.c	306	    uint32_t recursion_depth)
-fixed-width-integer	libclamav/scan_report.c	323	    uint64_t bytes)
-fixed-width-integer	libclamav/scan_report.c	336	    uint64_t bytes)
-fixed-width-integer	libclamav/scan_report.c	344	    uint64_t bytes)
-fixed-width-integer	libclamav/scan_report.c	366	    uint64_t offset)
-fixed-width-integer	libclamav/scan_report.c	377	    uint64_t *offset_out)
-fixed-width-integer	libclamav/scan_report.c	398	    uint64_t finished_usec;
-fixed-width-integer	libclamav/scan_report.c	472	        uint64_t last_alert_offset;
-fixed-width-integer	libclamav/scan_report.c	48	    uint64_t *destination)
-fixed-width-integer	libclamav/scan_report.c	62	        *destination = (uint64_t)value;
-fixed-width-integer	libclamav/scan_report.c	739	    uint64_t *offset_out,
+fixed-width-integer	libclamav/scan_report.c	291	            report->limits.max_files = (uint32_t)value;
+fixed-width-integer	libclamav/scan_report.c	296	            report->limits.max_recursion = (uint32_t)value;
+fixed-width-integer	libclamav/scan_report.c	305	    uint64_t root_size)
+fixed-width-integer	libclamav/scan_report.c	321	    uint64_t bytes,
+fixed-width-integer	libclamav/scan_report.c	322	    uint32_t recursion_depth)
+fixed-width-integer	libclamav/scan_report.c	339	    uint64_t bytes)
+fixed-width-integer	libclamav/scan_report.c	352	    uint64_t bytes)
+fixed-width-integer	libclamav/scan_report.c	360	    uint64_t bytes)
+fixed-width-integer	libclamav/scan_report.c	382	    uint64_t offset)
+fixed-width-integer	libclamav/scan_report.c	393	    uint64_t *offset_out)
+fixed-width-integer	libclamav/scan_report.c	414	    uint64_t finished_usec;
+fixed-width-integer	libclamav/scan_report.c	488	        uint64_t last_alert_offset;
+fixed-width-integer	libclamav/scan_report.c	64	    uint64_t *destination)
+fixed-width-integer	libclamav/scan_report.c	767	    uint64_t *offset_out,
+fixed-width-integer	libclamav/scan_report.c	78	        *destination = (uint64_t)value;
 fixed-width-integer	libclamav/scan_report.h	17	    uint32_t version;
 fixed-width-integer	libclamav/scan_report.h	27	    uint64_t pending_alert_offset;
 fixed-width-integer	libclamav/scan_report.h	28	    uint64_t last_alert_offset;
 fixed-width-integer	libclamav/scan_report.h	35	    uint64_t started_usec;
-fixed-width-integer	libclamav/scan_report.h	46	    uint64_t root_size);
-fixed-width-integer	libclamav/scan_report.h	54	    uint64_t bytes,
-fixed-width-integer	libclamav/scan_report.h	55	    uint32_t recursion_depth);
-fixed-width-integer	libclamav/scan_report.h	59	    uint64_t bytes);
-fixed-width-integer	libclamav/scan_report.h	63	    uint64_t bytes);
-fixed-width-integer	libclamav/scan_report.h	67	    uint64_t bytes);
-fixed-width-integer	libclamav/scan_report.h	80	    uint64_t offset);
-fixed-width-integer	libclamav/scan_report.h	84	    uint64_t *offset_out);
+fixed-width-integer	libclamav/scan_report.h	47	    uint64_t root_size);
+fixed-width-integer	libclamav/scan_report.h	55	    uint64_t bytes,
+fixed-width-integer	libclamav/scan_report.h	56	    uint32_t recursion_depth);
+fixed-width-integer	libclamav/scan_report.h	60	    uint64_t bytes);
+fixed-width-integer	libclamav/scan_report.h	64	    uint64_t bytes);
+fixed-width-integer	libclamav/scan_report.h	68	    uint64_t bytes);
+fixed-width-integer	libclamav/scan_report.h	81	    uint64_t offset);
+fixed-width-integer	libclamav/scan_report.h	85	    uint64_t *offset_out);
 fixed-width-integer	libclamav/scanners.c	1002	    uint64_t output_length         = 0;
 fixed-width-integer	libclamav/scanners.c	1077	    uint32_t nEncryptedFilesFound = 0;
 fixed-width-integer	libclamav/scanners.c	1082	    uint32_t nComments = 0;
@@ -12873,18 +12873,18 @@ native-width-integer	libclamav/rtf.c	94	static const size_t rtf_action_mapping_c
 native-width-integer	libclamav/rtf.h	27	int cli_scanrtf(cli_ctx *ctx);
 native-width-integer	libclamav/scan_layer.h	36	    size_t size;
 native-width-integer	libclamav/scan_layer.h	44	    size_t object_id;                     /* Unique ID for this object. */
-native-width-integer	libclamav/scan_report.c	131	static int report_completion_rank(cl_scan_completion_t completion)
-native-width-integer	libclamav/scan_report.c	190	    int value)
-native-width-integer	libclamav/scan_report.c	223	static int report_verdict_rank(cl_verdict_t verdict)
-native-width-integer	libclamav/scan_report.c	270	        int status = CL_ERROR;
-native-width-integer	libclamav/scan_report.c	271	        long long value;
-native-width-integer	libclamav/scan_report.c	50	    int status = CL_ERROR;
-native-width-integer	libclamav/scan_report.c	51	    long long value;
-native-width-integer	libclamav/scan_report.c	576	    int destination_completion_rank;
-native-width-integer	libclamav/scan_report.c	577	    int source_completion_rank;
-native-width-integer	libclamav/scan_report.c	788	    status = report_json_add_int(object, "version", (int)report->version);
-native-width-integer	libclamav/scan_report.c	791	    status = report_json_add_int(object, "status", (int)report->status);
-native-width-integer	libclamav/scan_report.c	797	    status = report_json_add_int(object, "verdict", (int)report->verdict);
+native-width-integer	libclamav/scan_report.c	147	static int report_completion_rank(cl_scan_completion_t completion)
+native-width-integer	libclamav/scan_report.c	206	    int value)
+native-width-integer	libclamav/scan_report.c	239	static int report_verdict_rank(cl_verdict_t verdict)
+native-width-integer	libclamav/scan_report.c	286	        int status = CL_ERROR;
+native-width-integer	libclamav/scan_report.c	287	        long long value;
+native-width-integer	libclamav/scan_report.c	603	    int destination_completion_rank;
+native-width-integer	libclamav/scan_report.c	604	    int source_completion_rank;
+native-width-integer	libclamav/scan_report.c	66	    int status = CL_ERROR;
+native-width-integer	libclamav/scan_report.c	67	    long long value;
+native-width-integer	libclamav/scan_report.c	818	    status = report_json_add_int(object, "version", (int)report->version);
+native-width-integer	libclamav/scan_report.c	821	    status = report_json_add_int(object, "status", (int)report->status);
+native-width-integer	libclamav/scan_report.c	827	    status = report_json_add_int(object, "verdict", (int)report->verdict);
 native-width-integer	libclamav/scanners.c	1000	    int fd                         = -1;
 native-width-integer	libclamav/scanners.c	1075	    unsigned int file_count = 0;
 native-width-integer	libclamav/scanners.c	1124	                int comment_fd = -1;
@@ -28571,30 +28571,31 @@ offset-size-arithmetic	libclamav/rtf.c	838	    /* fmap_need_off_once_len() repor
 offset-size-arithmetic	libclamav/rtf.c	842	    if (ret != CL_ETIMEOUT && offset < ctx->fmap->len) {
 offset-size-arithmetic	libclamav/rtf.c	94	static const size_t rtf_action_mapping_cnt = sizeof(rtf_action_mapping) / sizeof(rtf_action_mapping[0]);
 offset-size-arithmetic	libclamav/scan_layer.h	52	#endif /* __SCAN_LAYER_H_LC */
-offset-size-arithmetic	libclamav/scan_report.c	250	    report = calloc(1, sizeof(*report));
-offset-size-arithmetic	libclamav/scan_report.c	316	    report->metrics.files_scanned++;
-offset-size-arithmetic	libclamav/scan_report.c	386	        *offset_out = report->pending_alert_offset;
-offset-size-arithmetic	libclamav/scan_report.c	474	        if (evidence_get_last_alert_offset(ctx->this_layer_evidence, &last_alert_offset)) {
-offset-size-arithmetic	libclamav/scan_report.c	482	        report->metrics.elapsed_ms = (finished_usec - report->started_usec) / 1000ULL;
-offset-size-arithmetic	libclamav/scan_report.c	583	    report_add_u64(&destination->metrics.root_size, source->metrics.root_size);
-offset-size-arithmetic	libclamav/scan_report.c	590	    report_add_u64(&destination->metrics.files_scanned, source->metrics.files_scanned);
-offset-size-arithmetic	libclamav/scan_report.c	615	        destination->last_alert_offset       = source->last_alert_offset;
-offset-size-arithmetic	libclamav/scan_report.c	616	        destination->last_alert_offset_valid = source->last_alert_offset_valid;
-offset-size-arithmetic	libclamav/scan_report.c	632	        destination->last_alert_offset       = source->last_alert_offset;
-offset-size-arithmetic	libclamav/scan_report.c	633	        destination->last_alert_offset_valid = source->last_alert_offset_valid;
-offset-size-arithmetic	libclamav/scan_report.c	642	            destination->last_alert_offset       = source->last_alert_offset;
-offset-size-arithmetic	libclamav/scan_report.c	643	            destination->last_alert_offset_valid = source->last_alert_offset_valid;
-offset-size-arithmetic	libclamav/scan_report.c	745	    *offset_out = report->last_alert_offset;
-offset-size-arithmetic	libclamav/scan_report.c	813	    status = report_json_add_u64(object, "root_size", report->metrics.root_size);
-offset-size-arithmetic	libclamav/scan_report.c	828	    status = report_json_add_u64(object, "files_scanned", report->metrics.files_scanned);
-offset-size-arithmetic	libclamav/scan_report.c	846	    status = report_json_add_u64(object, "max_file_size", report->limits.max_file_size);
-offset-size-arithmetic	libclamav/scan_report.c	849	    status = report_json_add_u64(object, "max_scan_size", report->limits.max_scan_size);
-offset-size-arithmetic	libclamav/scan_report.c	852	    status = report_json_add_u64(object, "max_pcre_file_size", report->limits.max_pcre_file_size);
-offset-size-arithmetic	libclamav/scan_report.c	858	    status = report_json_add_u64(object, "max_temporary_size", report->limits.max_temporary_size);
-offset-size-arithmetic	libclamav/scan_report.c	861	    status = report_json_add_u64(object, "max_contiguous_size", report->limits.max_contiguous_size);
-offset-size-arithmetic	libclamav/scan_report.c	885	        status = report_json_add_u64(object, "last_alert_offset", report->last_alert_offset);
-offset-size-arithmetic	libclamav/scan_report.h	102	 * the request ends. */
-offset-size-arithmetic	libclamav/scan_report.h	107	#endif /* __SCAN_REPORT_H_LC */
+offset-size-arithmetic	libclamav/scan_report.c	266	    report = calloc(1, sizeof(*report));
+offset-size-arithmetic	libclamav/scan_report.c	332	    report->metrics.files_scanned++;
+offset-size-arithmetic	libclamav/scan_report.c	402	        *offset_out = report->pending_alert_offset;
+offset-size-arithmetic	libclamav/scan_report.c	490	        if (evidence_get_last_alert_offset(ctx->this_layer_evidence, &last_alert_offset)) {
+offset-size-arithmetic	libclamav/scan_report.c	498	        report->metrics.elapsed_ms = (finished_usec - report->started_usec) / 1000ULL;
+offset-size-arithmetic	libclamav/scan_report.c	554	     * detection as authoritative, but never expose a clean/trusted or other
+offset-size-arithmetic	libclamav/scan_report.c	610	    report_add_u64(&destination->metrics.root_size, source->metrics.root_size);
+offset-size-arithmetic	libclamav/scan_report.c	617	    report_add_u64(&destination->metrics.files_scanned, source->metrics.files_scanned);
+offset-size-arithmetic	libclamav/scan_report.c	643	        destination->last_alert_offset       = source->last_alert_offset;
+offset-size-arithmetic	libclamav/scan_report.c	644	        destination->last_alert_offset_valid = source->last_alert_offset_valid;
+offset-size-arithmetic	libclamav/scan_report.c	660	        destination->last_alert_offset       = source->last_alert_offset;
+offset-size-arithmetic	libclamav/scan_report.c	661	        destination->last_alert_offset_valid = source->last_alert_offset_valid;
+offset-size-arithmetic	libclamav/scan_report.c	670	            destination->last_alert_offset       = source->last_alert_offset;
+offset-size-arithmetic	libclamav/scan_report.c	671	            destination->last_alert_offset_valid = source->last_alert_offset_valid;
+offset-size-arithmetic	libclamav/scan_report.c	773	    *offset_out = report->last_alert_offset;
+offset-size-arithmetic	libclamav/scan_report.c	843	    status = report_json_add_u64(object, "root_size", report->metrics.root_size);
+offset-size-arithmetic	libclamav/scan_report.c	858	    status = report_json_add_u64(object, "files_scanned", report->metrics.files_scanned);
+offset-size-arithmetic	libclamav/scan_report.c	876	    status = report_json_add_u64(object, "max_file_size", report->limits.max_file_size);
+offset-size-arithmetic	libclamav/scan_report.c	879	    status = report_json_add_u64(object, "max_scan_size", report->limits.max_scan_size);
+offset-size-arithmetic	libclamav/scan_report.c	882	    status = report_json_add_u64(object, "max_pcre_file_size", report->limits.max_pcre_file_size);
+offset-size-arithmetic	libclamav/scan_report.c	888	    status = report_json_add_u64(object, "max_temporary_size", report->limits.max_temporary_size);
+offset-size-arithmetic	libclamav/scan_report.c	891	    status = report_json_add_u64(object, "max_contiguous_size", report->limits.max_contiguous_size);
+offset-size-arithmetic	libclamav/scan_report.c	915	        status = report_json_add_u64(object, "last_alert_offset", report->last_alert_offset);
+offset-size-arithmetic	libclamav/scan_report.h	103	 * the request ends. */
+offset-size-arithmetic	libclamav/scan_report.h	108	#endif /* __SCAN_REPORT_H_LC */
 offset-size-arithmetic	libclamav/scanners.c	1033	    if (output_length != metadata->unpack_size) {
 offset-size-arithmetic	libclamav/scanners.c	1125	                char prefix[sizeof("comments_") + 10];
 offset-size-arithmetic	libclamav/scanners.c	1270	                    (void)cli_basename(metadata.filename, strlen(metadata.filename), &filename_base, true /* posix_support_backslash_pathsep */);
@@ -33290,8 +33291,8 @@ large-file-option	libclamav/others.c	790	        case CL_ENGINE_MAX_SCANSIZE:
 large-file-option	libclamav/others.c	792	                cli_errmsg("MaxScanSize: values must be between 0 and 64 GiB\n");
 large-file-option	libclamav/others.c	797	        case CL_ENGINE_MAX_FILESIZE:
 large-file-option	libclamav/others.c	799	                cli_errmsg("MaxFileSize: negative values are not allowed\n");
-large-file-option	libclamav/scan_report.c	261	    report_get_engine_limit(engine, CL_ENGINE_MAX_FILESIZE, &report->limits.max_file_size);
-large-file-option	libclamav/scan_report.c	262	    report_get_engine_limit(engine, CL_ENGINE_MAX_SCANSIZE, &report->limits.max_scan_size);
+large-file-option	libclamav/scan_report.c	277	    report_get_engine_limit(engine, CL_ENGINE_MAX_FILESIZE, &report->limits.max_file_size);
+large-file-option	libclamav/scan_report.c	278	    report_get_engine_limit(engine, CL_ENGINE_MAX_SCANSIZE, &report->limits.max_scan_size);
 large-file-option	libclamav/scanners.c	1285	            cli_mark_scan_incomplete(ctx, "EGG archive inspection reached MaxScanSize");
 large-file-option	libclamav/scanners.c	6527	     * MaxScanSize/MaxFiles accounting here. */
 large-file-option	libclamav/spin.c	174	                cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFileSize", CL_EMAXSIZE);
