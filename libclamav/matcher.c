@@ -1615,6 +1615,8 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
                         /* Recalculate the relative offsets in boyer-moore signatures (e.g. those that are based on pe/elf/macho section start/end). */
                         current = cli_bm_initoff(target_ac_root, &bm_offsets_table, &info);
                         if (CL_SUCCESS != current) {
+                            if (current == CL_EMEM)
+                                cli_mark_scan_incomplete(ctx, "BM offset state could not be allocated");
                             status = cli_merge_scan_status(status, current);
                             if (cli_scan_status_is_critical(current)) {
                                 ret = current;

@@ -444,14 +444,18 @@ cl_error_t cli_pcre_recaloff(struct cli_matcher *root, struct cli_pcre_off *data
     }
 
     /* allocate data structures */
-    data->shift = (uint64_t *)calloc(root->pcre_metas, sizeof(uint64_t));
+    data->shift = (uint64_t *)cli_max_calloc(root->pcre_metas, sizeof(uint64_t));
     if (!data->shift) {
         cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->shift\n");
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "PCRE offset state could not be allocated");
         return CL_EMEM;
     }
-    data->offset = (uint64_t *)calloc(root->pcre_metas, sizeof(uint64_t));
+    data->offset = (uint64_t *)cli_max_calloc(root->pcre_metas, sizeof(uint64_t));
     if (!data->offset) {
         cli_errmsg("cli_pcre_initoff: cannot allocate memory for data->offset\n");
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "PCRE offset state could not be allocated");
         free(data->shift);
         return CL_EMEM;
     }

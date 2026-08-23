@@ -5096,6 +5096,18 @@ evidence. Compiled PCRE limit-exhaustion and allocation-fault coverage,
 production regex qualification, sanitizer runs, and Sonic1 qualification remain
 open.
 
+## BM and PCRE offset-table allocation failures — 2026-08-22
+
+Per-scan BM and PCRE relative-offset tables previously used direct allocation;
+PCRE had a scan context but did not mark its allocation failure, and BM setup
+merged `CL_EMEM` without a parser-specific sticky reason. Both tables now use
+the individual-allocation ceiling, and the context-bearing setup boundaries
+mark failures before matcher execution can be treated as complete.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled offset-setup fault injection, production-signature
+qualification, sanitizer runs, and Sonic1 qualification remain open.
+
 ## AC matcher-state allocation ceiling — 2026-08-22
 
 Per-scan AC state, partial-signature offset tables, logical match-offset lists,

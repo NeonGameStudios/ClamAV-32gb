@@ -186,6 +186,10 @@
   or recursion-limit exhaustion returns `CL_ERESOURCE` instead of becoming a
   clean non-match; add compiled limit-exhaustion, allocation-fault, and
   production-regex qualification.
+- Per-scan BM and PCRE offset tables now use the individual-allocation ceiling;
+  BM setup and context-aware PCRE setup mark allocation failure before raw
+  matching can be reported complete. Add compiled offset-setup fault injection
+  and production-signature qualification.
 - Shared in-memory blob growth now checks cumulative native-width sizes before
   page rounding, reallocation, and final length updates; requests beyond the
   1 GiB individual-allocation boundary fail explicitly instead of wrapping.
