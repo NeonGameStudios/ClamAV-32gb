@@ -3047,12 +3047,27 @@ static void add_section_info(cli_ctx *ctx, struct cli_exe_section *s)
     json_object_array_add(sections, section);
 }
 
+static cl_error_t pe_readn_full(cli_ctx *ctx,
+                                fmap_t *map,
+                                void *destination,
+                                size_t offset,
+                                size_t length,
+                                const char *reason)
+{
+    size_t read_length = fmap_readn_full(map, destination, offset, length);
+
+    if (read_length == length)
+        return CL_SUCCESS;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    return read_length == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+}
+
 int cli_scanpe(cli_ctx *ctx)
 {
     uint8_t polipos = 0;
     char epbuff[4096], *tempfile;
     size_t epsize;
-    size_t bytes;
     unsigned int i, j, found, upx_success = 0, err;
     unsigned int ssize = 0, dsize = 0, corrupted_cur;
     int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, cli_ctx *) = NULL;
@@ -3691,15 +3706,20 @@ int cli_scanpe(cli_ctx *ctx)
                 return CL_EMEM;
             }
 
-            bytes = fmap_readn(map, src + dsize, peinfo->sections[i + 1].raw, peinfo->sections[i + 1].rsz);
-            if (bytes != peinfo->sections[i + 1].rsz) {
-                cli_dbgmsg("cli_scanpe: MEW: Can't read %u bytes [read: %zu]\n", peinfo->sections[i + 1].rsz, bytes);
+            ret = pe_readn_full(ctx,
+                                map,
+                                src + dsize,
+                                peinfo->sections[i + 1].raw,
+                                peinfo->sections[i + 1].rsz,
+                                "PE MEW compressed section could not be read completely");
+            if (ret != CL_SUCCESS) {
+                cli_dbgmsg("cli_scanpe: MEW: Can't read %u bytes\n", peinfo->sections[i + 1].rsz);
                 cli_exe_info_destroy(peinfo);
                 free(src);
-                return CL_EREAD;
+                return ret;
             }
 
-            cli_dbgmsg("cli_scanpe: MEW: %zu (%08zx) bytes read\n", bytes, bytes);
+            cli_dbgmsg("cli_scanpe: MEW: %u bytes read\n", peinfo->sections[i + 1].rsz);
 
             /* count offset to lzma proc, if lzma used, 0xe8 -> call */
             if (tbuff[0x7b] == '\xe8') {
@@ -3811,19 +3831,33 @@ int cli_scanpe(cli_ctx *ctx)
                 return CL_EMEM;
             }
 
-            if (fmap_readn(map, dest, 0, ssize) != ssize) {
+            ret = pe_readn_full(ctx,
+                                map,
+                                dest,
+                                0,
+                                ssize,
+                                "PE Upack source section could not be read completely");
+            if (ret != CL_SUCCESS) {
                 cli_dbgmsg("cli_scanpe: Upack: Can't read raw data of section 0\n");
                 free(dest);
-                break;
+                cli_exe_info_destroy(peinfo);
+                return ret;
             }
 
             if (upack)
                 memmove(dest + peinfo->sections[2].rva - peinfo->sections[0].rva, dest, ssize);
 
-            if (fmap_readn(map, dest + peinfo->sections[1].rva - off, peinfo->sections[1].uraw, peinfo->sections[1].ursz) != peinfo->sections[1].ursz) {
+            ret = pe_readn_full(ctx,
+                                map,
+                                dest + peinfo->sections[1].rva - off,
+                                peinfo->sections[1].uraw,
+                                peinfo->sections[1].ursz,
+                                "PE Upack compressed section could not be read completely");
+            if (ret != CL_SUCCESS) {
                 cli_dbgmsg("cli_scanpe: Upack: Can't read raw data of section 1\n");
                 free(dest);
-                break;
+                cli_exe_info_destroy(peinfo);
+                return ret;
             }
 
             if (pe_json != NULL)
@@ -4379,8 +4413,6 @@ int cli_scanpe(cli_ctx *ctx)
 
             for (i = 0; i < peinfo->nsections; i++) {
                 if (peinfo->sections[i].raw) {
-                    size_t r_ret;
-
                     if (!peinfo->sections[i].rsz) {
                         cli_mark_scan_incomplete(ctx, "PE Petite section has no raw data");
                         cli_exe_info_destroy(peinfo);
@@ -4397,14 +4429,16 @@ int cli_scanpe(cli_ctx *ctx)
                         return CL_EFORMAT;
                     }
 
-                    r_ret = fmap_readn(map, dest + peinfo->sections[i].rva - peinfo->min,
-                                       peinfo->sections[i].raw,
-                                       peinfo->sections[i].ursz);
-                    if (r_ret != peinfo->sections[i].ursz) {
-                        cli_mark_scan_incomplete(ctx, "PE Petite section could not be read completely");
+                    ret = pe_readn_full(ctx,
+                                        map,
+                                        dest + peinfo->sections[i].rva - peinfo->min,
+                                        peinfo->sections[i].raw,
+                                        peinfo->sections[i].ursz,
+                                        "PE Petite section could not be read completely");
+                    if (ret != CL_SUCCESS) {
                         cli_exe_info_destroy(peinfo);
                         free(dest);
-                        return CL_EREAD;
+                        return ret;
                     }
                 }
             }
@@ -4578,28 +4612,49 @@ int cli_scanpe(cli_ctx *ctx)
             return CL_EMEM;
         }
 
-        if (fmap_readn(map, src, 0, head) != head) {
+        ret = pe_readn_full(ctx,
+                            map,
+                            src,
+                            0,
+                            head,
+                            "PE WWPack header region could not be read completely");
+        if (ret != CL_SUCCESS) {
             cli_dbgmsg("cli_scanpe: WWPack: Can't read %d bytes from headers\n", head);
             free(src);
             cli_exe_info_destroy(peinfo);
-            return CL_EREAD;
+            return ret;
         }
 
         for (i = 0; i < (unsigned int)peinfo->nsections - 1; i++) {
             if (!peinfo->sections[i].rsz)
                 continue;
 
-            if (!CLI_ISCONTAINED(src, ssize, src + peinfo->sections[i].rva, peinfo->sections[i].rsz))
-                break;
+            if (!CLI_ISCONTAINED(src, ssize, src + peinfo->sections[i].rva, peinfo->sections[i].rsz)) {
+                cli_mark_scan_incomplete(ctx, "PE WWPack section output range is invalid");
+                free(src);
+                cli_exe_info_destroy(peinfo);
+                return CL_EPARSE;
+            }
 
-            if (fmap_readn(map, src + peinfo->sections[i].rva, peinfo->sections[i].raw, peinfo->sections[i].rsz) != peinfo->sections[i].rsz)
-                break;
+            ret = pe_readn_full(ctx,
+                                map,
+                                src + peinfo->sections[i].rva,
+                                peinfo->sections[i].raw,
+                                peinfo->sections[i].rsz,
+                                "PE WWPack section could not be read completely");
+            if (ret != CL_SUCCESS) {
+                free(src);
+                cli_exe_info_destroy(peinfo);
+                return ret;
+            }
         }
 
         if (i + 1 != peinfo->nsections) {
             cli_dbgmsg("cli_scanpe: WWpack: Probably hacked/damaged file.\n");
+            cli_mark_scan_incomplete(ctx, "PE WWPack section reconstruction was incomplete");
             free(src);
-            break;
+            cli_exe_info_destroy(peinfo);
+            return CL_EPARSE;
         }
 
         if ((packer = (uint8_t *)cli_max_calloc(peinfo->sections[peinfo->nsections - 1].rsz, sizeof(char))) == NULL) {
@@ -4608,12 +4663,27 @@ int cli_scanpe(cli_ctx *ctx)
             return CL_EMEM;
         }
 
-        if (!peinfo->sections[peinfo->nsections - 1].rsz || fmap_readn(map, packer, peinfo->sections[peinfo->nsections - 1].raw, peinfo->sections[peinfo->nsections - 1].rsz) != peinfo->sections[peinfo->nsections - 1].rsz) {
+        if (!peinfo->sections[peinfo->nsections - 1].rsz) {
+            cli_dbgmsg("cli_scanpe: WWPack: Can't read %d bytes from wwpack sect\n", peinfo->sections[peinfo->nsections - 1].rsz);
+            cli_mark_scan_incomplete(ctx, "PE WWPack compressed section is empty");
+            free(src);
+            free(packer);
+            cli_exe_info_destroy(peinfo);
+            return CL_EPARSE;
+        }
+
+        ret = pe_readn_full(ctx,
+                            map,
+                            packer,
+                            peinfo->sections[peinfo->nsections - 1].raw,
+                            peinfo->sections[peinfo->nsections - 1].rsz,
+                            "PE WWPack compressed section could not be read completely");
+        if (ret != CL_SUCCESS) {
             cli_dbgmsg("cli_scanpe: WWPack: Can't read %d bytes from wwpack sect\n", peinfo->sections[peinfo->nsections - 1].rsz);
             free(src);
             free(packer);
             cli_exe_info_destroy(peinfo);
-            return CL_EREAD;
+            return ret;
         }
 
         if (pe_json != NULL)
@@ -4670,17 +4740,32 @@ int cli_scanpe(cli_ctx *ctx)
             if (!peinfo->sections[i].rsz)
                 continue;
 
-            if (!CLI_ISCONTAINED(src, ssize, src + peinfo->sections[i].rva, peinfo->sections[i].rsz))
-                break;
+            if (!CLI_ISCONTAINED(src, ssize, src + peinfo->sections[i].rva, peinfo->sections[i].rsz)) {
+                cli_mark_scan_incomplete(ctx, "PE Aspack section output range is invalid");
+                free(src);
+                cli_exe_info_destroy(peinfo);
+                return CL_EPARSE;
+            }
 
-            if (fmap_readn(map, src + peinfo->sections[i].rva, peinfo->sections[i].raw, peinfo->sections[i].rsz) != peinfo->sections[i].rsz)
-                break;
+            ret = pe_readn_full(ctx,
+                                map,
+                                src + peinfo->sections[i].rva,
+                                peinfo->sections[i].raw,
+                                peinfo->sections[i].rsz,
+                                "PE Aspack section could not be read completely");
+            if (ret != CL_SUCCESS) {
+                free(src);
+                cli_exe_info_destroy(peinfo);
+                return ret;
+            }
         }
 
         if (i != peinfo->nsections) {
             cli_dbgmsg("cli_scanpe: Aspack: Probably hacked/damaged Aspack file.\n");
+            cli_mark_scan_incomplete(ctx, "PE Aspack section reconstruction was incomplete");
             free(src);
-            break;
+            cli_exe_info_destroy(peinfo);
+            return CL_EPARSE;
         }
 
         if (pe_json != NULL)

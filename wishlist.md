@@ -1702,3 +1702,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   EOF and its clipped backing read fails, while retaining CL_EREAD for
   fully in-range callback faults; retain compiled CAB/CHM corpus, sanitizer,
   and Sonic1 qualification gates.
+
+## PE unpacker payload-read classification — 2026-08-23
+
+- Route confirmed MEW, Upack, Petite, WWPack, and Aspack reconstruction reads
+  through complete-range admission so clipped sections remain parse/incomplete
+  results and in-range callback failures remain `CL_EREAD`; retain PE corpus,
+  sanitizer, and Sonic1 qualification gates.

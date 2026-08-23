@@ -5801,3 +5801,15 @@ callback failures. A focused CAB fixture reaches a folder read beginning at
 the final byte and verifies that the result remains CL_EFORMAT; the existing
 fully in-range callback-fault regression remains unchanged. Compiled CAB/CHM
 corpus, sanitizer, and Sonic1 qualification remain open.
+
+## PE unpacker payload-read classification — 2026-08-23
+
+Confirmed MEW, Upack, Petite, WWPack, and Aspack reconstruction paths were
+still using truncating `fmap_readn()` calls or breaking out of a recognized
+unpacker after a failed section read. That could skip required PE-specific
+inspection and allow the outer scan to continue as clean. The shared PE
+`pe_readn_full()` helper now distinguishes a clipped section range
+(`CL_EPARSE`) from an in-range fmap callback failure (`CL_EREAD`), marks the
+layer incomplete, and returns the failure through each affected unpacker path.
+The existing Petite callback regression now exercises the helper; complete
+PE corpus, sanitizer, and Sonic1 qualification remain open.
