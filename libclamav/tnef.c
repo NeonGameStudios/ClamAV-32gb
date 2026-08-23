@@ -86,6 +86,12 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
     int alldone;
     off_t fsize, pos = 0;
 
+    if (ctx == NULL || ctx->fmap == NULL) {
+        if (ctx != NULL)
+            cli_mark_scan_incomplete(ctx, "TNEF input map is unavailable");
+        return CL_ENULLARG;
+    }
+
     ret = tnef_checktimelimit(ctx, "TNEF inspection reached the configured time limit");
     if (ret != CL_SUCCESS)
         return ret;

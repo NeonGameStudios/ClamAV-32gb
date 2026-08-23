@@ -15705,6 +15705,17 @@ START_TEST(test_tnef_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tnef_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_ENULLARG);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "TNEF input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_tnef_initial_read_failure_is_fail_visible)
 {
     static const uint8_t input[sizeof(uint32_t) + sizeof(uint16_t)] = {0};
@@ -23069,6 +23080,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_tnef_exact_eof_ends_attribute_list);
     tcase_add_test(tc_cl, test_tnef_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_tnef_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_attribute_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_truncated_attribute_header_is_parse_error);

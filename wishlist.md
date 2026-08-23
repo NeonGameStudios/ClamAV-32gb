@@ -1604,3 +1604,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Reject negative, host-unrepresentable, and size-overflowing coordinates in
   the legacy bytecode `read` entry before fmap conversion; retain independently
   compiled v1/v2 fixture and interpreter/JIT qualification as release gates.
+
+## TNEF missing-map handling — 2026-08-23
+
+- Reject a missing TNEF input map before parser entry dereferences it, preserving
+  an explicit incomplete `CL_ENULLARG` result; retain compiled mail corpus,
+  sanitizer, and Sonic1 qualification as release gates.

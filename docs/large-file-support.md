@@ -5891,3 +5891,10 @@ unrepresentable or size-overflowing ranges before passing coordinates to fmap.
 This prevents malformed v1 state from wrapping into a different input range;
 independently compiled fixture and interpreter/JIT qualification remain release
 gates.
+
+## TNEF missing-map handling — 2026-08-23
+
+TNEF now checks for a missing input fmap before time-limit or header processing
+and returns an explicit incomplete `CL_ENULLARG` result for a non-null context.
+Focused direct-parser coverage exercises the boundary; compiled mail corpus,
+sanitizer, and Sonic1 qualification remain release gates.

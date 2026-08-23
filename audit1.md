@@ -5634,3 +5634,11 @@ unrepresentable or size-overflowing ranges before converting the coordinate to
 the fmap API. A focused regression covers invalid signed state, while
 independently compiled v1/v2 fixtures and interpreter/JIT qualification remain
 open.
+
+## TNEF missing-map handling — 2026-08-23
+
+The TNEF parser now rejects a missing input fmap before its time-limit and
+header logic dereferences the map, returning `CL_ENULLARG` with an explicit
+incomplete reason for a non-null context. Focused direct-parser coverage covers
+the boundary; compiled mail corpus, sanitizer, and Sonic1 qualification remain
+open.
