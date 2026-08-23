@@ -5813,3 +5813,14 @@ inspection and allow the outer scan to continue as clean. The shared PE
 layer incomplete, and returns the failure through each affected unpacker path.
 The existing Petite callback regression now exercises the helper; complete
 PE corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Structured-report counter saturation — 2026-08-23
+
+Structured report logical/file/parser/detector counters previously used plain
+increments. A sufficiently large directory or parser walk could wrap one of
+those diagnostic values to zero in the serialized report, weakening evidence
+of how much work was actually attempted. Report counter increments now
+saturate at `UINT64_MAX`; the focused unit regression covers all three
+increment paths plus file counting. This changes report evidence only and
+does not alter scan admission. Compiled report and Sonic1 qualification remain
+open.

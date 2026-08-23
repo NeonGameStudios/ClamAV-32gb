@@ -1709,3 +1709,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   through complete-range admission so clipped sections remain parse/incomplete
   results and in-range callback failures remain `CL_EREAD`; retain PE corpus,
   sanitizer, and Sonic1 qualification gates.
+
+## Structured-report counter saturation — 2026-08-23
+
+- Saturate structured-report logical/file/parser/detector counters at
+  `UINT64_MAX` so very large directory or parser walks cannot wrap diagnostic
+  evidence to zero; retain compiled report and Sonic1 qualification gates.

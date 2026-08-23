@@ -1465,6 +1465,27 @@ START_TEST(test_scan_report_json_preserves_unsigned_boundaries)
 }
 END_TEST
 
+START_TEST(test_scan_report_counters_saturate)
+{
+    cl_scan_report_t *report = NULL;
+
+    ck_assert_int_eq(cli_scan_report_create(&report, NULL), CL_SUCCESS);
+
+    report->metrics.files_scanned       = UINT64_MAX;
+    report->metrics.parser_operations  = UINT64_MAX;
+    report->metrics.detector_operations = UINT64_MAX;
+    cli_scan_report_note_logical(report, 1, 0);
+    cli_scan_report_note_parser_operation(report);
+    cli_scan_report_note_detector_operation(report);
+
+    ck_assert_uint_eq(report->metrics.files_scanned, UINT64_MAX);
+    ck_assert_uint_eq(report->metrics.parser_operations, UINT64_MAX);
+    ck_assert_uint_eq(report->metrics.detector_operations, UINT64_MAX);
+
+    cl_scan_report_free(report);
+}
+END_TEST
+
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
 static off_t largefile_pread_cb(void *handle, void *buf, size_t count, off_t offset)
 {
@@ -23414,6 +23435,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_complete_and_json);
     tcase_add_test(tc_cl, test_scan_report_last_alert_offset_contract);
     tcase_add_test(tc_cl, test_scan_report_json_preserves_unsigned_boundaries);
+    tcase_add_test(tc_cl, test_scan_report_counters_saturate);
     tcase_add_test(tc_cl, test_scan_report_detection_precedes_incomplete_state);
     tcase_add_test(tc_cl, test_scan_report_unsupported_encryption_is_not_malformed);
     tcase_add_test(tc_cl, test_scan_report_unsupported_decoder_statuses_are_unsupported);

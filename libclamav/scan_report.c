@@ -236,6 +236,15 @@ static cl_error_t report_json_add_string(
     return CL_SUCCESS;
 }
 
+/* Report counters are diagnostic evidence, not scan-control state. Saturate
+ * them rather than allowing an adversarially large directory or parser walk
+ * to wrap a count back to zero in the serialized report. */
+static void report_increment_u64(uint64_t *value)
+{
+    if ((NULL != value) && (*value != UINT64_MAX))
+        (*value)++;
+}
+
 static int report_verdict_rank(cl_verdict_t verdict)
 {
     switch (verdict) {
@@ -329,7 +338,7 @@ void cli_scan_report_note_logical(
     else
         report->metrics.logical_bytes += bytes;
 
-    report->metrics.files_scanned++;
+    report_increment_u64(&report->metrics.files_scanned);
     if (recursion_depth > report->metrics.max_recursion_depth)
         report->metrics.max_recursion_depth = recursion_depth;
 }
@@ -367,14 +376,14 @@ void cli_scan_report_note_parser_operation(
     cl_scan_report_t *report)
 {
     if (NULL != report)
-        report->metrics.parser_operations++;
+        report_increment_u64(&report->metrics.parser_operations);
 }
 
 void cli_scan_report_note_detector_operation(
     cl_scan_report_t *report)
 {
     if (NULL != report)
-        report->metrics.detector_operations++;
+        report_increment_u64(&report->metrics.detector_operations);
 }
 
 void cli_scan_report_note_match_offset(
