@@ -6287,3 +6287,12 @@ failure therefore cannot be hidden by a later clean item in the same block;
 the existing raw and later-item scanning behavior remains intact. Compiled
 HWP3 nested-detection coverage, sanitizer, and supported-build Sonic1
 qualification remain release gates.
+
+## Raw embedded-dispatch status aggregation — 2026-08-23
+
+`scanraw()` can dispatch several recognized embedded parsers, SFX layers,
+partitions, or type-retyped views during one raw pass. Every child result now
+uses shared status precedence when updating the aggregate, so a later clean
+candidate cannot hide an earlier detection or parser/resource failure. Weak
+candidate rejection remains unchanged. Compiled multi-candidate coverage,
+sanitizer, and supported-build Sonic1 qualification remain release gates.

@@ -6581,3 +6581,15 @@ precedence rules, preserving detections and fail-visible parser/resource
 failures while still visiting later items. Static source guards pass; compiled
 HWP3 corpus, nested-detection regression, sanitizer, and Sonic1 qualification
 remain release gates.
+
+## Raw embedded-dispatch status aggregation — 2026-08-23
+
+`scanraw()` can dispatch several recognized embedded parsers, SFX layers, or
+type-retyped views during one raw pass. Its aggregate `nret` status was
+previously overwritten by each direct child result, allowing a later clean
+candidate to hide an earlier detection or parser/resource failure. All
+recognized-layer, SFX, partition, HTML, and mail dispatch results now use the
+shared status-precedence merge, preserving the strongest result while retaining
+the existing weak-candidate rejection behavior. Static source guards pass;
+compiled multi-candidate detection/error coverage, sanitizer, and Sonic1
+qualification remain release gates.

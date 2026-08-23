@@ -5006,14 +5006,16 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
 
         perf_nested_start(ctx, PERFT_RAWTYPENO, PERFT_SCAN);
 
+        /* More than one recognized embedded layer can be dispatched during a
+         * single raw pass. Keep the aggregate status monotonic so a later
+         * clean child cannot hide an earlier detection or parser failure. */
         fpt = ftoffset;
 
         while (fpt) {
             ret = cli_checktimelimit(ctx);
             if (ret != CL_SUCCESS) {
                 cli_mark_scan_incomplete(ctx, "raw embedded-type dispatch reached the configured time limit");
-                if (nret == CL_SUCCESS)
-                    nret = ret;
+                nret = cli_merge_scan_status(nret, ret);
                 break;
             }
 
@@ -5023,8 +5025,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
              * child range or a confirmed parser layer. */
             if (fpt->offset < 0 || (uint64_t)fpt->offset >= (uint64_t)ctx->fmap->len) {
                 cli_mark_scan_incomplete(ctx, "raw embedded-type match offset is outside the input map");
-                if (nret == CL_SUCCESS)
-                    nret = CL_EPARSE;
+                nret = cli_merge_scan_status(nret, CL_EPARSE);
                 invalid_embedded_match = true;
                 break;
             }
@@ -5060,7 +5061,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("MHTML signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = ret = cli_scanmail(ctx);
+                                    ret  = cli_scanmail(ctx);
+                                    nret = cli_merge_scan_status(nret, ret);
                                 }
                             }
                         }
@@ -5079,7 +5081,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XDP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = ret = cli_scanxdp(ctx);
+                                    ret  = cli_scanxdp(ctx);
+                                    nret = cli_merge_scan_status(nret, ret);
                                 }
                             }
                         }
@@ -5098,7 +5101,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XML-WORD signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = ret = cli_scanmsxml(ctx);
+                                    ret  = cli_scanmsxml(ctx);
+                                    nret = cli_merge_scan_status(nret, ret);
                                 }
                             }
                         }
@@ -5116,7 +5120,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XML-XL signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = ret = cli_scanmsxml(ctx);
+                                    ret  = cli_scanmsxml(ctx);
+                                    nret = cli_merge_scan_status(nret, ret);
                                 }
                             }
                         }
@@ -5134,7 +5139,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("XML-HWP signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = ret = cli_scanhwpml(ctx);
+                                    ret  = cli_scanhwpml(ctx);
+                                    nret = cli_merge_scan_status(nret, ret);
                                 }
                             }
                         }
@@ -5151,7 +5157,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("DMG signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = cli_scandmg(ctx);
+                                    nret = cli_merge_scan_status(nret, cli_scandmg(ctx));
                                 }
                             }
                         }
@@ -5168,7 +5174,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("ISO signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = cli_scaniso(ctx, fpt->offset);
+                                    nret = cli_merge_scan_status(nret, cli_scaniso(ctx, fpt->offset));
                                 }
                             }
                         }
@@ -5183,7 +5189,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     type_has_been_handled = false;
                                 } else {
                                     cli_dbgmsg("UDF signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                    nret = cli_scanudf(ctx, fpt->offset);
+                                    nret = cli_merge_scan_status(nret, cli_scanudf(ctx, fpt->offset));
                                 }
                             }
                         }
@@ -5205,7 +5211,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     } else {
                                         cli_dbgmsg("Recognized GUID Partition Table file\n");
                                         cli_dbgmsg("GPT signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                        nret = cli_scangpt(ctx, 0);
+                                        nret = cli_merge_scan_status(nret, cli_scangpt(ctx, 0));
                                     }
                                 } else if ((iret == CL_SUCCESS) && (DCONF_ARCH & ARCH_CONF_MBR)) {
                                     // Reassign type of current layer based on what we discovered
@@ -5214,7 +5220,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                         type_has_been_handled = false;
                                     } else {
                                         cli_dbgmsg("MBR signature found at " STDu64 "\n", (uint64_t)fpt->offset);
-                                        nret = cli_scanmbr(ctx, 0);
+                                        nret = cli_merge_scan_status(nret, cli_scanmbr(ctx, 0));
                                     }
                                 }
                             }
@@ -5251,24 +5257,22 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                                              ret == CL_EREAD
                                                                  ? "RAR SFX main header could not be read completely"
                                                                  : "RAR SFX main header is malformed or truncated");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     break;
                                 }
                                 if (!have_rar) {
                                     cli_mark_scan_incomplete(ctx, "RAR parser backend is unavailable for embedded SFX");
-                                    if (nret == CL_SUCCESS)
-                                        nret = CL_EPARSE;
+                                    nret = cli_merge_scan_status(nret, CL_EPARSE);
                                     break;
                                 }
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     ctx->fmap->len - fpt->offset,
                                     ctx,
                                     CL_TYPE_RAR,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5285,18 +5289,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                         cli_mark_scan_incomplete(ctx, "EGG SFX header could not be read completely");
                                     else
                                         cli_mark_scan_incomplete(ctx, "EGG SFX header is malformed or unsupported");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     break;
                                 }
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     ctx->fmap->len - fpt->offset,
                                     ctx,
                                     CL_TYPE_EGG,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5318,8 +5321,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
                                 if (ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "ZIP SFX header is malformed or could not be read completely");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     cli_dbgmsg("ZIP single header check failed: %s (%d)\n", cl_strerror(ret), ret);
                                     break;
                                 }
@@ -5327,14 +5329,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Increment last_offset to ignore any file type matches that occured within this legitimate archive.
                                 last_offset += zip_size - 1; // Note: size is definitely > 0 because header_check succeeded.
 
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     zip_size,
                                     ctx,
                                     CL_TYPE_ZIP,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5350,8 +5352,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
                                 if (ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "CAB SFX header is malformed or could not be read completely");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     cli_dbgmsg("CAB header check failed: %s (%d)\n", cl_strerror(ret), ret);
                                     break;
                                 }
@@ -5359,14 +5360,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Increment last_offset to ignore any file type matches that occured within this legitimate archive.
                                 last_offset += cab_size - 1; // Note: size is definitely > 0 because header_check succeeded.
 
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     cab_size,
                                     ctx,
                                     CL_TYPE_MSCAB,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5383,8 +5384,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
                                 if (ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "ARJ SFX header is malformed or could not be read completely");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     cli_dbgmsg("ARJ header check failed: %s (%d)\n", cl_strerror(ret), ret);
                                     break;
                                 }
@@ -5392,14 +5392,14 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 // Increment last_offset to ignore any file type matches that occured within this legitimate archive.
                                 last_offset += arj_size - 1; // Note: size is definitely > 0 because header_check succeeded.
 
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     arj_size,
                                     ctx,
                                     CL_TYPE_ARJ,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5416,18 +5416,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                                              ret == CL_EREAD
                                                                  ? "7-Zip SFX start header could not be read completely"
                                                                  : "7-Zip SFX start header is malformed or unsupported");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     break;
                                 }
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     ctx->fmap->len - fpt->offset,
                                     ctx,
                                     CL_TYPE_7Z,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5443,18 +5442,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
                                 if (ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "NSIS SFX header is malformed or unsupported");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     break;
                                 }
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     (size_t)archive_offset,
                                     ctx->fmap->len - (size_t)archive_offset,
                                     ctx,
                                     CL_TYPE_NULSFT,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5468,18 +5466,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
                                 if (ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "AutoIt SFX header is malformed or unsupported");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     break;
                                 }
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     ctx->fmap->len - fpt->offset,
                                     ctx,
                                     CL_TYPE_AUTOIT,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5493,18 +5490,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
                                 if (ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "InstallShield MSI SFX header is malformed or unsupported");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     break;
                                 }
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     ctx->fmap->len - fpt->offset,
                                     ctx,
                                     CL_TYPE_ISHIELD_MSI,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5518,18 +5514,17 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 }
                                 if (ret != CL_SUCCESS) {
                                     cli_mark_scan_incomplete(ctx, "embedded PDF header is malformed or unsupported");
-                                    if (nret == CL_SUCCESS)
-                                        nret = ret;
+                                    nret = cli_merge_scan_status(nret, ret);
                                     break;
                                 }
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     ctx->fmap->len - fpt->offset,
                                     ctx,
                                     CL_TYPE_PDF,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
                             }
                             break;
 
@@ -5544,8 +5539,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 if ((uint64_t)(ctx->fmap->len - fpt->offset) > ctx->engine->maxembeddedpe) {
                                     cli_dbgmsg("scanraw: MaxEmbeddedPE exceeded\n");
                                     cli_mark_scan_incomplete(ctx, "embedded PE exceeds MaxEmbeddedPE and was not inspected");
-                                    if (nret == CL_SUCCESS)
-                                        nret = CL_ERESOURCE;
+                                    nret = cli_merge_scan_status(nret, CL_ERESOURCE);
                                     break;
                                 }
 
@@ -5565,8 +5559,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                         cli_dbgmsg("scanraw: embedded PE header fmap could not be duplicated at " STDu64 "\n",
                                                     (uint64_t)fpt->offset);
                                         cli_mark_scan_incomplete(ctx, "embedded PE header fmap could not be duplicated");
-                                        if (nret == CL_SUCCESS)
-                                            nret = CL_EMAP;
+                                        nret = cli_merge_scan_status(nret, CL_EMAP);
                                         break;
                                     }
 
@@ -5591,8 +5584,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 if (CL_SUCCESS != ret) {
                                     if (ret != CL_ERROR) {
                                         cli_mark_scan_incomplete(ctx, "embedded PE header could not be inspected completely");
-                                        if (nret == CL_SUCCESS)
-                                            nret = ret;
+                                        nret = cli_merge_scan_status(nret, ret);
                                     }
                                     cli_dbgmsg("Header check for MSEXE detection failed, probably not actually an embedded PE file.\n");
                                     break;
@@ -5606,7 +5598,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
 
                                 ctx->corrupted_input = 1;
 
-                                nret = cli_magic_scan_nested_fmap_type(
+                                nret = cli_merge_scan_status(nret, cli_magic_scan_nested_fmap_type(
                                     ctx->fmap,
                                     fpt->offset,
                                     // Sadly, there is no way from the PE header to determine the length of the PE file.
@@ -5615,7 +5607,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     ctx,
                                     CL_TYPE_MSEXE,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED);
+                                    LAYER_ATTRIBUTES_EMBEDDED));
 
                                 ctx->corrupted_input = corrupted_input;
                             }
@@ -5656,7 +5648,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, CL_TYPE_HTML, true))) {
                             cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
                         } else {
-                            nret = cli_scanhtml(ctx);
+                            nret = cli_merge_scan_status(nret, cli_scanhtml(ctx));
                         }
                     }
                     break;
@@ -5667,7 +5659,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                         if (CL_SUCCESS != (ret = cli_recursion_stack_change_type(ctx, CL_TYPE_MAIL, true))) {
                             cli_dbgmsg("Call to cli_recursion_stack_change_type() returned %s \n", cl_strerror(ret));
                         } else {
-                            nret = cli_scanmail(ctx);
+                            nret = cli_merge_scan_status(nret, cli_scanmail(ctx));
                         }
                     }
                     break;
