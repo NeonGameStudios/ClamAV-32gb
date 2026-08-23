@@ -5406,3 +5406,12 @@ short ranges therefore remain parse/incomplete results, while fully in-range
 callback failures remain `CL_EREAD`. Focused regressions cover truncated main
 headers and in-range main-header callback failure. Compiled scanner, sanitizer,
 production SIS corpus, and Sonic1 qualification remain open.
+
+## HWPOLE2 fixed-prefix range classification — 2026-08-22
+
+HWPOLE2 now preflights its fixed 32-bit uncompressed-size prefix and reports a
+genuinely short header as `CL_EPARSE`, while an in-range fmap callback failure
+remains `CL_EREAD`. Focused regressions cover both outcomes. Its native
+32-bit payload-size representation remains an explicit boundary for larger
+inputs; compiled scanner, sanitizer, production HWP corpus, and Sonic1
+qualification remain open.

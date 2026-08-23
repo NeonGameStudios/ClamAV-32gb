@@ -1426,3 +1426,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   before callback admission, preserving parse results for short ranges and
   `CL_EREAD` for fully in-range callback failures; retain compiled scanner,
   sanitizer, production SIS corpus, and Sonic1 qualification as release gates.
+
+## HWPOLE2 fixed-prefix range classification — 2026-08-22
+
+- Preflight the fixed HWPOLE2 32-bit payload-size prefix, preserving parse
+  results for short headers and `CL_EREAD` for fully in-range callback
+  failures; retain the native 32-bit payload-size boundary and compiled
+  scanner, sanitizer, production HWP corpus, and Sonic1 qualification as
+  release gates.

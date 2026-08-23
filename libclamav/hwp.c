@@ -315,7 +315,7 @@ cl_error_t cli_scanhwpole2(cli_ctx *ctx)
 
     if (map->len < sizeof(usize)) {
         cli_mark_scan_incomplete(ctx, "HWPOLE2 header is truncated");
-        return CL_EREAD;
+        return CL_EPARSE;
     }
 
     /* The wrapper's payload-size field is only 32 bits. Do not narrow a
@@ -330,10 +330,14 @@ cl_error_t cli_scanhwpole2(cli_ctx *ctx)
 
     asize = (uint32_t)payload_size;
 
-    if (fmap_readn(map, &usize, 0, sizeof(usize)) != sizeof(usize)) {
-        cli_errmsg("HWPOLE2: Failed to read uncompressed ole2 filesize\n");
-        cli_mark_scan_incomplete(ctx, "HWPOLE2 size prefix could not be read completely");
-        return CL_EREAD;
+    {
+        size_t nread = fmap_readn_full(map, &usize, 0, sizeof(usize));
+
+        if (nread != sizeof(usize)) {
+            cli_errmsg("HWPOLE2: Failed to read uncompressed ole2 filesize\n");
+            cli_mark_scan_incomplete(ctx, "HWPOLE2 size prefix could not be read completely");
+            return nread == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+        }
     }
 
     if (usize != asize) {

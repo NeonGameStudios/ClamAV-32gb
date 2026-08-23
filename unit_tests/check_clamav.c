@@ -9019,6 +9019,48 @@ START_TEST(test_hwpole2_declared_size_mismatch_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwpole2_truncated_prefix_is_parse_error)
+{
+    static const uint8_t hwpole2_data[sizeof(uint32_t) - 1U] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(hwpole2_data, sizeof(hwpole2_data));
+    ck_assert_ptr_nonnull(map);
+    map->need = fmap_readn_full_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanhwpole2(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWPOLE2 header is truncated");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_hwpole2_prefix_read_failure_is_fail_visible)
+{
+    static const uint8_t hwpole2_data[sizeof(uint32_t)] = {0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(hwpole2_data, sizeof(hwpole2_data));
+    ck_assert_ptr_nonnull(map);
+    map->need = fmap_readn_full_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scanhwpole2(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWPOLE2 size prefix could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwpml_truncated_document_is_fail_visible)
 {
     static const uint8_t malformed_hwpml[] =
@@ -21740,6 +21782,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_fmap_ffi_layout);
     tcase_add_test(tc_cl, test_format_width_limits_are_fail_visible);
     tcase_add_test(tc_cl, test_hwpole2_declared_size_mismatch_is_fail_visible);
+    tcase_add_test(tc_cl, test_hwpole2_truncated_prefix_is_parse_error);
+    tcase_add_test(tc_cl, test_hwpole2_prefix_read_failure_is_fail_visible);
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
