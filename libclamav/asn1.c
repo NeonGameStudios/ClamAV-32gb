@@ -1567,7 +1567,11 @@ static cl_error_t asn1_parse_mscat(struct cl_engine *engine, fmap_t *map, size_t
                     dsize = 1;
                     break;
                 } else if (ASN1_GET_X509_CERT_ERROR == result) {
-                    cli_dbgmsg("asn1_parse_mscat: skipping x509 certificate with errors\n");
+                    cli_dbgmsg("asn1_parse_mscat: embedded x509 certificate could not be parsed completely\n");
+                    if (ctx != NULL)
+                        cli_mark_scan_incomplete(ctx, "Authenticode embedded certificate could not be parsed completely");
+                    dsize = 1;
+                    break;
                 }
             }
             if (dsize) {

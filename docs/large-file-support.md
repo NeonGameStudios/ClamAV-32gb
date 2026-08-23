@@ -1379,6 +1379,9 @@ or waive them.
   section-signature hashes use the same bounded reader, and overlay offsets
   and lengths stay native-width until the fixed 32-bit bytecode metadata ABI;
   an unrepresentable bytecode bridge is marked incomplete.
+- Authenticode certificate parsing no longer skips a confirmed embedded X.509
+  certificate after an ASN.1/read failure. The certificate walk terminates with
+  sticky incomplete state before catalog trust can proceed.
 - ZIP raw local-header catalogue coordinates and OOXML search results now use
   `size_t`, so large maps are not truncated before raw-header indexing. ZIP64
   central-directory placement is parsed with checked 64-bit offsets and is

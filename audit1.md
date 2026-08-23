@@ -5896,6 +5896,13 @@ focused callback-backed parser regression covers both the initial in-range
 read failure and a post-parser hash-container read failure on the signed PE
 fixture; compiled PE corpus, sanitizer, and Sonic1 qualification remain open.
 
+Confirmed embedded X.509 certificate parse errors now terminate the
+Authenticode certificate walk as incomplete instead of being skipped after the
+certificate cursor advances. This keeps malformed or callback-failed embedded
+certificate inspection from reaching external catalog trust; the existing
+initial and post-container callback regressions remain the available compiled
+evidence.
+
 ## FSG and UPX confirmed-read failure classification — 2026-08-23
 
 Legacy FSG source/support windows and the UPX compressed-section window could
