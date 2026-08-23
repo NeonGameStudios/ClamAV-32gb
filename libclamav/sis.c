@@ -332,7 +332,7 @@ cl_error_t cli_scansis(cli_ctx *ctx)
         cli_dbgmsg("SIS: Extracting files to %s\n", tmpd);
 
     {
-        size_t nread = fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS);
+        size_t nread = map->len < SIZEOF_HEADER_UUIDS ? 0 : fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS);
 
         if (nread != SIZEOF_HEADER_UUIDS) {
             cl_error_t read_status = sis_read_failure(ctx, nread,

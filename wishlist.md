@@ -1359,3 +1359,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   and `CL_EREAD` for fully in-range callback failures; retain compiled
   scanner, sanitizer, production document-corpus, and Sonic1 qualification as
   release gates.
+
+## SIS fixed-header truncation classification — 2026-08-22
+
+- Preflight the fixed 16-byte SIS UID header before callback admission,
+  preserving parse results for truncated packages and `CL_EREAD` for fully
+  in-range header callback failures; retain compiled scanner, sanitizer, SIS
+  corpus, and Sonic1 qualification as release gates.

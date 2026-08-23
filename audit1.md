@@ -5319,3 +5319,12 @@ callback would fail on its available prefix; a fully in-range callback failure
 remains `CL_EREAD`. A focused document-info regression covers the boundary.
 Compiled scanner, sanitizer, production document-corpus, and Sonic1
 qualification remain open.
+
+## SIS fixed-header truncation classification — 2026-08-22
+
+SIS fixed 16-byte UID headers now preflight the complete range before invoking
+the fmap callback. A truncated package therefore remains a parse/incomplete
+result even when an injected callback would fail on its available prefix;
+fully in-range header callback failures remain `CL_EREAD`. A focused direct
+parser regression covers the boundary. Compiled scanner, sanitizer, SIS
+corpus, and Sonic1 qualification remain open.
