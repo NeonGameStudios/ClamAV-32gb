@@ -1856,8 +1856,12 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
                 hwp3_debug("HWP3.x: Information Block[%llu]: %d: NAME: %s\n", infoloc, i, field);
 #endif
                 /* scanning macros - TODO - check numbers */
-                ret = cli_magic_scan_nested_fmap_type(map, *offset + (617 * i) + 288, 325, ctx,
-                                                      CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE);
+                /* Preserve every embedded-item result.  Replacing a prior
+                 * detection or parser failure with a later clean item would
+                 * let this information block report a clean layer. */
+                ret = cli_merge_scan_status(
+                    ret, cli_magic_scan_nested_fmap_type(map, *offset + (617 * i) + 288, 325, ctx,
+                                                         CL_TYPE_ANY, NULL, LAYER_ATTRIBUTES_NONE));
             }
             break;
         case 4: /* Presentation Information */

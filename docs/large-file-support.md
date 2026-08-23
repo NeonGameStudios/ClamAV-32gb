@@ -6278,3 +6278,12 @@ summary arithmetic independent from per-signature callback telemetry, avoiding
 underflow for multi-detection files while preserving each detection response.
 Compiled multi-match, protocol, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## HWP3 embedded-item status aggregation — 2026-08-23
+
+The HWP3 information-block loop now merges each hyperlink/media nested-scan
+status instead of replacing the prior result. An earlier detection or parser
+failure therefore cannot be hidden by a later clean item in the same block;
+the existing raw and later-item scanning behavior remains intact. Compiled
+HWP3 nested-detection coverage, sanitizer, and supported-build Sonic1
+qualification remain release gates.

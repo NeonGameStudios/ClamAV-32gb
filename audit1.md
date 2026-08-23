@@ -6570,3 +6570,14 @@ the daemon summary needs to count infected files rather than signatures.
 multiscan aggregation, preventing unsigned summary underflow while preserving
 per-signature callback output. Static source guards pass; compiled multi-match,
 protocol, sanitizer, and Sonic1 qualification remain release gates.
+
+## HWP3 embedded-item status aggregation — 2026-08-23
+
+The HWP3 information-block loop assigned each hyperlink/media nested-scan
+result directly to one shared status. A detection or parser failure in an
+earlier item could therefore be overwritten by a later clean item during the
+same block. The loop now merges every nested result with the shared scan-status
+precedence rules, preserving detections and fail-visible parser/resource
+failures while still visiting later items. Static source guards pass; compiled
+HWP3 corpus, nested-detection regression, sanitizer, and Sonic1 qualification
+remain release gates.
