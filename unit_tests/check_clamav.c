@@ -14075,6 +14075,26 @@ static const void *gif_version_read_failure(fmap_t *map, size_t at, size_t len, 
     return (const uint8_t *)map->data + at;
 }
 
+static const void *gif_truncated_screen_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == strlen("GIF89a"))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *png_truncated_chunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 8U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static const void *jpeg_required_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -20052,6 +20072,26 @@ START_TEST(test_gif_header_read_failures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_truncated_screen_descriptor_is_parse_error)
+{
+    static const uint8_t data[] = {'G', 'I', 'F', '8', '9', 'a', 0};
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = gif_truncated_screen_read_failure;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_gif_block_timeout_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -20153,6 +20193,29 @@ START_TEST(test_png_chunk_read_failure_is_fail_visible)
     ck_assert_int_eq(cli_parsepng(&ctx), CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "PNG chunk length could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_png_truncated_chunk_header_is_parse_error)
+{
+    static const uint8_t data[] = {
+        0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a,
+        0x00,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = png_truncated_chunk_read_failure;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_parsepng(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -21322,9 +21385,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_hfsplus_time_limit_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
+    tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
     tcase_add_test(tc_png, test_png_chunk_read_failure_is_fail_visible);
+    tcase_add_test(tc_png, test_png_truncated_chunk_header_is_parse_error);
     tcase_add_test(tc_png, test_png_chunk_timeout_is_fail_visible);
     tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);

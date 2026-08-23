@@ -5279,3 +5279,13 @@ result even when its available prefix would otherwise trigger an injected
 callback failure; fully in-range callback failures remain `CL_EREAD`. Focused
 regressions cover all three parser families. Compiled scanner, sanitizer,
 production-corpus, and Sonic1 qualification remain open.
+
+## GIF/PNG fixed-range truncation classification — 2026-08-22
+
+GIF fixed fields and PNG chunk-length/type/CRC fields now use bounded
+fixed-range readers before invoking fmap callbacks. A truncated field stays a
+parse/incomplete result even if its available prefix would otherwise trigger a
+callback failure; fully in-range callback failures remain `CL_EREAD`. Focused
+GIF screen-descriptor and PNG chunk-header regressions cover the boundary.
+Compiled scanner, sanitizer, production media-corpus, and Sonic1 qualification
+remain open.

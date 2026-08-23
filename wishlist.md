@@ -1327,4 +1327,11 @@ qualification.
 - Preflight fixed-size Mach-O, TIFF, and TNEF metadata reads before callback
   admission, preserving parse results for genuinely short structures and
   `CL_EREAD` for fully in-range callback failures; retain compiled scanner,
-  sanitizer, production-corpus, and Sonic1 qualification as release gates.
+sanitizer, production-corpus, and Sonic1 qualification as release gates.
+
+## GIF/PNG fixed-range truncation classification — 2026-08-22
+
+- Preflight fixed-size GIF fields and PNG chunk metadata before callback
+  admission, preserving parse results for truncated structures and `CL_EREAD`
+  for fully in-range callback failures; retain compiled scanner, sanitizer,
+  production media-corpus, and Sonic1 qualification as release gates.

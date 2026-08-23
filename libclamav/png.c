@@ -95,6 +95,17 @@ static cl_error_t png_read_error(cli_ctx *ctx, const char *reason)
     return CL_EREAD;
 }
 
+static size_t png_readn(fmap_t *map, void *dst, uint64_t offset, size_t length)
+{
+    /* A fixed PNG chunk field that extends past EOF is malformed input, not
+     * an operational callback failure. Preserve CL_EREAD only when the
+     * complete requested range is available to the fmap callback. */
+    if (map == NULL || offset > (uint64_t)map->len ||
+        length > map->len - (size_t)offset)
+        return 0;
+    return fmap_readn(map, dst, (size_t)offset, length);
+}
+
 cl_error_t cli_parsepng(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -136,7 +147,7 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
             goto scan_overlay;
         }
 
-        bytes_read = fmap_readn(map, (void *)&chunk_data_length_u32, offset, PNG_CHUNK_LENGTH_SIZE);
+        bytes_read = png_readn(map, (void *)&chunk_data_length_u32, offset, PNG_CHUNK_LENGTH_SIZE);
         if (bytes_read == (size_t)-1) {
             cli_dbgmsg("PNG: read failure while reading chunk length\n");
             status = png_read_error(ctx, "PNG chunk length could not be read completely");
@@ -148,7 +159,7 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
         chunk_data_length = be32_to_host(chunk_data_length_u32);
         offset += PNG_CHUNK_LENGTH_SIZE;
 
-        bytes_read = fmap_readn(map, chunk_type, offset, PNG_CHUNK_TYPE_SIZE);
+        bytes_read = png_readn(map, chunk_type, offset, PNG_CHUNK_TYPE_SIZE);
         if (bytes_read != PNG_CHUNK_TYPE_SIZE) {
             cli_dbgmsg("PNG: EOF while reading chunk type\n");
             status = (bytes_read == (size_t)-1)
@@ -312,7 +323,7 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
              *------*/
         }
 
-        bytes_read = fmap_readn(map, &chunk_crc, offset, PNG_CHUNK_CRC_SIZE);
+        bytes_read = png_readn(map, &chunk_crc, offset, PNG_CHUNK_CRC_SIZE);
         if (bytes_read != PNG_CHUNK_CRC_SIZE) {
             cli_dbgmsg("PNG: EOF while reading chunk crc\n");
             status = (bytes_read == (size_t)-1)

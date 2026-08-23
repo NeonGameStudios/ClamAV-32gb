@@ -190,6 +190,16 @@ static bool gif_range_within_map(const fmap_t *map, size_t offset, size_t length
     return map != NULL && offset <= map->len && length <= map->len - offset;
 }
 
+static size_t gif_readn(fmap_t *map, void *dst, size_t offset, size_t length)
+{
+    /* A fixed GIF structure that extends past EOF is malformed input, not an
+     * operational callback failure. Preserve CL_EREAD only when the complete
+     * requested range is available to the fmap callback. */
+    if (!gif_range_within_map(map, offset, length))
+        return 0;
+    return fmap_readn(map, dst, offset, length);
+}
+
 cl_error_t cli_parsegif(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -240,7 +250,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
         goto scan_overlay;
     }
     {
-        size_t bytes_read = fmap_readn(map, &version, offset, strlen("89a"));
+        size_t bytes_read = gif_readn(map, &version, offset, strlen("89a"));
         if (bytes_read != strlen("89a")) {
             cli_dbgmsg("GIF: Can't read GIF format version completely\n");
             status      = gif_read_status(ctx, bytes_read, strlen("89a"), "Heuristics.Broken.Media.GIF.TruncatedVersion");
@@ -257,7 +267,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
      * Read the Logical Screen Descriptor
      */
     {
-        size_t bytes_read = fmap_readn(map, &screen_desc, offset, sizeof(screen_desc));
+        size_t bytes_read = gif_readn(map, &screen_desc, offset, sizeof(screen_desc));
         if (bytes_read != sizeof(screen_desc)) {
             cli_errmsg("GIF: Can't read logical screen description, file truncated?\n");
             status      = gif_read_status(ctx, bytes_read, sizeof(screen_desc), "Heuristics.Broken.Media.GIF.TruncatedScreenDescriptor");
@@ -299,7 +309,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
          * Get the block label
          */
         {
-            size_t bytes_read = fmap_readn(map, &block_label, offset, sizeof(block_label));
+            size_t bytes_read = gif_readn(map, &block_label, offset, sizeof(block_label));
             if (bytes_read != sizeof(block_label)) {
                 if (have_image_data) {
                     cli_errmsg("GIF: Missing GIF trailer, file inspection is incomplete.\n");
@@ -328,7 +338,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                 cli_dbgmsg("GIF: Extension introducer:\n");
 
                 {
-                    size_t bytes_read = fmap_readn(map, &extension_label, offset, sizeof(extension_label));
+                    size_t bytes_read = gif_readn(map, &extension_label, offset, sizeof(extension_label));
                     if (bytes_read != sizeof(extension_label)) {
                         cli_errmsg("GIF: Failed to read the extension block label, file truncated?\n");
                         status      = gif_read_status(ctx, bytes_read, sizeof(extension_label), "Heuristics.Broken.Media.GIF.TruncatedExtension");
@@ -344,7 +354,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                     /* The size of a graphic control extension block is fixed. */
                     struct gif_graphic_control_extension graphic_control_extension;
                     {
-                        size_t bytes_read = fmap_readn(map, &graphic_control_extension, offset, sizeof(graphic_control_extension));
+                        size_t bytes_read = gif_readn(map, &graphic_control_extension, offset, sizeof(graphic_control_extension));
                         if (bytes_read != sizeof(graphic_control_extension)) {
                             cli_errmsg("GIF: EOF in the graphic control extension, file truncated?\n");
                             status      = gif_read_status(ctx, bytes_read, sizeof(graphic_control_extension), "Heuristics.Broken.Media.GIF.TruncatedGraphicControlExtension");
@@ -381,7 +391,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                          */
                         uint8_t extension_block_size = 0;
                         {
-                            size_t bytes_read = fmap_readn(map, &extension_block_size, offset, sizeof(extension_block_size));
+                            size_t bytes_read = gif_readn(map, &extension_block_size, offset, sizeof(extension_block_size));
                             if (bytes_read != sizeof(extension_block_size)) {
                                 cli_errmsg("GIF: EOF while attempting to read the block size for an extension, file truncated?\n");
                                 status      = gif_read_status(ctx, bytes_read, sizeof(extension_block_size), "Heuristics.Broken.Media.GIF.TruncatedExtension");
@@ -414,7 +424,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
 
                 cli_dbgmsg("GIF: Found an image descriptor.\n");
                 {
-                    size_t bytes_read = fmap_readn(map, &image_desc, offset, sizeof(image_desc));
+                    size_t bytes_read = gif_readn(map, &image_desc, offset, sizeof(image_desc));
                     if (bytes_read != sizeof(image_desc)) {
                         cli_errmsg("GIF: Can't read image descriptor, file truncated?\n");
                         status      = gif_read_status(ctx, bytes_read, sizeof(image_desc), "Heuristics.Broken.Media.GIF.TruncatedImageDescriptor");
@@ -467,7 +477,7 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
                      */
                     uint8_t image_data_block_size = 0;
                     {
-                        size_t bytes_read = fmap_readn(map, &image_data_block_size, offset, sizeof(image_data_block_size));
+                        size_t bytes_read = gif_readn(map, &image_data_block_size, offset, sizeof(image_data_block_size));
                         if (bytes_read != sizeof(image_data_block_size)) {
                             cli_errmsg("GIF: EOF while attempting to read the block size for an image data block, file truncated?\n");
                             status      = gif_read_status(ctx, bytes_read, sizeof(image_data_block_size), "Heuristics.Broken.Media.GIF.TruncatedImageDataBlock");
