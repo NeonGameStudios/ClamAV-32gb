@@ -6339,3 +6339,13 @@ loads a non-matching signature to force the root raw pass and verifies through
 the structured report that matcher bytes exceed the root size after the
 normalized views are scanned. Full HTML corpus, sanitizer, and supported-build
 Sonic1 qualification remain release gates.
+
+## Script normalized-view matcher-work accounting — 2026-08-23
+
+Script normalization retains its generated representation in a file-backed
+fmap and sends that normalized view through the regular matcher path. A
+compiled `cl_scanmap_ex2` regression loads a non-matching signature to force
+the root raw pass and verifies through the structured report that matcher
+bytes exceed the root size after the normalized script is scanned. Full script
+corpus, sanitizer, and supported-build Sonic1 qualification remain release
+gates.

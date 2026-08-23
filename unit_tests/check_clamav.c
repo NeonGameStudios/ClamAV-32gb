@@ -2804,6 +2804,54 @@ START_TEST(test_html_normalized_view_uses_matcher_work_budget)
 }
 END_TEST
 
+START_TEST(test_script_normalized_view_uses_matcher_work_budget)
+{
+    static const unsigned char data[] = "var marker = 1;\n";
+    const char *signature = SRCDIR PATHSEP "input" PATHSEP "other_sigs" PATHSEP
+                            "Clamav-Unit-Test-Signature.hdb";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_STRONG_INDICATOR;
+    const char *last_alert = "stale";
+    uint64_t scanned       = UINT64_MAX;
+    unsigned int sigs      = 0;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_load(signature, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1);
+
+    /* The loaded non-matching signature forces the root raw pass. A matcher
+     * total greater than the root size therefore proves that the file-backed
+     * normalized script was charged to the shared MaxMatcherWork budget. */
+    engine->maxscriptnormalize = 1024;
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+
+    ret = cl_scanmap_ex2(map, NULL, &verdict, &last_alert, &scanned,
+                         engine, &options, NULL, NULL, NULL, NULL,
+                         "CL_TYPE_SCRIPT", NULL, &report);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_ge(metrics.matcher_bytes, (uint64_t)sizeof(data));
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_html_notags_cap_is_fail_visible)
 {
     struct cl_engine *engine;
@@ -25842,6 +25890,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_html_utf16_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_html_normalize_cap_does_not_skip_raw_matching);
     tcase_add_test(tc_cl, test_html_normalized_view_uses_matcher_work_budget);
+    tcase_add_test(tc_cl, test_script_normalized_view_uses_matcher_work_budget);
     tcase_add_test(tc_cl, test_html_notags_cap_is_fail_visible);
     tcase_add_test(tc_cl, test_html_notags_cap_uses_generated_size);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
