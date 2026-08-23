@@ -230,6 +230,7 @@ for provenance_script in \
     largefile_runtime_evidence_check.sh \
     largefile_host_preflight.sh \
     largefile_boundary_corpus.sh \
+    largefile_bigtiff_fixture.py \
     largefile_poc.sh \
     largefile_source_manifest.sh; do
     if [ ! -s "$out/provenance/$provenance_script" ]; then
@@ -246,6 +247,51 @@ grep -Fx 'runtime_gate=pass' "$metadata" >/dev/null 2>&1 || {
     echo 'runtime gate does not have an explicit pass marker' >&2
     exit 1
 }
+grep -Fx 'bigtiff_sparse_fixture=pass size=4294967368 sha256=06b8d598efcbad2fe8cbaedb41c74ef3dcf442825f781cb919eace3ff3f85c1d' "$metadata" >/dev/null 2>&1 || {
+    echo 'sparse BigTIFF runtime fixture did not pass with the bound size and hash' >&2
+    exit 1
+}
+for bigtiff_evidence in \
+    bigtiff-ifd-over-4g-fixture.log \
+    bigtiff-ifd-over-4g.type \
+    bigtiff-ifd-over-4g.log; do
+    if [ ! -s "$out/$bigtiff_evidence" ]; then
+        echo "sparse BigTIFF evidence is missing: $bigtiff_evidence" >&2
+        exit 1
+    fi
+done
+grep -Fx 'first_ifd_offset=4294967312' "$out/bigtiff-ifd-over-4g-fixture.log" >/dev/null 2>&1 || {
+    echo 'sparse BigTIFF generator evidence has the wrong first IFD coordinate' >&2
+    exit 1
+}
+grep -Fx 'external_value_offset=4294967352' "$out/bigtiff-ifd-over-4g-fixture.log" >/dev/null 2>&1 || {
+    echo 'sparse BigTIFF generator evidence has the wrong LONG8 value coordinate' >&2
+    exit 1
+}
+grep -Fx 'file_size=4294967368' "$out/bigtiff-ifd-over-4g-fixture.log" >/dev/null 2>&1 || {
+    echo 'sparse BigTIFF generator evidence has the wrong logical size' >&2
+    exit 1
+}
+grep -F 'Big TIFF' "$out/bigtiff-ifd-over-4g.type" >/dev/null 2>&1 || {
+    echo 'sparse BigTIFF fixture was not independently recognized as BigTIFF' >&2
+    exit 1
+}
+grep -F 'cli_parsetiff: little-endian BigTIFF file' "$out/bigtiff-ifd-over-4g.log" >/dev/null 2>&1 || {
+    echo 'release scanner did not enter the BigTIFF parser' >&2
+    exit 1
+}
+grep -F 'cli_parsetiff: first IFD located @ offset 4294967312' "$out/bigtiff-ifd-over-4g.log" >/dev/null 2>&1 || {
+    echo 'release scanner did not preserve the BigTIFF IFD coordinate above 4 GiB' >&2
+    exit 1
+}
+grep -F 'cli_parsetiff: examined 1 IFD(s)' "$out/bigtiff-ifd-over-4g.log" >/dev/null 2>&1 || {
+    echo 'release scanner did not complete BigTIFF IFD traversal' >&2
+    exit 1
+}
+if grep -F 'UnsupportedBigTIFF' "$out/bigtiff-ifd-over-4g.log" >/dev/null 2>&1; then
+    echo 'release scanner still reports BigTIFF as unsupported' >&2
+    exit 1
+fi
 grep -E '^memory_total_kb=[1-9][0-9]*$' "$host_preflight" >/dev/null 2>&1 || {
     echo 'host preflight does not record total memory' >&2
     exit 1
@@ -946,6 +992,33 @@ if [ "$require_sanitizer" = yes ]; then
         echo 'sanitizer gate did not pass' >&2
         exit 1
     }
+    grep -Fx 'bigtiff_sparse_sanitizer=pass' "$metadata" >/dev/null 2>&1 || {
+        echo 'sanitizer BigTIFF gate did not pass' >&2
+        exit 1
+    }
+    if [ ! -s "$out/sanitizer/bigtiff-ifd-over-4g.log" ]; then
+        echo 'sanitizer BigTIFF parser evidence is missing' >&2
+        exit 1
+    fi
+    grep -F 'cli_parsetiff: little-endian BigTIFF file' \
+        "$out/sanitizer/bigtiff-ifd-over-4g.log" >/dev/null 2>&1 || {
+        echo 'sanitizer scanner did not enter the BigTIFF parser' >&2
+        exit 1
+    }
+    grep -F 'cli_parsetiff: first IFD located @ offset 4294967312' \
+        "$out/sanitizer/bigtiff-ifd-over-4g.log" >/dev/null 2>&1 || {
+        echo 'sanitizer scanner did not preserve the BigTIFF IFD coordinate above 4 GiB' >&2
+        exit 1
+    }
+    grep -F 'cli_parsetiff: examined 1 IFD(s)' \
+        "$out/sanitizer/bigtiff-ifd-over-4g.log" >/dev/null 2>&1 || {
+        echo 'sanitizer scanner did not complete BigTIFF IFD traversal' >&2
+        exit 1
+    }
+    if grep -F 'UnsupportedBigTIFF' "$out/sanitizer/bigtiff-ifd-over-4g.log" >/dev/null 2>&1; then
+        echo 'sanitizer scanner still reports BigTIFF as unsupported' >&2
+        exit 1
+    fi
     if grep -REiq 'AddressSanitizer|UndefinedBehaviorSanitizer|runtime error|SUMMARY:' "$out/sanitizer" >/dev/null 2>&1; then
         echo 'sanitizer evidence contains a diagnostic' >&2
         exit 1
@@ -953,6 +1026,10 @@ if [ "$require_sanitizer" = yes ]; then
 else
     grep -E 'sanitizer=(pass|not-required)' "$metadata" >/dev/null 2>&1 || {
         echo 'ordinary evidence has no sanitizer disposition' >&2
+        exit 1
+    }
+    grep -E '^bigtiff_sparse_sanitizer=(pass|not-required)$' "$metadata" >/dev/null 2>&1 || {
+        echo 'ordinary evidence has no BigTIFF sanitizer disposition' >&2
         exit 1
     }
 fi

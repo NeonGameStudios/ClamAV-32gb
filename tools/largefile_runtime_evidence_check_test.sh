@@ -77,6 +77,7 @@ for provenance_script in \
     largefile_runtime_evidence_check.sh \
     largefile_host_preflight.sh \
     largefile_boundary_corpus.sh \
+    largefile_bigtiff_fixture.py \
     largefile_poc.sh \
     largefile_source_manifest.sh; do
     printf 'synthetic provenance for %s\n' "$provenance_script" > "$out/provenance/$provenance_script"
@@ -194,6 +195,8 @@ printf '                 U __asan_init\n' > "$out/provenance/rust-sanitizer-symb
     printf 'policy_32g_plus_one_stdin=pass\n'
     printf 'policy_32g_edge_stdin=pass\n'
     printf 'cancellation=pass status=124\n'
+    printf 'bigtiff_sparse_fixture=pass size=4294967368 sha256=06b8d598efcbad2fe8cbaedb41c74ef3dcf442825f781cb919eace3ff3f85c1d\n'
+    printf 'bigtiff_sparse_sanitizer=pass\n'
     printf 'sanitizer=pass\n'
     printf 'concurrency_1=pass rss_sum_kb=1\n'
     printf 'concurrency_2=pass rss_sum_kb=2\n'
@@ -219,6 +222,22 @@ printf 'stdin exceeds MaxFileSize\n' > "$out/32g-plus-one-stdin.log"
 } > "$out/32g-edge-stdin.log"
 printf 'terminated by timeout\n' > "$out/cancellation.log"
 printf 'sanitizer clean\n' > "$out/sanitizer/logs/clean.log"
+{
+    printf 'first_ifd_offset=4294967312\n'
+    printf 'external_value_offset=4294967352\n'
+    printf 'file_size=4294967368\n'
+} > "$out/bigtiff-ifd-over-4g-fixture.log"
+printf 'Big TIFF image data, little-endian\n' > "$out/bigtiff-ifd-over-4g.type"
+{
+    printf 'cli_parsetiff: little-endian BigTIFF file\n'
+    printf 'cli_parsetiff: first IFD located @ offset 4294967312\n'
+    printf 'cli_parsetiff: examined 1 IFD(s)\n'
+} > "$out/bigtiff-ifd-over-4g.log"
+{
+    printf 'cli_parsetiff: little-endian BigTIFF file\n'
+    printf 'cli_parsetiff: first IFD located @ offset 4294967312\n'
+    printf 'cli_parsetiff: examined 1 IFD(s)\n'
+} > "$out/sanitizer/bigtiff-ifd-over-4g.log"
 for level in 1 2 4; do
     worker=1
     while [ "$worker" -le "$level" ]; do
@@ -257,6 +276,24 @@ refresh_manifest()
 
 refresh_manifest
 "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
+
+cp "$out/build-identity.txt" "$out/build-identity.with-bigtiff"
+grep -v '^bigtiff_sparse_fixture=pass ' "$out/build-identity.with-bigtiff" > "$out/build-identity.txt"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted evidence without the bound sparse BigTIFF result' >&2
+    exit 1
+fi
+mv "$out/build-identity.with-bigtiff" "$out/build-identity.txt"
+
+cp "$out/bigtiff-ifd-over-4g.log" "$out/bigtiff-ifd-over-4g.good"
+printf 'Heuristics.Broken.Media.TIFF.UnsupportedBigTIFF\n' >> "$out/bigtiff-ifd-over-4g.log"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted a sparse fixture still reported as unsupported BigTIFF' >&2
+    exit 1
+fi
+mv "$out/bigtiff-ifd-over-4g.good" "$out/bigtiff-ifd-over-4g.log"
 
 cp "$out/provenance/repository-tree.txt" "$out/provenance/repository-tree.good"
 sed 's/synthetic.c$/different.c/' "$out/provenance/repository-tree.good" > "$out/provenance/repository-tree.txt"

@@ -432,6 +432,7 @@ for provenance_file in \
     largefile_runtime_evidence_check.sh \
     largefile_host_preflight.sh \
     largefile_boundary_corpus.sh \
+    largefile_bigtiff_fixture.py \
     largefile_poc.sh \
     largefile_source_manifest.sh; do
     cp "$root/tools/$provenance_file" "$provenance/$provenance_file"
@@ -868,6 +869,71 @@ else
     failures=$((failures + 1))
 fi
 
+# Exercise the production TIFF dispatcher with a sparse BigTIFF whose first
+# IFD and LONG8 value range are both above 4 GiB. The file remains only a few
+# allocated blocks, while its logical size forces the parser to preserve the
+# format's native 64-bit coordinates. Image fuzzy hashing is disabled for this
+# focused parser gate because that optional FFI retains a separately documented
+# contiguous-image boundary.
+bigtiff_fixture=$corpus/bigtiff-ifd-over-4g.tif
+bigtiff_fixture_log=$out/bigtiff-ifd-over-4g-fixture.log
+bigtiff_type_log=$out/bigtiff-ifd-over-4g.type
+bigtiff_scan_log=$out/bigtiff-ifd-over-4g.log
+bigtiff_status=0
+bigtiff_size=not-generated
+bigtiff_fixture_sha256=not-generated
+bigtiff_expected_size=4294967368
+bigtiff_expected_first_ifd=4294967312
+bigtiff_expected_sha256=06b8d598efcbad2fe8cbaedb41c74ef3dcf442825f781cb919eace3ff3f85c1d
+if ! python3 "$root/tools/largefile_bigtiff_fixture.py" "$bigtiff_fixture" > "$bigtiff_fixture_log" 2>&1; then
+    bigtiff_status=2
+fi
+if [ "$bigtiff_status" -eq 0 ]; then
+    if ! bigtiff_size=$(stat -c %s "$bigtiff_fixture"); then
+        bigtiff_status=2
+    fi
+    if ! file -b "$bigtiff_fixture" > "$bigtiff_type_log" 2>&1; then
+        bigtiff_status=2
+    fi
+    bigtiff_fixture_sha256=$(sha256sum "$bigtiff_fixture" | awk '{ print $1 }')
+fi
+if [ "$bigtiff_status" -eq 0 ] &&
+    [ "$bigtiff_size" = "$bigtiff_expected_size" ] &&
+    [ "$bigtiff_fixture_sha256" = "$bigtiff_expected_sha256" ] &&
+    grep -F 'Big TIFF' "$bigtiff_type_log" >/dev/null 2>&1; then
+    mkdir -p "$poc_out/tmp/bigtiff-over-4g"
+    "$runtime_clamscan" \
+        --database="$poc_out/db" \
+        --max-filesize=32G \
+        --max-scansize=64G \
+        --max-temporary-size=64G \
+        --max-contiguous-size=32G \
+        --pcre-max-filesize=32G \
+        --max-scantime="$max_scan_time_ms" \
+        --heuristic-alerts=yes \
+        --scan-image=yes \
+        --scan-image-fuzzy-hash=no \
+        --alert-broken-media=yes \
+        --debug \
+        --no-summary \
+        --tempdir="$poc_out/tmp/bigtiff-over-4g" \
+        "$bigtiff_fixture" > "$bigtiff_scan_log" 2>&1 || bigtiff_status=$?
+else
+    bigtiff_status=2
+fi
+if [ "$bigtiff_status" -eq 0 ] &&
+    grep -F 'cli_parsetiff: little-endian BigTIFF file' "$bigtiff_scan_log" >/dev/null 2>&1 &&
+    grep -F "cli_parsetiff: first IFD located @ offset $bigtiff_expected_first_ifd" "$bigtiff_scan_log" >/dev/null 2>&1 &&
+    grep -F 'cli_parsetiff: examined 1 IFD(s)' "$bigtiff_scan_log" >/dev/null 2>&1 &&
+    ! grep -F 'UnsupportedBigTIFF' "$bigtiff_scan_log" >/dev/null 2>&1; then
+    printf 'bigtiff_sparse_fixture=pass size=%s sha256=%s\n' \
+        "$bigtiff_size" "$bigtiff_fixture_sha256" >> "$metadata"
+else
+    printf 'bigtiff_sparse_fixture=fail status=%s size=%s sha256=%s\n' \
+        "$bigtiff_status" "$bigtiff_size" "$bigtiff_fixture_sha256" >> "$metadata"
+    failures=$((failures + 1))
+fi
+
 if [ "$run_cancellation" -eq 1 ]; then
     cancellation_log=$out/cancellation.log
     cancellation_status=0
@@ -1081,6 +1147,39 @@ if [ -n "$sanitizer_clamscan" ]; then
     UBSAN_OPTIONS=${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1} \
     LD_LIBRARY_PATH=$sanitizer_library_path \
         "$root/tools/largefile_poc.sh" "$runtime_sanitizer_clamscan" "$corpus" "$sanitizer_out" > "$out/sanitizer.log" 2>&1 || sanitizer_status=$?
+    sanitizer_bigtiff_status=0
+    sanitizer_bigtiff_log=$sanitizer_out/bigtiff-ifd-over-4g.log
+    mkdir -p "$sanitizer_out/tmp/bigtiff-over-4g"
+    CLAMAV_MAX_SCAN_TIME_MS=$sanitizer_max_scan_time_ms \
+    ASAN_OPTIONS=${ASAN_OPTIONS:-detect_leaks=1:halt_on_error=1} \
+    UBSAN_OPTIONS=${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1} \
+    LD_LIBRARY_PATH=$sanitizer_library_path \
+        "$runtime_sanitizer_clamscan" \
+        --database="$poc_out/db" \
+        --max-filesize=32G \
+        --max-scansize=64G \
+        --max-temporary-size=64G \
+        --max-contiguous-size=32G \
+        --pcre-max-filesize=32G \
+        --max-scantime="$sanitizer_max_scan_time_ms" \
+        --heuristic-alerts=yes \
+        --scan-image=yes \
+        --scan-image-fuzzy-hash=no \
+        --alert-broken-media=yes \
+        --debug \
+        --no-summary \
+        --tempdir="$sanitizer_out/tmp/bigtiff-over-4g" \
+        "$bigtiff_fixture" > "$sanitizer_bigtiff_log" 2>&1 || sanitizer_bigtiff_status=$?
+    if [ "$sanitizer_bigtiff_status" -eq 0 ] &&
+        grep -F 'cli_parsetiff: little-endian BigTIFF file' "$sanitizer_bigtiff_log" >/dev/null 2>&1 &&
+        grep -F "cli_parsetiff: first IFD located @ offset $bigtiff_expected_first_ifd" "$sanitizer_bigtiff_log" >/dev/null 2>&1 &&
+        grep -F 'cli_parsetiff: examined 1 IFD(s)' "$sanitizer_bigtiff_log" >/dev/null 2>&1 &&
+        ! grep -Eiq 'AddressSanitizer|UndefinedBehaviorSanitizer|runtime error|SUMMARY:|UnsupportedBigTIFF' "$sanitizer_bigtiff_log" >/dev/null 2>&1; then
+        printf 'bigtiff_sparse_sanitizer=pass\n' >> "$metadata"
+    else
+        printf 'bigtiff_sparse_sanitizer=fail status=%s\n' "$sanitizer_bigtiff_status" >> "$metadata"
+        sanitizer_status=1
+    fi
     if [ "$sanitizer_status" -eq 0 ] && ! grep -REiq 'AddressSanitizer|UndefinedBehaviorSanitizer|runtime error|SUMMARY:' "$sanitizer_out" >/dev/null 2>&1; then
         printf 'sanitizer=pass\n' >> "$metadata"
     else
@@ -1089,9 +1188,11 @@ if [ -n "$sanitizer_clamscan" ]; then
     fi
 else
     if [ "$require_sanitizer" -eq 1 ]; then
+        printf 'bigtiff_sparse_sanitizer=not-run\n' >> "$metadata"
         printf 'sanitizer=not-run (set CLAMAV_SANITIZER_CLAMSCAN)\n' >> "$metadata"
         failures=$((failures + 1))
     else
+        printf 'bigtiff_sparse_sanitizer=not-required\n' >> "$metadata"
         printf 'sanitizer=not-required\n' >> "$metadata"
     fi
 fi

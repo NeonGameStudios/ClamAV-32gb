@@ -6421,3 +6421,15 @@ parser normally and under ASan/UBSan; the 9,497-byte bundle SHA-256 is
 `aa2960126b3904732742e674ac16d06c219c7c359898cfd5eb0af5822b598090`.
 The layout follows the
 [libtiff BigTIFF design](https://libtiff.gitlab.io/libtiff/specification/bigtiff.html).
+
+The release runtime gate now creates a deterministic sparse BigTIFF with its
+first IFD at 4,294,967,312, an external LONG8 value at 4,294,967,352, and a
+logical size of 4,294,967,368 bytes. Its SHA-256 is
+`06b8d598efcbad2fe8cbaedb41c74ef3dcf442825f781cb919eace3ff3f85c1d`.
+Release and sanitizer scans must report entry into the BigTIFF parser, the
+exact above-4-GiB IFD coordinate, and completion of one IFD without an
+unsupported diagnostic. The post-run evidence checker independently binds the
+generator output, file type, size, hash, and parser logs; its acceptance and
+rejection controls pass locally. Sonic1 must still produce the bound release
+and sanitizer evidence, and the complete compiled TIFF corpus must pass,
+before BigTIFF is considered qualified.

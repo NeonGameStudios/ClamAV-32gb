@@ -2182,5 +2182,8 @@ and Sonic1 qualification as release gates.
   and IFD links, fixed 20-byte entries, and LONG8/SLONG8/IFD8 fields without
   retaining a directory or mapped value payload. Keep malformed extensions,
   count/size overflow, out-of-range values, callback failures, and deadlines
-  fail-visible. Retain compiled TIFF corpus and Sonic1 qualification as release
-  gates.
+  fail-visible. The release gate now binds a deterministic sparse
+  4,294,967,368-byte fixture, with its first IFD and external LONG8 value above
+  4 GiB, to exact release/sanitizer parser oracles and post-run verification.
+  Retain the complete compiled TIFF corpus and materialized Sonic1
+  qualification as release gates.

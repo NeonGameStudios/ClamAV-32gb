@@ -6848,3 +6848,15 @@ production-source corpus check, all nine TIFF files in libtiff's archived
 Motorola-endian, LONG/LONG8, tiled, long-strip, and IFD4/IFD8 SubIFD variants.
 The downloaded bundle is 9,497 bytes with SHA-256
 `aa2960126b3904732742e674ac16d06c219c7c359898cfd5eb0af5822b598090`.
+
+The release runtime gate now generates a deterministic sparse BigTIFF whose
+first IFD begins at byte 4,294,967,312 and whose external LONG8 value begins at
+byte 4,294,967,352. Its logical size is 4,294,967,368 bytes and its SHA-256 is
+`06b8d598efcbad2fe8cbaedb41c74ef3dcf442825f781cb919eace3ff3f85c1d`.
+Both release and sanitizer scanners must enter the BigTIFF parser, preserve the
+above-4-GiB IFD coordinate, complete one IFD, and avoid the retired unsupported
+classification. The post-run verifier binds those logs to the generator,
+independent file-type result, size, and hash; its positive and fail-closed
+control suite passes locally. The complete compiled TIFF corpus and
+materialized Sonic1 release/sanitizer evidence remain required before this
+parser family is qualified.
