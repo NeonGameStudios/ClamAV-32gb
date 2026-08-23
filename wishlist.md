@@ -28,6 +28,10 @@
   input cleanup; constant-table growth uses the same ceiling and rejects its
   terminal counter overflow. Add compiled malformed-loader and allocation
   fault-injection coverage.
+- Bytecode VM stack/global pointer-registration tables now use bounded growth
+  and stop execution with `CL_EMEM` when registration fails, rather than
+  continuing with a zero pointer identifier. Add compiled interpreter fault
+  injection and sanitizer coverage.
 - PDF, PE, ELF, Mach-O, and root-metadata bytecode hook-context allocation
   failures now mark required hook work incomplete before returning `CL_EMEM`;
   compiled hook fault injection, interpreter/JIT qualification, production

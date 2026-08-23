@@ -5165,3 +5165,17 @@ The source guards and non-clang regression gates remain the available local
 evidence. Compiled malformed-loader and allocation-fault coverage,
 interpreter/JIT qualification, sanitizer runs, and Sonic1 qualification
 remain open.
+
+## Bytecode VM pointer-registration allocation failures — 2026-08-22
+
+The interpreter's stack and global pointer-registration tables used unbounded
+`realloc` and ignored a failed registration at several call sites. A failed
+growth could therefore return a zero pointer identifier and let execution
+continue with an invalid pointer map. The tables now use bounded, checked
+growth, record allocation failure, and stop the VM with `CL_EMEM` before a
+failed result is written or consumed. Early failure cleanup also has
+initialized timing state for debug logging.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled interpreter fault injection, interpreter/JIT qualification,
+sanitizer runs, and Sonic1 qualification remain open.

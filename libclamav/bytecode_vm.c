@@ -30,6 +30,8 @@
 #include "bytecode_priv.h"
 #include "type_desc.h"
 #include "readdb.h"
+#include <limits.h>
+#include <stdint.h>
 #include <string.h>
 #ifndef _WIN32
 #include <sys/time.h>
@@ -541,7 +543,14 @@ static always_inline struct stack_entry *pop_stack(struct stack *stack,
             stop = CL_BREAK;                                                      \
             continue;                                                             \
         }                                                                         \
-        stackid = ptr_register_stack(&ptrinfos, values, 0, func->numBytes) >> 32; \
+        {                                                                         \
+            int64_t stackptr = ptr_register_stack(&ptrinfos, values, 0, func->numBytes); \
+            if (!stackptr) {                                                      \
+                stop = CL_EMEM;                                                   \
+                continue;                                                         \
+            }                                                                     \
+            stackid = (int)(stackptr >> 32);                                      \
+        }                                                                         \
         inst    = &bb->insts[bb_inst];                                            \
         break;                                                                    \
     }
@@ -559,7 +568,14 @@ static always_inline struct stack_entry *pop_stack(struct stack *stack,
             stop = CL_BREAK;                                                      \
             continue;                                                             \
         }                                                                         \
-        stackid = ptr_register_stack(&ptrinfos, values, 0, func->numBytes) >> 32; \
+        {                                                                         \
+            int64_t stackptr = ptr_register_stack(&ptrinfos, values, 0, func->numBytes); \
+            if (!stackptr) {                                                      \
+                stop = CL_EMEM;                                                   \
+                continue;                                                         \
+            }                                                                     \
+            stackid = (int)(stackptr >> 32);                                      \
+        }                                                                         \
         inst    = &bb->insts[bb_inst];                                            \
         break;                                                                    \
     }
@@ -573,6 +589,7 @@ struct ptr_infos {
     struct ptr_info *stack_infos;
     struct ptr_info *glob_infos;
     unsigned nstacks, nglobs;
+    bool allocation_failed;
 };
 
 static inline int64_t ptr_compose(int32_t id, uint32_t offset)
@@ -597,11 +614,19 @@ static inline int64_t ptr_register_stack(struct ptr_infos *infos,
                                          char *values,
                                          uint32_t off, uint32_t size)
 {
-    unsigned n              = infos->nstacks + 1;
-    struct ptr_info *sinfos = cli_safer_realloc(infos->stack_infos,
-                                                sizeof(*sinfos) * n);
-    if (!sinfos)
+    unsigned n;
+    struct ptr_info *sinfos;
+
+    if (infos->nstacks == UINT_MAX || (size_t)(infos->nstacks + 1) > SIZE_MAX / sizeof(*sinfos)) {
+        infos->allocation_failed = true;
         return 0;
+    }
+    n      = infos->nstacks + 1;
+    sinfos = cli_max_realloc(infos->stack_infos, sizeof(*sinfos) * n);
+    if (!sinfos) {
+        infos->allocation_failed = true;
+        return 0;
+    }
     infos->stack_infos = sinfos;
     infos->nstacks     = n;
     sinfos             = &sinfos[n - 1];
@@ -614,10 +639,20 @@ static inline int64_t ptr_register_glob_fixedid(struct ptr_infos *infos,
                                                 void *values, uint32_t size, unsigned n)
 {
     struct ptr_info *sinfos;
+    if (!n) {
+        infos->allocation_failed = true;
+        return 0;
+    }
     if (n > infos->nglobs) {
-        sinfos = cli_safer_realloc(infos->glob_infos, sizeof(*sinfos) * n);
-        if (!sinfos)
+        if ((size_t)n > SIZE_MAX / sizeof(*sinfos)) {
+            infos->allocation_failed = true;
             return 0;
+        }
+        sinfos = cli_max_realloc(infos->glob_infos, sizeof(*sinfos) * n);
+        if (!sinfos) {
+            infos->allocation_failed = true;
+            return 0;
+        }
         memset(sinfos + infos->nglobs, 0, (n - infos->nglobs) * sizeof(*sinfos));
         infos->glob_infos = sinfos;
         infos->nglobs     = n;
@@ -637,6 +672,10 @@ static inline int64_t ptr_register_glob(struct ptr_infos *infos,
 {
     if (!values)
         return 0;
+    if (infos->nglobs == UINT_MAX) {
+        infos->allocation_failed = true;
+        return 0;
+    }
     return ptr_register_glob_fixedid(infos, values, size, infos->nglobs + 1);
 }
 
@@ -732,6 +771,8 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
 
     memset(&ptrinfos, 0, sizeof(ptrinfos));
     memset(&stack, 0, sizeof(stack));
+    memset(&tv0, 0, sizeof(tv0));
+    memset(&tv1, 0, sizeof(tv1));
     for (i = 0; i < (size_t)cli_apicall_maxglobal - _FIRST_GLOBAL; i++) {
         void *apiptr;
         uint32_t size;
@@ -741,10 +782,16 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
             continue;
         apiptr = *apiglobal;
         size   = globaltypesize(g->type);
-        ptr_register_glob_fixedid(&ptrinfos, apiptr, size, g->globalid - _FIRST_GLOBAL + 1);
+        if (!ptr_register_glob_fixedid(&ptrinfos, apiptr, size, g->globalid - _FIRST_GLOBAL + 1)) {
+            stop = CL_EMEM;
+            goto done;
+        }
     }
-    ptr_register_glob_fixedid(&ptrinfos, bc->globalBytes, bc->numGlobalBytes,
-                              cli_apicall_maxglobal - _FIRST_GLOBAL + 2);
+    if (!ptr_register_glob_fixedid(&ptrinfos, bc->globalBytes, bc->numGlobalBytes,
+                                   cli_apicall_maxglobal - _FIRST_GLOBAL + 2)) {
+        stop = CL_EMEM;
+        goto done;
+    }
 
     gettimeofday(&tv0, NULL);
     timeout.tv_usec = tv0.tv_usec + ctx->bytecode_timeout * 1000;
@@ -934,6 +981,10 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
                             READ32(a, inst->u.ops.ops[0]);
                             resp  = cli_apicalls3[api->idx](ctx, a);
                             res64 = ptr_register_glob(&ptrinfos, resp, a);
+                            if (ptrinfos.allocation_failed) {
+                                stop = CL_EMEM;
+                                break;
+                            }
                             WRITE64(inst->dest, res64);
                             break;
                         }
@@ -962,6 +1013,10 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
                             READ32(arg2, inst->u.ops.ops[1]);
                             resp  = cli_apicalls6[api->idx](ctx, arg1, arg2);
                             res64 = ptr_register_glob(&ptrinfos, resp, arg2);
+                            if (ptrinfos.allocation_failed) {
+                                stop = CL_EMEM;
+                                break;
+                            }
                             WRITE64(inst->dest, res64);
                             break;
                         }
@@ -1109,7 +1164,14 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
                     }
                 }
                 func    = func2;
-                stackid = ptr_register_stack(&ptrinfos, values, 0, func->numBytes) >> 32;
+                {
+                    int64_t stackptr = ptr_register_stack(&ptrinfos, values, 0, func->numBytes);
+                    if (!stackptr) {
+                        stop = CL_EMEM;
+                        continue;
+                    }
+                    stackid = (int)(stackptr >> 32);
+                }
                 CHECK_GT(func->numBB, 0);
                 stop = jump(func, 0, &bb, &inst, &bb_inst);
                 stack_depth++;
@@ -1368,6 +1430,7 @@ cl_error_t cli_vm_execute(const struct cli_bc *bc, struct cli_bc_ctx *ctx, const
             CHECK_GT(bb->numInsts, bb_inst);
         }
     } while (stop == CL_SUCCESS);
+done:
     if (cli_debug_flag) {
         gettimeofday(&tv1, NULL);
         tv1.tv_sec -= tv0.tv_sec;
