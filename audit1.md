@@ -6281,3 +6281,15 @@ an incomplete scan without an actual storage failure. The spool now retries
 cleanup and reservation rollback for real failures. A focused Rust regression
 covers the retry classification; compiled short-write/fault injection,
 sanitizer, and parser-family qualification remain open.
+
+## Shared zero-byte temporary-output writes — 2026-08-23
+
+`cli_writen()` retried `EINTR` and handled ordinary short writes, but a
+zero-byte `write()` left its todo count unchanged and could spin forever. This
+is a fail-stop hazard for every disk-backed parser spool. It now returns the
+completed prefix and marks the caller's exact-byte check as failed, so
+partial/zero progress cannot be scanned or normalized as complete. The shared
+`cli_filecopy()` caller now also propagates source-read, short/zero-byte-write,
+and close failures instead of publishing a truncated copy as successful.
+Compiled zero-progress fault injection, sanitizer, and Sonic1 qualification
+remain open.

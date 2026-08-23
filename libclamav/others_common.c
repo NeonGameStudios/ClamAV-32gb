@@ -499,6 +499,11 @@ size_t cli_writen(int fd, const void *buff, size_t count)
             return (size_t)-1;
         }
 
+        if (retval == 0) {
+            cli_errmsg("cli_writen: write returned zero bytes\n");
+            return count - todo;
+        }
+
         if ((size_t)retval > todo) {
             break;
         } else {
@@ -519,6 +524,7 @@ int cli_filecopy(const char *src, const char *dest)
 #else
     char *buffer;
     int s, d;
+    int result = 0;
     size_t bytes;
 
     if ((s = open(src, O_RDONLY | O_BINARY)) == -1)
@@ -537,14 +543,23 @@ int cli_filecopy(const char *src, const char *dest)
 
     bytes = cli_readn(s, buffer, FILEBUFF);
     while ((bytes != (size_t)-1) && (bytes != 0)) {
-        cli_writen(d, buffer, bytes);
+        if (cli_writen(d, buffer, bytes) != bytes) {
+            result = -1;
+            break;
+        }
         bytes = cli_readn(s, buffer, FILEBUFF);
     }
+    if (bytes == (size_t)-1)
+        result = -1;
 
     free(buffer);
-    close(s);
+    if (close(s) != 0)
+        result = -1;
 
-    return close(d);
+    if (close(d) != 0)
+        result = -1;
+
+    return result;
 #endif
 }
 

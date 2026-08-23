@@ -3685,7 +3685,7 @@ fixed-width-integer	libclamav/others.h	711	    ret |= (int16_t)(((const char *)b
 fixed-width-integer	libclamav/others.h	715	static inline void cli_writeint32(void *offset, uint32_t value)
 fixed-width-integer	libclamav/others.h	747	void cli_set_match_offset(cli_ctx *ctx, uint64_t offset);
 fixed-width-integer	libclamav/others.h	809	cl_error_t cli_recursion_stack_push(cli_ctx *ctx, cl_fmap_t *map, cli_file_t type, bool is_new_buffer, uint32_t attributes);
-fixed-width-integer	libclamav/others_common.c	1063	    uint32_t depth           = 0;
+fixed-width-integer	libclamav/others_common.c	1078	    uint32_t depth           = 0;
 fixed-width-integer	libclamav/others_common.c	387	    if ((uint32_t)(*timep) > 0x7fffffff) {
 fixed-width-integer	libclamav/packlibs.c	216	static int mew_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
 fixed-width-integer	libclamav/packlibs.c	237	    uint32_t myeax_backbytes, myecx_backsize, oldback = 0;
@@ -11624,26 +11624,26 @@ native-width-integer	libclamav/others.h	97	     (size_t)(sb) + (size_t)(sb_size)
 native-width-integer	libclamav/others.h	976	static inline int cli_getpagesize(void)
 native-width-integer	libclamav/others.h	98	     (size_t)(sb) < (size_t)(bb) + (size_t)(bb_size))
 native-width-integer	libclamav/others.h	983	static inline int cli_getpagesize(void)
-native-width-integer	libclamav/others_common.c	1011	const char *cli_strerror(int errnum, char *buf, size_t len)
-native-width-integer	libclamav/others_common.c	1026	static char *cli_md5buff(const unsigned char *buffer, unsigned int len, unsigned char *dig)
-native-width-integer	libclamav/others_common.c	1030	    int i;
-native-width-integer	libclamav/others_common.c	1049	unsigned int cli_rndnum(unsigned int max)
-native-width-integer	libclamav/others_common.c	1058	    return 1 + (unsigned int)(max * (rand() / (1.0 + RAND_MAX)));
-native-width-integer	libclamav/others_common.c	1061	char *cli_sanitize_filepath(const char *filepath, size_t filepath_len, char **sanitized_filebase)
-native-width-integer	libclamav/others_common.c	1064	    size_t index             = 0;
-native-width-integer	libclamav/others_common.c	1065	    size_t sanitized_index   = 0;
-native-width-integer	libclamav/others_common.c	1217	    int i;
-native-width-integer	libclamav/others_common.c	1218	    size_t len;
-native-width-integer	libclamav/others_common.c	1280	    size_t len;
-native-width-integer	libclamav/others_common.c	1301	cl_error_t cli_newfilepathfd(const char *dir, char *fname, char **name, int *fd)
-native-width-integer	libclamav/others_common.c	1334	    size_t len;
-native-width-integer	libclamav/others_common.c	1363	cl_error_t cli_gentempfd(const char *dir, char **name, int *fd)
-native-width-integer	libclamav/others_common.c	1368	cl_error_t cli_gentempfd_with_prefix(const char *dir, const char *prefix, char **name, int *fd)
-native-width-integer	libclamav/others_common.c	1404	int cli_regcomp(regex_t *preg, const char *pattern, int cflags)
-native-width-integer	libclamav/others_common.c	1421	    size_t evaluated_filepath_len   = 0;
+native-width-integer	libclamav/others_common.c	1026	const char *cli_strerror(int errnum, char *buf, size_t len)
+native-width-integer	libclamav/others_common.c	1041	static char *cli_md5buff(const unsigned char *buffer, unsigned int len, unsigned char *dig)
+native-width-integer	libclamav/others_common.c	1045	    int i;
+native-width-integer	libclamav/others_common.c	1064	unsigned int cli_rndnum(unsigned int max)
+native-width-integer	libclamav/others_common.c	1073	    return 1 + (unsigned int)(max * (rand() / (1.0 + RAND_MAX)));
+native-width-integer	libclamav/others_common.c	1076	char *cli_sanitize_filepath(const char *filepath, size_t filepath_len, char **sanitized_filebase)
+native-width-integer	libclamav/others_common.c	1079	    size_t index             = 0;
+native-width-integer	libclamav/others_common.c	1080	    size_t sanitized_index   = 0;
+native-width-integer	libclamav/others_common.c	1232	    int i;
+native-width-integer	libclamav/others_common.c	1233	    size_t len;
+native-width-integer	libclamav/others_common.c	1295	    size_t len;
+native-width-integer	libclamav/others_common.c	1316	cl_error_t cli_newfilepathfd(const char *dir, char *fname, char **name, int *fd)
+native-width-integer	libclamav/others_common.c	1349	    size_t len;
+native-width-integer	libclamav/others_common.c	1378	cl_error_t cli_gentempfd(const char *dir, char **name, int *fd)
+native-width-integer	libclamav/others_common.c	1383	cl_error_t cli_gentempfd_with_prefix(const char *dir, const char *prefix, char **name, int *fd)
+native-width-integer	libclamav/others_common.c	1419	int cli_regcomp(regex_t *preg, const char *pattern, int cflags)
 native-width-integer	libclamav/others_common.c	143	    size_t len = sizeof(x) - 1;                           \
-native-width-integer	libclamav/others_common.c	1488	cl_error_t cli_get_filepath_from_filedesc(int desc, char **filepath)
-native-width-integer	libclamav/others_common.c	1497	    ssize_t linksz;
+native-width-integer	libclamav/others_common.c	1436	    size_t evaluated_filepath_len   = 0;
+native-width-integer	libclamav/others_common.c	1503	cl_error_t cli_get_filepath_from_filedesc(int desc, char **filepath)
+native-width-integer	libclamav/others_common.c	1512	    ssize_t linksz;
 native-width-integer	libclamav/others_common.c	191	size_t cli_eprintf(const char *str, ...)
 native-width-integer	libclamav/others_common.c	193	    size_t bytes_written = 0;
 native-width-integer	libclamav/others_common.c	204	int cli_matchregex(const char *str, const char *regex)
@@ -11673,28 +11673,30 @@ native-width-integer	libclamav/others_common.c	479	    ssize_t retval;
 native-width-integer	libclamav/others_common.c	480	    size_t todo;
 native-width-integer	libclamav/others_common.c	485	        return (size_t)-1;
 native-width-integer	libclamav/others_common.c	499	            return (size_t)-1;
-native-width-integer	libclamav/others_common.c	502	        if ((size_t)retval > todo) {
-native-width-integer	libclamav/others_common.c	514	int cli_filecopy(const char *src, const char *dest)
-native-width-integer	libclamav/others_common.c	521	    int s, d;
-native-width-integer	libclamav/others_common.c	522	    size_t bytes;
-native-width-integer	libclamav/others_common.c	539	    while ((bytes != (size_t)-1) && (bytes != 0)) {
-native-width-integer	libclamav/others_common.c	562	    unsigned int i;
-native-width-integer	libclamav/others_common.c	581	    long ino;   /* -1: inode not available */
-native-width-integer	libclamav/others_common.c	582	    int is_dir; /* 0 - no, 1 - yes */
-native-width-integer	libclamav/others_common.c	586	static int ftw_compare(const void *a, const void *b)
-native-width-integer	libclamav/others_common.c	590	    long diff                    = da->is_dir - db->is_dir;
-native-width-integer	libclamav/others_common.c	606	static inline int ft_skipped(enum filetype ft)
-native-width-integer	libclamav/others_common.c	612	static int get_filetype(const char *fname, int flags, int need_stat,
-native-width-integer	libclamav/others_common.c	615	    int stated = 0;
-native-width-integer	libclamav/others_common.c	683	static cl_error_t handle_filetype(const char *fname, int flags,
-native-width-integer	libclamav/others_common.c	684	                                  STATBUF *statbuf, int *stated, enum filetype *ft,
-native-width-integer	libclamav/others_common.c	725	static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk);
-native-width-integer	libclamav/others_common.c	726	static int handle_entry(struct dirent_data *entry, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk)
-native-width-integer	libclamav/others_common.c	735	cl_error_t cli_ftw(char *path, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk)
-native-width-integer	libclamav/others_common.c	741	    int stated                     = 0;
-native-width-integer	libclamav/others_common.c	829	static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk)
-native-width-integer	libclamav/others_common.c	833	    size_t i, entries_cnt = 0;
-native-width-integer	libclamav/others_common.c	848	            int stated = 0;
+native-width-integer	libclamav/others_common.c	507	        if ((size_t)retval > todo) {
+native-width-integer	libclamav/others_common.c	519	int cli_filecopy(const char *src, const char *dest)
+native-width-integer	libclamav/others_common.c	526	    int s, d;
+native-width-integer	libclamav/others_common.c	527	    int result = 0;
+native-width-integer	libclamav/others_common.c	528	    size_t bytes;
+native-width-integer	libclamav/others_common.c	545	    while ((bytes != (size_t)-1) && (bytes != 0)) {
+native-width-integer	libclamav/others_common.c	552	    if (bytes == (size_t)-1)
+native-width-integer	libclamav/others_common.c	577	    unsigned int i;
+native-width-integer	libclamav/others_common.c	596	    long ino;   /* -1: inode not available */
+native-width-integer	libclamav/others_common.c	597	    int is_dir; /* 0 - no, 1 - yes */
+native-width-integer	libclamav/others_common.c	601	static int ftw_compare(const void *a, const void *b)
+native-width-integer	libclamav/others_common.c	605	    long diff                    = da->is_dir - db->is_dir;
+native-width-integer	libclamav/others_common.c	621	static inline int ft_skipped(enum filetype ft)
+native-width-integer	libclamav/others_common.c	627	static int get_filetype(const char *fname, int flags, int need_stat,
+native-width-integer	libclamav/others_common.c	630	    int stated = 0;
+native-width-integer	libclamav/others_common.c	698	static cl_error_t handle_filetype(const char *fname, int flags,
+native-width-integer	libclamav/others_common.c	699	                                  STATBUF *statbuf, int *stated, enum filetype *ft,
+native-width-integer	libclamav/others_common.c	740	static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk);
+native-width-integer	libclamav/others_common.c	741	static int handle_entry(struct dirent_data *entry, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk)
+native-width-integer	libclamav/others_common.c	750	cl_error_t cli_ftw(char *path, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk)
+native-width-integer	libclamav/others_common.c	756	    int stated                     = 0;
+native-width-integer	libclamav/others_common.c	844	static cl_error_t cli_ftw_dir(const char *dirname, int flags, int maxdepth, cli_ftw_cb callback, struct cli_ftw_cbdata *data, cli_ftw_pathchk pathchk)
+native-width-integer	libclamav/others_common.c	848	    size_t i, entries_cnt = 0;
+native-width-integer	libclamav/others_common.c	863	            int stated = 0;
 native-width-integer	libclamav/packlibs.c	211	int cli_unfsg(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst)
 native-width-integer	libclamav/packlibs.c	216	static int mew_checktimelimit(cli_ctx *ctx, uint32_t *ticks)
 native-width-integer	libclamav/packlibs.c	234	int unmew_ctx(const char *source, char *dest, int ssize, int dsize, const char **endsrc, char **enddst, cli_ctx *ctx)
@@ -20058,12 +20060,12 @@ format-width	libclamav/others.c	3462	        snprintf(reason, reason_len, "Objec
 format-width	libclamav/others.c	3520	            snprintf(reason, reason_len, "Object %zu trusted by %s",
 format-width	libclamav/others.c	772	        cli_errmsg("%s: value must be between 0 and %u\n", name, (unsigned)UINT8_MAX);
 format-width	libclamav/others.c	811	                cli_warnmsg("MaxRecursion: the value of 0 is not allowed, using default: %u\n", CLI_DEFAULT_MAXRECLEVEL);
-format-width	libclamav/others_common.c	1438	        cli_errmsg("cli_get_filepath_from_filedesc: Failed to allocate %u bytes to store filename\n", dwRet + 1);
-format-width	libclamav/others_common.c	1506	    snprintf(link, sizeof(link), "/proc/self/fd/%u", desc);
-format-width	libclamav/others_common.c	1510	        cli_dbgmsg("cli_get_filepath_from_filedesc: Failed to resolve filename for descriptor %d (%s)\n", desc, link);
-format-width	libclamav/others_common.c	1536	        cli_dbgmsg("cli_get_filepath_from_filedesc: Failed to resolve filename for descriptor %d\n", desc);
-format-width	libclamav/others_common.c	1572	    cli_dbgmsg("cli_get_filepath_from_filedesc: File path for fd [%d] is: %s\n", desc, evaluated_filepath);
-format-width	libclamav/others_common.c	1612	        cli_warnmsg("Can't open file %s: %d\n", file_name, GetLastError());
+format-width	libclamav/others_common.c	1453	        cli_errmsg("cli_get_filepath_from_filedesc: Failed to allocate %u bytes to store filename\n", dwRet + 1);
+format-width	libclamav/others_common.c	1521	    snprintf(link, sizeof(link), "/proc/self/fd/%u", desc);
+format-width	libclamav/others_common.c	1525	        cli_dbgmsg("cli_get_filepath_from_filedesc: Failed to resolve filename for descriptor %d (%s)\n", desc, link);
+format-width	libclamav/others_common.c	1551	        cli_dbgmsg("cli_get_filepath_from_filedesc: Failed to resolve filename for descriptor %d\n", desc);
+format-width	libclamav/others_common.c	1587	    cli_dbgmsg("cli_get_filepath_from_filedesc: File path for fd [%d] is: %s\n", desc, evaluated_filepath);
+format-width	libclamav/others_common.c	1627	        cli_warnmsg("Can't open file %s: %d\n", file_name, GetLastError());
 format-width	libclamav/others_common.c	224	        cli_warnmsg("cli_max_malloc(): File or section is too large to scan (%zu bytes). For your safety, ClamAV limits how much memory an operation can allocate to %d bytes\n",
 format-width	libclamav/others_common.c	233	        cli_errmsg("cli_max_malloc(): Can't allocate memory (%zu bytes).\n", size);
 format-width	libclamav/others_common.c	247	        cli_warnmsg("cli_max_calloc(): File or section is too large to scan (%zu bytes). For your safety, ClamAV limits how much memory an operation can allocate to %d bytes\n",
@@ -27241,39 +27243,39 @@ offset-size-arithmetic	libclamav/others.h	98	     (size_t)(sb) < (size_t)(bb) + 
 offset-size-arithmetic	libclamav/others.h	988	#endif /* HAVE_GETPAGESIZE */
 offset-size-arithmetic	libclamav/others.h	989	#endif /* HAVE_SYSCONF_SC_PAGESIZE */
 offset-size-arithmetic	libclamav/others.h	990	#endif /* _WIN32 */
-offset-size-arithmetic	libclamav/others_common.c	1019	    buf[len - 1] = '\0'; /* just in case */
-offset-size-arithmetic	libclamav/others_common.c	1026	static char *cli_md5buff(const unsigned char *buffer, unsigned int len, unsigned char *dig)
-offset-size-arithmetic	libclamav/others_common.c	1061	char *cli_sanitize_filepath(const char *filepath, size_t filepath_len, char **sanitized_filebase)
-offset-size-arithmetic	libclamav/others_common.c	1076	    sanitized_filepath = cli_max_calloc(filepath_len + 1, sizeof(unsigned char));
-offset-size-arithmetic	libclamav/others_common.c	1119	        } else if (0 == strncmp(filepath + index, "/", strlen("/"))) {
-offset-size-arithmetic	libclamav/others_common.c	1124	            index += strlen("/");
-offset-size-arithmetic	libclamav/others_common.c	1126	        } else if (0 == strncmp(filepath + index, "./", strlen("./"))) {
-offset-size-arithmetic	libclamav/others_common.c	1131	            index += strlen("./");
-offset-size-arithmetic	libclamav/others_common.c	1133	        } else if (0 == strncmp(filepath + index, "../", strlen("../"))) {
-offset-size-arithmetic	libclamav/others_common.c	1139	                index += strlen("../");
-offset-size-arithmetic	libclamav/others_common.c	1143	                strncpy(sanitized_filepath + sanitized_index, filepath + index, strlen("../"));
-offset-size-arithmetic	libclamav/others_common.c	1144	                sanitized_index += strlen("../");
-offset-size-arithmetic	libclamav/others_common.c	1145	                index += strlen("../");
-offset-size-arithmetic	libclamav/others_common.c	1161	            next_pathsep = CLI_STRNSTR(filepath + index, "/", filepath_len - index);
-offset-size-arithmetic	libclamav/others_common.c	1165	            next_windows_pathsep = CLI_STRNSTR(filepath + index, "\\", filepath_len - index);
-offset-size-arithmetic	libclamav/others_common.c	1173	                /* No more path separators, copy the rest (filename) into the sanitized path */
-offset-size-arithmetic	libclamav/others_common.c	1174	                strncpy(sanitized_filepath + sanitized_index, filepath + index, filepath_len - index);
-offset-size-arithmetic	libclamav/others_common.c	1224	        len = strlen(sanitized_prefix_base) + strlen(".") + SHORT_HASH_LENGTH + 1; /* {prefix}.{SHORT_HASH_LENGTH}\0 */
-offset-size-arithmetic	libclamav/others_common.c	1226	        len = strlen("clamav-") + 48 + strlen(".tmp") + 1; /* clamav-{48}.tmp\0 */
-offset-size-arithmetic	libclamav/others_common.c	1263	        snprintf(fname, len, "%s.%.*s", sanitized_prefix_base, SHORT_HASH_LENGTH, tmp);
-offset-size-arithmetic	libclamav/others_common.c	1265	        snprintf(fname, len, "clamav-%s.tmp", tmp);
-offset-size-arithmetic	libclamav/others_common.c	1289	    len      = strlen(mdir) + strlen(PATHSEP) + strlen(fname) + 1; /* mdir/fname\0 */
-offset-size-arithmetic	libclamav/others_common.c	1344	    len      = strlen(mdir) + strlen(PATHSEP) + strlen(fname) + 1; /* mdir/fname\0 */
+offset-size-arithmetic	libclamav/others_common.c	1034	    buf[len - 1] = '\0'; /* just in case */
+offset-size-arithmetic	libclamav/others_common.c	1041	static char *cli_md5buff(const unsigned char *buffer, unsigned int len, unsigned char *dig)
+offset-size-arithmetic	libclamav/others_common.c	1076	char *cli_sanitize_filepath(const char *filepath, size_t filepath_len, char **sanitized_filebase)
+offset-size-arithmetic	libclamav/others_common.c	1091	    sanitized_filepath = cli_max_calloc(filepath_len + 1, sizeof(unsigned char));
+offset-size-arithmetic	libclamav/others_common.c	1134	        } else if (0 == strncmp(filepath + index, "/", strlen("/"))) {
+offset-size-arithmetic	libclamav/others_common.c	1139	            index += strlen("/");
+offset-size-arithmetic	libclamav/others_common.c	1141	        } else if (0 == strncmp(filepath + index, "./", strlen("./"))) {
+offset-size-arithmetic	libclamav/others_common.c	1146	            index += strlen("./");
+offset-size-arithmetic	libclamav/others_common.c	1148	        } else if (0 == strncmp(filepath + index, "../", strlen("../"))) {
+offset-size-arithmetic	libclamav/others_common.c	1154	                index += strlen("../");
+offset-size-arithmetic	libclamav/others_common.c	1158	                strncpy(sanitized_filepath + sanitized_index, filepath + index, strlen("../"));
+offset-size-arithmetic	libclamav/others_common.c	1159	                sanitized_index += strlen("../");
+offset-size-arithmetic	libclamav/others_common.c	1160	                index += strlen("../");
+offset-size-arithmetic	libclamav/others_common.c	1176	            next_pathsep = CLI_STRNSTR(filepath + index, "/", filepath_len - index);
+offset-size-arithmetic	libclamav/others_common.c	1180	            next_windows_pathsep = CLI_STRNSTR(filepath + index, "\\", filepath_len - index);
+offset-size-arithmetic	libclamav/others_common.c	1188	                /* No more path separators, copy the rest (filename) into the sanitized path */
+offset-size-arithmetic	libclamav/others_common.c	1189	                strncpy(sanitized_filepath + sanitized_index, filepath + index, filepath_len - index);
+offset-size-arithmetic	libclamav/others_common.c	1239	        len = strlen(sanitized_prefix_base) + strlen(".") + SHORT_HASH_LENGTH + 1; /* {prefix}.{SHORT_HASH_LENGTH}\0 */
+offset-size-arithmetic	libclamav/others_common.c	1241	        len = strlen("clamav-") + 48 + strlen(".tmp") + 1; /* clamav-{48}.tmp\0 */
+offset-size-arithmetic	libclamav/others_common.c	1278	        snprintf(fname, len, "%s.%.*s", sanitized_prefix_base, SHORT_HASH_LENGTH, tmp);
+offset-size-arithmetic	libclamav/others_common.c	1280	        snprintf(fname, len, "clamav-%s.tmp", tmp);
+offset-size-arithmetic	libclamav/others_common.c	1304	    len      = strlen(mdir) + strlen(PATHSEP) + strlen(fname) + 1; /* mdir/fname\0 */
+offset-size-arithmetic	libclamav/others_common.c	1359	    len      = strlen(mdir) + strlen(PATHSEP) + strlen(fname) + 1; /* mdir/fname\0 */
 offset-size-arithmetic	libclamav/others_common.c	143	    size_t len = sizeof(x) - 1;                           \
-offset-size-arithmetic	libclamav/others_common.c	1438	        cli_errmsg("cli_get_filepath_from_filedesc: Failed to allocate %u bytes to store filename\n", dwRet + 1);
-offset-size-arithmetic	libclamav/others_common.c	1453	            (wcslen(long_evaluated_filepathW)) * sizeof(WCHAR),
-offset-size-arithmetic	libclamav/others_common.c	1458	            cli_errmsg("cli_get_filepath_from_handle: Failed to convert UTF16_LE filename to UTF8\n", dwRet + 1);
-offset-size-arithmetic	libclamav/others_common.c	1464	            (char *)long_evaluated_filepathW + wcslen(L"\\\\?\\") * sizeof(WCHAR),
-offset-size-arithmetic	libclamav/others_common.c	1465	            (wcslen(long_evaluated_filepathW) - wcslen(L"\\\\?\\")) * sizeof(WCHAR),
+offset-size-arithmetic	libclamav/others_common.c	1453	        cli_errmsg("cli_get_filepath_from_filedesc: Failed to allocate %u bytes to store filename\n", dwRet + 1);
+offset-size-arithmetic	libclamav/others_common.c	1468	            (wcslen(long_evaluated_filepathW)) * sizeof(WCHAR),
 offset-size-arithmetic	libclamav/others_common.c	147	    vsnprintf(buff + len, sizeof(buff) - len, str, args); \
-offset-size-arithmetic	libclamav/others_common.c	1470	            cli_errmsg("cli_get_filepath_from_handle: Failed to convert UTF16_LE filename to UTF8\n", dwRet + 1);
-offset-size-arithmetic	libclamav/others_common.c	1506	    snprintf(link, sizeof(link), "/proc/self/fd/%u", desc);
-offset-size-arithmetic	libclamav/others_common.c	1507	    link[sizeof(link) - 1] = '\0';
+offset-size-arithmetic	libclamav/others_common.c	1473	            cli_errmsg("cli_get_filepath_from_handle: Failed to convert UTF16_LE filename to UTF8\n", dwRet + 1);
+offset-size-arithmetic	libclamav/others_common.c	1479	            (char *)long_evaluated_filepathW + wcslen(L"\\\\?\\") * sizeof(WCHAR),
+offset-size-arithmetic	libclamav/others_common.c	1480	            (wcslen(long_evaluated_filepathW) - wcslen(L"\\\\?\\")) * sizeof(WCHAR),
+offset-size-arithmetic	libclamav/others_common.c	1485	            cli_errmsg("cli_get_filepath_from_handle: Failed to convert UTF16_LE filename to UTF8\n", dwRet + 1);
+offset-size-arithmetic	libclamav/others_common.c	1521	    snprintf(link, sizeof(link), "/proc/self/fd/%u", desc);
+offset-size-arithmetic	libclamav/others_common.c	1522	    link[sizeof(link) - 1] = '\0';
 offset-size-arithmetic	libclamav/others_common.c	165	    msg_callback(CL_MSG_INFO_VERBOSE, buff, buff + len, ctx ? ctx->cb_ctx : NULL);
 offset-size-arithmetic	libclamav/others_common.c	168	/* intended for logging in rust modules */
 offset-size-arithmetic	libclamav/others_common.c	191	size_t cli_eprintf(const char *str, ...)
@@ -27289,18 +27291,19 @@ offset-size-arithmetic	libclamav/others_common.c	475	 * @return size_t   (size_t
 offset-size-arithmetic	libclamav/others_common.c	477	size_t cli_writen(int fd, const void *buff, size_t count)
 offset-size-arithmetic	libclamav/others_common.c	485	        return (size_t)-1;
 offset-size-arithmetic	libclamav/others_common.c	499	            return (size_t)-1;
-offset-size-arithmetic	libclamav/others_common.c	539	    while ((bytes != (size_t)-1) && (bytes != 0)) {
-offset-size-arithmetic	libclamav/others_common.c	556	#endif /* _WIN32 */
-offset-size-arithmetic	libclamav/others_common.c	557	#endif /* P_tmpdir */
-offset-size-arithmetic	libclamav/others_common.c	729	        return callback(entry->statbuf, entry->filename, entry->filename, visit_file, data);
-offset-size-arithmetic	libclamav/others_common.c	752	        pathend = path + strlen(path);
-offset-size-arithmetic	libclamav/others_common.c	753	        while (pathend > path && pathend[-1] == *PATHSEP) --pathend;
-offset-size-arithmetic	libclamav/others_common.c	782	        /* Allocate the filename for the callback function. TODO: this FTW code is spaghetti, refactor. */
-offset-size-arithmetic	libclamav/others_common.c	805	        /* Allocate the filename for the callback function within the handle_entry function. TODO: this FTW code is spaghetti, refactor. */
-offset-size-arithmetic	libclamav/others_common.c	892	            fname = (char *)cli_max_malloc(strlen(dirname) + strlen(dent->d_name) + 2);
-offset-size-arithmetic	libclamav/others_common.c	924	                statbufp = malloc(sizeof(*statbufp));
-offset-size-arithmetic	libclamav/others_common.c	942	            new_entries = cli_max_realloc(entries, entries_cnt * sizeof(*entries));
-offset-size-arithmetic	libclamav/others_common.c	978	            cli_qsort(entries, entries_cnt, sizeof(*entries), ftw_compare);
+offset-size-arithmetic	libclamav/others_common.c	545	    while ((bytes != (size_t)-1) && (bytes != 0)) {
+offset-size-arithmetic	libclamav/others_common.c	552	    if (bytes == (size_t)-1)
+offset-size-arithmetic	libclamav/others_common.c	571	#endif /* _WIN32 */
+offset-size-arithmetic	libclamav/others_common.c	572	#endif /* P_tmpdir */
+offset-size-arithmetic	libclamav/others_common.c	744	        return callback(entry->statbuf, entry->filename, entry->filename, visit_file, data);
+offset-size-arithmetic	libclamav/others_common.c	767	        pathend = path + strlen(path);
+offset-size-arithmetic	libclamav/others_common.c	768	        while (pathend > path && pathend[-1] == *PATHSEP) --pathend;
+offset-size-arithmetic	libclamav/others_common.c	797	        /* Allocate the filename for the callback function. TODO: this FTW code is spaghetti, refactor. */
+offset-size-arithmetic	libclamav/others_common.c	820	        /* Allocate the filename for the callback function within the handle_entry function. TODO: this FTW code is spaghetti, refactor. */
+offset-size-arithmetic	libclamav/others_common.c	907	            fname = (char *)cli_max_malloc(strlen(dirname) + strlen(dent->d_name) + 2);
+offset-size-arithmetic	libclamav/others_common.c	939	                statbufp = malloc(sizeof(*statbufp));
+offset-size-arithmetic	libclamav/others_common.c	957	            new_entries = cli_max_realloc(entries, entries_cnt * sizeof(*entries));
+offset-size-arithmetic	libclamav/others_common.c	993	            cli_qsort(entries, entries_cnt, sizeof(*entries), ftw_compare);
 offset-size-arithmetic	libclamav/packlibs.c	101	                    backsize++;
 offset-size-arithmetic	libclamav/packlibs.c	106	                        if ((oob = doubledl(&csrc, &mydl, source, ssize)) == -1)
 offset-size-arithmetic	libclamav/packlibs.c	122	                    backsize  = backsize * 2 + (backbytes & 1);

@@ -6066,3 +6066,13 @@ other write failures remain explicit incomplete output, and reservation
 rollback/cleanup behavior is unchanged. This protects LHA/LZH, ALZ, and
 OneNote materialization; compiled fault injection, sanitizer, and parser-family
 qualification remain release gates.
+
+## Shared zero-byte temporary-output writes — 2026-08-23
+
+The shared `cli_writen()` helper now treats a successful zero-byte `write()`
+as incomplete progress and returns the completed prefix instead of looping
+forever. Existing exact-length checks therefore fail closed for parser spools
+and normalized output; `cli_filecopy()` also propagates source-read,
+short/zero-byte-write, and close failures instead of publishing a truncated
+copy as successful. Compiled zero-progress fault injection, sanitizer, and
+Sonic1 qualification remain release gates.

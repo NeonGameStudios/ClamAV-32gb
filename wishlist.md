@@ -2004,3 +2004,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   wrong in-range descriptor as optional; keep read/range failures distinct and
   retain compiled UDF corpus, sanitizer, and Sonic1 qualification as release
   gates.
+
+## Shared zero-byte temporary-output writes — 2026-08-23
+
+- The shared `cli_writen()` helper now stops zero-byte write progress and
+  returns the completed prefix instead of spinning forever, and `cli_filecopy()`
+  propagates source-read, short/zero-byte-write, and close failures; add
+  compiled zero-progress/fault-injection coverage for all large
+  temporary-output paths.
