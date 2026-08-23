@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a minimal stored EA05 member for bounded-output regression tests."""
+"""Create minimal stored EA05 or EA06 members for bounded-output regression tests."""
 
 import struct
 import sys
@@ -38,6 +38,40 @@ class AutoItMT:
         value ^= (value & 0xFFFFDF8C) << 15
         value ^= value >> 18
         return (value >> 1) & 0xFF
+
+
+class AutoItLame:
+    def __init__(self, seed):
+        self.grp1 = []
+        for _ in range(17):
+            seed = (seed * 0x53A9B4FB) & 0xFFFFFFFF
+            seed = (1 - seed) & 0xFFFFFFFF
+            self.grp1.append(seed)
+        self.c0 = 0
+        self.c1 = 10
+        for _ in range(9):
+            self._fpusht()
+
+    @staticmethod
+    def _rol(value, shift):
+        return ((value << shift) | (value >> (32 - shift))) & 0xFFFFFFFF
+
+    def _fpusht(self):
+        rolled = (self._rol(self.grp1[self.c0], 9) + self._rol(self.grp1[self.c1], 13)) & 0xFFFFFFFF
+        self.grp1[self.c0] = rolled
+        self.c0 = 16 if self.c0 == 0 else self.c0 - 1
+        self.c1 = 16 if self.c1 == 0 else self.c1 - 1
+        bits = struct.pack("<II", (rolled << 20) & 0xFFFFFFFF, 0x3FF00000 | (rolled >> 12))
+        return struct.unpack("<d", bits)[0] - 1.0
+
+    def next_byte(self):
+        value = int(self._fpusht() * 256.0)
+        return value if value < 256 else 0xFF
+
+
+def lame_encrypt(payload, seed):
+    lame = AutoItLame(seed)
+    return bytes(value ^ lame.next_byte() for value in payload)
 
 
 def build_fixture(compressed):
@@ -96,8 +130,26 @@ def build_fixture(compressed):
     return bytes(result)
 
 
-if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3 and sys.argv[1] != "--compressed"):
-    raise SystemExit(f"usage: {sys.argv[0]} [--compressed] OUTPUT")
+def build_ea06_script_fixture():
+    script_magic = ">>>AUTOIT SCRIPT<<<".encode("utf-16le")
+    token_stream = struct.pack("<I", 1) + bytes([0x7F])
+    result = bytearray([0x36]) + bytes(16)
+    result += struct.pack("<II", 0x52CA436B, 19 ^ 0xADBC)
+    result += lame_encrypt(script_magic, 19 + 0xB33F)
+    result += struct.pack("<I", 0 ^ 0xF820)
+    metadata = bytearray(29)
+    metadata[0] = 0
+    struct.pack_into("<I", metadata, 1, len(token_stream) ^ 0x87BC)
+    result += metadata
+    result += lame_encrypt(token_stream, 0x2477)
+    return bytes(result)
+
+
+if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3 and sys.argv[1] not in ("--compressed", "--ea06-script")):
+    raise SystemExit(f"usage: {sys.argv[0]} [--compressed|--ea06-script] OUTPUT")
 
 with open(sys.argv[-1], "wb") as fixture:
-    fixture.write(build_fixture(len(sys.argv) == 3))
+    if len(sys.argv) == 3 and sys.argv[1] == "--ea06-script":
+        fixture.write(build_ea06_script_fixture())
+    else:
+        fixture.write(build_fixture(len(sys.argv) == 3))
