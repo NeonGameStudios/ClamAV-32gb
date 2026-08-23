@@ -5444,3 +5444,12 @@ failure remains `CL_EREAD`. Streaming MSO callback failures also preserve
 `CL_EUNPACK`. Focused regressions cover the prefix range classes. Compiled
 scanner, sanitizer, production OLE2/MSO corpus, and Sonic1 qualification
 remain open.
+
+## ARJ fixed-header read classification — 2026-08-23
+
+ARJ main and member fixed-header reads now preflight their complete ranges
+before invoking the fmap callback. A genuinely short header remains a format
+or parse failure, while a fully in-range callback failure remains `CL_EREAD`
+with an explicit incomplete reason. Focused main-header callback coverage
+guards the boundary. Compiled scanner, sanitizer, production ARJ corpus, and
+Sonic1 qualification remain open.

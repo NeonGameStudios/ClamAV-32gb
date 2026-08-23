@@ -85,6 +85,21 @@ static bool arj_range_within_map(const fmap_t *map, size_t offset, size_t length
     return map != NULL && offset <= map->len && length <= map->len - offset;
 }
 
+static cl_error_t arj_read_fixed_range(fmap_t *map, void *dst, size_t offset, size_t length)
+{
+    size_t bytes_read;
+
+    if (!arj_range_within_map(map, offset, length))
+        return CL_EFORMAT;
+
+    bytes_read = fmap_readn_full(map, dst, offset, length);
+    if (bytes_read == length)
+        return CL_SUCCESS;
+    if (bytes_read == (size_t)-1)
+        return CL_EREAD;
+    return CL_EFORMAT;
+}
+
 static const void *unarj_need_off_once_len(fmap_t *map, size_t offset, size_t length, size_t *length_out,
                                            cl_error_t *read_status)
 {
@@ -933,16 +948,17 @@ static cl_error_t is_arj_archive(arj_metadata_t *metadata)
     return CL_EFORMAT;
 }
 
-static bool arj_read_main_header(arj_metadata_t *metadata)
+static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
 {
     uint16_t header_size, count;
+    uint16_t count_wire;
     arj_main_hdr_t main_hdr;
     const char *filename = NULL;
     const char *comment  = NULL;
     struct text_norm_state fnstate, comstate;
     unsigned char *fnnorm  = NULL;
     unsigned char *comnorm = NULL;
-    bool ret               = true;
+    cl_error_t ret         = CL_SUCCESS;
 
     size_t filename_max_len = 0;
     size_t filename_len     = 0;
@@ -950,32 +966,32 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
     size_t comment_len      = 0;
     size_t orig_offset      = metadata->offset;
 
-    if (fmap_readn(metadata->map, &header_size, metadata->offset, 2) != 2)
-        return false;
+    ret = arj_read_fixed_range(metadata->map, &header_size, metadata->offset, sizeof(header_size));
+    if (ret != CL_SUCCESS)
+        goto done;
 
     metadata->offset += 2;
     header_size = le16_to_host(header_size);
     cli_dbgmsg("Header Size: %d\n", header_size);
     if (header_size == 0) {
         /* End of archive */
-        ret = false;
+        ret = CL_EFORMAT;
         goto done;
     }
     if (header_size > HEADERSIZE_MAX) {
         cli_dbgmsg("arj_read_header: invalid header_size: %u\n", header_size);
-        ret = false;
+        ret = CL_EFORMAT;
         goto done;
     }
     if (!arj_range_within_map(metadata->map, metadata->offset,
                               sizeof(header_size) + (size_t)header_size)) {
         cli_dbgmsg("arj_read_header: invalid header_size: %u, exceeds length of file.\n", header_size);
-        ret = false;
+        ret = CL_EFORMAT;
         goto done;
     }
-    if (fmap_readn(metadata->map, &main_hdr, metadata->offset, 30) != 30) {
-        ret = false;
+    ret = arj_read_fixed_range(metadata->map, &main_hdr, metadata->offset, sizeof(main_hdr));
+    if (ret != CL_SUCCESS)
         goto done;
-    }
     metadata->offset += 30;
 
     cli_dbgmsg("ARJ Main File Header\n");
@@ -989,7 +1005,7 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
 
     if (main_hdr.first_hdr_size < 30) {
         cli_dbgmsg("Format error. First Header Size < 30\n");
-        ret = false;
+        ret = CL_EFORMAT;
         goto done;
     }
     if (main_hdr.first_hdr_size > 30) {
@@ -999,7 +1015,7 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
     filename_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
     if (filename_max_len > header_size) {
         cli_dbgmsg("UNARJ: Format error. First Header Size invalid\n");
-        ret = false;
+        ret = CL_EFORMAT;
         goto done;
     }
     if (filename_max_len > 0) {
@@ -1007,7 +1023,7 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
         filename = fmap_need_offstr(metadata->map, metadata->offset, filename_max_len + 1);
         if (!filename || !fnnorm) {
             cli_dbgmsg("UNARJ: Unable to allocate memory for filename\n");
-            ret = false;
+            ret = CL_EFORMAT;
             goto done;
         }
         filename_len = CLI_STRNLEN(filename, filename_max_len);
@@ -1017,7 +1033,7 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
     comment_max_len = (header_size + sizeof(header_size)) - (metadata->offset - orig_offset);
     if (comment_max_len > header_size) {
         cli_dbgmsg("UNARJ: Format error. First Header Size invalid\n");
-        ret = false;
+        ret = CL_EFORMAT;
         goto done;
     }
     if (comment_max_len > 0) {
@@ -1025,7 +1041,7 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
         comment = fmap_need_offstr(metadata->map, metadata->offset, comment_max_len + 1);
         if (!comment || !comnorm) {
             cli_dbgmsg("UNARJ: Unable to allocate memory for comment\n");
-            ret = false;
+            ret = CL_EFORMAT;
             goto done;
         }
         comment_len = CLI_STRNLEN(comment, comment_max_len);
@@ -1044,19 +1060,15 @@ static bool arj_read_main_header(arj_metadata_t *metadata)
     metadata->offset += 4; /* crc */
     /* Skip past any extended header data */
     for (;;) {
-        const uint16_t *countp;
-
         if (arj_checktimelimit(metadata->ctx, "ARJ main-header traversal reached the configured time limit") != CL_SUCCESS) {
-            ret = false;
+            ret = CL_ETIMEOUT;
             goto done;
         }
 
-        countp = fmap_need_off_once(metadata->map, metadata->offset, 2);
-        if (!countp) {
-            ret = false;
+        ret = arj_read_fixed_range(metadata->map, &count_wire, metadata->offset, sizeof(count_wire));
+        if (ret != CL_SUCCESS)
             goto done;
-        }
-        count = cli_readint16(countp);
+        count = le16_to_host(count_wire);
         metadata->offset += 2;
         cli_dbgmsg("Extended header size: %d\n", count);
         if (count == 0) {
@@ -1083,6 +1095,7 @@ done:
 static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
 {
     uint16_t header_size, count;
+    uint16_t count_wire;
     const char *filename = NULL, *comment = NULL;
     arj_file_hdr_t file_hdr;
     struct text_norm_state fnstate, comstate;
@@ -1096,8 +1109,9 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
     size_t comment_len      = 0;
     size_t orig_offset      = metadata->offset;
 
-    if (fmap_readn(metadata->map, &header_size, metadata->offset, 2) != 2)
-        return CL_EFORMAT;
+    ret = arj_read_fixed_range(metadata->map, &header_size, metadata->offset, sizeof(header_size));
+    if (ret != CL_SUCCESS)
+        goto done;
     header_size = le16_to_host(header_size);
     metadata->offset += 2;
 
@@ -1118,10 +1132,9 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
         ret = CL_EFORMAT;
         goto done;
     }
-    if (fmap_readn(metadata->map, &file_hdr, metadata->offset, 30) != 30) {
-        ret = CL_EFORMAT;
+    ret = arj_read_fixed_range(metadata->map, &file_hdr, metadata->offset, sizeof(file_hdr));
+    if (ret != CL_SUCCESS)
         goto done;
-    }
     metadata->offset += 30;
     file_hdr.comp_size = le32_to_host(file_hdr.comp_size);
     file_hdr.orig_size = le32_to_host(file_hdr.orig_size);
@@ -1210,8 +1223,6 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
 
     /* Skip past any extended header data */
     for (;;) {
-        const uint16_t *countp;
-
         if (arj_checktimelimit(metadata->ctx, "ARJ file-header traversal reached the configured time limit") != CL_SUCCESS) {
             ret = CL_ETIMEOUT;
             if (metadata->filename) {
@@ -1221,15 +1232,15 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
             goto done;
         }
 
-        countp = fmap_need_off_once(metadata->map, metadata->offset, 2);
-        if (!countp) {
-            if (metadata->filename)
+        ret = arj_read_fixed_range(metadata->map, &count_wire, metadata->offset, sizeof(count_wire));
+        if (ret != CL_SUCCESS) {
+            if (metadata->filename) {
                 free(metadata->filename);
-            metadata->filename = NULL;
-            ret                = CL_EFORMAT;
+                metadata->filename = NULL;
+            }
             goto done;
         }
-        count = cli_readint16(countp);
+        count = le16_to_host(count_wire);
         metadata->offset += 2;
         cli_dbgmsg("Extended header size: %d\n", count);
         if (count == 0) {
@@ -1280,12 +1291,10 @@ cl_error_t cli_unarj_open(fmap_t *map, const char *dirname, arj_metadata_t *meta
         cli_dbgmsg("cli_unarj_open: is_arj_archive check failed\n");
         return ret;
     }
-    if (!arj_read_main_header(metadata)) {
+    ret = arj_read_main_header(metadata);
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("cli_unarj_open: Failed to read main header\n");
-        ret = arj_checktimelimit(metadata->ctx, "ARJ inspection reached the configured time limit");
-        if (ret != CL_SUCCESS)
-            return ret;
-        return CL_EFORMAT;
+        return ret;
     }
     return CL_SUCCESS;
 }
@@ -1296,7 +1305,6 @@ cl_error_t cli_unarj_header_check(
     size_t *size)
 {
     cl_error_t status = CL_EFORMAT;
-    bool bool_ret;
     cl_error_t ret;
     arj_metadata_t metadata = {0};
     int files_found         = 0;
@@ -1327,14 +1335,17 @@ cl_error_t cli_unarj_header_check(
 
     cli_dbgmsg("cli_unarj_header_check: is_arj_archive-check passed\n");
 
-    bool_ret = arj_read_main_header(&metadata);
-    if (false == bool_ret) {
+    status = arj_read_main_header(&metadata);
+    if (status != CL_SUCCESS) {
         cli_dbgmsg("Failed to read main header\n");
-        status = arj_checktimelimit(ctx, "ARJ inspection reached the configured time limit");
-        if (status != CL_SUCCESS)
+        if (status == CL_ETIMEOUT)
             goto done;
-        cli_mark_scan_incomplete(ctx, "ARJ main header is malformed or truncated");
-        status = CL_EPARSE;
+        if (status == CL_EREAD) {
+            cli_mark_scan_incomplete(ctx, "ARJ main header could not be read completely");
+        } else {
+            cli_mark_scan_incomplete(ctx, "ARJ main header is malformed or truncated");
+            status = CL_EPARSE;
+        }
         goto done;
     }
 
@@ -1375,7 +1386,10 @@ cl_error_t cli_unarj_header_check(
         *size  = metadata.offset - offset;
         cli_dbgmsg("cli_unarj_header_check: Successfully found %d files in valid ARJ archive of %zu bytes\n", files_found, *size);
     } else if (ret != CL_BREAK && ret != CL_SUCCESS) {
-        cli_mark_scan_incomplete(ctx, "ARJ archive ended before its headers were complete");
+        if (ret == CL_EREAD)
+            cli_mark_scan_incomplete(ctx, "ARJ member header could not be read completely");
+        else
+            cli_mark_scan_incomplete(ctx, "ARJ archive ended before its headers were complete");
         status = ret;
     } else {
         status = CL_EFORMAT;

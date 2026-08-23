@@ -1457,3 +1457,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   preserve `CL_EREAD` and an incomplete result for streaming MSO callback
   failures; retain compiled scanner, sanitizer, production OLE2/MSO corpus,
   and Sonic1 qualification as release gates.
+
+## ARJ fixed-header read classification — 2026-08-23
+
+- Preflight ARJ main and member fixed-header ranges, preserving format/parse
+  results for short ranges and `CL_EREAD` for fully in-range fmap callback
+  failures; retain compiled scanner, sanitizer, production ARJ corpus, and
+  Sonic1 qualification as release gates.
