@@ -1591,8 +1591,10 @@ int32_t cli_bcapi_jsnorm_process(struct cli_bc_ctx *ctx, int32_t id)
         cli_bcapi_mark_map_read_error(ctx, "JavaScript normalization input accounting overflowed");
         return -1;
     }
-    if (cctx && cli_checklimits("bytecode js api", cctx, ctx->jsnormwritten + avail, 0, 0))
+    if (cctx && cli_checklimits("bytecode js api", cctx, ctx->jsnormwritten + avail, 0, 0)) {
+        (void)cli_bcapi_buffer_pipe_read_stopped(ctx, b->from, avail);
         return -1;
+    }
     cli_bcapi_buffer_pipe_read_stopped(ctx, b->from, avail);
     cli_js_process_buffer(b->state, (char *)in, avail);
     ctx->jsnormwritten += avail;

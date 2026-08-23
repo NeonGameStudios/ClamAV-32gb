@@ -801,6 +801,48 @@ START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
 }
 END_TEST
 
+START_TEST(test_bytecode_jsnorm_limit_failure_releases_input)
+{
+    struct cl_engine *engine;
+    struct cli_bc_ctx *bcctx;
+    cli_ctx cctx;
+    fmap_t *map;
+    const char input[] = "alert(1);";
+    int32_t input_id;
+    int32_t jsnorm_id;
+
+    cl_init(CL_INIT_DEFAULT);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILES, 1), CL_SUCCESS);
+
+    memset(&cctx, 0, sizeof(cctx));
+    cctx.engine       = engine;
+    cctx.scannedfiles = 1;
+    bcctx             = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    map = cl_fmap_open_memory((const unsigned char *)input, sizeof(input) - 1);
+    ck_assert_ptr_nonnull(map);
+    cctx.fmap = map;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+    input_id = cli_bcapi_buffer_pipe_new_fromfile64(bcctx, 0);
+    ck_assert_int_ge(input_id, 0);
+    jsnorm_id = cli_bcapi_jsnorm_init(bcctx, input_id);
+    ck_assert_int_ge(jsnorm_id, 0);
+    ck_assert_int_eq(cli_bcapi_jsnorm_process(bcctx, jsnorm_id), -1);
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_str_eq(cctx.scan_incomplete_reason,
+                     "Heuristics.Limits.Exceeded.MaxFiles");
+    ck_assert_uint_eq(cli_bcapi_buffer_pipe_read_avail(bcctx, input_id), 0);
+    ck_assert(!bcctx->buffers[input_id].map_read_locked);
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
 {
     const uint64_t boundary = UINT64_C(4294967296);
@@ -1378,6 +1420,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
     tcase_add_test(tc_cli_read, test_bytecode_v1_coordinate_narrowing_is_fail_visible);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
+    tcase_add_test(tc_cli_read, test_bytecode_jsnorm_limit_failure_releases_input);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);
 #endif

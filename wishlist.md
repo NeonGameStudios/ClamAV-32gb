@@ -1,5 +1,14 @@
 # Wishlist
 
+## Bytecode JavaScript-normalizer limit cleanup — 2026-08-23
+
+- JavaScript-normalizer API limit failures now release the borrowed input
+  window before returning the legacy failure sentinel; the shared limit
+  checker already records the MaxFiles boundary as incomplete. A focused
+  regression covers the boundary and confirms the input pipe is drained;
+  independently compiled interpreter/JIT, sanitizer, and Sonic1 qualification
+  remain release gates.
+
 ## Legacy bytecode coordinate narrowing — 2026-08-23
 
 - Legacy `seek`, `file_find`, and PDF-offset results now fail visibly when a

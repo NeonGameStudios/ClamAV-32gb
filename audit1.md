@@ -6176,3 +6176,13 @@ non-cacheable; the v2 APIs retain native-width results. A synthetic
 2-GiB-plus fmap regression covers the seek, search, and PDF-offset boundaries.
 Independently compiled v1/v2 fixtures, interpreter/JIT execution, sanitizer,
 and Sonic1 qualification remain open.
+
+## Bytecode JavaScript-normalizer limit cleanup — 2026-08-23
+
+The JavaScript-normalizer API retained its borrowed input window after
+`cli_checklimits()` rejected a request at the file-count boundary. The shared
+limit checker already records that boundary as incomplete; the normalizer now
+releases the window before returning its legacy failure sentinel. A focused
+regression covers MaxFiles and confirms that the input pipe is drained;
+independently compiled interpreter/JIT fixtures, sanitizer, and Sonic1
+qualification remain open.
