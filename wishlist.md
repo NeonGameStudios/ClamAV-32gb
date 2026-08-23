@@ -2159,3 +2159,10 @@ and Sonic1 qualification as release gates.
 - Keep recognized BigTIFF (`II+\0`/`MM\0+`) inputs explicit unsupported/incomplete
   until a bounded 64-bit IFD parser is implemented; retain compiled media,
   sanitizer, corpus, and Sonic1 qualification as release gates.
+
+## AutoIt EA06 bounded decompiled-output spool — 2026-08-23
+
+- Close the former EA06 1 GiB decompiled-script allocation boundary with a
+  quota-accounted 64 KiB output window, overlapping input/output reservation
+  accounting, and reservation-aware nested scanning. Retain compiled AutoIt
+  corpus and supported-build Sonic1 qualification as release gates.

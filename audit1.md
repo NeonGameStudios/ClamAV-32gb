@@ -965,8 +965,10 @@ uses a 32 KiB back-reference history window and a 64 KiB pending-write buffer
 to stream into a temporary file; stored EA05 members are decrypted in chunks
 and use the same quota-accounted temporary path. The EA05 format still has
 32-bit size fields, so output above 4 GiB remains an explicit unsupported
-boundary. EA06 script decompilation still retains a random-access decoded
-buffer and remains unsupported above the individual-allocation ceiling.
+boundary. At this checkpoint, EA06 script decompilation still retained a
+random-access decoded buffer and remained unsupported above the
+individual-allocation ceiling; later bounded input/output milestones close
+that implementation limit.
 
 The source guards and capability manifest record those two deliberate limits.
 This closes the EA05 contiguous-allocation implementation item but does not
@@ -5080,9 +5082,9 @@ EA06 script handling no longer allocates the complete decoded token stream as
 one contiguous buffer. Compressed and stored script members now use the
 existing temporary-storage admission and bounded writer, and the decompiler
 reads opcodes, scalar values, and string chunks with small `pread` windows and
-deadline checks. Its output buffer starts at 64 KiB and grows only as needed;
-the remaining explicit unsupported boundary is decompiled output above the
-1 GiB individual-allocation ceiling. Source guards cover the spool and
+deadline checks. At this checkpoint its output buffer still started at 64 KiB
+and grew as needed, leaving decompiled output above the 1 GiB
+individual-allocation ceiling unsupported. Source guards cover the spool and
 allocation invariants, and `tools/largefile_autoit_stored_fixture.py` now
 generates a deterministic stored EA06 script member for runtime qualification;
 the release runtime gate now executes that fixture and requires the parser's
@@ -6775,3 +6777,24 @@ reservation. The former
 `dmg-blkx-metadata-unsorted-over-64m` capability exception has been removed.
 Compiled DMG corpus, sanitizer, and supported-build Sonic1 qualification
 remain release gates.
+
+## AutoIt EA06 bounded decompiled-output spool — 2026-08-23
+
+EA06 script decompilation now sends reconstructed tokens directly through one
+64 KiB pending window into a quota-accounted temporary spool instead of
+growing a complete contiguous output buffer. A `uint64_t` output count checks
+file and scan limits before appends; flushes check the shared deadline and
+temporary budget before exact writes. The decoded-input reservation stays live
+while output is generated, charging both spools at their real peak, and the
+output reservation is held until nested scanning and cleanup finish.
+
+The deterministic stored EA06 fixture now emits 65,557 bytes and crosses the
+64 KiB flush boundary. Its LAME generator was corrected to match both state
+transitions made by the C decoder. The actual production parser harness
+verified every reconstructed byte, one nested scan, an exact 196,673-byte
+temporary peak, and zero leaked reservation in normal and ASan/UBSan runs.
+The focused writer harness also passed exact-output and one-byte-short file and
+temporary-budget cases. Source guards cover the bounded writer and reject the
+retired contiguous-output machinery. The
+`autoit-ea06-script-over-1g` capability exception is removed; compiled corpus
+and supported-build Sonic1 qualification remain release gates.

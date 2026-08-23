@@ -65,6 +65,7 @@ class AutoItLame:
         return struct.unpack("<d", bits)[0] - 1.0
 
     def next_byte(self):
+        self._fpusht()
         value = int(self._fpusht() * 256.0)
         return value if value < 256 else 0xFF
 
@@ -132,7 +133,19 @@ def build_fixture(compressed):
 
 def build_ea06_script_fixture():
     script_magic = ">>>AUTOIT SCRIPT<<<".encode("utf-16le")
-    token_stream = struct.pack("<I", 1) + bytes([0x7F])
+    text_length = (64 * 1024) + 17
+    plain_text = b"A\x00" * text_length
+    encoded_text = bytes(
+        value ^ (((text_length >> 8) if index & 1 else text_length) & 0xFF)
+        for index, value in enumerate(plain_text)
+    )
+    token_stream = (
+        struct.pack("<I", 1)
+        + bytes([0x36])
+        + struct.pack("<I", text_length)
+        + encoded_text
+        + bytes([0x7F])
+    )
     result = bytearray([0x36]) + bytes(16)
     result += struct.pack("<II", 0x52CA436B, 19 ^ 0xADBC)
     result += lame_encrypt(script_magic, 19 + 0xB33F)

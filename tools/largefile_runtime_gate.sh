@@ -832,8 +832,9 @@ fi
 
 # Exercise the EA06 script path with a deterministic stored member. This is a
 # focused parser regression in addition to the sparse raw-file boundary corpus:
-# the fixture must reach AutoIt token decompilation and finish cleanly without
-# relying on a production database signature.
+# the fixture must reach AutoIt token decompilation, flush more than one 64 KiB
+# output window, and finish cleanly without relying on a production database
+# signature.
 autoit_fixture=$corpus/autoit-ea06-script.bin
 autoit_log=$out/autoit-ea06-script.log
 autoit_status=0
@@ -859,7 +860,8 @@ if [ "$autoit_status" -eq 0 ]; then
         "$autoit_fixture" > "$autoit_log" 2>&1 || autoit_status=$?
 fi
 if [ "$autoit_status" -eq 0 ] &&
-    grep -F 'autoit: script has got 1 lines' "$autoit_log" >/dev/null 2>&1; then
+    grep -F 'autoit: script has got 1 lines' "$autoit_log" >/dev/null 2>&1 &&
+    grep -F 'autoit: decompiled script output is 65557 bytes' "$autoit_log" >/dev/null 2>&1; then
     printf 'autoit_ea06_fixture=pass sha256=%s\n' "$autoit_fixture_sha256" >> "$metadata"
 else
     printf 'autoit_ea06_fixture=fail status=%s sha256=%s\n' "$autoit_status" "$autoit_fixture_sha256" >> "$metadata"

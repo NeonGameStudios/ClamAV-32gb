@@ -2231,14 +2231,16 @@ EA05 decoded output now goes directly to a quota-accounted temporary file. Its
 KiB write buffer, and stored EA05 members are decrypted and written in 64 KiB
 chunks. This removes the former 1 GiB individual-allocation dependency for
 EA05 members; the format’s 32-bit size fields remain an explicit 4 GiB output
-boundary. EA06 script decompilation still requires random access to its
-decoded member and remains an explicit unsupported-over-1-GiB capability.
+boundary. At this checkpoint, EA06 script decompilation still required random
+access to its decoded member and retained an explicit unsupported-over-1-GiB
+capability; the later bounded script-input and script-output spool milestones
+remove that implementation limit.
 
 Both EA05 and EA06 temporary child outputs are now admitted against
 `MaxTemporarySize` and scanned through the reservation-aware descriptor entry
 point, so a declared output reservation is not charged a second time at the
-child boundary. EA06’s individual-allocation and random-access constraints are
-unchanged.
+child boundary. The EA06 constraints described at this checkpoint were later
+replaced by bounded input and output spools.
 
 This is an implementation improvement, not parser-family qualification: valid
 EA05 compressed/stored fixtures above 1 GiB, malformed decoder states,
@@ -5761,7 +5763,7 @@ corpus, sanitizer, and Sonic1 qualification remain release gates.
 
 ## AutoIt output deadlines — 2026-08-22
 
-EA05/EA06 streamed output and EA06 script materialization now re-check the
+EA05/EA06 streamed output and EA06 script-output paths now re-check the
 shared deadline after temporary admission and immediately before writes. The
 shared decoder flush and nested-member handoff are covered, and timeout paths
 release reservations before partial output can be scanned. Source guards cover
@@ -6357,3 +6359,25 @@ the root raw pass and verifies through the structured report that matcher
 bytes exceed the root size after the normalized script is scanned. Full script
 corpus, sanitizer, and supported-build Sonic1 qualification remain release
 gates.
+
+## AutoIt EA06 bounded decompiled-output spool — 2026-08-23
+
+EA06 script decompilation no longer grows a contiguous output allocation. The
+file-backed decoded token stream is read through bounded `pread` windows and
+the reconstructed script is emitted sequentially through one 64 KiB pending
+window into a quota-accounted temporary spool. A native-width output counter
+checks file and scan limits before each append; every flush checks the shared
+deadline and temporary budget before writing. The decoded-input reservation
+remains live while output is produced, so their real overlap is charged, and
+the output reservation remains live through the nested scan.
+
+The deterministic EA06 fixture now reconstructs exactly 65,557 bytes, forcing
+a full 64 KiB flush plus a second flush. The fixture generator's LAME byte
+stream was corrected to perform the same two state transitions as the C
+decoder. A harness including the production parser verified the exact output,
+one nested scan, a 196,673-byte temporary peak (131,116-byte token spool plus
+65,557-byte script spool), and zero reservation leakage; normal and
+ASan/UBSan executions passed. The focused writer harness also verifies exact
+output and one-byte-short file and temporary-budget failures. The former
+`autoit-ea06-script-over-1g` exception is removed; compiled corpus and
+supported-build Sonic1 qualification remain release gates.
