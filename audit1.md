@@ -22,6 +22,18 @@ matcher regression covers both the admitted and exhausted-budget paths; full
 rule, production-signature, sanitizer, and large-file qualification remain
 open.
 
+## XAR unsupported member encodings — 2026-08-23
+
+An explicit XAR `<encoding>` element with an unknown media type, or without a
+`style`, was previously treated as an uncompressed member. The scanner could
+therefore copy encoded bytes into a child and report clean without inspecting
+the required decoded content. Those declarations now return `CL_EUNPACK`, mark
+the layer incomplete, and remain non-cacheable; absent `<encoding>` continues
+to mean the format-defined uncompressed representation, while the recognized
+gzip, bzip2, LZMA, XZ, and octet-stream styles retain their existing paths. A
+focused unsupported-encoding regression and static source guards cover the
+change; compiled XAR corpus, sanitizer, and Sonic1 qualification remain open.
+
 ## HFS+ compressed-resource handoff failures — 2026-08-23
 
 HFS+ compressed-resource processing previously returned seek, decoder, or

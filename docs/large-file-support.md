@@ -6142,3 +6142,14 @@ allocation failures incomplete before returning `CL_EMEM`, preventing a
 required section inspection from being reconciled as clean. Static source
 guards pass; compiled ELF allocation fault injection, sanitizer, corpus, and
 supported-build Sonic1 qualification remain release gates.
+
+## XAR unsupported member encodings — 2026-08-23
+
+An explicit XAR member encoding with an unknown media type, or with no
+`style`, is now treated as unsupported rather than as raw uncompressed data.
+The parser returns `CL_EUNPACK`, marks the layer incomplete, and prevents a
+clean cache result without decoded-member inspection. Missing `<encoding>`
+continues to represent an uncompressed member, and recognized gzip, bzip2,
+LZMA, XZ, and octet-stream styles are unchanged. Focused source guards and a
+unit regression are present; compiled XAR corpus, sanitizer, and Sonic1
+qualification remain release gates.

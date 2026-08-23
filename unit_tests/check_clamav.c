@@ -13179,6 +13179,49 @@ START_TEST(test_xar_invalid_file_metadata_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_xar_unsupported_encoding_is_fail_visible)
+{
+    static const uint8_t toc[] =
+        "<?xml version=\"1.0\"?><xar><toc><file><data>"
+        "<offset>0</offset><length>4</length><size>4</size>"
+        "<encoding style=\"application/x-unsupported\"/>"
+        "</data></file></toc></xar>";
+    static const uint8_t heap[] = {0xde, 0xad, 0xbe, 0xef};
+    uint8_t *data;
+    size_t data_length;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data = xar_test_make_archive_from_toc(toc, sizeof(toc) - 1U, &data_length);
+    ck_assert_ptr_nonnull(data);
+    data = realloc(data, data_length + sizeof(heap));
+    ck_assert_ptr_nonnull(data);
+    memcpy(data + data_length, heap, sizeof(heap));
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, data_length + sizeof(heap));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanxar(&ctx);
+    ck_assert_int_eq(ret, CL_EUNPACK);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "XAR member encoding style is unsupported");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
+
 static void xar_test_write_be64(uint8_t *dst, uint64_t value)
 {
     unsigned int i;
@@ -25127,6 +25170,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_compressed_member_read_failure_is_fail_visible);
+    tcase_add_test(tc_xar, test_xar_unsupported_encoding_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_xml_reader_error_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_toc_temporary_quota_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_subdocument_temporary_quota_is_fail_visible);

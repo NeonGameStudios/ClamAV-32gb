@@ -2054,3 +2054,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Keep ELF32/ELF64 native section-metadata allocation failures
   sticky-incomplete and non-cacheable; add compiled ELF allocation fault
   coverage.
+
+## XAR unsupported member encodings — 2026-08-23
+
+- Treat explicit XAR member encodings with a missing media type or unsupported
+  style as `CL_EUNPACK` incomplete results instead of scanning encoded bytes as
+  raw content; retain compiled XAR corpus, sanitizer, and Sonic1 qualification
+  as release gates.

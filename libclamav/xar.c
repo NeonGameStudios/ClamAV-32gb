@@ -382,7 +382,8 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
                 if (style == NULL) {
                     cli_dbgmsg("cli_scaxar: xmlTextReaderGetAttribute no style attribute "
                                "for encoding element\n");
-                    *encoding = CL_TYPE_ANY;
+                    cli_mark_scan_incomplete(ctx, "XAR member encoding declaration is missing its media type");
+                    return CL_EUNPACK;
                 } else if (xmlStrEqual(style, (const xmlChar *)"application/x-gzip")) {
                     cli_dbgmsg("cli_scanxar: encoding = application/x-gzip.\n");
                     *encoding = CL_TYPE_GZ;
@@ -400,7 +401,9 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
                     *encoding = CL_TYPE_XZ;
                 } else {
                     cli_dbgmsg("cli_scaxar: unknown style value=%s for encoding element\n", style);
-                    *encoding = CL_TYPE_ANY;
+                    xmlFree(style);
+                    cli_mark_scan_incomplete(ctx, "XAR member encoding style is unsupported");
+                    return CL_EUNPACK;
                 }
                 if (style != NULL)
                     xmlFree(style);
