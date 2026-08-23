@@ -4320,6 +4320,8 @@ START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
     size_t offset = 0;
     size_t fail_offset;
     unsigned int sigs = 0;
+    uint32_t security_offset;
+    uint32_t security_size;
     cl_error_t status;
     int fd;
 
@@ -4364,6 +4366,8 @@ START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
     ck_assert_int_eq(status, CL_SUCCESS);
     ck_assert_msg(peinfo.ndatadirs > 4 && peinfo.dirs[4].VirtualAddress != 0,
                   "signed PE fixture has no security directory");
+    security_offset = peinfo.dirs[4].VirtualAddress;
+    security_size   = peinfo.dirs[4].Size;
 
     /* The fixture's SPC_INDIRECT_DATA hash-algorithm SEQUENCE begins 117
      * bytes into the PKCS#7 payload. This is after asn1_parse_mscat() has
@@ -4388,6 +4392,44 @@ START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode signature could not be parsed completely");
     ck_assert(map->dont_cache_flag);
+
+    /* A confirmed security directory whose fixed certificate header cannot be
+     * read is an operational failure, not an ordinary verification miss. */
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.skipped_operations     = 0;
+    map->dont_cache_flag       = false;
+    state.calls                = 0;
+    state.fail_offset          = (size_t)peinfo.dirs[4].VirtualAddress;
+    state.fail_length          = sizeof(struct pe_certificate_hdr);
+    state.fail_exact           = true;
+
+    status = cli_check_auth_header(&ctx, &peinfo);
+    ck_assert_int_eq(status, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode certificate header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    /* A declared certificate table that cannot contain its fixed header is a
+     * malformed confirmed security directory, not a verification miss. */
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ctx.skipped_operations     = 0;
+    map->dont_cache_flag       = false;
+    state.calls                = 0;
+    state.fail_at              = SIZE_MAX;
+    state.fail_exact           = false;
+    peinfo.dirs[4].VirtualAddress = (uint32_t)(map->len - (sizeof(struct pe_certificate_hdr) - 1U));
+    peinfo.dirs[4].Size          = sizeof(struct pe_certificate_hdr) - 1U;
+
+    status = cli_check_auth_header(&ctx, &peinfo);
+    ck_assert_int_eq(status, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode certificate header is truncated");
+    ck_assert(map->dont_cache_flag);
+
+    peinfo.dirs[4].VirtualAddress = security_offset;
+    peinfo.dirs[4].Size           = security_size;
 
     cli_exe_info_destroy(&peinfo);
     cl_fmap_close(map);

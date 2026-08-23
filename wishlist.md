@@ -1,5 +1,12 @@
 # Wishlist
 
+## Authenticode certificate-header read classification — 2026-08-23
+
+- Mark confirmed PE security-directory certificate-header range failures
+  incomplete and non-cacheable, distinguishing `CL_EREAD` for in-range fmap
+  callback failures from `CL_EPARSE` for truncation; retain PE corpus,
+  sanitizer, and Sonic1 qualification as release gates.
+
 ## Runtime dependency immutability evidence — 2026-08-23
 
 - The mandatory service qualification now records and canonicalizes the

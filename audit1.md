@@ -6219,3 +6219,15 @@ service_runtime_dependencies_unchanged=pass. The synthetic service-evidence
 regression mutates the after-manifest and confirms verifier rejection. This
 strengthens runtime attestation; authorized production-CVD, sanitizer, and
 Sonic1 execution remain open.
+
+## Authenticode certificate-header read classification — 2026-08-23
+
+The confirmed PE security-directory path previously discarded a failed
+`fmap_readn_full()` for the fixed certificate header and fell through with
+its default verification/format status. The path now distinguishes a
+genuinely truncated certificate header (`CL_EPARSE`) from an in-range fmap
+callback failure (`CL_EREAD`), marks the layer incomplete before leaving the
+path, and therefore prevents clean/cache/trust normalization. The focused
+signed-PE callback regression reuses the existing fixture and asserts the
+`CL_EREAD` result, sticky reason, and non-cacheable map. Compiled PE corpus,
+sanitizer, and Sonic1 qualification remain open.

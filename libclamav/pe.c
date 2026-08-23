@@ -6477,6 +6477,8 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
 
         if ((size_t)sec_dir_size < sizeof(cert_hdr)) {
             cli_dbgmsg("cli_check_auth_header: authenticode data is shorter than its header\n");
+            cli_mark_scan_incomplete(ctx, "Authenticode certificate header is truncated");
+            ret = CL_EPARSE;
             goto finish;
         }
 
@@ -6494,8 +6496,19 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
 
         // Parse the security directory header
 
-        if (fmap_readn_full(map, &cert_hdr, sec_dir_offset, sizeof(cert_hdr)) != sizeof(cert_hdr)) {
-            goto finish;
+        {
+            size_t cert_hdr_read = fmap_readn_full(map, &cert_hdr, sec_dir_offset, sizeof(cert_hdr));
+
+            if (cert_hdr_read != sizeof(cert_hdr)) {
+                if (cert_hdr_read == (size_t)-1) {
+                    cli_mark_scan_incomplete(ctx, "Authenticode certificate header could not be read completely");
+                    ret = CL_EREAD;
+                } else {
+                    cli_mark_scan_incomplete(ctx, "Authenticode certificate header is truncated");
+                    ret = CL_EPARSE;
+                }
+                goto finish;
+            }
         }
 
         if (EC16(cert_hdr.revision) != WIN_CERT_REV_2) {
