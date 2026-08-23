@@ -5868,3 +5868,10 @@ in-range fmap callback failures. Both paths mark the scan incomplete and
 non-cacheable; focused local-only and central-directory fault-injection cases
 cover the distinction. Compiled ZIP corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## GIF/PNG missing-map handling — 2026-08-23
+
+GIF and PNG parser entry points now reject a missing input fmap before any
+metadata dereference and return an explicit incomplete parse result. Focused
+direct-parser tests cover both media families; compiled corpus, sanitizer, and
+Sonic1 qualification remain release gates.

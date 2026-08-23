@@ -223,6 +223,12 @@ cl_error_t cli_parsegif(cli_ctx *ctx)
     }
     map = ctx->fmap;
 
+    if (map == NULL) {
+        status      = gif_parse_error(ctx, "GIF input map is unavailable");
+        parse_error = true;
+        goto done;
+    }
+
     /* A map shorter than the signature cannot be a confirmed GIF. Once the
      * signature-sized range exists, a failed fmap read is an operational
      * failure and must not become a clean non-GIF result. */

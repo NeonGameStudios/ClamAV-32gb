@@ -21654,6 +21654,22 @@ START_TEST(test_gif_block_timeout_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_png_missing_maps_are_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_parsegif(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "GIF input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_parsepng(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PNG input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_png_truncated_chunks_are_fail_visible)
 {
     static const uint8_t missing_iend[] = {
@@ -23190,6 +23206,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);
     tcase_add_test(tc_gif, test_gif_block_timeout_is_fail_visible);
+    tcase_add_test(tc_gif, test_gif_png_missing_maps_are_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunks_are_fail_visible);
     tcase_add_test(tc_png, test_png_chunk_read_failure_is_fail_visible);
     tcase_add_test(tc_png, test_png_truncated_chunk_header_is_parse_error);

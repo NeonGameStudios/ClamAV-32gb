@@ -1585,3 +1585,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   former and `CL_EREAD` with sticky incomplete state for the latter; retain
   compiled scanner, sanitizer, production ZIP corpus, and Sonic1 qualification
   as release gates.
+
+## GIF/PNG missing-map handling — 2026-08-23
+
+- Reject missing input maps at the GIF and PNG parser boundaries with explicit
+  incomplete parse results; retain compiled media corpus, sanitizer, and Sonic1
+  qualification as release gates.

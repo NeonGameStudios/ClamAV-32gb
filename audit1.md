@@ -5611,3 +5611,10 @@ callback failure (`CL_EREAD`). Both local-only extraction and central-directory
 catalogue paths mark the layer incomplete and non-cacheable on callback failure;
 focused fault-injection coverage exercises both windows. Compiled scanner,
 sanitizer, production ZIP corpus, and Sonic1 qualification remain open.
+
+## GIF/PNG missing-map handling — 2026-08-23
+
+The GIF and PNG direct parser entry points now reject a missing input fmap as an
+explicit incomplete parse result instead of dereferencing a null map. Focused
+direct-parser coverage asserts the fail-visible reasons for both families.
+Compiled media corpus, sanitizer, and Sonic1 qualification remain open.

@@ -140,6 +140,12 @@ cl_error_t cli_parsepng(cli_ctx *ctx)
     }
     map = ctx->fmap;
 
+    if (map == NULL) {
+        status      = png_parse_error(ctx, "PNG input map is unavailable");
+        parse_error = true;
+        goto done;
+    }
+
     while (1) {
         status = cli_checktimelimit(ctx);
         if (status != CL_SUCCESS) {
