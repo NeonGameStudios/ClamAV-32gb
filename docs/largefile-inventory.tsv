@@ -8560,7 +8560,7 @@ native-width-integer	libclamav/autoit.c	965	    size_t i;
 native-width-integer	libclamav/autoit.h	26	cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset);
 native-width-integer	libclamav/autoit.h	27	cl_error_t cli_scanautoit(cli_ctx *ctx, off_t offset);
 native-width-integer	libclamav/binhex.c	165	                unsigned int todo = MIN(dec_done, datalen);
-native-width-integer	libclamav/binhex.c	228	                unsigned int todo = MIN(dec_done, reslen);
+native-width-integer	libclamav/binhex.c	230	                unsigned int todo = MIN(dec_done, reslen);
 native-width-integer	libclamav/binhex.c	72	int cli_binhex(cli_ctx *ctx)
 native-width-integer	libclamav/binhex.c	77	    size_t enc_done = 0, enc_todo = map->len;
 native-width-integer	libclamav/binhex.c	78	    unsigned int dec_done = 0, chunksz = 0, chunkoff = 0;
@@ -22869,12 +22869,12 @@ offset-size-arithmetic	libclamav/binhex.c	133	                hdrlen += 4 + 2;
 offset-size-arithmetic	libclamav/binhex.c	136	                decoded[namelen + 1] = 0;
 offset-size-arithmetic	libclamav/binhex.c	160	                memmove(decoded, &decoded[hdrlen], dec_done - hdrlen);
 offset-size-arithmetic	libclamav/binhex.c	166	                datalen -= todo;
-offset-size-arithmetic	libclamav/binhex.c	176	                    if (lseek(datafd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/binhex.c	229	                reslen -= todo;
-offset-size-arithmetic	libclamav/binhex.c	238	                    if (lseek(resfd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/binhex.c	288	        b = encoded[chunkoff++];
-offset-size-arithmetic	libclamav/binhex.c	309	            cli_dbgmsg("cli_binhex: Invalid character (%02x)\n", encoded[chunkoff - 1]);
-offset-size-arithmetic	libclamav/binhex.c	314	        switch ((offset++) & 3) { /* 6 bits per char */
+offset-size-arithmetic	libclamav/binhex.c	177	                    if (lseek(datafd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/binhex.c	231	                reslen -= todo;
+offset-size-arithmetic	libclamav/binhex.c	241	                    if (lseek(resfd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/binhex.c	292	        b = encoded[chunkoff++];
+offset-size-arithmetic	libclamav/binhex.c	313	            cli_dbgmsg("cli_binhex: Invalid character (%02x)\n", encoded[chunkoff - 1]);
+offset-size-arithmetic	libclamav/binhex.c	318	        switch ((offset++) & 3) { /* 6 bits per char */
 offset-size-arithmetic	libclamav/binhex.c	77	    size_t enc_done = 0, enc_todo = map->len;
 offset-size-arithmetic	libclamav/blob.c	157	void blobSetFilename(blob *b, const char *dir, const char *filename)
 offset-size-arithmetic	libclamav/blob.c	179	blobGetFilename(const blob *b)

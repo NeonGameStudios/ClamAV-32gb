@@ -2024,3 +2024,7 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Make `mdprintf()` send only the unsent response suffix, retry `EINTR`, wait
   for both nonblocking errno variants, and reject zero-byte progress; add
   compiled protocol fault injection and Sonic1 qualification.
+
+## BinHex temporary fork short-write and rewind disposition — 2026-08-23
+
+- Keep BinHex data/resource fork short or zero-progress writes and failed nested-scan rewinds sticky-incomplete and non-cacheable; add compiled write/seek fault coverage.

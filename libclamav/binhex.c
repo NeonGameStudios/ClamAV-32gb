@@ -168,6 +168,7 @@ int cli_binhex(cli_ctx *ctx)
                 if ((ret = binhex_checktimelimit(ctx, "BinHex data fork output reached the configured time limit")) != CL_SUCCESS)
                     break;
                 if (cli_writen(datafd, decoded, todo) != todo) {
+                    cli_mark_scan_incomplete(ctx, "BinHex data fork output could not be written completely");
                     ret = CL_EWRITE;
                     break;
                 }
@@ -175,6 +176,7 @@ int cli_binhex(cli_ctx *ctx)
                     write_phase++;
                     if (lseek(datafd, 0, SEEK_SET) == -1) {
                         cli_dbgmsg("cli_binhex: call to lseek() has failed\n");
+                        cli_mark_scan_incomplete(ctx, "BinHex data fork could not be rewound for nested scanning");
                         ret = CL_ESEEK;
                         break;
                     }
@@ -231,12 +233,14 @@ int cli_binhex(cli_ctx *ctx)
                 if ((ret = binhex_checktimelimit(ctx, "BinHex resource fork output reached the configured time limit")) != CL_SUCCESS)
                     break;
                 if (cli_writen(resfd, decoded, todo) != todo) {
+                    cli_mark_scan_incomplete(ctx, "BinHex resource fork output could not be written completely");
                     ret = CL_EWRITE;
                     break;
                 }
                 if (!reslen) {
                     if (lseek(resfd, 0, SEEK_SET) == -1) {
                         cli_dbgmsg("cli_binhex: call to lseek() has failed\n");
+                        cli_mark_scan_incomplete(ctx, "BinHex resource fork could not be rewound for nested scanning");
                         ret = CL_ESEEK;
                         break;
                     }

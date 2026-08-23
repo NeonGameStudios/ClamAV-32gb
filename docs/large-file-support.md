@@ -6094,3 +6094,13 @@ zero-byte progress. This prevents duplicate or out-of-bounds response bytes
 and prevents a stalled clamd response from being reported as successful.
 Compiled protocol fault injection, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## BinHex temporary fork short-write and rewind disposition — 2026-08-23
+
+The BinHex data and resource fork staging paths returned `CL_EWRITE` after a
+short or zero-progress temporary write without setting the sticky incomplete
+state. Rewind failures before nested handoff likewise returned `CL_ESEEK`
+without recording that required child inspection had been skipped. Both output
+paths now record explicit incomplete reasons before returning these failures,
+preserving the non-cacheable, fail-closed result. Compiled write/seek fault
+injection, sanitizer, and Sonic1 qualification remain open.

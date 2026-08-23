@@ -6313,3 +6313,15 @@ counter unchanged. It now sends the unsent suffix, retries `EINTR`, waits for
 both nonblocking errno variants, and treats zero progress as a failed response.
 Compiled protocol fault injection, sanitizer, and Sonic1 qualification remain
 open.
+
+## BinHex temporary fork short-write disposition — 2026-08-23
+
+The BinHex data and resource fork staging paths returned `CL_EWRITE` after a
+short or zero-progress temporary write without setting the sticky incomplete
+state. The rewind-before-nested-scan failures likewise returned `CL_ESEEK`
+without recording that required child inspection had been skipped. Common
+result reconciliation could therefore normalize a partially extracted or
+unscanned fork to clean. Both output paths now record explicit incomplete
+reasons before returning these failures, preserving the non-cacheable,
+fail-closed result. Compiled write/seek fault injection, sanitizer, and Sonic1
+qualification remain open.
