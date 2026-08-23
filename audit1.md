@@ -5289,3 +5289,13 @@ callback failure; fully in-range callback failures remain `CL_EREAD`. Focused
 GIF screen-descriptor and PNG chunk-header regressions cover the boundary.
 Compiled scanner, sanitizer, production media-corpus, and Sonic1 qualification
 remain open.
+
+## BMP/JP2/APM fixed-range truncation classification — 2026-08-22
+
+BMP and JPEG 2000 fixed-header readers and APM partition-map reads now
+preflight the complete requested range before invoking fmap callbacks. A
+truncated structure therefore remains a parse/format incomplete result even
+when a callback would fail on its available prefix; fully in-range callback
+failures remain `CL_EREAD`. Focused BMP, JP2, and APM regressions cover the
+boundary. Compiled scanner, sanitizer, production media-corpus, and Sonic1
+qualification remain open.

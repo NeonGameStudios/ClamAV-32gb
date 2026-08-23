@@ -47,6 +47,9 @@ static cl_error_t jp2_parse_error(cli_ctx *ctx, const char *reason)
 
 static cl_error_t jp2_read_exact(cli_ctx *ctx, void *dst, size_t offset, size_t length, const char *reason)
 {
+    if (offset > ctx->fmap->len || length > ctx->fmap->len - offset)
+        return jp2_parse_error(ctx, reason);
+
     size_t got = fmap_readn(ctx->fmap, dst, offset, length);
 
     if (got == length)

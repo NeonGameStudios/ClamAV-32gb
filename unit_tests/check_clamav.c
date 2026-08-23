@@ -10883,6 +10883,29 @@ START_TEST(test_bmp_structural_admission_remains_incomplete)
 }
 END_TEST
 
+START_TEST(test_bmp_truncated_signature_is_parse_error)
+{
+    static const uint8_t data[] = {'B'};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = bmp_truncated_signature_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_scanbmp(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_jp2_truncated_box_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -10918,6 +10941,29 @@ START_TEST(test_jp2_truncated_box_is_fail_visible)
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+END_TEST
+
+START_TEST(test_jp2_truncated_signature_is_parse_error)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = jp2_truncated_signature_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_scanjp2(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -12547,6 +12593,29 @@ START_TEST(test_apm_partition_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_apm_truncated_driver_map_is_format_error)
+{
+    static const uint8_t data[] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = apm_truncated_driver_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_scanapm(&ctx), CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_apm_invalid_partition_is_fail_visible)
 {
     uint8_t data[1536] = {0};
@@ -13859,6 +13928,36 @@ static const void *apm_partition_read_failure(fmap_t *map, size_t at, size_t len
 {
     (void)lock;
     if (at == 1024U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *apm_truncated_driver_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *bmp_truncated_signature_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *jp2_truncated_signature_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0U)
         return NULL;
     if (len == 0 || at > map->len || len > map->len - at)
         return NULL;
@@ -21164,7 +21263,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_graphics_bmp_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_bmp_missing_uncompressed_pixel_range_is_malformed);
     tcase_add_test(tc_cl, test_bmp_structural_admission_remains_incomplete);
+    tcase_add_test(tc_cl, test_bmp_truncated_signature_is_parse_error);
     tcase_add_test(tc_cl, test_jp2_truncated_box_is_fail_visible);
+    tcase_add_test(tc_cl, test_jp2_truncated_signature_is_parse_error);
     tcase_add_test(tc_cl, test_jp2_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_jp2_structural_admission_remains_incomplete);
     tcase_add_test(tc_cl, test_generic_graphics_parser_is_explicitly_unsupported);
@@ -21203,6 +21304,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_gpt_sector_size_probe_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_apm_truncated_driver_map_is_format_error);
     tcase_add_test(tc_cl, test_apm_invalid_partition_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_read_failure_is_fail_visible);

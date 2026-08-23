@@ -58,6 +58,9 @@ static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
 
 static cl_error_t apm_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
 {
+    if (at > ctx->fmap->len || len > ctx->fmap->len - at)
+        return CL_EFORMAT;
+
     size_t got = fmap_readn(ctx->fmap, dst, at, len);
 
     if (got == len)
