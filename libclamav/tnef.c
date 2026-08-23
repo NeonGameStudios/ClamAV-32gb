@@ -534,9 +534,12 @@ static size_t
 tnef_readn(fmap_t *map, void *dst, off_t at, size_t len)
 {
     /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
-     * beyond the map. Preserve impossible coordinates as short input so only
-     * an in-range callback failure becomes an operational read error. */
+     * beyond the map. Preserve impossible or incomplete fixed structures as
+     * short input so only an in-range callback failure for a fully available
+     * structure becomes an operational read error. */
     if (at < 0 || (uint64_t)at > (uint64_t)map->len)
+        return 0;
+    if (len > map->len - (size_t)at)
         return 0;
     return fmap_readn(map, dst, (size_t)at, len);
 }

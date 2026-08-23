@@ -172,8 +172,11 @@ static size_t cli_macho_readn(fmap_t *map, uint64_t at, void *dst, size_t len)
 {
     /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
      * beyond the map. Preserve an impossible Mach-O coordinate as short
-     * input; only an in-range callback failure is an operational read error. */
+     * input; only an in-range callback failure for a fully available
+     * structure is an operational read error. */
     if (at > (uint64_t)map->len)
+        return 0;
+    if (len > map->len - (size_t)at)
         return 0;
     return fmap_readn(map, dst, (size_t)at, len);
 }

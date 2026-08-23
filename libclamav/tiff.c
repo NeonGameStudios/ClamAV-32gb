@@ -57,9 +57,10 @@ static cl_error_t tiff_read_error(cli_ctx *ctx, const char *reason)
 static size_t tiff_readn(fmap_t *map, void *dst, size_t at, size_t len)
 {
     /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
-     * beyond the map. Keep an impossible TIFF coordinate as a parser error;
-     * only an in-range callback failure is an operational read error. */
-    if (at > map->len)
+     * beyond the map. Keep an impossible or incomplete TIFF structure as a
+     * parser error; only an in-range callback failure for a fully available
+     * structure is an operational read error. */
+    if (at > map->len || len > map->len - at)
         return 0;
     return fmap_readn(map, dst, at, len);
 }

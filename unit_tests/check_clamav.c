@@ -13915,6 +13915,16 @@ static const void *macho_load_command_read_failure(fmap_t *map, size_t at, size_
     return (const uint8_t *)map->data + at;
 }
 
+static const void *macho_truncated_load_command_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 32U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 /* The checked-in PE fixture's first import thunk is at this raw file offset.
  * Allow every other memory window so the scan reaches the thunk-table read. */
 #define PE_TEST_IMPORT_DESCRIPTOR_OFFSET 0x126e00U
@@ -14029,6 +14039,26 @@ static const void *tnef_attribute_read_failure(fmap_t *map, size_t at, size_t le
 {
     (void)lock;
     if (at == sizeof(uint32_t) + sizeof(uint16_t))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *tnef_truncated_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 7U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *tiff_truncated_ifd_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 8U)
         return NULL;
     if (len == 0 || at > map->len || len > map->len - at)
         return NULL;
@@ -14534,6 +14564,37 @@ START_TEST(test_tnef_attribute_read_failure_is_fail_visible)
     ctx.fmap   = map;
 
     ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "TNEF attribute header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_tnef_truncated_attribute_header_is_parse_error)
+{
+    static const uint8_t input[8] = {
+        0x78, 0x9f, 0x3e, 0x22, /* TNEF signature */
+        0x00, 0x00,             /* key */
+        0x01,                   /* attribute level */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need = tnef_truncated_header_read_failure;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_tnef(tmpdir, &ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "TNEF attribute header could not be read completely");
@@ -18630,6 +18691,37 @@ START_TEST(test_macho_scan_load_command_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_macho_truncated_load_command_is_parse_error)
+{
+    uint8_t data[32 + 1] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    macho_test_write_u32(data + 0, 0xfeedfacfU);
+    macho_test_write_u32(data + 4, 0x01000007U); /* CPU_TYPE_X86_64. */
+    macho_test_write_u32(data + 12, 2U);         /* MH_EXECUTE. */
+    macho_test_write_u32(data + 16, 1U);         /* one load command. */
+    macho_test_write_u32(data + 20, 8U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = macho_truncated_load_command_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmacho(&ctx, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 static void macho_test_write_u32(uint8_t *dst, uint32_t value)
 {
     dst[0] = (uint8_t)value;
@@ -20236,6 +20328,30 @@ START_TEST(test_tiff_initial_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_tiff_truncated_ifd_header_is_parse_error)
+{
+    static const uint8_t data[] = {
+        'I', 'I', 0x2a, 0x00,
+        0x08, 0x00, 0x00, 0x00,
+        0x01,
+    };
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = tiff_truncated_ifd_read_failure;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_parsetiff(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_tiff_ifd_value_size_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -21065,6 +21181,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tnef_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_attribute_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_tnef_truncated_attribute_header_is_parse_error);
     tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
@@ -21179,6 +21296,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_unibin_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_metadata_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_scan_load_command_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_truncated_load_command_is_parse_error);
     tcase_add_test(tc_cl, test_macho_native_metadata_preserves_64bit_sections);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_macho_unibin_member_range_is_fail_visible);
@@ -21211,6 +21329,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_png, test_png_large_ancillary_chunk_uses_bounded_mapping);
     tcase_add_test(tc_tiff, test_tiff_truncated_structures_are_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_tiff, test_tiff_truncated_ifd_header_is_parse_error);
     tcase_add_test(tc_tiff, test_tiff_ifd_value_size_is_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_ifd_timeout_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX

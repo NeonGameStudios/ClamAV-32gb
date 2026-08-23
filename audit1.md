@@ -5269,3 +5269,13 @@ prefix; a fully in-range callback failure remains `CL_EREAD`. The new
 regression uses a truncated program header with an injected prefix failure to
 prove that the two outcomes remain distinct. Compiled scanner, sanitizer,
 production ELF-corpus, and Sonic1 qualification remain open.
+
+## Fixed-range parser truncation classification — 2026-08-22
+
+Mach-O load-command, TIFF IFD, and TNEF attribute-header helpers now
+preflight the full fixed-size request before invoking the fmap callback. A
+required structure that extends past EOF therefore remains a parse/incomplete
+result even when its available prefix would otherwise trigger an injected
+callback failure; fully in-range callback failures remain `CL_EREAD`. Focused
+regressions cover all three parser families. Compiled scanner, sanitizer,
+production-corpus, and Sonic1 qualification remain open.
