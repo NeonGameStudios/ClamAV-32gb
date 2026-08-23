@@ -269,9 +269,19 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
     struct cli_exe_section *sections = NULL;
     struct cli_exe_section64 *sections64 = NULL;
     char name[16];
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
     uint64_t at;
     cl_error_t read_status;
+
+    if (ctx == NULL) {
+        cli_dbgmsg("Mach-O: passed context was NULL\n");
+        return CL_EARG;
+    }
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "Mach-O input map is unavailable");
+        return CL_EPARSE;
+    }
+    map = ctx->fmap;
 
     read_status = cli_checktimelimit(ctx);
     if (read_status != CL_SUCCESS) {
@@ -758,8 +768,18 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
     unsigned int conv, i;
     cl_error_t ret = CL_SUCCESS;
     cl_error_t read_status;
-    fmap_t *map    = ctx->fmap;
+    fmap_t *map;
     uint64_t at;
+
+    if (ctx == NULL) {
+        cli_dbgmsg("Mach-O universal-binary: passed context was NULL\n");
+        return CL_EARG;
+    }
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "Mach-O universal-binary input map is unavailable");
+        return CL_EPARSE;
+    }
+    map = ctx->fmap;
 
     read_status = cli_checktimelimit(ctx);
     if (read_status != CL_SUCCESS) {

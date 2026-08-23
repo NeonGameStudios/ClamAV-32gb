@@ -6644,3 +6644,13 @@ could run. `cli_scanswf()` now rejects a missing map as an explicit incomplete
 parse, while a null context remains an argument error. A focused direct-entry
 regression is registered; compiled SWF corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## Mach-O missing-map admission — 2026-08-23
+
+The thin Mach-O and universal-binary parser entry points initialized their
+fmap pointers before checking the caller's input. A direct library caller
+with no map could therefore crash before the existing bounded header and
+architecture checks ran. Both entries now return explicit incomplete results
+for unavailable input maps, with separate diagnostics for thin and universal
+binary input. A focused regression covers both paths; compiled Mach-O corpus,
+sanitizer, and Sonic1 qualification remain release gates.

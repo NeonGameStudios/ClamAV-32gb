@@ -22651,6 +22651,23 @@ START_TEST(test_macho_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_macho_missing_maps_are_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanmacho(&ctx, NULL), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Mach-O input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanmacho_unibin(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Mach-O universal-binary input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_macho_unibin_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -26026,6 +26043,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_macho_missing_maps_are_fail_visible);
     tcase_add_test(tc_cl, test_macho_unibin_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_metadata_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_scan_load_command_read_failure_is_fail_visible);
