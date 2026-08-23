@@ -6055,3 +6055,18 @@ rejection and malformed-header classification unchanged. A focused callback
 regression verifies that the embedded scan remains `CL_EREAD` and
 non-cacheable. Compiled scanner, production RAR corpus, and backend/Sonic1
 qualification remain open.
+
+## PE heuristic window read classification — 2026-08-23
+
+The enabled Magistr and Polipos PE heuristics had three required fmap windows
+that silently fell through when `fmap_need_off_once()` returned `NULL`: the
+Magistr tail signature window, the Polipos code section, and each Polipos jump
+target. A callback failure could therefore skip confirmed PE-specific
+inspection and still allow a later clean result. These windows now use the
+bounded PE range/read classifier, return `CL_EREAD` for in-range callback
+failures, return `CL_EPARSE` for out-of-range coordinates, and mark the layer
+incomplete before releasing `peinfo` and any Polipos jump array. A focused
+fixture regression covers the Magistr and Polipos code-section read failures;
+the Polipos jump-target branch remains covered by the same source guard and
+requires compiled corpus qualification. Compiled PE corpus, sanitizer, and
+Sonic1 qualification remain open.

@@ -15807,6 +15807,19 @@ static const void *pe_import_dll_name_read_failure(fmap_t *map, size_t at, size_
     return (const uint8_t *)map->data + at;
 }
 
+static size_t pe_heuristic_read_failure_offset = SIZE_MAX;
+static size_t pe_heuristic_read_failure_length = 0;
+
+static const void *pe_heuristic_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == pe_heuristic_read_failure_offset && len == pe_heuristic_read_failure_length)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static size_t pe_petite_section_read_offset;
 
 static const void *pe_petite_section_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -19495,6 +19508,172 @@ START_TEST(test_pe_header_read_failure_is_fail_visible)
     ck_assert(map->dont_cache_flag);
     cli_exe_info_destroy(&peinfo);
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_pe_heuristic_read_failures_are_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct cl_scan_options options;
+    struct cli_exe_info peinfo;
+    cli_scan_layer_t layer;
+    cli_ctx header_ctx;
+    cli_ctx ctx;
+    struct stat st;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_error_t ret;
+    uint8_t *data;
+    uint8_t original_last_section[sizeof(struct pe_image_section_hdr)];
+    uint8_t original_polipos_section[sizeof(struct pe_image_section_hdr)];
+    size_t offset = 0;
+    size_t pe_offset;
+    size_t section_offset;
+    size_t magistr_offset;
+    uint16_t nsections;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    ck_assert_msg((size_t)st.st_size >= 0x40, "PE fixture is too short for DOS metadata");
+    pe_offset = (size_t)cli_readint32(data + 0x3c);
+    ck_assert_msg(pe_offset <= (size_t)st.st_size - sizeof(struct pe_image_file_hdr),
+                  "PE fixture signature header is outside the fixture");
+    nsections = (uint16_t)cli_readint16(data + pe_offset + offsetof(struct pe_image_file_hdr, NumberOfSections));
+    ck_assert_msg(nsections > 2, "PE fixture has too few sections for heuristic coverage");
+    section_offset = pe_offset + sizeof(struct pe_image_file_hdr) +
+                     (size_t)cli_readint16(data + pe_offset + offsetof(struct pe_image_file_hdr, SizeOfOptionalHeader));
+    ck_assert_msg(section_offset <= (size_t)st.st_size &&
+                      nsections <= ((size_t)st.st_size - section_offset) / sizeof(struct pe_image_section_hdr),
+                  "PE section table is outside the fixture");
+
+    memcpy(original_last_section, data + section_offset + (nsections - 1) * sizeof(struct pe_image_section_hdr),
+           sizeof(original_last_section));
+    cli_writeint32(data + section_offset + (nsections - 1) * sizeof(struct pe_image_section_hdr) +
+                       offsetof(struct pe_image_section_hdr, VirtualSize),
+                   0x000061ecU);
+    cli_writeint32(data + section_offset + (nsections - 1) * sizeof(struct pe_image_section_hdr) +
+                       offsetof(struct pe_image_section_hdr, Characteristics),
+                   0x80000000U);
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_HEURISTICS;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    scan_engine->dconf->pe = PE_CONF_MAGISTR;
+
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    memset(&header_ctx, 0, sizeof(header_ctx));
+    header_ctx.engine            = scan_engine;
+    header_ctx.dconf             = scan_engine->dconf;
+    header_ctx.options           = &options;
+    header_ctx.fmap              = map;
+    header_ctx.this_layer_tmpdir = tmpdir;
+    cli_exe_info_init(&peinfo, 0);
+    ck_assert_int_eq(cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE), CL_SUCCESS);
+    ck_assert_uint_eq(peinfo.nsections, nsections);
+    magistr_offset = (size_t)peinfo.sections[peinfo.nsections - 1].raw +
+                     peinfo.sections[peinfo.nsections - 1].rsz -
+                     (peinfo.sections[peinfo.nsections - 1].rsz < 0x7000 ?
+                          peinfo.sections[peinfo.nsections - 1].rsz : 0x7000);
+    cli_exe_info_destroy(&peinfo);
+
+    pe_heuristic_read_failure_offset = magistr_offset;
+    pe_heuristic_read_failure_length = 4096;
+    map->need                         = pe_heuristic_read_failure;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE Magistr heuristic window could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    pe_heuristic_read_failure_offset = SIZE_MAX;
+    pe_heuristic_read_failure_length = 0;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+
+    memcpy(data + section_offset + (nsections - 1) * sizeof(struct pe_image_section_hdr), original_last_section,
+           sizeof(original_last_section));
+    memcpy(original_polipos_section, data + section_offset + sizeof(struct pe_image_section_hdr),
+           sizeof(original_polipos_section));
+    cli_writeint32(data + section_offset + sizeof(struct pe_image_section_hdr) +
+                       offsetof(struct pe_image_section_hdr, VirtualSize),
+                   50000U);
+    cli_writeint32(data + section_offset + sizeof(struct pe_image_section_hdr) +
+                       offsetof(struct pe_image_section_hdr, Characteristics),
+                   0xe0000060U);
+
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_HEURISTICS;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    scan_engine->dconf->pe = PE_CONF_POLIPOS;
+
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    memset(&header_ctx, 0, sizeof(header_ctx));
+    header_ctx.engine            = scan_engine;
+    header_ctx.dconf             = scan_engine->dconf;
+    header_ctx.options           = &options;
+    header_ctx.fmap              = map;
+    header_ctx.this_layer_tmpdir = tmpdir;
+    cli_exe_info_init(&peinfo, 0);
+    ck_assert_int_eq(cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE), CL_SUCCESS);
+    ck_assert_msg(peinfo.sections[0].rsz >= 5, "PE fixture first section is too short for Polipos coverage");
+    pe_heuristic_read_failure_offset = peinfo.sections[0].raw;
+    pe_heuristic_read_failure_length = peinfo.sections[0].rsz;
+    cli_exe_info_destroy(&peinfo);
+    map->need                         = pe_heuristic_read_failure;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE Polipos code section could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    pe_heuristic_read_failure_offset = SIZE_MAX;
+    pe_heuristic_read_failure_length = 0;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    memcpy(data + section_offset + sizeof(struct pe_image_section_hdr), original_polipos_section,
+           sizeof(original_polipos_section));
+    free(data);
 }
 END_TEST
 
@@ -24647,6 +24826,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_arj_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_heuristic_read_failures_are_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pe_rawaddr_preserves_native_coordinate);
     tcase_add_test(tc_cl, test_pe_header_preserves_unsigned_high_bit_section_fields);

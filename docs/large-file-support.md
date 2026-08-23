@@ -5988,3 +5988,13 @@ read fault as “not actually PE”; genuinely short ranges retain their existin
 candidate or parse status. A focused DOS-signature callback regression covers
 the boundary. Compiled PE corpus, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## PE heuristic window read classification — 2026-08-23
+
+The enabled Magistr and Polipos heuristics now classify failures from their
+required tail, code-section, and jump-target fmap windows. In-range callback
+failures return `CL_EREAD`; invalid or out-of-map coordinates return `CL_EPARSE`;
+both mark the layer incomplete and non-cacheable before PE-specific inspection
+is abandoned. Focused Magistr and Polipos code-section fault injection is
+registered; compiled PE corpus, sanitizer, Polipos jump-target coverage, and
+Sonic1 qualification remain release gates.

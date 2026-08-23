@@ -1856,3 +1856,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   malformed/truncated result for parse failures and candidate rejection for
   weak signatures. Compiled scanner, production RAR corpus, and backend/Sonic1
   qualification remain release gates.
+
+## PE heuristic window read classification — 2026-08-23
+
+- Preserve required Magistr tail-window and Polipos code/jump-window failures
+  as explicit `CL_EREAD` or `CL_EPARSE` incomplete results instead of silently
+  skipping confirmed PE-specific inspection; retain compiled PE corpus,
+  sanitizer, Polipos jump-target coverage, and Sonic1 qualification as release
+  gates.

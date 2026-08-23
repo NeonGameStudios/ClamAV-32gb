@@ -3114,6 +3114,27 @@ static const char *pe_need_window(cli_ctx *ctx,
     return window;
 }
 
+static const char *pe_need_tail_window(cli_ctx *ctx,
+                                       fmap_t *map,
+                                       uint32_t raw,
+                                       uint32_t size,
+                                       size_t tail_bytes,
+                                       size_t length,
+                                       cl_error_t *status,
+                                       const char *read_reason,
+                                       const char *range_reason)
+{
+    uint64_t end = (uint64_t)raw + (uint64_t)size;
+
+    if (end < tail_bytes || end - tail_bytes > SIZE_MAX) {
+        cli_mark_scan_incomplete(ctx, range_reason);
+        *status = CL_EPARSE;
+        return NULL;
+    }
+
+    return pe_need_window(ctx, map, (size_t)(end - tail_bytes), length, status, read_reason, range_reason);
+}
+
 int cli_scanpe(cli_ctx *ctx)
 {
     uint8_t polipos = 0;
@@ -3536,27 +3557,41 @@ int cli_scanpe(cli_ctx *ctx)
         if (vsize >= 0x612c && rsize >= 0x612c && ((vsize & 0xff) == 0xec)) {
             int bw = rsize < 0x7000 ? rsize : 0x7000;
             const char *tbuff;
+            cl_error_t read_status;
 
-            if ((tbuff = fmap_need_off_once(map, peinfo->sections[peinfo->nsections - 1].raw + rsize - bw, 4096))) {
-                if (cli_memstr(tbuff, 4091, "\xe8\x2c\x61\x00\x00", 5)) {
-                    ret = cli_append_potentially_unwanted(ctx, dam ? "Heuristics.W32.Magistr.A.dam" : "Heuristics.W32.Magistr.A");
-                    if (ret != CL_SUCCESS) {
-                        cli_exe_info_destroy(peinfo);
-                        return ret;
-                    }
+            tbuff = pe_need_tail_window(ctx, map, peinfo->sections[peinfo->nsections - 1].raw, rsize,
+                                        (size_t)bw, 4096, &read_status,
+                                        "PE Magistr heuristic window could not be read completely",
+                                        "PE Magistr heuristic window is outside the input map");
+            if (tbuff == NULL) {
+                cli_exe_info_destroy(peinfo);
+                return read_status;
+            }
+            if (cli_memstr(tbuff, 4091, "\xe8\x2c\x61\x00\x00", 5)) {
+                ret = cli_append_potentially_unwanted(ctx, dam ? "Heuristics.W32.Magistr.A.dam" : "Heuristics.W32.Magistr.A");
+                if (ret != CL_SUCCESS) {
+                    cli_exe_info_destroy(peinfo);
+                    return ret;
                 }
             }
         } else if (rsize >= 0x7000 && vsize >= 0x7000 && ((vsize & 0xff) == 0xed)) {
             int bw = rsize < 0x8000 ? rsize : 0x8000;
             const char *tbuff;
+            cl_error_t read_status;
 
-            if ((tbuff = fmap_need_off_once(map, peinfo->sections[peinfo->nsections - 1].raw + rsize - bw, 4096))) {
-                if (cli_memstr(tbuff, 4091, "\xe8\x04\x72\x00\x00", 5)) {
-                    ret = cli_append_potentially_unwanted(ctx, dam ? "Heuristics.W32.Magistr.B.dam" : "Heuristics.W32.Magistr.B");
-                    if (ret != CL_SUCCESS) {
-                        cli_exe_info_destroy(peinfo);
-                        return ret;
-                    }
+            tbuff = pe_need_tail_window(ctx, map, peinfo->sections[peinfo->nsections - 1].raw, rsize,
+                                        (size_t)bw, 4096, &read_status,
+                                        "PE Magistr heuristic window could not be read completely",
+                                        "PE Magistr heuristic window is outside the input map");
+            if (tbuff == NULL) {
+                cli_exe_info_destroy(peinfo);
+                return read_status;
+            }
+            if (cli_memstr(tbuff, 4091, "\xe8\x04\x72\x00\x00", 5)) {
+                ret = cli_append_potentially_unwanted(ctx, dam ? "Heuristics.W32.Magistr.B.dam" : "Heuristics.W32.Magistr.B");
+                if (ret != CL_SUCCESS) {
+                    cli_exe_info_destroy(peinfo);
+                    return ret;
                 }
             }
         }
@@ -3573,8 +3608,17 @@ int cli_scanpe(cli_ctx *ctx)
             break;
         if (peinfo->sections[0].rsz < 5)
             break;
-        if (!(code = fmap_need_off_once(map, peinfo->sections[0].raw, peinfo->sections[0].rsz)))
-            break;
+        {
+            cl_error_t read_status;
+
+            code = pe_need_window(ctx, map, peinfo->sections[0].raw, peinfo->sections[0].rsz, &read_status,
+                                  "PE Polipos code section could not be read completely",
+                                  "PE Polipos code section is outside the input map");
+            if (code == NULL) {
+                cli_exe_info_destroy(peinfo);
+                return read_status;
+            }
+        }
 
         for (i = 0; i < peinfo->sections[0].rsz - 5; i++) {
             if ((uint8_t)(code[i] - 0xe8) > 1)
@@ -3617,8 +3661,16 @@ int cli_scanpe(cli_ctx *ctx)
 
         cli_dbgmsg("cli_scanpe: Polipos: Checking %d xsect jump(s)\n", xsjs);
         for (i = 0; i < xsjs; i++) {
-            if (!(code = fmap_need_off_once(map, jumps[i], 9)))
-                continue;
+            cl_error_t read_status;
+
+            code = pe_need_window(ctx, map, jumps[i], 9, &read_status,
+                                  "PE Polipos jump target could not be read completely",
+                                  "PE Polipos jump target is outside the input map");
+            if (code == NULL) {
+                free(jumps);
+                cli_exe_info_destroy(peinfo);
+                return read_status;
+            }
 
             if ((jump = cli_readint32(code)) == 0x60ec8b55 || (code[4] == 0x0ec && ((jump == 0x83ec8b55 && code[6] == 0x60) || (jump == 0x81ec8b55 && !code[7] && !code[8])))) {
                 ret = cli_append_potentially_unwanted(ctx, "Heuristics.W32.Polipos.A");
