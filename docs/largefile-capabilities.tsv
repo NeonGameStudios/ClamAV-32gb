@@ -69,7 +69,7 @@ feature	MAINTAINER_MODE	pending	CMakeOptions.cmake	qualify generated-source conf
 feature	OPTIMIZE	pending	CMakeOptions.cmake	qualify optimized and unoptimized large-file behavior
 unsupported	macos-first-release	unsupported	docs/large-file-support.md	macOS is outside the first Linux x86-64 production qualification target
 unsupported	aarch64-first-release	unsupported	docs/large-file-support.md	AArch64 is outside the first Linux x86-64 production qualification target
-unsupported	autoit-ea06-script-over-1g	unsupported	libclamav/autoit.c	EA06 script decompilation still requires random access to the decoded member and rejects requests above the 1 GiB individual-allocation ceiling as incomplete
+unsupported	autoit-ea06-script-over-1g	unsupported	libclamav/autoit.c	EA06 decoded script input is now disk-spooled and read through bounded pread windows; decompiled output still uses a bounded contiguous buffer and remains incomplete above the 1 GiB individual-allocation ceiling
 unsupported	autoit-ea05-output-over-4g	unsupported	libclamav/autoit.c	EA05 stores compressed and uncompressed sizes in 32-bit fields; output above the format-defined 4 GiB range remains incomplete
 unsupported	bytecode-v1-over-4g	unsupported	docs/bytecode-abi-v2.md	legacy bytecode ABI cannot represent applicable layers above 4 GiB; logical dispatch returns CL_EPARSE with an incomplete, non-cacheable layer
 unsupported	elf-legacy-metadata-over-4g	unsupported	libclamav/elf.c	ELF64 entrypoint or section coordinates above 4 GiB are matched through the native metadata view, while legacy 32-bit bytecode metadata is explicitly incomplete

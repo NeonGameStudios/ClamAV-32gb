@@ -5057,6 +5057,18 @@ retain their operational status; malformed metadata and seek/format outcomes
 remain unchanged. Compiled HFS+ corpus, sanitizer, and Sonic1 qualification
 remain open.
 
+## AutoIt EA06 bounded script input spool — 2026-08-23
+
+EA06 script handling no longer allocates the complete decoded token stream as
+one contiguous buffer. Compressed and stored script members now use the
+existing temporary-storage admission and bounded writer, and the decompiler
+reads opcodes, scalar values, and string chunks with small `pread` windows and
+deadline checks. Its output buffer starts at 64 KiB and grows only as needed;
+the remaining explicit unsupported boundary is decompiled output above the
+1 GiB individual-allocation ceiling. Source guards cover the spool and
+allocation invariants; compiled EA06 corpus, sanitizer, and Sonic1
+qualification remain release gates.
+
 ## Trust-layer status commit and cleanup — 2026-08-22
 
 Trusting a layer now commits `CL_VERDICT_TRUSTED` only after the optional

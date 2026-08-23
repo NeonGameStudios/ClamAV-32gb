@@ -778,6 +778,23 @@ static cl_error_t autoit_scan_temp_member(cli_ctx *ctx, int *tempfd, char **temp
     return autoit_release_temp_member(ctx, tempfd, tempfile, temporary_reserved, status);
 }
 
+static bool autoit_script_read(cli_ctx *ctx, int input_fd, uint32_t offset, void *destination, size_t length,
+                               const char *reason)
+{
+    ssize_t bytes_read;
+
+    if (autoit_checktimelimit(ctx, "AutoIt EA06 script input traversal reached the configured time limit") != CL_SUCCESS)
+        return false;
+
+    bytes_read = pread(input_fd, destination, length, (off_t)offset);
+    if (bytes_read != (ssize_t)length) {
+        cli_mark_scan_incomplete(ctx, reason);
+        return false;
+    }
+
+    return true;
+}
+
 static cl_error_t autoit_reserve_output(uint8_t **buffer, uint32_t *capacity, uint32_t used, size_t additional)
 {
     uint64_t required = (uint64_t)used + additional;
@@ -800,6 +817,13 @@ static cl_error_t autoit_reserve_output(uint8_t **buffer, uint32_t *capacity, ui
     *buffer   = replacement;
     *capacity = (uint32_t)new_capacity;
     return CL_SUCCESS;
+}
+
+static cl_error_t autoit_script_abort(cli_ctx *ctx, int *tempfd, char **tempfile,
+                                      uint64_t *temporary_reserved, uint8_t *buffer, cl_error_t status)
+{
+    free(buffer);
+    return autoit_release_temp_member(ctx, tempfd, tempfile, temporary_reserved, status);
 }
 
 cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
@@ -1524,6 +1548,7 @@ static void LAME_decrypt(uint8_t *cypher, uint32_t size, uint16_t seed)
 static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 {
     cl_error_t ret = CL_SUCCESS;
+    cl_error_t status;
     uint8_t b[600], comp, *buf;
     uint32_t s;
     int i;
@@ -1532,6 +1557,7 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
     char *stream_tempfile = NULL;
     int stream_tempfd = -1;
     uint64_t stream_reserved = 0;
+    uint64_t temporary_reserved = 0;
     uint8_t stored_buffer[AUTOIT_INPUT_CHUNK];
     bool stream_output = false;
     const char prefixes[] = {'\0', '\0', '@', '$', '\0', '.', '"', '\0'};
@@ -1556,6 +1582,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
     while (CL_SUCCESS == (ret = cli_checklimits("cli_autoit", ctx, 0, 0, 0))) {
         bool script = false;
+
+        status = CL_SUCCESS;
 
         stream_output = false;
 
@@ -1722,45 +1750,38 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                 return ret;
             }
 
-            if (!script) {
-                ret = cli_scan_reserve_temporary(ctx, UNP.usize);
-                if (ret != CL_SUCCESS) {
-                    free(UNP.inputbuf);
-                    UNP.inputbuf = NULL;
-                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 expanded member exceeds temporary storage limits");
-                    return ret;
-                }
-                stream_reserved = UNP.usize;
-                ret = autoit_checktimelimit(ctx, "AutoIt EA06 expanded member temporary admission reached the configured time limit");
-                if (ret != CL_SUCCESS) {
-                    free(UNP.inputbuf);
-                    UNP.inputbuf = NULL;
-                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
-                                                      &stream_reserved, ret);
-                }
-                ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "autoit", &stream_tempfile, &stream_tempfd);
-                if (ret != CL_SUCCESS) {
-                    free(UNP.inputbuf);
-                    UNP.inputbuf = NULL;
-                    cli_scan_release_temporary(ctx, stream_reserved);
-                    stream_reserved = 0;
-                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 expanded member temporary output could not be created");
-                    return ret;
-                }
-                stream_output = true;
-                ret = autoit_output_init(&UNP, stream_tempfd);
-                if (ret != CL_SUCCESS) {
-                    free(UNP.inputbuf);
-                    UNP.inputbuf = NULL;
-                    stream_output = false;
-                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
-                                                      &stream_reserved, ret);
-                }
-            } else if (!(UNP.outputbuf = cli_max_malloc(UNP.usize))) {
+            ret = cli_scan_reserve_temporary(ctx, UNP.usize);
+            if (ret != CL_SUCCESS) {
                 free(UNP.inputbuf);
                 UNP.inputbuf = NULL;
-                cli_mark_scan_incomplete(ctx, "AutoIt EA06 expanded member could not be allocated");
-                return CL_EMEM;
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 expanded member exceeds temporary storage limits");
+                return ret;
+            }
+            stream_reserved = UNP.usize;
+            ret = autoit_checktimelimit(ctx, "AutoIt EA06 expanded member temporary admission reached the configured time limit");
+            if (ret != CL_SUCCESS) {
+                free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
+                return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                  &stream_reserved, ret);
+            }
+            ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "autoit", &stream_tempfile, &stream_tempfd);
+            if (ret != CL_SUCCESS) {
+                free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
+                cli_scan_release_temporary(ctx, stream_reserved);
+                stream_reserved = 0;
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 expanded member temporary output could not be created");
+                return ret;
+            }
+            stream_output = true;
+            ret = autoit_output_init(&UNP, stream_tempfd);
+            if (ret != CL_SUCCESS) {
+                free(UNP.inputbuf);
+                UNP.inputbuf = NULL;
+                stream_output = false;
+                return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                  &stream_reserved, ret);
             }
 
             cli_dbgmsg("autoit: uncompressed size again: %x\n", UNP.usize);
@@ -1824,29 +1845,19 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                             UNP.error = 1;
                             break;
                         }
-                        if (stream_output) {
-                            status = autoit_output_byte(&UNP, autoit_output_history_byte(&UNP, bb));
-                            if (status != CL_SUCCESS) {
-                                UNP.error = 1;
-                                break;
-                            }
-                        } else {
-                            UNP.outputbuf[UNP.cur_output] = UNP.outputbuf[UNP.cur_output - bb];
-                            UNP.cur_output++;
+                        status = autoit_output_byte(&UNP, autoit_output_history_byte(&UNP, bb));
+                        if (status != CL_SUCCESS) {
+                            UNP.error = 1;
+                            break;
                         }
                     }
                 } else {
                     uint32_t literal = getbits(&UNP, 8);
                     if (UNP.error)
                         break;
-                    if (stream_output) {
-                        status = autoit_output_byte(&UNP, (uint8_t)literal);
-                        if (status != CL_SUCCESS)
-                            UNP.error = 1;
-                    } else {
-                        UNP.outputbuf[UNP.cur_output] = (uint8_t)literal;
-                        UNP.cur_output++;
-                    }
+                    status = autoit_output_byte(&UNP, (uint8_t)literal);
+                    if (status != CL_SUCCESS)
+                        UNP.error = 1;
                 }
             }
 
@@ -1863,7 +1874,6 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             if (UNP.error) {
                 cli_dbgmsg("autoit: decompression error after %u bytes - partial file may exist\n", UNP.cur_output);
                 if (ctx->scan_timed_out) {
-                    free(UNP.outputbuf);
                     if (stream_output) {
                         stream_output = false;
                         return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
@@ -1872,7 +1882,6 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     return CL_ETIMEOUT;
                 }
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 member decompression was incomplete");
-                free(UNP.outputbuf);
                 if (stream_output) {
                     stream_output = false;
                     return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
@@ -1903,75 +1912,59 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 next member could not be read");
                 return CL_EREAD;
             }
-            if (!script) {
-                ret = cli_scan_reserve_temporary(ctx, UNP.csize);
-                if (ret != CL_SUCCESS) {
-                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member exceeds temporary storage limits");
-                    return ret;
-                }
-                stream_reserved = UNP.csize;
-                ret = autoit_checktimelimit(ctx, "AutoIt EA06 stored member temporary admission reached the configured time limit");
-                if (ret != CL_SUCCESS)
-                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
-                                                      &stream_reserved, ret);
-                ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "autoit", &stream_tempfile, &stream_tempfd);
-                if (ret != CL_SUCCESS) {
-                    cli_scan_release_temporary(ctx, stream_reserved);
-                    stream_reserved = 0;
-                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member temporary output could not be created");
-                    return ret;
-                }
-                stream_output = true;
-                LAME_srand(&input_lame, 0x2477 /* + m4sum (broken by design) */);
-                while (input_offset < next_offset) {
-                    size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
-                    size_t j;
-
-                    if (autoit_checktimelimit(ctx, "AutoIt EA06 stored member traversal reached the configured time limit") != CL_SUCCESS) {
-                        stream_output = false;
-                        return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
-                                                          &stream_reserved, CL_ETIMEOUT);
-                    }
-                    if (fmap_readn(map, stored_buffer, input_offset, chunk) != chunk) {
-                        cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member could not be read completely");
-                        stream_output = false;
-                        return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
-                                                          &stream_reserved, CL_EREAD);
-                    }
-                    for (j = 0; j < chunk; j++)
-                        stored_buffer[j] ^= LAME_getnext(&input_lame);
-                    if (autoit_checktimelimit(ctx, "AutoIt EA06 stored member output reached the configured time limit") != CL_SUCCESS) {
-                        stream_output = false;
-                        return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
-                                                          &stream_reserved, CL_ETIMEOUT);
-                    }
-                    if (cli_writen(stream_tempfd, stored_buffer, chunk) != chunk) {
-                        cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member temporary output could not be written completely");
-                        stream_output = false;
-                        return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
-                                                          &stream_reserved, CL_EWRITE);
-                    }
-                    input_offset += chunk;
-                }
-                UNP.usize = UNP.csize;
-            } else {
-                if (!(UNP.inputbuf = cli_max_malloc(UNP.csize))) {
-                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member could not be allocated");
-                    return CL_EMEM;
-                }
-                if (fmap_readn(map, UNP.inputbuf, input_offset, UNP.csize) != UNP.csize) {
-                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member could not be read completely");
-                    free(UNP.inputbuf);
-                    UNP.inputbuf = NULL;
-                    return CL_EREAD;
-                }
-                LAME_decrypt(UNP.inputbuf, UNP.csize, 0x2477 /* + m4sum (broken by design) */);
-                UNP.outputbuf = UNP.inputbuf;
-                UNP.usize     = UNP.csize;
+            ret = cli_scan_reserve_temporary(ctx, UNP.csize);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member exceeds temporary storage limits");
+                return ret;
             }
+            stream_reserved = UNP.csize;
+            ret = autoit_checktimelimit(ctx, "AutoIt EA06 stored member temporary admission reached the configured time limit");
+            if (ret != CL_SUCCESS)
+                return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                  &stream_reserved, ret);
+            ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "autoit", &stream_tempfile, &stream_tempfd);
+            if (ret != CL_SUCCESS) {
+                cli_scan_release_temporary(ctx, stream_reserved);
+                stream_reserved = 0;
+                cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member temporary output could not be created");
+                return ret;
+            }
+            stream_output = true;
+            LAME_srand(&input_lame, 0x2477 /* + m4sum (broken by design) */);
+            while (input_offset < next_offset) {
+                size_t chunk = MIN(next_offset - input_offset, sizeof(stored_buffer));
+                size_t j;
+
+                if (autoit_checktimelimit(ctx, "AutoIt EA06 stored member traversal reached the configured time limit") != CL_SUCCESS) {
+                    stream_output = false;
+                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                      &stream_reserved, CL_ETIMEOUT);
+                }
+                if (fmap_readn(map, stored_buffer, input_offset, chunk) != chunk) {
+                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member could not be read completely");
+                    stream_output = false;
+                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                      &stream_reserved, CL_EREAD);
+                }
+                for (j = 0; j < chunk; j++)
+                    stored_buffer[j] ^= LAME_getnext(&input_lame);
+                if (autoit_checktimelimit(ctx, "AutoIt EA06 stored member output reached the configured time limit") != CL_SUCCESS) {
+                    stream_output = false;
+                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                      &stream_reserved, CL_ETIMEOUT);
+                }
+                if (cli_writen(stream_tempfd, stored_buffer, chunk) != chunk) {
+                    cli_mark_scan_incomplete(ctx, "AutoIt EA06 stored member temporary output could not be written completely");
+                    stream_output = false;
+                    return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                      &stream_reserved, CL_EWRITE);
+                }
+                input_offset += chunk;
+            }
+            UNP.usize = UNP.csize;
         }
 
-        if (stream_output) {
+        if (stream_output && !script) {
             ret = autoit_scan_temp_member(ctx, &stream_tempfd, &stream_tempfile, &stream_reserved);
             stream_output = false;
             if (ret != CL_SUCCESS)
@@ -1982,25 +1975,34 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
         if (script && UNP.usize < 4) {
             cli_dbgmsg("autoit: script is too short\n");
             cli_mark_scan_incomplete(ctx, "AutoIt EA06 script is shorter than its token header");
-            free(UNP.outputbuf);
-            UNP.outputbuf = NULL;
-            return CL_EFORMAT;
+            stream_output = false;
+            return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                              &stream_reserved, CL_EFORMAT);
         }
 
         if (script) {
-            /* From here on, we'll reuse csize to be the size of the
-             * output buffer */
-            UNP.csize = UNP.usize;
+            /* Keep the decompiler's in-memory state bounded independently of
+             * the decoded script input, which is read from its temporary spool. */
+            UNP.csize = MIN(UNP.usize, AUTOIT_OUTPUT_CHUNK);
             if (!(buf = cli_max_malloc(UNP.csize))) {
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 script buffer could not be allocated");
-                free(UNP.outputbuf);
-                return CL_EMEM;
+                stream_output = false;
+                return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                  &stream_reserved, CL_EMEM);
             }
 
             UNP.cur_output = 0;
             UNP.cur_input  = 4;
-            UNP.bits_avail = cli_readint32((char *)UNP.outputbuf);
             UNP.error      = 0;
+
+            if (!autoit_script_read(ctx, stream_tempfd, 0, b, sizeof(uint32_t),
+                                    "AutoIt EA06 script token header could not be read completely")) {
+                free(buf);
+                stream_output = false;
+                return autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                                  &stream_reserved, CL_EREAD);
+            }
+            UNP.bits_avail = cli_readint32((char *)b);
 
             cli_dbgmsg("autoit: script has got %u lines\n", UNP.bits_avail);
 
@@ -2013,17 +2015,30 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     break;
                 }
 
-                switch ((op = UNP.outputbuf[UNP.cur_input++])) {
+                if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, &op, sizeof(op),
+                                        "AutoIt EA06 script opcode could not be read completely")) {
+                    UNP.error = 1;
+                    break;
+                }
+                UNP.cur_input++;
+
+                switch (op) {
                     case 0: /* keyword ID */ {
                         uint32_t keyword_id;
                         uint32_t keyword_len;
+                        uint8_t value[sizeof(uint32_t)];
                         if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
                             UNP.error = 1;
                             cli_dbgmsg("autoit: too few bytes present - expected enough for a keyword ID\n");
                             break;
                         }
 
-                        keyword_id = cli_readint32((char *)&UNP.outputbuf[UNP.cur_input]);
+                        if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, value, sizeof(value),
+                                                "AutoIt EA06 keyword ID could not be read completely")) {
+                            UNP.error = 1;
+                            break;
+                        }
+                        keyword_id = cli_readint32((char *)value);
                         if (keyword_id >= (sizeof(autoit_keywords) / sizeof(autoit_keywords[0]))) {
                             UNP.error = 1;
                             cli_dbgmsg("autoit: unknown AutoIT keyword ID: 0x%x\n", keyword_id);
@@ -2034,8 +2049,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
                         keyword_len = strlen(autoit_keywords[keyword_id]);
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, (size_t)keyword_len + 2, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
 
                         if (cli_debug_flag) {
                             if (0 == memcmp(autoit_keywords[keyword_id], "UNKNOWN", MIN(strlen("UNKNOWN"), keyword_len))) {
@@ -2050,13 +2065,19 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     case 1: /* function ID */ {
                         uint32_t function_id;
                         uint32_t function_len;
+                        uint8_t value[sizeof(uint32_t)];
                         if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
                             UNP.error = 1;
                             cli_dbgmsg("autoit: too few bytes present - expected enough for a function ID\n");
                             break;
                         }
 
-                        function_id = cli_readint32((char *)&UNP.outputbuf[UNP.cur_input]);
+                        if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, value, sizeof(value),
+                                                "AutoIt EA06 function ID could not be read completely")) {
+                            UNP.error = 1;
+                            break;
+                        }
+                        function_id = cli_readint32((char *)value);
                         if (function_id >= (sizeof(autoit_functions) / sizeof(autoit_functions[0]))) {
                             UNP.error = 1;
                             cli_dbgmsg("autoit: unknown AutoIT function ID: 0x%x\n", function_id);
@@ -2067,8 +2088,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
 
                         function_len = strlen(autoit_functions[function_id]);
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, (size_t)function_len + 2, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
 
                         if (cli_debug_flag) {
                             if (0 == memcmp(autoit_functions[function_id], "UNKNOWN", MIN(strlen("UNKNOWN"), function_len))) {
@@ -2088,10 +2109,18 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 12, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
 
-                        snprintf((char *)&buf[UNP.cur_output], 12, "0x%08x ", cli_readint32((char *)&UNP.outputbuf[UNP.cur_input]));
+                        {
+                            uint8_t value[sizeof(uint32_t)];
+                            if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, value, sizeof(value),
+                                                    "AutoIt EA06 integer token could not be read completely")) {
+                                UNP.error = 1;
+                                break;
+                            }
+                            snprintf((char *)&buf[UNP.cur_output], 12, "0x%08x ", cli_readint32((char *)value));
+                        }
                         UNP.cur_output += 11;
                         UNP.cur_input += 4;
                         break;
@@ -2106,12 +2135,20 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 20, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
 
-                        val = (uint64_t)cli_readint32((char *)&UNP.outputbuf[UNP.cur_input + 4]);
-                        val <<= 32;
-                        val += (uint64_t)cli_readint32((char *)&UNP.outputbuf[UNP.cur_input]);
+                        {
+                            uint8_t value[sizeof(uint64_t)];
+                            if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, value, sizeof(value),
+                                                    "AutoIt EA06 integer64 token could not be read completely")) {
+                                UNP.error = 1;
+                                break;
+                            }
+                            val = (uint64_t)cli_readint32((char *)&value[4]);
+                            val <<= 32;
+                            val += (uint64_t)cli_readint32((char *)value);
+                        }
                         snprintf((char *)&buf[UNP.cur_output], 20, "0x%016lx ", (unsigned long int)val);
                         UNP.cur_output += 19;
                         UNP.cur_input += 8;
@@ -2126,23 +2163,29 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 40, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
 
-                        if (fpu_words == FPU_ENDIAN_LITTLE) {
-                            snprintf((char *)&buf[UNP.cur_output], 39, "%g ", *(double *)&UNP.outputbuf[UNP.cur_input]);
-                        } else
-                            do {
-                                double x;
-                                uint8_t *j = (uint8_t *)&x;
-                                unsigned int i;
+                        {
+                            uint8_t value[sizeof(double)];
+                            double x;
+                            uint8_t *j = (uint8_t *)&x;
+                            unsigned int k;
 
-                                for (i = 0; i < 8; i++) {
-                                    j[7 - i] = UNP.outputbuf[UNP.cur_input + i];
-                                }
+                            if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, value, sizeof(value),
+                                                    "AutoIt EA06 double token could not be read completely")) {
+                                UNP.error = 1;
+                                break;
+                            }
+                            if (fpu_words == FPU_ENDIAN_LITTLE) {
+                                memcpy(&x, value, sizeof(x));
+                            } else {
+                                for (k = 0; k < sizeof(value); k++)
+                                    j[7 - k] = value[k];
+                            }
 
-                                snprintf((char *)&buf[UNP.cur_output], 39, "%g ", x); /* FIXME: check */
-                            } while (0);
+                            snprintf((char *)&buf[UNP.cur_output], 39, "%g ", x); /* FIXME: check */
+                        }
                         buf[UNP.cur_output + 38] = ' ';
                         buf[UNP.cur_output + 39] = '\0';
                         UNP.cur_output += strlen((char *)&buf[UNP.cur_output]);
@@ -2159,6 +2202,19 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     case 0x37: /* DIRECTIVE */
                     {
                         uint32_t chars, dchars, i;
+                        uint8_t value[sizeof(uint32_t)];
+                        uint8_t probe[20];
+                        uint8_t input_chunk[AUTOIT_INPUT_CHUNK];
+                        size_t probe_len;
+                        size_t sample_len;
+                        size_t j;
+                        size_t chunk;
+                        bool utf16;
+                        bool bom;
+                        size_t input_at;
+                        size_t converted_chars;
+                        size_t count;
+                        size_t unicode_count;
 
                         if (UNP.cur_input > UNP.usize || 4 > UNP.usize - UNP.cur_input) {
                             UNP.error = 1;
@@ -2166,7 +2222,12 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                             break;
                         }
 
-                        chars = cli_readint32((char *)&UNP.outputbuf[UNP.cur_input]);
+                        if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, value, sizeof(value),
+                                                "AutoIt EA06 string length could not be read completely")) {
+                            UNP.error = 1;
+                            break;
+                        }
+                        chars = cli_readint32((char *)value);
                         if (chars > UINT32_MAX / 2) {
                             UNP.error = 1;
                             cli_dbgmsg("autoit: character count overflow\n");
@@ -2182,21 +2243,69 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                         }
 
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, (size_t)chars + 3, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
 
                         if (prefixes[op - 0x30]) {
                             buf[UNP.cur_output++] = prefixes[op - 0x30];
                         }
 
                         if (chars) {
-                            for (i = 0; i < dchars; i += 2) {
-                                UNP.outputbuf[UNP.cur_input + i] ^= (uint8_t)chars;
-                                UNP.outputbuf[UNP.cur_input + i + 1] ^= (uint8_t)(chars >> 8);
+                            probe_len = MIN((size_t)dchars, sizeof(probe));
+                            if (!autoit_script_read(ctx, stream_tempfd, UNP.cur_input, probe, probe_len,
+                                                    "AutoIt EA06 string data could not be read completely")) {
+                                UNP.error = 1;
+                                break;
                             }
-                            u2a(&UNP.outputbuf[UNP.cur_input], dchars);
-                            memcpy(&buf[UNP.cur_output], &UNP.outputbuf[UNP.cur_input], chars);
-                            UNP.cur_output += chars;
+                            for (i = 0; i < probe_len; i++)
+                                probe[i] ^= (i & 1) ? (uint8_t)(chars >> 8) : (uint8_t)chars;
+
+                            utf16 = false;
+                            bom   = false;
+                            if (dchars > 4 && probe_len >= 3 && probe[0] == 0xff && probe[1] == 0xfe && probe[2]) {
+                                utf16 = true;
+                                bom   = true;
+                            } else {
+                                sample_len = MIN((size_t)20, (size_t)(dchars & ~1U));
+                                unicode_count = 0;
+                                for (i = 0; i < sample_len; i += 2) {
+                                    if (probe[i] != 0 && probe[i + 1] == 0)
+                                        unicode_count++;
+                                }
+                                utf16 = (unicode_count * 4 >= sample_len);
+                            }
+
+                            converted_chars = chars - (bom ? 1 : 0);
+                            input_at        = UNP.cur_input;
+                            if (utf16) {
+                                for (i = 0; i < converted_chars;) {
+                                    count = MIN((size_t)(converted_chars - i), sizeof(input_chunk) / 2);
+                                    if (bom)
+                                        input_at = (size_t)UNP.cur_input + 2 + (size_t)i * 2;
+                                    else
+                                        input_at = (size_t)UNP.cur_input + (size_t)i * 2;
+                                    if (!autoit_script_read(ctx, stream_tempfd, (uint32_t)input_at, input_chunk, count * 2,
+                                                            "AutoIt EA06 UTF-16 string data could not be read completely")) {
+                                        UNP.error = 1;
+                                        break;
+                                    }
+                                    for (j = 0; j < count; j++)
+                                        buf[UNP.cur_output++] = input_chunk[j * 2] ^ (uint8_t)chars;
+                                    i += (uint32_t)count;
+                                }
+                            } else {
+                                for (i = 0; i < chars;) {
+                                    chunk = MIN((size_t)(chars - i), sizeof(input_chunk));
+                                    if (!autoit_script_read(ctx, stream_tempfd, (uint32_t)(input_at + i), input_chunk, chunk,
+                                                            "AutoIt EA06 string data could not be read completely")) {
+                                        UNP.error = 1;
+                                        break;
+                                    }
+                                    for (j = 0; j < chunk; j++)
+                                        buf[UNP.cur_output++] = input_chunk[j] ^ (((i + j) & 1) ? (uint8_t)(chars >> 8) : (uint8_t)chars);
+                                    i += (uint32_t)chunk;
+                                }
+                            }
                             UNP.cur_input += dchars;
                         }
 
@@ -2235,8 +2344,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     case 0x57: /* ? */
                     case 0x58: /* : */
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 4, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
 
                         // TODO: Fix Autoit plus bug
                         //  if (op == 0x49) /* + */ and next op ==0x05 /*int32*/ and that int32 is negative...
@@ -2250,8 +2359,8 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
                     case 0x7f:
                         UNP.bits_avail--;
                         AUTOIT_RESERVE_OR_RETURN(buf, UNP.csize, UNP.cur_output, 1, ctx,
-                                                 free(UNP.outputbuf);
-                                                 free(buf));
+                                                 autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                                                      &stream_reserved, buf, reserve_status_));
                         buf[UNP.cur_output++] = '\n';
                         break;
 
@@ -2267,21 +2376,26 @@ static cl_error_t ea06(cli_ctx *ctx, const uint8_t *base, char *tmpd)
             if (UNP.error) {
                 cli_dbgmsg("autoit: decompilation aborted - partial script may exist\n");
                 if (ctx->scan_timed_out) {
-                    free(UNP.outputbuf);
-                    free(buf);
-                    return CL_ETIMEOUT;
+                    stream_output = false;
+                    return autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                               &stream_reserved, buf, CL_ETIMEOUT);
                 }
                 cli_mark_scan_incomplete(ctx, "AutoIt EA06 script decompilation was incomplete");
-                free(UNP.outputbuf);
-                free(buf);
-                return CL_EFORMAT;
+                stream_output = false;
+                return autoit_script_abort(ctx, &stream_tempfd, &stream_tempfile,
+                                           &stream_reserved, buf, CL_EFORMAT);
             }
 
-            free(UNP.outputbuf);
-            UNP.outputbuf = NULL;
+            ret = autoit_release_temp_member(ctx, &stream_tempfd, &stream_tempfile,
+                                             &stream_reserved, CL_SUCCESS);
+            stream_output = false;
+            if (ret != CL_SUCCESS) {
+                free(buf);
+                return ret;
+            }
         } else {
-            buf            = UNP.outputbuf;
-            UNP.cur_output = UNP.usize;
+            cli_mark_scan_incomplete(ctx, "AutoIt EA06 non-script member was not written to a temporary spool");
+            return CL_EFORMAT;
         }
 
         snprintf(tempfile, 1023, "%s" PATHSEP "autoit.%.3u", tmpd, files);
