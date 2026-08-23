@@ -5415,3 +5415,12 @@ remains `CL_EREAD`. Focused regressions cover both outcomes. Its native
 32-bit payload-size representation remains an explicit boundary for larger
 inputs; compiled scanner, sanitizer, production HWP corpus, and Sonic1
 qualification remain open.
+
+## TNEF attachment-range admission — 2026-08-22
+
+TNEF now validates each declared attachment payload range before creating or
+filling an output blob. A payload extending past the fmap is therefore a
+malformed/incomplete parse rather than an operational read failure; a fully
+in-range fmap callback failure remains `CL_EREAD`. Focused regressions cover
+both outcomes. Compiled scanner, sanitizer, production TNEF corpus, and
+Sonic1 qualification remain open.

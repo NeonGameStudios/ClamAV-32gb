@@ -377,6 +377,16 @@ tnef_attachment(fmap_t *map, off_t *pos, uint16_t type, uint16_t tag, int32_t le
 
     offset = *pos;
 
+    /* Validate the complete declared payload before reading or materializing
+     * any part of it. A genuinely short TNEF attribute is malformed input;
+     * only a fully in-range fmap callback failure is an operational read
+     * error. */
+    if (!CLI_ISCONTAINED_2_0_TO(fsize, offset, length)) {
+        cli_dbgmsg("TNEF: Incorrect length field in tnef_attachment\n");
+        cli_mark_scan_incomplete(ctx, "TNEF attachment length is outside the input");
+        return CL_EFORMAT;
+    }
+
     switch (tag) {
         case attATTACHTITLE:
             if (length <= 0)

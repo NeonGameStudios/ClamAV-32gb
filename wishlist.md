@@ -1432,5 +1432,12 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
 - Preflight the fixed HWPOLE2 32-bit payload-size prefix, preserving parse
   results for short headers and `CL_EREAD` for fully in-range callback
   failures; retain the native 32-bit payload-size boundary and compiled
-  scanner, sanitizer, production HWP corpus, and Sonic1 qualification as
-  release gates.
+ scanner, sanitizer, production HWP corpus, and Sonic1 qualification as
+ release gates.
+
+## TNEF attachment-range admission — 2026-08-22
+
+- Preflight declared TNEF attachment payloads before materialization,
+  preserving parse results for out-of-range data and `CL_EREAD` for fully
+  in-range callback failures; retain compiled scanner, sanitizer, production
+  TNEF corpus, and Sonic1 qualification as release gates.
