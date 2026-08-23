@@ -3414,6 +3414,8 @@ not_contains libclamav/ole2_extract.c '&(((const uint8_t *)phdr)[encryption_offs
 contains libclamav/udf.c 'if (read_status != NULL)'
 contains libclamav/udf.c 'length > ctx->fmap->len - offset'
 contains libclamav/tiff.c 'Heuristics.Broken.Media.TIFF.UnsupportedType'
+contains libclamav/special.c 'if (ctx == NULL || ctx->fmap == NULL)'
+contains unit_tests/check_clamav.c 'test_riff_missing_map_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_ole2_encryption_probe_uses_native_window'
 contains unit_tests/check_clamav.c 'test_ole2_encryption_probe_read_failure_is_fail_visible'
 contains libclamav/hfsplus.c 'outputBlocks++'

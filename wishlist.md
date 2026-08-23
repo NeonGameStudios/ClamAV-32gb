@@ -1521,3 +1521,9 @@ qualification as release gates.
 - Reject unknown TIFF IFD field types as explicit incomplete parse results and
   preserve the missing-map guard; retain compiled malformed-IFD, sanitizer,
   production TIFF corpus, and Sonic1 qualification as release gates.
+
+## RIFF range-status reset — 2026-08-23
+
+- Reset RIFF range status per request and reject a missing fmap at the detector
+  boundary; retain compiled callback-fault, malformed RIFF, sanitizer,
+  production RIFF corpus, and Sonic1 qualification as release gates.

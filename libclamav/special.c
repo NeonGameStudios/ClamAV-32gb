@@ -128,16 +128,26 @@ static cl_error_t riff_checktimelimit(cli_ctx *ctx)
  * walks a structurally confirmed file. */
 static const void *riff_need_off(cli_ctx *ctx, off_t offset, size_t length, cl_error_t *read_status)
 {
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
     const void *ptr;
 
+    if (read_status != NULL)
+        *read_status = CL_EPARSE;
+    if (ctx == NULL || ctx->fmap == NULL || length == 0)
+        return NULL;
+
+    map = ctx->fmap;
     if (offset < 0 || (uint64_t)offset > (uint64_t)map->len ||
         length > map->len - (size_t)offset)
         return NULL;
 
     ptr = fmap_need_off_once(map, (size_t)offset, length);
-    if (NULL == ptr)
-        *read_status = CL_EREAD;
+    if (NULL == ptr) {
+        if (read_status != NULL)
+            *read_status = CL_EREAD;
+    } else if (read_status != NULL) {
+        *read_status = CL_SUCCESS;
+    }
 
     return ptr;
 }
@@ -225,9 +235,13 @@ int cli_check_riff_exploit(cli_ctx *ctx)
     int big_endian, retval;
     cl_error_t read_status = CL_SUCCESS;
     off_t offset;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
 
     cli_dbgmsg("in cli_check_riff_exploit()\n");
+
+    if (ctx == NULL || ctx->fmap == NULL)
+        return CL_ENULLARG;
+    map = ctx->fmap;
 
     time_status = riff_checktimelimit(ctx);
     if (time_status != CL_SUCCESS)

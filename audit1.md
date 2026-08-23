@@ -5526,3 +5526,12 @@ parser return. The parser also rejects a missing input fmap before dereferencing
 it. A malformed-IFD regression covers the unsupported-type path. Compiled
 scanner, sanitizer, production TIFF corpus, and Sonic1 qualification remain
 open.
+
+## RIFF range-status reset — 2026-08-23
+
+The RIFF exploit detector now rejects a missing fmap before dereference and its
+bounded range helper resets status for every request, preserving `CL_EPARSE`
+for unavailable ranges and `CL_EREAD` only for in-range callback failures. A
+direct missing-map regression covers the public detector boundary. Compiled
+scanner, sanitizer, production RIFF corpus, and Sonic1 qualification remain
+open.
