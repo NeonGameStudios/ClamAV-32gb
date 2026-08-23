@@ -5179,3 +5179,18 @@ initialized timing state for debug logging.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled interpreter fault injection, interpreter/JIT qualification,
 sanitizer runs, and Sonic1 qualification remain open.
+
+## Bytecode API resource-table count arithmetic — 2026-08-22
+
+Bytecode API hashset, buffer-pipe, inflate, LZMA, BZip2, JavaScript-normalizer,
+and map creation paths formed resource-table sizes with unchecked `count + 1`
+and multiplication. The underlying allocator was bounded, but a wrapped count
+could bypass the intended table boundary. A shared helper now rejects counter
+and native-size overflow before each table growth and reports the failure to
+the bytecode event stream; valid allocations continue through the bounded
+allocator.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled API counter-overflow and allocation-fault coverage,
+interpreter/JIT qualification, sanitizer runs, and Sonic1 qualification
+remain open.

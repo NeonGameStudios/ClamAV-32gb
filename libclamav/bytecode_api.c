@@ -31,9 +31,11 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #include <json.h>
 #include <bzlib.h>
@@ -80,6 +82,20 @@ static void cli_bcapi_note_cleanup_failure(cli_ctx *cctx, cl_error_t *status,
         cli_mark_scan_incomplete(cctx, reason);
     if (status && (*status == CL_SUCCESS || *status == CL_VERIFIED || *status == CL_BREAK))
         *status = failure;
+}
+
+static int cli_bcapi_table_size(unsigned current, size_t element_size,
+                                unsigned *next, size_t *bytes)
+{
+    if (!element_size || current == UINT_MAX)
+        return -1;
+
+    *next = current + 1;
+    if ((size_t)*next > SIZE_MAX / element_size)
+        return -1;
+
+    *bytes = (size_t)*next * element_size;
+    return 0;
 }
 
 struct bc_lzma {
@@ -817,8 +833,15 @@ int32_t cli_bcapi_read_number(struct cli_bc_ctx *ctx, uint32_t radix)
 
 int32_t cli_bcapi_hashset_new(struct cli_bc_ctx *ctx)
 {
-    unsigned n            = ctx->nhashsets + 1;
-    struct cli_hashset *s = cli_max_realloc(ctx->hashsets, sizeof(*ctx->hashsets) * n);
+    unsigned n;
+    size_t table_size;
+    struct cli_hashset *s;
+
+    if (cli_bcapi_table_size(ctx->nhashsets, sizeof(*ctx->hashsets), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
+    s = cli_max_realloc(ctx->hashsets, table_size);
     if (!s) {
         cli_event_error_oom(EV, 0);
         return -1;
@@ -893,12 +916,18 @@ int32_t cli_bcapi_buffer_pipe_new(struct cli_bc_ctx *ctx, uint32_t size)
 {
     unsigned char *data;
     struct bc_buffer *b;
-    unsigned n = ctx->nbuffers + 1;
+    unsigned n;
+    size_t table_size;
+
+    if (cli_bcapi_table_size(ctx->nbuffers, sizeof(*ctx->buffers), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
 
     data = cli_max_calloc(1, size);
     if (!data)
         return -1;
-    b = cli_max_realloc(ctx->buffers, sizeof(*ctx->buffers) * n);
+    b = cli_max_realloc(ctx->buffers, table_size);
     if (!b) {
         free(data);
         return -1;
@@ -916,12 +945,18 @@ int32_t cli_bcapi_buffer_pipe_new(struct cli_bc_ctx *ctx, uint32_t size)
 int32_t cli_bcapi_buffer_pipe_new_fromfile(struct cli_bc_ctx *ctx, uint32_t at)
 {
     struct bc_buffer *b;
-    unsigned n = ctx->nbuffers + 1;
+    unsigned n;
+    size_t table_size;
+
+    if (cli_bcapi_table_size(ctx->nbuffers, sizeof(*ctx->buffers), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
 
     if (at >= ctx->file_size)
         return -1;
 
-    b = cli_max_realloc(ctx->buffers, sizeof(*ctx->buffers) * n);
+    b = cli_max_realloc(ctx->buffers, table_size);
     if (!b) {
         return -1;
     }
@@ -940,12 +975,18 @@ int32_t cli_bcapi_buffer_pipe_new_fromfile(struct cli_bc_ctx *ctx, uint32_t at)
 int32_t cli_bcapi_buffer_pipe_new_fromfile64(struct cli_bc_ctx *ctx, uint64_t at)
 {
     struct bc_buffer *b;
-    unsigned n = ctx->nbuffers + 1;
+    unsigned n;
+    size_t table_size;
+
+    if (cli_bcapi_table_size(ctx->nbuffers, sizeof(*ctx->buffers), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
 
     if (at >= ctx->file_size64 || at > (uint64_t)SIZE_MAX)
         return -1;
 
-    b = cli_max_realloc(ctx->buffers, sizeof(*ctx->buffers) * n);
+    b = cli_max_realloc(ctx->buffers, table_size);
     if (!b)
         return -1;
     ctx->buffers    = b;
@@ -1110,12 +1151,18 @@ int32_t cli_bcapi_inflate_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to,
     int ret;
     z_stream stream;
     struct bc_inflate *b;
-    unsigned n = ctx->ninflates + 1;
+    unsigned n;
+    size_t table_size;
+
+    if (cli_bcapi_table_size(ctx->ninflates, sizeof(*ctx->inflates), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
     if (!get_buffer(ctx, from) || !get_buffer(ctx, to)) {
         cli_dbgmsg("bytecode api: inflate_init: invalid buffers!\n");
         return -1;
     }
-    b = cli_max_realloc(ctx->inflates, sizeof(*ctx->inflates) * n);
+    b = cli_max_realloc(ctx->inflates, table_size);
     if (!b) {
         return -1;
     }
@@ -1232,8 +1279,14 @@ int32_t cli_bcapi_lzma_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
 {
     int ret;
     struct bc_lzma *b;
-    unsigned n = ctx->nlzmas + 1;
+    unsigned n;
+    size_t table_size;
     unsigned avail_in_orig;
+
+    if (cli_bcapi_table_size(ctx->nlzmas, sizeof(*ctx->lzmas), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
 
     if (!get_buffer(ctx, from) || !get_buffer(ctx, to)) {
         cli_dbgmsg("bytecode api: lzma_init: invalid buffers!\n");
@@ -1246,7 +1299,7 @@ int32_t cli_bcapi_lzma_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
         return -1;
     }
 
-    b = cli_max_realloc(ctx->lzmas, sizeof(*ctx->lzmas) * n);
+    b = cli_max_realloc(ctx->lzmas, table_size);
     if (!b) {
         return -1;
     }
@@ -1328,12 +1381,18 @@ int32_t cli_bcapi_bzip2_init(struct cli_bc_ctx *ctx, int32_t from, int32_t to)
 {
     int ret;
     struct bc_bzip2 *b;
-    unsigned n = ctx->nbzip2s + 1;
+    unsigned n;
+    size_t table_size;
+
+    if (cli_bcapi_table_size(ctx->nbzip2s, sizeof(*ctx->bzip2s), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
     if (!get_buffer(ctx, from) || !get_buffer(ctx, to)) {
         cli_dbgmsg("bytecode api: bzip2_init: invalid buffers!\n");
         return -1;
     }
-    b = cli_max_realloc(ctx->bzip2s, sizeof(*ctx->bzip2s) * n);
+    b = cli_max_realloc(ctx->bzip2s, table_size);
     if (!b) {
         return -1;
     }
@@ -1431,7 +1490,13 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
 {
     struct parser_state *state;
     struct bc_jsnorm *b;
-    unsigned n = ctx->njsnorms + 1;
+    unsigned n;
+    size_t table_size;
+
+    if (cli_bcapi_table_size(ctx->njsnorms, sizeof(*ctx->jsnorms), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
     if (!get_buffer(ctx, from)) {
         cli_dbgmsg("bytecode api: jsnorm_init: invalid buffers!\n");
         return -1;
@@ -1439,7 +1504,7 @@ int32_t cli_bcapi_jsnorm_init(struct cli_bc_ctx *ctx, int32_t from)
     state = cli_js_init();
     if (!state)
         return -1;
-    b = cli_max_realloc(ctx->jsnorms, sizeof(*ctx->jsnorms) * n);
+    b = cli_max_realloc(ctx->jsnorms, table_size);
     if (!b) {
         cli_js_destroy(state);
         return -1;
@@ -1680,11 +1745,17 @@ uint32_t cli_bcapi_entropy_buffer(struct cli_bc_ctx *ctx, uint8_t *s, int32_t le
 
 int32_t cli_bcapi_map_new(struct cli_bc_ctx *ctx, int32_t keysize, int32_t valuesize)
 {
-    unsigned n = ctx->nmaps + 1;
+    unsigned n;
+    size_t table_size;
     struct cli_map *s;
+
+    if (cli_bcapi_table_size(ctx->nmaps, sizeof(*ctx->maps), &n, &table_size) != 0) {
+        cli_event_error_oom(EV, 0);
+        return -1;
+    }
     if (!keysize)
         return -1;
-    s = cli_max_realloc(ctx->maps, sizeof(*ctx->maps) * n);
+    s = cli_max_realloc(ctx->maps, table_size);
     if (!s)
         return -1;
     ctx->maps  = s;

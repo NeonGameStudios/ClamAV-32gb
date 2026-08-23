@@ -32,6 +32,10 @@
   and stop execution with `CL_EMEM` when registration fails, rather than
   continuing with a zero pointer identifier. Add compiled interpreter fault
   injection and sanitizer coverage.
+- Bytecode API hashset, buffer, decompressor, JavaScript-normalizer, and map
+  tables now check `count + 1` and native-size multiplication before bounded
+  reallocation. Add compiled API counter-overflow and allocation-fault
+  coverage across interpreter/JIT variants.
 - PDF, PE, ELF, Mach-O, and root-metadata bytecode hook-context allocation
   failures now mark required hook work incomplete before returning `CL_EMEM`;
   compiled hook fault injection, interpreter/JIT qualification, production
