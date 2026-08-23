@@ -12265,6 +12265,70 @@ START_TEST(test_tar_base256_size_is_supported)
 }
 END_TEST
 
+START_TEST(test_tar_pax_size_is_supported)
+{
+    uint8_t data[3072] = {0};
+    unsigned int checksum = 0;
+    struct cl_scan_options options;
+    fmap_t *map;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t i;
+
+    memcpy(data, "PaxHeader", sizeof("PaxHeader") - 1U);
+    memcpy(data + 124, "00000000011", 11);
+    data[156] = 'x';
+    memcpy(data + 257, "ustar", 5);
+    memset(data + 148, ' ', 8);
+    for (i = 0; i < 512; i++)
+        checksum += data[i];
+    snprintf((char *)(data + 148), 8, "%06o", checksum);
+    data[154] = ' ';
+    data[155] = '\0';
+    memcpy(data + 512, "9 size=2\n", 9);
+
+    checksum = 0;
+    memcpy(data + 1024, "pax-member", sizeof("pax-member") - 1U);
+    memcpy(data + 1024 + 124, "00000000000", 11);
+    data[1024 + 156] = '0';
+    memcpy(data + 1024 + 257, "ustar", 5);
+    memset(data + 1024 + 148, ' ', 8);
+    for (i = 1024; i < 1536; i++)
+        checksum += data[i];
+    snprintf((char *)(data + 1024 + 148), 8, "%06o", checksum);
+    data[1024 + 154] = ' ';
+    data[1024 + 155] = '\0';
+    data[1536] = 'O';
+    data[1537] = 'K';
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_POSIX_TAR", NULL);
+    ck_assert_int_eq(ret, CL_CLEAN);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(!map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tar_time_limit_is_fail_visible)
 {
     static const uint8_t data[512] = {0};
@@ -25571,6 +25635,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_end_marker_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_base256_size_is_supported);
+    tcase_add_test(tc_cl, test_tar_pax_size_is_supported);
     tcase_add_test(tc_cl, test_tar_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_initial_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_invalid_magic_is_fail_visible);

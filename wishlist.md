@@ -2149,7 +2149,7 @@ and Sonic1 qualification as release gates.
 
 ## TAR GNU base-256 size admission — 2026-08-23
 
-- Accept checked positive GNU base-256 TAR size fields in addition to legacy
-  octal, while rejecting negative/overflow values; add PAX extended-size
-  support and retain compiled TAR, sanitizer, corpus, and Sonic1 qualification
-  as release gates.
+- Accept checked positive GNU base-256 TAR size fields and bounded PAX decimal
+  `size=` overrides in addition to legacy octal, while rejecting
+  negative/overflow values; retain compiled TAR, sanitizer, corpus, and Sonic1
+  qualification as release gates.

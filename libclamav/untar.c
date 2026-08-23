@@ -57,6 +57,7 @@
 #define TARCHECKSUMOFFSET 148
 #define TARCHECKSUMLEN 8
 #define TARFILETYPEOFFSET 156
+#define TARPAXRECORDMAX 4096
 
 static bool
 octal(const char *str, uint64_t *value)
@@ -149,6 +150,88 @@ cli_untar_checktimelimit(cli_ctx *ctx, const char *reason)
     return status;
 }
 
+static cl_error_t
+cli_untar_parse_pax_size(cli_ctx *ctx, size_t offset, size_t length, uint64_t *size_value, bool *found)
+{
+    size_t consumed = 0;
+
+    if (ctx == NULL || ctx->fmap == NULL || size_value == NULL || found == NULL)
+        return CL_ENULLARG;
+
+    *found = false;
+    while (consumed < length) {
+        const unsigned char *prefix;
+        const unsigned char *record;
+        size_t cursor;
+        size_t remaining = length - consumed;
+        size_t prefix_len = MIN(remaining, (size_t)32);
+        size_t record_len = 0;
+        size_t nread      = 0;
+        size_t space      = SIZE_MAX;
+        size_t equals;
+        size_t i;
+        uint64_t parsed = 0;
+        cl_error_t status;
+
+        if (consumed > SIZE_MAX - offset)
+            return CL_EPARSE;
+        cursor = offset + consumed;
+
+        status = cli_untar_checktimelimit(ctx, "TAR PAX metadata traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            return status;
+
+        prefix = fmap_need_off_once_len(ctx->fmap, cursor, prefix_len, &nread);
+        if (prefix == NULL || nread != prefix_len) {
+            return (cursor < ctx->fmap->len) ? CL_EREAD : CL_EPARSE;
+        }
+
+        for (i = 0; i < prefix_len; i++) {
+            if (prefix[i] == ' ') {
+                space = i;
+                break;
+            }
+            if (prefix[i] < '0' || prefix[i] > '9' || record_len > (SIZE_MAX - (prefix[i] - '0')) / 10)
+                return CL_EPARSE;
+            record_len = record_len * 10 + (prefix[i] - '0');
+        }
+
+        if (space == SIZE_MAX || space == 0 || record_len <= space + 2 || record_len > TARPAXRECORDMAX ||
+            record_len > remaining)
+            return CL_EPARSE;
+        if (cursor > ctx->fmap->len || record_len > ctx->fmap->len - cursor)
+            return CL_EPARSE;
+
+        record = fmap_need_off_once_len(ctx->fmap, cursor, record_len, &nread);
+        if (record == NULL || nread != record_len)
+            return (cursor < ctx->fmap->len) ? CL_EREAD : CL_EPARSE;
+        if (record[record_len - 1] != '\n')
+            return CL_EPARSE;
+
+        equals = space + 1;
+        while (equals < record_len - 1 && record[equals] != '=')
+            equals++;
+        if (equals == space + 1 || equals >= record_len - 1)
+            return CL_EPARSE;
+
+        if (equals - (space + 1) == 4 && memcmp(record + space + 1, "size", 4) == 0) {
+            if (equals + 1 >= record_len - 1)
+                return CL_EPARSE;
+            for (i = equals + 1; i < record_len - 1; i++) {
+                if (record[i] < '0' || record[i] > '9' || parsed > (UINT64_MAX - (record[i] - '0')) / 10)
+                    return CL_EPARSE;
+                parsed = parsed * 10 + (record[i] - '0');
+            }
+            *size_value = parsed;
+            *found      = true;
+        }
+
+        consumed += record_len;
+    }
+
+    return CL_SUCCESS;
+}
+
 static cl_error_t cli_untar_finish_member(cli_ctx *ctx, int *fd, const char *fullname, const char *name,
                                           bool scan, uint64_t temporary_reserved)
 {
@@ -236,6 +319,10 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
     bool incomplete     = false;
     bool saw_zero_block = false;
     bool member_incomplete = false;
+    bool pax_size_pending   = false;
+    bool pax_global_size    = false;
+    uint64_t pax_pending_value = 0;
+    uint64_t pax_global_value  = 0;
     uint64_t temporary_reserved = 0;
     unsigned int files  = 0;
     char fullname[PATH_MAX + 1];
@@ -299,6 +386,8 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             int directory, skipEntry = 0;
             int checksum = -1;
             char magic[7], osize[TARSIZELEN + 1];
+            bool pax_header;
+            bool pax_found = false;
             size = 0;
             if (fout >= 0) {
                 ret = cli_untar_finish_member(ctx, &fout, fullname, name, !member_incomplete,
@@ -361,6 +450,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             }
 
             type = block[TARFILETYPEOFFSET];
+            pax_header = (type == 'g' || type == 'x');
 
             switch (type) {
                 default:
@@ -401,6 +491,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
             }
 
             if (directory) {
+                pax_size_pending = false;
                 in_block = 0;
                 continue;
             }
@@ -411,9 +502,44 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 cli_dbgmsg("cli_untar: Invalid size in tar header\n");
                 cli_mark_scan_incomplete(ctx, "TAR entry size was invalid");
                 incomplete = true;
+                if (!pax_header)
+                    pax_size_pending = false;
                 skipEntry++;
             } else {
-                size = (size_t)size_value;
+                if (pax_header) {
+                    uint64_t raw_size_value = size_value;
+                    uint64_t pax_value      = 0;
+
+                    ret = cli_untar_parse_pax_size(ctx, pos, (size_t)raw_size_value, &pax_value, &pax_found);
+                    if (ret != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, ret == CL_EREAD ? "TAR PAX metadata could not be read completely"
+                                                                       : "TAR PAX metadata was malformed");
+                        return ret;
+                    }
+                    if (type == 'x') {
+                        pax_size_pending = pax_found;
+                        if (pax_found)
+                            pax_pending_value = pax_value;
+                    } else if (pax_found) {
+                        pax_global_size = true;
+                        pax_global_value = pax_value;
+                    }
+                    /* The PAX header's own size controls its payload skip. */
+                    size_value = raw_size_value;
+                } else if (pax_size_pending) {
+                    size_value       = pax_pending_value;
+                    pax_size_pending = false;
+                } else if (pax_global_size) {
+                    size_value = pax_global_value;
+                }
+
+                if (size_value > SIZE_MAX) {
+                    cli_dbgmsg("cli_untar: PAX size exceeds native coordinate range\n");
+                    cli_mark_scan_incomplete(ctx, "TAR PAX member size exceeded the coordinate range");
+                    return CL_EPARSE;
+                } else {
+                    size = (size_t)size_value;
+                }
                 cli_dbgmsg("cli_untar: size = %zu\n", size);
                 ret = cli_checklimits("cli_untar", ctx, size, 0, 0);
                 if (ret == CL_EMAXFILES) {

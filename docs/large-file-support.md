@@ -6247,7 +6247,8 @@ Raw embedded-type dispatch now rejects negative or out-of-map matcher offsets be
 
 TAR size fields now accept checked positive GNU base-256 values in addition to
 legacy ASCII octal. This preserves valid member sizes beyond the legacy octal
-range while rejecting negative or overflowing encodings before temporary
-admission. A focused valid POSIX TAR regression covers the binary field and
-complete end marker. PAX extended-size records, compiled TAR corpus, sanitizer,
-and supported-build Sonic1 qualification remain release gates.
+range and bounded PAX decimal `size=` overrides while rejecting negative or
+overflowing encodings before temporary admission. Focused valid POSIX TAR
+regressions cover both encodings and complete end markers. Malformed/oversized
+PAX records, compiled TAR corpus, sanitizer, and supported-build Sonic1
+qualification remain release gates.

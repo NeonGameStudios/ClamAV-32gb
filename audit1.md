@@ -6537,7 +6537,8 @@ The TAR size field previously accepted only legacy ASCII octal. Valid GNU TAR
 archives use the high-bit binary encoding when a member size exceeds that
 field's octal range, so those members were classified as invalid before their
 content could be considered. TAR now accepts checked positive base-256 size
-fields, rejects negative or overflowing values, and retains the existing
-native-width and shared-limit checks. A focused valid POSIX TAR regression
-covers the binary field and complete two-block termination. PAX extended-size
-records, compiled TAR corpus, sanitizer, and Sonic1 qualification remain open.
+fields and bounded PAX decimal `size=` overrides, rejects negative or
+overflowing values, and retains the existing native-width and shared-limit
+checks. Focused valid POSIX TAR regressions cover both encodings and complete
+two-block termination. Malformed/oversized PAX records, compiled TAR corpus,
+sanitizer, and Sonic1 qualification remain open.
