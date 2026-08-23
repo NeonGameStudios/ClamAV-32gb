@@ -1715,3 +1715,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Saturate structured-report logical/file/parser/detector counters at
   `UINT64_MAX` so very large directory or parser walks cannot wrap diagnostic
   evidence to zero; retain compiled report and Sonic1 qualification gates.
+
+## OLE2 document-stream encryption probe read propagation — 2026-08-23
+
+- Route the `WordDocument`, `WorkBook`, and `PowerPoint Document` encryption
+  probes through checked fmap ranges and propagate truncation versus in-range
+  callback failures through the property walker; focused WordDocument and
+  WorkBook regressions are present, while compiled Office corpus, sanitizer,
+  and Sonic1 qualification remain release gates.

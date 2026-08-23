@@ -5824,3 +5824,16 @@ saturate at `UINT64_MAX`; the focused unit regression covers all three
 increment paths plus file counting. This changes report evidence only and
 does not alter scan admission. Compiled report and Sonic1 qualification remain
 open.
+
+## OLE2 document-stream encryption probe read propagation — 2026-08-23
+
+The OLE2 property walker identified `WordDocument`, `WorkBook`, and
+`PowerPoint Document` streams, but their fixed encryption probes still used
+raw `fmap_need_off_once()` calls whose NULL result could be ignored. The probes
+now use the existing checked native-width range helper, distinguish truncation
+from an in-range callback failure, mark the layer incomplete, and return the
+status through both property-tree passes. Focused callback-backed
+`password.fat.doc` and `password.fat.xls` regressions verify that failed
+WordDocument and WorkBook probes return `CL_EREAD` and make the fmap
+non-cacheable. Compiled Office corpus, sanitizer, and Sonic1 qualification
+remain open.

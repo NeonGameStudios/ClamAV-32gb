@@ -16751,6 +16751,126 @@ START_TEST(test_ole2_header_read_failure_is_fail_visible)
 }
 END_TEST
 
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+struct ole2_word_encryption_failure_state {
+    int fd;
+    size_t fail_offset;
+    size_t fail_length;
+    unsigned int failed_reads;
+};
+
+static off_t ole2_word_encryption_failure_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct ole2_word_encryption_failure_state *state = handle;
+
+    /* The OLE2 header, property sectors, and bounded encryption-info window
+     * use different ranges, so the fixture-specific fault reaches the
+     * document-stream encryption probe. */
+    if (offset >= 0 && ((state->fail_offset == SIZE_MAX && count == state->fail_length) ||
+                        ((size_t)offset == state->fail_offset && count == state->fail_length))) {
+        state->failed_reads++;
+        errno = EIO;
+        return -1;
+    }
+
+    return pread(state->fd, buf, count, offset);
+}
+
+START_TEST(test_ole2_word_encryption_probe_read_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct ole2_word_encryption_failure_state state;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/ole2_encryption/password.fat.doc", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0, "empty OLE2 fixture: %s", file_path);
+
+    state.fd           = fd;
+    state.fail_offset  = SIZE_MAX;
+    state.fail_length  = 32U; /* packed fib_base_t */
+    state.failed_reads = 0;
+    map                = cl_fmap_open_handle(&state, 0, (size_t)sb.st_size,
+                                             ole2_word_encryption_failure_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_msg(state.failed_reads > 0, "WordDocument encryption probe did not reach the injected read fault");
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OLE2 WordDocument encryption header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ck_assert_int_eq(close(fd), 0);
+}
+END_TEST
+
+START_TEST(test_ole2_workbook_encryption_probe_read_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    struct ole2_word_encryption_failure_state state;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/ole2_encryption/password.fat.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0, "empty OLE2 fixture: %s", file_path);
+
+    state.fd           = fd;
+    state.fail_offset  = 1536U; /* CFB sector 2, the fixture's WorkBook stream */
+    state.fail_length  = 512U;  /* native CFB sector size */
+    state.failed_reads = 0;
+    map                = cl_fmap_open_handle(&state, 0, (size_t)sb.st_size,
+                                             ole2_word_encryption_failure_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_msg(state.failed_reads > 0, "WorkBook encryption probe did not reach the injected read fault");
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "OLE2 WorkBook encryption block could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    ck_assert_int_eq(close(fd), 0);
+}
+END_TEST
+#endif
+
 static size_t ole2_block_failure_offset = SIZE_MAX;
 static size_t ole2_block_failure_length = SIZE_MAX;
 
@@ -23630,6 +23750,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole2_sector_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_invalid_block_geometry_is_fail_visible);
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_cl, test_ole2_word_encryption_probe_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_ole2_workbook_encryption_probe_read_failure_is_fail_visible);
+#endif
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_ole2_encryption_probe_uses_native_window);
     tcase_add_test(tc_cl, test_ole2_encryption_probe_read_failure_is_fail_visible);

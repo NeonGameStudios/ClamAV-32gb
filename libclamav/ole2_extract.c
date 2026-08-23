@@ -803,23 +803,28 @@ static size_t get_stream_data_offset(ole2_header_t *hdr, const property_t *word_
  * https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-doc/26fb6c06-4e5c-4778-ab4e-edbf26a545bb
  * for more information.
  */
-static void test_for_encryption(const property_t *word_block, ole2_header_t *hdr, encryption_status_t *pEncryptionStatus)
+static cl_error_t test_for_encryption(const property_t *word_block, ole2_header_t *hdr, encryption_status_t *pEncryptionStatus)
 {
 
     const uint8_t *ptr = NULL;
     fib_base_t fib     = {0};
+    cl_error_t read_status;
 
     size_t fib_offset = get_stream_data_offset(hdr, word_block, word_block->start_block);
 
     if (fib_offset > hdr->m_length || sizeof(fib_base_t) > hdr->m_length - fib_offset) {
         cli_dbgmsg("ERROR: Invalid offset for File Information Block %zu (0x%zx)\n", fib_offset, fib_offset);
-        return;
+        cli_mark_scan_incomplete(hdr->ctx, "OLE2 WordDocument encryption header is truncated");
+        return CL_EPARSE;
     }
 
-    ptr = fmap_need_off_once(hdr->map, fib_offset, sizeof(fib_base_t));
+    ptr = ole2_need_range(hdr, fib_offset, sizeof(fib_base_t), &read_status);
     if (NULL == ptr) {
         cli_dbgmsg("ERROR: Invalid offset for File Information Block %zu (0x%zx)\n", fib_offset, fib_offset);
-        return;
+        cli_mark_scan_incomplete(hdr->ctx, read_status == CL_EREAD
+                                             ? "OLE2 WordDocument encryption header could not be read completely"
+                                             : "OLE2 WordDocument encryption header is truncated");
+        return read_status;
     }
     copy_fib_base(&fib, ptr);
 
@@ -827,7 +832,7 @@ static void test_for_encryption(const property_t *word_block, ole2_header_t *hdr
 
     if (FIB_BASE_IDENTIFIER != fib.wIdent) {
         cli_dbgmsg("ERROR: Invalid identifier for File Information Block %d (0x%x)\n", fib.wIdent, fib.wIdent);
-        return;
+        return CL_SUCCESS;
     }
 
     /*TODO: Look into whether or not it's possible to determine the xor key when
@@ -839,6 +844,8 @@ static void test_for_encryption(const property_t *word_block, ole2_header_t *hdr
     if (is_obfuscated(&fib)) {
         pEncryptionStatus->encryption_type = XOR_OBFUSCATION;
     }
+
+    return CL_SUCCESS;
 }
 
 static size_t read_uint16(const uint8_t *const ptr, uint32_t ptr_size, uint32_t *idx, uint16_t *dst)
@@ -888,43 +895,47 @@ static bool find_file_pass(const uint8_t *const ptr, uint32_t ptr_size, uint32_t
  * Search for the FilePass structure.
  * https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-xls/cf9ae8d5-4e8c-40a2-95f1-3b31f16b5529
  */
-static void test_for_xls_encryption(const property_t *word_block, ole2_header_t *hdr, encryption_status_t *pEncryptionStatus)
+static cl_error_t test_for_xls_encryption(const property_t *word_block, ole2_header_t *hdr, encryption_status_t *pEncryptionStatus)
 {
     uint16_t tmp16;
     uint32_t idx;
+    cl_error_t read_status;
 
     size_t stream_data_offset = get_stream_data_offset(hdr, word_block, word_block->start_block);
 
-    uint32_t block_size      = (1 << hdr->log2_big_block_size);
-    const uint8_t *const ptr = fmap_need_off_once(hdr->map, stream_data_offset, block_size);
+    size_t block_size         = (size_t)1 << hdr->log2_big_block_size;
+    const uint8_t *const ptr  = ole2_need_range(hdr, stream_data_offset, block_size, &read_status);
     if (NULL == ptr) {
         cli_dbgmsg("ERROR: Invalid offset for File Information Block %zu (0x%zx)\n", stream_data_offset, stream_data_offset);
-        return;
+        cli_mark_scan_incomplete(hdr->ctx, read_status == CL_EREAD
+                                             ? "OLE2 WorkBook encryption block could not be read completely"
+                                             : "OLE2 WorkBook encryption block is truncated");
+        return read_status;
     }
 
     /*Validate keyword*/
     idx = 0;
     if (sizeof(uint16_t) != read_uint16(ptr, block_size, &idx, &tmp16)) {
-        return;
+        return CL_SUCCESS;
     }
 
     /*Invalid keyword*/
     if (2057 != tmp16) {
-        return;
+        return CL_SUCCESS;
     }
 
     /*Skip past this size.*/
     if (sizeof(uint16_t) != read_uint16(ptr, block_size, &idx, &tmp16)) {
-        return;
+        return CL_SUCCESS;
     }
     idx += tmp16;
 
     if (!find_file_pass(ptr, block_size, &idx)) {
-        return;
+        return CL_SUCCESS;
     }
 
     if (sizeof(uint16_t) != read_uint16(ptr, block_size, &idx, &tmp16)) {
-        return;
+        return CL_SUCCESS;
     }
 
     if (XLS_RC4_ENCRYPTION == tmp16) {
@@ -934,6 +945,8 @@ static void test_for_xls_encryption(const property_t *word_block, ole2_header_t 
         pEncryptionStatus->encryption_type = XOR_OBFUSCATION;
         pEncryptionStatus->encrypted       = true;
     }
+
+    return CL_SUCCESS;
 }
 
 /**
@@ -1070,11 +1083,23 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
         }
 
         if (0 == ole2_cmp_name(prop_block[idx].name, prop_block[idx].name_size, "WORDDocument")) {
-            test_for_encryption(&(prop_block[idx]), hdr, pEncryptionStatus);
+            ret = test_for_encryption(&(prop_block[idx]), hdr, pEncryptionStatus);
+            if (ret != CL_SUCCESS) {
+                ole2_list_delete(&node_list);
+                return ret;
+            }
         } else if (0 == ole2_cmp_name(prop_block[idx].name, prop_block[idx].name_size, "WorkBook")) {
-            test_for_xls_encryption(&(prop_block[idx]), hdr, pEncryptionStatus);
+            ret = test_for_xls_encryption(&(prop_block[idx]), hdr, pEncryptionStatus);
+            if (ret != CL_SUCCESS) {
+                ole2_list_delete(&node_list);
+                return ret;
+            }
         } else if (0 == ole2_cmp_name(prop_block[idx].name, prop_block[idx].name_size, "PowerPoint Document")) {
-            test_for_encryption(&(prop_block[idx]), hdr, pEncryptionStatus);
+            ret = test_for_encryption(&(prop_block[idx]), hdr, pEncryptionStatus);
+            if (ret != CL_SUCCESS) {
+                ole2_list_delete(&node_list);
+                return ret;
+            }
         } else if (0 == ole2_cmp_name(prop_block[idx].name, prop_block[idx].name_size, "EncryptionInfo")) {
             pEncryptionStatus->encrypted = true;
         } else if (0 == ole2_cmp_name(prop_block[idx].name, prop_block[idx].name_size, "EncryptedPackage")) {
