@@ -487,6 +487,7 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
             written = cli_writen(ofd, mPtr, to_write);
             if (written != to_write) {
                 cli_errmsg("hfsplus_scanfile: write error\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ fork contents could not be written completely");
                 status = CL_EWRITE;
                 goto done;
             }
@@ -929,6 +930,7 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
 
     if (lseek(fd, resourceHeader.mapOffset, SEEK_SET) != resourceHeader.mapOffset) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to map in temporary file\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ resource map could not be located completely");
         status = CL_ESEEK;
         goto done;
     }
@@ -958,6 +960,7 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
         if (memcmp(resourceType.type, "cmpf", 4) == 0) {
             if (cmpfInstanceIdx != -1) {
                 cli_dbgmsg("hfsplus_seek_to_cmpf_resource: There are several cmpf resource types in the file\n");
+                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type table is ambiguous");
                 status = CL_EFORMAT;
                 goto done;
             }
@@ -971,12 +974,14 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
 
     if (cmpfInstanceIdx < 0) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Didn't find cmpf resource type\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource type is missing");
         status = CL_EFORMAT;
         goto done;
     }
 
     if (lseek(fd, cmpfInstanceIdx * sizeof(hfsPlusReferenceEntry), SEEK_CUR) < 0) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to instance index\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource index could not be located completely");
         status = CL_ESEEK;
         goto done;
     }
@@ -992,6 +997,7 @@ static cl_error_t hfsplus_seek_to_cmpf_resource(cli_ctx *ctx, int fd, size_t *si
 
     if (lseek(fd, resourceHeader.dataOffset + dataOffset, SEEK_SET) < 0) {
         cli_dbgmsg("hfsplus_seek_to_cmpf_resource: Failed to seek to data offset\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource data could not be located completely");
         status = CL_ESEEK;
         goto done;
     }
@@ -1264,6 +1270,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                     if (attributeSize < sizeof(header)) {
                         cli_warnmsg("hfsplus_walk_catalog: Error: Compression attribute size is less than the compression header\n");
+                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file header is incomplete");
                         status = CL_EFORMAT;
                         goto done;
                     }
@@ -1280,6 +1287,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                     if (header.magic != DECMPFS_HEADER_MAGIC) {
                         cli_dbgmsg("hfsplus_walk_catalog: Unexpected magic value for compression header: 0x%08x\n", header.magic);
+                        cli_mark_scan_incomplete(ctx, "HFS+ compressed-file header has invalid magic");
                         status = CL_EFORMAT;
                         goto done;
                     }
@@ -1318,6 +1326,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             size_t written;
                             if (attributeSize < sizeof(header) + 1) {
                                 cli_dbgmsg("hfsplus_walk_catalog: Unexpected end of stream, no compression flag\n");
+                                cli_mark_scan_incomplete(ctx, "HFS+ inline compressed file lacks its compression flag");
                                 status = CL_EFORMAT;
                                 goto done;
                             }
@@ -1325,6 +1334,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             if ((attribute[sizeof(header)] & 0x0f) == 0x0f) { // Data is stored uncompressed
                                 if (attributeSize - sizeof(header) - 1 != header.fileSize) {
                                     cli_dbgmsg("hfsplus_walk_catalog: Expected file size different from size of data available\n");
+                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed file size does not match its available data");
                                     status = CL_EFORMAT;
                                     goto done;
                                 }
@@ -1379,6 +1389,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                             break;
                                     }
 
+                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed decoder could not be initialized");
                                     status = CL_EFORMAT;
                                     goto done;
                                 }
@@ -1392,8 +1403,11 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 }
 
                                 z_ret = inflateEnd(&stream);
-                                if (z_ret == Z_STREAM_ERROR) {
+                                if (z_ret != Z_OK) {
                                     cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
+                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed decoder could not be finalized");
+                                    status = CL_EFORMAT;
+                                    goto done;
                                 }
 
                                 status = cli_checktimelimit(ctx);
@@ -1410,6 +1424,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             }
                             if (written != header.fileSize) {
                                 cli_errmsg("hfsplus_walk_catalog: write error\n");
+                                cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output could not be written completely");
                                 status = CL_EWRITE;
                                 goto done;
                             }
@@ -1433,6 +1448,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                             // attribute)
                             if (fileRec.resourceFork.logicalSize < 4096) {
                                 cli_dbgmsg("hfsplus_walk_catalog: Error: Expected more data in the compressed resource fork\n");
+                                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource fork is incomplete");
                                 status = CL_EFORMAT;
                                 goto done;
                             }
@@ -1445,12 +1461,14 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                             if (NULL == resourceFile) {
                                 cli_dbgmsg("hfsplus_walk_catalog: Error: hfsplus_scanfile returned no resource file\n");
+                                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource fork output is unavailable");
                                 status = CL_EFORMAT;
                                 goto done;
                             }
 
                             if (-1 == (ifd = safe_open(resourceFile, O_RDONLY | O_BINARY))) {
                                 cli_dbgmsg("hfsplus_walk_catalog: Failed to open temporary file %s\n", resourceFile);
+                                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource fork output could not be opened");
                                 status = CL_EOPEN;
                                 goto done;
                             } else {
@@ -1463,6 +1481,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                                     if (dataOffset < 0) {
                                         cli_dbgmsg("hfsplus_walk_catalog: Failed to locate block table data\n");
+                                        cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block table could not be located completely");
                                         status = CL_ESEEK;
                                         goto done;
                                     }
@@ -1495,6 +1514,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                                             if (lseek(ifd, blockOffset, SEEK_SET) != blockOffset) {
                                                 cli_dbgmsg("hfsplus_walk_catalog: Failed to seek to beginning of block\n");
+                                                cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block could not be located completely");
                                                 status = CL_ESEEK;
                                                 goto done;
                                             }
@@ -1507,6 +1527,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                                                 if (cli_readn(ifd, block, readLen) != readLen) {
                                                     cli_dbgmsg("hfsplus_walk_catalog: Failed to read block from temporary file\n");
+                                                    cli_mark_scan_incomplete(ctx, "HFS+ compressed resource block could not be read completely");
                                                     status = CL_EREAD;
                                                     goto done;
                                                 }
@@ -1526,6 +1547,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
 
                                                         if (Z_OK != (z_ret = inflateInit2(&stream, 15))) {
                                                             cli_dbgmsg("hfsplus_walk_catalog: inflateInit2 failed (%d)\n", z_ret);
+                                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource decoder could not be initialized");
                                                             status = CL_EFORMAT;
                                                             goto done;
                                                         }
@@ -1543,6 +1565,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                         z_ret = inflate(&stream, Z_NO_FLUSH);
                                                         if (z_ret != Z_OK && z_ret != Z_STREAM_END) {
                                                             cli_dbgmsg("hfsplus_walk_catalog: Failed to extract (%d)\n", z_ret);
+                                                            cli_mark_scan_incomplete(ctx, "HFS+ compressed resource decoder failed before completion");
                                                             status = CL_EFORMAT;
                                                             goto done;
                                                         }
@@ -1605,6 +1628,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                                 }
                                                 if (stream_initialized && Z_OK != (z_ret = inflateEnd(&stream))) {
                                                     cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
+                                                    cli_mark_scan_incomplete(ctx, "HFS+ compressed resource decoder could not be finalized");
                                                     status = CL_EFORMAT;
                                                     goto done;
                                                 }

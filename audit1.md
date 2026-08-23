@@ -22,6 +22,18 @@ matcher regression covers both the admitted and exhausted-budget paths; full
 rule, production-signature, sanitizer, and large-file qualification remain
 open.
 
+## HFS+ compressed-resource handoff failures — 2026-08-23
+
+HFS+ compressed-resource processing previously returned seek, decoder, or
+temporary-output errors without identifying the required child inspection as
+incomplete. Resource-map/index/data seeks, block reads, decoder
+initialization/finalization, compressed metadata validation, fork writes, and
+inline compressed output now record specific sticky-incomplete reasons before
+returning. This keeps malformed or partially materialized compressed children
+non-cacheable instead of allowing parser status reconciliation to expose a
+clean result. Static source guards pass; compiled HFS+ fault injection,
+sanitizer, corpus, and supported-build Sonic1 qualification remain open.
+
 ## HFS+ non-empty fork block admission — 2026-08-23
 
 `hfsplus_scanfile()` previously returned success for a fork with a non-zero

@@ -2028,3 +2028,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 ## BinHex temporary fork short-write and rewind disposition — 2026-08-23
 
 - Keep BinHex data/resource fork short or zero-progress writes and failed nested-scan rewinds sticky-incomplete and non-cacheable; add compiled write/seek fault coverage.
+
+## HFS+ compressed-resource handoff failures — 2026-08-23
+
+- Keep HFS+ compressed-resource seeks, block reads, decoder setup/teardown,
+  compressed metadata validation, fork writes, and inline compressed output
+  sticky-incomplete and non-cacheable; add compiled HFS+ fault-injection and
+  corpus coverage.

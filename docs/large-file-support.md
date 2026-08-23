@@ -6104,3 +6104,14 @@ without recording that required child inspection had been skipped. Both output
 paths now record explicit incomplete reasons before returning these failures,
 preserving the non-cacheable, fail-closed result. Compiled write/seek fault
 injection, sanitizer, and Sonic1 qualification remain open.
+
+## HFS+ compressed-resource handoff failures — 2026-08-23
+
+HFS+ compressed-resource processing now records specific sticky-incomplete
+reasons for resource-map/index/data seeks, block reads, decoder
+initialization/finalization, compressed metadata validation, fork writes, and
+inline compressed output failures. These operations are required to materialize
+and inspect the compressed child; preserving the reason prevents parser status
+reconciliation from exposing a clean result after a partial handoff. Static
+source guards pass; compiled HFS+ fault injection, sanitizer, corpus, and
+supported-build Sonic1 qualification remain release gates.
