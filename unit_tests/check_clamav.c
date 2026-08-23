@@ -13546,6 +13546,8 @@ END_TEST
 
 static const void *partition_boot_record_read_failure(fmap_t *map, size_t at, size_t len, int lock);
 static const void *gpt_sector_size_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+static const void *gpt_primary_table_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+static void write_test_le64(uint8_t *data, uint64_t value);
 
 START_TEST(test_mbr_partition_read_failure_is_fail_visible)
 {
@@ -13655,6 +13657,80 @@ START_TEST(test_gpt_sector_size_probe_read_failure_is_fail_visible)
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "GPT sector-size probe could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_gpt_primary_table_read_failure_is_not_hidden_by_secondary)
+{
+    uint8_t data[6 * 512] = {0};
+    uint8_t *primary = data + 512;
+    uint8_t *secondary = data + 5 * 512;
+    uint32_t table_crc;
+    uint32_t header_crc;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* Protective MBR. */
+    data[446 + 4] = MBR_PROTECTIVE;
+    cli_writeint32(data + 446 + 8, 1);
+    cli_writeint32(data + 446 + 12, 5);
+    data[510] = 0x55;
+    data[511] = 0xaa;
+
+    /* Both tables contain one empty entry; only the primary table read fails. */
+    table_crc = (uint32_t)crc32(0L, data + 2 * 512, sizeof(struct gpt_partition_entry));
+
+    memcpy(primary, GPT_SIGNATURE_STR, 8);
+    cli_writeint32(primary + 8, 0x00010000U);
+    cli_writeint32(primary + 12, sizeof(struct gpt_header));
+    write_test_le64(primary + 24, 1);
+    write_test_le64(primary + 32, 5);
+    write_test_le64(primary + 40, 3);
+    write_test_le64(primary + 48, 3);
+    write_test_le64(primary + 72, 2);
+    cli_writeint32(primary + 80, 1);
+    cli_writeint32(primary + 84, sizeof(struct gpt_partition_entry));
+    cli_writeint32(primary + 88, table_crc);
+    header_crc = (uint32_t)crc32(0L, primary, sizeof(struct gpt_header));
+    cli_writeint32(primary + 16, header_crc);
+
+    memcpy(secondary, primary, sizeof(struct gpt_header));
+    write_test_le64(secondary + 24, 5);
+    write_test_le64(secondary + 32, 1);
+    write_test_le64(secondary + 72, 4);
+    cli_writeint32(secondary + 16, 0);
+    header_crc = (uint32_t)crc32(0L, secondary, sizeof(struct gpt_header));
+    cli_writeint32(secondary + 16, header_crc);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions    = 1;
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    map                      = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need                = gpt_primary_table_read_failure;
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_GPT;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scangpt(&ctx, 512);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "GPT partition table could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -15933,6 +16009,16 @@ static const void *gpt_sector_size_read_failure(fmap_t *map, size_t at, size_t l
 {
     (void)lock;
     if (at == 512U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+static const void *gpt_primary_table_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 2U * 512U)
         return NULL;
     if (len == 0 || at > map->len || len > map->len - at)
         return NULL;
@@ -25179,6 +25265,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mbr_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_sector_size_probe_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_gpt_primary_table_read_failure_is_not_hidden_by_secondary);
     tcase_add_test(tc_cl, test_mbr_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_truncated_driver_map_is_format_error);

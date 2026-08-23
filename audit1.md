@@ -2195,6 +2195,18 @@ A focused body-bearing TNEF regression now requires the non-cacheable,
 fail-visible result. Full TNEF corpus, sanitizer, and supported-build Sonic1
 qualification remain release gates.
 
+## GPT primary-table validation fallback — 2026-08-23
+
+GPT validation could return an operational partition-table read or deadline
+failure while the dispatcher treated the result as an ordinary malformed
+primary header and fell back to a clean secondary-only scan. The validation
+status is now preserved: only `CL_EFORMAT` is eligible for the documented
+primary/secondary format fallback; `CL_EREAD`, `CL_ETIMEOUT`, and other
+operational failures terminate the GPT layer and remain incomplete. A focused
+unit regression injects a primary-table callback failure while leaving the
+secondary copy readable. Compiled GPT media, fault injection, sanitizer, and
+Sonic1 qualification remain release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script

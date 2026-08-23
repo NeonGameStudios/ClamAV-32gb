@@ -2061,3 +2061,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   style as `CL_EUNPACK` incomplete results instead of scanning encoded bytes as
   raw content; retain compiled XAR corpus, sanitizer, and Sonic1 qualification
   as release gates.
+
+## GPT primary-table validation fallback — 2026-08-23
+
+- Preserve GPT primary/secondary validation `CL_EREAD` and deadline failures
+  instead of treating them as malformed-header fallback and allowing a
+  secondary-only scan to look clean; retain compiled GPT fault injection,
+  sanitizer, corpus, and Sonic1 qualification as release gates.

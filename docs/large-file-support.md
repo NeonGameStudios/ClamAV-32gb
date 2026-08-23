@@ -6153,3 +6153,14 @@ continues to represent an uncompressed member, and recognized gzip, bzip2,
 LZMA, XZ, and octet-stream styles are unchanged. Focused source guards and a
 unit regression are present; compiled XAR corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## GPT primary-table validation fallback — 2026-08-23
+
+GPT primary/secondary header selection now distinguishes malformed format data
+from operational validation failures. A callback read failure or deadline
+crossing while checking a partition table is no longer treated as a malformed
+primary header that can be hidden by a successful secondary-only scan; only
+`CL_EFORMAT` uses the documented redundancy fallback. The resulting GPT layer
+remains incomplete and non-cacheable. Focused callback-fault coverage is
+present; compiled GPT media, sanitizer, and Sonic1 qualification remain
+release gates.

@@ -174,6 +174,7 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
     struct gpt_header phdr, shdr;
     enum GPT_SCANSTATE state = INVALID;
     cl_error_t secondary_status;
+    cl_error_t header_status;
     size_t maplen;
     off_t pos = 0;
 
@@ -235,7 +236,17 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
 
     pos = maplen - sectorsize; /* last sector is the secondary gpt header */
 
-    if (gpt_validate_header(ctx, phdr, sectorsize)) {
+    header_status = gpt_validate_header(ctx, phdr, sectorsize);
+    if (header_status != CL_SUCCESS) {
+        /* A malformed primary header can legitimately fall back to the
+         * secondary copy. An operational failure while validating its
+         * partition table cannot: treating that failure as mere corruption
+         * would allow a successful secondary scan to hide an incomplete
+         * primary inspection. */
+        if (header_status != CL_EFORMAT) {
+            status = header_status;
+            goto done;
+        }
         cli_dbgmsg("cli_scangpt: Primary GPT header is invalid\n");
         cli_dbgmsg("cli_scangpt: Using secondary GPT header\n");
 
@@ -248,10 +259,11 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
             goto done;
         }
 
-        if (gpt_validate_header(ctx, shdr, sectorsize)) {
+        header_status = gpt_validate_header(ctx, shdr, sectorsize);
+        if (header_status != CL_SUCCESS) {
             cli_dbgmsg("cli_scangpt: Secondary GPT header is invalid\n");
             cli_dbgmsg("cli_scangpt: Disk is unusable\n");
-            status = CL_EFORMAT;
+            status = header_status;
             goto done;
         }
     } else {
@@ -267,17 +279,25 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
                 status = secondary_status;
                 goto done;
             }
-        } else if (gpt_validate_header(ctx, shdr, sectorsize)) {
-            cli_dbgmsg("cli_scangpt: Secondary GPT header is invalid\n");
+        } else {
+            header_status = gpt_validate_header(ctx, shdr, sectorsize);
+            if (header_status != CL_SUCCESS) {
+                cli_dbgmsg("cli_scangpt: Secondary GPT header is invalid\n");
+                if (header_status != CL_EFORMAT) {
+                    status = header_status;
+                    goto done;
+                }
+            }
         }
         /* check that the two partition table crc32 checksum match,
          * may want a different hashing function */
-        else if (phdr.tableCRC32 != shdr.tableCRC32) {
+        if (secondary_status == CL_SUCCESS && header_status == CL_SUCCESS &&
+            phdr.tableCRC32 != shdr.tableCRC32) {
             cli_dbgmsg("cli_scangpt: Primary and secondary GPT header table CRC32 differ\n");
             cli_dbgmsg("cli_scangpt: Set to scan primary and secondary partition tables\n");
 
             state = BOTH;
-        } else {
+        } else if (secondary_status == CL_SUCCESS && header_status == CL_SUCCESS) {
             cli_dbgmsg("cli_scangpt: Secondary GPT header check OK\n");
         }
     }
