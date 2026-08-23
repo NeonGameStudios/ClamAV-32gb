@@ -5265,7 +5265,10 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     break;
                                 }
                                 if (ret != CL_SUCCESS) {
-                                    cli_mark_scan_incomplete(ctx, "EGG SFX header is malformed or unsupported");
+                                    if (ret == CL_EREAD)
+                                        cli_mark_scan_incomplete(ctx, "EGG SFX header could not be read completely");
+                                    else
+                                        cli_mark_scan_incomplete(ctx, "EGG SFX header is malformed or unsupported");
                                     if (nret == CL_SUCCESS)
                                         nret = ret;
                                     break;

@@ -1650,6 +1650,7 @@ contains libclamav/scanners.c 'cli_merge_scan_status(ret, cli_scan_fmap(ctx, CL_
 contains libclamav/scanners.h 'cl_error_t cli_merge_scan_status(cl_error_t prior, cl_error_t current);'
 contains unit_tests/check_clamav.c 'test_sequential_parser_status_merge_is_fail_closed'
 contains libclamav/scanners.c 'EGG SFX candidate rejected before layer admission'
+contains libclamav/scanners.c 'EGG SFX header could not be read completely'
 contains libclamav/scanners.c 'reserved temporary directory file could not be opened'
 contains libclamav/scanners.c 'temporary scan directory file could not be opened'
 contains libclamav/scanners.c 'temporary scan directory file could not be closed'

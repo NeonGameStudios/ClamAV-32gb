@@ -5982,3 +5982,14 @@ unless a higher-priority detection, timeout, or allocation failure already
 terminated the scan. A focused callback-backed MSXML regression verifies the
 status, reason, and non-cacheable map state. Compiled MSXML/HWPML corpus,
 sanitizer, and Sonic1 qualification remain open.
+
+## Embedded EGG SFX read-result classification — 2026-08-23
+
+The embedded EGG SFX admission helper already distinguished a fully in-range
+fmap callback failure (`CL_EREAD`) from a short candidate (`CL_EFORMAT`) and a
+malformed or unsupported fixed header (`CL_EPARSE`). The scanner-facing branch
+was still reporting both read and parse failures with the same generic
+“malformed or unsupported” reason. It now preserves a dedicated incomplete
+reason for `CL_EREAD`, while leaving weak-candidate rejection and parse-result
+classification unchanged. Compiled scanner, sanitizer, production EGG corpus,
+and Sonic1 qualification remain open.

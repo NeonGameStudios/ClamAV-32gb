@@ -1807,3 +1807,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Return `CL_EREAD` and mark the layer incomplete when a confirmed MEW loader
   metadata window cannot be read; retain PE corpus, sanitizer, and Sonic1
   qualification gates.
+
+## Embedded EGG SFX read-result classification — 2026-08-23
+
+- Preserve a distinct `EGG SFX header could not be read completely` result when
+  a confirmed embedded header's fmap callback fails; retain the existing
+  malformed/unsupported result for parse failures and the rejection path for
+  short weak candidates. Compiled scanner, sanitizer, production EGG corpus,
+  and Sonic1 qualification remain release gates.
