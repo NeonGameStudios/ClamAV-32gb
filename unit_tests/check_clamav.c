@@ -16765,6 +16765,35 @@ START_TEST(test_arj_truncated_main_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_arj_truncated_signature_is_parse_error)
+{
+    static const uint8_t data[] = {0x60};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_size = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    arj_read_failure_offset = 0U;
+    map->need             = arj_targeted_read_failure;
+    ctx.engine            = &engine;
+    ctx.fmap              = map;
+
+    ret = cli_unarj_header_check(&ctx, 0, &archive_size);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ signature is truncated");
+    ck_assert(map->dont_cache_flag);
+
+    arj_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_arj_time_limit_is_fail_visible)
 {
     static const uint8_t data[4] = {0x60, 0xea, 0x00, 0x00};
@@ -21549,6 +21578,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ishield_truncated_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_main_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_arj_truncated_signature_is_parse_error);
     tcase_add_test(tc_cl, test_arj_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_stored_member_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_member_is_fail_visible);

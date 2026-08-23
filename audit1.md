@@ -5337,3 +5337,13 @@ result, while a fully in-range callback failure remains `CL_EREAD`. A focused
 header callback regression covers the operational-read boundary. Compiled
 scanner, sanitizer, production XAR corpus, and Sonic1 qualification remain
 open.
+
+## ARJ signature truncation classification — 2026-08-22
+
+ARJ signature admission now preflights its complete two-byte range before
+invoking the fmap callback. A one-byte candidate therefore remains a
+parse/incomplete result even when an injected callback would fail on its
+available prefix; a fully in-range signature callback failure remains
+`CL_EREAD`. A focused header-check regression covers the boundary. Compiled
+scanner, sanitizer, production ARJ corpus, and Sonic1 qualification remain
+open.

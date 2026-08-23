@@ -915,6 +915,11 @@ static cl_error_t is_arj_archive(arj_metadata_t *metadata)
     const char header_id[2] = {0x60, 0xea};
     const char *mark;
 
+    if (!arj_range_within_map(metadata->map, metadata->offset, sizeof(header_id))) {
+        cli_mark_scan_incomplete(metadata->ctx, "ARJ signature is truncated");
+        return CL_EPARSE;
+    }
+
     mark = fmap_need_off_once(metadata->map, metadata->offset, 2);
     if (!mark) {
         cli_dbgmsg("is_arj_archive: Failed to read the two-byte ARJ header ID at offset %zu\n", metadata->offset);

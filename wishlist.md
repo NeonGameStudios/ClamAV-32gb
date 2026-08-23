@@ -1373,3 +1373,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   results for truncated headers and `CL_EREAD` for fully in-range callback
   failures; retain compiled scanner, sanitizer, production XAR corpus, and
   Sonic1 qualification as release gates.
+
+## ARJ signature truncation classification — 2026-08-22
+
+- Preflight the fixed two-byte ARJ signature before callback admission,
+  preserving parse results for one-byte candidates and `CL_EREAD` for fully
+  in-range signature callback failures; retain compiled scanner, sanitizer,
+  production ARJ corpus, and Sonic1 qualification as release gates.
