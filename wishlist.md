@@ -1286,3 +1286,12 @@ deduplicated blank separators no longer consume quota when no node is retained.
 The source guards and non-clang regression gates remain the available local
 evidence; allocation fault injection, sanitizer, production mail corpus, and
 Sonic1 qualification remain open.
+
+## On-access FILDES hard-ceiling preflight — 2026-08-22
+
+The on-access protocol's descriptor-passing path now rechecks the opened
+regular file against a defensive 32-GiB ceiling before
+sending `FILDESREPORT`. Direct-context callers therefore cannot bypass the
+scan-thread preflight; stat and over-limit failures preserve non-clean status
+without sending a partial request. Compiled on-access fault-injection and
+Sonic1 qualification remain open.

@@ -246,10 +246,18 @@ static int onas_send_fdpass(int sockd, int fd)
 
 /* Issues a FILDES command and pass a FD to clamd
  * Returns >0 on success, 0 soft fail, -1 hard fail */
-static int onas_fdpass(const char *filename, int fd, int sockd)
+static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstream,
+                       cl_error_t *ret_code)
 {
     int ret        = 1;
     int close_flag = 0;
+    STATBUF statbuf;
+
+    /* The option parser rejects values above the fork's hard ceiling and maps
+     * zero to that ceiling. Keep the protocol boundary defensive for callers
+     * that construct an on-access context directly. */
+    if (maxstream == 0 || maxstream > CLI_MAX_LARGE_FILESIZE)
+        maxstream = CLI_MAX_LARGE_FILESIZE;
 
     if (-1 == fd) {
         if (filename) {
@@ -265,6 +273,24 @@ static int onas_fdpass(const char *filename, int fd, int sockd)
 
     if (sockd == -1) {
         logg(LOGG_DEBUG, "ClamProto: error when getting socket descriptor\n");
+        ret = -1;
+        goto fd_out;
+    }
+
+    if (FSTAT(fd, &statbuf) != 0) {
+        logg(LOGG_ERROR, "%s: Failed to stat FILDES input. ERROR\n",
+             filename ? filename : "FD");
+        if (ret_code)
+            *ret_code = CL_ESTAT;
+        ret = -1;
+        goto fd_out;
+    }
+
+    if (S_ISREG(statbuf.st_mode) && (uint64_t)statbuf.st_size > maxstream) {
+        logg(LOGG_ERROR, "%s: File size exceeds the on-access FILDES 32-GiB ceiling; refusing to pass the descriptor. ERROR\n",
+             filename ? filename : "FD");
+        if (ret_code)
+            *ret_code = CL_EMAXSIZE;
         ret = -1;
         goto fd_out;
     }
@@ -354,7 +380,7 @@ int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *file
 #ifdef HAVE_FD_PASSING
         case FILDES:
             /* NULL filename safe in send_fdpass() */
-            len = onas_fdpass(display_filename, scan_fd, sockd);
+            len = onas_fdpass(display_filename, scan_fd, sockd, maxstream, ret_code);
             break;
 #endif
     }

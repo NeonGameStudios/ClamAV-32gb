@@ -5801,3 +5801,12 @@ separators are checked before reservation, so discarded input does not consume
 the quota. Static source guards and non-clang regression gates pass; compiled
 allocation-fault, sanitizer, production-mail, and Sonic1 qualification remain
 open.
+
+## On-access FILDES hard-ceiling preflight — 2026-08-22
+
+The on-access descriptor-passing helper now clamps direct-context limits to the
+hard 32-GiB boundary, checks the descriptor with `fstat`, and rejects an
+over-limit regular file before sending `FILDESREPORT`. The existing scan-thread
+preflight remains, while this protocol-layer check closes the direct-caller
+bypass and preserves explicit `CL_EMAXSIZE`/`CL_ESTAT` results. Compiled
+on-access fault-injection, sanitizer, and Sonic1 qualification remain open.
