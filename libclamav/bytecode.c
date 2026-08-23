@@ -28,6 +28,8 @@
 #include <string.h>
 #include <assert.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <stdint.h>
 
 #include "json.h"
 #include "dconf.h"
@@ -584,7 +586,12 @@ static inline operand_t readOperand(struct cli_bc_func *func, unsigned char *p,
         uint16_t ty;
         p[*off] |= 0x20;
         /* TODO: unique constants */
-        func->constants = cli_safer_realloc_or_free(func->constants, (func->numConstants + 1) * sizeof(*func->constants));
+        if (func->numConstants == UINT32_MAX) {
+            cli_errmsg("bytecode: constant table is too large\n");
+            *ok = false;
+            return MAX_OP;
+        }
+        func->constants = cli_max_realloc_or_free(func->constants, ((size_t)func->numConstants + 1) * sizeof(*func->constants));
         if (!func->constants) {
             *ok = false;
             return MAX_OP;
@@ -1156,20 +1163,38 @@ static cl_error_t parseGlobals(struct cli_bc *bc, unsigned char *buffer)
 static cl_error_t parseMD(struct cli_bc *bc, unsigned char *buffer)
 {
     unsigned offset = 1, len = strlen((const char *)buffer);
-    unsigned numMD, i, b;
+    uint64_t num_md64;
+    unsigned numMD, i, b, new_count;
+    struct cli_bc_dbgnode *new_nodes;
     bool ok = true;
     if (buffer[0] != 'D')
         return CL_EMALFDB;
-    numMD = readNumber(buffer, &offset, len, &ok);
+    num_md64 = readNumber(buffer, &offset, len, &ok);
     if (!ok) {
         cli_errmsg("Unable to parse number of MD nodes\n");
         return CL_EMALFDB;
     }
+    if (num_md64 > UINT_MAX || num_md64 > UINT_MAX - bc->dbgnode_cnt) {
+        cli_errmsg("Too many MD nodes\n");
+        return CL_EMALFDB;
+    }
+    numMD = (unsigned)num_md64;
+    if (!numMD)
+        return CL_SUCCESS;
+
     b = bc->dbgnode_cnt;
-    bc->dbgnode_cnt += numMD;
-    bc->dbgnodes = cli_safer_realloc(bc->dbgnodes, bc->dbgnode_cnt * sizeof(*bc->dbgnodes));
-    if (!bc->dbgnodes)
+    new_count = b + numMD;
+    if ((size_t)new_count > SIZE_MAX / sizeof(*new_nodes)) {
+        cli_errmsg("MD node table size overflows native allocation size\n");
+        return CL_EMALFDB;
+    }
+    new_nodes = cli_max_realloc(bc->dbgnodes, (size_t)new_count * sizeof(*new_nodes));
+    if (!new_nodes)
         return CL_EMEM;
+    memset(new_nodes + b, 0, (size_t)numMD * sizeof(*new_nodes));
+    bc->dbgnodes    = new_nodes;
+    bc->dbgnode_cnt = new_count;
+
     for (i = 0; i < numMD; i++) {
         unsigned j;
         struct cli_bc_dbgnode_element *elts;

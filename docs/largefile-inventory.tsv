@@ -585,84 +585,85 @@ fixed-width-integer	libclamav/builtin_bytecodes.h	193	  uint32_t a = (env.os_cat
 fixed-width-integer	libclamav/builtin_bytecodes.h	196	  uint32_t b = (env.big_endian << 28) | (env.sizeof_ptr << 24) |
 fixed-width-integer	libclamav/builtin_bytecodes.h	198	  uint32_t c = (env.os_features << 24) | env.c_version;
 fixed-width-integer	libclamav/builtin_bytecodes.h	95	const uint16_t __clambc_kind = BC_STARTUP;
-fixed-width-integer	libclamav/bytecode.c	1014	        uint16_t tid = readTypeID(bc, buffer, &offset, len, &ok);
-fixed-width-integer	libclamav/bytecode.c	1047	static uint16_t type_components(struct cli_bc *bc, uint16_t id, bool *ok)
-fixed-width-integer	libclamav/bytecode.c	110	static const uint16_t nokind;
-fixed-width-integer	libclamav/bytecode.c	111	static const uint32_t nofilesize;
-fixed-width-integer	libclamav/bytecode.c	112	static const uint64_t nofilesize64;
-fixed-width-integer	libclamav/bytecode.c	120	static bool bytecode_offsets_to_legacy(const uint64_t *offsets, uint32_t *legacy_offsets)
-fixed-width-integer	libclamav/bytecode.c	1301	static uint16_t get_type(struct cli_bc_func *func, operand_t op)
-fixed-width-integer	libclamav/bytecode.c	1307	static int16_t get_optype(const struct cli_bc_func *bcfunc, operand_t op)
-fixed-width-integer	libclamav/bytecode.c	132	            legacy_offsets[i] = (uint32_t)offsets[i];
-fixed-width-integer	libclamav/bytecode.c	1449	                int16_t t = get_optype(bcfunc, inst.u.binop[0]);
-fixed-width-integer	libclamav/bytecode.c	1538	        uint32_t num;
-fixed-width-integer	libclamav/bytecode.c	1542	        num = (uint32_t)readNumber(buffer, &offset, len, &ok);
-fixed-width-integer	libclamav/bytecode.c	1551	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
-fixed-width-integer	libclamav/bytecode.c	1554	        for (i = 0; (uint32_t)i < num; i++) {
-fixed-width-integer	libclamav/bytecode.c	1583	    uint64_t usecs;
-fixed-width-integer	libclamav/bytecode.c	1608	        uint32_t count;
-fixed-width-integer	libclamav/bytecode.c	2028	            uint32_t count = 0;
-fixed-width-integer	libclamav/bytecode.c	2056	uint64_t cli_bytecode_context_getresult_int(struct cli_bc_ctx *ctx)
-fixed-width-integer	libclamav/bytecode.c	2058	    return *(uint32_t *)ctx->values; /*XXX*/
-fixed-width-integer	libclamav/bytecode.c	2156	static inline int64_t ptr_compose(int32_t id, uint32_t offset)
-fixed-width-integer	libclamav/bytecode.c	2158	    uint64_t i = id;
-fixed-width-integer	libclamav/bytecode.c	2162	static inline int get_geptypesize(const struct cli_bc *bc, uint16_t tid)
-fixed-width-integer	libclamav/bytecode.c	2181	static int calc_gepz(struct cli_bc *bc, struct cli_bc_func *func, uint16_t tid, operand_t op)
-fixed-width-integer	libclamav/bytecode.c	2184	    uint32_t *gepoff;
-fixed-width-integer	libclamav/bytecode.c	2202	    gepoff = (uint32_t *)&func->constants[op - func->numValues];
-fixed-width-integer	libclamav/bytecode.c	2204	        cli_errmsg("bytecode: gep offset out of range: %d >= %d\n", (uint32_t)*gepoff, ty->numElements);
-fixed-width-integer	libclamav/bytecode.c	2217	    uint64_t *gmap;
-fixed-width-integer	libclamav/bytecode.c	2227	        uint16_t ty    = bc->globaltys[j];
-fixed-width-integer	libclamav/bytecode.c	2251	                uint64_t ptr;
-fixed-width-integer	libclamav/bytecode.c	2261	                *(uint64_t *)&bc->globalBytes[gmap[j]] = ptr;
-fixed-width-integer	libclamav/bytecode.c	2275	                            *(uint16_t *)&bc->globalBytes[off + i * 2] = bc->globals[j][i];
-fixed-width-integer	libclamav/bytecode.c	2279	                            *(uint32_t *)&bc->globalBytes[off + i * 4] = bc->globals[j][i];
-fixed-width-integer	libclamav/bytecode.c	2283	                            *(uint64_t *)&bc->globalBytes[off + i * 8] = bc->globals[j][i];
-fixed-width-integer	libclamav/bytecode.c	2309	            uint16_t ty = bcfunc->types[j];
-fixed-width-integer	libclamav/bytecode.c	2800	        uint64_t context_result;
-fixed-width-integer	libclamav/bytecode.c	2806	        if (context_result != (uint64_t)0xda7aba5e) {
-fixed-width-integer	libclamav/bytecode.c	2906	    if (!bytecode_uses_v2(ctx->bc) && !cli_bytecode_file_size_compatible((uint64_t)map->len))
-fixed-width-integer	libclamav/bytecode.c	2910	    ctx->file_size64      = (uint64_t)map->len;
-fixed-width-integer	libclamav/bytecode.c	2911	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
-fixed-width-integer	libclamav/bytecode.c	2917	int cli_bytecode_file_size_compatible(uint64_t file_size)
-fixed-width-integer	libclamav/bytecode.c	2924	                                const uint32_t *lsigcnt,
-fixed-width-integer	libclamav/bytecode.c	2925	                                const uint64_t *lsigsuboff, fmap_t *map)
-fixed-width-integer	libclamav/bytecode.c	2931	    uint32_t legacy_offsets[64];
-fixed-width-integer	libclamav/bytecode.c	3089	        uint32_t legacy_offsets[64];
-fixed-width-integer	libclamav/bytecode.c	3180	            uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/bytecode.c	3270	                                       struct pdf_obj **objs, uint32_t *pdf_flags,
-fixed-width-integer	libclamav/bytecode.c	3285	    uint32_t timeout;
-fixed-width-integer	libclamav/bytecode.c	3298	            uint64_t remaining_ms;
-fixed-width-integer	libclamav/bytecode.c	3305	                uint64_t seconds = (uint64_t)(scan_ctx->time_limit.tv_sec - now.tv_sec);
-fixed-width-integer	libclamav/bytecode.c	3306	                int64_t useconds  = (int64_t)scan_ctx->time_limit.tv_usec - now.tv_usec;
-fixed-width-integer	libclamav/bytecode.c	3312	                remaining_ms = seconds * 1000U + ((uint64_t)useconds + 999U) / 1000U;
-fixed-width-integer	libclamav/bytecode.c	3320	                timeout = (uint32_t)remaining_ms;
-fixed-width-integer	libclamav/bytecode.c	3345	           (uint64_t)stamp,
-fixed-width-integer	libclamav/bytecode.c	339	                                        uint64_t *temporary_reserved)
-fixed-width-integer	libclamav/bytecode.c	360	static unsigned typesize(const struct cli_bc *bc, uint16_t type)
-fixed-width-integer	libclamav/bytecode.c	397	static unsigned typealign(const struct cli_bc *bc, uint16_t type)
-fixed-width-integer	libclamav/bytecode.c	447	static inline bool type_isint(uint16_t type)
-fixed-width-integer	libclamav/bytecode.c	452	cl_error_t cli_bytecode_context_setparam_int(struct cli_bc_ctx *ctx, unsigned i, uint64_t c)
-fixed-width-integer	libclamav/bytecode.c	467	            *(uint16_t *)&ctx->values[ctx->operands[i]] = c;
-fixed-width-integer	libclamav/bytecode.c	470	            *(uint32_t *)&ctx->values[ctx->operands[i]] = c;
-fixed-width-integer	libclamav/bytecode.c	473	            *(uint64_t *)&ctx->values[ctx->operands[i]] = c;
-fixed-width-integer	libclamav/bytecode.c	489	static inline uint64_t readNumber(const unsigned char *p, unsigned *off, unsigned len, bool *ok)
-fixed-width-integer	libclamav/bytecode.c	491	    uint64_t n = 0;
-fixed-width-integer	libclamav/bytecode.c	513	        uint64_t v = p[i];
-fixed-width-integer	libclamav/bytecode.c	581	    uint64_t v;
-fixed-width-integer	libclamav/bytecode.c	583	        uint64_t *dest;
-fixed-width-integer	libclamav/bytecode.c	584	        uint16_t ty;
-fixed-width-integer	libclamav/bytecode.c	606	            *(uint16_t *)dest = v;
-fixed-width-integer	libclamav/bytecode.c	608	            *(uint32_t *)dest = v;
-fixed-width-integer	libclamav/bytecode.c	65	static const uint32_t nomatch[64] = {
-fixed-width-integer	libclamav/bytecode.c	684	    uint64_t magic1;
-fixed-width-integer	libclamav/bytecode.c	74	static const uint32_t nooffsets[64] = {
-fixed-width-integer	libclamav/bytecode.c	792	static uint16_t readTypeID(struct cli_bc *bc, unsigned char *buffer,
-fixed-width-integer	libclamav/bytecode.c	795	    uint64_t t = readNumber(buffer, offset, len, ok);
-fixed-width-integer	libclamav/bytecode.c	829	static uint16_t containedTy[] = {8, 16, 32, 64};
-fixed-width-integer	libclamav/bytecode.c	91	static const uint64_t nooffsets64[64] = {
-fixed-width-integer	libclamav/bytecode.c	940	static bool types_equal(const struct cli_bc *bc, uint16_t *apity2ty, uint16_t tid, uint16_t apitid)
-fixed-width-integer	libclamav/bytecode.c	981	    uint16_t *apity2ty; /*map of api type to current bytecode type ID */
+fixed-width-integer	libclamav/bytecode.c	1021	        uint16_t tid = readTypeID(bc, buffer, &offset, len, &ok);
+fixed-width-integer	libclamav/bytecode.c	1054	static uint16_t type_components(struct cli_bc *bc, uint16_t id, bool *ok)
+fixed-width-integer	libclamav/bytecode.c	112	static const uint16_t nokind;
+fixed-width-integer	libclamav/bytecode.c	113	static const uint32_t nofilesize;
+fixed-width-integer	libclamav/bytecode.c	114	static const uint64_t nofilesize64;
+fixed-width-integer	libclamav/bytecode.c	1166	    uint64_t num_md64;
+fixed-width-integer	libclamav/bytecode.c	122	static bool bytecode_offsets_to_legacy(const uint64_t *offsets, uint32_t *legacy_offsets)
+fixed-width-integer	libclamav/bytecode.c	1326	static uint16_t get_type(struct cli_bc_func *func, operand_t op)
+fixed-width-integer	libclamav/bytecode.c	1332	static int16_t get_optype(const struct cli_bc_func *bcfunc, operand_t op)
+fixed-width-integer	libclamav/bytecode.c	134	            legacy_offsets[i] = (uint32_t)offsets[i];
+fixed-width-integer	libclamav/bytecode.c	1474	                int16_t t = get_optype(bcfunc, inst.u.binop[0]);
+fixed-width-integer	libclamav/bytecode.c	1563	        uint32_t num;
+fixed-width-integer	libclamav/bytecode.c	1567	        num = (uint32_t)readNumber(buffer, &offset, len, &ok);
+fixed-width-integer	libclamav/bytecode.c	1576	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
+fixed-width-integer	libclamav/bytecode.c	1579	        for (i = 0; (uint32_t)i < num; i++) {
+fixed-width-integer	libclamav/bytecode.c	1608	    uint64_t usecs;
+fixed-width-integer	libclamav/bytecode.c	1633	        uint32_t count;
+fixed-width-integer	libclamav/bytecode.c	2053	            uint32_t count = 0;
+fixed-width-integer	libclamav/bytecode.c	2081	uint64_t cli_bytecode_context_getresult_int(struct cli_bc_ctx *ctx)
+fixed-width-integer	libclamav/bytecode.c	2083	    return *(uint32_t *)ctx->values; /*XXX*/
+fixed-width-integer	libclamav/bytecode.c	2181	static inline int64_t ptr_compose(int32_t id, uint32_t offset)
+fixed-width-integer	libclamav/bytecode.c	2183	    uint64_t i = id;
+fixed-width-integer	libclamav/bytecode.c	2187	static inline int get_geptypesize(const struct cli_bc *bc, uint16_t tid)
+fixed-width-integer	libclamav/bytecode.c	2206	static int calc_gepz(struct cli_bc *bc, struct cli_bc_func *func, uint16_t tid, operand_t op)
+fixed-width-integer	libclamav/bytecode.c	2209	    uint32_t *gepoff;
+fixed-width-integer	libclamav/bytecode.c	2227	    gepoff = (uint32_t *)&func->constants[op - func->numValues];
+fixed-width-integer	libclamav/bytecode.c	2229	        cli_errmsg("bytecode: gep offset out of range: %d >= %d\n", (uint32_t)*gepoff, ty->numElements);
+fixed-width-integer	libclamav/bytecode.c	2242	    uint64_t *gmap;
+fixed-width-integer	libclamav/bytecode.c	2252	        uint16_t ty    = bc->globaltys[j];
+fixed-width-integer	libclamav/bytecode.c	2276	                uint64_t ptr;
+fixed-width-integer	libclamav/bytecode.c	2286	                *(uint64_t *)&bc->globalBytes[gmap[j]] = ptr;
+fixed-width-integer	libclamav/bytecode.c	2300	                            *(uint16_t *)&bc->globalBytes[off + i * 2] = bc->globals[j][i];
+fixed-width-integer	libclamav/bytecode.c	2304	                            *(uint32_t *)&bc->globalBytes[off + i * 4] = bc->globals[j][i];
+fixed-width-integer	libclamav/bytecode.c	2308	                            *(uint64_t *)&bc->globalBytes[off + i * 8] = bc->globals[j][i];
+fixed-width-integer	libclamav/bytecode.c	2334	            uint16_t ty = bcfunc->types[j];
+fixed-width-integer	libclamav/bytecode.c	2825	        uint64_t context_result;
+fixed-width-integer	libclamav/bytecode.c	2831	        if (context_result != (uint64_t)0xda7aba5e) {
+fixed-width-integer	libclamav/bytecode.c	2931	    if (!bytecode_uses_v2(ctx->bc) && !cli_bytecode_file_size_compatible((uint64_t)map->len))
+fixed-width-integer	libclamav/bytecode.c	2935	    ctx->file_size64      = (uint64_t)map->len;
+fixed-width-integer	libclamav/bytecode.c	2936	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
+fixed-width-integer	libclamav/bytecode.c	2942	int cli_bytecode_file_size_compatible(uint64_t file_size)
+fixed-width-integer	libclamav/bytecode.c	2949	                                const uint32_t *lsigcnt,
+fixed-width-integer	libclamav/bytecode.c	2950	                                const uint64_t *lsigsuboff, fmap_t *map)
+fixed-width-integer	libclamav/bytecode.c	2956	    uint32_t legacy_offsets[64];
+fixed-width-integer	libclamav/bytecode.c	3114	        uint32_t legacy_offsets[64];
+fixed-width-integer	libclamav/bytecode.c	3205	            uint64_t temporary_reserved = 0;
+fixed-width-integer	libclamav/bytecode.c	3295	                                       struct pdf_obj **objs, uint32_t *pdf_flags,
+fixed-width-integer	libclamav/bytecode.c	3310	    uint32_t timeout;
+fixed-width-integer	libclamav/bytecode.c	3323	            uint64_t remaining_ms;
+fixed-width-integer	libclamav/bytecode.c	3330	                uint64_t seconds = (uint64_t)(scan_ctx->time_limit.tv_sec - now.tv_sec);
+fixed-width-integer	libclamav/bytecode.c	3331	                int64_t useconds  = (int64_t)scan_ctx->time_limit.tv_usec - now.tv_usec;
+fixed-width-integer	libclamav/bytecode.c	3337	                remaining_ms = seconds * 1000U + ((uint64_t)useconds + 999U) / 1000U;
+fixed-width-integer	libclamav/bytecode.c	3345	                timeout = (uint32_t)remaining_ms;
+fixed-width-integer	libclamav/bytecode.c	3370	           (uint64_t)stamp,
+fixed-width-integer	libclamav/bytecode.c	341	                                        uint64_t *temporary_reserved)
+fixed-width-integer	libclamav/bytecode.c	362	static unsigned typesize(const struct cli_bc *bc, uint16_t type)
+fixed-width-integer	libclamav/bytecode.c	399	static unsigned typealign(const struct cli_bc *bc, uint16_t type)
+fixed-width-integer	libclamav/bytecode.c	449	static inline bool type_isint(uint16_t type)
+fixed-width-integer	libclamav/bytecode.c	454	cl_error_t cli_bytecode_context_setparam_int(struct cli_bc_ctx *ctx, unsigned i, uint64_t c)
+fixed-width-integer	libclamav/bytecode.c	469	            *(uint16_t *)&ctx->values[ctx->operands[i]] = c;
+fixed-width-integer	libclamav/bytecode.c	472	            *(uint32_t *)&ctx->values[ctx->operands[i]] = c;
+fixed-width-integer	libclamav/bytecode.c	475	            *(uint64_t *)&ctx->values[ctx->operands[i]] = c;
+fixed-width-integer	libclamav/bytecode.c	491	static inline uint64_t readNumber(const unsigned char *p, unsigned *off, unsigned len, bool *ok)
+fixed-width-integer	libclamav/bytecode.c	493	    uint64_t n = 0;
+fixed-width-integer	libclamav/bytecode.c	515	        uint64_t v = p[i];
+fixed-width-integer	libclamav/bytecode.c	583	    uint64_t v;
+fixed-width-integer	libclamav/bytecode.c	585	        uint64_t *dest;
+fixed-width-integer	libclamav/bytecode.c	586	        uint16_t ty;
+fixed-width-integer	libclamav/bytecode.c	613	            *(uint16_t *)dest = v;
+fixed-width-integer	libclamav/bytecode.c	615	            *(uint32_t *)dest = v;
+fixed-width-integer	libclamav/bytecode.c	67	static const uint32_t nomatch[64] = {
+fixed-width-integer	libclamav/bytecode.c	691	    uint64_t magic1;
+fixed-width-integer	libclamav/bytecode.c	76	static const uint32_t nooffsets[64] = {
+fixed-width-integer	libclamav/bytecode.c	799	static uint16_t readTypeID(struct cli_bc *bc, unsigned char *buffer,
+fixed-width-integer	libclamav/bytecode.c	802	    uint64_t t = readNumber(buffer, offset, len, ok);
+fixed-width-integer	libclamav/bytecode.c	836	static uint16_t containedTy[] = {8, 16, 32, 64};
+fixed-width-integer	libclamav/bytecode.c	93	static const uint64_t nooffsets64[64] = {
+fixed-width-integer	libclamav/bytecode.c	947	static bool types_equal(const struct cli_bc *bc, uint16_t *apity2ty, uint16_t tid, uint16_t apitid)
+fixed-width-integer	libclamav/bytecode.c	988	    uint16_t *apity2ty; /*map of api type to current bytecode type ID */
 fixed-width-integer	libclamav/bytecode.h	105	                                        uint64_t *temporary_reserved);
 fixed-width-integer	libclamav/bytecode.h	106	uint64_t cli_bytecode_context_getresult_int(struct cli_bc_ctx *ctx);
 fixed-width-integer	libclamav/bytecode.h	134	cl_error_t cli_bytecode_runlsig(struct cli_ctx_tag *ctx, struct cli_target_info *info, const struct cli_all_bc *bcs, unsigned bc_idx, const uint32_t *lsigcnt, const uint64_t *lsigsuboff, fmap_t *map);
@@ -8570,40 +8571,44 @@ native-width-integer	libclamav/bmp.c	55	    size_t got = fmap_readn(ctx->fmap, d
 native-width-integer	libclamav/bmp.c	59	    if (got == (size_t)-1) {
 native-width-integer	libclamav/builtin_bytecodes.h	162	  int s = disable_bytecode_if("",0,0);
 native-width-integer	libclamav/builtin_bytecodes.h	96	int entrypoint()
-native-width-integer	libclamav/bytecode.c	1584	    unsigned long run_count;
-native-width-integer	libclamav/bytecode.c	1585	    unsigned long match_count;
-native-width-integer	libclamav/bytecode.c	1588	static int sigelem_comp(const void *a, const void *b)
-native-width-integer	libclamav/bytecode.c	1598	    int i, elems = 0, max_name_len = 0, name_len;
-native-width-integer	libclamav/bytecode.c	1617	            name_len = (int)strlen(name);
-native-width-integer	libclamav/bytecode.c	1630	    if (max_name_len < (int)strlen("Bytecode name"))
-native-width-integer	libclamav/bytecode.c	1631	        max_name_len = (int)strlen("Bytecode name");
-native-width-integer	libclamav/bytecode.c	1651	    int ret;
-native-width-integer	libclamav/bytecode.c	1700	cl_error_t cli_bytecode_load(struct cli_bc *bc, FILE *f, struct cli_dbio *dbio, int trust, int sigperf)
-native-width-integer	libclamav/bytecode.c	1708	    int end = 0;
-native-width-integer	libclamav/bytecode.c	1854	                 * otherwise we get 'Line too long for provided buffer' */
-native-width-integer	libclamav/bytecode.c	1883	    {BCEV_DBG_INT, "debug int", ev_int, multiple_sum},
-native-width-integer	libclamav/bytecode.c	1892	static int register_events(cli_events_t *ev)
-native-width-integer	libclamav/bytecode.c	1894	    size_t i;
-native-width-integer	libclamav/bytecode.c	198	        int fd;
-native-width-integer	libclamav/bytecode.c	2162	static inline int get_geptypesize(const struct cli_bc *bc, uint16_t tid)
-native-width-integer	libclamav/bytecode.c	2181	static int calc_gepz(struct cli_bc *bc, struct cli_bc_func *func, uint16_t tid, operand_t op)
-native-width-integer	libclamav/bytecode.c	2301	        unsigned *map              = cli_max_malloc(sizeof(*map) * (size_t)totValues);
-native-width-integer	libclamav/bytecode.c	2303	            cli_errmsg("interpreter: Unable to allocate memory for map: %zu\n", sizeof(*map) * (size_t)totValues);
-native-width-integer	libclamav/bytecode.c	2430	                    if ((int)(inst->u.three[0]) == -1)
-native-width-integer	libclamav/bytecode.c	2651	static int set_mode(struct cl_engine *engine, enum bytecode_mode mode)
-native-width-integer	libclamav/bytecode.c	2917	int cli_bytecode_file_size_compatible(uint64_t file_size)
-native-width-integer	libclamav/bytecode.c	3181	            int fd;
-native-width-integer	libclamav/bytecode.c	3271	                                       size_t pdfsize, off_t pdfstartoff)
-native-width-integer	libclamav/bytecode.c	3330	    int cols;
-native-width-integer	libclamav/bytecode.c	338	int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename,
-native-width-integer	libclamav/bytecode.c	341	    int fd;
-native-width-integer	libclamav/bytecode.c	3446	            if (len > (unsigned int)cols) {
-native-width-integer	libclamav/bytecode.c	3649	    size_t j;
-native-width-integer	libclamav/bytecode.c	3774	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
-native-width-integer	libclamav/bytecode.c	53	unsigned int g_sigid;
-native-width-integer	libclamav/bytecode.c	744	        unsigned long m0 = magic1 >> 32;
-native-width-integer	libclamav/bytecode.c	745	        unsigned long m1 = magic1;
-native-width-integer	libclamav/bytecode.c	799	        cli_errmsg("Invalid type id: %llu\n", (unsigned long long)t);
+native-width-integer	libclamav/bytecode.c	1187	    if ((size_t)new_count > SIZE_MAX / sizeof(*new_nodes)) {
+native-width-integer	libclamav/bytecode.c	1191	    new_nodes = cli_max_realloc(bc->dbgnodes, (size_t)new_count * sizeof(*new_nodes));
+native-width-integer	libclamav/bytecode.c	1194	    memset(new_nodes + b, 0, (size_t)numMD * sizeof(*new_nodes));
+native-width-integer	libclamav/bytecode.c	1609	    unsigned long run_count;
+native-width-integer	libclamav/bytecode.c	1610	    unsigned long match_count;
+native-width-integer	libclamav/bytecode.c	1613	static int sigelem_comp(const void *a, const void *b)
+native-width-integer	libclamav/bytecode.c	1623	    int i, elems = 0, max_name_len = 0, name_len;
+native-width-integer	libclamav/bytecode.c	1642	            name_len = (int)strlen(name);
+native-width-integer	libclamav/bytecode.c	1655	    if (max_name_len < (int)strlen("Bytecode name"))
+native-width-integer	libclamav/bytecode.c	1656	        max_name_len = (int)strlen("Bytecode name");
+native-width-integer	libclamav/bytecode.c	1676	    int ret;
+native-width-integer	libclamav/bytecode.c	1725	cl_error_t cli_bytecode_load(struct cli_bc *bc, FILE *f, struct cli_dbio *dbio, int trust, int sigperf)
+native-width-integer	libclamav/bytecode.c	1733	    int end = 0;
+native-width-integer	libclamav/bytecode.c	1879	                 * otherwise we get 'Line too long for provided buffer' */
+native-width-integer	libclamav/bytecode.c	1908	    {BCEV_DBG_INT, "debug int", ev_int, multiple_sum},
+native-width-integer	libclamav/bytecode.c	1917	static int register_events(cli_events_t *ev)
+native-width-integer	libclamav/bytecode.c	1919	    size_t i;
+native-width-integer	libclamav/bytecode.c	200	        int fd;
+native-width-integer	libclamav/bytecode.c	2187	static inline int get_geptypesize(const struct cli_bc *bc, uint16_t tid)
+native-width-integer	libclamav/bytecode.c	2206	static int calc_gepz(struct cli_bc *bc, struct cli_bc_func *func, uint16_t tid, operand_t op)
+native-width-integer	libclamav/bytecode.c	2326	        unsigned *map              = cli_max_malloc(sizeof(*map) * (size_t)totValues);
+native-width-integer	libclamav/bytecode.c	2328	            cli_errmsg("interpreter: Unable to allocate memory for map: %zu\n", sizeof(*map) * (size_t)totValues);
+native-width-integer	libclamav/bytecode.c	2455	                    if ((int)(inst->u.three[0]) == -1)
+native-width-integer	libclamav/bytecode.c	2676	static int set_mode(struct cl_engine *engine, enum bytecode_mode mode)
+native-width-integer	libclamav/bytecode.c	2942	int cli_bytecode_file_size_compatible(uint64_t file_size)
+native-width-integer	libclamav/bytecode.c	3206	            int fd;
+native-width-integer	libclamav/bytecode.c	3296	                                       size_t pdfsize, off_t pdfstartoff)
+native-width-integer	libclamav/bytecode.c	3355	    int cols;
+native-width-integer	libclamav/bytecode.c	340	int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename,
+native-width-integer	libclamav/bytecode.c	343	    int fd;
+native-width-integer	libclamav/bytecode.c	3471	            if (len > (unsigned int)cols) {
+native-width-integer	libclamav/bytecode.c	3674	    size_t j;
+native-width-integer	libclamav/bytecode.c	3799	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
+native-width-integer	libclamav/bytecode.c	55	unsigned int g_sigid;
+native-width-integer	libclamav/bytecode.c	594	        func->constants = cli_max_realloc_or_free(func->constants, ((size_t)func->numConstants + 1) * sizeof(*func->constants));
+native-width-integer	libclamav/bytecode.c	751	        unsigned long m0 = magic1 >> 32;
+native-width-integer	libclamav/bytecode.c	752	        unsigned long m1 = magic1;
+native-width-integer	libclamav/bytecode.c	806	        cli_errmsg("Invalid type id: %llu\n", (unsigned long long)t);
 native-width-integer	libclamav/bytecode.h	104	int cli_bytecode_context_getresult_file(struct cli_bc_ctx *ctx, char **tempfilename,
 native-width-integer	libclamav/bytecode.h	117	cl_error_t cli_bytecode_load(struct cli_bc *bc, FILE *f, struct cli_dbio *dbio, int security, int sigperf);
 native-width-integer	libclamav/bytecode.h	143	void cli_bytecode_debug(int argc, char **argv);
@@ -17731,10 +17736,13 @@ boundary-constant	libclamav/autoit.c	2166	                        if (chars > UI
 boundary-constant	libclamav/autoit.c	2399	    if (offset < 0 || (uint64_t)offset > SIZE_MAX || (size_t)offset >= map->len) {
 boundary-constant	libclamav/blob.c	842	                            uint32_t scan_length = available > UINT32_MAX ? UINT32_MAX : (uint32_t)available;
 boundary-constant	libclamav/bmp.c	176	    if ((dib_end > map_length) || (dib_end > (uint64_t)SIZE_MAX))
-boundary-constant	libclamav/bytecode.c	2911	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
-boundary-constant	libclamav/bytecode.c	2919	    return file_size <= UINT32_MAX;
-boundary-constant	libclamav/bytecode.c	3317	            if (remaining_ms > UINT32_MAX)
-boundary-constant	libclamav/bytecode.c	3318	                remaining_ms = UINT32_MAX;
+boundary-constant	libclamav/bytecode.c	1177	    if (num_md64 > UINT_MAX || num_md64 > UINT_MAX - bc->dbgnode_cnt) {
+boundary-constant	libclamav/bytecode.c	1187	    if ((size_t)new_count > SIZE_MAX / sizeof(*new_nodes)) {
+boundary-constant	libclamav/bytecode.c	2936	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
+boundary-constant	libclamav/bytecode.c	2944	    return file_size <= UINT32_MAX;
+boundary-constant	libclamav/bytecode.c	3342	            if (remaining_ms > UINT32_MAX)
+boundary-constant	libclamav/bytecode.c	3343	                remaining_ms = UINT32_MAX;
+boundary-constant	libclamav/bytecode.c	589	        if (func->numConstants == UINT32_MAX) {
 boundary-constant	libclamav/bytecode_api.c	1021	    if (ctx->fmap == NULL || b->read_cursor > (uint64_t)SIZE_MAX)
 boundary-constant	libclamav/bytecode_api.c	141	    if (!ctx->fmap || ctx->off < 0 || (uint64_t)ctx->off > (uint64_t)SIZE_MAX) {
 boundary-constant	libclamav/bytecode_api.c	1921	    if (name_len == SIZE_MAX)
@@ -18098,8 +18106,8 @@ quantity-parser	common/optparser.c	1586	                        numarg = atoi(ar
 quantity-parser	common/optparser.c	1605	                    lnumarg = strtoll(arg, &buff, 0);
 quantity-parser	common/optparser.c	80	     * complete decimal token here instead of narrowing through atoi() (or
 quantity-parser	examples/ex_scan_callbacks.c	410	            context->script_commands[context->num_script_commands] = strtol(command, &endptr, 10);
-quantity-parser	libclamav/bytecode.c	1728	            linelength = len ? atoi(len + 1) : 4096;
-quantity-parser	libclamav/bytecode.c	754	    *linelength = strtol((const char *)buffer + offset, &pos, 10);
+quantity-parser	libclamav/bytecode.c	1753	            linelength = len ? atoi(len + 1) : 4096;
+quantity-parser	libclamav/bytecode.c	761	    *linelength = strtol((const char *)buffer + offset, &pos, 10);
 quantity-parser	libclamav/bytecode_api.c	808	                result = strtoul(p, &endptr, radix);
 quantity-parser	libclamav/bytecode_api.h	930	int32_t atoi(const uint8_t* str, int32_t size);
 quantity-parser	libclamav/cvd.c	318	    cvd->version = atoi(pt);
@@ -18188,9 +18196,9 @@ narrowing-cast	common/clamdcom.c	1060	                sent = sendln(sockd, comma
 narrowing-cast	common/clamdcom.c	1073	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	common/clamdcom.c	1086	                sent = sendln(sockd, command, (unsigned int)length);
 narrowing-cast	libclamav/blob.c	878	                       (unsigned long)len, fb->b.name);
-narrowing-cast	libclamav/bytecode.c	132	            legacy_offsets[i] = (uint32_t)offsets[i];
-narrowing-cast	libclamav/bytecode.c	1551	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
-narrowing-cast	libclamav/bytecode.c	2911	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
+narrowing-cast	libclamav/bytecode.c	134	            legacy_offsets[i] = (uint32_t)offsets[i];
+narrowing-cast	libclamav/bytecode.c	1576	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
+narrowing-cast	libclamav/bytecode.c	2936	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
 narrowing-cast	libclamav/bytecode_api.c	1667	    for (i = 0; i < (unsigned int)len; i++) {
 narrowing-cast	libclamav/bytecode_api.c	2087	        cli_dbgmsg("cli_bcapi_get_environment len %u > %lu\n", len, (unsigned long)sizeof(*env));
 narrowing-cast	libclamav/bytecode_api.c	2255	    return size > UINT32_MAX ? 0 : (uint32_t)size;
@@ -18668,202 +18676,202 @@ format-width	libclamav/blob.c	370	            cli_dbgmsg("blobClose: recovered %
 format-width	libclamav/blob.c	667	            cli_errmsg("fileblobDestroy: file not saved (%lu bytes): report to https://github.com/Cisco-Talos/clamav/issues\n",
 format-width	libclamav/blob.c	877	            cli_errmsg("fileblobAddData: Can't write %lu bytes to temporary file %s\n",
 format-width	libclamav/blob.c	96	    cli_dbgmsg("blobDestroy %d\n", b->magic);
-format-width	libclamav/bytecode.c	1019	            cli_errmsg("bytecode: API id %u out of range, max %u\n", id, maxapi);
-format-width	libclamav/bytecode.c	1025	            cli_errmsg("bytecode: API %u name mismatch: %s expected %s\n", id, name, cli_apicalls[id].name);
-format-width	libclamav/bytecode.c	1029	            cli_errmsg("bytecode: API %u prototype doesn't match\n", id);
-format-width	libclamav/bytecode.c	1043	    cli_dbgmsg("bytecode: Parsed %u APIcalls, maxapi %u\n", calls, maxapi);
-format-width	libclamav/bytecode.c	1057	            cli_errmsg("bytecode: function type not accepted for constant: %u\n", id);
-format-width	libclamav/bytecode.c	1091	            cli_errmsg("bytecode: constant has too many subcomponents, expected %u\n", comp);
-format-width	libclamav/bytecode.c	1099	        cli_errmsg("bytecode: constant has too few subcomponents: %u < %u\n", j, comp);
-format-width	libclamav/bytecode.c	1118	        cli_dbgmsg("bytecode using global %u, but highest global known to libclamav is %u, skipping\n", maxglobal, cli_apicall_maxglobal);
-format-width	libclamav/bytecode.c	1124	        cli_errmsg("bytecode: OOM allocating memory for %u globals\n", numglobals);
-format-width	libclamav/bytecode.c	1129	        cli_errmsg("bytecode: OOM allocating memory for %u global types\n", numglobals);
-format-width	libclamav/bytecode.c	1149	        cli_errmsg("Trailing garbage in globals: %d extra bytes\n",
-format-width	libclamav/bytecode.c	1203	    cli_dbgmsg("bytecode: Parsed %u nodes total\n", bc->dbgnode_cnt);
-format-width	libclamav/bytecode.c	1214	        cli_errmsg("Found more functions than declared: %u >= %u\n", fn,
-format-width	libclamav/bytecode.c	1292	        cli_errmsg("Basic block ID out of range: %u\n", id);
-format-width	libclamav/bytecode.c	1358	            cli_errmsg("Invalid opcode: %u\n", inst.opcode);
-format-width	libclamav/bytecode.c	1443	                    cli_errmsg("Invalid number of operands (%u) for OP_BC_STORE opcode\n", numOp);
-format-width	libclamav/bytecode.c	1458	                    cli_errmsg("Invalid number of operands (%u) for OP_BC_COPY opcode\n", numOp);
-format-width	libclamav/bytecode.c	1497	                        cli_errmsg("Opcode %u with too many operands: %u?\n", inst.opcode, numOp);
-format-width	libclamav/bytecode.c	1509	            cli_errmsg("More instructions than declared in total: %u > %u!\n",
-format-width	libclamav/bytecode.c	1525	                cli_dbgmsg("unknown inst type: %d\n", inst.type);
-format-width	libclamav/bytecode.c	1546	            cli_errmsg("invalid number of dbg nodes, expected: %u, got: %u\n", bcfunc->numInsts, num);
-format-width	libclamav/bytecode.c	1551	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
-format-width	libclamav/bytecode.c	1561	        cli_errmsg("Trailing garbage in basicblock: %d extra bytes\n",
-format-width	libclamav/bytecode.c	1669	            cli_dbgmsg("cli_event_define error for time event id %d\n", bc->sigtime_id);
-format-width	libclamav/bytecode.c	1674	    cli_dbgmsg("sigperf_events_init(): adding sig ids starting %u for %s\n", g_sigid, bc_name);
-format-width	libclamav/bytecode.c	1680	        cli_errmsg("sigperf_events_init: cli_event_define() error for time event id %d\n", bc->sigtime_id);
-format-width	libclamav/bytecode.c	1689	        cli_errmsg("sigperf_events_init: cli_event_define() error for matches event id %d\n", bc->sigmatch_id);
-format-width	libclamav/bytecode.c	1732	        cli_dbgmsg("line: %d\n", linelength);
-format-width	libclamav/bytecode.c	1737	        cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1742	        cli_errmsg("Out of memory allocating line of length %u\n", linelength);
-format-width	libclamav/bytecode.c	1759			    cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1769	                    cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1783	                    cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1797	                    cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1807	                        cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1821	                    cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1831	                    cli_errmsg("Error at bytecode line %u\n", row);
-format-width	libclamav/bytecode.c	1837	                        cli_errmsg("Parsed different number of instructions than declared: %u != %u\n",
-format-width	libclamav/bytecode.c	1842	                    cli_dbgmsg("Parsed %u BBs, %u instructions\n",
-format-width	libclamav/bytecode.c	1859	    cli_dbgmsg("Parsed %d functions\n", current_func);
-format-width	libclamav/bytecode.c	1863	        cli_errmsg("Loaded less functions than declared: %u vs. %u\n",
-format-width	libclamav/bytecode.c	1971	        cli_dbgmsg("Bytecode %u: executing in interpreter mode\n", bc->id);
-format-width	libclamav/bytecode.c	1991	        cli_dbgmsg("Bytecode %u: executing in JIT mode\n", bc->id);
-format-width	libclamav/bytecode.c	2017	            cli_infomsg(cctx, "bytecode %d encountered %u JIT and %u interpreter errors\n",
-format-width	libclamav/bytecode.c	2022	            cli_infomsg(cctx, "bytecode %d execution different with JIT and interpreter, see --debug for details\n",
-format-width	libclamav/bytecode.c	2036	            cli_infomsg(cctx, "bytecode %d encountered %u JIT and %u interpreter warnings\n",
-format-width	libclamav/bytecode.c	2130	                cli_errmsg("bytecode: global out of range: %u > %u, for instruction %u in function %u\n",                   \
-format-width	libclamav/bytecode.c	2140	            cli_errmsg("bytecode: operand out of range: %u > %u, for instruction %u in function %u\n", o, totValues, j, i); \
-format-width	libclamav/bytecode.c	2166	        cli_errmsg("bytecode: typeid out of range %u >= %u\n", tid, bc->num_types);
-format-width	libclamav/bytecode.c	2170	        cli_errmsg("bytecode: invalid type for gep (%u)\n", tid);
-format-width	libclamav/bytecode.c	2175	        cli_errmsg("bytecode: invalid gep type, must be pointer: %u\n", tid);
-format-width	libclamav/bytecode.c	2187	        cli_errmsg("bytecode: typeid out of range %u >= %u\n", tid, bc->num_types);
-format-width	libclamav/bytecode.c	2191	        cli_errmsg("bytecode: invalid type for gep (%u)\n", tid);
-format-width	libclamav/bytecode.c	2196	        cli_errmsg("bytecode: invalid gep type, must be pointer to nonint: %u\n", tid);
-format-width	libclamav/bytecode.c	2204	        cli_errmsg("bytecode: gep offset out of range: %d >= %d\n", (uint32_t)*gepoff, ty->numElements);
-format-width	libclamav/bytecode.c	2223	        cli_errmsg("interpreter: Unable to allocate memory for global map: %zu\n", bc->num_globals * sizeof(*gmap));
-format-width	libclamav/bytecode.c	2237	            cli_errmsg("interpreter: Unable to allocate memory for globalBytes: %u\n", bc->numGlobalBytes);
-format-width	libclamav/bytecode.c	2286	                        cli_dbgmsg("interpreter: unsupported elsize: %u\n", elsize);
-format-width	libclamav/bytecode.c	2303	            cli_errmsg("interpreter: Unable to allocate memory for map: %zu\n", sizeof(*map) * (size_t)totValues);
-format-width	libclamav/bytecode.c	2316	            /* printf("%d -> %d, %u\n", j, map[j], typesize(bc, ty)); */
-format-width	libclamav/bytecode.c	2381	                            cli_errmsg("bytecode: called function out of range: %u > %u\n", inst->u.ops.funcid, bc->num_func);
-format-width	libclamav/bytecode.c	2475	                    cli_warnmsg("Bytecode: unhandled opcode: %d\n", inst->opcode);
-format-width	libclamav/bytecode.c	2659	    cli_dbgmsg("Bytecode: mode changed to %d\n", mode);
-format-width	libclamav/bytecode.c	2662	            cli_errmsg("bytecode: in test mode but JIT/bytecode is about to be disabled: %d\n", mode);
-format-width	libclamav/bytecode.c	2669	        cli_errmsg("bytecode: in JIT mode but JIT is about to be disabled: %d\n", mode);
-format-width	libclamav/bytecode.c	2788	    cli_dbgmsg("Bytecode: mode is %d\n", engine->bytecode_mode);
-format-width	libclamav/bytecode.c	2802	        cli_dbgmsg("Bytecode: disable status is %d\n", ctx->bytecode_disable_status);
-format-width	libclamav/bytecode.c	2832	            cli_dbgmsg("Bytecode: %u bytecode prepared with JIT\n", bcs->count);
-format-width	libclamav/bytecode.c	2875	            cli_warnmsg("Bytecode: %d failed to prepare for interpreter mode\n", bc->id);
-format-width	libclamav/bytecode.c	2880	    cli_dbgmsg("Bytecode: %u bytecode prepared with JIT, "
-format-width	libclamav/bytecode.c	2881	               "%u prepared with interpreter, %u total\n",
-format-width	libclamav/bytecode.c	2960	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent a logical match offset\n", bc_name, bc->id);
-format-width	libclamav/bytecode.c	2970	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent the file size\n", bc_name, bc->id);
-format-width	libclamav/bytecode.c	2992	        cli_dbgmsg("hook lsig id %d matched (bc %d)\n", bc->hook_lsig_id, bc->id);
-format-width	libclamav/bytecode.c	3008	    cli_dbgmsg("Running bytecode '%s' (id: %u) for logical signature match.\n", bc_name, bc->id);
-format-width	libclamav/bytecode.c	3011	        cli_warnmsg("Bytecode '%s' (id: %u) failed to run: %s\n", bc_name, bc->id, cl_strerror(ret));
-format-width	libclamav/bytecode.c	3015	            cli_dbgmsg("Exceeded scan timeout during bytecode run (max: %u)\n", cctx->engine->maxscantime);
-format-width	libclamav/bytecode.c	3038	    cli_dbgmsg("Bytecode '%s' (id: %u) returned code: %u\n", bc_name, bc->id, ret);
-format-width	libclamav/bytecode.c	3061	    cli_dbgmsg("Bytecode executing hook id %u (%u hooks)\n", id, hooks_cnt);
-format-width	libclamav/bytecode.c	3080	        cli_dbgmsg("Bytecode: no applicable bytecode registered for hook %u\n", id);
-format-width	libclamav/bytecode.c	3094	            cli_dbgmsg("Bytecode: executing bytecode %u (lsig matched)\n", bc->id);
-format-width	libclamav/bytecode.c	3107	            cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
-format-width	libclamav/bytecode.c	3139	            cli_warnmsg("Bytecode %u failed to run: %s\n", bc->id, cl_strerror(ret));
-format-width	libclamav/bytecode.c	3173	        cli_dbgmsg("Bytecode %u returned %u\n", bc->id, ret);
-format-width	libclamav/bytecode.c	3186	                    cli_dbgmsg("Bytecode %u unpacked file saved in %s\n",
-format-width	libclamav/bytecode.c	3189	                    cli_dbgmsg("Bytecode %u unpacked file\n", bc->id);
-format-width	libclamav/bytecode.c	3206	                        cli_dbgmsg("ftruncate failed on %d\n", fd);
-format-width	libclamav/bytecode.c	3232	                    cli_dbgmsg("Scanning unpacked file by bytecode %u found a reason to stop: %s\n", bc->id, cl_strerror(ret));
-format-width	libclamav/bytecode.c	3248	        cli_dbgmsg("Bytecode: executed %u bytecodes for this hook\n", executed);
-format-width	libclamav/bytecode.c	3341	    printf("Bytecode format functionality level: %u\n", bc->metadata.formatlevel);
-format-width	libclamav/bytecode.c	3350	    printf("\ttarget exclude: %d\n", bc->metadata.targetExclude);
-format-width	libclamav/bytecode.c	3378	            printf("Unknown (type %u)", bc->kind);
-format-width	libclamav/bytecode.c	3382	    printf("\tbytecode functionality level: %u - %u\n",
-format-width	libclamav/bytecode.c	3388	    printf("\tvirusnames: %u\n", bc->vnames_cnt);
-format-width	libclamav/bytecode.c	3434	    printf("\tnumber of functions: %u\n\tnumber of types: %u\n",
-format-width	libclamav/bytecode.c	3436	    printf("\tnumber of global constants: %u\n", (unsigned)bc->num_globals);
-format-width	libclamav/bytecode.c	3437	    printf("\tnumber of debug nodes: %u\n", bc->dbgnode_cnt);
-format-width	libclamav/bytecode.c	3535	        printf("i%d", tid);
-format-width	libclamav/bytecode.c	3571	            printf("%d x ", ty->numElements);
-format-width	libclamav/bytecode.c	3576	            printf("unhandled type kind %d, cannot parse", ty->kind);
-format-width	libclamav/bytecode.c	3585	    printf("found %d extra types of %d total, starting at tid %d\n",
-format-width	libclamav/bytecode.c	3604	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
-format-width	libclamav/bytecode.c	3609	    printf("found a total of %zu globals\n", bc->num_globals);
-format-width	libclamav/bytecode.c	3621	    printf("found %d values with %d arguments and %d locals\n",
-format-width	libclamav/bytecode.c	3635	    printf("found a total of %d constants\n", func->numConstants);
-format-width	libclamav/bytecode.c	3642	    printf("found a total of %u total values\n", total);
-format-width	libclamav/bytecode.c	3654	        printf("opcode %u[%u] of type %u is not implemented yet!",
-format-width	libclamav/bytecode.c	3665	            printf("%d = %d + %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3668	            printf("%d = %d - %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3671	            printf("%d = %d * %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3674	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3677	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3680	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3683	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3686	            printf("%d = %d << %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3689	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3692	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3695	            printf("%d = %d & %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3698	            printf("%d = %d | %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3701	            printf("%d = %d ^ %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3706	            printf("%d = %d trunc " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
-format-width	libclamav/bytecode.c	3709	            printf("%d = %d sext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
-format-width	libclamav/bytecode.c	3712	            printf("%d = %d zext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
-format-width	libclamav/bytecode.c	3717	            printf("br %d ? bb.%d : bb.%d", inst->u.branch.condition,
-format-width	libclamav/bytecode.c	3722	            printf("jmp bb.%d", inst->u.jump);
-format-width	libclamav/bytecode.c	3726	            printf("ret %d", inst->u.unaryop);
-format-width	libclamav/bytecode.c	3736	            printf("%d = (%d == %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3739	            printf("%d = (%d != %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3742	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3745	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3748	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3751	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3754	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3757	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3760	            printf("%d = (%d <= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3763	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3766	            printf("%d = %d ? %d : %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	3772	            printf("%d = call F.%d (", inst->dest, inst->u.ops.funcid);
-format-width	libclamav/bytecode.c	3775	                    printf("%d", inst->u.ops.ops[j]);
-format-width	libclamav/bytecode.c	3777	                    printf("%d, ", inst->u.ops.ops[j]);
-format-width	libclamav/bytecode.c	3784	                printf("apicall FID %d not yet implemented!\n", inst->u.ops.funcid);
-format-width	libclamav/bytecode.c	3790	                    printf("%d = %s[%d] (%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3794	                    printf("%d = %s[%d] (p.%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3798	                    printf("%d = %s[%d] (%d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3802	                    printf("p.%d = %s[%d] (%d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3806	                    printf("%d = %s[%d] (p.%d, %d, %d, %d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3811	                    printf("%d = %s[%d] ()", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3815	                    printf("p.%d = %s[%d] (%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3819	                    printf("%d = %s[%d] (%d, %d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3824	                    printf("%d = %s[%d] (p.%d, %d, p.%d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3829	                    printf("%d = %s[%d] (p.%d, %d, %d)", inst->dest, api->name,
-format-width	libclamav/bytecode.c	3834	                    printf("type %u apicalls not yet implemented!\n", api->kind);
-format-width	libclamav/bytecode.c	3841	            printf("cp %d -> %d", inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3844	            printf("%d = gep1 p.%d + (%d * %d)", inst->dest, inst->u.three[1],
-format-width	libclamav/bytecode.c	3848	            printf("%d = gepz p.%d + (%d)", inst->dest,
-format-width	libclamav/bytecode.c	3855	            printf("store %d -> p.%d", inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3858	            printf("load  %d <- p.%d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	3863	            printf("%d = memset (p.%d, %d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	3867	            printf("%d = memcpy (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	3871	            printf("%d = memmove (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	3875	            printf("%d = memcmp (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
-format-width	libclamav/bytecode.c	3881	            printf("%d = isbigendian()", inst->dest);
-format-width	libclamav/bytecode.c	3887	            printf("%d = bswap16 %d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	3890	            printf("%d = bswap32 %d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	3893	            printf("%d = bswap64 %d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	3896	            printf("%d = ptrdiff32 p.%d p.%d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
-format-width	libclamav/bytecode.c	3899	            printf("%d = ptrtoint64 p.%d", inst->dest, inst->u.unaryop);
-format-width	libclamav/bytecode.c	3907	            printf("opcode %u[%u] of type %u is not implemented yet!",
-format-width	libclamav/bytecode.c	3919	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
-format-width	libclamav/bytecode.c	392	        cli_warnmsg("type %d size is 0\n", type - 65);
-format-width	libclamav/bytecode.c	3926	    printf("FUNCTION ID: F.%d -> NUMINSTS %d\n", funcid, func->numInsts);
-format-width	libclamav/bytecode.c	412	        cli_errmsg("bytecode: function ID doesn't exist: %u\n", funcid);
-format-width	libclamav/bytecode.c	455	        cli_errmsg("bytecode: param index out of bounds: %u\n", i);
-format-width	libclamav/bytecode.c	533	        cli_errmsg("Called function out of range: %u >= %u\n", id, bc->num_func);
-format-width	libclamav/bytecode.c	545	        cli_errmsg("Called undeclared API function: %u\n", id);
-format-width	libclamav/bytecode.c	617	        cli_errmsg("Operand index exceeds bounds: %u >= %u!\n", (unsigned)v, (unsigned)func->numValues);
-format-width	libclamav/bytecode.c	705	        cli_dbgmsg("Skipping bytecode with (format) functionality level: %u (current %u)\n",
-format-width	libclamav/bytecode.c	725	        cli_dbgmsg("Skipping bytecode with (engine) functionality level %u-%u (current %u)\n",
-format-width	libclamav/bytecode.c	738	        cli_errmsg("Invalid bytecode header at %u\n", offset);
-format-width	libclamav/bytecode.c	746	        cli_errmsg("Magic numbers don't match: %lx%lx, %u\n", m0, m1, magic2);
-format-width	libclamav/bytecode.c	762	        cli_errmsg("Out of memory allocating %u functions\n", bc->num_func);
-format-width	libclamav/bytecode.c	767	        cli_errmsg("Out of memory allocating %u types\n", bc->num_types);
-format-width	libclamav/bytecode.c	799	        cli_errmsg("Invalid type id: %llu\n", (unsigned long long)t);
-format-width	libclamav/bytecode.c	820	        cli_errmsg("Out of memory allocating %u types\n", ty->numElements);
-format-width	libclamav/bytecode.c	854	        cli_warnmsg("Type start id mismatch: %u != %u\n", bc->start_tid,
-format-width	libclamav/bytecode.c	872	                    cli_errmsg("Error parsing type %u\n", i);
-format-width	libclamav/bytecode.c	876	                    cli_errmsg("Function with no return type? %u\n", i);
-format-width	libclamav/bytecode.c	887	                    cli_errmsg("Error parsing type %u\n", i);
-format-width	libclamav/bytecode.c	896	                    cli_errmsg("Error parsing type %u\n", i);
-format-width	libclamav/bytecode.c	912	                    cli_errmsg("Error parsing type %u\n", i);
-format-width	libclamav/bytecode.c	924	                cli_errmsg("Invalid type kind: %u\n", t);
-format-width	libclamav/bytecode.c	955	        cli_dbgmsg("bytecode: type kind mismatch: %u != %u\n", ty->kind, apity->kind);
-format-width	libclamav/bytecode.c	959	        cli_dbgmsg("bytecode: type numElements mismatch: %u != %u\n", ty->numElements, apity->numElements);
-format-width	libclamav/bytecode.c	965	                cli_dbgmsg("bytecode: contained type mismatch: %u != %u\n",
-format-width	libclamav/bytecode.c	992	        cli_dbgmsg("bytecode using API %u, but highest API known to libclamav is %u, skipping\n", maxapi, cli_apicall_maxapi);
-format-width	libclamav/bytecode.c	999	        cli_errmsg("bytecode: attempting to describe more APIs than max: %u > %u\n", calls, maxapi);
+format-width	libclamav/bytecode.c	1006	        cli_errmsg("bytecode: attempting to describe more APIs than max: %u > %u\n", calls, maxapi);
+format-width	libclamav/bytecode.c	1026	            cli_errmsg("bytecode: API id %u out of range, max %u\n", id, maxapi);
+format-width	libclamav/bytecode.c	1032	            cli_errmsg("bytecode: API %u name mismatch: %s expected %s\n", id, name, cli_apicalls[id].name);
+format-width	libclamav/bytecode.c	1036	            cli_errmsg("bytecode: API %u prototype doesn't match\n", id);
+format-width	libclamav/bytecode.c	1050	    cli_dbgmsg("bytecode: Parsed %u APIcalls, maxapi %u\n", calls, maxapi);
+format-width	libclamav/bytecode.c	1064	            cli_errmsg("bytecode: function type not accepted for constant: %u\n", id);
+format-width	libclamav/bytecode.c	1098	            cli_errmsg("bytecode: constant has too many subcomponents, expected %u\n", comp);
+format-width	libclamav/bytecode.c	1106	        cli_errmsg("bytecode: constant has too few subcomponents: %u < %u\n", j, comp);
+format-width	libclamav/bytecode.c	1125	        cli_dbgmsg("bytecode using global %u, but highest global known to libclamav is %u, skipping\n", maxglobal, cli_apicall_maxglobal);
+format-width	libclamav/bytecode.c	1131	        cli_errmsg("bytecode: OOM allocating memory for %u globals\n", numglobals);
+format-width	libclamav/bytecode.c	1136	        cli_errmsg("bytecode: OOM allocating memory for %u global types\n", numglobals);
+format-width	libclamav/bytecode.c	1156	        cli_errmsg("Trailing garbage in globals: %d extra bytes\n",
+format-width	libclamav/bytecode.c	1228	    cli_dbgmsg("bytecode: Parsed %u nodes total\n", bc->dbgnode_cnt);
+format-width	libclamav/bytecode.c	1239	        cli_errmsg("Found more functions than declared: %u >= %u\n", fn,
+format-width	libclamav/bytecode.c	1317	        cli_errmsg("Basic block ID out of range: %u\n", id);
+format-width	libclamav/bytecode.c	1383	            cli_errmsg("Invalid opcode: %u\n", inst.opcode);
+format-width	libclamav/bytecode.c	1468	                    cli_errmsg("Invalid number of operands (%u) for OP_BC_STORE opcode\n", numOp);
+format-width	libclamav/bytecode.c	1483	                    cli_errmsg("Invalid number of operands (%u) for OP_BC_COPY opcode\n", numOp);
+format-width	libclamav/bytecode.c	1522	                        cli_errmsg("Opcode %u with too many operands: %u?\n", inst.opcode, numOp);
+format-width	libclamav/bytecode.c	1534	            cli_errmsg("More instructions than declared in total: %u > %u!\n",
+format-width	libclamav/bytecode.c	1550	                cli_dbgmsg("unknown inst type: %d\n", inst.type);
+format-width	libclamav/bytecode.c	1571	            cli_errmsg("invalid number of dbg nodes, expected: %u, got: %u\n", bcfunc->numInsts, num);
+format-width	libclamav/bytecode.c	1576	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
+format-width	libclamav/bytecode.c	1586	        cli_errmsg("Trailing garbage in basicblock: %d extra bytes\n",
+format-width	libclamav/bytecode.c	1694	            cli_dbgmsg("cli_event_define error for time event id %d\n", bc->sigtime_id);
+format-width	libclamav/bytecode.c	1699	    cli_dbgmsg("sigperf_events_init(): adding sig ids starting %u for %s\n", g_sigid, bc_name);
+format-width	libclamav/bytecode.c	1705	        cli_errmsg("sigperf_events_init: cli_event_define() error for time event id %d\n", bc->sigtime_id);
+format-width	libclamav/bytecode.c	1714	        cli_errmsg("sigperf_events_init: cli_event_define() error for matches event id %d\n", bc->sigmatch_id);
+format-width	libclamav/bytecode.c	1757	        cli_dbgmsg("line: %d\n", linelength);
+format-width	libclamav/bytecode.c	1762	        cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1767	        cli_errmsg("Out of memory allocating line of length %u\n", linelength);
+format-width	libclamav/bytecode.c	1784			    cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1794	                    cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1808	                    cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1822	                    cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1832	                        cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1846	                    cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1856	                    cli_errmsg("Error at bytecode line %u\n", row);
+format-width	libclamav/bytecode.c	1862	                        cli_errmsg("Parsed different number of instructions than declared: %u != %u\n",
+format-width	libclamav/bytecode.c	1867	                    cli_dbgmsg("Parsed %u BBs, %u instructions\n",
+format-width	libclamav/bytecode.c	1884	    cli_dbgmsg("Parsed %d functions\n", current_func);
+format-width	libclamav/bytecode.c	1888	        cli_errmsg("Loaded less functions than declared: %u vs. %u\n",
+format-width	libclamav/bytecode.c	1996	        cli_dbgmsg("Bytecode %u: executing in interpreter mode\n", bc->id);
+format-width	libclamav/bytecode.c	2016	        cli_dbgmsg("Bytecode %u: executing in JIT mode\n", bc->id);
+format-width	libclamav/bytecode.c	2042	            cli_infomsg(cctx, "bytecode %d encountered %u JIT and %u interpreter errors\n",
+format-width	libclamav/bytecode.c	2047	            cli_infomsg(cctx, "bytecode %d execution different with JIT and interpreter, see --debug for details\n",
+format-width	libclamav/bytecode.c	2061	            cli_infomsg(cctx, "bytecode %d encountered %u JIT and %u interpreter warnings\n",
+format-width	libclamav/bytecode.c	2155	                cli_errmsg("bytecode: global out of range: %u > %u, for instruction %u in function %u\n",                   \
+format-width	libclamav/bytecode.c	2165	            cli_errmsg("bytecode: operand out of range: %u > %u, for instruction %u in function %u\n", o, totValues, j, i); \
+format-width	libclamav/bytecode.c	2191	        cli_errmsg("bytecode: typeid out of range %u >= %u\n", tid, bc->num_types);
+format-width	libclamav/bytecode.c	2195	        cli_errmsg("bytecode: invalid type for gep (%u)\n", tid);
+format-width	libclamav/bytecode.c	2200	        cli_errmsg("bytecode: invalid gep type, must be pointer: %u\n", tid);
+format-width	libclamav/bytecode.c	2212	        cli_errmsg("bytecode: typeid out of range %u >= %u\n", tid, bc->num_types);
+format-width	libclamav/bytecode.c	2216	        cli_errmsg("bytecode: invalid type for gep (%u)\n", tid);
+format-width	libclamav/bytecode.c	2221	        cli_errmsg("bytecode: invalid gep type, must be pointer to nonint: %u\n", tid);
+format-width	libclamav/bytecode.c	2229	        cli_errmsg("bytecode: gep offset out of range: %d >= %d\n", (uint32_t)*gepoff, ty->numElements);
+format-width	libclamav/bytecode.c	2248	        cli_errmsg("interpreter: Unable to allocate memory for global map: %zu\n", bc->num_globals * sizeof(*gmap));
+format-width	libclamav/bytecode.c	2262	            cli_errmsg("interpreter: Unable to allocate memory for globalBytes: %u\n", bc->numGlobalBytes);
+format-width	libclamav/bytecode.c	2311	                        cli_dbgmsg("interpreter: unsupported elsize: %u\n", elsize);
+format-width	libclamav/bytecode.c	2328	            cli_errmsg("interpreter: Unable to allocate memory for map: %zu\n", sizeof(*map) * (size_t)totValues);
+format-width	libclamav/bytecode.c	2341	            /* printf("%d -> %d, %u\n", j, map[j], typesize(bc, ty)); */
+format-width	libclamav/bytecode.c	2406	                            cli_errmsg("bytecode: called function out of range: %u > %u\n", inst->u.ops.funcid, bc->num_func);
+format-width	libclamav/bytecode.c	2500	                    cli_warnmsg("Bytecode: unhandled opcode: %d\n", inst->opcode);
+format-width	libclamav/bytecode.c	2684	    cli_dbgmsg("Bytecode: mode changed to %d\n", mode);
+format-width	libclamav/bytecode.c	2687	            cli_errmsg("bytecode: in test mode but JIT/bytecode is about to be disabled: %d\n", mode);
+format-width	libclamav/bytecode.c	2694	        cli_errmsg("bytecode: in JIT mode but JIT is about to be disabled: %d\n", mode);
+format-width	libclamav/bytecode.c	2813	    cli_dbgmsg("Bytecode: mode is %d\n", engine->bytecode_mode);
+format-width	libclamav/bytecode.c	2827	        cli_dbgmsg("Bytecode: disable status is %d\n", ctx->bytecode_disable_status);
+format-width	libclamav/bytecode.c	2857	            cli_dbgmsg("Bytecode: %u bytecode prepared with JIT\n", bcs->count);
+format-width	libclamav/bytecode.c	2900	            cli_warnmsg("Bytecode: %d failed to prepare for interpreter mode\n", bc->id);
+format-width	libclamav/bytecode.c	2905	    cli_dbgmsg("Bytecode: %u bytecode prepared with JIT, "
+format-width	libclamav/bytecode.c	2906	               "%u prepared with interpreter, %u total\n",
+format-width	libclamav/bytecode.c	2985	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent a logical match offset\n", bc_name, bc->id);
+format-width	libclamav/bytecode.c	2995	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent the file size\n", bc_name, bc->id);
+format-width	libclamav/bytecode.c	3017	        cli_dbgmsg("hook lsig id %d matched (bc %d)\n", bc->hook_lsig_id, bc->id);
+format-width	libclamav/bytecode.c	3033	    cli_dbgmsg("Running bytecode '%s' (id: %u) for logical signature match.\n", bc_name, bc->id);
+format-width	libclamav/bytecode.c	3036	        cli_warnmsg("Bytecode '%s' (id: %u) failed to run: %s\n", bc_name, bc->id, cl_strerror(ret));
+format-width	libclamav/bytecode.c	3040	            cli_dbgmsg("Exceeded scan timeout during bytecode run (max: %u)\n", cctx->engine->maxscantime);
+format-width	libclamav/bytecode.c	3063	    cli_dbgmsg("Bytecode '%s' (id: %u) returned code: %u\n", bc_name, bc->id, ret);
+format-width	libclamav/bytecode.c	3086	    cli_dbgmsg("Bytecode executing hook id %u (%u hooks)\n", id, hooks_cnt);
+format-width	libclamav/bytecode.c	3105	        cli_dbgmsg("Bytecode: no applicable bytecode registered for hook %u\n", id);
+format-width	libclamav/bytecode.c	3119	            cli_dbgmsg("Bytecode: executing bytecode %u (lsig matched)\n", bc->id);
+format-width	libclamav/bytecode.c	3132	            cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
+format-width	libclamav/bytecode.c	3164	            cli_warnmsg("Bytecode %u failed to run: %s\n", bc->id, cl_strerror(ret));
+format-width	libclamav/bytecode.c	3198	        cli_dbgmsg("Bytecode %u returned %u\n", bc->id, ret);
+format-width	libclamav/bytecode.c	3211	                    cli_dbgmsg("Bytecode %u unpacked file saved in %s\n",
+format-width	libclamav/bytecode.c	3214	                    cli_dbgmsg("Bytecode %u unpacked file\n", bc->id);
+format-width	libclamav/bytecode.c	3231	                        cli_dbgmsg("ftruncate failed on %d\n", fd);
+format-width	libclamav/bytecode.c	3257	                    cli_dbgmsg("Scanning unpacked file by bytecode %u found a reason to stop: %s\n", bc->id, cl_strerror(ret));
+format-width	libclamav/bytecode.c	3273	        cli_dbgmsg("Bytecode: executed %u bytecodes for this hook\n", executed);
+format-width	libclamav/bytecode.c	3366	    printf("Bytecode format functionality level: %u\n", bc->metadata.formatlevel);
+format-width	libclamav/bytecode.c	3375	    printf("\ttarget exclude: %d\n", bc->metadata.targetExclude);
+format-width	libclamav/bytecode.c	3403	            printf("Unknown (type %u)", bc->kind);
+format-width	libclamav/bytecode.c	3407	    printf("\tbytecode functionality level: %u - %u\n",
+format-width	libclamav/bytecode.c	3413	    printf("\tvirusnames: %u\n", bc->vnames_cnt);
+format-width	libclamav/bytecode.c	3459	    printf("\tnumber of functions: %u\n\tnumber of types: %u\n",
+format-width	libclamav/bytecode.c	3461	    printf("\tnumber of global constants: %u\n", (unsigned)bc->num_globals);
+format-width	libclamav/bytecode.c	3462	    printf("\tnumber of debug nodes: %u\n", bc->dbgnode_cnt);
+format-width	libclamav/bytecode.c	3560	        printf("i%d", tid);
+format-width	libclamav/bytecode.c	3596	            printf("%d x ", ty->numElements);
+format-width	libclamav/bytecode.c	3601	            printf("unhandled type kind %d, cannot parse", ty->kind);
+format-width	libclamav/bytecode.c	3610	    printf("found %d extra types of %d total, starting at tid %d\n",
+format-width	libclamav/bytecode.c	3629	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
+format-width	libclamav/bytecode.c	3634	    printf("found a total of %zu globals\n", bc->num_globals);
+format-width	libclamav/bytecode.c	3646	    printf("found %d values with %d arguments and %d locals\n",
+format-width	libclamav/bytecode.c	3660	    printf("found a total of %d constants\n", func->numConstants);
+format-width	libclamav/bytecode.c	3667	    printf("found a total of %u total values\n", total);
+format-width	libclamav/bytecode.c	3679	        printf("opcode %u[%u] of type %u is not implemented yet!",
+format-width	libclamav/bytecode.c	3690	            printf("%d = %d + %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3693	            printf("%d = %d - %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3696	            printf("%d = %d * %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3699	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3702	            printf("%d = %d / %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3705	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3708	            printf("%d = %d %% %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3711	            printf("%d = %d << %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3714	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3717	            printf("%d = %d >> %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3720	            printf("%d = %d & %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3723	            printf("%d = %d | %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3726	            printf("%d = %d ^ %d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3731	            printf("%d = %d trunc " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
+format-width	libclamav/bytecode.c	3734	            printf("%d = %d sext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
+format-width	libclamav/bytecode.c	3737	            printf("%d = %d zext " STDx64, inst->dest, inst->u.cast.source, inst->u.cast.mask);
+format-width	libclamav/bytecode.c	3742	            printf("br %d ? bb.%d : bb.%d", inst->u.branch.condition,
+format-width	libclamav/bytecode.c	3747	            printf("jmp bb.%d", inst->u.jump);
+format-width	libclamav/bytecode.c	3751	            printf("ret %d", inst->u.unaryop);
+format-width	libclamav/bytecode.c	3761	            printf("%d = (%d == %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3764	            printf("%d = (%d != %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3767	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3770	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3773	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3776	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3779	            printf("%d = (%d > %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3782	            printf("%d = (%d >= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3785	            printf("%d = (%d <= %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3788	            printf("%d = (%d < %d)", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3791	            printf("%d = %d ? %d : %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	3797	            printf("%d = call F.%d (", inst->dest, inst->u.ops.funcid);
+format-width	libclamav/bytecode.c	3800	                    printf("%d", inst->u.ops.ops[j]);
+format-width	libclamav/bytecode.c	3802	                    printf("%d, ", inst->u.ops.ops[j]);
+format-width	libclamav/bytecode.c	3809	                printf("apicall FID %d not yet implemented!\n", inst->u.ops.funcid);
+format-width	libclamav/bytecode.c	3815	                    printf("%d = %s[%d] (%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3819	                    printf("%d = %s[%d] (p.%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3823	                    printf("%d = %s[%d] (%d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3827	                    printf("p.%d = %s[%d] (%d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3831	                    printf("%d = %s[%d] (p.%d, %d, %d, %d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3836	                    printf("%d = %s[%d] ()", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3840	                    printf("p.%d = %s[%d] (%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3844	                    printf("%d = %s[%d] (%d, %d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3849	                    printf("%d = %s[%d] (p.%d, %d, p.%d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3854	                    printf("%d = %s[%d] (p.%d, %d, %d)", inst->dest, api->name,
+format-width	libclamav/bytecode.c	3859	                    printf("type %u apicalls not yet implemented!\n", api->kind);
+format-width	libclamav/bytecode.c	3866	            printf("cp %d -> %d", inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3869	            printf("%d = gep1 p.%d + (%d * %d)", inst->dest, inst->u.three[1],
+format-width	libclamav/bytecode.c	3873	            printf("%d = gepz p.%d + (%d)", inst->dest,
+format-width	libclamav/bytecode.c	3880	            printf("store %d -> p.%d", inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3883	            printf("load  %d <- p.%d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	3888	            printf("%d = memset (p.%d, %d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	3892	            printf("%d = memcpy (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	3896	            printf("%d = memmove (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	3900	            printf("%d = memcmp (p.%d, p.%d, %d)", inst->dest, inst->u.three[0],
+format-width	libclamav/bytecode.c	3906	            printf("%d = isbigendian()", inst->dest);
+format-width	libclamav/bytecode.c	3912	            printf("%d = bswap16 %d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	3915	            printf("%d = bswap32 %d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	3918	            printf("%d = bswap64 %d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	3921	            printf("%d = ptrdiff32 p.%d p.%d", inst->dest, inst->u.binop[0], inst->u.binop[1]);
+format-width	libclamav/bytecode.c	3924	            printf("%d = ptrtoint64 p.%d", inst->dest, inst->u.unaryop);
+format-width	libclamav/bytecode.c	3932	            printf("opcode %u[%u] of type %u is not implemented yet!",
+format-width	libclamav/bytecode.c	394	        cli_warnmsg("type %d size is 0\n", type - 65);
+format-width	libclamav/bytecode.c	3944	        printf("bytecode diagnostic: funcid [%u] outside bytecode numfuncs [%u]\n",
+format-width	libclamav/bytecode.c	3951	    printf("FUNCTION ID: F.%d -> NUMINSTS %d\n", funcid, func->numInsts);
+format-width	libclamav/bytecode.c	414	        cli_errmsg("bytecode: function ID doesn't exist: %u\n", funcid);
+format-width	libclamav/bytecode.c	457	        cli_errmsg("bytecode: param index out of bounds: %u\n", i);
+format-width	libclamav/bytecode.c	535	        cli_errmsg("Called function out of range: %u >= %u\n", id, bc->num_func);
+format-width	libclamav/bytecode.c	547	        cli_errmsg("Called undeclared API function: %u\n", id);
+format-width	libclamav/bytecode.c	624	        cli_errmsg("Operand index exceeds bounds: %u >= %u!\n", (unsigned)v, (unsigned)func->numValues);
+format-width	libclamav/bytecode.c	712	        cli_dbgmsg("Skipping bytecode with (format) functionality level: %u (current %u)\n",
+format-width	libclamav/bytecode.c	732	        cli_dbgmsg("Skipping bytecode with (engine) functionality level %u-%u (current %u)\n",
+format-width	libclamav/bytecode.c	745	        cli_errmsg("Invalid bytecode header at %u\n", offset);
+format-width	libclamav/bytecode.c	753	        cli_errmsg("Magic numbers don't match: %lx%lx, %u\n", m0, m1, magic2);
+format-width	libclamav/bytecode.c	769	        cli_errmsg("Out of memory allocating %u functions\n", bc->num_func);
+format-width	libclamav/bytecode.c	774	        cli_errmsg("Out of memory allocating %u types\n", bc->num_types);
+format-width	libclamav/bytecode.c	806	        cli_errmsg("Invalid type id: %llu\n", (unsigned long long)t);
+format-width	libclamav/bytecode.c	827	        cli_errmsg("Out of memory allocating %u types\n", ty->numElements);
+format-width	libclamav/bytecode.c	861	        cli_warnmsg("Type start id mismatch: %u != %u\n", bc->start_tid,
+format-width	libclamav/bytecode.c	879	                    cli_errmsg("Error parsing type %u\n", i);
+format-width	libclamav/bytecode.c	883	                    cli_errmsg("Function with no return type? %u\n", i);
+format-width	libclamav/bytecode.c	894	                    cli_errmsg("Error parsing type %u\n", i);
+format-width	libclamav/bytecode.c	903	                    cli_errmsg("Error parsing type %u\n", i);
+format-width	libclamav/bytecode.c	919	                    cli_errmsg("Error parsing type %u\n", i);
+format-width	libclamav/bytecode.c	931	                cli_errmsg("Invalid type kind: %u\n", t);
+format-width	libclamav/bytecode.c	962	        cli_dbgmsg("bytecode: type kind mismatch: %u != %u\n", ty->kind, apity->kind);
+format-width	libclamav/bytecode.c	966	        cli_dbgmsg("bytecode: type numElements mismatch: %u != %u\n", ty->numElements, apity->numElements);
+format-width	libclamav/bytecode.c	972	                cli_dbgmsg("bytecode: contained type mismatch: %u != %u\n",
+format-width	libclamav/bytecode.c	999	        cli_dbgmsg("bytecode using API %u, but highest API known to libclamav is %u, skipping\n", maxapi, cli_apicall_maxapi);
 format-width	libclamav/bytecode_api.c	1144	            cli_dbgmsg("bytecode api: inflateInit2: unknown error %d\n", ret);
 format-width	libclamav/bytecode_api.c	117	        cli_warnmsg("bytecode: negative read size: %d\n", size);
 format-width	libclamav/bytecode_api.c	1185	                cli_dbgmsg("bytecode api: inflate at %lu: %s, trying to recover\n", b->stream.total_in,
@@ -22460,163 +22468,165 @@ offset-size-arithmetic	libclamav/bmp.c	59	    if (got == (size_t)-1) {
 offset-size-arithmetic	libclamav/builtin_bytecodes.h	196	  uint32_t b = (env.big_endian << 28) | (env.sizeof_ptr << 24) |
 offset-size-arithmetic	libclamav/builtin_bytecodes.h	27	/* bytecode run on startup with interpreter to determine if JIT/bytecode should
 offset-size-arithmetic	libclamav/builtin_bytecodes.h	93	/* source-code for builtin_bc_startup: */
-offset-size-arithmetic	libclamav/bytecode.c	1007	    apity2ty = cli_max_calloc(cli_apicall_maxtypes, sizeof(*cli_apicall_types));
-offset-size-arithmetic	libclamav/bytecode.c	1022	        /* API ids start from 1 */
-offset-size-arithmetic	libclamav/bytecode.c	1079	                         unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	1083	        buffer[*offset + 1] == 0x60) {
-offset-size-arithmetic	libclamav/bytecode.c	1085	        memset(bc->globals[i], 0, sizeof(*bc->globals[0]) * comp);
-offset-size-arithmetic	libclamav/bytecode.c	1086	        (*offset) += 2;
-offset-size-arithmetic	libclamav/bytecode.c	1102	    (*offset)++;
-offset-size-arithmetic	libclamav/bytecode.c	1108	    unsigned i, offset = 1, len = strlen((const char *)buffer), numglobals;
-offset-size-arithmetic	libclamav/bytecode.c	1122	    bc->globals = cli_max_calloc(numglobals, sizeof(*bc->globals));
-offset-size-arithmetic	libclamav/bytecode.c	1127	    bc->globaltys = cli_max_calloc(numglobals, sizeof(*bc->globaltys));
-offset-size-arithmetic	libclamav/bytecode.c	1141	        bc->globals[i] = cli_max_malloc(sizeof(*bc->globals[0]) * comp);
-offset-size-arithmetic	libclamav/bytecode.c	1150	                   len - offset);
-offset-size-arithmetic	libclamav/bytecode.c	1158	    unsigned offset = 1, len = strlen((const char *)buffer);
-offset-size-arithmetic	libclamav/bytecode.c	1170	    bc->dbgnodes = cli_safer_realloc(bc->dbgnodes, bc->dbgnode_cnt * sizeof(*bc->dbgnodes));
-offset-size-arithmetic	libclamav/bytecode.c	1182	        bc->dbgnodes[b + i].elements = elts = cli_max_calloc(el, sizeof(*elts));
-offset-size-arithmetic	libclamav/bytecode.c	120	static bool bytecode_offsets_to_legacy(const uint64_t *offsets, uint32_t *legacy_offsets)
-offset-size-arithmetic	libclamav/bytecode.c	1219	    len  = strlen((const char *)buffer);
-offset-size-arithmetic	libclamav/bytecode.c	1232	    offset++;
-offset-size-arithmetic	libclamav/bytecode.c	1242	        func->types = cli_max_calloc(all_locals, sizeof(*func->types));
-offset-size-arithmetic	libclamav/bytecode.c	1261	    offset++;
-offset-size-arithmetic	libclamav/bytecode.c	1270	    func->allinsts     = cli_max_calloc(func->numInsts, sizeof(*func->allinsts));
-offset-size-arithmetic	libclamav/bytecode.c	1280	    func->BB = cli_max_calloc(func->numBB, sizeof(*func->BB));
-offset-size-arithmetic	libclamav/bytecode.c	1288	static bbid_t readBBID(struct cli_bc_func *func, const unsigned char *buffer, unsigned *off, unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	1328	    len = strlen((const char *)buffer);
-offset-size-arithmetic	libclamav/bytecode.c	1344	            offset++;
-offset-size-arithmetic	libclamav/bytecode.c	1384	                        inst.u.ops.ops = cli_max_calloc(numOp, sizeof(*inst.u.ops.ops));
-offset-size-arithmetic	libclamav/bytecode.c	1429	                    inst.u.ops.ops     = cli_max_calloc(numOp + 2, sizeof(*inst.u.ops.ops));
-offset-size-arithmetic	libclamav/bytecode.c	1535	        offset++;
-offset-size-arithmetic	libclamav/bytecode.c	1539	        offset += 3;
-offset-size-arithmetic	libclamav/bytecode.c	1549	        bcfunc->dbgnodes = cli_max_malloc(num * sizeof(*bcfunc->dbgnodes));
-offset-size-arithmetic	libclamav/bytecode.c	1551	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
-offset-size-arithmetic	libclamav/bytecode.c	1562	                   len - offset);
-offset-size-arithmetic	libclamav/bytecode.c	1642	        cli_infomsg(NULL, "%-*s %*lu %*lu %*" PRIu64 " %*.2f\n", max_name_len, elem->bc_name,
-offset-size-arithmetic	libclamav/bytecode.c	1710	    memset(bc, 0, sizeof(*bc));
-offset-size-arithmetic	libclamav/bytecode.c	1728	            linelength = len ? atoi(len + 1) : 4096;
-offset-size-arithmetic	libclamav/bytecode.c	1895	    for (i = 0; i < sizeof(bc_events) / sizeof(bc_events[0]); i++) {
-offset-size-arithmetic	libclamav/bytecode.c	1935	        cli_event_time_start(cctx->perf, PERFT_BYTECODE);
-offset-size-arithmetic	libclamav/bytecode.c	1953	    cli_event_time_start(g_sigevents, bc->sigtime_id);
-offset-size-arithmetic	libclamav/bytecode.c	1970	        inst.u.ops.opsizes = ctx->opsizes;
-offset-size-arithmetic	libclamav/bytecode.c	1982	        /* need to be called here to catch any extracted but not yet scanned files */
-offset-size-arithmetic	libclamav/bytecode.c	2001	        /* need to be called here to catch any extracted but not yet scanned files */
-offset-size-arithmetic	libclamav/bytecode.c	208	                    if (lseek(fd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/bytecode.c	2121	    memset(bc, 0, sizeof(*bc));
-offset-size-arithmetic	libclamav/bytecode.c	2162	static inline int get_geptypesize(const struct cli_bc *bc, uint16_t tid)
-offset-size-arithmetic	libclamav/bytecode.c	2178	    return typesize(bc, ty->containedTypes[0]);
-offset-size-arithmetic	libclamav/bytecode.c	2202	    gepoff = (uint32_t *)&func->constants[op - func->numValues];
-offset-size-arithmetic	libclamav/bytecode.c	2203	    if (*gepoff >= ty->numElements) {
-offset-size-arithmetic	libclamav/bytecode.c	2204	        cli_errmsg("bytecode: gep offset out of range: %d >= %d\n", (uint32_t)*gepoff, ty->numElements);
-offset-size-arithmetic	libclamav/bytecode.c	2208	        off += typesize(bc, ty->containedTypes[i]);
-offset-size-arithmetic	libclamav/bytecode.c	2221	    gmap                = cli_max_malloc(bc->num_globals * sizeof(*gmap));
-offset-size-arithmetic	libclamav/bytecode.c	2223	        cli_errmsg("interpreter: Unable to allocate memory for global map: %zu\n", bc->num_globals * sizeof(*gmap));
-offset-size-arithmetic	libclamav/bytecode.c	2253	                    ptr = ptr_compose(bc->globals[j][1] - _FIRST_GLOBAL + 1,
-offset-size-arithmetic	libclamav/bytecode.c	2267	                elsize = typesize(bc, ty->containedTypes[0]);
-offset-size-arithmetic	libclamav/bytecode.c	2271	                            bc->globalBytes[off + i] = bc->globals[j][i];
-offset-size-arithmetic	libclamav/bytecode.c	2275	                            *(uint16_t *)&bc->globalBytes[off + i * 2] = bc->globals[j][i];
-offset-size-arithmetic	libclamav/bytecode.c	2279	                            *(uint32_t *)&bc->globalBytes[off + i * 4] = bc->globals[j][i];
-offset-size-arithmetic	libclamav/bytecode.c	2283	                            *(uint64_t *)&bc->globalBytes[off + i * 8] = bc->globals[j][i];
-offset-size-arithmetic	libclamav/bytecode.c	2301	        unsigned *map              = cli_max_malloc(sizeof(*map) * (size_t)totValues);
-offset-size-arithmetic	libclamav/bytecode.c	2303	            cli_errmsg("interpreter: Unable to allocate memory for map: %zu\n", sizeof(*map) * (size_t)totValues);
-offset-size-arithmetic	libclamav/bytecode.c	2318	            /* TODO: don't allow size 0, it is always a bug! */
-offset-size-arithmetic	libclamav/bytecode.c	2397	                        inst->u.ops.opsizes = cli_max_malloc(sizeof(*inst->u.ops.opsizes) * inst->u.ops.numOps);
-offset-size-arithmetic	libclamav/bytecode.c	241	    /* don't touch fmap, file_size/file_size64, and hooks, sections, ctx,
-offset-size-arithmetic	libclamav/bytecode.c	2410	                            inst->u.ops.opsizes[k] = typesize(bc, target->types[k]);
-offset-size-arithmetic	libclamav/bytecode.c	2429	                    inst->u.three[0] = get_geptypesize(bc, inst->u.three[0]);
-offset-size-arithmetic	libclamav/bytecode.c	2493	    bcs->all_bcs = cli_safer_realloc_or_free(bcs->all_bcs, sizeof(*bcs->all_bcs) * (bcs->count + 1));
-offset-size-arithmetic	libclamav/bytecode.c	2499	    memset(bc, 0, sizeof(*bc));
-offset-size-arithmetic	libclamav/bytecode.c	2503	    bc->globals     = cli_max_calloc(1, sizeof(*bc->globals));
-offset-size-arithmetic	libclamav/bytecode.c	2508	    bc->globals[0] = cli_max_calloc(1, sizeof(*bc->globals[0]));
-offset-size-arithmetic	libclamav/bytecode.c	2513	    bc->globaltys = cli_max_calloc(1, sizeof(*bc->globaltys));
-offset-size-arithmetic	libclamav/bytecode.c	2524	    bc->funcs        = cli_max_calloc(1, sizeof(*bc->funcs));
-offset-size-arithmetic	libclamav/bytecode.c	2536	    func->types        = cli_max_calloc(1, sizeof(*func->types));
-offset-size-arithmetic	libclamav/bytecode.c	2542	    func->BB       = cli_max_calloc(1, sizeof(*func->BB));
-offset-size-arithmetic	libclamav/bytecode.c	2547	    func->allinsts = cli_max_calloc(2, sizeof(*func->allinsts));
-offset-size-arithmetic	libclamav/bytecode.c	2554	    func->constants    = cli_max_calloc(1, sizeof(*func->constants));
-offset-size-arithmetic	libclamav/bytecode.c	2565	    inst->u.ops.ops     = cli_max_calloc(1, sizeof(*inst->u.ops.ops));
-offset-size-arithmetic	libclamav/bytecode.c	2694	        bc = cli_max_calloc(1, sizeof(*bc));
-offset-size-arithmetic	libclamav/bytecode.c	2704	        dbio.bufsize          = strlen(builtin_cbc) + 1;
-offset-size-arithmetic	libclamav/bytecode.c	2705	        if (!dbio.bufsize || dbio.bufpt[dbio.bufsize - 2] != '\n') {
-offset-size-arithmetic	libclamav/bytecode.c	2889	    memset(allbc, 0, sizeof(*allbc));
-offset-size-arithmetic	libclamav/bytecode.c	2906	    if (!bytecode_uses_v2(ctx->bc) && !cli_bytecode_file_size_compatible((uint64_t)map->len))
-offset-size-arithmetic	libclamav/bytecode.c	2910	    ctx->file_size64      = (uint64_t)map->len;
-offset-size-arithmetic	libclamav/bytecode.c	2911	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
-offset-size-arithmetic	libclamav/bytecode.c	2912	    ctx->hooks.filesize   = &ctx->file_size;
-offset-size-arithmetic	libclamav/bytecode.c	2913	    ctx->hooks.filesize64 = &ctx->file_size64;
-offset-size-arithmetic	libclamav/bytecode.c	2925	                                const uint64_t *lsigsuboff, fmap_t *map)
-offset-size-arithmetic	libclamav/bytecode.c	2960	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent a logical match offset\n", bc_name, bc->id);
-offset-size-arithmetic	libclamav/bytecode.c	2970	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent the file size\n", bc_name, bc->id);
-offset-size-arithmetic	libclamav/bytecode.c	2984	        pehookdata.offset    = tinfo->exeinfo.offset;
-offset-size-arithmetic	libclamav/bytecode.c	2987	        pehookdata.hdr_size  = tinfo->exeinfo.hdr_size;
-offset-size-arithmetic	libclamav/bytecode.c	2999	        memcpy(&ctx.lsigoff, lsigsuboff, 64 * sizeof(*lsigsuboff));
-offset-size-arithmetic	libclamav/bytecode.c	3003	            memcpy(&ctx.lsigoff32, legacy_offsets, 64 * sizeof(*legacy_offsets));
-offset-size-arithmetic	libclamav/bytecode.c	310	    memset(ctx, 0, sizeof(*ctx));
-offset-size-arithmetic	libclamav/bytecode.c	3107	            cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
-offset-size-arithmetic	libclamav/bytecode.c	3118	        ctx->hooks.match_offsets64 = bytecode_uses_v2(bc) ? ctx->lsigoff : nooffsets64;
-offset-size-arithmetic	libclamav/bytecode.c	3122	            if (!bytecode_offsets_to_legacy(ctx->lsigoff, legacy_offsets)) {
-offset-size-arithmetic	libclamav/bytecode.c	3133	            memcpy(ctx->lsigoff32, legacy_offsets, sizeof(ctx->lsigoff32));
-offset-size-arithmetic	libclamav/bytecode.c	3134	            ctx->hooks.match_offsets = ctx->lsigoff32;
-offset-size-arithmetic	libclamav/bytecode.c	3157	                ret = cli_append_potentially_unwanted(cctx, ctx->virname);
-offset-size-arithmetic	libclamav/bytecode.c	3159	                ret = cli_append_virus(cctx, ctx->virname);
-offset-size-arithmetic	libclamav/bytecode.c	3192	                if (lseek(fd, 0, SEEK_SET) == -1) {
-offset-size-arithmetic	libclamav/bytecode.c	321	    struct cli_bc_ctx *ctx = cli_max_calloc(1, sizeof(*ctx));
-offset-size-arithmetic	libclamav/bytecode.c	3293	     * the post-run callers still perform the authoritative deadline check. */
-offset-size-arithmetic	libclamav/bytecode.c	351	    *tempfilename = ctx->tempfile;
-offset-size-arithmetic	libclamav/bytecode.c	360	static unsigned typesize(const struct cli_bc *bc, uint16_t type)
-offset-size-arithmetic	libclamav/bytecode.c	3659	    snprintf(inst_str, sizeof(inst_str), "%-20s[%-3d/%3d/%3d]", bc_opstr[inst->opcode],
-offset-size-arithmetic	libclamav/bytecode.c	3774	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
-offset-size-arithmetic	libclamav/bytecode.c	383	                ty->size += typesize(bc, ty->containedTypes[j]);
-offset-size-arithmetic	libclamav/bytecode.c	386	            ty->size = ty->numElements * typesize(bc, ty->containedTypes[0]);
-offset-size-arithmetic	libclamav/bytecode.c	3881	            printf("%d = isbigendian()", inst->dest);
-offset-size-arithmetic	libclamav/bytecode.c	391	    if (!ty->size && ty->kind != DFunctionType) {
-offset-size-arithmetic	libclamav/bytecode.c	392	        cli_warnmsg("type %d size is 0\n", type - 65);
-offset-size-arithmetic	libclamav/bytecode.c	420	        ctx->operands = cli_max_malloc(sizeof(*ctx->operands) * func->numArgs);
-offset-size-arithmetic	libclamav/bytecode.c	425	        ctx->opsizes = cli_max_malloc(sizeof(*ctx->opsizes) * func->numArgs);
-offset-size-arithmetic	libclamav/bytecode.c	434	            s += ctx->opsizes[i] = typesize(bc, func->types[i]);
-offset-size-arithmetic	libclamav/bytecode.c	489	static inline uint64_t readNumber(const unsigned char *p, unsigned *off, unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	492	    unsigned i, newoff, lim, p0 = p[*off], shift = 0;
-offset-size-arithmetic	libclamav/bytecode.c	500	    newoff = *off + lim + 1;
-offset-size-arithmetic	libclamav/bytecode.c	512	    for (i = *off + 1; i < newoff; i++) {
-offset-size-arithmetic	libclamav/bytecode.c	529	                                  unsigned *off, unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	531	    funcid_t id = readNumber(p, off, len, ok) - 1;
-offset-size-arithmetic	libclamav/bytecode.c	541	                                     unsigned *off, unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	543	    funcid_t id = readNumber(p, off, len, ok) - 1;
-offset-size-arithmetic	libclamav/bytecode.c	553	                                       unsigned len, bool *ok, unsigned width)
-offset-size-arithmetic	libclamav/bytecode.c	556	    unsigned newoff = *off + width;
-offset-size-arithmetic	libclamav/bytecode.c	579	                                    unsigned *off, unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	582	    if ((p[*off] & 0xf0) == 0x40 || p[*off] == 0x50) {
-offset-size-arithmetic	libclamav/bytecode.c	587	        func->constants = cli_safer_realloc_or_free(func->constants, (func->numConstants + 1) * sizeof(*func->constants));
-offset-size-arithmetic	libclamav/bytecode.c	624	static inline char *readData(const unsigned char *p, unsigned *off, unsigned len, bool *ok, unsigned *datalen)
-offset-size-arithmetic	libclamav/bytecode.c	629	        cli_errmsg("Data start marker missing: %c\n", p[*off]);
-offset-size-arithmetic	libclamav/bytecode.c	633	    (*off)++;
-offset-size-arithmetic	libclamav/bytecode.c	639	    if (*off > len || l > (len - *off) / 2) {
-offset-size-arithmetic	libclamav/bytecode.c	644	    newoff = *off + 2 * l;
-offset-size-arithmetic	libclamav/bytecode.c	668	static inline char *readString(const unsigned char *p, unsigned *off, unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	672	    if (*ok && stringlen && str[stringlen - 1] != '\0') {
-offset-size-arithmetic	libclamav/bytecode.c	673	        str[stringlen - 1] = '\0';
-offset-size-arithmetic	libclamav/bytecode.c	690	    if (strncmp((const char *)buffer, BC_HEADER, sizeof(BC_HEADER) - 1)) {
-offset-size-arithmetic	libclamav/bytecode.c	694	    offset                   = sizeof(BC_HEADER) - 1;
-offset-size-arithmetic	libclamav/bytecode.c	695	    len                      = strlen((const char *)buffer);
-offset-size-arithmetic	libclamav/bytecode.c	709	    /* Optimistic parsing, check for error only at the end.*/
-offset-size-arithmetic	libclamav/bytecode.c	720	     * Note that post 0.96 bytecode/bytecode lsig needs format 7, because
-offset-size-arithmetic	libclamav/bytecode.c	753	    offset++;
-offset-size-arithmetic	libclamav/bytecode.c	754	    *linelength = strtol((const char *)buffer + offset, &pos, 10);
-offset-size-arithmetic	libclamav/bytecode.c	760	    bc->funcs = cli_max_calloc(bc->num_func, sizeof(*bc->funcs));
-offset-size-arithmetic	libclamav/bytecode.c	765	    bc->types = cli_max_calloc(bc->num_types, sizeof(*bc->types));
-offset-size-arithmetic	libclamav/bytecode.c	780	        *vend++  = '\0';
-offset-size-arithmetic	libclamav/bytecode.c	793	                           unsigned *offset, unsigned len, bool *ok)
-offset-size-arithmetic	libclamav/bytecode.c	818	    ty->containedTypes = cli_max_malloc(sizeof(*ty->containedTypes) * ty->numElements);
-offset-size-arithmetic	libclamav/bytecode.c	839	        bc->types[i].size = bc->types[i].align = 8;
-offset-size-arithmetic	libclamav/bytecode.c	845	    unsigned i, offset = 1, len = strlen((const char *)buffer);
-offset-size-arithmetic	libclamav/bytecode.c	854	        cli_warnmsg("Type start id mismatch: %u != %u\n", bc->start_tid,
-offset-size-arithmetic	libclamav/bytecode.c	869	                ty->size = ty->align = sizeof(void *);
-offset-size-arithmetic	libclamav/bytecode.c	883	                ty->size = ty->align = 0; /* TODO:calculate size/align of structs */
-offset-size-arithmetic	libclamav/bytecode.c	905	                ty->containedTypes = cli_max_malloc(sizeof(*ty->containedTypes));
-offset-size-arithmetic	libclamav/bytecode.c	917	                    ty->size = ty->align = 8;
-offset-size-arithmetic	libclamav/bytecode.c	919	                    ty->size  = ty->numElements * typesize(bc, ty->containedTypes[0]);
-offset-size-arithmetic	libclamav/bytecode.c	931	            ty->size  = ty->numElements * typesize(bc, ty->containedTypes[0]);
-offset-size-arithmetic	libclamav/bytecode.c	979	    unsigned i, offset = 1, len = strlen((const char *)buffer), maxapi, calls;
+offset-size-arithmetic	libclamav/bytecode.c	1014	    apity2ty = cli_max_calloc(cli_apicall_maxtypes, sizeof(*cli_apicall_types));
+offset-size-arithmetic	libclamav/bytecode.c	1029	        /* API ids start from 1 */
+offset-size-arithmetic	libclamav/bytecode.c	1086	                         unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	1090	        buffer[*offset + 1] == 0x60) {
+offset-size-arithmetic	libclamav/bytecode.c	1092	        memset(bc->globals[i], 0, sizeof(*bc->globals[0]) * comp);
+offset-size-arithmetic	libclamav/bytecode.c	1093	        (*offset) += 2;
+offset-size-arithmetic	libclamav/bytecode.c	1109	    (*offset)++;
+offset-size-arithmetic	libclamav/bytecode.c	1115	    unsigned i, offset = 1, len = strlen((const char *)buffer), numglobals;
+offset-size-arithmetic	libclamav/bytecode.c	1129	    bc->globals = cli_max_calloc(numglobals, sizeof(*bc->globals));
+offset-size-arithmetic	libclamav/bytecode.c	1134	    bc->globaltys = cli_max_calloc(numglobals, sizeof(*bc->globaltys));
+offset-size-arithmetic	libclamav/bytecode.c	1148	        bc->globals[i] = cli_max_malloc(sizeof(*bc->globals[0]) * comp);
+offset-size-arithmetic	libclamav/bytecode.c	1157	                   len - offset);
+offset-size-arithmetic	libclamav/bytecode.c	1165	    unsigned offset = 1, len = strlen((const char *)buffer);
+offset-size-arithmetic	libclamav/bytecode.c	1187	    if ((size_t)new_count > SIZE_MAX / sizeof(*new_nodes)) {
+offset-size-arithmetic	libclamav/bytecode.c	1191	    new_nodes = cli_max_realloc(bc->dbgnodes, (size_t)new_count * sizeof(*new_nodes));
+offset-size-arithmetic	libclamav/bytecode.c	1194	    memset(new_nodes + b, 0, (size_t)numMD * sizeof(*new_nodes));
+offset-size-arithmetic	libclamav/bytecode.c	1207	        bc->dbgnodes[b + i].elements = elts = cli_max_calloc(el, sizeof(*elts));
+offset-size-arithmetic	libclamav/bytecode.c	122	static bool bytecode_offsets_to_legacy(const uint64_t *offsets, uint32_t *legacy_offsets)
+offset-size-arithmetic	libclamav/bytecode.c	1244	    len  = strlen((const char *)buffer);
+offset-size-arithmetic	libclamav/bytecode.c	1257	    offset++;
+offset-size-arithmetic	libclamav/bytecode.c	1267	        func->types = cli_max_calloc(all_locals, sizeof(*func->types));
+offset-size-arithmetic	libclamav/bytecode.c	1286	    offset++;
+offset-size-arithmetic	libclamav/bytecode.c	1295	    func->allinsts     = cli_max_calloc(func->numInsts, sizeof(*func->allinsts));
+offset-size-arithmetic	libclamav/bytecode.c	1305	    func->BB = cli_max_calloc(func->numBB, sizeof(*func->BB));
+offset-size-arithmetic	libclamav/bytecode.c	1313	static bbid_t readBBID(struct cli_bc_func *func, const unsigned char *buffer, unsigned *off, unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	1353	    len = strlen((const char *)buffer);
+offset-size-arithmetic	libclamav/bytecode.c	1369	            offset++;
+offset-size-arithmetic	libclamav/bytecode.c	1409	                        inst.u.ops.ops = cli_max_calloc(numOp, sizeof(*inst.u.ops.ops));
+offset-size-arithmetic	libclamav/bytecode.c	1454	                    inst.u.ops.ops     = cli_max_calloc(numOp + 2, sizeof(*inst.u.ops.ops));
+offset-size-arithmetic	libclamav/bytecode.c	1560	        offset++;
+offset-size-arithmetic	libclamav/bytecode.c	1564	        offset += 3;
+offset-size-arithmetic	libclamav/bytecode.c	1574	        bcfunc->dbgnodes = cli_max_malloc(num * sizeof(*bcfunc->dbgnodes));
+offset-size-arithmetic	libclamav/bytecode.c	1576	            cli_errmsg("Unable to allocate memory for dbg nodes: %u\n", num * (uint32_t)sizeof(*bcfunc->dbgnodes));
+offset-size-arithmetic	libclamav/bytecode.c	1587	                   len - offset);
+offset-size-arithmetic	libclamav/bytecode.c	1667	        cli_infomsg(NULL, "%-*s %*lu %*lu %*" PRIu64 " %*.2f\n", max_name_len, elem->bc_name,
+offset-size-arithmetic	libclamav/bytecode.c	1735	    memset(bc, 0, sizeof(*bc));
+offset-size-arithmetic	libclamav/bytecode.c	1753	            linelength = len ? atoi(len + 1) : 4096;
+offset-size-arithmetic	libclamav/bytecode.c	1920	    for (i = 0; i < sizeof(bc_events) / sizeof(bc_events[0]); i++) {
+offset-size-arithmetic	libclamav/bytecode.c	1960	        cli_event_time_start(cctx->perf, PERFT_BYTECODE);
+offset-size-arithmetic	libclamav/bytecode.c	1978	    cli_event_time_start(g_sigevents, bc->sigtime_id);
+offset-size-arithmetic	libclamav/bytecode.c	1995	        inst.u.ops.opsizes = ctx->opsizes;
+offset-size-arithmetic	libclamav/bytecode.c	2007	        /* need to be called here to catch any extracted but not yet scanned files */
+offset-size-arithmetic	libclamav/bytecode.c	2026	        /* need to be called here to catch any extracted but not yet scanned files */
+offset-size-arithmetic	libclamav/bytecode.c	210	                    if (lseek(fd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/bytecode.c	2146	    memset(bc, 0, sizeof(*bc));
+offset-size-arithmetic	libclamav/bytecode.c	2187	static inline int get_geptypesize(const struct cli_bc *bc, uint16_t tid)
+offset-size-arithmetic	libclamav/bytecode.c	2203	    return typesize(bc, ty->containedTypes[0]);
+offset-size-arithmetic	libclamav/bytecode.c	2227	    gepoff = (uint32_t *)&func->constants[op - func->numValues];
+offset-size-arithmetic	libclamav/bytecode.c	2228	    if (*gepoff >= ty->numElements) {
+offset-size-arithmetic	libclamav/bytecode.c	2229	        cli_errmsg("bytecode: gep offset out of range: %d >= %d\n", (uint32_t)*gepoff, ty->numElements);
+offset-size-arithmetic	libclamav/bytecode.c	2233	        off += typesize(bc, ty->containedTypes[i]);
+offset-size-arithmetic	libclamav/bytecode.c	2246	    gmap                = cli_max_malloc(bc->num_globals * sizeof(*gmap));
+offset-size-arithmetic	libclamav/bytecode.c	2248	        cli_errmsg("interpreter: Unable to allocate memory for global map: %zu\n", bc->num_globals * sizeof(*gmap));
+offset-size-arithmetic	libclamav/bytecode.c	2278	                    ptr = ptr_compose(bc->globals[j][1] - _FIRST_GLOBAL + 1,
+offset-size-arithmetic	libclamav/bytecode.c	2292	                elsize = typesize(bc, ty->containedTypes[0]);
+offset-size-arithmetic	libclamav/bytecode.c	2296	                            bc->globalBytes[off + i] = bc->globals[j][i];
+offset-size-arithmetic	libclamav/bytecode.c	2300	                            *(uint16_t *)&bc->globalBytes[off + i * 2] = bc->globals[j][i];
+offset-size-arithmetic	libclamav/bytecode.c	2304	                            *(uint32_t *)&bc->globalBytes[off + i * 4] = bc->globals[j][i];
+offset-size-arithmetic	libclamav/bytecode.c	2308	                            *(uint64_t *)&bc->globalBytes[off + i * 8] = bc->globals[j][i];
+offset-size-arithmetic	libclamav/bytecode.c	2326	        unsigned *map              = cli_max_malloc(sizeof(*map) * (size_t)totValues);
+offset-size-arithmetic	libclamav/bytecode.c	2328	            cli_errmsg("interpreter: Unable to allocate memory for map: %zu\n", sizeof(*map) * (size_t)totValues);
+offset-size-arithmetic	libclamav/bytecode.c	2343	            /* TODO: don't allow size 0, it is always a bug! */
+offset-size-arithmetic	libclamav/bytecode.c	2422	                        inst->u.ops.opsizes = cli_max_malloc(sizeof(*inst->u.ops.opsizes) * inst->u.ops.numOps);
+offset-size-arithmetic	libclamav/bytecode.c	243	    /* don't touch fmap, file_size/file_size64, and hooks, sections, ctx,
+offset-size-arithmetic	libclamav/bytecode.c	2435	                            inst->u.ops.opsizes[k] = typesize(bc, target->types[k]);
+offset-size-arithmetic	libclamav/bytecode.c	2454	                    inst->u.three[0] = get_geptypesize(bc, inst->u.three[0]);
+offset-size-arithmetic	libclamav/bytecode.c	2518	    bcs->all_bcs = cli_safer_realloc_or_free(bcs->all_bcs, sizeof(*bcs->all_bcs) * (bcs->count + 1));
+offset-size-arithmetic	libclamav/bytecode.c	2524	    memset(bc, 0, sizeof(*bc));
+offset-size-arithmetic	libclamav/bytecode.c	2528	    bc->globals     = cli_max_calloc(1, sizeof(*bc->globals));
+offset-size-arithmetic	libclamav/bytecode.c	2533	    bc->globals[0] = cli_max_calloc(1, sizeof(*bc->globals[0]));
+offset-size-arithmetic	libclamav/bytecode.c	2538	    bc->globaltys = cli_max_calloc(1, sizeof(*bc->globaltys));
+offset-size-arithmetic	libclamav/bytecode.c	2549	    bc->funcs        = cli_max_calloc(1, sizeof(*bc->funcs));
+offset-size-arithmetic	libclamav/bytecode.c	2561	    func->types        = cli_max_calloc(1, sizeof(*func->types));
+offset-size-arithmetic	libclamav/bytecode.c	2567	    func->BB       = cli_max_calloc(1, sizeof(*func->BB));
+offset-size-arithmetic	libclamav/bytecode.c	2572	    func->allinsts = cli_max_calloc(2, sizeof(*func->allinsts));
+offset-size-arithmetic	libclamav/bytecode.c	2579	    func->constants    = cli_max_calloc(1, sizeof(*func->constants));
+offset-size-arithmetic	libclamav/bytecode.c	2590	    inst->u.ops.ops     = cli_max_calloc(1, sizeof(*inst->u.ops.ops));
+offset-size-arithmetic	libclamav/bytecode.c	2719	        bc = cli_max_calloc(1, sizeof(*bc));
+offset-size-arithmetic	libclamav/bytecode.c	2729	        dbio.bufsize          = strlen(builtin_cbc) + 1;
+offset-size-arithmetic	libclamav/bytecode.c	2730	        if (!dbio.bufsize || dbio.bufpt[dbio.bufsize - 2] != '\n') {
+offset-size-arithmetic	libclamav/bytecode.c	2914	    memset(allbc, 0, sizeof(*allbc));
+offset-size-arithmetic	libclamav/bytecode.c	2931	    if (!bytecode_uses_v2(ctx->bc) && !cli_bytecode_file_size_compatible((uint64_t)map->len))
+offset-size-arithmetic	libclamav/bytecode.c	2935	    ctx->file_size64      = (uint64_t)map->len;
+offset-size-arithmetic	libclamav/bytecode.c	2936	    ctx->file_size        = map->len > UINT32_MAX ? UINT32_MAX : (uint32_t)map->len;
+offset-size-arithmetic	libclamav/bytecode.c	2937	    ctx->hooks.filesize   = &ctx->file_size;
+offset-size-arithmetic	libclamav/bytecode.c	2938	    ctx->hooks.filesize64 = &ctx->file_size64;
+offset-size-arithmetic	libclamav/bytecode.c	2950	                                const uint64_t *lsigsuboff, fmap_t *map)
+offset-size-arithmetic	libclamav/bytecode.c	2985	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent a logical match offset\n", bc_name, bc->id);
+offset-size-arithmetic	libclamav/bytecode.c	2995	        cli_warnmsg("Bytecode '%s' (id: %u) cannot represent the file size\n", bc_name, bc->id);
+offset-size-arithmetic	libclamav/bytecode.c	3009	        pehookdata.offset    = tinfo->exeinfo.offset;
+offset-size-arithmetic	libclamav/bytecode.c	3012	        pehookdata.hdr_size  = tinfo->exeinfo.hdr_size;
+offset-size-arithmetic	libclamav/bytecode.c	3024	        memcpy(&ctx.lsigoff, lsigsuboff, 64 * sizeof(*lsigsuboff));
+offset-size-arithmetic	libclamav/bytecode.c	3028	            memcpy(&ctx.lsigoff32, legacy_offsets, 64 * sizeof(*legacy_offsets));
+offset-size-arithmetic	libclamav/bytecode.c	312	    memset(ctx, 0, sizeof(*ctx));
+offset-size-arithmetic	libclamav/bytecode.c	3132	            cli_dbgmsg("Bytecode hook %u cannot represent map length %zu\n", id, map->len);
+offset-size-arithmetic	libclamav/bytecode.c	3143	        ctx->hooks.match_offsets64 = bytecode_uses_v2(bc) ? ctx->lsigoff : nooffsets64;
+offset-size-arithmetic	libclamav/bytecode.c	3147	            if (!bytecode_offsets_to_legacy(ctx->lsigoff, legacy_offsets)) {
+offset-size-arithmetic	libclamav/bytecode.c	3158	            memcpy(ctx->lsigoff32, legacy_offsets, sizeof(ctx->lsigoff32));
+offset-size-arithmetic	libclamav/bytecode.c	3159	            ctx->hooks.match_offsets = ctx->lsigoff32;
+offset-size-arithmetic	libclamav/bytecode.c	3182	                ret = cli_append_potentially_unwanted(cctx, ctx->virname);
+offset-size-arithmetic	libclamav/bytecode.c	3184	                ret = cli_append_virus(cctx, ctx->virname);
+offset-size-arithmetic	libclamav/bytecode.c	3217	                if (lseek(fd, 0, SEEK_SET) == -1) {
+offset-size-arithmetic	libclamav/bytecode.c	323	    struct cli_bc_ctx *ctx = cli_max_calloc(1, sizeof(*ctx));
+offset-size-arithmetic	libclamav/bytecode.c	3318	     * the post-run callers still perform the authoritative deadline check. */
+offset-size-arithmetic	libclamav/bytecode.c	353	    *tempfilename = ctx->tempfile;
+offset-size-arithmetic	libclamav/bytecode.c	362	static unsigned typesize(const struct cli_bc *bc, uint16_t type)
+offset-size-arithmetic	libclamav/bytecode.c	3684	    snprintf(inst_str, sizeof(inst_str), "%-20s[%-3d/%3d/%3d]", bc_opstr[inst->opcode],
+offset-size-arithmetic	libclamav/bytecode.c	3799	                if (j == (size_t)(inst->u.ops.numOps - 1)) {
+offset-size-arithmetic	libclamav/bytecode.c	385	                ty->size += typesize(bc, ty->containedTypes[j]);
+offset-size-arithmetic	libclamav/bytecode.c	388	            ty->size = ty->numElements * typesize(bc, ty->containedTypes[0]);
+offset-size-arithmetic	libclamav/bytecode.c	3906	            printf("%d = isbigendian()", inst->dest);
+offset-size-arithmetic	libclamav/bytecode.c	393	    if (!ty->size && ty->kind != DFunctionType) {
+offset-size-arithmetic	libclamav/bytecode.c	394	        cli_warnmsg("type %d size is 0\n", type - 65);
+offset-size-arithmetic	libclamav/bytecode.c	422	        ctx->operands = cli_max_malloc(sizeof(*ctx->operands) * func->numArgs);
+offset-size-arithmetic	libclamav/bytecode.c	427	        ctx->opsizes = cli_max_malloc(sizeof(*ctx->opsizes) * func->numArgs);
+offset-size-arithmetic	libclamav/bytecode.c	436	            s += ctx->opsizes[i] = typesize(bc, func->types[i]);
+offset-size-arithmetic	libclamav/bytecode.c	491	static inline uint64_t readNumber(const unsigned char *p, unsigned *off, unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	494	    unsigned i, newoff, lim, p0 = p[*off], shift = 0;
+offset-size-arithmetic	libclamav/bytecode.c	502	    newoff = *off + lim + 1;
+offset-size-arithmetic	libclamav/bytecode.c	514	    for (i = *off + 1; i < newoff; i++) {
+offset-size-arithmetic	libclamav/bytecode.c	531	                                  unsigned *off, unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	533	    funcid_t id = readNumber(p, off, len, ok) - 1;
+offset-size-arithmetic	libclamav/bytecode.c	543	                                     unsigned *off, unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	545	    funcid_t id = readNumber(p, off, len, ok) - 1;
+offset-size-arithmetic	libclamav/bytecode.c	555	                                       unsigned len, bool *ok, unsigned width)
+offset-size-arithmetic	libclamav/bytecode.c	558	    unsigned newoff = *off + width;
+offset-size-arithmetic	libclamav/bytecode.c	581	                                    unsigned *off, unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	584	    if ((p[*off] & 0xf0) == 0x40 || p[*off] == 0x50) {
+offset-size-arithmetic	libclamav/bytecode.c	594	        func->constants = cli_max_realloc_or_free(func->constants, ((size_t)func->numConstants + 1) * sizeof(*func->constants));
+offset-size-arithmetic	libclamav/bytecode.c	631	static inline char *readData(const unsigned char *p, unsigned *off, unsigned len, bool *ok, unsigned *datalen)
+offset-size-arithmetic	libclamav/bytecode.c	636	        cli_errmsg("Data start marker missing: %c\n", p[*off]);
+offset-size-arithmetic	libclamav/bytecode.c	640	    (*off)++;
+offset-size-arithmetic	libclamav/bytecode.c	646	    if (*off > len || l > (len - *off) / 2) {
+offset-size-arithmetic	libclamav/bytecode.c	651	    newoff = *off + 2 * l;
+offset-size-arithmetic	libclamav/bytecode.c	675	static inline char *readString(const unsigned char *p, unsigned *off, unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	679	    if (*ok && stringlen && str[stringlen - 1] != '\0') {
+offset-size-arithmetic	libclamav/bytecode.c	680	        str[stringlen - 1] = '\0';
+offset-size-arithmetic	libclamav/bytecode.c	697	    if (strncmp((const char *)buffer, BC_HEADER, sizeof(BC_HEADER) - 1)) {
+offset-size-arithmetic	libclamav/bytecode.c	701	    offset                   = sizeof(BC_HEADER) - 1;
+offset-size-arithmetic	libclamav/bytecode.c	702	    len                      = strlen((const char *)buffer);
+offset-size-arithmetic	libclamav/bytecode.c	716	    /* Optimistic parsing, check for error only at the end.*/
+offset-size-arithmetic	libclamav/bytecode.c	727	     * Note that post 0.96 bytecode/bytecode lsig needs format 7, because
+offset-size-arithmetic	libclamav/bytecode.c	760	    offset++;
+offset-size-arithmetic	libclamav/bytecode.c	761	    *linelength = strtol((const char *)buffer + offset, &pos, 10);
+offset-size-arithmetic	libclamav/bytecode.c	767	    bc->funcs = cli_max_calloc(bc->num_func, sizeof(*bc->funcs));
+offset-size-arithmetic	libclamav/bytecode.c	772	    bc->types = cli_max_calloc(bc->num_types, sizeof(*bc->types));
+offset-size-arithmetic	libclamav/bytecode.c	787	        *vend++  = '\0';
+offset-size-arithmetic	libclamav/bytecode.c	800	                           unsigned *offset, unsigned len, bool *ok)
+offset-size-arithmetic	libclamav/bytecode.c	825	    ty->containedTypes = cli_max_malloc(sizeof(*ty->containedTypes) * ty->numElements);
+offset-size-arithmetic	libclamav/bytecode.c	846	        bc->types[i].size = bc->types[i].align = 8;
+offset-size-arithmetic	libclamav/bytecode.c	852	    unsigned i, offset = 1, len = strlen((const char *)buffer);
+offset-size-arithmetic	libclamav/bytecode.c	861	        cli_warnmsg("Type start id mismatch: %u != %u\n", bc->start_tid,
+offset-size-arithmetic	libclamav/bytecode.c	876	                ty->size = ty->align = sizeof(void *);
+offset-size-arithmetic	libclamav/bytecode.c	890	                ty->size = ty->align = 0; /* TODO:calculate size/align of structs */
+offset-size-arithmetic	libclamav/bytecode.c	912	                ty->containedTypes = cli_max_malloc(sizeof(*ty->containedTypes));
+offset-size-arithmetic	libclamav/bytecode.c	924	                    ty->size = ty->align = 8;
+offset-size-arithmetic	libclamav/bytecode.c	926	                    ty->size  = ty->numElements * typesize(bc, ty->containedTypes[0]);
+offset-size-arithmetic	libclamav/bytecode.c	938	            ty->size  = ty->numElements * typesize(bc, ty->containedTypes[0]);
+offset-size-arithmetic	libclamav/bytecode.c	986	    unsigned i, offset = 1, len = strlen((const char *)buffer), maxapi, calls;
 offset-size-arithmetic	libclamav/bytecode.h	134	cl_error_t cli_bytecode_runlsig(struct cli_ctx_tag *ctx, struct cli_target_info *info, const struct cli_all_bc *bcs, unsigned bc_idx, const uint32_t *lsigcnt, const uint64_t *lsigsuboff, fmap_t *map);
 offset-size-arithmetic	libclamav/bytecode_api.c	1024	    result = fmap_need_off(ctx->fmap, (size_t)b->read_cursor, size);
 offset-size-arithmetic	libclamav/bytecode_api.c	1027	        b->map_read_offset = b->read_cursor;

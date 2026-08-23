@@ -23,6 +23,11 @@
   matcher results, and bundled YARA execution preserves direct memory/resource
   exhaustion statuses instead of relabeling them as generic parse errors.
   Add focused compiled regressions and full logical/YARA qualification.
+- Bytecode debug-node growth now uses checked native-size arithmetic, the
+  individual-allocation ceiling, and zeroed extension state for safe malformed
+  input cleanup; constant-table growth uses the same ceiling and rejects its
+  terminal counter overflow. Add compiled malformed-loader and allocation
+  fault-injection coverage.
 - PDF, PE, ELF, Mach-O, and root-metadata bytecode hook-context allocation
   failures now mark required hook work incomplete before returning `CL_EMEM`;
   compiled hook fault injection, interpreter/JIT qualification, production

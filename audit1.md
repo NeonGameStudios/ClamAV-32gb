@@ -5148,3 +5148,20 @@ The source guards and non-clang regression gates remain the available local
 evidence. Focused compiled unknown-type and bundled-resource-status tests,
 full logical/YARA qualification, sanitizer runs, and Sonic1 qualification
 remain open.
+
+## Bytecode loader table-growth boundaries — 2026-08-22
+
+Bytecode debug-node growth used an unbounded `realloc`, assigned its result
+directly, and advanced the node count before newly added cleanup state had
+been initialized. Large or malformed metadata could therefore lose the old
+allocation, wrap the table size, or make destruction inspect uninitialized
+nodes. The loader now checks the decoded count and native-size multiplication,
+uses the individual-allocation ceiling with a temporary pointer, zeroes the
+new node range, and commits the count only after successful growth. Per-function
+constant growth likewise uses the bounded realloc helper and rejects counter
+overflow.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled malformed-loader and allocation-fault coverage,
+interpreter/JIT qualification, sanitizer runs, and Sonic1 qualification
+remain open.
