@@ -14602,6 +14602,28 @@ static const void *fmap_gets_read_failure(fmap_t *map, char *dst, size_t *at, si
     return NULL;
 }
 
+static const void *uuencode_attachment_read_failure(fmap_t *map, char *dst, size_t *at, size_t max_len)
+{
+    size_t start = *at;
+    size_t len;
+    const char *src;
+    const char *end;
+
+    if (start == 18U || start >= map->len || max_len == 0)
+        return NULL;
+
+    len = MIN(max_len - 1, map->len - start);
+    src = (const char *)map->data + start;
+    end = memchr(src, '\n', len);
+    if (end != NULL)
+        len = (size_t)(end - src) + 1;
+
+    memcpy(dst, src, len);
+    dst[len] = '\0';
+    *at += len;
+    return dst;
+}
+
 static const void *cpio_member_name_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
@@ -15251,6 +15273,32 @@ START_TEST(test_uuencode_initial_read_failure_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "UUencoded input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_uuencode_attachment_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "begin 644 payload\n#0V%T\n";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->gets = uuencode_attachment_read_failure;
+    ctx.fmap  = map;
+
+    ck_assert_int_eq(cli_uuencode(&ctx, tmpdir, map), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UUencoded input could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -21987,6 +22035,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_tnef_attribute_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_tnef_truncated_attribute_header_is_parse_error);
     tcase_add_test(tc_cl, test_uuencode_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_uuencode_attachment_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_uuencode_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_initial_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mbox_line_read_failure_is_fail_visible);

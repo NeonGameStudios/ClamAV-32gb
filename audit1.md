@@ -5424,3 +5424,12 @@ malformed/incomplete parse rather than an operational read failure; a fully
 in-range fmap callback failure remains `CL_EREAD`. Focused regressions cover
 both outcomes. Compiled scanner, sanitizer, production TNEF corpus, and
 Sonic1 qualification remain open.
+
+## UUEncode mid-attachment read classification — 2026-08-22
+
+UUEncode now distinguishes a fmap line-read failure after the `begin` line
+from a genuinely unterminated or invalid attachment. The former remains
+`CL_EREAD` and non-cacheable; the latter remains a parse/incomplete result.
+A focused callback regression covers the mid-attachment failure. Compiled
+scanner, sanitizer, production UUEncode corpus, and Sonic1 qualification
+remain open.

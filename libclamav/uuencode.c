@@ -45,6 +45,10 @@
 /* Maximum line length according to RFC821 */
 #define RFC2821LENGTH 1000
 
+/* uudecodeFile() uses a private negative result to preserve a fmap line-read
+ * failure across its historical success/failure interface. */
+#define UUDECODE_READ_ERROR (-2)
+
 static cl_error_t uuencode_checktimelimit(cli_ctx *ctx, const char *reason)
 {
     cl_error_t ret = cli_checktimelimit(ctx);
@@ -91,10 +95,13 @@ int cli_uuencode(cli_ctx *ctx, const char *dir, fmap_t *map)
 
     cli_dbgmsg("found uuencode file\n");
 
-    if (uudecodeFile(m, buffer, dir, map, &at) < 0) {
+    status = uudecodeFile(m, buffer, dir, map, &at);
+    if (status < 0) {
         messageDestroy(m);
         if (ctx->scan_timed_out)
             return CL_ETIMEOUT;
+        if (status == UUDECODE_READ_ERROR)
+            return CL_EREAD;
         cli_dbgmsg("UUencoded attachment ended before its terminator or contained invalid data\n");
         cli_mark_scan_incomplete(ctx, "UUencoded attachment was not terminated or decoded completely");
         return CL_EPARSE;
@@ -116,6 +123,7 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
     char *filename = cli_strtok(firstline, 2, " ");
     bool saw_end                = false;
     bool materialization_failed = false;
+    bool read_failed            = false;
 
     if (filename == NULL)
         return -1;
@@ -142,8 +150,13 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
             break;
         }
 
-        if (!fmap_gets(map, buffer, at, sizeof(buffer) - 1))
+        if (!fmap_gets(map, buffer, at, sizeof(buffer) - 1)) {
+            if (*at < map->len) {
+                cli_mark_scan_incomplete(m->ctx, "UUencoded input could not be read completely");
+                read_failed = true;
+            }
             break;
+        }
 
         cli_chomp(buffer);
         if (strcasecmp(buffer, "end") == 0) {
@@ -170,5 +183,7 @@ int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map
 
     fileblobDestroy(fb);
 
+    if (read_failed)
+        return UUDECODE_READ_ERROR;
     return saw_end && !materialization_failed ? 1 : -1;
 }

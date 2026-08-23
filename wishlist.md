@@ -1441,3 +1441,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   preserving parse results for out-of-range data and `CL_EREAD` for fully
   in-range callback failures; retain compiled scanner, sanitizer, production
   TNEF corpus, and Sonic1 qualification as release gates.
+
+## UUEncode mid-attachment read classification — 2026-08-22
+
+- Preserve `CL_EREAD` for fmap line-read failures after UUEncode admission,
+  while retaining parse/incomplete results for malformed or unterminated
+  attachments; retain compiled scanner, sanitizer, production UUEncode corpus,
+  and Sonic1 qualification as release gates.
