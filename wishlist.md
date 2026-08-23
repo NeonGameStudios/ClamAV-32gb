@@ -1444,7 +1444,8 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
 
 ## UUEncode mid-attachment read classification — 2026-08-22
 
-- Preserve `CL_EREAD` for fmap line-read failures after UUEncode admission,
-  while retaining parse/incomplete results for malformed or unterminated
-  attachments; retain compiled scanner, sanitizer, production UUEncode corpus,
-  and Sonic1 qualification as release gates.
+- Preserve `CL_EREAD` for fmap line-read failures after UUEncode admission in
+  standalone and embedded-mail paths, while retaining parse/incomplete results
+  for malformed or unterminated attachments; retain compiled scanner,
+  sanitizer, production UUEncode corpus, and Sonic1 qualification as release
+  gates.

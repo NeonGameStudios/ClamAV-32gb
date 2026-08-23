@@ -186,7 +186,7 @@ typedef struct mbox_ctx {
 
 static int cli_parse_mbox(const char *dir, cli_ctx *ctx);
 static int scanFileblob(mbox_ctx *mctx, fileblob *fb);
-static message *parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821Table, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound);
+static message *parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821Table, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status);
 static message *parseEmailHeaders(message *m, const table_t *rfc821Table, bool *heuristicFound);
 static int parseEmailHeader(message *m, const char *line, const table_t *rfc821, cli_ctx *ctx, bool *heuristicFound);
 static cl_error_t parseMHTMLComment(const char *comment, cli_ctx *ctx, void *wrkjobj, void *cbdata);
@@ -623,14 +623,22 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                  * Fast track visa to uudecode.
                  * TODO: binhex, yenc
                  */
-                if (uudecodeFile(m, buffer, dir, map, &at) < 0) {
-                    if (ctx->scan_timed_out) {
-                        retcode = CL_ETIMEOUT;
-                        break;
-                    }
-                    cli_mark_scan_incomplete(ctx, "UUencoded attachment in mail was not terminated or decoded completely");
-                    if (messageAddStr(m, buffer) < 0) {
-                        break;
+                {
+                    int decode_status = uudecodeFile(m, buffer, dir, map, &at);
+
+                    if (decode_status < 0) {
+                        if (decode_status == UUDECODE_READ_ERROR) {
+                            retcode = CL_EREAD;
+                            break;
+                        }
+                        if (ctx->scan_timed_out) {
+                            retcode = CL_ETIMEOUT;
+                            break;
+                        }
+                        cli_mark_scan_incomplete(ctx, "UUencoded attachment in mail was not terminated or decoded completely");
+                        if (messageAddStr(m, buffer) < 0) {
+                            break;
+                        }
                     }
                 }
             } else {
@@ -696,9 +704,12 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
         buffer[sizeof(buffer) - 1] = '\0';
 
         bool heuristicFound = false;
-        body                = parseEmailFile(map, &at, rfc821, buffer, dir, ctx, &heuristicFound);
+        cl_error_t parse_status = CL_SUCCESS;
+        body                = parseEmailFile(map, &at, rfc821, buffer, dir, ctx, &heuristicFound, &parse_status);
         if (heuristicFound) {
             retcode = CL_VIRUS;
+        } else if (parse_status != CL_SUCCESS) {
+            retcode = parse_status;
         } else if (ctx->scan_timed_out) {
             retcode = CL_ETIMEOUT;
         }
@@ -988,7 +999,7 @@ haveTooManyMIMEArguments(size_t argCnt, cli_ctx *ctx, bool *heuristicFound)
  * handled ungracefully...
  */
 static message *
-parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound)
+parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *firstLine, const char *dir, cli_ctx *ctx, bool *heuristicFound, cl_error_t *failure_status)
 {
     bool inHeader     = true;
     bool bodyIsEmpty  = true;
@@ -1006,6 +1017,8 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
     size_t lineFoldCnt = 0;
 
     *heuristicFound = false;
+    if (failure_status)
+        *failure_status = CL_SUCCESS;
 
     ReadStruct *head = NULL;
     ReadStruct *curr = NULL;
@@ -1240,9 +1253,16 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
              * TODO: binhex, yenc
              */
             bodyIsEmpty = false;
-            if (uudecodeFile(ret, line, dir, map, at) < 0) {
+            int decode_status = uudecodeFile(ret, line, dir, map, at);
+
+            if (decode_status < 0) {
                 if (ctx->scan_timed_out)
                     break;
+                if (decode_status == UUDECODE_READ_ERROR) {
+                    if (failure_status)
+                        *failure_status = CL_EREAD;
+                    break;
+                }
                 cli_mark_scan_incomplete(ctx, "UUencoded attachment in mail was not terminated or decoded completely");
                 if (messageAddStr(ret, line) < 0) {
                     ret->isTruncated = true;

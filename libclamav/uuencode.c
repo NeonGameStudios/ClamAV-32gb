@@ -45,10 +45,6 @@
 /* Maximum line length according to RFC821 */
 #define RFC2821LENGTH 1000
 
-/* uudecodeFile() uses a private negative result to preserve a fmap line-read
- * failure across its historical success/failure interface. */
-#define UUDECODE_READ_ERROR (-2)
-
 static cl_error_t uuencode_checktimelimit(cli_ctx *ctx, const char *reason)
 {
     cl_error_t ret = cli_checktimelimit(ctx);

@@ -5428,8 +5428,8 @@ Sonic1 qualification remain open.
 ## UUEncode mid-attachment read classification — 2026-08-22
 
 UUEncode now distinguishes a fmap line-read failure after the `begin` line
-from a genuinely unterminated or invalid attachment. The former remains
-`CL_EREAD` and non-cacheable; the latter remains a parse/incomplete result.
-A focused callback regression covers the mid-attachment failure. Compiled
-scanner, sanitizer, production UUEncode corpus, and Sonic1 qualification
-remain open.
+from a genuinely unterminated or invalid attachment across both standalone
+and embedded-mail call paths. The former remains `CL_EREAD` and non-cacheable;
+the latter remains a parse/incomplete result. Focused callback regressions
+cover standalone and embedded-mail mid-attachment failures. Compiled scanner,
+sanitizer, production UUEncode corpus, and Sonic1 qualification remain open.

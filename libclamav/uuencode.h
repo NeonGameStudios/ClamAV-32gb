@@ -24,6 +24,10 @@
 
 #include "fmap.h"
 
+/* Private negative result used by uudecodeFile() to preserve a backing
+ * fmap line-read failure across its historical success/failure interface. */
+#define UUDECODE_READ_ERROR (-2)
+
 int cli_uuencode(struct cli_ctx_tag *ctx, const char *dir, fmap_t *map);
 int uudecodeFile(message *m, const char *firstline, const char *dir, fmap_t *map, size_t *at);
 
