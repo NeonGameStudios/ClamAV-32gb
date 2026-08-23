@@ -1610,3 +1610,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Reject a missing TNEF input map before parser entry dereferences it, preserving
   an explicit incomplete `CL_ENULLARG` result; retain compiled mail corpus,
   sanitizer, and Sonic1 qualification as release gates.
+
+## ISO9660 Joliet name-expansion admission — 2026-08-23
+
+- Mark Joliet UTF-16BE conversion failure and converted directory-name expansion
+  beyond the fixed destination buffer incomplete instead of silently scanning a
+  substituted or truncated name; retain compiled ISO corpus, sanitizer, and
+  Sonic1 qualification as release gates.

@@ -12306,6 +12306,86 @@ START_TEST(test_iso_long_directory_name_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_joliet_name_conversion_truncation_is_fail_visible)
+{
+    enum {
+        ISO_OFFSET       = 32768,
+        SECONDARY_OFFSET = ISO_OFFSET + 2048,
+        ROOT_BLOCK       = 32,
+        ROOT_OFFSET      = ROOT_BLOCK * 2048,
+        NAME_CHARS       = 100,
+        NAME_BYTES       = NAME_CHARS * 2,
+        ENTRY_SIZE       = 33 + NAME_BYTES,
+        ISO_LENGTH       = ROOT_OFFSET + 2048
+    };
+    uint8_t data[ISO_LENGTH] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    size_t i;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    /* Primary descriptor, followed by a valid Joliet secondary descriptor. */
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08; /* 2048-byte logical blocks */
+    data[ISO_OFFSET + 156] = 34;
+    data[ISO_OFFSET + 158] = ROOT_BLOCK;
+    data[ISO_OFFSET + 166] = 0x00;
+    data[ISO_OFFSET + 167] = 0x08;
+
+    data[SECONDARY_OFFSET] = 2;
+    memcpy(data + SECONDARY_OFFSET + 1, "CD001", 5);
+    data[SECONDARY_OFFSET + 88] = 0x25;
+    data[SECONDARY_OFFSET + 89] = 0x2f;
+    data[SECONDARY_OFFSET + 90] = 0x40; /* Joliet level 1 */
+    data[SECONDARY_OFFSET + 156] = 34;
+    data[SECONDARY_OFFSET + 158] = ROOT_BLOCK;
+    data[SECONDARY_OFFSET + 166] = 0x00;
+    data[SECONDARY_OFFSET + 167] = 0x08;
+
+    /* A Joliet name can fit in the source field while expanding beyond the
+     * fixed destination buffer after UTF-16BE to UTF-8 conversion. */
+    data[ROOT_OFFSET]      = ENTRY_SIZE;
+    data[ROOT_OFFSET + 2]  = ROOT_BLOCK;
+    data[ROOT_OFFSET + 10] = 0x00;
+    data[ROOT_OFFSET + 11] = 0x08; /* directory extent is one block */
+    data[ROOT_OFFSET + 25] = 0x02; /* directory */
+    data[ROOT_OFFSET + 32] = NAME_BYTES;
+    for (i = 0; i < NAME_CHARS; i++) {
+        data[ROOT_OFFSET + 33 + (i * 2)]     = 0x4e;
+        data[ROOT_OFFSET + 33 + (i * 2) + 1] = 0x00; /* U+4E00 */
+    }
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_ISO9660", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_iso_directory_coordinate_overflow_is_fail_visible)
 {
     enum {
@@ -23013,6 +23093,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_iso_volume_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_unsupported_extent_layouts_are_fail_visible);
     tcase_add_test(tc_cl, test_iso_long_directory_name_is_fail_visible);
+    tcase_add_test(tc_cl, test_iso_joliet_name_conversion_truncation_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);

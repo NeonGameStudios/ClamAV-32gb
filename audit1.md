@@ -5642,3 +5642,11 @@ header logic dereferences the map, returning `CL_ENULLARG` with an explicit
 incomplete reason for a non-null context. Focused direct-parser coverage covers
 the boundary; compiled mail corpus, sanitizer, and Sonic1 qualification remain
 open.
+
+## ISO9660 Joliet name-expansion admission — 2026-08-23
+
+ISO9660 now treats failed Joliet UTF-16BE-to-UTF-8 conversion and output-name
+expansion beyond its fixed destination buffer as incomplete instead of silently
+scanning under an empty or truncated name. A focused Joliet fixture exercises
+the expansion boundary and preserves the non-cacheable `CL_EPARSE` result.
+Compiled ISO corpus, sanitizer, and Sonic1 qualification remain open.

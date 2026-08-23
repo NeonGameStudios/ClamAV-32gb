@@ -5898,3 +5898,11 @@ TNEF now checks for a missing input fmap before time-limit or header processing
 and returns an explicit incomplete `CL_ENULLARG` result for a non-null context.
 Focused direct-parser coverage exercises the boundary; compiled mail corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## ISO9660 Joliet name-expansion admission — 2026-08-23
+
+ISO9660 now marks Joliet UTF-16BE-to-UTF-8 conversion failure and converted
+directory names that exceed the fixed destination buffer as incomplete rather
+than silently substituting an empty or truncated name. A focused Joliet fixture
+exercises the expansion boundary; compiled ISO corpus, sanitizer, and Sonic1
+qualification remain release gates.

@@ -188,6 +188,7 @@ static char *iso_string(iso9660_t *iso, const void *src, unsigned int len)
     if (iso->joliet) {
         char *utf8;
         const char *uutf8;
+        size_t utf8_len;
         if (len > (sizeof(iso->buf) - 2)) {
             cli_mark_scan_incomplete(iso->ctx, "ISO directory entry name exceeded the parser buffer");
             len = sizeof(iso->buf) - 2;
@@ -196,7 +197,15 @@ static char *iso_string(iso9660_t *iso, const void *src, unsigned int len)
         iso->buf[len]     = '\0';
         iso->buf[len + 1] = '\0';
         utf8              = cli_utf16_to_utf8(iso->buf, len, E_UTF16_BE);
-        uutf8             = utf8 ? utf8 : "";
+        if (utf8 == NULL) {
+            cli_mark_scan_incomplete(iso->ctx, "ISO Joliet directory entry name could not be converted");
+            uutf8 = "";
+        } else {
+            utf8_len = strlen(utf8);
+            if (utf8_len >= sizeof(iso->buf))
+                cli_mark_scan_incomplete(iso->ctx, "ISO Joliet directory entry name exceeded the parser buffer");
+            uutf8 = utf8;
+        }
         strncpy(iso->buf, uutf8, sizeof(iso->buf));
         iso->buf[sizeof(iso->buf) - 1] = '\0';
         free(utf8);
