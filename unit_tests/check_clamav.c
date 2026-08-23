@@ -24696,6 +24696,65 @@ START_TEST(test_pe_icon_bitmap_header_range_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_icon_bitmap_mask_read_failure_is_fail_visible)
+{
+    uint8_t data[2048];
+    struct cl_engine engine;
+    struct icon_matcher matcher;
+    struct cli_exe_section section;
+    struct cli_exe_info peinfo;
+    icon_groupset iconset;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&matcher, 0, sizeof(matcher));
+    memset(&section, 0, sizeof(section));
+    memset(&peinfo, 0, sizeof(peinfo));
+    memset(&ctx, 0, sizeof(ctx));
+    pe_icon_test_build_resource_tree(data, sizeof(data));
+
+    /* Resource tree: type 3 (icon) and type 14 (icon group), each with one
+     * language entry. The 32-bit bitmap has an in-range alpha-mask window,
+     * but its backing fmap read is injected to fail. */
+    pe_icon_test_write_u16(data + 0xe2, 1);
+    pe_icon_test_write_u16(data + 0xe4, 1);
+    pe_icon_test_write_u16(data + 0xec, 32);
+    pe_icon_test_write_u16(data + 0xf2, 1);
+    pe_icon_test_write_u32(data + 0x100, 40);
+    pe_icon_test_write_u32(data + 0x104, 16);
+    pe_icon_test_write_u32(data + 0x108, 32);
+    pe_icon_test_write_u16(data + 0x10c, 1);
+    pe_icon_test_write_u16(data + 0x10e, 1);
+
+    section.rsz                   = sizeof(data);
+    peinfo.sections               = &section;
+    peinfo.nsections              = 1;
+    peinfo.ndatadirs              = 3;
+    peinfo.dirs[2].VirtualAddress = 0;
+    peinfo.hdr_size               = 0;
+    engine.maxiconspe             = 100;
+    engine.iconcheck              = &matcher;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    /* 0x100 + 40-byte bitmap header + 16 * 64-byte pixels. */
+    pe_icon_read_failure_offset = 0x528U;
+    map->need                    = pe_icon_targeted_read_failure;
+    ctx.engine                   = &engine;
+    ctx.fmap                     = map;
+    cli_icongroupset_init(&iconset);
+
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE icon alpha mask could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    pe_icon_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_pe_icon_resource_tree_read_failure_is_fail_visible)
 {
     uint8_t data[256] = {0};
@@ -25149,6 +25208,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_range_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_icon_bitmap_mask_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_resource_tree_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_temporary_limit_is_fail_visible);

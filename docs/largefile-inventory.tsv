@@ -4015,10 +4015,10 @@ fixed-width-integer	libclamav/pe_icons.c	138	    uint32_t err_total = 0;
 fixed-width-integer	libclamav/pe_icons.c	1422	static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
 fixed-width-integer	libclamav/pe_icons.c	1446	    const uint32_t *palette = NULL;
 fixed-width-integer	libclamav/pe_icons.c	1447	    uint32_t *imagedata;
-fixed-width-integer	libclamav/pe_icons.c	1707	                uint32_t *newdata;
-fixed-width-integer	libclamav/pe_icons.c	1756	        if (!(set->v[0][i] & ((uint64_t)1 << j)))
-fixed-width-integer	libclamav/pe_icons.c	1761	        if (!(set->v[1][i] & ((uint64_t)1 << j)))
-fixed-width-integer	libclamav/pe_icons.c	1842	        set->v[type][i] |= (uint64_t)1 << j;
+fixed-width-integer	libclamav/pe_icons.c	1736	                uint32_t *newdata;
+fixed-width-integer	libclamav/pe_icons.c	1785	        if (!(set->v[0][i] & ((uint64_t)1 << j)))
+fixed-width-integer	libclamav/pe_icons.c	1790	        if (!(set->v[1][i] & ((uint64_t)1 << j)))
+fixed-width-integer	libclamav/pe_icons.c	1871	        set->v[type][i] |= (uint64_t)1 << j;
 fixed-width-integer	libclamav/pe_icons.c	206	int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
 fixed-width-integer	libclamav/pe_icons.c	229	        uint32_t gsz = cli_readint32(grp + 4);
 fixed-width-integer	libclamav/pe_icons.c	231	            uint32_t icnt, raddr;
@@ -5966,13 +5966,13 @@ fixed-width-integer	unit_tests/check_clamav.c	23989	    if (offset < 0 || (uint6
 fixed-width-integer	unit_tests/check_clamav.c	24290	    if (offset < 0 || (uint64_t)offset >= state->length)
 fixed-width-integer	unit_tests/check_clamav.c	24350	static void pe_icon_test_write_u16(uint8_t *dst, uint16_t value)
 fixed-width-integer	unit_tests/check_clamav.c	24356	static void pe_icon_test_write_u32(uint8_t *dst, uint32_t value)
-fixed-width-integer	unit_tests/check_clamav.c	24753	    uint64_t scanned = 0;
+fixed-width-integer	unit_tests/check_clamav.c	24812	    uint64_t scanned = 0;
 fixed-width-integer	unit_tests/check_clamav.c	2482	/* cl_error_t cl_cvdverify_ex(const char *file, const char *certs_directory, uint32_t dboptions) */
 fixed-width-integer	unit_tests/check_clamav.c	2538	/* cl_error_t cl_cvdunpack_ex(const char *file, const char *dir, const char *certs_directory, uint32_t dboptions) */
-fixed-width-integer	unit_tests/check_clamav.c	25405	static int32_t le_expected[4] = {0x01234567, 0x67012345, 0x45670123, 0x23456701};
-fixed-width-integer	unit_tests/check_clamav.c	25439	    int16_t value;
-fixed-width-integer	unit_tests/check_clamav.c	25457	    int32_t value = le_expected[_i & 3];
-fixed-width-integer	unit_tests/check_clamav.c	25987	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
+fixed-width-integer	unit_tests/check_clamav.c	25465	static int32_t le_expected[4] = {0x01234567, 0x67012345, 0x45670123, 0x23456701};
+fixed-width-integer	unit_tests/check_clamav.c	25499	    int16_t value;
+fixed-width-integer	unit_tests/check_clamav.c	25517	    int32_t value = le_expected[_i & 3];
+fixed-width-integer	unit_tests/check_clamav.c	26047	    ck_assert_msg(!!ref, "unable to malloc buffer: " STDi64, (int64_t)siz);
 fixed-width-integer	unit_tests/check_clamav.c	2606	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	2674	    uint64_t scanned;
 fixed-width-integer	unit_tests/check_clamav.c	2725	    uint64_t scanned       = 0;
@@ -12301,26 +12301,32 @@ native-width-integer	libclamav/pe_icons.c	1602	                    unsigned int 
 native-width-integer	libclamav/pe_icons.c	1613	                    unsigned int c                          = rawimage[x_off] | (rawimage[x_off + 1] << 8) | (rawimage[x_off + 2] << 16);
 native-width-integer	libclamav/pe_icons.c	1620	                    unsigned int a                          = rawimage[x_off + 3] << 24;
 native-width-integer	libclamav/pe_icons.c	1630	        fmap_unneed_ptr(map, palette, (1 << depth) * sizeof(int));
-native-width-integer	libclamav/pe_icons.c	1652	            unsigned int x_off = y * andlinesz;
-native-width-integer	libclamav/pe_icons.c	1653	            unsigned int have  = 0;
-native-width-integer	libclamav/pe_icons.c	1670	            unsigned int r, g, b, a;
-native-width-integer	libclamav/pe_icons.c	1671	            unsigned int c           = imagedata[y * width + x];
-native-width-integer	libclamav/pe_icons.c	1691	                        unsigned int c1 = imagedata[y * width + x], c2 = imagedata[y * width + x + 1], c3 = imagedata[(y + 1) * width + x], c4 = imagedata[(y + 1) * width + x + 1];
-native-width-integer	libclamav/pe_icons.c	1706	                unsigned int newsize;
-native-width-integer	libclamav/pe_icons.c	1709	                if (abs((int)width - 32) + abs((int)height - 32) < abs((int)width - 24) + abs((int)height - 24))
-native-width-integer	libclamav/pe_icons.c	1711	                else if (abs((int)width - 24) + abs((int)height - 24) < abs((int)width - 16) + abs((int)height - 16))
-native-width-integer	libclamav/pe_icons.c	1725	                    unsigned int oldy = (unsigned int)(y * scaley) * width;
-native-width-integer	libclamav/pe_icons.c	1727	                        newdata[y * newsize + x] = imagedata[oldy + (unsigned int)(x * scalex + 0.5f)];
-native-width-integer	libclamav/pe_icons.c	1738	        int metrics_status = getmetrics(width, imagedata, &metrics, tempd);
-native-width-integer	libclamav/pe_icons.c	1749	        unsigned int color = 0, gray = 0, bright, dark, edge, noedge, reds, greens, blues, ccount;
-native-width-integer	libclamav/pe_icons.c	1750	        unsigned int colors, confidence, bwmatch = 0, positivematch = 64 + 4 * (2 - enginesize);
-native-width-integer	libclamav/pe_icons.c	1751	        unsigned int i, j;
-native-width-integer	libclamav/pe_icons.c	1782	        reds   = abs((int)metrics.rsum - (int)matcher->icons[enginesize][x].rsum) * 10;
-native-width-integer	libclamav/pe_icons.c	1784	        greens = abs((int)metrics.gsum - (int)matcher->icons[enginesize][x].gsum) * 10;
-native-width-integer	libclamav/pe_icons.c	1786	        blues  = abs((int)metrics.bsum - (int)matcher->icons[enginesize][x].bsum) * 10;
-native-width-integer	libclamav/pe_icons.c	1788	        ccount = abs((int)metrics.ccount - (int)matcher->icons[enginesize][x].ccount) * 10;
-native-width-integer	libclamav/pe_icons.c	1820	void cli_icongroupset_add(const char *groupname, icon_groupset *set, unsigned int type, cli_ctx *ctx)
-native-width-integer	libclamav/pe_icons.c	1823	    unsigned int i, j;
+native-width-integer	libclamav/pe_icons.c	1634	        size_t mask_offset;
+native-width-integer	libclamav/pe_icons.c	1635	        size_t mask_size;
+native-width-integer	libclamav/pe_icons.c	1636	        size_t pixel_bytes;
+native-width-integer	libclamav/pe_icons.c	1640	        if ((size_t)height > SIZE_MAX / (size_t)andlinesz) {
+native-width-integer	libclamav/pe_icons.c	1646	        mask_size   = (size_t)height * (size_t)andlinesz;
+native-width-integer	libclamav/pe_icons.c	1647	        pixel_bytes = (size_t)height * (size_t)scanlinesz;
+native-width-integer	libclamav/pe_icons.c	1681	            unsigned int x_off = y * andlinesz;
+native-width-integer	libclamav/pe_icons.c	1682	            unsigned int have  = 0;
+native-width-integer	libclamav/pe_icons.c	1699	            unsigned int r, g, b, a;
+native-width-integer	libclamav/pe_icons.c	1700	            unsigned int c           = imagedata[y * width + x];
+native-width-integer	libclamav/pe_icons.c	1720	                        unsigned int c1 = imagedata[y * width + x], c2 = imagedata[y * width + x + 1], c3 = imagedata[(y + 1) * width + x], c4 = imagedata[(y + 1) * width + x + 1];
+native-width-integer	libclamav/pe_icons.c	1735	                unsigned int newsize;
+native-width-integer	libclamav/pe_icons.c	1738	                if (abs((int)width - 32) + abs((int)height - 32) < abs((int)width - 24) + abs((int)height - 24))
+native-width-integer	libclamav/pe_icons.c	1740	                else if (abs((int)width - 24) + abs((int)height - 24) < abs((int)width - 16) + abs((int)height - 16))
+native-width-integer	libclamav/pe_icons.c	1754	                    unsigned int oldy = (unsigned int)(y * scaley) * width;
+native-width-integer	libclamav/pe_icons.c	1756	                        newdata[y * newsize + x] = imagedata[oldy + (unsigned int)(x * scalex + 0.5f)];
+native-width-integer	libclamav/pe_icons.c	1767	        int metrics_status = getmetrics(width, imagedata, &metrics, tempd);
+native-width-integer	libclamav/pe_icons.c	1778	        unsigned int color = 0, gray = 0, bright, dark, edge, noedge, reds, greens, blues, ccount;
+native-width-integer	libclamav/pe_icons.c	1779	        unsigned int colors, confidence, bwmatch = 0, positivematch = 64 + 4 * (2 - enginesize);
+native-width-integer	libclamav/pe_icons.c	1780	        unsigned int i, j;
+native-width-integer	libclamav/pe_icons.c	1811	        reds   = abs((int)metrics.rsum - (int)matcher->icons[enginesize][x].rsum) * 10;
+native-width-integer	libclamav/pe_icons.c	1813	        greens = abs((int)metrics.gsum - (int)matcher->icons[enginesize][x].gsum) * 10;
+native-width-integer	libclamav/pe_icons.c	1815	        blues  = abs((int)metrics.bsum - (int)matcher->icons[enginesize][x].bsum) * 10;
+native-width-integer	libclamav/pe_icons.c	1817	        ccount = abs((int)metrics.ccount - (int)matcher->icons[enginesize][x].ccount) * 10;
+native-width-integer	libclamav/pe_icons.c	1849	void cli_icongroupset_add(const char *groupname, icon_groupset *set, unsigned int type, cli_ctx *ctx)
+native-width-integer	libclamav/pe_icons.c	1852	    unsigned int i, j;
 native-width-integer	libclamav/pe_icons.c	206	int cli_groupiconscan(struct ICON_ENV *icon_env, uint32_t rva)
 native-width-integer	libclamav/pe_icons.c	212	    int err            = 0;
 native-width-integer	libclamav/pe_icons.c	215	    size_t group_offset;
@@ -17155,37 +17161,37 @@ native-width-integer	unit_tests/check_clamav.c	24385	static void pe_icon_test_bu
 native-width-integer	unit_tests/check_clamav.c	2443	    int fd = get_test_file(_i, file, sizeof(file), &size);
 native-width-integer	unit_tests/check_clamav.c	2457	/* cl_error_t cl_load(const char *path, struct cl_engine **engine, unsigned int *signo, unsigned int options) */
 native-width-integer	unit_tests/check_clamav.c	2462	    unsigned int sigs = 0;
-native-width-integer	unit_tests/check_clamav.c	24752	    unsigned int sigs = 0;
-native-width-integer	unit_tests/check_clamav.c	24755	    int signature_fd = -1;
-native-width-integer	unit_tests/check_clamav.c	24763	                     (ssize_t)(sizeof(signature) - 1));
-native-width-integer	unit_tests/check_clamav.c	24808	    int expect         = expected_testfiles;
-native-width-integer	unit_tests/check_clamav.c	25395	        int timeout = atoi(user_timeout);
-native-width-integer	unit_tests/check_clamav.c	25413	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	24811	    unsigned int sigs = 0;
+native-width-integer	unit_tests/check_clamav.c	24814	    int signature_fd = -1;
+native-width-integer	unit_tests/check_clamav.c	24822	                     (ssize_t)(sizeof(signature) - 1));
+native-width-integer	unit_tests/check_clamav.c	24867	    int expect         = expected_testfiles;
 native-width-integer	unit_tests/check_clamav.c	2543	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	25438	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	25456	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	25473	    size_t j;
-native-width-integer	unit_tests/check_clamav.c	25494	    int result;
-native-width-integer	unit_tests/check_clamav.c	25517	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
-native-width-integer	unit_tests/check_clamav.c	25554	    int i;
+native-width-integer	unit_tests/check_clamav.c	25455	        int timeout = atoi(user_timeout);
+native-width-integer	unit_tests/check_clamav.c	25473	    size_t i;
+native-width-integer	unit_tests/check_clamav.c	25498	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	25516	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	25533	    size_t j;
+native-width-integer	unit_tests/check_clamav.c	25554	    int result;
 native-width-integer	unit_tests/check_clamav.c	2557	/* int cl_statinidir(const char *dirname, struct cl_stat *dbstat) */
+native-width-integer	unit_tests/check_clamav.c	25577	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
+native-width-integer	unit_tests/check_clamav.c	25614	    int i;
 native-width-integer	unit_tests/check_clamav.c	2563	/* int cl_statchkdir(const struct cl_stat *dbstat) */
 native-width-integer	unit_tests/check_clamav.c	2575	/* const char *cl_strerror(int clerror) */
 native-width-integer	unit_tests/check_clamav.c	2582	    unsigned int calls;
-native-width-integer	unit_tests/check_clamav.c	25838	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	25856	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	25874	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	25892	    size_t utf8_size = 0;
-native-width-integer	unit_tests/check_clamav.c	25938	int open_testfile(const char *name, int flags)
-native-width-integer	unit_tests/check_clamav.c	25940	    int fd;
-native-width-integer	unit_tests/check_clamav.c	25953	void diff_file_mem(int fd, const char *ref, size_t len)
-native-width-integer	unit_tests/check_clamav.c	25956	    size_t p, reflen = len;
-native-width-integer	unit_tests/check_clamav.c	25979	void diff_files(int fd, int ref_fd)
-native-width-integer	unit_tests/check_clamav.c	25982	    ssize_t nread;
-native-width-integer	unit_tests/check_clamav.c	25983	    off_t siz = lseek(ref_fd, 0, SEEK_END);
-native-width-integer	unit_tests/check_clamav.c	26049	int main(int argc, char **argv)
-native-width-integer	unit_tests/check_clamav.c	26051	    int nf;
+native-width-integer	unit_tests/check_clamav.c	25898	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	25916	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	25934	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	25952	    size_t utf8_size = 0;
+native-width-integer	unit_tests/check_clamav.c	25998	int open_testfile(const char *name, int flags)
+native-width-integer	unit_tests/check_clamav.c	26000	    int fd;
+native-width-integer	unit_tests/check_clamav.c	26013	void diff_file_mem(int fd, const char *ref, size_t len)
+native-width-integer	unit_tests/check_clamav.c	26016	    size_t p, reflen = len;
+native-width-integer	unit_tests/check_clamav.c	26039	void diff_files(int fd, int ref_fd)
+native-width-integer	unit_tests/check_clamav.c	26042	    ssize_t nread;
+native-width-integer	unit_tests/check_clamav.c	26043	    off_t siz = lseek(ref_fd, 0, SEEK_END);
 native-width-integer	unit_tests/check_clamav.c	2607	    unsigned long legacy_scanned;
+native-width-integer	unit_tests/check_clamav.c	26109	int main(int argc, char **argv)
+native-width-integer	unit_tests/check_clamav.c	26111	    int nf;
 native-width-integer	unit_tests/check_clamav.c	2676	    size_t length;
 native-width-integer	unit_tests/check_clamav.c	2685	    length = (size_t)engine->maxhtmlnormalize + 1U;
 native-width-integer	unit_tests/check_clamav.c	2726	    unsigned int sigs      = 0;
@@ -18235,6 +18241,8 @@ boundary-constant	libclamav/pe.c	6455	    if (hlen > SIZE_MAX - 8 || at > SIZE_M
 boundary-constant	libclamav/pe.c	711	            if (base > UINT32_MAX - child_rva) {
 boundary-constant	libclamav/pe.c	721	            if (base > UINT32_MAX - offs) {
 boundary-constant	libclamav/pe_icons.c	1560	        if (line_size != 0 && (size_t)height > SIZE_MAX / line_size)
+boundary-constant	libclamav/pe_icons.c	1640	        if ((size_t)height > SIZE_MAX / (size_t)andlinesz) {
+boundary-constant	libclamav/pe_icons.c	1648	        if (icoff <= SIZE_MAX - pixel_bytes) {
 boundary-constant	libclamav/petite.c	297	            if (bottom > UINT32_MAX - 4) {
 boundary-constant	libclamav/petite.c	447	                        if (backbytes >= INT_MAX / 2) {
 boundary-constant	libclamav/petite.c	468	                            if (backbytes >= INT_MAX / 2) {
@@ -18419,16 +18427,17 @@ boundary-constant	unit_tests/check_clamav.c	24373	static size_t pe_icon_read_fai
 boundary-constant	unit_tests/check_clamav.c	24456	    pe_icon_read_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	24613	    pe_icon_read_failure_offset = SIZE_MAX;
 boundary-constant	unit_tests/check_clamav.c	24669	    pe_icon_test_write_u32(data + 0x100, UINT32_MAX);
-boundary-constant	unit_tests/check_clamav.c	24795	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	24811	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25078	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25082	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25108	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25134	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25138	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25186	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25198	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	25236	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	24753	    pe_icon_read_failure_offset = SIZE_MAX;
+boundary-constant	unit_tests/check_clamav.c	24854	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	24870	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25137	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25141	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25167	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25193	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25197	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25246	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25258	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	25296	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	2631	    legacy_scanned = ULONG_MAX;
 boundary-constant	unit_tests/check_clamav.c	3184	    ctx.scannedfiles = UINT32_MAX;
 boundary-constant	unit_tests/check_clamav.c	3187	    ck_assert_uint_eq(ctx.scannedfiles, UINT32_MAX);
@@ -18619,7 +18628,7 @@ quantity-parser	sigtool/sigtool.c	3470	        mprintf(LOGG_INFO, "%s\n", (atoi(
 quantity-parser	sigtool/sigtool.c	3500	            sz    = (int)strtol(tokens[8], NULL, 16);
 quantity-parser	sigtool/sigtool.c	3614	            ftmsigtype = strtol(tokens[0], &end, 10);
 quantity-parser	sigtool/sigtool.c	3635	        switch (atoi(tokens[1])) {
-quantity-parser	unit_tests/check_clamav.c	25395	        int timeout = atoi(user_timeout);
+quantity-parser	unit_tests/check_clamav.c	25455	        int timeout = atoi(user_timeout);
 quantity-parser	unit_tests/check_clamd.c	102	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 quantity-parser	unit_tests/check_clamd.c	557	        ck_assert_int_eq(option->numarg, strtoll(valid[i], NULL, 10));
 narrowing-cast	clamav-milter/clamfi.c	246	                uint32_t chunk = len > UINT32_MAX ? UINT32_MAX : (uint32_t)len;
@@ -20265,23 +20274,23 @@ format-width	libclamav/pe_icons.c	1496	        // cli_dbgmsg("parseicon: Image t
 format-width	libclamav/pe_icons.c	1501	        // cli_dbgmsg("parseicon: Image not square enough (%ux%u)\n", width, height);
 format-width	libclamav/pe_icons.c	1515	    cli_dbgmsg("parseicon: Bitmap - %ux%ux%u\n", width, height, depth);
 format-width	libclamav/pe_icons.c	1540	            /* cli_dbgmsg("Palette[%u] = %08x\n", j, palette[j]); */
-format-width	libclamav/pe_icons.c	1699	                cli_dbgmsg("parseicon: Fast scaling to %ux%u\n", width, height);
-format-width	libclamav/pe_icons.c	1723	                cli_dbgmsg("parseicon: Slow scaling to %ux%u (%f, %f)\n", newsize, newsize, scalex, scaley);
+format-width	libclamav/pe_icons.c	1728	                cli_dbgmsg("parseicon: Fast scaling to %ux%u\n", width, height);
 format-width	libclamav/pe_icons.c	173	    cli_dbgmsg("cli_scanicon: scanned a total of %u[%u actual] icons across %u groups\n", icon_env.icnt, icon_env.hcnt, icon_env.gcnt);
 format-width	libclamav/pe_icons.c	175	        cli_warnmsg("cli_scanicon: found %u invalid icon entries of %u total\n", icon_env.icnt - icon_env.hcnt, icon_env.icnt);
+format-width	libclamav/pe_icons.c	1752	                cli_dbgmsg("parseicon: Slow scaling to %ux%u (%f, %f)\n", newsize, newsize, scalex, scaley);
 format-width	libclamav/pe_icons.c	179	        cli_dbgmsg("cli_scanicon: detected %u total image parsing issues\n", err_total);
-format-width	libclamav/pe_icons.c	1799	        cli_dbgmsg("parseicon: edge confidence: %u%%\n", edge);
-format-width	libclamav/pe_icons.c	1800	        cli_dbgmsg("parseicon: noedge confidence: %u%%\n", noedge);
-format-width	libclamav/pe_icons.c	1802	            cli_dbgmsg("parseicon: color confidence: %u%%\n", color);
-format-width	libclamav/pe_icons.c	1803	            cli_dbgmsg("parseicon: gray confidence: %u%%\n", gray);
-format-width	libclamav/pe_icons.c	1805	        cli_dbgmsg("parseicon: bright confidence: %u%%\n", bright);
-format-width	libclamav/pe_icons.c	1806	        cli_dbgmsg("parseicon: dark confidence: %u%%\n", dark);
-format-width	libclamav/pe_icons.c	1808	            cli_dbgmsg("parseicon: spread confidence: red %u%%, green %u%%, blue %u%% - colors %u%%\n", reds, greens, blues, ccount);
 format-width	libclamav/pe_icons.c	181	            cli_dbgmsg("cli_scanicon: detected %u cases of 'parseicon: offset to icon is out of file'\n", icon_env.err_oof);
-format-width	libclamav/pe_icons.c	1812	            cli_dbgmsg("confidence: %u\n", confidence);
+format-width	libclamav/pe_icons.c	1828	        cli_dbgmsg("parseicon: edge confidence: %u%%\n", edge);
+format-width	libclamav/pe_icons.c	1829	        cli_dbgmsg("parseicon: noedge confidence: %u%%\n", noedge);
 format-width	libclamav/pe_icons.c	183	            cli_dbgmsg("cli_scanicon: detected %u cases of 'parseicon: bmp header is out of file'\n", icon_env.err_bhoof);
-format-width	libclamav/pe_icons.c	1838	        cli_dbgmsg("cli_icongroupset_add: failed to locate icon group%u %s\n", type, groupname);
+format-width	libclamav/pe_icons.c	1831	            cli_dbgmsg("parseicon: color confidence: %u%%\n", color);
+format-width	libclamav/pe_icons.c	1832	            cli_dbgmsg("parseicon: gray confidence: %u%%\n", gray);
+format-width	libclamav/pe_icons.c	1834	        cli_dbgmsg("parseicon: bright confidence: %u%%\n", bright);
+format-width	libclamav/pe_icons.c	1835	        cli_dbgmsg("parseicon: dark confidence: %u%%\n", dark);
+format-width	libclamav/pe_icons.c	1837	            cli_dbgmsg("parseicon: spread confidence: red %u%%, green %u%%, blue %u%% - colors %u%%\n", reds, greens, blues, ccount);
+format-width	libclamav/pe_icons.c	1841	            cli_dbgmsg("confidence: %u\n", confidence);
 format-width	libclamav/pe_icons.c	185	            cli_dbgmsg("cli_scanicon: detected %u cases of 'parseicon: BMP header too small'\n", icon_env.err_bhts);
+format-width	libclamav/pe_icons.c	1867	        cli_dbgmsg("cli_icongroupset_add: failed to locate icon group%u %s\n", type, groupname);
 format-width	libclamav/pe_icons.c	187	            cli_dbgmsg("cli_scanicon: detected %u cases of 'parseicon: Image too small or too big'\n", icon_env.err_tstl);
 format-width	libclamav/pe_icons.c	189	            cli_dbgmsg("cli_scanicon: detected %u cases of 'parseicon: Image not square enough'\n", icon_env.err_insl);
 format-width	libclamav/pe_icons.c	274	                    cli_dbgmsg("cli_scanicon: Icongrp @%x - %ux%ux%u - (id=%x, rsvd=%u, planes=%u, palcnt=%u, sz=%x)\n", rva, grp[0], grp[1], depth, id, planes, grp[2], grp[3], icon_size);
@@ -20976,14 +20985,14 @@ format-width	unit_tests/check_clamav.c	18924	                          "decoded 
 format-width	unit_tests/check_clamav.c	18927	    ck_assert_msg(verified == decoded_size, "verified %llu of %llu decoded bytes",
 format-width	unit_tests/check_clamav.c	18944	    ck_assert_msg(ret == CL_EPARSE, "malformed HWPML Base64 returned %d", ret);
 format-width	unit_tests/check_clamav.c	19575	                  "ARJ temporary limit returned %s (%d)", cl_strerror(ret), ret);
-format-width	unit_tests/check_clamav.c	25397	        printf("Using test case timeout of %d seconds set by user\n", timeout);
-format-width	unit_tests/check_clamav.c	25959	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
-format-width	unit_tests/check_clamav.c	25961	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
-format-width	unit_tests/check_clamav.c	25972	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
-format-width	unit_tests/check_clamav.c	25975	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
-format-width	unit_tests/check_clamav.c	25991	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
-format-width	unit_tests/check_clamav.c	26035	                        "\tVersion from header: %u.%u.%u\n"
-format-width	unit_tests/check_clamav.c	26036	                        "\tVersion from library: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	25457	        printf("Using test case timeout of %d seconds set by user\n", timeout);
+format-width	unit_tests/check_clamav.c	26019	    ck_assert_msg(!!buf, "unable to malloc buffer: %zu", len);
+format-width	unit_tests/check_clamav.c	26021	    ck_assert_msg(p == len, "file is smaller: %lu, expected: %lu", p, len);
+format-width	unit_tests/check_clamav.c	26032	        ck_assert_msg(c1 == c2, "file contents mismatch at byte: %lu, was: %c, expected: %c", p, c2, c1);
+format-width	unit_tests/check_clamav.c	26035	    ck_assert_msg(p == reflen, "trailing garbage, file size: %ld, expected: %ld", p, reflen);
+format-width	unit_tests/check_clamav.c	26051	    ck_assert_msg(nread == siz, "short read, expected: %ld, was: %ld", siz, nread);
+format-width	unit_tests/check_clamav.c	26095	                        "\tVersion from header: %u.%u.%u\n"
+format-width	unit_tests/check_clamav.c	26096	                        "\tVersion from library: %u.%u.%u\n"
 format-width	unit_tests/check_clamav.c	3644	    ck_assert_msg(testfiles_n == expect, "testfiles: %d != %d", testfiles_n, expect);
 format-width	unit_tests/check_clamav.c	3792	    ck_assert_msg(i < testfiles_n, "%i < %i %s", i, testfiles_n, file);
 format-width	unit_tests/check_clamav.c	3954	                      "fmap aging inspected %llu bitmap entries", (unsigned long long)map->aging_scanned_last);
@@ -28291,28 +28300,33 @@ offset-size-arithmetic	libclamav/pe_icons.c	1615	                    x_off += 3;
 offset-size-arithmetic	libclamav/pe_icons.c	1620	                    unsigned int a                          = rawimage[x_off + 3] << 24;
 offset-size-arithmetic	libclamav/pe_icons.c	1621	                    imagedata[(height - 1 - y) * width + x] = rawimage[x_off] | (rawimage[x_off + 1] << 8) | (rawimage[x_off + 2] << 16) | a;
 offset-size-arithmetic	libclamav/pe_icons.c	1623	                    x_off += 4;
-offset-size-arithmetic	libclamav/pe_icons.c	1635	        if (!(rawimage = fmap_need_off_once(map, icoff + height * scanlinesz, height * andlinesz))) {
-offset-size-arithmetic	libclamav/pe_icons.c	1647	        rawimage += height * scanlinesz;
-offset-size-arithmetic	libclamav/pe_icons.c	1649	    /* Set alpha on or off based on the mask */
-offset-size-arithmetic	libclamav/pe_icons.c	1652	            unsigned int x_off = y * andlinesz;
-offset-size-arithmetic	libclamav/pe_icons.c	1657	                    c    = rawimage[x_off++];
-offset-size-arithmetic	libclamav/pe_icons.c	1667	    /* Blend alpha */
-offset-size-arithmetic	libclamav/pe_icons.c	1717	                if (!(newdata = cli_max_malloc(newsize * newsize * sizeof(*newdata)))) {
-offset-size-arithmetic	libclamav/pe_icons.c	1727	                        newdata[y * newsize + x] = imagedata[oldy + (unsigned int)(x * scalex + 0.5f)];
-offset-size-arithmetic	libclamav/pe_icons.c	1747	    enginesize = (width >> 3) - 2;
-offset-size-arithmetic	libclamav/pe_icons.c	1750	        unsigned int colors, confidence, bwmatch = 0, positivematch = 64 + 4 * (2 - enginesize);
-offset-size-arithmetic	libclamav/pe_icons.c	1766	            edge    = matchbwpoint(width, metrics.edge_x, metrics.edge_y, metrics.edge_avg, metrics.color_x, metrics.color_y, metrics.color_avg, matcher->icons[enginesize][x].edge_x, matcher->icons[enginesize][x].edge_y, matcher->icons[enginesize][x].edge_avg, matcher->icons[enginesize][x].color_x, matcher->icons[enginesize][x].color_y, matcher->icons[enginesize][x].color_avg);
-offset-size-arithmetic	libclamav/pe_icons.c	1767	            noedge  = matchbwpoint(width, metrics.noedge_x, metrics.noedge_y, metrics.noedge_avg, metrics.gray_x, metrics.gray_y, metrics.gray_avg, matcher->icons[enginesize][x].noedge_x, matcher->icons[enginesize][x].noedge_y, matcher->icons[enginesize][x].noedge_avg, matcher->icons[enginesize][x].gray_x, matcher->icons[enginesize][x].gray_y, matcher->icons[enginesize][x].gray_avg);
-offset-size-arithmetic	libclamav/pe_icons.c	1770	            edge   = matchpoint(width, metrics.edge_x, metrics.edge_y, metrics.edge_avg, matcher->icons[enginesize][x].edge_x, matcher->icons[enginesize][x].edge_y, matcher->icons[enginesize][x].edge_avg, 255);
-offset-size-arithmetic	libclamav/pe_icons.c	1771	            noedge = matchpoint(width, metrics.noedge_x, metrics.noedge_y, metrics.noedge_avg, matcher->icons[enginesize][x].noedge_x, matcher->icons[enginesize][x].noedge_y, matcher->icons[enginesize][x].noedge_avg, 255);
-offset-size-arithmetic	libclamav/pe_icons.c	1774	                color = matchpoint(width, metrics.color_x, metrics.color_y, metrics.color_avg, matcher->icons[enginesize][x].color_x, matcher->icons[enginesize][x].color_y, matcher->icons[enginesize][x].color_avg, 4072);
-offset-size-arithmetic	libclamav/pe_icons.c	1775	                gray  = matchpoint(width, metrics.gray_x, metrics.gray_y, metrics.gray_avg, matcher->icons[enginesize][x].gray_x, matcher->icons[enginesize][x].gray_y, matcher->icons[enginesize][x].gray_avg, 4072);
-offset-size-arithmetic	libclamav/pe_icons.c	1779	        bright = matchpoint(width, metrics.bright_x, metrics.bright_y, metrics.bright_avg, matcher->icons[enginesize][x].bright_x, matcher->icons[enginesize][x].bright_y, matcher->icons[enginesize][x].bright_avg, 255);
-offset-size-arithmetic	libclamav/pe_icons.c	1780	        dark   = matchpoint(width, metrics.dark_x, metrics.dark_y, metrics.dark_avg, matcher->icons[enginesize][x].dark_x, matcher->icons[enginesize][x].dark_y, matcher->icons[enginesize][x].dark_avg, 255);
-offset-size-arithmetic	libclamav/pe_icons.c	1782	        reds   = abs((int)metrics.rsum - (int)matcher->icons[enginesize][x].rsum) * 10;
-offset-size-arithmetic	libclamav/pe_icons.c	1784	        greens = abs((int)metrics.gsum - (int)matcher->icons[enginesize][x].gsum) * 10;
-offset-size-arithmetic	libclamav/pe_icons.c	1786	        blues  = abs((int)metrics.bsum - (int)matcher->icons[enginesize][x].bsum) * 10;
-offset-size-arithmetic	libclamav/pe_icons.c	1788	        ccount = abs((int)metrics.ccount - (int)matcher->icons[enginesize][x].ccount) * 10;
+offset-size-arithmetic	libclamav/pe_icons.c	1640	        if ((size_t)height > SIZE_MAX / (size_t)andlinesz) {
+offset-size-arithmetic	libclamav/pe_icons.c	1646	        mask_size   = (size_t)height * (size_t)andlinesz;
+offset-size-arithmetic	libclamav/pe_icons.c	1647	        pixel_bytes = (size_t)height * (size_t)scanlinesz;
+offset-size-arithmetic	libclamav/pe_icons.c	1648	        if (icoff <= SIZE_MAX - pixel_bytes) {
+offset-size-arithmetic	libclamav/pe_icons.c	1649	            mask_offset  = icoff + pixel_bytes;
+offset-size-arithmetic	libclamav/pe_icons.c	1650	            mask_in_range = (mask_offset <= map->len) && (mask_size <= map->len - mask_offset);
+offset-size-arithmetic	libclamav/pe_icons.c	1676	        rawimage += height * scanlinesz;
+offset-size-arithmetic	libclamav/pe_icons.c	1678	    /* Set alpha on or off based on the mask */
+offset-size-arithmetic	libclamav/pe_icons.c	1681	            unsigned int x_off = y * andlinesz;
+offset-size-arithmetic	libclamav/pe_icons.c	1686	                    c    = rawimage[x_off++];
+offset-size-arithmetic	libclamav/pe_icons.c	1696	    /* Blend alpha */
+offset-size-arithmetic	libclamav/pe_icons.c	1746	                if (!(newdata = cli_max_malloc(newsize * newsize * sizeof(*newdata)))) {
+offset-size-arithmetic	libclamav/pe_icons.c	1756	                        newdata[y * newsize + x] = imagedata[oldy + (unsigned int)(x * scalex + 0.5f)];
+offset-size-arithmetic	libclamav/pe_icons.c	1776	    enginesize = (width >> 3) - 2;
+offset-size-arithmetic	libclamav/pe_icons.c	1779	        unsigned int colors, confidence, bwmatch = 0, positivematch = 64 + 4 * (2 - enginesize);
+offset-size-arithmetic	libclamav/pe_icons.c	1795	            edge    = matchbwpoint(width, metrics.edge_x, metrics.edge_y, metrics.edge_avg, metrics.color_x, metrics.color_y, metrics.color_avg, matcher->icons[enginesize][x].edge_x, matcher->icons[enginesize][x].edge_y, matcher->icons[enginesize][x].edge_avg, matcher->icons[enginesize][x].color_x, matcher->icons[enginesize][x].color_y, matcher->icons[enginesize][x].color_avg);
+offset-size-arithmetic	libclamav/pe_icons.c	1796	            noedge  = matchbwpoint(width, metrics.noedge_x, metrics.noedge_y, metrics.noedge_avg, metrics.gray_x, metrics.gray_y, metrics.gray_avg, matcher->icons[enginesize][x].noedge_x, matcher->icons[enginesize][x].noedge_y, matcher->icons[enginesize][x].noedge_avg, matcher->icons[enginesize][x].gray_x, matcher->icons[enginesize][x].gray_y, matcher->icons[enginesize][x].gray_avg);
+offset-size-arithmetic	libclamav/pe_icons.c	1799	            edge   = matchpoint(width, metrics.edge_x, metrics.edge_y, metrics.edge_avg, matcher->icons[enginesize][x].edge_x, matcher->icons[enginesize][x].edge_y, matcher->icons[enginesize][x].edge_avg, 255);
+offset-size-arithmetic	libclamav/pe_icons.c	1800	            noedge = matchpoint(width, metrics.noedge_x, metrics.noedge_y, metrics.noedge_avg, matcher->icons[enginesize][x].noedge_x, matcher->icons[enginesize][x].noedge_y, matcher->icons[enginesize][x].noedge_avg, 255);
+offset-size-arithmetic	libclamav/pe_icons.c	1803	                color = matchpoint(width, metrics.color_x, metrics.color_y, metrics.color_avg, matcher->icons[enginesize][x].color_x, matcher->icons[enginesize][x].color_y, matcher->icons[enginesize][x].color_avg, 4072);
+offset-size-arithmetic	libclamav/pe_icons.c	1804	                gray  = matchpoint(width, metrics.gray_x, metrics.gray_y, metrics.gray_avg, matcher->icons[enginesize][x].gray_x, matcher->icons[enginesize][x].gray_y, matcher->icons[enginesize][x].gray_avg, 4072);
+offset-size-arithmetic	libclamav/pe_icons.c	1808	        bright = matchpoint(width, metrics.bright_x, metrics.bright_y, metrics.bright_avg, matcher->icons[enginesize][x].bright_x, matcher->icons[enginesize][x].bright_y, matcher->icons[enginesize][x].bright_avg, 255);
+offset-size-arithmetic	libclamav/pe_icons.c	1809	        dark   = matchpoint(width, metrics.dark_x, metrics.dark_y, metrics.dark_avg, matcher->icons[enginesize][x].dark_x, matcher->icons[enginesize][x].dark_y, matcher->icons[enginesize][x].dark_avg, 255);
+offset-size-arithmetic	libclamav/pe_icons.c	1811	        reds   = abs((int)metrics.rsum - (int)matcher->icons[enginesize][x].rsum) * 10;
+offset-size-arithmetic	libclamav/pe_icons.c	1813	        greens = abs((int)metrics.gsum - (int)matcher->icons[enginesize][x].gsum) * 10;
+offset-size-arithmetic	libclamav/pe_icons.c	1815	        blues  = abs((int)metrics.bsum - (int)matcher->icons[enginesize][x].bsum) * 10;
+offset-size-arithmetic	libclamav/pe_icons.c	1817	        ccount = abs((int)metrics.ccount - (int)matcher->icons[enginesize][x].ccount) * 10;
 offset-size-arithmetic	libclamav/pe_icons.c	218	    group_offset = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size);
 offset-size-arithmetic	libclamav/pe_icons.c	235	            raddr = cli_rawaddr(cli_readint32(grp), peinfo->sections, peinfo->nsections, (unsigned int *)(&err), map->len, peinfo->hdr_size);
 offset-size-arithmetic	libclamav/pe_icons.c	242	                if ((uint64_t)raddr <= map->len && 6 <= map->len - (size_t)raddr) {
@@ -33013,29 +33027,29 @@ offset-size-arithmetic	unit_tests/check_clamav.c	24293	        count = state->le
 offset-size-arithmetic	unit_tests/check_clamav.c	24318	    written = text_normalize_map(&state, map, pread_state.length + 1U);
 offset-size-arithmetic	unit_tests/check_clamav.c	24380	    if (len == 0 || at > map->len || len > map->len - at)
 offset-size-arithmetic	unit_tests/check_clamav.c	24638	     * declared size wraps a 32-bit file offset in the old implementation. */
-offset-size-arithmetic	unit_tests/check_clamav.c	24762	    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1),
-offset-size-arithmetic	unit_tests/check_clamav.c	24763	                     (ssize_t)(sizeof(signature) - 1));
-offset-size-arithmetic	unit_tests/check_clamav.c	25415	    data  = malloc(sizeof(le_data) * DATA_REP);
-offset-size-arithmetic	unit_tests/check_clamav.c	25416	    data2 = malloc(sizeof(le_data) * DATA_REP);
-offset-size-arithmetic	unit_tests/check_clamav.c	25440	    /* read 2 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	25441	    for (j = _i; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25446	    for (j = 0; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25458	    /* read 4 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	25459	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25464	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25474	    /* write 4 bytes apart, start is not always aligned*/
-offset-size-arithmetic	unit_tests/check_clamav.c	25475	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25478	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25482	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25485	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
-offset-size-arithmetic	unit_tests/check_clamav.c	25517	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
-offset-size-arithmetic	unit_tests/check_clamav.c	25559	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	25562	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	25570	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
-offset-size-arithmetic	unit_tests/check_clamav.c	25714	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
-offset-size-arithmetic	unit_tests/check_clamav.c	25721	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
-offset-size-arithmetic	unit_tests/check_clamav.c	25943	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
-offset-size-arithmetic	unit_tests/check_clamav.c	25969	        len--;
+offset-size-arithmetic	unit_tests/check_clamav.c	24821	    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1),
+offset-size-arithmetic	unit_tests/check_clamav.c	24822	                     (ssize_t)(sizeof(signature) - 1));
+offset-size-arithmetic	unit_tests/check_clamav.c	25475	    data  = malloc(sizeof(le_data) * DATA_REP);
+offset-size-arithmetic	unit_tests/check_clamav.c	25476	    data2 = malloc(sizeof(le_data) * DATA_REP);
+offset-size-arithmetic	unit_tests/check_clamav.c	25500	    /* read 2 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	25501	    for (j = _i; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25506	    for (j = 0; j <= DATA_REP * sizeof(le_data) - 2; j += 2) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25518	    /* read 4 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	25519	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25524	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25534	    /* write 4 bytes apart, start is not always aligned*/
+offset-size-arithmetic	unit_tests/check_clamav.c	25535	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25538	    for (j = _i; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25542	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25545	    for (j = 0; j < DATA_REP * sizeof(le_data) - 4; j += 4) {
+offset-size-arithmetic	unit_tests/check_clamav.c	25577	static const size_t dsig_tests_cnt = sizeof(dsig_tests) / sizeof(dsig_tests[0]);
+offset-size-arithmetic	unit_tests/check_clamav.c	25619	    ck_assert_msg(!memcmp(h_sha2_256, res256[0], sizeof(h_sha2_256)), "sha2-256 test vector #1 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	25622	    ck_assert_msg(!memcmp(h_sha2_256, res256[1], sizeof(h_sha2_256)), "sha2-256 test vector #2 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	25630	    ck_assert_msg(!memcmp(h_sha2_256, res256[2], sizeof(h_sha2_256)), "sha2-256 test vector #3 failed");
+offset-size-arithmetic	unit_tests/check_clamav.c	25774	    unsanitized = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	25781	    unsanitized   = "relative/../../bad_win_posix_path"; // <-- posix paths intentionally specified -- should still work on Windows)
+offset-size-arithmetic	unit_tests/check_clamav.c	26003	    str = malloc(strlen(name) + strlen(SRCDIR) + 2);
+offset-size-arithmetic	unit_tests/check_clamav.c	26029	        len--;
 offset-size-arithmetic	unit_tests/check_clamav.c	2647	     * so must expose the original configured-limit failure rather than turn
 offset-size-arithmetic	unit_tests/check_clamav.c	2648	     * content that was never scanned into a clean result. */
 offset-size-arithmetic	unit_tests/check_clamav.c	2685	    length = (size_t)engine->maxhtmlnormalize + 1U;

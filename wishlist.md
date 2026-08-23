@@ -1,5 +1,14 @@
 # Wishlist
 
+## PE icon alpha-mask read failures — 2026-08-23
+
+- A 32-bit PE icon's required alpha-mask window now fails closed when its
+  in-range fmap read fails. The previous fallback could hide an in-range
+  callback failure, while the documented out-of-range malformed-icon fallback
+  remains available; a focused callback regression verifies `CL_EREAD`, the
+  incomplete reason, and non-cacheability.
+  Compiled PE/icon corpus, sanitizer, and Sonic1 qualification remain open.
+
 ## Raw matching of short non-empty layers — 2026-08-23
 
 - Removed the historical five-byte early exits from root, descriptor-child, and

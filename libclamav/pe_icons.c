@@ -1631,11 +1631,40 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
     makebmp("0-noalpha", tempd, width, height, imagedata);
 
     if (depth == 32 && !special_32_is_32) { /* Sometimes it really is 24. Exploited live - see sample 0013839101 */
+        size_t mask_offset;
+        size_t mask_size;
+        size_t pixel_bytes;
+        bool mask_in_range = false;
+
         andlinesz = 4 * (width / 32) + 4 * (width % 32 != 0);
-        if (!(rawimage = fmap_need_off_once(map, icoff + height * scanlinesz, height * andlinesz))) {
-            /* Likely a broken sample - 32bit icon with 24bit data and a broken mask:
-           i could really break out here but i've got the full image, so i'm just forcing full alpha
-           Found in samples: 0008777448, 0009116157, 0009116157 */
+        if ((size_t)height > SIZE_MAX / (size_t)andlinesz) {
+            free(imagedata);
+            cli_mark_scan_incomplete(ctx, "PE icon alpha mask size overflowed");
+            return CL_EPARSE;
+        }
+
+        mask_size   = (size_t)height * (size_t)andlinesz;
+        pixel_bytes = (size_t)height * (size_t)scanlinesz;
+        if (icoff <= SIZE_MAX - pixel_bytes) {
+            mask_offset  = icoff + pixel_bytes;
+            mask_in_range = (mask_offset <= map->len) && (mask_size <= map->len - mask_offset);
+            rawimage     = fmap_need_off_once(map, mask_offset, mask_size);
+        } else {
+            rawimage = NULL;
+        }
+
+        if (!rawimage && mask_in_range) {
+            /* The complete mask range exists in the fmap, so a NULL lookup is
+             * a backing-read failure rather than the legacy malformed icon
+             * case. Required alpha-mask inspection must remain fail-visible. */
+            free(imagedata);
+            cli_mark_scan_incomplete(ctx, "PE icon alpha mask could not be read completely");
+            return CL_EREAD;
+        }
+
+        if (!rawimage) {
+            /* Preserve the legacy fallback for a genuinely out-of-range mask
+             * on a malformed 32-bit icon whose pixel data was complete. */
             for (y = 0; y < height; y++)
                 for (x = 0; x < width; x++)
                     imagedata[y * width + x] |= 0xff000000;

@@ -6154,3 +6154,13 @@ sub-five-byte layers follow the normal raw-matching path. A focused one-byte
 signature regression covers the public fmap API, and source guards prevent the
 old shortcuts from returning. Full front-end and production-signature
 qualification remain open.
+
+## PE icon alpha-mask read failures — 2026-08-23
+
+The PE icon parser previously treated every failed 32-bit alpha-mask fmap
+lookup as the known malformed-icon case, even when the requested mask range
+was inside the map. The path now distinguishes an in-range backing-read
+failure from the documented out-of-range malformed-icon fallback; the former
+frees the decoded image, marks the layer incomplete, and returns `CL_EREAD`.
+A focused callback regression verifies the reason and non-cacheable map state.
+Compiled PE/icon corpus, sanitizer, and Sonic1 qualification remain open.
