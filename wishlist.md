@@ -1759,3 +1759,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Mark AutoIt signature and versioned-body header-window read failures
   incomplete and non-cacheable, with a focused signature-window callback
   regression; retain compiled AutoIt corpus, sanitizer, and Sonic1 gates.
+
+## InstallShield MSI admission-window read classification — 2026-08-23
+
+- Mark InstallShield MSI magic and control-header read failures incomplete and
+  non-cacheable in the direct admission helper, with a focused callback
+  regression; retain compiled InstallShield corpus, sanitizer, and Sonic1
+  qualification gates.

@@ -14977,6 +14977,15 @@ START_TEST(test_autoit_time_limit_is_fail_visible)
 }
 END_TEST
 
+static const void *ishield_msi_admission_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
 START_TEST(test_embedded_candidate_admission_headers)
 {
     static const uint8_t autoit_prefix[] = {
@@ -15040,6 +15049,18 @@ START_TEST(test_embedded_candidate_admission_headers)
     ck_assert_ptr_nonnull(map);
     ctx.fmap = map;
     ck_assert_int_eq(cli_ishield_msi_header_check(&ctx, 0), CL_SUCCESS);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(ishield, sizeof(ishield));
+    ck_assert_ptr_nonnull(map);
+    map->need = ishield_msi_admission_read_failure;
+    ctx.fmap = map;
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ck_assert_int_eq(cli_ishield_msi_header_check(&ctx, 0), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI header could not be read completely");
+    ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 
     map = cl_fmap_open_memory(ishield, 14 + 0x1f);

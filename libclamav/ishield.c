@@ -201,8 +201,10 @@ cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
     remaining = ctx->fmap->len - (size_t)offset;
     if (remaining < sizeof(magic) - 1)
         return CL_EFORMAT;
-    if (!(buf = fmap_need_off_once(ctx->fmap, offset, sizeof(magic) - 1)))
+    if (!(buf = fmap_need_off_once(ctx->fmap, offset, sizeof(magic) - 1))) {
+        cli_mark_scan_incomplete(ctx, "InstallShield MSI header could not be read completely");
         return CL_EREAD;
+    }
     if (memcmp(buf, magic, sizeof(magic) - 1) != 0)
         return CL_EFORMAT;
 
@@ -210,8 +212,10 @@ cl_error_t cli_ishield_msi_header_check(cli_ctx *ctx, off_t offset)
      * after the 14-byte InstallShield marker. */
     if (remaining - (sizeof(magic) - 1) < 0x20)
         return CL_EPARSE;
-    if (!fmap_need_off_once(ctx->fmap, offset + (sizeof(magic) - 1), 0x20))
+    if (!fmap_need_off_once(ctx->fmap, offset + (sizeof(magic) - 1), 0x20)) {
+        cli_mark_scan_incomplete(ctx, "InstallShield MSI control header could not be read completely");
         return CL_EREAD;
+    }
 
     return CL_SUCCESS;
 }

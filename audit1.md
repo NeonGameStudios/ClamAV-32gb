@@ -5904,3 +5904,13 @@ specific incomplete reasons before returning. The AutoIt regression also
 injects a failure into the larger signature window and verifies the status,
 reason, and non-cacheable map state. Compiled AutoIt corpus, sanitizer, and
 Sonic1 qualification remain open.
+
+## InstallShield MSI admission-window read classification — 2026-08-23
+
+The InstallShield MSI header checker already returned `CL_EREAD` for a failed
+magic or control-block read, but did not make that direct admission context
+sticky incomplete. Both required windows now record explicit incomplete
+reasons before returning. The embedded-admission regression injects the magic
+window failure and verifies the status, reason, and non-cacheable map state.
+Compiled InstallShield corpus, sanitizer, and Sonic1 qualification remain
+open.
