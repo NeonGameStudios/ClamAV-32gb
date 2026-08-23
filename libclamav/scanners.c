@@ -4677,8 +4677,15 @@ cl_error_t cli_scan_structured(cli_ctx *ctx)
             return status;
         }
 
-        result = fmap_readn(map, buf, pos, 8191);
-        if (result == 0 || result == (size_t)-1)
+        result = fmap_readn(map, buf, pos, sizeof(buf) - 1);
+        if (result == (size_t)-1) {
+            bool request_in_range = pos <= map->len &&
+                                    sizeof(buf) - 1 <= map->len - pos;
+
+            cli_mark_scan_incomplete(ctx, "Structured data detector input could not be read completely");
+            return request_in_range ? CL_EREAD : CL_EPARSE;
+        }
+        if (result == 0)
             break;
 
         pos += result;

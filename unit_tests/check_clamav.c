@@ -15792,7 +15792,7 @@ END_TEST
 
 START_TEST(test_structured_detector_read_failure_is_fail_visible)
 {
-    static const uint8_t input[] = "structured detector read failure";
+    static const uint8_t input[8191] = {0};
     struct cl_engine engine;
     struct cl_scan_options options;
     cli_ctx ctx;
@@ -15812,6 +15812,37 @@ START_TEST(test_structured_detector_read_failure_is_fail_visible)
     ctx.fmap   = map;
 
     ck_assert_int_eq(cli_scan_structured(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Structured data detector input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_structured_detector_clipped_read_failure_is_truncation)
+{
+    static const uint8_t input[] = "structured detector clipped read failure";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.min_cc_count = 1;
+    options.heuristic   = CL_SCAN_HEURISTIC_STRUCTURED;
+    ctx.engine           = &engine;
+    ctx.options          = &options;
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1);
+    ck_assert_ptr_nonnull(map);
+    map->need = embedded_header_read_failure;
+    ctx.fmap   = map;
+
+    ck_assert_int_eq(cli_scan_structured(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "Structured data detector input could not be read completely");
@@ -23546,6 +23577,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_riff_time_limit_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_structured_detector_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_structured_detector_clipped_read_failure_is_truncation);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_structured_detector_time_limit_is_fail_visible);
 #endif

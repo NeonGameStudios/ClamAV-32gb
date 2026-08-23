@@ -4197,6 +4197,18 @@ read, preserving `CL_ETIMEOUT` and the incomplete/non-cacheable result even in
 that no-new-input interval. Compiled timeout injection, malformed/multi-member
 corpus, sanitizer, and Sonic1 qualification remain open.
 
+## Structured-detector clipped-window read classification — 2026-08-23
+
+The structured-data detector requested fixed 8 KiB windows and treated every
+fmap callback failure as CL_EREAD. Since the fmap clips a final request that
+extends past EOF, a failure on that clipped window represents an incomplete
+input prefix rather than a fully in-range operational read fault. The
+detector now returns CL_EREAD only for fully contained callback failures and
+returns CL_EPARSE with sticky incomplete state for clipped failures. The
+existing in-range fault regression now uses an exact 8191-byte window, and a
+new short-input regression covers the clipped case. Compiled detector corpus,
+sanitizer, and Sonic1 qualification remain open.
+
 ## ALZ extracted-output deadline — 2026-08-22
 
 The bounded ALZ reader already checked the shared deadline while consuming fmap

@@ -1656,6 +1656,13 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   `CL_EPARSE` for genuine EOF/truncation; retain compiled corpus, sanitizer,
   and Sonic1 qualification gates.
 
+## Structured-detector clipped-window read classification — 2026-08-23
+
+- Preserve CL_EREAD only for fully in-range structured-detector callback
+  failures; classify a failed clipped EOF window as incomplete parse input,
+  retaining compiled detector corpus, sanitizer, and Sonic1 qualification
+  gates.
+
 ## MIME line read-failure propagation — 2026-08-23
 
 - Preserve in-range fmap callback failures from the bounded MIME line reader
