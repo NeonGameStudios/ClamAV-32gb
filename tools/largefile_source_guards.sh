@@ -3580,6 +3580,7 @@ contains tools/largefile_runtime_gate.sh 'largefile_autoit_stored_fixture.py'
 contains tools/largefile_runtime_gate.sh '--ea06-script'
 contains tools/largefile_runtime_gate.sh 'autoit: script has got 1 lines'
 contains tools/largefile_runtime_gate.sh "autoit_ea06_fixture=pass"
+contains tools/largefile_runtime_gate.sh 'autoit_fixture_sha256'
 contains tools/largefile_runtime_gate.sh 'cancellation=pass'
 contains tools/largefile_runtime_gate.sh 'CLAMAV_CONCURRENCY_FILE:-32g-edge.bin'
 contains tools/largefile_runtime_gate.sh 'CLAMAV_MIN_AVAILABLE_KB'

@@ -837,8 +837,11 @@ fi
 autoit_fixture=$corpus/autoit-ea06-script.bin
 autoit_log=$out/autoit-ea06-script.log
 autoit_status=0
+autoit_fixture_sha256=not-generated
 if ! python3 "$root/tools/largefile_autoit_stored_fixture.py" --ea06-script "$autoit_fixture" > "$out/autoit-ea06-fixture.log" 2>&1; then
     autoit_status=2
+else
+    autoit_fixture_sha256=$(sha256sum "$autoit_fixture" | awk '{ print $1 }')
 fi
 if [ "$autoit_status" -eq 0 ]; then
     mkdir -p "$poc_out/tmp/autoit-ea06"
@@ -857,9 +860,9 @@ if [ "$autoit_status" -eq 0 ]; then
 fi
 if [ "$autoit_status" -eq 0 ] &&
     grep -F 'autoit: script has got 1 lines' "$autoit_log" >/dev/null 2>&1; then
-    printf 'autoit_ea06_fixture=pass\n' >> "$metadata"
+    printf 'autoit_ea06_fixture=pass sha256=%s\n' "$autoit_fixture_sha256" >> "$metadata"
 else
-    printf 'autoit_ea06_fixture=fail status=%s\n' "$autoit_status" >> "$metadata"
+    printf 'autoit_ea06_fixture=fail status=%s sha256=%s\n' "$autoit_status" "$autoit_fixture_sha256" >> "$metadata"
     failures=$((failures + 1))
 fi
 
