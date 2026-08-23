@@ -1823,3 +1823,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   preserving `CL_EREAD` instead of relying on generic end-of-parser
   reconciliation. Compiled HFS+ corpus, sanitizer, and Sonic1 qualification
   remain release gates.
+
+## Runtime evidence manifest path binding — 2026-08-23
+
+- Require source, Git tree, and index manifests to contain the same canonical,
+  sorted path set, and require content-manifest revisions to equal the source
+  manifest digest; add a negative verifier regression for path disagreement.
+  Runtime/build semantic qualification and external attestation remain
+  release gates.

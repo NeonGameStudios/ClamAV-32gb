@@ -44,7 +44,7 @@ mkdir -p "$out/host-preflight" "$out/poc" "$out/concurrency/1" \
     "$out/sanitizer/logs" "$out/artifacts/runtime-components" \
     "$out/artifacts/runtime-components-sanitizer" "$out/provenance"
 hash=$(printf '%064d' 0)
-printf 'synthetic source manifest\n' > "$out/provenance/source-manifest.txt"
+printf '%064d  synthetic.c\n' 0 > "$out/provenance/source-manifest.txt"
 cp "$out/provenance/source-manifest.txt" "$out/provenance/build-source-manifest.txt"
 source_manifest_hash=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
 source_commit=$source_manifest_hash
@@ -70,8 +70,8 @@ cp "$out/provenance/CMakeCache.txt" "$out/provenance/CMakeCache-sanitizer.txt"
 cp "$out/provenance/source-manifest.txt" "$out/provenance/build-source-manifest-sanitizer.txt"
 cp "$out/provenance/compile_commands.json" "$out/provenance/compile_commands-sanitizer.json"
 printf 'version = 4\n' > "$out/provenance/Cargo.lock"
-printf '100644 blob %s\tCargo.lock\n' "$hash" > "$out/provenance/repository-tree.txt"
-printf '100644 %s 0\tCargo.lock\n' "$hash" > "$out/provenance/repository-index.txt"
+printf '100644 blob %s\tsynthetic.c\n' "$hash" > "$out/provenance/repository-tree.txt"
+printf '100644 %s 0\tsynthetic.c\n' "$hash" > "$out/provenance/repository-index.txt"
 for provenance_script in \
     largefile_runtime_gate.sh \
     largefile_runtime_evidence_check.sh \
@@ -257,6 +257,15 @@ refresh_manifest()
 
 refresh_manifest
 "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432
+
+cp "$out/provenance/repository-tree.txt" "$out/provenance/repository-tree.good"
+sed 's/synthetic.c$/different.c/' "$out/provenance/repository-tree.good" > "$out/provenance/repository-tree.txt"
+refresh_manifest
+if "$root/tools/largefile_runtime_evidence_check.sh" "$out" yes '1 2 4' 33554432 >/dev/null 2>&1; then
+    echo 'evidence checker accepted source/tree/index manifest path disagreement' >&2
+    exit 1
+fi
+mv "$out/provenance/repository-tree.good" "$out/provenance/repository-tree.txt"
 
 cp "$out/provenance/compile_commands-sanitizer.json" "$out/provenance/compile_commands-sanitizer.good"
 printf '[{"directory":"%s","command":"cc -fsanitize=address,undefined -c synthetic.c","file":"synthetic.c"},{"directory":"%s","command":"cc -c uninstrumented.c","file":"uninstrumented.c"}]\n' \

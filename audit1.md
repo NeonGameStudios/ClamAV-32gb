@@ -6005,3 +6005,15 @@ was still reporting both read and parse failures with the same generic
 reason for `CL_EREAD`, while leaving weak-candidate rejection and parse-result
 classification unchanged. Compiled scanner, sanitizer, production EGG corpus,
 and Sonic1 qualification remain open.
+
+## Runtime evidence manifest path binding — 2026-08-23
+
+The runtime verifier previously checked the hashes and line counts of the
+source, Git-tree, and index manifests independently, but did not prove that
+they described the same files. It now validates canonical sorted path sets
+across all three manifests and rejects duplicate, absolute, or traversal
+paths. Git-backed evidence is explicitly typed as `git-commit`; snapshot
+evidence is typed as `content-manifest` and must use the source-manifest digest
+as both revision identifiers. A synthetic negative regression confirms that a
+source/tree path mismatch is rejected. Full semantic build/runtime binding and
+external attestation remain open.

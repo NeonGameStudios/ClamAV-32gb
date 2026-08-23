@@ -39,6 +39,48 @@ for entry in entries:
 PY
 }
 
+verify_source_manifest_paths()
+{
+    command -v python3 >/dev/null 2>&1 || return 1
+    python3 - "$1" "$2" "$3" <<'PY'
+import sys
+
+source_path, tree_path, index_path = sys.argv[1:]
+
+def read_paths(path, separator):
+    paths = []
+    seen = set()
+    with open(path, encoding="utf-8") as stream:
+        for line_number, line in enumerate(stream, start=1):
+            line = line.rstrip("\n")
+            if not line:
+                raise ValueError(f"empty manifest line: {path}:{line_number}")
+            if separator not in line:
+                raise ValueError(f"malformed manifest line: {path}:{line_number}")
+            value = line.split(separator, 1)[1]
+            if not value or value.startswith("/") or "\x00" in value:
+                raise ValueError(f"invalid manifest path: {path}:{line_number}")
+            components = value.split("/")
+            if any(component in ("", ".", "..") for component in components):
+                raise ValueError(f"non-canonical manifest path: {path}:{line_number}")
+            if value in seen:
+                raise ValueError(f"duplicate manifest path: {path}:{line_number}")
+            seen.add(value)
+            paths.append(value)
+    if not paths:
+        raise ValueError(f"empty manifest: {path}")
+    return paths
+
+source = read_paths(source_path, "  ")
+tree = read_paths(tree_path, "\t")
+index = read_paths(index_path, "\t")
+if source != sorted(source) or tree != sorted(tree) or index != sorted(index):
+    raise ValueError("source manifests are not canonically sorted")
+if source != tree or source != index:
+    raise ValueError("source, tree, and index manifests describe different path sets")
+PY
+}
+
 if [ "$#" -ne 4 ]; then
     echo "usage: $0 OUTPUT_DIRECTORY [sanitizer-required] [levels] RSS_BUDGET_KB" >&2
     exit 2
@@ -300,6 +342,22 @@ if [ "${#source_tree}" -ne 40 ] && [ "${#source_tree}" -ne 64 ]; then
     echo 'evidence source tree has an invalid length' >&2
     exit 1
 fi
+source_revision_type=$(sed -n 's/^source_revision_type=//p' "$metadata")
+case "$source_revision_type" in
+    git-commit) ;;
+    content-manifest)
+        source_manifest_sha256=$(sha256sum "$source_manifest" | awk '{ print $1 }')
+        if [ "$source_commit" != "$source_manifest_sha256" ] ||
+            [ "$source_tree" != "$source_manifest_sha256" ]; then
+            echo 'content-manifest evidence does not bind revision IDs to the source manifest' >&2
+            exit 1
+        fi
+        ;;
+    *)
+        echo 'evidence has an invalid source revision type' >&2
+        exit 1
+        ;;
+esac
 grep -Fx 'source_tree_clean=yes' "$metadata" >/dev/null 2>&1 || {
     echo 'evidence was not produced from a clean source tree' >&2
     exit 1
@@ -396,6 +454,10 @@ index_file_count=$(wc -l < "$repository_index" | tr -d '[:space:]')
 if [ "$tree_file_count" != "$metadata_file_count" ] ||
     [ "$index_file_count" != "$metadata_file_count" ]; then
     echo 'repository metadata manifests do not contain every tracked file' >&2
+    exit 1
+fi
+if ! verify_source_manifest_paths "$source_manifest" "$repository_tree" "$repository_index"; then
+    echo 'source, tree, and index manifests do not bind the same canonical path set' >&2
     exit 1
 fi
 github_sha=$(sed -n 's/^github_sha=//p' "$metadata")
