@@ -100,6 +100,7 @@ static inline size_t msxml_read_cb_new_window(struct msxml_cbdata *cbdata)
     new_window = fmap_need_off_once(cbdata->map, new_mappos, bytes);
     if (!new_window) {
         cli_errmsg("msxml_read_cb: cannot acquire new window for fmap\n");
+        cbdata->read_failed = 1;
         return -1;
     }
 
@@ -241,6 +242,11 @@ cl_error_t cli_scanmsxml(cli_ctx *ctx)
     if (!reader) {
         cli_dbgmsg("cli_scanmsxml: cannot initialize xmlReader\n");
 
+        if (cbdata.read_failed) {
+            cli_mark_scan_incomplete(ctx, "MSXML input could not be read completely");
+            return CL_EREAD;
+        }
+
         ret = cli_json_parse_error(ctx->this_layer_metadata_json, "OOXML_ERROR_XML_READER_IO");
 
         return ret; // libxml2 failed!
@@ -254,5 +260,18 @@ cl_error_t cli_scanmsxml(cli_ctx *ctx)
         ret = CL_EPARSE;
     }
     xmlFreeTextReader(reader);
+
+    /* libxml2 reports an input-callback failure as a generic parser error.
+     * Preserve the operational distinction so callers cannot confuse a
+     * backing read fault with malformed XML. */
+    if (cbdata.read_failed && ret != CL_VIRUS && ret != CL_ETIMEOUT && ret != CL_EMEM) {
+        cli_mark_scan_incomplete(ctx, "MSXML input could not be read completely");
+        /* cli_msxml_parse_document() may have already recorded its generic
+         * parser-unwind reason. Replace that less precise diagnostic now that
+         * the reader callback has identified the actual cause. */
+        ctx->scan_incomplete_reason = "MSXML input could not be read completely";
+        ret = CL_EREAD;
+    }
+
     return ret;
 }

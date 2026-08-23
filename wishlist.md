@@ -1,5 +1,13 @@
 # Wishlist
 
+## MSXML fmap callback failure classification — 2026-08-23
+
+- Preserve an in-range MSXML fmap callback failure as `CL_EREAD` instead of
+  allowing libxml2 to collapse it into generic malformed-XML status. The
+  adapter now records callback failure through reader initialization and
+  parsing, with focused non-cacheable coverage; compiled MSXML/HWPML corpus,
+  sanitizer, and Sonic1 qualification remain open.
+
 ## Current state — 2026-08-19
 
 - The 32 GiB ingress policy, shared accounting/fail-closed controls, and

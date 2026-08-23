@@ -46,6 +46,7 @@ struct msxml_cbdata {
     const unsigned char *window;
     off_t winpos, mappos;
     size_t winsize;
+    int read_failed;
 };
 
 int msxml_read_cb(void *ctx, char *buffer, int buffer_len);

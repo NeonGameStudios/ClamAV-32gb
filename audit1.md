@@ -5968,3 +5968,17 @@ window now marks the layer incomplete and returns `CL_EREAD`. The existing
 XOR-backed `clam-mew.exe` corpus path has a focused callback regression for
 the `0x154`/`0x158` loader boundary. Compiled PE corpus, sanitizer, and Sonic1
 qualification remain open.
+
+## MSXML fmap callback failure classification — 2026-08-23
+
+The legacy MSXML `xmlReaderForIO()` adapter returned `-1` when a bounded fmap
+window could not be acquired, but did not retain that cause after libxml2
+converted the callback failure into a generic reader/parser error. A required
+MSXML metadata scan could therefore report only `CL_EPARSE`, losing the
+operational distinction needed for diagnostics and qualification. The adapter
+now records the callback fault in `msxml_cbdata`, preserves it through reader
+initialization and close, marks the layer incomplete, and returns `CL_EREAD`
+unless a higher-priority detection, timeout, or allocation failure already
+terminated the scan. A focused callback-backed MSXML regression verifies the
+status, reason, and non-cacheable map state. Compiled MSXML/HWPML corpus,
+sanitizer, and Sonic1 qualification remain open.

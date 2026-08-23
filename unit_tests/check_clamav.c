@@ -7021,6 +7021,54 @@ START_TEST(test_msxml_truncated_document_is_fail_visible)
 }
 END_TEST
 
+struct msxml_read_failure_state {
+    const uint8_t *data;
+    size_t length;
+};
+
+static off_t msxml_read_failure_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct msxml_read_failure_state *state = handle;
+
+    if (offset == 0)
+        return -1;
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    if (count > state->length - (size_t)offset)
+        count = state->length - (size_t)offset;
+    memcpy(buf, state->data + (size_t)offset, count);
+    return (off_t)count;
+}
+
+START_TEST(test_msxml_read_failure_is_fail_visible)
+{
+    static const uint8_t document[] = "<worddocument><author>callback fault</author></worddocument>";
+    struct msxml_read_failure_state state;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    state.data   = document;
+    state.length = sizeof(document) - 1U;
+    map          = cl_fmap_open_handle(&state, 0, state.length, msxml_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanmsxml(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML input could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_msxml_base64_decode_failure_is_fail_visible)
 {
     static const uint8_t document[] = "<chunk>QUJD$A==</chunk>";
@@ -24612,6 +24660,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_truncated_document_is_fail_visible);
+    tcase_add_test(tc_cl, test_msxml_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_base64_decode_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_stream_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_xdp_time_limit_is_fail_visible);
