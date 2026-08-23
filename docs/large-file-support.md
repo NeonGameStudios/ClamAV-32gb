@@ -6242,3 +6242,12 @@ qualification remain open.
 ## Embedded matcher-offset range admission — 2026-08-23
 
 Raw embedded-type dispatch now rejects negative or out-of-map matcher offsets before child-range subtraction or nested parser handoff. This prevents malformed internal coordinates from wrapping into a child fmap or being treated as a confirmed layer, and prevents a later type-parser pass from restoring a clean status. Compiled embedded-candidate and production-SFX qualification remain open.
+
+## TAR GNU base-256 size admission — 2026-08-23
+
+TAR size fields now accept checked positive GNU base-256 values in addition to
+legacy ASCII octal. This preserves valid member sizes beyond the legacy octal
+range while rejecting negative or overflowing encodings before temporary
+admission. A focused valid POSIX TAR regression covers the binary field and
+complete end marker. PAX extended-size records, compiled TAR corpus, sanitizer,
+and supported-build Sonic1 qualification remain release gates.

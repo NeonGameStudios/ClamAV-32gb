@@ -6530,3 +6530,14 @@ test_7z_output_range_is_bounded covers zero-size, exact-edge, overrun, and
 UINT64_MAX arithmetic cases. Static source guards and the inventory pass
 remain available; compiled 7-Zip, sanitizer, production corpus, and Sonic1
 qualification remain release gates.
+
+## TAR GNU base-256 size admission — 2026-08-23
+
+The TAR size field previously accepted only legacy ASCII octal. Valid GNU TAR
+archives use the high-bit binary encoding when a member size exceeds that
+field's octal range, so those members were classified as invalid before their
+content could be considered. TAR now accepts checked positive base-256 size
+fields, rejects negative or overflowing values, and retains the existing
+native-width and shared-limit checks. A focused valid POSIX TAR regression
+covers the binary field and complete two-block termination. PAX extended-size
+records, compiled TAR corpus, sanitizer, and Sonic1 qualification remain open.

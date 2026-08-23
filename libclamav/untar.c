@@ -90,6 +90,36 @@ octal(const char *str, uint64_t *value)
     return true;
 }
 
+static bool
+tar_size_field(const char *field, uint64_t *value)
+{
+    const unsigned char *bytes = (const unsigned char *)field;
+    uint64_t parsed            = 0;
+    size_t i;
+
+    if (field == NULL || value == NULL)
+        return false;
+
+    /* GNU TAR uses 0x80 as the positive binary size marker. 0xff denotes a
+     * negative two's-complement value and all other high-bit prefixes are
+     * reserved; neither is a valid member size. */
+    if (bytes[0] & 0x80) {
+        if (bytes[0] != 0x80)
+            return false;
+
+        for (i = 1; i < TARSIZELEN; i++) {
+            if (parsed > (UINT64_MAX - bytes[i]) / 256U)
+                return false;
+            parsed = parsed * 256U + bytes[i];
+        }
+
+        *value = parsed;
+        return true;
+    }
+
+    return octal(field, value);
+}
+
 /**
  * Retrieve checksum values from a tar header block.
  * @param header Header data block, padded with zeroes to reach BLOCKSIZE
@@ -377,7 +407,7 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
 
             strncpy(osize, block + TARSIZEOFFSET, TARSIZELEN);
             osize[TARSIZELEN] = '\0';
-            if (!octal(osize, &size_value) || size_value > SIZE_MAX) {
+            if (!tar_size_field(osize, &size_value) || size_value > SIZE_MAX) {
                 cli_dbgmsg("cli_untar: Invalid size in tar header\n");
                 cli_mark_scan_incomplete(ctx, "TAR entry size was invalid");
                 incomplete = true;
