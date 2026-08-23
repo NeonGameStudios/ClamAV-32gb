@@ -6081,3 +6081,14 @@ termination as `CL_EPARSE`, and distinguishes a truncated marker block from an
 in-range header callback failure. A focused regression covers no marker, one
 marker, and the valid two-marker boundary. Compiled TAR corpus, sanitizer, and
 Sonic1 qualification remain open.
+
+## NsPack bitched-entry read classification — 2026-08-23
+
+The enabled NsPack path had a confirmed bitched-header branch whose 24-byte
+entry-metadata `fmap_need_off_once()` failure simply broke out of the heuristic
+loop. An in-range callback fault could therefore suppress the remainder of the
+NsPack inspection without a non-cacheable result. The branch now uses the PE
+bounded range/read classifier, returning `CL_EREAD` for callback failures and
+`CL_EPARSE` for out-of-map coordinates. The existing NsPack fault-injection
+regression also covers this entry boundary; compiled PE corpus, sanitizer, and
+Sonic1 qualification remain open.

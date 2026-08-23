@@ -20260,8 +20260,11 @@ START_TEST(test_pe_nspack_loader_read_failure_is_fail_visible)
     fmap_t *map;
     cl_error_t ret;
     uint8_t *data;
+    uint8_t original_entry[18];
     size_t offset = 0;
     size_t ep;
+    size_t entry_metadata_offset;
+    unsigned int err = 0;
     int fd;
 
     snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
@@ -20302,6 +20305,39 @@ START_TEST(test_pe_nspack_loader_read_failure_is_fail_visible)
     ep = (size_t)peinfo.ep;
     ck_assert_msg(ep >= 4U && ep <= (size_t)st.st_size - 18U,
                   "PE fixture entrypoint cannot hold the NsPack marker");
+    entry_metadata_offset = cli_rawaddr(peinfo.vep + 5U, peinfo.sections, peinfo.nsections, &err,
+                                        map->len, peinfo.hdr_size);
+    ck_assert_int_eq(err, 0);
+    memcpy(original_entry, data + ep, sizeof(original_entry));
+
+    data[ep] = '\xe9';
+    cli_writeint32(data + ep + 1U, 0);
+    pe_nspack_read_failure_offset = entry_metadata_offset;
+    cli_exe_info_destroy(&peinfo);
+
+    map->need = pe_nspack_read_failure;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE NsPack entry metadata could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    pe_nspack_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+    memcpy(data + ep, original_entry, sizeof(original_entry));
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
 
     memcpy(data + ep, nspack_entry, sizeof(nspack_entry));
     /* Make NsPack's loader-relative read point four bytes before the entry

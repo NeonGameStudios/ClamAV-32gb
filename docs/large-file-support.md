@@ -6007,3 +6007,11 @@ returns `CL_EPARSE`, marks the layer incomplete, and prevents caching a clean
 result; callback failures while reading a marker remain `CL_EREAD`. Focused
 coverage exercises missing, single-block, and valid termination, while
 compiled TAR corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## NsPack bitched-entry read classification — 2026-08-23
+
+The confirmed bitched NsPack entry-metadata window now distinguishes an
+in-range fmap callback failure (`CL_EREAD`) from an out-of-map coordinate
+(`CL_EPARSE`) and stops PE-specific inspection before the result can look clean.
+The focused NsPack callback regression covers this boundary, while compiled PE
+corpus, sanitizer, and Sonic1 qualification remain release gates.

@@ -1871,3 +1871,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   and truncated termination as explicit parse-incomplete results, with
   compiled TAR corpus, sanitizer, and Sonic1 qualification retained as release
   gates.
+
+## NsPack bitched-entry read classification — 2026-08-23
+
+- Preserve confirmed bitched NsPack entry-metadata read failures as explicit
+  `CL_EREAD` or `CL_EPARSE` incomplete results; retain compiled PE corpus,
+  sanitizer, and Sonic1 qualification as release gates.

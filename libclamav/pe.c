@@ -4936,12 +4936,19 @@ int cli_scanpe(cli_ctx *ctx)
 
         src = epbuff;
         if (*epbuff == '\xe9') { /* bitched headers */
+            cl_error_t read_status;
+
             eprva = cli_readint32(epbuff + 1) + peinfo->vep + 5;
             if (!(rep = cli_rawaddr(eprva, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size)) && err)
                 break;
 
-            if (!(nbuff = fmap_need_off_once(map, rep, 24)))
-                break;
+            nbuff = pe_need_window(ctx, map, rep, 24, &read_status,
+                                   "PE NsPack entry metadata could not be read completely",
+                                   "PE NsPack entry metadata is outside the input map");
+            if (nbuff == NULL) {
+                cli_exe_info_destroy(peinfo);
+                return read_status;
+            }
 
             src = nbuff;
         }
