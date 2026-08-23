@@ -1598,3 +1598,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   explicit format/incomplete results while fully in-range fmap callback
   failures preserve `CL_EREAD`; retain compiled HFS+ corpus, sanitizer, and
   Sonic1 qualification as release gates.
+
+## Legacy bytecode read-coordinate admission — 2026-08-23
+
+- Reject negative, host-unrepresentable, and size-overflowing coordinates in
+  the legacy bytecode `read` entry before fmap conversion; retain independently
+  compiled v1/v2 fixture and interpreter/JIT qualification as release gates.

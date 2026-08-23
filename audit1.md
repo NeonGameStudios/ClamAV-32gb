@@ -5626,3 +5626,11 @@ A genuinely short node remains an explicit format/incomplete result, while a
 fully in-range callback failure remains `CL_EREAD`. The existing callback
 regression now also exercises a one-byte-short catalog leaf. Compiled HFS+
 corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Legacy bytecode read-coordinate admission — 2026-08-23
+
+The v1 bytecode `read` entry now rejects negative offsets and host-
+unrepresentable or size-overflowing ranges before converting the coordinate to
+the fmap API. A focused regression covers invalid signed state, while
+independently compiled v1/v2 fixtures and interpreter/JIT qualification remain
+open.

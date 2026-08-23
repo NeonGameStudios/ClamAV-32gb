@@ -616,6 +616,36 @@ START_TEST(test_bytecode_map_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_bytecode_v1_read_rejects_invalid_offsets)
+{
+    struct cli_bc_ctx *bcctx;
+    cli_ctx cctx;
+    fmap_t *map;
+    uint8_t buffer[2] = {0};
+
+    memset(&cctx, 0, sizeof(cctx));
+    map = cl_fmap_open_memory(buffer, sizeof(buffer));
+    ck_assert_ptr_nonnull(map);
+    cctx.fmap = map;
+
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->ctx = &cctx;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+
+    bcctx->off = -1;
+    ck_assert_int_eq(cli_bcapi_read(bcctx, buffer, 1), -1);
+
+    if ((uint64_t)SIZE_MAX < (uint64_t)INT64_MAX) {
+        bcctx->off = (off_t)SIZE_MAX;
+        ck_assert_int_eq(cli_bcapi_read(bcctx, buffer, 2), -1);
+    }
+
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_bytecode_output_uses_64bit_accounting_and_temporary_quota)
 {
     struct cl_engine *engine;
@@ -1248,6 +1278,7 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_read, test_bytecode_pdf_object_access_does_not_retain_fmap_pages);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);
+    tcase_add_test(tc_cli_read, test_bytecode_v1_read_rejects_invalid_offsets);
     tcase_add_test(tc_cli_read, test_bytecode_output_uses_64bit_accounting_and_temporary_quota);
 #ifdef DO_BARRIER
     tcase_add_test(tc_cli_arith, test_parallel_load);

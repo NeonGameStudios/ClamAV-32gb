@@ -134,6 +134,12 @@ int32_t cli_bcapi_read(struct cli_bc_ctx *ctx, uint8_t *data, int32_t size)
         API_MISUSE();
         return -1;
     }
+    if (ctx->off < 0 || (uint64_t)ctx->off > (uint64_t)SIZE_MAX ||
+        (uint64_t)size > (uint64_t)SIZE_MAX - (uint64_t)ctx->off) {
+        cli_dbgmsg("bcapi_read: offset or requested range is not representable\n");
+        API_MISUSE();
+        return -1;
+    }
     n = fmap_readn(ctx->fmap, data, ctx->off, size);
     if ((n == 0) || (n == (size_t)-1)) {
         cli_dbgmsg("bcapi_read: fmap_readn returned %s (requested %d)\n",

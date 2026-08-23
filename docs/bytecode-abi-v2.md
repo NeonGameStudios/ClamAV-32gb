@@ -13,6 +13,9 @@ run in either the interpreter or the LLVM JIT.
   offset fit the legacy representable range. If a v1 hook or logical bytecode
   would run on a larger layer, the engine marks the scan incomplete instead of
   truncating a coordinate.
+- The legacy `read` entry rejects negative offsets and ranges that cannot be
+  represented by the host `size_t` before passing them to fmap; it never lets
+  malformed v1 state wrap into a different input coordinate.
 - v2 bytecode receives the full mapped file size and native 64-bit logical
   match offsets. The byte buffer argument and allocation sizes remain bounded
   by their existing 32-bit API contracts.

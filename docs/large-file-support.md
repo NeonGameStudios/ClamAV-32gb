@@ -5883,3 +5883,11 @@ input fmap. A short node remains an explicit format/incomplete result, while a
 fully in-range callback failure remains `CL_EREAD`; focused coverage exercises
 the one-byte-short leaf boundary. Compiled HFS+ corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## Legacy bytecode read-coordinate admission — 2026-08-23
+
+The legacy bytecode `read` entry rejects negative offsets and host-
+unrepresentable or size-overflowing ranges before passing coordinates to fmap.
+This prevents malformed v1 state from wrapping into a different input range;
+independently compiled fixture and interpreter/JIT qualification remain release
+gates.
