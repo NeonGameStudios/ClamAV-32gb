@@ -44,6 +44,7 @@ struct scan_cb_data {
     int odesc;
     int type;
     int infected;
+    int infected_files;
     int errors;
     int total;
     int id;

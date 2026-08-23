@@ -6561,3 +6561,12 @@ per-request error counter. Structured requests also retain that status for the
 final report, preventing a traversal failure from becoming a clean result with
 no scanned object. Static source guards pass; compiled daemon fault injection,
 protocol, sanitizer, and Sonic1 qualification remain release gates.
+
+## clamd infected-file aggregate accounting — 2026-08-23
+
+`ALLMATCHES` callback delivery can report several signatures for one file, but
+the daemon summary needs to count infected files rather than signatures.
+`scan_cb_data` now keeps a separate infected-file counter for command and
+multiscan aggregation, preventing unsigned summary underflow while preserving
+per-signature callback output. Static source guards pass; compiled multi-match,
+protocol, sanitizer, and Sonic1 qualification remain release gates.

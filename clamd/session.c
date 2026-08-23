@@ -433,7 +433,7 @@ int command(client_conn_t *conn, int *virus)
             }
             conn->filename         = NULL;
             conn->display_filename = NULL;
-            *virus                 = scandata.infected;
+            *virus                 = scandata.infected_files;
             if (ret == CL_EMEM && optget(opts, "ExitOnOOM")->enabled)
                 return -1;
             if (ret == CL_BREAK) {
@@ -571,7 +571,7 @@ int command(client_conn_t *conn, int *virus)
     } else {
         error = scandata.errors;
         total = scandata.total;
-        ok    = total - error - scandata.infected;
+        ok    = total - error - scandata.infected_files;
     }
 
     if (ok + error == total && (error != total)) {

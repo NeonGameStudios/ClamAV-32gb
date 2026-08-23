@@ -546,6 +546,10 @@ cl_error_t scan_callback(STATBUF *sb, char *filename, const char *msg, enum cli_
     }
 
     if (ret == CL_VIRUS) {
+        /* infected counts individual detections for ALLMATCHES callback
+         * output. Keep the aggregate counter at one per input file so a file
+         * with several signatures cannot underflow command()'s summary math. */
+        scandata->infected_files++;
 
         if (scandata->options->general & CL_SCAN_GENERAL_ALLMATCHES || (scandata->infected && scandata->options->general & CL_SCAN_GENERAL_HEURISTIC_PRECEDENCE)) {
             if (optget(scandata->opts, "PreludeEnable")->enabled) {
