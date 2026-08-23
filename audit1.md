@@ -22,6 +22,14 @@ matcher regression covers both the admitted and exhausted-budget paths; full
 rule, production-signature, sanitizer, and large-file qualification remain
 open.
 
+## HFS+ non-empty fork block admission — 2026-08-23
+
+`hfsplus_scanfile()` previously returned success for a fork with a non-zero
+logical size and zero declared allocation blocks, skipping the required fork
+contents. Such a fork now returns `CL_EFORMAT` and marks the layer incomplete;
+the existing HFS+ fork regression covers the boundary. Compiled HFS+ corpus,
+sanitizer, and supported-build Sonic1 qualification remain open.
+
 ## UDF file-set descriptor completeness — 2026-08-23
 
 The UDF descriptor walk previously treated a non-file-set descriptor after the

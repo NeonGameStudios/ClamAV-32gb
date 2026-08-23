@@ -23262,6 +23262,23 @@ START_TEST(test_hfsplus_fork_read_failure_is_fail_visible)
     ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ fork ended before its declared size");
     ck_assert(map->dont_cache_flag);
 
+    /* A non-empty fork with no allocation blocks must not be treated as an
+     * empty child and skipped. */
+    test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 0);
+    map->need             = NULL;
+    map->dont_cache_flag  = false;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine             = &engine;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ fork declares data without allocation blocks");
+    ck_assert(map->dont_cache_flag);
+
     cl_fmap_close(map);
 }
 END_TEST

@@ -1508,6 +1508,13 @@ qualification as release gates.
   retain compiled scanner, sanitizer, production OLE2 corpus, and Sonic1
   qualification as release gates.
 
+## HFS+ non-empty fork block admission — 2026-08-23
+
+- Treat a non-empty HFS+ fork with zero declared allocation blocks as an
+  explicit format-incomplete result instead of skipping it as an empty child;
+  retain compiled HFS+ corpus, sanitizer, and Sonic1 qualification as release
+  gates.
+
 ## XAR compressed-member range read classification — 2026-08-23
 
 - Classify XAR gzip/LZMA member input windows as `CL_EPARSE` when truncated and

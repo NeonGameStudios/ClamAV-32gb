@@ -353,9 +353,16 @@ static cl_error_t hfsplus_scanfile(cli_ctx *ctx, hfsPlusVolumeHeader *volHeader,
 
     UNUSEDPARAM(extHeader);
 
-    /* bad record checks */
-    if (!fork || (fork->logicalSize == 0) || (fork->totalBlocks == 0)) {
+    /* An empty fork has no data to extract. A non-empty fork with no
+     * allocation blocks, however, is structurally incomplete and must not be
+     * treated as a clean empty child. */
+    if (!fork || (fork->logicalSize == 0)) {
         cli_dbgmsg("hfsplus_scanfile: Empty file.\n");
+        goto done;
+    }
+    if (fork->totalBlocks == 0) {
+        cli_mark_scan_incomplete(ctx, "HFS+ fork declares data without allocation blocks");
+        status = CL_EFORMAT;
         goto done;
     }
 
