@@ -821,10 +821,15 @@ int cli_scanrtf(cli_ctx* ctx)
                     action                                   = tableFind(actiontable, state.controlword);
                     if (action != -1) {
                         if (state.cb_data && state.cb_end) { /* premature end of previous block */
-                            state.cb_end(&state, ctx);
+                            ret = state.cb_end(&state, ctx);
                             state.cb_begin = NULL;
+                            state.cb_process = NULL;
                             state.cb_end   = NULL;
                             state.cb_data  = NULL;
+                            if (ret != CL_SUCCESS && ret != CL_CLEAN && ret != CL_BREAK) {
+                                SCAN_CLEANUP;
+                                return ret;
+                            }
                         }
                         rtf_action(&state, action);
                     }

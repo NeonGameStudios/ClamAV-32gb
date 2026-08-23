@@ -5535,3 +5535,12 @@ for unavailable ranges and `CL_EREAD` only for in-range callback failures. A
 direct missing-map regression covers the public detector boundary. Compiled
 scanner, sanitizer, production RIFF corpus, and Sonic1 qualification remain
 open.
+
+## RTF implicit embedded-object close status — 2026-08-23
+
+RTF now propagates a non-clean status returned while an embedded-object
+callback is implicitly closed by a subsequent recognized control word. The
+callback state is cleared before the cleanup macro runs, preventing a lost
+detection or extraction failure and avoiding a second close attempt. Compiled
+scanner, sanitizer, production RTF corpus, and Sonic1 qualification remain
+open.

@@ -1525,5 +1525,11 @@ qualification as release gates.
 ## RIFF range-status reset — 2026-08-23
 
 - Reset RIFF range status per request and reject a missing fmap at the detector
-  boundary; retain compiled callback-fault, malformed RIFF, sanitizer,
-  production RIFF corpus, and Sonic1 qualification as release gates.
+boundary; retain compiled callback-fault, malformed RIFF, sanitizer,
+production RIFF corpus, and Sonic1 qualification as release gates.
+
+## RTF implicit embedded-object close status — 2026-08-23
+
+- Propagate non-clean status from an implicitly closed RTF embedded-object
+  callback and clear callback state before cleanup; retain compiled callback,
+  sanitizer, production RTF corpus, and Sonic1 qualification as release gates.
