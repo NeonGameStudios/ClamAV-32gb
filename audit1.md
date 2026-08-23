@@ -4855,6 +4855,18 @@ fail-visible contract for metadata collection without changing raw or nested
 content scanning behavior. Compiled HWP fault injection, corpus, sanitizer,
 and Sonic1 qualification remain open.
 
+## HFS+ compressed-resource read classification — 2026-08-23
+
+HFS+ compressed-resource processing returned `CL_EREAD` when its temporary
+resource header, resource map, resource-type table, resource entry, compressed
+length, block count, or block table could not be read. Those failures were
+reported only after the parser unwound, so the context lacked the specific
+required-operation reason and could be reconciled as a generic HFS+ end state.
+The required temporary-file reads now mark the scan incomplete immediately and
+retain their operational status; malformed metadata and seek/format outcomes
+remain unchanged. Compiled HFS+ corpus, sanitizer, and Sonic1 qualification
+remain open.
+
 ## Trust-layer status commit and cleanup — 2026-08-22
 
 Trusting a layer now commits `CL_VERDICT_TRUSTED` only after the optional

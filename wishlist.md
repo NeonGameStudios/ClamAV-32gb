@@ -1815,3 +1815,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   malformed/unsupported result for parse failures and the rejection path for
   short weak candidates. Compiled scanner, sanitizer, production EGG corpus,
   and Sonic1 qualification remain release gates.
+
+## HFS+ compressed-resource read classification — 2026-08-23
+
+- Mark required HFS+ compressed-resource headers, resource tables, block counts,
+  and block-table reads incomplete at the point of temporary-file failure,
+  preserving `CL_EREAD` instead of relying on generic end-of-parser
+  reconciliation. Compiled HFS+ corpus, sanitizer, and Sonic1 qualification
+  remain release gates.
