@@ -5944,3 +5944,10 @@ decoder open and member extraction instead of being collapsed into parse or
 format results. Deadline expiry remains `CL_ETIMEOUT`, and focused CAB fault
 injection covers the decoder-owned read boundary; compiled MSPack corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## Legacy InstallShield CAB header read classification — 2026-08-23
+
+The embedded InstallShield header path now distinguishes a genuinely short
+declared header (`CL_EPARSE`) from a fully in-range fmap callback failure
+(`CL_EREAD`). Focused coverage exercises both outcomes; compiled InstallShield
+corpus, sanitizer, and Sonic1 qualification remain release gates.

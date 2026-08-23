@@ -1643,3 +1643,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   decoder open and extraction, while retaining `CL_ETIMEOUT` for deadline
   expiry; retain compiled MSPack corpus, sanitizer, and Sonic1 qualification
   gates.
+
+## Legacy InstallShield CAB header read classification — 2026-08-23
+
+- Preserve `CL_EPARSE` for a genuinely short embedded InstallShield header and
+  `CL_EREAD` for an in-range fmap callback failure; retain compiled corpus,
+  sanitizer, and Sonic1 qualification gates.

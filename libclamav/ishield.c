@@ -807,13 +807,17 @@ static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c)
         cli_mark_scan_incomplete(ctx, "InstallShield header is outside the containing map");
         return CL_EPARSE;
     }
+    if (c->hdrsz < sizeof(*h1)) {
+        cli_mark_scan_incomplete(ctx, "InstallShield header is truncated");
+        return CL_EPARSE;
+    }
 
     /* Only pin the structure currently being read. The old c->hdrsz request
      * could fault an attacker-controlled multi-gigabyte header into memory. */
     if (!(h1 = fmap_need_off(map, (size_t)c->hdr, sizeof(*h1)))) {
         cli_dbgmsg("is_parse_hdr: not enough room for H1\n");
-        cli_mark_scan_incomplete(ctx, "InstallShield header is truncated");
-        return CL_EPARSE;
+        cli_mark_scan_incomplete(ctx, "InstallShield header could not be read completely");
+        return CL_EREAD;
     }
 
     hdr = (char *)h1;

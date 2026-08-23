@@ -17794,6 +17794,16 @@ static const void *ishield_header_read_failure(fmap_t *map, size_t at, size_t le
     return NULL;
 }
 
+static const void *ishield_embedded_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 15U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_ishield_msi_partial_limit_and_decode_failures_are_visible)
 {
     enum {
@@ -18002,6 +18012,16 @@ START_TEST(test_ishield_truncated_metadata_is_fail_visible)
     ret = cli_scanishield(&ctx, 0, map->len);
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    map->need                  = ishield_embedded_header_read_failure;
+    ret                        = cli_scanishield(&ctx, 0, map->len);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield header could not be read completely");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);

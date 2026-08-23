@@ -5696,3 +5696,12 @@ records the operational read failure separately from deadline expiry and
 preserves `CL_EREAD` through CAB/CHM open and member extraction, with explicit
 incomplete reasons and a focused CAB header regression. Compiled MSPack/CAB/
 CHM corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Legacy InstallShield CAB header read classification — 2026-08-23
+
+The legacy InstallShield embedded-header path range-checks the declared header
+before locking its fixed structure, so a genuinely short header remains
+`CL_EPARSE` while a fully in-range fmap callback failure now remains
+`CL_EREAD`. The existing embedded-header regression now covers both outcomes;
+compiled InstallShield corpus, sanitizer, and Sonic1 qualification remain
+open.
