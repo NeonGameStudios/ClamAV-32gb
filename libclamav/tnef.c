@@ -160,8 +160,19 @@ int cli_tnef(const char *dir, cli_ctx *ctx)
         }
         if (alldone)
             break;
-        if (length == 0)
+        if (length == 0) {
+            uint16_t checksum;
+            size_t checksum_read = tnef_readn(ctx->fmap, &checksum, pos, sizeof(checksum));
+
+            if (checksum_read != sizeof(checksum)) {
+                cli_mark_scan_incomplete(ctx, "TNEF zero-length attribute checksum could not be read completely");
+                ret     = (checksum_read == (size_t)-1) ? CL_EREAD : CL_EPARSE;
+                alldone = 1;
+                break;
+            }
+            pos += sizeof(checksum);
             continue;
+        }
         if (length < 0) {
             cli_warnmsg("Corrupt TNEF header detected - length %d\n",
                         (int)length);

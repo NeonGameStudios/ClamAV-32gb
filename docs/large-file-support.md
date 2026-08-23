@@ -2868,6 +2868,15 @@ deadline, close, and nested-scan checks remain in force; compiled allocation
 fault injection, sanitizer, and full HTML/MHTML corpus qualification remain
 release gates.
 
+## TNEF zero-length attribute checksum accounting — 2026-08-23
+
+TNEF zero-length attributes now consume their mandatory two-byte checksum
+before the next attribute header is read. This prevents a nonzero checksum
+from shifting the parser state and preserves explicit read or parse-incomplete
+results when the checksum cannot be consumed. The focused exact-EOF regression
+is recorded in the source evidence; compiled TNEF corpus, sanitizer, and
+Sonic1 qualification remain open.
+
 ## RTF split reserved-field accounting — 2026-08-23
 
 When an embedded RTF object’s eight-byte reserved field crosses an 8 KiB fmap

@@ -2237,6 +2237,17 @@ unit regression injects a primary-table callback failure while leaving the
 secondary copy readable. Compiled GPT media, fault injection, sanitizer, and
 Sonic1 qualification remain release gates.
 
+## TNEF zero-length attribute checksum accounting — 2026-08-23
+
+TNEF zero-length attributes still carry their two-byte checksum. The parser
+previously continued at the checksum instead of consuming it, so a nonzero
+checksum could be interpreted as the next attribute level and desynchronize
+the remaining container walk. The zero-length path now reads and advances
+over the checksum, preserving `CL_EREAD` for an in-range callback failure and
+an incomplete parse for a truncated checksum. A focused exact-EOF regression
+covers the corrected boundary; compiled TNEF corpus, sanitizer, and Sonic1
+qualification remain release gates.
+
 ## VBA project temporary-spool accounting — 2026-08-20
 
 The modern VBA project-directory extractor previously wrote generated script

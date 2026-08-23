@@ -2083,3 +2083,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   results instead of allowing partial normalized output or metadata to look
   complete; retain compiled allocation-fault, sanitizer, HTML/MHTML corpus,
   and Sonic1 qualification as release gates.
+
+## TNEF zero-length attribute checksum accounting — 2026-08-23
+
+- Consume the mandatory checksum after every zero-length TNEF attribute so a
+  nonzero checksum cannot shift the next-header boundary; retain exact-EOF,
+  callback-fault, malformed-container, sanitizer, and Sonic1 qualification as
+  release gates.
