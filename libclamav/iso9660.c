@@ -36,6 +36,7 @@ typedef struct {
     unsigned int sectsz;
     unsigned int fileno;
     unsigned int joliet;
+    uint64_t volume_end;
     char buf[260];
     struct cli_hashset dir_blocks;
 } iso9660_t;
@@ -67,6 +68,9 @@ static const void *needblock(const iso9660_t *iso, unsigned int block, int temp,
         return NULL;
 
     available       = (uint64_t)(ctx->fmap->len - iso->base_offset);
+    if (iso->volume_end < (uint64_t)iso->base_offset)
+        return NULL;
+    available = MIN(available, iso->volume_end - (uint64_t)iso->base_offset);
     blocks_per_sect = 2048 / iso->blocksz;
     if (!blocks_per_sect || (uint64_t)block >= (available / iso->sectsz) * blocks_per_sect)
         return NULL;                                  /* Block is out of file */
@@ -377,6 +381,9 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     cl_error_t ret      = CL_SUCCESS;
     uint32_t nextJoliet = 0;
     uint64_t root_directory_block64;
+    uint32_t volume_space_size;
+    uint32_t volume_space_size_be;
+    uint64_t volume_bytes;
 
     if (ctx == NULL || ctx->fmap == NULL)
         return CL_ENULLARG;
@@ -498,6 +505,22 @@ cl_error_t cli_scaniso(cli_ctx *ctx, size_t offset)
     memcpy(primary_descriptor, primary_map, sizeof(primary_descriptor));
     fmap_unneed_off(ctx->fmap, offset, sizeof(primary_descriptor));
     privol = primary_descriptor;
+
+    volume_space_size    = (uint32_t)cli_readint32(privol + 80);
+    volume_space_size_be = cbswap32((uint32_t)cli_readint32(privol + 84));
+    volume_bytes         = (uint64_t)volume_space_size * iso.blocksz;
+    if (volume_space_size == 0 || volume_space_size != volume_space_size_be ||
+        volume_bytes < (uint64_t)iso.sectsz * 16U ||
+        (uint64_t)iso.base_offset > UINT64_MAX - volume_bytes) {
+        status = iso_incomplete(ctx, "ISO volume space size was invalid");
+        goto done;
+    }
+    iso.volume_end = (uint64_t)iso.base_offset + volume_bytes;
+    if (iso.volume_end > (uint64_t)ctx->fmap->len) {
+        status = iso_incomplete(ctx, "ISO declared volume exceeds the input map");
+        goto done;
+    }
+
     if (!iso.joliet) {
         next = NULL;
     } else

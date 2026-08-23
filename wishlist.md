@@ -2097,3 +2097,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   including padding and coordinate overflow checks; retain empty-list,
   malformed-range, callback-fault, sanitizer, and Sonic1 qualification as
   release gates.
+
+## ISO9660 declared-volume boundary accounting — 2026-08-23
+
+- Validate ISO9660's paired Volume Space Size fields and bound block admission
+  to the declared end as well as fmap length so appended overlay bytes cannot
+  become members; retain the overlay-boundary, malformed-volume, sanitizer,
+  and Sonic1 qualification as release gates.

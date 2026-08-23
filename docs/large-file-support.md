@@ -1642,6 +1642,16 @@ evidence, and workflow YAML controls passed. Broader production CVD, parser
 corpus, cold-cache, sanitizer/multi-worker, release-runner, and remote rebuild
 qualification remain open.
 
+## ISO9660 declared-volume boundary accounting — 2026-08-23
+
+ISO9660 block admission now honors the image's declared Volume Space Size in
+addition to the mapped fmap length. Directory and file extents cannot consume
+appended overlay bytes beyond the declared volume, and invalid zero or
+undersized or map-exceeding volume extents remain explicit incomplete results.
+The paired little-/big-endian size fields are validated as well. The focused
+overlay-boundary regression is recorded in the source evidence; compiled ISO
+corpus, sanitizer, and Sonic1 qualification remain open.
+
 Local hashes are `pdf.c=e7a731bb472fe5dda94f208d82fee5f5d91e4a111f08790edc31ff607d635228`,
 `pdfdecode.c=5aa98bba6753b3950edf207bbcfd8a25e4ee154b17acf743cf21fb4316cc73e7`,
 `check_clamav.c=886628a0c83441f27d3c427fbad97dd038b0753a47c2d08af560aac977f5f84f`,

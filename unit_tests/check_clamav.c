@@ -13078,6 +13078,69 @@ START_TEST(test_iso_directory_coordinate_overflow_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_file_extent_respects_volume_space)
+{
+    enum {
+        ISO_OFFSET  = 32768,
+        ROOT_BLOCK  = 32,
+        ROOT_OFFSET = ROOT_BLOCK * 2048,
+        ISO_LENGTH  = (ROOT_BLOCK + 3) * 2048
+    };
+    uint8_t data[ISO_LENGTH] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    /* Build the smallest descriptor sequence that reaches an empty LIST-like
+     * root directory. The file entry below points at block 34, which is in
+     * the mapped overlay but outside the declared 34-block ISO volume. */
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 80]  = 34;
+    data[ISO_OFFSET + 84]  = 0x00;
+    data[ISO_OFFSET + 85]  = 0x00;
+    data[ISO_OFFSET + 86]  = 0x00;
+    data[ISO_OFFSET + 87]  = 34;
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08; /* 2048-byte logical blocks */
+    data[ISO_OFFSET + 156] = 34;
+    data[ISO_OFFSET + 158] = ROOT_BLOCK;
+    data[ISO_OFFSET + 166] = 0x00;
+    data[ISO_OFFSET + 167] = 0x08; /* one-block root directory */
+
+    data[ISO_OFFSET + 2048] = 1;
+    memcpy(data + ISO_OFFSET + 2049, "CD001", 5);
+    data[ISO_OFFSET + 4096] = 0xff;
+    memcpy(data + ISO_OFFSET + 4097, "CD001", 5);
+
+    data[ROOT_OFFSET]      = 34;
+    data[ROOT_OFFSET + 2]  = 34; /* outside the declared volume */
+    data[ROOT_OFFSET + 10] = 1;
+    data[ROOT_OFFSET + 32] = 1;
+    data[ROOT_OFFSET + 33] = 'x';
+    data[34 * 2048]        = 'O'; /* mapped overlay byte */
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    options.parse         = CL_SCAN_PARSE_ARCHIVE;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ck_assert_int_eq(cli_scaniso(&ctx, ISO_OFFSET), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_xar_truncated_header_is_fail_visible)
 {
     uint8_t data[28] = {0};
@@ -25363,6 +25426,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_iso_long_directory_name_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_joliet_name_conversion_truncation_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);
+    tcase_add_test(tc_cl, test_iso_file_extent_respects_volume_space);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);

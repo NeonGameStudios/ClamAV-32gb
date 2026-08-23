@@ -1101,6 +1101,19 @@ requires each list walk to finish exactly at its declared end. A focused empty
 list regression covers the boundary; compiled RIFF corpus, fault injection,
 sanitizer, and Sonic1 qualification remain release gates.
 
+## ISO9660 declared-volume boundary accounting — 2026-08-23
+
+ISO9660 directory and file extents were previously constrained by the mapped
+fmap but not by the image's declared Volume Space Size. An appended overlay
+could therefore be admitted as an ISO member when its block coordinates were
+within the fmap. Block admission now caps available bytes at the declared
+volume end and rejects invalid zero or undersized volume extents. A focused
+file-extent regression places the target byte in mapped overlay space beyond
+the declared volume and requires an incomplete result. The paired
+little-/big-endian size fields and declared-end-versus-map check are also
+fail-visible; compiled ISO corpus, sanitizer, and Sonic1 qualification remain
+release gates.
+
 ## Fmap hash deadline coverage — 2026-08-22
 
 Internal scan and cache callers now use a context-aware fmap hash helper that
