@@ -774,13 +774,13 @@ WARNING: setting this limit too high may severely impact performance.
 Default: 2000
 .TP
 \fBPCREMaxFileSize SIZE\fR
-This option sets the maximum filesize for which PCRE subsigs will be executed. PCRE requires one contiguous subject, so this build also enforces its 1 GiB single-allocation ceiling.
+This option sets the maximum filesize for which PCRE subsigs will be executed. PCRE requires one contiguous subject. On qualifying 64-bit builds with anonymous-map fmap support, the effective ceiling is 32 GiB; builds without that capability retain a 1 GiB single-allocation ceiling.
 .br
-Values of zero or above 1 GiB select the 1 GiB ceiling; they do not permit an unbounded whole-file mapping. A required PCRE pass above the effective limit makes the scan incomplete and returns non-clean.
+Values of zero or above the platform ceiling select that ceiling; they do not permit an unbounded whole-file mapping. A required PCRE pass above the effective limit makes the scan incomplete and returns non-clean.
 .br
 Negative values are not allowed.
 .br
-Default: 100M
+Default: 32G when large-file defaults are enabled; otherwise 100M.
 .TP
 \fBOnAccessIncludePath STRING\fR
 This option specifies a directory (including all files and directories inside it), which should be scanned on access. This option can be used multiple times.

@@ -1,5 +1,12 @@
 # Wishlist
 
+## PCRE man-page platform ceiling — 2026-08-23
+
+- Corrected `clamd.conf` documentation so `PCREMaxFileSize` describes the
+  implemented 32 GiB anonymous-map ceiling on qualifying 64-bit builds and
+  the 1 GiB fallback elsewhere; the build-profile-dependent default is now
+  explicit. Generated-man-page qualification remains a release gate.
+
 ## JPEG exploit-probe read classification — 2026-08-23
 
 - The JPEG MS04-028 comment-marker probe now preserves an in-range fmap

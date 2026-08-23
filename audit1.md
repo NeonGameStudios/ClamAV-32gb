@@ -6197,3 +6197,12 @@ incomplete, non-cacheable result for an in-range callback failure; genuinely
 short input remains classified by the following segment-length parse. A
 one-shot callback-fault regression covers this boundary, while compiled media
 corpus, sanitizer, and Sonic1 qualification remain open.
+
+## PCRE man-page platform ceiling — 2026-08-23
+
+The checked-in `clamd.conf` man-page source still described PCRE as having a
+universal 1 GiB ceiling and listed only the legacy 100 MiB default. That was
+contradictory on qualifying 64-bit anonymous-map builds, where the effective
+PCRE ceiling is 32 GiB and the opt-in large-file-default profile selects 32G.
+The documentation now states both platform cases and the build-profile
+default; generated-man-page qualification remains open.
