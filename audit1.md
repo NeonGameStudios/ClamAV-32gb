@@ -55,6 +55,15 @@ reconciled as clean after those mandatory walks stop early. Static source
 guards pass; compiled OLE2 limit/allocation fault injection, sanitizer,
 corpus, and supported-build Sonic1 qualification remain open.
 
+## ELF section metadata allocation failures — 2026-08-23
+
+ELF32 and ELF64 section parsing allocated native metadata arrays after the
+working section table; those allocations could return `CL_EMEM` without
+marking the required section inspection incomplete. Both native metadata
+allocation failures now record sticky incomplete state. Static source guards
+pass; compiled ELF allocation fault injection, sanitizer, corpus, and
+supported-build Sonic1 qualification remain open.
+
 ## HFS+ non-empty fork block admission — 2026-08-23
 
 `hfsplus_scanfile()` previously returned success for a fork with a non-zero

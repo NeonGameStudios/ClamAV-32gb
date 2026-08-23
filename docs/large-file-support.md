@@ -6134,3 +6134,11 @@ extracted-file tracking allocation failures now mark required inspection
 incomplete before returning. Static source guards pass; compiled OLE2
 limit/allocation fault injection, sanitizer, corpus, and supported-build
 Sonic1 qualification remain release gates.
+
+## ELF section metadata allocation failures — 2026-08-23
+
+ELF32 and ELF64 section parsing now marks native section-metadata array
+allocation failures incomplete before returning `CL_EMEM`, preventing a
+required section inspection from being reconciled as clean. Static source
+guards pass; compiled ELF allocation fault injection, sanitizer, corpus, and
+supported-build Sonic1 qualification remain release gates.

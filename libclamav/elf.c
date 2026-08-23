@@ -546,11 +546,15 @@ static int cli_elf_sh32(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         elfinfo->sections = (struct cli_exe_section *)cli_max_calloc(shnum, sizeof(struct cli_exe_section));
         if (!elfinfo->sections) {
             cli_dbgmsg("ELF: Can't allocate memory for section headers\n");
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "ELF section metadata table could not be allocated");
             return CL_EMEM;
         }
         elfinfo->sections64 = (struct cli_exe_section64 *)cli_max_calloc(shnum, sizeof(struct cli_exe_section64));
         if (!elfinfo->sections64) {
             cli_dbgmsg("ELF: Can't allocate memory for native-width section headers\n");
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "ELF native-width section metadata table could not be allocated");
             return CL_EMEM;
         }
     }
@@ -669,11 +673,15 @@ static int cli_elf_sh64(cli_ctx *ctx, fmap_t *map, struct cli_exe_info *elfinfo,
         elfinfo->sections = (struct cli_exe_section *)cli_max_calloc(shnum, sizeof(struct cli_exe_section));
         if (!elfinfo->sections) {
             cli_dbgmsg("ELF: Can't allocate memory for section headers\n");
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "ELF section metadata table could not be allocated");
             return CL_EMEM;
         }
         elfinfo->sections64 = (struct cli_exe_section64 *)cli_max_calloc(shnum, sizeof(struct cli_exe_section64));
         if (!elfinfo->sections64) {
             cli_dbgmsg("ELF: Can't allocate memory for native-width section headers\n");
+            if (ctx)
+                cli_mark_scan_incomplete(ctx, "ELF native-width section metadata table could not be allocated");
             return CL_EMEM;
         }
     }

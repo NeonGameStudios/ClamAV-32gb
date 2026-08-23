@@ -2048,3 +2048,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   scan-size admission, invalid-header/first-data-block geometry, and tracking
   allocation failures as sticky-incomplete; add compiled limit/allocation
   fault coverage.
+
+## ELF section metadata allocation failures — 2026-08-23
+
+- Keep ELF32/ELF64 native section-metadata allocation failures
+  sticky-incomplete and non-cacheable; add compiled ELF allocation fault
+  coverage.
