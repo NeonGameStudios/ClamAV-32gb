@@ -1,5 +1,14 @@
 # Wishlist
 
+## Runtime dependency immutability evidence — 2026-08-23
+
+- The mandatory service qualification now records and canonicalizes the
+  runtime dependency path/hash set both before and after the workload. The
+  verifier requires the sets to match and the summary to carry an explicit
+  service_runtime_dependencies_unchanged=pass marker. The synthetic service
+  evidence regression tampers with the after-manifest and requires rejection.
+  Real production-CVD, sanitizer, and Sonic1 execution remain open.
+
 ## PCRE man-page platform ceiling — 2026-08-23
 
 - Corrected `clamd.conf` documentation so `PCREMaxFileSize` describes the

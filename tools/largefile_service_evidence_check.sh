@@ -53,12 +53,13 @@ compile_commands=$out/provenance/compile_commands.json
 binary_before=$out/provenance/service-binary-hashes-before.txt
 binary_after=$out/provenance/service-binary-hashes-after.txt
 dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
+dependency_hashes_after=$out/provenance/service-runtime-dependency-hashes-after.txt
 checksum_manifest=$out/SHA256SUMS
 
 for required in "$summary" "$oracle_binding" "$qualification_oracle" "$workload_results" \
     "$identity" "$config" "$source_manifest" "$cmake_cache" \
     "$compile_commands" "$binary_before" "$binary_after" \
-    "$dependency_hashes" "$checksum_manifest"; do
+    "$dependency_hashes" "$dependency_hashes_after" "$checksum_manifest"; do
     [ -s "$required" ] || fail "missing service evidence: $required"
 done
 
@@ -77,6 +78,8 @@ grep -Fx 'service_qualification=pass' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no qualification pass marker'
 grep -Fx 'service_resource_measurement_failed=0' "$summary" >/dev/null 2>&1 ||
     fail 'service evidence has no clean resource-measurement marker'
+grep -Fx 'service_runtime_dependencies_unchanged=pass' "$summary" >/dev/null 2>&1 ||
+    fail 'service evidence has no runtime-dependency immutability marker'
 
 identity_field()
 {
@@ -112,6 +115,8 @@ binary_reference=$(identity_field service_binary_hashes)
 binary_hashes_sha256=$(identity_field service_binary_hashes_sha256)
 dependency_reference=$(identity_field service_runtime_dependency_hashes)
 dependency_hashes_sha256=$(identity_field service_runtime_dependency_hashes_sha256)
+dependency_after_reference=$(identity_field service_runtime_dependency_hashes_after)
+dependency_after_hashes_sha256=$(identity_field service_runtime_dependency_hashes_after_sha256)
 loader_injection=$(identity_field loader_injection)
 max_scan_time_ms=$(identity_field max_scan_time_ms)
 service_timeout_s=$(identity_field service_timeout_s)
@@ -151,6 +156,8 @@ is_hash "$dependency_hashes_sha256" || fail 'service dependency-list hash is inv
     fail 'service build identity references the wrong binary hash list'
 [ "$dependency_reference" = provenance/service-runtime-dependency-hashes.txt ] ||
     fail 'service build identity references the wrong dependency hash list'
+[ "$dependency_after_reference" = provenance/service-runtime-dependency-hashes-after.txt ] ||
+    fail 'service build identity references the wrong after dependency hash list'
 
 cache_source=$(sed -n 's#^CMAKE_HOME_DIRECTORY:INTERNAL=##p' "$cmake_cache")
 [ "$cache_source" = "$root" ] || fail 'service CMake cache is bound to a different source root'
@@ -171,13 +178,18 @@ actual_compile_commands_sha256=$(sha256sum "$compile_commands" | awk '{ print $1
     fail 'service compile-commands hash does not verify'
 actual_binary_hashes_sha256=$(sha256sum "$binary_before" | awk '{ print $1 }')
 actual_dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
+actual_dependency_after_hashes_sha256=$(sha256sum "$dependency_hashes_after" | awk '{ print $1 }')
 [ "$actual_binary_hashes_sha256" = "$binary_hashes_sha256" ] ||
     fail 'service binary-list hash does not verify'
 [ "$actual_dependency_hashes_sha256" = "$dependency_hashes_sha256" ] ||
     fail 'service dependency-list hash does not verify'
+[ "$actual_dependency_after_hashes_sha256" = "$dependency_after_hashes_sha256" ] ||
+    fail 'service after dependency-list hash does not verify'
 
 cmp -s "$binary_before" "$binary_after" ||
     fail 'service executable hashes changed during qualification'
+cmp -s "$dependency_hashes" "$dependency_hashes_after" ||
+    fail 'service runtime dependency hashes changed during qualification'
 
 expected_binaries='clamscan/clamscan
 clamd/clamd

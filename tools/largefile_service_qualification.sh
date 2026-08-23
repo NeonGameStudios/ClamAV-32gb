@@ -112,6 +112,7 @@ service_source_manifest=$out/provenance/source-manifest.txt
 service_binary_hashes_before=$out/provenance/service-binary-hashes-before.txt
 service_binary_hashes_after=$out/provenance/service-binary-hashes-after.txt
 service_dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
+service_dependency_hashes_after=$out/provenance/service-runtime-dependency-hashes-after.txt
 service_build_identity=$out/provenance/service-build-identity.txt
 
 if [ ! -s "$service_cmake_cache" ] || [ ! -s "$service_compile_commands" ]; then
@@ -182,25 +183,35 @@ record_service_binary_hashes()
 
 record_service_binary_hashes "$service_binary_hashes_before"
 
-: > "$service_dependency_hashes"
-for relative_binary in $service_binaries; do
-    service_binary="$build_dir/$relative_binary"
-    service_ldd="$out/provenance/ldd-${relative_binary%%/*}.txt"
-    ldd "$service_binary" > "$service_ldd" 2>&1
-    if grep -F 'not found' "$service_ldd" >/dev/null 2>&1; then
-        echo "service executable has unresolved runtime dependencies: $service_binary" >&2
-        exit 2
-    fi
-    awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' "$service_ldd" |
-        LC_ALL=C sort -u | while IFS= read -r dependency; do
+record_service_dependency_hashes()
+{
+    destination=$1
+    phase=$2
+    : > "$destination"
+    for relative_binary in $service_binaries; do
+        service_binary="$build_dir/$relative_binary"
+        service_ldd="$out/provenance/ldd-${phase}-${relative_binary%%/*}.txt"
+        service_dependency_paths="$out/provenance/service-dependency-paths-${phase}-${relative_binary%%/*}.txt"
+        ldd "$service_binary" > "$service_ldd" 2>&1
+        if grep -F 'not found' "$service_ldd" >/dev/null 2>&1; then
+            echo "service executable has unresolved runtime dependencies: $service_binary" >&2
+            return 1
+        fi
+        awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^\//) print $i }' "$service_ldd" |
+            LC_ALL=C sort -u > "$service_dependency_paths"
+        while IFS= read -r dependency; do
+            [ -n "$dependency" ] || continue
             [ -f "$dependency" ] || {
                 echo "service runtime dependency is not a regular file: $dependency" >&2
-                exit 1
+                return 1
             }
-            printf '%s\t%s\n' "$dependency" "$(sha256sum "$dependency" | awk '{ print $1 }')" >> "$service_dependency_hashes"
-        done
-done
-LC_ALL=C sort -u "$service_dependency_hashes" -o "$service_dependency_hashes"
+            printf '%s\t%s\n' "$dependency" "$(sha256sum "$dependency" | awk '{ print $1 }')" >> "$destination"
+        done < "$service_dependency_paths"
+    done
+    LC_ALL=C sort -u "$destination" -o "$destination"
+}
+
+record_service_dependency_hashes "$service_dependency_hashes" before
 service_dependency_hashes_sha256=$(sha256sum "$service_dependency_hashes" | awk '{ print $1 }')
 {
     printf 'source_commit=%s\n' "$service_source_commit"
@@ -1180,6 +1191,15 @@ if ! cmp -s "$service_binary_hashes_before" "$service_binary_hashes_after"; then
     echo 'service executable changed during qualification' >&2
     exit 1
 fi
+record_service_dependency_hashes "$service_dependency_hashes_after" after
+if ! cmp -s "$service_dependency_hashes" "$service_dependency_hashes_after"; then
+    echo 'service runtime dependency set changed during qualification' >&2
+    exit 1
+fi
+printf 'service_runtime_dependency_hashes_after=provenance/service-runtime-dependency-hashes-after.txt\n' >> "$service_build_identity"
+printf 'service_runtime_dependency_hashes_after_sha256=%s\n' \
+    "$(sha256sum "$service_dependency_hashes_after" | awk '{ print $1 }')" >> "$service_build_identity"
+printf 'service_runtime_dependencies_unchanged=pass\n' >> "$out/service-summary.txt"
 printf 'service_build_identity=pass\n' >> "$out/service-summary.txt"
 printf 'service_qualification=pass\n' >> "$out/service-summary.txt"
 printf 'qualification_oracle=provenance/qualification-oracle.tsv\n' >> "$out/oracle-binding.txt"

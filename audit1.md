@@ -6206,3 +6206,16 @@ contradictory on qualifying 64-bit anonymous-map builds, where the effective
 PCRE ceiling is 32 GiB and the opt-in large-file-default profile selects 32G.
 The documentation now states both platform cases and the build-profile
 default; generated-man-page qualification remains open.
+
+## Service runtime dependency immutability evidence — 2026-08-23
+
+The mandatory service qualification previously hashed the clamd, clamdscan,
+milter, and clamscan runtime dependencies before the workload and checked the
+paths again in the post-run verifier, but it did not prove that the dependency
+set remained unchanged during qualification. It now records a second,
+canonical path/hash manifest after the workload, rejects any set or content
+change, and requires the explicit summary marker
+service_runtime_dependencies_unchanged=pass. The synthetic service-evidence
+regression mutates the after-manifest and confirms verifier rejection. This
+strengthens runtime attestation; authorized production-CVD, sanitizer, and
+Sonic1 execution remain open.

@@ -43,6 +43,8 @@ cp "$binary_list" "$binary_after"
 dependency_hashes=$out/provenance/service-runtime-dependency-hashes.txt
 printf '%s\t%s\n' "$tmp/libclamav.so" \
     "$(sha256sum "$tmp/libclamav.so" | awk '{ print $1 }')" > "$dependency_hashes"
+dependency_hashes_after=$out/provenance/service-runtime-dependency-hashes-after.txt
+cp "$dependency_hashes" "$dependency_hashes_after"
 
 workload_input=$tmp/workload-input.bin
 printf 'synthetic workload input\n' > "$workload_input"
@@ -143,12 +145,15 @@ dependency_hashes_sha256=$(sha256sum "$dependency_hashes" | awk '{ print $1 }')
     printf 'service_binary_hashes_sha256=%s\n' "$binary_hashes_sha256"
     printf 'service_runtime_dependency_hashes=provenance/service-runtime-dependency-hashes.txt\n'
     printf 'service_runtime_dependency_hashes_sha256=%s\n' "$dependency_hashes_sha256"
+    printf 'service_runtime_dependency_hashes_after=provenance/service-runtime-dependency-hashes-after.txt\n'
+    printf 'service_runtime_dependency_hashes_after_sha256=%s\n' "$(sha256sum "$dependency_hashes_after" | awk '{ print $1 }')"
     printf 'loader_injection=disabled\n'
     printf 'max_scan_time_ms=14400000\n'
     printf 'service_timeout_s=14400\n'
 } > "$out/provenance/service-build-identity.txt"
 {
     printf 'service_resource_measurement_failed=0\n'
+    printf 'service_runtime_dependencies_unchanged=pass\n'
     printf 'service_build_identity=pass\n'
     printf 'service_qualification=pass\n'
 } > "$out/service-summary.txt"
@@ -169,6 +174,13 @@ workload_hash_manifest=$(sha256sum "$workload_results" | awk '{ print $1 }')
 ) > "$out/SHA256SUMS"
 
 sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null
+
+printf '%s\n' 'tampered dependency manifest' > "$dependency_hashes_after"
+if sh "$root/tools/largefile_service_evidence_check.sh" "$out" "$build" >/dev/null 2>&1; then
+    echo 'service evidence verifier accepted changed runtime dependency evidence' >&2
+    exit 1
+fi
+cp "$dependency_hashes" "$dependency_hashes_after"
 
 python3 - "$qualification_oracle" "$tmp/invalid-oracle.tsv" <<'PY'
 from pathlib import Path
