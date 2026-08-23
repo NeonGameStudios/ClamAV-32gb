@@ -6270,3 +6270,14 @@ problem. The helpers now preserve `ssize_t` results and retry `EINTR` (and
 `EWOULDBLOCK` for the reply reader), keeping transient signal interruptions
 from turning a valid large request into a failed scan. Compiled transport
 fault injection, sanitizer, and Sonic1 qualification remain open.
+
+## Rust decoder-spool interrupted writes — 2026-08-23
+
+The shared Rust temporary spool treated an interrupted `libc::write()` as a
+hard `CL_EWRITE`. Long LHA/LZH, ALZ, or OneNote output can legitimately cross
+an `EINTR` signal boundary, so that behavior could turn a complete decode into
+an incomplete scan without an actual storage failure. The spool now retries
+`EINTR`, rejects a zero-byte write explicitly, and preserves the existing
+cleanup and reservation rollback for real failures. A focused Rust regression
+covers the retry classification; compiled short-write/fault injection,
+sanitizer, and parser-family qualification remain open.

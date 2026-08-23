@@ -6057,3 +6057,12 @@ termination returns `CL_EPARSE`; an in-range fmap callback failure remains
 descriptor walk. Focused missing-terminator coverage is registered, while
 compiled ISO/Joliet corpus, sanitizer, and Sonic1 qualification remain release
 gates.
+
+## Rust decoder-spool interrupted writes — 2026-08-23
+
+The shared Rust temporary spool now retries `EINTR` from `write()` instead of
+turning a signal interruption into a false `CL_EWRITE`. Zero-byte writes and
+other write failures remain explicit incomplete output, and reservation
+rollback/cleanup behavior is unchanged. This protects LHA/LZH, ALZ, and
+OneNote materialization; compiled fault injection, sanitizer, and parser-family
+qualification remain release gates.

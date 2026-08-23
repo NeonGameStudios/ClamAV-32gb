@@ -85,6 +85,10 @@ fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
     }
 }
 
+fn spool_write_is_interrupted(err: &io::Error) -> bool {
+    err.raw_os_error() == Some(libc::EINTR)
+}
+
 fn onenote_error_status(err: &onenote::Error) -> cl_error_t {
     if matches!(err, onenote::Error::ReadFailure(_)) {
         cl_error_t_CL_EREAD
@@ -304,7 +308,18 @@ impl TempSpool {
                     write_len,
                 )
             };
-            if written <= 0 {
+            if written < 0 {
+                let err = io::Error::last_os_error();
+                if spool_write_is_interrupted(&err) {
+                    continue;
+                }
+                if additional != 0 {
+                    unsafe { sys::cli_scan_release_temporary(self.ctx, additional) };
+                    self.reserved -= additional;
+                }
+                return Err(cl_error_t_CL_EWRITE);
+            }
+            if written == 0 {
                 if additional != 0 {
                     unsafe { sys::cli_scan_release_temporary(self.ctx, additional) };
                     self.reserved -= additional;
@@ -1483,6 +1498,12 @@ mod tests {
             rust_reader_status(&read_error, cl_error_t_CL_EREAD),
             cl_error_t_CL_EREAD
         );
+    }
+
+    #[test]
+    fn rust_spool_write_retries_interrupted_syscalls() {
+        assert!(spool_write_is_interrupted(&io::Error::from_raw_os_error(libc::EINTR)));
+        assert!(!spool_write_is_interrupted(&io::Error::from_raw_os_error(libc::EIO)));
     }
 
     #[test]

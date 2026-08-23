@@ -858,6 +858,10 @@
 - LHA/LZH decoder output now checks the shared scan deadline between bounded
   output chunks, covering decoders that emit data without another fmap read;
   retain compiled timeout-injection and parser-family qualification.
+- The shared Rust decoder spool now retries signal-interrupted `write()` calls
+  and treats zero-byte or other failed writes as explicit incomplete output;
+  add compiled EINTR/short-write injection and retain LHA/ALZ/OneNote corpus,
+  sanitizer, and parser-family qualification.
 - Legacy CPIO/TAR/RAR/EGG/ARJ/InstallShield metadata callback failures now
   propagate; add callback-fault and malformed archive corpus coverage.
 - TAR parser entry and member traversal now honor the shared scan deadline and
