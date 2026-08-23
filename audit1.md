@@ -5083,6 +5083,19 @@ The source guards and non-clang regression gates remain the available local
 evidence. Fault-injected metadata and merge coverage, sanitizer runs, shared
 and static JSON-C qualification, and Sonic1 qualification remain open.
 
+## PCRE limit and match-workspace failures — 2026-08-22
+
+PCRE match-data allocation failures previously returned `CL_EMEM` without
+marking the scan, while match-limit and recursion-limit exhaustion was logged
+and treated as an ordinary non-match. The PCRE boundary now records workspace
+allocation/initialization failures as incomplete and maps match/backtracking
+limit exhaustion to `CL_ERESOURCE` with a sticky incomplete reason.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled PCRE limit-exhaustion and allocation-fault coverage,
+production regex qualification, sanitizer runs, and Sonic1 qualification remain
+open.
+
 ## AC matcher-state allocation ceiling — 2026-08-22
 
 Per-scan AC state, partial-signature offset tables, logical match-offset lists,

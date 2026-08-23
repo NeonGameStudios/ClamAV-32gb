@@ -655,8 +655,15 @@ cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const ch
             }
 
             /* reset the match results */
-            if ((ret = cli_pcre_results_reset(&p_res, pd)) != CL_SUCCESS)
+            if ((ret = cli_pcre_results_reset(&p_res, pd)) != CL_SUCCESS) {
+                if (ctx) {
+                    if (ret == CL_EMEM)
+                        cli_mark_scan_incomplete(ctx, "PCRE match workspace could not be allocated");
+                    else
+                        cli_mark_scan_incomplete(ctx, "PCRE match workspace could not be initialized");
+                }
                 break;
+            }
 
             /* performance metrics */
             cli_event_time_start(p_sigevents, pm->sigtime_id);
@@ -737,6 +744,14 @@ cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const ch
         /* handle error code */
         if (rc < 0 && p_res.err != CL_SUCCESS) {
             ret = p_res.err;
+            if (ctx) {
+                if (ret == CL_ERESOURCE)
+                    cli_mark_scan_incomplete(ctx, "PCRE match or backtracking limit was exhausted");
+                else if (ret == CL_EMEM)
+                    cli_mark_scan_incomplete(ctx, "PCRE match workspace could not be allocated");
+                else
+                    cli_mark_scan_incomplete(ctx, "PCRE execution failed");
+            }
         }
 
         /* jumps out of main loop from 'global' loop */

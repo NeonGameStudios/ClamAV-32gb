@@ -182,6 +182,10 @@
   contiguous-subject admission and releases the reservation on expiry; add
   deterministic contiguous-PCRE timeout injection and complete PCRE corpus
   qualification.
+- PCRE match-data allocation failures now mark the scan incomplete, and match
+  or recursion-limit exhaustion returns `CL_ERESOURCE` instead of becoming a
+  clean non-match; add compiled limit-exhaustion, allocation-fault, and
+  production-regex qualification.
 - Shared in-memory blob growth now checks cumulative native-width sizes before
   page rounding, reallocation, and final length updates; requests beyond the
   1 GiB individual-allocation boundary fail explicitly instead of wrapping.

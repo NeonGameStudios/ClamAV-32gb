@@ -170,9 +170,11 @@ int cli_pcre_match(struct cli_pcre_data *pd, const unsigned char *buffer, size_t
                 break;
             case PCRE2_ERROR_MATCHLIMIT:
                 cli_dbgmsg("cli_pcre_match: pcre_exec: match limit exceeded\n");
+                results->err = CL_ERESOURCE;
                 break;
             case PCRE2_ERROR_RECURSIONLIMIT:
                 cli_dbgmsg("cli_pcre_match: pcre_exec: recursive limit exceeded\n");
+                results->err = CL_ERESOURCE;
                 break;
             default:
                 cli_errmsg("cli_pcre_match: pcre_exec: returned error %d\n", rc);
