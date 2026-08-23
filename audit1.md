@@ -6613,3 +6613,15 @@ failure. The walker now requires the root close before returning the normal
 TOC-end sentinel; EOF first marks the layer incomplete and returns `CL_EPARSE`.
 A focused missing-root-close regression is registered; compiled XAR corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## RTF long-description state accounting — 2026-08-23
+
+RTF retained only the first 64 description bytes, but its state machine also
+used that display cap as the total consumed count. A description longer than
+64 bytes could therefore leave the parser in `WAIT_DESC` and consume the
+following reserved/data fields incorrectly, especially across fmap chunks.
+The parser now advances by the full declared description length while copying
+only the bounded display prefix. A chunk-boundary regression verifies that the
+subsequent OLE10 handoff is reached and its truncated header remains
+fail-visible; compiled RTF/OLE corpus, sanitizer, and Sonic1 qualification
+remain release gates.

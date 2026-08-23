@@ -394,30 +394,31 @@ static int rtf_object_process(struct rtf_state* state, const unsigned char* inpu
                 break;
             }
             case WAIT_DESC: {
+                size_t description_remaining;
+                size_t description_bytes;
+                size_t description_copy;
+
                 cli_dbgmsg("RTF: in WAIT_DESC\n");
-                for (i = 0; i < out_cnt && data->bread < data->desc_len && data->bread < 64; i++, data->bread++)
-                    data->desc_name[data->bread] = out_data[i];
-                out_cnt -= i;
-                out_data += i;
-                if (data->bread < data->desc_len && data->bread < 64) {
+                description_remaining = data->desc_len - data->bread;
+                description_bytes     = MIN(out_cnt, description_remaining);
+                description_copy      = 0;
+                if (data->bread < 64)
+                    description_copy = MIN(description_bytes, 64 - data->bread);
+                if (description_copy != 0)
+                    memcpy(data->desc_name + data->bread, out_data, description_copy);
+                data->bread += description_bytes;
+                out_data += description_bytes;
+                out_cnt -= description_bytes;
+                if (data->bread < data->desc_len) {
                     cli_dbgmsg("RTF: waiting for more data(1)\n");
                     return 0; /* wait for more data */
                 }
-                data->desc_name[data->bread] = '\0';
-                if (data->desc_len - data->bread > out_cnt) {
-                    data->desc_len -= out_cnt;
-                    cli_dbgmsg("RTF: waiting for more data(2)\n");
-                    return 0; /* wait for more data */
-                }
-                out_cnt -= data->desc_len - data->bread;
-                if (data->bread >= data->desc_len) {
-                    out_data += data->desc_len - data->bread;
-                    data->bread = 0;
-                    cli_dbgmsg("Preparing to dump rtf embedded object, description:%s\n", data->desc_name);
-                    free(data->desc_name);
-                    data->desc_name      = NULL;
-                    data->internal_state = WAIT_ZERO;
-                }
+                data->desc_name[MIN(data->desc_len, (size_t)64)] = '\0';
+                data->bread                                      = 0;
+                cli_dbgmsg("Preparing to dump rtf embedded object, description:%s\n", data->desc_name);
+                free(data->desc_name);
+                data->desc_name      = NULL;
+                data->internal_state = WAIT_ZERO;
                 break;
             }
             case WAIT_ZERO: {

@@ -7345,6 +7345,68 @@ START_TEST(test_rtf_split_object_data_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rtf_long_description_is_consumed)
+{
+    static const char object_prefix[] = "{\\object{\\objdata ";
+    static const char object_suffix[] = "41}}}";
+    static const char hex[]           = "0123456789abcdef";
+    static const uint8_t object_magic[] = {0x01, 0x05, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00};
+    uint8_t object_data[8U + 4U + 65U + 8U + 4U] = {0};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    char *document;
+    size_t length = 0;
+    size_t padding;
+    size_t i;
+
+    memcpy(object_data, object_magic, sizeof(object_magic));
+    object_data[8] = 65;
+    memset(object_data + 12, 'A', 65);
+
+    document = calloc(1, 20000);
+    ck_assert_ptr_nonnull(document);
+    memcpy(document + length, "{\\rtf1 ", strlen("{\\rtf1 "));
+    length += strlen("{\\rtf1 ");
+    padding = (8192U - (length + strlen(object_prefix) + (12U + 64U) * 2U) % 8192U) % 8192U;
+    memset(document + length, 'a', padding);
+    length += padding;
+    memcpy(document + length, object_prefix, strlen(object_prefix));
+    length += strlen(object_prefix);
+    for (i = 0; i < 12; i++) {
+        document[length++] = hex[object_data[i] >> 4];
+        document[length++] = hex[object_data[i] & 0x0f];
+    }
+    for (i = 12; i < sizeof(object_data); i++) {
+        document[length++] = hex[object_data[i] >> 4];
+        document[length++] = hex[object_data[i] & 0x0f];
+    }
+    memcpy(document + length, object_suffix, strlen(object_suffix));
+    length += strlen(object_suffix);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanrtf(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE10 embedded object name was truncated");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(document);
+}
+END_TEST
+
 START_TEST(test_rtf_split_object_zero_field_preserves_payload_size)
 {
     static const char object_prefix[] = "{\\object{\\objdata ";
@@ -26069,6 +26131,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_rtf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_input_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_split_object_data_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_rtf_long_description_is_consumed);
     tcase_add_test(tc_cl, test_rtf_split_object_zero_field_preserves_payload_size);
     tcase_add_test(tc_cl, test_rtf_implicit_object_close_status_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);

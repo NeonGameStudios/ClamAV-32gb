@@ -6312,3 +6312,12 @@ XML EOF after the last complete entry. Missing the root close is an explicit
 incomplete/non-cacheable result instead of a normal end-of-TOC condition. A
 focused missing-root-close regression is registered; compiled XAR corpus,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
+
+## RTF long-description state accounting — 2026-08-23
+
+RTF object descriptions now consume their full declared byte count across fmap
+chunks while retaining only the bounded 64-byte display prefix. The reserved
+field and payload-size state can no longer be misparsed when a description is
+longer than the display cap. A focused chunk-boundary regression is registered;
+compiled RTF/OLE corpus, sanitizer, and supported-build Sonic1 qualification
+remain release gates.
