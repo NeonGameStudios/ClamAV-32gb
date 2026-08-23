@@ -1663,10 +1663,19 @@ contains libclamav/pdfdecode.c 'PDF Flate traversal reached the configured time 
 contains libclamav/pdfdecode.c 'PDF LZW traversal reached the configured time limit'
 contains libclamav/pdfdecode.c 'static cl_error_t pdf_write_raw_stream'
 contains libclamav/pdfdecode.c 'PDF raw stream traversal reached the configured time limit'
+contains libclamav/pdfdecode.c 'static cl_error_t pdf_stream_flatedecode'
+contains libclamav/pdfdecode.c 'PDF streamed Flate traversal reached the configured time limit'
+contains libclamav/pdfdecode.c 'PDF streamed Flate output exceeded configured scan limits'
+contains libclamav/pdfdecode.c 'pdf_rollback_stream_output'
+contains libclamav/pdfdecode.c 'PDF streamed Flate output could not be truncated during rollback'
+ordered_after libclamav/pdfdecode.c 'decode_status = pdf_stream_flatedecode' 'if (streamlen > UINT32_MAX)'
 contains libclamav/pdfdecode.c 'pdf->temporary_reserved'
 contains libclamav/pdf.c 'pdf->temporary_reserved = &temporary_reserved'
 contains unit_tests/check_clamav.c 'test_pdf_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_pdf_raw_stream_is_chunked_and_quota_accounted'
+contains unit_tests/check_clamav.c 'test_pdf_flate_stream_is_chunked_and_quota_accounted'
+contains unit_tests/check_clamav.c 'test_pdf_flate_stream_quota_failure_rolls_back_output'
+contains unit_tests/check_clamav.c 'test_pdf_streaming_flate_accepts_native_input_width'
 contains docs/largefile-capabilities.tsv 'pdf-stream-over-1g'
 contains libclamav/pdfdecode.h 'const char *stream, size_t streamlen'
 contains libclamav/pdf.h 'size_t start;'
@@ -3872,6 +3881,19 @@ contains unit_tests/check_clamav.c 'test_gpt_primary_table_read_failure_is_not_h
 contains libclamav/others_common.c 'nmemb > CLI_MAX_ALLOCATION / size'
 contains libclamav/others_common.c 'total_size = nmemb * size;'
 not_contains libclamav/others_common.c '(nmemb * size > CLI_MAX_ALLOCATION)'
+
+if ! awk '
+    /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)([[:space:]]|$)/ { depth++; next }
+    /^[[:space:]]*#[[:space:]]*endif([[:space:]]|$)/ {
+        if (depth == 0)
+            exit 2
+        depth--
+    }
+    END { if (depth != 0) exit 1 }
+' "$root/unit_tests/check_clamav.c"; then
+    echo 'large-file source guard failed: unit_tests/check_clamav.c has unbalanced preprocessor conditionals' >&2
+    exit 1
+fi
 
 if grep -F 'Technical design limitations prevent ClamAV from scanning files greater than' "$root/etc/clamd.conf.sample" >/dev/null 2>&1; then
     echo 'large-file source guard failed: stale clamd.conf size limit documentation' >&2

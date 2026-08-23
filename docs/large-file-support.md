@@ -6433,3 +6433,40 @@ generator output, file type, size, hash, and parser logs; its acceptance and
 rejection controls pass locally. Sonic1 must still produce the bound release
 and sanitizer evidence, and the complete compiled TIFF corpus must pass,
 before BigTIFF is considered qualified.
+
+## PDF single-Flate bounded streaming — 2026-08-23
+
+Ordinary unencrypted PDF streams with exactly one `FlateDecode` filter no
+longer enter the legacy whole-input/whole-output decoder token. The decoder
+feeds zlib through 64 KiB native-width input windows and writes through one
+fixed 256 KiB output window. Every emitted prefix is checked against the
+shared file/scan deadline and limits, then reserved against
+`MaxTemporarySize` before an exact write.
+
+The output transaction records the child-file position and temporary
+reservation before decoding. Malformed input, truncation, timeout, resource,
+or write failure truncates and rewinds the child and releases only that
+attempt's reservation. Parse failures then preserve the established raw-stream
+fallback without leaving decoded-prefix bytes ahead of it. Focused regressions
+cover multi-window exact output, one-byte-short temporary admission with zero
+leakage, malformed-prefix rollback, and native-width source admission above
+`UINT32_MAX`.
+
+Object streams still retain decoded bytes for object parsing, and encrypted
+streams and filter chains need intermediate representations. Those paths,
+together with ASCII85, RunLength, ASCIIHex, and LZW, retain their explicit
+legacy contiguous/width boundary. Compiled PDF corpus, sanitizer, materialized
+large-stream, and supported-build Sonic1 qualification remain release gates.
+
+The isolated Linux GCC translation-unit check also exposed an older unmatched
+`_WIN32` guard and late callback declarations in `check_clamav.c`. The guard is
+now closed at the end of its HTML-only block, shared callback state/prototypes
+are visible before first use, and the source guard rejects future unbalanced
+preprocessor conditionals. Sonic1 was not mutated: a fresh read-only status
+probe timed out during SSH Connect with `remote_started=false`.
+
+An isolated production-code harness linked the real `pdf_decodestream()` and
+passed all four streaming cases under ordinary GCC and GCC
+AddressSanitizer/UBSan with leak detection: multi-window exact output,
+one-byte-short quota rollback, truncated-stream raw fallback, and native-width
+input admission. Full parser/corpus sanitizer qualification remains pending.

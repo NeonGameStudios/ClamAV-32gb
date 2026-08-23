@@ -186,6 +186,8 @@ static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *strea
 }
 
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
+static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream,
+                                         size_t streamlen, int fout, size_t *bytes_scanned);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
 static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -247,6 +249,34 @@ size_t pdf_decodestream(
      * filtered token path below. */
     if (obj->numfilters == 0 && objstm == NULL && !(pdf->flags & (1 << DECRYPTABLE_PDF))) {
         *status = pdf_write_raw_stream(pdf, stream, streamlen, fout, &bytes_scanned);
+        goto done;
+    }
+
+    /* A single ordinary Flate stream does not need the legacy whole-buffer
+     * token. Decode it through bounded zlib input/output windows directly into
+     * the quota-accounted child file. Object streams still need retained
+     * decoded bytes for object parsing, filter chains need an intermediate
+     * representation, and encrypted streams must pass through decryption
+     * first. XRef streams deliberately skip forced decryption. */
+    if (obj->numfilters == 1 && obj->filterlist[0] == OBJ_FILTER_FLATE && objstm == NULL &&
+        !(obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
+        (!(pdf->flags & (1 << DECRYPTABLE_PDF)) || xref)) {
+        cl_error_t decode_status;
+
+        decode_status = pdf_stream_flatedecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+        if (decode_status == CL_EPARSE || decode_status == CL_BREAK) {
+            size_t raw_bytes           = 0;
+            cl_error_t fallback_status = pdf_write_raw_stream(pdf, stream, streamlen, fout, &raw_bytes);
+
+            if (fallback_status != CL_SUCCESS) {
+                *status = fallback_status;
+            } else {
+                bytes_scanned = raw_bytes;
+                *status       = (decode_status == CL_BREAK) ? CL_SUCCESS : CL_EPARSE;
+            }
+        } else {
+            *status = decode_status;
+        }
         goto done;
     }
 
@@ -816,10 +846,10 @@ static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, s
     return rc;
 }
 
-static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, uint32_t length)
+static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, size_t length)
 {
     uint8_t *pt = content;
-    uint32_t r;
+    size_t r;
     int toggle = 0;
 
     for (r = 0; r < length; r++, pt++) {
@@ -832,6 +862,234 @@ static uint8_t *decode_nextlinestart(struct pdf_struct *pdf, uint8_t *content, u
     }
 
     return pt;
+}
+
+static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout, off_t output_start,
+                                             uint64_t reservation_start)
+{
+    cl_error_t status = CL_SUCCESS;
+
+    if (ftruncate(fout, output_start) != 0) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output could not be truncated during rollback");
+        return CL_EWRITE;
+    }
+
+    if (pdf->temporary_reserved != NULL) {
+        uint64_t reservation_current = *pdf->temporary_reserved;
+
+        if (reservation_current < reservation_start) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate temporary accounting underflowed during rollback");
+            status = CL_ERESOURCE;
+        } else if (reservation_current != reservation_start) {
+            cli_scan_release_temporary(pdf->ctx, reservation_current - reservation_start);
+            *pdf->temporary_reserved = reservation_start;
+        }
+    }
+
+    if (lseek(fout, output_start, SEEK_SET) != output_start) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output could not be rewound during rollback");
+        if (status == CL_SUCCESS)
+            status = CL_ESEEK;
+    }
+
+    return status;
+}
+
+static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8_t *content, size_t length,
+                                             int fout, size_t *decoded_length, int *inflate_status)
+{
+    uint8_t *output = NULL;
+    z_stream stream;
+    size_t supplied = 0;
+    size_t decoded  = 0;
+    cl_error_t status;
+    int zstat = Z_OK;
+
+    if (decoded_length == NULL || inflate_status == NULL)
+        return CL_ENULLARG;
+
+    *decoded_length = 0;
+    *inflate_status = Z_OK;
+
+    output = (uint8_t *)malloc(INFLATE_CHUNK_SIZE);
+    if (output == NULL) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output window could not be allocated");
+        return CL_EMEM;
+    }
+
+    memset(&stream, 0, sizeof(stream));
+    zstat = inflateInit(&stream);
+    if (zstat != Z_OK) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate decoder could not be initialized");
+        free(output);
+        return CL_EMEM;
+    }
+
+    status = CL_SUCCESS;
+    for (;;) {
+        uInt before_input;
+        size_t produced;
+
+        status = pdf_checktimelimit(pdf, "PDF streamed Flate traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            break;
+
+        if (stream.avail_in == 0 && supplied < length) {
+            size_t input_length = MIN((size_t)PDF_INPUT_WINDOW_SIZE, length - supplied);
+
+            stream.next_in  = (Bytef *)(content + supplied);
+            stream.avail_in = (uInt)input_length;
+            supplied += input_length;
+        }
+
+        stream.next_out  = (Bytef *)output;
+        stream.avail_out = (uInt)INFLATE_CHUNK_SIZE;
+        before_input     = stream.avail_in;
+        zstat            = inflate(&stream, Z_NO_FLUSH);
+        produced         = INFLATE_CHUNK_SIZE - (size_t)stream.avail_out;
+
+        if (produced != 0) {
+            size_t required;
+
+            if (decoded > SIZE_MAX - produced || decoded > UINT64_MAX - produced) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output size overflowed");
+                status = CL_ERESOURCE;
+                break;
+            }
+            required = decoded + produced;
+
+            status = cli_checklimits("pdf", pdf->ctx, (uint64_t)required, 0, 0);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output exceeded configured scan limits");
+                break;
+            }
+
+            status = pdf_write_output(pdf, fout, output, produced);
+            if (status != CL_SUCCESS)
+                break;
+            decoded = required;
+        }
+
+        if (zstat == Z_STREAM_END)
+            break;
+
+        if (zstat == Z_OK) {
+            if (before_input == stream.avail_in && produced == 0) {
+                status = CL_EPARSE;
+                break;
+            }
+
+            /* A full output window can leave buffered output to drain even
+             * after the final input window was consumed. Otherwise, input
+             * exhaustion before Z_STREAM_END is a truncated stream. */
+            if (stream.avail_in == 0 && supplied == length && produced < INFLATE_CHUNK_SIZE) {
+                status = CL_EPARSE;
+                break;
+            }
+            continue;
+        }
+
+        if (zstat == Z_BUF_ERROR && stream.avail_in == 0 && supplied < length)
+            continue;
+
+        if (zstat == Z_MEM_ERROR) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate decoder exhausted memory");
+            status = CL_EMEM;
+        } else {
+            status = CL_EPARSE;
+        }
+        break;
+    }
+
+    *decoded_length = decoded;
+    *inflate_status = zstat;
+    (void)inflateEnd(&stream);
+    free(output);
+    return status;
+}
+
+static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream_data,
+                                         size_t streamlen, int fout, size_t *bytes_scanned)
+{
+    uint8_t *content = (uint8_t *)stream_data;
+    size_t length    = streamlen;
+    size_t decoded   = 0;
+    off_t output_start;
+    uint64_t reservation_start = 0;
+    cl_error_t status;
+    int zstat = Z_OK;
+
+    if (bytes_scanned == NULL)
+        return CL_ENULLARG;
+    *bytes_scanned = 0;
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    if (*content == '\r') {
+        content++;
+        length--;
+        pdfobj_flag(pdf, obj, BAD_STREAMSTART);
+        if (length == 0) {
+            cli_dbgmsg("cli_pdf: Flate stream has no compressed payload after its leading carriage return\n");
+            cli_mark_scan_incomplete(pdf->ctx, "PDF Flate stream has no compressed payload");
+            status = CL_EPARSE;
+            goto rollback;
+        }
+    }
+
+    status = pdf_inflate_stream_attempt(pdf, content, length, fout, &decoded, &zstat);
+    if (status == CL_EPARSE && decoded == 0) {
+        uint8_t *resynchronized = decode_nextlinestart(pdf, content, length);
+
+        if (pdf->ctx != NULL && pdf->ctx->scan_timed_out) {
+            status = CL_ETIMEOUT;
+            goto rollback;
+        }
+
+        if (resynchronized != NULL && resynchronized > content &&
+            (size_t)(resynchronized - content) < length) {
+            length -= (size_t)(resynchronized - content);
+            content = resynchronized;
+            pdfobj_flag(pdf, obj, BAD_FLATESTART);
+            decoded = 0;
+            status  = pdf_inflate_stream_attempt(pdf, content, length, fout, &decoded, &zstat);
+        }
+    }
+
+    if (status == CL_SUCCESS) {
+        cli_dbgmsg("cli_pdf: streamed Flate decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        *bytes_scanned = decoded;
+        return decoded == 0 ? CL_BREAK : CL_SUCCESS;
+    }
+
+rollback:
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(pdf, fout, output_start, reservation_start);
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+
+    if (status == CL_EPARSE) {
+        if (decoded == 0) {
+            pdfobj_flag(pdf, obj, BAD_FLATESTART);
+        } else {
+            pdfobj_flag(pdf, obj, BAD_FLATE);
+        }
+
+        if (zstat == Z_OK || zstat == Z_BUF_ERROR) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF Flate stream did not reach the decoder end state");
+        } else {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder failed before the stream completed");
+        }
+    }
+
+    return status;
 }
 
 static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token)

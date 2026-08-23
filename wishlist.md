@@ -2187,3 +2187,12 @@ and Sonic1 qualification as release gates.
   4 GiB, to exact release/sanitizer parser oracles and post-run verification.
   Retain the complete compiled TIFF corpus and materialized Sonic1
   qualification as release gates.
+
+## PDF single-Flate bounded streaming — 2026-08-23
+
+- Qualify the new 64 KiB-input/256 KiB-output single-Flate path with compiled
+  malformed and valid PDF corpora, sanitizer fault injection, and a
+  materialized multi-gigabyte stream on Sonic1. Preserve transactional rollback
+  and exact temporary accounting. Convert object streams, encryption, filter
+  chains, ASCII85, RunLength, ASCIIHex, and LZW separately before retiring the
+  remaining `pdf-stream-over-1g` capability exception.

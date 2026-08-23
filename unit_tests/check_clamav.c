@@ -126,6 +126,20 @@ static int fpu_words = FPU_ENDIAN_INITME;
 
 static char *tmpdir;
 
+/* Some large-coordinate and read-failure fixtures are shared by tests that
+ * appear before their callback implementations later in this translation
+ * unit. Keep their complete state and prototypes visible at first use. */
+struct pe_native_offset_map_state {
+    const uint8_t *data;
+    size_t length;
+    size_t source_offset;
+};
+
+static const void *pe_native_offset_map_need(fmap_t *map, size_t at, size_t len, int lock);
+static const void *apm_truncated_driver_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+static const void *bmp_truncated_signature_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+static const void *jp2_truncated_signature_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+
 static void cl_setup(void)
 {
     tmpdir = cli_gentemp(NULL);
@@ -2934,6 +2948,7 @@ START_TEST(test_html_notags_cap_uses_generated_size)
     cl_engine_free(engine);
 }
 END_TEST
+#endif
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
 START_TEST(test_html_normalize_cleanup_close_failure_is_fail_visible)
@@ -10115,6 +10130,187 @@ START_TEST(test_pdf_raw_stream_is_chunked_and_quota_accounted)
 }
 END_TEST
 
+START_TEST(test_pdf_flate_stream_is_chunked_and_quota_accounted)
+{
+    enum { DECODED_LENGTH = (256U * 1024U * 3U) + 123U };
+    uint8_t *decoded    = NULL;
+    uint8_t *compressed = NULL;
+    uint8_t *actual     = NULL;
+    uLongf compressed_length;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    struct stat output_stat;
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status = CL_SUCCESS;
+    size_t written;
+    uint64_t temporary_reserved = 0;
+    uint32_t random_state = 0x6d2b79f5U;
+    size_t i;
+
+    decoded = malloc(DECODED_LENGTH);
+    ck_assert_ptr_nonnull(decoded);
+    for (i = 0; i < DECODED_LENGTH; i++) {
+        random_state ^= random_state << 13;
+        random_state ^= random_state >> 17;
+        random_state ^= random_state << 5;
+        decoded[i] = (uint8_t)random_state;
+    }
+
+    compressed_length = compressBound((uLong)DECODED_LENGTH);
+    compressed        = malloc((size_t)compressed_length);
+    ck_assert_ptr_nonnull(compressed);
+    ck_assert_int_eq(compress2(compressed, &compressed_length, decoded,
+                               (uLong)DECODED_LENGTH, Z_BEST_SPEED),
+                     Z_OK);
+
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE,
+                                       (long long)DECODED_LENGTH),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+
+    map = cl_fmap_open_memory(compressed, (size_t)compressed_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    pdf.ctx                = &ctx;
+    pdf.temporary_reserved = &temporary_reserved;
+    obj.id                 = 11U << 8;
+    obj.numfilters         = 1;
+    obj.filterlist[0]      = OBJ_FILTER_FLATE;
+
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)compressed,
+                               (size_t)compressed_length, 0, fd, &status, NULL);
+    ck_assert_uint_eq(written, DECODED_LENGTH);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_uint_eq(temporary_reserved, DECODED_LENGTH);
+    ck_assert_uint_eq(ctx.temporary_bytes, DECODED_LENGTH);
+    ck_assert_int_eq(fstat(fd, &output_stat), 0);
+    ck_assert_int_eq(output_stat.st_size, DECODED_LENGTH);
+
+    actual = malloc(DECODED_LENGTH);
+    ck_assert_ptr_nonnull(actual);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_uint_eq(cli_readn(fd, actual, DECODED_LENGTH), DECODED_LENGTH);
+    ck_assert_int_eq(memcmp(actual, decoded, DECODED_LENGTH), 0);
+
+    cli_scan_release_temporary(&ctx, temporary_reserved);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    free(actual);
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(compressed);
+    free(decoded);
+}
+END_TEST
+
+START_TEST(test_pdf_flate_stream_quota_failure_rolls_back_output)
+{
+    enum { DECODED_LENGTH = (256U * 1024U * 2U) + 17U };
+    uint8_t *decoded    = NULL;
+    uint8_t *compressed = NULL;
+    uLongf compressed_length;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    struct stat output_stat;
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status = CL_SUCCESS;
+    size_t written;
+    uint64_t temporary_reserved = 0;
+    uint32_t random_state = 0x9e3779b9U;
+    size_t i;
+
+    decoded = malloc(DECODED_LENGTH);
+    ck_assert_ptr_nonnull(decoded);
+    for (i = 0; i < DECODED_LENGTH; i++) {
+        random_state ^= random_state << 13;
+        random_state ^= random_state >> 17;
+        random_state ^= random_state << 5;
+        decoded[i] = (uint8_t)random_state;
+    }
+
+    compressed_length = compressBound((uLong)DECODED_LENGTH);
+    compressed        = malloc((size_t)compressed_length);
+    ck_assert_ptr_nonnull(compressed);
+    ck_assert_int_eq(compress2(compressed, &compressed_length, decoded,
+                               (uLong)DECODED_LENGTH, Z_BEST_SPEED),
+                     Z_OK);
+
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE,
+                                       (long long)DECODED_LENGTH - 1),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+
+    map = cl_fmap_open_memory(compressed, (size_t)compressed_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    pdf.ctx                = &ctx;
+    pdf.temporary_reserved = &temporary_reserved;
+    obj.id                 = 12U << 8;
+    obj.numfilters         = 1;
+    obj.filterlist[0]      = OBJ_FILTER_FLATE;
+
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)compressed,
+                               (size_t)compressed_length, 0, fd, &status, NULL);
+    ck_assert_uint_eq(written, 0);
+    ck_assert_int_eq(status, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(temporary_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert_int_eq(fstat(fd, &output_stat), 0);
+    ck_assert_int_eq(output_stat.st_size, 0);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_CUR), 0);
+
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(compressed);
+    free(decoded);
+}
+END_TEST
+
 START_TEST(test_arc4_apply_uses_native_length)
 {
     static const uint8_t key[]      = "Key";
@@ -10185,7 +10381,10 @@ START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
     pdf.ctx               = &ctx;
     obj.id                = 8U << 8;
     obj.numfilters        = 1;
-    obj.filterlist[0]     = OBJ_FILTER_FLATE;
+    /* Filter chains and non-streamed legacy decoders retain this explicit
+     * native-width boundary. Single ordinary Flate streams use the bounded
+     * streaming path instead. */
+    obj.filterlist[0]     = OBJ_FILTER_LZW;
 
     status  = CL_SUCCESS;
     written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
@@ -10239,7 +10438,7 @@ START_TEST(test_pdf_stream_allocation_boundary_is_fail_visible)
     pdf.ctx               = &ctx;
     obj.id                = 9U << 8;
     obj.numfilters        = 1;
-    obj.filterlist[0]     = OBJ_FILTER_FLATE;
+    obj.filterlist[0]     = OBJ_FILTER_LZW;
 
     status  = CL_SUCCESS;
     written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
@@ -10267,6 +10466,71 @@ START_TEST(test_pdf_object_coordinates_are_native_width)
     ck_assert_uint_eq(obj.start, wide_offset);
     ck_assert_msg(sizeof(obj.start) >= sizeof(size_t),
                   "PDF object coordinate was narrowed below native size_t width");
+}
+END_TEST
+
+START_TEST(test_pdf_streaming_flate_accepts_native_input_width)
+{
+    static const uint8_t decoded[] = "native-width streamed PDF Flate";
+    uint8_t input[PDF_INPUT_WINDOW_SIZE] = {0};
+    uint8_t actual[sizeof(decoded) - 1U];
+    uLongf compressed_length = sizeof(input);
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status = CL_SUCCESS;
+    size_t written;
+
+    ck_assert_int_eq(compress2(input, &compressed_length, decoded,
+                               sizeof(decoded) - 1U, Z_BEST_SPEED),
+                     Z_OK);
+    ck_assert_msg(compressed_length < sizeof(input), "PDF Flate fixture filled its input window");
+
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    /* The valid zlib stream ends in the first bounded input window. The
+     * native-width logical stream length includes trailing bytes and verifies
+     * that admission no longer narrows the Flate input length to uint32_t. */
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    pdf.ctx                = &ctx;
+    obj.id                 = 13U << 8;
+    obj.numfilters         = 1;
+    obj.filterlist[0]      = OBJ_FILTER_FLATE;
+
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
+                               (size_t)UINT32_MAX + 1U, 0, fd, &status, NULL);
+    ck_assert_uint_eq(written, sizeof(decoded) - 1U);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_uint_eq(cli_readn(fd, actual, sizeof(actual)), sizeof(actual));
+    ck_assert_int_eq(memcmp(actual, decoded, sizeof(actual)), 0);
+
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
 }
 END_TEST
 #endif
@@ -10680,6 +10944,7 @@ START_TEST(test_pdf_truncated_flate_after_prefix_is_fail_visible)
     enum { DECODED_LENGTH = 16384 };
     uint8_t decoded[DECODED_LENGTH];
     uint8_t *compressed;
+    uint8_t *actual = NULL;
     uLongf compressed_length;
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
@@ -10687,9 +10952,12 @@ START_TEST(test_pdf_truncated_flate_after_prefix_is_fail_visible)
     struct pdf_struct pdf;
     cli_ctx ctx;
     fmap_t *map;
+    struct stat output_stat;
     char *path = NULL;
     int fd = -1;
     cl_error_t status;
+    size_t written;
+    uint64_t temporary_reserved = 0;
     size_t i;
 
     for (i = 0; i < sizeof(decoded); i++)
@@ -10720,18 +10988,33 @@ START_TEST(test_pdf_truncated_flate_after_prefix_is_fail_visible)
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
     pdf.ctx               = &ctx;
+    pdf.temporary_reserved = &temporary_reserved;
     obj.id                = 6U << 8;
     obj.numfilters        = 1;
     obj.filterlist[0]     = OBJ_FILTER_FLATE;
 
-    status = CL_SUCCESS;
-    (void)pdf_decodestream(&pdf, &obj, NULL, (const char *)compressed,
-                           (uint32_t)compressed_length - 1U, 0, fd, &status, NULL);
-    ck_assert_msg(status == CL_EPARSE || status == CL_EUNPACK,
-                  "truncated PDF Flate after a valid prefix returned %s (%d)",
-                  cl_strerror(status), status);
+    status  = CL_SUCCESS;
+    written = pdf_decodestream(&pdf, &obj, NULL, (const char *)compressed,
+                               (size_t)compressed_length - 1U, 0, fd, &status, NULL);
+    ck_assert_uint_eq(written, (size_t)compressed_length - 1U);
+    ck_assert_int_eq(status, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
+    ck_assert_uint_eq(temporary_reserved, (size_t)compressed_length - 1U);
+    ck_assert_uint_eq(ctx.temporary_bytes, (size_t)compressed_length - 1U);
+    ck_assert_int_eq(fstat(fd, &output_stat), 0);
+    ck_assert_int_eq(output_stat.st_size, (off_t)compressed_length - 1);
+
+    actual = malloc((size_t)compressed_length - 1U);
+    ck_assert_ptr_nonnull(actual);
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_uint_eq(cli_readn(fd, actual, (size_t)compressed_length - 1U),
+                      (size_t)compressed_length - 1U);
+    ck_assert_int_eq(memcmp(actual, compressed, (size_t)compressed_length - 1U), 0);
+
+    cli_scan_release_temporary(&ctx, temporary_reserved);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    free(actual);
 
     close(fd);
     cli_unlink(path);
@@ -16793,12 +17076,6 @@ static const void *macho_truncated_load_command_read_failure(fmap_t *map, size_t
 #define PE_TEST_IMPORT_DLL_NAME_OFFSET   0x1274bcU
 #define PE_TEST_IMPORT_FUNCTION_OFFSET   0x127066U
 #define PE_TEST_IMPORT_THUNK_OFFSET      0x126e3cU
-
-struct pe_native_offset_map_state {
-    const uint8_t *data;
-    size_t length;
-    size_t source_offset;
-};
 
 static const void *pe_native_offset_map_need(fmap_t *map, size_t at, size_t len, int lock)
 {
@@ -26645,10 +26922,13 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_stream_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_raw_stream_is_chunked_and_quota_accounted);
+    tcase_add_test(tc_cl, test_pdf_flate_stream_is_chunked_and_quota_accounted);
+    tcase_add_test(tc_cl, test_pdf_flate_stream_quota_failure_rolls_back_output);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pdf_stream_width_boundary_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_stream_allocation_boundary_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_object_coordinates_are_native_width);
+    tcase_add_test(tc_cl, test_pdf_streaming_flate_accepts_native_input_width);
 #endif
     tcase_add_test(tc_cl, test_pdf_extracted_object_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_extract_decoder_error_is_fail_visible);

@@ -6860,3 +6860,38 @@ independent file-type result, size, and hash; its positive and fail-closed
 control suite passes locally. The complete compiled TIFF corpus and
 materialized Sonic1 release/sanitizer evidence remain required before this
 parser family is qualified.
+
+## PDF single-Flate bounded streaming — 2026-08-23
+
+The common unencrypted, single-filter Flate path now bypasses the legacy
+contiguous decoder token. It consumes native-width source lengths in 64 KiB
+zlib windows and emits decoded bytes through a fixed 256 KiB,
+deadline-checked, scan-limit-checked, temporary-quota-accounted output window.
+
+Decoder output is transactional. The implementation records output and quota
+baselines, truncates and rewinds on every failed attempt, and releases only the
+bytes reserved by that attempt before the established raw fallback is written.
+Tests cover exact multi-window output/accounting, one-byte-short quota rollback,
+truncated-output replacement by the exact raw stream, and a logical Flate input
+length above `UINT32_MAX` whose valid stream terminates in the first bounded
+window. Object streams, encryption, filter chains, and non-Flate legacy filters
+remain explicit unsupported boundaries pending their own streaming designs;
+compiled corpus, sanitizer, materialized large-stream, and Sonic1 evidence are
+still required.
+
+An isolated Linux GCC translation-unit check found that the accumulated unit
+test source had an unmatched `_WIN32` conditional and referenced several late
+callback definitions before their declarations. The HTML-only guard now closes
+at its intended boundary, shared callback state/prototypes are declared before
+first use, and the source guard checks preprocessor balance. Both production
+`pdfdecode.c` and the complete `check_clamav.c` translation unit now pass GCC
+syntax/code-generation checks with temporary generated-header stubs; existing
+unrelated legacy warnings remain. A read-only Sonic1 status probe again timed
+out during Connect without starting a remote command, so remote compiled and
+runtime evidence remains pending.
+
+The real production `pdf_decodestream()` was also linked into an isolated GCC
+harness. Its four streaming cases passed both normally and under GCC
+AddressSanitizer/UBSan with leak detection: multi-window output, quota rollback,
+truncated raw fallback, and native-width input admission. This is focused local
+evidence; full PDF corpus and Sonic1 sanitizer qualification remain open.
