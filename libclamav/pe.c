@@ -2799,6 +2799,7 @@ static cl_error_t hash_imptbl(cli_ctx *ctx, uint8_t **digest, uint32_t *impsz, b
         buffer = fmap_need_off_once(map, offset, MIN(PE_MAXNAMESIZE, fsize - offset));
         if (buffer == NULL) {
             cli_dbgmsg("scan_pe: failed to read name for dll\n");
+            cli_mark_scan_incomplete(ctx, "PE imported DLL name could not be read completely");
             status = CL_EREAD;
             goto done;
         }

@@ -15470,6 +15470,16 @@ static const void *pe_import_thunk_read_failure(fmap_t *map, size_t at, size_t l
     return (const uint8_t *)map->data + at;
 }
 
+static const void *pe_import_dll_name_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == PE_TEST_IMPORT_DLL_NAME_OFFSET)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 static size_t pe_petite_section_read_offset;
 
 static const void *pe_petite_section_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -19386,6 +19396,8 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
     char file_path[PATH_MAX];
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
     struct stat st;
     cl_verdict_t verdict;
     const char *last_alert;
@@ -19426,6 +19438,34 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    /* Exercise the import-hash path directly so an in-range DLL-name read
+     * failure must set the layer's sticky incomplete state, not merely return
+     * an error to the outer scan policy. */
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    map->need = pe_import_dll_name_read_failure;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                  = scan_engine;
+    ctx.dconf                   = scan_engine->dconf;
+    ctx.options                 = &options;
+    ctx.fmap                    = map;
+    ctx.this_layer_tmpdir       = tmpdir;
+    ctx.this_layer_metadata_json = json_object_new_object();
+    ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+    ctx.recursion_stack         = &layer;
+    ctx.recursion_stack_size    = 1;
+    layer.fmap                  = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE imported DLL name could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(ctx.this_layer_metadata_json);
+    cl_fmap_close(map);
 
     verdict    = CL_VERDICT_STRONG_INDICATOR;
     last_alert = "stale";

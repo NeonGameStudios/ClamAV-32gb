@@ -5883,3 +5883,14 @@ entry now records an explicit incomplete reason before returning, preserving
 the non-cacheable invariant. A focused callback regression covers the
 version-byte boundary; compiled AutoIt corpus, sanitizer, and Sonic1
 qualification remain open.
+
+## PE import DLL-name read classification — 2026-08-23
+
+The PE import-hash pass already treated descriptor and thunk read failures as
+incomplete, but an in-range fmap failure while acquiring an imported DLL name
+returned `CL_EREAD` without setting the sticky incomplete state. The path now
+records an explicit reason before unwinding, so PE-specific inspection cannot
+be cached or continue as a complete layer. The existing PE fault-injection
+test now directly exercises that callback boundary and verifies the status,
+reason, and non-cacheable map state. Compiled PE corpus, sanitizer, and
+Sonic1 qualification remain open.
