@@ -2430,6 +2430,12 @@ cl_error_t cli_hash_mapped_regions(fmap_t *map, void *hash_ctx, const struct cli
     return CL_SUCCESS;
 }
 
+static cl_error_t asn1_mscat_parse_failure(cli_ctx *ctx)
+{
+    cli_mark_scan_incomplete(ctx, "Authenticode signature could not be parsed completely");
+    return CL_EPARSE;
+}
+
 /* Check an embedded PE Authenticode section to determine whether it's trusted.
  * This will return CL_VERIFIED if the file should be trusted, CL_EPARSE if an
  * error occurred while parsing the signature, CL_EVERIFY if parsing was
@@ -2465,11 +2471,11 @@ cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset
 
     if (asn1_expect_objtype(map, content, &content_size, &c, ASN1_TYPE_SEQUENCE)) {
         cli_dbgmsg("asn1_check_mscat: expected SEQUENCE at top level of hash container\n");
-        return CL_EPARSE;
+        return asn1_mscat_parse_failure(ctx);
     }
     if (asn1_expect_obj(map, &c.content, &c.size, ASN1_TYPE_OBJECT_ID, lenof(OID_SPC_PE_IMAGE_DATA_OBJID), OID_SPC_PE_IMAGE_DATA_OBJID)) {
         cli_dbgmsg("asn1_check_mscat: expected spcPEImageData OID in the first hash SEQUENCE\n");
-        return CL_EPARSE;
+        return asn1_mscat_parse_failure(ctx);
     }
 
     // TODO Should we do anything with the underlying SEQUENCE and data?  From
@@ -2478,20 +2484,20 @@ cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset
 
     if (asn1_expect_objtype(map, c.next, &content_size, &c, ASN1_TYPE_SEQUENCE)) {
         cli_dbgmsg("asn1_check_mscat: expected second hash container object to be a SEQUENCE\n");
-        return CL_EPARSE;
+        return asn1_mscat_parse_failure(ctx);
     }
     if (content_size) {
         cli_dbgmsg("asn1_check_mscat: extra data in hash SEQUENCE\n");
-        return CL_EPARSE;
+        return asn1_mscat_parse_failure(ctx);
     }
 
     if (asn1_expect_hash_algo(map, &c.content, &c.size, &hashtype, &hashsize)) {
         cli_dbgmsg("asn1_check_mscat: unexpected file hash algo\n");
-        return CL_EPARSE;
+        return asn1_mscat_parse_failure(ctx);
     }
 
     if (NULL == (hash_ctx = get_hash_ctx(hashtype))) {
-        return CL_EPARSE;
+        return asn1_mscat_parse_failure(ctx);
     }
 
     // Now that we know the hash algorithm, compute the Authenticode hash
@@ -2517,7 +2523,7 @@ cl_error_t asn1_check_mscat(struct cl_engine *engine, fmap_t *map, size_t offset
     }
     if (c.size) {
         cli_dbgmsg("asn1_check_mscat: extra data after the stored authenticode hash\n");
-        return CL_EPARSE;
+        return asn1_mscat_parse_failure(ctx);
     }
 
     if (NULL != ctx && ctx->scan_incomplete) {

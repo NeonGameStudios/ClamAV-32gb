@@ -4099,9 +4099,12 @@ struct authenticode_hash_map_state {
     const uint8_t *data;
     size_t data_length;
     size_t fail_at;
+    size_t fail_offset;
+    size_t fail_length;
     size_t calls;
     size_t max_request;
     size_t last_offset;
+    bool fail_exact;
     bool repeat_data;
 };
 
@@ -4114,6 +4117,9 @@ static const void *authenticode_hash_test_need(fmap_t *map, size_t at, size_t le
     state->last_offset = at;
     if (len > state->max_request)
         state->max_request = len;
+
+    if (state->fail_exact && at == state->fail_offset && len == state->fail_length)
+        return NULL;
 
     if (at >= state->fail_at)
         return NULL;
@@ -4295,6 +4301,98 @@ START_TEST(test_authenticode_parse_read_failure_is_fail_visible)
     ck_assert(map.dont_cache_flag);
     ck_assert_uint_eq(state.calls, 1);
     cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_authenticode_post_container_parse_failure_is_fail_visible)
+{
+    char file_path[PATH_MAX];
+    char trust_path[PATH_MAX];
+    struct authenticode_hash_map_state state;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    struct cli_exe_info peinfo;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    struct stat st;
+    fmap_t *map;
+    uint8_t *data;
+    size_t offset = 0;
+    size_t fail_offset;
+    unsigned int sigs = 0;
+    cl_error_t status;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_msg(FSTAT(fd, &st) == 0, "fstat(%s) failed: %s", file_path, strerror(errno));
+
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    memset(&state, 0, sizeof(state));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    snprintf(trust_path, sizeof(trust_path), "%s/input/pe_allmatch/trust-sigs/Test.Sig.CRB.TrustCert.crb", SRCDIR);
+    ck_assert_int_eq(cl_load(trust_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_msg(sigs > 0U, "no Authenticode trust certificate loaded");
+
+    memset(&peinfo, 0, sizeof(peinfo));
+    ctx.engine               = engine;
+    ctx.dconf                = engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+    cli_exe_info_init(&peinfo, 0);
+    status = cli_peheader(&ctx, &peinfo, CLI_PEHEADER_OPT_NONE);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_msg(peinfo.ndatadirs > 4 && peinfo.dirs[4].VirtualAddress != 0,
+                  "signed PE fixture has no security directory");
+
+    /* The fixture's SPC_INDIRECT_DATA hash-algorithm SEQUENCE begins 117
+     * bytes into the PKCS#7 payload. This is after asn1_parse_mscat() has
+     * finished, so the injected six-byte read failure reaches the post-parser
+     * hash-container validation path. */
+    fail_offset = (size_t)peinfo.dirs[4].VirtualAddress + sizeof(struct pe_certificate_hdr) + 117U;
+    ck_assert_msg(fail_offset <= map->len && 6U <= map->len - fail_offset,
+                  "signed PE fixture is too short for the post-container probe");
+    ck_assert_uint_eq(data[fail_offset], 0x30U);
+
+    state.data        = data;
+    state.data_length = (size_t)st.st_size;
+    state.fail_at     = SIZE_MAX;
+    state.fail_offset = fail_offset;
+    state.fail_length = 6U;
+    state.fail_exact  = true;
+    map->handle       = &state;
+    map->need         = authenticode_hash_test_need;
+
+    status = cli_check_auth_header(&ctx, &peinfo);
+    ck_assert_int_eq(status, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode signature could not be parsed completely");
+    ck_assert(map->dont_cache_flag);
+
+    cli_exe_info_destroy(&peinfo);
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(data);
 }
 END_TEST
 
@@ -24486,6 +24584,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl_scan, test_authenticode_hash_regions_are_native_and_bounded);
     tcase_add_test(tc_cl_scan, test_authenticode_hash_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_authenticode_parse_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_authenticode_post_container_parse_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_fmap_hash_read_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
 

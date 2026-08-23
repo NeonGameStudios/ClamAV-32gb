@@ -1735,6 +1735,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Mark embedded Authenticode ASN.1 parse/read failures incomplete before
   external catalog trust can continue; retain the focused callback regression,
   compiled PE corpus, sanitizer, and Sonic1 qualification gates.
+- Cover the post-`asn1_parse_mscat()` hash-container validation exits with a
+  signed-fixture callback regression; hash mismatches remain verification
+  failures rather than parser failures.
 
 ## Context-aware fmap hash read classification — 2026-08-23
 
