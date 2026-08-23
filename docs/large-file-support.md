@@ -5790,3 +5790,14 @@ reservation added for the current chunk, so a large OneNote attachment or
 other Rust-produced view cannot monopolize one unchecked output operation.
 Compiled Rust parser, deterministic write-timeout, sanitizer, and Sonic1
 qualification remain release gates.
+
+## MIME retained-node accounting — 2026-08-22
+
+The legacy MIME line-list admission counter now charges retained payload bytes
+plus each linked-list node and the ref-count byte prepended by `lineCreate()`.
+This prevents a message containing many short retained lines from exceeding
+the intended bounded representation. Intentionally deduplicated blank
+separators are checked before reservation, so discarded input does not consume
+the quota. Static source guards and non-clang regression gates pass; compiled
+allocation-fault, sanitizer, production-mail, and Sonic1 qualification remain
+open.

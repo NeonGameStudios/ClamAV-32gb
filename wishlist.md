@@ -1276,3 +1276,13 @@ remain open.
   shared checked helper and enforce the hard 32-GiB ceiling when daemon options
   are unavailable; add compiled FILDES and Sonic1 qualification for sparse
   exact-edge and over-limit inputs.
+
+## MIME retained-node accounting — 2026-08-22
+
+The legacy MIME line-list quota now charges each retained text node and the
+ref-count byte used by `lineCreate()` in addition to line payload bytes. This
+keeps many-short-line messages within the intended bounded representation, and
+deduplicated blank separators no longer consume quota when no node is retained.
+The source guards and non-clang regression gates remain the available local
+evidence; allocation fault injection, sanitizer, production mail corpus, and
+Sonic1 qualification remain open.

@@ -265,18 +265,33 @@ START_TEST(test_message_move_text_preserves_materialization_limit)
     message *source = messageCreate();
     message *destination = messageCreate();
     text *body;
+    const size_t expected_bytes = strlen("body") + 1 + sizeof(text) + sizeof(line_t);
 
     ck_assert_ptr_nonnull(source);
     ck_assert_ptr_nonnull(destination);
     ck_assert_int_eq(messageAddStr(source, "body"), 1);
-    ck_assert_uint_eq(source->materialized_bytes, strlen("body") + 1);
+    ck_assert_uint_eq(source->materialized_bytes, expected_bytes);
     body = messageGetBody(source);
     ck_assert_ptr_nonnull(body);
     ck_assert_int_eq(messageMoveText(destination, body, source), 0);
-    ck_assert_uint_eq(destination->materialized_bytes, strlen("body") + 1);
+    ck_assert_uint_eq(destination->materialized_bytes, expected_bytes);
     ck_assert_uint_eq(source->materialized_bytes, 0);
     messageDestroy(destination);
     messageDestroy(source);
+}
+END_TEST
+
+START_TEST(test_message_addstr_deduplicated_blank_does_not_charge)
+{
+    message *m = messageCreate();
+    size_t materialized_bytes;
+
+    ck_assert_ptr_nonnull(m);
+    ck_assert_int_eq(messageAddStr(m, NULL), 1);
+    materialized_bytes = m->materialized_bytes;
+    ck_assert_int_eq(messageAddStr(m, NULL), 1);
+    ck_assert_uint_eq(m->materialized_bytes, materialized_bytes);
+    messageDestroy(m);
 }
 END_TEST
 
@@ -368,6 +383,7 @@ Suite *test_str_suite(void)
     tcase_add_test(tc_str, test_message_addline_materialization_limit_is_fail_visible);
     tcase_add_test(tc_str, test_message_addstr_materialization_limit_is_fail_visible);
     tcase_add_test(tc_str, test_message_move_text_preserves_materialization_limit);
+    tcase_add_test(tc_str, test_message_addstr_deduplicated_blank_does_not_charge);
     tcase_add_test(tc_str, test_message_export_rejects_truncated_materialization);
 
     return s;

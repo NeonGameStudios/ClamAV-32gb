@@ -84,11 +84,40 @@ static int simil(const char *str1, const char *str2);
 static void messageSetSpoolBuildContext(fileblob *fb, cli_ctx *ctx);
 static int messageCopyBodySpool(message *m, fileblob *out);
 
+static size_t messageMaterializedEntryBytes(size_t line_bytes, bool has_line)
+{
+    size_t total = line_bytes;
+
+    /* Account for the linked-list node and the ref-count byte prepended by
+     * lineCreate(). Without these fixed costs, a message made of many short
+     * lines could exceed the intended resident-memory bound while remaining
+     * below the payload-only quota. */
+    if (total > MESSAGE_MAX_MATERIALIZED_BYTES - sizeof(text))
+        return MESSAGE_MAX_MATERIALIZED_BYTES + 1;
+    total += sizeof(text);
+
+    if (has_line) {
+        if (total > MESSAGE_MAX_MATERIALIZED_BYTES - sizeof(line_t))
+            return MESSAGE_MAX_MATERIALIZED_BYTES + 1;
+        total += sizeof(line_t);
+    }
+
+    return total;
+}
+
 static size_t messageLineMaterializedBytes(const line_t *line)
 {
     const char *data = lineGetData(line);
+    const size_t line_bytes = data ? strlen(data) + 1 : 1;
 
-    return data ? strlen(data) + 1 : 1;
+    return messageMaterializedEntryBytes(line_bytes, line != NULL);
+}
+
+static size_t messageStringMaterializedBytes(const char *data)
+{
+    const size_t line_bytes = data ? strlen(data) + 1 : 1;
+
+    return messageMaterializedEntryBytes(line_bytes, data != NULL && *data != '\0');
 }
 
 static void messageMarkMaterializationFailure(message *m, const char *reason)
@@ -1153,7 +1182,14 @@ int messageAddStr(message *m, const char *data)
     if (m->body_spool)
         return messageAddSpoolLine(m, data);
 
-    stored_bytes = (data != NULL) ? strlen(data) + 1 : 1;
+    /* Do not charge a blank line that is intentionally deduplicated below.
+     * Charging before this check made repeated separators consume quota even
+     * though no text node was retained. */
+    if (data == NULL && m->body_first != NULL && m->body_last != NULL &&
+        m->body_last->t_line == NULL && messageGetMimeType(m) != TEXT)
+        return 1;
+
+    stored_bytes = messageStringMaterializedBytes(data);
     if (!messageReserveMaterializedBytes(m, stored_bytes, "messageAddStr"))
         return -1;
 
@@ -1163,16 +1199,6 @@ int messageAddStr(message *m, const char *data)
         if (m->body_last == NULL) {
             cli_errmsg("Internal email parser error: message 'body_last' pointer should not be NULL if 'body_first' is set.\n");
         } else {
-            if ((data == NULL) && (m->body_last->t_line == NULL))
-                /*
-                 * Although this would save time and RAM, some
-                 * phish signatures have been built which need the
-                 * blank lines
-                 */
-                if (messageGetMimeType(m) != TEXT)
-                    /* don't save two blank lines in succession */
-                    return 1;
-
             m->body_last->t_next = (text *)malloc(sizeof(text));
             if (m->body_last->t_next == NULL) {
                 messageDedup(m);

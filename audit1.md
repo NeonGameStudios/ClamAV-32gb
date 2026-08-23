@@ -5217,3 +5217,14 @@ available. Unknown/non-regular descriptors retain their historical handoff so
 the daemon can report the protocol error. A sparse exact-32-GiB and
 32-GiB-plus-one regression covers the boundary; compiled FILDES and Sonic1
 qualification remain open.
+
+## MIME retained-node accounting — 2026-08-22
+
+The legacy MIME line-list admission counter previously charged only retained
+line payload bytes. It now also charges the linked-list node and the ref-count
+byte prepended to allocated lines, preventing a large population of short
+retained lines from exceeding the intended bounded representation. A
+deduplicated blank separator is checked before reservation so discarded input
+does not consume the quota. Static source guards and non-clang regression
+gates remain available; compiled allocation-fault, sanitizer, production-mail,
+and Sonic1 qualification remain open.
