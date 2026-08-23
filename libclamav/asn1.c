@@ -2194,6 +2194,7 @@ finish:
     OPENSSL_free(exp);
     if (CL_EPARSE == ret) {
         cli_dbgmsg("asn1_parse_mscat: failed to parse authenticode section\n");
+        cli_mark_scan_incomplete(ctx, "Authenticode signature could not be parsed completely");
     }
     return ret;
 }

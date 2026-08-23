@@ -5849,3 +5849,16 @@ status through both property-tree passes. Focused callback-backed
 WordDocument and WorkBook probes return `CL_EREAD` and make the fmap
 non-cacheable. Compiled Office corpus, sanitizer, and Sonic1 qualification
 remain open.
+
+## Authenticode parse/read failure classification — 2026-08-23
+
+The embedded Authenticode ASN.1 parser previously returned `CL_EPARSE` after
+both malformed input and swallowed fmap read failures without marking the
+current layer incomplete. Such a result could leave the PE path eligible to
+continue toward external catalog trust. All `CL_EPARSE` exits from the
+embedded-signature parser now mark the layer incomplete, making the failure
+non-cacheable and causing the existing catalog-trust gate to refuse that
+layer. A focused callback-backed parser regression covers the initial
+in-range read failure. This conservative classification intentionally does
+not claim to distinguish every ASN.1 helper's read fault from malformed DER;
+compiled PE corpus, sanitizer, and Sonic1 qualification remain open.

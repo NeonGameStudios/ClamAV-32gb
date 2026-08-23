@@ -1729,3 +1729,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Bound HWP raw-deflate reads to the declared compressed stream and preserve
   `CL_EREAD` plus incomplete state for fully in-range fmap callback failures;
   retain compiled HWP corpus, sanitizer, and Sonic1 qualification gates.
+
+## Authenticode parse/read failure classification — 2026-08-23
+
+- Mark embedded Authenticode ASN.1 parse/read failures incomplete before
+  external catalog trust can continue; retain the focused callback regression,
+  compiled PE corpus, sanitizer, and Sonic1 qualification gates.

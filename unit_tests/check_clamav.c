@@ -4259,6 +4259,45 @@ START_TEST(test_authenticode_hash_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_authenticode_parse_read_failure_is_fail_visible)
+{
+    static const uint8_t malformed_signature[] = {0x30};
+    struct authenticode_hash_map_state state;
+    struct cl_engine *engine;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t map;
+    cl_error_t status;
+
+    memset(&state, 0, sizeof(state));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&map, 0, sizeof(map));
+    state.data        = malformed_signature;
+    state.data_length = sizeof(malformed_signature);
+    state.fail_at     = 0;
+    map.data          = malformed_signature;
+    map.handle        = &state;
+    map.need          = authenticode_hash_test_need;
+    map.len           = sizeof(malformed_signature);
+    layer.fmap        = &map;
+    ctx.fmap          = &map;
+    ctx.recursion_stack = &layer;
+    ctx.recursion_stack_size = 1;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ctx.engine = engine;
+    status     = asn1_check_mscat(engine, &map, 0, sizeof(malformed_signature), NULL, 0, &ctx);
+    ck_assert_int_eq(status, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Authenticode signature could not be parsed completely");
+    ck_assert(map.dont_cache_flag);
+    ck_assert_uint_eq(state.calls, 1);
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_pe_overlay_range_preserves_native_size)
 {
     struct cli_exe_section sections[2];
@@ -24120,6 +24159,7 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl_scan, test_authenticode_hash_regions_are_native_and_bounded);
     tcase_add_test(tc_cl_scan, test_authenticode_hash_failure_is_fail_visible);
+    tcase_add_test(tc_cl_scan, test_authenticode_parse_read_failure_is_fail_visible);
     tcase_add_test(tc_cl_scan, test_pe_overlay_range_preserves_native_size);
 
     user_timeout = getenv("T");
