@@ -5927,3 +5927,12 @@ lookahead from an ordinary non-continuation. The failure stops header parsing,
 preserves `CL_EREAD`, and leaves the layer incomplete and non-cacheable. The
 focused unit regression injects the failure once so a retry cannot hide the
 original operational error.
+
+## Shared fmap string-read failure classification — 2026-08-23
+
+ARJ filename/comment metadata and legacy embedded InstallShield strings now
+use bounded fmap windows that distinguish an in-range backing read failure
+(`CL_EREAD`) from a missing terminator (`CL_EPARSE`). InstallShield string
+lookups are also constrained to the selected input range. Focused fmap, ARJ,
+and InstallShield fault-injection coverage is recorded; compiled parser,
+sanitizer, corpus, and Sonic1 qualification remain release gates.

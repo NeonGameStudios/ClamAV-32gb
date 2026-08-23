@@ -241,6 +241,28 @@ START_TEST(test_fmap_readn_full_preserves_range_failure_classes)
 }
 END_TEST
 
+START_TEST(test_fmap_need_offstr_once_status_preserves_range_failure_classes)
+{
+    static const uint8_t terminated[]   = {'a', 'b', 'c', '\0'};
+    static const uint8_t unterminated[] = {'a', 'b', 'c'};
+    cl_error_t status;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(terminated, sizeof(terminated));
+    ck_assert_ptr_nonnull(map);
+    map->need = fmap_readn_full_read_failure;
+    ck_assert_ptr_null(fmap_need_offstr_once_status(map, 0, sizeof(terminated), &status));
+    ck_assert_int_eq(status, CL_EREAD);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(unterminated, sizeof(unterminated));
+    ck_assert_ptr_nonnull(map);
+    ck_assert_ptr_null(fmap_need_offstr_once_status(map, 0, sizeof(unterminated), &status));
+    ck_assert_int_eq(status, CL_EPARSE);
+    cl_fmap_close(map);
+}
+END_TEST
+
 /* extern void cl_free(struct cl_engine *engine); */
 START_TEST(test_cl_free)
 {
@@ -17986,6 +18008,46 @@ START_TEST(test_ishield_truncated_metadata_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ishield_metadata_string_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {'n', 'a', 'm', 'e', 0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine           = &engine;
+    ctx.options          = &options;
+    ctx.fmap             = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_scanishield(&ctx, 0, sizeof(data) - 1U);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield metadata ended before a complete file record");
+    ck_assert(map->dont_cache_flag);
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    map->need                  = ishield_header_read_failure;
+    ret = cli_scanishield(&ctx, 0, map->len);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield file name could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_ishield_invalid_embedded_header_is_fail_visible)
 {
     uint8_t data[128];
@@ -18147,6 +18209,43 @@ START_TEST(test_arj_main_header_read_failure_is_fail_visible)
     map->need             = arj_targeted_read_failure;
     ctx.engine            = &engine;
     ctx.fmap              = map;
+
+    ret = cli_unarj_header_check(&ctx, 0, &archive_size);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ main header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    arj_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_arj_main_header_string_read_failure_is_fail_visible)
+{
+    uint8_t data[40];
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t archive_size = 0;
+    cl_error_t ret;
+
+    memset(data, 0, sizeof(data));
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    data[0] = 0x60;
+    data[1] = 0xea;
+    arj_test_write_u16(data + 2, 34);
+    data[4]  = 30;
+    data[32] = 'a';
+    data[33] = 0;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    arj_read_failure_offset = 32U;
+    map->need              = arj_targeted_read_failure;
+    ctx.engine             = &engine;
+    ctx.fmap               = map;
 
     ret = cli_unarj_header_check(&ctx, 0, &archive_size);
     ck_assert_int_eq(ret, CL_EREAD);
@@ -23012,6 +23111,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_fmap_hash_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_cl_fmap_get_data_clamps_wrapped_length);
     tcase_add_test(tc_cl, test_fmap_readn_full_preserves_range_failure_classes);
+    tcase_add_test(tc_cl, test_fmap_need_offstr_once_status_preserves_range_failure_classes);
 #ifndef _WIN32
     tcase_add_test(tc_cl, test_html_normalize_cap_is_fail_visible);
     tcase_add_test(tc_cl, test_html_utf16_time_limit_is_fail_visible);
@@ -23271,8 +23371,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_nested_fmap_ranges_and_force_to_disk_are_fail_visible);
     tcase_add_test(tc_cl, test_ishield_msi_partial_limit_and_decode_failures_are_visible);
     tcase_add_test(tc_cl, test_ishield_truncated_metadata_is_fail_visible);
+    tcase_add_test(tc_cl, test_ishield_metadata_string_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_ishield_invalid_embedded_header_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_main_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_arj_main_header_string_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_main_header_is_fail_visible);
     tcase_add_test(tc_cl, test_arj_truncated_signature_is_parse_error);
     tcase_add_test(tc_cl, test_arj_time_limit_is_fail_visible);

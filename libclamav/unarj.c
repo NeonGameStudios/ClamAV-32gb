@@ -959,6 +959,7 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
     unsigned char *fnnorm  = NULL;
     unsigned char *comnorm = NULL;
     cl_error_t ret         = CL_SUCCESS;
+    cl_error_t string_status;
 
     size_t filename_max_len = 0;
     size_t filename_len     = 0;
@@ -1020,10 +1021,16 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
     }
     if (filename_max_len > 0) {
         fnnorm   = cli_max_calloc(sizeof(unsigned char), filename_max_len + 1);
-        filename = fmap_need_offstr(metadata->map, metadata->offset, filename_max_len + 1);
-        if (!filename || !fnnorm) {
+        if (!fnnorm) {
             cli_dbgmsg("UNARJ: Unable to allocate memory for filename\n");
-            ret = CL_EFORMAT;
+            ret = CL_EMEM;
+            goto done;
+        }
+        filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+                                                 filename_max_len + 1, &string_status);
+        if (!filename) {
+            cli_dbgmsg("UNARJ: Unable to read filename metadata: %s\n", cl_strerror(string_status));
+            ret = string_status;
             goto done;
         }
         filename_len = CLI_STRNLEN(filename, filename_max_len);
@@ -1038,10 +1045,16 @@ static cl_error_t arj_read_main_header(arj_metadata_t *metadata)
     }
     if (comment_max_len > 0) {
         comnorm = cli_max_calloc(sizeof(unsigned char), comment_max_len + 1);
-        comment = fmap_need_offstr(metadata->map, metadata->offset, comment_max_len + 1);
-        if (!comment || !comnorm) {
+        if (!comnorm) {
             cli_dbgmsg("UNARJ: Unable to allocate memory for comment\n");
-            ret = CL_EFORMAT;
+            ret = CL_EMEM;
+            goto done;
+        }
+        comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+                                               comment_max_len + 1, &string_status);
+        if (!comment) {
+            cli_dbgmsg("UNARJ: Unable to read comment metadata: %s\n", cl_strerror(string_status));
+            ret = string_status;
             goto done;
         }
         comment_len = CLI_STRNLEN(comment, comment_max_len);
@@ -1102,6 +1115,7 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
     unsigned char *fnnorm  = NULL;
     unsigned char *comnorm = NULL;
     cl_error_t ret         = CL_SUCCESS;
+    cl_error_t string_status;
 
     size_t filename_max_len = 0;
     size_t filename_len     = 0;
@@ -1175,10 +1189,11 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
             ret = CL_EMEM;
             goto done;
         }
-        filename = fmap_need_offstr(metadata->map, metadata->offset, filename_max_len + 1);
+        filename = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+                                                 filename_max_len + 1, &string_status);
         if (!filename) {
-            cli_dbgmsg("UNARJ: Filename is out of file\n");
-            ret = CL_EFORMAT;
+            cli_dbgmsg("UNARJ: Unable to read filename metadata: %s\n", cl_strerror(string_status));
+            ret = string_status;
             goto done;
         }
         filename_len = CLI_STRNLEN(filename, filename_max_len);
@@ -1198,10 +1213,11 @@ static cl_error_t arj_read_file_header(arj_metadata_t *metadata)
             ret = CL_EMEM;
             goto done;
         }
-        comment = fmap_need_offstr(metadata->map, metadata->offset, comment_max_len + 1);
+        comment = fmap_need_offstr_once_status(metadata->map, metadata->offset,
+                                               comment_max_len + 1, &string_status);
         if (!comment) {
-            cli_dbgmsg("UNARJ: comment is out of file\n");
-            ret = CL_EFORMAT;
+            cli_dbgmsg("UNARJ: Unable to read comment metadata: %s\n", cl_strerror(string_status));
+            ret = string_status;
             goto done;
         }
         comment_len += CLI_STRNLEN(comment, comment_max_len);

@@ -430,6 +430,68 @@ static inline const void *fmap_need_off_once_len(fmap_t *m, size_t at, size_t le
 }
 
 /**
+ * @brief Find a NUL-terminated string through bounded, unlocked fmap windows.
+ *
+ * Unlike fmap_need_offstr(), this helper preserves the distinction between a
+ * range that contains no terminator and a backing read that fails. The latter
+ * is reported as CL_EREAD through @p status. A successful lookup returns the
+ * pointer to the start of the string, not to its terminator.
+ *
+ * @param m           The fmap.
+ * @param at          Offset of the start of the string.
+ * @param len_hint    Maximum string range; zero means the remainder of the map.
+ * @param[out] status CL_SUCCESS, CL_EPARSE, CL_EREAD, or CL_ENULLARG.
+ * @return const void* Pointer to the string, or NULL on failure.
+ */
+static inline const void *fmap_need_offstr_once_status(fmap_t *m, size_t at, size_t len_hint, cl_error_t *status)
+{
+    const void *start = NULL;
+    size_t remaining;
+
+    if (status == NULL)
+        return NULL;
+    *status = CL_EPARSE;
+
+    if (m == NULL) {
+        *status = CL_ENULLARG;
+        return NULL;
+    }
+    if (at > m->len)
+        return NULL;
+
+    remaining = m->len - at;
+    if (len_hint == 0 || len_hint > remaining)
+        len_hint = remaining;
+    if (len_hint == 0)
+        return NULL;
+
+    while (len_hint != 0) {
+        size_t window_length = len_hint;
+        const unsigned char *window;
+
+        if (m->pgsz != 0 && m->pgsz < (uint64_t)window_length)
+            window_length = (size_t)m->pgsz;
+
+        window = (const unsigned char *)fmap_need_off_once(m, at, window_length);
+        if (window == NULL) {
+            *status = CL_EREAD;
+            return NULL;
+        }
+        if (start == NULL)
+            start = window;
+        if (memchr(window, '\0', window_length) != NULL) {
+            *status = CL_SUCCESS;
+            return start;
+        }
+
+        at += window_length;
+        len_hint -= window_length;
+    }
+
+    return NULL;
+}
+
+/**
  * @brief Get a pointer to the file data if the requested offset & max-len are within the fmap.
  *
  * Just like `fmap_need_off_once()` except the `len` param is a maximum-len.

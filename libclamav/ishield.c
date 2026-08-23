@@ -497,6 +497,38 @@ static void md5str(uint8_t *sum);
 static cl_error_t is_parse_hdr(cli_ctx *ctx, struct IS_CABSTUFF *c);
 static cl_error_t is_extract_cab(cli_ctx *ctx, uint64_t off, uint64_t size, uint64_t csize);
 
+static const char *ishield_need_str(cli_ctx *ctx, off_t offset, size_t input_end, cl_error_t *status)
+{
+    size_t at;
+    size_t available;
+
+    if (status == NULL)
+        return NULL;
+    *status = CL_EPARSE;
+
+    if (ctx == NULL || ctx->fmap == NULL || offset < 0 ||
+        (uint64_t)offset >= (uint64_t)input_end)
+        return NULL;
+
+    at        = (size_t)offset;
+    available = input_end - at;
+    return (const char *)fmap_need_offstr_once_status(
+        ctx->fmap, at, MIN((size_t)2048, available), status);
+}
+
+static cl_error_t ishield_string_failure(cli_ctx *ctx, cl_error_t status,
+                                         const char *parse_reason,
+                                         const char *read_reason)
+{
+    if (status == CL_EREAD) {
+        cli_mark_scan_incomplete(ctx, read_reason);
+        return CL_EREAD;
+    }
+
+    cli_mark_scan_incomplete(ctx, parse_reason);
+    return CL_EPARSE;
+}
+
 /* Extract the content of older (non-MSI) IS */
 cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
 {
@@ -509,6 +541,7 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
     fmap_t *map;
     unsigned fc = 0;
     size_t input_end;
+    cl_error_t string_status;
 
     if (!ctx || !ctx->engine || !ctx->fmap)
         return CL_ENULLARG;
@@ -521,36 +554,41 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
     input_end = (size_t)off + sz;
 
     while (ret == CL_SUCCESS) {
-        fname = fmap_need_offstr(map, coff, 2048);
+        if (coff >= 0 && (size_t)coff == input_end)
+            break;
+
+        fname = ishield_need_str(ctx, coff, input_end, &string_status);
         if (!fname) {
-            if (coff < 0 || (size_t)coff != input_end) {
-                cli_mark_scan_incomplete(ctx, "InstallShield metadata ended before a complete file record");
-                ret = CL_EPARSE;
-            }
+            ret = ishield_string_failure(ctx, string_status,
+                                         "InstallShield metadata ended before a complete file record",
+                                         "InstallShield file name could not be read completely");
             break;
         }
         coff += strlen(fname) + 1;
 
-        path = fmap_need_offstr(map, coff, 2048);
+        path = ishield_need_str(ctx, coff, input_end, &string_status);
         if (!path) {
-            cli_mark_scan_incomplete(ctx, "InstallShield file record ended before its path");
-            ret = CL_EPARSE;
+            ret = ishield_string_failure(ctx, string_status,
+                                         "InstallShield file record ended before its path",
+                                         "InstallShield file path could not be read completely");
             break;
         }
         coff += strlen(path) + 1;
 
-        version = fmap_need_offstr(map, coff, 2048);
+        version = ishield_need_str(ctx, coff, input_end, &string_status);
         if (!version) {
-            cli_mark_scan_incomplete(ctx, "InstallShield file record ended before its version");
-            ret = CL_EPARSE;
+            ret = ishield_string_failure(ctx, string_status,
+                                         "InstallShield file record ended before its version",
+                                         "InstallShield file version could not be read completely");
             break;
         }
         coff += strlen(version) + 1;
 
-        strsz = fmap_need_offstr(map, coff, 2048);
+        strsz = ishield_need_str(ctx, coff, input_end, &string_status);
         if (!strsz) {
-            cli_mark_scan_incomplete(ctx, "InstallShield file record ended before its size");
-            ret = CL_EPARSE;
+            ret = ishield_string_failure(ctx, string_status,
+                                         "InstallShield file record ended before its size",
+                                         "InstallShield file size could not be read completely");
             break;
         }
         coff += strlen(strsz) + 1;
@@ -611,7 +649,6 @@ cl_error_t cli_scanishield(cli_ctx *ctx, off_t off, size_t sz)
             }
         }
 
-        fmap_unneed_ptr(map, fname, data - fname);
         ret = is_dump_and_scan(ctx, coff, fsize);
         coff += fsize;
     }

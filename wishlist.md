@@ -1629,3 +1629,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   failure as `CL_EREAD` instead of treating it as a normal non-continuation;
   compiled mail fault-injection, parser-corpus, and Sonic1 qualification remain
   open.
+
+## Shared fmap string-read failure classification — 2026-08-23
+
+- Replace ambiguous `fmap_need_offstr()` production use with bounded,
+  status-aware windows; migrate ARJ and legacy InstallShield, preserve
+  `CL_EREAD` versus `CL_EPARSE`, and bound InstallShield to its selected range;
+  retain compiled parser, sanitizer, corpus, and Sonic1 qualification gates.

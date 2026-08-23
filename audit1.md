@@ -5674,3 +5674,15 @@ The LHA/LZH decoder's construction, member-read, and next-header error
 boundaries now convert the dependency's wrapped I/O error so this distinction
 survives the parser boundary as well. Compiled Rust/layout, parser-corpus,
 sanitizer, and Sonic1 qualification remain open.
+
+## Shared fmap string-read failure classification — 2026-08-23
+
+`fmap_need_offstr()` collapsed a missing terminator, an out-of-range string,
+and an in-range backing callback failure into NULL. The ARJ filename/comment
+paths and legacy InstallShield embedded metadata therefore could turn an
+operational read failure into an ordinary malformed result; InstallShield also
+searched beyond its selected subrange. A new bounded unlocked-window helper
+returns `CL_EREAD` for callback failure and `CL_EPARSE` for absent terminators,
+and both production callers now use it. Focused fmap, ARJ, and InstallShield
+fault-injection tests cover the distinction and range boundary. Compiled
+parser, sanitizer, production corpus, and Sonic1 qualification remain open.
