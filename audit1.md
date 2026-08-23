@@ -5120,3 +5120,17 @@ a clean result.
 The source guards and non-clang regression gates remain the available local
 evidence. Fault-injected matcher-root/file-type setup coverage, production
 signature qualification, sanitizer runs, and Sonic1 qualification remain open.
+
+## Milter final-action allocation failures — 2026-08-22
+
+Milter end-of-message handling declared the structured infected reply without
+initializing it, so an allocation failure could reach the null check through
+an indeterminate pointer. The reply is now initialized and therefore returns
+the configured failure action instead of undefined behavior. VirusAction event
+argument copies are checked as a group; a failure skips only that optional
+event while preserving the mandatory infected action, and failure to allocate a
+configured startup VirusAction now aborts milter initialization.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled milter allocation fault injection, one-request service
+qualification, sanitizer runs, and Sonic1 qualification remain open.

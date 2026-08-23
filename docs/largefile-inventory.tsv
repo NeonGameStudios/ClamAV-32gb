@@ -6177,14 +6177,14 @@ native-width-integer	clamav-milter/clamfi.c	356	    unsigned int crcpt;
 native-width-integer	clamav-milter/clamfi.c	434	        size_t reply_size = strlen(alert) + sizeof("stream:  FOUND\n");
 native-width-integer	clamav-milter/clamfi.c	490	                unsigned int have_multi = (multircpt != 0 && cf->nrecipients);
 native-width-integer	clamav-milter/clamfi.c	491	                unsigned int lst_rcpt   = (have_multi * (cf->nrecipients - 1)) + 1;
-native-width-integer	clamav-milter/clamfi.c	548	                                    int wret;
-native-width-integer	clamav-milter/clamfi.c	615	static int parse_action(char *action)
+native-width-integer	clamav-milter/clamfi.c	551	                                        int wret;
+native-width-integer	clamav-milter/clamfi.c	620	static int parse_action(char *action)
 native-width-integer	clamav-milter/clamfi.c	64	int addxvirus = 0; /* 0 - don't add | 1 - replace | 2 - add */
 native-width-integer	clamav-milter/clamfi.c	67	int multircpt   = 1;
-native-width-integer	clamav-milter/clamfi.c	670	int init_actions(struct optstruct *opts)
+native-width-integer	clamav-milter/clamfi.c	675	int init_actions(struct optstruct *opts)
 native-width-integer	clamav-milter/clamfi.c	74	int loginfected;
-native-width-integer	clamav-milter/clamfi.c	760	                    int gotpctv = 0;
-native-width-integer	clamav-milter/clamfi.c	855	        unsigned int rcpt_cnt;
+native-width-integer	clamav-milter/clamfi.c	770	                    int gotpctv = 0;
+native-width-integer	clamav-milter/clamfi.c	865	        unsigned int rcpt_cnt;
 native-width-integer	clamav-milter/clamfi.c	87	    int local;
 native-width-integer	clamav-milter/clamfi.c	88	    int main;
 native-width-integer	clamav-milter/clamfi.c	89	    int alt;
@@ -18254,8 +18254,8 @@ narrowing-cast	unit_tests/check_clamd.c	763	    ck_assert_int_eq((int)send(socke
 narrowing-cast	win32/compat/net.c	268	    int ret = send((SOCKET)sockfd, (const char *)buf, (int)len, flags);
 format-width	clamav-milter/clamav-milter.c	443	            if (fprintf(fd, "%u\n", (unsigned int)getpid()) < 0) {
 format-width	clamav-milter/clamav-milter.c	65	    logg(LOGG_DEBUG, "clamav-milter: milter_exit, signal %d\n", sig);
-format-width	clamav-milter/clamfi.c	555	                                            logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
-format-width	clamav-milter/clamfi.c	557	                                            logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
+format-width	clamav-milter/clamfi.c	558	                                                logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
+format-width	clamav-milter/clamfi.c	560	                                                logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
 format-width	clamav-milter/connpool.c	139	    logg(LOGG_DEBUG, "%s socket tcp:%s:%s added to the pool (slot %d)\n", cpe->local ? "Local" : "Remote", addr ? addr : "localhost", port ? port : "3310", cp->entries);
 format-width	clamav-milter/connpool.c	176	            logg(LOGG_DEBUG, "Probe for slot %u returned: %s\n", i, cpe->dead ? "failed" : "success");
 format-width	clamav-milter/connpool.c	96	    logg(LOGG_DEBUG, "Local socket unix:%s added to the pool (slot %d)\n", srv->sun_path, cp->entries);
@@ -20733,11 +20733,11 @@ offset-size-arithmetic	clamav-milter/clamfi.c	476	    } else if (len > 7 && !str
 offset-size-arithmetic	clamav-milter/clamfi.c	484	                reply[len - 7] = '\0';
 offset-size-arithmetic	clamav-milter/clamfi.c	499	                    msg[sizeof(msg) - 1] = '\0';
 offset-size-arithmetic	clamav-milter/clamfi.c	500	                    add_x_header(ctx, msg, cf->scanned_count, cf->status_count);
-offset-size-arithmetic	clamav-milter/clamfi.c	664	    snprintf(buf, sizeof(buf), rejectfmt, cf->virusname);
-offset-size-arithmetic	clamav-milter/clamfi.c	665	    buf[sizeof(buf) - 1] = '\0';
-offset-size-arithmetic	clamav-milter/clamfi.c	762	                    rejectfmt = dst = malloc(strlen(src) * 4 + 1);
-offset-size-arithmetic	clamav-milter/clamfi.c	817	    if (!(cf = (struct CLAMFI *)malloc(sizeof(*cf)))) {
-offset-size-arithmetic	clamav-milter/clamfi.c	854	        void *new_rcpt = realloc(cf->recipients, (cf->nrecipients + 1) * sizeof(*(cf->recipients)));
+offset-size-arithmetic	clamav-milter/clamfi.c	669	    snprintf(buf, sizeof(buf), rejectfmt, cf->virusname);
+offset-size-arithmetic	clamav-milter/clamfi.c	670	    buf[sizeof(buf) - 1] = '\0';
+offset-size-arithmetic	clamav-milter/clamfi.c	772	                    rejectfmt = dst = malloc(strlen(src) * 4 + 1);
+offset-size-arithmetic	clamav-milter/clamfi.c	827	    if (!(cf = (struct CLAMFI *)malloc(sizeof(*cf)))) {
+offset-size-arithmetic	clamav-milter/clamfi.c	864	        void *new_rcpt = realloc(cf->recipients, (cf->nrecipients + 1) * sizeof(*(cf->recipients)));
 offset-size-arithmetic	clamav-milter/clamfi_quota.c	11	int clamfi_normalize_maxfilesize(uint64_t configured, uint64_t *effective)
 offset-size-arithmetic	clamav-milter/clamfi_quota.c	2	 * Pure message-size policy used by clamav-milter and its unit tests.
 offset-size-arithmetic	clamav-milter/clamfi_quota.c	26	enum clamfi_quota_result clamfi_quota_add(uint64_t current, uint64_t limit, size_t requested, uint64_t *next)

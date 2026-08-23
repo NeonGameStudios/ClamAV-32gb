@@ -13,6 +13,12 @@
   non-success or detection status with a previously complete report, so close,
   aggregation, and transport-boundary failures cannot be published as clean.
   Compiled daemon and Sonic1 qualification remain open.
+- Milter structured-report finalization now initializes the infected reply
+  buffer and skips only the optional VirusAction event when its copied
+  arguments cannot be allocated; the mandatory infected action remains
+  fail-closed, and configured VirusAction allocation failure aborts startup.
+  Compiled milter fault injection and one-request Sonic1 qualification remain
+  open.
 - PDF, PE, ELF, Mach-O, and root-metadata bytecode hook-context allocation
   failures now mark required hook work incomplete before returning `CL_EMEM`;
   compiled hook fault injection, interpreter/JIT qualification, production

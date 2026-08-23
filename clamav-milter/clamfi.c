@@ -347,7 +347,7 @@ sfsistat clamfi_abort(SMFICTX *ctx)
 sfsistat clamfi_eom(SMFICTX *ctx)
 {
     struct CLAMFI *cf;
-    char *reply;
+    char *reply = NULL;
     int len, ret;
     int infected   = 0;
     int incomplete = 0;
@@ -528,38 +528,43 @@ sfsistat clamfi_eom(SMFICTX *ctx)
                                 char *e_msg_id   = strdup(msg_id);
                                 pid_t pid;
 
-                                logg(LOGG_DEBUG, "VirusEvent: about to execute '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'\n", viraction, vir, e_id, e_from, e_to, e_msg_subj, e_msg_id, e_msg_date);
-
-                                pthread_mutex_lock(&virusaction_lock);
-                                pid = fork();
-                                if (!pid) {
-                                    char *args[9]; /* avoid element is not computable at load time warns */
-                                    args[0] = viraction;
-                                    args[1] = vir;
-                                    args[2] = e_id;
-                                    args[3] = e_from;
-                                    args[4] = e_to;
-                                    args[5] = e_msg_subj;
-                                    args[6] = e_msg_id;
-                                    args[7] = e_msg_date;
-                                    args[8] = NULL;
-                                    exit(execvp(viraction, args));
-                                } else if (pid > 0) {
-                                    int wret;
-                                    pthread_mutex_unlock(&virusaction_lock);
-                                    while ((wret = waitpid(pid, &ret, 0)) == -1 && errno == EINTR) continue;
-                                    if (wret < 0)
-                                        logg(LOGG_ERROR, "VirusEvent: waitpid() failed: %s\n", cli_strerror(errno, er, sizeof(er)));
-                                    else {
-                                        if (WIFEXITED(ret))
-                                            logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
-                                        else if (WIFSIGNALED(ret))
-                                            logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
-                                        else
-                                            logg(LOGG_DEBUG, "VirusEvent: child lost\n");
-                                    }
+                                if (!e_id || !e_from || !e_to || !e_msg_subj || !e_msg_date || !e_msg_id) {
+                                    logg(LOGG_ERROR, "VirusEvent: unable to allocate event arguments; skipping event\n");
                                 } else {
-                                    logg(LOGG_ERROR, "VirusEvent: fork failed: %s\n", cli_strerror(errno, er, sizeof(er)));
+                                    logg(LOGG_DEBUG, "VirusEvent: about to execute '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'\n", viraction, vir, e_id, e_from, e_to, e_msg_subj, e_msg_id, e_msg_date);
+
+                                    pthread_mutex_lock(&virusaction_lock);
+                                    pid = fork();
+                                    if (!pid) {
+                                        char *args[9]; /* avoid element is not computable at load time warns */
+                                        args[0] = viraction;
+                                        args[1] = vir;
+                                        args[2] = e_id;
+                                        args[3] = e_from;
+                                        args[4] = e_to;
+                                        args[5] = e_msg_subj;
+                                        args[6] = e_msg_id;
+                                        args[7] = e_msg_date;
+                                        args[8] = NULL;
+                                        exit(execvp(viraction, args));
+                                    } else if (pid > 0) {
+                                        int wret;
+                                        pthread_mutex_unlock(&virusaction_lock);
+                                        while ((wret = waitpid(pid, &ret, 0)) == -1 && errno == EINTR) continue;
+                                        if (wret < 0)
+                                            logg(LOGG_ERROR, "VirusEvent: waitpid() failed: %s\n", cli_strerror(errno, er, sizeof(er)));
+                                        else {
+                                            if (WIFEXITED(ret))
+                                                logg(LOGG_DEBUG, "VirusEvent: child exited with code %d\n", WEXITSTATUS(ret));
+                                            else if (WIFSIGNALED(ret))
+                                                logg(LOGG_DEBUG, "VirusEvent: child killed by signal %d\n", WTERMSIG(ret));
+                                            else
+                                                logg(LOGG_DEBUG, "VirusEvent: child lost\n");
+                                        }
+                                    } else {
+                                        pthread_mutex_unlock(&virusaction_lock);
+                                        logg(LOGG_ERROR, "VirusEvent: fork failed: %s\n", cli_strerror(errno, er, sizeof(er)));
+                                    }
                                 }
                                 free(e_id);
                                 free(e_from);
@@ -693,8 +698,13 @@ int init_actions(struct optstruct *opts)
         }
     }
 
-    if ((opt = optget(opts, "VirusAction"))->enabled)
+    if ((opt = optget(opts, "VirusAction"))->enabled) {
         viraction = strdup(opt->strarg);
+        if (!viraction) {
+            logg(LOGG_ERROR, "Failed to allocate memory for VirusAction\n");
+            return 1;
+        }
+    }
 
     if ((opt = optget(opts, "OnFail"))->enabled) {
         switch (parse_action(opt->strarg)) {
