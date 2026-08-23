@@ -601,6 +601,7 @@ static cl_error_t decode(arj_metadata_t *metadata)
     memset(&decode_data, 0, sizeof(decode_data));
     decode_data.text = (unsigned char *)cli_max_calloc(DDICSIZ, 1);
     if (!decode_data.text) {
+        cli_mark_scan_incomplete(metadata->ctx, "ARJ decoder buffer could not be allocated");
         return CL_EMEM;
     }
     decode_data.map       = metadata->map;
@@ -775,6 +776,7 @@ static cl_error_t decode_f(arj_metadata_t *metadata)
     memset(&decode_data, 0, sizeof(decode_data));
     decode_data.text = (unsigned char *)cli_max_calloc(DDICSIZ, 1);
     if (!decode_data.text) {
+        cli_mark_scan_incomplete(metadata->ctx, "ARJ decoder buffer could not be allocated");
         return CL_EMEM;
     }
     decode_data.map       = metadata->map;

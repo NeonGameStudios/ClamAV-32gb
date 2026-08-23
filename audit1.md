@@ -5018,3 +5018,15 @@ temporary-output paths remain unchanged.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled allocation fault injection, production HFS+ corpora,
 sanitizer runs, and Sonic1 qualification remain open.
+
+## ARJ decoder-buffer allocation failures — 2026-08-22
+
+Both ARJ compressed decoder paths could return `CL_EMEM` before allocating
+their fixed decoder buffer without marking the containing archive layer
+incomplete. The paths now record a shared decoder-buffer failure reason before
+returning; extraction, deadline, callback-read, and output accounting are
+unchanged.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled decoder allocation fault injection, production ARJ corpora,
+sanitizer runs, and Sonic1 qualification remain open.

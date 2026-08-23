@@ -891,6 +891,7 @@ contains libclamav/unarj.c 'ARJ stored member output reached the configured time
 contains libclamav/unarj.c 'ARJ member output could not be written completely'
 contains libclamav/unarj.c 'ARJ stored member output could not be written completely'
 contains libclamav/unarj.c 'ARJ member decompression reached the configured time limit'
+contains libclamav/unarj.c 'ARJ decoder buffer could not be allocated'
 contains unit_tests/check_clamav.c 'test_arj_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_arj_truncated_member_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_arj_truncated_main_header_is_fail_visible'
