@@ -45,7 +45,8 @@
 #define apm_parsemsg(...) ;
 #endif
 
-static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize, bool old_school);
+static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize,
+                                             bool old_school, size_t tableoff, size_t tableend);
 
 static bool apm_scale_blocks(uint64_t blocks, size_t sectorsize, size_t *bytes)
 {
@@ -80,6 +81,7 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
     bool old_school = false;
     size_t sectorsize, maplen, partsize, described_size;
     size_t tableoff = 0, tablesize = 0;
+    size_t tableend = 0;
     size_t pos = 0, partoff = 0;
     unsigned i;
     uint32_t max_prtns = 0;
@@ -189,10 +191,16 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         status = CL_EFORMAT;
         goto done;
     }
+    if (tableoff > maplen || tablesize > maplen - tableoff) {
+        cli_mark_scan_incomplete(ctx, "APM partition table is outside the input map");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    tableend = tableoff + tablesize;
 
     /* check that the partition table fits in the space specified - HEURISTICS */
     if (SCAN_HEURISTIC_PARTITION_INTXN && (ctx->dconf->other & OTHER_CONF_PRTNINTXN)) {
-        status = apm_partition_intersection(ctx, &aptable, sectorsize, old_school);
+        status = apm_partition_intersection(ctx, &aptable, sectorsize, old_school, tableoff, tableend);
         if (status != CL_SUCCESS) {
             goto done;
         }
@@ -224,6 +232,11 @@ cl_error_t cli_scanapm(cli_ctx *ctx)
         /* read partition table entry */
         if (!apm_scale_blocks(i, sectorsize, &pos)) {
             cli_mark_scan_incomplete(ctx, "APM partition entry offset overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (pos < tableoff || pos > tableend || sizeof(apentry) > tableend - pos) {
+            cli_mark_scan_incomplete(ctx, "APM partition entry is outside the declared partition table");
             status = CL_EFORMAT;
             goto done;
         }
@@ -318,7 +331,8 @@ done:
     return status;
 }
 
-static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize, bool old_school)
+static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_info *aptable, size_t sectorsize,
+                                              bool old_school, size_t tableoff, size_t tableend)
 {
     cl_error_t status = CL_SUCCESS;
     cl_error_t ret;
@@ -345,6 +359,11 @@ static cl_error_t apm_partition_intersection(cli_ctx *ctx, struct apm_partition_
         /* read partition table entry */
         if (!apm_scale_blocks(i, sectorsize, &pos)) {
             cli_mark_scan_incomplete(ctx, "APM intersection entry offset overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (pos < tableoff || pos > tableend || sizeof(apentry) > tableend - pos) {
+            cli_mark_scan_incomplete(ctx, "APM intersection entry is outside the declared partition table");
             status = CL_EFORMAT;
             goto done;
         }

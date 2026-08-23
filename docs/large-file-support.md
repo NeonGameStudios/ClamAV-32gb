@@ -6229,3 +6229,11 @@ HFS+ tree-header coordinates are now bounded by the volume header's declared
 `totalBlocks` before fmap admission. This prevents a header at the exact
 declared volume end from consuming appended mapped bytes as a valid tree.
 Compiled HFS+ corpus, sanitizer, and Sonic1 qualification remain open.
+
+## APM declared partition-map boundary — 2026-08-23
+
+APM entry reads now remain within the partition map's declared
+`pBlockStart/pBlockCount` extent, including the optional partition-intersection
+walk. Appended mapped bytes can no longer become partition metadata merely
+because they are readable. Compiled APM corpus, sanitizer, and Sonic1
+qualification remain open.

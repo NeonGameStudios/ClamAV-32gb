@@ -1075,6 +1075,15 @@ the child uses the already-held reservation rather than double-counting the
 same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
 qualification remain open.
 
+## APM declared partition-map boundary — 2026-08-23
+
+APM entry reads previously checked only the image fmap. The parser now validates
+the declared partition-map extent and bounds both normal and intersection
+entry walks to that extent before reading metadata. A focused fixture keeps a
+second entry mapped but outside the declared table and verifies an incomplete
+result. Compiled APM corpus, sanitizer, and Sonic1 qualification remain
+release gates.
+
 ## RTF split reserved-field accounting — 2026-08-23
 
 The RTF embedded-object state machine lost progress when its eight-byte

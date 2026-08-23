@@ -2116,3 +2116,9 @@ and Sonic1 qualification as release gates.
 - Bound HFS+ tree-header coordinates by the declared volume before fmap access,
   retaining the exact-end boundary fixture, compiled corpus, sanitizer, and
   Sonic1 qualification as release gates.
+
+## APM declared partition-map boundary — 2026-08-23
+
+- Bound APM normal and intersection entry reads by the declared partition-map
+  extent, retaining the mapped-but-undeclared entry fixture, compiled corpus,
+  sanitizer, and Sonic1 qualification as release gates.

@@ -13924,6 +13924,8 @@ START_TEST(test_apm_partition_limit_is_fail_visible)
     data[517] = 0x00;
     data[518] = 0x00;
     data[519] = 0x02; /* partition map plus one declared partition. */
+    data[523] = 0x01; /* partition map starts at block 1. */
+    data[527] = 0x02; /* map occupies blocks 1 and 2. */
     memcpy(data + 512 + 48, "Apple_partition_map", 19);
 
     memset(&engine, 0, sizeof(engine));
@@ -14002,6 +14004,8 @@ START_TEST(test_apm_invalid_partition_is_fail_visible)
     data[517] = 0x00;
     data[518] = 0x00;
     data[519] = 0x02; /* partition map plus one declared partition. */
+    data[523] = 0x01; /* partition map starts at block 1. */
+    data[527] = 0x02; /* map occupies blocks 1 and 2. */
     memcpy(data + 512 + 48, "Apple_partition_map", 19);
     data[1024] = 0x50;
     data[1025] = 0x4d; /* partition entry signature: "PM". */
@@ -14041,6 +14045,62 @@ START_TEST(test_apm_invalid_partition_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_apm_partition_table_boundary_is_fail_visible)
+{
+    uint8_t data[1536] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* The map header declares two entries, but its own partition extent
+     * contains only the header block. The second entry remains mapped so the
+     * parser must enforce the declared table boundary. */
+    data[0] = 0x45;
+    data[1] = 0x52;
+    data[2] = 0x02;
+    data[3] = 0x00;
+    data[7] = 0x03;
+    data[512] = 0x50;
+    data[513] = 0x4d;
+    data[516] = 0x00;
+    data[517] = 0x00;
+    data[518] = 0x00;
+    data[519] = 0x02;
+    data[523] = 0x01;
+    data[527] = 0x01;
+    memcpy(data + 512 + 48, "Apple_partition_map", 19);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.maxpartitions    = 2;
+    options.parse            = CL_SCAN_PARSE_ARCHIVE;
+    map                      = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_APM;
+    layer.size               = sizeof(data);
+    layer.fmap               = map;
+
+    ret = cli_scanapm(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "APM partition entry is outside the declared partition table");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_apm_partition_coordinate_overflow_is_fail_visible)
 {
     uint8_t data[1536] = {0};
@@ -14069,6 +14129,8 @@ START_TEST(test_apm_partition_coordinate_overflow_is_fail_visible)
     data[517] = 0x00;
     data[518] = 0x00;
     data[519] = 0x02; /* partition map plus one declared partition. */
+    data[523] = 0x01; /* partition map starts at block 1. */
+    data[527] = 0x02; /* map occupies blocks 1 and 2. */
     memcpy(data + 512 + 48, "Apple_partition_map", 19);
     data[1024] = 0x50;
     data[1025] = 0x4d; /* partition entry signature: "PM". */
@@ -14133,6 +14195,8 @@ START_TEST(test_apm_partition_read_failure_is_fail_visible)
     data[517] = 0x00;
     data[518] = 0x00;
     data[519] = 0x02; /* partition map plus one declared partition. */
+    data[523] = 0x01; /* partition map starts at block 1. */
+    data[527] = 0x02; /* map occupies blocks 1 and 2. */
     memcpy(data + 512 + 48, "Apple_partition_map", 19);
 
     memset(&engine, 0, sizeof(engine));
@@ -25464,6 +25528,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_apm_partition_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_truncated_driver_map_is_format_error);
     tcase_add_test(tc_cl, test_apm_invalid_partition_is_fail_visible);
+    tcase_add_test(tc_cl, test_apm_partition_table_boundary_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_apm_partition_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_gpt_invalid_partition_is_fail_visible);
