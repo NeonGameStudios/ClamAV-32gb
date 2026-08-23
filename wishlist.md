@@ -1470,3 +1470,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
 - Preflight PE icon bitmap headers, preserving parse results for short ranges
   and `CL_EREAD` for fully in-range fmap callback failures; retain compiled
   scanner, sanitizer, PE corpus, and Sonic1 qualification as release gates.
+
+## EGG fixed-index-header read classification — 2026-08-23
+
+- Preflight EGG archive and file/block fixed headers plus EOF marker reads,
+  preserving parse results for short ranges and `CL_EREAD` for fully in-range
+  fmap callback failures; retain compiled scanner, sanitizer, production EGG
+  corpus, and Sonic1 qualification as release gates.

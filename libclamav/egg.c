@@ -382,6 +382,32 @@ static cl_error_t egg_checktimelimit(const egg_handle* handle)
     return status;
 }
 
+static const uint8_t* egg_read_fixed_range(egg_handle* handle, size_t offset, size_t length, cl_error_t* status)
+{
+    const uint8_t* data;
+
+    if (handle == NULL || handle->map == NULL || offset > handle->map->len || length > handle->map->len - offset) {
+        if (status != NULL)
+            *status = CL_EPARSE;
+        if (handle != NULL && handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG fixed metadata is truncated");
+        return NULL;
+    }
+
+    data = (const uint8_t*)fmap_need_off_once(handle->map, offset, length);
+    if (data == NULL) {
+        if (status != NULL)
+            *status = CL_EREAD;
+        if (handle->ctx != NULL)
+            cli_mark_scan_incomplete(handle->ctx, "EGG fixed metadata could not be read completely");
+        return NULL;
+    }
+
+    if (status != NULL)
+        *status = CL_SUCCESS;
+    return data;
+}
+
 #define EGG_VALIDATE_HANDLE(h) \
     ((!handle || !handle->map || (handle->offset > handle->map->len)) ? CL_EARG : CL_SUCCESS)
 
@@ -696,7 +722,7 @@ static cl_error_t egg_parse_block_headers(egg_handle* handle, egg_block** block)
      * 1st:
      *   Block headers must start with the block_header.
      */
-    index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(block_header));
+    index = egg_read_fixed_range(handle, handle->offset, sizeof(block_header), &status);
     if (!index) {
         cli_dbgmsg("egg_parse_block_headers: File buffer too small to contain block header.\n");
         goto done;
@@ -740,7 +766,7 @@ static cl_error_t egg_parse_block_headers(egg_handle* handle, egg_block** block)
      *      a) EOFARC
      */
 
-    index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(magic32_t));
+    index = egg_read_fixed_range(handle, handle->offset, sizeof(magic32_t), &status);
     if (!index) {
         cli_dbgmsg("egg_parse_block_headers: File buffer too small to contain end of archive magic bytes.\n");
         goto done;
@@ -1410,7 +1436,7 @@ static cl_error_t egg_parse_file_headers(egg_handle* handle, egg_file** file)
      * 1st:
      *   File headers must start with the file_header.
      */
-    index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(file_header));
+    index = egg_read_fixed_range(handle, handle->offset, sizeof(file_header), &status);
     if (!index) {
         cli_dbgmsg("egg_parse_file_headers: File buffer too small to contain file header.\n");
         goto done;
@@ -1460,7 +1486,7 @@ static cl_error_t egg_parse_file_headers(egg_handle* handle, egg_file** file)
             goto done;
 
         /* Get the next magic32_t */
-        index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(magic32_t));
+        index = egg_read_fixed_range(handle, handle->offset, sizeof(magic32_t), &status);
         if (!index) {
             cli_dbgmsg("egg_parse_file_headers: File buffer too small to contain end of archive magic bytes.\n");
             goto done;
@@ -1574,7 +1600,7 @@ static cl_error_t egg_parse_archive_headers(egg_handle* handle)
      *   Archive headers begins with the egg_header.
      */
 
-    index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(egg_header));
+    index = egg_read_fixed_range(handle, handle->offset, sizeof(egg_header), &status);
     if (!index) {
         cli_dbgmsg("egg_parse_archive_headers: File buffer too small to contain egg_header.\n");
         goto done;
@@ -1614,7 +1640,7 @@ static cl_error_t egg_parse_archive_headers(egg_handle* handle)
             goto done;
 
         /* Get the next magic32_t */
-        index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(magic32_t));
+        index = egg_read_fixed_range(handle, handle->offset, sizeof(magic32_t), &status);
         if (!index) {
             cli_dbgmsg("egg_parse_archive_headers: File buffer too small to contain end of archive magic bytes.\n");
             goto done;
@@ -1739,7 +1765,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
             goto done;
 
         /* Get the next magic32_t */
-        index = (const uint8_t*)fmap_need_off_once(handle->map, handle->offset, sizeof(magic32_t));
+        index = egg_read_fixed_range(handle, handle->offset, sizeof(magic32_t), &status);
         if (!index) {
             cli_dbgmsg("cli_egg_open: No more data in archive.\n");
             status = CL_EFORMAT;

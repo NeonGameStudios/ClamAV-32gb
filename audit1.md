@@ -5461,3 +5461,12 @@ the fmap callback. A genuinely short header remains a parse/incomplete result,
 while a fully in-range callback failure remains `CL_EREAD` with an explicit
 incomplete reason. Focused injected-read coverage guards the boundary.
 Compiled scanner, sanitizer, PE corpus, and Sonic1 qualification remain open.
+
+## EGG fixed-index-header read classification — 2026-08-23
+
+EGG archive and file/block fixed headers, together with their EOF marker
+reads, now preflight the requested ranges. Short metadata remains a parse/
+incomplete result, while a fully in-range fmap callback failure remains
+`CL_EREAD` with an explicit incomplete reason. Focused archive-header
+regressions cover both outcomes. Compiled scanner, sanitizer, production EGG
+corpus, and Sonic1 qualification remain open.

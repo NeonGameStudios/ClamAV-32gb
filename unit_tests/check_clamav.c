@@ -13857,6 +13857,54 @@ START_TEST(test_egg_sfx_header_admission)
 }
 END_TEST
 
+START_TEST(test_egg_fixed_header_range_classes_are_fail_visible)
+{
+    static const uint8_t valid_header[] = {
+        0x45, 0x47, 0x47, 0x41, /* EGG_HEADER_MAGIC */
+        0x00, 0x01,             /* EGG_HEADER_VERSION */
+        0x01, 0x00, 0x00, 0x00, /* nonzero header id */
+        0x00, 0x00, 0x00, 0x00  /* reserved */
+    };
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    void *handle = NULL;
+    char **comments = NULL;
+    uint32_t ncomments = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_header, sizeof(valid_header));
+    ck_assert_ptr_nonnull(map);
+    map->need  = fmap_readn_full_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG fixed metadata could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(valid_header, sizeof(valid_header) - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_ptr_null(handle);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG fixed metadata is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 typedef struct {
     uint8_t *buffer;
     size_t capacity;
@@ -22208,6 +22256,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
+    tcase_add_test(tc_cl, test_egg_fixed_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_egg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_lzma_stream_extracts_bounded_member);
