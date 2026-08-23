@@ -6603,3 +6603,13 @@ length and the BIFF parser's initial state before reporting success; either
 boundary returns `CL_EPARSE`, marks the layer incomplete, and prevents a clean
 cache/verdict. Static source guards pass; compiled OLE2 truncation corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## XAR TOC root-completion check — 2026-08-23
+
+The XAR TOC entry walker previously returned `CL_BREAK` both when it observed
+the closing `</xar>` element and when libxml2 reached EOF after a complete
+entry. A truncated TOC could therefore finish without an explicit parser
+failure. The walker now requires the root close before returning the normal
+TOC-end sentinel; EOF first marks the layer incomplete and returns `CL_EPARSE`.
+A focused missing-root-close regression is registered; compiled XAR corpus,
+sanitizer, and Sonic1 qualification remain release gates.

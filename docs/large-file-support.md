@@ -6304,3 +6304,11 @@ the declared stream length and a BIFF record that ends mid-header or payload.
 Both cases remain explicit incomplete/non-cacheable results instead of clean
 OLE2 scans. Compiled truncation corpus, sanitizer, and supported-build Sonic1
 qualification remain release gates.
+
+## XAR TOC root-completion check — 2026-08-23
+
+XAR TOC traversal now distinguishes a properly observed closing `</xar>` from
+XML EOF after the last complete entry. Missing the root close is an explicit
+incomplete/non-cacheable result instead of a normal end-of-TOC condition. A
+focused missing-root-close regression is registered; compiled XAR corpus,
+sanitizer, and supported-build Sonic1 qualification remain release gates.

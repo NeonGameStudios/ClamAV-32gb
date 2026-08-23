@@ -330,6 +330,7 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
     const xmlChar *name;
     int indata = 0, inea = 0;
     int rc, gotoffset = 0, gotlength = 0, gotsize = 0;
+    bool toc_closed = false;
 
     *a_cksum  = NULL;
     *a_hash   = XAR_CKSUM_NONE;
@@ -429,6 +430,7 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
             } else if ((xmlTextReaderNodeType(reader) == XML_READER_TYPE_END_ELEMENT) &&
                        xmlStrEqual(name, (const xmlChar *)"xar")) {
                 cli_dbgmsg("cli_scanxar: finished parsing xar TOC.\n");
+                toc_closed = true;
                 break;
             }
         }
@@ -442,9 +444,12 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
 
     if (gotoffset && gotlength && gotsize) {
         rc = CL_SUCCESS;
-    } else if (!indata && !inea && 0 == gotoffset + gotlength + gotsize)
-        rc = CL_BREAK;
-    else
+    } else if (!indata && !inea && 0 == gotoffset + gotlength + gotsize) {
+        if (toc_closed)
+            rc = CL_BREAK;
+        else
+            rc = xar_incomplete(ctx, "XAR TOC XML ended before the root element closed");
+    } else
         rc = CL_EFORMAT;
 
     return rc;
