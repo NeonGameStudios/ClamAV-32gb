@@ -188,6 +188,7 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
 {
     size_t length                      = 0;
     uint32_t partitionStartingLocation = 0;
+    uint32_t partitionLength           = 0;
     uint32_t logicalBlockSize          = 0;
     uint64_t offset64                  = 0;
     uint64_t partitionOffset           = 0;
@@ -206,6 +207,7 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
     }
 
     partitionStartingLocation = le32_to_host(pPartitionDescriptor->partitionStartingLocation);
+    partitionLength           = le32_to_host(pPartitionDescriptor->partitionLength);
     logicalBlockSize           = le32_to_host(pLogicalVolumeDescriptor->logicalBlockSize);
 
     switch (icbFlags & 3) {
@@ -270,19 +272,26 @@ static cl_error_t getUDFExtentRange(cli_ctx *ctx, PartitionDescriptor *pPartitio
         length = recordedLength;
     }
 
-    extent->offset = 0;
-    extent->length = length;
-    if (0 == length)
-        return CL_SUCCESS;
-
     if (logicalBlockSize == 0) {
         cli_warnmsg("extractFile: Logical block size is zero.\n");
         cli_mark_scan_incomplete(ctx, "UDF logical block size is invalid");
         return CL_EPARSE;
     }
 
-    partitionOffset = (uint64_t)partitionStartingLocation * logicalBlockSize;
     extentOffset    = (uint64_t)extentBlock * logicalBlockSize;
+    if (extentOffset > (uint64_t)partitionLength * logicalBlockSize ||
+        length > (uint64_t)partitionLength * logicalBlockSize - extentOffset) {
+        cli_warnmsg("extractFile: Allocation descriptor extent exceeds the UDF partition.\n");
+        cli_mark_scan_incomplete(ctx, "UDF file extent is outside the declared partition");
+        return CL_EPARSE;
+    }
+
+    extent->offset = 0;
+    extent->length = length;
+    if (0 == length)
+        return CL_SUCCESS;
+
+    partitionOffset = (uint64_t)partitionStartingLocation * logicalBlockSize;
     if (UINT64_MAX - partitionOffset < extentOffset) {
         cli_warnmsg("extractFile: Allocation descriptor offset arithmetic overflowed.\n");
         cli_mark_scan_incomplete(ctx, "UDF file extent offset overflowed");

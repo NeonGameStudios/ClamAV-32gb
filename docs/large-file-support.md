@@ -1642,6 +1642,15 @@ evidence, and workflow YAML controls passed. Broader production CVD, parser
 corpus, cold-cache, sanitizer/multi-worker, release-runner, and remote rebuild
 qualification remain open.
 
+## UDF declared-partition extent accounting — 2026-08-23
+
+UDF file extents are now bounded by the declared Partition Descriptor length
+before fmap admission. This prevents an extent at the partition end from
+consuming mapped bytes outside the partition and preserves an explicit
+incomplete result for invalid logical-block geometry. The focused allocation
+fixture covers the boundary; compiled UDF corpus, sanitizer, width review, and
+Sonic1 qualification remain open.
+
 ## ISO9660 declared-volume boundary accounting — 2026-08-23
 
 ISO9660 block admission now honors the image's declared Volume Space Size in

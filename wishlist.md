@@ -1478,6 +1478,12 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   scanner, sanitizer, production document-corpus, and Sonic1 qualification as
   release gates.
 
+## UDF declared-partition extent accounting — 2026-08-23
+
+- Bound UDF allocation extents by the declared partition length before fmap
+  access, retaining the out-of-partition fixture, compiled fragmented-UDF
+  corpus, sanitizer, width review, and Sonic1 qualification as release gates.
+
 ## SIS fixed-header truncation classification — 2026-08-22
 
 - Preflight the fixed 16-byte SIS UID header before callback admission,

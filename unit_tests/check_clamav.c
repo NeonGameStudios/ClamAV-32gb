@@ -23095,6 +23095,7 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
 
     pd_offset = base + (6 * VOLUME_DESCRIPTOR_SIZE);
     test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionStartingLocation), 0);
+    test_udf_put_le32(data + pd_offset + offsetof(PartitionDescriptor, partitionLength), UDF_TEST_ALLOCATED_LENGTH);
 
     fed_offset = base + (14 * VOLUME_DESCRIPTOR_SIZE);
     test_udf_put_le64(data + fed_offset + offsetof(FileEntryDescriptor, infoLength), UDF_TEST_DECLARED_LENGTH);
@@ -23118,6 +23119,21 @@ START_TEST(test_udf_declared_information_length_is_fail_visible)
     ck_assert_int_eq(ret, CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF allocation extents do not match declared information length");
+    ck_assert(map->dont_cache_flag);
+
+    /* An extent beginning at the partition end must not consume bytes from a
+     * later mapped region merely because the fmap itself is large enough. */
+    test_udf_put_le64(data + fed_offset + offsetof(FileEntryDescriptor, infoLength), UDF_TEST_ALLOCATED_LENGTH);
+    test_udf_put_le32(data + allocation_offset + offsetof(short_ad, position), UDF_TEST_ALLOCATED_LENGTH);
+    memset(&ctx, 0, sizeof(ctx));
+    map->dont_cache_flag = false;
+    ctx.engine           = &engine;
+    ctx.fmap             = map;
+
+    ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF file extent is outside the declared partition");
     ck_assert(map->dont_cache_flag);
 
     /* An ext_ad whose logical information length differs from its recorded

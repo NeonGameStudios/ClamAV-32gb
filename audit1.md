@@ -1101,6 +1101,17 @@ requires each list walk to finish exactly at its declared end. A focused empty
 list regression covers the boundary; compiled RIFF corpus, fault injection,
 sanitizer, and Sonic1 qualification remain release gates.
 
+## UDF declared-partition extent accounting — 2026-08-23
+
+UDF extent admission previously validated only the computed fmap range. It now
+also checks the extent's block-relative start and byte length against the
+Partition Descriptor's declared partition length, after validating the logical
+block size. A mapped extent beginning at the partition end is therefore an
+explicit incomplete parse instead of an extracted child. The focused fixture
+extends the existing UDF allocation test with that boundary; compiled UDF
+corpus, sanitizer, width review, and Sonic1 qualification remain release
+gates.
+
 ## ISO9660 declared-volume boundary accounting — 2026-08-23
 
 ISO9660 directory and file extents were previously constrained by the mapped
