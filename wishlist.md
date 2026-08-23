@@ -1,5 +1,12 @@
 # Wishlist
 
+## Milter large-stream transport width and interruption handling — 2026-08-23
+
+- Milter socket progress now retains the native `ssize_t` result width for
+  multi-gigabyte stream chunks and retries `EINTR` at send/receive boundaries
+  instead of failing a valid request. Compiled transport fault injection,
+  sanitizer, and Sonic1 qualification remain release gates.
+
 ## On-access source-read status propagation — 2026-08-23
 
 - Local read failures while staging an on-access INSTREAM request now preserve

@@ -154,7 +154,9 @@ int nc_send(int s, const void *buff, size_t len)
     char *buf = (char *)buff;
 
     while (len) {
-        int res        = send(s, buf, len, 0);
+        /* send() returns ssize_t. Keep the native result width because the
+         * milter may pass multi-gigabyte stream chunks to this helper. */
+        ssize_t res    = send(s, buf, len, 0);
         time_t timeout = time(NULL) + TIMEOUT;
         struct timeval tv;
         char er[256];
@@ -169,6 +171,8 @@ int nc_send(int s, const void *buff, size_t len)
             buf += res;
             continue;
         }
+        if (errno == EINTR)
+            continue;
         if (errno != EAGAIN && errno != EWOULDBLOCK) {
             strerror_print(LOGG_ERROR, "send failed");
             close(s);
@@ -238,7 +242,7 @@ char *nc_recv(int s)
     time_t now, timeout = time(NULL) + readtimeout;
     struct timeval tv;
     fd_set fds;
-    int res;
+    ssize_t res;
     unsigned int len = 0;
 
     while (1) {
@@ -269,7 +273,7 @@ char *nc_recv(int s)
         }
         if (res == -1) {
             char er[256];
-            if (errno == EAGAIN)
+            if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
                 continue;
             strerror_print(LOGG_ERROR, "recv failed after successful select");
             close(s);

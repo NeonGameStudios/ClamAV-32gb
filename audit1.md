@@ -6240,3 +6240,14 @@ was set. The source-side failures now record `CL_EREAD` before unwinding,
 preserving the distinction between a partial local input read and a
 socket/write failure. This remains source-validated only; compiled on-access
 fault injection, sanitizer, and Sonic1 qualification remain open.
+
+## Milter large-stream transport width and interruption handling — 2026-08-23
+
+The milter's `nc_send()` helper accepted a `size_t` length but stored the
+native `send()` result in an `int`, which could narrow progress for a
+multi-gigabyte stream chunk. Its send path also treated an interrupt as a
+hard transport failure, and the small reply reader had the same receive-side
+problem. The helpers now preserve `ssize_t` results and retry `EINTR` (and
+`EWOULDBLOCK` for the reply reader), keeping transient signal interruptions
+from turning a valid large request into a failed scan. Compiled transport
+fault injection, sanitizer, and Sonic1 qualification remain open.
