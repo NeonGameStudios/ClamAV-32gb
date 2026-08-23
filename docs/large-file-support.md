@@ -5936,3 +5936,11 @@ use bounded fmap windows that distinguish an in-range backing read failure
 lookups are also constrained to the selected input range. Focused fmap, ARJ,
 and InstallShield fault-injection coverage is recorded; compiled parser,
 sanitizer, corpus, and Sonic1 qualification remain release gates.
+
+## MSPack decoder read-failure propagation — 2026-08-23
+
+CAB/CHM decoder-owned fmap callback failures now remain `CL_EREAD` through
+decoder open and member extraction instead of being collapsed into parse or
+format results. Deadline expiry remains `CL_ETIMEOUT`, and focused CAB fault
+injection covers the decoder-owned read boundary; compiled MSPack corpus,
+sanitizer, and Sonic1 qualification remain release gates.

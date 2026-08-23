@@ -19255,6 +19255,16 @@ static void mspack_test_write_u32(uint8_t *dst, uint32_t value)
         dst[i] = (uint8_t)(value >> (8U * i));
 }
 
+static const void *mspack_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at != 0 || len > 36U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 #ifdef CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
 struct mspack_system;
 struct mscab_decompressor;
@@ -19405,6 +19415,41 @@ START_TEST(test_mspack_callback_time_limit_is_fail_visible)
 }
 END_TEST
 #endif
+
+START_TEST(test_mspack_decoder_read_failure_is_fail_visible)
+{
+    uint8_t data[44] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t cab_size = 0;
+    cl_error_t ret;
+
+    memcpy(data, "MSCF", 4);
+    mspack_test_write_u32(data + 8, sizeof(data));
+    mspack_test_write_u32(data + 16, 44);
+    data[24] = 3;
+    data[25] = 1;
+    mspack_test_write_u16(data + 26, 1);
+    mspack_test_write_u16(data + 28, 1);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need  = mspack_targeted_read_failure;
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_mscab_header_check(&ctx, 0, &cab_size);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB archive header could not be inspected completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
 
 #ifndef _WIN32
 START_TEST(test_script_normalization_time_limit_is_fail_visible)
@@ -23423,6 +23468,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_script_normalization_cleanup_close_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_mspack_decoder_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mspack_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);

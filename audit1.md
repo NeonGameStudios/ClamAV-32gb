@@ -5686,3 +5686,13 @@ returns `CL_EREAD` for callback failure and `CL_EPARSE` for absent terminators,
 and both production callers now use it. Focused fmap, ARJ, and InstallShield
 fault-injection tests cover the distinction and range boundary. Compiled
 parser, sanitizer, production corpus, and Sonic1 qualification remain open.
+
+## MSPack decoder read-failure propagation — 2026-08-23
+
+The MSPack fmap bridge already recognized a fully in-range callback failure as
+`fmap_readn() == (size_t)-1`, but CAB/CHM decoder-open and extraction paths
+collapsed that condition into ordinary parse/format failure. The bridge now
+records the operational read failure separately from deadline expiry and
+preserves `CL_EREAD` through CAB/CHM open and member extraction, with explicit
+incomplete reasons and a focused CAB header regression. Compiled MSPack/CAB/
+CHM corpus, sanitizer, and Sonic1 qualification remain open.

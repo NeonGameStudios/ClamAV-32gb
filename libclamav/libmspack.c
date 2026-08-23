@@ -39,6 +39,7 @@ struct mspack_system_ex {
     uint64_t max_size;
     cli_ctx *ctx;
     bool time_limit_exceeded;
+    bool read_failure;
     const char *time_limit_reason;
 };
 
@@ -67,6 +68,16 @@ static bool mspack_deadline_ok(struct mspack_system_ex *system_ex)
     cli_mark_scan_incomplete(system_ex->ctx,
                              system_ex->time_limit_reason ? system_ex->time_limit_reason : "MSPack decoder reached the configured time limit");
     return false;
+}
+
+static cl_error_t mspack_decoder_failure(const struct mspack_system_ex *system_ex,
+                                         cl_error_t fallback)
+{
+    if (system_ex->time_limit_exceeded)
+        return CL_ETIMEOUT;
+    if (system_ex->read_failure)
+        return CL_EREAD;
+    return fallback;
 }
 
 static int mspack_fmap_length(const fmap_t *map, off_t *length)
@@ -209,6 +220,8 @@ static int mspack_fmap_read(struct mspack_file *file, void *buffer, int bytes)
 
         count = fmap_readn(mspack_handle->fmap, buffer, offset, (size_t)bytes);
         if (count == (size_t)-1) {
+            if (mspack_handle->system_ex != NULL)
+                mspack_handle->system_ex->read_failure = true;
             cli_dbgmsg("%s() %d requested %d bytes, read failed (-1)\n", __func__, __LINE__, bytes);
             return -1;
         } else if ((int)count < bytes) {
@@ -537,11 +550,16 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     if (NULL == cab_h) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive header could not be inspected completely");
-        status = ops_ex.time_limit_exceeded ? CL_ETIMEOUT : CL_EPARSE;
+        status = mspack_decoder_failure(&ops_ex, CL_EPARSE);
         goto done;
     }
     if (ops_ex.time_limit_exceeded) {
         status = CL_ETIMEOUT;
+        goto done;
+    }
+    if (ops_ex.read_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB archive header could not be read completely");
+        status = CL_EREAD;
         goto done;
     }
 
@@ -611,11 +629,16 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     if (NULL == cab_h) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CAB archive could not be opened for inspection");
-        ret = ops_ex.time_limit_exceeded ? CL_ETIMEOUT : CL_EFORMAT;
+        ret = mspack_decoder_failure(&ops_ex, CL_EFORMAT);
         goto done;
     }
     if (ops_ex.time_limit_exceeded) {
         ret = CL_ETIMEOUT;
+        goto done;
+    }
+    if (ops_ex.read_failure) {
+        cli_mark_scan_incomplete(ctx, "CAB archive could not be read completely");
+        ret = CL_EREAD;
         goto done;
     }
 
@@ -680,6 +703,11 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         tempfile_exists = (access(tmp_fname, F_OK) == 0);
         if (ops_ex.time_limit_exceeded) {
             ret = CL_ETIMEOUT;
+            goto done;
+        }
+        if (ops_ex.read_failure) {
+            cli_mark_scan_incomplete(ctx, "CAB member input could not be read completely");
+            ret = CL_EREAD;
             goto done;
         }
         if (ret) {
@@ -771,11 +799,16 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
     if (!mschm_h) {
         cli_dbgmsg("%s() failed at %d\n", __func__, __LINE__);
         cli_mark_scan_incomplete(ctx, "CHM archive could not be opened for inspection");
-        ret = ops_ex.time_limit_exceeded ? CL_ETIMEOUT : CL_EFORMAT;
+        ret = mspack_decoder_failure(&ops_ex, CL_EFORMAT);
         goto done;
     }
     if (ops_ex.time_limit_exceeded) {
         ret = CL_ETIMEOUT;
+        goto done;
+    }
+    if (ops_ex.read_failure) {
+        cli_mark_scan_incomplete(ctx, "CHM archive could not be read completely");
+        ret = CL_EREAD;
         goto done;
     }
 
@@ -845,6 +878,11 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         tempfile_exists = (access(tmp_fname, F_OK) == 0);
         if (ops_ex.time_limit_exceeded) {
             ret = CL_ETIMEOUT;
+            goto done;
+        }
+        if (ops_ex.read_failure) {
+            cli_mark_scan_incomplete(ctx, "CHM member input could not be read completely");
+            ret = CL_EREAD;
             goto done;
         }
         if (ret) {

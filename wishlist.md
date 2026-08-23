@@ -1636,3 +1636,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   status-aware windows; migrate ARJ and legacy InstallShield, preserve
   `CL_EREAD` versus `CL_EPARSE`, and bound InstallShield to its selected range;
   retain compiled parser, sanitizer, corpus, and Sonic1 qualification gates.
+
+## MSPack decoder read-failure propagation — 2026-08-23
+
+- Preserve in-range fmap callback failures as `CL_EREAD` through CAB/CHM
+  decoder open and extraction, while retaining `CL_ETIMEOUT` for deadline
+  expiry; retain compiled MSPack corpus, sanitizer, and Sonic1 qualification
+  gates.
