@@ -1340,10 +1340,11 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
                     ret = CL_EREAD;
                     goto done;
                 }
-                idx = lastOffset;
-            } else {
-                fmap_unneed_ptr(ctx->fmap, fsd, VOLUME_DESCRIPTOR_SIZE);
+                cli_mark_scan_incomplete(ctx, "UDF file set descriptor is missing or malformed");
+                ret = CL_EPARSE;
+                goto done;
             }
+            fmap_unneed_ptr(ctx->fmap, fsd, VOLUME_DESCRIPTOR_SIZE);
 
             isInitialized = true;
         }

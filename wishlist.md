@@ -1890,3 +1890,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   missing, malformed, out-of-map, and callback-failed termination as explicit
   incomplete results; retain compiled ISO/Joliet corpus, sanitizer, and Sonic1
   qualification as release gates.
+
+## UDF file-set descriptor completeness — 2026-08-23
+
+- Require the file-set descriptor after the anchor instead of treating a
+  wrong in-range descriptor as optional; keep read/range failures distinct and
+  retain compiled UDF corpus, sanitizer, and Sonic1 qualification as release
+  gates.

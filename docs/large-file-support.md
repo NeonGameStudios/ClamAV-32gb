@@ -2300,6 +2300,18 @@ guards cover the boundary. Compiled parser execution, legacy-mail corpus,
 sanitizer coverage, and supported-build Sonic1 qualification remain release
 gates.
 
+## UDF file-set descriptor completeness — 2026-08-23
+
+The UDF descriptor walk previously treated a non-file-set descriptor after the
+anchor as an optional omission and continued into file-list indexing. A
+structurally incomplete volume could therefore bypass the required file-set
+boundary and reach a clean result when its remaining lists happened to look
+consistent. The accepted sequence now requires a file-set descriptor; a
+wrong in-range tag is `CL_EPARSE`, while callback and out-of-map failures keep
+their existing `CL_EREAD`/`CL_EPARSE` distinction. A focused synthetic
+regression covers the missing-file-set case. Compiled UDF corpus, sanitizer,
+and supported-build Sonic1 qualification remain release gates.
+
 ## Word macro-directory truncation — 2026-08-20
 
 The legacy Word macro-directory reader now validates its declared range and
