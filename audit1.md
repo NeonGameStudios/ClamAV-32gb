@@ -4994,3 +4994,15 @@ reconciles its returned status.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled allocation fault injection, production ELF corpora,
 sanitizer runs, and Sonic1 qualification remain open.
+
+## AC embedded-type tracking allocation failures — 2026-08-22
+
+The AC raw matcher can retain matched embedded file-type offsets for later
+parser dispatch. Its tracking-node allocation accepted a scan context but
+returned `CL_EMEM` without marking the scan incomplete. The active matcher
+path now records an incomplete reason before returning, so a required type
+dispatch failure cannot be reported or cached as complete.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled matcher allocation fault injection, production signature
+qualification, sanitizer runs, and Sonic1 qualification remain open.

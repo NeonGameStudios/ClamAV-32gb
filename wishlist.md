@@ -1119,6 +1119,9 @@
 - Raw embedded-type dispatch now checks `MaxScanTime` before each candidate so
   a large matcher result list cannot delay parser admission; add compiled
   candidate-list timeout injection and production qualification.
+- AC embedded-type match tracking allocation failure now marks the scan
+  incomplete before returning `CL_EMEM`; add matcher allocation
+  fault-injection and production-signature qualification.
 - Legacy PDF object-header and `endobj` searches now use overlapping 64 KiB
   windows with shared deadline checks; add compiled timeout injection,
   decoder-fault coverage, and production PDF qualification.

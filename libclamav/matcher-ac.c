@@ -1637,13 +1637,15 @@ void cli_ac_freedata(struct cli_ac_data *data)
  * @param ctx The context information. May be NULL.
  * @return cl_error_t CL_SUCCESS regardless if added, or CL_EMEM if memory allocation failed.
  */
-inline static cl_error_t ac_addtype(struct cli_matched_type **list, cli_file_t type, off_t offset, const cli_ctx *ctx)
+inline static cl_error_t ac_addtype(struct cli_matched_type **list, cli_file_t type, off_t offset, cli_ctx *ctx)
 {
     struct cli_matched_type *tnode;
 
     tnode = calloc(1, sizeof(struct cli_matched_type));
     if (NULL == tnode) {
         cli_errmsg("cli_ac_addtype: Can't allocate memory for new type node\n");
+        if (ctx)
+            cli_mark_scan_incomplete(ctx, "AC embedded-type match tracking could not be allocated");
         return CL_EMEM;
     }
 
