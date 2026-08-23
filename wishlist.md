@@ -1723,3 +1723,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   callback failures through the property walker; focused WordDocument and
   WorkBook regressions are present, while compiled Office corpus, sanitizer,
   and Sonic1 qualification remain release gates.
+
+## HWP raw-deflate input read classification — 2026-08-23
+
+- Bound HWP raw-deflate reads to the declared compressed stream and preserve
+  `CL_EREAD` plus incomplete state for fully in-range fmap callback failures;
+  retain compiled HWP corpus, sanitizer, and Sonic1 qualification gates.

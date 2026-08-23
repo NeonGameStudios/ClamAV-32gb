@@ -117,22 +117,40 @@ static cl_error_t decompress_and_callback(cli_ctx *ctx, fmap_t *input, size_t at
     /* inflation loop */
     do {
         if (zstrm.avail_in == 0) {
+            size_t requested = FILEBUFF;
+            bool request_in_range;
+
             zstrm.next_in = inbuf;
 
-            in = fmap_readn(input, inbuf, off_in, FILEBUFF);
+            /* Do not read past a declared compressed stream into the next
+             * OLE2 stream. A request that is fully contained in the fmap can
+             * still fail at the backing callback, which must remain distinct
+             * from truncation. */
+            if (len && remain < requested)
+                requested = remain;
+            request_in_range = off_in <= input->len && requested <= input->len - off_in;
+            if (!request_in_range) {
+                if (off_in > input->len)
+                    break;
+                requested = input->len - off_in;
+            }
+            if (!requested)
+                break;
+
+            in = fmap_readn(input, inbuf, off_in, requested);
             if (in == (size_t)-1) {
                 cli_errmsg("%s: Error reading stream\n", parent);
-                ret = CL_EUNPACK;
+                cli_mark_scan_incomplete(ctx, request_in_range
+                                                    ? "HWP compressed input could not be read completely"
+                                                    : "HWP compressed input is truncated");
+                ret = request_in_range ? CL_EREAD : CL_EPARSE;
                 goto dc_end;
             }
             if (!in)
                 break;
 
-            if (len) {
-                if (remain < in)
-                    in = remain;
+            if (len)
                 remain -= in;
-            }
             zstrm.avail_in = in;
             off_in += in;
         }

@@ -4197,6 +4197,18 @@ read, preserving `CL_ETIMEOUT` and the incomplete/non-cacheable result even in
 that no-new-input interval. Compiled timeout injection, malformed/multi-member
 corpus, sanitizer, and Sonic1 qualification remain open.
 
+## HWP raw-deflate input read classification — 2026-08-23
+
+HWP raw-deflate staging previously requested a full `FILEBUFF` window even
+when a declared compressed length was shorter, and mapped any failed
+`fmap_readn()` request to generic `CL_EUNPACK` without an incomplete marker.
+The reader now bounds each request to the declared stream and containing fmap,
+returns `CL_EPARSE` for truncation, and preserves `CL_EREAD` with sticky
+incomplete state for a fully in-range callback failure. A focused HWP3
+regression injects the compressed-window callback fault and checks the exact
+status and non-cacheable state. Compiled HWP corpus, sanitizer, and Sonic1
+qualification remain open.
+
 ## Structured-detector clipped-window read classification — 2026-08-23
 
 The structured-data detector requested fixed 8 KiB windows and treated every
