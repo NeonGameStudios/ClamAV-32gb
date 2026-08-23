@@ -5544,3 +5544,12 @@ callback state is cleared before the cleanup macro runs, preventing a lost
 detection or extraction failure and avoiding a second close attempt. Compiled
 scanner, sanitizer, production RTF corpus, and Sonic1 qualification remain
 open.
+
+## HWP3 character-style read classification — 2026-08-23
+
+The HWP3 paragraph character-style byte now uses the checked fixed-range read
+helper. A fully in-range fmap callback failure is marked incomplete and
+returned as `CL_EREAD` with an explicit reason instead of bypassing sticky
+state; the focused callback regression also verifies that the map cannot be
+cached. Compiled scanner, sanitizer, production HWP3 corpus, and Sonic1
+qualification remain open.

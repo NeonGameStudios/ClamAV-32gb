@@ -926,8 +926,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                 return CL_ETIMEOUT;
 
             /* examine byte for cs data type */
-            if (fmap_readn(map, &cfsb, offset, sizeof(cfsb)) != sizeof(cfsb))
-                return CL_EREAD;
+            read_status = hwp3_read_fixed(ctx, map, &cfsb, offset, sizeof(cfsb),
+                                           "HWP3 character-style byte could not be read completely");
+            if (read_status != CL_SUCCESS)
+                return read_status;
 
             offset += sizeof(cfsb);
 

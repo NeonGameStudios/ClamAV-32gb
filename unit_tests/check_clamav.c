@@ -13396,6 +13396,39 @@ START_TEST(test_hwp3_paragraph_content_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp3_character_style_read_failure_is_fail_visible)
+{
+    enum {
+        HWP3_CONTENT_OFFSET   = 30 + 128 + 1008,
+        HWP3_PARAGRAPH_OFFSET = HWP3_CONTENT_OFFSET + (7 * 2) + 2,
+        HWP3_CONTENT_START    = HWP3_PARAGRAPH_OFFSET + 230
+    };
+    uint8_t data[HWP3_CONTENT_START + 2] = {0};
+    cli_ctx ctx;
+    struct cl_scan_options options;
+    fmap_t *map;
+
+    data[HWP3_PARAGRAPH_OFFSET + 1] = 1;
+    data[HWP3_PARAGRAPH_OFFSET + 5] = 1;
+    map                              = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    hwp3_paragraph_content_read_failure_offset = HWP3_CONTENT_START;
+    map->need                                  = hwp3_paragraph_content_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
+    ctx.fmap   = map;
+    ctx.options = &options;
+
+    ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP3 character-style byte could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    hwp3_paragraph_content_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_hwp3_truncated_information_header_is_parse_error)
 {
     enum { HWP3_INFO_OFFSET = 30 + 128 + 1008 + (7 * 2) + 2 + 43 };
@@ -22575,6 +22608,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_truncated_paragraph_header_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_paragraph_content_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_paragraph_content_read_failure_is_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp3_character_style_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_information_header_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_information_header_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);

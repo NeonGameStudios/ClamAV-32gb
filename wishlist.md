@@ -1533,3 +1533,10 @@ production RIFF corpus, and Sonic1 qualification as release gates.
 - Propagate non-clean status from an implicitly closed RTF embedded-object
   callback and clear callback state before cleanup; retain compiled callback,
   sanitizer, production RTF corpus, and Sonic1 qualification as release gates.
+
+## HWP3 character-style read classification — 2026-08-23
+
+- Route the paragraph character-style byte through the checked fixed-range
+  helper so in-range fmap callback failures remain `CL_EREAD` with sticky
+  incomplete state and an explicit reason; retain compiled callback,
+  sanitizer, production HWP3 corpus, and Sonic1 qualification as release gates.
