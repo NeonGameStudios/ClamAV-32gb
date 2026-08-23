@@ -4447,12 +4447,14 @@ rfc1341(mbox_ctx *mctx, message *m)
     md5_hex = cli_str2hex((const char *)md5_val, 16);
 
     if (!md5_hex) {
+        cli_mark_scan_incomplete(mctx->ctx, "MIME partial message identifier could not be allocated");
         free(id);
         free(number);
         return CL_EMEM;
     }
 
     if (messageSavePartial(m, pdir, md5_hex, n) < 0) {
+        cli_mark_scan_incomplete(mctx->ctx, "MIME partial message could not be saved completely");
         free(md5_hex);
         free(id);
         free(number);
@@ -4484,6 +4486,7 @@ rfc1341(mbox_ctx *mctx, message *m)
             fout = fileblobCreate();
             if (fout == NULL) {
                 cli_errmsg("Can't open '%s' for writing", outname);
+                cli_mark_scan_incomplete(mctx->ctx, "MIME partial message reassembly output could not be allocated");
                 free(id);
                 free(number);
                 free(md5_hex);

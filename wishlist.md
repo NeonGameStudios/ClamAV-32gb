@@ -958,6 +958,10 @@
   multipart/related traversal now honor the shared `MaxScanTime` deadline and
   preserve `CL_ETIMEOUT`; add compiled timeout injection and production mail
   corpus qualification.
+- Mail `message/partial` identifier, spool, save, and reassembly-output
+  allocation/materialization failures now mark the mail layer incomplete;
+  add fault-injected partial-message coverage and production corpus
+  qualification.
 
 ## Large-file validation and expansion progression
 

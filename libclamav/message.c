@@ -1692,13 +1692,16 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
 
     if (m && m->body_spool) {
         fb = fileblobCreate();
-        if (!fb)
+        if (!fb) {
+            cli_mark_scan_incomplete(m->ctx, "MIME partial message spool could not be allocated");
             return CL_EMEM;
+        }
 
         fileblobSetCTX(fb, m->ctx);
         fileblobPartialSet(fb, fullname, NULL);
         messageSetSpoolBuildContext(fb, m->ctx);
         if (fb->isIncomplete || fb->fp == NULL || messageCopyBodySpool(m, fb) < 0) {
+            cli_mark_scan_incomplete(m->ctx, "MIME partial message spool could not be materialized completely");
             fileblobDestructiveDestroy(fb);
             return CL_EFORMAT;
         }
@@ -1714,8 +1717,10 @@ int messageSavePartial(message *m, const char *dir, const char *md5id, unsigned 
                        (void *(*)(text *, void *, int))textToFileblob,
                        (void (*)(void *, cli_ctx *))fileblobSetCTX,
                        0);
-    if (!fb)
+    if (!fb) {
+        cli_mark_scan_incomplete(m ? m->ctx : NULL, "MIME partial message spool could not be materialized completely");
         return CL_EFORMAT;
+    }
     fileblobDestroy(fb);
     return CL_SUCCESS;
 }

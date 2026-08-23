@@ -5030,3 +5030,15 @@ unchanged.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled decoder allocation fault injection, production ARJ corpora,
 sanitizer runs, and Sonic1 qualification remain open.
+
+## MIME partial-message allocation failures — 2026-08-22
+
+The `message/partial` path could return after failing to allocate its
+identifier, disk-backed spool, or final reassembly output without marking the
+mail layer incomplete. The mbox and message helpers now record those required
+allocation/materialization failures before cleanup or return; regular MIME
+body-spool and deadline behavior is unchanged.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Fault-injected partial-message coverage, production mail corpora,
+sanitizer runs, and Sonic1 qualification remain open.
