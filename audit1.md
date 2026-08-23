@@ -5328,3 +5328,12 @@ result even when an injected callback would fail on its available prefix;
 fully in-range header callback failures remain `CL_EREAD`. A focused direct
 parser regression covers the boundary. Compiled scanner, sanitizer, SIS
 corpus, and Sonic1 qualification remain open.
+
+## XAR fixed-header read classification — 2026-08-22
+
+XAR fixed-header reads now preflight the complete range before invoking the
+fmap callback. A header shorter than the input remains a parse/incomplete
+result, while a fully in-range callback failure remains `CL_EREAD`. A focused
+header callback regression covers the operational-read boundary. Compiled
+scanner, sanitizer, production XAR corpus, and Sonic1 qualification remain
+open.

@@ -1366,3 +1366,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   preserving parse results for truncated packages and `CL_EREAD` for fully
   in-range header callback failures; retain compiled scanner, sanitizer, SIS
   corpus, and Sonic1 qualification as release gates.
+
+## XAR fixed-header read classification — 2026-08-22
+
+- Preflight the fixed XAR header before callback admission, preserving parse
+  results for truncated headers and `CL_EREAD` for fully in-range callback
+  failures; retain compiled scanner, sanitizer, production XAR corpus, and
+  Sonic1 qualification as release gates.

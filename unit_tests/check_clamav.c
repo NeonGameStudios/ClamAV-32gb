@@ -12074,6 +12074,48 @@ START_TEST(test_xar_truncated_header_is_fail_visible)
 }
 END_TEST
 
+static const void *xar_header_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+
+START_TEST(test_xar_header_read_failure_is_fail_visible)
+{
+    static uint8_t data[sizeof(struct xar_header)] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    data[0] = 0x78;
+    data[1] = 0x61;
+    data[2] = 0x72;
+    data[3] = 0x21;
+    map       = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = xar_header_read_failure;
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_XAR", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_xar_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -13912,6 +13954,16 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
     (void)len;
     (void)lock;
     return NULL;
+}
+
+static const void *xar_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
 }
 
 static size_t pdf_xref_read_failure_offset;
@@ -21387,6 +21439,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_iso_long_directory_name_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_directory_coordinate_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_xar_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_xar_header_read_failure_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_time_limit_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_invalid_file_metadata_is_fail_visible);
     tcase_add_test(tc_xar, test_xar_xml_reader_error_is_fail_visible);

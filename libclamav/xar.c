@@ -36,6 +36,17 @@
 
 #define XAR_COPY_CHUNK_SIZE (64U * 1024U)
 
+static size_t xar_readn(fmap_t *map, void *dst, size_t at, size_t len)
+{
+    /* fmap_readn() truncates requests that extend beyond the map, which can
+     * otherwise make a short XAR header look like a backing-read failure.
+     * Preflight the complete fixed range so only an in-range callback failure
+     * is reported as CL_EREAD. */
+    if (map == NULL || at > map->len || len > map->len - at)
+        return 0;
+    return fmap_readn(map, dst, at, len);
+}
+
 static cl_error_t xar_incomplete(cli_ctx *ctx, const char *reason)
 {
     cli_mark_scan_incomplete(ctx, reason);
@@ -642,9 +653,17 @@ int cli_scanxar(cli_ctx *ctx)
         return rc;
 
     /* retrieve xar header */
-    if (fmap_readn(ctx->fmap, &hdr, 0, sizeof(hdr)) != sizeof(hdr)) {
-        cli_dbgmsg("cli_scanxar: Invalid header, too short.\n");
-        return xar_incomplete(ctx, "XAR header is incomplete");
+    {
+        size_t header_read = xar_readn(ctx->fmap, &hdr, 0, sizeof(hdr));
+
+        if (header_read != sizeof(hdr)) {
+            cli_dbgmsg("cli_scanxar: Invalid header, too short.\n");
+            if (header_read == (size_t)-1) {
+                cli_mark_scan_incomplete(ctx, "XAR header could not be read completely");
+                return CL_EREAD;
+            }
+            return xar_incomplete(ctx, "XAR header is incomplete");
+        }
     }
     hdr.magic = be32_to_host(hdr.magic);
 
