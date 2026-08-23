@@ -145,6 +145,12 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
 
         if (bytes < 0) {
             logg(LOGG_ERROR, "Failed to read from %s.\n", filename ? filename : "FD");
+            /* A source read failure is distinct from a transport write
+             * failure: preserve the local input classification for the
+             * caller instead of allowing the generic fallback to report
+             * CL_EWRITE. */
+            if (ret_code)
+                *ret_code = CL_EREAD;
             ret = -1;
             goto strm_out;
         } else if (0 == bytes) {
@@ -179,6 +185,8 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
 
         if (bytes < 0) {
             logg(LOGG_ERROR, "Failed to read from %s.\n", filename ? filename : "FD");
+            if (ret_code)
+                *ret_code = CL_EREAD;
             ret = -1;
             goto strm_out;
         } else if (bytes > 0) {

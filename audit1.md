@@ -6231,3 +6231,12 @@ path, and therefore prevents clean/cache/trust normalization. The focused
 signed-PE callback regression reuses the existing fixture and asserts the
 `CL_EREAD` result, sticky reason, and non-cacheable map. Compiled PE corpus,
 sanitizer, and Sonic1 qualification remain open.
+
+## On-access source-read status propagation — 2026-08-23
+
+`onas_send_stream()` previously returned a failed local `read()` with only
+`-1`; the caller then classified it as `CL_EWRITE` because no protocol status
+was set. The source-side failures now record `CL_EREAD` before unwinding,
+preserving the distinction between a partial local input read and a
+socket/write failure. This remains source-validated only; compiled on-access
+fault injection, sanitizer, and Sonic1 qualification remain open.

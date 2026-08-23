@@ -1,5 +1,12 @@
 # Wishlist
 
+## On-access source-read status propagation — 2026-08-23
+
+- Local read failures while staging an on-access INSTREAM request now preserve
+  `CL_EREAD` through the protocol/client boundary instead of being relabeled
+  as a generic write failure. Compiled on-access fault injection and Sonic1
+  qualification remain release gates.
+
 ## Authenticode certificate-header read classification — 2026-08-23
 
 - Mark confirmed PE security-directory certificate-header range failures

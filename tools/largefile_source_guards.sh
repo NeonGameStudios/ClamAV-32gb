@@ -1708,6 +1708,8 @@ contains clamonacc/client/protocol.c 'File size exceeds the effective on-access 
 contains clamonacc/client/protocol.c 'onas_fdpass(display_filename, scan_fd, sockd, maxstream, ret_code)'
 contains clamonacc/client/protocol.c 'Failed to rewind the on-access stream input'
 contains clamonacc/client/protocol.c 'lseek(fd, 0, SEEK_SET) == (off_t)-1'
+contains clamonacc/client/protocol.c 'A source read failure is distinct from a transport write'
+contains clamonacc/client/protocol.c '*ret_code = CL_EREAD;'
 contains libclamav/others.c 'cli_validate_32g_limit("MaxEmbeddedPE"'
 contains libclamav/others.c 'cli_validate_32g_limit("MaxHTMLNormalize"'
 contains libclamav/others.c 'cli_validate_32g_limit("MaxHTMLNoTags"'

@@ -174,12 +174,12 @@ fixed-width-integer	clamonacc/client/communication.h	49	int onas_recv_scan_repor
 fixed-width-integer	clamonacc/client/protocol.c	116	    if ((uint64_t)statbuf.st_size > maxstream) {
 fixed-width-integer	clamonacc/client/protocol.c	141	        uint64_t remaining = len - bytesRead;
 fixed-width-integer	clamonacc/client/protocol.c	144	        uint32_t chunk_len;
-fixed-width-integer	clamonacc/client/protocol.c	155	        chunk_len = htonl((uint32_t)bytes);
-fixed-width-integer	clamonacc/client/protocol.c	254	static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstream,
-fixed-width-integer	clamonacc/client/protocol.c	294	    if (S_ISREG(statbuf.st_mode) && (uint64_t)statbuf.st_size > maxstream) {
-fixed-width-integer	clamonacc/client/protocol.c	323	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
-fixed-width-integer	clamonacc/client/protocol.c	324	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
-fixed-width-integer	clamonacc/client/protocol.c	331	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
+fixed-width-integer	clamonacc/client/protocol.c	161	        chunk_len = htonl((uint32_t)bytes);
+fixed-width-integer	clamonacc/client/protocol.c	262	static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstream,
+fixed-width-integer	clamonacc/client/protocol.c	302	    if (S_ISREG(statbuf.st_mode) && (uint64_t)statbuf.st_size > maxstream) {
+fixed-width-integer	clamonacc/client/protocol.c	331	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
+fixed-width-integer	clamonacc/client/protocol.c	332	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
+fixed-width-integer	clamonacc/client/protocol.c	339	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
 fixed-width-integer	clamonacc/client/protocol.c	75	static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
 fixed-width-integer	clamonacc/client/protocol.c	77	    uint32_t buf[BUFSIZ / sizeof(uint32_t)];
 fixed-width-integer	clamonacc/client/protocol.c	78	    uint64_t len;
@@ -6946,24 +6946,24 @@ native-width-integer	clamonacc/client/communication.h	50	                       
 native-width-integer	clamonacc/client/protocol.c	125	    if (S_ISREG(statbuf.st_mode) && 0 != fd && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
 native-width-integer	clamonacc/client/protocol.c	142	        size_t read_len    = (remaining < sizeof(buf)) ? (size_t)remaining : sizeof(buf);
 native-width-integer	clamonacc/client/protocol.c	143	        ssize_t bytes      = read(fd, buf, read_len);
-native-width-integer	clamonacc/client/protocol.c	157	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
-native-width-integer	clamonacc/client/protocol.c	178	        ssize_t bytes = read(fd, buf, 1);
-native-width-integer	clamonacc/client/protocol.c	217	static int onas_send_fdpass(int sockd, int fd)
-native-width-integer	clamonacc/client/protocol.c	224	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
-native-width-integer	clamonacc/client/protocol.c	237	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
-native-width-integer	clamonacc/client/protocol.c	239	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
-native-width-integer	clamonacc/client/protocol.c	242	    *(int *)CMSG_DATA(cmsg) = fd;
-native-width-integer	clamonacc/client/protocol.c	254	static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstream,
-native-width-integer	clamonacc/client/protocol.c	257	    int ret        = 1;
-native-width-integer	clamonacc/client/protocol.c	258	    int close_flag = 0;
-native-width-integer	clamonacc/client/protocol.c	323	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
-native-width-integer	clamonacc/client/protocol.c	324	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
-native-width-integer	clamonacc/client/protocol.c	326	    int infected = 0, len = 0, beenthere = 0;
-native-width-integer	clamonacc/client/protocol.c	330	    int sockd                                                        = -1;
-native-width-integer	clamonacc/client/protocol.c	331	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
-native-width-integer	clamonacc/client/protocol.c	333	    int scan_fd                                                      = (NULL != action_source) ? action_source->scan_fd : fd;
-native-width-integer	clamonacc/client/protocol.c	415	        int report_infected   = 0;
-native-width-integer	clamonacc/client/protocol.c	416	        int report_incomplete = 0;
+native-width-integer	clamonacc/client/protocol.c	163	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
+native-width-integer	clamonacc/client/protocol.c	184	        ssize_t bytes = read(fd, buf, 1);
+native-width-integer	clamonacc/client/protocol.c	225	static int onas_send_fdpass(int sockd, int fd)
+native-width-integer	clamonacc/client/protocol.c	232	    unsigned char fdbuf[CMSG_SPACE(sizeof(int))];
+native-width-integer	clamonacc/client/protocol.c	245	    msg.msg_controllen      = CMSG_LEN(sizeof(int));
+native-width-integer	clamonacc/client/protocol.c	247	    cmsg->cmsg_len          = CMSG_LEN(sizeof(int));
+native-width-integer	clamonacc/client/protocol.c	250	    *(int *)CMSG_DATA(cmsg) = fd;
+native-width-integer	clamonacc/client/protocol.c	262	static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstream,
+native-width-integer	clamonacc/client/protocol.c	265	    int ret        = 1;
+native-width-integer	clamonacc/client/protocol.c	266	    int close_flag = 0;
+native-width-integer	clamonacc/client/protocol.c	331	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
+native-width-integer	clamonacc/client/protocol.c	332	                  int fd, int64_t timeout, int *printok, int *errors, cl_error_t *ret_code)
+native-width-integer	clamonacc/client/protocol.c	334	    int infected = 0, len = 0, beenthere = 0;
+native-width-integer	clamonacc/client/protocol.c	338	    int sockd                                                        = -1;
+native-width-integer	clamonacc/client/protocol.c	339	    int (*recv_func)(struct onas_rcvln *, char **, char **, int64_t) = NULL;
+native-width-integer	clamonacc/client/protocol.c	341	    int scan_fd                                                      = (NULL != action_source) ? action_source->scan_fd : fd;
+native-width-integer	clamonacc/client/protocol.c	423	        int report_infected   = 0;
+native-width-integer	clamonacc/client/protocol.c	424	        int report_incomplete = 0;
 native-width-integer	clamonacc/client/protocol.c	75	static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
 native-width-integer	clamonacc/client/protocol.c	79	    int ret        = 1;
 native-width-integer	clamonacc/client/protocol.c	80	    int close_flag = 0;
@@ -21617,29 +21617,29 @@ offset-size-arithmetic	clamonacc/client/communication.h	45	int onas_sendln(CURL 
 offset-size-arithmetic	clamonacc/client/protocol.c	117	        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated stream. ERROR\n",
 offset-size-arithmetic	clamonacc/client/protocol.c	125	    if (S_ISREG(statbuf.st_mode) && 0 != fd && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
 offset-size-arithmetic	clamonacc/client/protocol.c	141	        uint64_t remaining = len - bytesRead;
-offset-size-arithmetic	clamonacc/client/protocol.c	156	        if (onas_sendln(curl, (const char *)&chunk_len, sizeof(chunk_len), timeout, ret_code) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	157	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	186	                logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated %s stream. ERROR\n",
-offset-size-arithmetic	clamonacc/client/protocol.c	204	    if (onas_sendln(curl, (const char *)buf, 4, timeout, ret_code)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	244	    if (sendmsg(sockd, &msg, 0) == -1) {
-offset-size-arithmetic	clamonacc/client/protocol.c	295	        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access FILDES limit; refusing to pass the descriptor. ERROR\n",
-offset-size-arithmetic	clamonacc/client/protocol.c	322	 * NOTE: filename may be NULL for STREAM scantype. */
-offset-size-arithmetic	clamonacc/client/protocol.c	323	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
-offset-size-arithmetic	clamonacc/client/protocol.c	332	    const char *display_filename                                     = (NULL != action_source) ? action_source->display_path : filename;
-offset-size-arithmetic	clamonacc/client/protocol.c	360	            len = strlen(filename) + strlen(scancmd[scantype]) + strlen("zREPORT ") + 1;
-offset-size-arithmetic	clamonacc/client/protocol.c	382	            /* NULL filename safe in send_stream() */
-offset-size-arithmetic	clamonacc/client/protocol.c	387	            /* NULL filename safe in send_fdpass() */
-offset-size-arithmetic	clamonacc/client/protocol.c	465	    while ((len = (*recv_func)(&rcv, &bol, &eol, timeout))) {
-offset-size-arithmetic	clamonacc/client/protocol.c	467	        if (len == -1) {
-offset-size-arithmetic	clamonacc/client/protocol.c	495	                if (!strncmp(bol, unkco, sizeof(unkco) - 1)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	509	                static char last_filename[PATH_MAX + 1] = {'\0'};
-offset-size-arithmetic	clamonacc/client/protocol.c	546	            } else if ((len > 32 && !memcmp(eol - 33, "No such file or directory. ERROR", 32)) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	547	                       (len > 34 && !memcmp(eol - 35, "Can't open file or directory ERROR", 34))) {
-offset-size-arithmetic	clamonacc/client/protocol.c	560	            } else if ((len > 21 && !memcmp(eol - 22, " Access denied. ERROR", 21)) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	561	                       (len > 23 && !memcmp(eol - 24, "Can't access file ERROR", 23)) ||
-offset-size-arithmetic	clamonacc/client/protocol.c	562	                       (len > 41 && !memcmp(eol - 42, " lstat() failed: Permission denied. ERROR", 41))) {
-offset-size-arithmetic	clamonacc/client/protocol.c	575	            } else if (len > 6 && !memcmp(eol - 7, " ERROR", 6)) {
-offset-size-arithmetic	clamonacc/client/protocol.c	600	        if (CLAMSTAT(display_filename, &sb) == -1) {
+offset-size-arithmetic	clamonacc/client/protocol.c	162	        if (onas_sendln(curl, (const char *)&chunk_len, sizeof(chunk_len), timeout, ret_code) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	163	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	194	                logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated %s stream. ERROR\n",
+offset-size-arithmetic	clamonacc/client/protocol.c	212	    if (onas_sendln(curl, (const char *)buf, 4, timeout, ret_code)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	252	    if (sendmsg(sockd, &msg, 0) == -1) {
+offset-size-arithmetic	clamonacc/client/protocol.c	303	        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access FILDES limit; refusing to pass the descriptor. ERROR\n",
+offset-size-arithmetic	clamonacc/client/protocol.c	330	 * NOTE: filename may be NULL for STREAM scantype. */
+offset-size-arithmetic	clamonacc/client/protocol.c	331	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
+offset-size-arithmetic	clamonacc/client/protocol.c	340	    const char *display_filename                                     = (NULL != action_source) ? action_source->display_path : filename;
+offset-size-arithmetic	clamonacc/client/protocol.c	368	            len = strlen(filename) + strlen(scancmd[scantype]) + strlen("zREPORT ") + 1;
+offset-size-arithmetic	clamonacc/client/protocol.c	390	            /* NULL filename safe in send_stream() */
+offset-size-arithmetic	clamonacc/client/protocol.c	395	            /* NULL filename safe in send_fdpass() */
+offset-size-arithmetic	clamonacc/client/protocol.c	473	    while ((len = (*recv_func)(&rcv, &bol, &eol, timeout))) {
+offset-size-arithmetic	clamonacc/client/protocol.c	475	        if (len == -1) {
+offset-size-arithmetic	clamonacc/client/protocol.c	503	                if (!strncmp(bol, unkco, sizeof(unkco) - 1)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	517	                static char last_filename[PATH_MAX + 1] = {'\0'};
+offset-size-arithmetic	clamonacc/client/protocol.c	554	            } else if ((len > 32 && !memcmp(eol - 33, "No such file or directory. ERROR", 32)) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	555	                       (len > 34 && !memcmp(eol - 35, "Can't open file or directory ERROR", 34))) {
+offset-size-arithmetic	clamonacc/client/protocol.c	568	            } else if ((len > 21 && !memcmp(eol - 22, " Access denied. ERROR", 21)) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	569	                       (len > 23 && !memcmp(eol - 24, "Can't access file ERROR", 23)) ||
+offset-size-arithmetic	clamonacc/client/protocol.c	570	                       (len > 41 && !memcmp(eol - 42, " lstat() failed: Permission denied. ERROR", 41))) {
+offset-size-arithmetic	clamonacc/client/protocol.c	583	            } else if (len > 6 && !memcmp(eol - 7, " ERROR", 6)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	608	        if (CLAMSTAT(display_filename, &sb) == -1) {
 offset-size-arithmetic	clamonacc/client/protocol.c	75	static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t timeout, uint64_t maxstream, bool action_stream, cl_error_t *ret_code)
 offset-size-arithmetic	clamonacc/client/protocol.h	32	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const struct action_source *action_source,
 offset-size-arithmetic	clamonacc/client/socket.c	62	            onas_sock.sock.sun_path[sizeof(onas_sock.sock.sun_path) - 1] = '\0';
