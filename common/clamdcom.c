@@ -413,7 +413,7 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
                                  struct optstruct *clamdopts, const char *command)
 {
     uint32_t buf[BUFSIZ / sizeof(uint32_t)];
-    int len;
+    ssize_t len;
     const struct optstruct *stream_limit = optget(clamdopts, "StreamMaxLength");
     uint64_t todo;
     STATBUF sb;
@@ -461,7 +461,10 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
         return -1;
     }
 
-    while ((len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t))) > 0) {
+    do {
+        len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t));
+    } while (len < 0 && errno == EINTR);
+    while (len > 0) {
         if ((uint64_t)len > todo) {
             logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
                  display_filename ? display_filename : "STDIN");
@@ -473,7 +476,9 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
         }
         todo -= len;
         if (!todo) {
-            len = read(fd, &buf[1], 1);
+            do {
+                len = read(fd, &buf[1], 1);
+            } while (len < 0 && errno == EINTR);
             if (len > 0) {
                 logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
                      display_filename ? display_filename : "STDIN");
@@ -485,6 +490,9 @@ static int send_stream_fd_common(int sockd, int fd, const char *display_filename
             }
             break;
         }
+        do {
+            len = read(fd, &buf[1], sizeof(buf) - sizeof(uint32_t));
+        } while (len < 0 && errno == EINTR);
     }
     if (len) {
         logg(LOGG_ERROR, "Failed to read from %s.\n", display_filename ? display_filename : "STDIN");

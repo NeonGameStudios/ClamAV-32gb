@@ -1,5 +1,12 @@
 # Wishlist
 
+## Shared clamd client stream EINTR handling — 2026-08-23
+
+- Legacy clamd client stream staging now retries signal-interrupted source
+  reads for both ordinary chunks and the byte-over-limit sentinel probe,
+  while real read failures remain fail-closed. Compiled nonblocking/fault
+  injection and Sonic1 qualification remain release gates.
+
 ## Milter large-stream transport width and interruption handling — 2026-08-23
 
 - Milter socket progress now retains the native `ssize_t` result width for

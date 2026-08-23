@@ -6241,6 +6241,15 @@ preserving the distinction between a partial local input read and a
 socket/write failure. This remains source-validated only; compiled on-access
 fault injection, sanitizer, and Sonic1 qualification remain open.
 
+## Shared clamd client stream EINTR handling — 2026-08-23
+
+The shared legacy INSTREAM helper used by clamdscan treated a source `read()`
+returning `EINTR` as a hard failure. The ordinary chunk read and the
+one-byte-over-limit sentinel probe now retry signal interruptions before
+classifying the result; genuine read errors still stop the request without
+sending a terminator for a partial stream. Compiled nonblocking/fault
+injection and Sonic1 qualification remain open.
+
 ## Milter large-stream transport width and interruption handling — 2026-08-23
 
 The milter's `nc_send()` helper accepted a `size_t` length but stored the
