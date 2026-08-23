@@ -1336,6 +1336,14 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   for fully in-range callback failures; retain compiled scanner, sanitizer,
   production media-corpus, and Sonic1 qualification as release gates.
 
+## JPEG fixed-range truncation classification — 2026-08-22
+
+- Preflight fixed-size JPEG header, marker, segment-size, Photoshop-marker,
+  and resource-size reads before callback admission, preserving parse results
+  for truncated structures and `CL_EREAD` for fully in-range callback
+  failures; retain compiled scanner, sanitizer, production media-corpus, and
+  Sonic1 qualification as release gates.
+
 ## BMP/JP2/APM fixed-range truncation classification — 2026-08-22
 
 - Preflight fixed-size BMP, JPEG 2000, and APM metadata reads before callback

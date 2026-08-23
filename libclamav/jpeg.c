@@ -254,6 +254,14 @@ typedef enum {
 
 static cl_error_t jpeg_parse_error(cli_ctx *ctx, const char *reason);
 
+static size_t jpeg_readn(fmap_t *map, void *dst, size_t at, size_t len)
+{
+    if (at > map->len || len > map->len - at)
+        return 0;
+
+    return fmap_readn(map, dst, at, len);
+}
+
 static cl_error_t jpeg_read_status(cli_ctx *ctx, size_t bytes_read, size_t expected, const char *reason)
 {
     if (bytes_read == expected)
@@ -324,7 +332,7 @@ static cl_error_t jpeg_check_photoshop_8bim(cli_ctx *ctx, size_t *off, size_t se
         return jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.PhotoshopResourceSize");
     }
     {
-        size_t bytes_read = fmap_readn(map, &raw_size, offset, sizeof(raw_size));
+        size_t bytes_read = jpeg_readn(map, &raw_size, offset, sizeof(raw_size));
         if (bytes_read != sizeof(raw_size))
             return jpeg_read_status(ctx, bytes_read, sizeof(raw_size),
                                     "Heuristics.Broken.Media.JPEG.PhotoshopResourceSize");
@@ -412,14 +420,14 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
         goto done;
 
     {
-        size_t bytes_read = fmap_readn(map, buff, offset, 4);
+        size_t bytes_read = jpeg_readn(map, buff, offset, 4);
         if (bytes_read != 4) {
             if (bytes_read == (size_t)-1) {
                 status = jpeg_read_status(ctx, bytes_read, 4,
                                            "Heuristics.Broken.Media.JPEG.CantReadHeader");
                 goto done;
             }
-            if ((map->len >= 3) && (fmap_readn(map, buff, offset, 3) == 3) &&
+            if ((map->len >= 3) && (jpeg_readn(map, buff, offset, 3) == 3) &&
                 !memcmp(buff, "\xff\xd8\xff", 3)) {
                 status = jpeg_parse_error(ctx, "Heuristics.Broken.Media.JPEG.TruncatedHeader");
             }
@@ -443,7 +451,7 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
         prev_marker = JPEG_MARKER_NOT_A_MARKER_0x00;
         for (i = 0; offset < map->len && i < 16; i++) {
             uint8_t marker_u8;
-            size_t bytes_read = fmap_readn(map, &marker_u8, offset, sizeof(marker_u8));
+            size_t bytes_read = jpeg_readn(map, &marker_u8, offset, sizeof(marker_u8));
             if (bytes_read == sizeof(marker_u8)) {
                 offset += sizeof(marker_u8);
             } else {
@@ -486,7 +494,7 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
         }
 
         {
-            size_t bytes_read = fmap_readn(map, &len_u16, offset, sizeof(len_u16));
+            size_t bytes_read = jpeg_readn(map, &len_u16, offset, sizeof(len_u16));
             if (bytes_read != sizeof(len_u16)) {
                 cli_errmsg("JPEG: Failed to read the segment size, file corrupted?\n");
                 status = jpeg_read_status(ctx, bytes_read, sizeof(len_u16),
@@ -655,7 +663,7 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
                      * callback is an operational read failure, not an
                      * unfamiliar application marker. */
                     if ((size_t)len >= sizeof(len_u16) + photoshop_marker_length) {
-                        photoshop_marker_read = fmap_readn(map, buff, offset - len + sizeof(len_u16),
+                        photoshop_marker_read = jpeg_readn(map, buff, offset - len + sizeof(len_u16),
                                                            photoshop_marker_length);
                         if (photoshop_marker_read == (size_t)-1) {
                             status = jpeg_read_status(ctx, photoshop_marker_read, photoshop_marker_length,

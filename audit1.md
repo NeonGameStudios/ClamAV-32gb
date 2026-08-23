@@ -5290,6 +5290,16 @@ GIF screen-descriptor and PNG chunk-header regressions cover the boundary.
 Compiled scanner, sanitizer, production media-corpus, and Sonic1 qualification
 remain open.
 
+## JPEG fixed-range truncation classification — 2026-08-22
+
+JPEG required header, marker, segment-size, Photoshop-marker, and Photoshop
+resource-size reads now preflight the complete requested range before invoking
+the fmap callback. A truncated segment therefore remains a parse/incomplete
+result even when an injected callback would fail on its available prefix;
+fully in-range callback failures remain `CL_EREAD`. A focused segment-size
+regression covers the boundary. Compiled scanner, sanitizer, production
+media-corpus, and Sonic1 qualification remain open.
+
 ## BMP/JP2/APM fixed-range truncation classification — 2026-08-22
 
 BMP and JPEG 2000 fixed-header readers and APM partition-map reads now
