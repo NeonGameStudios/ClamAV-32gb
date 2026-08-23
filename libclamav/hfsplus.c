@@ -863,6 +863,12 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
             return CL_EFORMAT;
         }
 
+        if (fileOffset > ctx->fmap->len || readSize > ctx->fmap->len - fileOffset) {
+            cli_dbgmsg("hfsplus_fetch_node: node range is outside the input map\n");
+            cli_mark_scan_incomplete(ctx, "HFS+ file-tree node is outside the input map");
+            return CL_EFORMAT;
+        }
+
         {
             size_t bytesRead = fmap_readn(ctx->fmap, buff + buffOffset, fileOffset, readSize);
 

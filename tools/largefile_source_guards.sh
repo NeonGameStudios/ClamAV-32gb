@@ -1117,6 +1117,7 @@ contains unit_tests/check_clamav.c 'test_hfsplus_declared_attributes_failure_is_
 contains unit_tests/check_clamav.c 'test_hfsplus_temporary_directory_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_tree_header_read_failure_is_fail_visible'
 contains libclamav/hfsplus.c 'HFS+ file-tree node could not be read completely'
+contains libclamav/hfsplus.c 'HFS+ file-tree node is outside the input map'
 contains libclamav/hfsplus.c 'HFS+ attributes traversal reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_hfsplus_catalog_node_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_hfsplus_fork_read_failure_is_fail_visible'

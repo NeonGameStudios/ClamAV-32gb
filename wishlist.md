@@ -1591,3 +1591,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Reject missing input maps at the GIF and PNG parser boundaries with explicit
   incomplete parse results; retain compiled media corpus, sanitizer, and Sonic1
   qualification as release gates.
+
+## HFS+ catalog-node range classification — 2026-08-23
+
+- Preflight each HFS+ catalog-node block so genuinely short nodes remain
+  explicit format/incomplete results while fully in-range fmap callback
+  failures preserve `CL_EREAD`; retain compiled HFS+ corpus, sanitizer, and
+  Sonic1 qualification as release gates.

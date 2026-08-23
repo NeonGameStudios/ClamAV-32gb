@@ -5618,3 +5618,11 @@ The GIF and PNG direct parser entry points now reject a missing input fmap as an
 explicit incomplete parse result instead of dereferencing a null map. Focused
 direct-parser coverage asserts the fail-visible reasons for both families.
 Compiled media corpus, sanitizer, and Sonic1 qualification remain open.
+
+## HFS+ catalog-node range classification — 2026-08-23
+
+HFS+ catalog-node fetches now preflight each block against the containing fmap.
+A genuinely short node remains an explicit format/incomplete result, while a
+fully in-range callback failure remains `CL_EREAD`. The existing callback
+regression now also exercises a one-byte-short catalog leaf. Compiled HFS+
+corpus, sanitizer, and Sonic1 qualification remain open.

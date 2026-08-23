@@ -21263,6 +21263,23 @@ START_TEST(test_hfsplus_catalog_node_read_failure_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+
+    /* The catalog header is complete, but the first catalog leaf node is
+     * short by one byte. This must remain a format/range failure rather than
+     * being reported as an fmap callback failure. */
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, (8U * 512U) + 4096U + 512U - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+
+    ret = cli_scanhfsplus(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ file-tree node is outside the input map");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
