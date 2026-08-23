@@ -1725,6 +1725,21 @@ static cl_error_t scan_for_xlm_macros_and_images(ole2_header_t *hdr, property_t 
         }
     }
 
+    /* A property can declare more bytes than its block chain supplies, and a
+     * BIFF record can end part-way through its header or payload. Neither is a
+     * complete XLM/image inspection; do not let the normal cleanup path turn
+     * either partial stream into a clean OLE2 result. */
+    if (len != 0) {
+        cli_mark_scan_incomplete(ctx, "OLE2 XLM/image stream ended before its declared length");
+        status = CL_EPARSE;
+        goto done;
+    }
+    if (state.state != BIFF_PARSER_INITIAL) {
+        cli_mark_scan_incomplete(ctx, "OLE2 XLM/image BIFF record ended before its declared length");
+        status = CL_EPARSE;
+        goto done;
+    }
+
     status = CL_SUCCESS;
 
 done:

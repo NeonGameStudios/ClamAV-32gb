@@ -6593,3 +6593,13 @@ shared status-precedence merge, preserving the strongest result while retaining
 the existing weak-candidate rejection behavior. Static source guards pass;
 compiled multi-candidate detection/error coverage, sanitizer, and Sonic1
 qualification remain release gates.
+
+## OLE2 XLM/BIFF completion checks — 2026-08-23
+
+The OLE2 XLM/image walker previously accepted a workbook block chain that
+ended before the property's declared length and accepted a BIFF record that
+ended mid-header or payload. The walker now requires both complete block-chain
+length and the BIFF parser's initial state before reporting success; either
+boundary returns `CL_EPARSE`, marks the layer incomplete, and prevents a clean
+cache/verdict. Static source guards pass; compiled OLE2 truncation corpus,
+sanitizer, and Sonic1 qualification remain release gates.

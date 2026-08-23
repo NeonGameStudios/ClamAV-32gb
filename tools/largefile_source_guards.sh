@@ -1968,6 +1968,8 @@ contains libclamav/ole2_extract.c 'Heuristics.Limits.Exceeded.MaxScanSize", CL_E
 contains libclamav/ole2_extract.c 'fixed recursion limit reached (max: 100)'
 contains libclamav/ole2_extract.c 'fixed file limit reached (max: 100000)'
 contains libclamav/ole2_extract.c 'OLE2 property-tree recursion limit reached'
+contains libclamav/ole2_extract.c 'OLE2 XLM/image stream ended before its declared length'
+contains libclamav/ole2_extract.c 'OLE2 XLM/image BIFF record ended before its declared length'
 contains libclamav/ole2_extract.c 'OLE2 property-tree file limit reached'
 contains libclamav/ole2_extract.c 'OLE2 property-tree worklist could not be extended'
 contains libclamav/ole2_extract.c 'OLE2 property-tree traversal reached the JSON timeout limit'

@@ -6296,3 +6296,11 @@ uses shared status precedence when updating the aggregate, so a later clean
 candidate cannot hide an earlier detection or parser/resource failure. Weak
 candidate rejection remains unchanged. Compiled multi-candidate coverage,
 sanitizer, and supported-build Sonic1 qualification remain release gates.
+
+## OLE2 XLM/BIFF completion checks — 2026-08-23
+
+OLE2 XLM/image inspection now rejects a property block chain that ends before
+the declared stream length and a BIFF record that ends mid-header or payload.
+Both cases remain explicit incomplete/non-cacheable results instead of clean
+OLE2 scans. Compiled truncation corpus, sanitizer, and supported-build Sonic1
+qualification remain release gates.
