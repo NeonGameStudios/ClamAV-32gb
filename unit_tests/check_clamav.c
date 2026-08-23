@@ -19186,6 +19186,116 @@ static cl_error_t dmg_test_scan_data_body(const char *data_body, struct cl_engin
     return ret;
 }
 
+START_TEST(test_dmg_external_sort_is_bounded_and_complete)
+{
+    enum {
+        TEST_RUN_BYTES = 4U * 1024U * 1024U,
+        TEST_IO_RECORDS = 256U
+    };
+    const uint32_t stripe_count   = 3U * (uint32_t)(TEST_RUN_BYTES / sizeof(struct dmg_block_data)) + 17U;
+    const uint64_t stripe_bytes   = (uint64_t)stripe_count * sizeof(struct dmg_block_data);
+    const uint64_t run_allocation = (TEST_RUN_BYTES / sizeof(struct dmg_block_data)) * sizeof(struct dmg_block_data);
+    const size_t metadata_len     = sizeof(struct dmg_mish_block) + (size_t)stripe_bytes;
+    struct dmg_block_data records[TEST_IO_RECORDS];
+    struct dmg_mish_block mish;
+    struct dmg_mish_with_stripes mish_set;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    char magic[4];
+    uint32_t written = 0;
+    uint32_t verified = 0;
+    int fd = -1;
+    size_t i;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&mish, 0, sizeof(mish));
+    memset(&mish_set, 0, sizeof(mish_set));
+    mish.blockDataCount       = stripe_count;
+    engine.maxtemporarysize   = (uint64_t)metadata_len + stripe_bytes;
+    engine.maxcontiguoussize  = TEST_RUN_BYTES;
+    ctx.engine                = &engine;
+    ctx.this_layer_tmpdir     = tmpdir;
+    ctx.temporary_bytes       = metadata_len;
+    ctx.temporary_peak        = metadata_len;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    memset(records, 0, sizeof(records));
+    memcpy(records, "mish", 4);
+    ck_assert_int_eq(cli_writen(fd, records, sizeof(struct dmg_mish_block)),
+                     sizeof(struct dmg_mish_block));
+
+    while (written < stripe_count) {
+        size_t count = MIN((size_t)(stripe_count - written), (size_t)TEST_IO_RECORDS);
+
+        memset(records, 0, count * sizeof(*records));
+        for (i = 0; i < count; i++) {
+            uint64_t descending = (uint64_t)stripe_count - (written + i);
+
+            records[i].type        = be32_to_host(DMG_STRIPE_EMPTY);
+            records[i].startSector = be64_to_host(descending);
+        }
+        ck_assert_int_eq(cli_writen(fd, records, count * sizeof(*records)),
+                         count * sizeof(*records));
+        written += (uint32_t)count;
+    }
+
+    map = fmap_new(fd, 0, metadata_len, path, NULL);
+    ck_assert_ptr_nonnull(map);
+    mish_set.mish         = &mish;
+    mish_set.metadata_map = map;
+    mish_set.metadata_fd  = fd;
+    mish_set.metadata_len = metadata_len;
+
+    engine.maxcontiguoussize = run_allocation - 1U;
+    ck_assert_int_eq(cli_dmg_external_sort_stripes(&ctx, &mish_set), CL_ERESOURCE);
+    ck_assert(mish_set.metadata_map == map);
+    ck_assert_uint_eq(ctx.temporary_bytes, (uint64_t)metadata_len);
+    ck_assert_uint_eq(ctx.contiguous_bytes, 0);
+    ck_assert(ctx.scan_incomplete);
+
+    ctx.scan_incomplete       = false;
+    engine.maxcontiguoussize  = TEST_RUN_BYTES;
+    engine.maxtemporarysize   = (uint64_t)metadata_len + stripe_bytes - 1U;
+    ck_assert_int_eq(cli_dmg_external_sort_stripes(&ctx, &mish_set), CL_ERESOURCE);
+    ck_assert(mish_set.metadata_map == map);
+    ck_assert_uint_eq(ctx.temporary_bytes, (uint64_t)metadata_len);
+    ck_assert_uint_eq(ctx.contiguous_bytes, 0);
+    ck_assert(ctx.scan_incomplete);
+
+    ctx.scan_incomplete      = false;
+    engine.maxtemporarysize  = (uint64_t)metadata_len + stripe_bytes;
+    ck_assert_int_eq(cli_dmg_external_sort_stripes(&ctx, &mish_set), CL_CLEAN);
+    ck_assert_ptr_nonnull(mish_set.metadata_map);
+    ck_assert_uint_eq(ctx.temporary_bytes, (uint64_t)metadata_len);
+    ck_assert_uint_eq(ctx.temporary_peak, (uint64_t)metadata_len + stripe_bytes);
+    ck_assert_uint_eq(ctx.contiguous_bytes, 0);
+    ck_assert_uint_eq(ctx.contiguous_peak, run_allocation);
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(fmap_readn(mish_set.metadata_map, magic, 0, sizeof(magic)), sizeof(magic));
+    ck_assert_int_eq(memcmp(magic, "mish", sizeof(magic)), 0);
+
+    while (verified < stripe_count) {
+        size_t count = MIN((size_t)(stripe_count - verified), (size_t)TEST_IO_RECORDS);
+        size_t offset = sizeof(struct dmg_mish_block) + (size_t)verified * sizeof(*records);
+
+        ck_assert_int_eq(fmap_readn(mish_set.metadata_map, records, offset, count * sizeof(*records)),
+                         count * sizeof(*records));
+        for (i = 0; i < count; i++)
+            ck_assert_uint_eq(be64_to_host(records[i].startSector), (uint64_t)verified + i + 1U);
+        verified += (uint32_t)count;
+    }
+
+    fmap_free(mish_set.metadata_map);
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_dmg_strict_base64_and_terminal_end_validation)
 {
     const uint32_t terminal_end[] = {DMG_STRIPE_END};
@@ -25871,6 +25981,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwpml);
     tcase_add_checked_fixture(tc_hwpml, cl_setup, cl_teardown);
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
+    tcase_add_test(tc_dmg, test_dmg_external_sort_is_bounded_and_complete);
     tcase_add_test(tc_dmg, test_dmg_malformed_metadata_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_trailer_read_failure_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_invalid_trailer_is_fail_visible);

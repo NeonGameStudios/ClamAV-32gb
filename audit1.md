@@ -6753,3 +6753,25 @@ return. Source guards and the capability manifest now record
 `dmg-blkx-metadata-unsorted-over-64m`. Compiled DMG corpus, large-metadata
 fixture, sanitizer, and supported-build Sonic1 qualification remain release
 gates.
+
+## DMG large blkx bounded external sort — 2026-08-23
+
+The remaining valid-unsorted metadata boundary is now closed. When a
+file-backed blkx table is not ordered by reconstructed sector, the parser
+sorts raw fixed-width records in 4 MiB runs and merges them with fixed-size
+read/write buffers through one auxiliary spool. Run memory is charged to the
+shared contiguous-residency budget. That spool is reserved in full against
+`MaxTemporarySize`, all run and merge I/O observes the shared deadline, short
+reads/writes and cleanup failures remain fail-visible, and the final ordering
+is copied back into the already-reserved decoded spool before the auxiliary
+reservation is released. Partition reconstruction therefore does not overlap
+two metadata-sized sort spools.
+
+The focused regression forces four sorted runs, two merge passes, and the
+final copy-back path; verifies every output sector in order; and asserts both
+the temporary peak and post-sort reservation. One-byte-short contiguous and
+temporary budgets are also required to fail visibly without leaking either
+reservation. The former
+`dmg-blkx-metadata-unsorted-over-64m` capability exception has been removed.
+Compiled DMG corpus, sanitizer, and supported-build Sonic1 qualification
+remain release gates.

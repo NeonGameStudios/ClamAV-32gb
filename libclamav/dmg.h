@@ -118,16 +118,6 @@ struct dmg_block_data {
     uint64_t dataLength __attribute__((packed));
 };
 
-struct dmg_mish_with_stripes {
-    struct dmg_mish_block *mish;
-    struct dmg_block_data *stripes;
-    struct dmg_mish_with_stripes *next;
-    fmap_t *metadata_map;
-    struct dmg_block_data current_stripe;
-    uint32_t current_index;
-    uint8_t current_valid;
-};
-
 #ifdef HAVE_PRAGMA_PACK
 #pragma pack()
 #endif
@@ -136,6 +126,19 @@ struct dmg_mish_with_stripes {
 #pragma pack
 #endif
 
+struct dmg_mish_with_stripes {
+    struct dmg_mish_block *mish;
+    struct dmg_block_data *stripes;
+    struct dmg_mish_with_stripes *next;
+    fmap_t *metadata_map;
+    int metadata_fd;
+    size_t metadata_len;
+    struct dmg_block_data current_stripe;
+    uint32_t current_index;
+    uint8_t current_valid;
+};
+
 int cli_scandmg(cli_ctx *ctx);
+int cli_dmg_external_sort_stripes(cli_ctx *ctx, struct dmg_mish_with_stripes *mish_set);
 
 #endif

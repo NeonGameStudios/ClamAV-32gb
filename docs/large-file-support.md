@@ -1418,11 +1418,14 @@ or waive them.
 - DMG blkx Base64 is decoded incrementally across XML callback boundaries into
   a quota-accounted spool. Blocks through 64 MiB retain the bounded sortable
   array; larger sorted blocks are read from the spool one fixed-width stripe
-  at a time. Complete alphabet, quartet, padding, suffix, stripe geometry, and
-  terminal `END` records are validated. Unsorted metadata above 64 MiB is an
-  explicit incomplete result pending external-sort support. Focused valid and
-  malformed fixtures guard these rules; full DMG corpus and supported-build
-  qualification remain release gates.
+  at a time, while larger unsorted blocks use 4 MiB sorted runs and a
+  quota-accounted auxiliary spool for bounded external merging. Run memory is
+  charged to `MaxContiguousSize`; the final ordering is copied back into the
+  already-reserved decoded spool before partition reconstruction. Complete
+  alphabet, quartet, padding, suffix, stripe geometry, and terminal `END`
+  records are validated. Focused valid, malformed, and external-sort fixtures
+  guard these rules; full DMG corpus and supported-build qualification remain
+  release gates.
 - BM offset mode now carries 64-bit runtime coordinates, but its bounded
   32-bit scan-window API still needs dedicated fixtures. PCRE full-map matching
   remains separately capped by the platform-aware `PCREMaxFileSize` policy.
@@ -2763,10 +2766,12 @@ allocation failure, mark the containing DMG scan incomplete before returning
 the resource error.
 
 This removes the former root-XML and decoded-metadata 64 MiB gates and
-whole-text-node allocation. Real Apple DMG corpus, large metadata, sanitizer,
-and supported-build Sonic1 qualification remain release gates; multi-segment
-DMGs remain explicit unsupported input. Unsorted metadata above the legacy
-sort boundary remains explicit as `dmg-blkx-metadata-unsorted-over-64m`.
+whole-text-node allocation. Large unsorted stripe tables use a bounded
+external merge sort whose one auxiliary spool is admitted against
+`MaxTemporarySize` and released before partition reconstruction. Real Apple
+DMG corpus, large metadata, sanitizer, and supported-build Sonic1
+qualification remain release gates; multi-segment DMGs remain explicit
+unsupported input.
 
 ## DMG blkx metadata retention — 2026-08-22
 
