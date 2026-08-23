@@ -5935,3 +5935,15 @@ windows explicitly and marks both range and in-range read failures. The
 64-bit buffer-pipe regression injects an exact-boundary backing-read failure
 and verifies the incomplete reason and non-cacheable map state. Compiled
 bytecode/decoder corpus, sanitizer, and Sonic1 qualification remain open.
+
+## NsPack confirmed-read failure classification — 2026-08-23
+
+After the NsPack entry-point marker is confirmed, loader metadata, compressed
+payload, and OEP metadata are required for the PE-specific unpacking path. The
+legacy loop previously broke out on those fmap failures and could continue
+through later PE work without a direct `CL_EREAD` result. Those confirmed-read
+exits now mark the layer incomplete, release any acquired source/destination
+resources, and return `CL_EREAD`; the pre-recognition heuristic probe remains
+non-terminal. A focused PE32 fixture injects the loader-metadata callback
+failure and verifies the status, reason, and non-cacheable map state. The
+compiled PE corpus, sanitizer, and Sonic1 qualification remain open.

@@ -1778,3 +1778,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Make file-backed bytecode buffer-pipe range and fmap-read failures sticky
   incomplete/non-cacheable, with an exact-boundary injected-read regression;
   retain compiled bytecode/decoder, sanitizer, and Sonic1 gates.
+
+## NsPack confirmed-read failure classification — 2026-08-23
+
+- Return `CL_EREAD` and mark the layer incomplete when confirmed NsPack loader,
+  compressed-data, or OEP metadata windows cannot be read; retain PE corpus,
+  sanitizer, and Sonic1 qualification gates.

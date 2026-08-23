@@ -4804,12 +4804,18 @@ int cli_scanpe(cli_ctx *ctx)
         nowinldr = 0x54 - cli_readint32(src + 17);
         cli_dbgmsg("cli_scanpe: NsPack: Found *start_of_stuff @delta-%x\n", nowinldr);
 
-        if (!(nbuff = fmap_need_off_once(map, rep - nowinldr, 4)))
-            break;
+        if (!(nbuff = fmap_need_off_once(map, rep - nowinldr, 4))) {
+            cli_mark_scan_incomplete(ctx, "PE NsPack loader metadata could not be read completely");
+            cli_exe_info_destroy(peinfo);
+            return CL_EREAD;
+        }
 
         start_of_stuff = rep + cli_readint32(nbuff);
-        if (!(nbuff = fmap_need_off_once(map, start_of_stuff, 20)))
-            break;
+        if (!(nbuff = fmap_need_off_once(map, start_of_stuff, 20))) {
+            cli_mark_scan_incomplete(ctx, "PE NsPack loader metadata could not be read completely");
+            cli_exe_info_destroy(peinfo);
+            return CL_EREAD;
+        }
 
         src = nbuff;
         if (!cli_readint32(nbuff)) {
@@ -4832,8 +4838,10 @@ int cli_scanpe(cli_ctx *ctx)
         /* memset(dest, 0xfc, dsize); */
 
         if (!(src = fmap_need_off(map, start_of_stuff, ssize))) {
+            cli_mark_scan_incomplete(ctx, "PE NsPack compressed data could not be read completely");
             free(dest);
-            break;
+            cli_exe_info_destroy(peinfo);
+            return CL_EREAD;
         }
         /* memset(src, 0x00, ssize); */
 
@@ -4846,8 +4854,10 @@ int cli_scanpe(cli_ctx *ctx)
 
         if (!(nbuff = fmap_need_off_once(map, rep, 5))) {
             fmap_unneed_off(map, start_of_stuff, ssize);
+            cli_mark_scan_incomplete(ctx, "PE NsPack OEP metadata could not be read completely");
             free(dest);
-            break;
+            cli_exe_info_destroy(peinfo);
+            return CL_EREAD;
         }
 
         eprva = eprva + 5 + cli_readint32(nbuff + 1);

@@ -19593,6 +19593,109 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
 }
 END_TEST
 
+static size_t pe_nspack_read_failure_offset = SIZE_MAX;
+
+static const void *pe_nspack_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == pe_nspack_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_pe_nspack_loader_read_failure_is_fail_visible)
+{
+    static const uint8_t nspack_entry[] = {
+        0x9c, 0x60, 0xe8, 0x00, 0x00, 0x00, 0x00, 0x5d, 0xb8, 0x07, 0x00, 0x00, 0x00};
+    char file_path[PATH_MAX];
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct cli_exe_info peinfo;
+    cli_scan_layer_t header_layer;
+    cli_scan_layer_t layer;
+    cli_ctx header_ctx;
+    cli_ctx ctx;
+    struct stat st;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t *data;
+    size_t offset = 0;
+    size_t ep;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/pe_allmatch/test.exe", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file_path, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+    memset(&header_ctx, 0, sizeof(header_ctx));
+    memset(&header_layer, 0, sizeof(header_layer));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    header_ctx.engine            = scan_engine;
+    header_ctx.dconf             = scan_engine->dconf;
+    header_ctx.options           = &options;
+    header_ctx.fmap              = map;
+    header_ctx.this_layer_tmpdir = tmpdir;
+    header_ctx.recursion_stack  = &header_layer;
+    header_ctx.recursion_stack_size = 1;
+    header_layer.fmap            = map;
+    cli_exe_info_init(&peinfo, 0);
+    ck_assert_int_eq(cli_peheader(&header_ctx, &peinfo, CLI_PEHEADER_OPT_NONE), CL_SUCCESS);
+    ck_assert_msg(!peinfo.is_pe32plus, "NsPack regression requires a PE32 fixture");
+    ep = (size_t)peinfo.ep;
+    ck_assert_msg(ep >= 4U && ep <= (size_t)st.st_size - 18U,
+                  "PE fixture entrypoint cannot hold the NsPack marker");
+
+    memcpy(data + ep, nspack_entry, sizeof(nspack_entry));
+    /* Make NsPack's loader-relative read point four bytes before the entry
+     * point, where the injected fmap callback will fail. */
+    cli_writeint32(data + ep + 17U, 0x50U);
+    pe_nspack_read_failure_offset = ep - 4U;
+    cli_exe_info_destroy(&peinfo);
+
+    map->need = pe_nspack_read_failure;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE NsPack loader metadata could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    pe_nspack_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 START_TEST(test_pe_petite_section_read_failure_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -24075,6 +24178,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_version_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_swizzor_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_nspack_loader_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_petite_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_group_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_read_failure_is_fail_visible);
