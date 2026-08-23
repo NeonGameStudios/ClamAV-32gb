@@ -16067,6 +16067,76 @@ START_TEST(test_ole2_header_read_failure_is_fail_visible)
 }
 END_TEST
 
+static size_t ole2_block_failure_offset = SIZE_MAX;
+static size_t ole2_block_failure_length = SIZE_MAX;
+
+static const void *ole2_block_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == ole2_block_failure_offset && len == ole2_block_failure_length)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_ole2_sector_range_classes_are_fail_visible)
+{
+    uint8_t data[1024];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+    char file_path[PATH_MAX];
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/ole2_encryption/password.fat.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(read(fd, data, sizeof(data)), (ssize_t)sizeof(data));
+    ck_assert_int_eq(close(fd), 0);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+    map                   = cl_fmap_open_memory(data, 800U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 sector block is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = ole2_block_read_failure;
+    ole2_block_failure_offset = 512U;
+    ole2_block_failure_length = 512U;
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.this_layer_tmpdir = tmpdir;
+    ctx.fmap              = map;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 sector block could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    ole2_block_failure_offset = SIZE_MAX;
+    ole2_block_failure_length = SIZE_MAX;
+}
+END_TEST
+
 START_TEST(test_ole2_mso_prefix_range_classes_are_fail_visible)
 {
     static const uint8_t truncated_prefix[sizeof(uint32_t) - 1U] = {0};
@@ -22410,6 +22480,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_rar_without_backend_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_ole2_sector_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_invalid_block_geometry_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX

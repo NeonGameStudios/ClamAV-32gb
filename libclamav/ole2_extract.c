@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <conv.h>
+#include <stddef.h>
 #include <zlib.h>
 #include <openssl/evp.h>
 #ifdef HAVE_UNISTD_H
@@ -132,8 +133,9 @@ typedef struct ole2_header_tag {
     bool has_xlm;
     bool has_image;
 
-    hwp5_header_t *is_hwp; // This value MUST be last in this structure,
-                           // otherwise you will get short file reads.
+    hwp5_header_t *is_hwp;
+    cli_ctx *ctx;
+    cl_error_t read_status;
 
 } ole2_header_t;
 
@@ -449,13 +451,30 @@ print_ole2_header(ole2_header_t *hdr)
     return;
 }
 
+static void ole2_mark_block_read_failure(ole2_header_t *hdr, cl_error_t status)
+{
+    if (hdr == NULL)
+        return;
+
+    if (hdr->read_status == CL_SUCCESS)
+        hdr->read_status = status;
+
+    if (hdr->ctx != NULL) {
+        if (status == CL_EREAD)
+            cli_mark_scan_incomplete(hdr->ctx, "OLE2 sector block could not be read completely");
+        else
+            cli_mark_scan_incomplete(hdr->ctx, "OLE2 sector block is truncated");
+    }
+}
+
 static bool ole2_read_block(ole2_header_t *hdr, void *buff, size_t size, int32_t blockno)
 {
     uint64_t block_offset;
     size_t offset;
     const void *pblock;
 
-    if (blockno < 0) {
+    if (hdr == NULL || buff == NULL || size == 0 || blockno < 0) {
+        ole2_mark_block_read_failure(hdr, CL_EPARSE);
         return false;
     }
 
@@ -465,15 +484,16 @@ static bool ole2_read_block(ole2_header_t *hdr, void *buff, size_t size, int32_t
     block_offset = ((uint64_t)(uint32_t)blockno << hdr->log2_big_block_size) +
                    MAX(512, (uint64_t)1 << hdr->log2_big_block_size);
     if (block_offset > SIZE_MAX || (size_t)block_offset >= hdr->m_length) {
+        ole2_mark_block_read_failure(hdr, CL_EPARSE);
         return false;
     }
     offset = (size_t)block_offset;
     if (size > hdr->m_length - offset) {
-        /* bb#11369 - ole2 files may not be a block multiple in size */
-        memset(buff, 0, size);
-        size = hdr->m_length - offset;
+        ole2_mark_block_read_failure(hdr, CL_EPARSE);
+        return false;
     }
     if (!(pblock = fmap_need_off_once(hdr->map, offset, size))) {
+        ole2_mark_block_read_failure(hdr, CL_EREAD);
         return false;
     }
     memcpy(buff, pblock, size);
@@ -3183,6 +3203,8 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         return CL_ENULLARG;
     }
 
+    memset(&hdr, 0, sizeof(hdr));
+
     if (ole2_checktimelimit(ctx, "OLE2 inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;
 
@@ -3202,18 +3224,9 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
 
     scansize2 = scansize;
 
-    /* size of header - size of other values in struct */
-    hdr_size = sizeof(struct ole2_header_tag) -
-               sizeof(int32_t) -        // sbat_root_start
-               sizeof(uint32_t) -       // max_block_no
-               sizeof(size_t) -         // m_length
-               sizeof(bitset_t *) -     // bitset
-               sizeof(struct uniq *) -  // U
-               sizeof(fmap_t *) -       // map
-               sizeof(bool) -           // has_vba
-               sizeof(bool) -           // has_xlm
-               sizeof(bool) -           // has_image
-               sizeof(hwp5_header_t *); // is_hwp
+    /* Only the on-disk CFB header precedes the parser-owned fields. Using the
+     * field offset avoids counting tail padding added by parser state. */
+    hdr_size = offsetof(ole2_header_t, sbat_root_start);
 
     if ((size_t)(ctx->fmap->len) < (size_t)(hdr_size)) {
         cli_mark_scan_incomplete(ctx, "OLE2 header was truncated");
@@ -3221,6 +3234,8 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     }
     hdr.map      = ctx->fmap;
     hdr.m_length = hdr.map->len;
+    hdr.ctx      = ctx;
+    hdr.read_status = CL_SUCCESS;
     phdr         = fmap_need_off_once(hdr.map, 0, hdr_size);
     if (phdr) {
         memcpy(&hdr, phdr, hdr_size);
@@ -3418,6 +3433,12 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
     }
 
 done:
+
+    if (hdr.read_status != CL_SUCCESS &&
+        (ret == CL_SUCCESS || ret == CL_BREAK ||
+         (ret == CL_EREAD && hdr.read_status == CL_EPARSE))) {
+        ret = hdr.read_status;
+    }
 
     if (hdr.bitset) {
         cli_bitset_free(hdr.bitset);

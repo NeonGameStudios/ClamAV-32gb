@@ -1485,3 +1485,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   results for short ranges and `CL_EREAD` for fully in-range fmap callback
   failures; retain compiled scanner, sanitizer, production EGG corpus, and
   Sonic1 qualification as release gates.
+
+## OLE2 sector-range read classification — 2026-08-23
+
+- Stop zero-padding map-short OLE2 CFB sectors as successful reads; retain
+  `CL_EPARSE` for truncated sectors and `CL_EREAD` for fully in-range fmap
+  callback failures, with sticky incomplete state and top-level reconciliation;
+  retain compiled scanner, sanitizer, production OLE2 corpus, and Sonic1
+  qualification as release gates.

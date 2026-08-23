@@ -5480,3 +5480,13 @@ failure. Short ranges remain parse/incomplete results; callback failures remain
 `CL_EREAD` with explicit incomplete reasons. Focused archive-comment regressions
 cover header and payload callback failures plus truncation. Compiled scanner,
 sanitizer, production EGG corpus, and Sonic1 qualification remain open.
+
+## OLE2 sector-range read classification — 2026-08-23
+
+The OLE2 CFB sector reader no longer zero-pads a map-short sector and returns
+success. It records the first sector-range outcome, marks the owning scan
+incomplete immediately, and preserves `CL_EPARSE` for a genuinely truncated
+sector versus `CL_EREAD` for a fully in-range fmap callback failure. The
+top-level extractor reconciles an ignored sector-walk failure before returning
+clean. A fixture-backed regression covers both classes. Compiled scanner,
+sanitizer, production OLE2 corpus, and Sonic1 qualification remain open.
