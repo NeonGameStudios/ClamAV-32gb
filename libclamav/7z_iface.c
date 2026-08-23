@@ -95,6 +95,8 @@ typedef struct
     cli_ctx *ctx;
     cl_error_t status;
     int fd;
+    uint64_t declared_size;
+    uint64_t written;
 } CClamFileOutStream;
 
 typedef struct
@@ -104,10 +106,24 @@ typedef struct
     cl_error_t status;
 } CClamFileInStream;
 
+bool cli_7z_output_range_allowed(uint64_t written, uint64_t size, uint64_t declared_size)
+{
+    return written <= declared_size && size <= declared_size - written;
+}
+
 static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
 {
     CClamFileOutStream *p = (CClamFileOutStream *)pp;
     size_t written;
+
+    if (p == NULL || (size != 0 && data == NULL))
+        return 0;
+
+    if (!cli_7z_output_range_allowed(p->written, (uint64_t)size, p->declared_size)) {
+        cli_mark_scan_incomplete(p->ctx, "7-Zip extracted output exceeded its declared member size");
+        p->status = CL_EUNPACK;
+        return 0;
+    }
 
     if (p->ctx && cli_7z_checktimelimit(p->ctx, "7-Zip member extraction reached the configured time limit") != CL_SUCCESS) {
         p->status = CL_ETIMEOUT;
@@ -119,8 +135,16 @@ static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
     /* ISeqOutStream uses a short write (zero here) to report failure. Do not
      * pass cli_writen()'s (size_t)-1 sentinel to the 7-Zip CRC wrapper: it
      * would be interpreted as an enormous successful write. */
-    if (written == (size_t)-1)
+    if (written == (size_t)-1) {
+        cli_mark_scan_incomplete(p->ctx, "7-Zip extracted output could not be written completely");
+        p->status = CL_EWRITE;
         return 0;
+    }
+    p->written += written;
+    if (written != size) {
+        cli_mark_scan_incomplete(p->ctx, "7-Zip extracted output could not be written completely");
+        p->status = CL_EWRITE;
+    }
     if (p->ctx && cli_7z_checktimelimit(p->ctx, "7-Zip member output reached the configured time limit") != CL_SUCCESS) {
         p->status = CL_ETIMEOUT;
         return 0;
@@ -389,6 +413,8 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             output.ctx      = ctx;
             output.status   = CL_SUCCESS;
             output.fd       = fd;
+            output.declared_size = f->Size;
+            output.written       = 0;
             res = SzArEx_ExtractToStream(&db, &lookStream.s, i, &output.s,
                                          &outSizeProcessed, &allocImp, &allocTempImp);
             if (output.status != CL_SUCCESS) {

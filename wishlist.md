@@ -2130,3 +2130,11 @@ and Sonic1 qualification as release gates.
   range subtraction or nested handoff, and preserve the incomplete result past
   later type-parser dispatch; retain compiled embedded-candidate,
   sanitizer, production-SFX, and Sonic1 qualification as release gates.
+
+## 7-Zip declared-output write admission — 2026-08-23
+
+- Bound each streaming 7-Zip output callback by the member's declared
+  uncompressed size before writing, so decoder over-production cannot exceed
+  the temporary reservation; retain the regular-file/decoder-size check and
+  add arithmetic regression coverage, with compiled 7-Zip, sanitizer, corpus,
+  and Sonic1 qualification remaining release gates.

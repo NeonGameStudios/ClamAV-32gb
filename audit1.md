@@ -6491,3 +6491,24 @@ Compiled HFS+ corpus, sanitizer, and Sonic1 qualification remain release gates.
 ## Embedded matcher-offset range admission — 2026-08-23
 
 The raw embedded-type dispatcher now rejects negative or out-of-map matcher offsets before any child-range subtraction, PE metadata bridge, or nested parser handoff. This keeps malformed internal coordinates from wrapping into a child fmap or being treated as a confirmed layer, and prevents a later type-parser pass from restoring a clean status. Compiled embedded-candidate and production-SFX qualification remain release gates.
+
+## 7-Zip declared-output write admission — 2026-08-23
+
+The bounded 7-Zip path reserved temporary space using each member's declared
+uncompressed size, but its streaming output callback did not reject a decoder
+write that would cross that declaration. The final file-size comparison caught
+the mismatch only after the extra bytes had already been written, so a hostile
+or defective decoder could exceed the temporary reservation and consume disk
+space before failing.
+
+CClamFileOutStream now tracks the declared member size and bytes written.
+cli_7z_output_range_allowed() uses checked subtraction to reject an output
+chunk that would exceed the declaration before cli_writen() is called. The
+callback also records short/failed writes as incomplete and retains the actual
+written count for the legacy whole-buffer fallback. The existing regular-file
+and decoder-produced-size checks remain as a second independent boundary.
+
+test_7z_output_range_is_bounded covers zero-size, exact-edge, overrun, and
+UINT64_MAX arithmetic cases. Static source guards and the inventory pass
+remain available; compiled 7-Zip, sanitizer, production corpus, and Sonic1
+qualification remain release gates.

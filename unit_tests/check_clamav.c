@@ -15155,6 +15155,17 @@ START_TEST(test_7z_output_size_mismatch_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_7z_output_range_is_bounded)
+{
+    ck_assert(cli_7z_output_range_allowed(0, 0, 0));
+    ck_assert(cli_7z_output_range_allowed(0, 4, 4));
+    ck_assert(cli_7z_output_range_allowed(4, 0, 4));
+    ck_assert(!cli_7z_output_range_allowed(4, 1, 4));
+    ck_assert(!cli_7z_output_range_allowed(UINT64_MAX, 1, UINT64_MAX));
+    ck_assert(!cli_7z_output_range_allowed(UINT64_MAX - 1, 2, UINT64_MAX));
+}
+END_TEST
+
 static cli_ctx *sevenzip_test_expire_ctx;
 static unsigned int sevenzip_test_read_calls;
 
@@ -25553,6 +25564,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_sfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_cl, test_7z_output_size_mismatch_is_fail_visible);
+    tcase_add_test(tc_cl, test_7z_output_range_is_bounded);
     tcase_add_test(tc_cl, test_7z_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
