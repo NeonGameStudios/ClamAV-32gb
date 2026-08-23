@@ -24761,6 +24761,17 @@ START_TEST(test_jpeg_truncated_structures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_jpeg_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_parsejpeg(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "JPEG input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_jpeg_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -26054,6 +26065,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_list_respects_declared_boundary);
     tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);
+    tcase_add_test(tc_cl, test_jpeg_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_required_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_jpeg_truncated_segment_size_is_parse_error);

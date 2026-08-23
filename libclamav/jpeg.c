@@ -431,6 +431,10 @@ cl_error_t cli_parsejpeg(cli_ctx *ctx)
         goto done;
     }
     map = ctx->fmap;
+    if (map == NULL) {
+        status = jpeg_parse_error(ctx, "JPEG input map is unavailable");
+        goto done;
+    }
 
     status = jpeg_checktimelimit(ctx, "JPEG inspection reached the configured time limit");
     if (status != CL_SUCCESS)

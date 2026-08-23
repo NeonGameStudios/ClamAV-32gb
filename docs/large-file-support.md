@@ -6321,3 +6321,11 @@ field and payload-size state can no longer be misparsed when a description is
 longer than the display cap. A focused chunk-boundary regression is registered;
 compiled RTF/OLE corpus, sanitizer, and supported-build Sonic1 qualification
 remain release gates.
+
+## JPEG missing-map admission — 2026-08-23
+
+The JPEG parser now checks for an input fmap before its bounded header reader
+is used. A direct caller with no map receives an explicit incomplete parse
+instead of an invalid dereference. A focused direct-entry regression is
+registered; compiled media corpus, sanitizer, and supported-build Sonic1
+qualification remain release gates.

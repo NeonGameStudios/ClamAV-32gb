@@ -6625,3 +6625,12 @@ only the bounded display prefix. A chunk-boundary regression verifies that the
 subsequent OLE10 handoff is reached and its truncated header remains
 fail-visible; compiled RTF/OLE corpus, sanitizer, and Sonic1 qualification
 remain release gates.
+
+## JPEG missing-map admission — 2026-08-23
+
+The JPEG direct parser dereferenced `ctx->fmap` through its bounded reader
+without first checking that the scan context supplied an input map. A direct
+library caller could therefore crash instead of receiving a fail-visible
+result. JPEG now rejects a missing map with an explicit incomplete parse, and
+a focused direct-entry regression is registered; compiled media corpus,
+sanitizer, and Sonic1 qualification remain release gates.
