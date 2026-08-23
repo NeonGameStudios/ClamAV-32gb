@@ -18064,6 +18064,63 @@ START_TEST(test_elf_time_limit_is_fail_visible)
 }
 END_TEST
 
+static const void *elf_truncated_program_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 63U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_elf_truncated_program_header_is_parse_error)
+{
+    uint8_t data[64] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data[0] = 0x7f;
+    data[1] = 'E';
+    data[2] = 'L';
+    data[3] = 'F';
+    data[4] = 2; /* ELFCLASS64. */
+    data[5] = 1; /* ELFDATA2LSB. */
+    data[6] = 1;
+    zip_stream_write_u16(data + 16, 2);
+    zip_stream_write_u16(data + 18, 62);
+    zip_stream_write_u32(data + 20, 1);
+    zip_stream_write_u64(data + 24, 0x400000U);
+    zip_stream_write_u64(data + 32, 63U);
+    zip_stream_write_u16(data + 52, sizeof(struct elf_file_hdr64));
+    zip_stream_write_u16(data + 54, sizeof(struct elf_program_hdr64));
+    zip_stream_write_u16(data + 56, 1);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need   = elf_truncated_program_header_read_failure;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    /* The requested 56-byte program header starts at byte 63, so only its
+     * first byte is in the map. A callback failure for that prefix must not
+     * turn the already-proven truncation into CL_EREAD. */
+    ret = cli_scanelf(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_elf_scan_program_header_read_failure_is_fail_visible)
 {
     uint8_t data[64 + 56] = {0};
@@ -21108,6 +21165,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_mspack_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_mscab_truncated_fixed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cl, test_elf_truncated_program_header_is_parse_error);
     tcase_add_test(tc_cl, test_elf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_metadata_read_failure_is_fail_visible);

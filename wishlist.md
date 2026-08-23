@@ -1313,3 +1313,11 @@ FILDES transfer. This keeps the local option from being bypassed when the
 scan-thread preflight is not the caller, while retaining the protocol-level
 32-GiB defensive check. Compiled option-parity/fault-injection and Sonic1
 qualification remain open.
+
+## ELF fixed-range truncation classification — 2026-08-22
+
+- Preflight the complete range of every fixed-size ELF metadata request before
+  calling the fmap callback, so a truncated header cannot be reported as an
+  operational callback failure; retain `CL_EREAD` for fully in-range callback
+  failures. Add compiled scanner, sanitizer, production ELF-corpus, and Sonic1
+  qualification.

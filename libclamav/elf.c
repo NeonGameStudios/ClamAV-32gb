@@ -62,8 +62,11 @@ static size_t cli_elf_readn(fmap_t *map, void *dst, uint64_t at, size_t len)
 {
     /* fmap_readn() uses (size_t)-1 for both callback failures and an offset
      * beyond the map. Preserve an impossible ELF coordinate as short input;
-     * only an in-range callback failure is an operational read error. */
+     * only an in-range callback failure for a fully available structure is an
+     * operational read error. */
     if (at > (uint64_t)map->len)
+        return 0;
+    if (len > map->len - (size_t)at)
         return 0;
     return fmap_readn(map, dst, (size_t)at, len);
 }

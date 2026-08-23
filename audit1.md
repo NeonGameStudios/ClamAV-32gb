@@ -5258,3 +5258,14 @@ longer rely on the scan-thread preflight alone, and zero or out-of-range
 programmatic values normalize to the certified 32-GiB ceiling. The existing
 protocol checks remain as a second boundary. Compiled on-access fault
 injection, option-parity, and Sonic1 qualification remain open.
+
+## ELF fixed-range truncation classification — 2026-08-22
+
+ELF fixed-size header, program-header, and section-header reads now
+preflight the complete requested range before invoking the fmap callback. A
+structure whose remaining bytes are beyond EOF therefore stays a parse/
+incomplete result even if the callback would fail while serving its in-range
+prefix; a fully in-range callback failure remains `CL_EREAD`. The new
+regression uses a truncated program header with an injected prefix failure to
+prove that the two outcomes remain distinct. Compiled scanner, sanitizer,
+production ELF-corpus, and Sonic1 qualification remain open.
