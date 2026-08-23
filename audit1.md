@@ -5924,3 +5924,14 @@ incomplete/non-cacheable state. The API now records an explicit incomplete
 reason on that failure. The existing page-lifetime regression now also injects
 an object-window read failure and verifies the context and map state. Compiled
 bytecode/PDF corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Bytecode buffer-pipe read classification — 2026-08-23
+
+File-backed bytecode buffer pipes previously returned NULL when their borrowed
+fmap window could not be supplied, without recording whether the range was
+outside the map or the backing read failed. Required decoder work could then
+unwind without sticky incomplete state. The API now rejects out-of-range
+windows explicitly and marks both range and in-range read failures. The
+64-bit buffer-pipe regression injects an exact-boundary backing-read failure
+and verifies the incomplete reason and non-cacheable map state. Compiled
+bytecode/decoder corpus, sanitizer, and Sonic1 qualification remain open.

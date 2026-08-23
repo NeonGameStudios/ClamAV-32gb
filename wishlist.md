@@ -1772,3 +1772,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Mark bounded bytecode PDF object-window fmap failures incomplete and
   non-cacheable, with an injected-read regression alongside the page-lifetime
   test; retain compiled bytecode/PDF corpus, sanitizer, and Sonic1 gates.
+
+## Bytecode buffer-pipe read classification — 2026-08-23
+
+- Make file-backed bytecode buffer-pipe range and fmap-read failures sticky
+  incomplete/non-cacheable, with an exact-boundary injected-read regression;
+  retain compiled bytecode/decoder, sanitizer, and Sonic1 gates.

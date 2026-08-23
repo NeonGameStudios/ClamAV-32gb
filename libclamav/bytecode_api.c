@@ -1068,7 +1068,17 @@ const uint8_t *cli_bcapi_buffer_pipe_read_get(struct cli_bc_ctx *ctx, int32_t id
     if (ctx->fmap == NULL || b->read_cursor > (uint64_t)SIZE_MAX)
         return NULL;
 
+    if (b->read_cursor > (uint64_t)ctx->fmap->len ||
+        (uint64_t)size > (uint64_t)ctx->fmap->len - b->read_cursor) {
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode buffer-pipe input range is outside the input map");
+        return NULL;
+    }
+
     result = fmap_need_off(ctx->fmap, (size_t)b->read_cursor, size);
+    if (result == NULL) {
+        cli_bcapi_mark_map_read_error(ctx, "Bytecode buffer-pipe input could not be read completely");
+        return NULL;
+    }
     if (result != NULL) {
         b->map_read_fmap   = ctx->fmap;
         b->map_read_offset = b->read_cursor;

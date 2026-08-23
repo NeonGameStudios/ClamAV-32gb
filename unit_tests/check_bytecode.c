@@ -740,11 +740,13 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
     struct bytecode_failing_pread_state pread_state;
     struct cli_bc_ctx *bcctx;
     struct cli_bc bc;
+    cli_ctx cctx;
     fmap_t *map;
     uint8_t byte;
     int32_t pipe_id;
 
     memset(&bc, 0, sizeof(bc));
+    memset(&cctx, 0, sizeof(cctx));
     bc.metadata.formatlevel = BC_FORMAT_LEVEL_V2;
     pread_state.length       = (size_t)(boundary + 1);
     pread_state.fail_at      = INT64_MAX;
@@ -755,6 +757,8 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
     bcctx = cli_bytecode_context_alloc();
     ck_assert_ptr_nonnull(bcctx);
     bcctx->bc = &bc;
+    bcctx->ctx = &cctx;
+    cctx.fmap = map;
     ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
     ck_assert_uint_eq(bcctx->file_size64, boundary + 1);
 
@@ -777,6 +781,19 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
     ck_assert_int_eq(cli_bcapi_buffer_pipe_read_stopped(bcctx, pipe_id, 1), 0);
     fmap_release_unlocked(map);
     ck_assert_uint_eq(map->paged, 0);
+    ck_assert_int_eq(cli_bcapi_buffer_pipe_done(bcctx, pipe_id), 0);
+
+    pread_state.fail_at         = (off_t)boundary;
+    cctx.scan_incomplete        = false;
+    cctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag        = false;
+    pipe_id                     = cli_bcapi_buffer_pipe_new_fromfile64(bcctx, boundary);
+    ck_assert(pipe_id >= 0);
+    ck_assert_uint_eq(cli_bcapi_buffer_pipe_read_avail64(bcctx, pipe_id), 1);
+    ck_assert_ptr_null(cli_bcapi_buffer_pipe_read_get(bcctx, pipe_id, 1));
+    ck_assert(cctx.scan_incomplete);
+    ck_assert_str_eq(cctx.scan_incomplete_reason, "Bytecode buffer-pipe input could not be read completely");
+    ck_assert(map->dont_cache_flag);
     ck_assert_int_eq(cli_bcapi_buffer_pipe_done(bcctx, pipe_id), 0);
 
     cli_bytecode_context_destroy(bcctx);
