@@ -5356,3 +5356,13 @@ prefix remains a parse/incomplete result even when an injected callback would
 fail on that prefix; a fully in-range callback failure remains `CL_EREAD`.
 A focused font-table regression covers the boundary. Compiled scanner,
 sanitizer, production HWP3 corpus, and Sonic1 qualification remain open.
+
+## HWP3 paragraph-header truncation classification — 2026-08-22
+
+HWP3 paragraph metadata reads for the prior-style, character-count,
+line-count, and font-style flags now preflight their fixed ranges before
+invoking the fmap callback. A short character-count prefix remains a
+parse/incomplete result even when an injected callback would fail on that
+prefix; fully in-range callback failures remain `CL_EREAD`. A focused
+paragraph-header regression covers the boundary. Compiled scanner, sanitizer,
+production HWP3 corpus, and Sonic1 qualification remain open.

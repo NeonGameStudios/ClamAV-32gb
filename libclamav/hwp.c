@@ -530,6 +530,18 @@ static size_t hwp3_readn(fmap_t *map, void *dst, size_t at, size_t len)
     return fmap_readn(map, dst, at, len);
 }
 
+static cl_error_t hwp3_read_fixed(cli_ctx *ctx, fmap_t *map, void *dst, size_t at, size_t len,
+                                  const char *reason)
+{
+    size_t nread = hwp3_readn(map, dst, at, len);
+
+    if (nread == len)
+        return CL_SUCCESS;
+
+    cli_mark_scan_incomplete(ctx, reason);
+    return nread == (size_t)-1 ? CL_EREAD : CL_EPARSE;
+}
+
 struct hwp3_docsummary_entry {
     size_t offset;
     const char *name;
@@ -768,6 +780,7 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
 static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, uint32_t level, size_t *roffset, int *last)
 {
     cl_error_t ret = CL_SUCCESS;
+    cl_error_t read_status;
 
     size_t offset = *roffset;
     size_t new_offset;
@@ -803,21 +816,29 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
         return CL_EMAXREC;
     }
 
-    if (fmap_readn(map, &ppfs, offset + PI_PPFS, sizeof(ppfs)) != sizeof(ppfs))
-        return CL_EREAD;
+    read_status = hwp3_read_fixed(ctx, map, &ppfs, offset + PI_PPFS, sizeof(ppfs),
+                                   "HWP3 paragraph header could not be read completely");
+    if (read_status != CL_SUCCESS)
+        return read_status;
 
-    if (fmap_readn(map, &nchars, offset + PI_NCHARS, sizeof(nchars)) != sizeof(nchars))
-        return CL_EREAD;
+    read_status = hwp3_read_fixed(ctx, map, &nchars, offset + PI_NCHARS, sizeof(nchars),
+                                  "HWP3 paragraph header could not be read completely");
+    if (read_status != CL_SUCCESS)
+        return read_status;
 
     nchars = le16_to_host(nchars);
 
-    if (fmap_readn(map, &nlines, offset + PI_NLINES, sizeof(nlines)) != sizeof(nlines))
-        return CL_EREAD;
+    read_status = hwp3_read_fixed(ctx, map, &nlines, offset + PI_NLINES, sizeof(nlines),
+                                  "HWP3 paragraph header could not be read completely");
+    if (read_status != CL_SUCCESS)
+        return read_status;
 
     nlines = le16_to_host(nlines);
 
-    if (fmap_readn(map, &ifsc, offset + PI_IFSC, sizeof(ifsc)) != sizeof(ifsc))
-        return CL_EREAD;
+    read_status = hwp3_read_fixed(ctx, map, &ifsc, offset + PI_IFSC, sizeof(ifsc),
+                                  "HWP3 paragraph header could not be read completely");
+    if (read_status != CL_SUCCESS)
+        return read_status;
 
     hwp3_debug("HWP3.x: Paragraph[%u, %d]: ppfs   %u\n", level, p, ppfs);
     hwp3_debug("HWP3.x: Paragraph[%u, %d]: nchars %u\n", level, p, nchars);
