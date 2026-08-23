@@ -5919,3 +5919,11 @@ The LHA/LZH decoder's construction, member-read, and next-header error
 boundaries now convert the dependency's wrapped I/O error so this distinction
 survives the parser boundary as well. Compiled Rust/layout, parser-corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## MIME header lookahead read failure — 2026-08-23
+
+MIME header continuation detection now distinguishes a failed in-range fmap
+lookahead from an ordinary non-continuation. The failure stops header parsing,
+preserves `CL_EREAD`, and leaves the layer incomplete and non-cacheable. The
+focused unit regression injects the failure once so a retry cannot hide the
+original operational error.

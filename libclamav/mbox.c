@@ -1200,7 +1200,14 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                     }
                 }
 
-                if ((lookahead = fmap_need_off_once(map, *at, 1))) {
+                lookahead = fmap_need_off_once(map, *at, 1);
+                if (lookahead == NULL && *at < map->len) {
+                    cli_mark_scan_incomplete(ctx, "MIME message header lookahead could not be read completely");
+                    if (failure_status)
+                        *failure_status = CL_EREAD;
+                    break;
+                }
+                if (lookahead) {
                     /*
                      * Section B.2 of RFC822 says TAB or
                      * SPACE means a continuation of the

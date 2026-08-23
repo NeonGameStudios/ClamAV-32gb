@@ -1622,3 +1622,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   beyond the fixed destination buffer incomplete instead of silently scanning a
   substituted or truncated name; retain compiled ISO corpus, sanitizer, and
   Sonic1 qualification as release gates.
+
+## MIME header lookahead read failure — 2026-08-23
+
+- MIME header continuation lookahead now preserves an in-range fmap callback
+  failure as `CL_EREAD` instead of treating it as a normal non-continuation;
+  compiled mail fault-injection, parser-corpus, and Sonic1 qualification remain
+  open.

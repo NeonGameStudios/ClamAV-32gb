@@ -4120,6 +4120,17 @@ unsupported-file skips explicitly use `CL_EUNPACK`; focused report tests cover
 resource, generic, and unsupported normalization. Compiled daemon skip, wire,
 sanitizer, and Sonic1 qualification remain open.
 
+## MIME header lookahead read failure — 2026-08-23
+
+The legacy MIME header state machine probes the next byte after each collected
+header line to decide whether the following line is a continuation. A failed
+in-range fmap callback previously returned `NULL` and was treated exactly like
+an ordinary non-continuation, so parsing could continue after an operational
+read failure. The lookahead now marks the scan incomplete, sets the parse
+status to `CL_EREAD`, and stops the header pass. A focused regression injects a
+one-shot failure at the lookahead offset and verifies the non-clean,
+non-cacheable result.
+
 ## APM partition coordinate admission — 2026-08-22
 
 APM block coordinates were multiplied directly into `size_t` offsets, and the
