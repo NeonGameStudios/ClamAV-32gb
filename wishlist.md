@@ -1784,3 +1784,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Return `CL_EREAD` and mark the layer incomplete when confirmed NsPack loader,
   compressed-data, or OEP metadata windows cannot be read; retain PE corpus,
   sanitizer, and Sonic1 qualification gates.
+
+## MEW confirmed-loader read classification — 2026-08-23
+
+- Return `CL_EREAD` and mark the layer incomplete when a confirmed MEW loader
+  metadata window cannot be read; retain PE corpus, sanitizer, and Sonic1
+  qualification gates.

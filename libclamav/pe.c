@@ -3654,8 +3654,11 @@ int cli_scanpe(cli_ctx *ctx)
             cli_dbgmsg("cli_scanpe: MEW: found MEW characteristics %08X + %08X + 5 = %08X\n",
                        cli_readint32(epbuff + 1), peinfo->vep, cli_readint32(epbuff + 1) + peinfo->vep + 5);
 
-            if (!(tbuff = fmap_need_off_once(map, fileoffset, 0xb0)))
-                break;
+            if (!(tbuff = fmap_need_off_once(map, fileoffset, 0xb0))) {
+                cli_mark_scan_incomplete(ctx, "PE MEW loader metadata could not be read completely");
+                cli_exe_info_destroy(peinfo);
+                return CL_EREAD;
+            }
 
             if (fileoffset == 0x154)
                 cli_dbgmsg("cli_scanpe: MEW: Win9x compatibility was set!\n");

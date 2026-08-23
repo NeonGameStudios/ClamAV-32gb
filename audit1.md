@@ -5947,3 +5947,13 @@ resources, and return `CL_EREAD`; the pre-recognition heuristic probe remains
 non-terminal. A focused PE32 fixture injects the loader-metadata callback
 failure and verifies the status, reason, and non-cacheable map state. The
 compiled PE corpus, sanitizer, and Sonic1 qualification remain open.
+
+## MEW confirmed-loader read classification — 2026-08-23
+
+After the MEW entry-point characteristics select the fixed loader metadata
+window, a failed `fmap_need_off_once()` previously broke out of the MEW path
+without recording that required unpacker inspection had been skipped. The
+window now marks the layer incomplete and returns `CL_EREAD`. The existing
+XOR-backed `clam-mew.exe` corpus path has a focused callback regression for
+the `0x154`/`0x158` loader boundary. Compiled PE corpus, sanitizer, and Sonic1
+qualification remain open.

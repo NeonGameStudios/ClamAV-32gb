@@ -19593,6 +19593,74 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
 }
 END_TEST
 
+static const void *pe_mew_loader_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if ((at == 0x154U || at == 0x158U) && len == 0xb0U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_pe_mew_loader_read_failure_is_fail_visible)
+{
+    const char *file = OBJDIR PATHSEP "input" PATHSEP "clamav_hdb_scanfiles" PATHSEP "clam-mew.exe";
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    struct stat st;
+    fmap_t *map;
+    cl_error_t ret;
+    uint8_t *data;
+    size_t offset = 0;
+    int fd;
+
+    fd = open(file, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &st), 0);
+    data = malloc((size_t)st.st_size);
+    ck_assert_ptr_nonnull(data);
+    while (offset < (size_t)st.st_size) {
+        ssize_t nread = read(fd, data + offset, (size_t)st.st_size - offset);
+        ck_assert_msg(nread > 0, "read(%s) failed: %s", file, strerror(errno));
+        offset += (size_t)nread;
+    }
+    close(fd);
+
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    map->need = pe_mew_loader_read_failure;
+
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.fmap               = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE MEW loader metadata could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(data);
+}
+END_TEST
+
 static size_t pe_nspack_read_failure_offset = SIZE_MAX;
 
 static const void *pe_nspack_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -24178,6 +24246,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_version_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_swizzor_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_mew_loader_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_nspack_loader_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_petite_section_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_group_header_read_failure_is_fail_visible);
