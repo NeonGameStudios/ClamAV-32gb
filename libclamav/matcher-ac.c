@@ -1679,7 +1679,7 @@ void lsig_increment_subsig_match(struct cli_ac_data *mdata, uint32_t lsig_id, ui
     mdata->lsigcnt[lsig_id][subsig_id]++;
 }
 
-cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial)
+cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *mdata, uint32_t lsig_id, uint32_t subsig_id, uint64_t realoff, int partial, cli_ctx *ctx)
 {
     const struct cli_ac_lsig *ac_lsig = root->ac_lsigtable[lsig_id];
     const struct cli_lsig_tdb *tdb    = &ac_lsig->tdb;
@@ -1724,6 +1724,8 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
                                                                                                      (ac_lsig->tdb.subsigs - 1) * sizeof(struct cli_subsig_matches *));
                 if (ls_matches == NULL) {
                     cli_errmsg("lsig_sub_matched: calloc failed for cli_lsig_matches\n");
+                    if (ctx)
+                        cli_mark_scan_incomplete(ctx, "logical signature match-offset tracking could not be allocated");
                     return CL_EMEM;
                 }
                 ls_matches->subsigs = ac_lsig->tdb.subsigs;
@@ -1733,17 +1735,24 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
                 ss_matches = ls_matches->matches[subsig_id] = malloc(sizeof(struct cli_subsig_matches));
                 if (ss_matches == NULL) {
                     cli_errmsg("lsig_sub_matched: malloc failed for cli_subsig_matches struct\n");
+                    if (ctx)
+                        cli_mark_scan_incomplete(ctx, "logical signature match-offset tracking could not be allocated");
                     return CL_EMEM;
                 }
                 ss_matches->next = 0;
                 ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) - 1;
             }
             if (ss_matches->next > ss_matches->last) { /* cli_matches out of space? realloc */
-                ss_matches = ls_matches->matches[subsig_id] = realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
-                if (ss_matches == NULL) {
+                struct cli_subsig_matches *new_matches;
+
+                new_matches = realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
+                if (new_matches == NULL) {
                     cli_errmsg("lsig_sub_matched: realloc failed for cli_subsig_matches struct\n");
+                    if (ctx)
+                        cli_mark_scan_incomplete(ctx, "logical signature match-offset tracking could not be allocated");
                     return CL_EMEM;
                 }
+                ss_matches = ls_matches->matches[subsig_id] = new_matches;
                 ss_matches->last = sizeof(ss_matches->offsets) / sizeof(uint64_t) + ss_matches->last * 2 - 1;
             }
 
@@ -1805,7 +1814,7 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
     return CL_SUCCESS;
 }
 
-cl_error_t cli_ac_chkmacro(struct cli_matcher *root, struct cli_ac_data *data, unsigned lsig_id)
+cl_error_t cli_ac_chkmacro(struct cli_matcher *root, struct cli_ac_data *data, unsigned lsig_id, cli_ctx *ctx)
 {
     const struct cli_lsig_tdb *tdb = &root->ac_lsigtable[lsig_id]->tdb;
     unsigned i;
@@ -1814,7 +1823,7 @@ cl_error_t cli_ac_chkmacro(struct cli_matcher *root, struct cli_ac_data *data, u
     /* Loop through all subsigs, and if they are tied to macros check that the
      * macro matched at a correct distance */
     for (i = 0; i < tdb->subsigs; i++) {
-        rc = lsig_sub_matched(root, data, lsig_id, i, CLI_OFF_NONE64, 0);
+        rc = lsig_sub_matched(root, data, lsig_id, i, CLI_OFF_NONE64, 0, ctx);
         if (rc != CL_SUCCESS)
             return rc;
     }
@@ -1955,12 +1964,16 @@ cl_error_t cli_ac_scanbuff(
                                 mdata->offmatrix[pt->sigid - 1] = malloc(pt->parts * sizeof(uint64_t *));
                                 if (!mdata->offmatrix[pt->sigid - 1]) {
                                     cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u]\n", pt->sigid - 1);
+                                    if (ctx)
+                                        cli_mark_scan_incomplete(ctx, "AC partial-signature offset tracking could not be allocated");
                                     return CL_EMEM;
                                 }
 
                                 mdata->offmatrix[pt->sigid - 1][0] = malloc(pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
                                 if (!mdata->offmatrix[pt->sigid - 1][0]) {
                                     cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u][0]\n", pt->sigid - 1);
+                                    if (ctx)
+                                        cli_mark_scan_incomplete(ctx, "AC partial-signature offset tracking could not be allocated");
                                     free(mdata->offmatrix[pt->sigid - 1]);
                                     mdata->offmatrix[pt->sigid - 1] = NULL;
                                     return CL_EMEM;
@@ -2094,7 +2107,7 @@ cl_error_t cli_ac_scanbuff(
                                 } else { /* !pt->type */
                                     cli_dbgmsg("cli_ac_scanbuff: signature %s matched at " STDu64 "\n", pt->virname, realoff);
                                     if (pt->lsigid[0]) {
-                                        rc = lsig_sub_matched(root, mdata, pt->lsigid[1], pt->lsigid[2], offmatrix[pt->parts - 1][1], 1);
+                                        rc = lsig_sub_matched(root, mdata, pt->lsigid[1], pt->lsigid[2], offmatrix[pt->parts - 1][1], 1, ctx);
                                         if (rc != CL_SUCCESS)
                                             return rc;
                                         ptN = ptN->next_same;
@@ -2105,6 +2118,8 @@ cl_error_t cli_ac_scanbuff(
                                         newres = (struct cli_ac_result *)malloc(sizeof(struct cli_ac_result));
                                         if (!newres) {
                                             cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+                                            if (ctx)
+                                                cli_mark_scan_incomplete(ctx, "AC signature result could not be allocated");
                                             return CL_EMEM;
                                         }
                                         newres->virname    = pt->virname;
@@ -2209,7 +2224,7 @@ cl_error_t cli_ac_scanbuff(
                                 }
                             } else {
                                 if (pt->lsigid[0]) {
-                                    rc = lsig_sub_matched(root, mdata, pt->lsigid[1], pt->lsigid[2], realoff, 0);
+                                    rc = lsig_sub_matched(root, mdata, pt->lsigid[1], pt->lsigid[2], realoff, 0, ctx);
                                     if (rc != CL_SUCCESS)
                                         return rc;
                                     ptN = ptN->next_same;
@@ -2220,6 +2235,8 @@ cl_error_t cli_ac_scanbuff(
                                     newres = (struct cli_ac_result *)malloc(sizeof(struct cli_ac_result));
                                     if (!newres) {
                                         cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
+                                        if (ctx)
+                                            cli_mark_scan_incomplete(ctx, "AC signature result could not be allocated");
                                         return CL_EMEM;
                                     }
                                     newres->virname    = pt->virname;

@@ -1132,6 +1132,10 @@
 - AC embedded-type match tracking allocation failure now marks the scan
   incomplete before returning `CL_EMEM`; add matcher allocation
   fault-injection and production-signature qualification.
+- AC partial-signature offset tables, logical match-offset tracking, and AC or
+  PCRE result-list allocation failures now mark the required matcher operation
+  incomplete before returning `CL_EMEM`; add compiled fault-injection coverage
+  for each list-growth boundary and production-signature qualification.
 - Legacy PDF object-header and `endobj` searches now use overlapping 64 KiB
   windows with shared deadline checks; add compiled timeout injection,
   decoder-fault coverage, and production PDF qualification.

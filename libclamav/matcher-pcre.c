@@ -689,7 +689,7 @@ cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const ch
                     pm_dbgmsg("cli_pcre_scanbuf: assigning lsigcnt[%d][%d], located @ %zu\n",
                               pm->lsigid[1], pm->lsigid[2], match_offset);
 
-                    ret = lsig_sub_matched(root, mdata, pm->lsigid[1], pm->lsigid[2], (uint64_t)match_offset, 0);
+                    ret = lsig_sub_matched(root, mdata, pm->lsigid[1], pm->lsigid[2], (uint64_t)match_offset, 0, ctx);
                     if (ret != CL_SUCCESS) {
                         break;
                     }
@@ -699,6 +699,8 @@ cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const ch
                         newres = (struct cli_ac_result *)calloc(1, sizeof(struct cli_ac_result));
                         if (!newres) {
                             cli_errmsg("cli_pcre_scanbuff: Can't allocate memory for new result\n");
+                            if (ctx)
+                                cli_mark_scan_incomplete(ctx, "PCRE signature result could not be allocated");
                             ret = CL_EMEM;
                             break;
                         }

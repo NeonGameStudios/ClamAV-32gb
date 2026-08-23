@@ -1121,7 +1121,7 @@ static cl_error_t lsig_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_a
     char *exp                   = ac_lsig->u.logic;
     char *exp_end               = exp + strlen(exp);
 
-    status = cli_ac_chkmacro(root, acdata, lsid);
+    status = cli_ac_chkmacro(root, acdata, lsid, ctx);
     if (status != CL_SUCCESS)
         return status;
 

@@ -5042,3 +5042,16 @@ body-spool and deadline behavior is unchanged.
 The source guards and non-clang regression gates remain the available local
 evidence. Fault-injected partial-message coverage, production mail corpora,
 sanitizer runs, and Sonic1 qualification remain open.
+
+## Logical matcher result-allocation failures — 2026-08-22
+
+The native logical-signature path could return `CL_EMEM` after failing to grow
+partial-signature offset tables, logical match-offset lists, or AC/PCRE raw
+result lists without recording the required matcher operation as incomplete.
+The context-aware matcher boundaries now mark those failures before returning;
+logical-signature macro evaluation passes the same scan context, and failed
+offset-list `realloc` preserves the original allocation for cleanup.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled list-growth fault injection, production-signature
+qualification, sanitizer runs, and Sonic1 qualification remain open.
