@@ -830,6 +830,39 @@ else
     failures=$((failures + 1))
 fi
 
+# Exercise the EA06 script path with a deterministic stored member. This is a
+# focused parser regression in addition to the sparse raw-file boundary corpus:
+# the fixture must reach AutoIt token decompilation and finish cleanly without
+# relying on a production database signature.
+autoit_fixture=$corpus/autoit-ea06-script.bin
+autoit_log=$out/autoit-ea06-script.log
+autoit_status=0
+if ! python3 "$root/tools/largefile_autoit_stored_fixture.py" --ea06-script "$autoit_fixture" > "$out/autoit-ea06-fixture.log" 2>&1; then
+    autoit_status=2
+fi
+if [ "$autoit_status" -eq 0 ]; then
+    mkdir -p "$poc_out/tmp/autoit-ea06"
+    "$runtime_clamscan" \
+        --database="$poc_out/db" \
+        --max-filesize=32G \
+        --max-scansize=64G \
+        --max-temporary-size=64G \
+        --max-contiguous-size=32G \
+        --pcre-max-filesize=32G \
+        --max-scantime="$max_scan_time_ms" \
+        --debug \
+        --no-summary \
+        --tempdir="$poc_out/tmp/autoit-ea06" \
+        "$autoit_fixture" > "$autoit_log" 2>&1 || autoit_status=$?
+fi
+if [ "$autoit_status" -eq 0 ] &&
+    grep -F 'autoit: script has got 1 lines' "$autoit_log" >/dev/null 2>&1; then
+    printf 'autoit_ea06_fixture=pass\n' >> "$metadata"
+else
+    printf 'autoit_ea06_fixture=fail status=%s\n' "$autoit_status" >> "$metadata"
+    failures=$((failures + 1))
+fi
+
 if [ "$run_cancellation" -eq 1 ]; then
     cancellation_log=$out/cancellation.log
     cancellation_status=0

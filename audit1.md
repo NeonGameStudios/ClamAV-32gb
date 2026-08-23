@@ -5068,8 +5068,9 @@ the remaining explicit unsupported boundary is decompiled output above the
 1 GiB individual-allocation ceiling. Source guards cover the spool and
 allocation invariants, and `tools/largefile_autoit_stored_fixture.py` now
 generates a deterministic stored EA06 script member for runtime qualification;
-compiled EA06 corpus, sanitizer, and Sonic1 qualification remain release
-gates.
+the release runtime gate now executes that fixture and requires the parser's
+token-decompilation debug marker. Compiled EA06 corpus, sanitizer, and Sonic1
+qualification remain release gates.
 
 ## Trust-layer status commit and cleanup — 2026-08-22
 
