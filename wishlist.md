@@ -2041,3 +2041,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Preserve HFS+ malformed tree headers, catalog/attribute records, extents,
   node coordinates, and catalog-fork geometry as sticky-incomplete; add
   compiled malformed-volume and allocation fault coverage.
+
+## OLE2 property-tree admission failures — 2026-08-23
+
+- Preserve OLE2 property-tree recursion/file/worklist limits, JSON timeout,
+  scan-size admission, invalid-header/first-data-block geometry, and tracking
+  allocation failures as sticky-incomplete; add compiled limit/allocation
+  fault coverage.

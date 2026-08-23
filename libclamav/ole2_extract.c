@@ -985,11 +985,13 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
 
     if (rec_level > 100) {
         cli_dbgmsg("OLE2: fixed recursion limit reached (max: 100)\n");
+        cli_mark_scan_incomplete(ctx, "OLE2 property-tree recursion limit reached");
         cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxRecursion", CL_EMAXREC);
         return CL_EMAXREC;
     }
     if (*file_count > 100000) {
         cli_dbgmsg("OLE2: fixed file limit reached (max: 100000)\n");
+        cli_mark_scan_incomplete(ctx, "OLE2 property-tree file limit reached");
         cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
         return CL_EMAXFILES;
     }
@@ -998,12 +1000,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
         // Note: engine->max_recursion_level is re-purposed here out of convenience.
         //       ole2 recursion does not leverage the ctx->recursion_stack stack.
         cli_dbgmsg("OLE2: Recursion limit reached (max: %d)\n", ctx->engine->max_recursion_level);
+        cli_mark_scan_incomplete(ctx, "OLE2 property-tree recursion limit reached");
         cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxRecursion", CL_EMAXREC);
         return CL_EMAXREC;
     }
 
     // push the 'root' node for the level onto the local list
     if ((ret = ole2_list_push(&node_list, prop_index)) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "OLE2 property-tree worklist could not be extended");
         ole2_list_delete(&node_list);
         return ret;
     }
@@ -1017,6 +1021,7 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
         }
 
         if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "OLE2 property-tree traversal reached the JSON timeout limit");
             ole2_list_delete(&node_list);
             return CL_ETIMEOUT;
         }
@@ -1150,12 +1155,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                 }
                 if ((int)(prop_block[idx].prev) != -1) {
                     if ((ret = ole2_list_push(&node_list, prop_block[idx].prev)) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "OLE2 property-tree worklist could not be extended");
                         ole2_list_delete(&node_list);
                         return ret;
                     }
                 }
                 if ((int)(prop_block[idx].next) != -1) {
                     if ((ret = ole2_list_push(&node_list, prop_block[idx].next)) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "OLE2 property-tree worklist could not be extended");
                         ole2_list_delete(&node_list);
                         return ret;
                     }
@@ -1165,12 +1172,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                 ole2_listmsg("file node\n");
                 if (ctx && ctx->engine->maxfiles && ((*file_count > ctx->engine->maxfiles) || (ctx->scannedfiles > ctx->engine->maxfiles - *file_count))) {
                     cli_dbgmsg("OLE2: files limit reached (max: %u)\n", ctx->engine->maxfiles);
+                    cli_mark_scan_incomplete(ctx, "OLE2 property-tree file limit reached");
                     cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
                     ole2_list_delete(&node_list);
                     return CL_EMAXFILES;
                 }
                 if (*file_count >= 100000) {
                     cli_dbgmsg("OLE2: fixed file limit reached (max: 100000)\n");
+                    cli_mark_scan_incomplete(ctx, "OLE2 property-tree file limit reached");
                     cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxFiles", CL_EMAXFILES);
                     ole2_list_delete(&node_list);
                     return CL_EMAXFILES;
@@ -1211,12 +1220,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                 }
                 if ((int)(prop_block[idx].prev) != -1) {
                     if ((ret = ole2_list_push(&node_list, prop_block[idx].prev)) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "OLE2 property-tree worklist could not be extended");
                         ole2_list_delete(&node_list);
                         return ret;
                     }
                 }
                 if ((int)(prop_block[idx].next) != -1) {
                     if ((ret = ole2_list_push(&node_list, prop_block[idx].next)) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "OLE2 property-tree worklist could not be extended");
                         ole2_list_delete(&node_list);
                         return ret;
                     }
@@ -1271,12 +1282,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                 }
                 if ((int)(prop_block[idx].prev) != -1) {
                     if ((ret = ole2_list_push(&node_list, prop_block[idx].prev)) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "OLE2 property-tree worklist could not be extended");
                         ole2_list_delete(&node_list);
                         return ret;
                     }
                 }
                 if ((int)(prop_block[idx].next) != -1) {
                     if ((ret = ole2_list_push(&node_list, prop_block[idx].next)) != CL_SUCCESS) {
+                        cli_mark_scan_incomplete(ctx, "OLE2 property-tree worklist could not be extended");
                         ole2_list_delete(&node_list);
                         return ret;
                     }
@@ -3266,6 +3279,7 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         if (ctx->engine->maxscansize > ctx->scansize) {
             scansize = ctx->engine->maxscansize - ctx->scansize;
         } else {
+            cli_mark_scan_incomplete(ctx, "OLE2 scan-size limit was reached before property inspection");
             cli_append_potentially_unwanted_if_heur_exceedsmax(ctx, "Heuristics.Limits.Exceeded.MaxScanSize", CL_EMAXSIZE);
             return CL_EMAXSIZE;
         }
@@ -3314,11 +3328,13 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
 
     hdr.bitset = cli_bitset_init();
     if (!hdr.bitset) {
+        cli_mark_scan_incomplete(ctx, "OLE2 property-tree visit tracking could not be initialized");
         ret = CL_EMEM;
         goto done;
     }
     if (memcmp(hdr.magic, magic_id, 8) != 0) {
         cli_dbgmsg("OLE2 magic failed!\n");
+        cli_mark_scan_incomplete(ctx, "OLE2 header has invalid magic");
         ret = CL_EFORMAT;
         goto done;
     }
@@ -3373,6 +3389,7 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
 
         if (hdr.map->len < data_start) {
             cli_dbgmsg("OLE2 extract: map is shorter than the first data block\n");
+            cli_mark_scan_incomplete(ctx, "OLE2 input ends before its first data block");
             ret = CL_EFORMAT;
             goto done;
         }
@@ -3434,6 +3451,7 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         goto done;
     }
     if (!(hdr.bitset = cli_bitset_init())) {
+        cli_mark_scan_incomplete(ctx, "OLE2 property-tree visit tracking could not be initialized");
         ret = CL_EMEM;
         goto done;
     }
@@ -3455,6 +3473,7 @@ cl_error_t cli_ole2_extract(const char *dirname, cli_ctx *ctx, struct uniq **fil
         cli_dbgmsg("OLE2: VBA project found\n");
         if (!(hdr.U = uniq_init(file_count))) {
             cli_dbgmsg("OLE2: uniq_init() failed\n");
+            cli_mark_scan_incomplete(ctx, "OLE2 extracted-file tracking could not be initialized");
             ret = CL_EMEM;
             goto done;
         }

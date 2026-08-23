@@ -45,6 +45,16 @@ without dereferencing an invalid context. Static source guards pass; compiled
 malformed-volume and allocation fault injection, sanitizer, corpus, and
 supported-build Sonic1 qualification remain open.
 
+## OLE2 property-tree admission failures — 2026-08-23
+
+OLE2 property-tree recursion/file/worklist limits, JSON timeout, scan-size
+admission, invalid header magic, first-data-block geometry, and property or
+extracted-file tracking allocation failures now mark required inspection
+incomplete before returning. This prevents a confirmed OLE2 layer from being
+reconciled as clean after those mandatory walks stop early. Static source
+guards pass; compiled OLE2 limit/allocation fault injection, sanitizer,
+corpus, and supported-build Sonic1 qualification remain open.
+
 ## HFS+ non-empty fork block admission — 2026-08-23
 
 `hfsplus_scanfile()` previously returned success for a fork with a non-zero
