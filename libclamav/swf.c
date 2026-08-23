@@ -69,7 +69,13 @@ static cl_error_t swf_read_chunk(fmap_t *map, void *dst, size_t offset, size_t l
     *nread = fmap_readn(map, dst, offset, length);
     if (*nread != (size_t)-1)
         return CL_SUCCESS;
-    return offset < map->len ? CL_EREAD : CL_EFORMAT;
+    /* fmap_readn() clips a request that crosses EOF before asking the
+     * backing map for data. A callback failure in that clipped prefix is
+     * therefore still a truncated compressed stream, not an in-range read
+     * failure for the caller's original request. */
+    if (offset > map->len || length > map->len - offset)
+        return CL_EFORMAT;
+    return CL_EREAD;
 }
 
 static cl_error_t swf_read_failure(cli_ctx *ctx, cl_error_t status, const char *truncated_reason,

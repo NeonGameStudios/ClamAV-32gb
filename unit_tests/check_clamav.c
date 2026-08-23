@@ -6646,6 +6646,16 @@ static const void *swf_targeted_read_failure(fmap_t *map, size_t at, size_t len,
     return (const uint8_t *)map->data + at;
 }
 
+static const void *swf_clipped_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 8U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_swf_required_read_failure_is_fail_visible)
 {
     static const uint8_t archive[] = {'F', 'W', 'S', 9U, 9U, 0U, 0U, 0U, 0U};
@@ -6685,6 +6695,42 @@ START_TEST(test_swf_required_read_failure_is_fail_visible)
         cl_fmap_close(map);
     }
     swf_read_failure_offset = SIZE_MAX;
+}
+END_TEST
+
+START_TEST(test_swf_compressed_input_range_failure_is_truncation)
+{
+    static const uint8_t archive[] = {
+        'C', 'W', 'S', 9U, 8U, 0U, 0U, 0U, 0U};
+    struct cl_scan_options options;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    map->need = swf_clipped_read_failure;
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    /* The compressed-input request asks for FILEBUFF bytes at offset 8,
+     * while only one byte remains. The backing callback fails for that
+     * clipped prefix; this is truncated input, not an in-range read fault. */
+    ret = cli_scanswf(&ctx);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "SWF zlib compressed input was truncated");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
 }
 END_TEST
 
@@ -23692,6 +23738,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_required_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_swf_compressed_input_range_failure_is_truncation);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_swf_cleanup_close_failure_is_fail_visible);
 #endif

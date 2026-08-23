@@ -1681,3 +1681,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   remains `CL_EPARSE` while fully in-range backing-read failures remain
   `CL_EREAD`; retain compiled 7-Zip corpus, sanitizer, and Sonic1
   qualification gates.
+
+## SWF clipped compressed-input read classification — 2026-08-23
+
+- Classify a backing callback failure on a compressed-input request that
+  crosses the fmap boundary as truncated SWF input rather than `CL_EREAD`;
+  retain the distinct in-range callback-fault regression and compiled SWF
+  corpus, sanitizer, and Sonic1 qualification gates.

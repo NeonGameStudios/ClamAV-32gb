@@ -5764,3 +5764,16 @@ read-only checkout-state probe timed out after 20 seconds with
 `remote_started=false`; no remote command ran. Sonic1 production and sanitizer
 qualification therefore remain an external blocker, while local non-CMake
 evidence continues independently.
+
+## SWF clipped compressed-input read classification — 2026-08-23
+
+The SWF compressed-input helper previously classified any callback failure
+whose starting offset was below the map end as `CL_EREAD`. Because
+`fmap_readn()` clips requests that extend past EOF before invoking the backing
+callback, that rule mislabeled a callback failure on a truncated final prefix
+as an operational read fault. The helper now checks whether the original
+request was fully contained before returning `CL_EREAD`; clipped or
+out-of-range requests remain format/incomplete results. A focused CWS
+regression covers the one-byte-final-prefix fault, while the existing
+fully-in-range callback regression remains unchanged. Compiled SWF corpus,
+sanitizer, and Sonic1 qualification remain open.
