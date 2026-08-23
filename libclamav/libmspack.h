@@ -21,6 +21,15 @@
 cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size);
 
 /**
+ * @brief Verify that a materialized CAB/CHM member is a regular file of its declared size.
+ *
+ * @param path             Materialized member path.
+ * @param declared_size   Expected uncompressed member size.
+ * @return true when the path exists, is regular, and has the declared size.
+ */
+bool cli_mspack_output_matches_declared(const char *path, uint64_t declared_size);
+
+/**
  * @brief Open and extract a Microsoft CAB file, scanning each extracted file.
  *
  * @param ctx           Scan context

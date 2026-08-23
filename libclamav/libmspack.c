@@ -482,6 +482,17 @@ static void mspack_cleanup_temp(cli_ctx *ctx, char **tmp_fname, bool *tempfile_e
     }
 }
 
+bool cli_mspack_output_matches_declared(const char *path, uint64_t declared_size)
+{
+    STATBUF output_stat;
+
+    if (path == NULL || CLAMSTAT(path, &output_stat) != 0 || output_stat.st_size < 0 ||
+        !S_ISREG(output_stat.st_mode))
+        return false;
+
+    return (uint64_t)output_stat.st_size == declared_size;
+}
+
 cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
 {
     static const size_t cab_header_size = 36;
@@ -678,6 +689,8 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
         } else {
             max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
         }
+        if (max_size > member_size)
+            max_size = member_size;
 
         if (!mspack_deadline_ok(&ops_ex)) {
             ret = CL_ETIMEOUT;
@@ -723,6 +736,17 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
              * beyond the truncation point would otherwise be reported clean. */
             cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
             cli_mark_scan_incomplete(ctx, "CAB member extraction was incomplete");
+            ret = CL_EPARSE;
+            goto done;
+        }
+
+        if (tempfile_exists && !cli_mspack_output_matches_declared(tmp_fname, member_size)) {
+            cli_mark_scan_incomplete(ctx, "CAB extracted member size or type did not match its declaration");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        if (!tempfile_exists && member_size != 0) {
+            cli_mark_scan_incomplete(ctx, "CAB extracted member output was not materialized");
             ret = CL_EPARSE;
             goto done;
         }
@@ -853,6 +877,8 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
         } else {
             max_size = ctx->engine->maxfilesize ? ctx->engine->maxfilesize : UINT64_MAX;
         }
+        if (max_size > member_size)
+            max_size = member_size;
 
         if (!mspack_deadline_ok(&ops_ex)) {
             ret = CL_ETIMEOUT;
@@ -896,6 +922,17 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
             /* Failed to extract. Never scan the partial output. */
             cli_dbgmsg("%s() failed to extract %d; refusing to scan partial member\n", __func__, ret);
             cli_mark_scan_incomplete(ctx, "CHM member extraction was incomplete");
+            ret = CL_EPARSE;
+            goto done;
+        }
+
+        if (tempfile_exists && !cli_mspack_output_matches_declared(tmp_fname, member_size)) {
+            cli_mark_scan_incomplete(ctx, "CHM extracted member size or type did not match its declaration");
+            ret = CL_EPARSE;
+            goto done;
+        }
+        if (!tempfile_exists && member_size != 0) {
+            cli_mark_scan_incomplete(ctx, "CHM extracted member output was not materialized");
             ret = CL_EPARSE;
             goto done;
         }

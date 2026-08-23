@@ -21793,6 +21793,24 @@ START_TEST(test_mspack_scan_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mspack_output_size_mismatch_is_fail_visible)
+{
+    static const uint8_t data[] = "MSPack output-size regression";
+    char *path = NULL;
+    int fd = -1;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ck_assert_int_eq(write(fd, data, sizeof(data) - 1), (ssize_t)(sizeof(data) - 1));
+    ck_assert(cli_mspack_output_matches_declared(path, sizeof(data) - 1));
+    ck_assert(!cli_mspack_output_matches_declared(path, sizeof(data)));
+
+    ck_assert_int_eq(close(fd), 0);
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+}
+END_TEST
+
 START_TEST(test_mspack_time_limit_is_fail_visible)
 {
     uint8_t data[36] = {0};
@@ -25722,6 +25740,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_script_normalization_cleanup_close_failure_is_fail_visible);
 #endif
     tcase_add_test(tc_cl, test_mspack_scan_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_mspack_output_size_mismatch_is_fail_visible);
     tcase_add_test(tc_cl, test_mspack_decoder_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_mspack_clipped_read_failure_is_truncation);
     tcase_add_test(tc_cl, test_mspack_time_limit_is_fail_visible);

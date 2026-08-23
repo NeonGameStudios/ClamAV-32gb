@@ -1098,6 +1098,24 @@ in its intended state and that the resulting malformed embedded object stays
 an explicit incomplete parse. Compiled RTF/OLE, sanitizer, and Sonic1 corpus
 qualification remain release gates.
 
+## CAB/CHM declared-output admission — 2026-08-23
+
+The shared MSPack writer already stopped decoder output when the configured
+remaining scan budget was exhausted, but its per-member budget was not tied to
+the member's declared uncompressed size. A malformed or defective decoder
+could therefore write beyond the reserved member amount whenever the broader
+scan budget was larger. The CAB and CHM loops also accepted a successful
+short materialization and passed it to nested scanning.
+
+The writer budget is now clamped to the declared member size in both parser
+families. Before nested scanning, each existing output is required to be a
+regular file whose size exactly matches that declaration; a missing non-empty
+member is incomplete, while a genuinely empty member retains the existing
+optional no-output behavior. The shared
+cli_mspack_output_matches_declared() helper and focused regression cover the
+materialization invariant. Compiled CAB/CHM corpus, sanitizer, and Sonic1
+qualification remain release gates.
+
 ## RIFF declared-container boundary accounting — 2026-08-23
 
 The RIFF exploit walk previously recursed through a `LIST` chunk without

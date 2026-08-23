@@ -2138,3 +2138,11 @@ and Sonic1 qualification as release gates.
   the temporary reservation; retain the regular-file/decoder-size check and
   add arithmetic regression coverage, with compiled 7-Zip, sanitizer, corpus,
   and Sonic1 qualification remaining release gates.
+
+## CAB/CHM declared-output admission — 2026-08-23
+
+- Clamp MSPack decoder writes to the declared CAB/CHM member size and require
+  successful materialized output to be a regular file of exactly that size
+  before nested scanning; retain the existing broader scan-budget cap and add
+  focused materialization coverage, with compiled parser, sanitizer, corpus,
+  and Sonic1 qualification remaining release gates.
