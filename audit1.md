@@ -5134,3 +5134,17 @@ configured startup VirusAction now aborts milter initialization.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled milter allocation fault injection, one-request service
 qualification, sanitizer runs, and Sonic1 qualification remain open.
+
+## Logical and bundled-YARA status fall-throughs — 2026-08-22
+
+The logical-signature dispatcher treated an unrecognized signature type as a
+successful no-op, which could make required logical work appear complete. It
+now records an incomplete/non-cacheable result. The bundled YARA status bridge
+also now preserves direct `CL_EMEM` and `CL_ERESOURCE` results instead of
+collapsing them into generic parse errors; the existing failure mapping still
+marks the scan incomplete and prevents cache publication.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Focused compiled unknown-type and bundled-resource-status tests,
+full logical/YARA qualification, sanitizer runs, and Sonic1 qualification
+remain open.

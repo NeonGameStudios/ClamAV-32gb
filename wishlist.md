@@ -19,6 +19,10 @@
   fail-closed, and configured VirusAction allocation failure aborts startup.
   Compiled milter fault injection and one-request Sonic1 qualification remain
   open.
+- Unknown logical-signature types now become explicit incomplete/non-cacheable
+  matcher results, and bundled YARA execution preserves direct memory/resource
+  exhaustion statuses instead of relabeling them as generic parse errors.
+  Add focused compiled regressions and full logical/YARA qualification.
 - PDF, PE, ELF, Mach-O, and root-metadata bytecode hook-context allocation
   failures now mark required hook work incomplete before returning `CL_EMEM`;
   compiled hook fault injection, interpreter/JIT qualification, production

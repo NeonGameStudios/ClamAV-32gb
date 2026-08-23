@@ -1306,6 +1306,8 @@ static cl_error_t yara_normalize_execution_status(int result)
         case CL_VIRUS:
         case CL_EREAD:
         case CL_ETIMEOUT:
+        case CL_EMEM:
+        case CL_ERESOURCE:
         case CL_EPARSE:
             return (cl_error_t)result;
         default:
@@ -1390,7 +1392,11 @@ cl_error_t cli_exp_eval(cli_ctx *ctx, struct cli_matcher *root, struct cli_ac_da
         }
 #endif
         else {
-            current = CL_SUCCESS;
+            cli_dbgmsg("lsig_eval: logical signature has an unsupported type %u\n", root->ac_lsigtable[i]->type);
+            cli_mark_scan_incomplete(ctx, "logical signature type is unsupported");
+            if (ctx && ctx->fmap)
+                ctx->fmap->dont_cache_flag = 1;
+            current = CL_EPARSE;
         }
 
         status = cli_merge_scan_status(status, current);
