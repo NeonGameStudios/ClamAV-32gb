@@ -5068,3 +5068,16 @@ partial success report.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled json-c allocation fault injection, shared/static JSON-C
 qualification, sanitizer runs, and Sonic1 qualification remain open.
+
+## AC matcher-state allocation ceiling — 2026-08-22
+
+Per-scan AC state, partial-signature offset tables, logical match-offset lists,
+and AC/PCRE result lists now use the shared individual-allocation ceiling
+instead of unbounded direct allocation calls. Context-bearing raw matcher and
+file-type setup boundaries mark those allocation failures as incomplete before
+returning, so a later raw or parser pass cannot turn skipped matcher state into
+a clean result.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Fault-injected matcher-root/file-type setup coverage, production
+signature qualification, sanitizer runs, and Sonic1 qualification remain open.

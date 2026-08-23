@@ -1413,7 +1413,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
 
     data->reloffsigs = reloffsigs;
     if (reloffsigs) {
-        data->offset = (uint64_t *)malloc(reloffsigs * 2 * sizeof(uint64_t));
+        data->offset = (uint64_t *)cli_max_malloc(reloffsigs * 2 * sizeof(uint64_t));
         if (!data->offset) {
             cli_errmsg("cli_ac_init: Can't allocate memory for data->offset\n");
             return CL_EMEM;
@@ -1424,7 +1424,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
 
     data->partsigs = partsigs;
     if (partsigs) {
-        data->offmatrix = (uint64_t ***)calloc(partsigs, sizeof(uint64_t **));
+        data->offmatrix = (uint64_t ***)cli_max_calloc(partsigs, sizeof(uint64_t **));
         if (!data->offmatrix) {
             cli_errmsg("cli_ac_init: Can't allocate memory for data->offmatrix\n");
 
@@ -1437,7 +1437,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
 
     data->lsigs = lsigs;
     if (lsigs) {
-        data->lsigcnt = (uint32_t **)malloc(lsigs * sizeof(uint32_t *));
+        data->lsigcnt = (uint32_t **)cli_max_malloc(lsigs * sizeof(uint32_t *));
         if (!data->lsigcnt) {
             if (partsigs)
                 free(data->offmatrix);
@@ -1448,7 +1448,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
             cli_errmsg("cli_ac_init: Can't allocate memory for data->lsigcnt\n");
             return CL_EMEM;
         }
-        data->lsigcnt[0] = (uint32_t *)calloc(lsigs * 64, sizeof(uint32_t));
+        data->lsigcnt[0] = (uint32_t *)cli_max_calloc(lsigs * 64, sizeof(uint32_t));
         if (!data->lsigcnt[0]) {
             free(data->lsigcnt);
             if (partsigs)
@@ -1462,7 +1462,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
         }
         for (i = 1; i < lsigs; i++)
             data->lsigcnt[i] = data->lsigcnt[0] + 64 * i;
-        data->yr_matches = (uint8_t *)calloc(lsigs, sizeof(uint8_t));
+        data->yr_matches = (uint8_t *)cli_max_calloc(lsigs, sizeof(uint8_t));
         if (data->yr_matches == NULL) {
             free(data->lsigcnt[0]);
             free(data->lsigcnt);
@@ -1475,7 +1475,7 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
         }
 
         /* subsig offsets */
-        data->lsig_matches = (struct cli_lsig_matches **)calloc(lsigs, sizeof(struct cli_lsig_matches *));
+        data->lsig_matches = (struct cli_lsig_matches **)cli_max_calloc(lsigs, sizeof(struct cli_lsig_matches *));
         if (!data->lsig_matches) {
             free(data->yr_matches);
             free(data->lsigcnt[0]);
@@ -1489,8 +1489,8 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
             cli_errmsg("cli_ac_init: Can't allocate memory for data->lsig_matches\n");
             return CL_EMEM;
         }
-        data->lsigsuboff_last  = (uint64_t **)malloc(lsigs * sizeof(uint64_t *));
-        data->lsigsuboff_first = (uint64_t **)malloc(lsigs * sizeof(uint64_t *));
+        data->lsigsuboff_last  = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
+        data->lsigsuboff_first = (uint64_t **)cli_max_malloc(lsigs * sizeof(uint64_t *));
         if (!data->lsigsuboff_last || !data->lsigsuboff_first) {
             free(data->lsig_matches);
             free(data->lsigsuboff_last);
@@ -1507,8 +1507,8 @@ cl_error_t cli_ac_initdata(struct cli_ac_data *data, uint32_t partsigs, uint32_t
             cli_errmsg("cli_ac_init: Can't allocate memory for data->lsigsuboff_(last|first)\n");
             return CL_EMEM;
         }
-        data->lsigsuboff_last[0]  = (uint64_t *)calloc(lsigs * 64, sizeof(uint64_t));
-        data->lsigsuboff_first[0] = (uint64_t *)calloc(lsigs * 64, sizeof(uint64_t));
+        data->lsigsuboff_last[0]  = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
+        data->lsigsuboff_first[0] = (uint64_t *)cli_max_calloc(lsigs * 64, sizeof(uint64_t));
         if (!data->lsigsuboff_last[0] || !data->lsigsuboff_first[0]) {
             free(data->lsig_matches);
             free(data->lsigsuboff_last[0]);
@@ -1720,8 +1720,8 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
 
             ls_matches = mdata->lsig_matches[lsig_id];
             if (ls_matches == NULL) { /* allocate cli_lsig_matches */
-                ls_matches = mdata->lsig_matches[lsig_id] = (struct cli_lsig_matches *)calloc(1, sizeof(struct cli_lsig_matches) +
-                                                                                                     (ac_lsig->tdb.subsigs - 1) * sizeof(struct cli_subsig_matches *));
+                ls_matches = mdata->lsig_matches[lsig_id] = (struct cli_lsig_matches *)cli_max_calloc(1, sizeof(struct cli_lsig_matches) +
+                                                                                                            (ac_lsig->tdb.subsigs - 1) * sizeof(struct cli_subsig_matches *));
                 if (ls_matches == NULL) {
                     cli_errmsg("lsig_sub_matched: calloc failed for cli_lsig_matches\n");
                     if (ctx)
@@ -1732,7 +1732,7 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
             }
             ss_matches = ls_matches->matches[subsig_id];
             if (ss_matches == NULL) { /*  allocate cli_subsig_matches */
-                ss_matches = ls_matches->matches[subsig_id] = malloc(sizeof(struct cli_subsig_matches));
+                ss_matches = ls_matches->matches[subsig_id] = cli_max_malloc(sizeof(struct cli_subsig_matches));
                 if (ss_matches == NULL) {
                     cli_errmsg("lsig_sub_matched: malloc failed for cli_subsig_matches struct\n");
                     if (ctx)
@@ -1745,7 +1745,7 @@ cl_error_t lsig_sub_matched(const struct cli_matcher *root, struct cli_ac_data *
             if (ss_matches->next > ss_matches->last) { /* cli_matches out of space? realloc */
                 struct cli_subsig_matches *new_matches;
 
-                new_matches = realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
+                new_matches = cli_max_realloc(ss_matches, sizeof(struct cli_subsig_matches) + sizeof(uint64_t) * ss_matches->last * 2);
                 if (new_matches == NULL) {
                     cli_errmsg("lsig_sub_matched: realloc failed for cli_subsig_matches struct\n");
                     if (ctx)
@@ -1961,7 +1961,7 @@ cl_error_t cli_ac_scanbuff(
 
                             /* sparsely populated matrix, so allocate and initialize if NULL */
                             if (!mdata->offmatrix[pt->sigid - 1]) {
-                                mdata->offmatrix[pt->sigid - 1] = malloc(pt->parts * sizeof(uint64_t *));
+                                mdata->offmatrix[pt->sigid - 1] = cli_max_malloc(pt->parts * sizeof(uint64_t *));
                                 if (!mdata->offmatrix[pt->sigid - 1]) {
                                     cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u]\n", pt->sigid - 1);
                                     if (ctx)
@@ -1969,7 +1969,7 @@ cl_error_t cli_ac_scanbuff(
                                     return CL_EMEM;
                                 }
 
-                                mdata->offmatrix[pt->sigid - 1][0] = malloc(pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
+                                mdata->offmatrix[pt->sigid - 1][0] = cli_max_malloc(pt->parts * (CLI_DEFAULT_AC_TRACKLEN + 2) * sizeof(uint64_t));
                                 if (!mdata->offmatrix[pt->sigid - 1][0]) {
                                     cli_errmsg("cli_ac_scanbuff: Can't allocate memory for mdata->offmatrix[%u][0]\n", pt->sigid - 1);
                                     if (ctx)
@@ -2115,7 +2115,7 @@ cl_error_t cli_ac_scanbuff(
                                     }
 
                                     if (res) {
-                                        newres = (struct cli_ac_result *)malloc(sizeof(struct cli_ac_result));
+                                        newres = (struct cli_ac_result *)cli_max_malloc(sizeof(struct cli_ac_result));
                                         if (!newres) {
                                             cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
                                             if (ctx)
@@ -2232,7 +2232,7 @@ cl_error_t cli_ac_scanbuff(
                                 }
 
                                 if (res) {
-                                    newres = (struct cli_ac_result *)malloc(sizeof(struct cli_ac_result));
+                                    newres = (struct cli_ac_result *)cli_max_malloc(sizeof(struct cli_ac_result));
                                     if (!newres) {
                                         cli_errmsg("cli_ac_scanbuff: Can't allocate memory for newres %lu\n", (unsigned long)sizeof(struct cli_ac_result));
                                         if (ctx)

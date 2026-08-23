@@ -1139,6 +1139,10 @@
   PCRE result-list allocation failures now mark the required matcher operation
   incomplete before returning `CL_EMEM`; add compiled fault-injection coverage
   for each list-growth boundary and production-signature qualification.
+- AC matcher state initialization and file-type matcher setup now use the
+  individual-allocation ceiling and mark allocation failures on the shared scan
+  context; add fault-injected matcher-root setup and file-type detection
+  coverage.
 - Legacy PDF object-header and `endobj` searches now use overlapping 64 KiB
   windows with shared deadline checks; add compiled timeout injection,
   decoder-fault coverage, and production PDF qualification.

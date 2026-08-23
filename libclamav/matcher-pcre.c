@@ -696,7 +696,7 @@ cl_error_t cli_pcre_scanbuf(const unsigned char *buffer, size_t length, const ch
                 } else {
                     /* for raw match data - sigtool only */
                     if (res) {
-                        newres = (struct cli_ac_result *)calloc(1, sizeof(struct cli_ac_result));
+                        newres = (struct cli_ac_result *)cli_max_calloc(1, sizeof(struct cli_ac_result));
                         if (!newres) {
                             cli_errmsg("cli_pcre_scanbuff: Can't allocate memory for new result\n");
                             if (ctx)

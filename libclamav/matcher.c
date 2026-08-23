@@ -375,6 +375,8 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
             current = cli_ac_initdata(&matcher_data, target_ac_root->ac_partsigs, target_ac_root->ac_lsigs,
                                       target_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
             if (CL_SUCCESS != current) {
+                if (current == CL_EMEM)
+                    cli_mark_scan_incomplete(ctx, "AC matcher state could not be allocated");
                 status = cli_merge_scan_status(status, current);
                 if (cli_scan_status_is_critical(current))
                     return status;
@@ -416,6 +418,8 @@ cl_error_t cli_scan_buff(const unsigned char *buffer, uint32_t length, uint64_t 
             current = cli_ac_initdata(&matcher_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs,
                                       generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
             if (CL_SUCCESS != current) {
+                if (current == CL_EMEM)
+                    cli_mark_scan_incomplete(ctx, "AC matcher state could not be allocated");
                 status = cli_merge_scan_status(status, current);
                 if (cli_scan_status_is_critical(current))
                     return status;
@@ -1543,6 +1547,8 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
             current = cli_ac_initdata(&generic_ac_data, generic_ac_root->ac_partsigs, generic_ac_root->ac_lsigs,
                                       generic_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
             if (CL_SUCCESS != current) {
+                if (current == CL_EMEM)
+                    cli_mark_scan_incomplete(ctx, "AC matcher state could not be allocated");
                 status = cli_merge_scan_status(status, current);
                 if (cli_scan_status_is_critical(current)) {
                     ret = current;
@@ -1585,6 +1591,8 @@ cl_error_t cli_scan_fmap(cli_ctx *ctx, cli_file_t ftype, bool filetype_only, str
         current = cli_ac_initdata(&target_ac_data, target_ac_root->ac_partsigs, target_ac_root->ac_lsigs,
                                   target_ac_root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN);
         if (CL_SUCCESS != current) {
+            if (current == CL_EMEM)
+                cli_mark_scan_incomplete(ctx, "AC matcher state could not be allocated");
             status = cli_merge_scan_status(status, current);
             if (cli_scan_status_is_critical(current)) {
                 ret = current;

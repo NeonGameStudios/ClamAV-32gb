@@ -465,8 +465,10 @@ cli_file_t cli_determine_fmap_type(cli_ctx_t ctx_t, cli_file_t basetype)
         if (!root)
             return ret;
 
-        if (cli_ac_initdata(&mdata, root->ac_partsigs, root->ac_lsigs, root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN))
+        if (cli_ac_initdata(&mdata, root->ac_partsigs, root->ac_lsigs, root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN)) {
+            cli_mark_scan_incomplete(ctx, "AC file-type matcher state could not be allocated");
             return ret;
+        }
 
         scan_ret = (cli_file_t)cli_ac_scanbuff(buff, bread, NULL, NULL, NULL, ctx->engine->root[0], &mdata, 0, ret, NULL, AC_SCAN_FT, NULL);
 
@@ -482,8 +484,10 @@ cli_file_t cli_determine_fmap_type(cli_ctx_t ctx_t, cli_file_t basetype)
              (scan_ret != CL_TYPE_7ZSFX))) {
             ret = scan_ret;
         } else {
-            if (cli_ac_initdata(&mdata, root->ac_partsigs, root->ac_lsigs, root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN))
+            if (cli_ac_initdata(&mdata, root->ac_partsigs, root->ac_lsigs, root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN)) {
+                cli_mark_scan_incomplete(ctx, "AC file-type matcher state could not be allocated");
                 return ret;
+            }
 
             decoded = (unsigned char *)cli_utf16toascii((char *)buff, bread);
             if (decoded) {
@@ -518,8 +522,10 @@ cli_file_t cli_determine_fmap_type(cli_ctx_t ctx_t, cli_file_t basetype)
                      * However when detecting whether a file is HTML or not, we need exact conversion.
                      * (just eliminating zeros and matching would introduce false positives */
                     if (encoding_normalize_toascii(&in_area, encoding, &out_area) >= 0 && out_area.length > 0) {
-                        if (cli_ac_initdata(&mdata, root->ac_partsigs, root->ac_lsigs, root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN))
+                        if (cli_ac_initdata(&mdata, root->ac_partsigs, root->ac_lsigs, root->ac_reloff_num, CLI_DEFAULT_AC_TRACKLEN)) {
+                            cli_mark_scan_incomplete(ctx, "AC file-type matcher state could not be allocated");
                             return ret;
+                        }
 
                         if (out_area.length > 0) {
                             scan_ret = (cli_file_t)cli_ac_scanbuff(decodedbuff, out_area.length, NULL, NULL, NULL, ctx->engine->root[0], &mdata, 0, 0, NULL, AC_SCAN_FT, NULL); /* FIXME: can we use CL_TYPE_TEXT_ASCII instead of 0? */
