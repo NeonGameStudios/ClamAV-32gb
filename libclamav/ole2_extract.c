@@ -1830,6 +1830,23 @@ likely_mso_stream(int fd)
     return 0;
 }
 
+cl_error_t cli_ole2_read_mso_prefix(fmap_t *input, uint32_t *prefix, cli_ctx *ctx)
+{
+    size_t bytes_read;
+
+    bytes_read = fmap_readn_full(input, prefix, 0, sizeof(*prefix));
+    if (bytes_read == sizeof(*prefix))
+        return CL_SUCCESS;
+
+    if (bytes_read == (size_t)-1) {
+        cli_mark_scan_incomplete(ctx, "MSO stream prefix could not be read completely");
+        return CL_EREAD;
+    }
+
+    cli_mark_scan_incomplete(ctx, "MSO stream prefix is truncated");
+    return CL_EPARSE;
+}
+
 static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
 {
     int zret, ofd;
@@ -1888,9 +1905,9 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
     }
 
     /* extract 32-bit prefix */
-    if (fmap_readn(input, &prefix, off_in, sizeof(prefix)) != sizeof(prefix)) {
+    ret = cli_ole2_read_mso_prefix(input, &prefix, ctx);
+    if (ret != CL_SUCCESS) {
         cli_dbgmsg("scan_mso_stream: Can't extract 4-byte prefix\n");
-        ret = CL_EREAD;
         goto mso_end;
     }
 
@@ -1911,10 +1928,16 @@ static cl_error_t scan_mso_stream(int fd, const char *filepath, cli_ctx *ctx)
             size_t bytes_read;
 
             zstrm.next_in = inbuf;
+            if (off_in >= 0 && (uint64_t)off_in > (uint64_t)input->len) {
+                cli_mark_scan_incomplete(ctx, "MSO stream ended before zlib inflation completed");
+                ret = CL_EPARSE;
+                goto mso_end;
+            }
             bytes_read    = fmap_readn(input, inbuf, off_in, FILEBUFF);
             if (bytes_read == (size_t)-1) {
                 cli_errmsg("scan_mso_stream: Error reading MSO file\n");
-                ret = CL_EUNPACK;
+                cli_mark_scan_incomplete(ctx, "MSO stream input could not be read completely");
+                ret = CL_EREAD;
                 goto mso_end;
             }
             if (bytes_read == 0) {

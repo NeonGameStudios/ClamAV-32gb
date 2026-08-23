@@ -5433,3 +5433,14 @@ and embedded-mail call paths. The former remains `CL_EREAD` and non-cacheable;
 the latter remains a parse/incomplete result. Focused callback regressions
 cover standalone and embedded-mail mid-attachment failures. Compiled scanner,
 sanitizer, production UUEncode corpus, and Sonic1 qualification remain open.
+
+## OLE2/MSO fixed-prefix read classification — 2026-08-23
+
+The MSO stream inflater now preflights its fixed four-byte uncompressed-size
+prefix with `fmap_readn_full()`. A genuinely short prefix is reported as
+`CL_EPARSE` with an incomplete result, while a fully in-range fmap callback
+failure remains `CL_EREAD`. Streaming MSO callback failures also preserve
+`CL_EREAD` and mark the layer incomplete instead of being relabeled as
+`CL_EUNPACK`. Focused regressions cover the prefix range classes. Compiled
+scanner, sanitizer, production OLE2/MSO corpus, and Sonic1 qualification
+remain open.

@@ -15908,6 +15908,43 @@ START_TEST(test_ole2_header_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole2_mso_prefix_range_classes_are_fail_visible)
+{
+    static const uint8_t truncated_prefix[sizeof(uint32_t) - 1U] = {0};
+    static const uint8_t complete_prefix[sizeof(uint32_t)]          = {0};
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint32_t prefix;
+
+    map = cl_fmap_open_memory(truncated_prefix, sizeof(truncated_prefix));
+    ck_assert_ptr_nonnull(map);
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    ck_assert_int_eq(cli_ole2_read_mso_prefix(map, &prefix, &ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSO stream prefix is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(complete_prefix, sizeof(complete_prefix));
+    ck_assert_ptr_nonnull(map);
+    map->need = fmap_readn_full_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.options = &options;
+    ctx.fmap    = map;
+
+    ck_assert_int_eq(cli_ole2_read_mso_prefix(map, &prefix, &ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSO stream prefix could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_ole2_invalid_block_geometry_is_fail_visible)
 {
     static const uint8_t magic[] = {0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
@@ -22081,6 +22118,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_rar_without_backend_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_ole2_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_ole2_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_ole2_mso_prefix_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_ole2_invalid_block_geometry_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_ole2_encryption_probe_uses_native_window);

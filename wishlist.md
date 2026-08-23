@@ -1449,3 +1449,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   for malformed or unterminated attachments; retain compiled scanner,
   sanitizer, production UUEncode corpus, and Sonic1 qualification as release
   gates.
+
+## OLE2/MSO fixed-prefix read classification — 2026-08-23
+
+- Preflight the fixed MSO uncompressed-size prefix, preserving parse results
+  for short streams and `CL_EREAD` for fully in-range callback failures;
+  preserve `CL_EREAD` and an incomplete result for streaming MSO callback
+  failures; retain compiled scanner, sanitizer, production OLE2/MSO corpus,
+  and Sonic1 qualification as release gates.
