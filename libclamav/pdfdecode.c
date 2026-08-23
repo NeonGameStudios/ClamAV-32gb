@@ -188,6 +188,8 @@ static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *strea
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
 static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream,
                                          size_t streamlen, int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream, size_t streamlen,
+                                      int fout, size_t *bytes_scanned);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
 static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -252,18 +254,23 @@ size_t pdf_decodestream(
         goto done;
     }
 
-    /* A single ordinary Flate stream does not need the legacy whole-buffer
-     * token. Decode it through bounded zlib input/output windows directly into
-     * the quota-accounted child file. Object streams still need retained
+    /* Ordinary single-filter Flate and RunLength streams do not need the
+     * legacy whole-buffer token. Decode them through bounded state directly
+     * into the quota-accounted child file. Object streams still need retained
      * decoded bytes for object parsing, filter chains need an intermediate
      * representation, and encrypted streams must pass through decryption
      * first. XRef streams deliberately skip forced decryption. */
-    if (obj->numfilters == 1 && obj->filterlist[0] == OBJ_FILTER_FLATE && objstm == NULL &&
+    if (obj->numfilters == 1 &&
+        (obj->filterlist[0] == OBJ_FILTER_FLATE || obj->filterlist[0] == OBJ_FILTER_RL) && objstm == NULL &&
         !(obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
         (!(pdf->flags & (1 << DECRYPTABLE_PDF)) || xref)) {
         cl_error_t decode_status;
 
-        decode_status = pdf_stream_flatedecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+        if (obj->filterlist[0] == OBJ_FILTER_FLATE) {
+            decode_status = pdf_stream_flatedecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+        } else {
+            decode_status = pdf_stream_rldecode(pdf, stream, streamlen, fout, &bytes_scanned);
+        }
         if (decode_status == CL_EPARSE || decode_status == CL_BREAK) {
             size_t raw_bytes           = 0;
             cl_error_t fallback_status = pdf_write_raw_stream(pdf, stream, streamlen, fout, &raw_bytes);
@@ -870,7 +877,7 @@ static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout, o
     cl_error_t status = CL_SUCCESS;
 
     if (ftruncate(fout, output_start) != 0) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output could not be truncated during rollback");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed decoder output could not be truncated during rollback");
         return CL_EWRITE;
     }
 
@@ -878,7 +885,7 @@ static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout, o
         uint64_t reservation_current = *pdf->temporary_reserved;
 
         if (reservation_current < reservation_start) {
-            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate temporary accounting underflowed during rollback");
+            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed decoder temporary accounting underflowed during rollback");
             status = CL_ERESOURCE;
         } else if (reservation_current != reservation_start) {
             cli_scan_release_temporary(pdf->ctx, reservation_current - reservation_start);
@@ -887,7 +894,7 @@ static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout, o
     }
 
     if (lseek(fout, output_start, SEEK_SET) != output_start) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed Flate output could not be rewound during rollback");
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed decoder output could not be rewound during rollback");
         if (status == CL_SUCCESS)
             status = CL_ESEEK;
     }
@@ -1088,6 +1095,143 @@ rollback:
             cli_mark_scan_incomplete(pdf->ctx, "PDF Flate decoder failed before the stream completed");
         }
     }
+
+    return status;
+}
+
+static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream_data, size_t streamlen,
+                                      int fout, size_t *bytes_scanned)
+{
+    const uint8_t *content = (const uint8_t *)stream_data;
+    uint8_t *output_buffer = NULL;
+    uint8_t repeated[128];
+    size_t offset                = 0;
+    size_t decoded               = 0;
+    size_t output_buffered       = 0;
+    size_t next_deadline_offset  = 0;
+    off_t output_start;
+    uint64_t reservation_start = 0;
+    cl_error_t status           = CL_SUCCESS;
+
+    if (bytes_scanned == NULL)
+        return CL_ENULLARG;
+    *bytes_scanned = 0;
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    output_buffer = (uint8_t *)malloc(INFLATE_CHUNK_SIZE);
+    if (output_buffer == NULL) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output window could not be allocated");
+        return CL_EMEM;
+    }
+
+    while (offset < streamlen) {
+        const uint8_t *output;
+        size_t output_length;
+        size_t required;
+        uint8_t control;
+
+        if (offset >= next_deadline_offset) {
+            status = pdf_checktimelimit(pdf, "PDF streamed RunLength traversal reached the configured time limit");
+            if (status != CL_SUCCESS)
+                break;
+            if (offset > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
+                next_deadline_offset = SIZE_MAX;
+            } else {
+                next_deadline_offset = offset + PDF_INPUT_WINDOW_SIZE;
+            }
+        }
+
+        control = content[offset++];
+        if (control < 128) {
+            output_length = (size_t)control + 1U;
+            if (output_length > streamlen - offset) {
+                status = CL_EPARSE;
+                break;
+            }
+            output = content + offset;
+            offset += output_length;
+        } else if (control > 128) {
+            output_length = (size_t)(257U - control);
+            if (offset >= streamlen) {
+                status = CL_EPARSE;
+                break;
+            }
+            memset(repeated, content[offset++], output_length);
+            output = repeated;
+        } else {
+            /* The legacy decoder accepts a complete packet sequence without
+             * an end marker and ignores bytes after an observed marker. */
+            break;
+        }
+
+        if (decoded > SIZE_MAX - output_length || decoded > UINT64_MAX - output_length) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output size overflowed");
+            status = CL_ERESOURCE;
+            break;
+        }
+        required = decoded + output_length;
+
+        if (output_length > INFLATE_CHUNK_SIZE - output_buffered) {
+            status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output exceeded configured scan limits");
+                break;
+            }
+            status = pdf_write_output(pdf, fout, output_buffer, output_buffered);
+            if (status != CL_SUCCESS)
+                break;
+            output_buffered = 0;
+        }
+
+        memcpy(output_buffer + output_buffered, output, output_length);
+        output_buffered += output_length;
+        decoded = required;
+
+        if (output_buffered == INFLATE_CHUNK_SIZE) {
+            status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output exceeded configured scan limits");
+                break;
+            }
+            status = pdf_write_output(pdf, fout, output_buffer, output_buffered);
+            if (status != CL_SUCCESS)
+                break;
+            output_buffered = 0;
+        }
+    }
+
+    if (status == CL_SUCCESS && output_buffered != 0) {
+        status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output exceeded configured scan limits");
+        } else {
+            status = pdf_write_output(pdf, fout, output_buffer, output_buffered);
+        }
+    }
+
+    if (status == CL_SUCCESS) {
+        cli_dbgmsg("cli_pdf: streamed RunLength decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        *bytes_scanned = decoded;
+        free(output_buffer);
+        return decoded == 0 ? CL_BREAK : CL_SUCCESS;
+    }
+
+    free(output_buffer);
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(pdf, fout, output_start, reservation_start);
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+
+    if (status == CL_EPARSE)
+        cli_mark_scan_incomplete(pdf->ctx, "PDF RunLength stream ended within an encoded packet");
 
     return status;
 }

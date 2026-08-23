@@ -6874,7 +6874,7 @@ bytes reserved by that attempt before the established raw fallback is written.
 Tests cover exact multi-window output/accounting, one-byte-short quota rollback,
 truncated-output replacement by the exact raw stream, and a logical Flate input
 length above `UINT32_MAX` whose valid stream terminates in the first bounded
-window. Object streams, encryption, filter chains, and non-Flate legacy filters
+window. Object streams, encryption, filter chains, ASCII85, ASCIIHex, and LZW
 remain explicit unsupported boundaries pending their own streaming designs;
 compiled corpus, sanitizer, materialized large-stream, and Sonic1 evidence are
 still required.
@@ -6895,3 +6895,20 @@ harness. Its four streaming cases passed both normally and under GCC
 AddressSanitizer/UBSan with leak detection: multi-window output, quota rollback,
 truncated raw fallback, and native-width input admission. This is focused local
 evidence; full PDF corpus and Sonic1 sanitizer qualification remain open.
+
+## PDF single-RunLength bounded streaming — 2026-08-23
+
+Ordinary single-filter, unencrypted `RunLengthDecode` objects now traverse
+native-width encoded input without a whole-buffer token. Decoder packets are
+batched into one fixed 256 KiB output window, input traversal checks the shared
+deadline at 64 KiB intervals, and every flush is admitted against scan and
+temporary limits. The shared output transaction truncates and rewinds the child
+and releases only the current attempt's reservations before raw fallback.
+
+Regressions cover exact multi-window bytes (including ignored post-marker
+data), one-byte-short temporary admission with zero file/quota residue,
+malformation after a valid decoded prefix with exact raw replacement, and a
+logical source length above `UINT32_MAX` that reaches an early end marker. The
+production harness now passes all eight Flate and RunLength cases both normally
+and under GCC AddressSanitizer/UBSan with leak detection. Full PDF corpus,
+materialized large-object, and Sonic1 qualification remain open.

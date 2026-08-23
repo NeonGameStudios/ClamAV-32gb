@@ -2194,5 +2194,12 @@ and Sonic1 qualification as release gates.
   malformed and valid PDF corpora, sanitizer fault injection, and a
   materialized multi-gigabyte stream on Sonic1. Preserve transactional rollback
   and exact temporary accounting. Convert object streams, encryption, filter
-  chains, ASCII85, RunLength, ASCIIHex, and LZW separately before retiring the
-  remaining `pdf-stream-over-1g` capability exception.
+  chains, ASCII85, ASCIIHex, and LZW separately before retiring the remaining
+  `pdf-stream-over-1g` capability exception.
+
+## PDF single-RunLength bounded streaming — 2026-08-23
+
+- Qualify the fixed-window RunLength packet walker with compiled valid and
+  malformed PDF corpora, materialized multi-gigabyte streams, decoder fault
+  injection, and Sonic1 release/sanitizer runs. Retain exact post-marker,
+  marker-less, rollback, deadline, scan-limit, and temporary-quota oracles.

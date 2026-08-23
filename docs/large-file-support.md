@@ -6454,8 +6454,8 @@ leakage, malformed-prefix rollback, and native-width source admission above
 
 Object streams still retain decoded bytes for object parsing, and encrypted
 streams and filter chains need intermediate representations. Those paths,
-together with ASCII85, RunLength, ASCIIHex, and LZW, retain their explicit
-legacy contiguous/width boundary. Compiled PDF corpus, sanitizer, materialized
+together with ASCII85, ASCIIHex, and LZW, retain their explicit legacy
+contiguous/width boundary. Compiled PDF corpus, sanitizer, materialized
 large-stream, and supported-build Sonic1 qualification remain release gates.
 
 The isolated Linux GCC translation-unit check also exposed an older unmatched
@@ -6470,3 +6470,24 @@ passed all four streaming cases under ordinary GCC and GCC
 AddressSanitizer/UBSan with leak detection: multi-window exact output,
 one-byte-short quota rollback, truncated-stream raw fallback, and native-width
 input admission. Full parser/corpus sanitizer qualification remains pending.
+
+## PDF single-RunLength bounded streaming — 2026-08-23
+
+Ordinary unencrypted PDF streams with exactly one `RunLengthDecode` filter now
+bypass the legacy whole-buffer token. The native-width packet walker checks the
+shared deadline at least every 64 KiB of encoded input, accumulates decoded
+packets in one fixed 256 KiB window, and checks logical and temporary limits
+before each exact output write. End markers and complete marker-less packet
+sequences preserve the legacy decoder semantics, while data after an observed
+marker is ignored.
+
+Malformed packets, timeout, output-limit, quota, seek, and write failures use
+the same output-position and temporary-reservation transaction as streamed
+Flate. A failure removes every decoded prefix before the established raw-stream
+fallback runs. Focused tests cover exact output across multiple output windows,
+one-byte-short quota rollback with zero leakage, malformed input after a valid
+prefix, and a native-width logical input above `UINT32_MAX` that terminates at
+an early marker. The production-code harness passes all eight Flate and
+RunLength cases under ordinary GCC and GCC AddressSanitizer/UBSan with leak
+detection. Filter chains, object streams, encryption, ASCII85, ASCIIHex, and
+LZW remain explicit PDF qualification gaps.
