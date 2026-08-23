@@ -973,8 +973,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
         if (hwp3_checktimelimit(ctx, "HWP3 paragraph-content traversal reached the configured time limit") != CL_SUCCESS)
             return CL_ETIMEOUT;
 
-        if (fmap_readn(map, &content, offset, sizeof(content)) != sizeof(content))
-            return CL_EREAD;
+        read_status = hwp3_read_fixed(ctx, map, &content, offset, sizeof(content),
+                                      "HWP3 paragraph content could not be read completely");
+        if (read_status != CL_SUCCESS)
+            return read_status;
 
         content = le16_to_host(content);
 
@@ -1005,8 +1007,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                     /* id block verification (only on HWP3_VERIFY) */
                     HWP3_PSPECIAL_VERIFY(map, offset, 6, content, match);
 
-                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-                        return CL_EREAD;
+                    read_status = hwp3_read_fixed(ctx, map, &length, offset + 2, sizeof(length),
+                                                  "HWP3 special-character length could not be read completely");
+                    if (read_status != CL_SUCCESS)
+                        return read_status;
 
                     length     = le32_to_host(length);
                     new_offset = offset + (8 + length);
@@ -1038,8 +1042,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                     /* id block verification (only on HWP3_VERIFY) */
                     HWP3_PSPECIAL_VERIFY(map, offset, 6, content, match);
 
-                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-                        return CL_EREAD;
+                    read_status = hwp3_read_fixed(ctx, map, &length, offset + 2, sizeof(length),
+                                                  "HWP3 special-character length could not be read completely");
+                    if (read_status != CL_SUCCESS)
+                        return read_status;
 
                     length     = le32_to_host(length);
                     new_offset = offset + (8 + length);
@@ -1072,8 +1078,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                     HWP3_PSPECIAL_VERIFY(map, offset, 6, content, match);
 
                     /* length check - always 34 bytes */
-                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-                        return CL_EREAD;
+                    read_status = hwp3_read_fixed(ctx, map, &length, offset + 2, sizeof(length),
+                                                  "HWP3 special-character length could not be read completely");
+                    if (read_status != CL_SUCCESS)
+                        return read_status;
 
                     length = le32_to_host(length);
 
@@ -1176,8 +1184,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
 #endif
 
                     /* ncells is located at offset 80 of box information */
-                    if (fmap_readn(map, &ncells, offset + 80, sizeof(ncells)) != sizeof(ncells))
-                        return CL_EREAD;
+                    read_status = hwp3_read_fixed(ctx, map, &ncells, offset + 80, sizeof(ncells),
+                                                  "HWP3 box header could not be read completely");
+                    if (read_status != CL_SUCCESS)
+                        return read_status;
 
                     ncells = le16_to_host(ncells);
                     offset += 84;
@@ -1227,8 +1237,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
 
                     /* Drawing Info Block is 328+n bytes with n = size of image */
                     /* n is located at offset 0 of info block */
-                    if (fmap_readn(map, &size, offset, sizeof(size)) != sizeof(size))
-                        return CL_EREAD;
+                    read_status = hwp3_read_fixed(ctx, map, &size, offset, sizeof(size),
+                                                  "HWP3 drawing header could not be read completely");
+                    if (read_status != CL_SUCCESS)
+                        return read_status;
 
                     hwp3_debug("HWP3.x: Paragraph[%u, %d]: drawing is %u additional bytes\n", level, p, size);
 
@@ -1582,8 +1594,10 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
                     /* id block verification (only on HWP3_VERIFY) */
                     HWP3_PSPECIAL_VERIFY(map, offset, 6, content, match);
 
-                    if (fmap_readn(map, &length, offset + 2, sizeof(length)) != sizeof(length))
-                        return CL_EREAD;
+                    read_status = hwp3_read_fixed(ctx, map, &length, offset + 2, sizeof(length),
+                                                  "HWP3 special-character length could not be read completely");
+                    if (read_status != CL_SUCCESS)
+                        return read_status;
 
                     length     = le32_to_host(length);
                     new_offset = offset + (8 + length);

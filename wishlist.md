@@ -1402,3 +1402,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   admission, preserving parse results for short headers and `CL_EREAD` for
   fully in-range callback failures; retain compiled scanner, sanitizer,
   production HWP3 corpus, and Sonic1 qualification as release gates.
+
+## HWP3 paragraph-payload fixed-read classification — 2026-08-22
+
+- Preflight HWP3 paragraph content, special-character length, box, and
+  drawing fields before callback admission, preserving parse results for short
+  payload prefixes and `CL_EREAD` for fully in-range callback failures; retain
+  compiled scanner, sanitizer, production HWP3 corpus, and Sonic1
+  qualification as release gates.

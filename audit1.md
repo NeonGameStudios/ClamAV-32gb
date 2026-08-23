@@ -5357,6 +5357,16 @@ fail on that prefix; a fully in-range callback failure remains `CL_EREAD`.
 A focused font-table regression covers the boundary. Compiled scanner,
 sanitizer, production HWP3 corpus, and Sonic1 qualification remain open.
 
+## HWP3 paragraph-payload fixed-read classification — 2026-08-22
+
+HWP3 paragraph content units, variable special-character length fields, and
+box/drawing header fields now preflight their fixed ranges before invoking the
+fmap callback. A short content or special-record prefix remains a
+parse/incomplete result even when an injected callback would fail on its
+available prefix; a fully in-range callback failure remains `CL_EREAD`. A
+focused paragraph-content regression covers the boundary. Compiled scanner,
+sanitizer, production HWP3 corpus, and Sonic1 qualification remain open.
+
 ## HWP3 paragraph-header truncation classification — 2026-08-22
 
 HWP3 paragraph metadata reads for the prior-style, character-count,
