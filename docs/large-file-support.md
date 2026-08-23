@@ -5843,3 +5843,11 @@ MSEXPAND now distinguishes a genuinely short packed header (`CL_EPARSE`) from
 an in-range fmap callback failure (`CL_EREAD`) before decoder admission. The
 focused direct-parser regression covers both outcomes; compiled SZDD corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## NSIS fixed-header range classification — 2026-08-23
+
+NSIS now distinguishes a genuinely truncated 0x1c-byte decoder header
+(`CL_EPARSE`) from an in-range fmap callback failure (`CL_EREAD`) before
+member-table admission. The focused `cli_scannulsft` regression covers both
+outcomes; compiled NSIS corpus, sanitizer, and Sonic1 qualification remain
+release gates.

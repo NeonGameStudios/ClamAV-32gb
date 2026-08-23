@@ -658,8 +658,8 @@ static int nsis_headers(struct nsis_st *n, cli_ctx *ctx)
         return CL_ETIMEOUT;
 
     if (n->off > n->map->len || n->map->len - n->off < 0x1c) {
-        cli_mark_scan_incomplete(ctx, "NSIS header is outside the input map");
-        return CL_EREAD;
+        cli_mark_scan_incomplete(ctx, "NSIS header is truncated");
+        return CL_EPARSE;
     }
     if (!(buf = fmap_need_off_once(n->map, n->off, 0x1c))) {
         cli_mark_scan_incomplete(ctx, "NSIS header could not be read completely");

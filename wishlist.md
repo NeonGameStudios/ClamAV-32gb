@@ -1562,4 +1562,11 @@ production RIFF corpus, and Sonic1 qualification as release gates.
 - Preflight the packed MSEXPAND header, preserving `CL_EPARSE` for a short
   SZDD header and `CL_EREAD` with sticky incomplete state for a fully in-range
   fmap callback failure; retain compiled scanner, sanitizer, production SZDD
-  corpus, and Sonic1 qualification as release gates.
+corpus, and Sonic1 qualification as release gates.
+
+## NSIS fixed-header range classification — 2026-08-23
+
+- Preflight the NSIS 0x1c-byte decoder header, preserving `CL_EPARSE` for a
+  truncated header and `CL_EREAD` with sticky incomplete state for a fully
+  in-range fmap callback failure; retain compiled scanner, sanitizer,
+  production NSIS corpus, and Sonic1 qualification as release gates.

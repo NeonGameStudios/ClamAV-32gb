@@ -5584,3 +5584,12 @@ in-range callback failure remains `CL_EREAD` with an explicit incomplete
 reason. Focused direct-parser coverage asserts both classes and the
 non-cacheable state. Compiled scanner, sanitizer, production SZDD corpus, and
 Sonic1 qualification remain open.
+
+## NSIS fixed-header range classification — 2026-08-23
+
+The NSIS decoder now preflights its 0x1c-byte archive header before invoking
+the fmap callback. A genuinely truncated header remains `CL_EPARSE`, while a
+fully in-range callback failure remains `CL_EREAD` with an explicit incomplete
+reason. Focused `cli_scannulsft` coverage asserts both classes and the
+non-cacheable state. Compiled scanner, sanitizer, production NSIS corpus, and
+Sonic1 qualification remain open.

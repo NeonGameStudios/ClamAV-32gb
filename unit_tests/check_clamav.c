@@ -14563,6 +14563,52 @@ START_TEST(test_embedded_candidate_admission_headers)
 }
 END_TEST
 
+static const void *nsis_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
+START_TEST(test_nsis_header_range_classes_are_fail_visible)
+{
+    static const uint8_t truncated_data[0x1b] = {0};
+    static const uint8_t readable_data[0x1c] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    map = cl_fmap_open_memory(truncated_data, sizeof(truncated_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap = map;
+    ck_assert_int_eq(cli_scannulsft(&ctx, 0), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "NSIS header is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.this_layer_tmpdir = tmpdir;
+    map                   = cl_fmap_open_memory(readable_data, sizeof(readable_data));
+    ck_assert_ptr_nonnull(map);
+    map->need = nsis_header_read_failure;
+    ctx.fmap  = map;
+    ck_assert_int_eq(cli_scannulsft(&ctx, 0), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "NSIS header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_nsis_time_limit_is_fail_visible)
 {
     static const uint8_t data[1] = {0};
@@ -22738,6 +22784,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_cpio_impossible_next_header_is_parse_error);
     tcase_add_test(tc_cl, test_cpio_initial_read_failure_is_read_error);
     tcase_add_test(tc_cl, test_parser_temporary_directory_failures_are_fail_visible);
+    tcase_add_test(tc_cl, test_nsis_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_nsis_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_truncated_directory_is_fail_visible);
     tcase_add_test(tc_cl, test_iso_time_limit_is_fail_visible);
