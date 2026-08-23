@@ -184,6 +184,42 @@ static cl_error_t report_json_add_u64(
     return CL_SUCCESS;
 }
 
+static cl_error_t report_json_add_int(
+    json_object *object,
+    const char *key,
+    int value)
+{
+    json_object *number;
+
+    if ((NULL == object) || (NULL == key))
+        return CL_ENULLARG;
+
+    number = json_object_new_int(value);
+    if (NULL == number)
+        return CL_EMEM;
+
+    json_object_object_add(object, key, number);
+    return CL_SUCCESS;
+}
+
+static cl_error_t report_json_add_string(
+    json_object *object,
+    const char *key,
+    const char *value)
+{
+    json_object *string;
+
+    if ((NULL == object) || (NULL == key) || (NULL == value))
+        return CL_ENULLARG;
+
+    string = json_object_new_string(value);
+    if (NULL == string)
+        return CL_EMEM;
+
+    json_object_object_add(object, key, string);
+    return CL_SUCCESS;
+}
+
 static int report_verdict_rank(cl_verdict_t verdict)
 {
     switch (verdict) {
@@ -749,15 +785,31 @@ cl_error_t cl_scan_report_to_json(
     if (NULL == object)
         return CL_EMEM;
 
-    json_object_object_add(object, "version", json_object_new_int((int)report->version));
-    json_object_object_add(object, "status", json_object_new_int((int)report->status));
-    json_object_object_add(object, "status_name", json_object_new_string(cl_strerror(report->status)));
-    json_object_object_add(object, "verdict", json_object_new_int((int)report->verdict));
-    json_object_object_add(object, "completion", json_object_new_string(report_completion_name(report->completion)));
-    if (NULL != report->target)
-        json_object_object_add(object, "target", json_object_new_string(report->target));
-    if (NULL != report->file_type)
-        json_object_object_add(object, "file_type", json_object_new_string(report->file_type));
+    status = report_json_add_int(object, "version", (int)report->version);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_int(object, "status", (int)report->status);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_string(object, "status_name", cl_strerror(report->status));
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_int(object, "verdict", (int)report->verdict);
+    if (CL_SUCCESS != status)
+        goto json_error;
+    status = report_json_add_string(object, "completion", report_completion_name(report->completion));
+    if (CL_SUCCESS != status)
+        goto json_error;
+    if (NULL != report->target) {
+        status = report_json_add_string(object, "target", report->target);
+        if (CL_SUCCESS != status)
+            goto json_error;
+    }
+    if (NULL != report->file_type) {
+        status = report_json_add_string(object, "file_type", report->file_type);
+        if (CL_SUCCESS != status)
+            goto json_error;
+    }
     status = report_json_add_u64(object, "root_size", report->metrics.root_size);
     if (CL_SUCCESS != status)
         goto json_error;
@@ -819,10 +871,16 @@ cl_error_t cl_scan_report_to_json(
     if (CL_SUCCESS != status)
         goto json_error;
 
-    if (NULL != report->reason)
-        json_object_object_add(object, "reason", json_object_new_string(report->reason));
-    if (NULL != report->last_alert)
-        json_object_object_add(object, "last_alert", json_object_new_string(report->last_alert));
+    if (NULL != report->reason) {
+        status = report_json_add_string(object, "reason", report->reason);
+        if (CL_SUCCESS != status)
+            goto json_error;
+    }
+    if (NULL != report->last_alert) {
+        status = report_json_add_string(object, "last_alert", report->last_alert);
+        if (CL_SUCCESS != status)
+            goto json_error;
+    }
     if (report->last_alert_offset_valid) {
         status = report_json_add_u64(object, "last_alert_offset", report->last_alert_offset);
         if (CL_SUCCESS != status)

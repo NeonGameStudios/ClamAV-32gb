@@ -5055,3 +5055,16 @@ offset-list `realloc` preserves the original allocation for cleanup.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled list-growth fault injection, production-signature
 qualification, sanitizer runs, and Sonic1 qualification remain open.
+
+## Structured report JSON node allocation failures — 2026-08-22
+
+Structured report serialization already checked 64-bit metric-node creation,
+but status, verdict, completion, target, file-type, reason, and alert string
+nodes were passed directly to json-c without checking allocation results. The
+report boundary now checks every integer and string node and returns `CL_EMEM`
+after releasing the partial object, so a failed serializer cannot publish a
+partial success report.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled json-c allocation fault injection, shared/static JSON-C
+qualification, sanitizer runs, and Sonic1 qualification remain open.
