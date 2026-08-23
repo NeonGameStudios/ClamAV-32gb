@@ -21693,6 +21693,18 @@ static const void *pe_icon_resource_read_failure(fmap_t *map, size_t at, size_t 
     return NULL;
 }
 
+static size_t pe_icon_read_failure_offset = SIZE_MAX;
+
+static const void *pe_icon_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == pe_icon_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_pe_icon_truncated_resource_is_fail_visible)
 {
     uint8_t data[256];
@@ -21762,6 +21774,90 @@ START_TEST(test_pe_icon_truncated_resource_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_pe_icon_bitmap_header_read_failure_is_fail_visible)
+{
+    uint8_t data[1024];
+    struct cl_engine engine;
+    struct icon_matcher matcher;
+    struct cli_exe_section section;
+    struct cli_exe_info peinfo;
+    icon_groupset iconset;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(data, 0, sizeof(data));
+    memset(&engine, 0, sizeof(engine));
+    memset(&matcher, 0, sizeof(matcher));
+    memset(&section, 0, sizeof(section));
+    memset(&peinfo, 0, sizeof(peinfo));
+    memset(&ctx, 0, sizeof(ctx));
+
+    /* Resource tree: type 3 (icon) and type 14 (icon group), each with one
+     * language entry. The bitmap header is fully in-range but its backing
+     * fmap read is injected to fail. */
+    pe_icon_test_write_u16(data + 14, 2);
+    pe_icon_test_write_u32(data + 16, 3);
+    pe_icon_test_write_u32(data + 20, 0x80000020U);
+    pe_icon_test_write_u32(data + 24, 14);
+    pe_icon_test_write_u32(data + 28, 0x80000040U);
+
+    pe_icon_test_write_u16(data + 0x20 + 14, 1);
+    pe_icon_test_write_u32(data + 0x30, 1);
+    pe_icon_test_write_u32(data + 0x34, 0x80000060U);
+
+    pe_icon_test_write_u16(data + 0x40 + 14, 1);
+    pe_icon_test_write_u32(data + 0x50, 1);
+    pe_icon_test_write_u32(data + 0x54, 0x800000a0U);
+
+    pe_icon_test_write_u16(data + 0x60 + 14, 1);
+    pe_icon_test_write_u32(data + 0x70, 0);
+    pe_icon_test_write_u32(data + 0x74, 0x80U);
+    pe_icon_test_write_u32(data + 0x80, sizeof(data));
+    pe_icon_test_write_u32(data + 0x84, 4);
+
+    pe_icon_test_write_u16(data + 0xa0 + 14, 1);
+    pe_icon_test_write_u32(data + 0xb0, 1);
+    pe_icon_test_write_u32(data + 0xb4, 0xc0U);
+    pe_icon_test_write_u32(data + 0xc0, 0xe0U);
+    pe_icon_test_write_u32(data + 0xc4, 20);
+    pe_icon_test_write_u16(data + 0xe2, 1);
+    pe_icon_test_write_u16(data + 0xe4, 1);
+    pe_icon_test_write_u16(data + 0xec, 32);
+    pe_icon_test_write_u16(data + 0xf2, 1);
+
+    pe_icon_test_write_u32(data + 0x100, 40);
+    pe_icon_test_write_u32(data + 0x104, 16);
+    pe_icon_test_write_u32(data + 0x108, 32);
+    pe_icon_test_write_u16(data + 0x10c, 1);
+    pe_icon_test_write_u16(data + 0x10e, 1);
+
+    section.rsz                   = sizeof(data);
+    peinfo.sections               = &section;
+    peinfo.nsections              = 1;
+    peinfo.ndatadirs              = 3;
+    peinfo.dirs[2].VirtualAddress = 0;
+    peinfo.hdr_size               = 0;
+    engine.maxiconspe             = 100;
+    engine.iconcheck              = &matcher;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    pe_icon_read_failure_offset = 0x100U;
+    map->need                    = pe_icon_targeted_read_failure;
+    ctx.engine                   = &engine;
+    ctx.fmap                     = map;
+    cli_icongroupset_init(&iconset);
+
+    ck_assert_int_eq(cli_scanicon(&iconset, &ctx, &peinfo), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE icon bitmap header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    pe_icon_read_failure_offset = SIZE_MAX;
     cl_fmap_close(map);
 }
 END_TEST
@@ -22214,6 +22310,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pe_swizzor_resource_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_import_thunk_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_truncated_resource_is_fail_visible);
+    tcase_add_test(tc_cl, test_pe_icon_bitmap_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_bitmap_header_range_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_icon_resource_tree_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_pe_unpack_limit_is_fail_visible);

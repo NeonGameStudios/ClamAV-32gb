@@ -1464,3 +1464,9 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   results for short ranges and `CL_EREAD` for fully in-range fmap callback
   failures; retain compiled scanner, sanitizer, production ARJ corpus, and
   Sonic1 qualification as release gates.
+
+## PE icon bitmap-header read classification — 2026-08-23
+
+- Preflight PE icon bitmap headers, preserving parse results for short ranges
+  and `CL_EREAD` for fully in-range fmap callback failures; retain compiled
+  scanner, sanitizer, PE corpus, and Sonic1 qualification as release gates.

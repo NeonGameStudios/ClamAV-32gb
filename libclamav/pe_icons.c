@@ -1438,8 +1438,12 @@ static int parseicon(struct ICON_ENV *icon_env, uint32_t rva)
 
     rva   = cli_readint32(rawimage);
     icoff = cli_rawaddr(rva, peinfo->sections, peinfo->nsections, &err, map->len, peinfo->hdr_size);
-    if (err || fmap_readn(map, &bmphdr, icoff, sizeof(bmphdr)) != sizeof(bmphdr)) {
+    if (err || icoff > map->len || sizeof(bmphdr) > map->len - icoff) {
         return icon_parse_error(icon_env, &icon_env->err_bhoof, "PE icon bitmap header was truncated");
+    }
+    if (fmap_readn(map, &bmphdr, icoff, sizeof(bmphdr)) != sizeof(bmphdr)) {
+        cli_mark_scan_incomplete(ctx, "PE icon bitmap header could not be read completely");
+        return CL_EREAD;
     }
 
     if ((size_t)READ32(bmphdr.sz) < sizeof(bmphdr)) {

@@ -5453,3 +5453,11 @@ or parse failure, while a fully in-range callback failure remains `CL_EREAD`
 with an explicit incomplete reason. Focused main-header callback coverage
 guards the boundary. Compiled scanner, sanitizer, production ARJ corpus, and
 Sonic1 qualification remain open.
+
+## PE icon bitmap-header read classification — 2026-08-23
+
+The PE icon parser now preflights the complete bitmap header before invoking
+the fmap callback. A genuinely short header remains a parse/incomplete result,
+while a fully in-range callback failure remains `CL_EREAD` with an explicit
+incomplete reason. Focused injected-read coverage guards the boundary.
+Compiled scanner, sanitizer, PE corpus, and Sonic1 qualification remain open.
