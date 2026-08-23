@@ -22,6 +22,7 @@
 
 use std::{
     convert::TryInto,
+    io,
     mem, panic,
     path::{Path, PathBuf},
 };
@@ -53,6 +54,12 @@ pub enum Error {
 
     #[error("Unable to parse OneNote file")]
     Parse,
+
+    #[error("OneNote input read failed: {0}")]
+    ReadFailure(String),
+
+    #[error("OneNote input read timed out: {0}")]
+    Timeout(String),
 
     #[error("OneNote attachment sink failed: {0}")]
     Sink(String),
@@ -114,6 +121,16 @@ pub trait LegacyAttachmentSink {
     fn abort(&mut self) {}
 }
 
+fn reader_error(error: io::Error) -> Error {
+    if error.kind() == io::ErrorKind::UnexpectedEof {
+        Error::Parse
+    } else if error.kind() == io::ErrorKind::TimedOut {
+        Error::Timeout(error.to_string())
+    } else {
+        Error::ReadFailure(error.to_string())
+    }
+}
+
 pub fn is_legacy_magic(data: &[u8]) -> bool {
     data.get(..ONE_MAGIC.len()) == Some(ONE_MAGIC)
 }
@@ -170,8 +187,8 @@ where
     let mut magic = [0u8; ONE_MAGIC.len()];
     reader
         .seek(SeekFrom::Start(0))
-        .map_err(|_| Error::Parse)?;
-    reader.read_exact(&mut magic).map_err(|_| Error::Parse)?;
+        .map_err(reader_error)?;
+    reader.read_exact(&mut magic).map_err(reader_error)?;
     if !is_legacy_magic(&magic) {
         return Err(Error::Format);
     }
@@ -184,12 +201,12 @@ where
     while scan_start < file_len {
         reader
             .seek(SeekFrom::Start(scan_start))
-            .map_err(|_| Error::Parse)?;
+            .map_err(reader_error)?;
         let mut valid = 0usize;
         while valid < scan_buffer.len() {
             let read = reader
                 .read(&mut scan_buffer[valid..])
-                .map_err(|_| Error::Parse)?;
+                .map_err(reader_error)?;
             if read == 0 {
                 break;
             }
@@ -220,8 +237,8 @@ where
         let mut header = [0u8; SIZE_OF_FILE_DATA_HEADER];
         reader
             .seek(SeekFrom::Start(header_start))
-            .map_err(|_| Error::Parse)?;
-        reader.read_exact(&mut header).map_err(|_| Error::Parse)?;
+            .map_err(reader_error)?;
+        reader.read_exact(&mut header).map_err(reader_error)?;
         let data_length = u32::from_le_bytes(
             header[16..20].try_into().map_err(|_| Error::Parse)?,
         ) as u64;
@@ -231,9 +248,9 @@ where
         }
 
         sink.begin()?;
-        if reader.seek(SeekFrom::Start(header_end)).is_err() {
+        if let Err(error) = reader.seek(SeekFrom::Start(header_end)) {
             sink.abort();
-            return Err(Error::Parse);
+            return Err(reader_error(error));
         }
         let mut remaining = data_length;
         let mut payload = [0u8; CHUNK];
@@ -241,9 +258,9 @@ where
             let requested = remaining.min(payload.len() as u64) as usize;
             let read = match reader.read(&mut payload[..requested]) {
                 Ok(read) => read,
-                Err(_) => {
+                Err(error) => {
                     sink.abort();
-                    return Err(Error::Parse);
+                    return Err(reader_error(error));
                 }
             };
             if read == 0 {
@@ -521,7 +538,27 @@ impl<'a> Iterator for OneNote<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
+    use std::io::{self, Cursor, Read, Seek, SeekFrom};
+
+    struct FailingReader {
+        inner: Cursor<Vec<u8>>,
+        fail_at: u64,
+    }
+
+    impl Read for FailingReader {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            if self.inner.position() >= self.fail_at {
+                return Err(io::Error::new(io::ErrorKind::Other, "synthetic read failure"));
+            }
+            self.inner.read(buffer)
+        }
+    }
+
+    impl Seek for FailingReader {
+        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+            self.inner.seek(from)
+        }
+    }
 
     struct CollectSink {
         files: Vec<Vec<u8>>,
@@ -648,5 +685,22 @@ mod tests {
         ));
         assert!(sink.aborted);
         assert!(sink.files.is_empty());
+    }
+
+    #[test]
+    fn legacy_reader_preserves_source_read_failure() {
+        let fixture = legacy_fixture(b"attachment");
+        let mut reader = FailingReader {
+            inner: Cursor::new(fixture.clone()),
+            fail_at: ONE_MAGIC.len() as u64,
+        };
+        let mut sink = CollectSink::new();
+
+        assert!(matches!(
+            scan_legacy_reader(&mut reader, fixture.len() as u64, &mut sink),
+            Err(Error::ReadFailure(_))
+        ));
+        assert!(sink.files.is_empty());
+        assert!(!sink.aborted);
     }
 }

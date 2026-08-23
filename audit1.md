@@ -5705,3 +5705,13 @@ before locking its fixed structure, so a genuinely short header remains
 `CL_EREAD`. The existing embedded-header regression now covers both outcomes;
 compiled InstallShield corpus, sanitizer, and Sonic1 qualification remain
 open.
+
+## OneNote legacy reader read-failure propagation — 2026-08-23
+
+The Rust OneNote legacy reader previously mapped every `Read`/`Seek` error to
+`Error::Parse`, so a context-aware fmap callback failure reached the scanner as
+`CL_EPARSE`. Reader errors now preserve genuine source I/O failures as a typed
+`Error::ReadFailure`; scanner mapping returns `CL_EREAD`, while
+`UnexpectedEof` and declared-range truncation remain parse failures. A focused
+reader regression exercises the distinction. Compiled OneNote corpus,
+sanitizer, and Sonic1 qualification remain open.

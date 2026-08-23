@@ -85,6 +85,16 @@ fn rust_reader_status(err: &io::Error, fallback: cl_error_t) -> cl_error_t {
     }
 }
 
+fn onenote_error_status(err: &onenote::Error) -> cl_error_t {
+    if matches!(err, onenote::Error::ReadFailure(_)) {
+        cl_error_t_CL_EREAD
+    } else if matches!(err, onenote::Error::Timeout(_)) {
+        cl_error_t_CL_ETIMEOUT
+    } else {
+        cl_error_t_CL_EPARSE
+    }
+}
+
 /// Decode or otherwise produce a child through a bounded reader and scan it
 /// from a quota-accounted temporary spool.  The reservation remains held
 /// through the nested scan so child parser scratch space cannot hide behind
@@ -686,11 +696,11 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
         if sink.attachments_seen {
             return match parse_result {
                 Ok(()) => cl_error_t_CL_SUCCESS,
-                Err(err) => parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err),
+                Err(err) => parser_failure(ctx, "OneNote", onenote_error_status(&err), err),
             };
         }
         if let Err(err) = parse_result {
-            return parser_failure(ctx, "OneNote", cl_error_t_CL_EPARSE, err);
+            return parser_failure(ctx, "OneNote", onenote_error_status(&err), err);
         }
         /* The legacy magic is shared by newer section files. If no legacy
          * attachment record was found, let the modern parser inspect the

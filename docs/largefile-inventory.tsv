@@ -30828,33 +30828,34 @@ offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	136	        let _ = unsa
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	154	    let hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	186	    let mut hashmap = ManuallyDrop::new(Box::from_raw(fuzzy_hashmap as *mut FuzzyHashMap));
 offset-size-arithmetic	libclamav_rust/src/fuzzy_hash.rs	355	/// appears to be slightly different and values are sometimes off-by-one.
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	140	            data[header_start + 16..data_length_end]
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	163	pub fn scan_legacy_reader<R, S>(reader: &mut R, file_len: u64, sink: &mut S) -> Result<(), Error>
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	179	    const CHUNK: usize = 1024 * 1024;
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	206	            scan_start = scan_start.saturating_add((valid - overlap) as u64);
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	275	    pub fn scan_bytes<F>(data: &[u8], filename: &Path, mut callback: F) -> Result<(), Error>
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	337	    pub fn from_bytes(data: &'a [u8], filename: &Path) -> Result<OneNote<'a>, Error> {
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	339	            "Inspecting OneNote file for attachments from in-memory buffer of size {}-bytes named {}\n",
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	343	        fn parse_section_buffer(data: &[u8], filename: &Path) -> Result<Vec<ExtractedFile>, Error> {
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	362	                                                    debug!("Found unnamed attached file of size {}-bytes", data.len());
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	365	                                                    debug!("Found attached file '{}' of size {}-bytes", name, data.len());
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	596	        fixture.truncate(fixture.len() - 1);
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	622	        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 5));
-offset-size-arithmetic	libclamav_rust/src/onenote.rs	91	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1075	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1087	            engine.maxscansize.saturating_sub((*ctx).scansize)
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1143	fn alz_metadata_size(size: u64) -> Option<usize> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	133	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	1442	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	201	    const WRITE_CHUNK: usize = 64 * 1024;
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	203	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	289	            let write_len = (bytes.len() - offset).min(Self::WRITE_CHUNK);
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	454	    fn last_size(&self) -> u64 {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	560	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	635	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	674	                    "OneNote input size is not representable in the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	739	                    "attachment size does not fit the 64-bit accounting domain",
-offset-size-arithmetic	libclamav_rust/src/scanners.rs	881	            // size-limit hint: propagate detections, cancellation, and
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	157	            data[header_start + 16..data_length_end]
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	180	pub fn scan_legacy_reader<R, S>(reader: &mut R, file_len: u64, sink: &mut S) -> Result<(), Error>
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	196	    const CHUNK: usize = 1024 * 1024;
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	223	            scan_start = scan_start.saturating_add((valid - overlap) as u64);
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	292	    pub fn scan_bytes<F>(data: &[u8], filename: &Path, mut callback: F) -> Result<(), Error>
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	354	    pub fn from_bytes(data: &'a [u8], filename: &Path) -> Result<OneNote<'a>, Error> {
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	356	            "Inspecting OneNote file for attachments from in-memory buffer of size {}-bytes named {}\n",
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	360	        fn parse_section_buffer(data: &[u8], filename: &Path) -> Result<Vec<ExtractedFile>, Error> {
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	379	                                                    debug!("Found unnamed attached file of size {}-bytes", data.len());
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	382	                                                    debug!("Found attached file '{}' of size {}-bytes", name, data.len());
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	558	        fn seek(&mut self, from: SeekFrom) -> io::Result<u64> {
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	633	        fixture.truncate(fixture.len() - 1);
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	659	        fixture.extend(std::iter::repeat(0u8).take(1024 * 1024 + 5));
+offset-size-arithmetic	libclamav_rust/src/onenote.rs	98	// https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/8806fd18-6735-4874-b111-227b83eaac26
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1085	        usize::try_from(engine.maxfiles.saturating_sub((*ctx).scannedfiles)).unwrap_or(usize::MAX)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1097	            engine.maxscansize.saturating_sub((*ctx).scansize)
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1153	fn alz_metadata_size(size: u64) -> Option<usize> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	143	fn lha_output_chunk_fits(written: u64, declared: u64, chunk_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	1452	        assert_eq!(alz_metadata_size(u64::from(u32::MAX) + 1), None);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	211	    const WRITE_CHUNK: usize = 64 * 1024;
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	213	    unsafe fn new(ctx: *mut cli_ctx, expected_size: u64) -> Result<Self, cl_error_t> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	299	            let write_len = (bytes.len() - offset).min(Self::WRITE_CHUNK);
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	464	    fn last_size(&self) -> u64 {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	570	    unsafe fn new(fd: libc::c_int, length: usize) -> Result<Self, cl_error_t> {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	645	fn onenote_modern_parser_admitted(input_len: usize) -> bool {
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	684	                    "OneNote input size is not representable in the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	749	                    "attachment size does not fit the 64-bit accounting domain",
+offset-size-arithmetic	libclamav_rust/src/scanners.rs	891	            // size-limit hint: propagate detections, cancellation, and
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1067	    #[doc = " @brief Increment the count for a subsignature of a logical signature.\n\n This is and alternative to lsig_increment_subsig_match() for use in subsigs that don't have a specific offset,\n like byte-compare subsigs and fuzzy-hash subsigs."]
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1104	    pub sizehashes64: [*mut cli_sz_hash64; 3usize],
 offset-size-arithmetic	libclamav_rust/src/sys.rs	1177	    pub filesize_range: *mut u64,

@@ -5951,3 +5951,10 @@ The embedded InstallShield header path now distinguishes a genuinely short
 declared header (`CL_EPARSE`) from a fully in-range fmap callback failure
 (`CL_EREAD`). Focused coverage exercises both outcomes; compiled InstallShield
 corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## OneNote legacy reader read-failure propagation — 2026-08-23
+
+The Rust OneNote legacy reader now preserves source I/O failures as
+`CL_EREAD`; genuine `UnexpectedEof` and declared-range truncation remain
+`CL_EPARSE`. Focused reader coverage exercises the distinction, while compiled
+OneNote corpus, sanitizer, and Sonic1 qualification remain release gates.
