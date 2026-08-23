@@ -851,8 +851,10 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
     if ((*buf != 0x35) && (*buf != 0x36)) {
         if (remaining < sizeof(signature_prefix) + 1)
             return CL_EFORMAT;
-        if (!(buf = fmap_need_off_once(ctx->fmap, offset, sizeof(signature_prefix) + 1)))
+        if (!(buf = fmap_need_off_once(ctx->fmap, offset, sizeof(signature_prefix) + 1))) {
+            cli_mark_scan_incomplete(ctx, "AutoIt header signature could not be read completely");
             return CL_EREAD;
+        }
         if (memcmp(buf, signature_prefix, sizeof(signature_prefix)) != 0)
             return CL_EFORMAT;
         if ((buf[sizeof(signature_prefix)] != 0x35) && (buf[sizeof(signature_prefix)] != 0x36))
@@ -864,8 +866,10 @@ cl_error_t cli_autoit_header_check(cli_ctx *ctx, off_t offset)
 
     if (remaining < 17)
         return CL_EPARSE;
-    if (!fmap_need_off_once(ctx->fmap, offset, 17))
+    if (!fmap_need_off_once(ctx->fmap, offset, 17)) {
+        cli_mark_scan_incomplete(ctx, "AutoIt header body could not be read completely");
         return CL_EREAD;
+    }
     return CL_SUCCESS;
 }
 

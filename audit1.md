@@ -5894,3 +5894,13 @@ be cached or continue as a complete layer. The existing PE fault-injection
 test now directly exercises that callback boundary and verifies the status,
 reason, and non-cacheable map state. Compiled PE corpus, sanitizer, and
 Sonic1 qualification remain open.
+
+## AutoIt header-window read classification — 2026-08-23
+
+The AutoIt header checker’s initial version-byte read was sticky, but its
+follow-up signature and versioned-body windows could still return `CL_EREAD`
+without marking the direct helper context incomplete. Both windows now record
+specific incomplete reasons before returning. The AutoIt regression also
+injects a failure into the larger signature window and verifies the status,
+reason, and non-cacheable map state. Compiled AutoIt corpus, sanitizer, and
+Sonic1 qualification remain open.

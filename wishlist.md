@@ -1753,3 +1753,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Mark in-range PE import DLL-name fmap failures incomplete and non-cacheable
   before the import-hash pass unwinds; retain the focused callback regression,
   compiled PE corpus, sanitizer, and Sonic1 qualification gates.
+
+## AutoIt header-window read classification — 2026-08-23
+
+- Mark AutoIt signature and versioned-body header-window read failures
+  incomplete and non-cacheable, with a focused signature-window callback
+  regression; retain compiled AutoIt corpus, sanitizer, and Sonic1 gates.

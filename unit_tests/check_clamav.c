@@ -15194,6 +15194,16 @@ static const void *embedded_header_read_failure(fmap_t *map, size_t at, size_t l
     return NULL;
 }
 
+static const void *autoit_signature_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (len > 1)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_autoit_version_read_failure_is_fail_visible)
 {
     static const uint8_t input[] = {0x35};
@@ -15215,6 +15225,26 @@ START_TEST(test_autoit_version_read_failure_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+
+    /* The header checker also performs a larger signature read after the
+     * initial version probe. That direct helper boundary must be sticky too. */
+    {
+        static const uint8_t signature_input[24] = {0};
+
+        memset(&ctx, 0, sizeof(ctx));
+        map = cl_fmap_open_memory(signature_input, sizeof(signature_input));
+        ck_assert_ptr_nonnull(map);
+        map->need = autoit_signature_read_failure;
+        ctx.engine = &engine;
+        ctx.fmap   = map;
+
+        ck_assert_int_eq(cli_autoit_header_check(&ctx, 0), CL_EREAD);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, "AutoIt header signature could not be read completely");
+        ck_assert(map->dont_cache_flag);
+
+        cl_fmap_close(map);
+    }
 }
 END_TEST
 
