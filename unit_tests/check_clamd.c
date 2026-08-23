@@ -536,6 +536,31 @@ START_TEST(test_largefile_admission_does_not_bypass_large_frontend_ingress)
 }
 END_TEST
 
+START_TEST(test_largefile_admission_zero_frontend_limits_select_ceiling)
+{
+    static const char *const names[] = {"StreamMaxLength", "OnAccessMaxFileSize"};
+    struct cl_engine *engine = cl_engine_new();
+    size_t i;
+    char reason[256];
+
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_FILESIZE, 100LL * 1024LL * 1024LL), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_MAX_SCANSIZE, 400LL * 1024LL * 1024LL), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_PCRE_MAX_FILESIZE, 100LL * 1024LL * 1024LL), CL_SUCCESS);
+
+    for (i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+        struct optstruct *opts = optadditem(names[i], "0", 1, OPT_CLAMD, 0, NULL);
+
+        ck_assert_ptr_nonnull(opts);
+        memset(reason, 0, sizeof(reason));
+        ck_assert_int_eq(clamd_largefile_admission_check(engine, opts, "/path/that/does/not/exist", reason, sizeof(reason)), 0);
+        ck_assert(reason[0] != '\0');
+        optfree(opts);
+    }
+    cl_engine_free(engine);
+}
+END_TEST
+
 START_TEST(test_maxscantime_cli_boundaries)
 {
     const char *valid[]   = {"0", "4294967295"};
@@ -1674,6 +1699,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_pcre_subject);
     tcase_add_test(tc_parser, test_largefile_admission_rejects_unbounded_logical_budget);
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_frontend_ingress);
+    tcase_add_test(tc_parser, test_largefile_admission_zero_frontend_limits_select_ceiling);
 #ifndef _WIN32
     TCase *tc_client;
 

@@ -6241,6 +6241,16 @@ preserving the distinction between a partial local input read and a
 socket/write failure. This remains source-validated only; compiled on-access
 fault injection, sanitizer, and Sonic1 qualification remain open.
 
+## Zero-valued front-end admission limits — 2026-08-23
+
+`StreamMaxLength=0` and `OnAccessMaxFileSize=0` select the certified 32-GiB
+ceiling in their respective front-end consumers. Daemon startup admission
+previously passed those explicit zeros through as zero and could therefore
+take the historical low-resource startup path when `MaxFileSize` itself was
+configured below the ceiling. Admission now normalizes each explicit zero to
+32 GiB before computing the memory and temporary-space requirements. The new
+unit regression covers both options with a lower engine `MaxFileSize`.
+
 ## Shared clamd client stream EINTR handling — 2026-08-23
 
 The shared legacy INSTREAM helper used by clamdscan treated a source `read()`

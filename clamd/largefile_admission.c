@@ -359,8 +359,14 @@ int clamd_largefile_admission_check(
      * so they must participate in the daemon's large-file startup decision. */
     if (!option_u64(opts, "StreamMaxLength", &stream_max_length))
         stream_max_length = max_file_size;
+    else if (stream_max_length == 0)
+        /* Zero selects the certified ceiling for this front-end option. */
+        stream_max_length = CLI_MAX_LARGE_FILESIZE;
     if (!option_u64(opts, "OnAccessMaxFileSize", &onaccess_max_file_size))
         onaccess_max_file_size = max_file_size;
+    else if (onaccess_max_file_size == 0)
+        /* Zero selects the certified ceiling for this front-end option. */
+        onaccess_max_file_size = CLI_MAX_LARGE_FILESIZE;
 
     max_ingress_size = max_file_size;
     if (stream_max_length > max_ingress_size)

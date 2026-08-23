@@ -1,5 +1,13 @@
 # Wishlist
 
+## Zero-valued front-end admission limits — 2026-08-23
+
+- Daemon startup admission now treats explicit `StreamMaxLength=0` and
+  `OnAccessMaxFileSize=0` as their documented 32-GiB ceilings before sizing
+  memory and temporary-space requirements. A focused regression prevents
+  lower `MaxFileSize` settings from bypassing those checks; runtime resource
+  and Sonic1 qualification remain release gates.
+
 ## Shared clamd client stream EINTR handling — 2026-08-23
 
 - Legacy clamd client stream staging now retries signal-interrupted source
