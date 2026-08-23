@@ -578,6 +578,11 @@ static inline cl_error_t parsehwp3_docinfo(cli_ctx *ctx, size_t offset, struct h
     if (hwp3_checktimelimit(ctx, "HWP3 document-info inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;
 
+    if (offset > ctx->fmap->len || HWP3_DOCINFO_SIZE > ctx->fmap->len - offset) {
+        cli_mark_scan_incomplete(ctx, "HWP3 document-info could not be read completely");
+        return CL_EPARSE;
+    }
+
     // TODO: use fmap_readn?
     if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCINFO_SIZE))) {
         cli_errmsg("HWP3.x: Failed to read fmap for hwp docinfo\n");
@@ -679,6 +684,11 @@ static inline cl_error_t parsehwp3_docsummary(cli_ctx *ctx, size_t offset)
 
     if (hwp3_checktimelimit(ctx, "HWP3 document-summary inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;
+
+    if (offset > ctx->fmap->len || HWP3_DOCSUMMARY_SIZE > ctx->fmap->len - offset) {
+        cli_mark_scan_incomplete(ctx, "HWP3 document-summary could not be read completely");
+        return CL_EPARSE;
+    }
 
     if (!(hwp3_ptr = fmap_need_off_once(ctx->fmap, offset, HWP3_DOCSUMMARY_SIZE))) {
         cli_errmsg("HWP3.x: Failed to read fmap for hwp docsummary\n");

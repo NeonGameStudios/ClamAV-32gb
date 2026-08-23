@@ -13023,6 +13023,29 @@ START_TEST(test_hwp3_document_info_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwp3_truncated_document_info_is_parse_error)
+{
+    uint8_t data[31] = {0};
+    cli_ctx ctx;
+    struct cl_scan_options options;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = hwp3_docinfo_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
+    ctx.fmap   = map;
+    ctx.options = &options;
+
+    ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_onenote_dispatch_honors_document_dconf)
 {
     static const uint8_t malformed[] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -21345,6 +21368,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);
+    tcase_add_test(tc_hwp3, test_hwp3_truncated_document_info_is_parse_error);
     tcase_add_test(tc_cl, test_onenote_dispatch_honors_document_dconf);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);

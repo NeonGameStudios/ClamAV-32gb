@@ -5309,3 +5309,13 @@ when a callback would fail on its available prefix; fully in-range callback
 failures remain `CL_EREAD`. Focused BMP, JP2, and APM regressions cover the
 boundary. Compiled scanner, sanitizer, production media-corpus, and Sonic1
 qualification remain open.
+
+## HWP3 fixed-section truncation classification — 2026-08-22
+
+HWP3 document-info and metadata-enabled document-summary reads now preflight
+their complete fixed ranges before invoking fmap callbacks. A truncated
+section therefore remains a parse/incomplete result even when an injected
+callback would fail on its available prefix; a fully in-range callback failure
+remains `CL_EREAD`. A focused document-info regression covers the boundary.
+Compiled scanner, sanitizer, production document-corpus, and Sonic1
+qualification remain open.

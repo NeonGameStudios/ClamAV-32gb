@@ -1351,3 +1351,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   `CL_EREAD` for fully in-range callback failures; retain compiled scanner,
   sanitizer, production media-corpus, and Sonic1 qualification as release
   gates.
+
+## HWP3 fixed-section truncation classification — 2026-08-22
+
+- Preflight fixed-size HWP3 document-info and metadata-enabled summary reads
+  before callback admission, preserving parse results for truncated sections
+  and `CL_EREAD` for fully in-range callback failures; retain compiled
+  scanner, sanitizer, production document-corpus, and Sonic1 qualification as
+  release gates.
