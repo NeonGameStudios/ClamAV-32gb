@@ -23335,11 +23335,12 @@ START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 8);
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 8);
 
-    /* A non-empty attributes fork whose first block is outside the map. */
+    /* A non-empty attributes fork whose first block is outside the declared
+     * volume but still inside the mapped bytes. */
     fork = volume + offsetof(hfsPlusVolumeHeader, attributesFile);
     test_hfsplus_put_be64(fork + offsetof(hfsPlusForkData, logicalSize), 512);
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, totalBlocks), 1);
-    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 100);
+    test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, startBlock), 32);
     test_hfsplus_put_be32(fork + offsetof(hfsPlusForkData, extents) + offsetof(hfsPlusExtentDescriptor, blockCount), 1);
 
     test_hfsplus_tree_header(data, 4 * 512, 512, 10);
@@ -23355,6 +23356,7 @@ START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ file-tree header is outside the declared volume");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);

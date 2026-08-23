@@ -222,6 +222,7 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     const uint8_t *mPtr = NULL;
     size_t offset;
     uint64_t offset64;
+    uint32_t headerStartBlock;
     uint32_t minSize, maxSize;
 
     /* From TN1150: Node Size must be power of 2 between 512 and 32768 */
@@ -229,29 +230,36 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
     maxSize = 32768; /* Doesn't seem to vary */
     switch (headerType) {
         case HFS_FILETREE_ALLOCATION:
-            offset64 = (uint64_t)volHeader->allocationFile.extents[0].startBlock * volHeader->blockSize;
+            headerStartBlock = volHeader->allocationFile.extents[0].startBlock;
             minSize  = 512;
             break;
         case HFS_FILETREE_EXTENTS:
-            offset64 = (uint64_t)volHeader->extentsFile.extents[0].startBlock * volHeader->blockSize;
+            headerStartBlock = volHeader->extentsFile.extents[0].startBlock;
             minSize  = 512;
             break;
         case HFS_FILETREE_CATALOG:
-            offset64 = (uint64_t)volHeader->catalogFile.extents[0].startBlock * volHeader->blockSize;
+            headerStartBlock = volHeader->catalogFile.extents[0].startBlock;
             minSize  = 4096;
             break;
         case HFS_FILETREE_ATTRIBUTES:
-            offset64 = (uint64_t)volHeader->attributesFile.extents[0].startBlock * volHeader->blockSize;
+            headerStartBlock = volHeader->attributesFile.extents[0].startBlock;
             minSize  = 4096;
             break;
         case HFS_FILETREE_STARTUP:
-            offset64 = (uint64_t)volHeader->startupFile.extents[0].startBlock * volHeader->blockSize;
+            headerStartBlock = volHeader->startupFile.extents[0].startBlock;
             minSize  = 512;
             break;
         default:
             cli_errmsg("hfsplus_readheader: %s: invalid headerType %d\n", name, headerType);
             return CL_EARG;
     }
+    if (headerStartBlock >= volHeader->totalBlocks ||
+        volHeader->blockSize > volHeader->totalBlocks - headerStartBlock) {
+        cli_dbgmsg("hfsplus_readheader: %s: headerNode is outside the declared volume\n", name);
+        cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is outside the declared volume");
+        return CL_EFORMAT;
+    }
+    offset64 = (uint64_t)headerStartBlock * volHeader->blockSize;
     if (offset64 > SIZE_MAX) {
         cli_dbgmsg("hfsplus_readheader: %s: header offset exceeds the native fmap range\n", name);
         cli_mark_scan_incomplete(ctx, "HFS+ file-tree header coordinate is not representable");

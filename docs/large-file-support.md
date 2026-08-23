@@ -6222,3 +6222,10 @@ primary header that can be hidden by a successful secondary-only scan; only
 remains incomplete and non-cacheable. Focused callback-fault coverage is
 present; compiled GPT media, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## HFS+ declared tree-header boundary — 2026-08-23
+
+HFS+ tree-header coordinates are now bounded by the volume header's declared
+`totalBlocks` before fmap admission. This prevents a header at the exact
+declared volume end from consuming appended mapped bytes as a valid tree.
+Compiled HFS+ corpus, sanitizer, and Sonic1 qualification remain open.

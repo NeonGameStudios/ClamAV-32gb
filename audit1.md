@@ -6468,3 +6468,12 @@ unscanned fork to clean. Both output paths now record explicit incomplete
 reasons before returning these failures, preserving the non-cacheable,
 fail-closed result. Compiled write/seek fault injection, sanitizer, and Sonic1
 qualification remain open.
+
+## HFS+ declared tree-header boundary — 2026-08-23
+
+HFS+ tree-header admission previously checked only whether the first extent's
+computed offset was inside the fmap. A header block beyond the volume's
+declared `totalBlocks` could therefore be read from appended mapped bytes. The
+header coordinate is now bounded by the declared volume before fmap admission;
+the focused attributes-tree fixture covers an extent at the exact volume end.
+Compiled HFS+ corpus, sanitizer, and Sonic1 qualification remain release gates.

@@ -2107,6 +2107,12 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 ## ISO9660 declared-volume boundary accounting — 2026-08-23
 
 - Validate ISO9660's paired Volume Space Size fields and bound block admission
-  to the declared end as well as fmap length so appended overlay bytes cannot
-  become members; retain the overlay-boundary, malformed-volume, sanitizer,
-  and Sonic1 qualification as release gates.
+to the declared end as well as fmap length so appended overlay bytes cannot
+become members; retain the overlay-boundary, malformed-volume, sanitizer,
+and Sonic1 qualification as release gates.
+
+## HFS+ declared tree-header boundary — 2026-08-23
+
+- Bound HFS+ tree-header coordinates by the declared volume before fmap access,
+  retaining the exact-end boundary fixture, compiled corpus, sanitizer, and
+  Sonic1 qualification as release gates.
