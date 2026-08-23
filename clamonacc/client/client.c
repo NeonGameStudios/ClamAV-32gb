@@ -82,6 +82,22 @@ static cl_error_t onas_scan_status(int infected, int errors, cl_error_t report_s
     return errors ? CL_ECREAT : CL_CLEAN;
 }
 
+static uint64_t onas_normalize_file_limit(uint64_t configured)
+{
+    if (configured == 0 || configured > CLI_MAX_LARGE_FILESIZE)
+        return CLI_MAX_LARGE_FILESIZE;
+
+    return configured;
+}
+
+static uint64_t onas_effective_file_limit(uint64_t maxstream, uint64_t sizelimit)
+{
+    maxstream = onas_normalize_file_limit(maxstream);
+    sizelimit = onas_normalize_file_limit(sizelimit);
+
+    return (maxstream < sizelimit) ? maxstream : sizelimit;
+}
+
 void onas_print_server_version(struct onas_context **ctx)
 {
     if (onas_get_clamd_version(ctx)) {
@@ -549,6 +565,7 @@ int onas_get_clamd_version(struct onas_context **ctx)
  * @param portnum   the port to use in case of TCP connection, set to 0 if connecting to a local socket
  * @param scantype  the type of scan to perform, e.g. fdpass, stream
  * @param maxstream the max streamsize (in bytes) allowed across the socket per file
+ * @param sizelimit the configured OnAccessMaxFileSize limit for the file
  * @param fname     the name of the file to be scanned
  * @param fd        the file descriptor for the file to be scanned, often (but not always) this is held by fanotify
  * @param timeout   time in ms to allow curl before timing out connection attempts
@@ -557,7 +574,7 @@ int onas_get_clamd_version(struct onas_context **ctx)
  * @param err       return variable passed to the daemon protocol interface indicating how many things went wrong in the course of scanning
  * @param ret_code  return variable passed to the daemon protocol interface indicating last known issue or success
  */
-int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
+int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
 {
     CURL *curl        = NULL;
     CURLcode curlcode = CURLE_OK;
@@ -569,6 +586,7 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
     char *resolved_action_path = NULL;
     bool have_action_source    = false;
     bool regular_file          = S_ISREG(sb.st_mode);
+    uint64_t effective_limit   = onas_effective_file_limit(maxstream, sizelimit);
     static bool disconnected   = false;
 
     action_source_init(&action_source);
@@ -583,6 +601,18 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
 
     if (!regular_file) {
         scantype = STREAM;
+    }
+
+    /* Keep direct callers and path-based commands on the same contract as
+     * the scan-thread preflight. The daemon's StreamMaxLength and the local
+     * OnAccessMaxFileSize are both bounded by the certified ceiling; the
+     * stricter effective limit must be enforced before any wire command or
+     * action-source setup can occur. */
+    if (regular_file && (uint64_t)sb.st_size > effective_limit) {
+        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access limit; refusing to submit a partial scan. ERROR\n",
+             fname ? fname : "FD");
+        status = CL_EMAXSIZE;
+        goto done;
     }
 
     if (action && (NULL != fname) && regular_file) {
@@ -629,7 +659,7 @@ int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uin
         disconnected = false;
     }
 
-    if ((scan_result = onas_dsresult(curl, scantype, maxstream, fname, have_action_source ? &action_source : NULL, fd, timeout,
+    if ((scan_result = onas_dsresult(curl, scantype, effective_limit, fname, have_action_source ? &action_source : NULL, fd, timeout,
                                      &printok, err, ret_code)) >= 0) {
         *infected = scan_result;
     } else {

@@ -140,17 +140,21 @@ fixed-width-integer	clamonacc/clamonacc.h	59	    uint64_t sizelimit;
 fixed-width-integer	clamonacc/clamonacc.h	60	    uint64_t extinfo;
 fixed-width-integer	clamonacc/clamonacc.h	67	    int64_t portnum;
 fixed-width-integer	clamonacc/clamonacc.h	69	    int32_t maxthreads;
-fixed-width-integer	clamonacc/client/client.c	102	    int64_t timeout;
-fixed-width-integer	clamonacc/client/client.c	176	int16_t onas_ping_clamd(struct onas_context **ctx)
-fixed-width-integer	clamonacc/client/client.c	179	    uint64_t attempts           = ONAS_DEFAULT_PING_ATTEMPTS;
-fixed-width-integer	clamonacc/client/client.c	180	    uint64_t interval           = ONAS_DEFAULT_PING_INTERVAL;
-fixed-width-integer	clamonacc/client/client.c	184	    uint64_t i                  = 0;
-fixed-width-integer	clamonacc/client/client.c	190	    uint16_t ret   = 0;
-fixed-width-integer	clamonacc/client/client.c	191	    int64_t timeout;
-fixed-width-integer	clamonacc/client/client.c	314	CURLcode onas_curl_init(CURL **curl, const char *ipaddr, int64_t port, int64_t timeout)
-fixed-width-integer	clamonacc/client/client.c	497	    int64_t timeout;
-fixed-width-integer	clamonacc/client/client.c	560	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
-fixed-width-integer	clamonacc/client/client.h	34	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
+fixed-width-integer	clamonacc/client/client.c	118	    int64_t timeout;
+fixed-width-integer	clamonacc/client/client.c	192	int16_t onas_ping_clamd(struct onas_context **ctx)
+fixed-width-integer	clamonacc/client/client.c	195	    uint64_t attempts           = ONAS_DEFAULT_PING_ATTEMPTS;
+fixed-width-integer	clamonacc/client/client.c	196	    uint64_t interval           = ONAS_DEFAULT_PING_INTERVAL;
+fixed-width-integer	clamonacc/client/client.c	200	    uint64_t i                  = 0;
+fixed-width-integer	clamonacc/client/client.c	206	    uint16_t ret   = 0;
+fixed-width-integer	clamonacc/client/client.c	207	    int64_t timeout;
+fixed-width-integer	clamonacc/client/client.c	330	CURLcode onas_curl_init(CURL **curl, const char *ipaddr, int64_t port, int64_t timeout)
+fixed-width-integer	clamonacc/client/client.c	513	    int64_t timeout;
+fixed-width-integer	clamonacc/client/client.c	577	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
+fixed-width-integer	clamonacc/client/client.c	589	    uint64_t effective_limit   = onas_effective_file_limit(maxstream, sizelimit);
+fixed-width-integer	clamonacc/client/client.c	611	    if (regular_file && (uint64_t)sb.st_size > effective_limit) {
+fixed-width-integer	clamonacc/client/client.c	85	static uint64_t onas_normalize_file_limit(uint64_t configured)
+fixed-width-integer	clamonacc/client/client.c	93	static uint64_t onas_effective_file_limit(uint64_t maxstream, uint64_t sizelimit)
+fixed-width-integer	clamonacc/client/client.h	34	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 fixed-width-integer	clamonacc/client/client.h	35	CURLcode onas_curl_init(CURL **curl, const char *ipaddr, int64_t port, int64_t timeout);
 fixed-width-integer	clamonacc/client/client.h	39	int16_t onas_ping_clamd(struct onas_context **ctx);
 fixed-width-integer	clamonacc/client/communication.c	130	static int onas_socket_wait(curl_socket_t sockfd, int32_t b_recv, uint64_t timeout_ms)
@@ -6830,20 +6834,20 @@ native-width-integer	clamonacc/clamonacc.h	63	    int isremote;
 native-width-integer	clamonacc/clamonacc.h	64	    int session;
 native-width-integer	clamonacc/clamonacc.h	65	    int timeout;
 native-width-integer	clamonacc/clamonacc.h	83	int onas_start_eloop(struct onas_context **ctx);
-native-width-integer	clamonacc/client/client.c	189	    int b_remote   = 0;
-native-width-integer	clamonacc/client/client.c	370	    curlcode = curl_easy_setopt(*curl, CURLOPT_CONNECTTIMEOUT_MS, (long)timeout);
-native-width-integer	clamonacc/client/client.c	416	    int remote;
-native-width-integer	clamonacc/client/client.c	488	int onas_get_clamd_version(struct onas_context **ctx)
-native-width-integer	clamonacc/client/client.c	494	    int b_remote;
-native-width-integer	clamonacc/client/client.c	495	    int len;
-native-width-integer	clamonacc/client/client.c	560	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
-native-width-integer	clamonacc/client/client.c	564	    int errors        = 0;
-native-width-integer	clamonacc/client/client.c	565	    int scan_result   = 0;
-native-width-integer	clamonacc/client/client.c	566	    int printok       = 1;
+native-width-integer	clamonacc/client/client.c	111	int onas_check_remote(struct onas_context **ctx, cl_error_t *err)
+native-width-integer	clamonacc/client/client.c	113	    int ret;
+native-width-integer	clamonacc/client/client.c	205	    int b_remote   = 0;
+native-width-integer	clamonacc/client/client.c	386	    curlcode = curl_easy_setopt(*curl, CURLOPT_CONNECTTIMEOUT_MS, (long)timeout);
+native-width-integer	clamonacc/client/client.c	432	    int remote;
+native-width-integer	clamonacc/client/client.c	504	int onas_get_clamd_version(struct onas_context **ctx)
+native-width-integer	clamonacc/client/client.c	510	    int b_remote;
+native-width-integer	clamonacc/client/client.c	511	    int len;
+native-width-integer	clamonacc/client/client.c	577	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
+native-width-integer	clamonacc/client/client.c	581	    int errors        = 0;
+native-width-integer	clamonacc/client/client.c	582	    int scan_result   = 0;
+native-width-integer	clamonacc/client/client.c	583	    int printok       = 1;
 native-width-integer	clamonacc/client/client.c	74	static cl_error_t onas_scan_status(int infected, int errors, cl_error_t report_status)
-native-width-integer	clamonacc/client/client.c	95	int onas_check_remote(struct onas_context **ctx, cl_error_t *err)
-native-width-integer	clamonacc/client/client.c	97	    int ret;
-native-width-integer	clamonacc/client/client.h	34	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
+native-width-integer	clamonacc/client/client.h	34	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 native-width-integer	clamonacc/client/client.h	36	int onas_get_clamd_version(struct onas_context **ctx);
 native-width-integer	clamonacc/client/client.h	38	int onas_check_remote(struct onas_context **ctx, cl_error_t *err);
 native-width-integer	clamonacc/client/communication.c	106	                    int wait_result = onas_socket_wait(sockfd, 1, wait_timeout);
@@ -18473,11 +18477,11 @@ format-width	clamonacc/c-thread-pool/thpool.c	481						logg(LOGG_DEBUG_NV, "jobq
 format-width	clamonacc/c-thread-pool/thpool.h	172	 *    printf("Working threads: %d\n", thpool_num_threads_working(thpool1));
 format-width	clamonacc/c-thread-pool/thpool.h	52	 *       printf("%d\n", num);
 format-width	clamonacc/clamonacc.c	70	    mprintf(LOGG_DEBUG, "Clamonacc: onas_clamonacc_exit(), signal %d\n", sig);
-format-width	clamonacc/client/client.c	268	                    logg(LOGG_DEBUG, "Will try again in %lu second\n", interval);
-format-width	clamonacc/client/client.c	270	                    logg(LOGG_DEBUG, "Will try again in %lu seconds\n", interval);
-format-width	clamonacc/client/client.c	273	                    logg(LOGG_INFO, "PINGing again in %lu second\n", interval);
-format-width	clamonacc/client/client.c	275	                    logg(LOGG_INFO, "PINGing again in %lu seconds\n", interval);
-format-width	clamonacc/client/client.c	636	        logg(LOGG_DEBUG, "ClamClient: connection could not be established ... return code %d\n", ret_code ? *ret_code : scan_result);
+format-width	clamonacc/client/client.c	284	                    logg(LOGG_DEBUG, "Will try again in %lu second\n", interval);
+format-width	clamonacc/client/client.c	286	                    logg(LOGG_DEBUG, "Will try again in %lu seconds\n", interval);
+format-width	clamonacc/client/client.c	289	                    logg(LOGG_INFO, "PINGing again in %lu second\n", interval);
+format-width	clamonacc/client/client.c	291	                    logg(LOGG_INFO, "PINGing again in %lu seconds\n", interval);
+format-width	clamonacc/client/client.c	666	        logg(LOGG_DEBUG, "ClamClient: connection could not be established ... return code %d\n", ret_code ? *ret_code : scan_result);
 format-width	clamonacc/client/protocol.c	100	            // logg(LOGG_INFO, "DEBUG: >>>>> fd is %d\n", fd);
 format-width	clamonacc/fanotif/fanotif.c	144	        logg(LOGG_DEBUG, "ClamFanotif: max file size limited to %lu bytes\n", (*ctx)->sizelimit);
 format-width	clamonacc/fanotif/fanotif.c	168	    logg(LOGG_DEBUG, "ClamFanotif: starting fanotify event loop with process id (%d) ... \n", getpid());
@@ -21165,8 +21169,11 @@ offset-size-arithmetic	clamonacc/clamonacc.c	333	static int startup_checks(struc
 offset-size-arithmetic	clamonacc/clamonacc.c	451	    mprintf(LOGG_INFO, "    --wait                 -w          Wait up to 30 seconds for clamd to start. Optionally use alongside --ping to set attempts [A] and interval [I] to check clamd.\n");
 offset-size-arithmetic	clamonacc/clamonacc.c	65	static int startup_checks(struct onas_context *ctx);
 offset-size-arithmetic	clamonacc/clamonacc.h	83	int onas_start_eloop(struct onas_context **ctx);
-offset-size-arithmetic	clamonacc/client/client.c	377	    /* we implement our own transfer protocol via send and recv, so we only need to connect */
-offset-size-arithmetic	clamonacc/client/client.c	534	        if (len == -1) {
+offset-size-arithmetic	clamonacc/client/client.c	393	    /* we implement our own transfer protocol via send and recv, so we only need to connect */
+offset-size-arithmetic	clamonacc/client/client.c	550	        if (len == -1) {
+offset-size-arithmetic	clamonacc/client/client.c	577	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code)
+offset-size-arithmetic	clamonacc/client/client.c	612	        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access limit; refusing to submit a partial scan. ERROR\n",
+offset-size-arithmetic	clamonacc/client/client.h	34	int onas_client_scan(const char *tcpaddr, int64_t portnum, int32_t scantype, uint64_t maxstream, uint64_t sizelimit, const char *fname, int fd, int64_t timeout, STATBUF sb, int *infected, int *err, cl_error_t *ret_code);
 offset-size-arithmetic	clamonacc/client/communication.c	121	        length -= received;
 offset-size-arithmetic	clamonacc/client/communication.c	159	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout, cl_error_t *ret_code)
 offset-size-arithmetic	clamonacc/client/communication.c	229	        len -= sent;
@@ -21194,13 +21201,15 @@ offset-size-arithmetic	clamonacc/client/communication.c	466	                memm
 offset-size-arithmetic	clamonacc/client/communication.c	467	                rcv_data->lnstart = rcv_data->buf;
 offset-size-arithmetic	clamonacc/client/communication.c	469	            rcv_data->curr   = &rcv_data->lnstart[rcv_data->retlen];
 offset-size-arithmetic	clamonacc/client/communication.h	45	int onas_sendln(CURL *curl, const void *line, size_t len, int64_t timeout_ms, cl_error_t *ret_code);
+offset-size-arithmetic	clamonacc/client/protocol.c	117	        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated stream. ERROR\n",
 offset-size-arithmetic	clamonacc/client/protocol.c	125	    if (S_ISREG(statbuf.st_mode) && 0 != fd && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
 offset-size-arithmetic	clamonacc/client/protocol.c	141	        uint64_t remaining = len - bytesRead;
 offset-size-arithmetic	clamonacc/client/protocol.c	156	        if (onas_sendln(curl, (const char *)&chunk_len, sizeof(chunk_len), timeout, ret_code) ||
 offset-size-arithmetic	clamonacc/client/protocol.c	157	            onas_sendln(curl, (const char *)buf, (size_t)bytes, timeout, ret_code)) {
+offset-size-arithmetic	clamonacc/client/protocol.c	186	                logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated %s stream. ERROR\n",
 offset-size-arithmetic	clamonacc/client/protocol.c	204	    if (onas_sendln(curl, (const char *)buf, 4, timeout, ret_code)) {
 offset-size-arithmetic	clamonacc/client/protocol.c	244	    if (sendmsg(sockd, &msg, 0) == -1) {
-offset-size-arithmetic	clamonacc/client/protocol.c	295	        logg(LOGG_ERROR, "%s: File size exceeds the on-access FILDES 32-GiB ceiling; refusing to pass the descriptor. ERROR\n",
+offset-size-arithmetic	clamonacc/client/protocol.c	295	        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access FILDES limit; refusing to pass the descriptor. ERROR\n",
 offset-size-arithmetic	clamonacc/client/protocol.c	322	 * NOTE: filename may be NULL for STREAM scantype. */
 offset-size-arithmetic	clamonacc/client/protocol.c	323	int onas_dsresult(CURL *curl, int scantype, uint64_t maxstream, const char *filename, const action_source_t *action_source,
 offset-size-arithmetic	clamonacc/client/protocol.c	332	    const char *display_filename                                     = (NULL != action_source) ? action_source->display_path : filename;
@@ -33312,6 +33321,8 @@ large-file-option	clamd/server-th.c	1168	        if (rlim.rlim_cur < (rlim_t)cl_
 large-file-option	clamd/server-th.c	1302	    if ((opt = optget(opts, "PCREMaxFileSize"))->active) {
 large-file-option	clamd/server-th.c	1304	            logg(LOGG_ERROR, "cli_engine_set_num(PCREMaxFileSize) failed: %s\n", cl_strerror(ret));
 large-file-option	clamd/server-th.c	1310	    logg(LOGG_INFO, "Limits: PCREMaxFileSize limit set to %llu.\n", val);
+large-file-option	clamonacc/client/client.c	568	 * @param sizelimit the configured OnAccessMaxFileSize limit for the file
+large-file-option	clamonacc/client/client.c	608	     * OnAccessMaxFileSize are both bounded by the certified ceiling; the
 large-file-option	clamonacc/fanotif/fanotif.c	142	    (*ctx)->sizelimit = optget((*ctx)->clamdopts, "OnAccessMaxFileSize")->numarg;
 large-file-option	clamonacc/scan/thread.c	368	                logg(LOGG_DEBUG, "ClamWorker: '%s' exceeds OnAccessMaxFileSize; treating the permission event as incomplete\n", pathname);
 large-file-option	clamscan/manager.c	1039	    maxfilesize      = (uint64_t)cl_engine_get_num(engine, CL_ENGINE_MAX_FILESIZE, NULL);

@@ -1304,3 +1304,12 @@ Regular-file on-access streams now require a successful rewind before the
 submitting a scan for a stale descriptor position; non-seekable non-regular
 inputs retain their existing streaming behavior. Compiled read/seek fault
 injection and Sonic1 qualification remain open.
+
+## On-access configured-limit parity — 2026-08-22
+
+Direct on-access client calls now combine `StreamMaxLength` with
+`OnAccessMaxFileSize` before action setup, path submission, streaming, or
+FILDES transfer. This keeps the local option from being bypassed when the
+scan-thread preflight is not the caller, while retaining the protocol-level
+32-GiB defensive check. Compiled option-parity/fault-injection and Sonic1
+qualification remain open.

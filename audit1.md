@@ -5248,3 +5248,13 @@ emitting `INSTREAMREPORT`, returns `CL_ESEEK`, and sends no command when the
 input cannot be rewound; non-seekable non-regular streams retain their prior
 behavior. Compiled read/seek fault injection, sanitizer, and Sonic1
 qualification remain open.
+
+## On-access configured-limit parity — 2026-08-22
+
+The on-access client now combines the daemon `StreamMaxLength` limit with the
+local `OnAccessMaxFileSize` limit before opening an action source, submitting a
+path command, streaming bytes, or passing a descriptor. Direct callers no
+longer rely on the scan-thread preflight alone, and zero or out-of-range
+programmatic values normalize to the certified 32-GiB ceiling. The existing
+protocol checks remain as a second boundary. Compiled on-access fault
+injection, option-parity, and Sonic1 qualification remain open.

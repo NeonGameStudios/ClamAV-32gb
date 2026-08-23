@@ -114,7 +114,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
     }
 
     if ((uint64_t)statbuf.st_size > maxstream) {
-        logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated stream. ERROR\n",
+        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated stream. ERROR\n",
              filename ? filename : "FD");
         if (ret_code)
             *ret_code = CL_EMAXSIZE;
@@ -183,7 +183,7 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
             goto strm_out;
         } else if (bytes > 0) {
             if (bytesRead >= maxstream) {
-                logg(LOGG_ERROR, "%s: File size exceeds StreamMaxLength; refusing to send a truncated %s stream. ERROR\n",
+                logg(LOGG_ERROR, "%s: File size exceeds the effective on-access stream limit; refusing to send a truncated %s stream. ERROR\n",
                      filename ? filename : "FD", action_stream ? "quarantine" : "scan");
                 if (ret_code) {
                     *ret_code = CL_EMAXSIZE;
@@ -292,7 +292,7 @@ static int onas_fdpass(const char *filename, int fd, int sockd, uint64_t maxstre
     }
 
     if (S_ISREG(statbuf.st_mode) && (uint64_t)statbuf.st_size > maxstream) {
-        logg(LOGG_ERROR, "%s: File size exceeds the on-access FILDES 32-GiB ceiling; refusing to pass the descriptor. ERROR\n",
+        logg(LOGG_ERROR, "%s: File size exceeds the effective on-access FILDES limit; refusing to pass the descriptor. ERROR\n",
              filename ? filename : "FD");
         if (ret_code)
             *ret_code = CL_EMAXSIZE;

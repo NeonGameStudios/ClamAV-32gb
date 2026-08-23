@@ -124,7 +124,7 @@ static cl_error_t onas_scan_safe(struct onas_scan_event *event_data, const char 
 
     pthread_mutex_lock(&onas_scan_lock);
 
-    ret = onas_client_scan(event_data->tcpaddr, event_data->portnum, event_data->scantype, event_data->maxstream,
+    ret = onas_client_scan(event_data->tcpaddr, event_data->portnum, event_data->scantype, event_data->maxstream, event_data->sizelimit,
                            fname, fd, event_data->timeout, sb, infected, err, ret_code);
 
     pthread_mutex_unlock(&onas_scan_lock);
