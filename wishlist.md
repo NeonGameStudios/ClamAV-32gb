@@ -1411,10 +1411,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   compiled scanner, sanitizer, production HWP3 corpus, and Sonic1
   qualification as release gates.
 
-## Shared fixed-range reader and PE import-table classification — 2026-08-22
+## Shared fixed-range reader and PE fixed-metadata classification — 2026-08-22
 
 - Add and adopt `fmap_readn_full()` for fixed-range admission, preserving
   parse results for short ranges and `CL_EREAD` for fully in-range callback
-  failures; apply it to PE import descriptors and 32/64-bit thunk entries,
-  while retaining compiled scanner, sanitizer, production PE corpus, and
-  Sonic1 qualification as release gates.
+  failures; apply it to PE fixed headers, directories, sections, certificate
+  headers, import descriptors, and 32/64-bit thunk entries. Retain compiled
+  scanner, sanitizer, production PE corpus, and Sonic1 qualification as
+  release gates.

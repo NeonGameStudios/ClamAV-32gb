@@ -4935,7 +4935,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     fsize = map->len - peinfo->offset;
-    if (fmap_readn(map, &e_magic, peinfo->offset, sizeof(e_magic)) != sizeof(e_magic)) {
+    if (fmap_readn_full(map, &e_magic, peinfo->offset, sizeof(e_magic)) != sizeof(e_magic)) {
         cli_dbgmsg("cli_peheader: Can't read DOS signature\n");
         goto done;
     }
@@ -4945,7 +4945,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    if (fmap_readn(map, &(peinfo->e_lfanew), peinfo->offset + 58 + sizeof(e_magic), sizeof(peinfo->e_lfanew)) != sizeof(peinfo->e_lfanew)) {
+    if (fmap_readn_full(map, &(peinfo->e_lfanew), peinfo->offset + 58 + sizeof(e_magic), sizeof(peinfo->e_lfanew)) != sizeof(peinfo->e_lfanew)) {
         /* truncated header? */
         cli_dbgmsg("cli_peheader: Unable to read e_lfanew - truncated header?\n");
         ret = CL_EFORMAT;
@@ -4962,7 +4962,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    if (fmap_readn(map, &(peinfo->file_hdr), peinfo->offset + peinfo->e_lfanew, sizeof(struct pe_image_file_hdr)) != sizeof(struct pe_image_file_hdr)) {
+    if (fmap_readn_full(map, &(peinfo->file_hdr), peinfo->offset + peinfo->e_lfanew, sizeof(struct pe_image_file_hdr)) != sizeof(struct pe_image_file_hdr)) {
         /* bad information in e_lfanew - probably not a PE file */
         cli_dbgmsg("cli_peheader: Can't read file header\n");
         goto done;
@@ -5171,7 +5171,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
     }
 
     at = peinfo->offset + peinfo->e_lfanew + sizeof(struct pe_image_file_hdr);
-    if (fmap_readn(map, &(peinfo->pe_opt.opt32), at, sizeof(struct pe_image_optional_hdr32)) != sizeof(struct pe_image_optional_hdr32)) {
+    if (fmap_readn_full(map, &(peinfo->pe_opt.opt32), at, sizeof(struct pe_image_optional_hdr32)) != sizeof(struct pe_image_optional_hdr32)) {
         cli_dbgmsg("cli_peheader: Can't read optional file header\n");
         ret = CL_EFORMAT;
         goto done;
@@ -5196,7 +5196,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
             goto done;
         }
 
-        if (fmap_readn(map, (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)), at, OPT_HDR_SIZE_DIFF) != OPT_HDR_SIZE_DIFF) {
+        if (fmap_readn_full(map, (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)), at, OPT_HDR_SIZE_DIFF) != OPT_HDR_SIZE_DIFF) {
             cli_dbgmsg("cli_peheader: Can't read additional optional file header bytes\n");
             ret = CL_EFORMAT;
             goto done;
@@ -5417,7 +5417,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    read = fmap_readn(map, peinfo->dirs, at, data_dirs_size);
+    read = fmap_readn_full(map, peinfo->dirs, at, data_dirs_size);
     if ((read == (size_t)-1) || (read != data_dirs_size)) {
         cli_dbgmsg("cli_peheader: Can't read optional file header data dirs\n");
         goto done;
@@ -5480,7 +5480,7 @@ cl_error_t cli_peheader(cli_ctx *ctx, struct cli_exe_info *peinfo, uint32_t opts
         goto done;
     }
 
-    read = fmap_readn(map, section_hdrs, at, peinfo->nsections * sizeof(struct pe_image_section_hdr));
+    read = fmap_readn_full(map, section_hdrs, at, peinfo->nsections * sizeof(struct pe_image_section_hdr));
     if ((read == (size_t)-1) || (read != peinfo->nsections * sizeof(struct pe_image_section_hdr))) {
         cli_dbgmsg("cli_peheader: Can't read section header - possibly broken PE file\n");
         ret = CL_EFORMAT;
@@ -6221,7 +6221,7 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
 
         // Parse the security directory header
 
-        if (fmap_readn(map, &cert_hdr, sec_dir_offset, sizeof(cert_hdr)) != sizeof(cert_hdr)) {
+        if (fmap_readn_full(map, &cert_hdr, sec_dir_offset, sizeof(cert_hdr)) != sizeof(cert_hdr)) {
             goto finish;
         }
 

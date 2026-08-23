@@ -12078,7 +12078,7 @@ native-width-integer	libclamav/pe.c	4916	    size_t read;
 native-width-integer	libclamav/pe.c	4921	    int toval                   = 0;
 native-width-integer	libclamav/pe.c	493	                      int (*cb)(void *, uint32_t, uint32_t, uint32_t, uint32_t), void *opaque)
 native-width-integer	libclamav/pe.c	499	    size_t type_entry_offset, name_entry_offset, lang_entry_offset;
-native-width-integer	libclamav/pe.c	5199	        if (fmap_readn(map, (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)), at, OPT_HDR_SIZE_DIFF) != OPT_HDR_SIZE_DIFF) {
+native-width-integer	libclamav/pe.c	5199	        if (fmap_readn_full(map, (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)), at, OPT_HDR_SIZE_DIFF) != OPT_HDR_SIZE_DIFF) {
 native-width-integer	libclamav/pe.c	520	    status   = findres_advance((size_t)rawaddr, 2, &type_entry_offset);
 native-width-integer	libclamav/pe.c	5421	    if ((read == (size_t)-1) || (read != data_dirs_size)) {
 native-width-integer	libclamav/pe.c	5440	        /* Seek to the end of the long header */
@@ -27758,11 +27758,11 @@ offset-size-arithmetic	libclamav/pe.c	4735	        dsize = cli_readint32(src + 9
 offset-size-arithmetic	libclamav/pe.c	4739	        if (!ssize || !dsize || dsize != peinfo->sections[0].vsz)
 offset-size-arithmetic	libclamav/pe.c	4755	        if (!(rep = cli_rawaddr(eprva, peinfo->sections, peinfo->nsections, &err, fsize, peinfo->hdr_size)) && err) {
 offset-size-arithmetic	libclamav/pe.c	4937	    fsize = map->len - peinfo->offset;
-offset-size-arithmetic	libclamav/pe.c	4948	    if (fmap_readn(map, &(peinfo->e_lfanew), peinfo->offset + 58 + sizeof(e_magic), sizeof(peinfo->e_lfanew)) != sizeof(peinfo->e_lfanew)) {
-offset-size-arithmetic	libclamav/pe.c	4965	    if (fmap_readn(map, &(peinfo->file_hdr), peinfo->offset + peinfo->e_lfanew, sizeof(struct pe_image_file_hdr)) != sizeof(struct pe_image_file_hdr)) {
+offset-size-arithmetic	libclamav/pe.c	4948	    if (fmap_readn_full(map, &(peinfo->e_lfanew), peinfo->offset + 58 + sizeof(e_magic), sizeof(peinfo->e_lfanew)) != sizeof(peinfo->e_lfanew)) {
+offset-size-arithmetic	libclamav/pe.c	4965	    if (fmap_readn_full(map, &(peinfo->file_hdr), peinfo->offset + peinfo->e_lfanew, sizeof(struct pe_image_file_hdr)) != sizeof(struct pe_image_file_hdr)) {
 offset-size-arithmetic	libclamav/pe.c	5144	    opt_hdr_size = EC16(file_hdr->SizeOfOptionalHeader);
 offset-size-arithmetic	libclamav/pe.c	5173	    at = peinfo->offset + peinfo->e_lfanew + sizeof(struct pe_image_file_hdr);
-offset-size-arithmetic	libclamav/pe.c	5199	        if (fmap_readn(map, (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)), at, OPT_HDR_SIZE_DIFF) != OPT_HDR_SIZE_DIFF) {
+offset-size-arithmetic	libclamav/pe.c	5199	        if (fmap_readn_full(map, (void *)((size_t)&peinfo->pe_opt.opt64 + sizeof(struct pe_image_optional_hdr32)), at, OPT_HDR_SIZE_DIFF) != OPT_HDR_SIZE_DIFF) {
 offset-size-arithmetic	libclamav/pe.c	5205	        stored_opt_hdr_size += OPT_HDR_SIZE_DIFF;
 offset-size-arithmetic	libclamav/pe.c	5212	        peinfo->hdr_size  = EC32(opt64->SizeOfHeaders);
 offset-size-arithmetic	libclamav/pe.c	5243	            snprintf(jsonbuf, sizeof(jsonbuf), "0x%x", peinfo->vep);
