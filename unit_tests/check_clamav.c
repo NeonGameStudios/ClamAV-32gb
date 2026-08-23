@@ -14556,6 +14556,70 @@ START_TEST(test_7z_read_failure_is_fail_visible)
 }
 END_TEST
 
+static size_t sevenzip_sfx_read_failure_offset = SIZE_MAX;
+static size_t sevenzip_sfx_read_failure_length = SIZE_MAX;
+
+static const void *sevenzip_sfx_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == sevenzip_sfx_read_failure_offset && len == sevenzip_sfx_read_failure_length)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_7z_sfx_header_read_failure_is_fail_visible)
+{
+    uint8_t data[33] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+    int saved_sdb;
+
+    memcpy(data + 1, "7z\xbc\xaf'\x1c", 6);
+    data[7] = 0;
+    data[8] = 4;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    saved_sdb = scan_engine->sdb;
+    scan_engine->sdb = 1;
+
+    sevenzip_sfx_read_failure_offset = 1U;
+    sevenzip_sfx_read_failure_length = 32U;
+    {
+        fmap_t *map = cl_fmap_open_memory(data, sizeof(data));
+        ck_assert_ptr_nonnull(map);
+        map->need = sevenzip_sfx_read_failure;
+        verdict    = CL_VERDICT_STRONG_INDICATOR;
+        last_alert = "stale";
+        scanned    = UINT64_MAX;
+
+        ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                            scan_engine, &options, NULL, NULL, NULL, NULL,
+                            "CL_TYPE_TEXT_ASCII", NULL);
+        ck_assert_int_eq(ret, CL_EREAD);
+        ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+        ck_assert(last_alert == NULL);
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
+
+    scan_engine->sdb = saved_sdb;
+    sevenzip_sfx_read_failure_offset = SIZE_MAX;
+    sevenzip_sfx_read_failure_length = SIZE_MAX;
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_7z_truncated_member_is_parse_error)
 {
     uint8_t data[32] = {0};
@@ -24441,6 +24505,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_read_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_7z_sfx_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_truncated_member_is_parse_error);
     tcase_add_test(tc_cl, test_7z_output_size_mismatch_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_time_limit_is_fail_visible);

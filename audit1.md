@@ -6006,6 +6006,17 @@ reason for `CL_EREAD`, while leaving weak-candidate rejection and parse-result
 classification unchanged. Compiled scanner, sanitizer, production EGG corpus,
 and Sonic1 qualification remain open.
 
+## Embedded 7-Zip SFX read-result classification — 2026-08-23
+
+The embedded 7-Zip admission helper already returned `CL_EREAD` when its
+confirmed 32-byte start-header window failed through the fmap callback, but
+the scanner-facing branch reported the same generic reason as malformed or
+unsupported headers. It now preserves a dedicated incomplete reason for
+`CL_EREAD`, while retaining weak-candidate rejection and parse-result
+classification. A focused public embedded-SFX regression verifies the read
+failure remains `CL_EREAD` and non-cacheable. Compiled scanner, production
+7-Zip SFX corpus, sanitizer, and Sonic1 qualification remain open.
+
 ## Runtime evidence manifest path binding — 2026-08-23
 
 The runtime verifier previously checked the hashes and line counts of the

@@ -5399,7 +5399,10 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     break;
                                 }
                                 if (ret != CL_SUCCESS) {
-                                    cli_mark_scan_incomplete(ctx, "7-Zip SFX start header is malformed or unsupported");
+                                    cli_mark_scan_incomplete(ctx,
+                                                             ret == CL_EREAD
+                                                                 ? "7-Zip SFX start header could not be read completely"
+                                                                 : "7-Zip SFX start header is malformed or unsupported");
                                     if (nret == CL_SUCCESS)
                                         nret = ret;
                                     break;

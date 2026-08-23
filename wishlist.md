@@ -1816,6 +1816,14 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   short weak candidates. Compiled scanner, sanitizer, production EGG corpus,
   and Sonic1 qualification remain release gates.
 
+## Embedded 7-Zip SFX read-result classification — 2026-08-23
+
+- Preserve a distinct `7-Zip SFX start header could not be read completely`
+  reason for confirmed embedded-header fmap failures, while retaining the
+  malformed/unsupported result for parse failures and candidate rejection for
+  weak signatures. Compiled scanner, production 7-Zip SFX corpus, sanitizer,
+  and Sonic1 qualification remain release gates.
+
 ## HFS+ compressed-resource read classification — 2026-08-23
 
 - Mark required HFS+ compressed-resource headers, resource tables, block counts,
