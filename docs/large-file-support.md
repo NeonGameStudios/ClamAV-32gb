@@ -5958,3 +5958,10 @@ The Rust OneNote legacy reader now preserves source I/O failures as
 `CL_EREAD`; genuine `UnexpectedEof` and declared-range truncation remain
 `CL_EPARSE`. Focused reader coverage exercises the distinction, while compiled
 OneNote corpus, sanitizer, and Sonic1 qualification remain release gates.
+
+## InstallShield MSI file-record read classification — 2026-08-23
+
+MSI embedded-file records now distinguish a genuinely short fixed record
+(`CL_EPARSE`) from a fully in-range fmap callback failure (`CL_EREAD`).
+Focused MSI coverage exercises both outcomes; compiled InstallShield corpus,
+sanitizer, and Sonic1 qualification remain release gates.

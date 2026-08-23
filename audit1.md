@@ -5715,3 +5715,11 @@ The Rust OneNote legacy reader previously mapped every `Read`/`Seek` error to
 `UnexpectedEof` and declared-range truncation remain parse failures. A focused
 reader regression exercises the distinction. Compiled OneNote corpus,
 sanitizer, and Sonic1 qualification remain open.
+
+## InstallShield MSI file-record read classification — 2026-08-23
+
+The MSI embedded-file record path now range-preflights its fixed record before
+the callback, so a genuinely short record remains `CL_EPARSE` while a fully
+in-range fmap callback failure remains `CL_EREAD`. Focused MSI coverage
+exercises both outcomes; compiled InstallShield corpus, sanitizer, and Sonic1
+qualification remain open.

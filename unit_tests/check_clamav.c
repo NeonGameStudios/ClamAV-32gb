@@ -17804,6 +17804,16 @@ static const void *ishield_embedded_header_read_failure(fmap_t *map, size_t at, 
     return (const uint8_t *)map->data + at;
 }
 
+static const void *ishield_msi_record_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == 0x20U)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_ishield_msi_partial_limit_and_decode_failures_are_visible)
 {
     enum {
@@ -17854,6 +17864,35 @@ START_TEST(test_ishield_msi_partial_limit_and_decode_failures_are_visible)
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(data, ISHIELD_TEST_HEADER_SIZE + ISHIELD_TEST_FILEBLOCK_SIZE - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap               = map;
+    layer.fmap             = map;
+    ctx.scan_incomplete    = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag   = false;
+    ret                    = cli_scanishield_msi(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI file record is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need                  = ishield_msi_record_read_failure;
+    ctx.fmap                   = map;
+    layer.fmap                 = map;
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag       = false;
+    ret                        = cli_scanishield_msi(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI file record could not be read completely");
     ck_assert(map->dont_cache_flag);
     cl_fmap_close(map);
 

@@ -1655,3 +1655,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
 - Preserve Rust OneNote source I/O failures as `CL_EREAD` while retaining
   `CL_EPARSE` for genuine EOF/truncation; retain compiled corpus, sanitizer,
   and Sonic1 qualification gates.
+
+## InstallShield MSI file-record read classification — 2026-08-23
+
+- Preserve `CL_EPARSE` for short MSI file records and `CL_EREAD` for in-range
+  fmap callback failures; retain compiled corpus, sanitizer, and Sonic1
+  qualification gates.

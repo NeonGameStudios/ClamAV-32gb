@@ -270,10 +270,15 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
             return CL_EMAXFILES;
         }
 
-        if (fmap_readn(map, &fb, off, sizeof(fb)) != sizeof(fb)) {
-            cli_dbgmsg("ishield-msi: short read for fileblock\n");
+        if (off > map->len || sizeof(fb) > map->len - (size_t)off) {
+            cli_dbgmsg("ishield-msi: file record is outside the input map\n");
             cli_mark_scan_incomplete(ctx, "InstallShield MSI file record is truncated");
             return CL_EPARSE;
+        }
+        if (fmap_readn(map, &fb, off, sizeof(fb)) != sizeof(fb)) {
+            cli_dbgmsg("ishield-msi: fileblock could not be read completely\n");
+            cli_mark_scan_incomplete(ctx, "InstallShield MSI file record could not be read completely");
+            return CL_EREAD;
         }
 
         off += sizeof(fb);
