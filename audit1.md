@@ -5397,3 +5397,12 @@ partial entry-point and unpacker reads remain streaming operations. The
 focused fmap regression proves that a short range and an in-range callback
 failure remain distinguishable. Compiled scanner, sanitizer, production PE
 corpus, and Sonic1 qualification remain open.
+
+## SIS fixed metadata range classification — 2026-08-22
+
+SIS UID, main metadata, name-table, and dependency-header reads now preflight
+their complete requested ranges before invoking the fmap callback. Genuinely
+short ranges therefore remain parse/incomplete results, while fully in-range
+callback failures remain `CL_EREAD`. Focused regressions cover truncated main
+headers and in-range main-header callback failure. Compiled scanner, sanitizer,
+production SIS corpus, and Sonic1 qualification remain open.

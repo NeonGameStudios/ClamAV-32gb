@@ -1419,3 +1419,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   headers, import descriptors, and 32/64-bit thunk entries. Retain compiled
   scanner, sanitizer, production PE corpus, and Sonic1 qualification as
   release gates.
+
+## SIS fixed metadata range classification — 2026-08-22
+
+- Preflight SIS UID, main metadata, name-table, and dependency-header reads
+  before callback admission, preserving parse results for short ranges and
+  `CL_EREAD` for fully in-range callback failures; retain compiled scanner,
+  sanitizer, production SIS corpus, and Sonic1 qualification as release gates.

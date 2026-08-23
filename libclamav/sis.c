@@ -332,7 +332,7 @@ cl_error_t cli_scansis(cli_ctx *ctx)
         cli_dbgmsg("SIS: Extracting files to %s\n", tmpd);
 
     {
-        size_t nread = map->len < SIZEOF_HEADER_UUIDS ? 0 : fmap_readn(map, &uid, 0, SIZEOF_HEADER_UUIDS);
+        size_t nread = fmap_readn_full(map, &uid, 0, SIZEOF_HEADER_UUIDS);
 
         if (nread != SIZEOF_HEADER_UUIDS) {
             cl_error_t read_status = sis_read_failure(ctx, nread,
@@ -465,7 +465,7 @@ static cl_error_t getsistring(cli_ctx *ctx, fmap_t *map, uint32_t ptr, uint32_t 
         return CL_EMEM;
     }
     {
-        size_t nread = fmap_readn(map, name, ptr, len);
+        size_t nread = fmap_readn_full(map, name, ptr, len);
 
         if (nread != len) {
             cl_error_t status = sis_read_failure(ctx, nread,
@@ -499,7 +499,7 @@ static cl_error_t spamsisnames(cli_ctx *ctx, fmap_t *map, size_t pos, uint16_t l
         return CL_EMEM;
     }
 
-    nread = fmap_readn(map, values, pos, len);
+    nread = fmap_readn_full(map, values, pos, len);
     if (nread != len) {
         cl_error_t status = sis_read_failure(ctx, nread,
                                              "SIS name table could not be read completely",
@@ -583,7 +583,7 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
         goto done;
 
     {
-        size_t nread = fmap_readn(map, &sis, SIZEOF_HEADER_UUIDS, sizeof(sis));
+        size_t nread = fmap_readn_full(map, &sis, SIZEOF_HEADER_UUIDS, sizeof(sis));
 
         if (nread != sizeof(sis)) {
             status = sis_read_failure(ctx, nread,
@@ -671,7 +671,7 @@ static cl_error_t real_scansis(cli_ctx *ctx, const char *tmpd)
 
             pos = sis.pdeps + i * (sizeof(dep) + sis.langs * 2 * sizeof(uint32_t));
             {
-                size_t nread = fmap_readn(map, &dep, pos, sizeof(dep));
+                size_t nread = fmap_readn_full(map, &dep, pos, sizeof(dep));
 
                 if (nread != sizeof(dep)) {
                     status = sis_read_failure(ctx, nread,
