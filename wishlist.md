@@ -1,5 +1,14 @@
 # Wishlist
 
+## Raw matching of short non-empty layers — 2026-08-23
+
+- Removed the historical five-byte early exits from root, descriptor-child, and
+  nested-fmap scan paths. Empty inputs still complete without a matcher pass,
+  while every non-empty layer now reaches the outer raw matcher, including
+  one-byte and other sub-five-byte content. A focused one-byte signature
+  regression and source guards cover the contract; full compiled and
+  production-signature qualification remains open.
+
 ## MSXML fmap callback failure classification — 2026-08-23
 
 - Preserve an in-range MSXML fmap callback failure as `CL_EREAD` instead of

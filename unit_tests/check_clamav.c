@@ -24739,6 +24739,55 @@ START_TEST(test_pe_icon_resource_tree_read_failure_is_fail_visible)
 END_TEST
 #endif
 
+START_TEST(test_raw_matching_inspects_nonempty_subfive_byte_input)
+{
+    static const unsigned char data[] = {0x41};
+    static const char signature[]      = "Small.Raw.Match:0:0:41\n";
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_fmap_t *map = NULL;
+    cl_scan_report_t *report = NULL;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    unsigned int sigs = 0;
+    uint64_t scanned = 0;
+    char *signature_path = NULL;
+    int signature_fd = -1;
+    cl_error_t status;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &signature_path, &signature_fd), CL_SUCCESS);
+    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1),
+                     (ssize_t)(sizeof(signature) - 1));
+    ck_assert_int_eq(close(signature_fd), 0);
+    signature_fd = -1;
+    ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    status = cl_scanmap_ex2(map, NULL, &verdict, &last_alert, &scanned,
+                            engine, &options, NULL, NULL, NULL, NULL,
+                            NULL, NULL, &report);
+    ck_assert_int_eq(status, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Small.Raw.Match.UNOFFICIAL");
+    ck_assert_ptr_nonnull(report);
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
+    free(signature_path);
+}
+END_TEST
+
 static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
@@ -24835,6 +24884,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_scan_report_sticky_incomplete_status_is_nonclean);
     tcase_add_test(tc_cl, test_scan_report_post_scan_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_scan_report_merge_preserves_detection_and_peaks);
+    tcase_add_test(tc_cl, test_raw_matching_inspects_nonempty_subfive_byte_input);
     tcase_add_test(tc_cl, test_descriptor_temporary_reservation_is_reported);
     tcase_add_test(tc_cl, test_scanfile_temporary_reservation_is_reported);
     tcase_add_test(tc_cl, test_scan_temporary_directory_failure_is_fail_visible);

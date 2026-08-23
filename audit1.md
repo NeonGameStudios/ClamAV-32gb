@@ -6142,3 +6142,15 @@ volume-descriptor sequence ended correctly. The walk now requires a complete
 termination. A focused empty-root regression covers the missing-terminator
 case; compiled ISO/Joliet corpus, sanitizer, and Sonic1 qualification remain
 open.
+
+## Raw matching of short non-empty layers — 2026-08-23
+
+The scanner had several historical five-byte fast paths that returned clean
+before the raw matcher ran: root `cl_scandesc_ex2()` inputs, descriptor-backed
+children, and nested fmap views. That violated the release contract for a
+non-empty layer and could skip a valid short raw signature. The fast paths now
+only bypass the matcher for an actually empty input; one-byte and other
+sub-five-byte layers follow the normal raw-matching path. A focused one-byte
+signature regression covers the public fmap API, and source guards prevent the
+old shortcuts from returning. Full front-end and production-signature
+qualification remain open.

@@ -6555,9 +6555,9 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
         goto early_ret;
     }
 
-    if (ctx->fmap->len <= 5) {
+    if (ctx->fmap->len == 0) {
         status = CL_SUCCESS;
-        cli_dbgmsg("cli_magic_scan: File is too small (%zu bytes), ignoring.\n", ctx->fmap->len);
+        cli_dbgmsg("cli_magic_scan: Empty file has no bytes to match.\n");
         goto early_ret;
     }
 
@@ -7592,8 +7592,8 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     if (status != CL_SUCCESS)
         goto done;
 
-    if (sb.st_size <= 5) {
-        cli_dbgmsg("cli_magic_scan_desc_type: Small data (%u bytes)\n", (unsigned int)sb.st_size);
+    if (sb.st_size == 0) {
+        cli_dbgmsg("cli_magic_scan_desc_type: Empty data has no bytes to match\n");
         status = CL_SUCCESS;
         goto done;
     }
@@ -7685,8 +7685,8 @@ static cl_error_t magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, siz
     cli_dbgmsg("magic_scan_nested_fmap_type: [0, +%zu), [%zu, +%zu)\n",
                map->len, offset, length);
 
-    if (length <= 5) {
-        cli_dbgmsg("magic_scan_nested_fmap_type: Small data (%zu bytes)\n", length);
+    if (length == 0) {
+        cli_dbgmsg("magic_scan_nested_fmap_type: Empty data has no bytes to match\n");
         goto done;
     }
 
@@ -7746,8 +7746,8 @@ cl_error_t cli_magic_scan_nested_fmap_type(cl_fmap_t *map, size_t offset, size_t
     if (ret != CL_SUCCESS)
         return ret;
 
-    if (length <= 5) {
-        cli_dbgmsg("cli_magic_scan_nested_fmap_type: Small data (%zu bytes)\n", length);
+    if (length == 0) {
+        cli_dbgmsg("cli_magic_scan_nested_fmap_type: Empty data has no bytes to match\n");
         return CL_SUCCESS;
     }
 
@@ -8628,8 +8628,8 @@ cl_error_t cli_scandesc_ex2_with_temporary_bytes(
         goto done;
     }
 
-    if (sb.st_size <= 5) {
-        cli_dbgmsg("cl_scandesc_callback: File too small (" STDu64 " bytes), ignoring\n", (uint64_t)sb.st_size);
+    if (sb.st_size == 0) {
+        cli_dbgmsg("cl_scandesc_callback: Empty file has no bytes to match\n");
         status = CL_SUCCESS;
         goto done;
     }
