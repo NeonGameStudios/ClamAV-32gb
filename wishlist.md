@@ -1569,4 +1569,11 @@ corpus, and Sonic1 qualification as release gates.
 - Preflight the NSIS 0x1c-byte decoder header, preserving `CL_EPARSE` for a
   truncated header and `CL_EREAD` with sticky incomplete state for a fully
   in-range fmap callback failure; retain compiled scanner, sanitizer,
-  production NSIS corpus, and Sonic1 qualification as release gates.
+production NSIS corpus, and Sonic1 qualification as release gates.
+
+## InstallShield MSI fixed-header range classification — 2026-08-23
+
+- Preflight the InstallShield MSI 0x20-byte control header, preserving
+  `CL_EPARSE` for truncation and `CL_EREAD` with sticky incomplete state for a
+  fully in-range fmap callback failure; retain compiled scanner, sanitizer,
+  production InstallShield corpus, and Sonic1 qualification as release gates.

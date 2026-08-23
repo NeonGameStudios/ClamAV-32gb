@@ -5593,3 +5593,12 @@ fully in-range callback failure remains `CL_EREAD` with an explicit incomplete
 reason. Focused `cli_scannulsft` coverage asserts both classes and the
 non-cacheable state. Compiled scanner, sanitizer, production NSIS corpus, and
 Sonic1 qualification remain open.
+
+## InstallShield MSI fixed-header range classification — 2026-08-23
+
+The direct InstallShield MSI scanner now preflights its 0x20-byte control
+header before dereferencing it. A genuinely short header remains `CL_EPARSE`,
+while a fully in-range fmap callback failure remains `CL_EREAD` with an
+explicit incomplete reason. Existing MSI fault-injection coverage now asserts
+both outcomes and non-cacheability. Compiled scanner, sanitizer, production
+InstallShield corpus, and Sonic1 qualification remain open.

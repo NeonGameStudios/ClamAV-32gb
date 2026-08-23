@@ -229,10 +229,14 @@ cl_error_t cli_scanishield_msi(cli_ctx *ctx, off_t off)
     map = ctx->fmap;
 
     cli_dbgmsg("in ishield-msi\n");
-    if (!(buf = fmap_need_off_once(map, off, 0x20))) {
-        cli_dbgmsg("ishield-msi: short read for header\n");
+    if (off < 0 || (uint64_t)off > map->len || map->len - (size_t)off < 0x20) {
         cli_mark_scan_incomplete(ctx, "InstallShield MSI header is truncated");
         return CL_EPARSE;
+    }
+    if (!(buf = fmap_need_off_once(map, off, 0x20))) {
+        cli_dbgmsg("ishield-msi: read failure for header\n");
+        cli_mark_scan_incomplete(ctx, "InstallShield MSI header could not be read completely");
+        return CL_EREAD;
     }
 
     off += 0x20;

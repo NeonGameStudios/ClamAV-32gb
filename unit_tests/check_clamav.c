@@ -17480,6 +17480,15 @@ static void ishield_test_write_u64(uint8_t *dst, uint64_t value)
         dst[i] = (uint8_t)(value >> (8U * i));
 }
 
+static const void *ishield_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
 START_TEST(test_ishield_msi_partial_limit_and_decode_failures_are_visible)
 {
     enum {
@@ -17506,6 +17515,32 @@ START_TEST(test_ishield_msi_partial_limit_and_decode_failures_are_visible)
     ctx.this_layer_tmpdir   = tmpdir;
     ctx.recursion_stack     = &layer;
     ctx.recursion_stack_size = 1;
+
+    map = cl_fmap_open_memory(data, ISHIELD_TEST_HEADER_SIZE - 1U);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap   = map;
+    layer.fmap = map;
+    ret        = cli_scanishield_msi(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI header is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(data, ISHIELD_TEST_HEADER_SIZE);
+    ck_assert_ptr_nonnull(map);
+    map->need = ishield_header_read_failure;
+    ctx.fmap  = map;
+    layer.fmap = map;
+    ctx.scan_incomplete    = false;
+    ctx.scan_incomplete_reason = NULL;
+    map->dont_cache_flag   = false;
+    ret                    = cli_scanishield_msi(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "InstallShield MSI header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
 
     data[8] = 1;
     map     = cl_fmap_open_memory(data, ISHIELD_TEST_HEADER_SIZE);

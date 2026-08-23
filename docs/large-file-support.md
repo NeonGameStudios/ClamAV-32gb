@@ -5851,3 +5851,11 @@ NSIS now distinguishes a genuinely truncated 0x1c-byte decoder header
 member-table admission. The focused `cli_scannulsft` regression covers both
 outcomes; compiled NSIS corpus, sanitizer, and Sonic1 qualification remain
 release gates.
+
+## InstallShield MSI fixed-header range classification — 2026-08-23
+
+The direct InstallShield MSI scanner now distinguishes a short 0x20-byte
+control header (`CL_EPARSE`) from an in-range fmap callback failure
+(`CL_EREAD`) before reading metadata. Existing MSI fault-injection coverage
+asserts both outcomes; compiled InstallShield corpus, sanitizer, and Sonic1
+qualification remain release gates.
