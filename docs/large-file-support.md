@@ -5836,3 +5836,10 @@ payloads remain ordinary non-matches, while fully in-range fmap callback
 failures remain `CL_EREAD` with explicit incomplete state instead of being
 silently ignored. Compiled JPEG corpus, sanitizer, and Sonic1 qualification
 remain release gates.
+
+## MSEXPAND fixed-header range classification — 2026-08-23
+
+MSEXPAND now distinguishes a genuinely short packed header (`CL_EPARSE`) from
+an in-range fmap callback failure (`CL_EREAD`) before decoder admission. The
+focused direct-parser regression covers both outcomes; compiled SZDD corpus,
+sanitizer, and Sonic1 qualification remain release gates.

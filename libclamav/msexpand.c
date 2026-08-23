@@ -132,6 +132,10 @@ cl_error_t cli_msexpand(cli_ctx *ctx, int ofd, uint64_t *temporary_reserved)
     if (status != CL_SUCCESS)
         return status;
 
+    if (map->len < sizeof(*hdr)) {
+        cli_mark_scan_incomplete(ctx, "MSEXPAND header is truncated");
+        return CL_EPARSE;
+    }
     if (!(hdr = fmap_need_off_once(map, 0, sizeof(*hdr)))) {
         cli_mark_scan_incomplete(ctx, "MSEXPAND header could not be read completely");
         return CL_EREAD;

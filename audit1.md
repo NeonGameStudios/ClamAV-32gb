@@ -5575,3 +5575,12 @@ and made non-cacheable instead of being silently treated as unfamiliar
 metadata. The focused APP0 regression covers the callback-failure boundary.
 Compiled scanner, sanitizer, production JPEG corpus, and Sonic1 qualification
 remain open.
+
+## MSEXPAND fixed-header range classification — 2026-08-23
+
+MSEXPAND now preflights its packed fixed header before invoking the fmap
+callback. A genuinely short SZDD header remains `CL_EPARSE`, while a fully
+in-range callback failure remains `CL_EREAD` with an explicit incomplete
+reason. Focused direct-parser coverage asserts both classes and the
+non-cacheable state. Compiled scanner, sanitizer, production SZDD corpus, and
+Sonic1 qualification remain open.

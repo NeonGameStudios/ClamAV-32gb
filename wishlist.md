@@ -1556,3 +1556,10 @@ production RIFF corpus, and Sonic1 qualification as release gates.
   preserving `CL_EREAD`, sticky incomplete state, and non-cacheability for
   fully in-range fmap callback failures; retain compiled scanner, sanitizer,
   production JPEG corpus, and Sonic1 qualification as release gates.
+
+## MSEXPAND fixed-header range classification — 2026-08-23
+
+- Preflight the packed MSEXPAND header, preserving `CL_EPARSE` for a short
+  SZDD header and `CL_EREAD` with sticky incomplete state for a fully in-range
+  fmap callback failure; retain compiled scanner, sanitizer, production SZDD
+  corpus, and Sonic1 qualification as release gates.

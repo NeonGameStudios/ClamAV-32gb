@@ -10111,6 +10111,53 @@ START_TEST(test_ole2_member_limit_is_fail_visible)
 }
 END_TEST
 
+static const void *msexpand_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
+START_TEST(test_msexpand_header_range_classes_are_fail_visible)
+{
+    static const uint8_t truncated_data[sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint16_t) - 1] = {0};
+    static const uint8_t readable_data[14] = {0};
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint64_t temporary_reserved;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    map = cl_fmap_open_memory(truncated_data, sizeof(truncated_data));
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap            = map;
+    temporary_reserved = 0;
+    ck_assert_int_eq(cli_msexpand(&ctx, -1, &temporary_reserved), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSEXPAND header is truncated");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    map        = cl_fmap_open_memory(readable_data, sizeof(readable_data));
+    ck_assert_ptr_nonnull(map);
+    map->need  = msexpand_header_read_failure;
+    ctx.fmap   = map;
+    temporary_reserved = 0;
+    ck_assert_int_eq(cli_msexpand(&ctx, -1, &temporary_reserved), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSEXPAND header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+END_TEST
+
 START_TEST(test_msexpand_truncated_output_is_fail_visible)
 {
     uint8_t data[14] = {
@@ -22635,6 +22682,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_hwpole2_prefix_read_failure_is_fail_visible);
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
+    tcase_add_test(tc_cl, test_msexpand_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_truncated_output_is_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_fileblob_cleanup_failures_are_fail_visible);
