@@ -5859,3 +5859,12 @@ control header (`CL_EPARSE`) from an in-range fmap callback failure
 (`CL_EREAD`) before reading metadata. Existing MSI fault-injection coverage
 asserts both outcomes; compiled InstallShield corpus, sanitizer, and Sonic1
 qualification remain release gates.
+
+## ZIP64 extra-field read classification — 2026-08-23
+
+ZIP local and central ZIP64 extra-field reads now preserve parse/format status
+for genuinely short or malformed metadata and return `CL_EREAD` for fully
+in-range fmap callback failures. Both paths mark the scan incomplete and
+non-cacheable; focused local-only and central-directory fault-injection cases
+cover the distinction. Compiled ZIP corpus, sanitizer, and Sonic1
+qualification remain release gates.

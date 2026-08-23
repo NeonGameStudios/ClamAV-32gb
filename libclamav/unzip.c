@@ -1675,6 +1675,11 @@ static cl_error_t parse_local_file_header(
                     loff + SIZEOF_LOCAL_HEADER + LOCAL_HEADER_flen,
                     LOCAL_HEADER_elen);
 
+                if (LOCAL_HEADER_elen && !extra) {
+                    cli_mark_scan_incomplete(ctx, "ZIP64 local header extra field could not be read completely");
+                    status = CL_EREAD;
+                    goto done;
+                }
                 if (!zip64_read_catalogue_values(ctx, extra, LOCAL_HEADER_elen,
                                                  (uint32_t)local_csize,
                                                  (uint32_t)local_usize,
@@ -1718,6 +1723,11 @@ static cl_error_t parse_local_file_header(
             }
             extra = fmap_need_off_once(ctx->fmap, loff + SIZEOF_LOCAL_HEADER + LOCAL_HEADER_flen, LOCAL_HEADER_elen);
             /* The local header has no catalogue offset field to resolve. */
+            if (LOCAL_HEADER_elen && !extra) {
+                cli_mark_scan_incomplete(ctx, "ZIP64 local header extra field could not be read completely");
+                status = CL_EREAD;
+                goto done;
+            }
             if (!zip64_read_catalogue_values(ctx, extra, LOCAL_HEADER_elen, csize, usize, 0, &local_values)) {
                 cli_dbgmsg("cli_unzip: local header - invalid ZIP64 extra field\n");
                 cli_mark_scan_incomplete(ctx, "ZIP64 local header has an invalid extended-information field");
@@ -2117,6 +2127,11 @@ static cl_error_t parse_central_directory_file_header(
         goto done;
     }
     central_extra = fmap_need_off_once(ctx->fmap, index, CENTRAL_HEADER_extra_len);
+    if (CENTRAL_HEADER_extra_len && !central_extra) {
+        cli_mark_scan_incomplete(ctx, "ZIP64 central header extra field could not be read completely");
+        status = CL_EREAD;
+        goto done;
+    }
     if (!zip64_read_catalogue_values(ctx,
                                      central_extra,
                                      CENTRAL_HEADER_extra_len,

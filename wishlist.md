@@ -1577,3 +1577,11 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   `CL_EPARSE` for truncation and `CL_EREAD` with sticky incomplete state for a
   fully in-range fmap callback failure; retain compiled scanner, sanitizer,
   production InstallShield corpus, and Sonic1 qualification as release gates.
+
+## ZIP64 extra-field read classification — 2026-08-23
+
+- Distinguish malformed or short ZIP64 local/central extra fields from fully
+  in-range fmap callback failures, preserving `CL_EPARSE`/`CL_EFORMAT` for the
+  former and `CL_EREAD` with sticky incomplete state for the latter; retain
+  compiled scanner, sanitizer, production ZIP corpus, and Sonic1 qualification
+  as release gates.
