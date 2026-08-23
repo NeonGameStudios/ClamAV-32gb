@@ -75,6 +75,7 @@ contains libclamav/cache.c 'status = fmap_get_hash_ctx(ctx->fmap, &sha2_256, CLI
 contains libclamav/scanners.c 'ret = fmap_get_hash_ctx(ctx->fmap, &hash, hash_type, ctx);'
 contains libclamav/scanners.c 'ret           = fmap_get_hash_ctx(map, &hash, requested_hash_type, &ctx);'
 contains unit_tests/check_matchers.c 'test_logical_root_status_merge_preserves_incomplete_result'
+contains unit_tests/check_matchers.c 'test_logical_unknown_type_is_fail_visible'
 contains libclamav/matcher.c 'yara_normalize_execution_status'
 contains libclamav/matcher.c 'ERROR_EXEC_STACK_OVERFLOW is 25, which collides with CL_EMAXFILES'
 contains libclamav/matcher.c 'YARA matcher execution failed'

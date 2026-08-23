@@ -5145,9 +5145,9 @@ collapsing them into generic parse errors; the existing failure mapping still
 marks the scan incomplete and prevents cache publication.
 
 The source guards and non-clang regression gates remain the available local
-evidence. Focused compiled unknown-type and bundled-resource-status tests,
-full logical/YARA qualification, sanitizer runs, and Sonic1 qualification
-remain open.
+evidence. A focused `test_logical_unknown_type_is_fail_visible` regression is
+registered; bundled-resource-status tests, full logical/YARA qualification,
+sanitizer runs, and Sonic1 qualification remain open.
 
 ## Bytecode loader table-growth boundaries — 2026-08-22
 

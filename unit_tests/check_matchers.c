@@ -894,6 +894,43 @@ START_TEST(test_logical_root_status_merge_preserves_incomplete_result)
 }
 END_TEST
 
+START_TEST(test_logical_unknown_type_is_fail_visible)
+{
+    struct cli_ac_lsig lsig;
+    struct cli_ac_lsig *lsigtable[1];
+    struct cli_matcher root;
+    struct cli_ac_data mdata;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&lsig, 0, sizeof(lsig));
+    memset(&root, 0, sizeof(root));
+    lsig.id             = 0;
+    lsig.type           = (lsig_type_t)99;
+    lsig.virname        = (char *)"UnknownLogicalType";
+    lsigtable[0]        = &lsig;
+    root.ac_lsigs       = 1;
+    root.ac_lsigtable   = lsigtable;
+
+    ck_assert_int_eq(cli_ac_initdata(&mdata, 0, 1, 0, CLI_DEFAULT_AC_TRACKLEN), CL_SUCCESS);
+    map = cl_fmap_open_memory((const unsigned char *)"x", 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.fmap                    = map;
+    ctx.recursion_stack[0].fmap = map;
+
+    ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "logical signature type is unsupported");
+
+    cli_ac_freedata(&mdata);
+    cl_fmap_close(map);
+    ctx.fmap                    = &thefmap;
+    ctx.recursion_stack[0].fmap = &thefmap;
+}
+END_TEST
+
 START_TEST(test_logical_failure_does_not_suppress_later_detection)
 {
     static char logic[] = "0";
@@ -1684,6 +1721,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_bytecode_offset_compatibility);
     tcase_add_test(tc_matchers, test_logical_bytecode_missing_entry_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_root_status_merge_preserves_incomplete_result);
+    tcase_add_test(tc_matchers, test_logical_unknown_type_is_fail_visible);
     tcase_add_test(tc_matchers, test_logical_failure_does_not_suppress_later_detection);
     tcase_add_test(tc_matchers, test_logical_bytecode_v1_large_file_is_fail_visible);
     tcase_add_test(tc_matchers, test_yara_uint32_read_accepts_exact_tail);
