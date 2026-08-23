@@ -122,8 +122,13 @@ static int onas_send_stream(CURL *curl, const char *filename, int fd, int64_t ti
         goto strm_out;
     }
 
-    if (0 != fd) {
-        (void)lseek(fd, 0, SEEK_SET);
+    if (S_ISREG(statbuf.st_mode) && 0 != fd && lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+        logg(LOGG_ERROR, "%s: Failed to rewind the on-access stream input. ERROR\n",
+             filename ? filename : "FD");
+        if (ret_code)
+            *ret_code = CL_ESEEK;
+        ret = -1;
+        goto strm_out;
     }
 
     if (onas_sendln(curl, zINSTREAM, sizeof(zINSTREAM), timeout, ret_code)) {

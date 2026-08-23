@@ -5238,3 +5238,12 @@ descriptor with `fstat`, and rejects an over-limit regular file before any
 protocol bytes are sent, preserving `CL_EMAXSIZE` or `CL_ESTAT`. The normal
 scan-thread preflight remains in place; compiled on-access fault-injection,
 sanitizer, and Sonic1 qualification remain open.
+
+## On-access stream rewind failure — 2026-08-22
+
+The regular-file on-access stream path ignored a failed rewind and could send
+the daemon bytes from a stale descriptor position. It now checks `lseek` before
+emitting `INSTREAMREPORT`, returns `CL_ESEEK`, and sends no command when the
+input cannot be rewound; non-seekable non-regular streams retain their prior
+behavior. Compiled read/seek fault injection, sanitizer, and Sonic1
+qualification remain open.

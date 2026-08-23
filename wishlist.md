@@ -1295,3 +1295,11 @@ sending `FILDESREPORT`. Direct-context callers therefore cannot bypass the
 scan-thread preflight; stat and over-limit failures preserve non-clean status
 without sending a partial request. Compiled on-access fault-injection and
 Sonic1 qualification remain open.
+
+## On-access stream rewind failure — 2026-08-22
+
+Regular-file on-access streams now require a successful rewind before the
+`INSTREAMREPORT` command is sent. A failed `lseek` returns `CL_ESEEK` without
+submitting a scan for a stale descriptor position; non-seekable non-regular
+inputs retain their existing streaming behavior. Compiled read/seek fault
+injection and Sonic1 qualification remain open.

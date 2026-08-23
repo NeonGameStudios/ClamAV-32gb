@@ -5810,3 +5810,11 @@ over-limit regular file before sending `FILDESREPORT`. The existing scan-thread
 preflight remains, while this protocol-layer check closes the direct-caller
 bypass and preserves explicit `CL_EMAXSIZE`/`CL_ESTAT` results. Compiled
 on-access fault-injection, sanitizer, and Sonic1 qualification remain open.
+
+## On-access stream rewind failure — 2026-08-22
+
+Regular-file on-access streams now require a successful rewind before sending
+`INSTREAMREPORT`. A failed `lseek` returns `CL_ESEEK` and sends no command,
+preventing a stale descriptor position from producing a partial or unrelated
+scan; non-seekable non-regular inputs retain their existing behavior. Compiled
+read/seek fault injection, sanitizer, and Sonic1 qualification remain open.
