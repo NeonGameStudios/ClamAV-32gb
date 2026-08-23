@@ -6076,3 +6076,12 @@ and normalized output; `cli_filecopy()` also propagates source-read,
 short/zero-byte-write, and close failures instead of publishing a truncated
 copy as successful. Compiled zero-progress fault injection, sanitizer, and
 Sonic1 qualification remain release gates.
+
+## clamd INSTREAM zero-progress staging — 2026-08-23
+
+The active clamd INSTREAM receive path now requires `cli_writen()` to return
+the exact chunk length. A zero-byte or short temporary-file write therefore
+cannot be acknowledged as a successful chunk and later scanned as a complete
+file; the request is reported as a write failure and cleaned up instead.
+Compiled daemon fault injection, sanitizer, and Sonic1 qualification remain
+release gates.

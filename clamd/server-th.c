@@ -1030,7 +1030,7 @@ static int handle_stream(client_conn_t *conn, struct fd_buf *buf, const struct o
         }
         cmdlen = clamd_stream_chunk_length(pos, buf->off, buf->chunksize);
         buf->chunksize -= cmdlen;
-        if (cli_writen(buf->dumpfd, buf->buffer + pos, cmdlen) == (size_t)-1) {
+        if (cli_writen(buf->dumpfd, buf->buffer + pos, cmdlen) != cmdlen) {
             if (buf->structured_report)
                 (void)conn_reply_scan_report(conn, CL_EWRITE, 0);
             else

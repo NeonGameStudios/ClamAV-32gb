@@ -2012,3 +2012,9 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   propagates source-read, short/zero-byte-write, and close failures; add
   compiled zero-progress/fault-injection coverage for all large
   temporary-output paths.
+
+## clamd INSTREAM zero-progress staging — 2026-08-23
+
+- Require the active INSTREAM receiver to accept a chunk only when the shared
+  writer returns its exact length; add compiled daemon zero-progress/fault
+  injection and Sonic1 qualification for partial staged streams.

@@ -6293,3 +6293,13 @@ partial/zero progress cannot be scanned or normalized as complete. The shared
 and close failures instead of publishing a truncated copy as successful.
 Compiled zero-progress fault injection, sanitizer, and Sonic1 qualification
 remain open.
+
+## clamd INSTREAM zero-progress staging — 2026-08-23
+
+The active clamd INSTREAM receive path previously treated only
+`cli_writen() == (size_t)-1` as a temporary-file failure. After the shared
+writer correctly returns a completed prefix for zero-byte progress, that check
+could accept a partial chunk and later dispatch an incomplete staged file. The
+caller now requires the exact chunk length and tears down the request on any
+short or failed write. Compiled daemon fault injection, sanitizer, and Sonic1
+qualification remain open.

@@ -6493,7 +6493,6 @@ native-width-integer	clamd/scanner.h	71	int scan_pathchk(const char *path, struc
 native-width-integer	clamd/scanner.h	72	void hash_callback(int fd, unsigned long long size, const char *md5, const char *virname, void *ctx);
 native-width-integer	clamd/scanner.h	74	void clamd_virus_found_cb(int fd, const char *virname, void *context);
 native-width-integer	clamd/server-th.c	102	static int syncpipe_wake_recv_w = -1;
-native-width-integer	clamd/server-th.c	1033	        if (cli_writen(buf->dumpfd, buf->buffer + pos, cmdlen) == (size_t)-1) {
 native-width-integer	clamd/server-th.c	1046	        logg(LOGG_DEBUG_NV, "Processed %llu bytes of chunkdata, pos %llu\n", (long long unsigned)cmdlen, (long long unsigned)pos);
 native-width-integer	clamd/server-th.c	1060	int recvloop(int *socketds, unsigned nsockets, struct cl_engine *engine, unsigned int dboptions, const struct optstruct *opts)
 native-width-integer	clamd/server-th.c	1062	    int max_threads, max_queue, readtimeout, ret = 0;
@@ -21362,7 +21361,6 @@ offset-size-arithmetic	clamd/server-th.c	1025	                memmove(buf->buffe
 offset-size-arithmetic	clamd/server-th.c	1026	                buf->off -= pos;
 offset-size-arithmetic	clamd/server-th.c	1031	        cmdlen = clamd_stream_chunk_length(pos, buf->off, buf->chunksize);
 offset-size-arithmetic	clamd/server-th.c	1032	        buf->chunksize -= cmdlen;
-offset-size-arithmetic	clamd/server-th.c	1033	        if (cli_writen(buf->dumpfd, buf->buffer + pos, cmdlen) == (size_t)-1) {
 offset-size-arithmetic	clamd/server-th.c	1047	        pos += cmdlen;
 offset-size-arithmetic	clamd/server-th.c	1048	        if (pos == buf->off) {
 offset-size-arithmetic	clamd/server-th.c	1167	            logg(LOGG_WARNING, "System limit for file size is lower than engine->maxfilesize\n");
