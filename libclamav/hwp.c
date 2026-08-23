@@ -520,6 +520,16 @@ struct hwp3_docinfo {
 
 // Document Summary - (1008 total bytes)
 #define HWP3_DOCSUMMARY_SIZE 1008
+
+static size_t hwp3_readn(fmap_t *map, void *dst, size_t at, size_t len)
+{
+    /* fmap_readn() truncates a request that crosses EOF. Preflight fixed
+     * table headers so only a fully in-range callback failure is CL_EREAD. */
+    if (map == NULL || at > map->len || len > map->len - at)
+        return 0;
+    return fmap_readn(map, dst, at, len);
+}
+
 struct hwp3_docsummary_entry {
     size_t offset;
     const char *name;
@@ -1866,6 +1876,7 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
     cl_error_t ret = CL_SUCCESS;
     fmap_t *map, *dmap;
     size_t offset, start, new_offset;
+    size_t nread;
     int i, p = 0, last = 0;
     uint16_t nstyles;
     json_object *fonts = NULL;
@@ -1917,10 +1928,16 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
             return CL_ETIMEOUT;
         }
 
-        if (fmap_readn(map, &nfonts, offset, sizeof(nfonts)) != sizeof(nfonts)) {
+        nread = hwp3_readn(map, &nfonts, offset, sizeof(nfonts));
+        if (nread != sizeof(nfonts)) {
             if (dmap)
                 fmap_free(dmap);
-            return CL_EREAD;
+            if (nread == (size_t)-1) {
+                cli_mark_scan_incomplete(ctx, "HWP3 font-table header could not be read completely");
+                return CL_EREAD;
+            }
+            cli_mark_scan_incomplete(ctx, "HWP3 font-table header is truncated");
+            return CL_EPARSE;
         }
         nfonts = le16_to_host(nfonts);
 
@@ -1939,10 +1956,16 @@ static cl_error_t hwp3_cb(void *cbdata, int fd, const char *filepath, cli_ctx *c
     }
 
     /* Styles - 2 + (n x 238) bytes where n is the first 2 bytes of the section */
-    if (fmap_readn(map, &nstyles, offset, sizeof(nstyles)) != sizeof(nstyles)) {
+    nread = hwp3_readn(map, &nstyles, offset, sizeof(nstyles));
+    if (nread != sizeof(nstyles)) {
         if (dmap)
             fmap_free(dmap);
-        return CL_EREAD;
+        if (nread == (size_t)-1) {
+            cli_mark_scan_incomplete(ctx, "HWP3 style-table header could not be read completely");
+            return CL_EREAD;
+        }
+        cli_mark_scan_incomplete(ctx, "HWP3 style-table header is truncated");
+        return CL_EPARSE;
     }
     nstyles = le16_to_host(nstyles);
 

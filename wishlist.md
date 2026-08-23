@@ -1380,3 +1380,11 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   preserving parse results for one-byte candidates and `CL_EREAD` for fully
   in-range signature callback failures; retain compiled scanner, sanitizer,
   production ARJ corpus, and Sonic1 qualification as release gates.
+
+## HWP3 content-table truncation classification — 2026-08-22
+
+- Preflight HWP3 content-stream font and style table count reads before
+  callback admission, preserving parse results for one-byte prefixes and
+  `CL_EREAD` for fully in-range callback failures; retain compiled scanner,
+  sanitizer, production HWP3 corpus, and Sonic1 qualification as release
+  gates.

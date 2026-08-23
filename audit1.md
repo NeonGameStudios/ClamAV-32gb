@@ -5347,3 +5347,12 @@ available prefix; a fully in-range signature callback failure remains
 `CL_EREAD`. A focused header-check regression covers the boundary. Compiled
 scanner, sanitizer, production ARJ corpus, and Sonic1 qualification remain
 open.
+
+## HWP3 content-table truncation classification — 2026-08-22
+
+HWP3 content-stream font and style table count reads now preflight their
+complete two-byte ranges before invoking the fmap callback. A one-byte table
+prefix remains a parse/incomplete result even when an injected callback would
+fail on that prefix; a fully in-range callback failure remains `CL_EREAD`.
+A focused font-table regression covers the boundary. Compiled scanner,
+sanitizer, production HWP3 corpus, and Sonic1 qualification remain open.
