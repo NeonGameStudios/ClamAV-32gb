@@ -1645,6 +1645,7 @@ static inline cl_error_t parsehwp3_paragraph(cli_ctx *ctx, fmap_t *map, int p, u
 static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t *offset, int *last)
 {
     cl_error_t ret = CL_SUCCESS;
+    cl_error_t read_status;
 
     uint32_t infoid, infolen;
     fmap_t *map = (dmap ? dmap : ctx->fmap);
@@ -1683,10 +1684,10 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         }
     }
 
-    if (fmap_readn(map, &infoid, *offset, sizeof(infoid)) != sizeof(infoid)) {
-        cli_errmsg("HWP3.x: Failed to read information block id @ %zu\n", *offset);
-        return CL_EREAD;
-    }
+    read_status = hwp3_read_fixed(ctx, map, &infoid, *offset, sizeof(infoid),
+                                  "HWP3 information-block header could not be read completely");
+    if (read_status != CL_SUCCESS)
+        return read_status;
     *offset += sizeof(infoid);
     infoid = le32_to_host(infoid);
 
@@ -1713,10 +1714,10 @@ static inline cl_error_t parsehwp3_infoblk_1(cli_ctx *ctx, fmap_t *dmap, size_t 
         return CL_SUCCESS;
     }
 
-    if (fmap_readn(map, &infolen, *offset, sizeof(infolen)) != sizeof(infolen)) {
-        cli_errmsg("HWP3.x: Failed to read information block len @ %zu\n", *offset);
-        return CL_EREAD;
-    }
+    read_status = hwp3_read_fixed(ctx, map, &infolen, *offset, sizeof(infolen),
+                                  "HWP3 information-block header could not be read completely");
+    if (read_status != CL_SUCCESS)
+        return read_status;
     *offset += sizeof(infolen);
     infolen = le32_to_host(infolen);
 

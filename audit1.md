@@ -5366,3 +5366,12 @@ parse/incomplete result even when an injected callback would fail on that
 prefix; fully in-range callback failures remain `CL_EREAD`. A focused
 paragraph-header regression covers the boundary. Compiled scanner, sanitizer,
 production HWP3 corpus, and Sonic1 qualification remain open.
+
+## HWP3 information-block header truncation classification — 2026-08-22
+
+HWP3 information-block ID and length reads now preflight their complete
+four-byte ranges before invoking the fmap callback. A short information-block
+header remains a parse/incomplete result even when an injected callback would
+fail on its available prefix; a fully in-range callback failure remains
+`CL_EREAD`. Focused regressions cover both outcomes. Compiled scanner,
+sanitizer, production HWP3 corpus, and Sonic1 qualification remain open.

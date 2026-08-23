@@ -12991,6 +12991,18 @@ static const void *hwp3_paragraph_header_read_failure(fmap_t *map, size_t at, si
     return (const uint8_t *)map->data + at;
 }
 
+static size_t hwp3_information_header_read_failure_offset = SIZE_MAX;
+
+static const void *hwp3_information_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == hwp3_information_header_read_failure_offset)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 START_TEST(test_hwp3_parser_errors_are_fail_visible)
 {
     uint8_t data[1000] = {0};
@@ -13071,6 +13083,60 @@ START_TEST(test_hwp3_truncated_paragraph_header_is_parse_error)
     ck_assert(map->dont_cache_flag);
 
     hwp3_paragraph_header_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_hwp3_truncated_information_header_is_parse_error)
+{
+    enum { HWP3_INFO_OFFSET = 30 + 128 + 1008 + (7 * 2) + 2 + 43 };
+    uint8_t data[HWP3_INFO_OFFSET + 2] = {0};
+    cli_ctx ctx;
+    struct cl_scan_options options;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    hwp3_information_header_read_failure_offset = HWP3_INFO_OFFSET + 1U;
+    map->need                                       = hwp3_information_header_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
+    ctx.fmap   = map;
+    ctx.options = &options;
+
+    ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP3 information-block header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    hwp3_information_header_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_hwp3_information_header_read_failure_is_fail_visible)
+{
+    enum { HWP3_INFO_OFFSET = 30 + 128 + 1008 + (7 * 2) + 2 + 43 };
+    uint8_t data[HWP3_INFO_OFFSET + 4] = {0};
+    cli_ctx ctx;
+    struct cl_scan_options options;
+    fmap_t *map;
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    hwp3_information_header_read_failure_offset = HWP3_INFO_OFFSET;
+    map->need                                       = hwp3_information_header_read_failure;
+    memset(&ctx, 0, sizeof(ctx));
+    memset(&options, 0, sizeof(options));
+    ctx.fmap   = map;
+    ctx.options = &options;
+
+    ck_assert_int_eq(cli_scanhwp3(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HWP3 information-block header could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    hwp3_information_header_read_failure_offset = SIZE_MAX;
     cl_fmap_close(map);
 }
 END_TEST
@@ -21570,6 +21636,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_parser_errors_are_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_font_table_is_parse_error);
     tcase_add_test(tc_hwp3, test_hwp3_truncated_paragraph_header_is_parse_error);
+    tcase_add_test(tc_hwp3, test_hwp3_truncated_information_header_is_parse_error);
+    tcase_add_test(tc_hwp3, test_hwp3_information_header_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_time_limit_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_information_block_length_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_document_info_read_failure_is_fail_visible);

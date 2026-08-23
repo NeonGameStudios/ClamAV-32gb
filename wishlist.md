@@ -1395,3 +1395,10 @@ sanitizer, production-corpus, and Sonic1 qualification as release gates.
   preserving parse results for short character-count prefixes and `CL_EREAD`
   for fully in-range callback failures; retain compiled scanner, sanitizer,
   production HWP3 corpus, and Sonic1 qualification as release gates.
+
+## HWP3 information-block header truncation classification — 2026-08-22
+
+- Preflight HWP3 information-block ID and length reads before callback
+  admission, preserving parse results for short headers and `CL_EREAD` for
+  fully in-range callback failures; retain compiled scanner, sanitizer,
+  production HWP3 corpus, and Sonic1 qualification as release gates.
