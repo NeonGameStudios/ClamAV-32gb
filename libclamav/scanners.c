@@ -4954,6 +4954,7 @@ static cl_error_t cli_rar_sfx_header_check(cli_ctx *ctx, size_t offset)
 static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_file_t *dettype)
 {
     cl_error_t ret = CL_SUCCESS, nret = CL_SUCCESS;
+    bool invalid_embedded_match = false;
     struct cli_matched_type *ftoffset = NULL, *fpt;
     unsigned int acmode               = (typercg == SCANRAW_TYPE_RECOGNITION_ONLY) ? AC_SCAN_FT : AC_SCAN_VIR;
 
@@ -5024,8 +5025,8 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                 cli_mark_scan_incomplete(ctx, "raw embedded-type match offset is outside the input map");
                 if (nret == CL_SUCCESS)
                     nret = CL_EPARSE;
-                fpt = fpt->next;
-                continue;
+                invalid_embedded_match = true;
+                break;
             }
 
             if ((fpt->offset > 0) &&
@@ -5637,7 +5638,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
             fpt = fpt->next;
         } // end while (fpt) loop
 
-        if (!((nret == CL_EMEM) || (ctx->abort_scan))) {
+        if (!((nret == CL_EMEM) || (ctx->abort_scan) || invalid_embedded_match)) {
             /*
              * Now run the other file type parsers that may rely on file type
              * recognition to determine the actual file type.

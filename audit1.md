@@ -6490,4 +6490,4 @@ Compiled HFS+ corpus, sanitizer, and Sonic1 qualification remain release gates.
 
 ## Embedded matcher-offset range admission — 2026-08-23
 
-The raw embedded-type dispatcher now rejects negative or out-of-map matcher offsets before any child-range subtraction, PE metadata bridge, or nested parser handoff. This keeps malformed internal coordinates from wrapping into a child fmap or being treated as a confirmed layer. Compiled embedded-candidate and production-SFX qualification remain release gates.
+The raw embedded-type dispatcher now rejects negative or out-of-map matcher offsets before any child-range subtraction, PE metadata bridge, or nested parser handoff. This keeps malformed internal coordinates from wrapping into a child fmap or being treated as a confirmed layer, and prevents a later type-parser pass from restoring a clean status. Compiled embedded-candidate and production-SFX qualification remain release gates.

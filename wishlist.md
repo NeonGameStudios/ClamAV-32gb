@@ -2127,5 +2127,6 @@ and Sonic1 qualification as release gates.
 ## Embedded matcher-offset range admission — 2026-08-23
 
 - Reject negative or out-of-map raw embedded-type matcher offsets before child
-  range subtraction or nested handoff; retain compiled embedded-candidate,
+  range subtraction or nested handoff, and preserve the incomplete result past
+  later type-parser dispatch; retain compiled embedded-candidate,
   sanitizer, production-SFX, and Sonic1 qualification as release gates.
