@@ -513,7 +513,7 @@ static const char *tagname(tag_id id)
 cl_error_t cli_scanswf(cli_ctx *ctx)
 {
     struct swf_file_hdr file_hdr;
-    fmap_t *map = ctx->fmap;
+    fmap_t *map;
     unsigned int bitpos, bitbuf, getbits_n, nbits, getword_1, getword_2, getdword_1, getdword_2;
     const char *pt;
     unsigned char get_c;
@@ -523,6 +523,16 @@ cl_error_t cli_scanswf(cli_ctx *ctx)
     cl_error_t read_status;
 
     cli_dbgmsg("in cli_scanswf()\n");
+
+    if (ctx == NULL) {
+        cli_dbgmsg("SWF: passed context was NULL\n");
+        return CL_EARG;
+    }
+    map = ctx->fmap;
+    if (map == NULL) {
+        cli_mark_scan_incomplete(ctx, "SWF input map is unavailable");
+        return CL_EPARSE;
+    }
 
     read_status = swf_checktimelimit(ctx, "SWF inspection reached the configured time limit");
     if (read_status != CL_SUCCESS)

@@ -6870,6 +6870,17 @@ START_TEST(test_swf_time_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanswf(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "SWF input map is unavailable");
+}
+END_TEST
+
 static size_t swf_read_failure_offset = SIZE_MAX;
 
 static const void *swf_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
@@ -26126,6 +26137,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_lzma_declared_input_size_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_time_limit_is_fail_visible);
+    tcase_add_test(tc_cl, test_swf_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_required_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_compressed_input_range_failure_is_truncation);
 #ifdef CLAMAV_TEST_JS_IO_WRAP

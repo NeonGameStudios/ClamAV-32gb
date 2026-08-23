@@ -6634,3 +6634,13 @@ library caller could therefore crash instead of receiving a fail-visible
 result. JPEG now rejects a missing map with an explicit incomplete parse, and
 a focused direct-entry regression is registered; compiled media corpus,
 sanitizer, and Sonic1 qualification remain release gates.
+
+## SWF missing-map admission — 2026-08-23
+
+The SWF direct parser initialized its fmap pointer from `ctx->fmap` before
+checking the caller's input. A direct library caller with no input map could
+therefore crash before the parser's existing truncation and decoder guards
+could run. `cli_scanswf()` now rejects a missing map as an explicit incomplete
+parse, while a null context remains an argument error. A focused direct-entry
+regression is registered; compiled SWF corpus, sanitizer, and Sonic1
+qualification remain release gates.
