@@ -5006,3 +5006,15 @@ dispatch failure cannot be reported or cached as complete.
 The source guards and non-clang regression gates remain the available local
 evidence. Compiled matcher allocation fault injection, production signature
 qualification, sanitizer runs, and Sonic1 qualification remain open.
+
+## HFS+ scan working-buffer allocation failures — 2026-08-22
+
+HFS+ volume-header allocation and catalog-node working-buffer allocation could
+return `CL_EMEM` without marking the required partition-layer inspection
+incomplete. Both active scan paths now record parser-specific incomplete
+reasons before returning; the existing metadata, read, deadline, and
+temporary-output paths remain unchanged.
+
+The source guards and non-clang regression gates remain the available local
+evidence. Compiled allocation fault injection, production HFS+ corpora,
+sanitizer runs, and Sonic1 qualification remain open.

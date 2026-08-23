@@ -391,6 +391,9 @@
   failures now mark required parser work incomplete before returning; compiled
   allocation-fault injection, production corpora, and Sonic1 qualification
   remain open.
+- HFS+ volume-header and catalog-node working-buffer allocation failures now
+  mark the required layer incomplete before returning `CL_EMEM`; add compiled
+  allocation fault-injection and full HFS+ corpus qualification.
 - HTML RFC2397, XDP, SIS, MSXML, OLE2, TAR, script-encoded HTML, PDF, TNEF,
   UUEncode, and mail temporary staging allocation/creation failures now mark
   required parser work incomplete before returning; compiled fault injection,

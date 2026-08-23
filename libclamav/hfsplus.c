@@ -154,6 +154,7 @@ static cl_error_t hfsplus_volumeheader(cli_ctx *ctx, hfsPlusVolumeHeader **heade
     volHeader = malloc(sizeof(hfsPlusVolumeHeader));
     if (!volHeader) {
         cli_errmsg("hfsplus_volumeheader: header malloc failed\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ volume header could not be allocated");
         return CL_EMEM;
     }
     *header = volHeader;
@@ -1093,6 +1094,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
         cli_dbgmsg("hfsplus_walk_catalog: failed to acquire node buffer, "
                    "size " STDu32 "\n",
                    nodeSize);
+        cli_mark_scan_incomplete(ctx, "HFS+ catalog node buffer could not be allocated");
         return CL_EMEM;
     }
 

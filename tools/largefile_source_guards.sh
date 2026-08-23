@@ -1017,6 +1017,8 @@ contains unit_tests/check_clamav.c 'test_udf_mismatched_file_lists_are_fail_visi
 contains unit_tests/check_clamav.c 'test_udf_declared_information_length_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_udf_allocation_descriptor_alignment_is_fail_visible'
 contains libclamav/hfsplus.c 'HFS+ volume header is incomplete'
+contains libclamav/hfsplus.c 'HFS+ volume header could not be allocated'
+contains libclamav/hfsplus.c 'HFS+ catalog node buffer could not be allocated'
 contains libclamav/hfsplus.c 'HFS+ file-tree header could not be read completely'
 contains libclamav/hfsplus.c 'HFS+ inspection ended before completion'
 contains libclamav/hfsplus.c 'HFS+ fork requires unsupported ExtentOverflow records'
