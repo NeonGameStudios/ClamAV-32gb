@@ -6002,11 +6002,12 @@ Sonic1 qualification remain release gates.
 ## TAR end-of-archive classification — 2026-08-23
 
 TAR traversal now requires two complete zero blocks for end-of-archive
-termination. Exact EOF after a member, a single zero block, or a partial marker
-returns `CL_EPARSE`, marks the layer incomplete, and prevents caching a clean
-result; callback failures while reading a marker remain `CL_EREAD`. Focused
-coverage exercises missing, single-block, and valid termination, while
-compiled TAR corpus, sanitizer, and Sonic1 qualification remain release gates.
+termination. Exact EOF after a member, a single zero block, a malformed marker,
+or a partial marker returns `CL_EPARSE`, marks the layer incomplete, and
+prevents caching a clean result; callback failures while reading a marker
+remain `CL_EREAD`. Focused coverage exercises missing, single-block, and valid
+termination, while compiled TAR corpus, sanitizer, and Sonic1 qualification
+remain release gates.
 
 ## NsPack bitched-entry read classification — 2026-08-23
 

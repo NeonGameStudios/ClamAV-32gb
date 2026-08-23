@@ -4977,8 +4977,8 @@ fixed-width-integer	libclamav/untar.c	102	    uint64_t checksum;
 fixed-width-integer	libclamav/untar.c	123	                                          bool scan, uint64_t temporary_reserved)
 fixed-width-integer	libclamav/untar.c	202	    uint64_t size_value = 0;
 fixed-width-integer	libclamav/untar.c	209	    uint64_t temporary_reserved = 0;
-fixed-width-integer	libclamav/untar.c	432	            ret = cli_scan_reserve_temporary(ctx, (uint64_t)size);
-fixed-width-integer	libclamav/untar.c	437	            temporary_reserved = (uint64_t)size;
+fixed-width-integer	libclamav/untar.c	436	            ret = cli_scan_reserve_temporary(ctx, (uint64_t)size);
+fixed-width-integer	libclamav/untar.c	441	            temporary_reserved = (uint64_t)size;
 fixed-width-integer	libclamav/untar.c	62	octal(const char *str, uint64_t *value)
 fixed-width-integer	libclamav/untar.c	64	    uint64_t ret = 0;
 fixed-width-integer	libclamav/untar.c	74	        uint64_t digit = (uint64_t)(*str - '0');
@@ -13802,11 +13802,11 @@ native-width-integer	libclamav/untar.c	228	        size_t nread;
 native-width-integer	libclamav/untar.c	240	        cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
 native-width-integer	libclamav/untar.c	269	            int directory, skipEntry = 0;
 native-width-integer	libclamav/untar.c	270	            int checksum = -1;
-native-width-integer	libclamav/untar.c	357	                case 'N': /* Old GNU format way of storing long filenames. */
-native-width-integer	libclamav/untar.c	382	                size = (size_t)size_value;
-native-width-integer	libclamav/untar.c	400	                size_t nskip = size;
-native-width-integer	libclamav/untar.c	401	                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
-native-width-integer	libclamav/untar.c	457	            size_t nbytes, nwritten;
+native-width-integer	libclamav/untar.c	361	                case 'N': /* Old GNU format way of storing long filenames. */
+native-width-integer	libclamav/untar.c	386	                size = (size_t)size_value;
+native-width-integer	libclamav/untar.c	404	                size_t nskip = size;
+native-width-integer	libclamav/untar.c	405	                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
+native-width-integer	libclamav/untar.c	461	            size_t nbytes, nwritten;
 native-width-integer	libclamav/untar.c	96	 * @return int value of checksum, -1 (from octal()) if bad value
 native-width-integer	libclamav/untar.c	98	static int
 native-width-integer	libclamav/untar.h	32	cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx);
@@ -18265,9 +18265,9 @@ boundary-constant	libclamav/udf.c	356	    if (extent_count > SIZE_MAX / sizeof(*
 boundary-constant	libclamav/udf.c	542	        if (idx > SIZE_MAX - VOLUME_DESCRIPTOR_SIZE)
 boundary-constant	libclamav/unarj.c	220	    if (((uint64_t)decode_data->bit_buf) * (n > 0 ? 2 << (n - 1) : 0) > UINT32_MAX)
 boundary-constant	libclamav/untar.c	106	    if (!octal(ochecksum, &checksum) || checksum > INT_MAX)
-boundary-constant	libclamav/untar.c	376	            if (!octal(osize, &size_value) || size_value > SIZE_MAX) {
-boundary-constant	libclamav/untar.c	405	                else if (padding && size > SIZE_MAX - padding) {
-boundary-constant	libclamav/untar.c	414	                if (nskip > SIZE_MAX - pos) {
+boundary-constant	libclamav/untar.c	380	            if (!octal(osize, &size_value) || size_value > SIZE_MAX) {
+boundary-constant	libclamav/untar.c	409	                else if (padding && size > SIZE_MAX - padding) {
+boundary-constant	libclamav/untar.c	418	                if (nskip > SIZE_MAX - pos) {
 boundary-constant	libclamav/unzip.c	1242	     * larger than INT_MAX and was undefined under UBSan on LP64 targets. */
 boundary-constant	libclamav/unzip.c	142	    if (!record || !end || record->compressed_size > SIZE_MAX)
 boundary-constant	libclamav/unzip.c	144	    if ((size_t)record->compressed_size > SIZE_MAX - (size_t)record->local_header_size)
@@ -20615,10 +20615,10 @@ format-width	libclamav/unarj.c	989	        cli_dbgmsg("arj_read_header: invalid 
 format-width	libclamav/unarj.c	999	    cli_dbgmsg("First Header Size: %d\n", main_hdr.first_hdr_size);
 format-width	libclamav/unsp.c	157	    cli_dbgmsg("unsp: table size = %d\n", tablesz);
 format-width	libclamav/untar.c	240	        cli_dbgmsg("cli_untar: pos = %lu\n", (unsigned long)pos);
-format-width	libclamav/untar.c	303	            cli_dbgmsg("cli_untar: Candidate checksum = %d, [%o in octal]\n", checksum, checksum);
-format-width	libclamav/untar.c	316	                cli_dbgmsg("cli_untar: Checksum %d is valid.\n", checksum);
-format-width	libclamav/untar.c	383	                cli_dbgmsg("cli_untar: size = %zu\n", size);
-format-width	libclamav/untar.c	474	                cli_errmsg("cli_untar: only wrote %zu bytes to file %s (out of disc space?): %s\n",
+format-width	libclamav/untar.c	307	            cli_dbgmsg("cli_untar: Candidate checksum = %d, [%o in octal]\n", checksum, checksum);
+format-width	libclamav/untar.c	320	                cli_dbgmsg("cli_untar: Checksum %d is valid.\n", checksum);
+format-width	libclamav/untar.c	387	                cli_dbgmsg("cli_untar: size = %zu\n", size);
+format-width	libclamav/untar.c	478	                cli_errmsg("cli_untar: only wrote %zu bytes to file %s (out of disc space?): %s\n",
 format-width	libclamav/unzip.c	1030	                        cli_warnmsg("cli_unzip: failed to write or account for %zu inflated bytes\n", produced);
 format-width	libclamav/unzip.c	1067	                        cli_warnmsg("cli_unzip: failed to write or account for %zu bunzipped bytes\n", produced);
 format-width	libclamav/unzip.c	1103	                        cli_warnmsg("cli_unzip: failed to write or account for %zu exploded bytes\n", produced);
@@ -29902,19 +29902,20 @@ offset-size-arithmetic	libclamav/untar.c	248	                                   
 offset-size-arithmetic	libclamav/untar.c	265	        pos += nread;
 offset-size-arithmetic	libclamav/untar.c	271	            char magic[7], osize[TARSIZELEN + 1];
 offset-size-arithmetic	libclamav/untar.c	285	                    cli_mark_scan_incomplete(ctx, "TAR end-of-archive marker was truncated");
-offset-size-arithmetic	libclamav/untar.c	357	                case 'N': /* Old GNU format way of storing long filenames. */
-offset-size-arithmetic	libclamav/untar.c	359	                case 'E': /* Solaris Extended attribute s*/
-offset-size-arithmetic	libclamav/untar.c	361	                case 'g': /* Global extended header */
-offset-size-arithmetic	libclamav/untar.c	362	                case 'x': /* Extended attributes */
-offset-size-arithmetic	libclamav/untar.c	363	                case 'X': /* Extended attributes (POSIX) */
-offset-size-arithmetic	libclamav/untar.c	374	            strncpy(osize, block + TARSIZEOFFSET, TARSIZELEN);
-offset-size-arithmetic	libclamav/untar.c	390	                     * the configured logical/file-size budget. */
-offset-size-arithmetic	libclamav/untar.c	401	                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
-offset-size-arithmetic	libclamav/untar.c	405	                else if (padding && size > SIZE_MAX - padding) {
-offset-size-arithmetic	libclamav/untar.c	418	                pos += nskip;
-offset-size-arithmetic	libclamav/untar.c	440	            snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "tar%02u", dir, files);
-offset-size-arithmetic	libclamav/untar.c	441	            fullname[sizeof(fullname) - 1] = '\0';
-offset-size-arithmetic	libclamav/untar.c	484	                size -= nbytes;
+offset-size-arithmetic	libclamav/untar.c	289	                    cli_mark_scan_incomplete(ctx, "TAR end-of-archive marker was malformed");
+offset-size-arithmetic	libclamav/untar.c	361	                case 'N': /* Old GNU format way of storing long filenames. */
+offset-size-arithmetic	libclamav/untar.c	363	                case 'E': /* Solaris Extended attribute s*/
+offset-size-arithmetic	libclamav/untar.c	365	                case 'g': /* Global extended header */
+offset-size-arithmetic	libclamav/untar.c	366	                case 'x': /* Extended attributes */
+offset-size-arithmetic	libclamav/untar.c	367	                case 'X': /* Extended attributes (POSIX) */
+offset-size-arithmetic	libclamav/untar.c	378	            strncpy(osize, block + TARSIZEOFFSET, TARSIZELEN);
+offset-size-arithmetic	libclamav/untar.c	394	                     * the configured logical/file-size budget. */
+offset-size-arithmetic	libclamav/untar.c	405	                size_t padding = size % BLOCKSIZE ? BLOCKSIZE - (size % BLOCKSIZE) : 0;
+offset-size-arithmetic	libclamav/untar.c	409	                else if (padding && size > SIZE_MAX - padding) {
+offset-size-arithmetic	libclamav/untar.c	422	                pos += nskip;
+offset-size-arithmetic	libclamav/untar.c	444	            snprintf(fullname, sizeof(fullname) - 1, "%s" PATHSEP "tar%02u", dir, files);
+offset-size-arithmetic	libclamav/untar.c	445	            fullname[sizeof(fullname) - 1] = '\0';
+offset-size-arithmetic	libclamav/untar.c	488	                size -= nbytes;
 offset-size-arithmetic	libclamav/untar.h	32	cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx);
 offset-size-arithmetic	libclamav/unzip.c	1026	                produced = sizeof(obuf) - *avail_out;
 offset-size-arithmetic	libclamav/unzip.c	1063	                    size_t produced = sizeof(obuf) - strm.avail_out;

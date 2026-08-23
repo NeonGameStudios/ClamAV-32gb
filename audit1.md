@@ -6078,9 +6078,9 @@ after only one zero block. That allowed a missing or incomplete
 end-of-archive marker sequence to bypass the parser's fail-closed contract.
 The parser now requires two complete zero blocks, marks missing/single-block
 termination as `CL_EPARSE`, and distinguishes a truncated marker block from an
-in-range header callback failure. A focused regression covers no marker, one
-marker, and the valid two-marker boundary. Compiled TAR corpus, sanitizer, and
-Sonic1 qualification remain open.
+in-range header callback failure; marker blocks must be entirely zero-filled. A
+focused regression covers no marker, one marker, and the valid two-marker
+boundary. Compiled TAR corpus, sanitizer, and Sonic1 qualification remain open.
 
 ## NsPack bitched-entry read classification — 2026-08-23
 

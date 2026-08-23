@@ -285,6 +285,10 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                     cli_mark_scan_incomplete(ctx, "TAR end-of-archive marker was truncated");
                     return CL_EPARSE;
                 }
+                if (memcmp(block, zero, BLOCKSIZE) != 0) {
+                    cli_mark_scan_incomplete(ctx, "TAR end-of-archive marker was malformed");
+                    return CL_EPARSE;
+                }
                 if (saw_zero_block)
                     break;
                 saw_zero_block = true;
