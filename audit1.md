@@ -5744,3 +5744,23 @@ BZip2 member reads use the same operational classification, and later-member
 failures are no longer downgraded to a generic parse flag. Focused Rust reader
 tests cover header and stored-member callback faults. Compiled ALZ corpus,
 sanitizer, and Sonic1 qualification remain open.
+
+## 7-Zip bounded EOF classification — 2026-08-23
+
+The 7-Zip fmap input adapter previously passed requests extending past the
+input map directly to `fmap_readn()`, whose shared sentinel is also used for
+an in-range backing-read failure. The adapter now clips requests at the map
+boundary and returns the decoder's input-EOF result for genuine truncation;
+fully in-range callback failures still return `SZ_ERROR_READ` and therefore
+`CL_EREAD`. A focused regression preserves `CL_EPARSE` for a truncated member,
+alongside the existing injected callback-failure regression. Compiled 7-Zip
+corpus, sanitizer, and Sonic1 qualification remain open.
+
+## Sonic1 qualification connectivity blocker — 2026-08-23
+
+The exact configured MCP-SSH host/profile (`sonic1` / `sonic1-camera-key`)
+remains unavailable at the connect phase on `192.168.1.216:4456`. A new
+read-only checkout-state probe timed out after 20 seconds with
+`remote_started=false`; no remote command ran. Sonic1 production and sanitizer
+qualification therefore remain an external blocker, while local non-CMake
+evidence continues independently.

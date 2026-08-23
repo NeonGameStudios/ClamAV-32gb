@@ -1674,3 +1674,10 @@ production NSIS corpus, and Sonic1 qualification as release gates.
   signature, central-directory, and member-data boundaries while retaining
   incomplete parse results for genuine truncation; retain compiled ALZ corpus,
   sanitizer, and Sonic1 qualification gates.
+
+## 7-Zip bounded EOF classification — 2026-08-23
+
+- Clip 7-Zip fmap input requests at the map boundary so genuine truncation
+  remains `CL_EPARSE` while fully in-range backing-read failures remain
+  `CL_EREAD`; retain compiled 7-Zip corpus, sanitizer, and Sonic1
+  qualification gates.

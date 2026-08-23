@@ -185,6 +185,24 @@ static SRes FileInStream_fmap_Read(void *pp, void *buf, size_t *size)
         return SZ_ERROR_READ;
     }
 
+    if (p->stream.s.curpos < 0 || (uint64_t)p->stream.s.curpos > (uint64_t)p->stream.file.fmap->len) {
+        *size = 0;
+        return SZ_ERROR_INPUT_EOF;
+    }
+
+    /* fmap_readn() uses (size_t)-1 for both an out-of-range request and a
+     * fully in-range backing-read failure. Clip a request at the map
+     * boundary first so malformed/truncated input becomes the decoder's EOF
+     * result, while a callback failure for the clipped in-range window still
+     * remains SZ_ERROR_READ and therefore CL_EREAD. */
+    {
+        size_t available = p->stream.file.fmap->len - (size_t)p->stream.s.curpos;
+        if (*size > available)
+            *size = available;
+    }
+    if (*size == 0)
+        return SZ_OK;
+
     read_sz = fmap_readn(p->stream.file.fmap, buf, p->stream.s.curpos, *size);
     if (read_sz == (size_t)-1) {
         *size = 0;
