@@ -2311,11 +2311,14 @@ and Sonic1 qualification as release gates.
   ASCIIHex-to-Crypt Identity ordering, exact decoded output, expected peak
   temporary accounting, and a repeated-Crypt chain that fails visibly with
   exact raw fallback.
-- A second focused GCC case passes 1/1 with eight internal RC4, AESV2, and
-  AESV3 oracles across both positions, matching named parameters, one-byte-
-  short quota rollback, and malformed AES-padding raw restoration.
-- Add production PDF corpora, every supported surrounding-filter ordering,
-  broader malformed crypt dictionaries, production/sanitizer runs,
+- A second focused GCC case passes 1/1 with 40 internal oracles. RC4, AESV2,
+  and AESV3 each succeed with Crypt before and after Flate, RunLength,
+  ASCIIHex, ASCII85, and LZW. Every surrounding filter also proves RC4 one-
+  byte-short quota rollback and malformed AES-padding raw restoration. The
+  same case passes with GCC AddressSanitizer/UBSan and leak detection; the
+  refactored LZW fixtures pass their focused 6/6 normal and sanitizer suite.
+- Add production PDF corpora, broader malformed crypt dictionaries,
+  production/sanitizer runs,
   materialized multi-gigabyte stages, fault injection, and Sonic1 evidence.
 
 ## PDF exact DecodeParms dictionary selection — 2026-08-24

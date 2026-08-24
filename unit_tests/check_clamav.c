@@ -10933,6 +10933,134 @@ static uint8_t *pdf_test_asciihex_encode(const uint8_t *input,
     return encoded;
 }
 
+static uint8_t *pdf_test_flate_encode(const uint8_t *input,
+                                      size_t input_size,
+                                      size_t *encoded_size)
+{
+    uint8_t *encoded;
+    uLongf compressed_size;
+
+    ck_assert_ptr_nonnull(input);
+    ck_assert(input_size > 0 && input_size <= ULONG_MAX);
+    ck_assert_ptr_nonnull(encoded_size);
+    compressed_size = compressBound((uLong)input_size);
+    ck_assert(compressed_size <= SIZE_MAX);
+    encoded         = malloc((size_t)compressed_size);
+    ck_assert_ptr_nonnull(encoded);
+    ck_assert_int_eq(compress2(encoded, &compressed_size, input,
+                               (uLong)input_size, Z_BEST_SPEED),
+                     Z_OK);
+    *encoded_size = (size_t)compressed_size;
+    return encoded;
+}
+
+static uint8_t *pdf_test_runlength_encode(const uint8_t *input,
+                                          size_t input_size,
+                                          size_t *encoded_size)
+{
+    uint8_t *encoded;
+    size_t capacity;
+    size_t packets;
+    size_t input_offset   = 0;
+    size_t encoded_offset = 0;
+
+    ck_assert_ptr_nonnull(input);
+    ck_assert(input_size > 0);
+    ck_assert_ptr_nonnull(encoded_size);
+    ck_assert(input_size <= SIZE_MAX - 127U);
+    packets = (input_size + 127U) / 128U;
+    ck_assert(input_size <= SIZE_MAX - packets - 1U);
+    capacity = input_size + packets + 1U;
+    encoded  = malloc(capacity);
+    ck_assert_ptr_nonnull(encoded);
+
+    while (input_offset < input_size) {
+        size_t chunk = MIN(input_size - input_offset, 128U);
+
+        encoded[encoded_offset++] = (uint8_t)(chunk - 1U);
+        memcpy(encoded + encoded_offset, input + input_offset, chunk);
+        encoded_offset += chunk;
+        input_offset += chunk;
+    }
+    encoded[encoded_offset++] = 128U;
+    ck_assert_uint_eq(encoded_offset, capacity);
+    *encoded_size = encoded_offset;
+    return encoded;
+}
+
+static uint8_t *pdf_test_ascii85_encode(const uint8_t *input,
+                                        size_t input_size,
+                                        size_t *encoded_size)
+{
+    uint8_t *encoded;
+    size_t full_groups;
+    size_t remainder;
+    size_t capacity;
+    size_t encoded_offset = 0;
+    size_t input_offset   = 0;
+
+    ck_assert_ptr_nonnull(input);
+    ck_assert(input_size > 0);
+    ck_assert_ptr_nonnull(encoded_size);
+    full_groups = input_size / 4U;
+    remainder   = input_size % 4U;
+    ck_assert(full_groups <= (SIZE_MAX - 6U) / 5U);
+    capacity = full_groups * 5U + (remainder == 0 ? 0U : remainder + 1U) + 2U;
+    encoded  = malloc(capacity);
+    ck_assert_ptr_nonnull(encoded);
+
+    while (input_offset < input_size) {
+        uint8_t digits[5];
+        uint32_t tuple = 0;
+        size_t bytes   = MIN(input_size - input_offset, 4U);
+        size_t i;
+
+        for (i = 0; i < 4U; i++) {
+            tuple <<= 8U;
+            if (i < bytes)
+                tuple |= input[input_offset + i];
+        }
+        for (i = 5U; i > 0; i--) {
+            digits[i - 1U] = (uint8_t)(tuple % 85U + '!');
+            tuple /= 85U;
+        }
+        memcpy(encoded + encoded_offset, digits,
+               bytes == 4U ? 5U : bytes + 1U);
+        encoded_offset += bytes == 4U ? 5U : bytes + 1U;
+        input_offset += bytes;
+    }
+    encoded[encoded_offset++] = '~';
+    encoded[encoded_offset++] = '>';
+    ck_assert_uint_eq(encoded_offset, capacity);
+    *encoded_size = encoded_offset;
+    return encoded;
+}
+
+static uint8_t *pdf_test_lzw_encode(const uint8_t *input, size_t input_size,
+                                    int early_change, bool include_eoi,
+                                    size_t *encoded_size);
+
+static uint8_t *pdf_test_filter_encode(uint32_t filter, const uint8_t *input,
+                                       size_t input_size, size_t *encoded_size)
+{
+    switch (filter) {
+        case OBJ_FILTER_FLATE:
+            return pdf_test_flate_encode(input, input_size, encoded_size);
+        case OBJ_FILTER_RL:
+            return pdf_test_runlength_encode(input, input_size, encoded_size);
+        case OBJ_FILTER_AH:
+            return pdf_test_asciihex_encode(input, input_size, encoded_size);
+        case OBJ_FILTER_A85:
+            return pdf_test_ascii85_encode(input, input_size, encoded_size);
+        case OBJ_FILTER_LZW:
+            return pdf_test_lzw_encode(input, input_size, 1, true,
+                                       encoded_size);
+        default:
+            ck_abort_msg("unsupported PDF test filter: %u", filter);
+    }
+    return NULL;
+}
+
 static uint8_t *pdf_test_asciihex_fixture(size_t output_size, uint8_t **expected,
                                           size_t *encoded_size)
 {
@@ -11947,135 +12075,161 @@ START_TEST(test_pdf_explicit_crypt_ordering_supports_rc4_and_aes)
     static const size_t key_lengths[] = {
         sizeof(rc4_key), sizeof(aesv2_key), sizeof(aesv3_key),
     };
-    static const uint32_t crypt_first[] = {
-        OBJ_FILTER_CRYPT, OBJ_FILTER_AH,
-    };
-    static const uint32_t crypt_second[] = {
-        OBJ_FILTER_AH, OBJ_FILTER_CRYPT,
+    static const uint32_t surrounding_filters[] = {
+        OBJ_FILTER_FLATE,
+        OBJ_FILTER_RL,
+        OBJ_FILTER_AH,
+        OBJ_FILTER_A85,
+        OBJ_FILTER_LZW,
     };
     struct pdf_single_filter_result result;
+    size_t filter_index;
     size_t method_index;
 
     for (method_index = 0;
          method_index < sizeof(methods) / sizeof(methods[0]);
          method_index++) {
-        uint8_t *encoded_plaintext;
-        size_t encoded_plaintext_size;
-        uint8_t *crypt_first_input;
-        size_t crypt_first_input_size;
-        uint8_t *ciphertext;
-        size_t ciphertext_size;
-        uint8_t *crypt_second_input;
-        size_t crypt_second_input_size;
+        for (filter_index = 0;
+             filter_index < sizeof(surrounding_filters) /
+                                    sizeof(surrounding_filters[0]);
+             filter_index++) {
+            uint32_t crypt_first[2];
+            uint32_t crypt_second[2];
+            uint8_t *encoded_plaintext;
+            size_t encoded_plaintext_size;
+            uint8_t *crypt_first_input;
+            size_t crypt_first_input_size;
+            uint8_t *ciphertext;
+            size_t ciphertext_size;
+            uint8_t *crypt_second_input;
+            size_t crypt_second_input_size;
 
-        encoded_plaintext = pdf_test_asciihex_encode(
-            decoded, sizeof(decoded) - 1U, &encoded_plaintext_size);
-        if (methods[method_index] == ENC_V2) {
-            crypt_first_input = pdf_test_encrypt_rc4(
-                20U << 8, keys[method_index], key_lengths[method_index],
-                encoded_plaintext, encoded_plaintext_size);
-            crypt_first_input_size = encoded_plaintext_size;
-            ciphertext = pdf_test_encrypt_rc4(
-                20U << 8, keys[method_index], key_lengths[method_index],
-                decoded, sizeof(decoded) - 1U);
-            ciphertext_size = sizeof(decoded) - 1U;
-        } else {
-            crypt_first_input = pdf_test_encrypt_aes(
-                methods[method_index], 20U << 8, keys[method_index],
-                key_lengths[method_index], encoded_plaintext,
-                encoded_plaintext_size, &crypt_first_input_size);
-            ciphertext = pdf_test_encrypt_aes(
-                methods[method_index], 20U << 8, keys[method_index],
-                key_lengths[method_index], decoded, sizeof(decoded) - 1U,
-                &ciphertext_size);
-        }
-
-        pdf_test_decode_explicit_crypt_chain(
-            crypt_first_input, crypt_first_input_size,
-            crypt_first, 0U, method_names[method_index],
-            methods[method_index], keys[method_index],
-            key_lengths[method_index], 0, &result);
-        ck_assert_int_eq(result.status, CL_SUCCESS);
-        ck_assert_uint_eq(result.written, sizeof(decoded) - 1U);
-        ck_assert_uint_eq(result.output_size, sizeof(decoded) - 1U);
-        ck_assert_int_eq(memcmp(result.output, decoded,
-                                sizeof(decoded) - 1U), 0);
-        ck_assert_uint_eq(result.temporary_bytes, sizeof(decoded) - 1U);
-        ck_assert_uint_eq(result.temporary_peak,
-                          encoded_plaintext_size + sizeof(decoded) - 1U);
-        ck_assert(!result.scan_incomplete);
-        ck_assert(!result.dont_cache);
-        free(result.output);
-
-        crypt_second_input = pdf_test_asciihex_encode(
-            ciphertext, ciphertext_size, &crypt_second_input_size);
-        pdf_test_decode_explicit_crypt_chain(
-            crypt_second_input, crypt_second_input_size, crypt_second, 1U,
-            method_names[method_index], methods[method_index],
-            keys[method_index], key_lengths[method_index], 0, &result);
-        ck_assert_int_eq(result.status, CL_SUCCESS);
-        ck_assert_uint_eq(result.written, sizeof(decoded) - 1U);
-        ck_assert_uint_eq(result.output_size, sizeof(decoded) - 1U);
-        ck_assert_int_eq(memcmp(result.output, decoded,
-                                sizeof(decoded) - 1U), 0);
-        ck_assert_uint_eq(result.temporary_bytes, sizeof(decoded) - 1U);
-        ck_assert_uint_eq(result.temporary_peak,
-                          ciphertext_size + sizeof(decoded) - 1U);
-        ck_assert(!result.scan_incomplete);
-        ck_assert(!result.dont_cache);
-        free(result.output);
-
-        if (methods[method_index] == ENC_V2) {
-            uint64_t peak = (uint64_t)ciphertext_size +
-                            sizeof(decoded) - 1U;
+            crypt_first[0]  = OBJ_FILTER_CRYPT;
+            crypt_first[1]  = surrounding_filters[filter_index];
+            crypt_second[0] = surrounding_filters[filter_index];
+            crypt_second[1] = OBJ_FILTER_CRYPT;
+            encoded_plaintext = pdf_test_filter_encode(
+                surrounding_filters[filter_index], decoded,
+                sizeof(decoded) - 1U, &encoded_plaintext_size);
+            if (methods[method_index] == ENC_V2) {
+                crypt_first_input = pdf_test_encrypt_rc4(
+                    20U << 8, keys[method_index], key_lengths[method_index],
+                    encoded_plaintext, encoded_plaintext_size);
+                crypt_first_input_size = encoded_plaintext_size;
+                ciphertext = pdf_test_encrypt_rc4(
+                    20U << 8, keys[method_index], key_lengths[method_index],
+                    decoded, sizeof(decoded) - 1U);
+                ciphertext_size = sizeof(decoded) - 1U;
+            } else {
+                crypt_first_input = pdf_test_encrypt_aes(
+                    methods[method_index], 20U << 8, keys[method_index],
+                    key_lengths[method_index], encoded_plaintext,
+                    encoded_plaintext_size, &crypt_first_input_size);
+                ciphertext = pdf_test_encrypt_aes(
+                    methods[method_index], 20U << 8, keys[method_index],
+                    key_lengths[method_index], decoded, sizeof(decoded) - 1U,
+                    &ciphertext_size);
+            }
 
             pdf_test_decode_explicit_crypt_chain(
-                crypt_second_input, crypt_second_input_size, crypt_second,
-                1U, method_names[method_index], methods[method_index],
-                keys[method_index], key_lengths[method_index], peak - 1U,
-                &result);
-            ck_assert_int_eq(result.status, CL_ERESOURCE);
-            ck_assert_uint_eq(result.written, 0);
-            ck_assert_uint_eq(result.output_size, 0);
-            ck_assert_ptr_null(result.output);
-            ck_assert_uint_eq(result.temporary_bytes, 0);
-            ck_assert(result.temporary_peak <= peak - 1U);
-            ck_assert(result.scan_incomplete);
-            ck_assert(result.dont_cache);
-        }
+                crypt_first_input, crypt_first_input_size,
+                crypt_first, 0U, method_names[method_index],
+                methods[method_index], keys[method_index],
+                key_lengths[method_index], 0, &result);
+            ck_assert_int_eq(result.status, CL_SUCCESS);
+            ck_assert_uint_eq(result.written, sizeof(decoded) - 1U);
+            ck_assert_uint_eq(result.output_size, sizeof(decoded) - 1U);
+            ck_assert_int_eq(memcmp(result.output, decoded,
+                                    sizeof(decoded) - 1U), 0);
+            ck_assert_uint_eq(result.temporary_bytes, sizeof(decoded) - 1U);
+            ck_assert_uint_eq(result.temporary_peak,
+                              encoded_plaintext_size + sizeof(decoded) - 1U);
+            ck_assert(!result.scan_incomplete);
+            ck_assert(!result.dont_cache);
+            free(result.output);
 
-        free(crypt_second_input);
-        free(ciphertext);
-        free(crypt_first_input);
-        free(encoded_plaintext);
+            crypt_second_input = pdf_test_filter_encode(
+                surrounding_filters[filter_index], ciphertext,
+                ciphertext_size, &crypt_second_input_size);
+            pdf_test_decode_explicit_crypt_chain(
+                crypt_second_input, crypt_second_input_size, crypt_second, 1U,
+                method_names[method_index], methods[method_index],
+                keys[method_index], key_lengths[method_index], 0, &result);
+            ck_assert_int_eq(result.status, CL_SUCCESS);
+            ck_assert_uint_eq(result.written, sizeof(decoded) - 1U);
+            ck_assert_uint_eq(result.output_size, sizeof(decoded) - 1U);
+            ck_assert_int_eq(memcmp(result.output, decoded,
+                                    sizeof(decoded) - 1U), 0);
+            ck_assert_uint_eq(result.temporary_bytes, sizeof(decoded) - 1U);
+            ck_assert_uint_eq(result.temporary_peak,
+                              ciphertext_size + sizeof(decoded) - 1U);
+            ck_assert(!result.scan_incomplete);
+            ck_assert(!result.dont_cache);
+            free(result.output);
+
+            if (methods[method_index] == ENC_V2) {
+                uint64_t peak = (uint64_t)ciphertext_size +
+                                sizeof(decoded) - 1U;
+
+                pdf_test_decode_explicit_crypt_chain(
+                    crypt_second_input, crypt_second_input_size, crypt_second,
+                    1U, method_names[method_index], methods[method_index],
+                    keys[method_index], key_lengths[method_index], peak - 1U,
+                    &result);
+                ck_assert_int_eq(result.status, CL_ERESOURCE);
+                ck_assert_uint_eq(result.written, 0);
+                ck_assert_uint_eq(result.output_size, 0);
+                ck_assert_ptr_null(result.output);
+                ck_assert_uint_eq(result.temporary_bytes, 0);
+                ck_assert(result.temporary_peak <= peak - 1U);
+                ck_assert(result.scan_incomplete);
+                ck_assert(result.dont_cache);
+            }
+
+            free(crypt_second_input);
+            free(ciphertext);
+            free(crypt_first_input);
+            free(encoded_plaintext);
+        }
     }
 
     {
         size_t ciphertext_size;
-        size_t malformed_input_size;
         size_t padding = 16U - ((sizeof(decoded) - 1U) % 16U);
         uint8_t *ciphertext = pdf_test_encrypt_aes(
             ENC_AESV2, 20U << 8, aesv2_key, sizeof(aesv2_key), decoded,
             sizeof(decoded) - 1U, &ciphertext_size);
-        uint8_t *malformed_input;
 
         ck_assert(ciphertext_size >= 32U);
         ciphertext[ciphertext_size - 17U] ^= (uint8_t)padding;
-        malformed_input = pdf_test_asciihex_encode(
-            ciphertext, ciphertext_size, &malformed_input_size);
-        pdf_test_decode_explicit_crypt_chain(
-            malformed_input, malformed_input_size, crypt_second, 1U,
-            "AES2", ENC_AESV2, aesv2_key, sizeof(aesv2_key), 0, &result);
-        ck_assert_int_eq(result.status, CL_EPARSE);
-        ck_assert_uint_eq(result.written, malformed_input_size);
-        ck_assert_uint_eq(result.output_size, malformed_input_size);
-        ck_assert_int_eq(memcmp(result.output, malformed_input,
-                                malformed_input_size), 0);
-        ck_assert_uint_eq(result.temporary_bytes, malformed_input_size);
-        ck_assert(result.scan_incomplete);
-        ck_assert(result.dont_cache);
-        free(result.output);
-        free(malformed_input);
+        for (filter_index = 0;
+             filter_index < sizeof(surrounding_filters) /
+                                    sizeof(surrounding_filters[0]);
+             filter_index++) {
+            uint32_t crypt_second[2];
+            size_t malformed_input_size;
+            uint8_t *malformed_input;
+
+            crypt_second[0] = surrounding_filters[filter_index];
+            crypt_second[1] = OBJ_FILTER_CRYPT;
+            malformed_input = pdf_test_filter_encode(
+                surrounding_filters[filter_index], ciphertext,
+                ciphertext_size, &malformed_input_size);
+            pdf_test_decode_explicit_crypt_chain(
+                malformed_input, malformed_input_size, crypt_second, 1U,
+                "AES2", ENC_AESV2, aesv2_key, sizeof(aesv2_key), 0,
+                &result);
+            ck_assert_int_eq(result.status, CL_EPARSE);
+            ck_assert_uint_eq(result.written, malformed_input_size);
+            ck_assert_uint_eq(result.output_size, malformed_input_size);
+            ck_assert_int_eq(memcmp(result.output, malformed_input,
+                                    malformed_input_size), 0);
+            ck_assert_uint_eq(result.temporary_bytes, malformed_input_size);
+            ck_assert(result.scan_incomplete);
+            ck_assert(result.dont_cache);
+            free(result.output);
+            free(malformed_input);
+        }
         free(ciphertext);
     }
 }
@@ -12787,9 +12941,9 @@ static void pdf_test_lzw_write_code(uint8_t *encoded, size_t capacity,
     *bit_offset += width;
 }
 
-static uint8_t *pdf_test_lzw_literal_fixture(size_t output_size, int early_change,
-                                             bool include_eoi, uint8_t **expected,
-                                             size_t *encoded_size)
+static uint8_t *pdf_test_lzw_encode(const uint8_t *input, size_t input_size,
+                                    int early_change, bool include_eoi,
+                                    size_t *encoded_size)
 {
     uint8_t *encoded;
     size_t capacity;
@@ -12799,21 +12953,19 @@ static uint8_t *pdf_test_lzw_literal_fixture(size_t output_size, int early_chang
     unsigned int next_free = 258U;
     unsigned int max_code  = (1U << width) - 2U;
 
-    ck_assert(output_size > 0);
+    ck_assert_ptr_nonnull(input);
+    ck_assert(input_size > 0);
     ck_assert(early_change == 0 || early_change == 1);
-    ck_assert(output_size <= (SIZE_MAX - 31U) / 12U);
-    capacity = ((output_size + 2U) * 12U + 7U) / 8U;
+    ck_assert_ptr_nonnull(encoded_size);
+    ck_assert(input_size <= (SIZE_MAX - 31U) / 12U);
+    capacity = ((input_size + 2U) * 12U + 7U) / 8U;
     encoded  = calloc(1, capacity);
-    *expected = malloc(output_size);
     ck_assert_ptr_nonnull(encoded);
-    ck_assert_ptr_nonnull(*expected);
 
     pdf_test_lzw_write_code(encoded, capacity, &bit_offset, 256U, width);
-    for (i = 0; i < output_size; i++) {
-        uint8_t value = (uint8_t)(i * 37U + 11U);
-
-        (*expected)[i] = value;
-        pdf_test_lzw_write_code(encoded, capacity, &bit_offset, value, width);
+    for (i = 0; i < input_size; i++) {
+        pdf_test_lzw_write_code(encoded, capacity, &bit_offset, input[i],
+                                width);
         if (i == 0)
             continue;
 
@@ -12832,6 +12984,26 @@ static uint8_t *pdf_test_lzw_literal_fixture(size_t output_size, int early_chang
         pdf_test_lzw_write_code(encoded, capacity, &bit_offset, 257U, width);
 
     *encoded_size = (bit_offset + 7U) / 8U;
+    return encoded;
+}
+
+static uint8_t *pdf_test_lzw_literal_fixture(size_t output_size, int early_change,
+                                             bool include_eoi, uint8_t **expected,
+                                             size_t *encoded_size)
+{
+    uint8_t *encoded;
+    size_t i;
+
+    ck_assert(output_size > 0);
+    ck_assert(early_change == 0 || early_change == 1);
+    *expected = malloc(output_size);
+    ck_assert_ptr_nonnull(*expected);
+
+    for (i = 0; i < output_size; i++) {
+        (*expected)[i] = (uint8_t)(i * 37U + 11U);
+    }
+    encoded = pdf_test_lzw_encode(*expected, output_size, early_change,
+                                  include_eoi, encoded_size);
     return encoded;
 }
 

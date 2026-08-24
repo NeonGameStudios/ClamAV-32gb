@@ -6727,14 +6727,19 @@ exact encoded fallback, and bounded reservation cleanup for a two-Crypt chain.
 `pdfdecode.c` and the full `check_clamav.c` translation unit compile directly
 with GCC; only the previously recorded isolated unit warning remains.
 
-A second focused Linux ARM64 GCC case passes 1/1 with eight internal oracles.
-It covers RC4, AESV2, and AESV3 with Crypt before and after ASCIIHex, proves
-that the Crypt stage receives only its matching named DecodeParms entry,
-rejects a one-byte-short RC4 temporary peak with zero output/residue, and
-restores the exact raw input after malformed AES padding.
+A second focused Linux ARM64 GCC case passes 1/1 with 40 internal oracles.
+RC4, AESV2, and AESV3 each produce exact output with Crypt before and after
+Flate, RunLength, ASCIIHex, ASCII85, and LZW. For every surrounding filter, a
+one-byte-short RC4 temporary peak returns `CL_ERESOURCE` with zero output and
+residue, while malformed AES padding returns `CL_EPARSE` after restoring the
+exact filter-encoded raw input. The same 40-oracle case passes with the touched
+PDF production objects under GCC AddressSanitizer/UBSan and leak detection.
+The arbitrary-input LZW encoder is also used by the established LZW fixtures;
+their six focused stream, quota, truncation, `EarlyChange`, parameter, and
+native-width cases pass normally and under the same sanitizer configuration.
 
-Production PDF corpora, exhaustive surrounding-filter orderings, broader
-malformed crypt dictionaries, production/sanitizer runs, materialized multi-
+Production PDF corpora, broader malformed crypt dictionaries,
+production/sanitizer runs, materialized multi-
 gigabyte stages, fault injection, and Sonic1 release evidence remain open.
 
 ## PDF exact DecodeParms dictionary selection — 2026-08-24
