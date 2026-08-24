@@ -6874,10 +6874,9 @@ bytes reserved by that attempt before the established raw fallback is written.
 Tests cover exact multi-window output/accounting, one-byte-short quota rollback,
 truncated-output replacement by the exact raw stream, and a logical Flate input
 length above `UINT32_MAX` whose valid stream terminates in the first bounded
-window. Object streams, encryption, filter chains, ASCII85, ASCIIHex, and LZW
-remain explicit unsupported boundaries pending their own streaming designs;
-compiled corpus, sanitizer, materialized large-stream, and Sonic1 evidence are
-still required.
+window. Object streams, encryption, filter chains, and LZW remain explicit
+unsupported boundaries pending their own streaming designs; compiled corpus,
+sanitizer, materialized large-stream, and Sonic1 evidence are still required.
 
 An isolated Linux GCC translation-unit check found that the accumulated unit
 test source had an unmatched `_WIN32` conditional and referenced several late
@@ -6912,3 +6911,23 @@ logical source length above `UINT32_MAX` that reaches an early end marker. The
 production harness now passes all eight Flate and RunLength cases both normally
 and under GCC AddressSanitizer/UBSan with leak detection. Full PDF corpus,
 materialized large-object, and Sonic1 qualification remain open.
+
+## PDF single-ASCII filter bounded streaming — 2026-08-23
+
+Single-filter, unencrypted ASCIIHex and ASCII85 streams now decode from
+native-width input through bounded state into the shared 256 KiB transactional
+output window. Deadline checks occur at 64 KiB encoded-input intervals, and
+every flush is admitted against scan and temporary limits before an exact
+write. Failures roll back all decoded bytes and only the current attempt's
+reservation before raw fallback.
+
+ASCIIHex now handles the complete PDF whitespace set and odd-nibble padding;
+ASCII85 preserves marker-less compatibility while validating final groups,
+32-bit tuple range, and `z` placement. Regressions bind exact multi-window
+output, all PDF whitespace bytes, known vectors, partial groups, marker
+behavior, one-byte-short quota rollback, invalid or overflowing input after
+written prefixes, and early terminators under logical lengths above
+`UINT32_MAX`. The production harness passes all 20 streamed-filter cases both
+normally and under GCC AddressSanitizer/UBSan with leak detection. LZW, filter
+chains, encryption, object streams, compiled corpus, and Sonic1 qualification
+remain open.

@@ -10633,6 +10633,463 @@ START_TEST(test_pdf_streaming_runlength_accepts_native_input_width)
 END_TEST
 #endif
 
+struct pdf_single_filter_result {
+    cl_error_t status;
+    size_t written;
+    uint8_t *output;
+    size_t output_size;
+    off_t output_offset;
+    uint64_t temporary_reserved;
+    uint64_t temporary_bytes;
+    bool scan_incomplete;
+    bool dont_cache;
+};
+
+static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_size,
+                                          size_t logical_size, uint32_t filter,
+                                          uint64_t temporary_limit,
+                                          struct pdf_single_filter_result *result)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    struct stat output_stat;
+    char *path = NULL;
+    int fd = -1;
+    cl_error_t status = CL_SUCCESS;
+    uint64_t temporary_reserved = 0;
+
+    ck_assert_ptr_nonnull(input);
+    ck_assert(input_size > 0);
+    ck_assert_uint_ge(logical_size, input_size);
+    ck_assert_ptr_nonnull(result);
+    memset(result, 0, sizeof(*result));
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    if (temporary_limit != 0) {
+        ck_assert_int_eq(cl_engine_set_num(scan_engine, CL_ENGINE_MAX_TEMPORARY_SIZE,
+                                           (long long)temporary_limit),
+                         CL_SUCCESS);
+    }
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+
+    map = cl_fmap_open_memory(input, input_size);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine             = scan_engine;
+    ctx.dconf              = scan_engine->dconf;
+    ctx.options            = &options;
+    ctx.fmap               = map;
+    ctx.this_layer_tmpdir  = tmpdir;
+    pdf.ctx                = &ctx;
+    pdf.temporary_reserved = &temporary_reserved;
+    obj.id                 = 18U << 8;
+    obj.numfilters         = 1;
+    obj.filterlist[0]      = filter;
+
+    result->written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
+                                       logical_size, 0, fd, &status, NULL);
+    result->status = status;
+    ck_assert_int_eq(fstat(fd, &output_stat), 0);
+    ck_assert(output_stat.st_size >= 0);
+    result->output_size   = (size_t)output_stat.st_size;
+    result->output_offset = lseek(fd, 0, SEEK_CUR);
+    ck_assert_int_ge(result->output_offset, 0);
+    if (result->output_size != 0) {
+        result->output = malloc(result->output_size);
+        ck_assert_ptr_nonnull(result->output);
+        ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+        ck_assert_uint_eq(cli_readn(fd, result->output, result->output_size),
+                          result->output_size);
+    }
+    result->temporary_reserved = temporary_reserved;
+    result->temporary_bytes    = ctx.temporary_bytes;
+    result->scan_incomplete    = ctx.scan_incomplete;
+    result->dont_cache         = map->dont_cache_flag;
+
+    if (temporary_reserved != 0)
+        cli_scan_release_temporary(&ctx, temporary_reserved);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+
+static uint8_t pdf_test_hex_digit(uint8_t value)
+{
+    return value < 10U ? (uint8_t)('0' + value) : (uint8_t)('A' + value - 10U);
+}
+
+static uint8_t *pdf_test_asciihex_fixture(size_t output_size, uint8_t **expected,
+                                          size_t *encoded_size)
+{
+    uint8_t *encoded;
+    size_t capacity;
+    size_t encoded_offset = 0;
+    size_t i;
+
+    ck_assert(output_size > 0);
+    ck_assert(output_size <= (SIZE_MAX - 16U) / 2U);
+    capacity = output_size * 2U + output_size / 4096U + 16U;
+    encoded  = malloc(capacity);
+    *expected = malloc(output_size);
+    ck_assert_ptr_nonnull(encoded);
+    ck_assert_ptr_nonnull(*expected);
+
+    for (i = 0; i < output_size; i++) {
+        uint8_t value = (uint8_t)(i * 29U + 7U);
+
+        if (i + 1U == output_size)
+            value = 0xa0U;
+        (*expected)[i] = value;
+        encoded[encoded_offset++] = pdf_test_hex_digit(value >> 4U);
+        if (i + 1U != output_size)
+            encoded[encoded_offset++] = pdf_test_hex_digit(value & 0x0fU);
+        if ((i & 0xfffU) == 0xfffU)
+            encoded[encoded_offset++] = (i & 0x1000U) ? '\n' : '\t';
+    }
+
+    encoded[encoded_offset++] = '>';
+    encoded[encoded_offset++] = '4';
+    encoded[encoded_offset++] = '2';
+    ck_assert(encoded_offset <= capacity);
+    *encoded_size = encoded_offset;
+    return encoded;
+}
+
+START_TEST(test_pdf_asciihex_stream_is_chunked_and_quota_accounted)
+{
+    const size_t decoded_size = (256U * 1024U) + 257U;
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_asciihex_fixture(decoded_size, &expected, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size, OBJ_FILTER_AH,
+                                  decoded_size, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, decoded_size);
+    ck_assert_uint_eq(result.output_size, decoded_size);
+    ck_assert_uint_eq(result.output_offset, decoded_size);
+    ck_assert_uint_eq(result.temporary_reserved, decoded_size);
+    ck_assert_uint_eq(result.temporary_bytes, decoded_size);
+    ck_assert(!result.scan_incomplete);
+    ck_assert_int_eq(memcmp(result.output, expected, decoded_size), 0);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_asciihex_stream_quota_failure_rolls_back_output)
+{
+    const size_t decoded_size = (256U * 1024U) + 257U;
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_asciihex_fixture(decoded_size, &expected, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size, OBJ_FILTER_AH,
+                                  decoded_size - 1U, &result);
+    ck_assert_int_eq(result.status, CL_ERESOURCE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_int_eq(result.output_offset, 0);
+    ck_assert_uint_eq(result.temporary_reserved, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_invalid_asciihex_after_prefix_is_fail_visible)
+{
+    static const uint8_t encoded[] = {'4', '1', '4', '2', 'G', '0', '>'};
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, sizeof(encoded), sizeof(encoded), OBJ_FILTER_AH, 0, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, sizeof(encoded));
+    ck_assert_uint_eq(result.output_size, sizeof(encoded));
+    ck_assert_uint_eq(result.output_offset, sizeof(encoded));
+    ck_assert_uint_eq(result.temporary_reserved, sizeof(encoded));
+    ck_assert_uint_eq(result.temporary_bytes, sizeof(encoded));
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+    ck_assert_int_eq(memcmp(result.output, encoded, sizeof(encoded)), 0);
+
+    free(result.output);
+}
+END_TEST
+
+#if SIZE_MAX > UINT32_MAX
+START_TEST(test_pdf_streaming_asciihex_accepts_native_input_width)
+{
+    uint8_t input[PDF_INPUT_WINDOW_SIZE] = {'4', '1', '>'};
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(input, sizeof(input), (size_t)UINT32_MAX + 1U,
+                                  OBJ_FILTER_AH, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, 1U);
+    ck_assert_uint_eq(result.output_size, 1U);
+    ck_assert_int_eq(result.output[0], 'A');
+    ck_assert(!result.scan_incomplete);
+
+    free(result.output);
+}
+END_TEST
+#endif
+
+START_TEST(test_pdf_ascii_filters_accept_pdf_whitespace)
+{
+    static const uint8_t asciihex[] = {'4', 0, '\t', '\n', '\f', '\r', ' ', '1', '>'};
+    static const uint8_t ascii85[]  = {'z', 0, '\t', '\n', '\f', '\r', ' ', 'z', '~', '>'};
+    static const uint8_t zeros[8]   = {0};
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(asciihex, sizeof(asciihex), sizeof(asciihex),
+                                  OBJ_FILTER_AH, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, 1U);
+    ck_assert_uint_eq(result.output_size, 1U);
+    ck_assert_int_eq(result.output[0], 'A');
+    ck_assert(!result.scan_incomplete);
+    free(result.output);
+
+    pdf_test_decode_single_filter(ascii85, sizeof(ascii85), sizeof(ascii85),
+                                  OBJ_FILTER_A85, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, sizeof(zeros));
+    ck_assert_uint_eq(result.output_size, sizeof(zeros));
+    ck_assert_int_eq(memcmp(result.output, zeros, sizeof(zeros)), 0);
+    ck_assert(!result.scan_incomplete);
+    free(result.output);
+}
+END_TEST
+
+static uint8_t *pdf_test_ascii85_fixture(size_t zero_groups, uint8_t **expected,
+                                         size_t *encoded_size, size_t *decoded_size)
+{
+    static const uint8_t encoded_prefix[] = "87cURD_*#TDfTZ)";
+    static const uint8_t decoded_prefix[] = "Hello, world";
+    uint8_t *encoded;
+    size_t capacity;
+    size_t encoded_offset = 0;
+    size_t i;
+
+    ck_assert(zero_groups <= (SIZE_MAX - sizeof(decoded_prefix)) / 4U);
+    capacity      = sizeof(encoded_prefix) - 1U + zero_groups + zero_groups / 4096U + 16U;
+    *decoded_size = sizeof(decoded_prefix) - 1U + zero_groups * 4U + 1U;
+    encoded       = malloc(capacity);
+    *expected     = calloc(1, *decoded_size);
+    ck_assert_ptr_nonnull(encoded);
+    ck_assert_ptr_nonnull(*expected);
+
+    memcpy(encoded + encoded_offset, encoded_prefix, sizeof(encoded_prefix) - 1U);
+    encoded_offset += sizeof(encoded_prefix) - 1U;
+    memcpy(*expected, decoded_prefix, sizeof(decoded_prefix) - 1U);
+    for (i = 0; i < zero_groups; i++) {
+        encoded[encoded_offset++] = 'z';
+        if ((i & 0xfffU) == 0xfffU)
+            encoded[encoded_offset++] = (i & 0x1000U) ? '\r' : '\n';
+    }
+
+    /* Two exclamation marks form a valid one-byte final group. The trailing
+     * z after the marker must not contribute another four zero bytes. */
+    encoded[encoded_offset++] = '!';
+    encoded[encoded_offset++] = '!';
+    encoded[encoded_offset++] = '~';
+    encoded[encoded_offset++] = '>';
+    encoded[encoded_offset++] = 'z';
+    ck_assert(encoded_offset <= capacity);
+    *encoded_size = encoded_offset;
+    return encoded;
+}
+
+START_TEST(test_pdf_ascii85_stream_is_chunked_and_quota_accounted)
+{
+    enum { ZERO_GROUPS = 65537U };
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    size_t decoded_size;
+    uint8_t *encoded = pdf_test_ascii85_fixture(ZERO_GROUPS, &expected, &encoded_size, &decoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size, OBJ_FILTER_A85,
+                                  decoded_size, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, decoded_size);
+    ck_assert_uint_eq(result.output_size, decoded_size);
+    ck_assert_uint_eq(result.output_offset, decoded_size);
+    ck_assert_uint_eq(result.temporary_reserved, decoded_size);
+    ck_assert_uint_eq(result.temporary_bytes, decoded_size);
+    ck_assert(!result.scan_incomplete);
+    ck_assert_int_eq(memcmp(result.output, expected, decoded_size), 0);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_ascii85_partial_groups_are_exact)
+{
+    static const struct {
+        const char *encoded;
+        const char *expected;
+        size_t expected_size;
+    } cases[] = {
+        {"5l~>", "A", 1U},
+        {"5sb~>", "AB", 2U},
+        {"5sdp~>", "ABC", 3U},
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        struct pdf_single_filter_result result;
+        size_t encoded_size = strlen(cases[i].encoded);
+
+        pdf_test_decode_single_filter((const uint8_t *)cases[i].encoded,
+                                      encoded_size, encoded_size,
+                                      OBJ_FILTER_A85, 0, &result);
+        ck_assert_int_eq(result.status, CL_SUCCESS);
+        ck_assert_uint_eq(result.written, cases[i].expected_size);
+        ck_assert_uint_eq(result.output_size, cases[i].expected_size);
+        ck_assert_int_eq(memcmp(result.output, cases[i].expected,
+                                cases[i].expected_size), 0);
+        ck_assert(!result.scan_incomplete);
+        free(result.output);
+    }
+}
+END_TEST
+
+START_TEST(test_pdf_ascii85_markerless_trailing_group_matches_legacy)
+{
+    static const uint8_t encoded[]  = "87cURD_*#TDfTZ)!!";
+    static const uint8_t expected[] = "Hello, world";
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, sizeof(encoded) - 1U,
+                                  sizeof(encoded) - 1U, OBJ_FILTER_A85, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, sizeof(expected) - 1U);
+    ck_assert_uint_eq(result.output_size, sizeof(expected) - 1U);
+    ck_assert_int_eq(memcmp(result.output, expected, sizeof(expected) - 1U), 0);
+    ck_assert(!result.scan_incomplete);
+    free(result.output);
+}
+END_TEST
+
+START_TEST(test_pdf_ascii85_overflow_groups_are_fail_visible)
+{
+    static const char *cases[] = {"uuuuu~>", "uuuu~>"};
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        struct pdf_single_filter_result result;
+        size_t encoded_size = strlen(cases[i]);
+
+        pdf_test_decode_single_filter((const uint8_t *)cases[i], encoded_size,
+                                      encoded_size, OBJ_FILTER_A85, 0, &result);
+        ck_assert_int_eq(result.status, CL_EPARSE);
+        ck_assert_uint_eq(result.written, encoded_size);
+        ck_assert_uint_eq(result.output_size, encoded_size);
+        ck_assert_int_eq(memcmp(result.output, cases[i], encoded_size), 0);
+        ck_assert(result.scan_incomplete);
+        ck_assert(result.dont_cache);
+        free(result.output);
+    }
+}
+END_TEST
+
+START_TEST(test_pdf_ascii85_stream_quota_failure_rolls_back_output)
+{
+    enum { ZERO_GROUPS = 65537U };
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    size_t decoded_size;
+    uint8_t *encoded = pdf_test_ascii85_fixture(ZERO_GROUPS, &expected, &encoded_size, &decoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size, OBJ_FILTER_A85,
+                                  decoded_size - 1U, &result);
+    ck_assert_int_eq(result.status, CL_ERESOURCE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_int_eq(result.output_offset, 0);
+    ck_assert_uint_eq(result.temporary_reserved, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_invalid_ascii85_after_prefix_is_fail_visible)
+{
+    enum { ZERO_GROUPS = 65536U };
+    const size_t encoded_size = ZERO_GROUPS + 5U;
+    uint8_t *encoded = malloc(encoded_size);
+    struct pdf_single_filter_result result;
+
+    ck_assert_ptr_nonnull(encoded);
+    memset(encoded, 'z', ZERO_GROUPS);
+    memcpy(encoded + ZERO_GROUPS, "!!z~>", 5U);
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size, OBJ_FILTER_A85, 0, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, encoded_size);
+    ck_assert_uint_eq(result.output_size, encoded_size);
+    ck_assert_uint_eq(result.output_offset, encoded_size);
+    ck_assert_uint_eq(result.temporary_reserved, encoded_size);
+    ck_assert_uint_eq(result.temporary_bytes, encoded_size);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+    ck_assert_int_eq(memcmp(result.output, encoded, encoded_size), 0);
+
+    free(result.output);
+    free(encoded);
+}
+END_TEST
+
+#if SIZE_MAX > UINT32_MAX
+START_TEST(test_pdf_streaming_ascii85_accepts_native_input_width)
+{
+    uint8_t input[PDF_INPUT_WINDOW_SIZE] = {'z', '~', '>'};
+    static const uint8_t expected[4] = {0};
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(input, sizeof(input), (size_t)UINT32_MAX + 1U,
+                                  OBJ_FILTER_A85, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, sizeof(expected));
+    ck_assert_uint_eq(result.output_size, sizeof(expected));
+    ck_assert_int_eq(memcmp(result.output, expected, sizeof(expected)), 0);
+    ck_assert(!result.scan_incomplete);
+
+    free(result.output);
+}
+END_TEST
+#endif
+
 START_TEST(test_arc4_apply_uses_native_length)
 {
     static const uint8_t key[]      = "Key";
@@ -27249,12 +27706,24 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_runlength_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_runlength_stream_quota_failure_rolls_back_output);
     tcase_add_test(tc_cl, test_pdf_truncated_runlength_after_prefix_is_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_asciihex_stream_is_chunked_and_quota_accounted);
+    tcase_add_test(tc_cl, test_pdf_asciihex_stream_quota_failure_rolls_back_output);
+    tcase_add_test(tc_cl, test_pdf_invalid_asciihex_after_prefix_is_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_ascii_filters_accept_pdf_whitespace);
+    tcase_add_test(tc_cl, test_pdf_ascii85_stream_is_chunked_and_quota_accounted);
+    tcase_add_test(tc_cl, test_pdf_ascii85_partial_groups_are_exact);
+    tcase_add_test(tc_cl, test_pdf_ascii85_markerless_trailing_group_matches_legacy);
+    tcase_add_test(tc_cl, test_pdf_ascii85_overflow_groups_are_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_ascii85_stream_quota_failure_rolls_back_output);
+    tcase_add_test(tc_cl, test_pdf_invalid_ascii85_after_prefix_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pdf_stream_width_boundary_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_stream_allocation_boundary_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_object_coordinates_are_native_width);
     tcase_add_test(tc_cl, test_pdf_streaming_flate_accepts_native_input_width);
     tcase_add_test(tc_cl, test_pdf_streaming_runlength_accepts_native_input_width);
+    tcase_add_test(tc_cl, test_pdf_streaming_asciihex_accepts_native_input_width);
+    tcase_add_test(tc_cl, test_pdf_streaming_ascii85_accepts_native_input_width);
 #endif
     tcase_add_test(tc_cl, test_pdf_extracted_object_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_extract_decoder_error_is_fail_visible);

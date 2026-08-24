@@ -190,6 +190,10 @@ static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj 
                                          size_t streamlen, int fout, size_t *bytes_scanned);
 static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream, size_t streamlen,
                                       int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream,
+                                            size_t streamlen, int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream,
+                                           size_t streamlen, int fout, size_t *bytes_scanned);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
 static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -254,22 +258,36 @@ size_t pdf_decodestream(
         goto done;
     }
 
-    /* Ordinary single-filter Flate and RunLength streams do not need the
-     * legacy whole-buffer token. Decode them through bounded state directly
-     * into the quota-accounted child file. Object streams still need retained
-     * decoded bytes for object parsing, filter chains need an intermediate
-     * representation, and encrypted streams must pass through decryption
-     * first. XRef streams deliberately skip forced decryption. */
+    /* Ordinary single-filter Flate, RunLength, ASCIIHex, and ASCII85 streams
+     * do not need the legacy whole-buffer token. Decode them through bounded
+     * state directly into the quota-accounted child file. Object streams still
+     * need retained decoded bytes for object parsing, filter chains need an
+     * intermediate representation, and encrypted streams must pass through
+     * decryption first. XRef streams deliberately skip forced decryption. */
     if (obj->numfilters == 1 &&
-        (obj->filterlist[0] == OBJ_FILTER_FLATE || obj->filterlist[0] == OBJ_FILTER_RL) && objstm == NULL &&
+        (obj->filterlist[0] == OBJ_FILTER_FLATE || obj->filterlist[0] == OBJ_FILTER_RL ||
+         obj->filterlist[0] == OBJ_FILTER_AH || obj->filterlist[0] == OBJ_FILTER_A85) &&
+        objstm == NULL &&
         !(obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
         (!(pdf->flags & (1 << DECRYPTABLE_PDF)) || xref)) {
         cl_error_t decode_status;
 
-        if (obj->filterlist[0] == OBJ_FILTER_FLATE) {
-            decode_status = pdf_stream_flatedecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
-        } else {
-            decode_status = pdf_stream_rldecode(pdf, stream, streamlen, fout, &bytes_scanned);
+        switch (obj->filterlist[0]) {
+            case OBJ_FILTER_FLATE:
+                decode_status = pdf_stream_flatedecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+                break;
+            case OBJ_FILTER_RL:
+                decode_status = pdf_stream_rldecode(pdf, stream, streamlen, fout, &bytes_scanned);
+                break;
+            case OBJ_FILTER_AH:
+                decode_status = pdf_stream_asciihexdecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+                break;
+            case OBJ_FILTER_A85:
+                decode_status = pdf_stream_ascii85decode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+                break;
+            default:
+                decode_status = CL_EARG;
+                break;
         }
         if (decode_status == CL_EPARSE || decode_status == CL_BREAK) {
             size_t raw_bytes           = 0;
@@ -902,6 +920,86 @@ static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout, o
     return status;
 }
 
+static cl_error_t pdf_stream_output_flush(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
+                                          size_t *output_buffered, size_t decoded,
+                                          const char *limit_reason)
+{
+    cl_error_t status;
+
+    if (output_buffer == NULL || output_buffered == NULL || limit_reason == NULL)
+        return CL_ENULLARG;
+    if (*output_buffered == 0)
+        return CL_SUCCESS;
+
+    status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pdf->ctx, limit_reason);
+        return status;
+    }
+
+    status = pdf_write_output(pdf, fout, output_buffer, *output_buffered);
+    if (status == CL_SUCCESS)
+        *output_buffered = 0;
+    return status;
+}
+
+static cl_error_t pdf_stream_output_append(struct pdf_struct *pdf, int fout, uint8_t *output_buffer,
+                                           size_t *output_buffered, size_t *decoded,
+                                           const uint8_t *data, size_t length,
+                                           const char *overflow_reason, const char *limit_reason)
+{
+    size_t offset = 0;
+
+    if (output_buffer == NULL || output_buffered == NULL || decoded == NULL ||
+        (length != 0 && data == NULL) || overflow_reason == NULL || limit_reason == NULL)
+        return CL_ENULLARG;
+    if (*decoded > SIZE_MAX - length || *decoded > UINT64_MAX - length) {
+        cli_mark_scan_incomplete(pdf->ctx, overflow_reason);
+        return CL_ERESOURCE;
+    }
+
+    while (offset < length) {
+        size_t available;
+        size_t chunk;
+        cl_error_t status;
+
+        if (*output_buffered == INFLATE_CHUNK_SIZE) {
+            status = pdf_stream_output_flush(pdf, fout, output_buffer, output_buffered,
+                                             *decoded, limit_reason);
+            if (status != CL_SUCCESS)
+                return status;
+        }
+
+        available = INFLATE_CHUNK_SIZE - *output_buffered;
+        chunk     = MIN(available, length - offset);
+        memcpy(output_buffer + *output_buffered, data + offset, chunk);
+        *output_buffered += chunk;
+        *decoded += chunk;
+        offset += chunk;
+    }
+
+    if (*output_buffered == INFLATE_CHUNK_SIZE)
+        return pdf_stream_output_flush(pdf, fout, output_buffer, output_buffered,
+                                       *decoded, limit_reason);
+    return CL_SUCCESS;
+}
+
+static int pdf_asciihex_nibble(uint8_t byte)
+{
+    if (byte >= '0' && byte <= '9')
+        return byte - '0';
+    if (byte >= 'A' && byte <= 'F')
+        return byte - 'A' + 10;
+    if (byte >= 'a' && byte <= 'f')
+        return byte - 'a' + 10;
+    return -1;
+}
+
+static bool pdf_is_whitespace(uint8_t byte)
+{
+    return byte == 0 || byte == '\t' || byte == '\n' || byte == '\f' || byte == '\r' || byte == ' ';
+}
+
 static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8_t *content, size_t length,
                                              int fout, size_t *decoded_length, int *inflate_status)
 {
@@ -1134,7 +1232,6 @@ static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream
     while (offset < streamlen) {
         const uint8_t *output;
         size_t output_length;
-        size_t required;
         uint8_t control;
 
         if (offset >= next_deadline_offset) {
@@ -1171,50 +1268,17 @@ static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream
             break;
         }
 
-        if (decoded > SIZE_MAX - output_length || decoded > UINT64_MAX - output_length) {
-            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output size overflowed");
-            status = CL_ERESOURCE;
+        status = pdf_stream_output_append(pdf, fout, output_buffer, &output_buffered, &decoded,
+                                          output, output_length,
+                                          "PDF streamed RunLength output size overflowed",
+                                          "PDF streamed RunLength output exceeded configured scan limits");
+        if (status != CL_SUCCESS)
             break;
-        }
-        required = decoded + output_length;
-
-        if (output_length > INFLATE_CHUNK_SIZE - output_buffered) {
-            status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
-            if (status != CL_SUCCESS) {
-                cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output exceeded configured scan limits");
-                break;
-            }
-            status = pdf_write_output(pdf, fout, output_buffer, output_buffered);
-            if (status != CL_SUCCESS)
-                break;
-            output_buffered = 0;
-        }
-
-        memcpy(output_buffer + output_buffered, output, output_length);
-        output_buffered += output_length;
-        decoded = required;
-
-        if (output_buffered == INFLATE_CHUNK_SIZE) {
-            status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
-            if (status != CL_SUCCESS) {
-                cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output exceeded configured scan limits");
-                break;
-            }
-            status = pdf_write_output(pdf, fout, output_buffer, output_buffered);
-            if (status != CL_SUCCESS)
-                break;
-            output_buffered = 0;
-        }
     }
 
-    if (status == CL_SUCCESS && output_buffered != 0) {
-        status = cli_checklimits("pdf", pdf->ctx, (uint64_t)decoded, 0, 0);
-        if (status != CL_SUCCESS) {
-            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed RunLength output exceeded configured scan limits");
-        } else {
-            status = pdf_write_output(pdf, fout, output_buffer, output_buffered);
-        }
-    }
+    if (status == CL_SUCCESS)
+        status = pdf_stream_output_flush(pdf, fout, output_buffer, &output_buffered, decoded,
+                                         "PDF streamed RunLength output exceeded configured scan limits");
 
     if (status == CL_SUCCESS) {
         cli_dbgmsg("cli_pdf: streamed RunLength decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
@@ -1233,6 +1297,262 @@ static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream
     if (status == CL_EPARSE)
         cli_mark_scan_incomplete(pdf->ctx, "PDF RunLength stream ended within an encoded packet");
 
+    return status;
+}
+
+static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                            const char *stream_data, size_t streamlen,
+                                            int fout, size_t *bytes_scanned)
+{
+    const uint8_t *content = (const uint8_t *)stream_data;
+    uint8_t *output_buffer = NULL;
+    size_t offset               = 0;
+    size_t decoded              = 0;
+    size_t output_buffered      = 0;
+    size_t next_deadline_offset = 0;
+    off_t output_start;
+    uint64_t reservation_start = 0;
+    cl_error_t status           = CL_SUCCESS;
+    int high_nibble             = -1;
+
+    if (bytes_scanned == NULL)
+        return CL_ENULLARG;
+    *bytes_scanned = 0;
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed ASCIIHex output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    output_buffer = (uint8_t *)malloc(INFLATE_CHUNK_SIZE);
+    if (output_buffer == NULL) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed ASCIIHex output window could not be allocated");
+        return CL_EMEM;
+    }
+
+    while (offset < streamlen) {
+        uint8_t byte;
+        int nibble;
+
+        if (offset >= next_deadline_offset) {
+            status = pdf_checktimelimit(pdf, "PDF streamed ASCIIHex traversal reached the configured time limit");
+            if (status != CL_SUCCESS)
+                break;
+            if (offset > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
+                next_deadline_offset = SIZE_MAX;
+            } else {
+                next_deadline_offset = offset + PDF_INPUT_WINDOW_SIZE;
+            }
+        }
+
+        byte = content[offset++];
+        if (byte == '>')
+            break;
+        if (pdf_is_whitespace(byte))
+            continue;
+
+        nibble = pdf_asciihex_nibble(byte);
+        if (nibble < 0) {
+            status = CL_EPARSE;
+            break;
+        }
+        if (high_nibble < 0) {
+            high_nibble = nibble;
+        } else {
+            uint8_t output = (uint8_t)((high_nibble << 4) | nibble);
+
+            high_nibble = -1;
+            status = pdf_stream_output_append(pdf, fout, output_buffer, &output_buffered, &decoded,
+                                              &output, 1U,
+                                              "PDF streamed ASCIIHex output size overflowed",
+                                              "PDF streamed ASCIIHex output exceeded configured scan limits");
+            if (status != CL_SUCCESS)
+                break;
+        }
+    }
+
+    if (status == CL_SUCCESS && high_nibble >= 0) {
+        uint8_t output = (uint8_t)(high_nibble << 4);
+
+        status = pdf_stream_output_append(pdf, fout, output_buffer, &output_buffered, &decoded,
+                                          &output, 1U,
+                                          "PDF streamed ASCIIHex output size overflowed",
+                                          "PDF streamed ASCIIHex output exceeded configured scan limits");
+    }
+    if (status == CL_SUCCESS)
+        status = pdf_stream_output_flush(pdf, fout, output_buffer, &output_buffered, decoded,
+                                         "PDF streamed ASCIIHex output exceeded configured scan limits");
+
+    if (status == CL_SUCCESS) {
+        cli_dbgmsg("cli_pdf: streamed ASCIIHex decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        *bytes_scanned = decoded;
+        free(output_buffer);
+        return decoded == 0 ? CL_BREAK : CL_SUCCESS;
+    }
+
+    free(output_buffer);
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(pdf, fout, output_start, reservation_start);
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+
+    if (status == CL_EPARSE) {
+        if (!(obj->flags & ((1 << OBJ_IMAGE) | (1 << OBJ_TRUNCATED))))
+            pdfobj_flag(pdf, obj, BAD_ASCIIDECODE);
+        cli_mark_scan_incomplete(pdf->ctx, "PDF ASCIIHex stream contained an invalid byte");
+    }
+    return status;
+}
+
+static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                           const char *stream_data, size_t streamlen,
+                                           int fout, size_t *bytes_scanned)
+{
+    const uint8_t *content = (const uint8_t *)stream_data;
+    uint8_t *output_buffer = NULL;
+    size_t offset               = 0;
+    size_t decoded              = 0;
+    size_t output_buffered      = 0;
+    size_t next_deadline_offset = 0;
+    off_t output_start;
+    uint64_t reservation_start = 0;
+    uint64_t sum               = 0;
+    cl_error_t status          = CL_SUCCESS;
+    unsigned int quintet       = 0;
+    bool found_eod             = false;
+
+    if (bytes_scanned == NULL)
+        return CL_ENULLARG;
+    *bytes_scanned = 0;
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed ASCII85 output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    output_buffer = (uint8_t *)malloc(INFLATE_CHUNK_SIZE);
+    if (output_buffer == NULL) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed ASCII85 output window could not be allocated");
+        return CL_EMEM;
+    }
+
+    while (offset < streamlen) {
+        uint8_t byte;
+
+        if (offset >= next_deadline_offset) {
+            status = pdf_checktimelimit(pdf, "PDF streamed ASCII85 traversal reached the configured time limit");
+            if (status != CL_SUCCESS)
+                break;
+            if (offset > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
+                next_deadline_offset = SIZE_MAX;
+            } else {
+                next_deadline_offset = offset + PDF_INPUT_WINDOW_SIZE;
+            }
+        }
+
+        byte = content[offset++];
+        if (byte == '~' && offset < streamlen && content[offset] == '>') {
+            uint8_t partial[4];
+            unsigned int i;
+
+            found_eod = true;
+            if (quintet == 1U) {
+                status = CL_EPARSE;
+                break;
+            }
+            for (i = quintet; i < 5U; i++)
+                sum *= 85U;
+            if (quintet > 1U)
+                sum += UINT64_C(0xFFFFFF) >> ((quintet - 2U) * 8U);
+            if (sum > UINT32_MAX) {
+                status = CL_EPARSE;
+                break;
+            }
+            for (i = 0; i + 1U < quintet; i++)
+                partial[i] = (uint8_t)((sum >> (24U - 8U * i)) & 0xffU);
+            if (quintet > 1U) {
+                status = pdf_stream_output_append(pdf, fout, output_buffer, &output_buffered, &decoded,
+                                                  partial, quintet - 1U,
+                                                  "PDF streamed ASCII85 output size overflowed",
+                                                  "PDF streamed ASCII85 output exceeded configured scan limits");
+            }
+            break;
+        }
+
+        if (byte >= '!' && byte <= 'u') {
+            sum = (sum * 85U) + ((uint32_t)byte - '!');
+            quintet++;
+            if (quintet == 5U) {
+                uint8_t output[4];
+
+                if (sum > UINT32_MAX) {
+                    status = CL_EPARSE;
+                    break;
+                }
+                output[0] = (uint8_t)(sum >> 24U);
+                output[1] = (uint8_t)((sum >> 16U) & 0xffU);
+                output[2] = (uint8_t)((sum >> 8U) & 0xffU);
+                output[3] = (uint8_t)(sum & 0xffU);
+                status    = pdf_stream_output_append(pdf, fout, output_buffer, &output_buffered, &decoded,
+                                                     output, sizeof(output),
+                                                     "PDF streamed ASCII85 output size overflowed",
+                                                     "PDF streamed ASCII85 output exceeded configured scan limits");
+                if (status != CL_SUCCESS)
+                    break;
+                quintet = 0;
+                sum     = 0;
+            }
+        } else if (byte == 'z') {
+            static const uint8_t zeros[4] = {0};
+
+            if (quintet != 0U) {
+                status = CL_EPARSE;
+                break;
+            }
+            status = pdf_stream_output_append(pdf, fout, output_buffer, &output_buffered, &decoded,
+                                              zeros, sizeof(zeros),
+                                              "PDF streamed ASCII85 output size overflowed",
+                                              "PDF streamed ASCII85 output exceeded configured scan limits");
+            if (status != CL_SUCCESS)
+                break;
+        } else if (!pdf_is_whitespace(byte)) {
+            status = CL_EPARSE;
+            break;
+        }
+    }
+
+    if (!found_eod && status == CL_SUCCESS)
+        cli_dbgmsg("cli_pdf: streamed ASCII85 input has no EOF marker\n");
+    if (status == CL_SUCCESS)
+        status = pdf_stream_output_flush(pdf, fout, output_buffer, &output_buffered, decoded,
+                                         "PDF streamed ASCII85 output exceeded configured scan limits");
+
+    if (status == CL_SUCCESS) {
+        cli_dbgmsg("cli_pdf: streamed ASCII85 decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        *bytes_scanned = decoded;
+        free(output_buffer);
+        return decoded == 0 ? CL_BREAK : CL_SUCCESS;
+    }
+
+    free(output_buffer);
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(pdf, fout, output_start, reservation_start);
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+
+    if (status == CL_EPARSE) {
+        if (!(obj->flags & ((1 << OBJ_IMAGE) | (1 << OBJ_TRUNCATED))))
+            pdfobj_flag(pdf, obj, BAD_ASCIIDECODE);
+        cli_mark_scan_incomplete(pdf->ctx, "PDF ASCII85 stream contained an invalid group");
+    }
     return status;
 }
 

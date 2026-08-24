@@ -6454,9 +6454,9 @@ leakage, malformed-prefix rollback, and native-width source admission above
 
 Object streams still retain decoded bytes for object parsing, and encrypted
 streams and filter chains need intermediate representations. Those paths,
-together with ASCII85, ASCIIHex, and LZW, retain their explicit legacy
-contiguous/width boundary. Compiled PDF corpus, sanitizer, materialized
-large-stream, and supported-build Sonic1 qualification remain release gates.
+together with LZW, retain their explicit legacy contiguous/width boundary.
+Compiled PDF corpus, sanitizer, materialized large-stream, and supported-build
+Sonic1 qualification remain release gates.
 
 The isolated Linux GCC translation-unit check also exposed an older unmatched
 `_WIN32` guard and late callback declarations in `check_clamav.c`. The guard is
@@ -6489,5 +6489,29 @@ one-byte-short quota rollback with zero leakage, malformed input after a valid
 prefix, and a native-width logical input above `UINT32_MAX` that terminates at
 an early marker. The production-code harness passes all eight Flate and
 RunLength cases under ordinary GCC and GCC AddressSanitizer/UBSan with leak
-detection. Filter chains, object streams, encryption, ASCII85, ASCIIHex, and
-LZW remain explicit PDF qualification gaps.
+detection. Filter chains, object streams, encryption, and LZW remain explicit
+PDF qualification gaps.
+
+## PDF single-ASCII filter bounded streaming — 2026-08-23
+
+Ordinary unencrypted single-filter `ASCIIHexDecode` and `ASCII85Decode` streams
+now use the shared fixed-window output transaction instead of allocating a
+token proportional to encoded input. Both native-width walkers check the
+deadline at 64 KiB input intervals and flush through one 256 KiB buffer with
+scan-limit and temporary-quota admission.
+
+ASCIIHex accepts all PDF whitespace, pads an odd final nibble with zero, and
+ignores data after `>`. ASCII85 retains the established marker-less behavior,
+supports whitespace and `z` groups, validates `z` placement and one-character
+final groups, rejects full or partial groups whose numeric value exceeds the
+32-bit ASCII85 tuple, completes two- through four-character groups at `~>`, and
+ignores post-marker data. Invalid input after a written decoded prefix rolls
+back the file and reservations before exact raw fallback.
+
+Focused tests cover exact output beyond one window, odd nibbles, known ASCII85
+vectors, zero groups, partial groups, whitespace, post-marker bytes,
+one-byte-short quotas, invalid and overflowing groups after valid output, and
+native-width logical lengths above `UINT32_MAX` with early terminators. The
+production harness passes all 20 Flate, RunLength, ASCIIHex, and ASCII85 cases normally and
+under GCC AddressSanitizer/UBSan with leak detection. Object streams,
+encryption, filter chains, and LZW remain the explicit token-backed PDF gaps.
