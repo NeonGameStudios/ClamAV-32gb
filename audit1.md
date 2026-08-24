@@ -7339,3 +7339,22 @@ validated incrementally for complete, minimal, scalar-value sequences before
 normalization. A focused Linux ARM64 GCC case passes all three normalized
 encoding branches plus cross-window and malformed-input oracles; sanitizer,
 production corpus, Linux x86-64, and Sonic1 qualification remain open.
+
+## Bounded UTF-16 HTML normalization — 2026-08-24
+
+`CL_TYPE_HTML_UTF16` no longer uses the lossy whole-chunk
+`cli_utf16toascii()` conversion. It decodes UTF-16LE and UTF-16BE to UTF-8 in
+fixed 4 KiB input windows, carries a pending high surrogate between windows,
+and reserves each exact decoded output length before staging it for the normal
+HTML child scan. BOM-less input is accepted only when its first code unit
+unambiguously establishes byte order. Odd code units, reversed byte order,
+invalid surrogate state, ambiguous byte order, read/write/map/cleanup failure,
+and nested-scan failure remain incomplete and non-cacheable.
+
+The focused Linux ARM64 GCC `text_encoding` case passes 2/2. Its HTML branch
+proves LE/BE decoding with and without BOMs, signature detection in the decoded
+child, a valid surrogate pair split exactly across the 4 KiB input boundary,
+exact temporary-account release, and exact fail-closed reasons for an odd code
+unit, a lone high surrogate, and unknown byte order. Production HTML corpus,
+sanitizer, Linux x86-64, materialized multi-gigabyte input, and Sonic1 evidence
+remain release gates.

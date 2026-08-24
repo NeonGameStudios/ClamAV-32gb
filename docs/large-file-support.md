@@ -2601,11 +2601,18 @@ accounting. An enabled image-fuzzy detector also marks calculation, metadata,
 mapping, and contiguous-admission failures incomplete instead of allowing a
 silent detector skip to return clean.
 
-UTF-16 HTML normalization now rejects odd trailing code units, zero-progress
-readers, conversion failures, short writes, mapping failures, child-scan
-failures, and temporary cleanup failures as incomplete. Its decoded output is
-reserved against `MaxTemporarySize` before staging, so a partial normalized
-HTML file cannot be admitted as a clean child.
+UTF-16 HTML normalization now uses the shared 4 KiB bounded UTF-16-to-UTF-8
+decoder instead of the lossy UTF-16-to-ASCII helper. It accepts little- and
+big-endian input with a BOM or an unambiguous first code unit, carries a high
+surrogate across input windows, and reserves the exact decoded byte count
+against `MaxTemporarySize` before each staged write. Odd code units, reversed
+byte order, invalid surrogate sequences, ambiguous byte order, zero-progress
+readers, short writes, mapping failures, child-scan failures, and temporary
+cleanup failures are incomplete and non-cacheable. A focused Linux ARM64 GCC
+case passes both endian forms with and without a BOM, a surrogate split exactly
+at the 4 KiB boundary, exact reservation release, signature detection from the
+decoded child, and malformed-input rejection. Production corpus, sanitizer,
+Linux x86-64, materialized large-file, and Sonic1 qualification remain open.
 
 OOXML metadata inspection now treats libxml2 reader-initialization failures,
 truncated `[Content_Types].xml` and HWP metadata documents, and missing

@@ -3821,8 +3821,8 @@ static cl_error_t script_validate_utf8_chunk(
     return (final && state->remaining != 0) ? CL_EPARSE : CL_SUCCESS;
 }
 
-static cl_error_t script_emit_utf8(uint32_t codepoint, unsigned char *output,
-                                   size_t output_size, size_t *written)
+static cl_error_t text_emit_utf8(uint32_t codepoint, unsigned char *output,
+                                 size_t output_size, size_t *written)
 {
     size_t needed;
 
@@ -3857,7 +3857,7 @@ static cl_error_t script_emit_utf8(uint32_t codepoint, unsigned char *output,
     return CL_SUCCESS;
 }
 
-static cl_error_t script_decode_utf16_chunk(
+static cl_error_t text_decode_utf16_chunk(
     const unsigned char *input,
     size_t input_len,
     bool little_endian,
@@ -3907,7 +3907,7 @@ static cl_error_t script_decode_utf16_chunk(
             codepoint = unit;
         }
 
-        status = script_emit_utf8(codepoint, output, output_size, written);
+        status = text_emit_utf8(codepoint, output, output_size, written);
         if (status != CL_SUCCESS)
             return status;
     }
@@ -4017,7 +4017,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx, cli_file_t input_type)
         normalize_len   = len;
 
         if (len && is_utf16) {
-            ret = script_decode_utf16_chunk(
+            ret = text_decode_utf16_chunk(
                 buff, len, little_endian, final, &utf16_start, &pending_high,
                 utf16_decoded, sizeof(utf16_decoded), &normalize_len);
             if (ret != CL_SUCCESS) {
@@ -4135,14 +4135,18 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
 {
     cl_error_t status = CL_ERROR;
     char *tempname    = NULL;
-    char *decoded     = NULL;
-    const char *buff;
+    unsigned char decoded[SCRIPT_UTF16_OUTPUT_CHUNK];
+    const unsigned char *buff;
     int fd = -1;
-    int bytes;
+    size_t bytes;
+    size_t decoded_len;
     size_t at       = 0;
     fmap_t *new_map = NULL;
-    uint64_t temporary_size;
-    bool temporary_reserved = false;
+    uint64_t temporary_reserved = 0;
+    uint16_t pending_high       = 0;
+    bool stream_start           = true;
+    bool little_endian;
+    bool final;
 
     cli_dbgmsg("in cli_scanhtml_utf16()\n");
 
@@ -4158,11 +4162,32 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
         goto done;
     }
 
-    temporary_size = (uint64_t)(ctx->fmap->len / 2);
-    status         = cli_scan_reserve_temporary(ctx, temporary_size);
-    if (status != CL_SUCCESS)
+    if (ctx->fmap->len < 2U) {
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML input has no complete code unit");
+        status = CL_EPARSE;
         goto done;
-    temporary_reserved = true;
+    }
+
+    buff = fmap_need_off_once(ctx->fmap, 0, 2U);
+    if (NULL == buff) {
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML byte order could not be read completely");
+        status = CL_EREAD;
+        goto done;
+    }
+    if (buff[0] == 0xffU && buff[1] == 0xfeU) {
+        little_endian = true;
+    } else if (buff[0] == 0xfeU && buff[1] == 0xffU) {
+        little_endian = false;
+    } else if (buff[0] != 0 && buff[1] == 0) {
+        little_endian = true;
+    } else if (buff[0] == 0 && buff[1] != 0) {
+        little_endian = false;
+    } else {
+        cli_mark_scan_incomplete(ctx, "UTF-16 HTML byte order could not be determined");
+        status = CL_EPARSE;
+        goto done;
+    }
+
     status = cli_checktimelimit(ctx);
     if (status != CL_SUCCESS) {
         cli_mark_scan_incomplete(ctx, "UTF-16 HTML temporary admission reached the configured time limit");
@@ -4190,7 +4215,7 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
             goto done;
         }
 
-        bytes = MIN(ctx->fmap->len - at, ctx->fmap->pgsz * 16);
+        bytes = MIN(ctx->fmap->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
         if (bytes == 0) {
             cli_mark_scan_incomplete(ctx, "UTF-16 HTML reader made no progress");
             status = CL_EPARSE;
@@ -4201,21 +4226,33 @@ static cl_error_t cli_scanhtml_utf16(cli_ctx *ctx)
             status = CL_EREAD;
             goto done;
         }
-        at += bytes;
-        decoded = cli_utf16toascii(buff, bytes);
-        if (decoded == NULL) {
-            cli_mark_scan_incomplete(ctx, "UTF-16 HTML input could not be converted completely");
-            status = CL_EMEM;
+
+        final  = bytes == ctx->fmap->len - at;
+        status = text_decode_utf16_chunk(
+            buff, bytes, little_endian, final, &stream_start, &pending_high,
+            decoded, sizeof(decoded), &decoded_len);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(
+                ctx,
+                status == CL_ERESOURCE
+                    ? "UTF-16 HTML expansion exceeded its bounded conversion window"
+                    : "UTF-16 HTML input contains an invalid surrogate or byte-order sequence");
             goto done;
         }
-        if ((status = cli_write_temp_output(ctx, fd, decoded, bytes / 2,
+
+        status = cli_reserve_temp_output(
+            ctx, &temporary_reserved, (uint64_t)decoded_len,
+            "UTF-16 HTML decoded output exceeds temporary storage limits");
+        if (status != CL_SUCCESS)
+            goto done;
+
+        if ((status = cli_write_temp_output(ctx, fd, decoded, decoded_len,
                                             "UTF-16 HTML normalized output reached the configured time limit",
                                             "UTF-16 HTML normalized output could not be written completely")) != CL_SUCCESS) {
             cli_errmsg("cli_scanhtml_utf16: Can't write file %s completely\n", tempname);
             goto done;
         }
-        free(decoded);
-        decoded = NULL;
+        at += bytes;
     }
 
     new_map = fmap_new(fd, 0, 0, NULL, tempname);
@@ -4255,10 +4292,6 @@ done:
         }
     }
 
-    if (NULL != decoded) {
-        free(decoded);
-    }
-
     if (NULL != tempname) {
         if (!ctx->engine->keeptmp) {
             if (cli_unlink(tempname) != 0) {
@@ -4274,7 +4307,7 @@ done:
     }
 
     if (temporary_reserved)
-        cli_scan_release_temporary(ctx, temporary_size);
+        cli_scan_release_temporary(ctx, temporary_reserved);
 
     return status;
 }

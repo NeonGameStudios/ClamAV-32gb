@@ -1,5 +1,16 @@
 # Wishlist
 
+## Bounded UTF-16 HTML normalization — 2026-08-24
+
+- UTF-16 HTML now uses strict bounded UTF-16-to-UTF-8 conversion with explicit
+  endian admission, cross-window surrogate state, and exact decoded-output
+  temporary accounting before the normalized HTML child scan.
+- The focused Linux ARM64 GCC encoding case passes 2/2 and covers LE/BE with
+  and without BOMs, a surrogate split at the 4 KiB boundary, decoded-child
+  detection, reservation release, and exact malformed-input reasons.
+- Add production HTML corpus, ASan/UBSan, Linux x86-64, materialized large-file,
+  and Sonic1 evidence before parser-family qualification.
+
 ## Encoded-text script normalization — 2026-08-24
 
 - UTF-16LE/BE script text now uses bounded streaming UTF-8 conversion before
