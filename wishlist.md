@@ -2234,9 +2234,9 @@ and Sonic1 qualification as release gates.
   injection, and Sonic1 release/sanitizer runs. Preserve simultaneous
   input/output temporary accounting, release consumed inputs only after the
   next stage completes, and require exact final-output/quota rollback before
-  raw fallback. Add per-filter DecodeParms-array support separately; retain
-  unsupported/mixed chains and encrypted production qualification as explicit
-  gaps.
+  raw fallback. Per-filter DecodeParms arrays are implemented by the later
+  2026-08-24 milestone; retain unsupported/mixed chains and encrypted
+  production qualification as explicit gaps.
 
 ## PDF file-backed object streams — 2026-08-23
 
@@ -2277,7 +2277,25 @@ and Sonic1 qualification as release gates.
   strict nonzero PKCS#7 padding, RC4 state across windows,
   decryption-before-filter ordering, simultaneous plaintext/downstream quota,
   exact rollback, file-backed object ownership, and no temporary residue.
-  Retain non-first Crypt as explicit incomplete; keep per-filter DecodeParms
-  arrays and unsupported/mixed filters as separate incomplete boundaries until
-  implemented and qualified. Non-mmap object streams remain deliberately
+  Retain non-first Crypt as explicit incomplete; keep unsupported/mixed filters
+  as a separate incomplete boundary until implemented and qualified. Non-mmap
+  object streams remain deliberately
   outside the certified first-release profile.
+
+## PDF per-filter DecodeParms arrays — 2026-08-24
+
+- Direct DecodeParms dictionaries retain their compatibility behavior. Arrays
+  must contain exactly one dictionary or `null` for every declared filter, and
+  each dictionary is dispatched only to its corresponding stage in streamed,
+  encrypted, and residual legacy chains. Short, long, scalar, or invalid-entry
+  arrays fail before output, mark the scan incomplete, and remain non-cacheable.
+- Focused Linux ARM64 GCC tests pass 2/2 for direct dispatch and parser syntax,
+  including `/DecodeParms`, abbreviated `/DP`, `null`, predictor placement,
+  exact raw fallback, zero-output malformed admission, and temporary-accounting
+  cleanup. Direct GCC compilation also passes for `pdf.c`, `pdfdecode.c`, and
+  the complete `check_clamav.c` translation unit with only pre-existing
+  isolated-build warnings.
+- Add production and sanitizer corpus execution, materialized multi-gigabyte
+  chains, broader malformed dictionary syntax, quota/read/write/cleanup fault
+  injection, unsupported/mixed filters, non-first Crypt ordering, and Sonic1
+  release evidence before parser-family qualification.

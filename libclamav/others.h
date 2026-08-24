@@ -58,6 +58,11 @@
 
 #include "unrar_iface.h"
 
+/* yara_clam.h stores the active scan context before the complete internal
+ * context definition below is available. Keep the type visible without
+ * exposing any fields early. */
+typedef struct cli_ctx_tag cli_ctx;
+
 #ifdef HAVE_YARA
 #include "yara_clam.h"
 #endif

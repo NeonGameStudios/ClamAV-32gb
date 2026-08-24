@@ -1941,6 +1941,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
     uint64_t temporary_reserved = 0;
     bool dump                = true;
     struct pdf_dict *dparams = NULL;
+    struct pdf_array *dparams_array = NULL;
     cl_error_t search_status;
 
     pdf->temporary_reserved = &temporary_reserved;
@@ -2036,6 +2037,7 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         int dict_len = obj->stream - start; /* Dictionary should end where the stream begins */
 
         const char *pstr;
+        const char *decodeparms_key = NULL;
         struct objstm_struct *objstm = NULL;
         int xref                     = 0;
 
@@ -2114,29 +2116,66 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
          */
         if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/DecodeParms"))) {
             cli_dbgmsg("pdf_extract_obj: Found /DecodeParms\n");
+            decodeparms_key = "/DecodeParms";
         } else if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/DP"))) {
             cli_dbgmsg("pdf_extract_obj: Found /DP\n");
+            decodeparms_key = "/DP";
         }
 
         if (pstr) {
-            /* shift pstr left to "<<" for pdf_parse_dict */
-            while ((*pstr == '<') && (pstr > start)) {
-                pstr--;
-                dict_len++;
+            /* pdf_getdict() historically advances past array and dictionary
+             * delimiters while looking for the next object. Recover this
+             * key's exact value boundary before selecting the parser. */
+            dict_len = obj->stream - start;
+            pstr = pdf_memstr_deadline(
+                pdf, start, (size_t)dict_len, decodeparms_key,
+                strlen(decodeparms_key), &search_status);
+            if (search_status == CL_ETIMEOUT) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF DecodeParms value search reached the configured time limit");
+                status = CL_ETIMEOUT;
+                goto done;
             }
-
-            /* shift pstr right to "<<" for pdf_parse_dict */
-            while ((*pstr != '<') && (dict_len > 0)) {
+            if (pstr == NULL) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx, "PDF DecodeParms key could not be relocated");
+                status = CL_EPARSE;
+                goto done;
+            }
+            pstr += strlen(decodeparms_key);
+            dict_len = obj->stream - pstr;
+            while (dict_len > 0 && isspace((unsigned char)*pstr)) {
                 pstr++;
                 dict_len--;
             }
 
-            if (dict_len > 4) {
+            if (dict_len >= 2 && pstr[0] == '<' && pstr[1] == '<') {
                 pdf->parse_recursion_depth++;
                 dparams = pdf_parse_dict(pdf, obj, obj->size, (char *)pstr, NULL);
                 pdf->parse_recursion_depth--;
+            } else if (dict_len >= 1 && pstr[0] == '[') {
+                pdf->parse_recursion_depth++;
+                dparams_array = pdf_parse_array(pdf, obj, obj->size,
+                                                (char *)pstr, NULL);
+                pdf->parse_recursion_depth--;
             } else {
-                cli_dbgmsg("pdf_extract_obj: failed to locate DecodeParms dictionary start\n");
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF DecodeParms value is neither a dictionary nor an array");
+                status = CL_EPARSE;
+                goto done;
+            }
+
+            if (dparams == NULL && dparams_array == NULL) {
+                status = cli_checktimelimit(pdf->ctx);
+                if (status == CL_SUCCESS) {
+                    cli_mark_scan_incomplete(
+                        pdf->ctx,
+                        "PDF DecodeParms dictionary or array could not be parsed");
+                    status = CL_EPARSE;
+                }
+                goto done;
             }
         }
 
@@ -2195,7 +2234,9 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             }
         }
 
-        sum = pdf_decodestream(pdf, obj, dparams, obj->stream, length, xref, fout, &status, objstm);
+        sum = pdf_decodestream_with_params_array(
+            pdf, obj, dparams, dparams_array, obj->stream, length, xref,
+            fout, &status, objstm);
         if ((CL_SUCCESS != status) && (CL_VIRUS != status)) {
             cli_dbgmsg("Error decoding stream! Error code: %d\n", status);
 
@@ -2216,6 +2257,10 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         if (dparams) {
             pdf_free_dict(dparams);
             dparams = NULL;
+        }
+        if (dparams_array) {
+            pdf_free_array(dparams_array);
+            dparams_array = NULL;
         }
 
         if (status == CL_SUCCESS && objstm != NULL &&
@@ -2387,6 +2432,9 @@ done:
 
     if (NULL != dparams) {
         pdf_free_dict(dparams);
+    }
+    if (NULL != dparams_array) {
+        pdf_free_array(dparams_array);
     }
 
     if (obj != NULL && obj->objstm != NULL)

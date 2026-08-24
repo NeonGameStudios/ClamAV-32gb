@@ -6998,10 +6998,10 @@ and under the same sanitizers. `pdfdecode.c`, `lzwdec.c`, and the complete
 `check_clamav.c` translation unit pass GCC compilation; only pre-existing
 isolated-build warnings remain.
 
-Encrypted object streams, unsupported or mixed filter chains, per-filter
-DecodeParms arrays, exhaustive filter-order corpus coverage, materialized
-multi-gigabyte intermediates, and Sonic1 release/sanitizer qualification remain
-open.
+Encrypted object streams, unsupported or mixed filter chains, exhaustive
+filter-order corpus coverage, materialized multi-gigabyte intermediates, and
+Sonic1 release/sanitizer qualification remain open. Per-filter DecodeParms
+arrays are addressed by the later 2026-08-24 milestone.
 
 ## PDF file-backed object streams — 2026-08-23
 
@@ -7033,9 +7033,10 @@ production `fmap.c`, normally and under the same sanitizers. The complete
 `check_clamav.c` translation unit also passes GCC syntax compilation with only
 pre-existing isolated-build warnings.
 
-Encrypted object streams, unsupported/mixed filters, per-filter DecodeParms
-arrays, non-mmap object-stream builds, compiled corpus, materialized-large
-fixtures, and Sonic1 qualification remain open.
+Encrypted object streams, unsupported/mixed filters, non-mmap object-stream
+builds, compiled corpus, materialized-large fixtures, and Sonic1 qualification
+remain open. Per-filter DecodeParms arrays are addressed by the later
+2026-08-24 milestone.
 
 ## PDF object-stream qualification corpus — 2026-08-23
 
@@ -7138,8 +7139,8 @@ crypt filters now have a deterministic `UNSUPPORTED` oracle, while truncated
 AESV2 ciphertext and invalid PKCS#7 padding have deterministic
 `MALFORMED_CONFIRMED` oracles. Materialized multi-gigabyte encrypted streams,
 broader malformed dictionaries, quota/read/cleanup faults, production and
-sanitizer clamscan runs, Sonic1 evidence, per-filter DecodeParms arrays, and
-unsupported/mixed filters remain open.
+sanitizer clamscan runs, Sonic1 evidence, and unsupported/mixed filters remain
+open.
 Non-first explicit Crypt is intentionally fail-visible before the legacy
 contiguous path.
 
@@ -7153,3 +7154,27 @@ Non-mmap builds remain outside the certified profile and keep the bounded
 unit oracles cover every missing build capability independently. Non-mmap PDF
 object streams are therefore an explicit unsupported release boundary, not an
 unresolved policy decision.
+
+## PDF per-filter DecodeParms arrays — 2026-08-24
+
+The PDF parser now accepts either the historical direct DecodeParms dictionary
+or an array aligned one-for-one with the declared filter array. Every array
+entry must be a dictionary or the exact scalar `null`, and each dictionary is
+selected only for its corresponding stage across streamed, encrypted, and
+residual legacy paths. Short arrays, extra entries, other scalars, and
+unparseable values fail before decoder output, mark the layer incomplete, and
+prevent clean caching.
+
+Focused Linux ARM64 GCC evidence passes 2/2 direct-dispatch and parser-syntax
+cases. The oracles cover `/DecodeParms`, `/DP`, dictionary and `null` placement,
+an unsupported predictor routed to the intended Flate stage, exact raw
+fallback, zero output for malformed array shape/type, and zero retained
+temporary accounting. Direct GCC compilation passes for `pdf.c`,
+`pdfdecode.c`, and the complete `check_clamav.c` translation unit with only
+pre-existing isolated-build warnings.
+
+This closes the implementation gap, not parser-family qualification. Certified
+Linux x86-64 production/sanitizer corpus runs, broader malformed dictionaries,
+materialized multi-gigabyte chains, quota/read/write/cleanup fault injection,
+unsupported/mixed filters, non-first Crypt ordering, and Sonic1 release
+evidence remain open.

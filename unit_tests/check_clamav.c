@@ -2988,6 +2988,7 @@ START_TEST(test_html_normalize_cleanup_close_failure_is_fail_visible)
     cl_engine_free(engine);
 }
 END_TEST
+#endif
 
 START_TEST(test_html_utf16_time_limit_is_fail_visible)
 {
@@ -3031,7 +3032,6 @@ START_TEST(test_html_utf16_time_limit_is_fail_visible)
     cl_engine_free(scan_engine);
 }
 END_TEST
-#endif
 
 #ifndef _WIN32
 START_TEST(test_top_level_maxfilesize_descriptor_is_fail_visible)
@@ -10740,9 +10740,10 @@ static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_siz
                                               filter, NULL, temporary_limit, result);
 }
 
-static void pdf_test_decode_filter_chain(
+static void pdf_test_decode_filter_chain_with_params(
     const uint8_t *input, size_t input_size, size_t logical_size,
     const uint32_t *filters, uint32_t filter_count,
+    struct pdf_array *params_array,
     uint64_t temporary_limit,
     struct pdf_single_filter_result *result)
 {
@@ -10799,9 +10800,9 @@ static void pdf_test_decode_filter_chain(
     for (i = 0; i < filter_count; i++)
         obj.filterlist[i] = filters[i];
 
-    result->written = pdf_decodestream(&pdf, &obj, NULL,
-                                       (const char *)input, logical_size, 0, fd,
-                                       &status, NULL);
+    result->written = pdf_decodestream_with_params_array(
+        &pdf, &obj, NULL, params_array, (const char *)input, logical_size, 0,
+        fd, &status, NULL);
     result->status = status;
     ck_assert_int_eq(fstat(fd, &output_stat), 0);
     ck_assert(output_stat.st_size >= 0);
@@ -10830,6 +10831,17 @@ static void pdf_test_decode_filter_chain(
     free(path);
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+
+static void pdf_test_decode_filter_chain(
+    const uint8_t *input, size_t input_size, size_t logical_size,
+    const uint32_t *filters, uint32_t filter_count,
+    uint64_t temporary_limit,
+    struct pdf_single_filter_result *result)
+{
+    pdf_test_decode_filter_chain_with_params(
+        input, input_size, logical_size, filters, filter_count, NULL,
+        temporary_limit, result);
 }
 
 START_TEST(test_pdf_flate_predictor_parameters_are_fail_visible)
@@ -10994,6 +11006,259 @@ static uint8_t *pdf_test_filter_chain_fixture(
     free(compressed);
     return encoded;
 }
+
+START_TEST(test_pdf_decodeparms_array_is_per_filter_and_fail_visible)
+{
+    static const uint32_t filters[] = {
+        OBJ_FILTER_AH,
+        OBJ_FILTER_FLATE,
+    };
+    char predictor_key[]       = "/Predictor";
+    char unsupported_value[]   = "12";
+    char null_value[]          = "null";
+    char invalid_scalar[]      = "0";
+    struct pdf_dict_node dict_node;
+    struct pdf_dict unsupported_predictor;
+    struct pdf_array_node nodes[3];
+    struct pdf_array params_array;
+    struct pdf_single_filter_result result;
+    uint8_t *expected = NULL;
+    size_t stage_size;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_filter_chain_fixture(
+        4097U, false, &expected, &stage_size, &encoded_size);
+
+    ck_assert(stage_size > 0);
+    memset(&dict_node, 0, sizeof(dict_node));
+    memset(&unsupported_predictor, 0, sizeof(unsupported_predictor));
+    memset(nodes, 0, sizeof(nodes));
+    memset(&params_array, 0, sizeof(params_array));
+    dict_node.key                 = predictor_key;
+    dict_node.value               = unsupported_value;
+    dict_node.valuesz             = sizeof(unsupported_value) - 1U;
+    dict_node.type                = PDF_DICT_STRING;
+    unsupported_predictor.nodes  = &dict_node;
+    unsupported_predictor.tail   = &dict_node;
+    nodes[0].next                 = &nodes[1];
+    nodes[1].prev                 = &nodes[0];
+    nodes[0].type                 = PDF_ARR_DICT;
+    nodes[0].data                 = &unsupported_predictor;
+    nodes[0].datasz               = sizeof(unsupported_predictor);
+    nodes[1].type                 = PDF_ARR_STRING;
+    nodes[1].data                 = null_value;
+    nodes[1].datasz               = sizeof(null_value) - 1U;
+    params_array.nodes            = &nodes[0];
+    params_array.tail             = &nodes[1];
+
+    /* The first dictionary belongs only to ASCIIHex. Flate receives the null
+     * second entry, so an unsupported predictor in entry zero is irrelevant. */
+    pdf_test_decode_filter_chain_with_params(
+        encoded, encoded_size, encoded_size, filters, 2U, &params_array, 0,
+        &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, 4097U);
+    ck_assert_uint_eq(result.output_size, 4097U);
+    ck_assert_int_eq(memcmp(result.output, expected, 4097U), 0);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+    free(result.output);
+
+    /* Moving that dictionary to entry one must make the Flate stage fail. The
+     * complete encoded input is restored transactionally and remains visible. */
+    nodes[0].type   = PDF_ARR_STRING;
+    nodes[0].data   = null_value;
+    nodes[0].datasz = sizeof(null_value) - 1U;
+    nodes[1].type   = PDF_ARR_DICT;
+    nodes[1].data   = &unsupported_predictor;
+    nodes[1].datasz = sizeof(unsupported_predictor);
+    pdf_test_decode_filter_chain_with_params(
+        encoded, encoded_size, encoded_size, filters, 2U, &params_array, 0,
+        &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, encoded_size);
+    ck_assert_uint_eq(result.output_size, encoded_size);
+    ck_assert_int_eq(memcmp(result.output, encoded, encoded_size), 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+    free(result.output);
+
+    /* Array shape and entry type are validated before any stage can emit. */
+    nodes[0].next      = NULL;
+    params_array.tail = &nodes[0];
+    pdf_test_decode_filter_chain_with_params(
+        encoded, encoded_size, encoded_size, filters, 2U, &params_array, 0,
+        &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    nodes[0].next      = &nodes[1];
+    nodes[1].prev      = &nodes[0];
+    nodes[1].next      = &nodes[2];
+    nodes[2].prev      = &nodes[1];
+    nodes[2].type      = PDF_ARR_STRING;
+    nodes[2].data      = null_value;
+    nodes[2].datasz    = sizeof(null_value) - 1U;
+    params_array.tail  = &nodes[2];
+    pdf_test_decode_filter_chain_with_params(
+        encoded, encoded_size, encoded_size, filters, 2U, &params_array, 0,
+        &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    nodes[1].next      = NULL;
+    nodes[0].type      = PDF_ARR_STRING;
+    nodes[0].data      = invalid_scalar;
+    nodes[0].datasz    = sizeof(invalid_scalar) - 1U;
+    nodes[1].type      = PDF_ARR_STRING;
+    nodes[1].data      = null_value;
+    nodes[1].datasz    = sizeof(null_value) - 1U;
+    params_array.tail  = &nodes[1];
+    pdf_test_decode_filter_chain_with_params(
+        encoded, encoded_size, encoded_size, filters, 2U, &params_array, 0,
+        &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+struct pdf_decodeparms_extract_result {
+    cl_error_t status;
+    bool scan_incomplete;
+    bool dont_cache;
+};
+
+static void pdf_test_extract_decodeparms_syntax(
+    const uint8_t *encoded, size_t encoded_size, const char *key,
+    const char *value, uint32_t object_number,
+    struct pdf_decodeparms_extract_result *result)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    struct pdf_obj obj;
+    struct pdf_struct pdf;
+    cli_ctx ctx;
+    fmap_t *map;
+    char output_path[PATH_MAX + 1];
+    char *fixture;
+    size_t fixture_capacity;
+    int prefix_length;
+
+    ck_assert_ptr_nonnull(encoded);
+    ck_assert(encoded_size > 0);
+    ck_assert_ptr_nonnull(key);
+    ck_assert_ptr_nonnull(value);
+    ck_assert_ptr_nonnull(result);
+    ck_assert(encoded_size <= SIZE_MAX - strlen(key) - strlen(value) - 128U);
+    fixture_capacity = encoded_size + strlen(key) + strlen(value) + 128U;
+    fixture          = malloc(fixture_capacity);
+    ck_assert_ptr_nonnull(fixture);
+    prefix_length = snprintf(
+        fixture, fixture_capacity,
+        "<< /Length %zu /Filter [/ASCIIHexDecode /FlateDecode] %s %s >>\nstream\n",
+        encoded_size, key, value);
+    ck_assert_int_gt(prefix_length, 0);
+    ck_assert((size_t)prefix_length <= fixture_capacity - encoded_size);
+    memcpy(fixture + prefix_length, encoded, encoded_size);
+
+    memset(result, 0, sizeof(*result));
+    memset(&options, 0, sizeof(options));
+    memset(&obj, 0, sizeof(obj));
+    memset(&pdf, 0, sizeof(pdf));
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(fixture,
+                              (size_t)prefix_length + encoded_size);
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    pdf.ctx               = &ctx;
+    pdf.map               = fixture;
+    pdf.size              = (size_t)prefix_length + encoded_size;
+    pdf.dir               = tmpdir;
+    obj.id                = object_number << 8U;
+    obj.start             = 0;
+    obj.size              = pdf.size;
+    obj.flags             = (1U << OBJ_STREAM) |
+                (1U << OBJ_HASFILTERS) |
+                (1U << OBJ_FILTER_AH) |
+                (1U << OBJ_FILTER_FLATE);
+    obj.numfilters    = 2U;
+    obj.filterlist[0] = OBJ_FILTER_AH;
+    obj.filterlist[1] = OBJ_FILTER_FLATE;
+    obj.stream        = fixture + prefix_length;
+    obj.stream_size   = encoded_size;
+
+    result->status          = pdf_extract_obj(&pdf, &obj, PDF_EXTRACT_OBJ_NONE);
+    result->scan_incomplete = ctx.scan_incomplete;
+    result->dont_cache      = map->dont_cache_flag;
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+
+    ck_assert_int_lt(snprintf(output_path, sizeof(output_path),
+                              "%s" PATHSEP "pdf obj %u 0", tmpdir,
+                              object_number),
+                     (int)sizeof(output_path));
+    ck_assert_int_eq(cli_unlink(output_path), 0);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(fixture);
+}
+
+START_TEST(test_pdf_decodeparms_array_syntax_reaches_per_filter_dispatch)
+{
+    uint8_t *expected = NULL;
+    size_t stage_size;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_filter_chain_fixture(
+        257U, false, &expected, &stage_size, &encoded_size);
+    struct pdf_decodeparms_extract_result result;
+
+    ck_assert(stage_size > 0);
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "/DecodeParms",
+        "[ << /Predictor 12 >> null ]", 20U, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "/DP",
+        "[ null << /Predictor 12 >> ]", 21U, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "/DecodeParms", "7", 22U, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(encoded);
+    free(expected);
+}
+END_TEST
 
 #if PDF_HAVE_FILE_BACKED_OBJECT_STREAMS
 static uint8_t *pdf_test_encrypt_rc4(
@@ -12444,14 +12709,14 @@ START_TEST(test_pdf_packed_object_reference_bounds_are_fail_visible)
     uint32_t id = 0;
 
     end = valid + sizeof(valid) - 1;
-    ck_assert_int_eq(is_object_reference(valid, &end, &id), 1);
+    ck_assert_int_eq(is_object_reference(NULL, valid, &end, &id), 1);
     ck_assert_uint_eq(id, UINT32_MAX);
 
     end = invalid_obj + sizeof(invalid_obj) - 1;
-    ck_assert_int_eq(is_object_reference(invalid_obj, &end, &id), -1);
+    ck_assert_int_eq(is_object_reference(NULL, invalid_obj, &end, &id), -1);
 
     end = invalid_gen + sizeof(invalid_gen) - 1;
-    ck_assert_int_eq(is_object_reference(invalid_gen, &end, &id), -1);
+    ck_assert_int_eq(is_object_reference(NULL, invalid_gen, &end, &id), -1);
 }
 END_TEST
 
@@ -29167,6 +29432,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_filter_chain_overlap_quota_failure_rolls_back);
     tcase_add_test(tc_cl, test_pdf_filter_chain_failure_restores_raw_input);
     tcase_add_test(tc_cl, test_pdf_filter_chain_rotates_three_bounded_stages);
+    tcase_add_test(tc_cl, test_pdf_decodeparms_array_is_per_filter_and_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_decodeparms_array_syntax_reaches_per_filter_dispatch);
     tcase_add_test(tc_cl, test_pdf_ascii_filters_accept_pdf_whitespace);
     tcase_add_test(tc_cl, test_pdf_ascii85_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_ascii85_partial_groups_are_exact);

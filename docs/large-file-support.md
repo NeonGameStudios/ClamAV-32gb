@@ -2808,9 +2808,10 @@ incrementally against `MaxTemporarySize` and retain their reservations through
 the reservation-aware nested scans. Read, write, quota, rewind, and cleanup
 failures remain fail-visible. This closes the temporary-spool accounting gap
 for extracted objects. Ordinary supported filter chains now use independently
-quota-accounted intermediate spools; the residual object-stream, encryption,
-unsupported-filter, and DecodeParms-array boundary remains recorded as
-`pdf-stream-over-1g`. Parser-family and large-PDF qualification remain open.
+quota-accounted intermediate spools; later milestones also add bounded object
+streams, encryption, and per-filter DecodeParms arrays. Unsupported or mixed
+filters remain recorded as `pdf-stream-over-1g`. Parser-family and large-PDF
+qualification remain open.
 
 ## ALZ bounded reader and member streaming — 2026-08-19
 
@@ -2955,8 +2956,9 @@ than `CLI_MAX_ALLOCATION` is rejected before decoding with `CL_ERESOURCE`.
 Those legacy implementations still use 32-bit input lengths and reject a
 larger stream before narrowing. Ordinary unencrypted streams and chains made
 only from the five supported filters now bypass both boundaries through the
-bounded reader/spool path. Object streams, encryption, unsupported or mixed
-chains, and per-filter DecodeParms arrays remain release gates. Every residual
+bounded reader/spool path. Later milestones address object streams, encryption,
+and per-filter DecodeParms arrays. Unsupported or mixed chains remain release
+gates. Every residual
 rejection marks the containing scan incomplete and cannot be treated as a
 scanned prefix.
 
@@ -2986,8 +2988,9 @@ upper valid boundary and both overflow cases.
 The capability manifest retains `pdf-stream-over-1g` for the deliberately
 unsupported residual paths. This is not an outer-file limit: ordinary
 unencrypted supported filters and their chains use native-width bounded
-readers, but object streams, encryption, unsupported or mixed chains, and
-per-filter DecodeParms arrays may still require the legacy contiguous token.
+readers, and later milestones cover supported object streams, encryption, and
+per-filter DecodeParms arrays. Unsupported or mixed chains may still require
+the legacy contiguous token.
 Crossing that token's 1 GiB allocation or 4 GiB width boundary makes the
 containing scan incomplete rather than allowing a truncated or wrapped prefix
 to be treated as complete.
@@ -6542,9 +6545,10 @@ input windows, one-byte-short quota rollback, truncation after a written
 prefix with exact raw replacement, `EarlyChange` zero, malformed and
 unsupported parameters, and an early EOI under a logical input length above
 `UINT32_MAX`. The real production harness passes all 26 streamed-filter cases
-normally and under GCC AddressSanitizer/UBSan with leak detection. Remaining
-PDF work includes encrypted and object streams, per-filter DecodeParms arrays,
-compiled corpus, materialized large-stream, and Sonic1 qualification.
+normally and under GCC AddressSanitizer/UBSan with leak detection. Later
+milestones address encrypted streams, object streams, and per-filter
+DecodeParms arrays. Compiled corpus, materialized large-stream, and Sonic1
+qualification remain open.
 
 ## PDF predictor fail-closed admission — 2026-08-23
 
@@ -6593,7 +6597,7 @@ hidden by a zero-output `CL_BREAK`. Its injectable bounded-fmap variant passes
 all 37 cases normally and under GCC AddressSanitizer/UBSan with leak detection.
 A second variant links the actual production `fmap.c`; all 36 applicable cases
 also pass normally and under the same sanitizers. Encrypted object streams,
-unsupported or mixed filter chains, per-filter DecodeParms arrays, compiled
+unsupported or mixed filter chains, compiled
 PDF corpus, materialized multi-gigabyte chains, and Sonic1 release/sanitizer
 qualification remain open.
 
@@ -6628,9 +6632,10 @@ passes 39/39 with its injectable bounded fmap and 38/38 with production
 configurations plus the complete unit-test translation unit pass GCC syntax
 compilation; only pre-existing isolated-build warnings remain.
 
-Unsupported/mixed filters, per-filter DecodeParms arrays, materialized multi-
-gigabyte encrypted fixtures, broader malformed encryption dictionaries, and
-Sonic1 release/sanitizer qualification remain open.
+Unsupported/mixed filters, materialized multi-gigabyte encrypted fixtures,
+broader malformed encryption dictionaries, and Sonic1 release/sanitizer
+qualification remain open. Per-filter DecodeParms arrays are addressed by the
+later 2026-08-24 milestone.
 
 The certified 32 GiB Linux x86-64 profile now explicitly requires private
 file-backed mapping support (`HAVE_MMAP` plus `HAVE_SYS_MMAN_H`). `clamd`
@@ -6683,3 +6688,25 @@ companion evidence checker rejects dirty release sources by default and
 revalidates every binding, exact case oracle, resource ceiling, malformed-
 status distinction, allocation proof, and empty temporary directory. Its
 self-test proves that a modified scanner log is rejected.
+
+## PDF per-filter DecodeParms arrays — 2026-08-24
+
+The PDF parser now accepts either the historical direct DecodeParms dictionary
+or an array aligned one-for-one with the declared filter array. Array entries
+must be dictionaries or the exact scalar `null`; each filter receives only its
+corresponding dictionary in streamed, encrypted, and residual legacy paths.
+Short arrays, extra entries, other scalars, and malformed parser values fail
+before decoder output, mark the layer incomplete, and prevent clean caching.
+
+Focused Linux ARM64 GCC evidence passes 2/2 cases. It proves that a predictor
+dictionary in the ASCIIHex position is not reused by Flate, moving it to the
+Flate position fails visibly with exact raw fallback, malformed array shapes
+produce zero output and zero retained temporary accounting, and parser syntax
+for `/DecodeParms`, `/DP`, and an invalid scalar reaches the same policy.
+Direct GCC compilation passes for `pdf.c`, `pdfdecode.c`, and the complete
+`check_clamav.c` translation unit; only previously recorded isolated-build
+warnings remain. This is implementation evidence, not certified Linux x86-64
+release evidence. Production/sanitizer corpus runs, broader malformed
+dictionaries, materialized multi-gigabyte chains, quota/read/write/cleanup
+faults, unsupported/mixed filters, non-first Crypt ordering, and Sonic1
+qualification remain open.

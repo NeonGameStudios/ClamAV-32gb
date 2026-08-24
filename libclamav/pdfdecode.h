@@ -58,4 +58,13 @@ size_t pdf_decodestream(
     const char *stream, size_t streamlen, int xref, int fout, cl_error_t *status,
     struct objstm_struct *objstm);
 
+/* DecodeParms may be either one dictionary or an array aligned one-for-one
+ * with the declared filter array. The compatibility entry point above accepts
+ * the historical single-dictionary form; the PDF parser uses this form when
+ * an array is present. */
+size_t pdf_decodestream_with_params_array(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    struct pdf_array *params_array, const char *stream, size_t streamlen,
+    int xref, int fout, cl_error_t *status, struct objstm_struct *objstm);
+
 #endif /* __PDFDECODE_H__ */
