@@ -242,6 +242,9 @@ generate_fixture rc4-filter-chain --filter asciihex-flate --encryption rc4-r2 ||
 generate_fixture aesv2-raw --filter raw --encryption aesv2-r4 || failures=$((failures + 1))
 generate_fixture aesv2-flate --filter flate --encryption aesv2-r4 || failures=$((failures + 1))
 generate_fixture aesv2-filter-chain --filter asciihex-flate --encryption aesv2-r4 || failures=$((failures + 1))
+generate_fixture aesv3-raw --filter raw --encryption aesv3-r5 || failures=$((failures + 1))
+generate_fixture aesv3-flate --filter flate --encryption aesv3-r5 || failures=$((failures + 1))
+generate_fixture aesv3-filter-chain --filter asciihex-flate --encryption aesv3-r5 || failures=$((failures + 1))
 
 run_fixture()
 {
@@ -318,6 +321,7 @@ run_fixture()
         none)
             if grep -F 'pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows' "$log" >/dev/null 2>&1 ||
                 grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks' "$log" >/dev/null 2>&1 ||
                 grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1; then
                 result=fail
             fi
@@ -325,14 +329,24 @@ run_fixture()
         rc4-r2)
             if ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
                 ! grep -F 'pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows' "$log" >/dev/null 2>&1 ||
-                grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
                 result=fail
             fi
             ;;
         aesv2-r4)
             if ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
                 ! grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1 ||
-                grep -F 'pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows' "$log" >/dev/null 2>&1; then
+                grep -F 'pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
+                result=fail
+            fi
+            ;;
+        aesv3-r5)
+            if ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
+                ! grep -F 'pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
                 result=fail
             fi
             ;;
@@ -357,6 +371,9 @@ if [ "$failures" -eq 0 ]; then
     run_fixture aesv2-raw 0 aesv2-r4 || failures=$((failures + 1))
     run_fixture aesv2-flate 0 aesv2-r4 || failures=$((failures + 1))
     run_fixture aesv2-filter-chain 0 aesv2-r4 || failures=$((failures + 1))
+    run_fixture aesv3-raw 0 aesv3-r5 || failures=$((failures + 1))
+    run_fixture aesv3-flate 0 aesv3-r5 || failures=$((failures + 1))
+    run_fixture aesv3-filter-chain 0 aesv3-r5 || failures=$((failures + 1))
 fi
 
 if [ "$failures" -ne 0 ]; then
@@ -370,7 +387,7 @@ qualification_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_qualification
 evidence_checker_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_evidence_check.py" | awk '{ print $1 }')
 generator_test_sha256=$(sha256sum "$out/generator-test.log" | awk '{ print $1 }')
 cat > "$out/evidence-metadata.txt" <<EOF
-schema_version=3
+schema_version=4
 source_revision_type=$source_revision_type
 source_commit=$source_commit
 source_tree=$source_tree

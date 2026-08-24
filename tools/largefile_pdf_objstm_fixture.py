@@ -97,25 +97,32 @@ AES_MULTIPLY = {
 }
 
 
-class AES128:
+class AES:
     def __init__(self, key):
-        if len(key) != 16:
-            raise ValueError("AES-128 key must be exactly 16 bytes")
-        words = [list(key[offset : offset + 4]) for offset in range(0, 16, 4)]
+        if len(key) not in (16, 32):
+            raise ValueError("AES key must be exactly 16 or 32 bytes")
+        key_words = len(key) // 4
+        self.rounds = key_words + 6
+        words = [list(key[offset : offset + 4]) for offset in range(0, len(key), 4)]
         rcon = 1
-        for index in range(4, 44):
+        for index in range(key_words, 4 * (self.rounds + 1)):
             temporary = words[index - 1][:]
-            if index % 4 == 0:
+            if index % key_words == 0:
                 temporary = temporary[1:] + temporary[:1]
                 temporary = [AES_SBOX[value] for value in temporary]
                 temporary[0] ^= rcon
                 rcon = gf_multiply(rcon, 2)
+            elif key_words > 6 and index % key_words == 4:
+                temporary = [AES_SBOX[value] for value in temporary]
             words.append(
-                [words[index - 4][column] ^ temporary[column] for column in range(4)]
+                [
+                    words[index - key_words][column] ^ temporary[column]
+                    for column in range(4)
+                ]
             )
         self.round_keys = [
             bytes(sum(words[round_number * 4 : round_number * 4 + 4], []))
-            for round_number in range(11)
+            for round_number in range(self.rounds + 1)
         ]
 
     @staticmethod
@@ -161,20 +168,20 @@ class AES128:
         if len(block) != 16:
             raise ValueError("AES block must be exactly 16 bytes")
         state = self.add_round_key(bytearray(block), self.round_keys[0])
-        for round_number in range(1, 10):
+        for round_number in range(1, self.rounds):
             state = self.substitute(state, AES_SBOX)
             state = self.shift_rows(state)
             state = self.mix_columns(state)
             state = self.add_round_key(state, self.round_keys[round_number])
         state = self.substitute(state, AES_SBOX)
         state = self.shift_rows(state)
-        return bytes(self.add_round_key(state, self.round_keys[10]))
+        return bytes(self.add_round_key(state, self.round_keys[self.rounds]))
 
     def decrypt_block(self, block):
         if len(block) != 16:
             raise ValueError("AES block must be exactly 16 bytes")
-        state = self.add_round_key(bytearray(block), self.round_keys[10])
-        for round_number in range(9, 0, -1):
+        state = self.add_round_key(bytearray(block), self.round_keys[self.rounds])
+        for round_number in range(self.rounds - 1, 0, -1):
             state = self.shift_rows(state, inverse=True)
             state = self.substitute(state, AES_INV_SBOX)
             state = self.add_round_key(state, self.round_keys[round_number])
@@ -184,11 +191,25 @@ class AES128:
         return bytes(self.add_round_key(state, self.round_keys[0]))
 
 
+class AES128(AES):
+    def __init__(self, key):
+        if len(key) != 16:
+            raise ValueError("AES-128 key must be exactly 16 bytes")
+        super().__init__(key)
+
+
+class AES256(AES):
+    def __init__(self, key):
+        if len(key) != 32:
+            raise ValueError("AES-256 key must be exactly 32 bytes")
+        super().__init__(key)
+
+
 class AESCBCEncryptor:
     def __init__(self, key, iv):
         if len(iv) != 16:
             raise ValueError("AES CBC IV must be exactly 16 bytes")
-        self.aes = AES128(key)
+        self.aes = AES128(key) if len(key) == 16 else AES256(key)
         self.previous = iv
         self.buffer = bytearray()
 
@@ -209,9 +230,29 @@ class AESCBCEncryptor:
 
 
 def aes_cbc_decrypt(data, key, iv):
+    output = aes_cbc_decrypt_no_padding(data, key, iv)
+    if not output or output[-1] == 0 or output[-1] > 16:
+        raise ValueError("AES CBC plaintext has invalid PKCS#7 padding")
+    padding = output[-1]
+    if output[-padding:] != bytes([padding]) * padding:
+        raise ValueError("AES CBC plaintext has invalid PKCS#7 padding")
+    return output[:-padding]
+
+
+def aes_cbc_encrypt_no_padding(data, key, iv):
+    if len(data) % 16:
+        raise ValueError("AES CBC plaintext is not block aligned")
+    encryptor = AESCBCEncryptor(key, iv)
+    output = encryptor.update(data)
+    if encryptor.buffer:
+        raise RuntimeError("AES CBC no-padding encryptor retained input")
+    return output
+
+
+def aes_cbc_decrypt_no_padding(data, key, iv):
     if len(data) % 16:
         raise ValueError("AES CBC ciphertext is not block aligned")
-    aes = AES128(key)
+    aes = AES128(key) if len(key) == 16 else AES256(key)
     previous = iv
     output = bytearray()
     for offset in range(0, len(data), 16):
@@ -219,12 +260,7 @@ def aes_cbc_decrypt(data, key, iv):
         plaintext = aes.decrypt_block(ciphertext)
         output.extend(value ^ prior for value, prior in zip(plaintext, previous))
         previous = ciphertext
-    if not output or output[-1] == 0 or output[-1] > 16:
-        raise ValueError("AES CBC plaintext has invalid PKCS#7 padding")
-    padding = output[-1]
-    if output[-padding:] != bytes([padding]) * padding:
-        raise ValueError("AES CBC plaintext has invalid PKCS#7 padding")
-    return bytes(output[:-padding])
+    return bytes(output)
 
 
 def standard_r2_security():
@@ -285,6 +321,63 @@ def standard_r4_security():
     }
 
 
+def standard_r5_security():
+    permissions = -4
+    file_key = hashlib.sha256(b"ClamAV deterministic AESV3 file key").digest()
+    user_validation_salt = hashlib.sha256(
+        b"ClamAV deterministic R5 user validation salt"
+    ).digest()[:8]
+    user_key_salt = hashlib.sha256(
+        b"ClamAV deterministic R5 user key salt"
+    ).digest()[:8]
+    user = (
+        hashlib.sha256(user_validation_salt).digest()
+        + user_validation_salt
+        + user_key_salt
+    )
+    user_encryption = aes_cbc_encrypt_no_padding(
+        file_key,
+        hashlib.sha256(user_key_salt).digest(),
+        bytes(16),
+    )
+
+    owner_password = b"ClamAV deterministic owner password"
+    owner_validation_salt = hashlib.sha256(
+        b"ClamAV deterministic R5 owner validation salt"
+    ).digest()[:8]
+    owner_key_salt = hashlib.sha256(
+        b"ClamAV deterministic R5 owner key salt"
+    ).digest()[:8]
+    owner = (
+        hashlib.sha256(owner_password + owner_validation_salt + user).digest()
+        + owner_validation_salt
+        + owner_key_salt
+    )
+    owner_encryption = aes_cbc_encrypt_no_padding(
+        file_key,
+        hashlib.sha256(owner_password + owner_key_salt + user).digest(),
+        bytes(16),
+    )
+    permissions_plaintext = (
+        (permissions & 0xFFFFFFFF).to_bytes(4, "little")
+        + bytes.fromhex("FFFFFFFF")
+        + b"Tadb"
+        + hashlib.sha256(b"ClamAV deterministic R5 permissions").digest()[:4]
+    )
+    encrypted_permissions = AES256(file_key).encrypt_block(permissions_plaintext)
+    return {
+        "cipher": "aesv3",
+        "file_id": FILE_ID,
+        "file_key": file_key,
+        "owner": owner,
+        "owner_encryption": owner_encryption,
+        "permissions": permissions,
+        "encrypted_permissions": encrypted_permissions,
+        "user": user,
+        "user_encryption": user_encryption,
+    }
+
+
 def rc4_object_key(file_key, object_number, generation=0):
     material = (
         file_key
@@ -320,19 +413,31 @@ def aesv2_encrypt(data, file_key, object_number, generation=0):
     return iv + encryptor.update(data) + encryptor.finalize()
 
 
-def spool_aesv2_with_openssl(source, file_key, object_number, plaintext_size):
+def aesv3_iv(object_number, generation=0):
+    return hashlib.sha256(
+        b"ClamAV deterministic AESV3 IV"
+        + object_number.to_bytes(4, "little")
+        + generation.to_bytes(4, "little")
+    ).digest()[:16]
+
+
+def aesv3_encrypt(data, file_key, object_number, generation=0):
+    iv = aesv3_iv(object_number, generation)
+    encryptor = AESCBCEncryptor(file_key, iv)
+    return iv + encryptor.update(data) + encryptor.finalize()
+
+
+def spool_aes_with_openssl(source, key, iv, cipher, plaintext_size, label):
     openssl = shutil.which("openssl")
     if openssl is None:
         return None
-    iv = aesv2_iv(object_number)
-    key = aesv2_object_key(file_key, object_number)
     destination = tempfile.TemporaryFile()
     source.seek(0)
     completed = subprocess.run(
         [
             openssl,
             "enc",
-            "-aes-128-cbc",
+            cipher,
             "-e",
             "-nosalt",
             "-K",
@@ -349,9 +454,31 @@ def spool_aesv2_with_openssl(source, file_key, object_number, plaintext_size):
     if completed.returncode != 0 or destination.tell() != expected_size:
         destination.close()
         detail = completed.stderr.decode("utf-8", errors="replace").strip()
-        raise RuntimeError(f"OpenSSL AESV2 fixture encryption failed: {detail}")
+        raise RuntimeError(f"OpenSSL {label} fixture encryption failed: {detail}")
     destination.seek(0)
     return destination
+
+
+def spool_aesv2_with_openssl(source, file_key, object_number, plaintext_size):
+    return spool_aes_with_openssl(
+        source,
+        aesv2_object_key(file_key, object_number),
+        aesv2_iv(object_number),
+        "-aes-128-cbc",
+        plaintext_size,
+        "AESV2",
+    )
+
+
+def spool_aesv3_with_openssl(source, file_key, object_number, plaintext_size):
+    return spool_aes_with_openssl(
+        source,
+        file_key,
+        aesv3_iv(object_number),
+        "-aes-256-cbc",
+        plaintext_size,
+        "AESV3",
+    )
 
 
 class HashedWriter:
@@ -451,7 +578,7 @@ def build_fixture(
     malformed=False,
     encryption="none",
 ):
-    if encryption not in ("none", "rc4-r2", "aesv2-r4"):
+    if encryption not in ("none", "rc4-r2", "aesv2-r4", "aesv3-r5"):
         raise ValueError(f"unsupported encryption: {encryption}")
     if malformed and encryption != "none":
         raise ValueError("--malformed is not supported with encryption")
@@ -466,6 +593,8 @@ def build_fixture(
         security = standard_r2_security()
     elif encryption == "aesv2-r4":
         security = standard_r4_security()
+    elif encryption == "aesv3-r5":
+        security = standard_r5_security()
     else:
         security = None
 
@@ -482,26 +611,40 @@ def build_fixture(
             raise ValueError(f"unsupported filter: {filter_name}")
 
     encoded_size = plaintext_encoded_size
-    if security is not None and security["cipher"] == "aesv2":
+    if security is not None and security["cipher"] in ("aesv2", "aesv3"):
         encoded_size = 16 + ((plaintext_encoded_size // 16) + 1) * 16
         aes_plaintext_spool = encoded_spool
         if aes_plaintext_spool is None:
             aes_plaintext_spool = tempfile.TemporaryFile()
             for chunk in decoded_chunks(layout):
                 aes_plaintext_spool.write(chunk)
-        aes_ciphertext_spool = spool_aesv2_with_openssl(
-            aes_plaintext_spool,
-            security["file_key"],
-            3,
-            plaintext_encoded_size,
-        )
+        if security["cipher"] == "aesv2":
+            aes_ciphertext_spool = spool_aesv2_with_openssl(
+                aes_plaintext_spool,
+                security["file_key"],
+                3,
+                plaintext_encoded_size,
+            )
+        else:
+            aes_ciphertext_spool = spool_aesv3_with_openssl(
+                aes_plaintext_spool,
+                security["file_key"],
+                3,
+                plaintext_encoded_size,
+            )
 
     try:
         with open(path, "wb") as raw_output:
             writer = HashedWriter(raw_output)
             writer.write(b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n")
             offsets = {}
-            offsets[1] = write_indirect(writer, 1, b"<< /Type /Catalog /Pages 2 0 R >>")
+            catalog = b"<< /Type /Catalog /Pages 2 0 R >>"
+            if security is not None and security["cipher"] == "aesv3":
+                catalog = (
+                    b"<< /Type /Catalog /Pages 2 0 R /Extensions "
+                    b"<< /ADBE << /BaseVersion /1.7 /ExtensionLevel 3 >> >> >>"
+                )
+            offsets[1] = write_indirect(writer, 1, catalog)
             offsets[2] = write_indirect(writer, 2, b"<< /Type /Pages /Count 1 /Kids [5 0 R] >>")
 
             offsets[3] = writer.offset
@@ -520,13 +663,20 @@ def build_fixture(
                 else None
             )
             aes_encryptor = None
-            if security is not None and security["cipher"] == "aesv2":
-                stream_iv = aesv2_iv(3)
+            if security is not None and security["cipher"] in ("aesv2", "aesv3"):
+                stream_iv = (
+                    aesv2_iv(3) if security["cipher"] == "aesv2" else aesv3_iv(3)
+                )
                 writer.write(stream_iv)
                 encoded_hash.update(stream_iv)
                 if aes_ciphertext_spool is None:
+                    stream_key = (
+                        aesv2_object_key(security["file_key"], 3)
+                        if security["cipher"] == "aesv2"
+                        else security["file_key"]
+                    )
                     aes_encryptor = AESCBCEncryptor(
-                        aesv2_object_key(security["file_key"], 3), stream_iv
+                        stream_key, stream_iv
                     )
 
             def write_stream_chunk(chunk):
@@ -561,6 +711,8 @@ def build_fixture(
                 )
             elif security is not None and security["cipher"] == "aesv2":
                 content = aesv2_encrypt(content, security["file_key"], 6)
+            elif security is not None and security["cipher"] == "aesv3":
+                content = aesv3_encrypt(content, security["file_key"], 6)
             offsets[6] = write_indirect(
                 writer,
                 6,
@@ -576,7 +728,7 @@ def build_fixture(
                         + f"/U <{security['user'].hex().upper()}> ".encode("ascii")
                         + f"/P {security['permissions']} >>".encode("ascii")
                     )
-                else:
+                elif security["cipher"] == "aesv2":
                     encryption_dictionary = (
                         b"<< /Filter /Standard /V 4 /R 4 /Length 128 "
                         + f"/O <{security['owner'].hex().upper()}> ".encode("ascii")
@@ -584,6 +736,19 @@ def build_fixture(
                         + f"/P {security['permissions']} /EncryptMetadata true ".encode("ascii")
                         + b"/CF << /StdCF << /Type /CryptFilter /CFM /AESV2 "
                         + b"/AuthEvent /DocOpen /Length 16 >> >> "
+                        + b"/StmF /StdCF /StrF /StdCF /EFF /StdCF >>"
+                    )
+                else:
+                    encryption_dictionary = (
+                        b"<< /Filter /Standard /V 5 /R 5 /Length 256 "
+                        + f"/O <{security['owner'].hex().upper()}> ".encode("ascii")
+                        + f"/U <{security['user'].hex().upper()}> ".encode("ascii")
+                        + f"/OE <{security['owner_encryption'].hex().upper()}> ".encode("ascii")
+                        + f"/UE <{security['user_encryption'].hex().upper()}> ".encode("ascii")
+                        + f"/Perms <{security['encrypted_permissions'].hex().upper()}> ".encode("ascii")
+                        + f"/P {security['permissions']} /EncryptMetadata true ".encode("ascii")
+                        + b"/CF << /StdCF << /Type /CryptFilter /CFM /AESV3 "
+                        + b"/AuthEvent /DocOpen /Length 32 >> >> "
                         + b"/StmF /StdCF /StrF /StdCF /EFF /StdCF >>"
                     )
                 offsets[7] = write_indirect(writer, 7, encryption_dictionary)
@@ -639,9 +804,15 @@ def build_fixture(
                 result["file_key_sha256"] = hashlib.sha256(
                     security["file_key"]
                 ).hexdigest()
-                result["object_stream_iv"] = (
-                    aesv2_iv(3).hex() if security["cipher"] == "aesv2" else "none"
-                )
+                if security["cipher"] == "aesv2":
+                    result["object_stream_iv"] = aesv2_iv(3).hex()
+                elif security["cipher"] == "aesv3":
+                    result["object_stream_iv"] = aesv3_iv(3).hex()
+                    result["perms_sha256"] = hashlib.sha256(
+                        security["encrypted_permissions"]
+                    ).hexdigest()
+                else:
+                    result["object_stream_iv"] = "none"
     except Exception:
         try:
             os.unlink(path)
@@ -669,7 +840,9 @@ def main():
     parser.add_argument("--decoded-size", type=int)
     parser.add_argument("--malformed", action="store_true")
     parser.add_argument(
-        "--encryption", choices=("none", "rc4-r2", "aesv2-r4"), default="none"
+        "--encryption",
+        choices=("none", "rc4-r2", "aesv2-r4", "aesv3-r5"),
+        default="none",
     )
     args = parser.parse_args()
 

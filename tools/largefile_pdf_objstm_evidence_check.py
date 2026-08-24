@@ -22,6 +22,9 @@ CASES = {
     "aesv2-raw": ("raw", "aesv2-r4", False),
     "aesv2-flate": ("flate", "aesv2-r4", False),
     "aesv2-filter-chain": ("asciihex-flate", "aesv2-r4", False),
+    "aesv3-raw": ("raw", "aesv3-r5", False),
+    "aesv3-flate": ("flate", "aesv3-r5", False),
+    "aesv3-filter-chain": ("asciihex-flate", "aesv3-r5", False),
 }
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SOURCE_ID = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
@@ -108,9 +111,9 @@ def main():
         "corpus_manifest_sha256", "results_sha256", "qualification_status",
     }
     if set(metadata) != expected_keys:
-        fail("metadata keys do not match schema version 3")
-    if metadata["schema_version"] != "3" or metadata["qualification_status"] != "pass":
-        fail("metadata does not declare a schema-3 pass")
+        fail("metadata keys do not match schema version 4")
+    if metadata["schema_version"] != "4" or metadata["qualification_status"] != "pass":
+        fail("metadata does not declare a schema-4 pass")
     if metadata["source_revision_type"] not in ("git-commit", "content-manifest"):
         fail("source revision type is invalid")
     if metadata["source_tree_status"] != "clean" and not args.allow_dirty_source:
@@ -250,14 +253,20 @@ def main():
         if encrypted_metadata != (expected_encryption != "none"):
             fail(f"{row['case']} generator security metadata oracle is incorrect")
         object_stream_iv = metadata_values.get("object_stream_iv")
-        if expected_encryption == "aesv2-r4":
+        if expected_encryption in ("aesv2-r4", "aesv3-r5"):
             if re.fullmatch(r"[0-9a-f]{32}", object_stream_iv or "") is None:
-                fail(f"{row['case']} AESV2 IV oracle is missing")
+                fail(f"{row['case']} AES IV oracle is missing")
         elif expected_encryption == "rc4-r2":
             if object_stream_iv != "none":
                 fail(f"{row['case']} RC4 IV oracle is incorrect")
         elif object_stream_iv is not None:
             fail(f"{row['case']} unencrypted metadata unexpectedly contains an IV")
+        perms_sha256 = metadata_values.get("perms_sha256")
+        if expected_encryption == "aesv3-r5":
+            if not SHA256.fullmatch(perms_sha256 or ""):
+                fail(f"{row['case']} AESV3 permissions oracle is missing")
+        elif perms_sha256 is not None:
+            fail(f"{row['case']} unexpectedly contains an AESV3 permissions oracle")
         if row["case"] == "materialized" and (case_decoded != decoded_size or allocated < size):
             fail("materialized fixture size/allocation does not meet its oracle")
 
@@ -299,15 +308,24 @@ def main():
         has_bounded_aesv2 = (
             "pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks" in text
         )
+        has_bounded_aesv3 = (
+            "pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks" in text
+        )
         has_empty_password = (
             "encrypted PDF found, user password is empty, will attempt to decrypt" in text
         )
         expected_diagnostics = {
-            "none": (False, False, False),
-            "rc4-r2": (True, False, True),
-            "aesv2-r4": (False, True, True),
+            "none": (False, False, False, False),
+            "rc4-r2": (True, False, False, True),
+            "aesv2-r4": (False, True, False, True),
+            "aesv3-r5": (False, False, True, True),
         }[encryption]
-        if (has_bounded_rc4, has_bounded_aesv2, has_empty_password) != expected_diagnostics:
+        if (
+            has_bounded_rc4,
+            has_bounded_aesv2,
+            has_bounded_aesv3,
+            has_empty_password,
+        ) != expected_diagnostics:
             fail(f"{row['case']} encrypted-stream diagnostic oracle is incorrect")
         tempdir = evidence / "tmp" / row["case"]
         if not tempdir.is_dir() or any(tempdir.iterdir()):

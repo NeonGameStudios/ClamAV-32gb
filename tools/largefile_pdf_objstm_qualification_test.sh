@@ -58,6 +58,10 @@ int main(int argc, char **argv)
         puts("check_user_password: encrypted PDF found, user password is empty, will attempt to decrypt");
         puts("pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks");
     }
+    if (strstr(input, "aesv3-") != NULL) {
+        puts("check_user_password: encrypted PDF found, user password is empty, will attempt to decrypt");
+        puts("pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks");
+    }
     if (mode != NULL && strcmp(mode, "reject") == 0) {
         char path[4096];
         FILE *leak;
@@ -85,7 +89,7 @@ gcc -O2 -o "$stub" "$stub.c"
     > "$work/qualification.log" 2>&1
 
 [ "$(awk -F '\t' 'NR > 1 && $10 == "pass" { count++ } END { print count + 0 }' \
-    "$work/evidence/results.tsv")" -eq 11 ]
+    "$work/evidence/results.tsv")" -eq 14 ]
 awk -F '\t' 'NR > 1 && $1 == "materialized" { found = 1; if ($9 < $7) exit 1 } END { exit !found }' \
     "$work/evidence/corpus-manifest.tsv"
 grep -F 'PDF object-stream qualification passed' "$work/qualification.log" >/dev/null

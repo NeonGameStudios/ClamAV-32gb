@@ -6635,18 +6635,19 @@ The deterministic `largefile_pdf_objstm_fixture.py` generator now emits
 structurally valid PDF 1.7 files with a cross-reference stream and compressed-
 object entry. Raw, Flate, ASCIIHex-to-Flate, and malformed-after-one-valid-
 object forms are self-verified, and the raw form can stream an exact decoded
-size without sparse seeks. Complete empty-password Standard R2/RC4 and
-Standard R4/AESV2 documents cover each supported filter form; AES generation
+size without sparse seeks. Complete empty-password Standard R2/RC4, Standard
+R4/AESV2, and deprecated compatibility-only Standard R5/AESV3 documents cover
+each supported filter form; AES generation
 uses an existing OpenSSL executable when available while a pure-Python NIST-
 vector-tested implementation remains the independent oracle and fallback.
 `largefile_pdf_objstm_qualification.sh` binds each
 fixture by size and hash, rejects holes in the materialized case, requires
 production parser plus map/cleanup diagnostics, checks exact marker detection
 and malformed-status visibility, records RSS/page-fault/I/O evidence, and
-rejects leaked temporary files. The generator self-test passes 20 cases;
-Poppler independently accepts the RC4 and AESV2 raw, Flate, and filter-chain
+rejects leaked temporary files. The generator self-test passes 25 cases;
+Poppler independently accepts the RC4, AESV2, and AESV3 raw, Flate, and filter-chain
 documents as one-page encrypted PDF 1.7 files with JavaScript, and the Linux
-x86-64 orchestrator self-test passes all 11 scanner cases with a fully
+x86-64 orchestrator self-test passes all 14 scanner cases with a fully
 allocated 64 MiB child. That orchestrator uses a deterministic scanner/time
 stub and is not production scan evidence. Production scanner, sanitizer,
 multi-gigabyte materialized, and Sonic1 runs are still required before changing
