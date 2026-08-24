@@ -837,28 +837,39 @@ char *pdf_parse_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *
     /* Make a best effort to find the end of the string and determine if UTF-* */
     p2 = ++p1;
 
-    while (p2 < objstart + objsize) {
-        int shouldbreak = 0;
+    {
+        unsigned int nesting = 1;
 
-        if (pdfng_checktimelimit_at(pdf, "PDF literal string scan reached the configured time limit",
-                                    (size_t)(p2 - p1)))
-            return NULL;
+        while (p2 < objstart + objsize) {
+            int shouldbreak = 0;
 
-        switch (*p2) {
-            case '\\':
-                p2++;
+            if (pdfng_checktimelimit_at(pdf, "PDF literal string scan reached the configured time limit",
+                                        (size_t)(p2 - p1)))
+                return NULL;
+
+            switch (*p2) {
+                case '\\':
+                    if (p2 + 1 >= objstart + objsize)
+                        return NULL;
+                    p2++;
+                    break;
+                case '(':
+                    nesting++;
+                    break;
+                case ')':
+                    nesting--;
+                    if (nesting == 0)
+                        shouldbreak = 1;
+                    break;
+            }
+
+            if (shouldbreak) {
+                p2--;
                 break;
-            case ')':
-                shouldbreak = 1;
-                break;
-        }
+            }
 
-        if (shouldbreak) {
-            p2--;
-            break;
+            p2++;
         }
-
-        p2++;
     }
 
     if (p2 >= objstart + objsize)
@@ -897,7 +908,7 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
     struct pdf_dict_node *node = NULL;
     const char *objstart;
     char *end;
-    unsigned int in_string = 0, ninner = 0;
+    unsigned int in_string = 0, in_comment = 0, ninner = 0;
 
     /* Sanity checking */
     if (!(pdf) || !(obj) || !(begin))
@@ -928,13 +939,24 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
 
         if (in_string) {
             if (*end == '\\') {
+                if ((size_t)(end - objstart) >= objsize - 1)
+                    return NULL;
                 end += 2;
                 continue;
             }
 
-            if (*end == ')')
-                in_string = 0;
+            if (*end == '(')
+                in_string++;
+            else if (*end == ')')
+                in_string--;
 
+            end++;
+            continue;
+        }
+
+        if (in_comment) {
+            if (*end == '\r' || *end == '\n')
+                in_comment = 0;
             end++;
             continue;
         }
@@ -942,6 +964,9 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
         switch (*end) {
             case '(':
                 in_string = 1;
+                break;
+            case '%':
+                in_comment = 1;
                 break;
             case '<':
                 if ((size_t)(end - objstart) <= objsize - 2 && end[1] == '<')
@@ -970,8 +995,10 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
         return NULL;
 
     res = calloc(1, sizeof(struct pdf_dict));
-    if (!(res))
+    if (!(res)) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary allocation failed");
         return NULL;
+    }
 
     /* Loop through each element of the dictionary */
     begin += 2;
@@ -987,20 +1014,36 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
             return NULL;
         }
 
-        /* Skip any whitespaces */
+        /* Skip whitespace and PDF comments between dictionary objects. */
         while (begin < end) {
             if (pdfng_checktimelimit_at(pdf, "PDF dictionary whitespace scan reached the configured time limit",
                                         (size_t)(begin - objstart))) {
                 pdf_free_dict(res);
                 return NULL;
             }
-            if (!isspace(begin[0]))
+            if (isspace((unsigned char)begin[0])) {
+                begin++;
+                continue;
+            }
+            if (begin[0] != '%')
                 break;
-            begin++;
+            while (begin < end && begin[0] != '\r' && begin[0] != '\n') {
+                if (pdfng_checktimelimit_at(pdf, "PDF dictionary comment scan reached the configured time limit",
+                                            (size_t)(begin - objstart))) {
+                    pdf_free_dict(res);
+                    return NULL;
+                }
+                begin++;
+            }
         }
 
         if (begin == end)
             break;
+
+        if (begin[0] != '/') {
+            pdf_free_dict(res);
+            return NULL;
+        }
 
         /* Get the key */
         p1 = begin + 1;
@@ -1013,14 +1056,20 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                 return NULL;
             }
 
-            if (isspace(p1[0]))
+            if (isspace((unsigned char)p1[0]))
                 break;
 
             switch (*p1) {
                 case '<':
+                case '>':
                 case '[':
+                case ']':
                 case '(':
+                case ')':
                 case '/':
+                case '%':
+                case '{':
+                case '}':
                 case '\r':
                 case '\n':
                 case ' ':
@@ -1031,10 +1080,8 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     /* Key name obfuscated with hex characters */
                     nhex++;
                     if (p1 > end - 3) {
-                        if (endchar) {
-                            *endchar = end;
-                        }
-                        return res;
+                        pdf_free_dict(res);
+                        return NULL;
                     }
 
                     break;
@@ -1046,12 +1093,17 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
             p1++;
         }
 
-        if (p1 == end)
-            break;
+        if (p1 == end) {
+            pdf_free_dict(res);
+            return NULL;
+        }
 
         key = cli_max_calloc((p1 - begin) + 2, 1);
-        if (!(key))
-            break;
+        if (!(key)) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary key allocation failed");
+            pdf_free_dict(res);
+            return NULL;
+        }
 
         if (nhex == 0) {
             /* Key isn't obfuscated with hex. Just copy the string */
@@ -1066,7 +1118,11 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     return NULL;
                 }
                 if (*p2 == '#') {
-                    cli_hex2str_to(p2 + 1, key + i, 2);
+                    if (cli_hex2str_to(p2 + 1, key + i, 2) == -1) {
+                        free(key);
+                        pdf_free_dict(res);
+                        return NULL;
+                    }
                     p2 += 2;
                 } else {
                     key[i] = *p2;
@@ -1077,7 +1133,7 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
         /* Now for the value */
         begin = p1;
 
-        /* Skip any whitespaces */
+        /* Skip whitespace and PDF comments before the value. */
         while (begin < end) {
             if (pdfng_checktimelimit_at(pdf, "PDF dictionary value whitespace scan reached the configured time limit",
                                         (size_t)(begin - objstart))) {
@@ -1085,14 +1141,27 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                 pdf_free_dict(res);
                 return NULL;
             }
-            if (!isspace(begin[0]))
+            if (isspace((unsigned char)begin[0])) {
+                begin++;
+                continue;
+            }
+            if (begin[0] != '%')
                 break;
-            begin++;
+            while (begin < end && begin[0] != '\r' && begin[0] != '\n') {
+                if (pdfng_checktimelimit_at(pdf, "PDF dictionary value-comment scan reached the configured time limit",
+                                            (size_t)(begin - objstart))) {
+                    free(key);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
+                begin++;
+            }
         }
 
         if (begin == end) {
             free(key);
-            break;
+            pdf_free_dict(res);
+            return NULL;
         }
 
         switch (begin[0]) {
@@ -1107,6 +1176,11 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     pdf_free_dict(res);
                     return NULL;
                 }
+                if (val == NULL) {
+                    free(key);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
                 begin = p1 + 2;
                 break;
             case '[':
@@ -1117,6 +1191,11 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     free(key);
                     if (arr)
                         pdf_free_array(arr);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
+                if (arr == NULL) {
+                    free(key);
                     pdf_free_dict(res);
                     return NULL;
                 }
@@ -1135,6 +1214,11 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                             pdf_free_dict(res);
                             return NULL;
                         }
+                        if (dict == NULL) {
+                            free(key);
+                            pdf_free_dict(res);
+                            return NULL;
+                        }
                         begin = p1 + 2;
                         break;
                     }
@@ -1147,6 +1231,11 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     free(key);
                     if (val)
                         free(val);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
+                if (val == NULL) {
+                    free(key);
                     pdf_free_dict(res);
                     return NULL;
                 }
@@ -1189,8 +1278,12 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
 
                 val = cli_max_calloc((p1 - begin) + 2, 1);
-                if (!(val))
-                    break;
+                if (!(val)) {
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary value allocation failed");
+                    free(key);
+                    pdf_free_dict(res);
+                    return NULL;
+                }
 
                 strncpy(val, begin, p1 - begin);
                 val[p1 - begin] = '\0';
@@ -1218,12 +1311,14 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
 
         if (!(val) && !(dict) && !(arr)) {
             free(key);
-            break;
+            pdf_free_dict(res);
+            return NULL;
         }
 
         if (!(res->nodes)) {
             res->nodes = res->tail = node = calloc(1, sizeof(struct pdf_dict_node));
             if (!(node)) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary node allocation failed");
                 free(key);
                 if (dict)
                     pdf_free_dict(dict);
@@ -1231,11 +1326,13 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     free(val);
                 if (arr)
                     pdf_free_array(arr);
-                break;
+                pdf_free_dict(res);
+                return NULL;
             }
         } else {
             node = calloc(1, sizeof(struct pdf_dict_node));
             if (!(node)) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF dictionary node allocation failed");
                 free(key);
                 if (dict)
                     pdf_free_dict(dict);
@@ -1243,7 +1340,8 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     free(val);
                 if (arr)
                     pdf_free_array(arr);
-                break;
+                pdf_free_dict(res);
+                return NULL;
             }
 
             node->prev = res->tail;
@@ -1280,7 +1378,7 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
     struct pdf_array_node *node = NULL;
     const char *objstart;
     char *end;
-    int in_string = 0, ninner = 0;
+    int in_string = 0, in_comment = 0, ninner = 0;
 
     /* Sanity checking */
     if (!(pdf) || !(obj) || !(begin))
@@ -1309,13 +1407,24 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
 
         if (in_string) {
             if (*end == '\\') {
+                if ((size_t)(end - objstart) >= objsize - 1)
+                    return NULL;
                 end += 2;
                 continue;
             }
 
-            if (*end == ')')
-                in_string = 0;
+            if (*end == '(')
+                in_string++;
+            else if (*end == ')')
+                in_string--;
 
+            end++;
+            continue;
+        }
+
+        if (in_comment) {
+            if (*end == '\r' || *end == '\n')
+                in_comment = 0;
             end++;
             continue;
         }
@@ -1323,6 +1432,9 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
         switch (*end) {
             case '(':
                 in_string = 1;
+                break;
+            case '%':
+                in_comment = 1;
                 break;
             case '[':
                 ninner++;
@@ -1346,8 +1458,10 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
         return NULL;
 
     res = calloc(1, sizeof(struct pdf_array));
-    if (!(res))
+    if (!(res)) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF array allocation failed");
         return NULL;
+    }
 
     begin++;
     while (begin < end) {
@@ -1367,9 +1481,20 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 pdf_free_array(res);
                 return NULL;
             }
-            if (!isspace(begin[0]))
+            if (isspace((unsigned char)begin[0])) {
+                begin++;
+                continue;
+            }
+            if (begin[0] != '%')
                 break;
-            begin++;
+            while (begin < end && begin[0] != '\r' && begin[0] != '\n') {
+                if (pdfng_checktimelimit_at(pdf, "PDF array comment scan reached the configured time limit",
+                                            (size_t)(begin - objstart))) {
+                    pdf_free_array(res);
+                    return NULL;
+                }
+                begin++;
+            }
         }
 
         if (begin == end)
@@ -1381,6 +1506,10 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
                     pdf->parse_recursion_depth++;
                     dict = pdf_parse_dict(pdf, obj, end - objstart, begin, &begin);
                     pdf->parse_recursion_depth--;
+                    if (dict == NULL) {
+                        pdf_free_array(res);
+                        return NULL;
+                    }
                     begin += 2;
                     break;
                 }
@@ -1391,12 +1520,20 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
                 pdf->parse_recursion_depth++;
                 val = pdf_parse_string(pdf, obj, begin, end - objstart, NULL, &begin, NULL);
                 pdf->parse_recursion_depth--;
+                if (val == NULL) {
+                    pdf_free_array(res);
+                    return NULL;
+                }
                 begin += 2;
                 break;
             case '[':
                 pdf->parse_recursion_depth++;
                 arr = pdf_parse_array(pdf, obj, end - objstart, begin, &begin);
                 pdf->parse_recursion_depth--;
+                if (arr == NULL) {
+                    pdf_free_array(res);
+                    return NULL;
+                }
                 begin += 1;
                 break;
             default: {
@@ -1421,15 +1558,18 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
                             pdf_free_array(res);
                             return NULL;
                         }
-                        if (isspace(p1[0]))
+                        if (isspace((unsigned char)p1[0]))
                             break;
                         p1++;
                     }
                 }
 
                 val = cli_max_calloc((p1 - begin) + 2, 1);
-                if (!(val))
-                    break;
+                if (!(val)) {
+                    cli_mark_scan_incomplete(pdf->ctx, "PDF array value allocation failed");
+                    pdf_free_array(res);
+                    return NULL;
+                }
 
                 strncpy(val, begin, p1 - begin);
                 val[p1 - begin] = '\0';
@@ -1450,33 +1590,36 @@ struct pdf_array *pdf_parse_array(struct pdf_struct *pdf, struct pdf_obj *obj, s
             return NULL;
         }
 
-        /* Parse error, just return what we could */
-        if (!(val) && !(arr) && !(dict))
-            break;
+        if (!(val) && !(arr) && !(dict)) {
+            pdf_free_array(res);
+            return NULL;
+        }
 
         if (!(node)) {
             res->nodes = res->tail = node = calloc(1, sizeof(struct pdf_array_node));
             if (!(node)) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF array node allocation failed");
                 if (dict)
                     pdf_free_dict(dict);
                 if (val)
                     free(val);
                 if (arr)
                     pdf_free_array(arr);
-
-                break;
+                pdf_free_array(res);
+                return NULL;
             }
         } else {
             node = calloc(1, sizeof(struct pdf_array_node));
             if (!(node)) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF array node allocation failed");
                 if (dict)
                     pdf_free_dict(dict);
                 if (val)
                     free(val);
                 if (arr)
                     pdf_free_array(arr);
-
-                break;
+                pdf_free_array(res);
+                return NULL;
             }
 
             node->prev = res->tail;

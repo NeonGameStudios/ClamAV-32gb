@@ -7206,3 +7206,37 @@ Production PDF corpora, exhaustive surrounding-filter orderings, broader
 malformed crypt dictionaries, production/sanitizer execution, materialized
 multi-gigabyte stages, quota/read/write/cleanup faults, and Sonic1 evidence
 remain release gates.
+
+## PDF exact DecodeParms dictionary selection — 2026-08-24
+
+The stream extractor previously located DecodeParms with substring searches,
+so apparent keys inside strings, comments, nested dictionaries, or longer names
+could be mistaken for the root stream parameter key. It now parses the complete
+root stream dictionary under the shared deadline, compares decoded node names
+exactly, prefers `/DecodeParms` over `/DP`, and rejects duplicate selected keys.
+Scalar values, malformed name escapes, and malformed nested values return
+`CL_EPARSE`, mark the scan incomplete, and prevent clean caching.
+
+The shared PDFNG dictionary and array walkers now ignore comments during
+boundary and object traversal. Literal-string boundary and value parsing both
+balance nested parentheses and respect escaped characters. Failed nested
+string, array, or dictionary parsing returns failure instead of advancing from
+an unset end pointer or exposing a partial DecodeParms value. Dictionary and
+array container, key, value, and node allocation failures now mark sticky
+incomplete state and return failure rather than a partial tree.
+
+Focused Linux ARM64 GCC evidence passes 3/3. The new exact-selection regression
+contains ten internal adversarial cases covering literal/comment/nested/long-
+name decoys, comments containing dictionary delimiters, valid and invalid
+hex-escaped names, long-form precedence, malformed array syntax and a malformed
+preceding value, duplicate exact keys, and an all-decoy dictionary. The prior
+Identity ordering and
+RC4/AES explicit-Crypt focused binaries were relinked against the current
+`pdf.c`, `pdfng.c`, and `pdfdecode.c` objects and pass 1/1 each. Direct GCC
+compilation passes for both production translation units and the complete unit
+translation unit, with only the previously recorded ISO fixture warning. All
+three focused binaries also pass with the touched `pdf.c`, `pdfng.c`, and
+`pdfdecode.c` production objects instrumented by GCC AddressSanitizer/UBSan and
+leak detection. Certified Linux x86-64 production/sanitizer corpus runs,
+allocation/read fault injection, materialized multi-gigabyte streams, and
+Sonic1 evidence remain release gates.

@@ -134,6 +134,50 @@ static const char *pdf_memstr_deadline(struct pdf_struct *pdf, const char *start
     return NULL;
 }
 
+static cl_error_t pdf_stream_dictionary_start(struct pdf_struct *pdf,
+                                              const char *start, size_t len,
+                                              const char **dict_start)
+{
+    size_t offset = 0;
+    cl_error_t status;
+
+    if (pdf == NULL || pdf->ctx == NULL || start == NULL || dict_start == NULL)
+        return CL_ENULLARG;
+
+    *dict_start = NULL;
+    while (offset < len) {
+        if (offset % PDF_SEARCH_WINDOW == 0) {
+            status = cli_checktimelimit(pdf->ctx);
+            if (status != CL_SUCCESS)
+                return status;
+        }
+
+        if (isspace((unsigned char)start[offset])) {
+            offset++;
+            continue;
+        }
+
+        if (start[offset] != '%')
+            break;
+
+        do {
+            offset++;
+            if (offset < len && offset % PDF_SEARCH_WINDOW == 0) {
+                status = cli_checktimelimit(pdf->ctx);
+                if (status != CL_SUCCESS)
+                    return status;
+            }
+        } while (offset < len && start[offset] != '\r' &&
+                 start[offset] != '\n');
+    }
+
+    if (len - offset < 2 || start[offset] != '<' || start[offset + 1] != '<')
+        return CL_EPARSE;
+
+    *dict_start = start + offset;
+    return CL_SUCCESS;
+}
+
 /* PDF statistics callbacks and related */
 struct pdfname_action;
 
@@ -1940,8 +1984,9 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
     size_t sum               = 0;
     uint64_t temporary_reserved = 0;
     bool dump                = true;
-    struct pdf_dict *dparams = NULL;
+    struct pdf_dict *dparams        = NULL;
     struct pdf_array *dparams_array = NULL;
+    struct pdf_dict *stream_dict    = NULL;
     cl_error_t search_status;
 
     pdf->temporary_reserved = &temporary_reserved;
@@ -2037,7 +2082,6 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         int dict_len = obj->stream - start; /* Dictionary should end where the stream begins */
 
         const char *pstr;
-        const char *decodeparms_key = NULL;
         struct objstm_struct *objstm = NULL;
         int xref                     = 0;
 
@@ -2114,68 +2158,86 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
         /*
          * Identify the DecodeParms, if available.
          */
-        if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/DecodeParms"))) {
-            cli_dbgmsg("pdf_extract_obj: Found /DecodeParms\n");
-            decodeparms_key = "/DecodeParms";
-        } else if (NULL != (pstr = pdf_getdict(pdf, start, &dict_len, "/DP"))) {
-            cli_dbgmsg("pdf_extract_obj: Found /DP\n");
-            decodeparms_key = "/DP";
-        }
+        dict_len = obj->stream - start;
+        {
+            const char *dict_start;
+            struct pdf_dict_node *decodeparms_node = NULL;
+            struct pdf_dict_node *node;
 
-        if (pstr) {
-            /* pdf_getdict() historically advances past array and dictionary
-             * delimiters while looking for the next object. Recover this
-             * key's exact value boundary before selecting the parser. */
-            dict_len = obj->stream - start;
-            pstr = pdf_memstr_deadline(
-                pdf, start, (size_t)dict_len, decodeparms_key,
-                strlen(decodeparms_key), &search_status);
-            if (search_status == CL_ETIMEOUT) {
+            status = pdf_stream_dictionary_start(
+                pdf, start, (size_t)dict_len, &dict_start);
+            if (status == CL_ETIMEOUT) {
                 cli_mark_scan_incomplete(
                     pdf->ctx,
-                    "PDF DecodeParms value search reached the configured time limit");
-                status = CL_ETIMEOUT;
+                    "PDF stream dictionary start search reached the configured time limit");
                 goto done;
             }
-            if (pstr == NULL) {
+            if (status != CL_SUCCESS) {
                 cli_mark_scan_incomplete(
-                    pdf->ctx, "PDF DecodeParms key could not be relocated");
-                status = CL_EPARSE;
-                goto done;
-            }
-            pstr += strlen(decodeparms_key);
-            dict_len = obj->stream - pstr;
-            while (dict_len > 0 && isspace((unsigned char)*pstr)) {
-                pstr++;
-                dict_len--;
-            }
-
-            if (dict_len >= 2 && pstr[0] == '<' && pstr[1] == '<') {
-                pdf->parse_recursion_depth++;
-                dparams = pdf_parse_dict(pdf, obj, obj->size, (char *)pstr, NULL);
-                pdf->parse_recursion_depth--;
-            } else if (dict_len >= 1 && pstr[0] == '[') {
-                pdf->parse_recursion_depth++;
-                dparams_array = pdf_parse_array(pdf, obj, obj->size,
-                                                (char *)pstr, NULL);
-                pdf->parse_recursion_depth--;
-            } else {
-                cli_mark_scan_incomplete(
-                    pdf->ctx,
-                    "PDF DecodeParms value is neither a dictionary nor an array");
-                status = CL_EPARSE;
+                    pdf->ctx, "PDF stream dictionary start was not found");
                 goto done;
             }
 
-            if (dparams == NULL && dparams_array == NULL) {
+            pdf->parse_recursion_depth++;
+            stream_dict = pdf_parse_dict(
+                pdf, obj, obj->size, (char *)dict_start, NULL);
+            pdf->parse_recursion_depth--;
+            if (stream_dict == NULL) {
                 status = cli_checktimelimit(pdf->ctx);
                 if (status == CL_SUCCESS) {
                     cli_mark_scan_incomplete(
                         pdf->ctx,
-                        "PDF DecodeParms dictionary or array could not be parsed");
+                        "PDF stream dictionary could not be parsed exactly");
                     status = CL_EPARSE;
                 }
                 goto done;
+            }
+
+            for (node = stream_dict->nodes; node != NULL; node = node->next) {
+                if (node->key != NULL &&
+                    strcmp(node->key, "/DecodeParms") == 0) {
+                    if (decodeparms_node != NULL) {
+                        cli_mark_scan_incomplete(
+                            pdf->ctx,
+                            "PDF stream dictionary contains duplicate DecodeParms keys");
+                        status = CL_EPARSE;
+                        goto done;
+                    }
+                    decodeparms_node = node;
+                }
+            }
+            if (decodeparms_node == NULL) {
+                for (node = stream_dict->nodes; node != NULL;
+                     node = node->next) {
+                    if (node->key != NULL && strcmp(node->key, "/DP") == 0) {
+                        if (decodeparms_node != NULL) {
+                            cli_mark_scan_incomplete(
+                                pdf->ctx,
+                                "PDF stream dictionary contains duplicate DP keys");
+                            status = CL_EPARSE;
+                            goto done;
+                        }
+                        decodeparms_node = node;
+                    }
+                }
+            }
+
+            if (decodeparms_node != NULL) {
+                if (decodeparms_node->type == PDF_DICT_DICT) {
+                    dparams = (struct pdf_dict *)decodeparms_node->value;
+                } else if (decodeparms_node->type == PDF_DICT_ARRAY) {
+                    dparams_array =
+                        (struct pdf_array *)decodeparms_node->value;
+                } else {
+                    cli_mark_scan_incomplete(
+                        pdf->ctx,
+                        "PDF DecodeParms value is neither a dictionary nor an array");
+                    status = CL_EPARSE;
+                    goto done;
+                }
+            } else {
+                pdf_free_dict(stream_dict);
+                stream_dict = NULL;
             }
         }
 
@@ -2254,12 +2316,10 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
                 goto done;
         }
 
-        if (dparams) {
-            pdf_free_dict(dparams);
-            dparams = NULL;
-        }
-        if (dparams_array) {
-            pdf_free_array(dparams_array);
+        if (stream_dict) {
+            pdf_free_dict(stream_dict);
+            stream_dict   = NULL;
+            dparams       = NULL;
             dparams_array = NULL;
         }
 
@@ -2430,12 +2490,8 @@ scan_extracted_objects:
 
 done:
 
-    if (NULL != dparams) {
-        pdf_free_dict(dparams);
-    }
-    if (NULL != dparams_array) {
-        pdf_free_array(dparams_array);
-    }
+    if (NULL != stream_dict)
+        pdf_free_dict(stream_dict);
 
     if (obj != NULL && obj->objstm != NULL)
         pdf_objstm_release_range(obj->objstm, obj->start, obj->size);

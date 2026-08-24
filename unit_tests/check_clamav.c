@@ -11143,8 +11143,9 @@ struct pdf_decodeparms_extract_result {
 };
 
 static void pdf_test_extract_decodeparms_syntax(
-    const uint8_t *encoded, size_t encoded_size, const char *key,
-    const char *value, uint32_t object_number,
+    const uint8_t *encoded, size_t encoded_size,
+    const char *dictionary_prefix, const char *key, const char *value,
+    uint32_t object_number,
     struct pdf_decodeparms_extract_result *result)
 {
     struct cl_engine *scan_engine;
@@ -11160,17 +11161,21 @@ static void pdf_test_extract_decodeparms_syntax(
 
     ck_assert_ptr_nonnull(encoded);
     ck_assert(encoded_size > 0);
+    ck_assert_ptr_nonnull(dictionary_prefix);
     ck_assert_ptr_nonnull(key);
     ck_assert_ptr_nonnull(value);
     ck_assert_ptr_nonnull(result);
-    ck_assert(encoded_size <= SIZE_MAX - strlen(key) - strlen(value) - 128U);
-    fixture_capacity = encoded_size + strlen(key) + strlen(value) + 128U;
+    ck_assert(encoded_size <= SIZE_MAX - strlen(dictionary_prefix) -
+                                  strlen(key) - strlen(value) - 192U);
+    fixture_capacity = encoded_size + strlen(dictionary_prefix) +
+                       strlen(key) + strlen(value) + 192U;
     fixture          = malloc(fixture_capacity);
     ck_assert_ptr_nonnull(fixture);
     prefix_length = snprintf(
         fixture, fixture_capacity,
-        "<< /Length %zu /Filter [/ASCIIHexDecode /FlateDecode] %s %s >>\nstream\n",
-        encoded_size, key, value);
+        " \n%% leading decoy << /DecodeParms 7 >>\n"
+        "<< %s /Length %zu /Filter [/ASCIIHexDecode /FlateDecode] %s %s >>\nstream\n",
+        dictionary_prefix, encoded_size, key, value);
     ck_assert_int_gt(prefix_length, 0);
     ck_assert((size_t)prefix_length <= fixture_capacity - encoded_size);
     memcpy(fixture + prefix_length, encoded, encoded_size);
@@ -11236,24 +11241,118 @@ START_TEST(test_pdf_decodeparms_array_syntax_reaches_per_filter_dispatch)
 
     ck_assert(stage_size > 0);
     pdf_test_extract_decodeparms_syntax(
-        encoded, encoded_size, "/DecodeParms",
+        encoded, encoded_size, "", "/DecodeParms",
         "[ << /Predictor 12 >> null ]", 20U, &result);
     ck_assert_int_eq(result.status, CL_SUCCESS);
     ck_assert(!result.scan_incomplete);
     ck_assert(!result.dont_cache);
 
     pdf_test_extract_decodeparms_syntax(
-        encoded, encoded_size, "/DP",
+        encoded, encoded_size, "", "/DP",
         "[ null << /Predictor 12 >> ]", 21U, &result);
     ck_assert_int_eq(result.status, CL_EPARSE);
     ck_assert(result.scan_incomplete);
     ck_assert(result.dont_cache);
 
     pdf_test_extract_decodeparms_syntax(
-        encoded, encoded_size, "/DecodeParms", "7", 22U, &result);
+        encoded, encoded_size, "", "/DecodeParms", "7", 22U, &result);
     ck_assert_int_eq(result.status, CL_EPARSE);
     ck_assert(result.scan_incomplete);
     ck_assert(result.dont_cache);
+
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_decodeparms_exact_dictionary_key_selection)
+{
+    uint8_t *expected = NULL;
+    size_t stage_size;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_filter_chain_fixture(
+        263U, false, &expected, &stage_size, &encoded_size);
+    struct pdf_decodeparms_extract_result result;
+
+    ck_assert(stage_size > 0);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size,
+        "/Info (decoy (nested /DecodeParms [ null << /Predictor 12 >> ])) "
+        "/DecodeParmsExtra 7",
+        "/DecodeParms", "[ << /Predictor 12 >> null ]", 23U, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "", "/Decode#50arms",
+        "[ << /Predictor 12 >> null ]", 26U, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "/DP 7", "/DecodeParms",
+        "[ << /Predictor 12 >> null ]", 27U, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "",
+        "/DecodeParms% key comment with >> and /DP 7\n",
+        "[ << /Predictor 12 >> null ]",
+        28U, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "", "/DecodeParms",
+        "[ << /Predictor 12 >>", 29U, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "/Broken << /Nested 1",
+        "/DecodeParms", "[ << /Predictor 12 >> null ]", 32U, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size, "", "/Decode#5ZParms",
+        "[ << /Predictor 12 >> null ]", 30U, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size,
+        "/DecodeParms [ << /Predictor 12 >> null ]",
+        "/DecodeParms", "[ << /Predictor 12 >> null ]", 31U, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size,
+        "/Meta << /DecodeParms [ null << /Predictor 12 >> ] >> "
+        "% /DecodeParms 7 is a comment\n",
+        "/DP", "[ << /Predictor 12 >> null ]", 24U, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+
+    pdf_test_extract_decodeparms_syntax(
+        encoded, encoded_size,
+        "/Info (only decoy /DecodeParms 7) /DecodeParmsExtra 7",
+        "/Noop", "null", 25U, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
 
     free(encoded);
     free(expected);
@@ -29781,6 +29880,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_filter_chain_rotates_three_bounded_stages);
     tcase_add_test(tc_cl, test_pdf_decodeparms_array_is_per_filter_and_fail_visible);
     tcase_add_test(tc_cl, test_pdf_decodeparms_array_syntax_reaches_per_filter_dispatch);
+    tcase_add_test(tc_cl, test_pdf_decodeparms_exact_dictionary_key_selection);
     tcase_add_test(tc_cl, test_pdf_ascii_filters_accept_pdf_whitespace);
     tcase_add_test(tc_cl, test_pdf_ascii85_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_ascii85_partial_groups_are_exact);

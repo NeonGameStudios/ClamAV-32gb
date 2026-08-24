@@ -2317,3 +2317,22 @@ and Sonic1 qualification as release gates.
 - Add production PDF corpora, every supported surrounding-filter ordering,
   broader malformed crypt dictionaries, production/sanitizer runs,
   materialized multi-gigabyte stages, fault injection, and Sonic1 evidence.
+
+## PDF exact DecodeParms dictionary selection — 2026-08-24
+
+- Parse the complete root stream dictionary under the shared deadline and
+  select only exact decoded `/DecodeParms` or `/DP` nodes. Ignore matching text
+  in literal strings, comments, nested dictionaries, and longer names; retain
+  long-form precedence and reject duplicate exact keys, malformed values, or
+  dictionary/array allocation failures as incomplete and non-cacheable.
+- Focused Linux ARM64 GCC evidence passes 3/3. The new case contains ten
+  adversarial oracles for nested literal decoys, comments containing delimiters,
+  nested-dictionary decoys, longer names, escaped names, long-form precedence,
+  malformed arrays and preceding values, malformed name escapes, and duplicate
+  exact keys. The two
+  explicit-Crypt focused cases also pass against the same current parser
+  objects. All three focused binaries also pass with the touched PDF production
+  objects under GCC AddressSanitizer/UBSan with leak detection.
+- Add production/sanitizer PDF corpus execution, allocation/read fault
+  injection, materialized multi-gigabyte streams, and Sonic1 release evidence
+  before parser-family qualification.

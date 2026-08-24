@@ -6736,3 +6736,38 @@ restores the exact raw input after malformed AES padding.
 Production PDF corpora, exhaustive surrounding-filter orderings, broader
 malformed crypt dictionaries, production/sanitizer runs, materialized multi-
 gigabyte stages, fault injection, and Sonic1 release evidence remain open.
+
+## PDF exact DecodeParms dictionary selection — 2026-08-24
+
+Stream extraction no longer searches for `/DecodeParms` or `/DP` as raw
+substrings. It parses the complete root stream dictionary under the existing
+deadline, uses the parser's decoded PDF names, and selects only exact root
+nodes. Text in literal strings, comments, nested dictionaries, and longer names
+such as `/DecodeParmsExtra` cannot supply filter parameters. The long form
+retains precedence over `/DP`; duplicate exact long-form keys, duplicate short-
+form keys when no long form exists, malformed name escapes, malformed nested
+values, and scalar parameter values remain explicit parse-incomplete and
+non-cacheable results.
+
+Dictionary and array boundary traversal now ignores comments and balances
+nested literal parentheses while respecting escapes. Comments are also skipped
+between dictionary keys and values and between array entries. A failed nested
+dictionary, array, or string parse can no longer leave an uninitialized cursor
+or silently produce a usable partial DecodeParms node. Dictionary/array
+container, key, value, and node allocation failures now set sticky incomplete
+state and return failure instead of exposing a partial parse tree.
+
+Focused Linux ARM64 GCC evidence passes 3/3. The exact-selection case contains
+ten internal oracles covering nested literal and dictionary decoys, comments
+containing `>>` and apparent keys, longer names, a hex-escaped valid key, long-
+form precedence, a malformed array and malformed preceding value, an invalid
+name escape, a duplicate exact key, and a dictionary containing only decoys.
+The earlier explicit Identity
+Crypt ordering and RC4/AES ordering cases each pass 1/1 after relinking against
+these exact parser objects. Direct GCC compilation passes for `pdf.c`,
+`pdfng.c`, and the complete `check_clamav.c` translation unit; the unit TU emits
+only its previously recorded ISO fixture warning. The same three focused
+binaries pass with `pdf.c`, `pdfng.c`, and `pdfdecode.c` instrumented by GCC
+AddressSanitizer/UBSan with leak detection. Full production/sanitizer corpus
+execution, allocation/read fault injection, materialized multi-gigabyte streams,
+and Sonic1 release evidence remain open.
