@@ -7196,7 +7196,13 @@ raw-child reservation. Direct GCC compilation of `pdfdecode.c` and the full
 `check_clamav.c` translation unit also passes with the previously recorded
 isolated warning only.
 
-RC4/AES non-first corpora, exhaustive surrounding-filter orderings, malformed
-crypt dictionaries, production/sanitizer execution, materialized
+A second focused Linux ARM64 GCC case passes 1/1 with eight internal oracles.
+RC4, AESV2, and AESV3 each pass with Crypt before and after ASCIIHex, and the
+named DecodeParms entry selects the intended method at the Crypt stage. A one-
+byte-short RC4 peak returns `CL_ERESOURCE` with zero output and residue; invalid
+AES padding returns `CL_EPARSE` after exact raw-input restoration.
+
+Production PDF corpora, exhaustive surrounding-filter orderings, broader
+malformed crypt dictionaries, production/sanitizer execution, materialized
 multi-gigabyte stages, quota/read/write/cleanup faults, and Sonic1 evidence
 remain release gates.

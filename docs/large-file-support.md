@@ -6727,6 +6727,12 @@ exact encoded fallback, and bounded reservation cleanup for a two-Crypt chain.
 `pdfdecode.c` and the full `check_clamav.c` translation unit compile directly
 with GCC; only the previously recorded isolated unit warning remains.
 
-RC4/AES non-first corpora, exhaustive surrounding-filter orderings, malformed
-crypt dictionaries, production/sanitizer runs, materialized multi-gigabyte
-stages, fault injection, and Sonic1 release evidence remain open.
+A second focused Linux ARM64 GCC case passes 1/1 with eight internal oracles.
+It covers RC4, AESV2, and AESV3 with Crypt before and after ASCIIHex, proves
+that the Crypt stage receives only its matching named DecodeParms entry,
+rejects a one-byte-short RC4 temporary peak with zero output/residue, and
+restores the exact raw input after malformed AES padding.
+
+Production PDF corpora, exhaustive surrounding-filter orderings, broader
+malformed crypt dictionaries, production/sanitizer runs, materialized multi-
+gigabyte stages, fault injection, and Sonic1 release evidence remain open.

@@ -2311,6 +2311,9 @@ and Sonic1 qualification as release gates.
   ASCIIHex-to-Crypt Identity ordering, exact decoded output, expected peak
   temporary accounting, and a repeated-Crypt chain that fails visibly with
   exact raw fallback.
-- Add RC4/AES non-first corpora, every supported surrounding-filter ordering,
-  malformed crypt dictionaries, production/sanitizer runs, materialized
-  multi-gigabyte stages, fault injection, and Sonic1 release evidence.
+- A second focused GCC case passes 1/1 with eight internal RC4, AESV2, and
+  AESV3 oracles across both positions, matching named parameters, one-byte-
+  short quota rollback, and malformed AES-padding raw restoration.
+- Add production PDF corpora, every supported surrounding-filter ordering,
+  broader malformed crypt dictionaries, production/sanitizer runs,
+  materialized multi-gigabyte stages, fault injection, and Sonic1 evidence.
