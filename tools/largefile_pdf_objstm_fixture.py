@@ -490,6 +490,20 @@ def spool_aesv3_with_openssl(source, file_key, object_number, plaintext_size):
     )
 
 
+def spool_aes_with_python(source, key, iv):
+    destination = tempfile.TemporaryFile()
+    encryptor = AESCBCEncryptor(key, iv)
+    source.seek(0)
+    while True:
+        chunk = source.read(CHUNK_SIZE)
+        if not chunk:
+            break
+        destination.write(encryptor.update(chunk))
+    destination.write(encryptor.finalize())
+    destination.seek(0)
+    return destination
+
+
 class HashedWriter:
     def __init__(self, output):
         self.output = output
@@ -586,6 +600,7 @@ def build_fixture(
     decoded_size=None,
     malformed=False,
     encryption="none",
+    fault="none",
 ):
     if encryption not in (
         "none",
@@ -599,6 +614,10 @@ def build_fixture(
         raise ValueError(f"unsupported encryption: {encryption}")
     if malformed and encryption != "none":
         raise ValueError("--malformed is not supported with encryption")
+    if fault not in ("none", "bad-cfm", "truncated-ciphertext", "bad-padding"):
+        raise ValueError(f"unsupported fault: {fault}")
+    if fault != "none" and (encryption != "aesv2-r4" or malformed):
+        raise ValueError("encryption faults require a valid AESV2-R4 fixture")
     layout = object_stream_layout(kind, decoded_size, malformed)
     first = len(layout[0])
     actual_decoded_size = sum(len(chunk) for chunk in decoded_chunks(layout))
@@ -650,6 +669,36 @@ def build_fixture(
                 3,
                 plaintext_encoded_size,
             )
+        if fault in ("truncated-ciphertext", "bad-padding"):
+            if aes_ciphertext_spool is None:
+                stream_key = (
+                    aesv2_object_key(security["file_key"], 3)
+                    if security["cipher"] == "aesv2"
+                    else security["file_key"]
+                )
+                stream_iv = (
+                    aesv2_iv(3)
+                    if security["cipher"] == "aesv2"
+                    else aesv3_iv(3)
+                )
+                aes_ciphertext_spool = spool_aes_with_python(
+                    aes_plaintext_spool, stream_key, stream_iv
+                )
+            ciphertext_size = encoded_size - 16
+            if fault == "truncated-ciphertext":
+                aes_ciphertext_spool.truncate(ciphertext_size - 1)
+                encoded_size -= 1
+            else:
+                if ciphertext_size < 32:
+                    raise ValueError("bad-padding fault requires two ciphertext blocks")
+                corrupt_offset = ciphertext_size - 32 + 15
+                aes_ciphertext_spool.seek(corrupt_offset)
+                value = aes_ciphertext_spool.read(1)
+                if len(value) != 1:
+                    raise RuntimeError("AES padding fault offset is unavailable")
+                aes_ciphertext_spool.seek(corrupt_offset)
+                aes_ciphertext_spool.write(bytes([value[0] ^ 0xFF]))
+            aes_ciphertext_spool.seek(0)
 
     try:
         with open(path, "wb") as raw_output:
@@ -747,12 +796,15 @@ def build_fixture(
                         + f"/P {security['permissions']} >>".encode("ascii")
                     )
                 elif security["cipher"] == "aesv2":
+                    crypt_method = b"AESV2" if fault != "bad-cfm" else b"Bogus"
                     encryption_dictionary = (
                         b"<< /Filter /Standard /V 4 /R 4 /Length 128 "
                         + f"/O <{security['owner'].hex().upper()}> ".encode("ascii")
                         + f"/U <{security['user'].hex().upper()}> ".encode("ascii")
                         + f"/P {security['permissions']} /EncryptMetadata true ".encode("ascii")
-                        + b"/CF << /StdCF << /Type /CryptFilter /CFM /AESV2 "
+                        + b"/CF << /StdCF << /Type /CryptFilter /CFM /"
+                        + crypt_method
+                        + b" "
                         + b"/AuthEvent /DocOpen /Length 16 >> >> "
                         + b"/StmF /StdCF /StrF /StdCF /EFF /StdCF >>"
                     )
@@ -807,6 +859,7 @@ def build_fixture(
                 "encoded_sha256": encoded_sha256,
                 "encoded_size": encoded_size,
                 "encryption": encryption,
+                "fault": fault,
                 "file_size": writer.offset,
                 "filter": filter_name,
                 "first": first,
@@ -859,6 +912,11 @@ def main():
     parser.add_argument("--decoded-size", type=int)
     parser.add_argument("--malformed", action="store_true")
     parser.add_argument(
+        "--fault",
+        choices=("none", "bad-cfm", "truncated-ciphertext", "bad-padding"),
+        default="none",
+    )
+    parser.add_argument(
         "--encryption",
         choices=(
             "none",
@@ -880,6 +938,7 @@ def main():
         decoded_size=args.decoded_size,
         malformed=args.malformed,
         encryption=args.encryption,
+        fault=args.fault,
     )
     for key in sorted(result):
         print(f"{key}={result[key]}")

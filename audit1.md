@@ -7049,7 +7049,9 @@ ASCIIHex-to-Flate object streams, plus nonempty-password raw variants for all
 three handlers, including deterministic
 owner/user entries, permissions, file ID, object keys, AES IVs, encrypted
 content, an unencrypted XRef stream, and a Standard crypt-filter dictionary.
-Its twenty-eight-case self-test verifies independent RC4 and NIST AES-128/256
+It also emits deterministic AESV2 documents with an unknown crypt-filter method,
+one-byte-truncated ciphertext, and invalid PKCS#7 padding. Its thirty-one-case
+self-test verifies independent RC4 and NIST AES-128/256
 vectors,
 AES encryption/decryption and padding, deterministic hashes, filter reversal,
 xref coordinates, security metadata, compressed-object ownership, invalid-
@@ -7063,19 +7065,22 @@ database and performs no build configuration. It binds size/hash/allocation,
 requires marker detection and real object-stream parser diagnostics, requires
 file-backed attach and cleanup diagnostics, distinguishes expected malformed
 status, rejects temporary residue, and records RSS, page faults, and file I/O
-for 64 MiB–4 GiB decoded children. The twenty-eight generator tests pass. Poppler
+for 64 MiB–4 GiB decoded children. The thirty-one generator tests pass. Poppler
 independently accepts the RC4, AESV2, and AESV3 raw, Flate, and filter-chain
 forms as
 one-page encrypted PDF 1.7 documents with the compressed JavaScript page
 object. Poppler also rejects each password case without credentials and parses
 it completely with the deterministic password. A Linux x86-64 orchestrator
-self-test passes seventeen cases, including
+self-test passes twenty cases, including
 allocation proof for a 64 MiB decoded child and exact Standard R2/RC4 and
 Standard R4/AESV2 plus Standard R5/AESV3 key-discovery and bounded-decrypt
 diagnostics. Password cases require status 2, structured `UNSUPPORTED`, a
 non-clean status, a skipped operation, no `OK`, no bounded decrypt, and no
-plaintext marker; its scanner and
-GNU-time outputs are deliberate stubs, so this validates the gate rather than
+plaintext marker. The unknown crypt filter is separately required to report
+`UNSUPPORTED` without entering bounded AES; truncated ciphertext and invalid
+padding must report `MALFORMED_CONFIRMED`, preserve their exact diagnostic, and
+leave no clean/plaintext result or temporary residue. Its scanner and GNU-time
+outputs are deliberate stubs, so this validates the gate rather than
 ClamAV. Sonic1 remains unavailable at TCP connect
 (20-second timeout), so no production or sanitizer scanner result is claimed.
 
@@ -7128,9 +7133,12 @@ This closes the implementation gap, not release qualification. Deterministic
 empty-password Standard R2 RC4, Standard R4 AESV2, and deprecated Standard R5
 AESV3 PDF 1.7 corpus generation and evidence oracles now cover raw and supported
 filtered object streams. Deterministic nonempty credentials for all three
-handlers prove explicit unsupported/no-clean/no-plaintext behavior;
-materialized multi-gigabyte
-encrypted streams, production and sanitizer clamscan runs, Sonic1 evidence,
-per-filter DecodeParms arrays, unsupported/mixed filters, and the non-mmap
-object-stream policy remain open. Non-first explicit Crypt is intentionally
-fail-visible before the legacy contiguous path.
+handlers prove explicit unsupported/no-clean/no-plaintext behavior. Unknown
+crypt filters now have a deterministic `UNSUPPORTED` oracle, while truncated
+AESV2 ciphertext and invalid PKCS#7 padding have deterministic
+`MALFORMED_CONFIRMED` oracles. Materialized multi-gigabyte encrypted streams,
+broader malformed dictionaries, quota/read/cleanup faults, production and
+sanitizer clamscan runs, Sonic1 evidence, per-filter DecodeParms arrays,
+unsupported/mixed filters, and the non-mmap object-stream policy remain open.
+Non-first explicit Crypt is intentionally fail-visible before the legacy
+contiguous path.

@@ -194,7 +194,7 @@ printf '%s:0:*:%s\n' "$signature_name" "$marker_hex" > "$out/database/pdf-objstm
 custom_signature_sha256=$(sha256sum "$out/database/pdf-objstm.ndb" | awk '{ print $1 }')
 
 manifest=$out/corpus-manifest.tsv
-printf 'case\tpath\tfilter\tencryption\tcredential\tdecoded_size\tencoded_size\tfile_size\tsha256\tallocated_bytes\tmetadata_sha256\n' > "$manifest"
+printf 'case\tpath\tfilter\tencryption\tcredential\tfault\tdecoded_size\tencoded_size\tfile_size\tsha256\tallocated_bytes\tmetadata_sha256\n' > "$manifest"
 results=$out/results.tsv
 printf 'case\tstatus\trss_kb\ttemporary_peak_bytes\tminor_faults\tmajor_faults\tfs_inputs\tfs_outputs\tlog_sha256\treport_sha256\tresult\n' > "$results"
 failures=0
@@ -216,14 +216,15 @@ generate_fixture()
     filter=$(sed -n 's/^filter=//p' "$metadata")
     encryption=$(sed -n 's/^encryption=//p' "$metadata")
     credential=$(sed -n 's/^credential=//p' "$metadata")
+    fault=$(sed -n 's/^fault=//p' "$metadata")
     fixture_decoded_size=$(sed -n 's/^decoded_size=//p' "$metadata")
     encoded_size=$(sed -n 's/^encoded_size=//p' "$metadata")
     file_size=$(stat -c %s "$path")
     blocks=$(stat -c %b "$path")
     block_size=$(stat -c %B "$path")
     allocated_bytes=$((blocks * block_size))
-    printf '%s\tcorpus/%s.pdf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$case_name" "$case_name" "$filter" "$encryption" "$credential" "$fixture_decoded_size" \
+    printf '%s\tcorpus/%s.pdf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$case_name" "$case_name" "$filter" "$encryption" "$credential" "$fault" "$fixture_decoded_size" \
         "$encoded_size" "$file_size" "$actual_sha" "$allocated_bytes" \
         "$metadata_sha256" >> "$manifest"
     if [ "$case_name" = materialized ] && [ "$allocated_bytes" -lt "$file_size" ]; then
@@ -249,6 +250,9 @@ generate_fixture aesv3-filter-chain --filter asciihex-flate --encryption aesv3-r
 generate_fixture password-rc4 --filter raw --encryption rc4-r2-password || failures=$((failures + 1))
 generate_fixture password-aesv2 --filter raw --encryption aesv2-r4-password || failures=$((failures + 1))
 generate_fixture password-aesv3 --filter raw --encryption aesv3-r5-password || failures=$((failures + 1))
+generate_fixture fault-bad-cfm --filter raw --encryption aesv2-r4 --fault bad-cfm || failures=$((failures + 1))
+generate_fixture fault-truncated-ciphertext --filter raw --encryption aesv2-r4 --fault truncated-ciphertext || failures=$((failures + 1))
+generate_fixture fault-bad-padding --filter raw --encryption aesv2-r4 --fault bad-padding || failures=$((failures + 1))
 
 run_fixture()
 {
@@ -337,10 +341,20 @@ run_fixture()
             ! grep -F 'PDF object-stream parsing did not complete' "$log" >/dev/null 2>&1; then
             result=fail
         fi
+    elif [ "$expect_outcome" = unsupported ] || [ "$expect_outcome" = malformed ]; then
+        if [ "$status" -ne 2 ] ||
+            grep -E "$signature_name(\.UNOFFICIAL)? .*FOUND" "$log" >/dev/null 2>&1 ||
+            grep -F ': OK' "$log" >/dev/null 2>&1 ||
+            grep -F 'pdf_objstm_attach_file: retained ' "$log" >/dev/null 2>&1 ||
+            grep -F 'pdf_find_and_parse_objs_in_objstm: Found object 5 0' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'PDF object-stream parsing did not complete' "$log" >/dev/null 2>&1; then
+            result=fail
+        fi
     else
         result=fail
     fi
-    if [ "$expect_malformed" -eq 1 ] || [ "$expect_outcome" = password ]; then
+    if [ "$expect_malformed" -eq 1 ] || [ "$expect_outcome" != detection ]; then
         if ! grep -F 'PDF object-stream parsing did not complete' "$log" >/dev/null 2>&1; then
             result=fail
         fi
@@ -389,6 +403,19 @@ run_fixture()
                 result=fail
             fi
             ;;
+        aesv2-unsupported)
+            if ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
+                ! grep -F 'parse_enc_method: StdCF CFM: Bogus' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
+                result=fail
+            fi
+            ;;
+        aesv2-malformed)
+            if ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
+                ! grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
+                result=fail
+            fi
+            ;;
         *) result=fail ;;
     esac
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
@@ -416,6 +443,9 @@ if [ "$failures" -eq 0 ]; then
     run_fixture password-rc4 1 rc4-r2-password password || failures=$((failures + 1))
     run_fixture password-aesv2 1 aesv2-r4-password password || failures=$((failures + 1))
     run_fixture password-aesv3 1 aesv3-r5-password password || failures=$((failures + 1))
+    run_fixture fault-bad-cfm 1 aesv2-unsupported unsupported || failures=$((failures + 1))
+    run_fixture fault-truncated-ciphertext 1 aesv2-malformed malformed || failures=$((failures + 1))
+    run_fixture fault-bad-padding 1 aesv2-malformed malformed || failures=$((failures + 1))
 fi
 
 if [ "$failures" -ne 0 ]; then
@@ -429,7 +459,7 @@ qualification_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_qualification
 evidence_checker_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_evidence_check.py" | awk '{ print $1 }')
 generator_test_sha256=$(sha256sum "$out/generator-test.log" | awk '{ print $1 }')
 cat > "$out/evidence-metadata.txt" <<EOF
-schema_version=5
+schema_version=6
 source_revision_type=$source_revision_type
 source_commit=$source_commit
 source_tree=$source_tree

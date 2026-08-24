@@ -6628,8 +6628,9 @@ configurations plus the complete unit-test translation unit pass GCC syntax
 compilation; only pre-existing isolated-build warnings remain.
 
 Unsupported/mixed filters, per-filter DecodeParms arrays, non-mmap object-
-stream builds, materialized multi-gigabyte encrypted fixtures, and Sonic1
-release/sanitizer qualification remain open.
+stream builds, materialized multi-gigabyte encrypted fixtures, broader malformed
+encryption dictionaries, and Sonic1 release/sanitizer qualification remain
+open.
 
 The deterministic `largefile_pdf_objstm_fixture.py` generator now emits
 structurally valid PDF 1.7 files with a cross-reference stream and compressed-
@@ -6638,7 +6639,9 @@ object forms are self-verified, and the raw form can stream an exact decoded
 size without sparse seeks. Complete empty-password Standard R2/RC4, Standard
 R4/AESV2, and deprecated compatibility-only Standard R5/AESV3 documents cover
 each supported filter form. Deterministic nonempty-password variants cover the
-same security handlers as explicit unsupported/no-plaintext cases. AES generation
+same security handlers as explicit unsupported/no-plaintext cases. Three
+deterministic AESV2 faults cover an unknown crypt-filter method, a physically
+truncated ciphertext body, and invalid PKCS#7 padding. AES generation
 uses an existing OpenSSL executable when available while a pure-Python NIST-
 vector-tested implementation remains the independent oracle and fallback.
 `largefile_pdf_objstm_qualification.sh` binds each
@@ -6647,10 +6650,14 @@ production parser plus map/cleanup diagnostics, checks exact marker detection
 and malformed-status visibility, records RSS/page-fault/I/O evidence, and
 rejects leaked temporary files. Every case now binds a versioned JSON report;
 password cases require `UNSUPPORTED`, a non-clean status, a skipped operation,
-no `OK`, and no plaintext marker. The generator self-test passes 28 cases;
+no `OK`, and no plaintext marker. The unknown crypt filter requires the same
+fail-closed `UNSUPPORTED` class without entering bounded AES, while truncated
+ciphertext and bad padding require `MALFORMED_CONFIRMED`, bounded-AES evidence,
+their exact reason, no plaintext result, and no residue. The generator self-test
+passes 31 cases;
 Poppler independently accepts the RC4, AESV2, and AESV3 raw, Flate, and filter-chain
 documents as one-page encrypted PDF 1.7 files with JavaScript, and the Linux
-x86-64 orchestrator self-test passes all 17 scanner cases with a fully
+x86-64 orchestrator self-test passes all 20 scanner cases with a fully
 allocated 64 MiB child. That orchestrator uses a deterministic scanner/time
 stub and is not production scan evidence. Production scanner, sanitizer,
 multi-gigabyte materialized, and Sonic1 runs are still required before changing

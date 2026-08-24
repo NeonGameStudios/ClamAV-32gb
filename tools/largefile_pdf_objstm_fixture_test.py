@@ -91,7 +91,11 @@ def verify_pdf(path, metadata, expected):
         else:
             if metadata["encryption"].startswith("aesv2-r4"):
                 assert b"7 0 obj\n<< /Filter /Standard /V 4 /R 4 /Length 128" in data
-                assert b"/CFM /AESV2" in data
+                if metadata["fault"] == "bad-cfm":
+                    assert b"/CFM /Bogus" in data
+                    assert b"/CFM /AESV2" not in data
+                else:
+                    assert b"/CFM /AESV2" in data
             else:
                 assert metadata["encryption"].startswith("aesv3-r5")
                 assert b"/ExtensionLevel 3" in data
@@ -103,9 +107,17 @@ def verify_pdf(path, metadata, expected):
         assert encryption_entry[0] == 0
 
     encoded = read_stream(path, metadata)
-    decoded = decode_stream(decrypt_stream(encoded, metadata), metadata["filter"])
-    assert decoded == expected
-    assert len(decoded) == metadata["decoded_size"]
+    if metadata["fault"] in ("truncated-ciphertext", "bad-padding"):
+        try:
+            decrypt_stream(encoded, metadata)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"{metadata['fault']} AES stream decrypted successfully")
+    else:
+        decoded = decode_stream(decrypt_stream(encoded, metadata), metadata["filter"])
+        assert decoded == expected
+        assert len(decoded) == metadata["decoded_size"]
     assert hashlib.sha256(encoded).hexdigest() == metadata["encoded_sha256"]
     assert metadata["credential"] == (
         "nonempty" if metadata["encryption"].endswith("-password") else "empty"
@@ -185,6 +197,25 @@ def main():
             )
             verify_pdf(path, metadata, expected)
             assert metadata["credential"] == "nonempty"
+            assert fixture.MARKER not in read_stream(path, metadata)
+            cases += 1
+
+        for fault in ("bad-cfm", "truncated-ciphertext", "bad-padding"):
+            path = os.path.join(directory, f"fault-{fault}.pdf")
+            layout = fixture.object_stream_layout("javascript", None, False)
+            expected = b"".join(fixture.decoded_chunks(layout))
+            metadata = fixture.build_fixture(
+                path,
+                filter_name="raw",
+                encryption="aesv2-r4",
+                fault=fault,
+            )
+            verify_pdf(path, metadata, expected)
+            assert metadata["fault"] == fault
+            if fault == "truncated-ciphertext":
+                assert (metadata["encoded_size"] - 16) % 16 == 15
+            else:
+                assert metadata["encoded_size"] % 16 == 0
             assert fixture.MARKER not in read_stream(path, metadata)
             cases += 1
 

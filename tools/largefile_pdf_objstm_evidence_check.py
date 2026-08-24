@@ -29,6 +29,14 @@ CASES = {
     "password-rc4": ("raw", "rc4-r2-password", False, "password"),
     "password-aesv2": ("raw", "aesv2-r4-password", False, "password"),
     "password-aesv3": ("raw", "aesv3-r5-password", False, "password"),
+    "fault-bad-cfm": ("raw", "aesv2-r4", False, "unsupported"),
+    "fault-truncated-ciphertext": ("raw", "aesv2-r4", False, "malformed"),
+    "fault-bad-padding": ("raw", "aesv2-r4", False, "malformed"),
+}
+FAULTS = {
+    "fault-bad-cfm": "bad-cfm",
+    "fault-truncated-ciphertext": "truncated-ciphertext",
+    "fault-bad-padding": "bad-padding",
 }
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SOURCE_ID = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
@@ -115,9 +123,9 @@ def main():
         "corpus_manifest_sha256", "results_sha256", "qualification_status",
     }
     if set(metadata) != expected_keys:
-        fail("metadata keys do not match schema version 5")
-    if metadata["schema_version"] != "5" or metadata["qualification_status"] != "pass":
-        fail("metadata does not declare a schema-5 pass")
+        fail("metadata keys do not match schema version 6")
+    if metadata["schema_version"] != "6" or metadata["qualification_status"] != "pass":
+        fail("metadata does not declare a schema-6 pass")
     if metadata["source_revision_type"] not in ("git-commit", "content-manifest"):
         fail("source revision type is invalid")
     if metadata["source_tree_status"] != "clean" and not args.allow_dirty_source:
@@ -215,20 +223,22 @@ def main():
 
     corpus_rows = read_tsv(
         evidence / "corpus-manifest.tsv",
-        ["case", "path", "filter", "encryption", "credential", "decoded_size", "encoded_size", "file_size", "sha256",
-         "allocated_bytes", "metadata_sha256"],
+        ["case", "path", "filter", "encryption", "credential", "fault", "decoded_size",
+         "encoded_size", "file_size", "sha256", "allocated_bytes", "metadata_sha256"],
     )
     if {row["case"] for row in corpus_rows} != set(CASES) or len(corpus_rows) != len(CASES):
         fail("corpus manifest does not contain exactly the required cases")
     for row in corpus_rows:
         expected_filter, expected_encryption, _, outcome = CASES[row["case"]]
         expected_credential = "nonempty" if outcome == "password" else "empty"
+        expected_fault = FAULTS.get(row["case"], "none")
         if (
             row["filter"] != expected_filter
             or row["encryption"] != expected_encryption
             or row["credential"] != expected_credential
+            or row["fault"] != expected_fault
         ):
-            fail(f"{row['case']} has the wrong filter, encryption, or credential oracle")
+            fail(f"{row['case']} has the wrong filter, encryption, credential, or fault oracle")
         path = safe_evidence_path(evidence, row["path"])
         size = integer(row["file_size"], f"{row['case']} file size", 1)
         allocated = integer(row["allocated_bytes"], f"{row['case']} allocation")
@@ -255,6 +265,8 @@ def main():
             fail(f"{row['case']} generator metadata has the wrong encryption oracle")
         if metadata_values.get("credential") != expected_credential:
             fail(f"{row['case']} generator metadata has the wrong credential oracle")
+        if metadata_values.get("fault") != expected_fault:
+            fail(f"{row['case']} generator metadata has the wrong fault oracle")
         encrypted_metadata = (
             re.fullmatch(r"[0-9a-f]{32}", metadata_values.get("file_id", ""))
             is not None
@@ -312,16 +324,32 @@ def main():
                 "pdf_find_and_parse_objs_in_objstm: Found object 5 0",
                 "pdf_objstm_cleanup: releasing ",
             )
-        else:
+        elif outcome == "password":
             required += (
                 "encrypted PDF found, user password is NOT empty, cannot decrypt!",
                 "pdf_find_and_extract_objs: encrypted pdf found, not decryptable",
                 "PDF object-stream parsing did not complete",
             )
+        elif outcome == "unsupported":
+            required += (
+                "encrypted PDF found, user password is empty, will attempt to decrypt",
+                "parse_enc_method: StdCF CFM: Bogus",
+                "PDF object-stream parsing did not complete",
+            )
+        elif outcome == "malformed":
+            required += (
+                "encrypted PDF found, user password is empty, will attempt to decrypt",
+                "pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks",
+                "PDF object-stream parsing did not complete",
+            )
+            if row["case"] == "fault-truncated-ciphertext":
+                required += ("PDF AES stream has an invalid IV or ciphertext length",)
+            else:
+                required += ("PDF AES stream has invalid PKCS#7 padding",)
         if any(value not in text for value in required):
             fail(f"{row['case']} log is missing a required parser oracle")
         incomplete = "PDF object-stream parsing did not complete" in text
-        if incomplete != (malformed or outcome == "password"):
+        if incomplete != (malformed or outcome != "detection"):
             fail(f"{row['case']} malformed-status oracle is incorrect")
         has_bounded_rc4 = (
             "pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows" in text
@@ -335,15 +363,20 @@ def main():
         has_empty_password = (
             "encrypted PDF found, user password is empty, will attempt to decrypt" in text
         )
-        expected_diagnostics = {
-            "none": (False, False, False, False),
-            "rc4-r2": (True, False, False, True),
-            "aesv2-r4": (False, True, False, True),
-            "aesv3-r5": (False, False, True, True),
-            "rc4-r2-password": (False, False, False, False),
-            "aesv2-r4-password": (False, False, False, False),
-            "aesv3-r5-password": (False, False, False, False),
-        }[encryption]
+        if outcome == "unsupported":
+            expected_diagnostics = (False, False, False, True)
+        elif outcome == "malformed":
+            expected_diagnostics = (False, True, False, True)
+        else:
+            expected_diagnostics = {
+                "none": (False, False, False, False),
+                "rc4-r2": (True, False, False, True),
+                "aesv2-r4": (False, True, False, True),
+                "aesv3-r5": (False, False, True, True),
+                "rc4-r2-password": (False, False, False, False),
+                "aesv2-r4-password": (False, False, False, False),
+                "aesv3-r5-password": (False, False, False, False),
+            }[encryption]
         if (
             has_bounded_rc4,
             has_bounded_aesv2,
@@ -351,14 +384,14 @@ def main():
             has_empty_password,
         ) != expected_diagnostics:
             fail(f"{row['case']} encrypted-stream diagnostic oracle is incorrect")
-        if outcome == "password":
+        if outcome != "detection":
             forbidden = (
                 "LargeFile.PDF.ObjStm.Tail", " FOUND", ": OK",
                 "pdf_objstm_attach_file: retained ",
                 "pdf_find_and_parse_objs_in_objstm: Found object 5 0",
             )
             if any(value in text for value in forbidden):
-                fail(f"{row['case']} password-protected scan exposed a clean or plaintext result")
+                fail(f"{row['case']} fail-closed scan exposed a clean or plaintext result")
 
         report_path = evidence / "reports" / f"{row['case']}.jsonl"
         if (
@@ -396,7 +429,7 @@ def main():
                 or report.get("completion") != "DETECTION_TERMINATED"
             ):
                 fail(f"{row['case']} structured detection outcome is incorrect")
-        else:
+        elif outcome == "password":
             reason = report.get("reason")
             if (
                 not isinstance(report.get("status"), int)
@@ -409,6 +442,32 @@ def main():
                 or report["skipped_operations"] < 1
             ):
                 fail(f"{row['case']} structured password outcome is not fail-closed")
+        else:
+            reason = report.get("reason")
+            expected_completion = (
+                "UNSUPPORTED" if outcome == "unsupported" else "MALFORMED_CONFIRMED"
+            )
+            if (
+                not isinstance(report.get("status"), int)
+                or report["status"] in (0, 1)
+                or report.get("verdict") != 0
+                or report.get("completion") != expected_completion
+                or not isinstance(reason, str)
+                or not reason
+                or not isinstance(report.get("skipped_operations"), int)
+                or report["skipped_operations"] < 1
+            ):
+                fail(f"{row['case']} structured fault outcome is not fail-closed")
+            if outcome == "unsupported" and (
+                "unsupported" not in reason.lower() or "encryption" not in reason.lower()
+            ):
+                fail(f"{row['case']} structured unsupported reason is not explicit")
+            expected_reason = {
+                "fault-truncated-ciphertext": "PDF AES stream has an invalid IV or ciphertext length",
+                "fault-bad-padding": "PDF AES stream has invalid PKCS#7 padding",
+            }.get(row["case"])
+            if expected_reason is not None and reason != expected_reason:
+                fail(f"{row['case']} structured malformed reason is incorrect")
         tempdir = evidence / "tmp" / row["case"]
         if not tempdir.is_dir() or any(tempdir.iterdir()):
             fail(f"{row['case']} retained temporary residue")
