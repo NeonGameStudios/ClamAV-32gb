@@ -7059,3 +7059,13 @@ self-test passes five cases, including allocation proof for a 64 MiB decoded
 child; its scanner and GNU-time outputs are deliberate stubs, so this validates
 the gate rather than ClamAV. Sonic1 remains unavailable at TCP connect
 (20-second timeout), so no production or sanitizer scanner result is claimed.
+
+The gate now samples peak temporary storage while the scanner runs and records
+an immutable source manifest plus commit/tree state, a copied Linux x86-64 ELF
+scanner, its version and resolved runtime dependencies, a per-file database
+manifest, the exact custom signature, tool hashes, fixture/log hashes, and
+normalized result hashes. A companion checker requires a clean source by
+default and independently verifies every binding, exact case set, parser
+oracle, malformed distinction, RSS/temporary ceiling, allocation proof, and
+cleanup state. The orchestrator self-test also proves that a tampered scan log
+is rejected.

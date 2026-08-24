@@ -6647,3 +6647,12 @@ allocated 64 MiB child. That orchestrator uses a deterministic scanner/time
 stub and is not production scan evidence. Production scanner, sanitizer,
 multi-gigabyte materialized, and Sonic1 runs are still required before changing
 the capability status.
+
+The gate also records a full source manifest, commit/tree state, a copied
+Linux x86-64 ELF scanner, its version and resolved runtime dependencies, a
+per-file database manifest, the exact custom signature, tool hashes, fixture/
+log hashes, peak temporary usage, and normalized resource results. The
+companion evidence checker rejects dirty release sources by default and
+revalidates every binding, exact case oracle, resource ceiling, malformed-
+status distinction, allocation proof, and empty temporary directory. Its
+self-test proves that a modified scanner log is rejected.

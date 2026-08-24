@@ -70,25 +70,131 @@ if [ ! -x /usr/bin/time ] || ! /usr/bin/time -v true >/dev/null 2>&1; then
     echo "GNU /usr/bin/time -v is required" >&2
     exit 2
 fi
-for command_name in python3 sha256sum stat awk grep find; do
+for command_name in python3 sha256sum stat awk grep find du sleep cp file ldd; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "required command is unavailable: $command_name" >&2
         exit 2
     }
 done
 
-mkdir -p "$out/corpus" "$out/logs" "$out/tmp" "$out/database"
+if [ -d "$out" ] && [ -n "$(find "$out" -mindepth 1 -print -quit)" ]; then
+    echo "PDF object-stream evidence directory is not empty: $out" >&2
+    exit 2
+fi
+mkdir -p "$out/corpus" "$out/logs" "$out/tmp" "$out/database" "$out/provenance"
 python3 "$root/tools/largefile_pdf_objstm_fixture_test.py" > "$out/generator-test.log" 2>&1
+
+"$root/tools/largefile_source_manifest.sh" "$root" "$out/provenance/source-manifest.txt"
+source_manifest_sha256=$(sha256sum "$out/provenance/source-manifest.txt" | awk '{ print $1 }')
+source_revision_type=content-manifest
+source_commit=$source_manifest_sha256
+source_tree=$source_manifest_sha256
+source_tree_status=snapshot
+if command -v git >/dev/null 2>&1 &&
+    [ "$(git -C "$root" rev-parse --show-toplevel 2>/dev/null || true)" = "$root" ]; then
+    source_revision_type=git-commit
+    source_commit=$(git -C "$root" rev-parse --verify HEAD)
+    source_tree=$(git -C "$root" rev-parse --verify 'HEAD^{tree}')
+    if [ -n "$(git -C "$root" status --porcelain --untracked-files=normal)" ]; then
+        source_tree_status=dirty-manifest-bound
+    else
+        source_tree_status=clean
+    fi
+fi
+
+cp "$scanner" "$out/provenance/clamscan"
+scanner_sha256=$(sha256sum "$out/provenance/clamscan" | awk '{ print $1 }')
+file -b "$scanner" > "$out/provenance/scanner-type.txt"
+if ! grep -E 'ELF 64-bit .* x86-64' "$out/provenance/scanner-type.txt" >/dev/null 2>&1; then
+    echo "CLAMSCAN is not a Linux x86-64 ELF executable" >&2
+    exit 2
+fi
+scanner_type_sha256=$(sha256sum "$out/provenance/scanner-type.txt" | awk '{ print $1 }')
+if ! ldd "$scanner" > "$out/provenance/ldd-clamscan.txt" 2>&1 ||
+    grep -F 'not found' "$out/provenance/ldd-clamscan.txt" >/dev/null 2>&1; then
+    echo "CLAMSCAN runtime dependency resolution failed" >&2
+    exit 2
+fi
+ldd_sha256=$(sha256sum "$out/provenance/ldd-clamscan.txt" | awk '{ print $1 }')
+python3 - "$out/provenance/ldd-clamscan.txt" "$out/provenance" <<'PY'
+import hashlib
+import pathlib
+import re
+import shutil
+import sys
+
+ldd_output = pathlib.Path(sys.argv[1])
+provenance = pathlib.Path(sys.argv[2])
+components = provenance / "runtime-components"
+components.mkdir()
+paths = sorted({
+    pathlib.Path(match)
+    for match in re.findall(r"(?:=>\s+)?(/[^\s(]+)", ldd_output.read_text(encoding="utf-8"))
+})
+if not paths:
+    raise SystemExit("scanner dependency list is empty")
+with (provenance / "runtime-dependencies.tsv").open("w", encoding="utf-8", newline="\n") as output:
+    output.write("source\tartifact\tsize\tsha256\n")
+    for index, path in enumerate(paths):
+        if not path.is_file():
+            raise SystemExit(f"scanner dependency is not a regular file: {path}")
+        artifact = components / f"{index:04d}-{path.name}"
+        shutil.copy2(path, artifact)
+        digest = hashlib.sha256()
+        with artifact.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+        output.write(
+            f"{path}\tprovenance/runtime-components/{artifact.name}\t"
+            f"{artifact.stat().st_size}\t{digest.hexdigest()}\n"
+        )
+PY
+runtime_dependencies_manifest_sha256=$(sha256sum "$out/provenance/runtime-dependencies.tsv" | awk '{ print $1 }')
+"$scanner" --version > "$out/provenance/scanner-version.txt" 2>&1
+scanner_version_sha256=$(sha256sum "$out/provenance/scanner-version.txt" | awk '{ print $1 }')
+
+python3 - "$database" "$out/provenance/database-manifest.tsv" <<'PY'
+import hashlib
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1])
+destination = pathlib.Path(sys.argv[2])
+if source.is_file():
+    entries = [(source.name, source)]
+elif source.is_dir():
+    entries = sorted(
+        (path.relative_to(source).as_posix(), path)
+        for path in source.rglob("*")
+        if path.is_file()
+    )
+else:
+    raise SystemExit("database is not a regular file or directory")
+if not entries:
+    raise SystemExit("database contains no regular files")
+with destination.open("w", encoding="utf-8", newline="\n") as output:
+    output.write("path\tsize\tsha256\n")
+    for relative, path in entries:
+        if "\t" in relative or "\n" in relative or "\r" in relative:
+            raise SystemExit("database path is not manifest-safe")
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+        output.write(f"{relative}\t{path.stat().st_size}\t{digest.hexdigest()}\n")
+PY
+database_manifest_sha256=$(sha256sum "$out/provenance/database-manifest.tsv" | awk '{ print $1 }')
 
 marker_hex=$(python3 -c 'import binascii, sys; print(binascii.hexlify(sys.argv[1].encode()).decode())' \
     'CLAMAV-PDF-OBJSTM-TAIL-MARKER')
 signature_name=LargeFile.PDF.ObjStm.Tail
 printf '%s:0:*:%s\n' "$signature_name" "$marker_hex" > "$out/database/pdf-objstm.ndb"
+custom_signature_sha256=$(sha256sum "$out/database/pdf-objstm.ndb" | awk '{ print $1 }')
 
 manifest=$out/corpus-manifest.tsv
-printf 'case\tpath\tfilter\tdecoded_size\tencoded_size\tfile_size\tsha256\tallocated_bytes\n' > "$manifest"
+printf 'case\tpath\tfilter\tdecoded_size\tencoded_size\tfile_size\tsha256\tallocated_bytes\tmetadata_sha256\n' > "$manifest"
 results=$out/results.tsv
-printf 'case\tstatus\trss_kb\tminor_faults\tmajor_faults\tfs_inputs\tfs_outputs\tresult\n' > "$results"
+printf 'case\tstatus\trss_kb\ttemporary_peak_bytes\tminor_faults\tmajor_faults\tfs_inputs\tfs_outputs\tlog_sha256\tresult\n' > "$results"
 failures=0
 
 generate_fixture()
@@ -103,6 +209,7 @@ generate_fixture()
     fi
     recorded_sha=$(sed -n 's/^sha256=//p' "$metadata")
     actual_sha=$(sha256sum "$path" | awk '{ print $1 }')
+    metadata_sha256=$(sha256sum "$metadata" | awk '{ print $1 }')
     [ -n "$recorded_sha" ] && [ "$recorded_sha" = "$actual_sha" ] || return 1
     filter=$(sed -n 's/^filter=//p' "$metadata")
     fixture_decoded_size=$(sed -n 's/^decoded_size=//p' "$metadata")
@@ -111,9 +218,10 @@ generate_fixture()
     blocks=$(stat -c %b "$path")
     block_size=$(stat -c %B "$path")
     allocated_bytes=$((blocks * block_size))
-    printf '%s\tcorpus/%s.pdf\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\tcorpus/%s.pdf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$case_name" "$case_name" "$filter" "$fixture_decoded_size" \
-        "$encoded_size" "$file_size" "$actual_sha" "$allocated_bytes" >> "$manifest"
+        "$encoded_size" "$file_size" "$actual_sha" "$allocated_bytes" \
+        "$metadata_sha256" >> "$manifest"
     if [ "$case_name" = materialized ] && [ "$allocated_bytes" -lt "$file_size" ]; then
         echo "materialized fixture contains holes: allocated=$allocated_bytes size=$file_size" >&2
         return 1
@@ -135,6 +243,7 @@ run_fixture()
     temp=$out/tmp/$case_name
     mkdir -p "$temp"
     status=0
+    temporary_peak=0
     /usr/bin/time -v "$scanner" \
         --database="$database" \
         --database="$out/database/pdf-objstm.ndb" \
@@ -148,18 +257,37 @@ run_fixture()
         --debug \
         --no-summary \
         --tempdir="$temp" \
-        "$path" > "$log" 2>&1 || status=$?
+        "$path" > "$log" 2>&1 &
+    scanner_pid=$!
+    while kill -0 "$scanner_pid" >/dev/null 2>&1; do
+        temporary_now=$(du -s -B1 "$temp" | awk '{ print $1 }')
+        if [ "$temporary_now" -gt "$temporary_peak" ]; then
+            temporary_peak=$temporary_now
+        fi
+        sleep 0.1
+    done
+    if wait "$scanner_pid"; then
+        status=0
+    else
+        status=$?
+    fi
+    temporary_now=$(du -s -B1 "$temp" | awk '{ print $1 }')
+    if [ "$temporary_now" -gt "$temporary_peak" ]; then
+        temporary_peak=$temporary_now
+    fi
 
     rss=$(sed -n 's/^[[:space:]]*Maximum resident set size (kbytes):[[:space:]]*//p' "$log" | tail -1)
     minor=$(sed -n 's/^[[:space:]]*Minor (reclaiming a frame) page faults:[[:space:]]*//p' "$log" | tail -1)
     major=$(sed -n 's/^[[:space:]]*Major (requiring I\/O) page faults:[[:space:]]*//p' "$log" | tail -1)
     fs_inputs=$(sed -n 's/^[[:space:]]*File system inputs:[[:space:]]*//p' "$log" | tail -1)
     fs_outputs=$(sed -n 's/^[[:space:]]*File system outputs:[[:space:]]*//p' "$log" | tail -1)
+    log_sha256=$(sha256sum "$log" | awk '{ print $1 }')
     result=pass
     case "$rss:$minor:$major:$fs_inputs:$fs_outputs" in
         *[!0-9:]*|:*|*::*) result=fail ;;
     esac
     if [ "$status" -ne 1 ] || [ -z "$rss" ] || [ "$rss" -gt "$rss_budget_kb" ] ||
+        [ "$temporary_peak" -gt 68719476736 ] ||
         ! grep -E "$signature_name(\.UNOFFICIAL)? .*FOUND" "$log" >/dev/null 2>&1 ||
         ! grep -F 'pdf_extract_obj: Found /Type/ObjStm' "$log" >/dev/null 2>&1 ||
         ! grep -F 'pdf_objstm_attach_file: retained ' "$log" >/dev/null 2>&1 ||
@@ -176,9 +304,10 @@ run_fixture()
     elif grep -F 'PDF object-stream parsing did not complete' "$log" >/dev/null 2>&1; then
         result=fail
     fi
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$case_name" "$status" "${rss:-missing}" "${minor:-missing}" \
-        "${major:-missing}" "${fs_inputs:-missing}" "${fs_outputs:-missing}" "$result" >> "$results"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$case_name" "$status" "${rss:-missing}" "$temporary_peak" \
+        "${minor:-missing}" "${major:-missing}" "${fs_inputs:-missing}" \
+        "${fs_outputs:-missing}" "$log_sha256" "$result" >> "$results"
     [ "$result" = pass ]
 }
 
@@ -194,4 +323,36 @@ if [ "$failures" -ne 0 ]; then
     echo "PDF object-stream qualification failed: $failures case(s); see $out" >&2
     exit 1
 fi
+corpus_manifest_sha256=$(sha256sum "$manifest" | awk '{ print $1 }')
+results_sha256=$(sha256sum "$results" | awk '{ print $1 }')
+generator_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_fixture.py" | awk '{ print $1 }')
+qualification_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_qualification.sh" | awk '{ print $1 }')
+evidence_checker_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_evidence_check.py" | awk '{ print $1 }')
+generator_test_sha256=$(sha256sum "$out/generator-test.log" | awk '{ print $1 }')
+cat > "$out/evidence-metadata.txt" <<EOF
+schema_version=1
+source_revision_type=$source_revision_type
+source_commit=$source_commit
+source_tree=$source_tree
+source_tree_status=$source_tree_status
+source_manifest_sha256=$source_manifest_sha256
+scanner_sha256=$scanner_sha256
+scanner_type_sha256=$scanner_type_sha256
+scanner_version_sha256=$scanner_version_sha256
+ldd_sha256=$ldd_sha256
+runtime_dependencies_manifest_sha256=$runtime_dependencies_manifest_sha256
+database_manifest_sha256=$database_manifest_sha256
+custom_signature_sha256=$custom_signature_sha256
+generator_sha256=$generator_sha256
+qualification_sha256=$qualification_sha256
+evidence_checker_sha256=$evidence_checker_sha256
+generator_test_sha256=$generator_test_sha256
+decoded_size=$decoded_size
+rss_budget_kb=$rss_budget_kb
+temporary_budget_bytes=68719476736
+max_scan_time_ms=$max_scan_time_ms
+corpus_manifest_sha256=$corpus_manifest_sha256
+results_sha256=$results_sha256
+qualification_status=pass
+EOF
 echo "PDF object-stream qualification passed; evidence: $out"
