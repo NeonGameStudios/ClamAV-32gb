@@ -3936,38 +3936,137 @@ done:
     return;
 }
 
+static bool pdf_crypt_name_equals(const char *left, const char *right)
+{
+    size_t left_len;
+    size_t right_len;
+
+    if (left == NULL || right == NULL)
+        return false;
+
+    left_len  = strlen(left);
+    right_len = strlen(right);
+    while (left_len > 0 && isspace((unsigned char)left[left_len - 1U]))
+        left_len--;
+    while (right_len > 0 && isspace((unsigned char)right[right_len - 1U]))
+        right_len--;
+    if (left_len > 0 && left[0] == '/') {
+        left++;
+        left_len--;
+    }
+    if (right_len > 0 && right[0] == '/') {
+        right++;
+        right_len--;
+    }
+
+    while (left_len > 0 && right_len > 0) {
+        unsigned char left_value;
+        unsigned char right_value;
+
+        if (left[0] == '#') {
+            if (left_len < 3U)
+                return false;
+            if (cli_hex2str_to(left + 1, (char *)&left_value, 2U) != 0)
+                return false;
+            left += 3;
+            left_len -= 3U;
+        } else {
+            left_value = (unsigned char)*left++;
+            left_len--;
+        }
+
+        if (right[0] == '#') {
+            if (right_len < 3U)
+                return false;
+            if (cli_hex2str_to(right + 1, (char *)&right_value, 2U) != 0)
+                return false;
+            right += 3;
+            right_len -= 3U;
+        } else {
+            right_value = (unsigned char)*right++;
+            right_len--;
+        }
+
+        if (left_value != right_value)
+            return false;
+    }
+
+    return left_len == 0 && right_len == 0;
+}
+
 static enum enc_method parse_enc_method_ctx(struct pdf_struct *pdf, const char *dict, unsigned len, const char *key,
                                             enum enc_method def)
 {
-    const char *q;
-    char *CFM           = NULL;
+    struct pdf_struct parser_pdf;
+    struct pdf_obj parser_obj;
+    struct pdf_dict *crypt_filters    = NULL;
+    struct pdf_dict_node *filter_node = NULL;
+    struct pdf_dict_node *cfm_node    = NULL;
+    struct pdf_dict_node *node;
     enum enc_method ret = ENC_UNKNOWN;
 
     if (!key)
         return def;
 
-    if (!strcmp(key, "Identity"))
+    if (pdf_crypt_name_equals(key, "Identity"))
         return ENC_IDENTITY;
 
-    q = pdf_getdict(pdf, dict, (int *)(&len), key);
-    if (!q)
-        return def;
+    if (dict == NULL || len < 4U)
+        return ENC_UNKNOWN;
 
-    CFM = pdf_readval(pdf, q, len, "/CFM");
-    if (CFM) {
-        cli_dbgmsg("parse_enc_method: %s CFM: %s\n", key, CFM);
-        if (!strncmp(CFM, "V2", 2))
-            ret = ENC_V2;
-        else if (!strncmp(CFM, "AESV2", 5))
-            ret = ENC_AESV2;
-        else if (!strncmp(CFM, "AESV3", 5))
-            ret = ENC_AESV3;
-        else if (!strncmp(CFM, "None", 4))
-            ret = ENC_NONE;
+    memset(&parser_pdf, 0, sizeof(parser_pdf));
+    memset(&parser_obj, 0, sizeof(parser_obj));
+    parser_pdf.map  = dict;
+    parser_pdf.size = len;
+    parser_pdf.ctx  = pdf == NULL ? NULL : pdf->ctx;
+    if (pdf != NULL)
+        parser_pdf.parse_recursion_depth = pdf->parse_recursion_depth;
+    parser_obj.size = len;
 
-        free(CFM);
+    crypt_filters = pdf_parse_dict(&parser_pdf, &parser_obj, len,
+                                   (char *)dict, NULL);
+    if (crypt_filters == NULL)
+        return ENC_UNKNOWN;
+
+    for (node = crypt_filters->nodes; node != NULL; node = node->next) {
+        if (node->key == NULL || !pdf_crypt_name_equals(node->key, key))
+            continue;
+        if (filter_node != NULL) {
+            filter_node = NULL;
+            goto done;
+        }
+        filter_node = node;
     }
+    if (filter_node == NULL || filter_node->type != PDF_DICT_DICT)
+        goto done;
 
+    for (node = ((struct pdf_dict *)filter_node->value)->nodes;
+         node != NULL; node = node->next) {
+        if (node->key == NULL || !pdf_crypt_name_equals(node->key, "CFM"))
+            continue;
+        if (cfm_node != NULL) {
+            cfm_node = NULL;
+            goto done;
+        }
+        cfm_node = node;
+    }
+    if (cfm_node == NULL || cfm_node->type != PDF_DICT_STRING ||
+        cfm_node->value == NULL)
+        goto done;
+
+    cli_dbgmsg("parse_enc_method: %s CFM: %s\n", key,
+               (const char *)cfm_node->value);
+    if (pdf_crypt_name_equals((const char *)cfm_node->value, "V2"))
+        ret = ENC_V2;
+    else if (pdf_crypt_name_equals((const char *)cfm_node->value, "AESV2"))
+        ret = ENC_AESV2;
+    else if (pdf_crypt_name_equals((const char *)cfm_node->value, "AESV3"))
+        ret = ENC_AESV3;
+    else if (pdf_crypt_name_equals((const char *)cfm_node->value, "None"))
+        ret = ENC_NONE;
+
+done:
+    pdf_free_dict(crypt_filters);
     return ret;
 }
 

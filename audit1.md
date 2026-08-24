@@ -7245,3 +7245,25 @@ three focused binaries also pass with the touched `pdf.c`, `pdfng.c`, and
 leak detection. Certified Linux x86-64 production/sanitizer corpus runs,
 allocation/read fault injection, materialized multi-gigabyte streams, and
 Sonic1 evidence remain release gates.
+
+## PDF exact crypt-filter dictionary selection — 2026-08-24
+
+`parse_enc_method_ctx()` no longer uses substring key lookup and prefix cipher
+matching. It structurally parses the bounded `/CF` dictionary, matches decoded
+PDF names exactly (including bounded `#xx` escapes), rejects duplicate filter
+or `/CFM` keys, requires dictionary/name value types, and returns
+`ENC_UNKNOWN` for missing, ambiguous, malformed, prefixed, or unsupported
+entries. Downstream decryption therefore preserves the existing explicit
+incomplete/non-cacheable result instead of silently choosing Identity or a
+supported cipher. `pdf_parse_dict()` also accepts a valid closing `>>` exactly
+at the end of the supplied span while still rejecting truncation.
+
+A focused Linux ARM64 GCC case passes 1/1 with 23 internal exact and
+fail-closed oracles. The same case passes with the touched PDF production
+objects under GCC AddressSanitizer/UBSan and leak detection. Adjacent evidence
+also remains green against those objects: the 40-oracle cipher/filter ordering
+case passes 1/1, exact DecodeParms parsing passes 3/3, and explicit Identity
+ordering passes 1/1, all normally and under the same sanitizer configuration.
+Full Standard encryption-dictionary corpus mutations, allocation/read fault
+injection, production scanner execution, materialized multi-gigabyte encrypted
+streams, and Sonic1 evidence remain release gates.

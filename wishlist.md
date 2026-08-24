@@ -2339,3 +2339,19 @@ and Sonic1 qualification as release gates.
 - Add production/sanitizer PDF corpus execution, allocation/read fault
   injection, materialized multi-gigabyte streams, and Sonic1 release evidence
   before parser-family qualification.
+
+## PDF exact crypt-filter dictionary selection — 2026-08-24
+
+- Parse the bounded `/CF` dictionary structurally and require one exact decoded
+  filter name whose value is a dictionary containing one exact name-valued
+  `/CFM`. Exact `Identity` and a missing `/Name` retain their specified
+  defaults; missing, duplicate, scalar, truncated, prefixed, or unknown
+  entries resolve to `ENC_UNKNOWN` and therefore remain explicitly incomplete.
+- Focused Linux ARM64 GCC evidence passes 1/1 with 23 internal valid and
+  fail-closed oracles, normally and with AddressSanitizer/UBSan plus leak
+  detection. The existing 40-oracle surrounding-filter matrix, three-case
+  DecodeParms parser suite, and explicit Identity ordering case also pass
+  against the hardened production objects in normal and sanitizer modes.
+- Add full Standard encryption-dictionary corpus mutations, allocation/read
+  fault injection, production scanner execution, materialized multi-gigabyte
+  encrypted streams, and Sonic1 evidence before parser-family qualification.

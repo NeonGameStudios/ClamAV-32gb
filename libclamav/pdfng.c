@@ -988,7 +988,7 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
     }
 
     /* More sanity checking */
-    if ((size_t)(end - objstart) >= objsize - 2)
+    if ((size_t)(end - objstart) > objsize - 2)
         return NULL;
 
     if (end[0] != '>' || end[1] != '>')
@@ -1242,9 +1242,9 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                 begin = p1 + 2;
                 break;
             default: {
-                int object_reference;
+                bool name_value = begin[0] == '/';
 
-                p1 = (begin[0] == '/') ? begin + 1 : begin;
+                p1 = name_value ? begin + 1 : begin;
                 while (p1 < end) {
                     int shouldbreak = 0;
 
@@ -1255,11 +1255,31 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                         return NULL;
                     }
 
-                    switch (p1[0]) {
-                        case '>':
-                        case '/':
-                            shouldbreak = 1;
-                            break;
+                    if (name_value) {
+                        switch (p1[0]) {
+                            case '(':
+                            case ')':
+                            case '<':
+                            case '>':
+                            case '[':
+                            case ']':
+                            case '/':
+                            case '%':
+                            case '{':
+                            case '}':
+                                shouldbreak = 1;
+                                break;
+                            default:
+                                shouldbreak = isspace((unsigned char)p1[0]);
+                                break;
+                        }
+                    } else {
+                        switch (p1[0]) {
+                            case '>':
+                            case '/':
+                                shouldbreak = 1;
+                                break;
+                        }
                     }
 
                     if (shouldbreak)
@@ -1268,14 +1288,20 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                     p1++;
                 }
 
-                object_reference = is_object_reference(pdf, begin, &p1, NULL);
-                if (object_reference == PDFNG_OBJECT_REFERENCE_TIMEOUT) {
-                    free(key);
-                    pdf_free_dict(res);
-                    return NULL;
+                if (!name_value) {
+                    int object_reference =
+                        is_object_reference(pdf, begin, &p1, NULL);
+
+                    if (object_reference == PDFNG_OBJECT_REFERENCE_TIMEOUT) {
+                        free(key);
+                        pdf_free_dict(res);
+                        return NULL;
+                    }
+                    if (object_reference < 0)
+                        cli_mark_scan_incomplete(
+                            pdf->ctx,
+                            "PDF indirect object reference exceeds the packed object-ID width");
                 }
-                if (object_reference < 0)
-                    cli_mark_scan_incomplete(pdf->ctx, "PDF indirect object reference exceeds the packed object-ID width");
 
                 val = cli_max_calloc((p1 - begin) + 2, 1);
                 if (!(val)) {
@@ -1288,7 +1314,9 @@ struct pdf_dict *pdf_parse_dict(struct pdf_struct *pdf, struct pdf_obj *obj, siz
                 strncpy(val, begin, p1 - begin);
                 val[p1 - begin] = '\0';
 
-                if (p1[0] != '/')
+                if (name_value)
+                    begin = p1;
+                else if (p1[0] != '/')
                     begin = p1 + 1;
                 else
                     begin = p1;

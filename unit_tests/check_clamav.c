@@ -11938,8 +11938,8 @@ static void pdf_test_decode_explicit_crypt_chain(
     static char name_key[] = "/Name";
     static char null_value[] = "null";
     static char crypt_filter_dictionary[] =
-        "/RC4 << /CFM /V2 >> /AES2 << /CFM /AESV2 >> "
-        "/AES3 << /CFM /AESV3 >>";
+        "<< /RC4 << /CFM /V2 >> /AES2 << /CFM /AESV2 >> "
+        "/AES3 << /CFM /AESV3 >> >>";
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
     struct pdf_dict_node method_node;
@@ -13209,6 +13209,132 @@ START_TEST(test_arc4_apply_uses_native_length)
     ck_assert(arc4_init(&state, key, sizeof(key) - 1));
     arc4_apply(&state, data, (size_t)(sizeof(data) - 1));
     ck_assert_int_eq(memcmp(data, expected, sizeof(expected)), 0);
+}
+END_TEST
+
+START_TEST(test_pdf_crypt_filter_dictionary_is_exact_and_fail_visible)
+{
+    static const char supported[] =
+        "<< /RC4 << /CFM /V2 >> /AES2 << /CFM /AESV2 >> "
+        "/AES3 << /CFM /AESV3 >> /Clear << /CFM /None >> >>";
+    static const char escaped[] =
+        "<< /A#45S2 << /CFM /A#45SV2 >> >>";
+    static const char decoys[] =
+        "<< % /Target << /CFM /AESV2 >>\n"
+        "/Meta << /Target << /CFM /V2 >> >> "
+        "/Target << /CFM /AESV3 >> >>";
+    static const char commented_cfm[] =
+        "<< /Target << /CFM /V2 % /CFM /AESV2 is a decoy\n"
+        ">> >>";
+    static const char invalid_literal_entry[] =
+        "<< /Note (/Target << /CFM /V2 >>) "
+        "/Target << /CFM /AESV3 >> >>";
+    static const char longer_key[] =
+        "<< /TargetExtra << /CFM /V2 >> >>";
+    static const char duplicate_key[] =
+        "<< /Target << /CFM /V2 >> "
+        "/Target << /CFM /AESV2 >> >>";
+    static const char scalar_filter[] = "<< /Target /V2 >>";
+    static const char missing_cfm[] = "<< /Target << /Length 128 >> >>";
+    static const char duplicate_cfm[] =
+        "<< /Target << /CFM /V2 /CFM /AESV2 >> >>";
+    static const char scalar_cfm[] = "<< /Target << /CFM (V2) >> >>";
+    static const char prefixed_cfm[] =
+        "<< /Target << /CFM /AESV2Extra >> >>";
+    static const char unknown_cfm[] =
+        "<< /Target << /CFM /FutureCipher >> >>";
+    static const char truncated[] = "<< /Target << /CFM /V2 >>";
+    static const char bare_fragment[] = "/Target << /CFM /V2 >>";
+
+    ck_assert_int_eq(parse_enc_method(
+                         supported, sizeof(supported) - 1U, "RC4",
+                         ENC_IDENTITY),
+                     ENC_V2);
+    ck_assert_int_eq(parse_enc_method(
+                         supported, sizeof(supported) - 1U, "/AES2   ",
+                         ENC_IDENTITY),
+                     ENC_AESV2);
+    ck_assert_int_eq(parse_enc_method(
+                         supported, sizeof(supported) - 1U, "AES3",
+                         ENC_IDENTITY),
+                     ENC_AESV3);
+    ck_assert_int_eq(parse_enc_method(
+                         supported, sizeof(supported) - 1U, "Clear",
+                         ENC_IDENTITY),
+                     ENC_NONE);
+    ck_assert_int_eq(parse_enc_method(
+                         escaped, sizeof(escaped) - 1U, "AES2",
+                         ENC_IDENTITY),
+                     ENC_AESV2);
+    ck_assert_int_eq(parse_enc_method(
+                         decoys, sizeof(decoys) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_AESV3);
+    ck_assert_int_eq(parse_enc_method(
+                         commented_cfm, sizeof(commented_cfm) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_V2);
+    ck_assert_int_eq(parse_enc_method(
+                         invalid_literal_entry,
+                         sizeof(invalid_literal_entry) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         supported, sizeof(supported) - 1U, "Identity",
+                         ENC_UNKNOWN),
+                     ENC_IDENTITY);
+    ck_assert_int_eq(parse_enc_method(
+                         supported, sizeof(supported) - 1U, NULL,
+                         ENC_AESV3),
+                     ENC_AESV3);
+
+    ck_assert_int_eq(parse_enc_method(
+                         longer_key, sizeof(longer_key) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         duplicate_key, sizeof(duplicate_key) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         scalar_filter, sizeof(scalar_filter) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         missing_cfm, sizeof(missing_cfm) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         duplicate_cfm, sizeof(duplicate_cfm) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         scalar_cfm, sizeof(scalar_cfm) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         prefixed_cfm, sizeof(prefixed_cfm) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         unknown_cfm, sizeof(unknown_cfm) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         truncated, sizeof(truncated) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(
+                         bare_fragment, sizeof(bare_fragment) - 1U, "Target",
+                         ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(NULL, 0, "Target", ENC_IDENTITY),
+                     ENC_UNKNOWN);
+    ck_assert_int_eq(parse_enc_method(NULL, 0, "Identity", ENC_UNKNOWN),
+                     ENC_IDENTITY);
+    ck_assert_int_eq(parse_enc_method(
+                         supported, sizeof(supported) - 1U, NULL, ENC_AESV3),
+                     ENC_AESV3);
 }
 END_TEST
 
@@ -30236,6 +30362,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_empty_flate_stream_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_unsupported_filter_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_unsupported_encryption_is_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_crypt_filter_dictionary_is_exact_and_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);

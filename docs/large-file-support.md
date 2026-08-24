@@ -6776,3 +6776,34 @@ binaries pass with `pdf.c`, `pdfng.c`, and `pdfdecode.c` instrumented by GCC
 AddressSanitizer/UBSan with leak detection. Full production/sanitizer corpus
 execution, allocation/read fault injection, materialized multi-gigabyte streams,
 and Sonic1 release evidence remain open.
+
+## PDF exact crypt-filter dictionary selection — 2026-08-24
+
+Crypt-filter method selection no longer searches `/CF` with raw substrings or
+accepts method prefixes. The bounded `/CF` span is parsed as a complete PDF
+dictionary. Selection requires one exact decoded filter-name node, a dictionary
+value, and one exact name-valued `/CFM`. PDF name hex escapes are compared
+without allocating or reading beyond the two escaped hex digits. Duplicate
+filter names or `/CFM` keys, longer-name collisions, scalar values, missing or
+unknown methods, malformed/truncated dictionaries, and partial fragments all
+resolve to `ENC_UNKNOWN`; the existing decrypt path consequently reports the
+layer incomplete instead of treating it as Identity or a supported cipher.
+
+The shared dictionary parser also now accepts a valid dictionary whose closing
+`>>` occupies the final two bytes of its bounded span. This exact-end case was
+previously rejected because the final-boundary check used `>=` rather than
+`>`. The change remains bounded and does not admit a missing closing delimiter.
+
+Focused Linux ARM64 GCC evidence passes 1/1 with 23 internal oracles covering
+RC4, AESV2, AESV3, `None`, `Identity`, missing-name defaults, PDF-name escapes,
+comments around dictionaries and `/CFM` values, nested decoys, longer keys,
+duplicate keys, scalar entries,
+missing/duplicate/scalar `/CFM`, supported-method prefixes, unknown methods,
+truncation, a bare fragment, an invalid non-dictionary entry, and absent input.
+The case passes normally and with the touched `pdf.c`, `pdfng.c`, and
+`pdfdecode.c` objects under GCC AddressSanitizer/UBSan with leak detection. The
+existing 40-oracle Crypt/filter matrix, three-case DecodeParms parser suite,
+and explicit Identity ordering case also pass in normal and sanitizer modes
+against the hardened objects. Full Standard encryption-dictionary corpus
+mutations, allocation/read fault injection, production scanner execution,
+materialized multi-gigabyte encrypted streams, and Sonic1 evidence remain open.
