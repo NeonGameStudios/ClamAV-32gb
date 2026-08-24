@@ -2355,3 +2355,19 @@ and Sonic1 qualification as release gates.
 - Add full Standard encryption-dictionary corpus mutations, allocation/read
   fault injection, production scanner execution, materialized multi-gigabyte
   encrypted streams, and Sonic1 evidence before parser-family qualification.
+
+## PDF exact Crypt DecodeParms semantics — 2026-08-24
+
+- Treat `/Type` and `/Name` in an explicit Crypt stage as exact, unique fields.
+  If `/Type` is present it must be the `CryptFilterDecodeParms` name; `/Name`
+  may appear at most once and must be a PDF name object. Wrongly typed,
+  missing-valued, duplicate, or invalid entries fail before decryption and
+  preserve transactional raw fallback. Longer keys remain irrelevant.
+- Focused Linux ARM64 GCC evidence passes 1/1 with ten internal scenarios,
+  normally and under AddressSanitizer/UBSan with leak detection. The existing
+  23-oracle `/CF` dictionary case, 40-oracle cipher/filter matrix, three-case
+  DecodeParms parser suite, and explicit Identity ordering case also pass
+  against the same current production objects in both modes.
+- Add complete stream-dictionary corpus mutations, allocation/read fault
+  injection, production scanner execution, materialized multi-gigabyte
+  encrypted streams, and Sonic1 evidence before parser-family qualification.

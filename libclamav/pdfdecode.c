@@ -3442,6 +3442,8 @@ static cl_error_t pdf_resolve_decryption_method(
     bool document_method, enum enc_method *enc_method)
 {
     enum enc_method enc = ENC_IDENTITY;
+    bool have_name      = false;
+    bool have_type      = false;
 
     if (pdf == NULL || obj == NULL || enc_method == NULL)
         return CL_ENULLARG;
@@ -3454,21 +3456,33 @@ static cl_error_t pdf_resolve_decryption_method(
         while (node) {
             if (pdf_checktimelimit(pdf, "PDF encryption-parameter traversal reached the configured time limit") != CL_SUCCESS)
                 return CL_ETIMEOUT;
-            if (node->type == PDF_DICT_STRING) {
-                if (node->key != NULL &&
-                    !strncmp(node->key, "/Type", 6)) { /* optional field - Type */
-                    /* MUST be "CryptFilterDecodeParms" */
-                    if (node->value)
-                        cli_dbgmsg("cli_pdf: Type: %s\n", (char *)(node->value));
-                } else if (node->key != NULL &&
-                           !strncmp(node->key, "/Name", 6)) { /* optional field - Name */
-                    /* overrides document and default encryption method */
-                    if (node->value)
-                        cli_dbgmsg("cli_pdf: Name: %s\n", (char *)(node->value));
-                    if (node->value != NULL)
-                        enc = parse_enc_method(pdf->CF, pdf->CF_n,
-                                               (char *)(node->value), enc);
+            if (node->key != NULL && strcmp(node->key, "/Type") == 0) {
+                if (have_type || node->type != PDF_DICT_STRING ||
+                    node->value == NULL ||
+                    ((const char *)node->value)[0] != '/' ||
+                    !pdf_name_equals((const char *)node->value,
+                                     "CryptFilterDecodeParms")) {
+                    cli_mark_scan_incomplete(
+                        pdf->ctx,
+                        "PDF Crypt DecodeParms contains an invalid or duplicate Type entry");
+                    return CL_EPARSE;
                 }
+                have_type = true;
+                cli_dbgmsg("cli_pdf: Type: %s\n", (char *)(node->value));
+            } else if (node->key != NULL &&
+                       strcmp(node->key, "/Name") == 0) {
+                if (have_name || node->type != PDF_DICT_STRING ||
+                    node->value == NULL ||
+                    ((const char *)node->value)[0] != '/') {
+                    cli_mark_scan_incomplete(
+                        pdf->ctx,
+                        "PDF Crypt DecodeParms contains an invalid or duplicate Name entry");
+                    return CL_EPARSE;
+                }
+                have_name = true;
+                cli_dbgmsg("cli_pdf: Name: %s\n", (char *)(node->value));
+                enc = parse_enc_method(pdf->CF, pdf->CF_n,
+                                       (char *)(node->value), enc);
             }
             node = node->next;
         }

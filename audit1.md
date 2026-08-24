@@ -7267,3 +7267,23 @@ ordering passes 1/1, all normally and under the same sanitizer configuration.
 Full Standard encryption-dictionary corpus mutations, allocation/read fault
 injection, production scanner execution, materialized multi-gigabyte encrypted
 streams, and Sonic1 evidence remain release gates.
+
+## PDF exact Crypt DecodeParms semantics — 2026-08-24
+
+`pdf_resolve_decryption_method()` now requires exact, unique `/Type` and
+`/Name` fields for explicit Crypt stages. A present `/Type` must identify
+`CryptFilterDecodeParms`; duplicate, wrongly typed, null, or invalid fields
+return `CL_EPARSE` before decryption. Longer names remain irrelevant. The
+ordinary chain transaction then restores the exact encoded input, retains only
+the raw-child reservation, marks the layer incomplete, and prevents caching.
+
+A focused Linux ARM64 GCC case passes 1/1 with ten internal valid,
+exact-key, duplicate, wrong-type, null-value, and invalid-value scenarios. It
+passes normally and with `pdf.c`, `pdfng.c`, and `pdfdecode.c` under GCC
+AddressSanitizer/UBSan plus leak detection. Adjacent focused evidence also
+passes against those current objects in both modes: exact `/CF` selection 1/1
+with 23 internal oracles, cipher/filter ordering 1/1 with 40, DecodeParms
+parsing 3/3, and explicit Identity ordering 1/1. Complete stream/encryption-
+dictionary corpus mutations, allocation/read fault injection, production
+scanner execution, materialized multi-gigabyte encrypted streams, and Sonic1
+evidence remain release gates.

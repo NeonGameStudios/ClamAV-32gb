@@ -6807,3 +6807,30 @@ and explicit Identity ordering case also pass in normal and sanitizer modes
 against the hardened objects. Full Standard encryption-dictionary corpus
 mutations, allocation/read fault injection, production scanner execution,
 materialized multi-gigabyte encrypted streams, and Sonic1 evidence remain open.
+
+## PDF exact Crypt DecodeParms semantics — 2026-08-24
+
+An explicit Crypt stage now treats `/Type` and `/Name` as exact and unique
+DecodeParms fields. A present `/Type` must be the PDF name
+`CryptFilterDecodeParms`; `/Name` may occur at most once and must be a non-null
+PDF name object. Duplicate fields, wrong value types, absent values, or
+an invalid `/Type` return `CL_EPARSE` before decryption, mark the layer
+incomplete/non-cacheable, and retain the filter chain's exact raw-input
+fallback. Longer keys such as `/TypeExtra` and `/NameExtra` do not alter the
+defaults. Name values accept bounded PDF `#xx` escapes through the same exact
+comparison used for `/CF` selection.
+
+Focused Linux ARM64 GCC evidence passes 1/1 with ten internal scenarios: a
+valid escaped `/Type` plus RC4 `/Name`, exact rejection of longer keys with
+Identity defaulting, duplicate `/Name`, dictionary-valued `/Name`, null
+`/Name`, literal-string `/Name`, duplicate `/Type`, an invalid `/Type` value,
+dictionary-valued `/Type`, and literal-string `/Type`. Every malformed case
+proves `CL_EPARSE`, exact encoded raw fallback,
+retained temporary accounting, incomplete state, and non-cacheability. The
+case passes normally and under GCC AddressSanitizer/UBSan with leak detection.
+The 23-oracle `/CF` case, 40-oracle cipher/filter matrix, three-case
+DecodeParms parser suite, and explicit Identity ordering case also remain green
+against the same current production objects in both modes. Complete
+stream/encryption-dictionary corpus mutations, allocation/read fault injection,
+production scanner execution, materialized multi-gigabyte encrypted streams,
+and Sonic1 evidence remain open.

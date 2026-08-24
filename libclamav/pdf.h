@@ -217,6 +217,7 @@ cl_error_t pdf_derive_object_key(struct pdf_struct *pdf, uint32_t id,
 char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method);
 enum enc_method get_enc_method(struct pdf_struct *pdf, struct pdf_obj *obj);
 enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key, enum enc_method def);
+bool pdf_name_equals(const char *left, const char *right);
 
 void pdfobj_flag(struct pdf_struct *pdf, struct pdf_obj *obj, enum pdf_flag flag);
 char *pdf_finalize_string(struct pdf_struct *pdf, struct pdf_obj *obj, const char *in, size_t len);

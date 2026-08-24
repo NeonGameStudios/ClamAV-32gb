@@ -3936,7 +3936,7 @@ done:
     return;
 }
 
-static bool pdf_crypt_name_equals(const char *left, const char *right)
+bool pdf_name_equals(const char *left, const char *right)
 {
     size_t left_len;
     size_t right_len;
@@ -4008,7 +4008,7 @@ static enum enc_method parse_enc_method_ctx(struct pdf_struct *pdf, const char *
     if (!key)
         return def;
 
-    if (pdf_crypt_name_equals(key, "Identity"))
+    if (pdf_name_equals(key, "Identity"))
         return ENC_IDENTITY;
 
     if (dict == NULL || len < 4U)
@@ -4029,7 +4029,7 @@ static enum enc_method parse_enc_method_ctx(struct pdf_struct *pdf, const char *
         return ENC_UNKNOWN;
 
     for (node = crypt_filters->nodes; node != NULL; node = node->next) {
-        if (node->key == NULL || !pdf_crypt_name_equals(node->key, key))
+        if (node->key == NULL || !pdf_name_equals(node->key, key))
             continue;
         if (filter_node != NULL) {
             filter_node = NULL;
@@ -4042,7 +4042,7 @@ static enum enc_method parse_enc_method_ctx(struct pdf_struct *pdf, const char *
 
     for (node = ((struct pdf_dict *)filter_node->value)->nodes;
          node != NULL; node = node->next) {
-        if (node->key == NULL || !pdf_crypt_name_equals(node->key, "CFM"))
+        if (node->key == NULL || !pdf_name_equals(node->key, "CFM"))
             continue;
         if (cfm_node != NULL) {
             cfm_node = NULL;
@@ -4056,13 +4056,13 @@ static enum enc_method parse_enc_method_ctx(struct pdf_struct *pdf, const char *
 
     cli_dbgmsg("parse_enc_method: %s CFM: %s\n", key,
                (const char *)cfm_node->value);
-    if (pdf_crypt_name_equals((const char *)cfm_node->value, "V2"))
+    if (pdf_name_equals((const char *)cfm_node->value, "V2"))
         ret = ENC_V2;
-    else if (pdf_crypt_name_equals((const char *)cfm_node->value, "AESV2"))
+    else if (pdf_name_equals((const char *)cfm_node->value, "AESV2"))
         ret = ENC_AESV2;
-    else if (pdf_crypt_name_equals((const char *)cfm_node->value, "AESV3"))
+    else if (pdf_name_equals((const char *)cfm_node->value, "AESV3"))
         ret = ENC_AESV3;
-    else if (pdf_crypt_name_equals((const char *)cfm_node->value, "None"))
+    else if (pdf_name_equals((const char *)cfm_node->value, "None"))
         ret = ENC_NONE;
 
 done:

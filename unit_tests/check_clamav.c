@@ -11928,22 +11928,20 @@ START_TEST(test_pdf_rc4_filter_spool_overlaps_quota)
 }
 END_TEST
 
-static void pdf_test_decode_explicit_crypt_chain(
+static void pdf_test_decode_explicit_crypt_chain_with_params(
     const uint8_t *input, size_t input_size, const uint32_t filters[2],
-    uint32_t crypt_index, const char *method_name, enum enc_method enc_method,
+    uint32_t crypt_index, struct pdf_dict *method_dict,
+    enum enc_method enc_method,
     const uint8_t *key, size_t key_length,
     uint64_t temporary_limit,
     struct pdf_single_filter_result *result)
 {
-    static char name_key[] = "/Name";
     static char null_value[] = "null";
     static char crypt_filter_dictionary[] =
         "<< /RC4 << /CFM /V2 >> /AES2 << /CFM /AESV2 >> "
         "/AES3 << /CFM /AESV3 >> >>";
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
-    struct pdf_dict_node method_node;
-    struct pdf_dict method_dict;
     struct pdf_array_node param_nodes[2];
     struct pdf_array params_array;
     struct pdf_obj obj;
@@ -11960,14 +11958,12 @@ static void pdf_test_decode_explicit_crypt_chain(
     ck_assert_ptr_nonnull(filters);
     ck_assert(crypt_index < 2U);
     ck_assert_uint_eq(filters[crypt_index], OBJ_FILTER_CRYPT);
-    ck_assert_ptr_nonnull(method_name);
+    ck_assert_ptr_nonnull(method_dict);
     ck_assert_ptr_nonnull(key);
     ck_assert(key_length > 0 && key_length <= UINT_MAX);
     ck_assert_ptr_nonnull(result);
     memset(result, 0, sizeof(*result));
     memset(&options, 0, sizeof(options));
-    memset(&method_node, 0, sizeof(method_node));
-    memset(&method_dict, 0, sizeof(method_dict));
     memset(param_nodes, 0, sizeof(param_nodes));
     memset(&params_array, 0, sizeof(params_array));
     memset(&obj, 0, sizeof(obj));
@@ -12004,17 +12000,11 @@ static void pdf_test_decode_explicit_crypt_chain(
     obj.filterlist[0]      = filters[0];
     obj.filterlist[1]      = filters[1];
 
-    method_node.key       = name_key;
-    method_node.value     = (void *)method_name;
-    method_node.valuesz   = strlen(method_name);
-    method_node.type      = PDF_DICT_STRING;
-    method_dict.nodes     = &method_node;
-    method_dict.tail      = &method_node;
     param_nodes[0].next   = &param_nodes[1];
     param_nodes[1].prev   = &param_nodes[0];
     param_nodes[crypt_index].type   = PDF_ARR_DICT;
-    param_nodes[crypt_index].data   = &method_dict;
-    param_nodes[crypt_index].datasz = sizeof(method_dict);
+    param_nodes[crypt_index].data   = method_dict;
+    param_nodes[crypt_index].datasz = sizeof(*method_dict);
     param_nodes[1U - crypt_index].type   = PDF_ARR_STRING;
     param_nodes[1U - crypt_index].data   = null_value;
     param_nodes[1U - crypt_index].datasz = sizeof(null_value) - 1U;
@@ -12049,6 +12039,31 @@ static void pdf_test_decode_explicit_crypt_chain(
     cl_engine_free(scan_engine);
 }
 
+static void pdf_test_decode_explicit_crypt_chain(
+    const uint8_t *input, size_t input_size, const uint32_t filters[2],
+    uint32_t crypt_index, const char *method_name, enum enc_method enc_method,
+    const uint8_t *key, size_t key_length,
+    uint64_t temporary_limit,
+    struct pdf_single_filter_result *result)
+{
+    static char name_key[] = "/Name";
+    struct pdf_dict_node method_node;
+    struct pdf_dict method_dict;
+
+    ck_assert_ptr_nonnull(method_name);
+    memset(&method_node, 0, sizeof(method_node));
+    memset(&method_dict, 0, sizeof(method_dict));
+    method_node.key     = name_key;
+    method_node.value   = (void *)method_name;
+    method_node.valuesz = strlen(method_name);
+    method_node.type    = PDF_DICT_STRING;
+    method_dict.nodes   = &method_node;
+    method_dict.tail    = &method_node;
+    pdf_test_decode_explicit_crypt_chain_with_params(
+        input, input_size, filters, crypt_index, &method_dict, enc_method,
+        key, key_length, temporary_limit, result);
+}
+
 START_TEST(test_pdf_explicit_crypt_ordering_supports_rc4_and_aes)
 {
     static const uint8_t rc4_key[] = {
@@ -12070,7 +12085,7 @@ START_TEST(test_pdf_explicit_crypt_ordering_supports_rc4_and_aes)
     static const enum enc_method methods[] = {
         ENC_V2, ENC_AESV2, ENC_AESV3,
     };
-    static const char *method_names[] = {"RC4", "AES2", "AES3"};
+    static const char *method_names[] = {"/RC4", "/AES2", "/AES3"};
     static const uint8_t *keys[] = {rc4_key, aesv2_key, aesv3_key};
     static const size_t key_lengths[] = {
         sizeof(rc4_key), sizeof(aesv2_key), sizeof(aesv3_key),
@@ -12217,7 +12232,7 @@ START_TEST(test_pdf_explicit_crypt_ordering_supports_rc4_and_aes)
                 ciphertext_size, &malformed_input_size);
             pdf_test_decode_explicit_crypt_chain(
                 malformed_input, malformed_input_size, crypt_second, 1U,
-                "AES2", ENC_AESV2, aesv2_key, sizeof(aesv2_key), 0,
+                "/AES2", ENC_AESV2, aesv2_key, sizeof(aesv2_key), 0,
                 &result);
             ck_assert_int_eq(result.status, CL_EPARSE);
             ck_assert_uint_eq(result.written, malformed_input_size);
@@ -12232,6 +12247,207 @@ START_TEST(test_pdf_explicit_crypt_ordering_supports_rc4_and_aes)
         }
         free(ciphertext);
     }
+}
+END_TEST
+
+static void pdf_test_assert_crypt_params_fail_closed(
+    const uint8_t *input, size_t input_size, struct pdf_dict *params,
+    const uint8_t *key, size_t key_length)
+{
+    static const uint32_t filters[] = {
+        OBJ_FILTER_CRYPT,
+        OBJ_FILTER_AH,
+    };
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_explicit_crypt_chain_with_params(
+        input, input_size, filters, 0U, params, ENC_V2, key, key_length, 0,
+        &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, input_size);
+    ck_assert_uint_eq(result.output_size, input_size);
+    ck_assert_ptr_nonnull(result.output);
+    ck_assert_int_eq(memcmp(result.output, input, input_size), 0);
+    ck_assert_uint_eq(result.temporary_bytes, input_size);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+    free(result.output);
+}
+
+START_TEST(test_pdf_crypt_decodeparms_are_unique_and_exact)
+{
+    static const uint8_t key[] = {
+        0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe,
+        0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01,
+    };
+    static const uint8_t decoded[] =
+        "exact and unique Crypt DecodeParms";
+    static const uint32_t filters[] = {
+        OBJ_FILTER_CRYPT,
+        OBJ_FILTER_AH,
+    };
+    static char type_key[]           = "/Type";
+    static char name_key[]           = "/Name";
+    static char type_extra_key[]     = "/TypeExtra";
+    static char name_extra_key[]     = "/NameExtra";
+    static char valid_type[]         = "/CryptFilterDecodeParms";
+    static char escaped_type[]       = "/CryptFilterDecodeP#61rms";
+    static char invalid_type[]       = "/OtherDecodeParms";
+    static char literal_valid_type[] = "CryptFilterDecodeParms";
+    static char rc4_name[]           = "/RC4";
+    static char literal_rc4_name[]   = "RC4";
+    static char escaped_rc4_name[]   = "/R#43#34";
+    static char aes2_name[]          = "/AES2";
+    struct pdf_dict_node nodes[3];
+    struct pdf_dict method_dict;
+    struct pdf_dict nested_dict;
+    struct pdf_single_filter_result result;
+    uint8_t *encoded;
+    size_t encoded_size;
+    uint8_t *encrypted;
+
+    encoded = pdf_test_asciihex_encode(
+        decoded, sizeof(decoded) - 1U, &encoded_size);
+    encrypted = pdf_test_encrypt_rc4(
+        20U << 8, key, sizeof(key), encoded, encoded_size);
+
+    memset(nodes, 0, sizeof(nodes));
+    memset(&method_dict, 0, sizeof(method_dict));
+    memset(&nested_dict, 0, sizeof(nested_dict));
+    nodes[0].key       = type_key;
+    nodes[0].value     = escaped_type;
+    nodes[0].valuesz   = sizeof(escaped_type) - 1U;
+    nodes[0].type      = PDF_DICT_STRING;
+    nodes[0].next      = &nodes[1];
+    nodes[1].prev      = &nodes[0];
+    nodes[1].key       = name_key;
+    nodes[1].value     = escaped_rc4_name;
+    nodes[1].valuesz   = sizeof(escaped_rc4_name) - 1U;
+    nodes[1].type      = PDF_DICT_STRING;
+    method_dict.nodes  = &nodes[0];
+    method_dict.tail   = &nodes[1];
+    pdf_test_decode_explicit_crypt_chain_with_params(
+        encrypted, encoded_size, filters, 0U, &method_dict, ENC_V2, key,
+        sizeof(key), 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, sizeof(decoded) - 1U);
+    ck_assert_uint_eq(result.output_size, sizeof(decoded) - 1U);
+    ck_assert_int_eq(memcmp(result.output, decoded,
+                            sizeof(decoded) - 1U), 0);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+    free(result.output);
+
+    memset(nodes, 0, sizeof(nodes));
+    nodes[0].key       = type_extra_key;
+    nodes[0].value     = invalid_type;
+    nodes[0].valuesz   = sizeof(invalid_type) - 1U;
+    nodes[0].type      = PDF_DICT_STRING;
+    nodes[0].next      = &nodes[1];
+    nodes[1].prev      = &nodes[0];
+    nodes[1].key       = name_extra_key;
+    nodes[1].value     = aes2_name;
+    nodes[1].valuesz   = sizeof(aes2_name) - 1U;
+    nodes[1].type      = PDF_DICT_STRING;
+    method_dict.nodes  = &nodes[0];
+    method_dict.tail   = &nodes[1];
+    pdf_test_decode_explicit_crypt_chain_with_params(
+        encoded, encoded_size, filters, 0U, &method_dict, ENC_V2, key,
+        sizeof(key), 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, sizeof(decoded) - 1U);
+    ck_assert_uint_eq(result.output_size, sizeof(decoded) - 1U);
+    ck_assert_int_eq(memcmp(result.output, decoded,
+                            sizeof(decoded) - 1U), 0);
+    ck_assert(!result.scan_incomplete);
+    ck_assert(!result.dont_cache);
+    free(result.output);
+
+    memset(nodes, 0, sizeof(nodes));
+    nodes[0].key      = name_key;
+    nodes[0].value    = rc4_name;
+    nodes[0].valuesz  = sizeof(rc4_name) - 1U;
+    nodes[0].type     = PDF_DICT_STRING;
+    nodes[0].next     = &nodes[1];
+    nodes[1].prev     = &nodes[0];
+    nodes[1].key      = name_key;
+    nodes[1].value    = aes2_name;
+    nodes[1].valuesz  = sizeof(aes2_name) - 1U;
+    nodes[1].type     = PDF_DICT_STRING;
+    method_dict.nodes = &nodes[0];
+    method_dict.tail  = &nodes[1];
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    nodes[0].next     = NULL;
+    nodes[0].key      = name_key;
+    nodes[0].value    = &nested_dict;
+    nodes[0].valuesz  = sizeof(nested_dict);
+    nodes[0].type     = PDF_DICT_DICT;
+    method_dict.tail  = &nodes[0];
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    nodes[0].value    = NULL;
+    nodes[0].valuesz  = 0;
+    nodes[0].type     = PDF_DICT_STRING;
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    nodes[0].value    = literal_rc4_name;
+    nodes[0].valuesz  = sizeof(literal_rc4_name) - 1U;
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    nodes[0].value    = literal_rc4_name;
+    nodes[0].valuesz  = sizeof(literal_rc4_name) - 1U;
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    memset(nodes, 0, sizeof(nodes));
+    nodes[0].key       = type_key;
+    nodes[0].value     = valid_type;
+    nodes[0].valuesz   = sizeof(valid_type) - 1U;
+    nodes[0].type      = PDF_DICT_STRING;
+    nodes[0].next      = &nodes[1];
+    nodes[1].prev      = &nodes[0];
+    nodes[1].key       = type_key;
+    nodes[1].value     = valid_type;
+    nodes[1].valuesz   = sizeof(valid_type) - 1U;
+    nodes[1].type      = PDF_DICT_STRING;
+    nodes[1].next      = &nodes[2];
+    nodes[2].prev      = &nodes[1];
+    nodes[2].key       = name_key;
+    nodes[2].value     = rc4_name;
+    nodes[2].valuesz   = sizeof(rc4_name) - 1U;
+    nodes[2].type      = PDF_DICT_STRING;
+    method_dict.nodes  = &nodes[0];
+    method_dict.tail   = &nodes[2];
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    nodes[0].next     = &nodes[2];
+    nodes[2].prev     = &nodes[0];
+    nodes[0].value    = invalid_type;
+    nodes[0].valuesz  = sizeof(invalid_type) - 1U;
+    method_dict.tail  = &nodes[2];
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    nodes[0].value    = &nested_dict;
+    nodes[0].valuesz  = sizeof(nested_dict);
+    nodes[0].type     = PDF_DICT_DICT;
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    nodes[0].value    = literal_valid_type;
+    nodes[0].valuesz  = sizeof(literal_valid_type) - 1U;
+    nodes[0].type     = PDF_DICT_STRING;
+    pdf_test_assert_crypt_params_fail_closed(
+        encrypted, encoded_size, &method_dict, key, sizeof(key));
+
+    free(encrypted);
+    free(encoded);
 }
 END_TEST
 
@@ -13998,8 +14214,8 @@ START_TEST(test_pdf_explicit_identity_crypt_precedes_supported_filters)
 {
     static const uint8_t decoded[] = "bounded explicit Crypt filter";
     char name_key[]                = "/Name";
-    char bad_name[]                = "Bad";
-    char identity_name[]           = "Identity";
+    char bad_name[]                = "/Bad";
+    char identity_name[]           = "/Identity";
     char crypt_filter_dictionary[] = "/Bad << /CFM /None >>";
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
@@ -30363,6 +30579,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_unsupported_filter_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_unsupported_encryption_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_crypt_filter_dictionary_is_exact_and_fail_visible);
+    tcase_add_test(tc_pdf, test_pdf_crypt_decodeparms_are_unique_and_exact);
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
