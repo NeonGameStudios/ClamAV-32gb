@@ -61,6 +61,12 @@
 #define LARGEFILE_FD_PASSING 0
 #endif
 
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+#define LARGEFILE_FILE_BACKED_MAPPING 1
+#else
+#define LARGEFILE_FILE_BACKED_MAPPING 0
+#endif
+
 #if defined(C_LINUX) && (defined(__x86_64__) || defined(_M_X64))
 #define LARGEFILE_CERTIFIED_PLATFORM 1
 #else
@@ -83,6 +89,36 @@ static void set_reason_value(
 {
     if ((NULL != reason) && (reason_size > 0))
         (void)snprintf(reason, reason_size, "%s=%" PRIu64 "%s is below required=%" PRIu64 "%s", label, actual, unit, required, unit);
+}
+
+int clamd_largefile_build_profile_check(
+    int build_support,
+    int certified_platform,
+    int fd_passing,
+    int file_backed_mapping,
+    char *reason,
+    size_t reason_size)
+{
+    if (NULL != reason && reason_size > 0)
+        reason[0] = '\0';
+
+    if (!build_support) {
+        set_reason(reason, reason_size, "build does not provide certified large-file support");
+        return 0;
+    }
+    if (!certified_platform) {
+        set_reason(reason, reason_size, "certified large-file daemon admission is limited to Linux x86-64");
+        return 0;
+    }
+    if (!file_backed_mapping) {
+        set_reason(reason, reason_size, "build does not provide certified file-backed mapping support");
+        return 0;
+    }
+    if (!fd_passing) {
+        set_reason(reason, reason_size, "build does not provide the certified FILDES descriptor-passing path");
+        return 0;
+    }
+    return 1;
 }
 
 static int read_u64_file(const char *path, uint64_t *value, int *unlimited)
@@ -289,7 +325,7 @@ void clamd_largefile_log_capabilities(const struct cl_engine *engine)
     (void)engine_u64(engine, CL_ENGINE_MAX_RECURSION, &max_recursion);
 
     logg(LOGG_INFO,
-         "Large-file capability manifest: schema=1 platform=%s build_support=%d pointer_bits=%u size_t_bits=%u off_t_bits=%u large_file_ceiling=%" PRIu64 " logical_scan_ceiling=%" PRIu64 " matcher_work_ceiling=%" PRIu64 " temporary_ceiling=%" PRIu64 " contiguous_ceiling=%" PRIu64 " configured_max_file=%" PRIu64 " configured_max_scan=%" PRIu64 " configured_pcre_max_file=%" PRIu64 " configured_matcher_work=%" PRIu64 " configured_temporary=%" PRIu64 " configured_contiguous=%" PRIu64 " configured_scan_time_ms=%" PRIu64 " configured_max_files=%" PRIu64 " configured_max_recursion=%" PRIu64 " structured_reports=1 bytecode_abi_v2=8 fd_passing=%d parser_qualification=unclaimed\n",
+         "Large-file capability manifest: schema=2 platform=%s build_support=%d pointer_bits=%u size_t_bits=%u off_t_bits=%u large_file_ceiling=%" PRIu64 " logical_scan_ceiling=%" PRIu64 " matcher_work_ceiling=%" PRIu64 " temporary_ceiling=%" PRIu64 " contiguous_ceiling=%" PRIu64 " configured_max_file=%" PRIu64 " configured_max_scan=%" PRIu64 " configured_pcre_max_file=%" PRIu64 " configured_matcher_work=%" PRIu64 " configured_temporary=%" PRIu64 " configured_contiguous=%" PRIu64 " configured_scan_time_ms=%" PRIu64 " configured_max_files=%" PRIu64 " configured_max_recursion=%" PRIu64 " structured_reports=1 bytecode_abi_v2=8 fd_passing=%d file_backed_mapping=%d parser_qualification=unclaimed\n",
          LARGEFILE_PLATFORM,
          LARGEFILE_BUILD_SUPPORT,
          (unsigned)(sizeof(void *) * CHAR_BIT),
@@ -313,7 +349,8 @@ void clamd_largefile_log_capabilities(const struct cl_engine *engine)
          max_scan_time,
          max_files,
          max_recursion,
-         LARGEFILE_FD_PASSING);
+         LARGEFILE_FD_PASSING,
+         LARGEFILE_FILE_BACKED_MAPPING);
 }
 
 int clamd_largefile_admission_check(
@@ -386,18 +423,13 @@ int clamd_largefile_admission_check(
         pcre_max_file_size <= legacy_file_size)
         return 1;
 
-    if (!LARGEFILE_BUILD_SUPPORT) {
-        set_reason(reason, reason_size, "build does not provide certified large-file support");
-        return 0;
-    }
-
-    if (!LARGEFILE_CERTIFIED_PLATFORM) {
-        set_reason(reason, reason_size, "certified large-file daemon admission is limited to Linux x86-64");
-        return 0;
-    }
-
-    if (!LARGEFILE_FD_PASSING) {
-        set_reason(reason, reason_size, "build does not provide the certified FILDES descriptor-passing path");
+    if (!clamd_largefile_build_profile_check(
+            LARGEFILE_BUILD_SUPPORT,
+            LARGEFILE_CERTIFIED_PLATFORM,
+            LARGEFILE_FD_PASSING,
+            LARGEFILE_FILE_BACKED_MAPPING,
+            reason,
+            reason_size)) {
         return 0;
     }
 

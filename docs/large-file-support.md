@@ -3164,10 +3164,11 @@ streaming path.
 ## clamd startup capability manifest — 2026-08-19
 
 After engine initialization, clamd emits one machine-readable
-`Large-file capability manifest` line. It records the compiled pointer,
+`Large-file capability manifest` line. Schema 2 records the compiled pointer,
 `size_t`, and `off_t` widths; hard 32 GiB/64 GiB/resource ceilings; active
 engine limits; structured-report and bytecode-v2 support; fd-passing
-availability; and an explicit `parser_qualification=unclaimed` marker. This
+and private file-backed-mapping availability; and an explicit
+`parser_qualification=unclaimed` marker. This
 binds runtime logs to the actual binary/configuration without turning a
 startup capability description into parser or service qualification evidence.
 The startup admission check also reads the clamd front-end limits
@@ -6627,10 +6628,20 @@ passes 39/39 with its injectable bounded fmap and 38/38 with production
 configurations plus the complete unit-test translation unit pass GCC syntax
 compilation; only pre-existing isolated-build warnings remain.
 
-Unsupported/mixed filters, per-filter DecodeParms arrays, non-mmap object-
-stream builds, materialized multi-gigabyte encrypted fixtures, broader malformed
-encryption dictionaries, and Sonic1 release/sanitizer qualification remain
-open.
+Unsupported/mixed filters, per-filter DecodeParms arrays, materialized multi-
+gigabyte encrypted fixtures, broader malformed encryption dictionaries, and
+Sonic1 release/sanitizer qualification remain open.
+
+The certified 32 GiB Linux x86-64 profile now explicitly requires private
+file-backed mapping support (`HAVE_MMAP` plus `HAVE_SYS_MMAN_H`). `clamd`
+advertises that capability in its startup manifest and refuses any configured
+large-file envelope when it is absent. Historical-size configurations retain
+their existing startup behavior, and non-mmap builds remain supported only
+outside the certified profile: their bounded 64 MiB PDF fallback and explicit
+incomplete/resource results are not promoted into a 32 GiB claim. The build-
+profile helper has exact unit oracles for missing large-file support, platform,
+file-backed mapping, and FILDES support. This resolves the non-mmap release
+policy; it does not qualify non-mmap PDF object streams.
 
 The deterministic `largefile_pdf_objstm_fixture.py` generator now emits
 structurally valid PDF 1.7 files with a cross-reference stream and compressed-

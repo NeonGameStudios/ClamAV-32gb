@@ -2255,8 +2255,11 @@ and Sonic1 qualification as release gates.
   now prove structured unsupported/no-clean/no-plaintext behavior. Extend the
   evidence gate to materialized multi-gigabyte encrypted children,
   broader malformed encryption dictionaries and quota/read/cleanup faults, and
-  release/sanitizer scanners on Sonic1. Define an explicit non-mmap release
-  policy before removing the capability exception.
+  release/sanitizer scanners on Sonic1. The first-release non-mmap policy is now
+  explicit: the certified profile requires private file-backed mappings,
+  advertises that capability, and rejects a large-file daemon configuration
+  without it; non-mmap builds retain historical-size behavior and explicit
+  incomplete PDF boundaries outside the certification claim.
 
 ## PDF bounded encrypted-stream qualification — 2026-08-23
 
@@ -2275,5 +2278,6 @@ and Sonic1 qualification as release gates.
   decryption-before-filter ordering, simultaneous plaintext/downstream quota,
   exact rollback, file-backed object ownership, and no temporary residue.
   Retain non-first Crypt as explicit incomplete; keep per-filter DecodeParms
-  arrays, unsupported/mixed filters, and non-mmap object streams as separate
-  incomplete boundaries until implemented and qualified.
+  arrays and unsupported/mixed filters as separate incomplete boundaries until
+  implemented and qualified. Non-mmap object streams remain deliberately
+  outside the certified first-release profile.

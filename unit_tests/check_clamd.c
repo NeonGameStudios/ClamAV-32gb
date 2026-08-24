@@ -450,6 +450,43 @@ START_TEST(test_size_parser_rejects_negative_values)
 }
 END_TEST
 
+START_TEST(test_largefile_build_profile_requires_every_capability)
+{
+    struct {
+        int build_support;
+        int certified_platform;
+        int fd_passing;
+        int file_backed_mapping;
+        int accepted;
+        const char *reason;
+    } cases[] = {
+        {1, 1, 1, 1, 1, ""},
+        {0, 1, 1, 1, 0, "build does not provide certified large-file support"},
+        {1, 0, 1, 1, 0, "certified large-file daemon admission is limited to Linux x86-64"},
+        {1, 1, 1, 0, 0, "build does not provide certified file-backed mapping support"},
+        {1, 1, 0, 1, 0, "build does not provide the certified FILDES descriptor-passing path"},
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        char reason[128];
+
+        memset(reason, 'x', sizeof(reason));
+        reason[sizeof(reason) - 1] = '\0';
+        ck_assert_int_eq(
+            clamd_largefile_build_profile_check(
+                cases[i].build_support,
+                cases[i].certified_platform,
+                cases[i].fd_passing,
+                cases[i].file_backed_mapping,
+                reason,
+                sizeof(reason)),
+            cases[i].accepted);
+        ck_assert_str_eq(reason, cases[i].reason);
+    }
+}
+END_TEST
+
 START_TEST(test_largefile_admission_accepts_historical_defaults)
 {
     struct cl_engine *engine = cl_engine_new();
@@ -1694,6 +1731,7 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_stream_chunk_length_is_wrap_safe);
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
     tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
+    tcase_add_test(tc_parser, test_largefile_build_profile_requires_every_capability);
     tcase_add_test(tc_parser, test_largefile_admission_accepts_historical_defaults);
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_limits);
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_pcre_subject);

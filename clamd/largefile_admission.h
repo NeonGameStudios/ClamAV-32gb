@@ -21,6 +21,17 @@ int clamd_largefile_admission_check(
     char *reason,
     size_t reason_size);
 
+/* Validate the compile-time capabilities required by the certified profile.
+ * The explicit inputs keep each release-policy boundary independently
+ * testable; production admission passes the corresponding build constants. */
+int clamd_largefile_build_profile_check(
+    int build_support,
+    int certified_platform,
+    int fd_passing,
+    int file_backed_mapping,
+    char *reason,
+    size_t reason_size);
+
 /* Emit the compiled and configured large-file capability manifest once the
  * engine has been initialized. The manifest describes capability boundaries;
  * it is not a parser or service qualification claim. */

@@ -267,9 +267,10 @@ returned as a worker error (and therefore denied in prevention mode), while a
 monitoring-only event may still allow without labeling the object clean.
 
 clamd now emits a single machine-readable startup capability manifest after
-engine initialization. It records the compiled width/build boundaries, hard
-resource ceilings, active configured limits, structured-report and bytecode-v2
-support, and fd-passing availability; `parser_qualification=unclaimed` keeps
+engine initialization. Schema 2 records the compiled width/build boundaries,
+hard resource ceilings, active configured limits, structured-report and
+bytecode-v2 support, fd-passing availability, and private file-backed-mapping
+availability; `parser_qualification=unclaimed` keeps
 this observability line from being mistaken for release qualification.
 
 On-access prevention now denies permission events after stat or size-limit

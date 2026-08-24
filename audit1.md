@@ -7138,7 +7138,18 @@ crypt filters now have a deterministic `UNSUPPORTED` oracle, while truncated
 AESV2 ciphertext and invalid PKCS#7 padding have deterministic
 `MALFORMED_CONFIRMED` oracles. Materialized multi-gigabyte encrypted streams,
 broader malformed dictionaries, quota/read/cleanup faults, production and
-sanitizer clamscan runs, Sonic1 evidence, per-filter DecodeParms arrays,
-unsupported/mixed filters, and the non-mmap object-stream policy remain open.
+sanitizer clamscan runs, Sonic1 evidence, per-filter DecodeParms arrays, and
+unsupported/mixed filters remain open.
 Non-first explicit Crypt is intentionally fail-visible before the legacy
 contiguous path.
+
+The first-release non-mmap policy is now explicit and enforced at daemon
+admission. The certified 32 GiB Linux x86-64 profile requires private
+file-backed mappings (`HAVE_MMAP` and `HAVE_SYS_MMAN_H`); the startup capability
+manifest records that bit, and a large-file configuration is rejected when it
+is absent. Historical-size configurations retain their existing behavior.
+Non-mmap builds remain outside the certified profile and keep the bounded
+64 MiB PDF fallback plus fail-visible resource/incomplete boundaries. Exact
+unit oracles cover every missing build capability independently. Non-mmap PDF
+object streams are therefore an explicit unsupported release boundary, not an
+unresolved policy decision.
