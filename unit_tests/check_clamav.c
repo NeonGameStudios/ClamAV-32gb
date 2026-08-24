@@ -16113,13 +16113,17 @@ START_TEST(test_sis_compressed_member_streams_to_nested_scan)
     static const uint8_t compressed[] = {
         0x78, 0x9c, 0x0b, 0xf6, 0x0c, 0x76, 0x71, 0x0c,
         0x71, 0x54, 0x04, 0x00, 0x0a, 0x88, 0x02, 0x2b};
+    static const char signature[] = "SIS.Member.Exact:0:*:5349534441544121\n";
     uint8_t data[142] = {0};
     struct cl_scan_options options;
     fmap_t *map;
     struct cl_engine *scan_engine;
     cl_verdict_t verdict;
     const char *last_alert;
+    char signature_path[PATH_MAX];
+    unsigned int sigs = 0;
     uint64_t scanned;
+    int signature_fd = -1;
     cl_error_t ret;
 
     /* Minimal pre-9.x SIS package with a valid compressed eight-byte member. */
@@ -16139,20 +16143,33 @@ START_TEST(test_sis_compressed_member_streams_to_nested_scan)
     memset(&options, 0, sizeof(options));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
+                              "%s/sis-member.ndb", tmpdir),
+                     (int)(strlen(tmpdir) + strlen("/sis-member.ndb")));
+    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_int_ge(signature_fd, 0);
+    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
+                     (ssize_t)(sizeof(signature) - 1U));
+    ck_assert_int_eq(close(signature_fd), 0);
+    signature_fd = -1;
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1U);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    verdict    = CL_VERDICT_STRONG_INDICATOR;
-    last_alert = "stale";
-    scanned    = UINT64_MAX;
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
 
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_SIS", NULL);
-    ck_assert_int_eq(ret, CL_CLEAN);
-    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
-    ck_assert(last_alert == NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "SIS.Member.Exact.UNOFFICIAL");
 
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
@@ -32063,6 +32080,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
     TCase *tc_hfs_inline = tcase_create("hfs_inline");
+    TCase *tc_sis_member = tcase_create("sis_member");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -32101,6 +32119,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hfs_inline);
     tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);
+    suite_add_tcase(s, tc_sis_member);
+    tcase_add_checked_fixture(tc_sis_member, cl_setup, cl_teardown);
+    tcase_add_test(tc_sis_member, test_sis_compressed_member_streams_to_nested_scan);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
@@ -32235,7 +32256,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_jp2_structural_admission_remains_incomplete);
     tcase_add_test(tc_cl, test_generic_graphics_parser_is_explicitly_unsupported);
     tcase_add_test(tc_cl, test_sis_truncated_compressed_member_is_fail_visible);
-    tcase_add_test(tc_cl, test_sis_compressed_member_streams_to_nested_scan);
     tcase_add_test(tc_cl, test_sis_member_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_sis_member_header_offset_is_fail_visible);
     tcase_add_test(tc_cl, test_tar_truncated_header_is_fail_visible);

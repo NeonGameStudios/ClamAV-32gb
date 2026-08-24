@@ -2521,3 +2521,10 @@ and Sonic1 qualification as release gates.
   certified Linux x86-64, and Sonic1 qualification. The former 64 KiB output
   ceiling is closed by fixed-window inflation with exact size and write-failure
   oracles.
+
+## SIS compressed-member qualification — 2026-08-24
+
+- Extend the passing exact decoded-member signature oracle to stored and 9.x
+  packages, malformed/trailing zlib streams, multi-window and materialized
+  large members, sanitizer builds, certified Linux x86-64, and Sonic1. The
+  legacy compressed-member fixture now proves nested matcher handoff directly.

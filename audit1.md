@@ -7491,3 +7491,13 @@ unit translation units pass GCC syntax checks; the capability set contains 183
 entries after regeneration. Compiled EGG corpus, additional codepages and
 split-sequence cases, sanitizer and I/O fault injection, materialized large
 metadata, certified Linux x86-64, and Sonic1 evidence remain open.
+
+## SIS compressed-member matcher handoff — 2026-08-24
+
+The existing SIS compressed-member regression asserted only that the archive
+returned clean, so it did not prove the decoded bytes reached nested matching.
+The fixture now loads an exact custom signature for the eight-byte
+`SISDATA!` output and requires the specific `SIS.Member.Exact.UNOFFICIAL`
+alert. The isolated test passes linked with the current SIS production object.
+Complete SIS corpus, sanitizer, materialized large members, certified Linux
+x86-64, and Sonic1 qualification remain open.

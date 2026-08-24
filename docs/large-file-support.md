@@ -3111,8 +3111,10 @@ Declared input and output sizes are checked before extraction, output is
 reserved against `MaxTemporarySize` until the nested descriptor scan finishes,
 and zlib completion, exact output length, trailing input, read, write, and
 time-limit failures mark the scan incomplete rather than scanning a partial
-member. SIS parser corpus, sanitizer, and large-payload qualification remain
-open.
+member. A production-linked exact-signature oracle now proves the synthetic
+compressed member reaches nested matching as `SISDATA!`; it no longer relies
+on a clean return as indirect evidence. SIS parser corpus, sanitizer, and
+large-payload/Sonic1 qualification remain open.
 
 ## SIS temporary cleanup propagation — 2026-08-20
 
