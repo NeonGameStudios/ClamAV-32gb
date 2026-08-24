@@ -1737,6 +1737,10 @@ contains libclamav/pdfdecode.c 'PDF Crypt DecodeParms contains an invalid or dup
 contains libclamav/pdfdecode.c 'PDF Crypt DecodeParms contains an invalid or duplicate Name entry'
 contains libclamav/pdfdecode.c "((const char *)node->value)[0] != '/'"
 contains unit_tests/check_clamav.c 'test_pdf_crypt_decodeparms_are_unique_and_exact'
+contains unit_tests/check_clamav.c 'test_pdf_encrypted_stream_write_failure_rolls_back'
+contains unit_tests/check_clamav.c 'test_pdf_filter_stage_close_failure_rolls_back'
+contains unit_tests/check_clamav.c 'test_pdf_filter_stage_map_failure_rolls_back'
+contains unit_tests/check_clamav.c 'test_pdf_filter_stage_read_failure_rolls_back'
 contains unit_tests/check_clamav.c 'pdf_test_assert_crypt_params_fail_closed'
 contains unit_tests/check_clamav.c 'test_pdf_explicit_identity_crypt_precedes_supported_filters'
 contains unit_tests/check_clamav.c 'test_pdf_explicit_crypt_ordering_supports_rc4_and_aes'

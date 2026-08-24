@@ -2383,5 +2383,19 @@ and Sonic1 qualification as release gates.
   provenance records. Generator tests pass 37 cases; shell syntax, Python
   syntax, and whitespace checks pass locally.
 - Run the exact Linux x86-64 orchestrator and current production scanner on
-  Sonic1 when SSH service is reachable. Allocation/read/write/cleanup fault
-  injection and materialized multi-gigabyte encrypted streams remain open.
+  Sonic1 when SSH service is reachable. Production-scanner and output-window
+  allocator fault injection plus materialized multi-gigabyte encrypted streams
+  remain open.
+
+## PDF bounded-spool fault rollback — 2026-08-24
+
+- Linker-injected GCC tests now prove four independent failures: encrypted RC4
+  output writes return `CL_EWRITE`; intermediate-stage close failure returns
+  `CL_EWRITE`; file-backed map creation returns `CL_ERESOURCE`; and an in-range
+  intermediate read returns `CL_EREAD`.
+- Every case rolls output and temporary accounting back to zero, creates no
+  object-stream child, marks the scan incomplete and non-cacheable, and passes
+  4/4 normally and against ASan/UBSan PDF production objects with leak
+  detection. Adjacent PDF suites remain green in both modes.
+- Add deterministic output-window allocator failure and production-scanner
+  fault injection; keep Sonic1 and materialized multi-gigabyte evidence open.

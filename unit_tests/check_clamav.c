@@ -10740,6 +10740,10 @@ static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_siz
                                               filter, NULL, temporary_limit, result);
 }
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+static bool pdf_test_fail_close_during_filter_chain;
+#endif
+
 static void pdf_test_decode_filter_chain_with_params(
     const uint8_t *input, size_t input_size, size_t logical_size,
     const uint32_t *filters, uint32_t filter_count,
@@ -10800,9 +10804,17 @@ static void pdf_test_decode_filter_chain_with_params(
     for (i = 0; i < filter_count; i++)
         obj.filterlist[i] = filters[i];
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    if (pdf_test_fail_close_during_filter_chain)
+        clamav_test_fail_close = 1;
+#endif
     result->written = pdf_decodestream_with_params_array(
         &pdf, &obj, NULL, params_array, (const char *)input, logical_size, 0,
         fd, &status, NULL);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    if (pdf_test_fail_close_during_filter_chain)
+        clamav_test_fail_close = 0;
+#endif
     result->status = status;
     ck_assert_int_eq(fstat(fd, &output_stat), 0);
     ck_assert(output_stat.st_size >= 0);
@@ -12527,6 +12539,42 @@ START_TEST(test_pdf_object_stream_quota_failure_has_no_backing)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_pdf_encrypted_stream_write_failure_rolls_back)
+{
+    static const uint8_t key[] = {
+        0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe,
+        0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01,
+    };
+    static const uint8_t decoded[] = "21 0 << /Type /Catalog >>";
+    uint8_t *encrypted = pdf_test_encrypt_rc4(
+        20U << 8, key, sizeof(key), decoded, sizeof(decoded) - 1U);
+    struct pdf_object_stream_result result;
+
+    clamav_test_fail_write = 1;
+    pdf_test_decode_object_stream(
+        encrypted, sizeof(decoded) - 1U, sizeof(decoded) - 1U, decoded,
+        sizeof(decoded) - 1U, 5U, 1U, NULL, 0, 0, ENC_V2, key,
+        sizeof(key), &result);
+    clamav_test_fail_write = 0;
+
+    ck_assert_int_eq(result.status, CL_EWRITE);
+    ck_assert(!result.mapped);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.backing_length, 0);
+    ck_assert_uint_eq(result.retained_reservation, 0);
+    ck_assert_uint_eq(result.local_reservation, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert_uint_eq(result.temporary_peak, sizeof(decoded) - 1U);
+    ck_assert_uint_eq(result.object_count, 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(encrypted);
+}
+END_TEST
+#endif
+
 START_TEST(test_pdf_extract_retains_malformed_object_stream_backing)
 {
     static const uint8_t object_data[] =
@@ -12739,6 +12787,42 @@ START_TEST(test_pdf_filter_chain_failure_restores_raw_input)
     free(expected);
 }
 END_TEST
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+START_TEST(test_pdf_filter_stage_close_failure_rolls_back)
+{
+    static const uint32_t filters[] = {OBJ_FILTER_AH, OBJ_FILTER_FLATE};
+    const size_t decoded_size = 31U;
+    size_t encoded_size;
+    size_t intermediate_size;
+    uint8_t *expected;
+    uint8_t *encoded = pdf_test_filter_chain_fixture(
+        decoded_size, false, &expected, &intermediate_size, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_fail_close_during_filter_chain = true;
+    pdf_test_decode_filter_chain(
+        encoded, encoded_size, encoded_size, filters,
+        sizeof(filters) / sizeof(filters[0]), 0, &result);
+    pdf_test_fail_close_during_filter_chain = false;
+
+    ck_assert_int_eq(result.status, CL_EWRITE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_uint_eq(result.output_offset, 0);
+    ck_assert_uint_eq(result.temporary_reserved, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert_uint_eq(result.temporary_peak,
+                      intermediate_size + decoded_size);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+#endif
 
 START_TEST(test_pdf_filter_chain_rotates_three_bounded_stages)
 {
@@ -25939,13 +26023,96 @@ END_TEST
 extern fmap_t *__real_fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path);
 
 static int fmap_new_test_fail;
+static int fmap_new_test_fail_read;
+
+static const void *pdf_filter_stage_read_failure(fmap_t *map, size_t at,
+                                                 size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
 
 fmap_t *__wrap_fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path)
 {
+    fmap_t *map;
+
     if (fmap_new_test_fail)
         return NULL;
-    return __real_fmap_new(fd, offset, len, name, path);
+    map = __real_fmap_new(fd, offset, len, name, path);
+    if (map != NULL && fmap_new_test_fail_read && name != NULL &&
+        strcmp(name, "pdf-filter-stage") == 0)
+        map->need = pdf_filter_stage_read_failure;
+    return map;
 }
+
+START_TEST(test_pdf_filter_stage_map_failure_rolls_back)
+{
+    static const uint32_t filters[] = {OBJ_FILTER_AH, OBJ_FILTER_FLATE};
+    const size_t decoded_size = 29U;
+    size_t encoded_size;
+    size_t intermediate_size;
+    uint8_t *expected;
+    uint8_t *encoded = pdf_test_filter_chain_fixture(
+        decoded_size, false, &expected, &intermediate_size, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    fmap_new_test_fail = 1;
+    pdf_test_decode_filter_chain(
+        encoded, encoded_size, encoded_size, filters,
+        sizeof(filters) / sizeof(filters[0]), 0, &result);
+    fmap_new_test_fail = 0;
+
+    ck_assert_int_eq(result.status, CL_ERESOURCE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_uint_eq(result.output_offset, 0);
+    ck_assert_uint_eq(result.temporary_reserved, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert_uint_eq(result.temporary_peak, intermediate_size);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_filter_stage_read_failure_rolls_back)
+{
+    static const uint32_t filters[] = {OBJ_FILTER_AH, OBJ_FILTER_FLATE};
+    const size_t decoded_size = 37U;
+    size_t encoded_size;
+    size_t intermediate_size;
+    uint8_t *expected;
+    uint8_t *encoded = pdf_test_filter_chain_fixture(
+        decoded_size, false, &expected, &intermediate_size, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    fmap_new_test_fail_read = 1;
+    pdf_test_decode_filter_chain(
+        encoded, encoded_size, encoded_size, filters,
+        sizeof(filters) / sizeof(filters[0]), 0, &result);
+    fmap_new_test_fail_read = 0;
+
+    ck_assert_int_eq(result.status, CL_EREAD);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_uint_eq(result.output_offset, 0);
+    ck_assert_uint_eq(result.temporary_reserved, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert_uint_eq(result.temporary_peak, intermediate_size);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
 
 START_TEST(test_normalized_script_map_failure_is_fail_visible)
 {
@@ -30386,12 +30553,22 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_flate_object_stream_uses_file_backing);
     tcase_add_test(tc_cl, test_pdf_malformed_object_stream_retains_backing);
     tcase_add_test(tc_cl, test_pdf_object_stream_quota_failure_has_no_backing);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_pdf_encrypted_stream_write_failure_rolls_back);
+#endif
     tcase_add_test(tc_cl, test_pdf_extract_retains_malformed_object_stream_backing);
 #endif
     tcase_add_test(tc_cl, test_pdf_filter_chain_is_bounded_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_filter_chain_overlap_quota_failure_rolls_back);
     tcase_add_test(tc_cl, test_pdf_filter_chain_failure_restores_raw_input);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_cl, test_pdf_filter_stage_close_failure_rolls_back);
+#endif
     tcase_add_test(tc_cl, test_pdf_filter_chain_rotates_three_bounded_stages);
+#ifdef CLAMAV_TEST_FMAP_NEW_WRAP
+    tcase_add_test(tc_cl, test_pdf_filter_stage_map_failure_rolls_back);
+    tcase_add_test(tc_cl, test_pdf_filter_stage_read_failure_rolls_back);
+#endif
     tcase_add_test(tc_cl, test_pdf_decodeparms_array_is_per_filter_and_fail_visible);
     tcase_add_test(tc_cl, test_pdf_decodeparms_array_syntax_reaches_per_filter_dispatch);
     tcase_add_test(tc_cl, test_pdf_decodeparms_exact_dictionary_key_selection);
