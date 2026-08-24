@@ -1,5 +1,16 @@
 # Wishlist
 
+## Encoded-text script normalization — 2026-08-24
+
+- UTF-16LE/BE script text now uses bounded streaming UTF-8 conversion before
+  normalized matching, with explicit BOM, odd-length, byte-order, and
+  cross-window surrogate handling.
+- UTF-8 script text is validated incrementally; overlong, truncated,
+  surrogate, and out-of-range sequences stay fail-visible and non-cacheable.
+- The focused Linux ARM64 GCC case passes all three encoding branches and
+  malformed/cross-window oracles. Production corpora, ASan/UBSan, Linux
+  x86-64, and Sonic1 qualification remain gates.
+
 ## PE32+ common inspection and narrower x86 boundary — 2026-08-24
 
 - PE32+ now completes section hashing, overlay inspection, `BC_PE_ALL`, and

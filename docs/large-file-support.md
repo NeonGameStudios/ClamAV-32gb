@@ -6431,6 +6431,25 @@ bytes exceed the root size after the normalized script is scanned. Full script
 corpus, sanitizer, and supported-build Sonic1 qualification remain release
 gates.
 
+## Encoded-text script normalization — 2026-08-24
+
+`CL_TYPE_TEXT_UTF16LE` and `CL_TYPE_TEXT_UTF16BE` no longer feed interleaved
+code-unit bytes directly into the byte-oriented script normalizer. They are
+decoded incrementally to UTF-8 through a fixed 4 KiB input window and bounded
+output window before the existing quota-accounted, file-backed normalized
+matcher pass. BOM handling is explicit, surrogate pairs may cross windows,
+and odd lengths, reversed byte order, lone surrogates, or incomplete pairs
+remain incomplete and non-cacheable.
+
+`CL_TYPE_TEXT_UTF8` is now validated across fmap windows before normalization;
+invalid continuation bytes, overlong forms, surrogate values, truncated final
+sequences, and values above U+10FFFF remain explicit incomplete results rather
+than bytes silently discarded by the ASCII-oriented normalizer. The focused
+Linux ARM64 GCC case passes UTF-16LE, UTF-16BE, and UTF-8 normalized-signature
+detection, a surrogate pair split at the 4 KiB boundary, and malformed
+UTF-16/UTF-8 fail-visible oracles. Full text corpora, ASan/UBSan, Linux x86-64,
+and Sonic1 qualification remain open.
+
 ## AutoIt EA06 bounded decompiled-output spool — 2026-08-23
 
 EA06 script decompilation no longer grows a contiguous output allocation. The

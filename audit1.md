@@ -7329,3 +7329,13 @@ three-case DecodeParms, and non-first Crypt suites also remain green normally
 and under the same sanitizer configuration. Production-scanner fault
 injection, materialized multi-gigabyte streams, and Sonic1 evidence remain
 release gates.
+
+## Encoded-text script normalization — 2026-08-24
+
+UTF-16LE and UTF-16BE text now pass through bounded streaming UTF-8 conversion
+before script normalization, including BOM and cross-window surrogate state.
+Malformed code units remain incomplete and non-cacheable. UTF-8 text is
+validated incrementally for complete, minimal, scalar-value sequences before
+normalization. A focused Linux ARM64 GCC case passes all three normalized
+encoding branches plus cross-window and malformed-input oracles; sanitizer,
+production corpus, Linux x86-64, and Sonic1 qualification remain open.

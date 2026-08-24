@@ -3761,22 +3761,192 @@ done:
     return status;
 }
 
-static cl_error_t cli_scanscript(cli_ctx *ctx)
+#define SCRIPT_UTF16_INPUT_CHUNK  4096U
+#define SCRIPT_UTF16_OUTPUT_CHUNK ((SCRIPT_UTF16_INPUT_CHUNK / 2U) * 3U + 4U)
+
+struct script_utf8_validation_state {
+    uint32_t codepoint;
+    uint32_t minimum;
+    uint8_t remaining;
+};
+
+static cl_error_t script_validate_utf8_chunk(
+    const unsigned char *input,
+    size_t input_len,
+    bool final,
+    struct script_utf8_validation_state *state)
+{
+    size_t i;
+
+    if (NULL == input || NULL == state)
+        return CL_ENULLARG;
+
+    for (i = 0; i < input_len; i++) {
+        uint8_t byte = input[i];
+
+        if (state->remaining == 0) {
+            if (byte <= 0x7fU)
+                continue;
+            if (byte >= 0xc2U && byte <= 0xdfU) {
+                state->codepoint = byte & 0x1fU;
+                state->minimum   = 0x80U;
+                state->remaining = 1;
+            } else if (byte >= 0xe0U && byte <= 0xefU) {
+                state->codepoint = byte & 0x0fU;
+                state->minimum   = 0x800U;
+                state->remaining = 2;
+            } else if (byte >= 0xf0U && byte <= 0xf4U) {
+                state->codepoint = byte & 0x07U;
+                state->minimum   = 0x10000U;
+                state->remaining = 3;
+            } else {
+                return CL_EPARSE;
+            }
+            continue;
+        }
+
+        if ((byte & 0xc0U) != 0x80U)
+            return CL_EPARSE;
+
+        state->codepoint = (state->codepoint << 6) | (byte & 0x3fU);
+        state->remaining--;
+        if (state->remaining == 0 &&
+            (state->codepoint < state->minimum ||
+             state->codepoint > 0x10ffffU ||
+             (state->codepoint >= 0xd800U && state->codepoint <= 0xdfffU))) {
+            return CL_EPARSE;
+        }
+    }
+
+    return (final && state->remaining != 0) ? CL_EPARSE : CL_SUCCESS;
+}
+
+static cl_error_t script_emit_utf8(uint32_t codepoint, unsigned char *output,
+                                   size_t output_size, size_t *written)
+{
+    size_t needed;
+
+    if (codepoint <= 0x7fU)
+        needed = 1;
+    else if (codepoint <= 0x7ffU)
+        needed = 2;
+    else if (codepoint <= 0xffffU)
+        needed = 3;
+    else
+        needed = 4;
+
+    if (*written > output_size || needed > output_size - *written)
+        return CL_ERESOURCE;
+
+    if (needed == 1) {
+        output[(*written)++] = (unsigned char)codepoint;
+    } else if (needed == 2) {
+        output[(*written)++] = (unsigned char)(0xc0U | (codepoint >> 6));
+        output[(*written)++] = (unsigned char)(0x80U | (codepoint & 0x3fU));
+    } else if (needed == 3) {
+        output[(*written)++] = (unsigned char)(0xe0U | (codepoint >> 12));
+        output[(*written)++] = (unsigned char)(0x80U | ((codepoint >> 6) & 0x3fU));
+        output[(*written)++] = (unsigned char)(0x80U | (codepoint & 0x3fU));
+    } else {
+        output[(*written)++] = (unsigned char)(0xf0U | (codepoint >> 18));
+        output[(*written)++] = (unsigned char)(0x80U | ((codepoint >> 12) & 0x3fU));
+        output[(*written)++] = (unsigned char)(0x80U | ((codepoint >> 6) & 0x3fU));
+        output[(*written)++] = (unsigned char)(0x80U | (codepoint & 0x3fU));
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t script_decode_utf16_chunk(
+    const unsigned char *input,
+    size_t input_len,
+    bool little_endian,
+    bool final,
+    bool *stream_start,
+    uint16_t *pending_high,
+    unsigned char *output,
+    size_t output_size,
+    size_t *written)
+{
+    size_t i;
+
+    if (NULL == input || NULL == stream_start || NULL == pending_high ||
+        NULL == output || NULL == written || (input_len & 1U)) {
+        return CL_ENULLARG;
+    }
+
+    *written = 0;
+    for (i = 0; i < input_len; i += 2) {
+        uint16_t unit = little_endian
+                            ? (uint16_t)((uint16_t)input[i] | ((uint16_t)input[i + 1] << 8))
+                            : (uint16_t)(((uint16_t)input[i] << 8) | (uint16_t)input[i + 1]);
+        uint32_t codepoint;
+        cl_error_t status;
+
+        if (*stream_start) {
+            *stream_start = false;
+            if (unit == 0xfeffU)
+                continue;
+            if (unit == 0xfffeU)
+                return CL_EPARSE;
+        }
+
+        if (*pending_high != 0) {
+            if (unit < 0xdc00U || unit > 0xdfffU)
+                return CL_EPARSE;
+            codepoint = 0x10000U +
+                        (((uint32_t)*pending_high - 0xd800U) << 10) +
+                        ((uint32_t)unit - 0xdc00U);
+            *pending_high = 0;
+        } else if (unit >= 0xd800U && unit <= 0xdbffU) {
+            *pending_high = unit;
+            continue;
+        } else if (unit >= 0xdc00U && unit <= 0xdfffU) {
+            return CL_EPARSE;
+        } else {
+            codepoint = unit;
+        }
+
+        status = script_emit_utf8(codepoint, output, output_size, written);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    return (final && *pending_high != 0) ? CL_EPARSE : CL_SUCCESS;
+}
+
+static cl_error_t cli_scanscript(cli_ctx *ctx, cli_file_t input_type)
 {
     cl_error_t ret = CL_SUCCESS;
     const unsigned char *buff;
+    const unsigned char *normalize_input;
     unsigned char *normalized = NULL;
+    unsigned char utf16_decoded[SCRIPT_UTF16_OUTPUT_CHUNK];
     struct text_norm_state state;
+    struct script_utf8_validation_state utf8_state;
     char *tmpname = NULL;
     int ofd       = -1;
     cl_fmap_t *new_map = NULL;
     fmap_t *map;
     size_t at = 0;
+    size_t normalize_len;
+    uint16_t pending_high = 0;
+    bool utf16_start      = true;
+    bool is_utf16;
+    bool little_endian;
     uint64_t curr_len;
     uint64_t temporary_reserved = 0;
 
-    if (!ctx || !ctx->engine->root)
+    if (!ctx || !ctx->engine || !ctx->engine->root)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "Script normalization input map is unavailable");
+        return CL_EPARSE;
+    }
+
+    is_utf16     = input_type == CL_TYPE_TEXT_UTF16LE || input_type == CL_TYPE_TEXT_UTF16BE;
+    little_endian = input_type == CL_TYPE_TEXT_UTF16LE;
+    memset(&utf8_state, 0, sizeof(utf8_state));
 
     map             = ctx->fmap;
     curr_len        = map->len;
@@ -3793,6 +3963,12 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
     if (curr_len > ctx->engine->maxscriptnormalize) {
         cli_dbgmsg("cli_scanscript: exiting (file larger than MaxScriptSize)\n");
         cli_mark_scan_incomplete(ctx, "script normalization skipped because the input exceeds MaxScriptNormalize");
+        ret = CL_EPARSE;
+        goto done;
+    }
+
+    if (is_utf16 && (curr_len & 1U)) {
+        cli_mark_scan_incomplete(ctx, "UTF-16 script input has an incomplete code unit");
         ret = CL_EPARSE;
         goto done;
     }
@@ -3817,6 +3993,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
 
     while (1) {
         size_t len;
+        bool final;
 
         ret = cli_checktimelimit(ctx);
         if (ret != CL_SUCCESS) {
@@ -3824,7 +4001,10 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
             goto done;
         }
 
-        len  = MIN(map->pgsz, map->len - at);
+        if (is_utf16)
+            len = MIN(map->len - at, (size_t)SCRIPT_UTF16_INPUT_CHUNK);
+        else
+            len = MIN(map->pgsz, map->len - at);
         buff = fmap_need_off_once(map, at, len);
         if (len && !buff) {
             cli_mark_scan_incomplete(ctx, "Script normalization could not read the complete input map");
@@ -3832,7 +4012,32 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
             goto done;
         }
 
-        if (!buff || !len || len > state.out_len - state.out_pos) {
+        final           = len == map->len - at;
+        normalize_input = buff;
+        normalize_len   = len;
+
+        if (len && is_utf16) {
+            ret = script_decode_utf16_chunk(
+                buff, len, little_endian, final, &utf16_start, &pending_high,
+                utf16_decoded, sizeof(utf16_decoded), &normalize_len);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(
+                    ctx,
+                    ret == CL_ERESOURCE
+                        ? "UTF-16 script expansion exceeded its bounded conversion window"
+                        : "UTF-16 script input contains an invalid surrogate or byte-order sequence");
+                goto done;
+            }
+            normalize_input = utf16_decoded;
+        } else if (len && input_type == CL_TYPE_TEXT_UTF8) {
+            ret = script_validate_utf8_chunk(buff, len, final, &utf8_state);
+            if (ret != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "UTF-8 script input contains an invalid byte sequence");
+                goto done;
+            }
+        }
+
+        if (!buff || !len || normalize_len > state.out_len - state.out_pos) {
             size_t written = state.out_pos;
 
             if (written) {
@@ -3854,7 +4059,7 @@ static cl_error_t cli_scanscript(cli_ctx *ctx)
 
         if (!len)
             break;
-        if (text_normalize_buffer(&state, buff, len) != len) {
+        if (text_normalize_buffer(&state, normalize_input, normalize_len) != normalize_len) {
             cli_dbgmsg("cli_scanscript: short read during normalizing\n");
             cli_mark_scan_incomplete(ctx, "Script normalization did not consume the complete input map");
             ret = CL_EPARSE;
@@ -6964,7 +7169,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 
         case CL_TYPE_SCRIPT:
             if ((DCONF_DOC & DOC_CONF_SCRIPT) && dettype != CL_TYPE_HTML)
-                ret = cli_scanscript(ctx);
+                ret = cli_scanscript(ctx, CL_TYPE_TEXT_ASCII);
             break;
 
         case CL_TYPE_SWF:
@@ -7316,7 +7521,7 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
             perf_nested_start(ctx, PERFT_SCRIPT, PERFT_SCAN);
             if ((dettype != CL_TYPE_HTML) &&
                 SCAN_PARSE_HTML && (DCONF_DOC & DOC_CONF_SCRIPT) && (ret != CL_VIRUS)) {
-                ret = cli_merge_scan_status(ret, cli_scanscript(ctx));
+                ret = cli_merge_scan_status(ret, cli_scanscript(ctx, type));
             }
             if (((dettype == CL_TYPE_MAIL) || (cli_recursion_stack_get_type(ctx, -1) == CL_TYPE_MAIL)) &&
                 SCAN_PARSE_MAIL && (DCONF_MAIL & MAIL_CONF_MBOX) && (ret != CL_VIRUS)) {

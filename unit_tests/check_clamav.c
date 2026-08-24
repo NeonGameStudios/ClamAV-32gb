@@ -26242,6 +26242,177 @@ START_TEST(test_script_normalization_window_offset_is_stable)
 }
 END_TEST
 
+static size_t build_utf16_ascii_script(unsigned char *output, size_t output_size,
+                                       const char *text, bool little_endian)
+{
+    size_t text_len = strlen(text);
+    size_t i;
+
+    ck_assert_msg(text_len <= (SIZE_MAX - 2U) / 2U, "UTF-16 test fixture length overflowed");
+    ck_assert_msg(output_size >= text_len * 2U + 2U, "UTF-16 test fixture buffer is too short");
+    output[0] = little_endian ? 0xffU : 0xfeU;
+    output[1] = little_endian ? 0xfeU : 0xffU;
+    for (i = 0; i < text_len; i++) {
+        output[2U + i * 2U] = little_endian ? (unsigned char)text[i] : 0;
+        output[3U + i * 2U] = little_endian ? 0 : (unsigned char)text[i];
+    }
+
+    return text_len * 2U + 2U;
+}
+
+START_TEST(test_encoded_text_script_normalization_is_complete)
+{
+    static const char script_text[] = "EnCoDeD   NoRmAlIzEd MaRkEr";
+    static const unsigned char invalid_utf16[] = {0xffU, 0xfeU, 0x00U, 0xd8U};
+    static const unsigned char odd_utf16[] = {0xffU, 0xfeU, 'a', 0, 'b'};
+    static const unsigned char reversed_utf16[] = {0xfeU, 0xffU, 0, 'a'};
+    static const unsigned char overlong_utf8[] = {'v', 'a', 'r', ' ', 0xf0U, 0x80U, 0x80U, 0x80U};
+    static const unsigned char truncated_utf8[] = {'v', 'a', 'r', ' ', 0xe2U, 0x82U};
+    static const unsigned char surrogate_utf8[] = {'v', 'a', 'r', ' ', 0xedU, 0xa0U, 0x80U};
+    static const unsigned char out_of_range_utf8[] = {'v', 'a', 'r', ' ', 0xf4U, 0x90U, 0x80U, 0x80U};
+    static const struct {
+        const unsigned char *data;
+        size_t length;
+        cli_file_t type;
+        const char *reason;
+    } malformed[] = {
+        {invalid_utf16, sizeof(invalid_utf16), CL_TYPE_TEXT_UTF16LE,
+         "UTF-16 script input contains an invalid surrogate or byte-order sequence"},
+        {odd_utf16, sizeof(odd_utf16), CL_TYPE_TEXT_UTF16LE,
+         "UTF-16 script input has an incomplete code unit"},
+        {reversed_utf16, sizeof(reversed_utf16), CL_TYPE_TEXT_UTF16LE,
+         "UTF-16 script input contains an invalid surrogate or byte-order sequence"},
+        {overlong_utf8, sizeof(overlong_utf8), CL_TYPE_TEXT_UTF8,
+         "UTF-8 script input contains an invalid byte sequence"},
+        {truncated_utf8, sizeof(truncated_utf8), CL_TYPE_TEXT_UTF8,
+         "UTF-8 script input contains an invalid byte sequence"},
+        {surrogate_utf8, sizeof(surrogate_utf8), CL_TYPE_TEXT_UTF8,
+         "UTF-8 script input contains an invalid byte sequence"},
+        {out_of_range_utf8, sizeof(out_of_range_utf8), CL_TYPE_TEXT_UTF8,
+         "UTF-8 script input contains an invalid byte sequence"},
+    };
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
+    cli_ctx ctx;
+    fmap_t *map;
+    unsigned char utf16[sizeof(script_text) * 2U + 2U];
+    unsigned char cross_window[4100];
+    size_t length;
+    size_t i;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = ~0U;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[7], "EncodedTextNormalized",
+                         "656e636f646564206e6f726d616c697a6564206d61726b6572",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    for (i = 0; i < 2U; i++) {
+        cli_file_t type = i == 0 ? CL_TYPE_TEXT_UTF16LE : CL_TYPE_TEXT_UTF16BE;
+
+        length = build_utf16_ascii_script(utf16, sizeof(utf16), script_text, i == 0);
+        map    = cl_fmap_open_memory(utf16, length);
+        ck_assert_ptr_nonnull(map);
+        memset(layers, 0, sizeof(layers));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine               = scan_engine;
+        ctx.dconf                = scan_engine->dconf;
+        ctx.options              = &options;
+        ctx.fmap                 = map;
+        ctx.this_layer_tmpdir    = tmpdir;
+        ctx.recursion_stack      = layers;
+        ctx.recursion_stack_size = 2;
+        layers[0].fmap           = map;
+        layers[0].type           = type;
+
+        ret = cli_magic_scan(&ctx, type);
+        ck_assert_int_eq(ret, CL_VIRUS);
+        ck_assert(!ctx.scan_incomplete);
+        cl_fmap_close(map);
+    }
+
+    map = cl_fmap_open_memory(script_text, sizeof(script_text) - 1U);
+    ck_assert_ptr_nonnull(map);
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].fmap           = map;
+    layers[0].type           = CL_TYPE_TEXT_UTF8;
+    ret                      = cli_magic_scan(&ctx, CL_TYPE_TEXT_UTF8);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+
+    cross_window[0] = 0xffU;
+    cross_window[1] = 0xfeU;
+    for (i = 2U; i < 4094U; i += 2U) {
+        cross_window[i]     = 'x';
+        cross_window[i + 1] = 0;
+    }
+    cross_window[4094] = 0x3dU;
+    cross_window[4095] = 0xd8U;
+    cross_window[4096] = 0x00U;
+    cross_window[4097] = 0xdeU;
+    cross_window[4098] = 'z';
+    cross_window[4099] = 0;
+    map                = cl_fmap_open_memory(cross_window, sizeof(cross_window));
+    ck_assert_ptr_nonnull(map);
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine               = scan_engine;
+    ctx.dconf                = scan_engine->dconf;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.this_layer_tmpdir    = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].fmap           = map;
+    layers[0].type           = CL_TYPE_TEXT_UTF16LE;
+    ret                      = cli_magic_scan(&ctx, CL_TYPE_TEXT_UTF16LE);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+
+    for (i = 0; i < sizeof(malformed) / sizeof(malformed[0]); i++) {
+        map = cl_fmap_open_memory(malformed[i].data, malformed[i].length);
+        ck_assert_ptr_nonnull(map);
+        memset(layers, 0, sizeof(layers));
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.engine               = scan_engine;
+        ctx.dconf                = scan_engine->dconf;
+        ctx.options              = &options;
+        ctx.fmap                 = map;
+        ctx.this_layer_tmpdir    = tmpdir;
+        ctx.recursion_stack      = layers;
+        ctx.recursion_stack_size = 2;
+        layers[0].fmap           = map;
+        layers[0].type           = malformed[i].type;
+        ret                      = cli_magic_scan(&ctx, malformed[i].type);
+        ck_assert_int_eq(ret, CL_EPARSE);
+        ck_assert(ctx.scan_incomplete);
+        ck_assert_str_eq(ctx.scan_incomplete_reason, malformed[i].reason);
+        ck_assert(map->dont_cache_flag);
+        cl_fmap_close(map);
+    }
+
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 #ifdef CLAMAV_TEST_MALLOC_WRAP
 extern void *__real_malloc(size_t size);
 
@@ -30439,6 +30610,7 @@ static Suite *test_cl_suite(void)
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
+    TCase *tc_text_encoding = tcase_create("text_encoding");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     TCase *tc_largefile;
 #endif
@@ -30458,6 +30630,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);
+    suite_add_tcase(s, tc_text_encoding);
+    tcase_add_checked_fixture(tc_text_encoding, cl_setup, cl_teardown);
+    tcase_add_test(tc_text_encoding, test_encoded_text_script_normalization_is_complete);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     if (getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL) {
         tc_largefile = tcase_create("largefile_qualification");
