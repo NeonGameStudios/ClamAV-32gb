@@ -283,6 +283,7 @@ int main(int argc, char *argv[])
     int rc, dbgargc, bc_stats = 0;
     int exit_status = 0;
     uint64_t parsed_arg;
+    uint64_t match_offsets64[64];
     struct optstruct *opts;
     const struct optstruct *opt;
     unsigned funcid = 0, i;
@@ -511,8 +512,11 @@ int main(int argc, char *argv[])
         }
 
         /* for testing */
-        ctx->hooks.match_counts  = deadbeefcounts;
-        ctx->hooks.match_offsets = deadbeefcounts;
+        for (i = 0; i < 64; i++)
+            match_offsets64[i] = deadbeefcounts[i];
+        ctx->hooks.match_counts    = deadbeefcounts;
+        ctx->hooks.match_offsets   = deadbeefcounts;
+        ctx->hooks.match_offsets64 = match_offsets64;
 
         /*
          * Run the bytecode.

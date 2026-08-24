@@ -18,6 +18,12 @@ and ASan/UBSan policy evidence. Nested v1/v2 cgroup membership and ancestor
 headroom are resolved rather than assuming hierarchy-root limits; current-source
 x86-64 daemon startup remains unqualified. Sonic1 resolved but its
 SSH port timed out on 2026-08-24, so no current-source remote command ran.
+Bytecode v1/v2 search now preserves split signatures across 4 KiB windows,
+including above 4 GiB; the loader enforces format-8-only APIs/globals and
+`clambc` supplies native test offsets. Exact bytecode scan-option queries are
+also repaired. Focused GCC and ASan/UBSan checks pass, and a compiled loader
+regression covers format isolation, but no independently compiled format-8
+interpreter/JIT fixture exists yet.
 Historical sections below remain evidence for their stated revisions; any use
 of “current head” there refers to that historical checkpoint, not today’s
 branch tip.

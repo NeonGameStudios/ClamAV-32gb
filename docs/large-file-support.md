@@ -4498,8 +4498,9 @@ release gates.
 
 ## Legacy bytecode ABI overflow — 2026-08-21
 
-An applicable v1 logical-bytecode signature cannot represent a file size or
-logical-signature offset above 4 GiB. That admission failure now returns
+An applicable v1 logical-bytecode signature cannot represent a file size of
+exactly 4 GiB or larger, or a logical-signature offset above `UINT32_MAX`.
+That admission failure now returns
 `CL_EPARSE` as well as marking the layer incomplete and non-cacheable; it can no
 longer fall through as the evaluator's default clean result. A synthetic >4 GiB
 logical-signature regression covers the status, reason, and cache invariant
@@ -4519,6 +4520,30 @@ focused unit regression verifies that the later v2 dispatch selects the native
 offset array after the v1 offset bridge rejects the coordinate. Mixed-ABI
 interpreter/JIT, sanitizer, production-bytecode, and supported-build Sonic1
 qualification remain release gates.
+
+## Bytecode v2 split-window search and format isolation — 2026-08-24
+
+The shared bytecode file-search implementation now overlaps adjacent 4 KiB
+input windows by `needle_length - 1`, so a multi-byte signature beginning at
+the final byte of one window is found in both legacy and 64-bit APIs. Focused
+fixtures cover the split at byte 4,095 and the same split after the 4 GiB
+coordinate boundary, normally and with ASan/UBSan.
+
+The bytecode loader now enforces the format-8 boundary for every appended v2
+API and global. Format-6/7 modules cannot opt into 64-bit interfaces by
+manually encoding their IDs, zero API IDs are rejected before one-based index
+conversion, and external-global pointer initializers must remain inside both
+the module's declared table and its format generation. A loader regression
+mutates a compiled format-7 CBC fixture and checks both the rejecting legacy
+path and accepting format-8 path. `clambc` also supplies its deterministic test
+matcher offsets through the 64-bit hook field.
+
+The bytecode scan-option query now performs allocation-free, exact-length ASCII
+case-insensitive matching. This fixes the historical index-zero lowercase
+write, inverted category comparisons, terminator-inclusive substring lengths,
+and the documented `heuristic precedence` key; embedded-NUL and trailing-name
+aliases are rejected. An independently compiled format-8 fixture and
+interpreter/JIT execution remain release gates.
 
 ## Mixed bytecode offset-bridge continuation — 2026-08-22
 

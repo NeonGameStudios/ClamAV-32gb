@@ -482,6 +482,12 @@
   individual-allocation ceiling, and hex-data decoding rejects checked-offset
   overflow before allocation or input traversal; ABI fixture and runtime
   qualification remain open.
+- Bytecode file search now preserves `needle_length - 1` bytes between 4 KiB
+  input windows, including a split signature above 4 GiB. The loader enforces
+  format-8-only APIs/globals, `clambc` initializes native matcher offsets, and
+  exact scan-option queries no longer accept partial or embedded-NUL names; an
+  independently compiled format-8 fixture plus interpreter/JIT and Sonic1
+  qualification remain open.
 - YARA-compatible logical roots now charge one bounded fmap pass to shared
   matcher-work accounting and fail closed when that budget is exhausted; full
   production-rule and large-file qualification remains open.

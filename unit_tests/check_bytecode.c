@@ -574,6 +574,125 @@ static off_t bytecode_failing_pread_cb(void *handle, void *buf, size_t count, of
     return (off_t)count;
 }
 
+struct bytecode_search_pread_state {
+    size_t length;
+    size_t marker_offset;
+    const uint8_t *marker;
+    size_t marker_length;
+};
+
+static off_t bytecode_search_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct bytecode_search_pread_state *state = handle;
+    size_t start;
+    size_t end;
+    size_t marker_end;
+    size_t copy_start;
+    size_t copy_end;
+
+    if (offset < 0 || (uint64_t)offset >= state->length)
+        return 0;
+    start = (size_t)offset;
+    if (count > state->length - start)
+        count = state->length - start;
+    memset(buf, 0, count);
+    end = start + count;
+    if (state->marker_offset > SIZE_MAX - state->marker_length)
+        return -1;
+    marker_end = state->marker_offset + state->marker_length;
+    copy_start = MAX(start, state->marker_offset);
+    copy_end   = MIN(end, marker_end);
+    if (copy_start < copy_end) {
+        memcpy((uint8_t *)buf + copy_start - start,
+               state->marker + copy_start - state->marker_offset,
+               copy_end - copy_start);
+    }
+    return (off_t)count;
+}
+
+static int bytecode_write_number_override(FILE *output, const char *line,
+                                          size_t offset, uint64_t value)
+{
+    char encoded[18];
+    uint64_t remaining = value;
+    unsigned digits     = 1;
+    unsigned old_digits;
+    unsigned i;
+
+    if ((unsigned char)line[offset] < 0x60 ||
+        (unsigned char)line[offset] > 0x70)
+        return -1;
+    old_digits = (unsigned char)line[offset] - 0x60;
+    while (remaining >>= 4)
+        digits++;
+    encoded[0] = (char)(0x60 + digits);
+    for (i = 0; i < digits; i++)
+        encoded[i + 1] = (char)(0x60 + ((value >> (i * 4)) & 0xf));
+    if (fwrite(line, 1, offset, output) != offset ||
+        fwrite(encoded, 1, digits + 1, output) != digits + 1 ||
+        fputs(line + offset + old_digits + 1, output) == EOF)
+        return -1;
+    return 0;
+}
+
+static cl_error_t bytecode_load_mutated_interface_fixture(unsigned formatlevel,
+                                                           unsigned maxapi,
+                                                           unsigned maxglobal)
+{
+    const char *fixture = "input" PATHSEP "bytecode_sigs" PATHSEP
+                          "Clamav-Unit-Test-Signature.cbc";
+    char line[8192];
+    struct cli_bc bc;
+    FILE *input;
+    FILE *mutated;
+    int fd;
+    cl_error_t rc = CL_EOPEN;
+
+    fd = open_testfile(fixture, O_RDONLY);
+    if (fd < 0)
+        return CL_EOPEN;
+    input = fdopen(fd, "r");
+    if (input == NULL) {
+        close(fd);
+        return CL_EOPEN;
+    }
+    mutated = tmpfile();
+    if (mutated == NULL) {
+        fclose(input);
+        return CL_ETMPFILE;
+    }
+    while (fgets(line, sizeof(line), input) != NULL) {
+        size_t offset = SIZE_MAX;
+        uint64_t value = 0;
+
+        if (!strncmp(line, BC_HEADER, sizeof(BC_HEADER) - 1)) {
+            offset = sizeof(BC_HEADER) - 1;
+            value  = formatlevel;
+        } else if (line[0] == 'E' && maxapi != UINT_MAX) {
+            offset = 1;
+            value  = maxapi;
+        } else if (line[0] == 'G' && maxglobal != UINT_MAX) {
+            offset = 1;
+            value  = maxglobal;
+        }
+        if (offset == SIZE_MAX) {
+            if (fputs(line, mutated) == EOF)
+                goto done;
+        } else if (bytecode_write_number_override(mutated, line, offset, value) != 0) {
+            goto done;
+        }
+    }
+    if (ferror(input) || fflush(mutated) != 0 || fseek(mutated, 0, SEEK_SET) != 0)
+        goto done;
+    rc = cli_bytecode_load(&bc, mutated, NULL, 1, 0);
+    cli_bytecode_destroy(&bc);
+
+done:
+    fclose(mutated);
+    fclose(input);
+    return rc;
+}
+
 START_TEST(test_bytecode_map_read_failure_is_fail_visible)
 {
     struct bytecode_failing_pread_state pread_state;
@@ -907,6 +1026,129 @@ START_TEST(test_bytecode_v2_uses_64bit_file_coordinates)
 
     cli_bytecode_context_destroy(bcctx);
     cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_bytecode_file_find_crosses_read_windows)
+{
+    static const uint8_t marker[] = {0x41, 0x42, 0x43, 0x44};
+    struct bytecode_search_pread_state state;
+    struct cli_bc_ctx *bcctx;
+    struct cli_bc bc;
+    fmap_t *map;
+
+    memset(&bc, 0, sizeof(bc));
+    state.length        = 8192;
+    state.marker_offset = 4095;
+    state.marker        = marker;
+    state.marker_length = sizeof(marker);
+    map = cl_fmap_open_handle(&state, 0, state.length,
+                              bytecode_search_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    bcctx = cli_bytecode_context_alloc();
+    ck_assert_ptr_nonnull(bcctx);
+    bcctx->bc = &bc;
+    ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+    ck_assert_int_eq(cli_bcapi_file_find(bcctx, marker, sizeof(marker)), 4095);
+    cli_bytecode_context_destroy(bcctx);
+    cl_fmap_close(map);
+
+#if SIZE_MAX > UINT32_MAX
+    if (sizeof(off_t) >= sizeof(int64_t)) {
+        bc.metadata.formatlevel = BC_FORMAT_LEVEL_V2;
+        state.marker_offset     = (size_t)UINT64_C(4294967296) + 4095U;
+        state.length            = state.marker_offset + sizeof(marker);
+        map = cl_fmap_open_handle(&state, 0, state.length,
+                                  bytecode_search_pread_cb, 1);
+        ck_assert_ptr_nonnull(map);
+        bcctx = cli_bytecode_context_alloc();
+        ck_assert_ptr_nonnull(bcctx);
+        bcctx->bc = &bc;
+        ck_assert_int_eq(cli_bytecode_context_setfile(bcctx, map), CL_SUCCESS);
+        bcctx->off = (off_t)UINT64_C(4294967296);
+        ck_assert_int_eq(cli_bcapi_file_find64(bcctx, marker, sizeof(marker)),
+                         (int64_t)state.marker_offset);
+        cli_bytecode_context_destroy(bcctx);
+        cl_fmap_close(map);
+    }
+#endif
+}
+END_TEST
+
+START_TEST(test_bytecode_v2_interfaces_require_format8)
+{
+    ck_assert_uint_eq(cli_apicall_maxapi, BC_V1_API_COUNT + 9U);
+    ck_assert_str_eq(cli_apicalls[BC_V1_API_COUNT].name, "read64");
+
+    ck_assert(cli_bytecode_api_allowed_for_format(BC_FORMAT_096, BC_V1_API_COUNT));
+    ck_assert(cli_bytecode_api_allowed_for_format(BC_FORMAT_LEVEL, BC_V1_API_COUNT));
+    ck_assert(!cli_bytecode_api_allowed_for_format(BC_FORMAT_LEVEL, BC_V1_API_COUNT + 1U));
+    ck_assert(cli_bytecode_api_allowed_for_format(BC_FORMAT_LEVEL_V2, BC_V1_API_COUNT + 1U));
+    ck_assert(cli_bytecode_api_allowed_for_format(BC_FORMAT_LEVEL_V2, cli_apicall_maxapi));
+    ck_assert(!cli_bytecode_api_allowed_for_format(BC_FORMAT_LEVEL_V2, 0));
+    ck_assert(!cli_bytecode_api_allowed_for_format(BC_FORMAT_LEVEL_V2, cli_apicall_maxapi + 1U));
+
+    ck_assert(cli_bytecode_global_allowed_for_format(BC_FORMAT_LEVEL, BC_V1_MAX_GLOBAL));
+    ck_assert(!cli_bytecode_global_allowed_for_format(BC_FORMAT_LEVEL, GLOBAL_FILESIZE64));
+    ck_assert(!cli_bytecode_global_allowed_for_format(BC_FORMAT_LEVEL, GLOBAL_MATCH_OFFSETS64));
+    ck_assert(cli_bytecode_global_allowed_for_format(BC_FORMAT_LEVEL_V2, GLOBAL_FILESIZE64));
+    ck_assert(cli_bytecode_global_allowed_for_format(BC_FORMAT_LEVEL_V2, GLOBAL_MATCH_OFFSETS64));
+    ck_assert(!cli_bytecode_global_allowed_for_format(BC_FORMAT_LEVEL_V2, _LAST_GLOBAL));
+}
+END_TEST
+
+START_TEST(test_bytecode_loader_enforces_v2_format_boundary)
+{
+    ck_assert_int_eq(bytecode_load_mutated_interface_fixture(
+                         BC_FORMAT_LEVEL, BC_V1_API_COUNT + 1U, UINT_MAX),
+                     CL_EMALFDB);
+    ck_assert_int_eq(bytecode_load_mutated_interface_fixture(
+                         BC_FORMAT_LEVEL, UINT_MAX, GLOBAL_FILESIZE64),
+                     CL_EMALFDB);
+    ck_assert_int_eq(bytecode_load_mutated_interface_fixture(
+                         BC_FORMAT_LEVEL_V2, BC_V1_API_COUNT + 1U,
+                         GLOBAL_FILESIZE64),
+                     CL_SUCCESS);
+}
+END_TEST
+
+START_TEST(test_bytecode_engine_scan_options_query)
+{
+    static const uint8_t general_name[]   = "GeNeRaL AlLmAtCh";
+    static const uint8_t parse_name[]     = "parse archive";
+    static const uint8_t heuristic_name[] = "heuristic broken";
+    static const uint8_t mail_name[]      = "mail partial message";
+    static const uint8_t dev_name[]       = "dev collect sha";
+    static const uint8_t precedence_name[] = "heuristic precedence";
+    static const uint8_t disabled_name[]  = "parse pdf";
+    static const uint8_t unknown_name[]   = "parse archive trailing";
+    static const uint8_t embedded_nul[]   = "parse archive\0trailing";
+    struct cl_scan_options options;
+    struct cli_bc_ctx bcctx;
+    cli_ctx cctx;
+
+    memset(&options, 0, sizeof(options));
+    memset(&bcctx, 0, sizeof(bcctx));
+    memset(&cctx, 0, sizeof(cctx));
+    options.general   = CL_SCAN_GENERAL_ALLMATCHES;
+    options.parse     = CL_SCAN_PARSE_ARCHIVE;
+    options.heuristic = CL_SCAN_HEURISTIC_BROKEN;
+    options.mail      = CL_SCAN_MAIL_PARTIAL_MESSAGE;
+    options.dev       = CL_SCAN_DEV_COLLECT_SHA;
+    options.general  |= CL_SCAN_GENERAL_HEURISTIC_PRECEDENCE;
+    cctx.options      = &options;
+    bcctx.ctx         = &cctx;
+
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, general_name, sizeof(general_name) - 1), 1);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, parse_name, sizeof(parse_name) - 1), 1);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, heuristic_name, sizeof(heuristic_name) - 1), 1);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, mail_name, sizeof(mail_name) - 1), 1);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, dev_name, sizeof(dev_name) - 1), 1);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, precedence_name, sizeof(precedence_name) - 1), 1);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, disabled_name, sizeof(disabled_name) - 1), 0);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, unknown_name, sizeof(unknown_name) - 1), 0);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, embedded_nul, sizeof(embedded_nul) - 1), 0);
+    ck_assert_uint_eq(cli_bcapi_engine_scan_options_ex(&bcctx, NULL, 0), 0);
 }
 END_TEST
 
@@ -1414,6 +1656,10 @@ Suite *test_bytecode_suite(void)
     tcase_add_test(tc_cli_arith, test_bytecode_lsig_execution_failure_is_fail_visible);
     tcase_add_test(tc_cli_arith, test_bytecode_timeout_respects_scan_deadline);
     tcase_add_test(tc_cli_read, test_bytecode_v2_uses_64bit_file_coordinates);
+    tcase_add_test(tc_cli_read, test_bytecode_file_find_crosses_read_windows);
+    tcase_add_test(tc_cli_read, test_bytecode_v2_interfaces_require_format8);
+    tcase_add_test(tc_cli_read, test_bytecode_loader_enforces_v2_format_boundary);
+    tcase_add_test(tc_cli_read, test_bytecode_engine_scan_options_query);
     tcase_add_test(tc_cli_read, test_bytecode_pdf_object_access_does_not_retain_fmap_pages);
     tcase_add_test(tc_cli_read, test_bytecode_v2_pdf_coordinates_are_native_width);
     tcase_add_test(tc_cli_read, test_bytecode_map_read_failure_is_fail_visible);

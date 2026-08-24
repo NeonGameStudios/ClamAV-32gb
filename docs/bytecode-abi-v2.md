@@ -10,9 +10,10 @@ run in either the interpreter or the LLVM JIT.
 - Format level 8 appends new globals and API entries; it does not renumber or
   change any v1 entry.
 - v1 bytecode is admitted only when the mapped input and every logical match
-  offset fit the legacy representable range. If a v1 hook or logical bytecode
-  would run on a larger layer, the engine marks the scan incomplete instead of
-  truncating a coordinate.
+  offset fit the legacy representable range. A mapped input of exactly 4 GiB
+  is already larger than `UINT32_MAX`; if a v1 hook or logical bytecode would
+  run on that or a larger layer, the engine marks the scan incomplete instead
+  of truncating a coordinate.
 - The legacy `read` entry rejects negative offsets and ranges that cannot be
   represented by the host `size_t` before passing them to fmap; it never lets
   malformed v1 state wrap into a different input coordinate.
@@ -49,6 +50,12 @@ The following entries are appended after the v1 API table:
 | `buffer_pipe_read_avail64` | `uint64_t` | `int32_t` |
 
 The interpreter and JIT use separate typed dispatch tables for these entries.
+The loader rejects a format-6/7 module that declares or references any of the
+appended APIs or globals; version selection cannot be bypassed by manually
+encoding a newer interface ID in a legacy-format module.
+The loader regression mutates a known compiled format-7 fixture in memory: the
+legacy form must reject v2 API/global declarations, while the same declarations
+are accepted after changing the fixture to format 8.
 The v2 PDF bridge also exposes native-width object size and offset accessors.
 The v1 PDF size and offset APIs remain unchanged; on a large PDF layer the v1
 offset accessor returns its existing invalid sentinel instead of silently
@@ -86,3 +93,6 @@ the fixture harness cannot mistake a failed execution for a passing
 qualification.
 The in-tree unit test verifies the host API boundary with a synthetic
 4-GiB-plus map; it is not a substitute for that compiler-produced fixture.
+It also verifies exact, case-insensitive scan-option queries, including the
+documented `heuristic precedence` key, and rejects trailing or embedded-NUL
+aliases instead of matching a partial option name.

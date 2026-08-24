@@ -106,7 +106,6 @@ static const uint64_t nooffsets64[64] = {
     CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
     CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
     CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
-    CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64,
     CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64, CLI_OFF_NONE64};
 
 static const uint16_t nokind;
@@ -117,6 +116,26 @@ static const struct cli_pe_hook_data nopedata;
 static inline bool bytecode_uses_v2(const struct cli_bc *bc)
 {
     return bc && bc->metadata.formatlevel == BC_FORMAT_LEVEL_V2;
+}
+
+int cli_bytecode_api_allowed_for_format(unsigned formatlevel, unsigned api_id)
+{
+    if (api_id == 0 || api_id > cli_apicall_maxapi)
+        return 0;
+    if (formatlevel == BC_FORMAT_LEVEL_V2)
+        return 1;
+    return (formatlevel == BC_FORMAT_096 || formatlevel == BC_FORMAT_LEVEL) &&
+           api_id <= BC_V1_API_COUNT;
+}
+
+int cli_bytecode_global_allowed_for_format(unsigned formatlevel, unsigned global_id)
+{
+    if (global_id < _FIRST_GLOBAL || global_id >= _LAST_GLOBAL)
+        return 0;
+    if (formatlevel == BC_FORMAT_LEVEL_V2)
+        return 1;
+    return (formatlevel == BC_FORMAT_096 || formatlevel == BC_FORMAT_LEVEL) &&
+           global_id <= BC_V1_MAX_GLOBAL;
 }
 
 static bool bytecode_offsets_to_legacy(const uint64_t *offsets, uint32_t *legacy_offsets)
@@ -999,6 +1018,10 @@ static cl_error_t parseApis(struct cli_bc *bc, unsigned char *buffer)
         cli_dbgmsg("bytecode using API %u, but highest API known to libclamav is %u, skipping\n", maxapi, cli_apicall_maxapi);
         return CL_BREAK;
     }
+    if (maxapi != 0 && !cli_bytecode_api_allowed_for_format(bc->metadata.formatlevel, maxapi)) {
+        cli_errmsg("bytecode format %u cannot declare API %u\n", bc->metadata.formatlevel, maxapi);
+        return CL_EMALFDB;
+    }
     calls = readNumber(buffer, &offset, len, &ok);
     if (!ok)
         return CL_EMALFDB;
@@ -1022,7 +1045,8 @@ static cl_error_t parseApis(struct cli_bc *bc, unsigned char *buffer)
         char *name   = readString(buffer, &offset, len, &ok);
 
         /* validate APIcall prototype */
-        if (id > maxapi) {
+        if (id == 0 || id > maxapi ||
+            !cli_bytecode_api_allowed_for_format(bc->metadata.formatlevel, id)) {
             cli_errmsg("bytecode: API id %u out of range, max %u\n", id, maxapi);
             ok = false;
         }
@@ -1125,6 +1149,11 @@ static cl_error_t parseGlobals(struct cli_bc *bc, unsigned char *buffer)
         cli_dbgmsg("bytecode using global %u, but highest global known to libclamav is %u, skipping\n", maxglobal, cli_apicall_maxglobal);
         return CL_BREAK;
     }
+    if (maxglobal >= _FIRST_GLOBAL &&
+        !cli_bytecode_global_allowed_for_format(bc->metadata.formatlevel, maxglobal)) {
+        cli_errmsg("bytecode format %u cannot declare global %u\n", bc->metadata.formatlevel, maxglobal);
+        return CL_EMALFDB;
+    }
     numglobals  = readNumber(buffer, &offset, len, &ok);
     bc->globals = cli_max_calloc(numglobals, sizeof(*bc->globals));
     if (!bc->globals) {
@@ -1149,6 +1178,16 @@ static cl_error_t parseGlobals(struct cli_bc *bc, unsigned char *buffer)
         if (!bc->globals[i])
             return CL_EMEM;
         readConstant(bc, i, comp, buffer, &offset, len, &ok);
+        if (ok && bc->globaltys[i] >= BC_START_TID &&
+            bc->types[bc->globaltys[i] - 65].kind == DPointerType &&
+            bc->globals[i][1] >= _FIRST_GLOBAL &&
+            (bc->globals[i][1] > maxglobal ||
+             !cli_bytecode_global_allowed_for_format(
+                 bc->metadata.formatlevel, (unsigned)bc->globals[i][1]))) {
+            cli_errmsg("bytecode format %u cannot reference global " STDu64 "\n",
+                       bc->metadata.formatlevel, bc->globals[i][1]);
+            return CL_EMALFDB;
+        }
     }
     if (!ok)
         return CL_EMALFDB;
@@ -1184,10 +1223,12 @@ static cl_error_t parseMD(struct cli_bc *bc, unsigned char *buffer)
 
     b = bc->dbgnode_cnt;
     new_count = b + numMD;
-    if ((size_t)new_count > SIZE_MAX / sizeof(*new_nodes)) {
+#if SIZE_MAX <= UINT_MAX
+    if (new_count > SIZE_MAX / sizeof(*new_nodes)) {
         cli_errmsg("MD node table size overflows native allocation size\n");
         return CL_EMALFDB;
     }
+#endif
     new_nodes = cli_max_realloc(bc->dbgnodes, (size_t)new_count * sizeof(*new_nodes));
     if (!new_nodes)
         return CL_EMEM;

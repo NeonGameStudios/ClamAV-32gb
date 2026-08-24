@@ -38,6 +38,9 @@ struct bytecode_metadata {
 /* Format 8 keeps the v1 API table stable and adds explicit 64-bit file
  * coordinates/results.  v1 bytecode remains valid on representable maps. */
 #define BC_FORMAT_LEVEL_V2 8
+/* One-based API IDs 1 through 107 and globals through MATCH_OFFSETS are the
+ * frozen format-6/7 interface. Format 8 appends, but never renumbers, entries. */
+#define BC_V1_API_COUNT 107U
 #define BC_HEADER "ClamBC"
 
 enum bc_opcode {
@@ -134,6 +137,8 @@ enum bc_global {
     GLOBAL_MATCH_OFFSETS64,
     _LAST_GLOBAL
 };
+
+#define BC_V1_MAX_GLOBAL GLOBAL_MATCH_OFFSETS
 
 #define BC_START_TID 69
 #endif

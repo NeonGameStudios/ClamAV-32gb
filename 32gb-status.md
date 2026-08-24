@@ -17,6 +17,13 @@ active scan and the first-release contract requires later requests to queue.
 Linux memory admission now resolves the daemon's actual v1/v2 cgroup mount and
 membership and uses the smallest finite headroom across visible ancestors;
 synthetic hierarchy and real-container probes pass locally.
+Bytecode search now overlaps adjacent 4 KiB windows and finds a split marker
+both below and above 4 GiB. Format-6/7 modules are rejected if they declare or
+reference format-8-only interfaces, and `clambc` initializes native matcher
+offsets. Exact, allocation-free scan-option queries now reject partial and
+embedded-NUL names. Focused GCC and ASan/UBSan checks pass, and the loader
+format-isolation regression compiles; independently compiled format-8
+interpreter/JIT and Sonic1 production-bytecode evidence remain open.
 
 **Status date:** 2026-08-14
 

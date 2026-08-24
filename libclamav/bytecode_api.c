@@ -606,11 +606,20 @@ static int64_t cli_bcapi_file_find_limit_common(struct cli_bc_ctx *ctx, const ui
         if (n < len)
             return -1;
         p = cli_memmem(buf, n, data, len);
-        if (p)
-            return (int64_t)(off + (uint64_t)(p - buf));
-        if ((uint64_t)n > limit - off)
+        if (p) {
+            uint64_t result = off + (uint64_t)(p - buf);
+
+            if (result > (uint64_t)INT64_MAX) {
+                cli_bcapi_mark_coordinate_error(ctx, "Bytecode v2 file-find result exceeds the signed 64-bit ABI");
+                return -1;
+            }
+            return (int64_t)result;
+        }
+        if ((uint64_t)n > limit - off || n <= (size_t)(len - 1))
             return -1;
-        off += n;
+        /* Keep the final len - 1 bytes in the next search window. Without
+         * this overlap, a signature split across two fmap reads is missed. */
+        off += n - (size_t)(len - 1);
     }
 }
 
@@ -752,7 +761,7 @@ int32_t cli_bcapi_fill_buffer(struct cli_bc_ctx *ctx, uint8_t *buf,
 int32_t cli_bcapi_extract_new(struct cli_bc_ctx *ctx, int32_t id)
 {
     cli_ctx *cctx;
-    int res = -1;
+    cl_error_t res = (cl_error_t)-1;
     bool discard_output;
 
     cctx = (cli_ctx *)ctx->ctx;
@@ -2009,11 +2018,28 @@ uint32_t cli_bcapi_engine_scan_options(struct cli_bc_ctx *ctx)
     return options;
 }
 
+static bool cli_bcapi_option_name_equal(const uint8_t *option_name, uint32_t name_len,
+                                        const char *expected)
+{
+    size_t i;
+    size_t expected_len = strlen(expected);
+
+    if ((size_t)name_len != expected_len)
+        return false;
+    for (i = 0; i < expected_len; i++) {
+        uint8_t actual = option_name[i];
+
+        if (actual >= 'A' && actual <= 'Z')
+            actual = (uint8_t)(actual + ('a' - 'A'));
+        if (actual != (uint8_t)expected[i])
+            return false;
+    }
+    return true;
+}
+
 uint32_t cli_bcapi_engine_scan_options_ex(struct cli_bc_ctx *ctx, const uint8_t *option_name, uint32_t name_len)
 {
-    uint32_t i          = 0;
-    uint32_t result     = 0;
-    char *option_name_l = NULL;
+    uint32_t result = 0;
 
     if (ctx == NULL || option_name == NULL || name_len == 0) {
         cli_warnmsg("engine_scan_options_ex: Invalid arguments!\n");
@@ -2026,99 +2052,66 @@ uint32_t cli_bcapi_engine_scan_options_ex(struct cli_bc_ctx *ctx, const uint8_t 
         goto done;
     }
 
-    if (name_len == SIZE_MAX)
-        goto done;
-
-    option_name_l = cli_max_malloc(name_len + 1);
-    if (NULL == option_name_l) {
-        cli_warnmsg("Failed to allocate memory for option name.\n");
-        goto done;
-    }
-
-    for (i = 0; i < name_len; i++) {
-        option_name_l[0] = tolower(option_name[i]);
-    }
-    option_name_l[name_len] = '\0';
-
-    if (strncmp(option_name_l, "general", MIN(name_len, sizeof("general")))) {
-        if (cli_memstr(option_name_l, name_len, "allmatch", sizeof("allmatch"))) {
-            result = (cctx->options->general & CL_SCAN_GENERAL_ALLMATCHES) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "collect metadata", sizeof("collect metadata"))) {
-            result = (cctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "heuristics", sizeof("heuristics"))) {
-            result = (cctx->options->general & CL_SCAN_GENERAL_HEURISTICS) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "precedence", sizeof("precedence"))) {
-            result = (cctx->options->general & CL_SCAN_GENERAL_HEURISTIC_PRECEDENCE) ? 1 : 0;
-        }
-        /* else unknown option */
-    } else if (strncmp(option_name_l, "parse", MIN(name_len, sizeof("parse")))) {
-        if (cli_memstr(option_name_l, name_len, "archive", sizeof("archive"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_ARCHIVE) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "elf", sizeof("elf"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_ELF) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "pdf", sizeof("pdf"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_PDF) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "swf", sizeof("swf"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_SWF) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "hwp3", sizeof("hwp3"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_HWP3) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "xmldocs", sizeof("xmldocs"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_XMLDOCS) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "mail", sizeof("mail"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_MAIL) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "ole2", sizeof("ole2"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_OLE2) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "html", sizeof("html"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_HTML) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "pe", sizeof("pe"))) {
-            result = (cctx->options->parse & CL_SCAN_PARSE_PE) ? 1 : 0;
-        }
-        /* else unknown option */
-    } else if (strncmp(option_name_l, "heuristic", MIN(name_len, sizeof("heuristic")))) {
-        if (cli_memstr(option_name_l, name_len, "broken", sizeof("broken"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_BROKEN) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "exceeds max", sizeof("exceeds max"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "phishing ssl mismatch", sizeof("phishing ssl mismatch"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_PHISHING_SSL_MISMATCH) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "phishing cloak", sizeof("phishing cloak"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_PHISHING_CLOAK) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "macros", sizeof("macros"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_MACROS) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "encrypted archive", sizeof("encrypted archive"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_ENCRYPTED_ARCHIVE) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "encrypted doc", sizeof("encrypted doc"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_ENCRYPTED_DOC) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "partition intersection", sizeof("partition intersection"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_PARTITION_INTXN) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "structured", sizeof("structured"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "structured ssn normal", sizeof("structured ssn normal"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED_SSN_NORMAL) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "structured ssn stripped", sizeof("structured ssn stripped"))) {
-            result = (cctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED_SSN_STRIPPED) ? 1 : 0;
-        }
-        /* else unknown option */
-    } else if (strncmp(option_name_l, "mail", MIN(name_len, sizeof("mail")))) {
-        if (cli_memstr(option_name_l, name_len, "partial message", sizeof("partial message"))) {
-            result = (cctx->options->mail & CL_SCAN_MAIL_PARTIAL_MESSAGE) ? 1 : 0;
-        }
-        /* else unknown option */
-    } else if (strncmp(option_name_l, "dev", MIN(name_len, sizeof("dev")))) {
-        if (cli_memstr(option_name_l, name_len, "collect sha", sizeof("collect sha"))) {
-            result = (cctx->options->dev & CL_SCAN_DEV_COLLECT_SHA) ? 1 : 0;
-        } else if (cli_memstr(option_name_l, name_len, "collect performance info", sizeof("collect performance info"))) {
-            result = (cctx->options->dev & CL_SCAN_DEV_COLLECT_PERFORMANCE_INFO) ? 1 : 0;
-        }
-        /* else unknown option */
-    }
-    /* else unknown option */
+#define OPTION_IS(name) cli_bcapi_option_name_equal(option_name, name_len, (name))
+    if (OPTION_IS("general allmatch"))
+        result = !!(cctx->options->general & CL_SCAN_GENERAL_ALLMATCHES);
+    else if (OPTION_IS("general collect metadata"))
+        result = !!(cctx->options->general & CL_SCAN_GENERAL_COLLECT_METADATA);
+    else if (OPTION_IS("general heuristics"))
+        result = !!(cctx->options->general & CL_SCAN_GENERAL_HEURISTICS);
+    else if (OPTION_IS("heuristic precedence"))
+        result = !!(cctx->options->general & CL_SCAN_GENERAL_HEURISTIC_PRECEDENCE);
+    else if (OPTION_IS("parse archive"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_ARCHIVE);
+    else if (OPTION_IS("parse elf"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_ELF);
+    else if (OPTION_IS("parse pdf"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_PDF);
+    else if (OPTION_IS("parse swf"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_SWF);
+    else if (OPTION_IS("parse hwp3"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_HWP3);
+    else if (OPTION_IS("parse xmldocs"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_XMLDOCS);
+    else if (OPTION_IS("parse mail"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_MAIL);
+    else if (OPTION_IS("parse ole2"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_OLE2);
+    else if (OPTION_IS("parse html"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_HTML);
+    else if (OPTION_IS("parse pe"))
+        result = !!(cctx->options->parse & CL_SCAN_PARSE_PE);
+    else if (OPTION_IS("heuristic broken"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_BROKEN);
+    else if (OPTION_IS("heuristic exceeds max"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_EXCEEDS_MAX);
+    else if (OPTION_IS("heuristic phishing ssl mismatch"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_PHISHING_SSL_MISMATCH);
+    else if (OPTION_IS("heuristic phishing cloak"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_PHISHING_CLOAK);
+    else if (OPTION_IS("heuristic macros"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_MACROS);
+    else if (OPTION_IS("heuristic encrypted archive"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_ENCRYPTED_ARCHIVE);
+    else if (OPTION_IS("heuristic encrypted doc"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_ENCRYPTED_DOC);
+    else if (OPTION_IS("heuristic partition intersection"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_PARTITION_INTXN);
+    else if (OPTION_IS("heuristic structured"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED);
+    else if (OPTION_IS("heuristic structured ssn normal"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED_SSN_NORMAL);
+    else if (OPTION_IS("heuristic structured ssn stripped"))
+        result = !!(cctx->options->heuristic & CL_SCAN_HEURISTIC_STRUCTURED_SSN_STRIPPED);
+    else if (OPTION_IS("mail partial message"))
+        result = !!(cctx->options->mail & CL_SCAN_MAIL_PARTIAL_MESSAGE);
+    else if (OPTION_IS("dev collect sha"))
+        result = !!(cctx->options->dev & CL_SCAN_DEV_COLLECT_SHA);
+    else if (OPTION_IS("dev collect performance info"))
+        result = !!(cctx->options->dev & CL_SCAN_DEV_COLLECT_PERFORMANCE_INFO);
+#undef OPTION_IS
 
 done:
-
-    if (NULL != option_name_l)
-        free(option_name_l);
-
     return result;
 }
 
