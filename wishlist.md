@@ -2485,9 +2485,15 @@ and Sonic1 qualification as release gates.
   position, legacy-wrapper compatibility, and the explicit whole-module
   callback boundary are implemented.
 - Focused GCC syntax and behavior oracles pass, including cross-window
-  normalizer parity; the 181-entry capability/source gate passes.
-- Convert the compact VBA project-directory metadata stream from its remaining
-  contiguous inflater, add production Office/VBA and malformed-codepage corpus,
-  sanitizer and allocation/read/write/rollback injection, materialized
-  multi-gigabyte module evidence, certified Linux x86-64 execution, and Sonic1
-  qualification.
+  normalizer parity.
+- The aggregate project-directory metadata stream is now a quota-accounted,
+  read-only file-backed mapping on certified 64-bit mmap builds, with consumed
+  page release and fixed-window metadata conversion; only the Unicode stream
+  name retains the existing 128-byte OLE property-name contract. Non-mmap builds
+  retain an explicit unsupported compatibility path. Production-linked normal,
+  streamed-metadata, quota-failure, and scan-limit-failure oracles pass, and the
+  182-entry capability/source gate covers the design.
+- Add production Office/VBA and malformed-codepage corpus, sanitizer and
+  allocation/read/write/map/unmap/rollback injection, materialized
+  multi-gigabyte directory/module evidence, certified Linux x86-64 execution,
+  and Sonic1 qualification.

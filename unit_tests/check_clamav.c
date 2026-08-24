@@ -23848,6 +23848,179 @@ START_TEST(test_vba_inflate_stream_propagates_output_failure)
 }
 END_TEST
 
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
+START_TEST(test_vba_project_directory_uses_file_backed_input)
+{
+    static const unsigned char compressed_directory[] = {
+        0x01, 0x00, 0x00, 0x00,
+        0x04, 0x00, 0x01, 0x00, 0x00, 0x00, 'A', 0x10,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    static const char expected_project_name[] = "REM PROJECTNAME: A\n";
+    static const unsigned char map_data[] = {0};
+    const char *hash = "vba-file-backed-dir";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char input_path[PATH_MAX];
+    char *output_path = NULL;
+    uint64_t output_reserved = 0;
+    int output_fd = -1;
+    int has_macros = 0;
+    int input_fd;
+    cl_error_t status;
+    char project_name[sizeof(expected_project_name) - 1];
+
+    snprintf(input_path, sizeof(input_path), "%s/%s_1", tmpdir, hash);
+    input_fd = open(input_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(input_fd, -1);
+    ck_assert_uint_eq(cli_writen(input_fd, compressed_directory, sizeof(compressed_directory)),
+                      sizeof(compressed_directory));
+    close(input_fd);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    engine.maxfilesize      = 1024U * 1024U;
+    engine.maxtemporarysize = 1024U * 1024U;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    status = cli_vba_readdir_new(&ctx, tmpdir, NULL, hash, 1,
+                                 &output_fd, &has_macros, &output_path,
+                                 &output_reserved);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_int_eq(has_macros, 1);
+    ck_assert_int_ne(output_fd, -1);
+    ck_assert_ptr_nonnull(output_path);
+    ck_assert_uint_eq(ctx.temporary_bytes, output_reserved);
+    ck_assert_msg(output_reserved > 0, "VBA project output was not quota accounted");
+    ck_assert(!ctx.scan_incomplete);
+    ck_assert_int_eq(lseek(output_fd, 58, SEEK_SET), 58);
+    ck_assert_uint_eq(cli_readn(output_fd, project_name, sizeof(project_name)), sizeof(project_name));
+    ck_assert_mem_eq(project_name, expected_project_name, sizeof(project_name));
+
+    close(output_fd);
+    unlink(output_path);
+    free(output_path);
+    cli_scan_release_temporary(&ctx, output_reserved);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    cl_fmap_close(map);
+    unlink(input_path);
+}
+END_TEST
+
+START_TEST(test_vba_project_directory_backing_quota_failure_is_fail_visible)
+{
+    static const unsigned char compressed_directory[] = {
+        0x01, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00};
+    static const unsigned char map_data[] = {0};
+    const char *hash = "vba-file-backed-dir-quota";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char input_path[PATH_MAX];
+    char *output_path = NULL;
+    uint64_t output_reserved = 0;
+    int output_fd = -1;
+    int has_macros = 0;
+    int input_fd;
+    cl_error_t status;
+
+    snprintf(input_path, sizeof(input_path), "%s/%s_1", tmpdir, hash);
+    input_fd = open(input_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(input_fd, -1);
+    ck_assert_uint_eq(cli_writen(input_fd, compressed_directory, sizeof(compressed_directory)),
+                      sizeof(compressed_directory));
+    close(input_fd);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    engine.maxfilesize      = 1024U * 1024U;
+    engine.maxtemporarysize = 5;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    status = cli_vba_readdir_new(&ctx, tmpdir, NULL, hash, 1, &output_fd,
+                                 &has_macros, &output_path, &output_reserved);
+    ck_assert_int_eq(status, CL_ERESOURCE);
+    ck_assert_int_eq(output_fd, -1);
+    ck_assert_ptr_null(output_path);
+    ck_assert_uint_eq(output_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    unlink(input_path);
+}
+END_TEST
+
+START_TEST(test_vba_project_directory_scan_limit_failure_is_fail_visible)
+{
+    static const unsigned char compressed_directory[] = {
+        0x01, 0x00, 0x00, 0x00,
+        0x10, 0x00, 0x00, 0x00, 0x00, 0x00};
+    static const unsigned char map_data[] = {0};
+    const char *hash = "vba-file-backed-dir-scan-limit";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    char input_path[PATH_MAX];
+    char *output_path = NULL;
+    uint64_t output_reserved = 0;
+    int output_fd = -1;
+    int has_macros = 0;
+    int input_fd;
+    cl_error_t status;
+
+    snprintf(input_path, sizeof(input_path), "%s/%s_1", tmpdir, hash);
+    input_fd = open(input_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(input_fd, -1);
+    ck_assert_uint_eq(cli_writen(input_fd, compressed_directory, sizeof(compressed_directory)),
+                      sizeof(compressed_directory));
+    close(input_fd);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(map_data, sizeof(map_data));
+    ck_assert_ptr_nonnull(map);
+    engine.maxfilesize      = 5;
+    engine.maxtemporarysize = 1024U * 1024U;
+    ctx.engine              = &engine;
+    ctx.options             = &options;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    status = cli_vba_readdir_new(&ctx, tmpdir, NULL, hash, 1, &output_fd,
+                                 &has_macros, &output_path, &output_reserved);
+    ck_assert_int_eq(status, CL_EMAXSIZE);
+    ck_assert_int_eq(output_fd, -1);
+    ck_assert_ptr_null(output_path);
+    ck_assert_uint_eq(output_reserved, 0);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    unlink(input_path);
+}
+END_TEST
+#endif
+
 START_TEST(test_vba_inflate_seek_failure_is_fail_visible)
 {
     int pipefd[2];
@@ -31946,6 +32119,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_codepage_stream_preserves_iconv_state);
     tcase_add_test(tc_cl, test_vba_inflate_stream_matches_legacy_output);
     tcase_add_test(tc_cl, test_vba_inflate_stream_propagates_output_failure);
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_cl, test_vba_project_directory_uses_file_backed_input);
+    tcase_add_test(tc_cl, test_vba_project_directory_backing_quota_failure_is_fail_visible);
+    tcase_add_test(tc_cl, test_vba_project_directory_scan_limit_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
 #endif

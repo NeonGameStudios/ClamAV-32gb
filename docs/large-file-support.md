@@ -2575,13 +2575,14 @@ quota-accounted project spool, and any decoder, conversion, deadline, quota, or
 write failure rolls the partial module back before an explicit error marker is
 written. The decompressed position and produced-byte accounting are 64-bit.
 
-Two explicit contiguous boundaries remain. The compact VBA project-directory
-metadata stream still uses the legacy inflater and is incomplete above the
-1 GiB individual-allocation ceiling. The public `cl_engine_set_clcb_vba`
-callback also requires one contiguous normalized module; modules above 1 GiB
-continue through bounded scanner inspection, but callback delivery is marked
-incomplete. Production Office/VBA corpus, sanitizer, materialized large-module,
-Linux x86-64, and Sonic1 qualification remain release gates.
+On certified 64-bit mmap builds, the compact project-directory metadata stream
+uses the file-backed path described below. Non-mmap builds retain the legacy
+contiguous inflater as an explicit unsupported release-profile boundary. The
+public `cl_engine_set_clcb_vba` callback still requires one contiguous
+normalized module; modules above 1 GiB continue through bounded scanner
+inspection, but callback delivery is marked incomplete. Production Office/VBA
+corpus, sanitizer, materialized large-module, Linux x86-64, and Sonic1
+qualification remain release gates.
 
 ## Mail text-list accounting — 2026-08-19
 
@@ -6983,3 +6984,35 @@ container is unavailable because the canonical checkout requires Rust 1.97
 while the existing image contains Rust 1.65; no software was installed.
 Production BCJ2 archives, sanitizer execution, Linux x86-64, materialized
 multi-gigabyte solid folders, and Sonic1 evidence remain release gates.
+
+## File-backed VBA project-directory metadata — 2026-08-24
+
+Certified 64-bit mmap builds no longer inflate the aggregate VBA `dir` stream
+into one heap allocation. Fixed-window decompression writes to an exact
+quota-accounted temporary file while checking native-width scan limits and the
+shared deadline. The scanner verifies that the backing object is a regular file
+whose actual size equals the produced count, maps it privately read-only, gives
+the kernel a sequential-access hint, and advises consumed page ranges away
+behind a 1 MiB parsing window. The backing reservation remains charged until
+the mapping is released, so the mapped directory and generated project output
+are accounted concurrently.
+
+Project and module text metadata converts through fixed 8 KiB input windows
+with persistent codepage state, so variable-length names and docstrings do not
+introduce an independent allocation cap. The Unicode module stream name alone
+retains the existing 128-byte OLE property-name contract needed to resolve its
+extracted stream. Overflow, limit, quota, decompression, conversion,
+backing-size, map/unmap, read/write, close/unlink, and deadline failures remain
+incomplete and non-cacheable. Builds without mmap support retain the legacy
+contiguous directory inflater as an explicit unsupported compatibility path;
+the public whole-module VBA callback retains its separate 1 GiB ABI boundary.
+
+The current production translation unit passes isolated GCC syntax checks.
+Production-linked focused oracles pass successful parsing with exact backing
+reservation release and streamed project-name output. One-byte-short temporary
+quota and decompressed scan-limit cases both reject with no output or residual
+temporary charge. Existing bounded stream/codepage and incremental normalizer
+oracles remain green. The capability manifest contains 182 entries.
+Production Office/VBA corpus, sanitizer and injected backing-I/O failures,
+materialized multi-gigabyte directories/modules, certified Linux x86-64, and
+Sonic1 qualification remain release gates.

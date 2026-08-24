@@ -33,6 +33,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <ctype.h>
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+#include <sys/mman.h>
+#endif
 
 #include <zlib.h>
 #include <json.h>
@@ -51,8 +54,17 @@
 
 #define PPT_LZW_BUFFSIZE 8192
 #define VBA_COMPRESSION_WINDOW 4096
+#define VBA_METADATA_INPUT_WINDOW 8192
+#define VBA_DIRECTORY_RELEASE_WINDOW (1024U * 1024U)
+#define VBA_OLE_STREAM_NAME_LIMIT 126U
 #define MIDDLE_SIZE 20
 #define MAX_VBA_COUNT 1000 /* If there's more than 1000 macros something's up! */
+
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
+#define VBA_HAVE_FILE_BACKED_DIRECTORY 1
+#else
+#define VBA_HAVE_FILE_BACKED_DIRECTORY 0
+#endif
 
 #ifndef HAVE_ATTRIB_PACKED
 #define __attribute__(x)
@@ -388,6 +400,26 @@ struct vba_module_pipeline {
     uint64_t inflated_size;
 };
 
+#if VBA_HAVE_FILE_BACKED_DIRECTORY
+struct vba_directory_spool {
+    struct vba_project_output output;
+    uint64_t produced;
+};
+#endif
+
+struct vba_metadata_digest {
+    uint64_t hash;
+    uint64_t size;
+};
+
+struct vba_metadata_writer {
+    struct vba_project_output *output;
+    struct vba_metadata_digest digest;
+};
+
+static void vba_directory_release_consumed(unsigned char *data, size_t data_len,
+                                           size_t consumed, size_t *released);
+
 static cl_error_t vba_project_output_write(struct vba_project_output *output,
                                            const unsigned char *data, size_t data_size)
 {
@@ -411,6 +443,132 @@ static cl_error_t vba_project_output_write(struct vba_project_output *output,
     }
 
     return CL_SUCCESS;
+}
+
+static cl_error_t vba_metadata_output_write(const unsigned char *data, size_t data_size, void *context)
+{
+    struct vba_metadata_writer *writer = context;
+    cl_error_t status;
+    size_t i;
+
+    if ((uint64_t)data_size > UINT64_MAX - writer->digest.size)
+        return CL_EFORMAT;
+
+    status = vba_project_output_write(writer->output, data, data_size);
+    if (status != CL_SUCCESS)
+        return status;
+
+    for (i = 0; i < data_size; i++) {
+        writer->digest.hash ^= data[i];
+        writer->digest.hash *= UINT64_C(1099511628211);
+    }
+    writer->digest.size += (uint64_t)data_size;
+    return CL_SUCCESS;
+}
+
+static cl_error_t vba_project_write_converted(struct vba_project_output *output,
+                                              const unsigned char *data, size_t data_size,
+                                              uint16_t codepage, struct vba_metadata_digest *digest,
+                                              unsigned char *directory_data, size_t directory_size,
+                                              size_t directory_offset, size_t *directory_released)
+{
+    struct vba_metadata_writer writer;
+    cli_codepage_utf8_stream_t *converter = NULL;
+    uint64_t converted_size = 0;
+    size_t offset = 0;
+    cl_error_t status;
+
+    memset(&writer, 0, sizeof(writer));
+    writer.output      = output;
+    writer.digest.hash = UINT64_C(14695981039346656037);
+    if (data_size == 0) {
+        if (digest != NULL)
+            *digest = writer.digest;
+        return CL_SUCCESS;
+    }
+
+    status = cli_codepage_utf8_stream_open(codepage, vba_metadata_output_write,
+                                           &writer, &converter);
+    while (status == CL_SUCCESS && offset < data_size) {
+        size_t take = MIN((size_t)VBA_METADATA_INPUT_WINDOW, data_size - offset);
+
+        status = cli_codepage_utf8_stream_process(converter, data + offset, take);
+        offset += take;
+        vba_directory_release_consumed(directory_data, directory_size,
+                                       directory_offset + offset, directory_released);
+    }
+    if (status == CL_SUCCESS)
+        status = cli_codepage_utf8_stream_finish(converter, &converted_size);
+    cli_codepage_utf8_stream_free(converter);
+
+    if (status == CL_SUCCESS && converted_size != writer.digest.size)
+        status = CL_EFORMAT;
+    if (status == CL_SUCCESS && digest != NULL)
+        *digest = writer.digest;
+    return status;
+}
+
+static bool vba_metadata_digest_equal(const struct vba_metadata_digest *left,
+                                      const struct vba_metadata_digest *right)
+{
+    return left->size == right->size && left->hash == right->hash;
+}
+
+#if VBA_HAVE_FILE_BACKED_DIRECTORY
+static cl_error_t vba_directory_spool_write(const unsigned char *data, size_t data_size, void *context)
+{
+    struct vba_directory_spool *spool = context;
+    uint64_t projected;
+    cl_error_t status;
+
+    if ((uint64_t)data_size > UINT64_MAX - spool->produced) {
+        cli_mark_scan_incomplete(spool->output.ctx, "VBA project directory decompressed-size accounting overflowed");
+        return CL_EFORMAT;
+    }
+    projected = spool->produced + (uint64_t)data_size;
+    status    = cli_checklimits("VBA project directory", spool->output.ctx,
+                                projected, 0, 0);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(spool->output.ctx, "VBA project directory exceeds configured scan limits");
+        return status;
+    }
+
+    status = vba_project_output_write(&spool->output, data, data_size);
+    if (status == CL_SUCCESS)
+        spool->produced = projected;
+    return status;
+}
+#endif
+
+static void vba_directory_release_consumed(unsigned char *data, size_t data_len,
+                                           size_t consumed, size_t *released)
+{
+#if VBA_HAVE_FILE_BACKED_DIRECTORY && defined(MADV_DONTNEED)
+    long system_page_size;
+    size_t page_size;
+    size_t release_end;
+
+    if (data == NULL || released == NULL || consumed <= VBA_DIRECTORY_RELEASE_WINDOW ||
+        *released >= data_len)
+        return;
+
+    system_page_size = sysconf(_SC_PAGESIZE);
+    if (system_page_size <= 0)
+        return;
+    page_size  = (size_t)system_page_size;
+    release_end = consumed - VBA_DIRECTORY_RELEASE_WINDOW;
+    release_end = (release_end / page_size) * page_size;
+    release_end = MIN(release_end, data_len);
+    if (release_end > *released) {
+        (void)madvise(data + *released, release_end - *released, MADV_DONTNEED);
+        *released = release_end;
+    }
+#else
+    UNUSEDPARAM(data);
+    UNUSEDPARAM(data_len);
+    UNUSEDPARAM(consumed);
+    UNUSEDPARAM(released);
+#endif
 }
 
 static cl_error_t vba_project_output_rollback(struct vba_project_output *output, off_t output_offset,
@@ -689,17 +847,20 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
     cl_error_t deferred_failure = CL_SUCCESS;
     char fullname[1024];
     int fd              = -1;
+    int datafd          = -1;
     unsigned char *data = NULL;
+    char *datafile      = NULL;
+    bool data_is_mapped = false;
     size_t data_len;
     size_t data_offset;
+    size_t data_released = 0;
     const char *stream_name = NULL;
     uint16_t codepage       = CODEPAGE_ISO8859_1;
     unsigned i;
-    char *mbcs_name = NULL, *utf16_name = NULL;
-    size_t mbcs_name_size = 0, utf16_name_size = 0;
     unsigned char *module_data = NULL, *module_data_utf8 = NULL;
     size_t module_data_size = 0, module_data_utf8_size = 0;
     uint64_t temporary_reserved = 0;
+    uint64_t directory_reserved = 0;
     struct vba_project_output project_output;
 
     if (dir == NULL || hash == NULL || tempfd == NULL || has_macros == NULL || tempfile == NULL || temporary_reserved_out == NULL) {
@@ -719,12 +880,79 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
         goto done;
     }
 
+#if VBA_HAVE_FILE_BACKED_DIRECTORY
+    {
+        struct vba_directory_spool directory_spool;
+        struct stat data_stat;
+        uint64_t data_len_u64 = 0;
+        void *mapping;
+
+        ret = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "vba_directory", &datafile, &datafd);
+        if (ret != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing file could not be created");
+            goto done;
+        }
+
+        memset(&directory_spool, 0, sizeof(directory_spool));
+        directory_spool.output.ctx                = ctx;
+        directory_spool.output.fd                 = datafd;
+        directory_spool.output.temporary_reserved = &directory_reserved;
+        ret = cli_vba_inflate_stream(fd, 0, vba_directory_spool_write,
+                                     &directory_spool, &data_len_u64);
+        if (ret != CL_SUCCESS || data_len_u64 != directory_spool.produced) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory could not be decompressed completely");
+            if (ret == CL_SUCCESS)
+                ret = CL_EFORMAT;
+            goto done;
+        }
+        if (data_len_u64 == 0 || data_len_u64 > SIZE_MAX) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory has an unsupported decompressed size");
+            ret = CL_EMAXSIZE;
+            goto done;
+        }
+        if (FSTAT(datafd, &data_stat) != 0 || data_stat.st_size < 0 ||
+            !S_ISREG(data_stat.st_mode) ||
+            (uint64_t)data_stat.st_size != data_len_u64) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing size could not be verified");
+            ret = CL_EWRITE;
+            goto done;
+        }
+
+        data_len = (size_t)data_len_u64;
+        mapping  = mmap(NULL, data_len, PROT_READ, MAP_PRIVATE, datafd, 0);
+        if (mapping == MAP_FAILED) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be mapped");
+            ret = CL_EMEM;
+            goto done;
+        }
+        data           = mapping;
+        data_is_mapped = true;
+#ifdef MADV_SEQUENTIAL
+        (void)madvise(mapping, data_len, MADV_SEQUENTIAL);
+#endif
+
+        if (close(datafd) != 0) {
+            datafd = -1;
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be closed");
+            ret = CL_EREAD;
+            goto done;
+        }
+        datafd = -1;
+        if (!ctx->engine->keeptmp && cli_unlink(datafile) != 0) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be removed");
+        } else if (!ctx->engine->keeptmp) {
+            free(datafile);
+            datafile = NULL;
+        }
+    }
+#else
     if ((data = cli_vba_inflate(fd, 0, &data_len)) == NULL) {
         cli_dbgmsg("vba_readdir_new: Failed to decompress 'dir'\n");
         cli_mark_scan_incomplete(ctx, "VBA project directory could not be decompressed completely");
         ret = CL_EPARSE;
         goto done;
     }
+#endif
 
     *has_macros = *has_macros + 1;
 
@@ -762,36 +990,16 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
         }                                                                                  \
     } while (0)
 
-#define CLI_WRITEN_MBCS(msg, size)                                                                                   \
-    do {                                                                                                             \
-        char *utf8 = NULL;                                                                                           \
-        size_t utf8_size;                                                                                            \
-        if (size > 0) {                                                                                              \
-            if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], size, codepage, &utf8, &utf8_size)) { \
-                CLI_WRITEN(utf8, utf8_size);                                                                         \
-                free(utf8);                                                                                          \
-                utf8 = NULL;                                                                                         \
-            } else {                                                                                                 \
-                cli_dbgmsg("cli_vba_readdir_new: failed to convert codepage %" PRIu16 " to UTF-8\n", codepage);      \
-                CLI_WRITEN("<error decoding string>", 23);                                                           \
-            }                                                                                                        \
-        }                                                                                                            \
-    } while (0)
-
-#define CLI_WRITEN_UTF16LE(msg, size)                                                                                         \
-    do {                                                                                                                      \
-        char *utf8 = NULL;                                                                                                    \
-        size_t utf8_size;                                                                                                     \
-        if (size > 0) {                                                                                                       \
-            if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], size, CODEPAGE_UTF16_LE, &utf8, &utf8_size)) { \
-                CLI_WRITEN(utf8, utf8_size);                                                                                  \
-                free(utf8);                                                                                                   \
-                utf8 = NULL;                                                                                                  \
-            } else {                                                                                                          \
-                cli_dbgmsg("cli_vba_readdir_new: failed to convert UTF16LE to UTF-8\n");                                      \
-                CLI_WRITEN("<error decoding string>", 23);                                                                    \
-            }                                                                                                                 \
-        }                                                                                                                     \
+#define CLI_WRITEN_CODEPAGE(msg, size, selected_codepage, digest)                                  \
+    do {                                                                                            \
+        ret = vba_project_write_converted(&project_output, (const unsigned char *)(msg),            \
+                                          (size_t)(size), (selected_codepage), (digest),            \
+                                          data_is_mapped ? data : NULL, data_len, data_offset,      \
+                                          &data_released);                                          \
+        if (ret != CL_SUCCESS) {                                                                    \
+            cli_mark_scan_incomplete(ctx, "VBA project metadata could not be converted completely"); \
+            goto done;                                                                              \
+        }                                                                                            \
     } while (0)
 
     CLI_WRITEN("REM VBA project extracted from Microsoft Office document\n\n", 58);
@@ -925,21 +1133,15 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 }
 
                 CLI_WRITEN("REM PROJECTNAME: ", 17);
-                CLI_WRITEN_MBCS(&data[data_offset], size);
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, NULL);
                 data_offset += size;
                 CLI_WRITEN("\n", 1);
                 break;
             }
             // MS-OVBA 2.3.4.2.1.6 PROJECTDOCSTRING
             case 0x0005: {
-                if (size > 2000) {
-                    cli_dbgmsg("cli_vba_readdir_new: Expected PROJECTDOCSTRING record size (%" PRIu32 " <= 2000)\n", size);
-                    ret = CL_EREAD;
-                    goto done;
-                }
-
                 CLI_WRITEN("REM PROJECTDOCSTRING: ", 22);
-                CLI_WRITEN_MBCS(&data[data_offset], size);
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, NULL);
                 data_offset += size;
                 CLI_WRITEN("\n", 1);
                 break;
@@ -952,7 +1154,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     goto done;
                 }
                 CLI_WRITEN("REM PROJECTDOCSTRINGUNICODE: ", 29);
-                CLI_WRITEN_UTF16LE(&data[data_offset], size);
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, CODEPAGE_UTF16_LE, NULL);
                 data_offset += size;
                 CLI_WRITEN("\n", 1);
                 break;
@@ -966,7 +1168,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 }
                 const size_t projecthelpfilepath_offset = data_offset;
                 CLI_WRITEN("REM PROJECTHELPFILEPATH: ", 25);
-                CLI_WRITEN_MBCS(&data[data_offset], size);
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, NULL);
                 data_offset += size;
                 CLI_WRITEN("\n", 1);
 
@@ -1015,7 +1217,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 }
 
                 CLI_WRITEN("REM PROJECTHELPFILEPATH2: ", 26);
-                CLI_WRITEN_UTF16LE(&data[data_offset], size2);
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size2, CODEPAGE_UTF16_LE, NULL);
                 data_offset += size2;
                 CLI_WRITEN("\n", 1);
                 break;
@@ -1122,17 +1324,12 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
             }
             // MS-OVBA 2.3.4.2.3.2 MODULE record
             case 0x0019: {
+                struct vba_metadata_digest mbcs_digest;
+                struct vba_metadata_digest utf16_digest;
 
                 // MS-OVBA 2.3.4.2.3.2.1 MODULENAME
                 CLI_WRITEN("\n\nREM MODULENAME: ", 18);
-                if (size > 0) {
-                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], size, codepage, &mbcs_name, &mbcs_name_size)) {
-                        CLI_WRITEN(mbcs_name, mbcs_name_size);
-                    } else {
-                        cli_dbgmsg("cli_vba_readdir_new: failed to convert codepage %" PRIu16 " to UTF-8\n", codepage);
-                        CLI_WRITEN("<error decoding string>", 23);
-                    }
-                }
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, &mbcs_digest);
                 data_offset += size;
 
                 // MS-OVBA 2.3.4.2.3.2.2 MODULENAMEUNICODE
@@ -1160,30 +1357,17 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     ret = CL_EREAD;
                     goto done;
                 }
-
-                if (size > 0) {
-                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], size, CODEPAGE_UTF16_LE, &utf16_name, &utf16_name_size)) {
-                        CLI_WRITEN(utf16_name, utf16_name_size);
-                    } else {
-                        cli_dbgmsg("cli_vba_readdir_new: failed to convert UTF16LE to UTF-8\n");
-                        CLI_WRITEN("<error decoding string>", 23);
-                    }
+                if (size % 2 != 0) {
+                    cli_mark_scan_incomplete(ctx, "VBA Unicode module name has an odd byte length");
+                    ret = CL_EREAD;
+                    goto done;
                 }
+
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, CODEPAGE_UTF16_LE, &utf16_digest);
                 data_offset += size;
 
-                if (mbcs_name && utf16_name &&
-                    (mbcs_name_size != utf16_name_size ||
-                     memcmp(mbcs_name, utf16_name, mbcs_name_size) != 0)) {
+                if (!vba_metadata_digest_equal(&mbcs_digest, &utf16_digest)) {
                     CLI_WRITEN("\nREM WARNING: MODULENAME and MODULENAMEUNICODE differ", 53);
-                }
-
-                if (mbcs_name) {
-                    free(mbcs_name);
-                    mbcs_name = NULL;
-                }
-                if (utf16_name) {
-                    free(utf16_name);
-                    utf16_name = NULL;
                 }
 
                 // MS-OVBA 2.3.4.2.3.2.3 MODULESTREAMNAME
@@ -1211,15 +1395,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     ret = CL_EREAD;
                     goto done;
                 }
-
-                if (size > 0) {
-                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], size, codepage, &mbcs_name, &mbcs_name_size)) {
-                        CLI_WRITEN(mbcs_name, mbcs_name_size);
-                    } else {
-                        cli_dbgmsg("cli_vba_readdir_new: failed to convert codepage %" PRIu16 " to UTF-8\n", codepage);
-                        CLI_WRITEN("<error decoding string>", 23);
-                    }
-                }
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, &mbcs_digest);
                 data_offset += size;
 
                 cli_dbgmsg("Reading MODULESTREAMNAMEUNICODE record\n");
@@ -1246,31 +1422,19 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     ret = CL_EREAD;
                     goto done;
                 }
+                if (module_stream_name_size > VBA_OLE_STREAM_NAME_LIMIT || module_stream_name_size % 2 != 0) {
+                    cli_mark_scan_incomplete(ctx, "VBA Unicode module stream name exceeds the bounded OLE metadata limit");
+                    ret = CL_EFORMAT;
+                    goto done;
+                }
 
                 const unsigned char *module_stream_name = &data[data_offset];
-                if (module_stream_name_size > 0) {
-                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], module_stream_name_size, CODEPAGE_UTF16_LE, &utf16_name, &utf16_name_size)) {
-                        CLI_WRITEN(utf16_name, utf16_name_size);
-                    } else {
-                        cli_dbgmsg("cli_vba_readdir_new: failed to convert UTF16LE to UTF-8\n");
-                        CLI_WRITEN("<error decoding string>", 23);
-                    }
-                }
+                CLI_WRITEN_CODEPAGE(&data[data_offset], module_stream_name_size,
+                                     CODEPAGE_UTF16_LE, &utf16_digest);
                 data_offset += module_stream_name_size;
 
-                if (mbcs_name && utf16_name &&
-                    (mbcs_name_size != utf16_name_size ||
-                     memcmp(mbcs_name, utf16_name, mbcs_name_size) != 0)) {
+                if (!vba_metadata_digest_equal(&mbcs_digest, &utf16_digest)) {
                     CLI_WRITEN("\nREM WARNING: MODULESTREAMNAME and MODULESTREAMNAMEUNICODE differ", 65);
-                }
-
-                if (mbcs_name) {
-                    free(mbcs_name);
-                    mbcs_name = NULL;
-                }
-                if (utf16_name) {
-                    free(utf16_name);
-                    utf16_name = NULL;
                 }
 
                 // MS-OVBA 2.3.4.2.3.2.4 MODULEDOCSTRING
@@ -1298,15 +1462,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     ret = CL_EREAD;
                     goto done;
                 }
-
-                if (size > 0) {
-                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], size, codepage, &mbcs_name, &mbcs_name_size)) {
-                        CLI_WRITEN(mbcs_name, mbcs_name_size);
-                    } else {
-                        cli_dbgmsg("cli_vba_readdir_new: failed to convert codepage %" PRIu16 " to UTF-8\n", codepage);
-                        CLI_WRITEN("<error decoding string>", 23);
-                    }
-                }
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, codepage, &mbcs_digest);
                 data_offset += size;
 
                 cli_dbgmsg("Reading MODULEDOCSTRINGUNICODE record\n");
@@ -1333,30 +1489,17 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                     ret = CL_EREAD;
                     goto done;
                 }
-
-                if (size > 0) {
-                    if (CL_SUCCESS == cli_codepage_to_utf8((char *)&data[data_offset], size, CODEPAGE_UTF16_LE, &utf16_name, &utf16_name_size)) {
-                        CLI_WRITEN(utf16_name, utf16_name_size);
-                    } else {
-                        cli_dbgmsg("cli_vba_readdir_new: failed to convert UTF16LE to UTF-8\n");
-                        CLI_WRITEN("<error decoding string>", 23);
-                    }
+                if (size % 2 != 0) {
+                    cli_mark_scan_incomplete(ctx, "VBA Unicode module docstring has an odd byte length");
+                    ret = CL_EREAD;
+                    goto done;
                 }
+
+                CLI_WRITEN_CODEPAGE(&data[data_offset], size, CODEPAGE_UTF16_LE, &utf16_digest);
                 data_offset += size;
 
-                if (mbcs_name && utf16_name &&
-                    (mbcs_name_size != utf16_name_size ||
-                     memcmp(mbcs_name, utf16_name, mbcs_name_size) != 0)) {
+                if (!vba_metadata_digest_equal(&mbcs_digest, &utf16_digest)) {
                     CLI_WRITEN("\nREM WARNING: MODULEDOCSTRING and MODULEDOCSTRINGUNICODE differ", 63);
-                }
-
-                if (mbcs_name) {
-                    free(mbcs_name);
-                    mbcs_name = NULL;
-                }
-                if (utf16_name) {
-                    free(utf16_name);
-                    utf16_name = NULL;
                 }
 
                 // MS-OVBA 2.3.4.2.3.2.5 MODULEOFFSET
@@ -1740,12 +1883,13 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                 data_offset += size;
             }
         }
+        if (data_is_mapped)
+            vba_directory_release_consumed(data, data_len, data_offset, &data_released);
     }
 
 #undef CLI_WRITEN
 #undef CLI_WRITENHEX
-#undef CLI_WRITEN_MBCS
-#undef CLI_WRITEN_UTF16LE
+#undef CLI_WRITEN_CODEPAGE
 
 done:
     if (ret == CL_SUCCESS && deferred_failure != CL_SUCCESS)
@@ -1758,23 +1902,38 @@ done:
                 ret = CL_EREAD;
         }
     }
-    if (data) {
+    if (data_is_mapped && data != NULL) {
+#if VBA_HAVE_FILE_BACKED_DIRECTORY
+        if (munmap(data, data_len) != 0) {
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be unmapped");
+            if (ret == CL_SUCCESS || ret == CL_CLEAN || ret == CL_BREAK)
+                ret = CL_ERESOURCE;
+        }
+#endif
+        data = NULL;
+    } else if (data) {
         free((void *)data);
+        data = NULL;
     }
+    if (datafd >= 0) {
+        if (close(datafd) != 0)
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be closed");
+        datafd = -1;
+    }
+    if (datafile != NULL) {
+        if (!ctx->engine->keeptmp && cli_unlink(datafile) != 0)
+            cli_mark_scan_incomplete(ctx, "VBA project directory backing could not be removed");
+        free(datafile);
+        datafile = NULL;
+    }
+    if (directory_reserved != 0)
+        cli_scan_release_temporary(ctx, directory_reserved);
     if (stream_name) {
         free((void *)stream_name);
     }
     if (ret != CL_SUCCESS && *tempfd >= 0) {
         close(*tempfd);
         *tempfd = -1;
-    }
-    if (utf16_name) {
-        free(utf16_name);
-        utf16_name = NULL;
-    }
-    if (mbcs_name) {
-        free(mbcs_name);
-        mbcs_name = NULL;
     }
     if (module_data) {
         free(module_data);

@@ -7410,8 +7410,10 @@ marks the layer incomplete/non-cacheable. The old pointer-returning inflater is
 preserved as a compatibility wrapper. `cl_engine_set_clcb_vba` still receives a
 whole contiguous module only at or below the 1 GiB individual-allocation
 ceiling; larger modules continue through bounded scanning but callback delivery
-is explicitly incomplete. The compact project-directory metadata stream also
-retains its legacy 1 GiB contiguous boundary.
+is explicitly incomplete. At this milestone, the compact project-directory
+metadata stream still retained its legacy 1 GiB contiguous boundary; the
+file-backed follow-up below removes that boundary from the certified mmap
+profile.
 
 Strict GCC syntax passes for both changed production translation units. Focused
 GCC oracles pass split UTF-8, persistent ISO-8859-1 iconv state, incomplete-tail
@@ -7421,3 +7423,33 @@ pass with 181 entries. The existing isolated container cannot complete CMake
 configuration because its Cargo 1.65 predates the checkout's required 1.97; no
 software was installed. Production Office/VBA corpus, sanitizer, materialized
 multi-gigabyte modules, certified Linux x86-64, and Sonic1 evidence remain open.
+
+## File-backed VBA project-directory metadata — 2026-08-24
+
+On certified 64-bit mmap builds, the aggregate compressed VBA `dir` stream now
+decompresses through the bounded 4 KiB inflater into an exact quota-accounted
+temporary file. The scanner verifies the regular-file length, maps it read-only
+and sequentially, and advises consumed page ranges away while retaining a 1 MiB
+look-behind window. The mapping and its temporary-storage reservation remain
+owned until parsing ends, including malformed exits. Non-mmap builds retain the
+legacy contiguous inflater as an explicit unsupported release-profile boundary.
+
+The decompressed byte count is checked with native 64-bit arithmetic against
+scan and temporary limits on every output window. Empty or unrepresentable
+lengths, malformed backing size, map/unmap, descriptor, unlink, quota, deadline,
+conversion, and write failures remain incomplete and non-cacheable. Project and
+module text metadata now converts through fixed 8 KiB input windows with
+persistent codepage state, removing artificial name/docstring caps. The Unicode
+module stream name alone remains bounded by the existing 128-byte OLE
+property-name interface used to resolve its extracted stream.
+
+The current production translation unit passes strict GCC syntax in the
+isolated Linux environment. Production-linked focused oracles pass both normal
+file-backed parsing with exact reservation transfer, streamed project-name
+output, a one-byte-short quota case, and a one-byte-short decompressed scan-limit
+case. Both rejection paths retain zero output, zero temporary accounting, and
+explicit incomplete state. The earlier bounded stream/codepage and incremental
+normalizer oracles remain green. The capability manifest now passes with 182
+entries. Production Office/VBA corpus, sanitizer and injected backing-I/O
+failures, materialized multi-gigabyte directories/modules, certified Linux
+x86-64, and Sonic1 qualification remain release gates.
