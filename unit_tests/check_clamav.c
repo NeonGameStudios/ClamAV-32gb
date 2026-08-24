@@ -16889,6 +16889,196 @@ START_TEST(test_tar_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+static void cpio_test_write_hex8(uint8_t *field, uint32_t value)
+{
+    char encoded[9];
+
+    ck_assert_ptr_nonnull(field);
+    ck_assert_int_eq(snprintf(encoded, sizeof(encoded), "%08x", value), 8);
+    memcpy(field, encoded, 8);
+}
+
+static size_t cpio_test_append_crc_entry(uint8_t *archive, size_t capacity, size_t offset,
+                                         const char *name, const uint8_t *payload,
+                                         size_t payload_size, uint32_t checksum)
+{
+    size_t name_size;
+    size_t position;
+
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_ptr_nonnull(name);
+    ck_assert_uint_le(payload_size, UINT32_MAX);
+    name_size = strlen(name) + 1U;
+    ck_assert_uint_le(name_size, UINT32_MAX);
+    ck_assert_uint_le(offset, capacity);
+    ck_assert_uint_le(110U, capacity - offset);
+
+    memset(archive + offset, '0', 110);
+    memcpy(archive + offset, "070702", 6);
+    memcpy(archive + offset + 14, "000081a4", 8);
+    cpio_test_write_hex8(archive + offset + 54, (uint32_t)payload_size);
+    cpio_test_write_hex8(archive + offset + 94, (uint32_t)name_size);
+    cpio_test_write_hex8(archive + offset + 102, checksum);
+
+    position = offset + 110U;
+    ck_assert_uint_le(name_size, capacity - position);
+    memcpy(archive + position, name, name_size);
+    position += name_size;
+    while (position % 4U) {
+        ck_assert_uint_lt(position, capacity);
+        archive[position++] = 0;
+    }
+
+    ck_assert_uint_le(payload_size, capacity - position);
+    if (payload_size != 0) {
+        ck_assert_ptr_nonnull(payload);
+        memcpy(archive + position, payload, payload_size);
+    }
+    position += payload_size;
+    while (position % 4U) {
+        ck_assert_uint_lt(position, capacity);
+        archive[position++] = 0;
+    }
+
+    return position;
+}
+
+START_TEST(test_cpio_crc_member_reaches_nested_matchers)
+{
+    static const uint8_t payload[] = "CPIO-OK!";
+    static const char signature[] = "Cpio.Crc.Member.Exact:0:0:4350494f2d4f4b21\n";
+    uint8_t archive[256] = {0};
+    uint8_t mismatch[256];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    char signature_path[PATH_MAX];
+    unsigned int checksum = 0;
+    unsigned int sigs = 0;
+    const char *last_alert;
+    cl_verdict_t verdict;
+    uint64_t scanned;
+    size_t archive_size;
+    size_t i;
+    fmap_t *map;
+    int signature_fd;
+    cl_error_t ret;
+
+    for (i = 0; i < sizeof(payload) - 1U; i++)
+        checksum += payload[i];
+    archive_size = cpio_test_append_crc_entry(archive, sizeof(archive), 0, "member",
+                                               payload, sizeof(payload) - 1U, checksum);
+    archive_size = cpio_test_append_crc_entry(archive, sizeof(archive), archive_size,
+                                               "TRAILER!!!", NULL, 0, 0);
+    memcpy(mismatch, archive, sizeof(archive));
+    cpio_test_write_hex8(mismatch + 102, checksum + 1U);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
+                              "%s/cpio-crc-member.ndb", tmpdir),
+                     (int)(strlen(tmpdir) + strlen("/cpio-crc-member.ndb")));
+    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_int_ge(signature_fd, 0);
+    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
+                     (ssize_t)(sizeof(signature) - 1U));
+    ck_assert_int_eq(close(signature_fd), 0);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
+
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_CPIO_CRC", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Cpio.Crc.Member.Exact.UNOFFICIAL");
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(mismatch, archive_size);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_CPIO_CRC", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Cpio.Crc.Member.Exact.UNOFFICIAL");
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
+static void cpio_test_assert_parse_incomplete(const uint8_t *archive, size_t archive_size,
+                                               const struct cl_engine *scan_engine,
+                                               struct cl_scan_options *options)
+{
+    const char *last_alert = "stale";
+    cl_verdict_t verdict   = CL_VERDICT_STRONG_INDICATOR;
+    uint64_t scanned       = UINT64_MAX;
+    fmap_t *map;
+    cl_error_t ret;
+
+    map = cl_fmap_open_memory(archive, archive_size);
+    ck_assert_ptr_nonnull(map);
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_CPIO_CRC", NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+}
+
+START_TEST(test_cpio_crc_checksum_mismatch_is_fail_visible)
+{
+    static const uint8_t payload[] = "CPIO-NO";
+    uint8_t archive[256] = {0};
+    uint8_t malformed[256];
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    unsigned int checksum = 0;
+    size_t archive_size;
+    size_t i;
+
+    for (i = 0; i < sizeof(payload) - 1U; i++)
+        checksum += payload[i];
+    archive_size = cpio_test_append_crc_entry(archive, sizeof(archive), 0, "benign",
+                                               payload, sizeof(payload) - 1U, checksum + 1U);
+    archive_size = cpio_test_append_crc_entry(archive, sizeof(archive), archive_size,
+                                               "TRAILER!!!", NULL, 0, 0);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    cpio_test_assert_parse_incomplete(archive, archive_size, scan_engine, &options);
+    memcpy(malformed, archive, sizeof(archive));
+    malformed[102] = 'g';
+    cpio_test_assert_parse_incomplete(malformed, archive_size, scan_engine, &options);
+    cpio_test_assert_parse_incomplete(archive, 120U + sizeof(payload) - 2U,
+                                      scan_engine, &options);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_cpio_time_limit_is_fail_visible)
 {
     enum { CPIO_OLD, CPIO_ODC, CPIO_NEWC, CPIO_CRC, CPIO_FORMATS };
@@ -32281,6 +32471,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hfs_inline = tcase_create("hfs_inline");
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar_member = tcase_create("tar_member");
+    TCase *tc_cpio_crc = tcase_create("cpio_crc");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -32328,6 +32519,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar_member, test_tar_pax_size_is_supported);
     tcase_add_test(tc_tar_member, test_tar_base256_unrepresentable_and_negative_sizes_fail_visible);
     tcase_add_test(tc_tar_member, test_tar_pax_global_local_size_scope_reaches_nested_matchers);
+    suite_add_tcase(s, tc_cpio_crc);
+    tcase_add_checked_fixture(tc_cpio_crc, cl_setup, cl_teardown);
+    tcase_add_test(tc_cpio_crc, test_cpio_crc_member_reaches_nested_matchers);
+    tcase_add_test(tc_cpio_crc, test_cpio_crc_checksum_mismatch_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

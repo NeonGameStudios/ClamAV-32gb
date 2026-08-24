@@ -2537,3 +2537,12 @@ and Sonic1 qualification as release gates.
   Linux x86-64, and Sonic1 qualification. Valid binary fields are preserved by
   an exact-width copy and reach nested matching; unrepresentable and negative
   fields fail visibly and remain non-cacheable.
+
+## CPIO CRC parser qualification — 2026-08-24
+
+- Extend the passing exact child-signature, mismatch, malformed-field, and
+  truncated-data oracles to zero-length entries, wrapping sums, multi-window
+  and materialized large members, plus injected in-range checksum reads and
+  deadline expiry. Add old/ODC/newc/CRC production corpus, sanitizer execution,
+  certified Linux x86-64, and Sonic1 qualification. CRC validation and malware
+  precedence are implemented with bounded fmap windows.

@@ -7522,7 +7522,28 @@ local PAX `size=` overrides a global value for one member and that the global
 value resumes afterward. Its signatures are constrained to child offset zero
 and `EOF-8`, preventing a raw containing-archive match. The focused case passes
 4 checks with 0 failures.
+
 The exact-offset signature cannot match the containing TAR at its root, so the
 result proves extraction and nested matcher handoff. Complete TAR corpus,
 sanitizer, truncated binary-field variants, certified Linux x86-64, and
+Sonic1 qualification remain release gates.
+
+## CPIO CRC member validation — 2026-08-24
+
+The `070702` CPIO path previously used its CRC flag only to select the magic
+string. It never parsed the header's checksum field or compared it with member
+content, so a corrupted CRC-format archive could complete cleanly. The parser
+now strictly parses all eight hexadecimal checksum characters and computes the
+format's wrapping 32-bit additive checksum through unlocked 64 KiB fmap
+windows. Each window checks the shared deadline; short ranges remain
+`CL_EPARSE`, fully in-range callback failures remain `CL_EREAD`, and malformed
+or mismatched checksums remain incomplete and non-cacheable.
+
+Checksum status is merged after nested scanning, preserving a malware alert
+over a checksum failure while retaining the checksum error for a clean member.
+The focused production-linked public-API case proves an exact child-offset
+signature on valid and checksum-mismatched malware, plus benign mismatch,
+malformed checksum syntax, and truncated member data. Both tests pass with no
+failures. Complete old/newc/CRC corpus, large materialized CRC members,
+sanitizer and checksum-read fault injection, certified Linux x86-64, and
 Sonic1 qualification remain release gates.

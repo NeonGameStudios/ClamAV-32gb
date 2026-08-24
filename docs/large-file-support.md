@@ -7083,3 +7083,19 @@ prevent the signatures from matching the containing TAR as raw data. This
 closes the prior weak-clean oracle; complete TAR corpus,
 sanitizer, truncated binary encodings, certified Linux x86-64, and Sonic1
 qualification remain release gates.
+
+## CPIO CRC member validation — 2026-08-24
+
+The `070702` parser now validates its eight-character hexadecimal checksum
+field instead of treating CRC archives exactly like unchecked newc archives.
+Member bytes are summed with wrapping 32-bit arithmetic through fixed 64 KiB
+unlocked fmap windows, with deadline checks and explicit distinction between
+truncated data and in-range backing-read failure.
+
+Malformed fields, mismatches, and truncated member ranges are incomplete and
+non-cacheable. An available member is still scanned, and status merging keeps
+a detection stronger than a checksum error. Production-linked public-API
+tests prove an exact child-only signature for valid and mismatched malware and
+fail-visible outcomes for benign mismatch, malformed syntax, and truncation.
+Complete CPIO corpus, large materialized CRC members, sanitizer/read-fault
+injection, certified Linux x86-64, and Sonic1 qualification remain open.

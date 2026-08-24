@@ -85,6 +85,7 @@ struct cpio_hdr_newc {
 };
 
 #define EC16(v, conv) (conv ? cbswap16(v) : v)
+#define CPIO_CHECKSUM_WINDOW (64U * 1024U)
 
 static size_t cpio_readn(fmap_t *map, void *dst, size_t at, size_t len)
 {
@@ -127,6 +128,83 @@ static cl_error_t cpio_checktimelimit(cli_ctx *ctx)
         cli_mark_scan_incomplete(ctx, "CPIO member traversal reached the configured time limit");
 
     return status;
+}
+
+static int cpio_parse_hex_u32(const char field[8], uint32_t *value)
+{
+    uint32_t parsed = 0;
+    size_t i;
+
+    if (field == NULL || value == NULL)
+        return -1;
+
+    for (i = 0; i < 8; i++) {
+        unsigned int digit;
+
+        if (field[i] >= '0' && field[i] <= '9')
+            digit = (unsigned int)(field[i] - '0');
+        else if (field[i] >= 'a' && field[i] <= 'f')
+            digit = (unsigned int)(field[i] - 'a') + 10U;
+        else if (field[i] >= 'A' && field[i] <= 'F')
+            digit = (unsigned int)(field[i] - 'A') + 10U;
+        else
+            return -1;
+
+        parsed = (parsed << 4) | digit;
+    }
+
+    *value = parsed;
+    return 0;
+}
+
+static cl_error_t cpio_validate_newc_checksum(cli_ctx *ctx, const char field[8], size_t offset, size_t length)
+{
+    uint32_t expected;
+    uint32_t actual = 0;
+    size_t consumed = 0;
+
+    if (ctx == NULL || ctx->fmap == NULL || field == NULL)
+        return CL_ENULLARG;
+
+    if (cpio_parse_hex_u32(field, &expected) < 0) {
+        cli_mark_scan_incomplete(ctx, "CPIO CRC checksum field was malformed");
+        return CL_EPARSE;
+    }
+
+    if (offset > ctx->fmap->len || length > ctx->fmap->len - offset) {
+        cli_mark_scan_incomplete(ctx, "CPIO CRC member data was truncated");
+        return CL_EPARSE;
+    }
+
+    while (consumed < length) {
+        const unsigned char *data;
+        size_t chunk = MIN(length - consumed, (size_t)CPIO_CHECKSUM_WINDOW);
+        size_t nread = 0;
+        size_t i;
+        cl_error_t status;
+
+        status = cpio_checktimelimit(ctx);
+        if (status != CL_SUCCESS)
+            return status;
+
+        data = fmap_need_off_once_len(ctx->fmap, offset + consumed, chunk, &nread);
+        if (data == NULL || nread != chunk) {
+            cli_mark_scan_incomplete(ctx, "CPIO CRC member data could not be read completely");
+            return CL_EREAD;
+        }
+
+        for (i = 0; i < chunk; i++)
+            actual += data[i];
+        consumed += chunk;
+    }
+
+    if (actual != expected) {
+        cli_dbgmsg("cli_scancpio_newc: CRC checksum mismatch: %08x != %08x\n", actual, expected);
+        cli_mark_scan_incomplete(ctx, "CPIO CRC member checksum did not match");
+        return CL_EPARSE;
+    }
+
+    return CL_SUCCESS;
 }
 
 static void sanitname(char *name)
@@ -417,6 +495,8 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
     memset(name, 0, 513);
 
     while (1) {
+        cl_error_t checksum_status = CL_SUCCESS;
+
         status = cpio_checktimelimit(ctx);
         if (status != CL_SUCCESS)
             goto done;
@@ -508,7 +588,16 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
         }
         filesize = (size_t)parsed_filesize;
         cli_dbgmsg("CPIO: Filesize: %zu\n", filesize);
+        if (crc) {
+            checksum_status = cpio_validate_newc_checksum(ctx, hdr_newc.check, pos, filesize);
+            if (checksum_status == CL_ETIMEOUT)
+                goto done;
+        }
         if (!filesize) {
+            if (checksum_status != CL_SUCCESS) {
+                status = checksum_status;
+                goto done;
+            }
             if (trailer)
                 complete = 1;
             continue;
@@ -520,6 +609,7 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
         }
 
         status = cli_magic_scan_nested_fmap_type(ctx->fmap, pos, filesize, ctx, CL_TYPE_ANY, name, LAYER_ATTRIBUTES_NONE);
+        status = cli_merge_scan_status(checksum_status, status);
         if (status != CL_SUCCESS) {
             goto done;
         }
