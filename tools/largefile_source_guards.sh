@@ -2436,6 +2436,8 @@ not_contains libclamav/untar.c 'if (cli_matchmeta(ctx, name, size, size, 0, file
 contains unit_tests/check_clamav.c 'test_tar_base256_size_is_supported'
 contains unit_tests/check_clamav.c 'test_tar_pax_size_is_supported'
 contains unit_tests/check_clamav.c 'test_tar_base256_unrepresentable_and_negative_sizes_fail_visible'
+contains unit_tests/check_clamav.c 'test_tar_pax_global_local_size_scope_reaches_nested_matchers'
+contains unit_tests/check_clamav.c 'Tar.Pax.GlobalResume:0:EOF-8:474c4f42414c2121'
 contains unit_tests/check_clamav.c 'Tar.Member.Exact:0:0:5441522d4f4b2121'
 contains unit_tests/check_clamav.c 'TCase *tc_tar_member = tcase_create("tar_member")'
 contains libclamav/iso9660.c 'ISO directory block could not be read'

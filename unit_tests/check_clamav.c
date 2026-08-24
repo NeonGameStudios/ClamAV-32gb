@@ -16598,6 +16598,113 @@ START_TEST(test_tar_base256_unrepresentable_and_negative_sizes_fail_visible)
 }
 END_TEST
 
+static void tar_test_make_posix_header(uint8_t *header, const char *name, uint64_t size, uint8_t type)
+{
+    unsigned int checksum = 0;
+    size_t name_length;
+    size_t i;
+
+    ck_assert_ptr_nonnull(header);
+    ck_assert_ptr_nonnull(name);
+    name_length = strlen(name);
+    ck_assert_uint_le(name_length, 100U);
+
+    memset(header, 0, 512);
+    memcpy(header, name, name_length);
+    ck_assert_int_eq(snprintf((char *)(header + 124), 12, "%011llo", (unsigned long long)size), 11);
+    header[156] = type;
+    memcpy(header + 257, "ustar", 5);
+    memset(header + 148, ' ', 8);
+    for (i = 0; i < 512; i++)
+        checksum += header[i];
+    ck_assert_int_eq(snprintf((char *)(header + 148), 8, "%06o", checksum), 6);
+    header[154] = ' ';
+    header[155] = '\0';
+}
+
+START_TEST(test_tar_pax_global_local_size_scope_reaches_nested_matchers)
+{
+    static const char signatures[] =
+        "Tar.Pax.LocalOverride:0:0:4c4f43414c2d4f4b21\n"
+        "Tar.Pax.GlobalResume:0:EOF-8:474c4f42414c2121\n";
+    uint8_t local_override[4096] = {0};
+    uint8_t global_resume[5120]  = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    const char *last_alert;
+    char signature_path[PATH_MAX];
+    unsigned int sigs = 0;
+    cl_verdict_t verdict;
+    uint64_t scanned;
+    fmap_t *map;
+    int signature_fd;
+    cl_error_t ret;
+
+    tar_test_make_posix_header(local_override, "global-pax", 9, 'g');
+    memcpy(local_override + 512, "9 size=8\n", 9);
+    tar_test_make_posix_header(local_override + 1024, "local-pax", 9, 'x');
+    memcpy(local_override + 1536, "9 size=9\n", 9);
+    tar_test_make_posix_header(local_override + 2048, "local-member", 0, '0');
+    memcpy(local_override + 2560, "LOCAL-OK!", 9);
+
+    tar_test_make_posix_header(global_resume, "global-pax", 9, 'g');
+    memcpy(global_resume + 512, "9 size=8\n", 9);
+    tar_test_make_posix_header(global_resume + 1024, "local-pax", 9, 'x');
+    memcpy(global_resume + 1536, "9 size=9\n", 9);
+    tar_test_make_posix_header(global_resume + 2048, "local-member", 0, '0');
+    memcpy(global_resume + 2560, "LOCALNOPE", 9);
+    tar_test_make_posix_header(global_resume + 3072, "global-member", 0, '0');
+    memcpy(global_resume + 3584, "GLOBAL!!", 8);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
+                              "%s/tar-pax-scope.ndb", tmpdir),
+                     (int)(strlen(tmpdir) + strlen("/tar-pax-scope.ndb")));
+    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_int_ge(signature_fd, 0);
+    ck_assert_int_eq(write(signature_fd, signatures, sizeof(signatures) - 1U),
+                     (ssize_t)(sizeof(signatures) - 1U));
+    ck_assert_int_eq(close(signature_fd), 0);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 2U);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
+
+    map = cl_fmap_open_memory(local_override, sizeof(local_override));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_POSIX_TAR", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Tar.Pax.LocalOverride.UNOFFICIAL");
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(global_resume, sizeof(global_resume));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                               scan_engine, &options, NULL, NULL, NULL, NULL,
+                               "CL_TYPE_POSIX_TAR", NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Tar.Pax.GlobalResume.UNOFFICIAL");
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_tar_time_limit_is_fail_visible)
 {
     static const uint8_t data[512] = {0};
@@ -32220,6 +32327,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tar_member, test_tar_base256_size_is_supported);
     tcase_add_test(tc_tar_member, test_tar_pax_size_is_supported);
     tcase_add_test(tc_tar_member, test_tar_base256_unrepresentable_and_negative_sizes_fail_visible);
+    tcase_add_test(tc_tar_member, test_tar_pax_global_local_size_scope_reaches_nested_matchers);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

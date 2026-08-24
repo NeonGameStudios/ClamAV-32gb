@@ -2531,9 +2531,9 @@ and Sonic1 qualification as release gates.
 
 ## TAR binary size-field qualification — 2026-08-24
 
-- Extend the passing positive/negative/overflow base-256 oracles to truncated
-  and large materialized fields, plus local/global PAX override combinations.
-  Add production TAR corpus, sanitizer and read/write/seek/cleanup fault
-  injection, certified Linux x86-64, and Sonic1 qualification. Valid binary
-  fields are preserved by an exact-width copy and reach nested matching;
-  unrepresentable and negative fields fail visibly and remain non-cacheable.
+- Extend the passing positive/negative/overflow base-256 and local/global PAX
+  scope oracles to truncated and large materialized fields. Add production TAR
+  corpus, sanitizer and read/write/seek/cleanup fault injection, certified
+  Linux x86-64, and Sonic1 qualification. Valid binary fields are preserved by
+  an exact-width copy and reach nested matching; unrepresentable and negative
+  fields fail visibly and remain non-cacheable.

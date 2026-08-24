@@ -7517,7 +7517,11 @@ the exact `Tar.Member.Exact.UNOFFICIAL` alert at child offset zero for both a
 GNU base-256 member and a PAX-sized member. A third public-API regression
 rejects a positive prefix above 64 bits, a `0x80` value whose remaining bytes
 overflow `uint64_t`, and a negative two's-complement field. All three tests
-pass (3 checks, 0 failures), and every rejected archive remains non-cacheable.
+pass, and every rejected archive remains non-cacheable. A fourth test proves a
+local PAX `size=` overrides a global value for one member and that the global
+value resumes afterward. Its signatures are constrained to child offset zero
+and `EOF-8`, preventing a raw containing-archive match. The focused case passes
+4 checks with 0 failures.
 The exact-offset signature cannot match the containing TAR at its root, so the
 result proves extraction and nested matcher handoff. Complete TAR corpus,
 sanitizer, truncated binary-field variants, certified Linux x86-64, and
