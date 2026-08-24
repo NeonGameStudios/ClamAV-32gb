@@ -2194,7 +2194,7 @@ and Sonic1 qualification as release gates.
   malformed and valid PDF corpora, sanitizer fault injection, and a
   materialized multi-gigabyte stream on Sonic1. Preserve transactional rollback
   and exact temporary accounting. Convert object streams, encryption, filter
-  chains, and LZW separately before retiring the remaining
+  chains separately before retiring the remaining
   `pdf-stream-over-1g` capability exception.
 
 ## PDF single-RunLength bounded streaming — 2026-08-23
@@ -2211,3 +2211,11 @@ and Sonic1 qualification as release gates.
   injection, and Sonic1 release/sanitizer runs. Preserve exact whitespace,
   odd-nibble, quintet-range, `z`, terminator, post-marker, and marker-less
   oracles.
+
+## PDF single-LZW bounded streaming — 2026-08-23
+
+- Qualify the fixed-dictionary LZW walker with compiled valid/malformed PDF
+  corpora, both `EarlyChange` modes, materialized multi-gigabyte streams,
+  decoder and output fault injection, and Sonic1 release/sanitizer runs.
+  Preserve EOI, resynchronization, predictor-unsupported, rollback, deadline,
+  scan-limit, and temporary-quota oracles.

@@ -6874,7 +6874,7 @@ bytes reserved by that attempt before the established raw fallback is written.
 Tests cover exact multi-window output/accounting, one-byte-short quota rollback,
 truncated-output replacement by the exact raw stream, and a logical Flate input
 length above `UINT32_MAX` whose valid stream terminates in the first bounded
-window. Object streams, encryption, filter chains, and LZW remain explicit
+window. Object streams, encryption, and filter chains remain explicit
 unsupported boundaries pending their own streaming designs; compiled corpus,
 sanitizer, materialized large-stream, and Sonic1 evidence are still required.
 
@@ -6928,6 +6928,26 @@ output, all PDF whitespace bytes, known vectors, partial groups, marker
 behavior, one-byte-short quota rollback, invalid or overflowing input after
 written prefixes, and early terminators under logical lengths above
 `UINT32_MAX`. The production harness passes all 20 streamed-filter cases both
-normally and under GCC AddressSanitizer/UBSan with leak detection. LZW, filter
+normally and under GCC AddressSanitizer/UBSan with leak detection. Filter
 chains, encryption, object streams, compiled corpus, and Sonic1 qualification
 remain open.
+
+## PDF single-LZW bounded streaming — 2026-08-23
+
+Ordinary unencrypted single-filter LZW streams now feed the fixed-state decoder
+through 64 KiB native-width input windows and emit through the shared 256 KiB
+transactional output window. Dictionary and partial-bit state survive input
+and output boundaries; each flush is deadline-, scan-limit-, and
+temporary-quota-accounted. Failed attempts remove all decoded prefixes and
+their reservations before exact raw fallback.
+
+`EarlyChange` 0 and 1 are parsed strictly and tested across a code-width
+transition. Malformed values and unsupported non-identity predictors are
+explicit incomplete results. The legacy token decoder also no longer calls
+`lzwInflateEnd()` after failed initialization. Regressions bind multi-window
+exact output, one-byte-short quota rollback, missing EOI after a written
+prefix, parameter failures, and early EOI with a logical source length above
+`UINT32_MAX`. The production harness passes all 26 single-filter cases both
+normally and under GCC AddressSanitizer/UBSan with leak detection. Filter-chain
+spools, encrypted/object streams, Flate predictors, compiled corpus,
+materialized large streams, and Sonic1 qualification remain open.

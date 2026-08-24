@@ -194,6 +194,8 @@ static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_o
                                             size_t streamlen, int fout, size_t *bytes_scanned);
 static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream,
                                            size_t streamlen, int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+                                       const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
 static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -258,7 +260,7 @@ size_t pdf_decodestream(
         goto done;
     }
 
-    /* Ordinary single-filter Flate, RunLength, ASCIIHex, and ASCII85 streams
+    /* Ordinary single-filter Flate, RunLength, ASCIIHex, ASCII85, and LZW streams
      * do not need the legacy whole-buffer token. Decode them through bounded
      * state directly into the quota-accounted child file. Object streams still
      * need retained decoded bytes for object parsing, filter chains need an
@@ -266,7 +268,8 @@ size_t pdf_decodestream(
      * decryption first. XRef streams deliberately skip forced decryption. */
     if (obj->numfilters == 1 &&
         (obj->filterlist[0] == OBJ_FILTER_FLATE || obj->filterlist[0] == OBJ_FILTER_RL ||
-         obj->filterlist[0] == OBJ_FILTER_AH || obj->filterlist[0] == OBJ_FILTER_A85) &&
+         obj->filterlist[0] == OBJ_FILTER_AH || obj->filterlist[0] == OBJ_FILTER_A85 ||
+         obj->filterlist[0] == OBJ_FILTER_LZW) &&
         objstm == NULL &&
         !(obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
         (!(pdf->flags & (1 << DECRYPTABLE_PDF)) || xref)) {
@@ -284,6 +287,9 @@ size_t pdf_decodestream(
                 break;
             case OBJ_FILTER_A85:
                 decode_status = pdf_stream_ascii85decode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+                break;
+            case OBJ_FILTER_LZW:
+                decode_status = pdf_stream_lzwdecode(pdf, obj, params, stream, streamlen, fout, &bytes_scanned);
                 break;
             default:
                 decode_status = CL_EARG;
@@ -1556,6 +1562,287 @@ static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_ob
     return status;
 }
 
+static cl_error_t pdf_lzw_parameters(struct pdf_struct *pdf, struct pdf_dict *params,
+                                     int *early_change)
+{
+    struct pdf_dict_node *node;
+    long predictor = 1;
+
+    if (early_change == NULL)
+        return CL_ENULLARG;
+    *early_change = 1;
+    if (params == NULL)
+        return CL_SUCCESS;
+
+    node = params->nodes;
+    while (node != NULL) {
+        const char *name = NULL;
+        bool early_parameter = false;
+
+        if (pdf_checktimelimit(pdf, "PDF LZW-parameter traversal reached the configured time limit") != CL_SUCCESS)
+            return CL_ETIMEOUT;
+
+        if (node->key != NULL) {
+            if (strcmp(node->key, "/EarlyChange") == 0) {
+                name            = "EarlyChange";
+                early_parameter = true;
+            } else if (strcmp(node->key, "/Predictor") == 0) {
+                name = "Predictor";
+            }
+        }
+
+        if (name != NULL) {
+            char *end;
+            char *value = (char *)node->value;
+            long parsed;
+
+            if (node->type != PDF_DICT_STRING || value == NULL) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW DecodeParms contained a missing or non-scalar numeric value");
+                return CL_EPARSE;
+            }
+
+            errno  = 0;
+            parsed = strtol(value, &end, 10);
+            while (*end != '\0' && isspace((unsigned char)*end))
+                end++;
+            if (end == value || *end != '\0' || errno == ERANGE) {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW DecodeParms contained an invalid numeric value");
+                return CL_EPARSE;
+            }
+
+            cli_dbgmsg("cli_pdf: %s: %ld\n", name, parsed);
+            if (!early_parameter) {
+                predictor = parsed;
+            } else if (parsed == 0 || parsed == 1) {
+                *early_change = (int)parsed;
+            } else {
+                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW EarlyChange parameter is outside its defined range");
+                return CL_EPARSE;
+            }
+        }
+        node = node->next;
+    }
+
+    if (predictor != 1) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF LZW predictor decoding is unsupported");
+        return CL_EPARSE;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_lzw_stream_attempt(struct pdf_struct *pdf, const uint8_t *content,
+                                         size_t length, int early_change, int fout,
+                                         size_t *decoded_length, int *decode_status)
+{
+    uint8_t *output_buffer = NULL;
+    lzw_stream stream;
+    size_t supplied        = 0;
+    size_t decoded         = 0;
+    size_t output_buffered = 0;
+    cl_error_t status      = CL_SUCCESS;
+    int lzwstat            = LZW_OK;
+    bool initialized       = false;
+
+    if (decoded_length == NULL || decode_status == NULL)
+        return CL_ENULLARG;
+    *decoded_length = 0;
+    *decode_status  = LZW_OK;
+
+    output_buffer = (uint8_t *)malloc(INFLATE_CHUNK_SIZE);
+    if (output_buffer == NULL) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed LZW output window could not be allocated");
+        return CL_EMEM;
+    }
+
+    memset(&stream, 0, sizeof(stream));
+    stream.next_out  = output_buffer;
+    stream.avail_out = INFLATE_CHUNK_SIZE;
+    if (early_change)
+        stream.flags |= LZW_FLAG_EARLYCHG;
+
+    lzwstat = lzwInit(&stream);
+    if (lzwstat != LZW_OK) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed LZW decoder could not be initialized");
+        status = CL_EMEM;
+        goto done;
+    }
+    initialized = true;
+
+    for (;;) {
+        unsigned int input_before;
+        unsigned int output_before;
+        size_t produced;
+
+        status = pdf_checktimelimit(pdf, "PDF streamed LZW traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            break;
+
+        if (stream.avail_in == 0 && supplied < length) {
+            size_t input_length = MIN((size_t)PDF_INPUT_WINDOW_SIZE, length - supplied);
+
+            stream.next_in  = (uint8_t *)(content + supplied);
+            stream.avail_in = (unsigned int)input_length;
+            supplied += input_length;
+        }
+
+        if (stream.avail_out == 0) {
+            status = pdf_stream_output_flush(pdf, fout, output_buffer, &output_buffered,
+                                             decoded,
+                                             "PDF streamed LZW output exceeded configured scan limits");
+            if (status != CL_SUCCESS)
+                break;
+            stream.next_out  = output_buffer;
+            stream.avail_out = INFLATE_CHUNK_SIZE;
+        }
+
+        input_before  = stream.avail_in;
+        output_before = stream.avail_out;
+        lzwstat       = lzwInflate(&stream);
+        produced      = (size_t)(output_before - stream.avail_out);
+
+        if (decoded > SIZE_MAX - produced || decoded > UINT64_MAX - produced) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed LZW output size overflowed");
+            status = CL_ERESOURCE;
+            break;
+        }
+        decoded += produced;
+        output_buffered += produced;
+
+        if (lzwstat == LZW_STREAM_END) {
+            status = pdf_stream_output_flush(pdf, fout, output_buffer, &output_buffered,
+                                             decoded,
+                                             "PDF streamed LZW output exceeded configured scan limits");
+            break;
+        }
+
+        if (lzwstat == LZW_OK) {
+            if (input_before == stream.avail_in && output_before == stream.avail_out) {
+                status = CL_EPARSE;
+                break;
+            }
+            if (stream.avail_out == 0 || (stream.avail_in == 0 && supplied < length))
+                continue;
+            if (stream.avail_in == 0 && supplied == length) {
+                status = CL_EPARSE;
+                break;
+            }
+            continue;
+        }
+
+        if (lzwstat == LZW_MEM_ERROR) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF streamed LZW decoder exhausted memory");
+            status = CL_EMEM;
+        } else {
+            status = CL_EPARSE;
+        }
+        break;
+    }
+
+done:
+    *decoded_length = decoded;
+    *decode_status  = lzwstat;
+    if (initialized)
+        (void)lzwInflateEnd(&stream);
+    free(output_buffer);
+    return status;
+}
+
+static cl_error_t pdf_stream_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                       struct pdf_dict *params, const char *stream_data,
+                                       size_t streamlen, int fout, size_t *bytes_scanned)
+{
+    uint8_t *content = (uint8_t *)stream_data;
+    size_t length    = streamlen;
+    size_t decoded   = 0;
+    off_t output_start;
+    uint64_t reservation_start = 0;
+    cl_error_t status;
+    int early_change = 1;
+    int lzwstat      = LZW_OK;
+
+    if (bytes_scanned == NULL)
+        return CL_ENULLARG;
+    *bytes_scanned = 0;
+
+    if (pdf->ctx != NULL && pdf->ctx->dconf != NULL &&
+        !(pdf->ctx->dconf->other & OTHER_CONF_LZW)) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF LZW decoding is disabled and the stream was not inspected");
+        return CL_EPARSE;
+    }
+
+    status = pdf_lzw_parameters(pdf, params, &early_change);
+    if (status != CL_SUCCESS)
+        return status;
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF streamed LZW output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    if (*content == '\r') {
+        content++;
+        length--;
+        pdfobj_flag(pdf, obj, BAD_STREAMSTART);
+        if (length == 0) {
+            cli_dbgmsg("cli_pdf: LZW stream has no compressed payload after its leading carriage return\n");
+            cli_mark_scan_incomplete(pdf->ctx, "PDF LZW stream has no compressed payload");
+            status = CL_EPARSE;
+            goto rollback;
+        }
+    }
+
+    status = pdf_lzw_stream_attempt(pdf, content, length, early_change, fout,
+                                    &decoded, &lzwstat);
+    if (status == CL_EPARSE && decoded == 0) {
+        uint8_t *resynchronized = decode_nextlinestart(pdf, content, length);
+
+        if (pdf->ctx != NULL && pdf->ctx->scan_timed_out) {
+            status = CL_ETIMEOUT;
+            goto rollback;
+        }
+        if (resynchronized != NULL && resynchronized > content &&
+            (size_t)(resynchronized - content) < length) {
+            length -= (size_t)(resynchronized - content);
+            content = resynchronized;
+            decoded = 0;
+            pdfobj_flag(pdf, obj, BAD_FLATESTART);
+            status = pdf_lzw_stream_attempt(pdf, content, length, early_change, fout,
+                                            &decoded, &lzwstat);
+        }
+    }
+
+    if (status == CL_SUCCESS) {
+        cli_dbgmsg("cli_pdf: streamed LZW decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        *bytes_scanned = decoded;
+        return decoded == 0 ? CL_BREAK : CL_SUCCESS;
+    }
+
+rollback:
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(pdf, fout, output_start, reservation_start);
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+
+    if (status == CL_EPARSE) {
+        if (decoded == 0) {
+            pdfobj_flag(pdf, obj, BAD_FLATESTART);
+        } else {
+            pdfobj_flag(pdf, obj, BAD_FLATE);
+        }
+        if (lzwstat == LZW_OK) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF LZW stream did not reach the decoder end state");
+        } else {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoder failed before the stream completed");
+        }
+    }
+    return status;
+}
+
 static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token)
 {
     uint8_t *decoded, *temp;
@@ -1880,35 +2167,16 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
     bool stream_initialized = false;
     int echg = 1, lzwstat, rc = CL_SUCCESS;
 
-    if (pdf->ctx && !(pdf->ctx->dconf->other & OTHER_CONF_LZW)) {
+    if (pdf->ctx && pdf->ctx->dconf && !(pdf->ctx->dconf->other & OTHER_CONF_LZW)) {
         cli_mark_scan_incomplete(pdf->ctx,
                                  "PDF LZW decoding is disabled and the stream was not inspected");
         rc = CL_EPARSE;
         goto done;
     }
 
-    if (params) {
-        struct pdf_dict_node *node = params->nodes;
-
-        while (node) {
-            if (pdf_checktimelimit(pdf, "PDF LZW-parameter traversal reached the configured time limit") != CL_SUCCESS)
-                return CL_ETIMEOUT;
-            if (node->type == PDF_DICT_STRING) {
-                if (!strncmp(node->key, "/EarlyChange", 13)) { /* optional field - lzw flag */
-                    char *end, *value = (char *)node->value;
-                    long set;
-
-                    if (value) {
-                        cli_dbgmsg("cli_pdf: EarlyChange: %s\n", value);
-                        set = strtol(value, &end, 10);
-                        if (end != value)
-                            echg = (int)set;
-                    }
-                }
-            }
-            node = node->next;
-        }
-    }
+    rc = pdf_lzw_parameters(pdf, params, &echg);
+    if (rc != CL_SUCCESS)
+        goto done;
 
     if (*content == '\r') {
         content++;
@@ -1933,8 +2201,6 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
         rc = CL_EMEM;
         goto done;
     }
-    stream_initialized = true;
-
     memset(&stream, 0, sizeof(stream));
     stream.next_in   = content;
     stream.avail_in  = length;
@@ -1950,6 +2216,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
         rc = CL_EMEM;
         goto done;
     }
+    stream_initialized = true;
 
     if (pdf_checktimelimit(pdf, "PDF LZW traversal reached the configured time limit") != CL_SUCCESS) {
         rc = CL_ETIMEOUT;
@@ -1969,6 +2236,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
         }
         if (q) {
             (void)lzwInflateEnd(&stream);
+            stream_initialized = false;
             length -= q - content;
             content = q;
 
@@ -1984,6 +2252,7 @@ static cl_error_t filter_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, 
                 rc = CL_EMEM;
                 goto done;
             }
+            stream_initialized = true;
 
             pdfobj_flag(pdf, obj, BAD_FLATESTART);
         }

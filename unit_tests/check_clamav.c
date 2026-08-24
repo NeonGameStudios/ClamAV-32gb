@@ -10645,10 +10645,11 @@ struct pdf_single_filter_result {
     bool dont_cache;
 };
 
-static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_size,
-                                          size_t logical_size, uint32_t filter,
-                                          uint64_t temporary_limit,
-                                          struct pdf_single_filter_result *result)
+static void pdf_test_decode_single_filter_with_params(const uint8_t *input, size_t input_size,
+                                                      size_t logical_size, uint32_t filter,
+                                                      struct pdf_dict *params,
+                                                      uint64_t temporary_limit,
+                                                      struct pdf_single_filter_result *result)
 {
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
@@ -10697,7 +10698,7 @@ static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_siz
     obj.numfilters         = 1;
     obj.filterlist[0]      = filter;
 
-    result->written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
+    result->written = pdf_decodestream(&pdf, &obj, params, (const char *)input,
                                        logical_size, 0, fd, &status, NULL);
     result->status = status;
     ck_assert_int_eq(fstat(fd, &output_stat), 0);
@@ -10725,6 +10726,15 @@ static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_siz
     free(path);
     cl_fmap_close(map);
     cl_engine_free(scan_engine);
+}
+
+static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_size,
+                                          size_t logical_size, uint32_t filter,
+                                          uint64_t temporary_limit,
+                                          struct pdf_single_filter_result *result)
+{
+    pdf_test_decode_single_filter_with_params(input, input_size, logical_size,
+                                              filter, NULL, temporary_limit, result);
 }
 
 static uint8_t pdf_test_hex_digit(uint8_t value)
@@ -11090,6 +11100,268 @@ START_TEST(test_pdf_streaming_ascii85_accepts_native_input_width)
 END_TEST
 #endif
 
+static void pdf_test_lzw_write_code(uint8_t *encoded, size_t capacity,
+                                    size_t *bit_offset, unsigned int code,
+                                    unsigned int width)
+{
+    unsigned int bit;
+
+    ck_assert_ptr_nonnull(encoded);
+    ck_assert_ptr_nonnull(bit_offset);
+    ck_assert(width >= 9U && width <= 12U);
+    ck_assert(code < (1U << width));
+    ck_assert(*bit_offset <= capacity * 8U);
+    ck_assert((size_t)width <= capacity * 8U - *bit_offset);
+
+    for (bit = 0; bit < width; bit++) {
+        size_t position = *bit_offset + bit;
+
+        if (code & (1U << (width - bit - 1U)))
+            encoded[position / 8U] |= (uint8_t)(1U << (7U - position % 8U));
+    }
+    *bit_offset += width;
+}
+
+static uint8_t *pdf_test_lzw_literal_fixture(size_t output_size, int early_change,
+                                             bool include_eoi, uint8_t **expected,
+                                             size_t *encoded_size)
+{
+    uint8_t *encoded;
+    size_t capacity;
+    size_t bit_offset = 0;
+    size_t i;
+    unsigned int width     = 9U;
+    unsigned int next_free = 258U;
+    unsigned int max_code  = (1U << width) - 2U;
+
+    ck_assert(output_size > 0);
+    ck_assert(early_change == 0 || early_change == 1);
+    ck_assert(output_size <= (SIZE_MAX - 31U) / 12U);
+    capacity = ((output_size + 2U) * 12U + 7U) / 8U;
+    encoded  = calloc(1, capacity);
+    *expected = malloc(output_size);
+    ck_assert_ptr_nonnull(encoded);
+    ck_assert_ptr_nonnull(*expected);
+
+    pdf_test_lzw_write_code(encoded, capacity, &bit_offset, 256U, width);
+    for (i = 0; i < output_size; i++) {
+        uint8_t value = (uint8_t)(i * 37U + 11U);
+
+        (*expected)[i] = value;
+        pdf_test_lzw_write_code(encoded, capacity, &bit_offset, value, width);
+        if (i == 0)
+            continue;
+
+        if (!early_change && next_free > max_code && width < 12U) {
+            width++;
+            max_code = (1U << width) - 2U;
+        }
+        if (next_free < 4096U)
+            next_free++;
+        if (early_change && next_free > max_code && width < 12U) {
+            width++;
+            max_code = (1U << width) - 2U;
+        }
+    }
+    if (include_eoi)
+        pdf_test_lzw_write_code(encoded, capacity, &bit_offset, 257U, width);
+
+    *encoded_size = (bit_offset + 7U) / 8U;
+    return encoded;
+}
+
+START_TEST(test_pdf_lzw_stream_is_chunked_and_quota_accounted)
+{
+    const size_t decoded_size = (256U * 1024U) + 257U;
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_lzw_literal_fixture(decoded_size, 1, true,
+                                                    &expected, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size,
+                                  OBJ_FILTER_LZW, decoded_size, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, decoded_size);
+    ck_assert_uint_eq(result.output_size, decoded_size);
+    ck_assert_uint_eq(result.output_offset, decoded_size);
+    ck_assert_uint_eq(result.temporary_reserved, decoded_size);
+    ck_assert_uint_eq(result.temporary_bytes, decoded_size);
+    ck_assert(!result.scan_incomplete);
+    ck_assert_int_eq(memcmp(result.output, expected, decoded_size), 0);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_lzw_stream_quota_failure_rolls_back_output)
+{
+    const size_t decoded_size = (256U * 1024U) + 257U;
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_lzw_literal_fixture(decoded_size, 1, true,
+                                                    &expected, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size,
+                                  OBJ_FILTER_LZW, decoded_size - 1U, &result);
+    ck_assert_int_eq(result.status, CL_ERESOURCE);
+    ck_assert_uint_eq(result.written, 0);
+    ck_assert_uint_eq(result.output_size, 0);
+    ck_assert_int_eq(result.output_offset, 0);
+    ck_assert_uint_eq(result.temporary_reserved, 0);
+    ck_assert_uint_eq(result.temporary_bytes, 0);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_truncated_lzw_after_written_prefix_is_fail_visible)
+{
+    const size_t decoded_size = (256U * 1024U) + 257U;
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_lzw_literal_fixture(decoded_size, 1, false,
+                                                    &expected, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    pdf_test_decode_single_filter(encoded, encoded_size, encoded_size,
+                                  OBJ_FILTER_LZW, 0, &result);
+    ck_assert_int_eq(result.status, CL_EPARSE);
+    ck_assert_uint_eq(result.written, encoded_size);
+    ck_assert_uint_eq(result.output_size, encoded_size);
+    ck_assert_uint_eq(result.output_offset, encoded_size);
+    ck_assert_uint_eq(result.temporary_reserved, encoded_size);
+    ck_assert_uint_eq(result.temporary_bytes, encoded_size);
+    ck_assert(result.scan_incomplete);
+    ck_assert(result.dont_cache);
+    ck_assert_int_eq(memcmp(result.output, encoded, encoded_size), 0);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_lzw_early_change_zero_is_exact)
+{
+    enum { DECODED_SIZE = 600U };
+    char key[]   = "/EarlyChange";
+    char value[] = "0";
+    struct pdf_dict_node node;
+    struct pdf_dict params;
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_lzw_literal_fixture(DECODED_SIZE, 0, true,
+                                                    &expected, &encoded_size);
+    struct pdf_single_filter_result result;
+
+    memset(&node, 0, sizeof(node));
+    memset(&params, 0, sizeof(params));
+    node.key     = key;
+    node.value   = value;
+    node.valuesz = sizeof(value) - 1U;
+    node.type    = PDF_DICT_STRING;
+    params.nodes = &node;
+    params.tail  = &node;
+
+    pdf_test_decode_single_filter_with_params(encoded, encoded_size, encoded_size,
+                                              OBJ_FILTER_LZW, &params, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, DECODED_SIZE);
+    ck_assert_uint_eq(result.output_size, DECODED_SIZE);
+    ck_assert_int_eq(memcmp(result.output, expected, DECODED_SIZE), 0);
+    ck_assert(!result.scan_incomplete);
+
+    free(result.output);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+START_TEST(test_pdf_lzw_invalid_parameters_are_fail_visible)
+{
+    static const struct {
+        const char *key;
+        const char *value;
+        enum pdf_dict_type type;
+    } cases[] = {
+        {"/EarlyChange", "2", PDF_DICT_STRING},
+        {"/EarlyChange", "invalid", PDF_DICT_STRING},
+        {"/Predictor", "12", PDF_DICT_STRING},
+        {"/EarlyChange", "0", PDF_DICT_ARRAY},
+    };
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_lzw_literal_fixture(32U, 1, true,
+                                                    &expected, &encoded_size);
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        struct pdf_dict_node node;
+        struct pdf_dict params;
+        struct pdf_single_filter_result result;
+
+        memset(&node, 0, sizeof(node));
+        memset(&params, 0, sizeof(params));
+        node.key     = (char *)cases[i].key;
+        node.value   = (void *)cases[i].value;
+        node.valuesz = strlen(cases[i].value);
+        node.type    = cases[i].type;
+        params.nodes = &node;
+        params.tail  = &node;
+
+        pdf_test_decode_single_filter_with_params(encoded, encoded_size, encoded_size,
+                                                  OBJ_FILTER_LZW, &params, 0, &result);
+        ck_assert_int_eq(result.status, CL_EPARSE);
+        ck_assert_uint_eq(result.written, encoded_size);
+        ck_assert_uint_eq(result.output_size, encoded_size);
+        ck_assert_int_eq(memcmp(result.output, encoded, encoded_size), 0);
+        ck_assert(result.scan_incomplete);
+        ck_assert(result.dont_cache);
+        free(result.output);
+    }
+
+    free(encoded);
+    free(expected);
+}
+END_TEST
+
+#if SIZE_MAX > UINT32_MAX
+START_TEST(test_pdf_streaming_lzw_accepts_native_input_width)
+{
+    uint8_t *expected = NULL;
+    size_t encoded_size;
+    uint8_t *encoded = pdf_test_lzw_literal_fixture(1U, 1, true,
+                                                    &expected, &encoded_size);
+    uint8_t *input = calloc(1, PDF_INPUT_WINDOW_SIZE);
+    struct pdf_single_filter_result result;
+
+    ck_assert_ptr_nonnull(input);
+    ck_assert(encoded_size <= PDF_INPUT_WINDOW_SIZE);
+    memcpy(input, encoded, encoded_size);
+    pdf_test_decode_single_filter(input, PDF_INPUT_WINDOW_SIZE,
+                                  (size_t)UINT32_MAX + 1U,
+                                  OBJ_FILTER_LZW, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, 1U);
+    ck_assert_uint_eq(result.output_size, 1U);
+    ck_assert_int_eq(result.output[0], expected[0]);
+    ck_assert(!result.scan_incomplete);
+
+    free(result.output);
+    free(input);
+    free(encoded);
+    free(expected);
+}
+END_TEST
+#endif
+
 START_TEST(test_arc4_apply_uses_native_length)
 {
     static const uint8_t key[]      = "Key";
@@ -11159,11 +11431,11 @@ START_TEST(test_pdf_stream_width_boundary_is_fail_visible)
     ctx.this_layer_tmpdir = tmpdir;
     pdf.ctx               = &ctx;
     obj.id                = 8U << 8;
-    obj.numfilters        = 1;
-    /* Filter chains and non-streamed legacy decoders retain this explicit
-     * native-width boundary. Single ordinary Flate streams use the bounded
-     * streaming path instead. */
+    /* Filter chains retain this explicit native-width boundary. Ordinary
+     * supported single filters use bounded streaming paths instead. */
+    obj.numfilters        = 2;
     obj.filterlist[0]     = OBJ_FILTER_LZW;
+    obj.filterlist[1]     = OBJ_FILTER_LZW;
 
     status  = CL_SUCCESS;
     written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
@@ -11216,8 +11488,9 @@ START_TEST(test_pdf_stream_allocation_boundary_is_fail_visible)
     ctx.this_layer_tmpdir = tmpdir;
     pdf.ctx               = &ctx;
     obj.id                = 9U << 8;
-    obj.numfilters        = 1;
+    obj.numfilters        = 2;
     obj.filterlist[0]     = OBJ_FILTER_LZW;
+    obj.filterlist[1]     = OBJ_FILTER_LZW;
 
     status  = CL_SUCCESS;
     written = pdf_decodestream(&pdf, &obj, NULL, (const char *)input,
@@ -27716,6 +27989,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_ascii85_overflow_groups_are_fail_visible);
     tcase_add_test(tc_cl, test_pdf_ascii85_stream_quota_failure_rolls_back_output);
     tcase_add_test(tc_cl, test_pdf_invalid_ascii85_after_prefix_is_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_lzw_stream_is_chunked_and_quota_accounted);
+    tcase_add_test(tc_cl, test_pdf_lzw_stream_quota_failure_rolls_back_output);
+    tcase_add_test(tc_cl, test_pdf_truncated_lzw_after_written_prefix_is_fail_visible);
+    tcase_add_test(tc_cl, test_pdf_lzw_early_change_zero_is_exact);
+    tcase_add_test(tc_cl, test_pdf_lzw_invalid_parameters_are_fail_visible);
 #if SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_cl, test_pdf_stream_width_boundary_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_stream_allocation_boundary_is_fail_visible);
@@ -27724,6 +28002,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_streaming_runlength_accepts_native_input_width);
     tcase_add_test(tc_cl, test_pdf_streaming_asciihex_accepts_native_input_width);
     tcase_add_test(tc_cl, test_pdf_streaming_ascii85_accepts_native_input_width);
+    tcase_add_test(tc_cl, test_pdf_streaming_lzw_accepts_native_input_width);
 #endif
     tcase_add_test(tc_cl, test_pdf_extracted_object_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_pdf_extract_decoder_error_is_fail_visible);

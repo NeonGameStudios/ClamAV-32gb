@@ -6453,10 +6453,10 @@ leakage, malformed-prefix rollback, and native-width source admission above
 `UINT32_MAX`.
 
 Object streams still retain decoded bytes for object parsing, and encrypted
-streams and filter chains need intermediate representations. Those paths,
-together with LZW, retain their explicit legacy contiguous/width boundary.
-Compiled PDF corpus, sanitizer, materialized large-stream, and supported-build
-Sonic1 qualification remain release gates.
+streams and filter chains need intermediate representations. Those paths
+retain their explicit legacy contiguous/width boundary. Compiled PDF corpus,
+sanitizer, materialized large-stream, and supported-build Sonic1 qualification
+remain release gates.
 
 The isolated Linux GCC translation-unit check also exposed an older unmatched
 `_WIN32` guard and late callback declarations in `check_clamav.c`. The guard is
@@ -6489,8 +6489,8 @@ one-byte-short quota rollback with zero leakage, malformed input after a valid
 prefix, and a native-width logical input above `UINT32_MAX` that terminates at
 an early marker. The production-code harness passes all eight Flate and
 RunLength cases under ordinary GCC and GCC AddressSanitizer/UBSan with leak
-detection. Filter chains, object streams, encryption, and LZW remain explicit
-PDF qualification gaps.
+detection. Filter chains, object streams, and encryption remain explicit PDF
+qualification gaps.
 
 ## PDF single-ASCII filter bounded streaming — 2026-08-23
 
@@ -6512,6 +6512,33 @@ Focused tests cover exact output beyond one window, odd nibbles, known ASCII85
 vectors, zero groups, partial groups, whitespace, post-marker bytes,
 one-byte-short quotas, invalid and overflowing groups after valid output, and
 native-width logical lengths above `UINT32_MAX` with early terminators. The
-production harness passes all 20 Flate, RunLength, ASCIIHex, and ASCII85 cases normally and
-under GCC AddressSanitizer/UBSan with leak detection. Object streams,
-encryption, filter chains, and LZW remain the explicit token-backed PDF gaps.
+production harness passes all 20 Flate, RunLength, ASCIIHex, and ASCII85 cases
+normally and under GCC AddressSanitizer/UBSan with leak detection. Object
+streams, encryption, and filter chains remain the explicit token-backed PDF
+gaps.
+
+## PDF single-LZW bounded streaming — 2026-08-23
+
+Ordinary unencrypted single-filter `LZWDecode` streams now preserve the
+decoder's fixed dictionary and bit state across 64 KiB native-width input
+windows, rather than narrowing the complete input into its unsigned legacy
+field. Decoded bytes use the shared 256 KiB transactional output window with
+deadline, scan-limit, and temporary-quota admission before exact writes.
+
+Both defined `EarlyChange` modes are parsed strictly and exercised across the
+9-to-10-bit code-width boundary. Missing, non-scalar, non-numeric, and
+out-of-range values are fail-visible, and predictor values other than the
+identity default are explicitly unsupported instead of silently treated as
+decoded. Disabled LZW support, missing EOI codes, invalid dictionary input,
+limits, and I/O failures remain incomplete and non-cacheable. The legacy
+filter-chain decoder now destroys state only after successful initialization.
+
+Focused regressions cover exact output beyond one output window and multiple
+input windows, one-byte-short quota rollback, truncation after a written
+prefix with exact raw replacement, `EarlyChange` zero, malformed and
+unsupported parameters, and an early EOI under a logical input length above
+`UINT32_MAX`. The real production harness passes all 26 streamed-filter cases
+normally and under GCC AddressSanitizer/UBSan with leak detection. Remaining
+PDF work includes bounded filter-chain spools, encrypted and object streams,
+Flate predictor handling, compiled corpus, materialized large-stream, and
+Sonic1 qualification.
