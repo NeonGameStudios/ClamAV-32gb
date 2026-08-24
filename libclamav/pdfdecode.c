@@ -1666,6 +1666,9 @@ static cl_error_t pdf_stream_decrypt_reader(
                 status = CL_EMEM;
                 goto fail;
             }
+            cli_dbgmsg("pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows\n");
+        } else {
+            cli_dbgmsg("pdf_stream_decrypt_reader: copying Identity Crypt stream in bounded windows\n");
         }
 
         for (;;) {
@@ -1721,6 +1724,8 @@ static cl_error_t pdf_stream_decrypt_reader(
             status = CL_EPARSE;
             goto fail;
         }
+        cli_dbgmsg("pdf_stream_decrypt_reader: decrypting AES%s stream in bounded CBC blocks\n",
+                   enc_method == ENC_AESV2 ? "V2" : "V3");
 
         if (enc_method == ENC_AESV2) {
             status = pdf_derive_object_key(pdf, obj->id, enc_method,

@@ -11,11 +11,14 @@ import subprocess
 
 
 CASES = {
-    "raw": ("raw", False),
-    "flate": ("flate", False),
-    "filter-chain": ("asciihex-flate", False),
-    "malformed": ("flate", True),
-    "materialized": ("raw", False),
+    "raw": ("raw", "none", False),
+    "flate": ("flate", "none", False),
+    "filter-chain": ("asciihex-flate", "none", False),
+    "malformed": ("flate", "none", True),
+    "materialized": ("raw", "none", False),
+    "rc4-raw": ("raw", "rc4-r2", False),
+    "rc4-flate": ("flate", "rc4-r2", False),
+    "rc4-filter-chain": ("asciihex-flate", "rc4-r2", False),
 }
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SOURCE_ID = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
@@ -102,7 +105,7 @@ def main():
     }
     if set(metadata) != expected_keys:
         fail("metadata keys do not match schema version 1")
-    if metadata["schema_version"] != "1" or metadata["qualification_status"] != "pass":
+    if metadata["schema_version"] != "2" or metadata["qualification_status"] != "pass":
         fail("metadata does not declare a schema-1 pass")
     if metadata["source_revision_type"] not in ("git-commit", "content-manifest"):
         fail("source revision type is invalid")
@@ -199,15 +202,15 @@ def main():
 
     corpus_rows = read_tsv(
         evidence / "corpus-manifest.tsv",
-        ["case", "path", "filter", "decoded_size", "encoded_size", "file_size", "sha256",
+        ["case", "path", "filter", "encryption", "decoded_size", "encoded_size", "file_size", "sha256",
          "allocated_bytes", "metadata_sha256"],
     )
     if {row["case"] for row in corpus_rows} != set(CASES) or len(corpus_rows) != len(CASES):
         fail("corpus manifest does not contain exactly the required cases")
     for row in corpus_rows:
-        expected_filter, _ = CASES[row["case"]]
-        if row["filter"] != expected_filter:
-            fail(f"{row['case']} has the wrong filter oracle")
+        expected_filter, expected_encryption, _ = CASES[row["case"]]
+        if row["filter"] != expected_filter or row["encryption"] != expected_encryption:
+            fail(f"{row['case']} has the wrong filter or encryption oracle")
         path = safe_evidence_path(evidence, row["path"])
         size = integer(row["file_size"], f"{row['case']} file size", 1)
         allocated = integer(row["allocated_bytes"], f"{row['case']} allocation")
@@ -222,6 +225,24 @@ def main():
             or digest(fixture_metadata) != row["metadata_sha256"]
         ):
             fail(f"{row['case']} generator metadata differs from its oracle")
+        metadata_values = {}
+        for line in fixture_metadata.read_text(encoding="utf-8").splitlines():
+            if "=" not in line:
+                fail(f"{row['case']} generator metadata contains a malformed row")
+            key, value = line.split("=", 1)
+            if key in metadata_values:
+                fail(f"{row['case']} generator metadata contains a duplicate key")
+            metadata_values[key] = value
+        if metadata_values.get("encryption") != expected_encryption:
+            fail(f"{row['case']} generator metadata has the wrong encryption oracle")
+        encrypted_metadata = (
+            re.fullmatch(r"[0-9a-f]{32}", metadata_values.get("file_id", ""))
+            is not None
+            and SHA256.fullmatch(metadata_values.get("file_key_sha256", ""))
+            is not None
+        )
+        if encrypted_metadata != (expected_encryption == "rc4-r2"):
+            fail(f"{row['case']} generator security metadata oracle is incorrect")
         if row["case"] == "materialized" and (case_decoded != decoded_size or allocated < size):
             fail("materialized fixture size/allocation does not meet its oracle")
 
@@ -233,7 +254,7 @@ def main():
     if {row["case"] for row in result_rows} != set(CASES) or len(result_rows) != len(CASES):
         fail("results do not contain exactly the required cases")
     for row in result_rows:
-        _, malformed = CASES[row["case"]]
+        _, encryption, malformed = CASES[row["case"]]
         if row["status"] != "1" or row["result"] != "pass":
             fail(f"{row['case']} does not have the exact detection/pass result")
         if integer(row["rss_kb"], f"{row['case']} RSS", 1) > rss_budget:
@@ -257,6 +278,16 @@ def main():
         incomplete = "PDF object-stream parsing did not complete" in text
         if incomplete != malformed:
             fail(f"{row['case']} malformed-status oracle is incorrect")
+        has_bounded_rc4 = (
+            "pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows" in text
+        )
+        has_empty_password = (
+            "encrypted PDF found, user password is empty, will attempt to decrypt" in text
+        )
+        if (has_bounded_rc4, has_empty_password) != (
+            (True, True) if encryption == "rc4-r2" else (False, False)
+        ):
+            fail(f"{row['case']} encrypted-stream diagnostic oracle is incorrect")
         tempdir = evidence / "tmp" / row["case"]
         if not tempdir.is_dir() or any(tempdir.iterdir()):
             fail(f"{row['case']} retained temporary residue")

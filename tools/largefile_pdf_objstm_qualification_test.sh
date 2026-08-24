@@ -7,7 +7,17 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/clamav-pdf-qualification.XXXXXX")
-trap 'rm -rf "$work"' EXIT HUP INT TERM
+cleanup()
+{
+    status=$?
+    trap - EXIT HUP INT TERM
+    if [ "$status" -ne 0 ] && [ -f "$work/qualification.log" ]; then
+        cat "$work/qualification.log" >&2
+    fi
+    rm -rf "$work"
+    exit "$status"
+}
+trap cleanup EXIT HUP INT TERM
 
 mkdir -p "$work/database"
 printf 'stub database\n' > "$work/database/stub.cvd"
@@ -40,6 +50,10 @@ int main(int argc, char **argv)
         return 2;
 
     puts("pdf_extract_obj: Found /Type/ObjStm");
+    if (strstr(input, "rc4-") != NULL) {
+        puts("check_user_password: encrypted PDF found, user password is empty, will attempt to decrypt");
+        puts("pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows");
+    }
     if (mode != NULL && strcmp(mode, "reject") == 0) {
         char path[4096];
         FILE *leak;
@@ -67,8 +81,8 @@ gcc -O2 -o "$stub" "$stub.c"
     > "$work/qualification.log" 2>&1
 
 [ "$(awk -F '\t' 'NR > 1 && $10 == "pass" { count++ } END { print count + 0 }' \
-    "$work/evidence/results.tsv")" -eq 5 ]
-awk -F '\t' 'NR > 1 && $1 == "materialized" { found = 1; if ($8 < $6) exit 1 } END { exit !found }' \
+    "$work/evidence/results.tsv")" -eq 8 ]
+awk -F '\t' 'NR > 1 && $1 == "materialized" { found = 1; if ($9 < $7) exit 1 } END { exit !found }' \
     "$work/evidence/corpus-manifest.tsv"
 grep -F 'PDF object-stream qualification passed' "$work/qualification.log" >/dev/null
 grep -F 'qualification_status=pass' "$work/evidence/evidence-metadata.txt" >/dev/null

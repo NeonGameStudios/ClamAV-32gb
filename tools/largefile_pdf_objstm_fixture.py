@@ -11,6 +11,71 @@ import zlib
 
 MARKER = b"CLAMAV-PDF-OBJSTM-TAIL-MARKER"
 CHUNK_SIZE = 1024 * 1024
+PASSWORD_PADDING = bytes.fromhex(
+    "28BF4E5E4E758A4164004E56FFFA0108"
+    "2E2E00B6D0683E802F0CA9FE6453697A"
+)
+FILE_ID = hashlib.md5(b"ClamAV deterministic encrypted object stream").digest()
+
+
+class RC4:
+    def __init__(self, key):
+        if not key:
+            raise ValueError("RC4 key must not be empty")
+        self.state = list(range(256))
+        j = 0
+        for i in range(256):
+            j = (j + self.state[i] + key[i % len(key)]) & 0xFF
+            self.state[i], self.state[j] = self.state[j], self.state[i]
+        self.i = 0
+        self.j = 0
+
+    def apply(self, data):
+        output = bytearray(data)
+        for offset, value in enumerate(output):
+            self.i = (self.i + 1) & 0xFF
+            self.j = (self.j + self.state[self.i]) & 0xFF
+            self.state[self.i], self.state[self.j] = (
+                self.state[self.j],
+                self.state[self.i],
+            )
+            key_byte = self.state[(self.state[self.i] + self.state[self.j]) & 0xFF]
+            output[offset] = value ^ key_byte
+        return bytes(output)
+
+
+def rc4(data, key):
+    return RC4(key).apply(data)
+
+
+def standard_r2_security():
+    permissions = -4
+    owner_key = hashlib.md5(PASSWORD_PADDING).digest()[:5]
+    owner = rc4(PASSWORD_PADDING, owner_key)
+    key_input = (
+        PASSWORD_PADDING
+        + owner
+        + (permissions & 0xFFFFFFFF).to_bytes(4, "little")
+        + FILE_ID
+    )
+    file_key = hashlib.md5(key_input).digest()[:5]
+    user = rc4(PASSWORD_PADDING, file_key)
+    return {
+        "file_id": FILE_ID,
+        "file_key": file_key,
+        "owner": owner,
+        "permissions": permissions,
+        "user": user,
+    }
+
+
+def rc4_object_key(file_key, object_number, generation=0):
+    material = (
+        file_key
+        + object_number.to_bytes(3, "little")
+        + generation.to_bytes(2, "little")
+    )
+    return hashlib.md5(material).digest()[: min(len(file_key) + 5, 16)]
 
 
 class HashedWriter:
@@ -70,7 +135,6 @@ def decoded_chunks(layout):
 
 def spool_encoded(layout, filter_name):
     spool = tempfile.TemporaryFile()
-    encoded_hash = hashlib.sha256()
     encoded_size = 0
     compressor = zlib.compressobj(level=9)
 
@@ -80,7 +144,6 @@ def spool_encoded(layout, filter_name):
             data = binascii.hexlify(data).upper()
         if data:
             spool.write(data)
-            encoded_hash.update(data)
             encoded_size += len(data)
 
     for chunk in decoded_chunks(layout):
@@ -89,7 +152,7 @@ def spool_encoded(layout, filter_name):
     if filter_name == "asciihex-flate":
         emit(b">", encode=False)
     spool.seek(0)
-    return spool, encoded_size, encoded_hash.hexdigest()
+    return spool, encoded_size
 
 
 def write_indirect(writer, number, contents):
@@ -104,21 +167,30 @@ def xref_entry(entry_type, field2, field3):
     return bytes([entry_type]) + field2.to_bytes(8, "big") + field3.to_bytes(2, "big")
 
 
-def build_fixture(path, filter_name="raw", kind="javascript", decoded_size=None, malformed=False):
+def build_fixture(
+    path,
+    filter_name="raw",
+    kind="javascript",
+    decoded_size=None,
+    malformed=False,
+    encryption="none",
+):
+    if encryption not in ("none", "rc4-r2"):
+        raise ValueError(f"unsupported encryption: {encryption}")
+    if malformed and encryption != "none":
+        raise ValueError("--malformed is not supported with encryption")
     layout = object_stream_layout(kind, decoded_size, malformed)
     first = len(layout[0])
     actual_decoded_size = sum(len(chunk) for chunk in decoded_chunks(layout))
     object_count = layout[-1]
     encoded_spool = None
+    security = standard_r2_security() if encryption == "rc4-r2" else None
 
     if filter_name == "raw":
         encoded_size = actual_decoded_size
-        raw_encoded_hash = hashlib.sha256()
-        encoded_sha256 = None
         filter_dictionary = b""
     else:
-        raw_encoded_hash = None
-        encoded_spool, encoded_size, encoded_sha256 = spool_encoded(layout, filter_name)
+        encoded_spool, encoded_size = spool_encoded(layout, filter_name)
         if filter_name == "flate":
             filter_dictionary = b" /Filter /FlateDecode"
         elif filter_name == "asciihex-flate":
@@ -143,21 +215,51 @@ def build_fixture(path, filter_name="raw", kind="javascript", decoded_size=None,
             )
             writer.write(dictionary)
             stream_offset = writer.offset
+            encoded_hash = hashlib.sha256()
+            stream_cipher = (
+                RC4(rc4_object_key(security["file_key"], 3))
+                if security is not None
+                else None
+            )
+
+            def write_stream_chunk(chunk):
+                if stream_cipher is not None:
+                    chunk = stream_cipher.apply(chunk)
+                writer.write(chunk)
+                encoded_hash.update(chunk)
+
             if encoded_spool is None:
                 for chunk in decoded_chunks(layout):
-                    writer.write(chunk)
-                    raw_encoded_hash.update(chunk)
+                    write_stream_chunk(chunk)
             else:
                 while True:
                     chunk = encoded_spool.read(CHUNK_SIZE)
                     if not chunk:
                         break
-                    writer.write(chunk)
+                    write_stream_chunk(chunk)
             writer.write(b"\nendstream\nendobj\n")
-            if encoded_sha256 is None:
-                encoded_sha256 = raw_encoded_hash.hexdigest()
+            encoded_sha256 = encoded_hash.hexdigest()
 
-            offsets[6] = write_indirect(writer, 6, b"<< /Length 4 >>\nstream\nq\nQ\nendstream")
+            content = b"q\nQ\n"
+            if security is not None:
+                content = rc4(
+                    content, rc4_object_key(security["file_key"], 6)
+                )
+            offsets[6] = write_indirect(
+                writer,
+                6,
+                f"<< /Length {len(content)} >>\nstream\n".encode("ascii")
+                + content
+                + b"\nendstream",
+            )
+            if security is not None:
+                encryption_dictionary = (
+                    b"<< /Filter /Standard /V 1 /R 2 /Length 40 "
+                    + f"/O <{security['owner'].hex().upper()}> ".encode("ascii")
+                    + f"/U <{security['user'].hex().upper()}> ".encode("ascii")
+                    + f"/P {security['permissions']} >>".encode("ascii")
+                )
+                offsets[7] = write_indirect(writer, 7, encryption_dictionary)
             offsets[4] = writer.offset
             xref_entries = [xref_entry(0, 0, 65535)]
             xref_entries.extend(xref_entry(1, offsets[number], 0) for number in range(1, 5))
@@ -165,12 +267,24 @@ def build_fixture(path, filter_name="raw", kind="javascript", decoded_size=None,
             xref_entries.append(xref_entry(1, offsets[6], 0))
             if malformed:
                 xref_entries.extend((xref_entry(2, 3, 1), xref_entry(2, 3, 2)))
+            elif security is not None:
+                xref_entries.extend((xref_entry(1, offsets[7], 0), xref_entry(0, 0, 0)))
             else:
                 xref_entries.extend((xref_entry(0, 0, 0), xref_entry(0, 0, 0)))
             xref = b"".join(xref_entries)
+            trailer_dictionary = b""
+            if security is not None:
+                file_id_hex = security["file_id"].hex().upper()
+                trailer_dictionary = (
+                    f" /Encrypt 7 0 R /ID [<{file_id_hex}> <{file_id_hex}>]".encode(
+                        "ascii"
+                    )
+                )
             xref_dictionary = (
                 f"4 0 obj\n<< /Type /XRef /Size 9 /Root 1 0 R "
-                f"/W [1 8 2] /Index [0 9] /Length {len(xref)} >>\nstream\n".encode("ascii")
+                f"/W [1 8 2] /Index [0 9] /Length {len(xref)}".encode("ascii")
+                + trailer_dictionary
+                + b" >>\nstream\n"
             )
             writer.write(xref_dictionary)
             writer.write(xref)
@@ -181,6 +295,7 @@ def build_fixture(path, filter_name="raw", kind="javascript", decoded_size=None,
                 "decoded_size": actual_decoded_size,
                 "encoded_sha256": encoded_sha256,
                 "encoded_size": encoded_size,
+                "encryption": encryption,
                 "file_size": writer.offset,
                 "filter": filter_name,
                 "first": first,
@@ -192,6 +307,11 @@ def build_fixture(path, filter_name="raw", kind="javascript", decoded_size=None,
                 "stream_offset": stream_offset,
                 "xref_offset": offsets[4],
             }
+            if security is not None:
+                result["file_id"] = security["file_id"].hex()
+                result["file_key_sha256"] = hashlib.sha256(
+                    security["file_key"]
+                ).hexdigest()
     except Exception:
         try:
             os.unlink(path)
@@ -214,6 +334,7 @@ def main():
     parser.add_argument("--kind", choices=("javascript", "opaque"), default="javascript")
     parser.add_argument("--decoded-size", type=int)
     parser.add_argument("--malformed", action="store_true")
+    parser.add_argument("--encryption", choices=("none", "rc4-r2"), default="none")
     args = parser.parse_args()
 
     result = build_fixture(
@@ -222,6 +343,7 @@ def main():
         kind=args.kind,
         decoded_size=args.decoded_size,
         malformed=args.malformed,
+        encryption=args.encryption,
     )
     for key in sorted(result):
         print(f"{key}={result[key]}")

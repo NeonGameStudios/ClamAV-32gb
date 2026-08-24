@@ -2235,7 +2235,8 @@ and Sonic1 qualification as release gates.
   input/output temporary accounting, release consumed inputs only after the
   next stage completes, and require exact final-output/quota rollback before
   raw fallback. Add per-filter DecodeParms-array support separately; retain
-  encrypted object streams and unsupported/mixed chains as explicit gaps.
+  unsupported/mixed chains and encrypted production qualification as explicit
+  gaps.
 
 ## PDF file-backed object streams — 2026-08-23
 
@@ -2248,20 +2249,24 @@ and Sonic1 qualification as release gates.
   Sonic1 and retain the resulting evidence. Preserve exact temporary ownership
   transfer, malformed-backing lifetime, containing-object status propagation,
   and page-range release. Bounded Identity, RC4, AESV2, and AESV3 object streams
-  are now implemented; extend the deterministic corpus and evidence gate to
-  encrypted security-handler/password cases, materialized multi-gigabyte
-  encrypted children, malformed ciphertext/padding, quota/read/cleanup faults,
-  and release/sanitizer scanners on Sonic1. Define an explicit non-mmap release
+  are now implemented, and deterministic empty-password Standard R2 RC4 cases
+  cover raw and supported filters. Extend the evidence gate to AES security
+  handlers, nonempty passwords, materialized multi-gigabyte encrypted children,
+  malformed ciphertext/padding, quota/read/cleanup faults, and
+  release/sanitizer scanners on Sonic1. Define an explicit non-mmap release
   policy before removing the capability exception.
 
 ## PDF bounded encrypted-stream qualification — 2026-08-23
 
-- Qualify implicit document decryption and first-position explicit Crypt for
-  Identity, RC4, AESV2, and AESV3 with deterministic complete PDFs and usable
-  credentials. Bind object-key vectors, CBC IV/block shape, strict nonzero
-  PKCS#7 padding, RC4 state across windows, decryption-before-filter ordering,
-  simultaneous plaintext/downstream quota, exact rollback, file-backed object
-  ownership, and no temporary residue. Add materialized multi-gigabyte release
-  and sanitizer runs on Sonic1. Retain non-first Crypt, per-filter DecodeParms
-  arrays, unsupported/mixed filters, and non-mmap object streams as explicit
-  incomplete boundaries until separately implemented and qualified.
+- Empty-password Standard R2 RC4 now has deterministic complete raw, Flate, and
+  ASCIIHex-to-Flate PDFs plus evidence-gate oracles for key discovery and the
+  bounded RC4 path. Extend this to complete AESV2/AESV3 security-handler PDFs,
+  nonempty credentials, malformed encryption dictionaries/ciphertext/padding,
+  quota/read/cleanup faults, and materialized multi-gigabyte release and
+  sanitizer runs on Sonic1. Preserve object-key vectors, CBC IV/block shape,
+  strict nonzero PKCS#7 padding, RC4 state across windows,
+  decryption-before-filter ordering, simultaneous plaintext/downstream quota,
+  exact rollback, file-backed object ownership, and no temporary residue.
+  Retain non-first Crypt as explicit incomplete; keep per-filter DecodeParms
+  arrays, unsupported/mixed filters, and non-mmap object streams as separate
+  incomplete boundaries until implemented and qualified.
