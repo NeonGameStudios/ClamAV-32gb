@@ -2389,13 +2389,14 @@ and Sonic1 qualification as release gates.
 
 ## PDF bounded-spool fault rollback — 2026-08-24
 
-- Linker-injected GCC tests now prove four independent failures: encrypted RC4
-  output writes return `CL_EWRITE`; intermediate-stage close failure returns
-  `CL_EWRITE`; file-backed map creation returns `CL_ERESOURCE`; and an in-range
-  intermediate read returns `CL_EREAD`.
+- Linker-injected GCC tests now prove five independent failure classes:
+  encrypted RC4 output writes and intermediate-stage close return `CL_EWRITE`;
+  file-backed map creation returns `CL_ERESOURCE`; an in-range intermediate
+  read returns `CL_EREAD`; and fixed output-window allocation returns `CL_EMEM`
+  for Flate, RunLength, ASCIIHex, ASCII85, and LZW.
 - Every case rolls output and temporary accounting back to zero, creates no
   object-stream child, marks the scan incomplete and non-cacheable, and passes
-  4/4 normally and against ASan/UBSan PDF production objects with leak
+  5/5 normally and against ASan/UBSan PDF production objects with leak
   detection. Adjacent PDF suites remain green in both modes.
-- Add deterministic output-window allocator failure and production-scanner
-  fault injection; keep Sonic1 and materialized multi-gigabyte evidence open.
+- Add production-scanner fault injection; keep Sonic1 and materialized
+  multi-gigabyte evidence open.

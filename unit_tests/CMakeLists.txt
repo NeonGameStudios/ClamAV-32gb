@@ -158,11 +158,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_STATIC_LIB)
     target_compile_definitions(check_clamav PRIVATE
         CLAMAV_TEST_MSPACK_CONSTRUCTOR_WRAP
         CLAMAV_TEST_FMAP_NEW_WRAP
+        CLAMAV_TEST_MALLOC_WRAP
         CLAMAV_TEST_JS_IO_WRAP)
     target_link_options(check_clamav PRIVATE
         "-Wl,--wrap=mspack_create_cab_decompressor"
         "-Wl,--wrap=mspack_create_chm_decompressor"
         "-Wl,--wrap=fmap_new"
+        "-Wl,--wrap=malloc"
         "-Wl,--wrap=cli_writen"
         "-Wl,--wrap=close")
 endif()

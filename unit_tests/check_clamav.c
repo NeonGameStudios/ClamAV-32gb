@@ -103,6 +103,12 @@ extern int clamav_test_fail_write;
 extern int clamav_test_fail_close;
 #endif
 
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+static bool pdf_test_output_window_allocation_active;
+static bool pdf_test_fail_output_window_allocation;
+static unsigned int pdf_test_output_window_allocation_failures;
+#endif
+
 static int fpu_words = FPU_ENDIAN_INITME;
 #define NO_FPU_ENDIAN (fpu_words == FPU_ENDIAN_UNKNOWN)
 #define EA06_SCAN strstr(file, "clam.ea06.exe")
@@ -113,6 +119,7 @@ static int fpu_words = FPU_ENDIAN_INITME;
 #define ZIP_TEST_METHOD_IMPLODE 6U
 #define ZIP_TEST_METHOD_BZIP2 12U
 #define ZIP_TEST_FLAG_ENCRYPTED 1U
+#define PDF_TEST_OUTPUT_WINDOW_SIZE (256U * 1024U)
 #define ZIP_TEST_FLAG_DATA_DESCRIPTOR (1U << 3)
 #define ZIP_TEST_FLAG_STRONG_ENCRYPTION (1U << 6)
 #define ZIP_TEST_FLAG_MASKED_HEADER (1U << 13)
@@ -10700,8 +10707,14 @@ static void pdf_test_decode_single_filter_with_params(const uint8_t *input, size
     obj.numfilters         = 1;
     obj.filterlist[0]      = filter;
 
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    pdf_test_output_window_allocation_active = true;
+#endif
     result->written = pdf_decodestream(&pdf, &obj, params, (const char *)input,
                                        logical_size, 0, fd, &status, NULL);
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    pdf_test_output_window_allocation_active = false;
+#endif
     result->status = status;
     ck_assert_int_eq(fstat(fd, &output_stat), 0);
     ck_assert(output_stat.st_size >= 0);
@@ -12820,6 +12833,44 @@ START_TEST(test_pdf_filter_stage_close_failure_rolls_back)
     free(result.output);
     free(encoded);
     free(expected);
+}
+END_TEST
+#endif
+
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+START_TEST(test_pdf_output_window_allocation_failure_rolls_back)
+{
+    static const uint8_t encoded[] = {0x78U};
+    static const uint32_t filters[] = {
+        OBJ_FILTER_FLATE,
+        OBJ_FILTER_RL,
+        OBJ_FILTER_AH,
+        OBJ_FILTER_A85,
+        OBJ_FILTER_LZW,
+    };
+    struct pdf_single_filter_result result;
+    size_t i;
+
+    for (i = 0; i < sizeof(filters) / sizeof(filters[0]); i++) {
+        pdf_test_output_window_allocation_failures = 0;
+        pdf_test_fail_output_window_allocation     = true;
+        pdf_test_decode_single_filter(encoded, sizeof(encoded),
+                                      sizeof(encoded), filters[i], 0,
+                                      &result);
+        pdf_test_fail_output_window_allocation = false;
+
+        ck_assert_uint_eq(pdf_test_output_window_allocation_failures, 1U);
+        ck_assert_int_eq(result.status, CL_EMEM);
+        ck_assert_uint_eq(result.written, 0);
+        ck_assert_uint_eq(result.output_size, 0);
+        ck_assert_uint_eq(result.output_offset, 0);
+        ck_assert_uint_eq(result.temporary_reserved, 0);
+        ck_assert_uint_eq(result.temporary_bytes, 0);
+        ck_assert_uint_eq(result.temporary_peak, 0);
+        ck_assert(result.scan_incomplete);
+        ck_assert(result.dont_cache);
+        free(result.output);
+    }
 }
 END_TEST
 #endif
@@ -26019,6 +26070,22 @@ START_TEST(test_script_normalization_window_offset_is_stable)
 }
 END_TEST
 
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+extern void *__real_malloc(size_t size);
+
+void *__wrap_malloc(size_t size)
+{
+    if (pdf_test_output_window_allocation_active &&
+        pdf_test_fail_output_window_allocation &&
+        size == PDF_TEST_OUTPUT_WINDOW_SIZE) {
+        pdf_test_fail_output_window_allocation = false;
+        pdf_test_output_window_allocation_failures++;
+        return NULL;
+    }
+    return __real_malloc(size);
+}
+#endif
+
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP
 extern fmap_t *__real_fmap_new(int fd, off_t offset, size_t len, const char *name, const char *path);
 
@@ -30563,6 +30630,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_filter_chain_failure_restores_raw_input);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
     tcase_add_test(tc_cl, test_pdf_filter_stage_close_failure_rolls_back);
+#endif
+#ifdef CLAMAV_TEST_MALLOC_WRAP
+    tcase_add_test(tc_cl, test_pdf_output_window_allocation_failure_rolls_back);
 #endif
     tcase_add_test(tc_cl, test_pdf_filter_chain_rotates_three_bounded_stages);
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP

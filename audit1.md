@@ -7306,23 +7306,24 @@ Python syntax, whitespace, capability-manifest, and source-guard checks pass
 locally. The Linux x86-64 orchestrator and current production scanner run
 remain pending: Sonic1 accepted the configured MCP-SSH profile but its SSH
 service refused or timed out before any remote command started. Materialized
-multi-gigabyte encrypted streams, production-scanner fault injection, and
-output-window allocator failure also remain release gates.
+multi-gigabyte encrypted streams and production-scanner fault injection also
+remain release gates.
 
 ## PDF bounded-spool fault rollback — 2026-08-24
 
-Four linker-injected GCC regressions now exercise the bounded encrypted/filter
-spool transaction itself. A failed encrypted RC4 output write returns
-`CL_EWRITE`; an intermediate-stage close failure returns `CL_EWRITE`; failed
-file-backed map creation returns `CL_ERESOURCE`; and a failed in-range read from
-that map returns `CL_EREAD`. Every path truncates final output, releases both
-stage and final reservations to zero, creates no object-stream child, marks the
-layer incomplete, and sets the source fmap non-cacheable.
+Five linker-injected GCC failure classes now exercise the bounded
+encrypted/filter spool transaction itself. A failed encrypted RC4 output write
+and an intermediate-stage close return `CL_EWRITE`; failed file-backed map
+creation returns `CL_ERESOURCE`; a failed in-range mapped read returns
+`CL_EREAD`; and fixed output-window allocation returns `CL_EMEM` for Flate,
+RunLength, ASCIIHex, ASCII85, and LZW. Every path truncates final output,
+releases both stage and final reservations to zero, creates no object-stream
+child, marks the layer incomplete, and sets the source fmap non-cacheable.
 
-The focused suite passes 4/4 normally and with `pdf.c`, `pdfng.c`, and
+The focused suite passes 5/5 normally and with `pdf.c`, `pdfng.c`, and
 `pdfdecode.c` instrumented by GCC AddressSanitizer/UBSan plus leak detection.
 The adjacent exact crypt dictionary, Crypt DecodeParms, 40-oracle cipher/filter,
 three-case DecodeParms, and non-first Crypt suites also remain green normally
-and under the same sanitizer configuration. Deterministic output-window
-allocator failure, production-scanner fault injection, materialized
-multi-gigabyte streams, and Sonic1 evidence remain release gates.
+and under the same sanitizer configuration. Production-scanner fault
+injection, materialized multi-gigabyte streams, and Sonic1 evidence remain
+release gates.
