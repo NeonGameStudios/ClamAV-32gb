@@ -29766,6 +29766,99 @@ static void test_hfsplus_invalid_leaf(uint8_t *data, size_t offset)
     test_hfsplus_put_be16(data + offset + 4096 - 2, 0);
 }
 
+START_TEST(test_hfsplus_inline_compression_streams_large_output)
+{
+    const size_t decoded_size = (2U * 64U * 1024U) + 37U;
+    uint8_t *decoded;
+    uint8_t *compressed;
+    uint8_t tail[37];
+    uLongf compressed_size;
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    char *path = NULL;
+    uint64_t written = 0;
+    cl_error_t status;
+    int fd = -1;
+    size_t i;
+
+    decoded = malloc(decoded_size);
+    ck_assert_ptr_nonnull(decoded);
+    for (i = 0; i < decoded_size; i++)
+        decoded[i] = (uint8_t)(i % 251U);
+
+    compressed_size = compressBound(decoded_size);
+    compressed      = malloc((size_t)compressed_size);
+    ck_assert_ptr_nonnull(compressed);
+    ck_assert_int_eq(compress2(compressed, &compressed_size, decoded, decoded_size,
+                               Z_BEST_COMPRESSION), Z_OK);
+    ck_assert_uint_lt(compressed_size, decoded_size);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_int_eq(cli_hfsplus_inflate_inline(&ctx, compressed, (size_t)compressed_size,
+                                               decoded_size, fd, &written), CL_SUCCESS);
+    ck_assert_uint_eq(written, decoded_size);
+    ck_assert_int_eq(pread(fd, tail, sizeof(tail), (off_t)(decoded_size - sizeof(tail))),
+                     (ssize_t)sizeof(tail));
+    ck_assert_mem_eq(tail, decoded + decoded_size - sizeof(tail), sizeof(tail));
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+    path = NULL;
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(compressed, (size_t)compressed_size);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    status = cli_hfsplus_inflate_inline(&ctx, compressed, (size_t)compressed_size,
+                                        decoded_size - 1U, fd, &written);
+    ck_assert_int_eq(status, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HFS+ inline compressed output exceeds its declared size");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+    path = NULL;
+    cl_fmap_close(map);
+
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(compressed, (size_t)compressed_size);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    clamav_test_fail_write = 1;
+    status = cli_hfsplus_inflate_inline(&ctx, compressed, (size_t)compressed_size,
+                                        decoded_size, fd, &written);
+    clamav_test_fail_write = 0;
+    ck_assert_int_eq(status, CL_EWRITE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "HFS+ inline compressed output could not be written completely");
+    ck_assert(map->dont_cache_flag);
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+    ck_assert_int_eq(cli_unlink(path), 0);
+    free(path);
+    path = NULL;
+    cl_fmap_close(map);
+#endif
+
+    free(compressed);
+    free(decoded);
+}
+END_TEST
+
 START_TEST(test_hfsplus_declared_attributes_failure_is_fail_visible)
 {
     uint8_t data[1024 + (32 * 512)];
@@ -31969,6 +32062,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwpml    = tcase_create("hwpml");
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
+    TCase *tc_hfs_inline = tcase_create("hfs_inline");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -32004,6 +32098,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_egg_metadata);
     tcase_add_checked_fixture(tc_egg_metadata, cl_setup, cl_teardown);
     tcase_add_test(tc_egg_metadata, test_egg_codepage_filename_is_streamed_and_scanned);
+    suite_add_tcase(s, tc_hfs_inline);
+    tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
+    tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

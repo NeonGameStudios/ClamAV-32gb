@@ -39,6 +39,7 @@
 
 #define DECMPFS_HEADER_MAGIC 0x636d7066
 #define DECMPFS_HEADER_MAGIC_LE 0x66706d63
+#define HFSPLUS_INLINE_OUTPUT_WINDOW (64U * 1024U)
 
 static void headerrecord_to_host(hfsHeaderRecord *);
 static void headerrecord_print(const char *, hfsHeaderRecord *);
@@ -58,6 +59,92 @@ static cl_error_t hfsplus_fetch_node(cli_ctx *, hfsPlusVolumeHeader *, hfsHeader
                                      size_t);
 static cl_error_t hfsplus_walk_catalog(cli_ctx *, hfsPlusVolumeHeader *, hfsHeaderRecord *,
                                        hfsHeaderRecord *, hfsHeaderRecord *, const char *);
+
+cl_error_t cli_hfsplus_inflate_inline(cli_ctx *ctx, const uint8_t *input,
+                                      size_t input_size, uint64_t expected_size,
+                                      int output_fd, uint64_t *written)
+{
+    uint8_t output[HFSPLUS_INLINE_OUTPUT_WINDOW];
+    z_stream stream;
+    uint64_t total = 0;
+    bool initialized = false;
+    cl_error_t status = CL_SUCCESS;
+    int z_ret;
+
+    if (ctx == NULL || input == NULL || input_size == 0 || input_size > UINT_MAX ||
+        output_fd < 0 || written == NULL)
+        return CL_EARG;
+    *written = 0;
+
+    memset(&stream, 0, sizeof(stream));
+    stream.avail_in = (uInt)input_size;
+    stream.next_in  = (Bytef *)input;
+    z_ret           = inflateInit2(&stream, 15 /* maximum windowBits size */);
+    if (z_ret != Z_OK) {
+        cli_mark_scan_incomplete(ctx, "HFS+ inline compressed decoder could not be initialized");
+        return z_ret == Z_MEM_ERROR ? CL_EMEM : CL_EFORMAT;
+    }
+    initialized = true;
+
+    for (;;) {
+        uInt input_before;
+        size_t produced;
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output reached the configured time limit");
+            goto done;
+        }
+
+        stream.avail_out = sizeof(output);
+        stream.next_out  = output;
+        input_before     = stream.avail_in;
+        z_ret            = inflate(&stream, Z_NO_FLUSH);
+        produced         = sizeof(output) - stream.avail_out;
+
+        if (total > expected_size || (uint64_t)produced > expected_size - total) {
+            cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output exceeds its declared size");
+            status = CL_EFORMAT;
+            goto done;
+        }
+        if (produced != 0) {
+            status = cli_checktimelimit(ctx);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output reached the configured time limit");
+                goto done;
+            }
+            if (cli_writen(output_fd, output, produced) != produced) {
+                cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output could not be written completely");
+                status = CL_EWRITE;
+                goto done;
+            }
+            total += produced;
+        }
+
+        if (z_ret == Z_STREAM_END)
+            break;
+        if (z_ret != Z_OK || (produced == 0 && stream.avail_in == input_before)) {
+            cli_mark_scan_incomplete(ctx, "HFS+ inline compressed file ended before its declared size");
+            status = CL_EFORMAT;
+            goto done;
+        }
+    }
+
+    if (total != expected_size || stream.avail_in != 0) {
+        cli_mark_scan_incomplete(ctx, "HFS+ inline compressed file ended before its declared size");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    *written = total;
+
+done:
+    if (initialized && inflateEnd(&stream) != Z_OK) {
+        cli_mark_scan_incomplete(ctx, "HFS+ inline compressed decoder could not be finalized");
+        if (status == CL_SUCCESS)
+            status = CL_EFORMAT;
+    }
+    return status;
+}
 
 /* Header Record : fix endianness for useful fields */
 static void headerrecord_to_host(hfsHeaderRecord *hdr)
@@ -1140,7 +1227,6 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
     uint8_t *nodeBuf                = NULL;
     const uint8_t COMPRESSED_ATTR[] = {0, 'c', 0, 'o', 0, 'm', 0, '.', 0, 'a', 0, 'p', 0, 'p', 0, 'l', 0, 'e', 0, '.', 0, 'd', 0, 'e', 0, 'c', 0, 'm', 0, 'p', 0, 'f', 0, 's'};
     char *tmpname                   = NULL;
-    uint8_t *uncompressed           = NULL;
     char *resourceFile              = NULL;
     int ifd                         = -1;
     int ofd                         = -1;
@@ -1370,7 +1456,7 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                     cli_dbgmsg("Found compressed file type %u size %" PRIu64 "\n", header.compressionType, header.fileSize);
                     switch (header.compressionType) {
                         case HFSPLUS_COMPRESSION_INLINE: {
-                            size_t written;
+                            uint64_t written = 0;
                             if (attributeSize < sizeof(header) + 1) {
                                 cli_dbgmsg("hfsplus_walk_catalog: Unexpected end of stream, no compression flag\n");
                                 cli_mark_scan_incomplete(ctx, "HFS+ inline compressed file lacks its compression flag");
@@ -1393,81 +1479,11 @@ static cl_error_t hfsplus_walk_catalog(cli_ctx *ctx, hfsPlusVolumeHeader *volHea
                                 }
                                 written = cli_writen(ofd, &attribute[sizeof(header) + 1], (size_t)header.fileSize);
                             } else {
-                                z_stream stream;
-                                int z_ret;
-
-                                if (header.fileSize > 65536) {
-                                    cli_dbgmsg("hfsplus_walk_catalog: Uncompressed file seems too big, something is probably wrong\n");
-                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output exceeds the bounded decoder buffer");
-                                    status = CL_ERESOURCE;
+                                status = cli_hfsplus_inflate_inline(ctx, &attribute[sizeof(header)],
+                                                                   attributeSize - sizeof(header),
+                                                                   header.fileSize, ofd, &written);
+                                if (status != CL_SUCCESS)
                                     goto done;
-                                }
-
-                                uncompressed = cli_max_malloc(header.fileSize ? (size_t)header.fileSize : 1);
-                                if (!uncompressed) {
-                                    cli_dbgmsg("hfsplus_walk_catalog: Failed to allocate memory for the uncompressed file contents\n");
-                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output could not be allocated");
-                                    status = CL_EMEM;
-                                    goto done;
-                                }
-
-                                stream.zalloc    = Z_NULL;
-                                stream.zfree     = Z_NULL;
-                                stream.opaque    = Z_NULL;
-                                stream.avail_in  = attributeSize - sizeof(header);
-                                stream.next_in   = &attribute[sizeof(header)];
-                                stream.avail_out = header.fileSize;
-                                stream.next_out  = uncompressed;
-
-                                z_ret = inflateInit2(&stream, 15 /* maximum windowBits size */);
-                                if (z_ret != Z_OK) {
-                                    switch (z_ret) {
-                                        case Z_MEM_ERROR:
-                                            cli_dbgmsg("hfsplus_walk_catalog: inflateInit2: out of memory!\n");
-                                            break;
-                                        case Z_VERSION_ERROR:
-                                            cli_dbgmsg("hfsplus_walk_catalog: inflateinit2: zlib version error!\n");
-                                            break;
-                                        case Z_STREAM_ERROR:
-                                            cli_dbgmsg("hfsplus_walk_catalog: inflateinit2: zlib stream error!\n");
-                                            break;
-                                        default:
-                                            cli_dbgmsg("hfsplus_walk_catalog: inflateInit2: unknown error %d\n", z_ret);
-                                            break;
-                                    }
-
-                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed decoder could not be initialized");
-                                    status = CL_EFORMAT;
-                                    goto done;
-                                }
-
-                                z_ret = inflate(&stream, Z_NO_FLUSH);
-                                if (z_ret != Z_STREAM_END || stream.total_out != header.fileSize || stream.avail_in != 0) {
-                                    cli_dbgmsg("hfsplus_walk_catalog: inflateSync failed to extract compressed stream (%d)\n", z_ret);
-                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed file ended before its declared size");
-                                    status = CL_EFORMAT;
-                                    goto done;
-                                }
-
-                                z_ret = inflateEnd(&stream);
-                                if (z_ret != Z_OK) {
-                                    cli_dbgmsg("hfsplus_walk_catalog: inflateEnd failed (%d)\n", z_ret);
-                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed decoder could not be finalized");
-                                    status = CL_EFORMAT;
-                                    goto done;
-                                }
-
-                                status = cli_checktimelimit(ctx);
-                                if (status != CL_SUCCESS) {
-                                    cli_mark_scan_incomplete(ctx, "HFS+ inline compressed output reached the configured time limit");
-                                    goto done;
-                                }
-                                written = cli_writen(ofd, uncompressed, (size_t)header.fileSize);
-
-                                extracted_file = true;
-
-                                free(uncompressed);
-                                uncompressed = NULL;
                             }
                             if (written != header.fileSize) {
                                 cli_errmsg("hfsplus_walk_catalog: write error\n");
@@ -1863,10 +1879,6 @@ done:
     if (NULL != name_utf8) {
         free(name_utf8);
     }
-    if (NULL != uncompressed) {
-        free(uncompressed);
-    }
-
     return status;
 }
 

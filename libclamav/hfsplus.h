@@ -357,6 +357,9 @@ typedef struct hfsPlusResourceBlockTable hfsPlusResourceBlockTable;
 /* Maximum number of catalog leaf nodes to scan for records */
 #define HFSPLUS_NODE_LIMIT 1000
 
+cl_error_t cli_hfsplus_inflate_inline(cli_ctx *ctx, const uint8_t *input,
+                                      size_t input_size, uint64_t expected_size,
+                                      int output_fd, uint64_t *written);
 cl_error_t cli_scanhfsplus(cli_ctx *ctx);
 
 #endif

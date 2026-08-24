@@ -2512,3 +2512,12 @@ and Sonic1 qualification as release gates.
   Sonic1 qualification. The scanner range path is implemented; the public
   legacy null-terminated-string API intentionally retains its 1 GiB
   compatibility ceiling.
+
+## Bounded HFS+ inline decmpfs output — 2026-08-24
+
+- Add compiled HFS+ decmpfs corpus for zero-length, trailing-input, truncated,
+  malformed-zlib, exact-limit, and multi-gigabyte outputs. Run decoder
+  allocation/finalization, deadline, disk-full, close/unlink, sanitizer,
+  certified Linux x86-64, and Sonic1 qualification. The former 64 KiB output
+  ceiling is closed by fixed-window inflation with exact size and write-failure
+  oracles.

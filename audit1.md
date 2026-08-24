@@ -3524,16 +3524,20 @@ unsupported/incomplete boundary.
 Static guards and whitespace validation pass; compiled PE corpus, sanitizer,
 and production qualification remain open.
 
-## HFS+ inline compressed-output admission — 2026-08-21
+## HFS+ inline compressed-output admission — updated 2026-08-24
 
-The HFS+ inline decmpfs path intentionally limits its contiguous inflater
-buffer to 64 KiB, but an output above that boundary previously returned only a
-generic format result and the supported branch used a raw allocation. The
-boundary is now an explicit `CL_ERESOURCE` incomplete result, and the bounded
-branch uses the shared allocation wrapper, including a portable one-byte
-allocation for an empty output.
-Static guards and whitespace validation pass; compiled HFS+ corpus, sanitizer,
-and production qualification remain open.
+The HFS+ inline decmpfs path no longer rejects declared output above 64 KiB or
+allocates the whole result. It inflates into a fixed 64 KiB output window,
+checks the shared deadline around every decoder/write cycle, rejects decoder
+stall, trailing input, truncation, and output beyond the declared size, and
+writes only exact decoded bytes into the already quota-reserved temporary
+file. Decoder setup/finalization and write failures remain sticky incomplete.
+
+The isolated production-linked regression expands beyond two output windows,
+verifies exact tail bytes, rejects a one-byte-short declared size, and injects
+a write failure. All three paths pass with the expected status and cache
+state. Compiled HFS+ corpus, sanitizer, materialized large output, certified
+Linux x86-64, and Sonic1 qualification remain open.
 
 ## Modern scan-layer callback error propagation — 2026-08-21
 

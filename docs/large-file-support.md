@@ -7046,3 +7046,20 @@ accounting. GCC syntax checks cover the parser, scanner integration, and full
 unit translation unit. Compiled EGG corpus, sanitizer/fault injection,
 additional codepages and split-sequence cases, materialized large metadata,
 certified Linux x86-64, and Sonic1 qualification remain release gates.
+
+## Bounded HFS+ inline decmpfs output — 2026-08-24
+
+HFS+ inline zlib-compressed attributes now decode through a fixed 64 KiB
+output window instead of rejecting output above 64 KiB and allocating the
+whole declared result. The decoder checks the shared deadline before each
+inflate and write, rejects no-progress, trailing input, truncation, declared
+size overrun/underrun, and preserves setup, finalization, and exact-write
+failures as incomplete and non-cacheable. The existing full-size temporary
+reservation remains held through nested scanning.
+
+An isolated test linked with the current HFS+ production object expands a
+compressed fixture beyond two output windows and verifies exact tail bytes. It
+also proves a one-byte-short declaration and injected write failure return the
+specific incomplete result without becoming cacheable. Compiled HFS+ corpus,
+sanitizer/fault injection beyond writes, materialized multi-gigabyte output,
+certified Linux x86-64, and Sonic1 qualification remain release gates.
