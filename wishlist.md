@@ -2240,10 +2240,12 @@ and Sonic1 qualification as release gates.
 ## PDF file-backed object streams — 2026-08-23
 
 - Qualify ordinary unencrypted raw and supported-filter object streams with a
-  compiled valid/malformed corpus, fully materialized multi-gigabyte decoded
-  children, RSS/page-residency measurements, mapping and cleanup fault
-  injection, and Sonic1 release/sanitizer runs. Preserve exact temporary
-  ownership transfer, malformed-backing lifetime, containing-object status
-  propagation, and page-range release. Implement bounded encrypted object
-  streams and define an explicit non-mmap release policy before removing the
-  remaining capability exception.
+  compiled valid/malformed corpus. A deterministic PDF 1.7 generator and
+  scanner-facing gate now cover raw, Flate, ASCIIHex-to-Flate, malformed-after-
+  one-valid-object, and fully allocated 64 MiB–4 GiB decoded children while
+  binding hashes, parser/mapping/cleanup diagnostics, RSS, faults, I/O, and
+  temporary cleanup. Run that gate with release and sanitizer scanners on
+  Sonic1 and retain the resulting evidence. Preserve exact temporary ownership
+  transfer, malformed-backing lifetime, containing-object status propagation,
+  and page-range release. Implement bounded encrypted object streams and define
+  an explicit non-mmap release policy before removing the capability exception.

@@ -6630,3 +6630,20 @@ compilation; only pre-existing isolated-build warnings remain.
 Encrypted object streams, unsupported/mixed filters, per-filter DecodeParms
 arrays, non-mmap object-stream builds, compiled PDF corpus, materialized-large
 fixtures, and Sonic1 release/sanitizer qualification remain open.
+
+The deterministic `largefile_pdf_objstm_fixture.py` generator now emits
+structurally valid PDF 1.7 files with a cross-reference stream and compressed-
+object entry. Raw, Flate, ASCIIHex-to-Flate, and malformed-after-one-valid-
+object forms are self-verified, and the raw form can stream an exact decoded
+size without sparse seeks. `largefile_pdf_objstm_qualification.sh` binds each
+fixture by size and hash, rejects holes in the materialized case, requires
+production parser plus map/cleanup diagnostics, checks exact marker detection
+and malformed-status visibility, records RSS/page-fault/I/O evidence, and
+rejects leaked temporary files. The generator self-test passes locally for
+seven cases; Poppler independently accepts the raw, Flate, filter-chain, and
+malformed-index documents as one-page PDF 1.7 files with JavaScript, and the
+Linux x86-64 orchestrator self-test passes all five scanner cases with a fully
+allocated 64 MiB child. That orchestrator uses a deterministic scanner/time
+stub and is not production scan evidence. Production scanner, sanitizer,
+multi-gigabyte materialized, and Sonic1 runs are still required before changing
+the capability status.

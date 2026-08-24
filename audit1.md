@@ -7036,3 +7036,26 @@ pre-existing isolated-build warnings.
 Encrypted object streams, unsupported/mixed filters, per-filter DecodeParms
 arrays, non-mmap object-stream builds, compiled corpus, materialized-large
 fixtures, and Sonic1 qualification remain open.
+
+## PDF object-stream qualification corpus — 2026-08-23
+
+A deterministic streaming generator now creates complete PDF 1.7 files with a
+cross-reference stream and a type-2 entry for the embedded object. It covers
+raw, Flate, ASCIIHex-to-Flate, malformed indexing after one valid object, and
+an exact-size opaque object stream written without sparse seeks. Its seven-case
+self-test verifies deterministic hashes, stream decoding, xref coordinates,
+compressed-object ownership, rejection of undersized requests, and allocated
+blocks for a multi-window materialized fixture.
+
+The scanner-facing qualification gate accepts an existing clamscan and
+database and performs no build configuration. It binds size/hash/allocation,
+requires marker detection and real object-stream parser diagnostics, requires
+file-backed attach and cleanup diagnostics, distinguishes expected malformed
+status, rejects temporary residue, and records RSS, page faults, and file I/O
+for 64 MiB–4 GiB decoded children. The seven generator tests pass, and Poppler
+independently accepts all four small corpus forms as one-page PDF 1.7 documents
+with the compressed JavaScript page object. A Linux x86-64 orchestrator
+self-test passes five cases, including allocation proof for a 64 MiB decoded
+child; its scanner and GNU-time outputs are deliberate stubs, so this validates
+the gate rather than ClamAV. Sonic1 remains unavailable at TCP connect
+(20-second timeout), so no production or sanitizer scanner result is claimed.

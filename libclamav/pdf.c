@@ -291,6 +291,8 @@ cl_error_t pdf_objstm_attach_file(struct pdf_struct *pdf,
     objstm->streambuf_is_mapped = true;
     objstm->temporary_reserved = (uint64_t)length;
     *pdf->temporary_reserved -= (uint64_t)length;
+    cli_dbgmsg("pdf_objstm_attach_file: retained %zu-byte quota-accounted file-backed object stream\n",
+               length);
 
     objstm->parse_status = pdf_find_and_parse_objs_in_objstm(pdf, objstm);
     if (objstm->parse_status != CL_SUCCESS) {
@@ -323,6 +325,8 @@ cl_error_t pdf_objstm_cleanup(struct pdf_struct *pdf,
     if (objstm->streambuf != NULL) {
         if (objstm->streambuf_is_mapped) {
 #if PDF_HAVE_FILE_BACKED_OBJECT_STREAMS
+            cli_dbgmsg("pdf_objstm_cleanup: releasing %zu-byte file-backed object stream\n",
+                       objstm->streambuf_len);
             if (munmap(objstm->streambuf, objstm->streambuf_len) != 0) {
                 if (pdf != NULL && pdf->ctx != NULL) {
                     cli_mark_scan_incomplete(
