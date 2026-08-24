@@ -24545,6 +24545,179 @@ START_TEST(test_arj_temporary_limit_is_fail_visible)
 }
 END_TEST
 
+#define PE32PLUS_TEST_FILE_SIZE 0x600U
+#define PE32PLUS_TEST_PE_OFFSET 0x80U
+#define PE32PLUS_TEST_SECTION_RAW 0x200U
+#define PE32PLUS_TEST_IMPORT_DESCRIPTOR_OFFSET 0x300U
+#define PE32PLUS_TEST_IMPORT_DLL_OFFSET 0x330U
+#define PE32PLUS_TEST_IMPORT_THUNK_OFFSET 0x340U
+#define PE32PLUS_TEST_IMPORT_NAME_OFFSET 0x360U
+
+static void pe32plus_test_write_u16(uint8_t *destination, uint16_t value)
+{
+    destination[0] = (uint8_t)(value & 0xffU);
+    destination[1] = (uint8_t)(value >> 8);
+}
+
+static void pe32plus_test_write_u64(uint8_t *destination, uint64_t value)
+{
+    cli_writeint32(destination, (uint32_t)value);
+    cli_writeint32(destination + sizeof(uint32_t), (uint32_t)(value >> 32));
+}
+
+static void build_pe32plus_import_fixture(uint8_t *data, size_t length)
+{
+    const size_t optional_offset = PE32PLUS_TEST_PE_OFFSET + sizeof(struct pe_image_file_hdr);
+    const size_t directories_offset = optional_offset + sizeof(struct pe_image_optional_hdr64);
+    const size_t section_offset = directories_offset + 16U * sizeof(struct pe_image_data_dir);
+    const uint16_t optional_size = (uint16_t)(sizeof(struct pe_image_optional_hdr64) +
+                                              16U * sizeof(struct pe_image_data_dir));
+
+    ck_assert_msg(length >= PE32PLUS_TEST_FILE_SIZE, "PE32+ fixture buffer is too short");
+    ck_assert_msg(section_offset + sizeof(struct pe_image_section_hdr) <= PE32PLUS_TEST_SECTION_RAW,
+                  "PE32+ fixture headers overlap section data");
+
+    memset(data, 0, length);
+    data[0] = 'M';
+    data[1] = 'Z';
+    cli_writeint32(data + 0x3cU, PE32PLUS_TEST_PE_OFFSET);
+
+    cli_writeint32(data + PE32PLUS_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, Magic), 0x00004550U);
+    pe32plus_test_write_u16(data + PE32PLUS_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, Machine), 0x8664U);
+    pe32plus_test_write_u16(data + PE32PLUS_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, NumberOfSections), 1U);
+    pe32plus_test_write_u16(data + PE32PLUS_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, SizeOfOptionalHeader), optional_size);
+    pe32plus_test_write_u16(data + PE32PLUS_TEST_PE_OFFSET + offsetof(struct pe_image_file_hdr, Characteristics), 0x0022U);
+
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr64, Magic), 0x020bU);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfCode), 0x400U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfInitializedData), 0x400U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, AddressOfEntryPoint), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, BaseOfCode), 0x1000U);
+    pe32plus_test_write_u64(data + optional_offset + offsetof(struct pe_image_optional_hdr64, ImageBase), 0x0000000140000000ULL);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SectionAlignment), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, FileAlignment), 0x200U);
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr64, MajorOperatingSystemVersion), 6U);
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr64, MajorSubsystemVersion), 6U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfImage), 0x2000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfHeaders), 0x200U);
+    pe32plus_test_write_u16(data + optional_offset + offsetof(struct pe_image_optional_hdr64, Subsystem), 3U);
+    pe32plus_test_write_u64(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfStackReserve), 0x100000U);
+    pe32plus_test_write_u64(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfStackCommit), 0x1000U);
+    pe32plus_test_write_u64(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfHeapReserve), 0x100000U);
+    pe32plus_test_write_u64(data + optional_offset + offsetof(struct pe_image_optional_hdr64, SizeOfHeapCommit), 0x1000U);
+    cli_writeint32(data + optional_offset + offsetof(struct pe_image_optional_hdr64, NumberOfRvaAndSizes), 16U);
+
+    cli_writeint32(data + directories_offset + sizeof(struct pe_image_data_dir) +
+                       offsetof(struct pe_image_data_dir, VirtualAddress),
+                   0x1100U);
+    cli_writeint32(data + directories_offset + sizeof(struct pe_image_data_dir) +
+                       offsetof(struct pe_image_data_dir, Size),
+                   2U * 20U);
+
+    memcpy(data + section_offset + offsetof(struct pe_image_section_hdr, Name), ".text", sizeof(".text") - 1U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, VirtualSize), 0x400U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, VirtualAddress), 0x1000U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, SizeOfRawData), 0x400U);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, PointerToRawData), PE32PLUS_TEST_SECTION_RAW);
+    cli_writeint32(data + section_offset + offsetof(struct pe_image_section_hdr, Characteristics), 0x60000020U);
+
+    cli_writeint32(data + PE32PLUS_TEST_IMPORT_DESCRIPTOR_OFFSET, 0x1140U);
+    cli_writeint32(data + PE32PLUS_TEST_IMPORT_DESCRIPTOR_OFFSET + 12U, 0x1130U);
+    cli_writeint32(data + PE32PLUS_TEST_IMPORT_DESCRIPTOR_OFFSET + 16U, 0x1150U);
+    memcpy(data + PE32PLUS_TEST_IMPORT_DLL_OFFSET, "KERNEL32.dll", sizeof("KERNEL32.dll"));
+    pe32plus_test_write_u64(data + PE32PLUS_TEST_IMPORT_THUNK_OFFSET, 0x1160U);
+    memcpy(data + PE32PLUS_TEST_IMPORT_NAME_OFFSET + sizeof(uint16_t),
+           "TestFunction", sizeof("TestFunction"));
+}
+
+static const void *pe32plus_import_thunk_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == PE32PLUS_TEST_IMPORT_THUNK_OFFSET && len == sizeof(uint64_t))
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
+START_TEST(test_pe32plus_common_inspection_and_import_failures_are_visible)
+{
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    struct json_object *import_table;
+    struct json_object *imphash;
+    cli_ctx ctx;
+    cl_error_t ret;
+    fmap_t *map;
+    uint8_t data[PE32PLUS_TEST_FILE_SIZE];
+
+    build_pe32plus_import_fixture(data, sizeof(data));
+    memset(&options, 0, sizeof(options));
+    options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                   = scan_engine;
+    ctx.dconf                    = scan_engine->dconf;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_tmpdir        = tmpdir;
+    ctx.this_layer_metadata_json = json_object_new_object();
+    ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+    ctx.recursion_stack          = &layer;
+    ctx.recursion_stack_size     = 1;
+    layer.fmap                   = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "PE32+ legacy x86 heuristic and unpacker inspection is unsupported");
+    ck_assert(map->dont_cache_flag);
+    ck_assert(json_object_object_get_ex(ctx.this_layer_metadata_json, "ImportTable", &import_table));
+    ck_assert_int_eq(json_object_get_type(import_table), json_type_array);
+    ck_assert_uint_eq(json_object_array_length(import_table), 1U);
+    ck_assert(json_object_object_get_ex(ctx.this_layer_metadata_json, "Imphash", &imphash));
+    ck_assert_int_eq(json_object_get_type(imphash), json_type_string);
+
+    json_object_put(ctx.this_layer_metadata_json);
+    cl_fmap_close(map);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need = pe32plus_import_thunk_read_failure;
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine                   = scan_engine;
+    ctx.dconf                    = scan_engine->dconf;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.this_layer_tmpdir        = tmpdir;
+    ctx.this_layer_metadata_json = json_object_new_object();
+    ck_assert_ptr_nonnull(ctx.this_layer_metadata_json);
+    ctx.recursion_stack          = &layer;
+    ctx.recursion_stack_size     = 1;
+    layer.fmap                   = map;
+
+    ret = cli_scanpe(&ctx);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE import thunk table could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    json_object_put(ctx.this_layer_metadata_json);
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_pe_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {'M', 'Z'};
@@ -25069,10 +25242,6 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
     close(fd);
     memcpy(original_descriptor_name, data + PE_TEST_IMPORT_DESCRIPTOR_OFFSET + 12, sizeof(original_descriptor_name));
 
-    map = cl_fmap_open_memory(data, (size_t)st.st_size);
-    ck_assert_ptr_nonnull(map);
-    map->need = pe_import_thunk_read_failure;
-
     memset(&options, 0, sizeof(options));
     options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
@@ -25108,6 +25277,9 @@ START_TEST(test_pe_import_thunk_read_failure_is_fail_visible)
     json_object_put(ctx.this_layer_metadata_json);
     cl_fmap_close(map);
 
+    map = cl_fmap_open_memory(data, (size_t)st.st_size);
+    ck_assert_ptr_nonnull(map);
+    map->need = pe_import_thunk_read_failure;
     verdict    = CL_VERDICT_STRONG_INDICATOR;
     last_alert = "stale";
     scanned    = UINT64_MAX;
@@ -30266,6 +30438,7 @@ static Suite *test_cl_suite(void)
 {
     Suite *s           = suite_create("cl_suite");
     TCase *tc_cl       = tcase_create("cl_api");
+    TCase *tc_pe32plus = tcase_create("pe32plus_common");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     TCase *tc_largefile;
 #endif
@@ -30282,6 +30455,9 @@ static Suite *test_cl_suite(void)
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_pe32plus);
+    tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
+    tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     if (getenv("CLAMAV_LARGEFILE_QUALIFY") != NULL) {
         tc_largefile = tcase_create("largefile_qualification");

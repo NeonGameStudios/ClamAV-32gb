@@ -3139,7 +3139,7 @@ int cli_scanpe(cli_ctx *ctx)
 {
     uint8_t polipos = 0;
     char epbuff[4096], *tempfile;
-    size_t epsize;
+    size_t epsize = 0;
     unsigned int i, j, found, upx_success = 0, err;
     unsigned int ssize = 0, dsize = 0, corrupted_cur;
     int (*upxfn)(const char *, uint32_t, char *, uint32_t *, uint32_t, uint32_t, uint32_t, cli_ctx *) = NULL;
@@ -3277,22 +3277,17 @@ int cli_scanpe(cli_ctx *ctx)
         }
     }
 
-    /* The remaining PE-specific inspection still consumes legacy PE32
-     * structures and is not safe to run against PE32+ coordinates. The raw
-     * matcher has already completed above, so preserve that coverage while
-     * making the skipped PE-specific layer fail-visible. */
-    if (peinfo->is_pe32plus) {
-        cli_mark_scan_incomplete(ctx, "PE32+ PE-specific inspection is unsupported");
-        cli_exe_info_destroy(peinfo);
-        return CL_EPARSE;
-    }
-
-    epsize = fmap_readn(map, epbuff, peinfo->ep, 4096);
-    if ((size_t)-1 == epsize) {
-        /* Do not continue, all future logic requires at least a partial read into epbuff */
-        cli_mark_scan_incomplete(ctx, "PE entry-point bytes could not be read completely");
-        cli_exe_info_destroy(peinfo);
-        return CL_EREAD;
+    /* The entry-point buffer is consumed only by the legacy x86 heuristic and
+     * unpacker path below. PE32+ can safely complete the common overlay,
+     * bytecode, and import-table passes without materializing it. */
+    if (!peinfo->is_pe32plus) {
+        epsize = fmap_readn(map, epbuff, peinfo->ep, 4096);
+        if ((size_t)-1 == epsize) {
+            /* Do not continue, all future legacy logic requires at least a partial read into epbuff */
+            cli_mark_scan_incomplete(ctx, "PE entry-point bytes could not be read completely");
+            cli_exe_info_destroy(peinfo);
+            return CL_EREAD;
+        }
     }
 
     /* Disasm scan disabled since it's now handled by the bytecode */
@@ -3353,6 +3348,8 @@ int cli_scanpe(cli_ctx *ctx)
     cli_bytecode_context_setctx(bc_ctx, ctx);
     ret = cli_bytecode_runhook(ctx, ctx->engine, bc_ctx, BC_PE_ALL, map);
     switch (ret) {
+        case CL_SUCCESS:
+            break;
         case CL_ENULLARG:
             cli_warnmsg("cli_scanpe: NULL argument supplied\n");
             /* A null hook context is also a non-clean hook failure. */
@@ -3395,6 +3392,18 @@ int cli_scanpe(cli_ctx *ctx)
                 return ret;
         }
     }
+
+    /* The common PE representation above is valid for PE32+ and includes
+     * native overlay coordinates, both optional-header variants for bytecode,
+     * and 64-bit import thunks. The remaining hand-written virus heuristics
+     * and unpackers still assume PE32/x86 entry-point and ImageBase semantics,
+     * so keep that narrower boundary explicit and non-cacheable. */
+    if (peinfo->is_pe32plus) {
+        cli_mark_scan_incomplete(ctx, "PE32+ legacy x86 heuristic and unpacker inspection is unsupported");
+        cli_exe_info_destroy(peinfo);
+        return CL_EPARSE;
+    }
+
     /* Attempt to detect some popular polymorphic viruses */
 
     /* W32.Parite.B */

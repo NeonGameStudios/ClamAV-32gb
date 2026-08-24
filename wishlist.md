@@ -1,5 +1,15 @@
 # Wishlist
 
+## PE32+ common inspection and narrower x86 boundary — 2026-08-24
+
+- PE32+ now completes section hashing, overlay inspection, `BC_PE_ALL`, and
+  native 64-bit import-table metadata/hash traversal after raw matching.
+- The remaining PE32/x86 heuristics and unpackers stay fail-visible and
+  non-cacheable instead of being misrepresented as architecture-neutral.
+- A deterministic focused Linux ARM64 GCC regression passes common import
+  metadata and injected 64-bit-thunk read failure. Production PE32+ corpora,
+  Linux x86-64, ASan/UBSan, and Sonic1 runs remain qualification gates.
+
 ## Daemon host file and temporary-filesystem admission — 2026-08-24
 
 - Certified large-file daemon startup now requires `RLIMIT_FSIZE` to represent

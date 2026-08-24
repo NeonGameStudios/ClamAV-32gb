@@ -4008,18 +4008,21 @@ summary, and is covered by the engine default regression. Enabling it is not
 itself release qualification; the capability manifest keeps this feature
 pending until the complete acceptance matrix is current-source verified.
 
-## PE32+ inspection boundary — 2026-08-20
+## PE32+ common inspection and legacy-x86 boundary — 2026-08-24
 
-PE32+ header parsing and the outer raw matcher remain enabled, but the
-remaining PE-specific inspection still depends on legacy PE32 structures. The
-scanner now marks that layer explicitly incomplete and returns `CL_EPARSE`
-instead of returning `CL_CLEAN` after silently skipping the inspection. This
-keeps raw detection available while preventing a PE32+ file from being
-reported or cached as fully clean without PE-specific coverage.
+PE32+ now completes the architecture-neutral PE passes after header parsing:
+outer raw matching, section hashing, overlay inspection, the `BC_PE_ALL`
+bytecode hook, and import-table metadata/hash traversal with native 64-bit
+thunks. Failures in the 64-bit thunk path remain explicit and non-cacheable.
 
-The capability manifest records this as an intentional unsupported boundary.
-Dependency-complete PE32+ fixtures, sanitizer coverage, and supported-build
-Sonic1 qualification remain release gates.
+The remaining hand-written PE heuristics and unpackers assume PE32/x86
+entry-point and ImageBase semantics. A confirmed PE32+ layer therefore stops
+at that narrower boundary with `CL_EPARSE` and the explicit reason
+`PE32+ legacy x86 heuristic and unpacker inspection is unsupported`; it cannot
+be reported or cached as fully clean. A deterministic PE32+ import fixture
+passes the focused Linux ARM64 GCC test for common-path metadata and injected
+64-bit-thunk read failure. Production PE32+ corpora, Linux x86-64,
+ASan/UBSan, and Sonic1 qualification remain release gates.
 
 ## Bytecode extracted-output accounting — 2026-08-20
 

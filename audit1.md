@@ -3516,8 +3516,10 @@ size or RVA sums in 32-bit arithmetic before the shared allocation and
 temporary limits. A wrapped sum could admit a smaller buffer or pass a wrapped
 input length to the unpacker. The paths now use checked `uint32_t` additions,
 reject overflow as an incomplete recognized layer, and pass validated sums into
-the existing bounded allocation/spool paths. PE32+ PE-specific analysis remains
-an explicit unsupported/incomplete result.
+the existing bounded allocation/spool paths. PE32+ now completes
+architecture-neutral overlay, bytecode, and 64-bit import-table inspection;
+the remaining PE32/x86 heuristics and unpackers retain an explicit
+unsupported/incomplete boundary.
 Static guards and whitespace validation pass; compiled PE corpus, sanitizer,
 and production qualification remain open.
 
