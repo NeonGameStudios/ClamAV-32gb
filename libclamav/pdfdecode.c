@@ -733,23 +733,32 @@ size_t pdf_decodestream(
     /* An unfiltered stream has no reason to enter the contiguous legacy
      * decoder token. Copy it to the child output in bounded chunks instead,
      * preserving the 64-bit containing-file coordinate and shared temporary
-     * admission. Object streams and encrypted layers still require the
-     * filtered token path below. */
-    if (obj->numfilters == 0 && objstm == NULL && !(pdf->flags & (1 << DECRYPTABLE_PDF))) {
+     * admission. On mmap-capable builds, an ordinary unencrypted object
+     * stream retains that completed child as read-only file-backed storage. */
+    if (obj->numfilters == 0 &&
+        !(pdf->flags & (1 << DECRYPTABLE_PDF)) &&
+        (objstm == NULL ||
+         (PDF_HAVE_FILE_BACKED_OBJECT_STREAMS &&
+          !(pdf->flags & (1 << ENCRYPTED_PDF))))) {
         *status = pdf_write_raw_stream(pdf, stream, streamlen, fout, &bytes_scanned);
+        if (*status == CL_SUCCESS && objstm != NULL)
+            *status = pdf_objstm_attach_file(pdf, objstm, fout,
+                                             bytes_scanned);
         goto done;
     }
 
     /* Ordinary Flate, RunLength, ASCIIHex, ASCII85, and LZW streams do not
      * need the legacy whole-buffer token. A single filter writes directly to
      * the quota-accounted child file; supported chains retain at most one
-     * completed input spool while producing the next stage. Object streams
-     * still need retained decoded bytes for object parsing, and encrypted
-     * streams must pass through decryption first. XRef streams deliberately
-     * skip forced decryption. */
+     * completed input spool while producing the next stage. Ordinary
+     * unencrypted object streams retain the completed final child through a
+     * read-only file-backed mapping; encrypted streams must still pass through
+     * decryption first. XRef streams deliberately skip forced decryption. */
     if (obj->numfilters != 0 &&
         pdf_stream_filter_chain_is_supported(obj) &&
-        objstm == NULL &&
+        (objstm == NULL ||
+         (PDF_HAVE_FILE_BACKED_OBJECT_STREAMS &&
+          !(pdf->flags & (1 << ENCRYPTED_PDF)))) &&
         !(obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
         (!(pdf->flags & (1 << DECRYPTABLE_PDF)) || xref)) {
         cl_error_t decode_status;
@@ -789,6 +798,9 @@ size_t pdf_decodestream(
                 bytes_scanned = raw_bytes;
                 *status       = (decode_status == CL_BREAK) ? CL_SUCCESS : CL_EPARSE;
             }
+        } else if (decode_status == CL_SUCCESS && objstm != NULL) {
+            *status = pdf_objstm_attach_file(pdf, objstm, fout,
+                                             bytes_scanned);
         } else {
             *status = decode_status;
         }
@@ -1093,7 +1105,10 @@ static size_t pdf_decodestream_internal(
         /* Don't store the result. It's ok if some or all objects failed to parse.
            It would be far worse to add objects from a stream to the list, and then free
            the stream buffer due to an "error". */
-        if (CL_SUCCESS != pdf_find_and_parse_objs_in_objstm(pdf, objstm)) {
+        objstm->parse_status = pdf_find_and_parse_objs_in_objstm(pdf, objstm);
+        if (CL_SUCCESS != objstm->parse_status) {
+            cli_mark_scan_incomplete(pdf->ctx,
+                                     "PDF object-stream parsing did not complete");
             cli_dbgmsg("pdf_decodestream_internal: pdf_find_and_parse_objs_in_objstm failed!\n");
         }
 

@@ -6998,7 +6998,41 @@ and under the same sanitizers. `pdfdecode.c`, `lzwdec.c`, and the complete
 `check_clamav.c` translation unit pass GCC compilation; only pre-existing
 isolated-build warnings remain.
 
-Object streams, encrypted streams, unsupported or mixed filter chains,
-per-filter DecodeParms arrays, exhaustive filter-order corpus coverage,
-materialized multi-gigabyte intermediates, and Sonic1 release/sanitizer
-qualification remain open.
+Encrypted object streams, unsupported or mixed filter chains, per-filter
+DecodeParms arrays, exhaustive filter-order corpus coverage, materialized
+multi-gigabyte intermediates, and Sonic1 release/sanitizer qualification remain
+open.
+
+## PDF file-backed object streams — 2026-08-23
+
+Mmap-capable builds now route ordinary unencrypted object streams through the
+bounded raw/single-filter/filter-chain decoders and retain the completed child
+as a read-only file-backed mapping. The output regular-file size is verified
+before mapping. Its exact temporary reservation moves from the extraction
+scope to the object-stream owner, survives descriptor close and unlink, and is
+released only after final unmap. Parsed and extracted ranges receive explicit
+`MADV_DONTNEED` release after sequential access.
+
+Object-index parse status is retained independently from decoder status. A
+malformed stream that already added an embedded object keeps its backing and
+returns an incomplete containing-object result; a pre-attachment decode or
+mapping failure discards only the unreferenced newest owner. Object-stream
+array growth no longer uses realloc-or-free, and failed removal no longer
+shrinks the live owner array through a second allocation. The same review
+removed a duplicate PDF encryption-search declaration and restored the
+missing declaration in its actual consumer, with both mmap and fallback
+configurations passing GCC compilation.
+
+Six regressions cover raw and Flate mappings, exact retained quota and teardown,
+malformed backing behind one valid object, containing-object status
+propagation, quota rejection without a mapping, and native-width logical input
+above `UINT32_MAX`. The production mapping/index/cleanup harness passes 2/2
+normally and under GCC ASan/UBSan with leak detection. Integrated decoder
+coverage passes 39/39 with the injectable bounded fmap and 38/38 with
+production `fmap.c`, normally and under the same sanitizers. The complete
+`check_clamav.c` translation unit also passes GCC syntax compilation with only
+pre-existing isolated-build warnings.
+
+Encrypted object streams, unsupported/mixed filters, per-filter DecodeParms
+arrays, non-mmap object-stream builds, compiled corpus, materialized-large
+fixtures, and Sonic1 qualification remain open.

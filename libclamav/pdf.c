@@ -205,6 +205,195 @@ static cl_error_t pdf_cleanup_temp_output(cli_ctx *ctx, int *fd, const char *fil
     return status;
 }
 
+void pdf_objstm_release_range(struct objstm_struct *objstm, size_t offset,
+                              size_t length)
+{
+#if PDF_HAVE_FILE_BACKED_OBJECT_STREAMS && defined(MADV_DONTNEED)
+    size_t end;
+    size_t page_size;
+    size_t release_start;
+    size_t release_end;
+    long system_page_size;
+
+    if (objstm == NULL || !objstm->streambuf_is_mapped ||
+        objstm->streambuf == NULL || length == 0 ||
+        offset >= objstm->streambuf_len)
+        return;
+
+    length = MIN(length, objstm->streambuf_len - offset);
+    end    = offset + length;
+    system_page_size = sysconf(_SC_PAGESIZE);
+    if (system_page_size <= 0)
+        return;
+    page_size     = (size_t)system_page_size;
+    release_start = (offset / page_size) * page_size;
+    if (end > SIZE_MAX - (page_size - 1U)) {
+        release_end = objstm->streambuf_len;
+    } else {
+        release_end = ((end + page_size - 1U) / page_size) * page_size;
+        release_end = MIN(release_end, objstm->streambuf_len);
+    }
+    if (release_end > release_start)
+        (void)madvise(objstm->streambuf + release_start,
+                      release_end - release_start, MADV_DONTNEED);
+#else
+    UNUSEDPARAM(objstm);
+    UNUSEDPARAM(offset);
+    UNUSEDPARAM(length);
+#endif
+}
+
+cl_error_t pdf_objstm_attach_file(struct pdf_struct *pdf,
+                                  struct objstm_struct *objstm, int fd,
+                                  size_t length)
+{
+#if PDF_HAVE_FILE_BACKED_OBJECT_STREAMS
+    STATBUF output_stat;
+    void *mapping;
+
+    if (pdf == NULL || pdf->ctx == NULL || objstm == NULL || fd < 0 ||
+        length == 0 || objstm->streambuf != NULL)
+        return CL_EARG;
+    if (pdf->temporary_reserved == NULL) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF object-stream backing was not temporary-quota accounted");
+        return CL_ERESOURCE;
+    }
+    if (FSTAT(fd, &output_stat) != 0 || output_stat.st_size < 0 ||
+        !S_ISREG(output_stat.st_mode) ||
+        (uint64_t)output_stat.st_size != (uint64_t)length) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF object-stream backing size could not be verified");
+        return CL_EWRITE;
+    }
+    if (*pdf->temporary_reserved < (uint64_t)length) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF object-stream temporary accounting was inconsistent");
+        return CL_ERESOURCE;
+    }
+
+    mapping = mmap(NULL, length, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (mapping == MAP_FAILED) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF object-stream backing could not be mapped");
+        return CL_EMEM;
+    }
+#ifdef MADV_SEQUENTIAL
+    (void)madvise(mapping, length, MADV_SEQUENTIAL);
+#endif
+
+    objstm->streambuf           = (char *)mapping;
+    objstm->streambuf_len       = length;
+    objstm->streambuf_is_mapped = true;
+    objstm->temporary_reserved = (uint64_t)length;
+    *pdf->temporary_reserved -= (uint64_t)length;
+
+    objstm->parse_status = pdf_find_and_parse_objs_in_objstm(pdf, objstm);
+    if (objstm->parse_status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF object-stream parsing did not complete");
+    }
+    pdf_objstm_release_range(objstm, 0, objstm->streambuf_len);
+    return CL_SUCCESS;
+#else
+    UNUSEDPARAM(objstm);
+    UNUSEDPARAM(fd);
+    UNUSEDPARAM(length);
+    if (pdf != NULL && pdf->ctx != NULL) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF object streams require file-backed mapping support");
+    }
+    return CL_ERESOURCE;
+#endif
+}
+
+cl_error_t pdf_objstm_cleanup(struct pdf_struct *pdf,
+                              struct objstm_struct *objstm,
+                              cl_error_t status)
+{
+    if (objstm == NULL)
+        return status;
+
+    if (objstm->streambuf != NULL) {
+        if (objstm->streambuf_is_mapped) {
+#if PDF_HAVE_FILE_BACKED_OBJECT_STREAMS
+            if (munmap(objstm->streambuf, objstm->streambuf_len) != 0) {
+                if (pdf != NULL && pdf->ctx != NULL) {
+                    cli_mark_scan_incomplete(
+                        pdf->ctx,
+                        "PDF object-stream backing could not be unmapped");
+                }
+                if (status == CL_SUCCESS || status == CL_VERIFIED ||
+                    status == CL_BREAK)
+                    status = CL_ERESOURCE;
+            }
+#else
+            if (pdf != NULL && pdf->ctx != NULL) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF object-stream mapping state was not supported");
+            }
+            if (status == CL_SUCCESS || status == CL_VERIFIED ||
+                status == CL_BREAK)
+                status = CL_ERESOURCE;
+#endif
+        } else {
+            free(objstm->streambuf);
+        }
+        objstm->streambuf = NULL;
+    }
+
+    if (objstm->temporary_reserved != 0) {
+        if (pdf == NULL || pdf->ctx == NULL) {
+            if (status == CL_SUCCESS || status == CL_VERIFIED ||
+                status == CL_BREAK)
+                status = CL_ERESOURCE;
+        } else {
+            cli_scan_release_temporary(pdf->ctx,
+                                       objstm->temporary_reserved);
+        }
+        objstm->temporary_reserved = 0;
+    }
+    objstm->streambuf_len       = 0;
+    objstm->streambuf_is_mapped = false;
+    return status;
+}
+
+static cl_error_t pdf_objstm_discard_last(struct pdf_struct *pdf,
+                                          struct objstm_struct *objstm,
+                                          cl_error_t status)
+{
+    if (pdf == NULL || objstm == NULL || pdf->objstms == NULL ||
+        pdf->nobjstms == 0 ||
+        pdf->objstms[pdf->nobjstms - 1U] != objstm) {
+        if (pdf != NULL && pdf->ctx != NULL) {
+            cli_mark_scan_incomplete(
+                pdf->ctx,
+                "PDF object-stream ownership was inconsistent");
+        }
+        if (status == CL_SUCCESS || status == CL_VERIFIED ||
+            status == CL_BREAK)
+            status = CL_EPARSE;
+        return status;
+    }
+
+    status = pdf_objstm_cleanup(pdf, objstm, status);
+    free(objstm);
+    pdf->nobjstms--;
+    pdf->objstms[pdf->nobjstms] = NULL;
+    if (pdf->nobjstms == 0) {
+        free(pdf->objstms);
+        pdf->objstms = NULL;
+    }
+    return status;
+}
+
 static int xrefCheck(const char *xref, const char *eof)
 {
     const char *q;
@@ -1933,21 +2122,28 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
             } else if (-1 == (objstm_n = pdf_readint(pdf, start, dict_len, "/N"))) {
                 cli_warnmsg("pdf_extract_obj: Failed to find num objects in object stream\n");
             } else {
-                /* Add objstm to pdf struct, so it can be freed eventually */
-                pdf->nobjstms++;
-                pdf->objstms = cli_max_realloc_or_free(pdf->objstms, sizeof(struct objstm_struct *) * pdf->nobjstms);
-                if (!pdf->objstms) {
-                    cli_warnmsg("pdf_extract_obj: out of memory parsing object stream (%u)\n", pdf->nobjstms);
-                    status = CL_EMEM;
-                    goto done;
-                }
+                struct objstm_struct **new_objstms;
+                size_t new_count = (size_t)pdf->nobjstms + 1U;
 
                 CLI_CALLOC_OR_GOTO_DONE(
                     objstm, 1, sizeof(struct objstm_struct),
-                    cli_warnmsg("pdf_extract_obj: out of memory parsing object stream (%u)\n", pdf->nobjstms),
+                    cli_warnmsg("pdf_extract_obj: out of memory parsing object stream (%zu)\n", new_count),
                     status = CL_EMEM);
 
-                pdf->objstms[pdf->nobjstms - 1] = objstm;
+                if (new_count > SIZE_MAX / sizeof(*pdf->objstms) ||
+                    (new_objstms = cli_max_realloc(
+                         pdf->objstms,
+                         sizeof(*pdf->objstms) * new_count)) == NULL) {
+                    cli_warnmsg("pdf_extract_obj: out of memory recording object stream (%zu)\n",
+                                new_count);
+                    free(objstm);
+                    objstm = NULL;
+                    status = CL_EMEM;
+                    goto done;
+                }
+                pdf->objstms                  = new_objstms;
+                pdf->objstms[pdf->nobjstms] = objstm;
+                pdf->nobjstms++;
 
                 objstm->first        = (size_t)objstm_first;
                 objstm->current      = (size_t)objstm_first;
@@ -1970,51 +2166,24 @@ cl_error_t pdf_extract_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t
              * but CL_EPARSE still means the required filtered representation
              * was not completely inspected. Independent PDF objects are
              * handled by the caller's bad-object accounting below. */
-            if (CL_EMEM == status) {
+            if (NULL != objstm && objstm->streambuf == NULL) {
+                status = pdf_objstm_discard_last(pdf, objstm, status);
+                objstm = NULL;
+            }
+
+            if (CL_EMEM == status)
                 goto done;
-            }
-
-            if (NULL != objstm) {
-                /*
-                 * If we were expecting an objstm and there was a failure...
-                 *   discard the memory for last object stream.
-                 */
-                if (NULL != pdf->objstms) {
-                    if (NULL != pdf->objstms[pdf->nobjstms - 1]) {
-                        if (NULL != pdf->objstms[pdf->nobjstms - 1]->streambuf) {
-                            free(pdf->objstms[pdf->nobjstms - 1]->streambuf);
-                            pdf->objstms[pdf->nobjstms - 1]->streambuf = NULL;
-                        }
-                        free(pdf->objstms[pdf->nobjstms - 1]);
-                        pdf->objstms[pdf->nobjstms - 1] = NULL;
-                    }
-
-                    /* Pop the objstm off the end of the pdf->objstms array. */
-                    if (pdf->nobjstms > 0) {
-                        pdf->nobjstms--;
-                        if (0 == pdf->nobjstms) {
-                            free(pdf->objstms);
-                            pdf->objstms = NULL;
-                        } else {
-                            pdf->objstms = cli_max_realloc_or_free(pdf->objstms, sizeof(struct objstm_struct *) * pdf->nobjstms);
-
-                            if (!pdf->objstms) {
-                                cli_warnmsg("pdf_extract_obj: out of memory when shrinking down objstm array\n");
-                                status = CL_EMEM;
-                                goto done;
-                            }
-                        }
-                    } else {
-                        /* hm.. this shouldn't happen */
-                        cli_warnmsg("pdf_extract_obj: Failure counting objstms.\n");
-                    }
-                }
-            }
         }
 
         if (dparams) {
             pdf_free_dict(dparams);
             dparams = NULL;
+        }
+
+        if (status == CL_SUCCESS && objstm != NULL &&
+            objstm->streambuf != NULL &&
+            objstm->parse_status != CL_SUCCESS) {
+            status = objstm->parse_status;
         }
 
         if (status == CL_VIRUS) {
@@ -2182,6 +2351,9 @@ done:
         pdf_free_dict(dparams);
     }
 
+    if (obj != NULL && obj->objstm != NULL)
+        pdf_objstm_release_range(obj->objstm, obj->start, obj->size);
+
     status = pdf_cleanup_temp_output(pdf->ctx, &fout, fullname, status,
                                      extracted_an_object && (flags & PDF_EXTRACT_OBJ_SCAN) &&
                                          !pdf->ctx->engine->keeptmp,
@@ -2345,7 +2517,6 @@ static void handle_pdfname(struct pdf_struct *pdf, struct pdf_obj *obj, const ch
 static void pdf_parse_encrypt(struct pdf_struct *pdf, const char *enc, int len)
 {
     const char *q, *q2;
-    cl_error_t search_status;
     cl_error_t search_status;
     unsigned long objid;
     unsigned long genid;
@@ -3665,7 +3836,8 @@ enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key
 
 void pdf_handle_enc(struct pdf_struct *pdf)
 {
-    struct pdf_obj *obj;
+    struct pdf_obj *obj = NULL;
+    cl_error_t search_status;
     uint32_t len, n, R, P, length, EM = 1, i, oulen;
 
     char *O       = NULL;
@@ -3892,6 +4064,9 @@ void pdf_handle_enc(struct pdf_struct *pdf)
     }
 
 done:
+    if (obj != NULL && obj->objstm != NULL)
+        pdf_objstm_release_range(obj->objstm, obj->start, obj->size);
+
     free(O);
     free(OE);
 
@@ -3971,6 +4146,7 @@ cl_error_t pdf_find_and_parse_objs_in_objstm(struct pdf_struct *pdf, struct objs
 
         /* Parse object */
         pdf_parseobj(pdf, obj);
+        pdf_objstm_release_range(objstm, obj->start, obj->size);
     }
 
     if (badobjects) {
@@ -4472,10 +4648,7 @@ err:
     if (pdf.objstms) {
         for (i = 0; i < pdf.nobjstms; i++) {
             if (pdf.objstms[i]) {
-                if (pdf.objstms[i]->streambuf) {
-                    free(pdf.objstms[i]->streambuf);
-                    pdf.objstms[i]->streambuf = NULL;
-                }
+                rc = pdf_objstm_cleanup(&pdf, pdf.objstms[i], rc);
                 free(pdf.objstms[i]);
                 pdf.objstms[i] = NULL;
             }

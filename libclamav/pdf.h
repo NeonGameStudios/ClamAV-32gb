@@ -30,6 +30,12 @@
 #define PDF_DEEP_PARSE_MAX_SIZE ((size_t)64 * 1024 * 1024)
 #define PDF_INPUT_WINDOW_SIZE (64 * 1024)
 
+#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H)
+#define PDF_HAVE_FILE_BACKED_OBJECT_STREAMS 1
+#else
+#define PDF_HAVE_FILE_BACKED_OBJECT_STREAMS 0
+#endif
+
 #define PDF_OBJECT_RECURSION_LIMIT 25
 /* Internal object IDs pack the format's object number and generation into
  * one 32-bit lookup key; reject values that cannot be represented losslessly. */
@@ -45,6 +51,9 @@ struct objstm_struct {
     size_t nobjs_found;   // number of objects actually found in the object stream
     char *streambuf;      // address of stream buffer, beginning with first obj pair
     size_t streambuf_len; // length of stream buffer, includes pairs followed by actual objects
+    uint64_t temporary_reserved; // retained file-backed bytes charged to the scan
+    cl_error_t parse_status;     // retained because parsed objects reference this backing
+    bool streambuf_is_mapped;    // streambuf is a read-only file-backed mapping, not heap memory
 };
 
 struct pdf_obj {
@@ -222,5 +231,11 @@ void pdf_print_dict(struct pdf_dict *dict, unsigned long depth);
 void pdf_print_array(struct pdf_array *array, unsigned long depth);
 
 cl_error_t pdf_find_and_parse_objs_in_objstm(struct pdf_struct *pdf, struct objstm_struct *objstm);
+cl_error_t pdf_objstm_attach_file(struct pdf_struct *pdf, struct objstm_struct *objstm,
+                                  int fd, size_t length);
+cl_error_t pdf_objstm_cleanup(struct pdf_struct *pdf, struct objstm_struct *objstm,
+                              cl_error_t status);
+void pdf_objstm_release_range(struct objstm_struct *objstm, size_t offset,
+                              size_t length);
 
 #endif

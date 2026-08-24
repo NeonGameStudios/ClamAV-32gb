@@ -6591,7 +6591,42 @@ that post-decode cleanup failures also roll back final output and cannot be
 hidden by a zero-output `CL_BREAK`. Its injectable bounded-fmap variant passes
 all 37 cases normally and under GCC AddressSanitizer/UBSan with leak detection.
 A second variant links the actual production `fmap.c`; all 36 applicable cases
-also pass normally and under the same sanitizers. Object streams, encryption,
-unsupported or mixed filter chains, per-filter DecodeParms arrays, compiled PDF
-corpus, materialized multi-gigabyte chains, and Sonic1 release/sanitizer
+also pass normally and under the same sanitizers. Encrypted object streams,
+unsupported or mixed filter chains, per-filter DecodeParms arrays, compiled
+PDF corpus, materialized multi-gigabyte chains, and Sonic1 release/sanitizer
 qualification remain open.
+
+## PDF file-backed object streams — 2026-08-23
+
+On mmap-capable builds, ordinary unencrypted object streams with no filter or
+only the supported native-width filters no longer transfer a decoded heap
+token into the object parser. Decoding writes the quota-accounted extracted
+child, verifies its regular-file type and exact size, maps it read-only, and
+transfers exactly that file's temporary reservation into the retained
+object-stream owner. The extracted-file descriptor can then close and its
+directory entry can be removed while the mapping and its storage charge remain
+live until every embedded object has been parsed and extracted.
+
+Malformed streams retain their mapping whenever already-created objects refer
+to its offsets. Their parse status is preserved and returned by the containing
+object extraction instead of freeing the backing or reporting a complete
+result. Failed decode or attachment before any backing exists discards only
+the new owner without reallocating or losing prior object-stream owners.
+`MADV_SEQUENTIAL` limits read-ahead behavior, and parsed/extracted object ranges
+are released with `MADV_DONTNEED`; final teardown unmaps before releasing the
+retained temporary reservation.
+
+Six regressions bind raw and Flate-backed streams, exact quota ownership and
+cleanup, malformed backing retained behind a valid first object,
+containing-object error propagation, one-byte-short quota rejection, and a
+supported filter route whose logical source length exceeds `UINT32_MAX`. The
+production mapping/index/cleanup harness passes 2/2 normally and under GCC
+AddressSanitizer/UBSan with leak detection. The integrated decoder harness now
+passes 39/39 with its injectable bounded fmap and 38/38 with production
+`fmap.c`, both normally and under the same sanitizers. Mmap and non-mmap source
+configurations plus the complete unit-test translation unit pass GCC syntax
+compilation; only pre-existing isolated-build warnings remain.
+
+Encrypted object streams, unsupported/mixed filters, per-filter DecodeParms
+arrays, non-mmap object-stream builds, compiled PDF corpus, materialized-large
+fixtures, and Sonic1 release/sanitizer qualification remain open.
