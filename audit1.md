@@ -2005,8 +2005,9 @@ fall back to whole-folder materialization only when the legacy allocation guard
 allowed it. The decoder now accepts those two-coder shapes and routes decoder
 output through a bounded 256 KiB branch-filter buffer. BCJ/ARM state,
 alignment/look-ahead tails, output CRC, and downstream short writes are
-preserved; unsupported graphs such as BCJ2 remain fail-visible on the streaming
-path.
+preserved. At this August 20 milestone, graphs such as BCJ2 still remained
+fail-visible on the streaming path; the bounded canonical four-coder BCJ2
+implementation is recorded in the August 24 section below.
 
 The modified `libclamav/7z/7zDec.c` compiled in the pinned Sonic1 Release
 build `/work/build-current-044db34-release`, and the full 16-test Release CTest
@@ -7367,3 +7368,24 @@ exact temporary-account release, and exact fail-closed reasons for an odd code
 unit, a lone high surrogate, and unknown byte order. Production HTML corpus,
 sanitizer, Linux x86-64, materialized multi-gigabyte input, and Sonic1 evidence
 remain release gates.
+
+## Bounded 7-Zip BCJ2 solid folders — 2026-08-24
+
+The accepted four-coder BCJ2 graph now stays on the sequential extraction
+path. CALL, JUMP, and range-control data use exact-size, quota-accounted,
+deadline-aware scratch files; MAIN streams directly through a resumable
+fixed-window BCJ2 merger. Checked 64-bit pack coordinates, unchanged folder
+and member CRC validation, sticky ClamAV error precedence, and all-exit scratch
+cleanup replace the former whole-folder fallback for this graph. LZMA/LZMA2
+decode work is limited to 256 KiB of output between progress callbacks, output
+ending on a branch opcode preserves legacy side-stream semantics, and original
+internal stream-extraction symbols remain ABI-compatible wrappers.
+
+Focused local GCC evidence passes direct legacy differential, boundary,
+terminal-opcode, truncation, output-failure, CALL/JUMP graph, native-width,
+pack-overflow, and production scratch-provider oracles. A one-MiB raw LZMA
+fixture additionally emits four exact 256 KiB writes with nine progress
+checkpoints. Translation-unit syntax checks pass. Production
+BCJ2 corpus, sanitizer, certified Linux x86-64, materialized large-folder, and
+Sonic1 qualification remain open; the existing container's Rust 1.65 cannot
+configure the checkout's Rust 1.97 requirement, and no toolchain was installed.

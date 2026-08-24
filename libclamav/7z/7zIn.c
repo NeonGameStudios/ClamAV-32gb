@@ -1551,14 +1551,15 @@ static size_t SzMemberOutStream_Write(void *pp, const void *data, size_t size)
   return size;
 }
 
-SRes SzArEx_ExtractToStream(
+SRes SzArEx_ExtractToStreamEx(
     const CSzArEx *p,
     ILookInStream *inStream,
     UInt32 fileIndex,
     ISeqOutStream *outStream,
     UInt64 *outSizeProcessed,
     ISzAlloc *allocMain,
-    ISzAlloc *allocTemp)
+    ISzAlloc *allocTemp,
+    ISzBcj2TempStreams *tempStreams)
 {
   UInt32 folderIndex;
   UInt32 i;
@@ -1600,11 +1601,11 @@ SRes SzArEx_ExtractToStream(
   member.end       = fileEnd;
   member.crc       = CRC_INIT_VAL;
 
-  res = SzFolder_DecodeToStream(folder,
+  res = SzFolder_DecodeToStreamEx(folder,
                                 p->db.PackSizes + p->FolderStartPackStreamIndex[folderIndex],
                                 inStream,
                                 SzArEx_GetFolderStreamPos(p, folderIndex, 0),
-                                &member.s, allocMain);
+                                &member.s, allocMain, tempStreams);
   if (res != SZ_OK)
     return res;
   if (member.position != SzFolder_GetUnpackSize(folder) || member.written != fileItem->Size)
@@ -1613,4 +1614,17 @@ SRes SzArEx_ExtractToStream(
     return SZ_ERROR_CRC;
   *outSizeProcessed = member.written;
   return SZ_OK;
+}
+
+SRes SzArEx_ExtractToStream(
+    const CSzArEx *p,
+    ILookInStream *inStream,
+    UInt32 fileIndex,
+    ISeqOutStream *outStream,
+    UInt64 *outSizeProcessed,
+    ISzAlloc *allocMain,
+    ISzAlloc *allocTemp)
+{
+  return SzArEx_ExtractToStreamEx(p, inStream, fileIndex, outStream,
+      outSizeProcessed, allocMain, allocTemp, 0);
 }

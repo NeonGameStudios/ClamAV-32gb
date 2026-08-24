@@ -265,6 +265,11 @@ static SRes SzStreamWrite(ISeqOutStream *outStream, const Byte *data, size_t siz
   return outStream->Write(outStream, data, size) == size ? SZ_OK : SZ_ERROR_WRITE;
 }
 
+/* Bound decompressor work between output/progress callbacks. The dictionary
+   remains fully allocated for codec semantics, but no decode step may produce
+   more than this window before the caller can enforce its deadline. */
+#define SZ_DECODE_OUTPUT_WINDOW_SIZE (1 << 18)
+
 static SRes SzDecodeCopyToStream(UInt64 inSize, ILookInStream *inStream, ISeqOutStream *outStream)
 {
   while (inSize > 0) {
@@ -311,7 +316,7 @@ static SRes SzDecodeLzmaToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt6
     const void *inBuf;
     size_t lookahead = (1 << 18);
     size_t oldPos, inProcessed;
-    SizeT produced;
+    SizeT dicLimit, outputWindow, produced;
     ELzmaStatus status;
     ELzmaFinishMode finishMode;
 
@@ -329,9 +334,19 @@ static SRes SzDecodeLzmaToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt6
       goto done;
     }
     oldPos = state.dicPos;
-    finishMode = remaining <= state.dicBufSize - state.dicPos ? LZMA_FINISH_END : LZMA_FINISH_ANY;
+    outputWindow = state.dicBufSize - state.dicPos;
+    if (outputWindow > SZ_DECODE_OUTPUT_WINDOW_SIZE)
+      outputWindow = SZ_DECODE_OUTPUT_WINDOW_SIZE;
+    if ((UInt64)outputWindow > remaining)
+      outputWindow = (SizeT)remaining;
+    if (outputWindow == 0) {
+      res = SZ_ERROR_DATA;
+      goto done;
+    }
+    dicLimit = state.dicPos + outputWindow;
+    finishMode = remaining <= outputWindow ? LZMA_FINISH_END : LZMA_FINISH_ANY;
     inProcessed = lookahead;
-    res = LzmaDec_DecodeToDic(&state, state.dicBufSize, (const Byte *)inBuf,
+    res = LzmaDec_DecodeToDic(&state, dicLimit, (const Byte *)inBuf,
                               &inProcessed, finishMode, &status);
     if (inProcessed) {
       res = inStream->Skip((void *)inStream, inProcessed);
@@ -406,7 +421,7 @@ static SRes SzDecodeLzma2ToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt
     const void *inBuf;
     size_t lookahead = (1 << 18);
     size_t oldPos, inProcessed;
-    SizeT produced;
+    SizeT dicLimit, outputWindow, produced;
     ELzmaStatus status;
     ELzmaFinishMode finishMode;
 
@@ -424,9 +439,19 @@ static SRes SzDecodeLzma2ToStream(const CSzCoderInfo *coder, UInt64 inSize, UInt
       goto done;
     }
     oldPos = state.decoder.dicPos;
-    finishMode = remaining <= state.decoder.dicBufSize - state.decoder.dicPos ? LZMA_FINISH_END : LZMA_FINISH_ANY;
+    outputWindow = state.decoder.dicBufSize - state.decoder.dicPos;
+    if (outputWindow > SZ_DECODE_OUTPUT_WINDOW_SIZE)
+      outputWindow = SZ_DECODE_OUTPUT_WINDOW_SIZE;
+    if ((UInt64)outputWindow > remaining)
+      outputWindow = (SizeT)remaining;
+    if (outputWindow == 0) {
+      res = SZ_ERROR_DATA;
+      goto done;
+    }
+    dicLimit = state.decoder.dicPos + outputWindow;
+    finishMode = remaining <= outputWindow ? LZMA_FINISH_END : LZMA_FINISH_ANY;
     inProcessed = lookahead;
-    res = Lzma2Dec_DecodeToDic(&state, state.decoder.dicBufSize, (const Byte *)inBuf,
+    res = Lzma2Dec_DecodeToDic(&state, dicLimit, (const Byte *)inBuf,
                                &inProcessed, finishMode, &status);
     if (inProcessed) {
       res = inStream->Skip((void *)inStream, inProcessed);
@@ -784,6 +809,55 @@ static size_t SzCrcOutStream_Write(void *pp, const void *data, size_t size)
   return written;
 }
 
+typedef struct
+{
+  ISeqOutStream s;
+  ISeqOutStream *downstream;
+  ISzBcj2TempStreams *provider;
+  SRes status;
+} CSzProgressOutStream;
+
+static size_t SzProgressOutStream_Write(void *pp, const void *data,
+    size_t size)
+{
+  CSzProgressOutStream *p = (CSzProgressOutStream *)pp;
+  size_t written;
+
+  if (p == 0 || p->downstream == 0 || p->provider == 0 ||
+      p->provider->Checkpoint == 0 || p->status != SZ_OK)
+    return 0;
+  p->status = p->provider->Checkpoint(p->provider->opaque);
+  if (p->status != SZ_OK)
+    return 0;
+  written = p->downstream->Write(p->downstream, data, size);
+  if (written != size)
+    return written;
+  p->status = p->provider->Checkpoint(p->provider->opaque);
+  if (p->status != SZ_OK)
+    return 0;
+  return written;
+}
+
+static SRes SzPackStreamPosition(const UInt64 *packSizes, UInt32 packIndex,
+    UInt64 startPos, UInt64 *position)
+{
+  UInt64 offset = 0;
+  UInt32 i;
+
+  if (packSizes == 0 || position == 0)
+    return SZ_ERROR_PARAM;
+  for (i = 0; i < packIndex; i++)
+  {
+    if ((UInt64)-1 - offset < packSizes[i])
+      return SZ_ERROR_DATA;
+    offset += packSizes[i];
+  }
+  if ((UInt64)-1 - startPos < offset)
+    return SZ_ERROR_DATA;
+  *position = startPos + offset;
+  return SZ_OK;
+}
+
 #define SZ_BRANCH_BUFFER_SIZE (1 << 18)
 
 /* A two-coder 7-Zip folder is normally a decompressor followed by a branch
@@ -907,11 +981,39 @@ static SRes SzBranchOutStream_Finish(CSzBranchOutStream *p)
   return SZ_OK;
 }
 
-SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
-    ILookInStream *inStream, UInt64 startPos,
+static SRes SzDecodeMainCoderToStream(const CSzCoderInfo *coder,
+    UInt64 inSize, UInt64 outSize, ILookInStream *inStream,
     ISeqOutStream *outStream, ISzAlloc *allocMain)
 {
+  switch ((UInt32)coder->MethodID)
+  {
+    case k_Copy:
+      if (inSize != outSize)
+        return SZ_ERROR_DATA;
+      return SzDecodeCopyToStream(inSize, inStream, outStream);
+    case k_LZMA:
+      return SzDecodeLzmaToStream((CSzCoderInfo *)coder, inSize, outSize,
+          inStream, outStream, allocMain);
+    case k_LZMA2:
+      return SzDecodeLzma2ToStream((CSzCoderInfo *)coder, inSize, outSize,
+          inStream, outStream, allocMain);
+#ifdef _7ZIP_PPMD_SUPPPORT
+    case k_PPMD:
+      return SzDecodePpmdToStream((CSzCoderInfo *)coder, inSize, outSize,
+          inStream, outStream, allocMain);
+#endif
+    default:
+      return SZ_ERROR_UNSUPPORTED;
+  }
+}
+
+SRes SzFolder_DecodeToStreamEx(const CSzFolder *folder, const UInt64 *packSizes,
+    ILookInStream *inStream, UInt64 startPos,
+    ISeqOutStream *outStream, ISzAlloc *allocMain,
+    ISzBcj2TempStreams *tempStreams)
+{
   CSzCrcOutStream crcStream;
+  CSzProgressOutStream progressStream;
   CSzBranchOutStream branchStream;
   ISeqOutStream *target = outStream;
   Byte *branchBuffer = NULL;
@@ -920,8 +1022,8 @@ SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
 
   if (!folder || !packSizes || !inStream || !outStream)
     return SZ_ERROR_PARAM;
-  if ((folder->NumCoders != 1 && folder->NumCoders != 2) ||
-      folder->NumPackStreams != 1)
+  if (folder->NumCoders != 1 && folder->NumCoders != 2 &&
+      folder->NumCoders != 4)
     return SZ_ERROR_UNSUPPORTED;
   res = CheckSupportedFolder(folder);
   if (res != SZ_OK)
@@ -933,6 +1035,18 @@ SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
   crcStream.downstream = outStream;
   crcStream.crc     = CRC_INIT_VAL;
   target            = &crcStream.s;
+
+  memset(&progressStream, 0, sizeof(progressStream));
+  if (tempStreams != 0 && tempStreams->Checkpoint != 0)
+  {
+    progressStream.s.Write = SzProgressOutStream_Write;
+    progressStream.downstream = target;
+    progressStream.provider = tempStreams;
+    progressStream.status = tempStreams->Checkpoint(tempStreams->opaque);
+    if (progressStream.status != SZ_OK)
+      return progressStream.status;
+    target = &progressStream.s;
+  }
 
   memset(&branchStream, 0, sizeof(branchStream));
   if (folder->NumCoders == 2) {
@@ -948,36 +1062,109 @@ SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
     target = &branchStream.s;
   }
 
-  res = LookInStream_SeekTo(inStream, startPos);
-  if (res != SZ_OK)
-    goto done;
-  switch ((UInt32)folder->Coders[0].MethodID) {
-    case k_Copy:
-      if (packSizes[0] != outSize)
-        res = SZ_ERROR_DATA;
-      else
-        res = SzDecodeCopyToStream(packSizes[0], inStream, target);
-      break;
-    case k_LZMA:
-      res = SzDecodeLzmaToStream(&folder->Coders[0], packSizes[0], outSize,
-                                 inStream, target, allocMain);
-      break;
-    case k_LZMA2:
-      res = SzDecodeLzma2ToStream(&folder->Coders[0], packSizes[0], outSize,
-                                  inStream, target, allocMain);
-      break;
-#ifdef _7ZIP_PPMD_SUPPPORT
-    case k_PPMD:
-      res = SzDecodePpmdToStream(&folder->Coders[0], packSizes[0], outSize,
-                                 inStream, target, allocMain);
-      break;
-#endif
-    default:
+  if (folder->NumCoders == 4)
+  {
+    static const UInt32 packIndices[2] = { 3, 2 };
+    static const UInt32 inputIndices[2] = { 2, 1 };
+    ISeqInStream *bcj2Inputs[4] = { 0, 0, 0, 0 };
+    UInt64 bcj2Sizes[4] = { 0, 0, 0, 0 };
+    CBcj2MainOutStream *bcj2 = 0;
+    UInt32 ci;
+
+    if (tempStreams == 0 || tempStreams->Create == 0 ||
+        tempStreams->Finish == 0)
+    {
       res = SZ_ERROR_UNSUPPORTED;
-      break;
+      goto verify;
+    }
+
+    for (ci = 0; ci < 2; ci++)
+    {
+      UInt32 inputIndex = inputIndices[ci];
+      UInt32 packIndex = packIndices[ci];
+      ISeqOutStream *scratchOut = 0;
+      UInt64 packPosition;
+
+      bcj2Sizes[inputIndex] = folder->UnpackSizes[ci];
+      res = tempStreams->Create(tempStreams->opaque, inputIndex,
+          bcj2Sizes[inputIndex], &scratchOut);
+      if (res != SZ_OK)
+        goto verify;
+      res = SzPackStreamPosition(packSizes, packIndex, startPos,
+          &packPosition);
+      if (res != SZ_OK)
+        goto verify;
+      res = LookInStream_SeekTo(inStream, packPosition);
+      if (res != SZ_OK)
+        goto verify;
+      res = SzDecodeMainCoderToStream(&folder->Coders[ci],
+          packSizes[packIndex], bcj2Sizes[inputIndex], inStream,
+          scratchOut, allocMain);
+      if (res != SZ_OK)
+        goto verify;
+      res = tempStreams->Finish(tempStreams->opaque, inputIndex,
+          &bcj2Inputs[inputIndex]);
+      if (res != SZ_OK)
+        goto verify;
+    }
+
+    bcj2Sizes[3] = packSizes[1];
+    {
+      ISeqOutStream *scratchOut = 0;
+      UInt64 packPosition;
+      res = tempStreams->Create(tempStreams->opaque, 3, bcj2Sizes[3],
+          &scratchOut);
+      if (res != SZ_OK)
+        goto verify;
+      res = SzPackStreamPosition(packSizes, 1, startPos, &packPosition);
+      if (res != SZ_OK)
+        goto verify;
+      res = LookInStream_SeekTo(inStream, packPosition);
+      if (res != SZ_OK)
+        goto verify;
+      res = SzDecodeCopyToStream(packSizes[1], inStream, scratchOut);
+      if (res != SZ_OK)
+        goto verify;
+      res = tempStreams->Finish(tempStreams->opaque, 3, &bcj2Inputs[3]);
+      if (res != SZ_OK)
+        goto verify;
+    }
+
+    bcj2Sizes[0] = folder->UnpackSizes[2];
+    res = Bcj2MainOutStream_Create(&bcj2, bcj2Inputs, bcj2Sizes,
+        outSize, target, allocMain);
+    if (res == SZ_OK)
+    {
+      UInt64 packPosition;
+      res = SzPackStreamPosition(packSizes, 0, startPos, &packPosition);
+      if (res == SZ_OK)
+        res = LookInStream_SeekTo(inStream, packPosition);
+      if (res == SZ_OK)
+        res = SzDecodeMainCoderToStream(&folder->Coders[2], packSizes[0],
+            bcj2Sizes[0], inStream, Bcj2MainOutStream_GetStream(bcj2),
+            allocMain);
+      {
+        SRes finishRes = Bcj2MainOutStream_Finish(bcj2);
+        if (finishRes != SZ_OK && (res == SZ_OK || res == SZ_ERROR_WRITE))
+          res = finishRes;
+      }
+    }
+    Bcj2MainOutStream_Free(bcj2, allocMain);
   }
-  if (res == SZ_OK && folder->NumCoders == 2)
-    res = SzBranchOutStream_Finish(&branchStream);
+  else
+  {
+    res = LookInStream_SeekTo(inStream, startPos);
+    if (res == SZ_OK)
+      res = SzDecodeMainCoderToStream(&folder->Coders[0], packSizes[0],
+          outSize, inStream, target, allocMain);
+    if (res == SZ_OK && folder->NumCoders == 2)
+      res = SzBranchOutStream_Finish(&branchStream);
+  }
+
+verify:
+  if (progressStream.status != SZ_OK &&
+      (res == SZ_OK || res == SZ_ERROR_WRITE))
+    res = progressStream.status;
   if (res == SZ_OK) {
     if (crcStream.written != outSize)
       res = SZ_ERROR_DATA;
@@ -985,7 +1172,14 @@ SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
       res = SZ_ERROR_CRC;
   }
 
-done:
   IAlloc_Free(allocMain, branchBuffer);
   return res;
+}
+
+SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
+    ILookInStream *inStream, UInt64 startPos,
+    ISeqOutStream *outStream, ISzAlloc *allocMain)
+{
+  return SzFolder_DecodeToStreamEx(folder, packSizes, inStream, startPos,
+      outStream, allocMain, 0);
 }

@@ -3782,9 +3782,10 @@ converter. Decoder output passes through a bounded 256 KiB staging buffer;
 converter state, 64-bit folder/member accounting, alignment look-ahead, output
 CRC, and downstream short-write failures remain visible. This removes the
 previous need to fall back to whole-folder materialization for those supported
-filter folders. Other folder graphs, including BCJ2, remain explicitly
-unsupported on this streaming path and must fail visibly or use the guarded
-legacy path where its allocation limit permits.
+filter folders. At this August 20 milestone, BCJ2 remained explicitly
+unsupported on the streaming path and had to fail visibly or use the guarded
+legacy path where its allocation limit permitted; the bounded canonical
+four-coder implementation is documented in the August 24 section below.
 
 The changed source compiled successfully in the pinned Sonic1 Release build,
 and the complete 16-test Release CTest gate passed after the rebuild in 561.21
@@ -6933,3 +6934,39 @@ against the same current production objects in both modes. Complete
 stream/encryption-dictionary corpus mutations, allocation/read fault injection,
 production scanner execution, materialized multi-gigabyte encrypted streams,
 and Sonic1 evidence remain open.
+
+## 7-Zip bounded BCJ2 solid-folder streaming — 2026-08-24
+
+The canonical four-coder BCJ2 folder graph no longer falls back to a complete
+solid-folder allocation. Copy, LZMA, LZMA2, or PPMd decoders stage only the
+CALL and JUMP side streams, while the range-control stream is copied to a
+third scratch file. Each scratch file reserves its declared 64-bit size from
+the shared temporary budget before creation, enforces exact output and input,
+checks the scan deadline around I/O, and releases its descriptor, path, and
+reservation on every exit. The MAIN decoder writes directly into a resumable
+BCJ2 merger with fixed 8 KiB input and 16 KiB output windows. Folder and member
+CRC layers remain unchanged, and the selected member is still the only final
+output materialized for nested scanning.
+
+The merger preserves five-byte range initialization, partial MAIN writes,
+CALL/JUMP selection, range normalization, intentional 32-bit x86 destination
+arithmetic, and 64-bit containing-folder coordinates. Checked pack-stream
+position arithmetic rejects overflow. A progress wrapper checks deadlines
+even while a late solid member causes the member filter to discard an earlier
+folder prefix, and `cli_7unz()` gives selected-output, scratch-provider, and
+archive-input statuses precedence over generic SDK errors. LZMA and LZMA2
+decode steps are capped at 256 KiB of produced output between callbacks, so a
+large dictionary cannot defer that progress/deadline check for a full cycle.
+The original internal stream-extraction symbols remain ABI-compatible wrappers
+around provider-aware suffixed entry points.
+
+Three isolated runtime oracles pass with the existing local ARM64 GCC
+toolchain: the decoder/terminal-opcode/window-boundary/graph/native-width/
+overflow oracle, the production scratch-provider write/read/cleanup/overrun
+oracle, and a one-MiB raw LZMA fixture that emits four exact 256 KiB writes
+with nine progress checkpoints. All changed production and unit translation
+units also pass direct GCC syntax compilation. Full CMake execution in that
+container is unavailable because the canonical checkout requires Rust 1.97
+while the existing image contains Rust 1.65; no software was installed.
+Production BCJ2 archives, sanitizer execution, Linux x86-64, materialized
+multi-gigabyte solid folders, and Sonic1 evidence remain release gates.

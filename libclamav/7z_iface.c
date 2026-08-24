@@ -106,6 +106,44 @@ typedef struct
     cl_error_t status;
 } CClamFileInStream;
 
+#define CLAM_BCJ2_TEMP_STREAM_COUNT 4U
+
+typedef struct CClamBcj2TempEntry CClamBcj2TempEntry;
+typedef struct CClamBcj2TempProvider CClamBcj2TempProvider;
+
+typedef struct
+{
+    ISeqOutStream s;
+    CClamBcj2TempEntry *entry;
+} CClamBcj2TempOutStream;
+
+typedef struct
+{
+    ISeqInStream s;
+    CClamBcj2TempEntry *entry;
+} CClamBcj2TempInStream;
+
+struct CClamBcj2TempEntry {
+    CClamBcj2TempProvider *provider;
+    CClamBcj2TempOutStream output;
+    CClamBcj2TempInStream input;
+    char *name;
+    int fd;
+    uint64_t expected;
+    uint64_t written;
+    uint64_t read;
+    uint64_t reserved;
+    bool created;
+    bool finished;
+};
+
+struct CClamBcj2TempProvider {
+    ISzBcj2TempStreams interface;
+    cli_ctx *ctx;
+    cl_error_t status;
+    CClamBcj2TempEntry entries[CLAM_BCJ2_TEMP_STREAM_COUNT];
+};
+
 bool cli_7z_output_range_allowed(uint64_t written, uint64_t size, uint64_t declared_size)
 {
     return written <= declared_size && size <= declared_size - written;
@@ -152,6 +190,237 @@ static size_t ClamFileOutStream_Write(void *pp, const void *data, size_t size)
     return written;
 }
 
+static SRes ClamBcj2TempProvider_StatusToSRes(cl_error_t status)
+{
+    switch (status) {
+        case CL_ETIMEOUT:
+            return SZ_ERROR_PROGRESS;
+        case CL_EMEM:
+        case CL_ERESOURCE:
+            return SZ_ERROR_MEM;
+        case CL_EREAD:
+        case CL_ESEEK:
+            return SZ_ERROR_READ;
+        case CL_EUNPACK:
+            return SZ_ERROR_DATA;
+        default:
+            return SZ_ERROR_WRITE;
+    }
+}
+
+static SRes ClamBcj2TempProvider_Fail(CClamBcj2TempProvider *provider,
+                                      cl_error_t status, const char *reason)
+{
+    if (provider == NULL)
+        return SZ_ERROR_FAIL;
+    if (provider->status == CL_SUCCESS)
+        provider->status = status;
+    if (provider->ctx != NULL && reason != NULL)
+        cli_mark_scan_incomplete(provider->ctx, reason);
+    return ClamBcj2TempProvider_StatusToSRes(provider->status);
+}
+
+static SRes ClamBcj2TempProvider_Checkpoint(void *opaque)
+{
+    CClamBcj2TempProvider *provider = (CClamBcj2TempProvider *)opaque;
+    cl_error_t status;
+
+    if (provider == NULL || provider->ctx == NULL)
+        return SZ_ERROR_PARAM;
+    if (provider->status != CL_SUCCESS)
+        return ClamBcj2TempProvider_StatusToSRes(provider->status);
+    status = cli_7z_checktimelimit(provider->ctx,
+                                   "7-Zip solid-folder extraction reached the configured time limit");
+    if (status != CL_SUCCESS) {
+        provider->status = status;
+        return SZ_ERROR_PROGRESS;
+    }
+    return SZ_OK;
+}
+
+static size_t ClamBcj2TempOutStream_Write(void *pp, const void *data, size_t size)
+{
+    CClamBcj2TempOutStream *stream = (CClamBcj2TempOutStream *)pp;
+    CClamBcj2TempEntry *entry;
+    size_t written;
+
+    if (stream == NULL || stream->entry == NULL || (size != 0 && data == NULL))
+        return 0;
+    entry = stream->entry;
+    if (!entry->created || entry->finished || entry->fd < 0)
+        return 0;
+    if (ClamBcj2TempProvider_Checkpoint(entry->provider) != SZ_OK)
+        return 0;
+    if (!cli_7z_output_range_allowed(entry->written, (uint64_t)size, entry->expected)) {
+        ClamBcj2TempProvider_Fail(entry->provider, CL_EUNPACK,
+                                  "7-Zip BCJ2 scratch output exceeded its declared size");
+        return 0;
+    }
+    if (size == 0)
+        return 0;
+    written = cli_writen(entry->fd, data, size);
+    if (written == (size_t)-1 || written != size) {
+        ClamBcj2TempProvider_Fail(entry->provider, CL_EWRITE,
+                                  "7-Zip BCJ2 scratch output could not be written completely");
+        return 0;
+    }
+    entry->written += written;
+    if (ClamBcj2TempProvider_Checkpoint(entry->provider) != SZ_OK)
+        return 0;
+    return written;
+}
+
+static SRes ClamBcj2TempInStream_Read(void *pp, void *data, size_t *size)
+{
+    CClamBcj2TempInStream *stream = (CClamBcj2TempInStream *)pp;
+    CClamBcj2TempEntry *entry;
+    size_t requested;
+    size_t read;
+
+    if (stream == NULL || stream->entry == NULL || size == NULL ||
+        (*size != 0 && data == NULL))
+        return SZ_ERROR_READ;
+    entry = stream->entry;
+    if (!entry->finished || entry->fd < 0 || entry->read > entry->expected) {
+        *size = 0;
+        return SZ_ERROR_READ;
+    }
+    if (ClamBcj2TempProvider_Checkpoint(entry->provider) != SZ_OK) {
+        *size = 0;
+        return ClamBcj2TempProvider_StatusToSRes(entry->provider->status);
+    }
+    requested = *size;
+    if ((uint64_t)requested > entry->expected - entry->read)
+        requested = (size_t)(entry->expected - entry->read);
+    if (requested == 0) {
+        *size = 0;
+        return SZ_OK;
+    }
+    read = cli_readn(entry->fd, data, requested);
+    if (read == (size_t)-1 || read != requested) {
+        *size = 0;
+        return ClamBcj2TempProvider_Fail(entry->provider, CL_EREAD,
+                                         "7-Zip BCJ2 scratch input could not be read completely");
+    }
+    entry->read += read;
+    *size = read;
+    if (ClamBcj2TempProvider_Checkpoint(entry->provider) != SZ_OK) {
+        *size = 0;
+        return ClamBcj2TempProvider_StatusToSRes(entry->provider->status);
+    }
+    return SZ_OK;
+}
+
+static SRes ClamBcj2TempProvider_Create(void *opaque, UInt32 streamIndex,
+                                        UInt64 expectedSize, ISeqOutStream **outStream)
+{
+    CClamBcj2TempProvider *provider = (CClamBcj2TempProvider *)opaque;
+    CClamBcj2TempEntry *entry;
+    cl_error_t status;
+
+    if (provider == NULL || outStream == NULL || streamIndex == 0 ||
+        streamIndex >= CLAM_BCJ2_TEMP_STREAM_COUNT)
+        return SZ_ERROR_PARAM;
+    *outStream = NULL;
+    if (ClamBcj2TempProvider_Checkpoint(provider) != SZ_OK)
+        return ClamBcj2TempProvider_StatusToSRes(provider->status);
+    entry = &provider->entries[streamIndex];
+    if (entry->created)
+        return ClamBcj2TempProvider_Fail(provider, CL_EUNPACK,
+                                         "7-Zip BCJ2 scratch stream was created more than once");
+    if (expectedSize > INT64_MAX)
+        return ClamBcj2TempProvider_Fail(provider, CL_ERESOURCE,
+                                         "7-Zip BCJ2 scratch size is not representable");
+
+    status = cli_scan_reserve_temporary(provider->ctx, expectedSize);
+    if (status != CL_SUCCESS)
+        return ClamBcj2TempProvider_Fail(provider, status,
+                                         "7-Zip BCJ2 scratch storage exceeded its resource limit");
+    entry->reserved = expectedSize;
+    entry->expected = expectedSize;
+    entry->created  = true;
+    status          = cli_gentempfd(provider->ctx->this_layer_tmpdir, &entry->name, &entry->fd);
+    if (status != CL_SUCCESS)
+        return ClamBcj2TempProvider_Fail(provider, status,
+                                         "7-Zip BCJ2 scratch file could not be created");
+    entry->output.s.Write = ClamBcj2TempOutStream_Write;
+    entry->output.entry   = entry;
+    entry->input.s.Read   = ClamBcj2TempInStream_Read;
+    entry->input.entry    = entry;
+    *outStream            = &entry->output.s;
+    return SZ_OK;
+}
+
+static SRes ClamBcj2TempProvider_Finish(void *opaque, UInt32 streamIndex,
+                                        ISeqInStream **inStream)
+{
+    CClamBcj2TempProvider *provider = (CClamBcj2TempProvider *)opaque;
+    CClamBcj2TempEntry *entry;
+    STATBUF fileStatus;
+
+    if (provider == NULL || inStream == NULL || streamIndex == 0 ||
+        streamIndex >= CLAM_BCJ2_TEMP_STREAM_COUNT)
+        return SZ_ERROR_PARAM;
+    *inStream = NULL;
+    entry     = &provider->entries[streamIndex];
+    if (!entry->created || entry->finished || entry->fd < 0 ||
+        entry->written != entry->expected || FSTAT(entry->fd, &fileStatus) != 0 ||
+        fileStatus.st_size < 0 || !S_ISREG(fileStatus.st_mode) ||
+        (uint64_t)fileStatus.st_size != entry->expected)
+        return ClamBcj2TempProvider_Fail(provider, CL_EUNPACK,
+                                         "7-Zip BCJ2 scratch output did not match its declared size");
+    if (lseek(entry->fd, 0, SEEK_SET) == (off_t)-1)
+        return ClamBcj2TempProvider_Fail(provider, CL_ESEEK,
+                                         "7-Zip BCJ2 scratch input could not be rewound");
+    entry->finished = true;
+    *inStream       = &entry->input.s;
+    return ClamBcj2TempProvider_Checkpoint(provider);
+}
+
+static void ClamBcj2TempProvider_Init(CClamBcj2TempProvider *provider, cli_ctx *ctx)
+{
+    UInt32 i;
+
+    memset(provider, 0, sizeof(*provider));
+    provider->interface.opaque     = provider;
+    provider->interface.Create     = ClamBcj2TempProvider_Create;
+    provider->interface.Finish     = ClamBcj2TempProvider_Finish;
+    provider->interface.Checkpoint = ClamBcj2TempProvider_Checkpoint;
+    provider->ctx                  = ctx;
+    provider->status               = CL_SUCCESS;
+    for (i = 0; i < CLAM_BCJ2_TEMP_STREAM_COUNT; i++) {
+        provider->entries[i].provider = provider;
+        provider->entries[i].fd       = -1;
+    }
+}
+
+static void ClamBcj2TempProvider_Cleanup(CClamBcj2TempProvider *provider)
+{
+    UInt32 i;
+
+    if (provider == NULL)
+        return;
+    for (i = 1; i < CLAM_BCJ2_TEMP_STREAM_COUNT; i++) {
+        CClamBcj2TempEntry *entry = &provider->entries[i];
+        if (!entry->created)
+            continue;
+        if (entry->fd >= 0) {
+            if (close(entry->fd) != 0)
+                ClamBcj2TempProvider_Fail(provider, CL_EWRITE,
+                                          "7-Zip BCJ2 scratch file could not be closed");
+            entry->fd = -1;
+        }
+        if (entry->name != NULL && !provider->ctx->engine->keeptmp &&
+            cli_unlink(entry->name) != 0)
+            ClamBcj2TempProvider_Fail(provider, CL_EUNLINK,
+                                      "7-Zip BCJ2 scratch file could not be removed");
+        cli_scan_release_temporary(provider->ctx, entry->reserved);
+        free(entry->name);
+        entry->name     = NULL;
+        entry->reserved = 0;
+    }
+}
+
 static cl_error_t cli_7z_error_status(SRes res)
 {
     switch (res) {
@@ -161,6 +430,8 @@ static cl_error_t cli_7z_error_status(SRes res)
             return CL_EWRITE;
         case SZ_ERROR_MEM:
             return CL_EMEM;
+        case SZ_ERROR_PROGRESS:
+            return CL_ETIMEOUT;
         default:
             return CL_EPARSE;
     }
@@ -275,7 +546,7 @@ static SRes FileInStream_fmap_Seek(void *pp, Int64 *pos, ESzSeek origin)
     if (*pos < -base || *pos > map_length - base)
         return 1;
 
-    *pos         = base + *pos;
+    *pos               = base + *pos;
     p->stream.s.curpos = (off_t)*pos;
     return 0;
 }
@@ -305,7 +576,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
     archiveStream.stream.s.curpos  = 0;
     archiveStream.stream.file.fmap = ctx->fmap;
     archiveStream.ctx              = ctx;
-    archiveStream.status            = CL_SUCCESS;
+    archiveStream.status           = CL_SUCCESS;
 
     LookToRead_CreateVTable(&lookStream, False);
 
@@ -343,6 +614,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             cl_error_t limitret;
             cl_error_t metadata_status;
             CClamFileOutStream output;
+            CClamBcj2TempProvider bcj2TempProvider;
             uint64_t temporary_reserved = 0;
             unsigned int encrypted      = 0;
             bool output_mismatch        = false;
@@ -409,16 +681,25 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                 cli_scan_release_temporary(ctx, temporary_reserved);
                 break;
             }
-            output.s.Write = ClamFileOutStream_Write;
-            output.ctx      = ctx;
-            output.status   = CL_SUCCESS;
-            output.fd       = fd;
+            output.s.Write       = ClamFileOutStream_Write;
+            output.ctx           = ctx;
+            output.status        = CL_SUCCESS;
+            output.fd            = fd;
             output.declared_size = f->Size;
             output.written       = 0;
-            res = SzArEx_ExtractToStream(&db, &lookStream.s, i, &output.s,
-                                         &outSizeProcessed, &allocImp, &allocTempImp);
+            ClamBcj2TempProvider_Init(&bcj2TempProvider, ctx);
+            res = SzArEx_ExtractToStreamEx(&db, &lookStream.s, i, &output.s,
+                                           &outSizeProcessed, &allocImp, &allocTempImp,
+                                           &bcj2TempProvider.interface);
+            ClamBcj2TempProvider_Cleanup(&bcj2TempProvider);
             if (output.status != CL_SUCCESS) {
                 found = output.status;
+                cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
+                free(tmp_name);
+                break;
+            }
+            if (bcj2TempProvider.status != CL_SUCCESS) {
+                found = bcj2TempProvider.status;
                 cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
                 free(tmp_name);
                 break;
@@ -431,18 +712,18 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
             }
             if (res == SZ_ERROR_UNSUPPORTED) {
                 UInt32 folderIndex = db.FileIndexToFolderIndexMap[i];
-                UInt64 folderSize = 0;
-                int allow_legacy = folderIndex == (UInt32)-1;
+                UInt64 folderSize  = 0;
+                int allow_legacy   = folderIndex == (UInt32)-1;
                 if (!allow_legacy && folderIndex < db.db.NumFolders) {
-                    folderSize = SzFolder_GetUnpackSize(&db.db.Folders[folderIndex]);
+                    folderSize   = SzFolder_GetUnpackSize(&db.db.Folders[folderIndex]);
                     allow_legacy = folderSize <= CLI_MAX_ALLOCATION;
                 }
                 if (allow_legacy) {
                     size_t legacyOffset = 0;
                     size_t legacySize   = 0;
-                    res = SzArEx_Extract(&db, &lookStream.s, i, &blockIndex,
-                                         &outBuffer, &outBufferSize, &legacyOffset,
-                                         &legacySize, &allocImp, &allocTempImp);
+                    res                 = SzArEx_Extract(&db, &lookStream.s, i, &blockIndex,
+                                                         &outBuffer, &outBufferSize, &legacyOffset,
+                                                         &legacySize, &allocImp, &allocTempImp);
                     if (archiveStream.status != CL_SUCCESS) {
                         found = archiveStream.status;
                         cli_7z_cleanup_temp(ctx, fd, tmp_name, &found, temporary_reserved);
@@ -457,7 +738,7 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
                         } else if (legacy_written != legacySize) {
                             cli_mark_scan_incomplete(ctx, "7-Zip legacy member output could not be written completely");
                             found = CL_EWRITE;
-                            res = SZ_ERROR_WRITE;
+                            res   = SZ_ERROR_WRITE;
                         } else {
                             outSizeProcessed = legacySize;
                         }

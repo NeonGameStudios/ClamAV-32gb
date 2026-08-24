@@ -2459,3 +2459,19 @@ and Sonic1 qualification as release gates.
   detection. Adjacent PDF suites remain green in both modes.
 - Add production-scanner fault injection; keep Sonic1 and materialized
   multi-gigabyte evidence open.
+
+## 7-Zip BCJ2 solid-folder streaming — 2026-08-24
+
+- Keep the completed bounded architecture: quota-accounted CALL/JUMP/control
+  scratch files, direct resumable MAIN merging, checked 64-bit pack positions,
+  256 KiB decompressor progress windows, deadline checkpoints, unchanged CRC
+  layering, ABI-compatible wrappers, and exact all-exit cleanup.
+- Local differential, terminal-opcode, window-boundary, truncation,
+  output-failure, CALL/JUMP graph, native-width, pack-overflow, and production
+  scratch-provider oracles pass; a one-MiB raw LZMA fixture also confirms four
+  exact 256 KiB output windows and nine progress checkpoints.
+- Add representative production BCJ2 archives, malformed graph/coder corpus,
+  scratch create/read/write/seek/close/unlink fault injection in the normal
+  unit binary, sanitizer execution, a materialized multi-gigabyte solid-folder
+  case, certified Linux x86-64 execution, and Sonic1 evidence before marking
+  the 7-Zip parser family qualified.

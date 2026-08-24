@@ -73,6 +73,9 @@
 #include "dmg.h"
 #include "egg.h"
 #include "7z_iface.h"
+#include "7z/7z.h"
+#include "7z/7zAlloc.h"
+#include "7z/Bcj2.h"
 #include "autoit.h"
 #include "binhex.h"
 #include "nsis/nulsft.h"
@@ -19289,6 +19292,594 @@ START_TEST(test_hwp3_password_protection_is_fail_visible)
 }
 END_TEST
 
+typedef struct
+{
+    ISeqInStream s;
+    const uint8_t *data;
+    size_t size;
+    size_t position;
+    size_t max_chunk;
+    size_t fail_at;
+    SRes fail_result;
+} bcj2_test_seq_input;
+
+typedef struct
+{
+    ISeekInStream s;
+    const uint8_t *data;
+    size_t size;
+} bcj2_test_seek_input;
+
+typedef struct
+{
+    ISeqOutStream s;
+    uint8_t *data;
+    size_t capacity;
+    size_t size;
+    bool fail;
+} bcj2_test_output;
+
+typedef struct
+{
+    bcj2_test_output output;
+    bcj2_test_seq_input input;
+    uint8_t data[64];
+    UInt64 expected;
+    bool created;
+    bool finished;
+} bcj2_test_temp_entry;
+
+typedef struct
+{
+    ISzBcj2TempStreams interface;
+    bcj2_test_temp_entry entries[4];
+    UInt64 observed_expected[4];
+    unsigned int create_count;
+    unsigned int finish_count;
+    unsigned int checkpoint_count;
+    UInt32 fail_create_index;
+    SRes fail_create_result;
+    SRes checkpoint_result;
+} bcj2_test_temp_provider;
+
+static SRes bcj2_test_seq_read(void *opaque, void *buffer, size_t *size)
+{
+    bcj2_test_seq_input *input = (bcj2_test_seq_input *)opaque;
+    size_t requested;
+    size_t available;
+
+    if (input == NULL || size == NULL || (*size != 0 && buffer == NULL))
+        return SZ_ERROR_READ;
+    if (input->fail_result != SZ_OK && input->position >= input->fail_at) {
+        *size = 0;
+        return input->fail_result;
+    }
+    requested = *size;
+    available = input->size - input->position;
+    if (requested > available)
+        requested = available;
+    if (input->max_chunk != 0 && requested > input->max_chunk)
+        requested = input->max_chunk;
+    if (requested != 0)
+        memcpy(buffer, input->data + input->position, requested);
+    input->position += requested;
+    *size = requested;
+    return SZ_OK;
+}
+
+static void bcj2_test_seq_init(bcj2_test_seq_input *input,
+                               const uint8_t *data, size_t size,
+                               size_t max_chunk)
+{
+    memset(input, 0, sizeof(*input));
+    input->s.Read = bcj2_test_seq_read;
+    input->data = data;
+    input->size = size;
+    input->max_chunk = max_chunk;
+    input->fail_at = SIZE_MAX;
+}
+
+static SRes bcj2_test_seek_read(void *opaque, void *buffer, size_t *size)
+{
+    bcj2_test_seek_input *input = (bcj2_test_seek_input *)opaque;
+    size_t position;
+    size_t requested;
+
+    if (input == NULL || size == NULL || input->s.curpos < 0 ||
+        (uint64_t)input->s.curpos > input->size || (*size != 0 && buffer == NULL))
+        return SZ_ERROR_READ;
+    position = (size_t)input->s.curpos;
+    requested = *size;
+    if (requested > input->size - position)
+        requested = input->size - position;
+    if (requested != 0)
+        memcpy(buffer, input->data + position, requested);
+    input->s.curpos += (off_t)requested;
+    *size = requested;
+    return SZ_OK;
+}
+
+static SRes bcj2_test_seek(void *opaque, Int64 *position, ESzSeek origin)
+{
+    bcj2_test_seek_input *input = (bcj2_test_seek_input *)opaque;
+    Int64 base;
+
+    if (input == NULL || position == NULL || input->size > INT64_MAX)
+        return SZ_ERROR_READ;
+    switch (origin) {
+        case SZ_SEEK_SET:
+            base = 0;
+            break;
+        case SZ_SEEK_CUR:
+            base = (Int64)input->s.curpos;
+            break;
+        case SZ_SEEK_END:
+            base = (Int64)input->size;
+            break;
+        default:
+            return SZ_ERROR_READ;
+    }
+    if (*position < -base || *position > (Int64)input->size - base)
+        return SZ_ERROR_READ;
+    input->s.curpos = (off_t)(base + *position);
+    *position = base + *position;
+    return SZ_OK;
+}
+
+static void bcj2_test_seek_init(bcj2_test_seek_input *input,
+                                const uint8_t *data, size_t size)
+{
+    memset(input, 0, sizeof(*input));
+    input->s.Read = bcj2_test_seek_read;
+    input->s.Seek = bcj2_test_seek;
+    input->data = data;
+    input->size = size;
+}
+
+static size_t bcj2_test_output_write(void *opaque, const void *data, size_t size)
+{
+    bcj2_test_output *output = (bcj2_test_output *)opaque;
+
+    if (output == NULL || (size != 0 && data == NULL) || output->fail ||
+        size > output->capacity - output->size)
+        return 0;
+    if (size != 0)
+        memcpy(output->data + output->size, data, size);
+    output->size += size;
+    return size;
+}
+
+static void bcj2_test_output_init(bcj2_test_output *output,
+                                  uint8_t *data, size_t capacity)
+{
+    memset(output, 0, sizeof(*output));
+    output->s.Write = bcj2_test_output_write;
+    output->data = data;
+    output->capacity = capacity;
+}
+
+static SRes bcj2_test_temp_create(void *opaque, UInt32 stream_index,
+                                  UInt64 expected_size, ISeqOutStream **out_stream)
+{
+    bcj2_test_temp_provider *provider = (bcj2_test_temp_provider *)opaque;
+    bcj2_test_temp_entry *entry;
+
+    if (provider == NULL || out_stream == NULL || stream_index == 0 || stream_index >= 4)
+        return SZ_ERROR_PARAM;
+    *out_stream = NULL;
+    provider->create_count++;
+    provider->observed_expected[stream_index] = expected_size;
+    if (provider->fail_create_index == stream_index)
+        return provider->fail_create_result;
+    if (expected_size > sizeof(provider->entries[stream_index].data))
+        return SZ_ERROR_MEM;
+    entry = &provider->entries[stream_index];
+    entry->expected = expected_size;
+    entry->created = true;
+    bcj2_test_output_init(&entry->output, entry->data, sizeof(entry->data));
+    *out_stream = &entry->output.s;
+    return SZ_OK;
+}
+
+static SRes bcj2_test_temp_finish(void *opaque, UInt32 stream_index,
+                                  ISeqInStream **in_stream)
+{
+    bcj2_test_temp_provider *provider = (bcj2_test_temp_provider *)opaque;
+    bcj2_test_temp_entry *entry;
+
+    if (provider == NULL || in_stream == NULL || stream_index == 0 || stream_index >= 4)
+        return SZ_ERROR_PARAM;
+    *in_stream = NULL;
+    entry = &provider->entries[stream_index];
+    if (!entry->created || entry->finished || entry->output.size != entry->expected)
+        return SZ_ERROR_DATA;
+    entry->finished = true;
+    provider->finish_count++;
+    bcj2_test_seq_init(&entry->input, entry->data, entry->output.size, 2);
+    *in_stream = &entry->input.s;
+    return SZ_OK;
+}
+
+static SRes bcj2_test_temp_checkpoint(void *opaque)
+{
+    bcj2_test_temp_provider *provider = (bcj2_test_temp_provider *)opaque;
+
+    if (provider == NULL)
+        return SZ_ERROR_PARAM;
+    provider->checkpoint_count++;
+    return provider->checkpoint_result;
+}
+
+static void bcj2_test_temp_init(bcj2_test_temp_provider *provider)
+{
+    memset(provider, 0, sizeof(*provider));
+    provider->interface.opaque = provider;
+    provider->interface.Create = bcj2_test_temp_create;
+    provider->interface.Finish = bcj2_test_temp_finish;
+    provider->interface.Checkpoint = bcj2_test_temp_checkpoint;
+    provider->fail_create_index = UINT32_MAX;
+    provider->fail_create_result = SZ_ERROR_MEM;
+    provider->checkpoint_result = SZ_OK;
+}
+
+static void bcj2_test_stream_vector(const uint8_t *main_data, size_t main_size,
+                                    const uint8_t *call_data, size_t call_size,
+                                    const uint8_t *jump_data, size_t jump_size,
+                                    const uint8_t *control_data, size_t control_size,
+                                    size_t output_size, size_t main_chunk)
+{
+    uint8_t *legacy_output;
+    uint8_t *streamed_output;
+    uint8_t *wrapper_output;
+    bcj2_test_seq_input inputs_storage[4];
+    ISeqInStream *inputs[4];
+    UInt64 sizes[4];
+    bcj2_test_output output;
+    CBcj2MainOutStream *state = NULL;
+    ISzAlloc alloc = {SzAlloc, SzFree};
+    size_t position;
+    unsigned int i;
+
+    legacy_output = calloc(output_size == 0 ? 1 : output_size, 1);
+    streamed_output = calloc(output_size == 0 ? 1 : output_size, 1);
+    wrapper_output = calloc(output_size == 0 ? 1 : output_size, 1);
+    ck_assert_ptr_nonnull(legacy_output);
+    ck_assert_ptr_nonnull(streamed_output);
+    ck_assert_ptr_nonnull(wrapper_output);
+    ck_assert_int_eq(Bcj2_Decode(main_data, main_size, call_data, call_size,
+                                 jump_data, jump_size, control_data, control_size,
+                                 legacy_output, output_size), SZ_OK);
+    bcj2_test_seq_init(&inputs_storage[0], main_data, main_size, 1);
+    bcj2_test_seq_init(&inputs_storage[1], call_data, call_size, 1);
+    bcj2_test_seq_init(&inputs_storage[2], jump_data, jump_size, 1);
+    bcj2_test_seq_init(&inputs_storage[3], control_data, control_size, 1);
+    for (i = 0; i < 4; i++)
+        inputs[i] = &inputs_storage[i].s;
+    sizes[0] = main_size;
+    sizes[1] = call_size;
+    sizes[2] = jump_size;
+    sizes[3] = control_size;
+    bcj2_test_output_init(&output, streamed_output, output_size);
+    ck_assert_int_eq(Bcj2MainOutStream_Create(&state, inputs, sizes, output_size,
+                                               &output.s, &alloc), SZ_OK);
+    ck_assert_ptr_nonnull(state);
+    position = 0;
+    while (position < main_size) {
+        size_t chunk = main_size - position;
+        if (chunk > main_chunk)
+            chunk = main_chunk;
+        ck_assert_uint_eq(Bcj2MainOutStream_GetStream(state)->Write(
+                              Bcj2MainOutStream_GetStream(state),
+                              main_data + position, chunk),
+                          chunk);
+        position += chunk;
+    }
+    ck_assert_int_eq(Bcj2MainOutStream_Finish(state), SZ_OK);
+    ck_assert_uint_eq(output.size, output_size);
+    ck_assert_mem_eq(streamed_output, legacy_output, output_size);
+    Bcj2MainOutStream_Free(state, &alloc);
+
+    bcj2_test_seq_init(&inputs_storage[0], main_data, main_size, 1);
+    bcj2_test_seq_init(&inputs_storage[1], call_data, call_size, 1);
+    bcj2_test_seq_init(&inputs_storage[2], jump_data, jump_size, 1);
+    bcj2_test_seq_init(&inputs_storage[3], control_data, control_size, 1);
+    bcj2_test_output_init(&output, wrapper_output, output_size);
+    ck_assert_int_eq(Bcj2_DecodeToStream(inputs, sizes, output_size, &output.s), SZ_OK);
+    ck_assert_uint_eq(output.size, output_size);
+    ck_assert_mem_eq(wrapper_output, legacy_output, output_size);
+    free(wrapper_output);
+    free(streamed_output);
+    free(legacy_output);
+}
+
+START_TEST(test_7z_bcj2_streaming_matches_legacy_across_chunks)
+{
+    static const uint8_t call_main[] = {0xe8};
+    static const uint8_t terminal_jcc[] = {0x0f, 0x80};
+    static const uint8_t call_side[] = {0x00, 0x00, 0x00, 0x10};
+    static const uint8_t jump_main[] = {0x0f, 0x80};
+    static const uint8_t jump_side[] = {0x00, 0x00, 0x00, 0x20};
+    static const uint8_t control[] = {0xff, 0xff, 0xff, 0xff, 0xff};
+    static const uint8_t empty[] = {0};
+    uint8_t *long_main;
+
+    bcj2_test_stream_vector(call_main, sizeof(call_main),
+                            call_side, sizeof(call_side), empty, 0,
+                            control, sizeof(control), 5, 1);
+    bcj2_test_stream_vector(call_main, sizeof(call_main),
+                            empty, 0, empty, 0,
+                            control, sizeof(control), 1, 1);
+    bcj2_test_stream_vector(terminal_jcc, sizeof(terminal_jcc),
+                            empty, 0, empty, 0,
+                            control, sizeof(control), 2, 1);
+    bcj2_test_stream_vector(jump_main, sizeof(jump_main),
+                            empty, 0, jump_side, sizeof(jump_side),
+                            control, sizeof(control), 6, 1);
+    long_main = malloc(20001);
+    ck_assert_ptr_nonnull(long_main);
+    memset(long_main, 0x90, 20001);
+    long_main[16382] = 0xe8;
+    bcj2_test_stream_vector(long_main, 20001, call_side, sizeof(call_side),
+                            empty, 0, control, sizeof(control), 20005, 17);
+    free(long_main);
+}
+END_TEST
+
+START_TEST(test_7z_bcj2_streaming_reports_truncation_and_output_failure)
+{
+    static const uint8_t main_data[] = {0xe8};
+    static const uint8_t short_call[] = {0x00, 0x00, 0x00};
+    static const uint8_t full_call[] = {0x00, 0x00, 0x00, 0x10};
+    static const uint8_t short_control[] = {0xff, 0xff, 0xff, 0xff};
+    static const uint8_t control[] = {0xff, 0xff, 0xff, 0xff, 0xff};
+    static const uint8_t empty[] = {0};
+    uint8_t output_data[8] = {0};
+    bcj2_test_seq_input storage[4];
+    ISeqInStream *inputs[4];
+    UInt64 sizes[4];
+    bcj2_test_output output;
+    CBcj2MainOutStream *state = NULL;
+    ISzAlloc alloc = {SzAlloc, SzFree};
+    unsigned int i;
+
+    bcj2_test_seq_init(&storage[0], main_data, sizeof(main_data), 1);
+    bcj2_test_seq_init(&storage[1], full_call, sizeof(full_call), 1);
+    bcj2_test_seq_init(&storage[2], empty, 0, 1);
+    bcj2_test_seq_init(&storage[3], short_control, sizeof(short_control), 1);
+    for (i = 0; i < 4; i++)
+        inputs[i] = &storage[i].s;
+    sizes[0] = sizeof(main_data);
+    sizes[1] = sizeof(full_call);
+    sizes[2] = 0;
+    sizes[3] = sizeof(short_control);
+    bcj2_test_output_init(&output, output_data, sizeof(output_data));
+    ck_assert_int_eq(Bcj2MainOutStream_Create(&state, inputs, sizes, 5,
+                                               &output.s, &alloc), SZ_ERROR_DATA);
+    ck_assert_ptr_null(state);
+
+    bcj2_test_seq_init(&storage[1], short_call, sizeof(short_call), 1);
+    bcj2_test_seq_init(&storage[3], control, sizeof(control), 1);
+    inputs[1] = &storage[1].s;
+    inputs[3] = &storage[3].s;
+    sizes[1] = sizeof(short_call);
+    sizes[3] = sizeof(control);
+    ck_assert_int_eq(Bcj2MainOutStream_Create(&state, inputs, sizes, 5,
+                                               &output.s, &alloc), SZ_OK);
+    ck_assert_uint_eq(Bcj2MainOutStream_GetStream(state)->Write(
+                          Bcj2MainOutStream_GetStream(state), main_data,
+                          sizeof(main_data)),
+                      0);
+    ck_assert_int_eq(Bcj2MainOutStream_Finish(state), SZ_ERROR_DATA);
+    Bcj2MainOutStream_Free(state, &alloc);
+
+    state = NULL;
+    bcj2_test_seq_init(&storage[1], full_call, sizeof(full_call), 1);
+    bcj2_test_seq_init(&storage[3], control, sizeof(control), 1);
+    inputs[1] = &storage[1].s;
+    inputs[3] = &storage[3].s;
+    sizes[1] = sizeof(full_call);
+    bcj2_test_output_init(&output, output_data, sizeof(output_data));
+    output.fail = true;
+    ck_assert_int_eq(Bcj2MainOutStream_Create(&state, inputs, sizes, 5,
+                                               &output.s, &alloc), SZ_OK);
+    ck_assert_uint_eq(Bcj2MainOutStream_GetStream(state)->Write(
+                          Bcj2MainOutStream_GetStream(state), main_data,
+                          sizeof(main_data)),
+                      sizeof(main_data));
+    ck_assert_int_eq(Bcj2MainOutStream_Finish(state), SZ_ERROR_WRITE);
+    Bcj2MainOutStream_Free(state, &alloc);
+}
+END_TEST
+
+static void bcj2_test_init_folder(CSzFolder *folder, CSzCoderInfo coders[4],
+                                  CSzBindPair bind_pairs[3], UInt32 pack_streams[4],
+                                  UInt64 unpack_sizes[4])
+{
+    unsigned int i;
+
+    memset(folder, 0, sizeof(*folder));
+    memset(coders, 0, sizeof(CSzCoderInfo) * 4);
+    for (i = 0; i < 3; i++) {
+        coders[i].NumInStreams = 1;
+        coders[i].NumOutStreams = 1;
+        coders[i].MethodID = 0;
+    }
+    coders[3].NumInStreams = 4;
+    coders[3].NumOutStreams = 1;
+    coders[3].MethodID = 0x0303011B;
+    bind_pairs[0].InIndex = 5;
+    bind_pairs[0].OutIndex = 0;
+    bind_pairs[1].InIndex = 4;
+    bind_pairs[1].OutIndex = 1;
+    bind_pairs[2].InIndex = 3;
+    bind_pairs[2].OutIndex = 2;
+    pack_streams[0] = 2;
+    pack_streams[1] = 6;
+    pack_streams[2] = 1;
+    pack_streams[3] = 0;
+    folder->Coders = coders;
+    folder->BindPairs = bind_pairs;
+    folder->PackStreams = pack_streams;
+    folder->UnpackSizes = unpack_sizes;
+    folder->NumCoders = 4;
+    folder->NumBindPairs = 3;
+    folder->NumPackStreams = 4;
+    folder->NumUnpackStreams = 4;
+}
+
+START_TEST(test_7z_bcj2_four_coder_folder_streams_main_and_spools_only_sides)
+{
+    static const uint8_t packed[] = {
+        0xe8,
+        0xff, 0xff, 0xff, 0xff, 0xff,
+        0x00, 0x00, 0x00, 0x10
+    };
+    static const uint8_t expected[] = {0xe8, 0x0b, 0x00, 0x00, 0x00};
+    CSzCoderInfo coders[4];
+    CSzBindPair bind_pairs[3];
+    UInt32 pack_streams[4];
+    UInt64 unpack_sizes[4] = {0, 4, 1, 5};
+    UInt64 pack_sizes[4] = {1, 5, 4, 0};
+    CSzFolder folder;
+    bcj2_test_seek_input source;
+    CLookToRead look;
+    bcj2_test_temp_provider provider;
+    uint8_t output_data[16] = {0};
+    bcj2_test_output output;
+    ISzAlloc alloc = {SzAlloc, SzFree};
+
+    bcj2_test_init_folder(&folder, coders, bind_pairs, pack_streams, unpack_sizes);
+    bcj2_test_seek_init(&source, packed, sizeof(packed));
+    LookToRead_CreateVTable(&look, False);
+    look.realStream = &source.s;
+    LookToRead_Init(&look);
+    bcj2_test_temp_init(&provider);
+    bcj2_test_output_init(&output, output_data, sizeof(output_data));
+
+    ck_assert_int_eq(SzFolder_DecodeToStreamEx(&folder, pack_sizes, &look.s, 0,
+                                              &output.s, &alloc,
+                                              &provider.interface), SZ_OK);
+    ck_assert_uint_eq(output.size, sizeof(expected));
+    ck_assert_mem_eq(output_data, expected, sizeof(expected));
+    ck_assert_uint_eq(provider.create_count, 3);
+    ck_assert_uint_eq(provider.finish_count, 3);
+    ck_assert(!provider.entries[0].created);
+    ck_assert_uint_eq(provider.observed_expected[1], 4);
+    ck_assert_uint_eq(provider.observed_expected[2], 0);
+    ck_assert_uint_eq(provider.observed_expected[3], 5);
+    ck_assert(provider.checkpoint_count > 0);
+}
+END_TEST
+
+START_TEST(test_7z_bcj2_four_coder_folder_preserves_jump_mapping)
+{
+    static const uint8_t packed[] = {
+        0x0f, 0x80,
+        0xff, 0xff, 0xff, 0xff, 0xff,
+        0x00, 0x00, 0x00, 0x20
+    };
+    static const uint8_t expected[] = {0x0f, 0x80, 0x1a, 0x00, 0x00, 0x00};
+    CSzCoderInfo coders[4];
+    CSzBindPair bind_pairs[3];
+    UInt32 pack_streams[4];
+    UInt64 unpack_sizes[4] = {4, 0, 2, 6};
+    UInt64 pack_sizes[4] = {2, 5, 0, 4};
+    CSzFolder folder;
+    bcj2_test_seek_input source;
+    CLookToRead look;
+    bcj2_test_temp_provider provider;
+    uint8_t output_data[16] = {0};
+    bcj2_test_output output;
+    ISzAlloc alloc = {SzAlloc, SzFree};
+
+    bcj2_test_init_folder(&folder, coders, bind_pairs, pack_streams, unpack_sizes);
+    bcj2_test_seek_init(&source, packed, sizeof(packed));
+    LookToRead_CreateVTable(&look, False);
+    look.realStream = &source.s;
+    LookToRead_Init(&look);
+    bcj2_test_temp_init(&provider);
+    bcj2_test_output_init(&output, output_data, sizeof(output_data));
+
+    ck_assert_int_eq(SzFolder_DecodeToStreamEx(&folder, pack_sizes, &look.s, 0,
+                                                &output.s, &alloc,
+                                                &provider.interface), SZ_OK);
+    ck_assert_uint_eq(output.size, sizeof(expected));
+    ck_assert_mem_eq(output_data, expected, sizeof(expected));
+    ck_assert_uint_eq(provider.observed_expected[1], 0);
+    ck_assert_uint_eq(provider.observed_expected[2], 4);
+    ck_assert_uint_eq(provider.observed_expected[3], 5);
+}
+END_TEST
+
+START_TEST(test_7z_bcj2_four_coder_folder_preserves_native_side_size)
+{
+    static const uint8_t packed[] = {0};
+    CSzCoderInfo coders[4];
+    CSzBindPair bind_pairs[3];
+    UInt32 pack_streams[4];
+    UInt64 large_side = (UInt64)INT64_MAX;
+    UInt64 unpack_sizes[4] = {0, 0, 0, 0};
+    UInt64 pack_sizes[4] = {0, 0, 0, 0};
+    CSzFolder folder;
+    bcj2_test_seek_input source;
+    CLookToRead look;
+    bcj2_test_temp_provider provider;
+    uint8_t output_data[1] = {0};
+    bcj2_test_output output;
+    ISzAlloc alloc = {SzAlloc, SzFree};
+
+    unpack_sizes[0] = large_side;
+    pack_sizes[3] = large_side;
+    bcj2_test_init_folder(&folder, coders, bind_pairs, pack_streams, unpack_sizes);
+    bcj2_test_seek_init(&source, packed, sizeof(packed));
+    LookToRead_CreateVTable(&look, False);
+    look.realStream = &source.s;
+    LookToRead_Init(&look);
+    bcj2_test_temp_init(&provider);
+    provider.fail_create_index = 2;
+    provider.fail_create_result = SZ_ERROR_MEM;
+    bcj2_test_output_init(&output, output_data, sizeof(output_data));
+
+    ck_assert_int_eq(SzFolder_DecodeToStreamEx(&folder, pack_sizes, &look.s, 0,
+                                              &output.s, &alloc,
+                                              &provider.interface), SZ_ERROR_MEM);
+    ck_assert_uint_eq(provider.create_count, 1);
+    ck_assert_uint_eq(provider.observed_expected[2], large_side);
+}
+END_TEST
+
+START_TEST(test_7z_bcj2_pack_position_overflow_is_rejected)
+{
+    static const uint8_t packed[] = {0};
+    CSzCoderInfo coders[4];
+    CSzBindPair bind_pairs[3];
+    UInt32 pack_streams[4];
+    UInt64 unpack_sizes[4] = {0, 0, 0, 0};
+    UInt64 pack_sizes[4] = {1, 0, 0, 0};
+    CSzFolder folder;
+    bcj2_test_seek_input source;
+    CLookToRead look;
+    bcj2_test_temp_provider provider;
+    uint8_t output_data[1] = {0};
+    bcj2_test_output output;
+    ISzAlloc alloc = {SzAlloc, SzFree};
+
+    bcj2_test_init_folder(&folder, coders, bind_pairs, pack_streams, unpack_sizes);
+    bcj2_test_seek_init(&source, packed, sizeof(packed));
+    LookToRead_CreateVTable(&look, False);
+    look.realStream = &source.s;
+    LookToRead_Init(&look);
+    bcj2_test_temp_init(&provider);
+    bcj2_test_output_init(&output, output_data, sizeof(output_data));
+
+    ck_assert_int_eq(SzFolder_DecodeToStreamEx(&folder, pack_sizes, &look.s,
+                                                UINT64_MAX, &output.s, &alloc,
+                                                &provider.interface), SZ_ERROR_DATA);
+    ck_assert_uint_eq(provider.create_count, 1);
+    ck_assert_uint_eq(provider.finish_count, 0);
+}
+END_TEST
+
 START_TEST(test_7z_truncated_header_is_fail_visible)
 {
     static const uint8_t data[] = {0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c};
@@ -31094,6 +31685,12 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_hwp3, test_hwp3_truncated_raw_deflate_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_raw_deflate_read_failure_is_fail_visible);
     tcase_add_test(tc_hwp3, test_hwp3_password_protection_is_fail_visible);
+    tcase_add_test(tc_cl, test_7z_bcj2_streaming_matches_legacy_across_chunks);
+    tcase_add_test(tc_cl, test_7z_bcj2_streaming_reports_truncation_and_output_failure);
+    tcase_add_test(tc_cl, test_7z_bcj2_four_coder_folder_streams_main_and_spools_only_sides);
+    tcase_add_test(tc_cl, test_7z_bcj2_four_coder_folder_preserves_jump_mapping);
+    tcase_add_test(tc_cl, test_7z_bcj2_four_coder_folder_preserves_native_side_size);
+    tcase_add_test(tc_cl, test_7z_bcj2_pack_position_overflow_is_rejected);
     tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_7z_sfx_header_read_failure_is_fail_visible);

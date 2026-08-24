@@ -85,12 +85,32 @@ SRes SzFolder_Decode(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *stream, UInt64 startPos,
     Byte *outBuffer, size_t outSize, ISzAlloc *allocMain);
 
-/* Decode a supported one- or two-coder folder directly to a sequential output
-   stream. This is the large-file path: output is emitted in bounded chunks and
-   is never materialized as a complete solid-folder buffer. */
+typedef struct
+{
+  void *opaque;
+  /* Callback SRes values classify the SDK operation. Implementations may
+     retain a more specific application status in opaque for caller-side
+     precedence after extraction returns. */
+  SRes (*Create)(void *opaque, UInt32 streamIndex, UInt64 expectedSize,
+      ISeqOutStream **outStream);
+  SRes (*Finish)(void *opaque, UInt32 streamIndex,
+      ISeqInStream **inStream);
+  SRes (*Checkpoint)(void *opaque);
+} ISzBcj2TempStreams;
+
+/* Preserve the original internal SDK entry point for existing callers. */
 SRes SzFolder_DecodeToStream(const CSzFolder *folder, const UInt64 *packSizes,
     ILookInStream *stream, UInt64 startPos,
     ISeqOutStream *outStream, ISzAlloc *allocMain);
+
+/* Decode a supported folder directly to a sequential output stream. One- and
+   two-coder folders need no scratch provider. Four-coder BCJ2 folders decode
+   CALL, JUMP, and range-control inputs through bounded caller-owned
+   temporary streams while MAIN flows directly through the merger. */
+SRes SzFolder_DecodeToStreamEx(const CSzFolder *folder, const UInt64 *packSizes,
+    ILookInStream *stream, UInt64 startPos,
+    ISeqOutStream *outStream, ISzAlloc *allocMain,
+    ISzBcj2TempStreams *tempStreams);
 
 typedef struct
 {
@@ -202,6 +222,16 @@ SRes SzArEx_ExtractToStream(
     UInt64 *outSizeProcessed,
     ISzAlloc *allocMain,
     ISzAlloc *allocTemp);
+
+SRes SzArEx_ExtractToStreamEx(
+    const CSzArEx *db,
+    ILookInStream *inStream,
+    UInt32 fileIndex,
+    ISeqOutStream *outStream,
+    UInt64 *outSizeProcessed,
+    ISzAlloc *allocMain,
+    ISzAlloc *allocTemp,
+    ISzBcj2TempStreams *tempStreams);
 
 
 /*
