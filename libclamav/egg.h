@@ -85,6 +85,21 @@ cl_error_t cli_egg_open_ex(
     cli_ctx* ctx);
 
 /**
+ * @brief Return one filename/comment payload indexed by cli_egg_open_ex().
+ *
+ * Scanner-aware opens retain bounded references to the original EGG metadata
+ * instead of requiring every string to be materialized.  The caller may scan
+ * UTF-8 ranges directly from the archive fmap or incrementally convert the
+ * declared codepage before scanning.
+ */
+cl_error_t cli_egg_metadata_range(
+    void* hArchive,
+    uint64_t index,
+    size_t* offset,
+    size_t* length,
+    uint16_t* codepage);
+
+/**
  * @brief Validate the minimum EGG header before admitting an embedded layer.
  *
  * A short or unrelated magic match is rejected as a non-layer. Once the

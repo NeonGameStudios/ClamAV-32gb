@@ -1067,6 +1067,169 @@ done:
     return status;
 }
 
+#define EGG_METADATA_INPUT_WINDOW (64U * 1024U)
+
+typedef struct {
+    cli_ctx *ctx;
+    int fd;
+    uint64_t reserved;
+} cli_egg_metadata_output;
+
+static cl_error_t cli_egg_write_metadata(const unsigned char *data, size_t length, void *opaque)
+{
+    cli_egg_metadata_output *output = opaque;
+    uint64_t projected;
+    cl_error_t status;
+
+    if (output == NULL || output->ctx == NULL || output->fd < 0 ||
+        (data == NULL && length != 0))
+        return CL_EARG;
+    if (length == 0)
+        return CL_SUCCESS;
+    if ((uint64_t)length > UINT64_MAX - output->reserved) {
+        cli_mark_scan_incomplete(output->ctx, "EGG converted metadata size accounting overflowed");
+        return CL_EFORMAT;
+    }
+
+    projected = output->reserved + (uint64_t)length;
+    status    = cli_checklimits("EGG string metadata", output->ctx, projected, 0, 0);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(output->ctx, "EGG converted metadata exceeds configured scan limits");
+        return status;
+    }
+    status = cli_scan_reserve_temporary(output->ctx, (uint64_t)length);
+    if (status != CL_SUCCESS)
+        return status;
+    status = cli_write_temp_output(output->ctx, output->fd, data, length,
+                                   "EGG metadata conversion reached the configured time limit",
+                                   "EGG metadata conversion spool write was incomplete");
+    if (status != CL_SUCCESS) {
+        cli_scan_release_temporary(output->ctx, (uint64_t)length);
+        return status;
+    }
+
+    output->reserved = projected;
+    return CL_SUCCESS;
+}
+
+static cl_error_t cli_egg_scan_converted_metadata(cli_ctx *ctx, size_t offset, size_t length,
+                                                  uint16_t codepage)
+{
+    unsigned char input[EGG_METADATA_INPUT_WINDOW];
+    cli_codepage_utf8_stream_t *converter = NULL;
+    cli_egg_metadata_output output;
+    uint64_t converted_size = 0;
+    char *tempfile           = NULL;
+    size_t consumed          = 0;
+    int fd                   = -1;
+    cl_error_t status;
+
+    memset(&output, 0, sizeof(output));
+    output.ctx = ctx;
+    output.fd  = -1;
+
+    status = cli_gentempfd_with_prefix(ctx->this_layer_tmpdir, "egg-metadata", &tempfile, &fd);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "EGG metadata conversion spool could not be created");
+        goto done;
+    }
+    output.fd = fd;
+
+    status = cli_codepage_utf8_stream_open(codepage, cli_egg_write_metadata, &output, &converter);
+    if (status == CL_BREAK) {
+        cli_mark_scan_incomplete(ctx, "EGG filename uses an unsupported codepage converter");
+        status = CL_EUNPACK;
+        goto done;
+    }
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "EGG filename codepage conversion could not be initialized");
+        goto done;
+    }
+
+    while (consumed < length) {
+        size_t chunk = MIN(sizeof(input), length - consumed);
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "EGG metadata conversion reached the configured time limit");
+            goto done;
+        }
+        if (fmap_readn(ctx->fmap, input, offset + consumed, chunk) != chunk) {
+            cli_mark_scan_incomplete(ctx, "EGG metadata could not be read completely during conversion");
+            status = CL_EREAD;
+            goto done;
+        }
+        status = cli_codepage_utf8_stream_process(converter, input, chunk);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "EGG filename codepage conversion rejected the complete metadata");
+            goto done;
+        }
+        consumed += chunk;
+    }
+
+    status = cli_codepage_utf8_stream_finish(converter, &converted_size);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(ctx, "EGG filename codepage conversion ended with incomplete state");
+        goto done;
+    }
+    if (converted_size != output.reserved) {
+        cli_mark_scan_incomplete(ctx, "EGG converted metadata length disagreed with staged output");
+        status = CL_EFORMAT;
+        goto done;
+    }
+    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "EGG converted metadata spool could not be rewound");
+        status = CL_ESEEK;
+        goto done;
+    }
+
+    status = cli_magic_scan_desc_type_reserved(fd, tempfile, ctx, CL_TYPE_ANY,
+                                               "egg-metadata", LAYER_ATTRIBUTES_NORMALIZED);
+    if (status != CL_SUCCESS && status != CL_VIRUS)
+        cli_mark_scan_incomplete(ctx, "EGG converted metadata scan did not complete");
+
+done:
+    cli_codepage_utf8_stream_free(converter);
+    status = cli_cleanup_compressed_temp(ctx, &fd, tempfile, status, output.reserved,
+                                         "EGG converted metadata spool could not be closed",
+                                         "EGG converted metadata spool could not be removed");
+    free(tempfile);
+    return status;
+}
+
+static cl_error_t cli_egg_scan_metadata_ranges(void *hArchive, cli_ctx *ctx)
+{
+    uint64_t index = 0;
+
+    for (;;) {
+        uint16_t codepage;
+        size_t offset;
+        size_t length;
+        cl_error_t status;
+
+        status = cli_egg_metadata_range(hArchive, index, &offset, &length, &codepage);
+        if (status == CL_BREAK)
+            return CL_SUCCESS;
+        if (status != CL_SUCCESS)
+            return status;
+
+        status = cli_checktimelimit(ctx);
+        if (status != CL_SUCCESS) {
+            cli_mark_scan_incomplete(ctx, "EGG metadata traversal reached the configured time limit");
+            return status;
+        }
+        if (codepage == CODEPAGE_UTF8)
+            status = cli_magic_scan_nested_fmap_type(ctx->fmap, offset, length, ctx,
+                                                     CL_TYPE_ANY, "egg-metadata",
+                                                     LAYER_ATTRIBUTES_NONE);
+        else
+            status = cli_egg_scan_converted_metadata(ctx, offset, length, codepage);
+        if (status != CL_SUCCESS)
+            return status;
+        index++;
+    }
+}
+
 static cl_error_t cli_scanegg(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
@@ -1113,6 +1276,10 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
         goto done;
     }
 
+    status = cli_egg_scan_metadata_ranges(hArchive, ctx);
+    if (status != CL_SUCCESS)
+        goto done;
+
     /* If the archive header had a comment, write it to the comment dir. */
     if (comments != NULL) {
         uint32_t i;
@@ -1151,13 +1318,9 @@ static cl_error_t cli_scanegg(cli_ctx *ctx)
                 comment_fullpath = NULL;
             }
 
-            /*
-             * Scan the comment.
-             */
-            status = cli_magic_scan_buff(comments[i], strlen(comments[i]), ctx, NULL, LAYER_ATTRIBUTES_NONE);
-            if (status != CL_SUCCESS) {
-                goto done;
-            }
+            /* The complete source range was scanned above through the bounded
+             * EGG metadata-range interface.  The retained compatibility
+             * string is used only for KeepTemporary output here. */
         }
     }
 

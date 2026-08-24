@@ -6518,10 +6518,10 @@ ClamAV's safe little-endian readers. A sparse logical-map regression covers
 archive and file dummy fields, AES metadata, and Windows metadata with payloads
 more than 1 GiB without allocating the holes; its largest contiguous request
 is 21 bytes. The same production paths pass normal and ASan/UBSan harnesses.
-The former broad `egg-extra-field-over-1g` exception is replaced by
-`egg-string-metadata-over-1g`: archive/file comments and filenames still use
-legacy contiguous UTF-8 string interfaces. Compiled EGG corpus and
-supported-build Sonic1 qualification remain release gates.
+The former broad `egg-extra-field-over-1g` exception was initially narrowed to
+the string fields. Scanner-aware filename/comment indexing now closes that
+remaining parser boundary as described in the 2026-08-24 follow-up below;
+only the legacy contiguous-string API retains its compatibility ceiling.
 
 ## Bounded BigTIFF IFD traversal — 2026-08-23
 
@@ -7016,3 +7016,33 @@ oracles remain green. The capability manifest contains 182 entries.
 Production Office/VBA corpus, sanitizer and injected backing-I/O failures,
 materialized multi-gigabyte directories/modules, certified Linux x86-64, and
 Sonic1 qualification remain release gates.
+
+## Bounded EGG filename and comment scanning — 2026-08-24
+
+Scanner-aware EGG opens now retain native-width source ranges for every
+filename and archive/file comment rather than requiring those payloads to fit
+one allocation. UTF-8 metadata scans directly from the containing fmap.
+Filenames declaring another codepage are read in fixed 64 KiB windows through
+the persistent converter and staged into exact, incrementally quota-accounted
+temporary storage before normalized scanning. Deadlines, scan limits, read,
+conversion, write, rewind, nested-scan, close, unlink, and accounting failures
+remain incomplete and non-cacheable.
+
+An oversized filename receives a bounded generated display identifier for
+member bookkeeping, while the complete original range is still scanned. Small
+compatibility strings retain their established behavior, and encrypted string
+metadata is explicitly unsupported rather than silently skipped. The public
+legacy `cli_egg_open()` null-terminated string interface still has the 1 GiB
+individual-allocation ceiling, now recorded as
+`egg-legacy-string-metadata-over-1g`; it no longer limits the scanner path.
+
+Sparse runtime evidence proves scanner-aware admission of filename and archive
+comment payloads above 1 GiB without backing the holes or requesting more than
+16 contiguous bytes during indexing. A production-linked GCC harness confirms
+scanner-aware success and legacy-interface rejection. An isolated scanner test
+converts a Shift-JIS filename in bounded state and detects a signature that
+matches only its UTF-8 form, while confirming matcher and temporary-work
+accounting. GCC syntax checks cover the parser, scanner integration, and full
+unit translation unit. Compiled EGG corpus, sanitizer/fault injection,
+additional codepages and split-sequence cases, materialized large metadata,
+certified Linux x86-64, and Sonic1 qualification remain release gates.

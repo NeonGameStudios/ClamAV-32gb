@@ -6831,9 +6831,10 @@ readers. The focused sparse regression represents four payloads above 1 GiB—
 archive/file dummy fields, AES metadata, and Windows metadata—without backing
 the holes and asserts bounded contiguous requests. An actual-production-source
 harness passed those paths normally and under ASan/UBSan. The broad
-`egg-extra-field-over-1g` exception is retired in favor of the narrower
-`egg-string-metadata-over-1g` boundary for legacy filename/comment strings.
-Compiled EGG corpus and supported-build Sonic1 qualification remain open.
+`egg-extra-field-over-1g` exception was retired in favor of the string-only
+boundary, which the scanner-aware range implementation below now closes. Only
+the legacy contiguous-string API retains a compatibility ceiling. Compiled EGG
+corpus and supported-build Sonic1 qualification remain open.
 
 ## Bounded BigTIFF IFD traversal — 2026-08-23
 
@@ -7453,3 +7454,36 @@ normalizer oracles remain green. The capability manifest now passes with 182
 entries. Production Office/VBA corpus, sanitizer and injected backing-I/O
 failures, materialized multi-gigabyte directories/modules, certified Linux
 x86-64, and Sonic1 qualification remain release gates.
+
+## Bounded EGG filename/comment metadata — 2026-08-24
+
+`cli_egg_open_ex()` now indexes each filename and archive/file comment as a
+native-width source range. It reads only optional two-byte codepage and
+four-byte parent identifiers while indexing. Filenames above the individual
+allocation ceiling use a generated display name, but the original range is
+not truncated or treated as inspected: UTF-8 ranges pass directly to nested
+fmap scanning, and non-UTF-8 names are converted through persistent 64 KiB
+input windows into a quota-accounted temporary descriptor before normalized
+scanning. File comments, previously retained but not scanner-visible, enter
+the same complete range traversal.
+
+The converter path checks cumulative output against file/scan limits, reserves
+temporary bytes before each exact write, checks the shared deadline around
+input and output, and keeps the reservation through nested scanning and
+cleanup. Unsupported codepages, encrypted metadata, malformed conversion,
+read/write/seek/scan/cleanup failures, and resource exhaustion remain explicit
+incomplete results. `cli_egg_open()` remains a compatibility API with its
+contiguous 1 GiB string ceiling, now named
+`egg-legacy-string-metadata-over-1g` rather than a parser-wide exception.
+
+The sparse regression indexes scanner-aware filename and archive-comment
+payloads above 1 GiB with maximum requests of 16 and 14 bytes respectively,
+then proves the legacy filename path returns `CL_EMAXSIZE`. A focused harness
+linked with the production EGG translation unit passes the scanner/legacy
+contract under GCC. An isolated end-to-end scanner test converts a codepage-932
+filename and detects an exact signature present only in the converted UTF-8
+bytes, with matcher and temporary-work accounting. Parser, scanner, and full
+unit translation units pass GCC syntax checks; the capability set contains 183
+entries after regeneration. Compiled EGG corpus, additional codepages and
+split-sequence cases, sanitizer and I/O fault injection, materialized large
+metadata, certified Linux x86-64, and Sonic1 evidence remain open.

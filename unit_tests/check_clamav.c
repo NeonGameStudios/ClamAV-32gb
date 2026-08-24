@@ -20298,6 +20298,9 @@ START_TEST(test_egg_extra_field_range_classes_are_fail_visible)
     uint32_t ncomments = 0;
     size_t comment_data_offset;
     size_t archive_length;
+    size_t metadata_offset;
+    size_t metadata_length;
+    uint16_t metadata_codepage;
     size_t offset;
     cl_error_t ret;
 
@@ -20371,6 +20374,30 @@ START_TEST(test_egg_extra_field_range_classes_are_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason, "EGG extra-field data is truncated");
     ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine = &engine;
+    ctx.fmap   = map;
+    handle     = NULL;
+    comments   = NULL;
+    ncomments  = 0;
+    ret        = cli_egg_open_ex(map, &handle, &comments, &ncomments, &ctx);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_ptr_nonnull(comments);
+    ck_assert_uint_eq(ncomments, 1);
+    ck_assert_str_eq(comments[0], "abc");
+    ck_assert_int_eq(cli_egg_metadata_range(handle, 0, &metadata_offset, &metadata_length,
+                                            &metadata_codepage), CL_SUCCESS);
+    ck_assert_uint_eq(metadata_offset, comment_data_offset);
+    ck_assert_uint_eq(metadata_length, sizeof(comment) - 1U);
+    ck_assert_uint_eq(metadata_codepage, CODEPAGE_UTF8);
+    free(comments[0]);
+    free(comments);
+    cli_egg_close(handle);
     cl_fmap_close(map);
 
     egg_read_failure_offset = SIZE_MAX;
@@ -20697,6 +20724,10 @@ START_TEST(test_egg_oversized_skippable_extra_fields_are_bounded)
     void *handle = NULL;
     char **comments = NULL;
     uint32_t ncomments = 0;
+    cl_egg_metadata metadata;
+    size_t metadata_offset = 0;
+    size_t metadata_length = 0;
+    uint16_t metadata_codepage = 0;
 
     ck_assert_msg(CLI_MAX_ALLOCATION <= UINT32_MAX - 4096U,
                   "test payload does not fit EGG's 32-bit extra-field size");
@@ -20753,13 +20784,167 @@ START_TEST(test_egg_oversized_skippable_extra_fields_are_bounded)
     zip_stream_write_u32(state.prefix + state.extra_offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
     ctx.engine = &engine;
     ctx.fmap   = &map;
-    ck_assert_int_eq(cli_egg_open_ex(&map, &handle, &comments, &ncomments, &ctx), CL_EMAXSIZE);
-    ck_assert_ptr_null(handle);
-    ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason,
-                     "EGG filename or comment exceeds the bounded string-metadata limit");
+    ck_assert_int_eq(cli_egg_open_ex(&map, &handle, &comments, &ncomments, &ctx), CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_ptr_null(comments);
+    ck_assert_uint_eq(ncomments, 0);
+    ck_assert_int_eq(cli_egg_metadata_range(handle, 0, &metadata_offset, &metadata_length,
+                                            &metadata_codepage), CL_SUCCESS);
+    ck_assert_uint_eq(metadata_offset, state.payload_offset);
+    ck_assert_uint_eq(metadata_length, payload_size);
+    ck_assert_uint_eq(metadata_codepage, CODEPAGE_UTF8);
+    ck_assert_int_eq(cli_egg_metadata_range(handle, 1, &metadata_offset, &metadata_length,
+                                            &metadata_codepage), CL_BREAK);
+    memset(&metadata, 0, sizeof(metadata));
+    ck_assert_int_eq(cli_egg_peek_file_header(handle, &metadata), CL_SUCCESS);
+    ck_assert_ptr_nonnull(metadata.filename);
+    free(metadata.filename);
     ck_assert_msg(state.max_request <= 16U,
                   "oversized filename parser requested %zu contiguous bytes", state.max_request);
+    cli_egg_close(handle);
+
+    handle    = NULL;
+    comments  = NULL;
+    ncomments = 0;
+    egg_sparse_extra_map_init(&map, &state, payload_size, true);
+    zip_stream_write_u32(state.prefix + state.extra_offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    ck_assert_int_eq(cli_egg_open(&map, &handle, &comments, &ncomments), CL_EMAXSIZE);
+    ck_assert_ptr_null(handle);
+    ck_assert_msg(state.max_request <= 16U,
+                  "legacy oversized filename parser requested %zu contiguous bytes", state.max_request);
+
+    memset(&ctx, 0, sizeof(ctx));
+    handle    = NULL;
+    comments  = NULL;
+    ncomments = 0;
+    egg_sparse_extra_map_init(&map, &state, payload_size, false);
+    memmove(state.prefix + state.extra_offset + sizeof(uint32_t),
+            state.prefix + state.extra_offset,
+            state.prefix_length - state.extra_offset);
+    zip_stream_write_u32(state.prefix + state.extra_offset, 0x08E28222U); /* header EOFARC */
+    state.extra_offset += sizeof(uint32_t);
+    state.payload_offset += sizeof(uint32_t);
+    state.prefix_length += sizeof(uint32_t);
+    state.suffix_offset += sizeof(uint32_t);
+    map.len += sizeof(uint32_t);
+    map.real_len = map.len;
+    zip_stream_write_u32(state.prefix + state.extra_offset, 0x04C63672U); /* COMMENT_HEADER_MAGIC */
+    ctx.engine = &engine;
+    ctx.fmap   = &map;
+    ck_assert_int_eq(cli_egg_open_ex(&map, &handle, &comments, &ncomments, &ctx), CL_SUCCESS);
+    ck_assert_ptr_nonnull(handle);
+    ck_assert_ptr_null(comments);
+    ck_assert_uint_eq(ncomments, 0);
+    ck_assert_int_eq(cli_egg_metadata_range(handle, 0, &metadata_offset, &metadata_length,
+                                            &metadata_codepage), CL_SUCCESS);
+    ck_assert_uint_eq(metadata_offset, state.payload_offset);
+    ck_assert_uint_eq(metadata_length, payload_size);
+    ck_assert_uint_eq(metadata_codepage, CODEPAGE_UTF8);
+    ck_assert_msg(state.max_request <= 14U,
+                  "oversized archive comment parser requested %zu contiguous bytes", state.max_request);
+    cli_egg_close(handle);
+
+    handle    = NULL;
+    comments  = NULL;
+    ncomments = 0;
+    ck_assert_int_eq(cli_egg_open(&map, &handle, &comments, &ncomments), CL_EMAXSIZE);
+    ck_assert_ptr_null(handle);
+}
+END_TEST
+
+START_TEST(test_egg_codepage_filename_is_streamed_and_scanned)
+{
+    static const uint8_t shift_jis_name[] = {
+        0x83, 0x65, 0x83, 0x58, 0x83, 0x67, '.', 't', 'x', 't' /* テスト.txt */
+    };
+    static const char signature[] =
+        "Egg.Metadata.Converted:0:*:e38386e382b9e383882e747874\n";
+    uint8_t archive[96];
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cl_scan_report_t *report = NULL;
+    cl_scan_report_metrics_t metrics;
+    cl_fmap_t *map;
+    cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
+    const char *last_alert = NULL;
+    char signature_path[PATH_MAX];
+    unsigned int sigs = 0;
+    uint64_t scanned = 0;
+    size_t offset = 0;
+    int signature_fd = -1;
+    cl_error_t status;
+
+    memset(archive, 0, sizeof(archive));
+    zip_stream_write_u32(archive + offset, 0x41474745U); /* EGG_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u16(archive + offset, 0x0100U);
+    offset += 2;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0U);
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* archive-header EOFARC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x0A8590E3U); /* FILE_HEADER_MAGIC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 1U);
+    offset += 4;
+    zip_stream_write_u64(archive + offset, 0U);
+    offset += 8;
+    zip_stream_write_u32(archive + offset, 0x0A8591ACU); /* FILENAME_HEADER_MAGIC */
+    offset += 4;
+    archive[offset++] = 0x08U; /* multibyte codepage */
+    zip_stream_write_u16(archive + offset, sizeof(uint16_t) + sizeof(shift_jis_name));
+    offset += 2;
+    zip_stream_write_u16(archive + offset, 932U);
+    offset += 2;
+    memcpy(archive + offset, shift_jis_name, sizeof(shift_jis_name));
+    offset += sizeof(shift_jis_name);
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* file-header EOFARC */
+    offset += 4;
+    zip_stream_write_u32(archive + offset, 0x08E28222U); /* archive EOFARC */
+    offset += 4;
+    ck_assert(offset <= sizeof(archive));
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
+                              "%s/egg-metadata.ndb", tmpdir),
+                     (int)(strlen(tmpdir) + strlen("/egg-metadata.ndb")));
+    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_int_ge(signature_fd, 0);
+    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
+                     (ssize_t)(sizeof(signature) - 1U));
+    ck_assert_int_eq(close(signature_fd), 0);
+    signature_fd = -1;
+
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_load(signature_path, engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cl_engine_set_str(engine, CL_ENGINE_TMPDIR, tmpdir), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num(engine, CL_ENGINE_DISABLE_CACHE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    map = cl_fmap_open_memory(archive, offset);
+    ck_assert_ptr_nonnull(map);
+    status = cl_scanmap_ex2(map, NULL, &verdict, &last_alert, &scanned,
+                            engine, &options, NULL, NULL, NULL, NULL,
+                            "CL_TYPE_EGG", NULL, &report);
+    ck_assert_int_eq(status, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Egg.Metadata.Converted.UNOFFICIAL");
+    ck_assert_ptr_nonnull(report);
+    ck_assert_int_eq(cl_scan_report_get_metrics(report, &metrics), CL_SUCCESS);
+    ck_assert_uint_ge(metrics.matcher_bytes, 13U);
+    ck_assert_uint_ge(metrics.temporary_bytes, 13U);
+
+    cl_scan_report_free(report);
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
 }
 END_TEST
 
@@ -31783,6 +31968,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_hwpml    = tcase_create("hwpml");
     TCase *tc_xdp      = tcase_create("xdp");
+    TCase *tc_egg_metadata = tcase_create("egg_metadata");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -31815,6 +32001,9 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_hwpml, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_xdp);
     tcase_add_checked_fixture(tc_xdp, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_egg_metadata);
+    tcase_add_checked_fixture(tc_egg_metadata, cl_setup, cl_teardown);
+    tcase_add_test(tc_egg_metadata, test_egg_codepage_filename_is_streamed_and_scanned);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

@@ -323,6 +323,12 @@ typedef struct {
 } egg_filename;
 
 typedef struct {
+    size_t offset;
+    size_t length;
+    uint16_t codepage;
+} egg_metadata_range;
+
+typedef struct {
     encrypt_header* header; /* Global Encryption Header */
     union {
         aes_lea_128* al128;
@@ -366,6 +372,8 @@ typedef struct {
     egg_block** blocks;
     uint64_t nComments;
     char** comments;
+    uint64_t nMetadataRanges;
+    egg_metadata_range* metadataRanges;
 } egg_handle;
 
 static cl_error_t egg_checktimelimit(const egg_handle* handle)
@@ -380,6 +388,31 @@ static cl_error_t egg_checktimelimit(const egg_handle* handle)
         cli_mark_scan_incomplete(handle->ctx, "EGG traversal reached the configured time limit");
 
     return status;
+}
+
+static cl_error_t egg_add_metadata_range(egg_handle* handle, size_t offset, size_t length,
+                                         uint16_t codepage)
+{
+    egg_metadata_range* ranges;
+    egg_metadata_range* range;
+
+    if (handle == NULL || length == 0 || offset > handle->map->len ||
+        length > handle->map->len - offset)
+        return CL_EARG;
+    if (handle->nMetadataRanges >= CLI_MAX_ALLOCATION / sizeof(*handle->metadataRanges))
+        return CL_EMAXSIZE;
+
+    ranges = cli_max_realloc(handle->metadataRanges,
+                             sizeof(*handle->metadataRanges) * (size_t)(handle->nMetadataRanges + 1));
+    if (ranges == NULL)
+        return CL_EMEM;
+    handle->metadataRanges = ranges;
+
+    range           = &handle->metadataRanges[handle->nMetadataRanges++];
+    range->offset   = offset;
+    range->length   = length;
+    range->codepage = codepage;
+    return CL_SUCCESS;
 }
 
 static const uint8_t* egg_read_range(egg_handle* handle, size_t offset, size_t length, cl_error_t* status,
@@ -919,6 +952,7 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
     cl_error_t status = CL_EPARSE;
 
     const uint8_t* index    = NULL;
+    extra_field extraFieldStorage;
     extra_field* extraField = NULL;
     uint32_t magic          = 0;
     uint32_t size           = 0;
@@ -943,7 +977,8 @@ static cl_error_t egg_parse_archive_extra_field(egg_handle* handle)
         goto done;
     }
 
-    extraField = (extra_field*)index;
+    memcpy(&extraFieldStorage, index, sizeof(extraFieldStorage));
+    extraField = &extraFieldStorage;
 
     cli_dbgmsg("egg_parse_archive_extra_field: extra_field->magic:    %08x (%s)\n", le32_to_host(extraField->magic), getMagicHeaderName(le32_to_host(extraField->magic)));
     cli_dbgmsg("egg_parse_archive_extra_field: extra_field->bit_flag: %02x\n", extraField->bit_flag);
@@ -1166,13 +1201,14 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
 {
     cl_error_t status = CL_EPARSE;
 
-    const uint8_t* index    = NULL;
-    extra_field* extraField = NULL;
-    uint32_t magic          = 0;
-    uint32_t size           = 0;
-    size_t size_field_size  = 0;
-    size_t payload_offset   = 0;
-    size_t payload_size     = 0;
+    const uint8_t* index     = NULL;
+    extra_field extraFieldStorage;
+    extra_field* extraField  = NULL;
+    uint32_t magic           = 0;
+    uint32_t size            = 0;
+    size_t size_field_size   = 0;
+    size_t payload_offset    = 0;
+    size_t payload_size      = 0;
 
     if (!handle || !eggFile) {
         cli_errmsg("egg_parse_file_extra_field: Invalid args!\n");
@@ -1191,7 +1227,8 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
         goto done;
     }
 
-    extraField = (extra_field*)index;
+    memcpy(&extraFieldStorage, index, sizeof(extraFieldStorage));
+    extraField = &extraFieldStorage;
 
     cli_dbgmsg("egg_parse_file_extra_field: extra_field->magic:    %08x (%s)\n", le32_to_host(extraField->magic), getMagicHeaderName(le32_to_host(extraField->magic)));
     cli_dbgmsg("egg_parse_file_extra_field: extra_field->bit_flag: %02x\n", extraField->bit_flag);
@@ -1241,15 +1278,6 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
     }
     if (!egg_extra_span_present(handle, payload_offset, payload_size, &status))
         goto done;
-    if ((magic == FILENAME_HEADER_MAGIC || magic == COMMENT_HEADER_MAGIC) &&
-        payload_size > CLI_MAX_ALLOCATION) {
-        cli_warnmsg("egg_parse_file_extra_field: string metadata exceeds bounded materialization limit\n");
-        if (handle->ctx != NULL)
-            cli_mark_scan_incomplete(handle->ctx, "EGG filename or comment exceeds the bounded string-metadata limit");
-        status = CL_EMAXSIZE;
-        goto done;
-    }
-
     status = CL_EFORMAT;
     switch (magic) {
         case FILENAME_HEADER_MAGIC: {
@@ -1257,8 +1285,9 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
              * File Filename Header
              */
             uint16_t codepage       = 0; /* Windows code page https://docs.microsoft.com/en-us/windows/desktop/Intl/code-page-identifiers) */
-            uint32_t name_size      = 0;
-            uint32_t remaining_size = (uint32_t)payload_size;
+            size_t name_offset      = payload_offset;
+            size_t name_size        = 0;
+            size_t remaining_size   = payload_size;
 
             char* name_utf8       = NULL;
             size_t name_utf8_size = 0;
@@ -1268,16 +1297,17 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 goto done;
             }
 
-            index = egg_read_extra_range(handle, payload_offset, payload_size, &status);
-            if (!index) {
-                cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain name fields.\n");
-                goto done;
-            }
-
             if (extraField->bit_flag & FILENAME_HEADER_FLAGS_ENCRYPT)
                 cli_dbgmsg("egg_parse_file_extra_field: filename_header->bit_flag: encrypted\n");
             else
                 cli_dbgmsg("egg_parse_file_extra_field: filename_header->bit_flag: not encrypted\n");
+
+            if (extraField->bit_flag & FILENAME_HEADER_FLAGS_ENCRYPT) {
+                if (handle->ctx != NULL)
+                    cli_mark_scan_incomplete(handle->ctx, "EGG encrypted filename prevents metadata inspection");
+                status = CL_EUNPACK;
+                goto done;
+            }
 
             if (extraField->bit_flag & FILENAME_HEADER_FLAGS_RELATIVE_PATH_INSTEAD_OF_ABSOLUTE)
                 cli_dbgmsg("egg_parse_file_extra_field: filename_header->bit_flag: relative-path\n");
@@ -1296,9 +1326,12 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                     cli_dbgmsg("egg_parse_file_extra_field: size too small for locale information.\n");
                     goto done;
                 }
+                index = egg_read_extra_range(handle, name_offset, sizeof(uint16_t), &status);
+                if (index == NULL)
+                    goto done;
                 codepage = (uint16_t)cli_readint16(index);
                 cli_dbgmsg("egg_parse_file_extra_field: filename_header->codepage:       %u\n", codepage);
-                index += sizeof(uint16_t);
+                name_offset += sizeof(uint16_t);
                 remaining_size -= sizeof(uint16_t);
             }
 
@@ -1309,9 +1342,12 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                     cli_dbgmsg("egg_parse_file_extra_field: size too small for parent_path_id.\n");
                     goto done;
                 }
+                index = egg_read_extra_range(handle, name_offset, sizeof(uint32_t), &status);
+                if (index == NULL)
+                    goto done;
                 eggFile->filename.parent_path_id = (uint32_t)cli_readint32(index);
                 cli_dbgmsg("egg_parse_file_extra_field: filename_header->parent_path_id: %u\n", eggFile->filename.parent_path_id);
-                index += sizeof(uint32_t);
+                name_offset += sizeof(uint32_t);
                 remaining_size -= sizeof(uint32_t);
             }
 
@@ -1321,6 +1357,34 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
             }
             name_size = remaining_size;
 
+            if (0 == codepage)
+                codepage = CODEPAGE_UTF8;
+            status = egg_add_metadata_range(handle, name_offset, name_size, codepage);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (name_size > CLI_MAX_ALLOCATION) {
+                if (handle->ctx == NULL) {
+                    cli_warnmsg("egg_parse_file_extra_field: filename exceeds legacy string-metadata limit\n");
+                    status = CL_EMAXSIZE;
+                    goto done;
+                }
+
+                eggFile->filename.name_utf8 = cli_genfname(NULL);
+                if (eggFile->filename.name_utf8 == NULL) {
+                    status = CL_EMEM;
+                    goto done;
+                }
+                cli_dbgmsg("egg_parse_file_extra_field: retained bounded generated name for oversized filename metadata\n");
+                break;
+            }
+
+            index = egg_read_extra_range(handle, name_offset, name_size, &status);
+            if (!index) {
+                cli_dbgmsg("egg_parse_file_extra_field: File buffer too small to contain name string.\n");
+                goto done;
+            }
+
             /*
              * Store name as UTF-8 string.
              */
@@ -1328,16 +1392,9 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
                 /* Convert ANSI codepage to UTF-8. EGG format explicitly supports:
                  * - 949 (Korean Unified Code)
                  * - 932 (Japanese Shift-JIS) */
-                if (0 == codepage) {
-                    if (CL_SUCCESS != cli_codepage_to_utf8((char*)index, name_size, CODEPAGE_UTF8, &name_utf8, &name_utf8_size)) {
-                        cli_dbgmsg("egg_parse_file_extra_field: failed to convert codepage \"0\" to UTF-8\n");
-                        name_utf8 = cli_genfname(NULL);
-                    }
-                } else {
-                    if (CL_SUCCESS != cli_codepage_to_utf8((char*)index, name_size, codepage, &name_utf8, &name_utf8_size)) {
-                        cli_dbgmsg("egg_parse_file_extra_field: failed to convert codepage %u to UTF-8\n", codepage);
-                        name_utf8 = cli_genfname(NULL);
-                    }
+                if (CL_SUCCESS != cli_codepage_to_utf8((char*)index, name_size, codepage, &name_utf8, &name_utf8_size)) {
+                    cli_dbgmsg("egg_parse_file_extra_field: failed to convert codepage %u to UTF-8\n", codepage);
+                    name_utf8 = cli_genfname(NULL);
                 }
             } else {
                 /* Should already be UTF-8. Use as-is.. */
@@ -1360,6 +1417,25 @@ static cl_error_t egg_parse_file_extra_field(egg_handle* handle, egg_file* eggFi
              */
             cl_error_t retval = CL_EPARSE;
             char* comment     = NULL;
+
+            if (extraField->bit_flag & COMMENT_HEADER_FLAGS_ENCRYPT) {
+                if (handle->ctx != NULL)
+                    cli_mark_scan_incomplete(handle->ctx, "EGG encrypted file comment prevents metadata inspection");
+                status = CL_EUNPACK;
+                goto done;
+            }
+
+            status = egg_add_metadata_range(handle, payload_offset, payload_size, CODEPAGE_UTF8);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (handle->ctx != NULL && payload_size > CLI_MAX_ALLOCATION)
+                break;
+            if (payload_size > CLI_MAX_ALLOCATION) {
+                cli_warnmsg("egg_parse_file_extra_field: file comment exceeds legacy string-metadata limit\n");
+                status = CL_EMAXSIZE;
+                goto done;
+            }
 
             index = egg_read_extra_range(handle, payload_offset, payload_size, &status);
             if (!index) {
@@ -1660,6 +1736,9 @@ static void egg_free_egg_handle(egg_handle* handle)
         free(handle->comments);
         handle->comments = NULL;
     }
+    free(handle->metadataRanges);
+    handle->metadataRanges  = NULL;
+    handle->nMetadataRanges = 0;
     free(handle);
 }
 
@@ -1962,6 +2041,7 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
             /*
              * Parse extra field for archive comment header.
              */
+            extra_field extraFieldStorage;
             extra_field* extraField = NULL;
             char* comment           = NULL;
             uint32_t size           = 0;
@@ -1972,7 +2052,8 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
                 goto done;
             }
 
-            extraField = (extra_field*)index;
+            memcpy(&extraFieldStorage, index, sizeof(extraFieldStorage));
+            extraField = &extraFieldStorage;
 
             cli_dbgmsg("cli_egg_open: archive comment extra_field->magic:    %08x (%s)\n", le32_to_host(extraField->magic), getMagicHeaderName(le32_to_host(extraField->magic)));
             cli_dbgmsg("cli_egg_open: archive comment extra_field->bit_flag: %02x\n", extraField->bit_flag);
@@ -2007,10 +2088,24 @@ cl_error_t cli_egg_open_ex(fmap_t* map, void** hArchive, char*** comments, uint3
 
             if (!egg_extra_span_present(handle, handle->offset, size, &status))
                 goto done;
-            if (size > CLI_MAX_ALLOCATION) {
-                cli_warnmsg("cli_egg_open: archive comment exceeds bounded string-metadata limit\n");
+
+            if (extraField->bit_flag & COMMENT_HEADER_FLAGS_ENCRYPT) {
                 if (handle->ctx != NULL)
-                    cli_mark_scan_incomplete(handle->ctx, "EGG archive comment exceeds the bounded string-metadata limit");
+                    cli_mark_scan_incomplete(handle->ctx, "EGG encrypted archive comment prevents metadata inspection");
+                status = CL_EUNPACK;
+                goto done;
+            }
+
+            status = egg_add_metadata_range(handle, handle->offset, size, CODEPAGE_UTF8);
+            if (status != CL_SUCCESS)
+                goto done;
+
+            if (handle->ctx != NULL && size > CLI_MAX_ALLOCATION) {
+                handle->offset += size;
+                continue;
+            }
+            if (size > CLI_MAX_ALLOCATION) {
+                cli_warnmsg("cli_egg_open: archive comment exceeds legacy string-metadata limit\n");
                 status = CL_EMAXSIZE;
                 goto done;
             }
@@ -2099,6 +2194,26 @@ done:
 cl_error_t cli_egg_open(fmap_t* map, void** hArchive, char*** comments, uint32_t* nComments)
 {
     return cli_egg_open_ex(map, hArchive, comments, nComments, NULL);
+}
+
+cl_error_t cli_egg_metadata_range(void* hArchive, uint64_t index, size_t* offset,
+                                  size_t* length, uint16_t* codepage)
+{
+    egg_handle* handle = hArchive;
+    egg_metadata_range* range;
+
+    if (handle == NULL || offset == NULL || length == NULL || codepage == NULL)
+        return CL_EARG;
+    if (CL_SUCCESS != EGG_VALIDATE_HANDLE(handle))
+        return CL_EARG;
+    if (index >= handle->nMetadataRanges)
+        return CL_BREAK;
+
+    range     = &handle->metadataRanges[index];
+    *offset   = range->offset;
+    *length   = range->length;
+    *codepage = range->codepage;
+    return CL_SUCCESS;
 }
 
 cl_error_t cli_egg_peek_file_header(void* hArchive, cl_egg_metadata* file_metadata)

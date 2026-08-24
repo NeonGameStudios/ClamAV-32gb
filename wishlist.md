@@ -466,10 +466,12 @@
   in-range fmap backing-read failure (`CL_EREAD`) from an out-of-range or
   truncated coordinate (`CL_EPARSE`); add compiled ZIP callback-fault and
   parser-corpus qualification.
-- EGG skippable and fixed metadata extra fields now validate oversized spans
-  without mapping them contiguously; only legacy filename/comment string
-  materialization retains the individual-allocation ceiling, and encryption
-  size subtraction remains underflow-safe.
+- EGG skippable and fixed metadata extra fields validate oversized spans
+  without mapping them contiguously. Scanner-aware filename and archive/file
+  comment metadata now uses bounded source ranges, direct fmap scans, and
+  fixed-window codepage conversion; only the public legacy contiguous-string
+  API retains the individual-allocation ceiling, and encryption size
+  subtraction remains underflow-safe.
 - EGG archive indexing, block metadata traversal, and streamed decoder loops now
   honor the shared scan deadline; add compiled timeout-injection and production
   EGG corpus qualification.
@@ -2233,9 +2235,10 @@ and Sonic1 qualification as release gates.
 
 - Replace the blanket oversized-extra-field rejection with full-span
   validation plus bounded fixed-prefix reads for skippable, OS, and encryption
-  metadata. Retain only legacy filename/comment strings as an explicit
-  contiguous-materialization boundary, with compiled EGG corpus and Sonic1
-  qualification still required.
+  metadata. Scanner-aware filename/comment payloads now retain ranges and scan
+  their complete content through direct fmaps or fixed-window codepage
+  conversion; only `cli_egg_open()` compatibility strings remain contiguous.
+  Compiled EGG corpus and Sonic1 qualification are still required.
 
 ## Bounded BigTIFF IFD traversal — 2026-08-23
 
@@ -2497,3 +2500,15 @@ and Sonic1 qualification as release gates.
   allocation/read/write/map/unmap/rollback injection, materialized
   multi-gigabyte directory/module evidence, certified Linux x86-64 execution,
   and Sonic1 qualification.
+
+## Bounded EGG filename/comment metadata — 2026-08-24
+
+- Add compiled EGG filename, file-comment, and archive-comment corpora covering
+  UTF-8, codepage 949, split multibyte sequences, encrypted metadata, malformed
+  conversion, and exact-tail signatures. The generated codepage-932 fixture
+  already proves bounded conversion and exact converted-byte detection. Run
+  read/write/seek/temp quota/deadline fault injection, sanitizer builds,
+  materialized multi-gigabyte metadata, certified Linux x86-64 execution, and
+  Sonic1 qualification. The scanner range path is implemented; the public
+  legacy null-terminated-string API intentionally retains its 1 GiB
+  compatibility ceiling.
