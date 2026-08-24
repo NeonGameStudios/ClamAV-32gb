@@ -7098,6 +7098,7 @@ a detection stronger than a checksum error. Production-linked public-API
 tests prove an exact child-only signature for valid and mismatched malware and
 fail-visible outcomes for benign mismatch, malformed syntax, and truncation. A
 third fixture spans more than two checksum windows and detects only an
-end-relative marker in the extracted child. Complete CPIO corpus, large
-materialized CRC members, sanitizer/read-fault
-injection, certified Linux x86-64, and Sonic1 qualification remain open.
+end-relative marker in the extracted child. An injected first-window backing
+failure returns `CL_EREAD` without an alert and remains non-cacheable. Complete
+CPIO corpus, large materialized CRC members, sanitizer, certified Linux x86-64,
+and Sonic1 qualification remain open.

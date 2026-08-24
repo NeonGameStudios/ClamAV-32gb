@@ -2542,7 +2542,8 @@ and Sonic1 qualification as release gates.
 
 - Extend the passing exact child-signature, mismatch, malformed-field, and
   truncated-data oracles to zero-length entries, wrapping sums, and materialized
-  large members, plus injected in-range checksum reads and deadline expiry. Add
-  old/ODC/newc/CRC production corpus, sanitizer execution, certified Linux
-  x86-64, and Sonic1 qualification. CRC validation, multi-window traversal, and
-  malware precedence are implemented with bounded fmap windows.
+  large members, plus injected deadline expiry. Add old/ODC/newc/CRC production
+  corpus, sanitizer execution, certified Linux x86-64, and Sonic1
+  qualification. CRC validation, multi-window traversal, in-range read-failure
+  classification, and malware precedence are implemented with bounded fmap
+  windows.
