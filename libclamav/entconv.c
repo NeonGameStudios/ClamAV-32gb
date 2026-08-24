@@ -1128,6 +1128,316 @@ done:
     return status;
 }
 
+#define CODEPAGE_STREAM_WINDOW 8192
+
+enum cli_codepage_stream_mode {
+    CODEPAGE_STREAM_ASCII,
+    CODEPAGE_STREAM_UTF8,
+    CODEPAGE_STREAM_ICONV
+};
+
+struct cli_codepage_utf8_stream {
+    cli_codepage_utf8_write_cb write_cb;
+    void *write_context;
+    uint64_t output_size;
+    enum cli_codepage_stream_mode mode;
+    bool finished;
+    unsigned char input[CODEPAGE_STREAM_WINDOW];
+    size_t input_size;
+    unsigned char utf8_sequence[4];
+    size_t utf8_sequence_size;
+    size_t utf8_sequence_expected;
+#if defined(HAVE_ICONV)
+    iconv_t conv;
+#endif
+};
+
+static cl_error_t codepage_stream_emit(cli_codepage_utf8_stream_t *stream,
+                                       const unsigned char *data, size_t data_size)
+{
+    cl_error_t status;
+
+    if (data_size == 0)
+        return CL_SUCCESS;
+    if ((uint64_t)data_size > UINT64_MAX - stream->output_size)
+        return CL_EFORMAT;
+
+    status = stream->write_cb(data, data_size, stream->write_context);
+    if (status != CL_SUCCESS)
+        return status;
+
+    stream->output_size += (uint64_t)data_size;
+    return CL_SUCCESS;
+}
+
+static cl_error_t codepage_stream_process_utf8(cli_codepage_utf8_stream_t *stream,
+                                               const unsigned char *data, size_t data_size)
+{
+    unsigned char output[CODEPAGE_STREAM_WINDOW];
+    size_t output_size = 0;
+    size_t i;
+
+    for (i = 0; i < data_size; i++) {
+        unsigned char byte = data[i];
+
+        if (stream->utf8_sequence_size == 0) {
+            if (byte < 0x80) {
+                output[output_size++] = byte;
+            } else if (byte >= 0xc2 && byte <= 0xdf) {
+                stream->utf8_sequence_expected = 2;
+                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+            } else if (byte >= 0xe0 && byte <= 0xef) {
+                stream->utf8_sequence_expected = 3;
+                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+            } else if (byte >= 0xf0 && byte <= 0xf4) {
+                stream->utf8_sequence_expected = 4;
+                stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+            } else {
+                return CL_EPARSE;
+            }
+        } else {
+            unsigned char lead = stream->utf8_sequence[0];
+
+            if ((byte & 0xc0) != 0x80)
+                return CL_EPARSE;
+            if (stream->utf8_sequence_size == 1 &&
+                ((lead == 0xe0 && byte < 0xa0) ||
+                 (lead == 0xed && byte > 0x9f) ||
+                 (lead == 0xf0 && byte < 0x90) ||
+                 (lead == 0xf4 && byte > 0x8f)))
+                return CL_EPARSE;
+
+            stream->utf8_sequence[stream->utf8_sequence_size++] = byte;
+            if (stream->utf8_sequence_size == stream->utf8_sequence_expected) {
+                if (sizeof(output) - output_size < stream->utf8_sequence_size) {
+                    cl_error_t status = codepage_stream_emit(stream, output, output_size);
+                    if (status != CL_SUCCESS)
+                        return status;
+                    output_size = 0;
+                }
+                memcpy(output + output_size, stream->utf8_sequence, stream->utf8_sequence_size);
+                output_size += stream->utf8_sequence_size;
+                stream->utf8_sequence_size     = 0;
+                stream->utf8_sequence_expected = 0;
+            }
+        }
+
+        if (output_size == sizeof(output)) {
+            cl_error_t status = codepage_stream_emit(stream, output, output_size);
+            if (status != CL_SUCCESS)
+                return status;
+            output_size = 0;
+        }
+    }
+
+    return codepage_stream_emit(stream, output, output_size);
+}
+
+#if defined(HAVE_ICONV)
+static cl_error_t codepage_stream_convert_pending(cli_codepage_utf8_stream_t *stream, bool finishing)
+{
+    while (stream->input_size != 0) {
+        unsigned char output[CODEPAGE_STREAM_WINDOW];
+        char *input_index  = (char *)stream->input;
+        char *output_index = (char *)output;
+        size_t input_left  = stream->input_size;
+        size_t output_left = sizeof(output);
+        size_t converted;
+        size_t consumed;
+        size_t produced;
+        cl_error_t status;
+
+        errno     = 0;
+        converted = iconv(stream->conv, &input_index, &input_left, &output_index, &output_left);
+        consumed  = stream->input_size - input_left;
+        produced  = sizeof(output) - output_left;
+
+        if (consumed != 0) {
+            memmove(stream->input, stream->input + consumed, input_left);
+            stream->input_size = input_left;
+        }
+
+        status = codepage_stream_emit(stream, output, produced);
+        if (status != CL_SUCCESS)
+            return status;
+
+        if (converted != (size_t)-1) {
+            if (stream->input_size == 0)
+                return CL_SUCCESS;
+            if (consumed == 0 && produced == 0)
+                return CL_EPARSE;
+            continue;
+        }
+
+        if (errno == E2BIG) {
+            if (consumed == 0 && produced == 0)
+                return CL_EPARSE;
+            continue;
+        }
+        if (errno == EINVAL && !finishing)
+            return CL_SUCCESS;
+        return CL_EPARSE;
+    }
+
+    return CL_SUCCESS;
+}
+#endif
+
+cl_error_t cli_codepage_utf8_stream_open(uint16_t codepage, cli_codepage_utf8_write_cb write_cb,
+                                         void *write_context, cli_codepage_utf8_stream_t **stream_out)
+{
+    cli_codepage_utf8_stream_t *stream;
+
+    if (write_cb == NULL || stream_out == NULL)
+        return CL_EARG;
+    *stream_out = NULL;
+
+    stream = cli_max_calloc(1, sizeof(*stream));
+    if (stream == NULL)
+        return CL_EMEM;
+
+    stream->write_cb      = write_cb;
+    stream->write_context = write_context;
+
+    if (codepage == CODEPAGE_US_7BIT_ASCII) {
+        stream->mode = CODEPAGE_STREAM_ASCII;
+    } else if (codepage == CODEPAGE_UTF8) {
+        stream->mode = CODEPAGE_STREAM_UTF8;
+    } else {
+#if defined(HAVE_ICONV)
+        const char *encoding = NULL;
+        size_t i;
+
+        for (i = 0; i < NUMCODEPAGES; i++) {
+            if (codepage == codepage_entries[i].codepage) {
+                encoding = codepage_entries[i].encoding;
+                break;
+            }
+            if (codepage < codepage_entries[i].codepage)
+                break;
+        }
+        if (encoding == NULL) {
+            free(stream);
+            return CL_BREAK;
+        }
+
+        stream->conv = iconv_open("UTF-8//TRANSLIT", encoding);
+        if (stream->conv == (iconv_t)-1)
+            stream->conv = iconv_open("UTF-8", encoding);
+        if (stream->conv == (iconv_t)-1) {
+            free(stream);
+            return CL_BREAK;
+        }
+        stream->mode = CODEPAGE_STREAM_ICONV;
+#else
+        free(stream);
+        return CL_BREAK;
+#endif
+    }
+
+    *stream_out = stream;
+    return CL_SUCCESS;
+}
+
+cl_error_t cli_codepage_utf8_stream_process(cli_codepage_utf8_stream_t *stream,
+                                            const unsigned char *data, size_t data_size)
+{
+    if (stream == NULL || (data == NULL && data_size != 0) || stream->finished)
+        return CL_EARG;
+    if (data_size == 0)
+        return CL_SUCCESS;
+
+    if (stream->mode == CODEPAGE_STREAM_ASCII)
+        return codepage_stream_emit(stream, data, data_size);
+    if (stream->mode == CODEPAGE_STREAM_UTF8)
+        return codepage_stream_process_utf8(stream, data, data_size);
+
+#if defined(HAVE_ICONV)
+    while (data_size != 0) {
+        size_t available = sizeof(stream->input) - stream->input_size;
+        size_t take;
+        cl_error_t status;
+
+        if (available == 0) {
+            status = codepage_stream_convert_pending(stream, false);
+            if (status != CL_SUCCESS)
+                return status;
+            available = sizeof(stream->input) - stream->input_size;
+            if (available == 0)
+                return CL_EPARSE;
+        }
+
+        take = data_size < available ? data_size : available;
+        memcpy(stream->input + stream->input_size, data, take);
+        stream->input_size += take;
+        data += take;
+        data_size -= take;
+
+        status = codepage_stream_convert_pending(stream, false);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    return CL_SUCCESS;
+#else
+    return CL_BREAK;
+#endif
+}
+
+cl_error_t cli_codepage_utf8_stream_finish(cli_codepage_utf8_stream_t *stream, uint64_t *output_size)
+{
+    cl_error_t status = CL_SUCCESS;
+
+    if (stream == NULL || stream->finished)
+        return CL_EARG;
+    stream->finished = true;
+
+#if defined(HAVE_ICONV)
+    if (stream->mode == CODEPAGE_STREAM_ICONV) {
+        status = codepage_stream_convert_pending(stream, true);
+        if (status == CL_SUCCESS) {
+            for (;;) {
+                unsigned char output[CODEPAGE_STREAM_WINDOW];
+                char *output_index = (char *)output;
+                size_t output_left = sizeof(output);
+                size_t converted;
+                size_t produced;
+
+                errno     = 0;
+                converted = iconv(stream->conv, NULL, NULL, &output_index, &output_left);
+                produced  = sizeof(output) - output_left;
+                status    = codepage_stream_emit(stream, output, produced);
+                if (status != CL_SUCCESS || converted != (size_t)-1)
+                    break;
+                if (errno != E2BIG || produced == 0) {
+                    status = CL_EPARSE;
+                    break;
+                }
+            }
+        }
+    }
+#endif
+
+    /* Match the legacy UTF-8 conversion behavior by dropping a final,
+     * incomplete character rather than emitting it. */
+    stream->utf8_sequence_size     = 0;
+    stream->utf8_sequence_expected = 0;
+
+    if (output_size != NULL)
+        *output_size = stream->output_size;
+    return status;
+}
+
+void cli_codepage_utf8_stream_free(cli_codepage_utf8_stream_t *stream)
+{
+    if (stream == NULL)
+        return;
+#if defined(HAVE_ICONV)
+    if (stream->mode == CODEPAGE_STREAM_ICONV && stream->conv != (iconv_t)-1)
+        iconv_close(stream->conv);
+#endif
+    free(stream);
+}
+
 char* cli_utf16toascii(const char* str, unsigned int length)
 {
     char* decoded;

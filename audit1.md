@@ -4368,10 +4368,12 @@ The legacy OLE/VBA path rejected decompressed module buffers above 4 GiB before
 matching because it passed their length through `cli_scan_buff()`'s 32-bit
 buffer ABI. `vba_scandata()` now creates a child fmap and uses
 `cli_scan_fmap()`, so raw matching, full-map PCRE, and logical/YARA evaluation
-retain native-size input coordinates. The decompressor still materializes one
-module in a contiguous buffer bounded by the individual-allocation ceiling;
-streaming VBA decompression, corpus, sanitizer, and Sonic1 qualification remain
-open.
+retain native-size input coordinates. The later bounded VBA-module milestone
+replaces source-body materialization with fixed-window decompression, stateful
+conversion, incremental normalization, and transactional spool output.
+Project-directory metadata and the legacy whole-module callback retain explicit
+1 GiB contiguous boundaries. Production corpus, sanitizer, Linux x86-64, and
+Sonic1 qualification remain open.
 
 ## Script native-width normalized fmap admission — 2026-08-22
 
@@ -7389,3 +7391,33 @@ checkpoints. Translation-unit syntax checks pass. Production
 BCJ2 corpus, sanitizer, certified Linux x86-64, materialized large-folder, and
 Sonic1 qualification remain open; the existing container's Rust 1.65 cannot
 configure the checkout's Rust 1.97 requirement, and no toolchain was installed.
+
+## Bounded VBA module decompression and normalization — 2026-08-24
+
+VBA source-module bodies no longer pass through the legacy `blob` accumulator
+on supported release builds. `cli_vba_inflate_stream()` retains only the 4 KiB
+VBA history window, uses a native 64-bit decompressed position, and emits fixed
+windows through a sticky-error callback. A persistent codepage converter
+carries multibyte state across those windows, and an incremental normalizer
+retains the final two output bytes so underscore/newline folding remains exact
+across every split point. Normalized bytes enter the existing VBA project file
+through exact temporary reservations and deadline checks.
+
+Each module write is transactional. The scanner records the output offset and
+reservation before decompression, truncates and releases the exact delta on any
+decoder, conversion, normalization, resource, timeout, or write failure, and
+marks the layer incomplete/non-cacheable. The old pointer-returning inflater is
+preserved as a compatibility wrapper. `cl_engine_set_clcb_vba` still receives a
+whole contiguous module only at or below the 1 GiB individual-allocation
+ceiling; larger modules continue through bounded scanning but callback delivery
+is explicitly incomplete. The compact project-directory metadata stream also
+retains its legacy 1 GiB contiguous boundary.
+
+Strict GCC syntax passes for both changed production translation units. Focused
+GCC oracles pass split UTF-8, persistent ISO-8859-1 iconv state, incomplete-tail
+handling, inflater output/error propagation, and byte-exact normalizer parity at
+1-, 2-, 3-, 7-, and 31-byte windows. The capability manifest and source guards
+pass with 181 entries. The existing isolated container cannot complete CMake
+configuration because its Cargo 1.65 predates the checkout's required 1.97; no
+software was installed. Production Office/VBA corpus, sanitizer, materialized
+multi-gigabyte modules, certified Linux x86-64, and Sonic1 evidence remain open.

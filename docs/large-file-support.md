@@ -2559,16 +2559,29 @@ bounded PE-unpacker conversion remains a release gate.
 ## VBA decompression failure propagation — 2026-08-19
 
 VBA project and module decompression now treats seek failures, intermediate
-blob-growth failures, and missing module streams as incomplete parser results.
+output failures, and missing module streams as incomplete parser results.
 OLE/VBA callers no longer silently continue as clean when a recognized macro
 cannot be materialized or decrypted; they retain a deferred non-clean status
 while allowing unrelated sibling content to be examined. Decompressed modules
 now enter the 64-bit fmap matcher path, preserving full-map PCRE and
 logical/YARA evaluation instead of narrowing the legacy buffer-matcher length
-to 32 bits. The decompressor still materializes one module in a contiguous
-buffer, so output above the individual-allocation ceiling remains an explicit
-unsupported/incomplete boundary and a streaming VBA decompressor remains a
-release gate.
+to 32 bits.
+
+VBA source-module bodies no longer use the contiguous inflater path on builds
+with the required codepage converter. A fixed 4 KiB decompression history feeds
+a persistent bounded codepage converter, which feeds a stateful incremental
+normalizer. The normalized source is written transactionally into the existing
+quota-accounted project spool, and any decoder, conversion, deadline, quota, or
+write failure rolls the partial module back before an explicit error marker is
+written. The decompressed position and produced-byte accounting are 64-bit.
+
+Two explicit contiguous boundaries remain. The compact VBA project-directory
+metadata stream still uses the legacy inflater and is incomplete above the
+1 GiB individual-allocation ceiling. The public `cl_engine_set_clcb_vba`
+callback also requires one contiguous normalized module; modules above 1 GiB
+continue through bounded scanner inspection, but callback delivery is marked
+incomplete. Production Office/VBA corpus, sanitizer, materialized large-module,
+Linux x86-64, and Sonic1 qualification remain release gates.
 
 ## Mail text-list accounting — 2026-08-19
 

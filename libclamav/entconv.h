@@ -259,6 +259,23 @@ int encoding_normalize_toascii(const m_area_t* in_m_area, const char* initial_en
  */
 cl_error_t cli_codepage_to_utf8(char* in, size_t in_size, uint16_t codepage, char** out, size_t* out_size);
 
+typedef struct cli_codepage_utf8_stream cli_codepage_utf8_stream_t;
+typedef cl_error_t (*cli_codepage_utf8_write_cb)(const unsigned char* data, size_t data_size, void* context);
+
+/**
+ * @brief Incrementally convert a Windows codepage to UTF-8.
+ *
+ * The converter preserves multibyte state between input windows and emits
+ * bounded output windows through the supplied callback. Codepages which need
+ * an unavailable platform converter return CL_BREAK explicitly.
+ */
+cl_error_t cli_codepage_utf8_stream_open(uint16_t codepage, cli_codepage_utf8_write_cb write_cb,
+                                         void* write_context, cli_codepage_utf8_stream_t** stream);
+cl_error_t cli_codepage_utf8_stream_process(cli_codepage_utf8_stream_t* stream,
+                                            const unsigned char* data, size_t data_size);
+cl_error_t cli_codepage_utf8_stream_finish(cli_codepage_utf8_stream_t* stream, uint64_t* output_size);
+void cli_codepage_utf8_stream_free(cli_codepage_utf8_stream_t* stream);
+
 char* cli_utf16toascii(const char* str, unsigned int length);
 
 char* cli_utf16_to_utf8(const char* utf16, size_t length, encoding_t type);

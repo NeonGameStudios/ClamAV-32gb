@@ -363,6 +363,321 @@ static size_t vba_normalize(unsigned char *buffer, size_t size)
     return o;
 }
 
+#define VBA_NORMALIZE_OUTPUT_WINDOW 16384
+
+struct vba_project_output {
+    cli_ctx *ctx;
+    int fd;
+    uint64_t *temporary_reserved;
+};
+
+struct vba_stream_normalizer {
+    struct vba_project_output *output;
+    unsigned int state;
+    unsigned char tail[2];
+    size_t tail_size;
+    unsigned char buffer[VBA_NORMALIZE_OUTPUT_WINDOW];
+    size_t buffer_size;
+    uint64_t output_size;
+};
+
+struct vba_module_pipeline {
+    cli_ctx *ctx;
+    cli_codepage_utf8_stream_t *converter;
+    cl_error_t conversion_status;
+    uint64_t inflated_size;
+};
+
+static cl_error_t vba_project_output_write(struct vba_project_output *output,
+                                           const unsigned char *data, size_t data_size)
+{
+    uint64_t write_size = (uint64_t)data_size;
+
+    if (data_size == 0)
+        return CL_SUCCESS;
+    if (write_size > UINT64_MAX - *output->temporary_reserved ||
+        cli_scan_reserve_temporary(output->ctx, write_size) != CL_SUCCESS) {
+        cli_mark_scan_incomplete(output->ctx, "VBA project temporary output exceeds temporary storage limits");
+        return CL_ERESOURCE;
+    }
+    *output->temporary_reserved += write_size;
+
+    if (vba_checktimelimit(output->ctx, "VBA project temporary output reached the configured time limit") != CL_SUCCESS)
+        return CL_ETIMEOUT;
+    if (cli_writen(output->fd, data, data_size) != data_size) {
+        cli_warnmsg("vba_readdir_new: Failed to write to output file\n");
+        cli_mark_scan_incomplete(output->ctx, "VBA project temporary output could not be written completely");
+        return CL_EWRITE;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t vba_project_output_rollback(struct vba_project_output *output, off_t output_offset,
+                                              uint64_t reservation_before)
+{
+    uint64_t released;
+
+    if (*output->temporary_reserved < reservation_before)
+        return CL_EFORMAT;
+    released = *output->temporary_reserved - reservation_before;
+
+    if (ftruncate(output->fd, output_offset) != 0 || lseek(output->fd, output_offset, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(output->ctx, "VBA module output could not be rolled back completely");
+        return CL_EWRITE;
+    }
+
+    cli_scan_release_temporary(output->ctx, released);
+    *output->temporary_reserved = reservation_before;
+    return CL_SUCCESS;
+}
+
+static cl_error_t vba_stream_normalizer_flush(struct vba_stream_normalizer *normalizer)
+{
+    cl_error_t status;
+
+    if (normalizer->buffer_size == 0)
+        return CL_SUCCESS;
+    if ((uint64_t)normalizer->buffer_size > UINT64_MAX - normalizer->output_size)
+        return CL_EFORMAT;
+
+    status = vba_project_output_write(normalizer->output, normalizer->buffer,
+                                      normalizer->buffer_size);
+    if (status != CL_SUCCESS)
+        return status;
+
+    normalizer->output_size += (uint64_t)normalizer->buffer_size;
+    normalizer->buffer_size = 0;
+    return CL_SUCCESS;
+}
+
+static cl_error_t vba_stream_normalizer_commit(struct vba_stream_normalizer *normalizer,
+                                               unsigned char byte)
+{
+    if (normalizer->buffer_size == sizeof(normalizer->buffer)) {
+        cl_error_t status = vba_stream_normalizer_flush(normalizer);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    normalizer->buffer[normalizer->buffer_size++] = byte;
+    return CL_SUCCESS;
+}
+
+static cl_error_t vba_stream_normalizer_append(struct vba_stream_normalizer *normalizer,
+                                               unsigned char byte)
+{
+    cl_error_t status;
+
+    if (normalizer->tail_size == sizeof(normalizer->tail)) {
+        status = vba_stream_normalizer_commit(normalizer, normalizer->tail[0]);
+        if (status != CL_SUCCESS)
+            return status;
+        normalizer->tail[0] = normalizer->tail[1];
+        normalizer->tail_size--;
+    }
+    normalizer->tail[normalizer->tail_size++] = byte;
+    return CL_SUCCESS;
+}
+
+static cl_error_t vba_stream_normalizer_process(const unsigned char *data, size_t data_size, void *context)
+{
+    enum {
+        NORMAL        = 0,
+        IN_STRING     = 1,
+        UNDERSCORE    = 2,
+        UNDERSCORE_CR = 3,
+        SPACE         = 4
+    };
+    struct vba_stream_normalizer *normalizer = context;
+    size_t i;
+
+    for (i = 0; i < data_size; i++) {
+        unsigned char byte = data[i];
+        cl_error_t status  = CL_SUCCESS;
+
+        switch (byte) {
+            case '"':
+                if (normalizer->state == IN_STRING) {
+                    normalizer->state = NORMAL;
+                } else if (normalizer->state == NORMAL || normalizer->state == UNDERSCORE || normalizer->state == SPACE) {
+                    normalizer->state = IN_STRING;
+                }
+                status = vba_stream_normalizer_append(normalizer, byte);
+                break;
+            case '_':
+                if (normalizer->state == SPACE)
+                    normalizer->state = UNDERSCORE;
+                status = vba_stream_normalizer_append(normalizer, byte);
+                break;
+            case '\r':
+                if (normalizer->state == UNDERSCORE)
+                    normalizer->state = UNDERSCORE_CR;
+                status = vba_stream_normalizer_append(normalizer, byte);
+                break;
+            case '\n':
+                if (normalizer->state == UNDERSCORE) {
+                    if (normalizer->tail_size < 1)
+                        return CL_EFORMAT;
+                    normalizer->tail_size--;
+                    normalizer->state = SPACE;
+                } else if (normalizer->state == UNDERSCORE_CR) {
+                    if (normalizer->tail_size < 2)
+                        return CL_EFORMAT;
+                    normalizer->tail_size -= 2;
+                    normalizer->state = SPACE;
+                } else {
+                    status = vba_stream_normalizer_append(normalizer, byte);
+                }
+                break;
+            case '\t':
+            case ' ':
+                if (normalizer->state != SPACE)
+                    status = vba_stream_normalizer_append(normalizer, ' ');
+                if (normalizer->state == NORMAL || normalizer->state == UNDERSCORE)
+                    normalizer->state = SPACE;
+                break;
+            default:
+                if (normalizer->state == NORMAL || normalizer->state == UNDERSCORE || normalizer->state == SPACE) {
+                    if (byte >= 'A' && byte <= 'Z')
+                        byte = (unsigned char)tolower((int)byte);
+                    normalizer->state = NORMAL;
+                }
+                status = vba_stream_normalizer_append(normalizer, byte);
+                break;
+        }
+
+        if (status != CL_SUCCESS)
+            return status;
+    }
+
+    return CL_SUCCESS;
+}
+
+static cl_error_t vba_stream_normalizer_finish(struct vba_stream_normalizer *normalizer)
+{
+    size_t i;
+
+    for (i = 0; i < normalizer->tail_size; i++) {
+        cl_error_t status = vba_stream_normalizer_commit(normalizer, normalizer->tail[i]);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    normalizer->tail_size = 0;
+    return vba_stream_normalizer_flush(normalizer);
+}
+
+static cl_error_t vba_module_convert_write(const unsigned char *data, size_t data_size, void *context)
+{
+    struct vba_module_pipeline *pipeline = context;
+    uint64_t projected_size;
+
+    if ((uint64_t)data_size > UINT64_MAX - pipeline->inflated_size) {
+        cli_mark_scan_incomplete(pipeline->ctx, "VBA module decompressed-size accounting overflowed");
+        return CL_EFORMAT;
+    }
+    projected_size = pipeline->inflated_size + (uint64_t)data_size;
+    pipeline->conversion_status = cli_checklimits("VBA module", pipeline->ctx,
+                                                  projected_size, 0, 0);
+    if (pipeline->conversion_status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(pipeline->ctx, "VBA module decompressed subject exceeds configured scan limits");
+        return pipeline->conversion_status;
+    }
+    pipeline->conversion_status = vba_checktimelimit(
+        pipeline->ctx, "VBA module decompression reached the configured time limit");
+    if (pipeline->conversion_status != CL_SUCCESS)
+        return pipeline->conversion_status;
+
+    pipeline->conversion_status = cli_codepage_utf8_stream_process(pipeline->converter, data, data_size);
+    if (pipeline->conversion_status == CL_SUCCESS)
+        pipeline->inflated_size = projected_size;
+    return pipeline->conversion_status;
+}
+
+static cl_error_t vba_extract_module_stream(int module_fd, off_t module_offset, uint16_t codepage,
+                                            struct vba_project_output *output, uint64_t *module_output_size)
+{
+    struct vba_stream_normalizer normalizer;
+    struct vba_module_pipeline pipeline;
+    uint64_t converted_size = 0;
+    uint64_t inflated_size  = 0;
+    cl_error_t status;
+
+    memset(&normalizer, 0, sizeof(normalizer));
+    memset(&pipeline, 0, sizeof(pipeline));
+    normalizer.output            = output;
+    pipeline.ctx                 = output->ctx;
+    pipeline.conversion_status   = CL_SUCCESS;
+
+    status = cli_codepage_utf8_stream_open(codepage, vba_stream_normalizer_process,
+                                           &normalizer, &pipeline.converter);
+    if (status != CL_SUCCESS)
+        return status;
+
+    status = cli_vba_inflate_stream(module_fd, module_offset, vba_module_convert_write,
+                                    &pipeline, &inflated_size);
+    if (status == CL_SUCCESS && inflated_size != pipeline.inflated_size)
+        status = CL_EFORMAT;
+    if (status == CL_SUCCESS)
+        status = cli_codepage_utf8_stream_finish(pipeline.converter, &converted_size);
+    if (status == CL_SUCCESS)
+        status = vba_stream_normalizer_finish(&normalizer);
+
+    cli_codepage_utf8_stream_free(pipeline.converter);
+
+    if (status == CL_SUCCESS && module_output_size != NULL)
+        *module_output_size = normalizer.output_size;
+    return status;
+}
+
+static cl_error_t vba_invoke_module_callback(cli_ctx *ctx, int output_fd,
+                                             off_t output_offset, uint64_t output_size)
+{
+    unsigned char *module = NULL;
+    off_t saved_offset;
+    size_t read_size;
+    cl_error_t status = CL_SUCCESS;
+
+    if (ctx->engine->cb_vba == NULL)
+        return CL_SUCCESS;
+    if (output_size == 0)
+        return CL_SUCCESS;
+    if (output_size > CLI_MAX_ALLOCATION || output_size > SIZE_MAX) {
+        cli_mark_scan_incomplete(ctx, "VBA callback ABI cannot receive a module above the contiguous allocation boundary");
+        return CL_EMAXSIZE;
+    }
+
+    module = cli_max_malloc((size_t)output_size);
+    if (module == NULL) {
+        cli_mark_scan_incomplete(ctx, "VBA callback module buffer could not be allocated");
+        return CL_EMEM;
+    }
+
+    saved_offset = lseek(output_fd, 0, SEEK_CUR);
+    if (saved_offset == (off_t)-1 || lseek(output_fd, output_offset, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "VBA callback module output could not be positioned safely");
+        status = CL_ESEEK;
+        goto done;
+    }
+
+    read_size = cli_readn(output_fd, module, (size_t)output_size);
+    if (lseek(output_fd, saved_offset, SEEK_SET) == (off_t)-1) {
+        cli_mark_scan_incomplete(ctx, "VBA callback read could not restore the project output position");
+        status = CL_ESEEK;
+        goto done;
+    }
+    if (read_size != (size_t)output_size) {
+        cli_mark_scan_incomplete(ctx, "VBA callback module could not be read from bounded output");
+        status = CL_EREAD;
+        goto done;
+    }
+
+    ctx->engine->cb_vba(module, (size_t)output_size, ctx->cb_ctx);
+
+done:
+    free(module);
+    return status;
+}
+
 /**
  * Read a VBA project in an OLE directory.
  * Contrary to cli_vba_readdir, this function uses the dir file to locate VBA modules.
@@ -385,6 +700,7 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
     unsigned char *module_data = NULL, *module_data_utf8 = NULL;
     size_t module_data_size = 0, module_data_utf8_size = 0;
     uint64_t temporary_reserved = 0;
+    struct vba_project_output project_output;
 
     if (dir == NULL || hash == NULL || tempfd == NULL || has_macros == NULL || tempfile == NULL || temporary_reserved_out == NULL) {
         return CL_EARG;
@@ -418,28 +734,18 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
         goto done;
     }
 
+    project_output.ctx                = ctx;
+    project_output.fd                 = *tempfd;
+    project_output.temporary_reserved = &temporary_reserved;
+
     cli_dbgmsg("Dumping VBA project from dir %s to file %s\n", fullname, *tempfile);
 
-#define CLI_WRITEN(msg, size)                                                 \
-    do {                                                                      \
-        uint64_t write_size = (uint64_t)(size);                               \
-        if (write_size > UINT64_MAX - temporary_reserved ||                  \
-            cli_scan_reserve_temporary(ctx, write_size) != CL_SUCCESS) {     \
-            cli_mark_scan_incomplete(ctx, "VBA project temporary output exceeds temporary storage limits"); \
-            ret = CL_ERESOURCE;                                               \
-            goto done;                                                        \
-        }                                                                     \
-        temporary_reserved += write_size;                                     \
-        if (vba_checktimelimit(ctx, "VBA project temporary output reached the configured time limit") != CL_SUCCESS) { \
-            ret = CL_ETIMEOUT;                                                 \
-            goto done;                                                        \
-        }                                                                     \
-        if (cli_writen(*tempfd, msg, size) != size) {                         \
-            cli_warnmsg("vba_readdir_new: Failed to write to output file\n"); \
-            cli_mark_scan_incomplete(ctx, "VBA project temporary output could not be written completely"); \
-            ret = CL_EWRITE;                                                  \
-            goto done;                                                        \
-        }                                                                     \
+#define CLI_WRITEN(msg, size)                                                       \
+    do {                                                                            \
+        ret = vba_project_output_write(&project_output,                             \
+                                       (const unsigned char *)(msg), (size_t)(size)); \
+        if (ret != CL_SUCCESS)                                                      \
+            goto done;                                                              \
     } while (0)
 
 #define CLI_WRITENHEX(msg, size)                                                           \
@@ -1315,10 +1621,69 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                         continue;
                     }
 
+                    off_t module_output_offset = lseek(*tempfd, 0, SEEK_CUR);
+                    uint64_t reservation_before = temporary_reserved;
+                    uint64_t module_output_size  = 0;
+                    cl_error_t module_status;
+
+                    if (module_output_offset == (off_t)-1) {
+                        cli_mark_scan_incomplete(ctx, "VBA module output position could not be recorded");
+                        close(module_fd);
+                        ret = CL_ESEEK;
+                        goto done;
+                    }
+
+                    module_status = vba_extract_module_stream(module_fd, module_offset, codepage,
+                                                              &project_output, &module_output_size);
+                    if (module_status != CL_BREAK) {
+                        if (module_status != CL_SUCCESS) {
+                            cl_error_t rollback_status = vba_project_output_rollback(
+                                &project_output, module_output_offset, reservation_before);
+
+                            cli_dbgmsg("cli_vba_readdir_new: Bounded module extraction failed: %s\n",
+                                       cl_strerror(module_status));
+                            cli_mark_scan_incomplete(ctx, "VBA module could not be decompressed, decoded, and normalized completely");
+                            if (deferred_failure == CL_SUCCESS)
+                                deferred_failure = module_status;
+                            if (close(module_fd) != 0)
+                                cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
+                            module_stream_found = 1;
+
+                            if (rollback_status != CL_SUCCESS) {
+                                ret = rollback_status;
+                                goto done;
+                            }
+                            CLI_WRITEN("\n<Error decoding module data>\n", 30);
+                            break;
+                        }
+
+                        if (close(module_fd) != 0) {
+                            cli_mark_scan_incomplete(ctx, "VBA module temporary input could not be closed");
+                            if (deferred_failure == CL_SUCCESS)
+                                deferred_failure = CL_EREAD;
+                        }
+
+                        module_stream_found = 1;
+                        module_status       = vba_invoke_module_callback(ctx, *tempfd,
+                                                                         module_output_offset,
+                                                                         module_output_size);
+                        if (module_status == CL_ESEEK) {
+                            ret = module_status;
+                            goto done;
+                        }
+                        /* Callback delivery is auxiliary. Allocation, read,
+                         * and contiguous-ABI failures are already recorded as
+                         * incomplete, but must not suppress bounded scanning
+                         * of the project spool. */
+                        break;
+                    }
+
+                    /* Platforms without a bounded converter retain the legacy
+                     * contiguous path for ABI compatibility. */
                     module_data = cli_vba_inflate(module_fd, module_offset, &module_data_size);
                     if (!module_data) {
                         cli_dbgmsg("cli_vba_readdir_new: Failed to extract module data\n");
-                        cli_mark_scan_incomplete(ctx, "VBA module could not be decompressed completely");
+                        cli_mark_scan_incomplete(ctx, "VBA module requires an unavailable bounded codepage converter or exceeded the fallback allocation boundary");
                         if (deferred_failure == CL_SUCCESS)
                             deferred_failure = CL_EPARSE;
                         if (close(module_fd) != 0)
@@ -1331,24 +1696,21 @@ cl_error_t cli_vba_readdir_new(cli_ctx *ctx, const char *dir, struct uniq *U, co
                         if (deferred_failure == CL_SUCCESS)
                             deferred_failure = CL_EREAD;
                     }
+                    module_stream_found = 1;
 
                     if (CL_SUCCESS == cli_codepage_to_utf8((char *)module_data, module_data_size, codepage, (char **)&module_data_utf8, &module_data_utf8_size)) {
                         module_data_utf8_size = vba_normalize(module_data_utf8, module_data_utf8_size);
 
                         CLI_WRITEN(module_data_utf8, module_data_utf8_size);
 
-                        if (NULL != ctx->engine->cb_vba) {
+                        if (NULL != ctx->engine->cb_vba)
                             ctx->engine->cb_vba(module_data_utf8, module_data_utf8_size, ctx->cb_ctx);
-                        }
 
-                        module_stream_found = 1;
                         free(module_data_utf8);
                         module_data_utf8 = NULL;
                     } else {
-                        /*If normalization didn't work, fall back to the pre-normalized data.*/
-                        if (NULL != ctx->engine->cb_vba) {
+                        if (NULL != ctx->engine->cb_vba)
                             ctx->engine->cb_vba(module_data, module_data_size, ctx->cb_ctx);
-                        }
 
                         CLI_WRITEN("\n<Error decoding module data>\n", 30);
                         cli_dbgmsg("cli_vba_readdir_new: Failed to decode VBA module content from codepage %" PRIu16 " to UTF8\n", codepage);
@@ -1660,49 +2022,63 @@ cli_vba_readdir(const char *dir, struct uniq *U, uint32_t which)
     return vba_project;
 }
 
-unsigned char *
-cli_vba_inflate(int fd, off_t offset, size_t *size)
+static cl_error_t vba_inflate_emit(cli_vba_inflate_write_cb write_cb, void *write_context,
+                                   const unsigned char *data, size_t data_size, uint64_t *output_size)
 {
-    unsigned int pos, shift, mask, distance, clean;
+    cl_error_t status;
+
+    if (data_size == 0)
+        return CL_SUCCESS;
+    if ((uint64_t)data_size > UINT64_MAX - *output_size)
+        return CL_EFORMAT;
+
+    status = write_cb(data, data_size, write_context);
+    if (status != CL_SUCCESS)
+        return status;
+    *output_size += (uint64_t)data_size;
+    return CL_SUCCESS;
+}
+
+cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb write_cb,
+                                  void *write_context, uint64_t *output_size)
+{
+    uint64_t pos;
+    unsigned int shift, mask, distance, clean;
+    uint64_t produced = 0;
+    size_t read_result;
     uint8_t flag;
     uint16_t token;
-    blob *b;
     unsigned char buffer[VBA_COMPRESSION_WINDOW];
+    cl_error_t status;
 
-    if (fd < 0)
-        return NULL;
-
-    b = blobCreate();
-
-    if (b == NULL)
-        return NULL;
+    if (output_size != NULL)
+        *output_size = 0;
+    if (fd < 0 || offset < 0 || write_cb == NULL)
+        return CL_EARG;
 
     memset(buffer, 0, sizeof(buffer));
-    if (lseek(fd, offset + 3, SEEK_SET) == (off_t)-1) { /* 1byte ?? , 2byte length ?? */
-        blobDestroy(b);
-        if (size)
-            *size = 0;
-        return NULL;
-    }
+    if (lseek(fd, offset, SEEK_SET) == (off_t)-1 ||
+        lseek(fd, 3, SEEK_CUR) == (off_t)-1) /* 1byte ?? , 2byte length ?? */
+        return CL_ESEEK;
+
     clean = TRUE;
     pos   = 0;
 
-    while (cli_readn(fd, &flag, 1) == 1) {
+    while ((read_result = cli_readn(fd, &flag, 1)) == 1) {
         for (mask = 1; mask < 0x100; mask <<= 1) {
-            unsigned int winpos = pos % VBA_COMPRESSION_WINDOW;
+            unsigned int winpos = (unsigned int)(pos % VBA_COMPRESSION_WINDOW);
             if (flag & mask) {
                 uint16_t len;
-                unsigned int srcpos;
+                uint64_t srcpos;
 
-                if (!read_uint16(fd, &token, FALSE)) {
-                    blobDestroy(b);
-                    if (size)
-                        *size = 0;
-                    return NULL;
-                }
+                if (!read_uint16(fd, &token, FALSE))
+                    return CL_EREAD;
                 shift    = 12 - (winpos > 0x10) - (winpos > 0x20) - (winpos > 0x40) - (winpos > 0x80) - (winpos > 0x100) - (winpos > 0x200) - (winpos > 0x400) - (winpos > 0x800);
                 len      = (uint16_t)((token & ((1 << shift) - 1)) + 3);
                 distance = token >> shift;
+
+                if (pos > UINT64_MAX - len)
+                    return CL_EFORMAT;
 
                 srcpos = pos - distance - 1;
                 if ((((srcpos + len) % VBA_COMPRESSION_WINDOW) < winpos) &&
@@ -1710,48 +2086,87 @@ cli_vba_inflate(int fd, off_t offset, size_t *size)
                     (((srcpos % VBA_COMPRESSION_WINDOW) + len) < VBA_COMPRESSION_WINDOW) &&
                     (len <= VBA_COMPRESSION_WINDOW)) {
                     srcpos %= VBA_COMPRESSION_WINDOW;
-                    memcpy(&buffer[winpos], &buffer[srcpos],
-                           len);
+                    memcpy(&buffer[winpos], &buffer[srcpos], len);
                     pos += len;
-                } else
+                } else {
                     while (len-- > 0) {
                         srcpos                                 = (pos - distance - 1) % VBA_COMPRESSION_WINDOW;
                         buffer[pos++ % VBA_COMPRESSION_WINDOW] = buffer[srcpos];
                     }
+                }
             } else {
                 if ((pos != 0) && (winpos == 0) && clean) {
-                    if (cli_readn(fd, &token, 2) != 2) {
-                        blobDestroy(b);
-                        if (size)
-                            *size = 0;
-                        return NULL;
-                    }
-                    if (blobAddData(b, buffer, VBA_COMPRESSION_WINDOW) < 0) {
-                        blobDestroy(b);
-                        if (size)
-                            *size = 0;
-                        return NULL;
-                    }
+                    if (cli_readn(fd, &token, 2) != 2)
+                        return CL_EREAD;
+                    status = vba_inflate_emit(write_cb, write_context, buffer,
+                                              VBA_COMPRESSION_WINDOW, &produced);
+                    if (status != CL_SUCCESS)
+                        return status;
                     clean = FALSE;
                     break;
                 }
-                if (cli_readn(fd, &buffer[winpos], 1) == 1)
+                read_result = cli_readn(fd, &buffer[winpos], 1);
+                if (read_result == 1) {
+                    if (pos == UINT64_MAX)
+                        return CL_EFORMAT;
                     pos++;
+                } else if (read_result == (size_t)-1) {
+                    return CL_EREAD;
+                }
             }
             clean = TRUE;
         }
     }
 
-    if (blobAddData(b, buffer, pos % VBA_COMPRESSION_WINDOW) < 0) {
-        blobDestroy(b);
-        if (size)
-            *size = 0;
+    if (read_result == (size_t)-1)
+        return CL_EREAD;
+
+    status = vba_inflate_emit(write_cb, write_context, buffer,
+                              (size_t)(pos % VBA_COMPRESSION_WINDOW), &produced);
+    if (status != CL_SUCCESS)
+        return status;
+
+    if (output_size != NULL)
+        *output_size = produced;
+    return CL_SUCCESS;
+}
+
+struct vba_blob_output {
+    blob *data;
+};
+
+static cl_error_t vba_blob_write(const unsigned char *data, size_t data_size, void *context)
+{
+    struct vba_blob_output *output = context;
+
+    return blobAddData(output->data, data, data_size) < 0 ? CL_EMEM : CL_SUCCESS;
+}
+
+unsigned char *
+cli_vba_inflate(int fd, off_t offset, size_t *size)
+{
+    struct vba_blob_output output;
+    uint64_t output_size = 0;
+    cl_error_t status;
+
+    if (size != NULL)
+        *size = 0;
+    if (fd < 0)
+        return NULL;
+
+    output.data = blobCreate();
+    if (output.data == NULL)
+        return NULL;
+
+    status = cli_vba_inflate_stream(fd, offset, vba_blob_write, &output, &output_size);
+    if (status != CL_SUCCESS || output_size > SIZE_MAX) {
+        blobDestroy(output.data);
         return NULL;
     }
 
-    if (size)
-        *size = blobGetDataSize(b);
-    return (unsigned char *)blobToMem(b);
+    if (size != NULL)
+        *size = (size_t)output_size;
+    return (unsigned char *)blobToMem(output.data);
 }
 
 /*

@@ -897,8 +897,10 @@
   injection and complete InstallShield corpus qualification.
 - Decompressed VBA modules now enter the 64-bit fmap matcher path, preserving
   full-map PCRE and logical/YARA evaluation instead of rejecting lengths above
-  4 GiB at the legacy buffer-matcher ABI; the decompressor's contiguous
-  individual-allocation ceiling remains an explicit unsupported boundary.
+  4 GiB at the legacy buffer-matcher ABI. Module bodies now use fixed-window
+  decompression, persistent codepage state, cross-window normalization, and
+  transactional quota-accounted output; project-directory metadata and the
+  legacy whole-module callback retain explicit 1 GiB contiguous boundaries.
 - 7-Zip member extraction now checks the shared deadline before and after each
   bounded streaming-output callback write and in fmap input read/seek
   callbacks, including long solid-folder decoder work, preserving
@@ -2475,3 +2477,17 @@ and Sonic1 qualification as release gates.
   unit binary, sanitizer execution, a materialized multi-gigabyte solid-folder
   case, certified Linux x86-64 execution, and Sonic1 evidence before marking
   the 7-Zip parser family qualified.
+
+## Bounded VBA module bodies — 2026-08-24
+
+- Fixed-window VBA inflate, persistent codepage conversion, incremental
+  normalization, transactional quota accounting/rollback, native 64-bit output
+  position, legacy-wrapper compatibility, and the explicit whole-module
+  callback boundary are implemented.
+- Focused GCC syntax and behavior oracles pass, including cross-window
+  normalizer parity; the 181-entry capability/source gate passes.
+- Convert the compact VBA project-directory metadata stream from its remaining
+  contiguous inflater, add production Office/VBA and malformed-codepage corpus,
+  sanitizer and allocation/read/write/rollback injection, materialized
+  multi-gigabyte module evidence, certified Linux x86-64 execution, and Sonic1
+  qualification.

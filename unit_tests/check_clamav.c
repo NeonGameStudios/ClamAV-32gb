@@ -23687,6 +23687,167 @@ END_TEST
 #endif
 
 #ifndef _WIN32
+struct vba_bounded_test_output {
+    unsigned char data[256];
+    size_t data_size;
+    size_t writes;
+    size_t maximum_write;
+    cl_error_t failure;
+};
+
+static cl_error_t vba_bounded_test_write(const unsigned char *data, size_t data_size, void *context)
+{
+    struct vba_bounded_test_output *output = context;
+
+    if (output->failure != CL_SUCCESS)
+        return output->failure;
+    if (data_size > sizeof(output->data) - output->data_size)
+        return CL_EWRITE;
+
+    memcpy(output->data + output->data_size, data, data_size);
+    output->data_size += data_size;
+    output->writes++;
+    if (data_size > output->maximum_write)
+        output->maximum_write = data_size;
+    return CL_SUCCESS;
+}
+
+START_TEST(test_codepage_utf8_stream_preserves_split_sequences)
+{
+    static const unsigned char input[] = {
+        'A', 0xe2, 0x82, 0xac, 0xf0, 0x9f, 0x98, 0x80, 'Z', 0xc2};
+    static const unsigned char expected[] = {
+        'A', 0xe2, 0x82, 0xac, 0xf0, 0x9f, 0x98, 0x80, 'Z'};
+    struct vba_bounded_test_output output;
+    cli_codepage_utf8_stream_t *stream = NULL;
+    uint64_t output_size               = UINT64_MAX;
+    size_t i;
+
+    memset(&output, 0, sizeof(output));
+    ck_assert_int_eq(cli_codepage_utf8_stream_open(CODEPAGE_UTF8, vba_bounded_test_write,
+                                                   &output, &stream),
+                     CL_SUCCESS);
+    ck_assert_ptr_nonnull(stream);
+
+    for (i = 0; i < sizeof(input); i++)
+        ck_assert_int_eq(cli_codepage_utf8_stream_process(stream, &input[i], 1), CL_SUCCESS);
+    ck_assert_int_eq(cli_codepage_utf8_stream_finish(stream, &output_size), CL_SUCCESS);
+    cli_codepage_utf8_stream_free(stream);
+
+    ck_assert_uint_eq(output_size, sizeof(expected));
+    ck_assert_uint_eq(output.data_size, sizeof(expected));
+    ck_assert_mem_eq(output.data, expected, sizeof(expected));
+    ck_assert_msg(output.maximum_write <= 4, "split UTF-8 conversion emitted %zu bytes at once", output.maximum_write);
+}
+END_TEST
+
+START_TEST(test_codepage_utf8_stream_rejects_invalid_sequence)
+{
+    static const unsigned char invalid[] = {0xe0, 0x80};
+    struct vba_bounded_test_output output;
+    cli_codepage_utf8_stream_t *stream = NULL;
+
+    memset(&output, 0, sizeof(output));
+    ck_assert_int_eq(cli_codepage_utf8_stream_open(CODEPAGE_UTF8, vba_bounded_test_write,
+                                                   &output, &stream),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cli_codepage_utf8_stream_process(stream, invalid, sizeof(invalid)), CL_EPARSE);
+    ck_assert_uint_eq(output.data_size, 0);
+    cli_codepage_utf8_stream_free(stream);
+}
+END_TEST
+
+START_TEST(test_codepage_stream_preserves_iconv_state)
+{
+    static const unsigned char first[]    = {'c', 'a', 'f'};
+    static const unsigned char second[]   = {0xe9};
+    static const unsigned char expected[] = {'c', 'a', 'f', 0xc3, 0xa9};
+    struct vba_bounded_test_output output;
+    cli_codepage_utf8_stream_t *stream = NULL;
+    uint64_t output_size               = UINT64_MAX;
+    cl_error_t status;
+
+    memset(&output, 0, sizeof(output));
+    status = cli_codepage_utf8_stream_open(CODEPAGE_ISO8859_1, vba_bounded_test_write,
+                                           &output, &stream);
+    if (status == CL_BREAK)
+        return;
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_int_eq(cli_codepage_utf8_stream_process(stream, first, sizeof(first)), CL_SUCCESS);
+    ck_assert_int_eq(cli_codepage_utf8_stream_process(stream, second, sizeof(second)), CL_SUCCESS);
+    ck_assert_int_eq(cli_codepage_utf8_stream_finish(stream, &output_size), CL_SUCCESS);
+    cli_codepage_utf8_stream_free(stream);
+
+    ck_assert_uint_eq(output_size, sizeof(expected));
+    ck_assert_uint_eq(output.data_size, sizeof(expected));
+    ck_assert_mem_eq(output.data, expected, sizeof(expected));
+}
+END_TEST
+
+START_TEST(test_vba_inflate_stream_matches_legacy_output)
+{
+    static const unsigned char compressed[] = {
+        0x01, 0x00, 0x00, 0x00, 'A', 'b', 'C', '_', ' ', '\r', '\n', 'Z'};
+    static const unsigned char expected[] = {'A', 'b', 'C', '_', ' ', '\r', '\n', 'Z'};
+    struct vba_bounded_test_output output;
+    unsigned char *legacy;
+    uint64_t output_size = UINT64_MAX;
+    size_t legacy_size   = SIZE_MAX;
+    char path[PATH_MAX];
+    int fd;
+
+    snprintf(path, sizeof(path), "%s/vba-inflate-stream", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, compressed, sizeof(compressed)), sizeof(compressed));
+
+    memset(&output, 0, sizeof(output));
+    ck_assert_int_eq(cli_vba_inflate_stream(fd, 0, vba_bounded_test_write,
+                                            &output, &output_size),
+                     CL_SUCCESS);
+    ck_assert_uint_eq(output_size, sizeof(expected));
+    ck_assert_uint_eq(output.data_size, sizeof(expected));
+    ck_assert_mem_eq(output.data, expected, sizeof(expected));
+    ck_assert_msg(output.maximum_write <= 4096U,
+                  "VBA inflater emitted %zu bytes at once", output.maximum_write);
+
+    legacy = cli_vba_inflate(fd, 0, &legacy_size);
+    ck_assert_ptr_nonnull(legacy);
+    ck_assert_uint_eq(legacy_size, sizeof(expected));
+    ck_assert_mem_eq(legacy, output.data, legacy_size);
+    free(legacy);
+
+    close(fd);
+    unlink(path);
+}
+END_TEST
+
+START_TEST(test_vba_inflate_stream_propagates_output_failure)
+{
+    static const unsigned char compressed[] = {
+        0x01, 0x00, 0x00, 0x00, 'A', 'b', 'C', 'D', 'E', 'F', 'G', 'H'};
+    struct vba_bounded_test_output output;
+    uint64_t output_size = UINT64_MAX;
+    char path[PATH_MAX];
+    int fd;
+
+    snprintf(path, sizeof(path), "%s/vba-inflate-stream-failure", tmpdir);
+    fd = open(path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+    ck_assert_int_ne(fd, -1);
+    ck_assert_uint_eq(cli_writen(fd, compressed, sizeof(compressed)), sizeof(compressed));
+
+    memset(&output, 0, sizeof(output));
+    output.failure = CL_EWRITE;
+    ck_assert_int_eq(cli_vba_inflate_stream(fd, 0, vba_bounded_test_write,
+                                            &output, &output_size),
+                     CL_EWRITE);
+    ck_assert_uint_eq(output_size, 0);
+
+    close(fd);
+    unlink(path);
+}
+END_TEST
+
 START_TEST(test_vba_inflate_seek_failure_is_fail_visible)
 {
     int pipefd[2];
@@ -31780,6 +31941,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_ole2_output_close_failure_is_fail_visible);
 #endif
 #ifndef _WIN32
+    tcase_add_test(tc_cl, test_codepage_utf8_stream_preserves_split_sequences);
+    tcase_add_test(tc_cl, test_codepage_utf8_stream_rejects_invalid_sequence);
+    tcase_add_test(tc_cl, test_codepage_stream_preserves_iconv_state);
+    tcase_add_test(tc_cl, test_vba_inflate_stream_matches_legacy_output);
+    tcase_add_test(tc_cl, test_vba_inflate_stream_propagates_output_failure);
     tcase_add_test(tc_cl, test_vba_inflate_seek_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_word_macro_directory_truncation_is_fail_visible);
 #endif

@@ -47,6 +47,9 @@ vba_project_t *cli_wm_readdir_ex(int fd, cli_ctx *ctx);
 void cli_free_vba_project(vba_project_t *vba_project);
 
 unsigned char *cli_vba_inflate(int fd, off_t offset, size_t *size);
+typedef cl_error_t (*cli_vba_inflate_write_cb)(const unsigned char *data, size_t data_size, void *context);
+cl_error_t cli_vba_inflate_stream(int fd, off_t offset, cli_vba_inflate_write_cb write_cb,
+                                  void *write_context, uint64_t *output_size);
 int cli_scan_ole10(int fd, cli_ctx *ctx);
 char *cli_ppt_vba_read(int fd, cli_ctx *ctx);
 char *cli_ppt_vba_read_ex(int fd, cli_ctx *ctx, uint64_t *temporary_reserved_out);
