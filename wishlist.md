@@ -873,10 +873,13 @@
   handoff; streaming MSXML output and nested handoffs receive the same
   post-admission boundary. Add deterministic timeout injection and compiled
   XML/OOXML/HWPML corpus qualification.
-- Optional XDP `keeptmp` staging now honors the shared deadline and preserves
-  read/write/resource failures; add compiled staging-failure qualification.
-- XDP temporary-dump writes now re-check the shared deadline after quota
-  admission; add deterministic post-admission timeout injection.
+- Optional XDP `keeptmp` staging now holds the complete cumulative dump
+  reservation through streaming XML/Base64 inspection, so retained input and
+  decoded children cannot independently reuse the same temporary quota. The
+  focused GCC case passes cumulative, overlapping-output, timeout, rollback,
+  and partial-cleanup oracles.
+- Add production XDP corpus, ASan/UBSan, Linux x86-64, materialized large-file,
+  and Sonic1 qualification; the current Sonic1 SSH service was unreachable.
 - HWP3 document-info, paragraph, font-table, and information-block traversal
   now honor the shared scan deadline; add compiled timeout-injection and large
   legacy-document corpus qualification.

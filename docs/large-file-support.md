@@ -5761,14 +5761,23 @@ post-admission timeout releases the just-added reservation and returns
 guards cover these boundaries; deterministic timeout injection, compiled
 HWP/HWPML corpus, sanitizer, and Sonic1 qualification remain release gates.
 
-## XDP post-admission output deadline — 2026-08-22
+## XDP retained-dump accounting and output deadline — 2026-08-24
 
-XDP temporary payload staging already checked the deadline before each input
-chunk, and now checks again after reserving the chunk and before writing it.
-Timeout cleanup releases the reservation and returns `CL_ETIMEOUT` without
-scanning partial output. A source guard covers this boundary; deterministic
-timeout injection, compiled XDP corpus, sanitizer, and Sonic1 qualification
-remain release gates.
+Optional XDP `keeptmp` staging now retains a cumulative temporary reservation
+for the complete dump instead of releasing each 8 KiB chunk while the file
+continued growing. The reservation stays live through streaming XML and Base64
+inspection, so the retained input and decoded child outputs share one
+`MaxTemporarySize` budget. Admission, deadline, read, write, close, and partial-
+cleanup failures release the complete reservation and remain incomplete and
+non-cacheable; successful parsing also returns the counter to zero.
+
+The focused Linux ARM64 GCC `xdp` case passes 3/3. It proves the existing
+timeout path with a valid scan context, cumulative rejection on the second dump
+window, overlap between a successful retained dump and decoded Base64 output,
+exact peak accounting, zero-byte rollback, and removal of a rejected partial
+dump. Production XDP corpus, sanitizer, Linux x86-64, materialized large-file,
+and Sonic1 qualification remain open; Sonic1's SSH service refused or timed out
+before any command started during this milestone.
 
 ## HTML output-boundary deadlines — 2026-08-22
 

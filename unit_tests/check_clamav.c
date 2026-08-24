@@ -7320,6 +7320,91 @@ START_TEST(test_xdp_time_limit_is_fail_visible)
 {
     static const uint8_t document[] = "<chunk>QUJD</chunk>";
     struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_ctx ctx;
+    fmap_t *map;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, sizeof(document) - 1U);
+    ck_assert_ptr_nonnull(map);
+    engine.keeptmp = 1;
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
+    ctx.time_limit.tv_sec--;
+
+    ret = cli_scanxdp(&ctx);
+    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+
+START_TEST(test_xdp_retained_dump_uses_cumulative_temporary_accounting)
+{
+    const size_t document_size = 2U * FILEBUFF + 32U;
+    static const char open_tag[] = "<xdp>";
+    static const char close_tag[] = "</xdp>";
+    struct cl_engine engine;
+    cli_ctx ctx;
+    fmap_t *map;
+    unsigned char *document;
+    DIR *directory;
+    struct dirent *entry;
+    cl_error_t ret;
+
+    document = malloc(document_size);
+    ck_assert_ptr_nonnull(document);
+    memset(document, ' ', document_size);
+    memcpy(document, open_tag, sizeof(open_tag) - 1U);
+    memcpy(document + document_size - (sizeof(close_tag) - 1U),
+           close_tag, sizeof(close_tag) - 1U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(document, document_size);
+    ck_assert_ptr_nonnull(map);
+    engine.keeptmp          = 1;
+    engine.maxtemporarysize = FILEBUFF;
+    ctx.engine              = &engine;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
+
+    ret = cli_scanxdp(&ctx);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(ctx.limit_exceeded);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "temporary storage exceeded the configured resource limit");
+    ck_assert_uint_eq(ctx.temporary_peak, FILEBUFF);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
+    ck_assert(map->dont_cache_flag);
+
+    directory = opendir(tmpdir);
+    ck_assert_ptr_nonnull(directory);
+    while ((entry = readdir(directory)) != NULL) {
+        ck_assert_msg(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0,
+                      "partial XDP dump was left behind: %s", entry->d_name);
+    }
+    ck_assert_int_eq(closedir(directory), 0);
+
+    cl_fmap_close(map);
+    free(document);
+}
+END_TEST
+
+START_TEST(test_xdp_retained_dump_overlaps_decoded_output_accounting)
+{
+    static const unsigned char document[] = "<chunk>QUJD</chunk>";
+    struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -7328,16 +7413,20 @@ START_TEST(test_xdp_time_limit_is_fail_visible)
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(document, sizeof(document) - 1U);
     ck_assert_ptr_nonnull(map);
-    engine.keeptmp = 1;
-    ctx.engine     = &engine;
-    ctx.fmap       = map;
-    ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
-    ctx.time_limit.tv_sec--;
+    engine.keeptmp          = 1;
+    engine.maxtemporarysize = sizeof(document) - 1U;
+    ctx.engine              = &engine;
+    ctx.fmap                = map;
+    ctx.this_layer_tmpdir   = tmpdir;
 
     ret = cli_scanxdp(&ctx);
-    ck_assert_int_eq(ret, CL_ETIMEOUT);
+    ck_assert_int_eq(ret, CL_ERESOURCE);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "XDP temporary dump reached the configured time limit");
+    ck_assert(ctx.limit_exceeded);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "temporary storage exceeded the configured resource limit");
+    ck_assert_uint_eq(ctx.temporary_peak, sizeof(document) - 1U);
+    ck_assert_uint_eq(ctx.temporary_bytes, 0);
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -30768,6 +30857,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwp3     = tcase_create("hwp3");
     TCase *tc_xar      = tcase_create("xar");
     TCase *tc_hwpml    = tcase_create("hwpml");
+    TCase *tc_xdp      = tcase_create("xdp");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -30798,6 +30888,11 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xar);
     suite_add_tcase(s, tc_hwpml);
     tcase_add_checked_fixture(tc_hwpml, cl_setup, cl_teardown);
+    suite_add_tcase(s, tc_xdp);
+    tcase_add_checked_fixture(tc_xdp, cl_setup, cl_teardown);
+    tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
+    tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
+    tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
     tcase_add_test(tc_dmg, test_dmg_external_sort_is_bounded_and_complete);
     tcase_add_test(tc_dmg, test_dmg_malformed_metadata_is_fail_visible);
@@ -31380,7 +31475,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_msxml_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_base64_decode_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_stream_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_rtf_input_read_failure_is_fail_visible);
