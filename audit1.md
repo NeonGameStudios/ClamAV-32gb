@@ -7501,3 +7501,21 @@ The fixture now loads an exact custom signature for the eight-byte
 alert. The isolated test passes linked with the current SIS production object.
 Complete SIS corpus, sanitizer, materialized large members, certified Linux
 x86-64, and Sonic1 qualification remain open.
+
+## TAR binary size-field preservation — 2026-08-24
+
+Strengthening the GNU base-256 TAR regression from a generic clean assertion
+to an exact child-only signature exposed a real parser defect: the parser used
+`strncpy()` to copy the fixed 12-byte size field. Positive GNU binary fields
+contain embedded NUL bytes, so the copy stopped after the `0x80` marker and
+zero-filled away the low-order size bytes. The archive was then skipped as an
+invalid entry, while the former weak oracle still reported success.
+
+The parser now copies all 12 bytes with `memcpy()` and adds a separate
+terminator for the legacy octal path. Isolated production-linked tests require
+the exact `Tar.Member.Exact.UNOFFICIAL` alert at child offset zero for both a
+GNU base-256 member and a PAX-sized member; both pass (2 checks, 0 failures).
+The exact-offset signature cannot match the containing TAR at its root, so the
+result proves extraction and nested matcher handoff. Complete TAR corpus,
+sanitizer, malformed binary-field variants, certified Linux x86-64, and Sonic1
+qualification remain release gates.

@@ -2528,3 +2528,12 @@ and Sonic1 qualification as release gates.
   packages, malformed/trailing zlib streams, multi-window and materialized
   large members, sanitizer builds, certified Linux x86-64, and Sonic1. The
   legacy compressed-member fixture now proves nested matcher handoff directly.
+
+## TAR binary size-field qualification — 2026-08-24
+
+- Extend the passing exact child-signature oracle to negative, reserved-prefix,
+  overflowing, truncated, and large materialized GNU base-256 fields, plus
+  local/global PAX override combinations. Add production TAR corpus, sanitizer
+  and read/write/seek/cleanup fault injection, certified Linux x86-64, and
+  Sonic1 qualification. The valid binary field is now preserved by an
+  exact-width copy and reaches nested matching.

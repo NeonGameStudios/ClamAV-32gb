@@ -7065,3 +7065,17 @@ also proves a one-byte-short declaration and injected write failure return the
 specific incomplete result without becoming cacheable. Compiled HFS+ corpus,
 sanitizer/fault injection beyond writes, materialized multi-gigabyte output,
 certified Linux x86-64, and Sonic1 qualification remain release gates.
+
+## TAR binary size-field preservation — 2026-08-24
+
+GNU base-256 TAR sizes are fixed-width binary fields and normally contain NUL
+bytes between the leading `0x80` marker and the low-order size bytes. TAR now
+copies the complete 12-byte field before parsing instead of using a string copy
+that truncated at the first NUL and silently skipped valid members.
+
+The focused production-linked regression requires an exact signature at child
+offset zero for both GNU base-256 and PAX size encodings. Both cases pass, and
+the offset constraint prevents the signature from matching the containing TAR
+as raw data. This closes the prior weak-clean oracle; complete TAR corpus,
+sanitizer, malformed binary encodings, certified Linux x86-64, and Sonic1
+qualification remain release gates.

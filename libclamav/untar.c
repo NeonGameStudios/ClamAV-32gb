@@ -496,7 +496,9 @@ cl_error_t cli_untar(const char *dir, unsigned int posix, cli_ctx *ctx)
                 continue;
             }
 
-            strncpy(osize, block + TARSIZEOFFSET, TARSIZELEN);
+            /* GNU base-256 fields contain embedded NUL bytes. Preserve all
+             * 12 bytes before adding the terminator used by octal fields. */
+            memcpy(osize, block + TARSIZEOFFSET, TARSIZELEN);
             osize[TARSIZELEN] = '\0';
             if (!tar_size_field(osize, &size_value) || size_value > SIZE_MAX) {
                 cli_dbgmsg("cli_untar: Invalid size in tar header\n");
