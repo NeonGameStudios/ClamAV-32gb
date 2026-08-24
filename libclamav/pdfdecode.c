@@ -458,6 +458,9 @@ static cl_error_t pdf_stream_ascii85decode_reader(struct pdf_struct *pdf, struct
 static cl_error_t pdf_stream_lzwdecode_reader(struct pdf_struct *pdf, struct pdf_obj *obj,
                                               struct pdf_dict *params, struct pdf_stream_reader *reader,
                                               int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_decrypt_reader(
+    struct pdf_struct *pdf, struct pdf_obj *obj, enum enc_method enc_method,
+    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned);
 static cl_error_t pdf_stream_encrypted_decode(
     struct pdf_struct *pdf, struct pdf_obj *obj, const struct pdf_decode_params *params,
     const char *stream, size_t streamlen, uint32_t first_filter,
@@ -539,6 +542,25 @@ static bool pdf_stream_filter_chain_is_supported(const struct pdf_obj *obj)
             return false;
     }
     return true;
+}
+
+static bool pdf_stream_explicit_crypt_chain_is_supported(
+    const struct pdf_obj *obj)
+{
+    uint32_t crypt_filters = 0;
+    uint32_t i;
+
+    if (obj == NULL || obj->numfilters < 2U ||
+        obj->numfilters > PDF_FILTERLIST_MAX)
+        return false;
+    for (i = 0; i < obj->numfilters; i++) {
+        if (obj->filterlist[i] == OBJ_FILTER_CRYPT) {
+            crypt_filters++;
+        } else if (!pdf_stream_filter_is_supported(obj->filterlist[i])) {
+            return false;
+        }
+    }
+    return crypt_filters == 1U;
 }
 
 static bool pdf_stream_filter_range_is_supported(const struct pdf_obj *obj,
@@ -640,6 +662,16 @@ static cl_error_t pdf_stream_filter_dispatch(
         case OBJ_FILTER_LZW:
             return pdf_stream_lzwdecode_reader(pdf, obj, filter_params, reader,
                                                 fout, bytes_scanned);
+        case OBJ_FILTER_CRYPT: {
+            enum enc_method enc_method;
+            cl_error_t status = pdf_resolve_decryption_method(
+                pdf, obj, filter_params, false, &enc_method);
+
+            if (status != CL_SUCCESS)
+                return status;
+            return pdf_stream_decrypt_reader(
+                pdf, obj, enc_method, reader, fout, bytes_scanned);
+        }
         default:
             return CL_EARG;
     }
@@ -659,7 +691,8 @@ static cl_error_t pdf_stream_filter_chain_reader(
 
     if (pdf == NULL || obj == NULL || reader == NULL || input_stage == NULL ||
         bytes_scanned == NULL || first_filter >= obj->numfilters ||
-        !pdf_stream_filter_range_is_supported(obj, first_filter))
+        (!pdf_stream_filter_range_is_supported(obj, first_filter) &&
+         !pdf_stream_explicit_crypt_chain_is_supported(obj)))
         return CL_EARG;
     *bytes_scanned = 0;
     pdf_filter_stage_init(&output_stage);
@@ -760,7 +793,9 @@ static cl_error_t pdf_stream_filter_chain(
     off_t output_start;
 
     if (pdf == NULL || obj == NULL || stream == NULL || bytes_scanned == NULL ||
-        obj->numfilters < 2 || !pdf_stream_filter_chain_is_supported(obj))
+        obj->numfilters < 2 ||
+        (!pdf_stream_filter_chain_is_supported(obj) &&
+         !pdf_stream_explicit_crypt_chain_is_supported(obj)))
         return CL_EARG;
 
     output_start = lseek(fout, 0, SEEK_CUR);
@@ -890,6 +925,39 @@ size_t pdf_decodestream_with_params_array(
         goto done;
     }
 
+    /* An explicit Crypt filter may legally follow another supported filter.
+     * Run the complete chain through the same quota-accounted stage rotation;
+     * the Crypt stage resolves only its matching DecodeParms entry and decrypts
+     * directly from the bounded reader. Exactly one Crypt stage is admitted. */
+    if ((obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
+        obj->filterlist[0] != OBJ_FILTER_CRYPT &&
+        pdf_stream_explicit_crypt_chain_is_supported(obj) &&
+        (objstm == NULL || PDF_HAVE_FILE_BACKED_OBJECT_STREAMS)) {
+        cl_error_t decode_status = pdf_stream_filter_chain(
+            pdf, obj, &decode_params, stream, streamlen, fout,
+            &bytes_scanned);
+
+        if (decode_status == CL_EPARSE || decode_status == CL_BREAK) {
+            size_t raw_bytes           = 0;
+            cl_error_t fallback_status = pdf_write_raw_stream(
+                pdf, stream, streamlen, fout, &raw_bytes);
+
+            if (fallback_status != CL_SUCCESS) {
+                *status = fallback_status;
+            } else {
+                bytes_scanned = raw_bytes;
+                *status       = decode_status == CL_BREAK ? CL_SUCCESS
+                                                          : CL_EPARSE;
+            }
+        } else if (decode_status == CL_SUCCESS && objstm != NULL) {
+            *status = pdf_objstm_attach_file(pdf, objstm, fout,
+                                             bytes_scanned);
+        } else {
+            *status = decode_status;
+        }
+        goto done;
+    }
+
     if ((obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
         (obj->numfilters == 0 ||
          obj->filterlist[0] != OBJ_FILTER_CRYPT)) {
@@ -897,7 +965,7 @@ size_t pdf_decodestream_with_params_array(
 
         cli_mark_scan_incomplete(
             pdf->ctx,
-            "PDF explicit Crypt filter is not first and cannot be bounded safely");
+            "PDF explicit Crypt filter chain is unsupported by bounded decoding");
         fallback_status = pdf_write_raw_stream(
             pdf, stream, streamlen, fout, &bytes_scanned);
         *status = fallback_status == CL_SUCCESS ? CL_EPARSE

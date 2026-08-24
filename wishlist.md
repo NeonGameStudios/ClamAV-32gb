@@ -2277,9 +2277,9 @@ and Sonic1 qualification as release gates.
   strict nonzero PKCS#7 padding, RC4 state across windows,
   decryption-before-filter ordering, simultaneous plaintext/downstream quota,
   exact rollback, file-backed object ownership, and no temporary residue.
-  Retain non-first Crypt as explicit incomplete; keep unsupported/mixed filters
-  as a separate incomplete boundary until implemented and qualified. Non-mmap
-  object streams remain deliberately
+  One explicit Crypt stage is now bounded in any filter position; retain
+  repeated Crypt stages and unsupported/mixed filters as explicit incomplete
+  boundaries. Non-mmap object streams remain deliberately
   outside the certified first-release profile.
 
 ## PDF per-filter DecodeParms arrays — 2026-08-24
@@ -2297,5 +2297,20 @@ and Sonic1 qualification as release gates.
   isolated-build warnings.
 - Add production and sanitizer corpus execution, materialized multi-gigabyte
   chains, broader malformed dictionary syntax, quota/read/write/cleanup fault
-  injection, unsupported/mixed filters, non-first Crypt ordering, and Sonic1
+  injection, unsupported/mixed filters, repeated Crypt stages, and Sonic1
   release evidence before parser-family qualification.
+
+## PDF explicit Crypt filter ordering — 2026-08-24
+
+- Route exactly one explicit Crypt stage through the ordinary quota-accounted
+  filter rotation at any declared position. The stage reads only its matching
+  DecodeParms, resolves Identity/RC4/AES through the bounded decryptor, and
+  overlaps intermediate/final temporary reservations until the next stage is
+  complete.
+- Focused Linux ARM64 GCC evidence passes 1/1 for both Crypt-to-ASCIIHex and
+  ASCIIHex-to-Crypt Identity ordering, exact decoded output, expected peak
+  temporary accounting, and a repeated-Crypt chain that fails visibly with
+  exact raw fallback.
+- Add RC4/AES non-first corpora, every supported surrounding-filter ordering,
+  malformed crypt dictionaries, production/sanitizer runs, materialized
+  multi-gigabyte stages, fault injection, and Sonic1 release evidence.

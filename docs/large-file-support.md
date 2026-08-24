@@ -6708,5 +6708,25 @@ Direct GCC compilation passes for `pdf.c`, `pdfdecode.c`, and the complete
 warnings remain. This is implementation evidence, not certified Linux x86-64
 release evidence. Production/sanitizer corpus runs, broader malformed
 dictionaries, materialized multi-gigabyte chains, quota/read/write/cleanup
-faults, unsupported/mixed filters, non-first Crypt ordering, and Sonic1
-qualification remain open.
+faults, unsupported/mixed filters, and Sonic1 qualification remain open.
+
+## PDF explicit Crypt filter ordering — 2026-08-24
+
+Exactly one explicit Crypt filter may now appear at any position in a supported
+filter chain. The shared quota-accounted stage rotation dispatches that stage
+to the bounded Identity, RC4, AESV2, or AESV3 reader and supplies only its
+corresponding DecodeParms dictionary. Intermediate input remains reserved while
+the Crypt or next output stage is produced, and failures retain transactional
+rollback plus exact raw fallback. A repeated Crypt stage or any other
+unsupported filter keeps the chain explicitly incomplete.
+
+Focused Linux ARM64 GCC evidence passes 1/1. The regression proves exact output
+and expected temporary peaks for Crypt-to-ASCIIHex and ASCIIHex-to-Crypt
+Identity ordering, then proves `CL_EPARSE`, incomplete/non-cacheable state,
+exact encoded fallback, and bounded reservation cleanup for a two-Crypt chain.
+`pdfdecode.c` and the full `check_clamav.c` translation unit compile directly
+with GCC; only the previously recorded isolated unit warning remains.
+
+RC4/AES non-first corpora, exhaustive surrounding-filter orderings, malformed
+crypt dictionaries, production/sanitizer runs, materialized multi-gigabyte
+stages, fault injection, and Sonic1 release evidence remain open.

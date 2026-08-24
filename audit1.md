@@ -7141,8 +7141,8 @@ AESV2 ciphertext and invalid PKCS#7 padding have deterministic
 broader malformed dictionaries, quota/read/cleanup faults, production and
 sanitizer clamscan runs, Sonic1 evidence, and unsupported/mixed filters remain
 open.
-Non-first explicit Crypt is intentionally fail-visible before the legacy
-contiguous path.
+One explicit Crypt stage at any position is addressed by the later 2026-08-24
+bounded-ordering milestone; repeated Crypt stages remain fail-visible.
 
 The first-release non-mmap policy is now explicit and enforced at daemon
 admission. The certified 32 GiB Linux x86-64 profile requires private
@@ -7176,5 +7176,27 @@ pre-existing isolated-build warnings.
 This closes the implementation gap, not parser-family qualification. Certified
 Linux x86-64 production/sanitizer corpus runs, broader malformed dictionaries,
 materialized multi-gigabyte chains, quota/read/write/cleanup fault injection,
-unsupported/mixed filters, non-first Crypt ordering, and Sonic1 release
-evidence remain open.
+unsupported/mixed filters and Sonic1 release evidence remain open.
+
+## PDF bounded explicit-Crypt ordering — 2026-08-24
+
+A supported filter chain may now contain one explicit Crypt filter at any
+position. The ordinary quota-accounted stage rotation invokes the existing
+bounded Identity, RC4, AESV2, or AESV3 reader for that stage and selects only
+its corresponding DecodeParms entry. Completed input and output stages overlap
+in temporary accounting, and every downstream decoder retains the existing
+transactional rollback and exact raw-fallback policy. Repeated Crypt filters or
+chains containing another unsupported filter remain explicit incomplete.
+
+The focused Linux ARM64 GCC regression passes 1/1. It proves exact output and
+temporary peaks for both Crypt-to-ASCIIHex and ASCIIHex-to-Crypt Identity
+ordering, then proves that a two-Crypt chain returns `CL_EPARSE`, marks the
+layer incomplete, restores the exact encoded input, and leaves only the final
+raw-child reservation. Direct GCC compilation of `pdfdecode.c` and the full
+`check_clamav.c` translation unit also passes with the previously recorded
+isolated warning only.
+
+RC4/AES non-first corpora, exhaustive surrounding-filter orderings, malformed
+crypt dictionaries, production/sanitizer execution, materialized
+multi-gigabyte stages, quota/read/write/cleanup faults, and Sonic1 evidence
+remain release gates.

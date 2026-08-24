@@ -13319,6 +13319,10 @@ END_TEST
 START_TEST(test_pdf_explicit_identity_crypt_precedes_supported_filters)
 {
     static const uint8_t decoded[] = "bounded explicit Crypt filter";
+    char name_key[]                = "/Name";
+    char bad_name[]                = "Bad";
+    char identity_name[]           = "Identity";
+    char crypt_filter_dictionary[] = "/Bad << /CFM /None >>";
     struct cl_engine *scan_engine;
     struct cl_scan_options options;
     struct pdf_obj obj;
@@ -13329,6 +13333,10 @@ START_TEST(test_pdf_explicit_identity_crypt_precedes_supported_filters)
     uint8_t actual[sizeof(decoded) - 1U];
     size_t encoded_size;
     uint64_t temporary_reserved = 0;
+    struct pdf_dict_node param_dict_nodes[2];
+    struct pdf_dict param_dicts[2];
+    struct pdf_array_node param_array_nodes[2];
+    struct pdf_array params_array;
     char *path = NULL;
     int fd = -1;
     cl_error_t status;
@@ -13340,6 +13348,10 @@ START_TEST(test_pdf_explicit_identity_crypt_precedes_supported_filters)
     memset(&obj, 0, sizeof(obj));
     memset(&pdf, 0, sizeof(pdf));
     memset(&ctx, 0, sizeof(ctx));
+    memset(param_dict_nodes, 0, sizeof(param_dict_nodes));
+    memset(param_dicts, 0, sizeof(param_dicts));
+    memset(param_array_nodes, 0, sizeof(param_array_nodes));
+    memset(&params_array, 0, sizeof(params_array));
 
     ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
     ck_assert_ptr_nonnull(path);
@@ -13357,6 +13369,8 @@ START_TEST(test_pdf_explicit_identity_crypt_precedes_supported_filters)
     pdf.ctx                = &ctx;
     pdf.flags              = 1U << DECRYPTABLE_PDF;
     pdf.temporary_reserved = &temporary_reserved;
+    pdf.CF                 = crypt_filter_dictionary;
+    pdf.CF_n               = sizeof(crypt_filter_dictionary) - 1U;
     obj.id                 = 9U << 8;
     obj.flags              = (1U << OBJ_STREAM) | (1U << OBJ_FILTER_CRYPT);
     obj.numfilters         = 2U;
@@ -13391,6 +13405,57 @@ START_TEST(test_pdf_explicit_identity_crypt_precedes_supported_filters)
     ctx.temporary_peak = 0;
     obj.filterlist[0]  = OBJ_FILTER_AH;
     obj.filterlist[1]  = OBJ_FILTER_CRYPT;
+    param_dict_nodes[0].key       = name_key;
+    param_dict_nodes[0].value     = bad_name;
+    param_dict_nodes[0].valuesz   = sizeof(bad_name) - 1U;
+    param_dict_nodes[0].type      = PDF_DICT_STRING;
+    param_dicts[0].nodes          = &param_dict_nodes[0];
+    param_dicts[0].tail           = &param_dict_nodes[0];
+    param_dict_nodes[1].key       = name_key;
+    param_dict_nodes[1].value     = identity_name;
+    param_dict_nodes[1].valuesz   = sizeof(identity_name) - 1U;
+    param_dict_nodes[1].type      = PDF_DICT_STRING;
+    param_dicts[1].nodes          = &param_dict_nodes[1];
+    param_dicts[1].tail           = &param_dict_nodes[1];
+    param_array_nodes[0].type     = PDF_ARR_DICT;
+    param_array_nodes[0].data     = &param_dicts[0];
+    param_array_nodes[0].datasz   = sizeof(param_dicts[0]);
+    param_array_nodes[0].next     = &param_array_nodes[1];
+    param_array_nodes[1].type     = PDF_ARR_DICT;
+    param_array_nodes[1].data     = &param_dicts[1];
+    param_array_nodes[1].datasz   = sizeof(param_dicts[1]);
+    param_array_nodes[1].prev     = &param_array_nodes[0];
+    params_array.nodes            = &param_array_nodes[0];
+    params_array.tail             = &param_array_nodes[1];
+    status             = CL_SUCCESS;
+    written = pdf_decodestream_with_params_array(
+        &pdf, &obj, NULL, &params_array, (const char *)encoded, encoded_size,
+        0, fd, &status, NULL);
+    ck_assert_int_eq(status, CL_SUCCESS);
+    ck_assert_uint_eq(written, sizeof(decoded) - 1U);
+    ck_assert_uint_eq(temporary_reserved, sizeof(decoded) - 1U);
+    ck_assert_uint_eq(ctx.temporary_bytes, sizeof(decoded) - 1U);
+    ck_assert_uint_eq(ctx.temporary_peak, 2U * (sizeof(decoded) - 1U));
+    ck_assert_int_eq(lseek(fd, 0, SEEK_SET), 0);
+    ck_assert_int_eq(read(fd, actual, sizeof(actual)),
+                     (ssize_t)sizeof(actual));
+    ck_assert_int_eq(memcmp(actual, decoded, sizeof(actual)), 0);
+    ck_assert(!ctx.scan_incomplete);
+
+    cli_scan_release_temporary(&ctx, temporary_reserved);
+    temporary_reserved = 0;
+    close(fd);
+    cli_unlink(path);
+    free(path);
+    path = NULL;
+
+    ck_assert_int_eq(cli_gentempfd(tmpdir, &path, &fd), CL_SUCCESS);
+    ck_assert_ptr_nonnull(path);
+    ctx.temporary_peak = 0;
+    obj.numfilters     = 3U;
+    obj.filterlist[0]  = OBJ_FILTER_AH;
+    obj.filterlist[1]  = OBJ_FILTER_CRYPT;
+    obj.filterlist[2]  = OBJ_FILTER_CRYPT;
     status             = CL_SUCCESS;
     written = pdf_decodestream(
         &pdf, &obj, NULL, (const char *)encoded, encoded_size, 0, fd,
@@ -13402,7 +13467,7 @@ START_TEST(test_pdf_explicit_identity_crypt_precedes_supported_filters)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(
         ctx.scan_incomplete_reason,
-        "PDF explicit Crypt filter is not first and cannot be bounded safely");
+        "PDF explicit Crypt filter chain is unsupported by bounded decoding");
     {
         uint8_t *raw = malloc(encoded_size);
 
