@@ -1,5 +1,23 @@
 # ClamAV 32 GiB Development and Validation Status
 
+## Current qualification warning — 2026-08-24
+
+This branch is not release-qualified. The current manifest records 0
+qualified, 34 source-bounded, 122 pending, and 23 deliberately unsupported
+capabilities; all 76 enabled parser rows still require release evidence. The
+August 14–18 “current-head” statements below are historical and remain bound
+to their named commits and manifests. Sonic1 was unreachable by SSH on
+2026-08-24, so none of the latest PDF or admission work has current-source
+Linux x86-64 production evidence. The working tree now fails certified daemon
+startup when `RLIMIT_FSIZE` cannot accommodate one maximum-sized ingress, or
+when staging is on tmpfs/ramfs; focused local
+GCC and ASan/UBSan policy tests pass, but do not qualify daemon startup.
+The same gate rejects `MaxThreads != 1` because its resource budget covers one
+active scan and the first-release contract requires later requests to queue.
+Linux memory admission now resolves the daemon's actual v1/v2 cgroup mount and
+membership and uses the smallest finite headroom across visible ancestors;
+synthetic hierarchy and real-container probes pass locally.
+
 **Status date:** 2026-08-14
 
 ## Latest current-head rebinding and Sonic1 evidence — 2026-08-18
@@ -2081,7 +2099,8 @@ capacity.
 Safe failure is not the same as full deep-parser support. Current deliberate
 boundaries include:
 
-- PCRE contiguous subjects capped at 1 GiB;
+- PCRE contiguous subjects use a 32 GiB ceiling only on qualifying mapped
+  64-bit builds; other builds retain the 1 GiB allocation ceiling;
 - PDF now stages through the shared temporary quota and uses a file-backed
   mapping on mmap-capable builds; non-mmap fallback builds retain a 64 MiB
   deep-parser cap. DMG retains only a 64 MiB per-decoded-`blkx` metadata cap;

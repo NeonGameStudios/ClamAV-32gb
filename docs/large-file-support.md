@@ -3179,6 +3179,42 @@ The startup admission check also reads the clamd front-end limits
 on-access ingress can no longer bypass the large-file host-resource gate just
 because the engine's `MaxFileSize` field remains at a historical value.
 
+Certified large-file startup now also fails closed when `RLIMIT_FSIZE` cannot
+be measured or is lower than the largest configured ingress. On Linux, the
+configured temporary directory must have a measurable filesystem type and must
+not be backed by tmpfs or ramfs; temporary-capacity qualification represents durable
+disk-backed staging rather than memory that competes with the 48 GiB admission
+floor. Deterministic policy tests cover finite, exact-boundary, unlimited,
+query-failure, disk, tmpfs, and ramfs outcomes. Current-source Linux x86-64
+startup and Sonic1 runtime evidence remain release gates.
+
+The same certified admission gate requires `MaxThreads=1`. Its memory and
+temporary requirements describe one active scan, and the first-release
+contract requires a second request to remain queued without staging or
+reserving resources. A multi-worker configuration must therefore be rejected
+until admission is changed to reserve independently measured resources for
+every simultaneously active worker.
+
+Linux memory admission resolves the daemon process's actual cgroup membership
+and controller mount from `/proc/self/cgroup` and `/proc/self/mountinfo`. It
+walks the visible cgroup v2 or v1 memory hierarchy and uses the smallest finite
+`limit - current` headroom instead of assuming that hierarchy-root files apply
+to a nested service or container. An applicable hierarchy with an unreadable,
+malformed, or mismatched limit/current pair fails closed. Deterministic v1 and
+v2 fixtures cover inherited limits, an unlimited leaf under a bounded parent,
+an exhausted leaf, a missing usage counter, hybrid v2/v1 controller fallback,
+and multiple matching mounts without hiding a visible ancestor limit;
+current-container probing also passes locally.
+
+The release-readiness gate is separate from the capability coverage validator.
+`bounded` and `pending` rows always make it exit nonzero, including in concise
+status mode. A `qualified` row must reference an absolute runtime or service
+evidence directory whose existing verifier passes, whose source-manifest hash
+matches the row, and whose source content still matches the current checkout
+outside the capability status control itself. Synthetic evidence is accepted
+only by an explicitly supplied test manifest and can never qualify the
+authoritative release manifest.
+
 ## Milter structured-report alert and nonblocking transport — 2026-08-19
 
 The milter structured-report client now preserves the report's `last_alert`

@@ -1,5 +1,23 @@
 # Wishlist
 
+## Daemon host file and temporary-filesystem admission — 2026-08-24
+
+- Certified large-file daemon startup now requires `RLIMIT_FSIZE` to represent
+  the maximum configured ingress and rejects unmeasurable limits instead of
+  warning and continuing. Linux temporary staging also rejects tmpfs and ramfs
+  so the 48-GiB memory and 68-GiB disk-capacity floors cannot describe the same RAM.
+  Deterministic GCC and ASan/UBSan policy tests pass locally; a current-source
+  Linux x86-64 daemon startup matrix and Sonic1 resource evidence remain gates.
+- The certified startup profile now rejects `MaxThreads` values other than 1;
+  admission budgets one active scan and requires additional requests to stay
+  queued without staging. Multi-worker admission remains outside the first
+  release profile until resources are measured and reserved per active worker.
+- Linux admission now resolves the daemon's real cgroup membership and mount,
+  then uses the smallest finite v1/v2 ancestor headroom. Synthetic nested,
+  hybrid-controller, multiple-mount, and current-container probes pass locally;
+  current-source Sonic1 startup under its actual service/container placement
+  remains a release gate.
+
 ## Zero-valued front-end admission limits — 2026-08-23
 
 - Daemon startup admission now treats explicit `StreamMaxLength=0` and
@@ -186,7 +204,7 @@
 - The generated size/type/offset inventory has been refreshed from the current
   source tree and now remains reproducible through `tools/largefile_inventory.sh`;
   `largefile_source_guards.sh` now rejects any committed inventory drift, and
-  the 162-entry capability manifest validates against the refreshed dispatch
+  the 179-entry capability manifest validates against the refreshed dispatch
   inventory.
 - Sanitizer runtime qualification now rejects any native compile-database entry
   that lacks either ASan or UBSan, rather than accepting evidence because the

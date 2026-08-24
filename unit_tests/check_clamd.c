@@ -487,6 +487,332 @@ START_TEST(test_largefile_build_profile_requires_every_capability)
 }
 END_TEST
 
+START_TEST(test_largefile_fsize_limit_policy)
+{
+    struct {
+        int query_succeeded;
+        int limit_is_infinite;
+        uint64_t limit_bytes;
+        int accepted;
+        const char *reason;
+    } cases[] = {
+        {1, 1, 0, 1, ""},
+        {1, 0, 32ULL * 1024ULL * 1024ULL * 1024ULL, 1, ""},
+        {1, 0, 32ULL * 1024ULL * 1024ULL * 1024ULL - 1, 0, "RLIMIT_FSIZE=34359738367 bytes is below required=34359738368 bytes"},
+        {0, 0, 0, 0, "RLIMIT_FSIZE could not be read"},
+    };
+    uint64_t required_bytes;
+    size_t i;
+
+    required_bytes = 32ULL * 1024ULL * 1024ULL * 1024ULL;
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        char reason[128];
+
+        memset(reason, 0, sizeof(reason));
+        ck_assert_int_eq(
+            clamd_largefile_fsize_limit_check(
+                cases[i].query_succeeded,
+                cases[i].limit_is_infinite,
+                cases[i].limit_bytes,
+                required_bytes,
+                reason,
+                sizeof(reason)),
+            cases[i].accepted);
+        ck_assert_str_eq(reason, cases[i].reason);
+    }
+}
+END_TEST
+
+START_TEST(test_largefile_temporary_filesystem_policy)
+{
+    struct {
+        int query_succeeded;
+        uint64_t filesystem_magic;
+        int accepted;
+        const char *reason;
+    } cases[] = {
+        {1, 0x0000ef53ULL, 1, ""},
+        {1, 0x01021994ULL, 0, "temporary directory is hosted on tmpfs"},
+        {1, 0x858458f6ULL, 0, "temporary directory is hosted on ramfs"},
+        {0, 0, 0, "temporary-directory filesystem type could not be measured"},
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        char reason[128];
+
+        memset(reason, 0, sizeof(reason));
+        ck_assert_int_eq(
+            clamd_largefile_temporary_filesystem_check(
+                cases[i].query_succeeded,
+                cases[i].filesystem_magic,
+                reason,
+                sizeof(reason)),
+            cases[i].accepted);
+        ck_assert_str_eq(reason, cases[i].reason);
+    }
+}
+END_TEST
+
+START_TEST(test_largefile_worker_count_policy)
+{
+    struct {
+        int query_succeeded;
+        uint64_t max_threads;
+        int accepted;
+        const char *reason;
+    } cases[] = {
+        {1, 1, 1, ""},
+        {1, 0, 0, "MaxThreads=0 is outside the certified single-worker profile"},
+        {1, 2, 0, "MaxThreads=2 is outside the certified single-worker profile"},
+        {0, 0, 0, "MaxThreads could not be read"},
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        char reason[128];
+
+        memset(reason, 0, sizeof(reason));
+        ck_assert_int_eq(
+            clamd_largefile_worker_count_check(
+                cases[i].query_succeeded,
+                cases[i].max_threads,
+                reason,
+                sizeof(reason)),
+            cases[i].accepted);
+        ck_assert_str_eq(reason, cases[i].reason);
+    }
+}
+END_TEST
+
+#if defined(C_LINUX)
+static void write_cgroup_fixture_file(const char *path, const char *value)
+{
+    FILE *stream = fopen(path, "w");
+
+    ck_assert_ptr_nonnull(stream);
+    ck_assert_int_ne(fputs(value, stream), EOF);
+    ck_assert_int_eq(fclose(stream), 0);
+}
+
+START_TEST(test_largefile_cgroup_membership_and_ancestor_headroom)
+{
+    char root[] = "/tmp/clamav-cgroup-admission-XXXXXX";
+    char mount[128];
+    char parent[256];
+    char leaf[512];
+    char alternate[128];
+    char alternate_leaf[256];
+    char proc_cgroup[128];
+    char proc_mountinfo[128];
+    char path[1024];
+    char line[2048];
+    uint64_t headroom;
+    int bounded;
+
+    ck_assert_ptr_nonnull(mkdtemp(root));
+    ck_assert_int_lt(snprintf(mount, sizeof(mount), "%s/cgroup", root), (int)sizeof(mount));
+    ck_assert_int_lt(snprintf(parent, sizeof(parent), "%s/parent", mount), (int)sizeof(parent));
+    ck_assert_int_lt(snprintf(leaf, sizeof(leaf), "%s/leaf", parent), (int)sizeof(leaf));
+    ck_assert_int_lt(snprintf(proc_cgroup, sizeof(proc_cgroup), "%s/proc-cgroup", root), (int)sizeof(proc_cgroup));
+    ck_assert_int_lt(snprintf(proc_mountinfo, sizeof(proc_mountinfo), "%s/mountinfo", root), (int)sizeof(proc_mountinfo));
+    ck_assert_int_eq(mkdir(mount, 0700), 0);
+    ck_assert_int_eq(mkdir(parent, 0700), 0);
+    ck_assert_int_eq(mkdir(leaf, 0700), 0);
+
+#define WRITE_CGROUP_FIXTURE(directory, name, value)                         \
+    do {                                                                      \
+        ck_assert_int_lt(                                                     \
+            snprintf(path, sizeof(path), "%s/%s", directory, name),        \
+            (int)sizeof(path));                                               \
+        write_cgroup_fixture_file(path, value);                               \
+    } while (0)
+
+    WRITE_CGROUP_FIXTURE(mount, "memory.max", "max\n");
+    WRITE_CGROUP_FIXTURE(mount, "memory.current", "0\n");
+    WRITE_CGROUP_FIXTURE(parent, "memory.max", "1000\n");
+    WRITE_CGROUP_FIXTURE(parent, "memory.current", "100\n");
+    WRITE_CGROUP_FIXTURE(leaf, "memory.max", "800\n");
+    WRITE_CGROUP_FIXTURE(leaf, "memory.current", "50\n");
+    write_cgroup_fixture_file(proc_cgroup, "0::/parent/leaf\n");
+    ck_assert_int_lt(
+        snprintf(
+            line,
+            sizeof(line),
+            "29 23 0:26 / %s rw,nosuid,nodev - cgroup2 cgroup rw\n",
+            mount),
+        (int)sizeof(line));
+    write_cgroup_fixture_file(proc_mountinfo, line);
+
+    headroom = 0;
+    bounded  = 0;
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 750, "unexpected cgroup v2 headroom: %llu", (unsigned long long)headroom);
+
+    ck_assert_int_lt(snprintf(alternate, sizeof(alternate), "%s/alternate", root), (int)sizeof(alternate));
+    ck_assert_int_lt(snprintf(alternate_leaf, sizeof(alternate_leaf), "%s/leaf", alternate), (int)sizeof(alternate_leaf));
+    ck_assert_int_eq(mkdir(alternate, 0700), 0);
+    ck_assert_int_eq(mkdir(alternate_leaf, 0700), 0);
+    WRITE_CGROUP_FIXTURE(alternate, "memory.max", "1000\n");
+    WRITE_CGROUP_FIXTURE(alternate, "memory.current", "300\n");
+    WRITE_CGROUP_FIXTURE(alternate_leaf, "memory.max", "800\n");
+    WRITE_CGROUP_FIXTURE(alternate_leaf, "memory.current", "200\n");
+    WRITE_CGROUP_FIXTURE(mount, "memory.max", "500\n");
+    ck_assert_int_lt(
+        snprintf(
+            line,
+            sizeof(line),
+            "29 23 0:26 / %s rw,nosuid,nodev - cgroup2 cgroup rw\n"
+            "30 23 0:27 /parent %s rw,nosuid,nodev - cgroup2 cgroup rw\n",
+            mount,
+            alternate),
+        (int)sizeof(line));
+    write_cgroup_fixture_file(proc_mountinfo, line);
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 500, "multiple-mount cgroup hid a visible ancestor limit: %llu", (unsigned long long)headroom);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.max", alternate_leaf), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.current", alternate_leaf), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.max", alternate), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.current", alternate), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_eq(rmdir(alternate_leaf), 0);
+    ck_assert_int_eq(rmdir(alternate), 0);
+    WRITE_CGROUP_FIXTURE(mount, "memory.max", "max\n");
+    ck_assert_int_lt(
+        snprintf(
+            line,
+            sizeof(line),
+            "29 23 0:26 / %s rw,nosuid,nodev - cgroup2 cgroup rw\n",
+            mount),
+        (int)sizeof(line));
+    write_cgroup_fixture_file(proc_mountinfo, line);
+
+    WRITE_CGROUP_FIXTURE(leaf, "memory.max", "max\n");
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 900, "unexpected inherited cgroup v2 headroom: %llu", (unsigned long long)headroom);
+
+    WRITE_CGROUP_FIXTURE(leaf, "memory.max", "40\n");
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 0, "unexpected exhausted cgroup v2 headroom: %llu", (unsigned long long)headroom);
+
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.current", leaf), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        0);
+
+    WRITE_CGROUP_FIXTURE(mount, "memory.limit_in_bytes", "10000\n");
+    WRITE_CGROUP_FIXTURE(mount, "memory.usage_in_bytes", "0\n");
+    WRITE_CGROUP_FIXTURE(parent, "memory.limit_in_bytes", "1000\n");
+    WRITE_CGROUP_FIXTURE(parent, "memory.usage_in_bytes", "100\n");
+    WRITE_CGROUP_FIXTURE(leaf, "memory.limit_in_bytes", "800\n");
+    WRITE_CGROUP_FIXTURE(leaf, "memory.usage_in_bytes", "50\n");
+    write_cgroup_fixture_file(proc_cgroup, "5:cpu,memory:/parent/leaf\n");
+    ck_assert_int_lt(
+        snprintf(
+            line,
+            sizeof(line),
+            "29 23 0:26 / %s rw,nosuid,nodev - cgroup cgroup rw,memory\n",
+            mount),
+        (int)sizeof(line));
+    write_cgroup_fixture_file(proc_mountinfo, line);
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 750, "unexpected cgroup v1 headroom: %llu", (unsigned long long)headroom);
+
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.max", leaf), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.max", parent), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.current", parent), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.max", mount), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.current", mount), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    write_cgroup_fixture_file(proc_cgroup, "0::/parent/leaf\n5:cpu,memory:/parent/leaf\n");
+    ck_assert_int_lt(
+        snprintf(
+            line,
+            sizeof(line),
+            "29 23 0:26 / %s rw,nosuid,nodev - cgroup2 cgroup rw\n"
+            "30 23 0:27 / %s rw,nosuid,nodev - cgroup cgroup rw,memory\n",
+            mount,
+            mount),
+        (int)sizeof(line));
+    write_cgroup_fixture_file(proc_mountinfo, line);
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 750, "hybrid cgroup ignored v1 memory headroom: %llu", (unsigned long long)headroom);
+
+    ck_assert_int_lt(
+        snprintf(
+            line,
+            sizeof(line),
+            "29 23 0:26 /unrelated %s rw,nosuid,nodev - cgroup2 cgroup rw\n"
+            "30 23 0:27 / %s rw,nosuid,nodev - cgroup cgroup rw,memory\n",
+            mount,
+            mount),
+        (int)sizeof(line));
+    write_cgroup_fixture_file(proc_mountinfo, line);
+    ck_assert_int_eq(
+        clamd_largefile_cgroup_headroom_from_files(
+            proc_cgroup, proc_mountinfo, &headroom, &bounded),
+        1);
+    ck_assert_int_eq(bounded, 1);
+    ck_assert_msg(headroom == 750, "hybrid cgroup without matching v2 mount ignored v1 memory headroom: %llu", (unsigned long long)headroom);
+
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.limit_in_bytes", leaf), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.usage_in_bytes", leaf), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.limit_in_bytes", parent), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.usage_in_bytes", parent), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.limit_in_bytes", mount), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+    ck_assert_int_lt(snprintf(path, sizeof(path), "%s/memory.usage_in_bytes", mount), (int)sizeof(path));
+    ck_assert_int_eq(unlink(path), 0);
+
+    ck_assert_int_eq(unlink(proc_cgroup), 0);
+    ck_assert_int_eq(unlink(proc_mountinfo), 0);
+    ck_assert_int_eq(rmdir(leaf), 0);
+    ck_assert_int_eq(rmdir(parent), 0);
+    ck_assert_int_eq(rmdir(mount), 0);
+    ck_assert_int_eq(rmdir(root), 0);
+
+#undef WRITE_CGROUP_FIXTURE
+}
+END_TEST
+#endif
+
 START_TEST(test_largefile_admission_accepts_historical_defaults)
 {
     struct cl_engine *engine = cl_engine_new();
@@ -1732,6 +2058,12 @@ static Suite *test_clamd_suite(void)
     tcase_add_test(tc_parser, test_large_file_size_parser_ceiling);
     tcase_add_test(tc_parser, test_size_parser_rejects_negative_values);
     tcase_add_test(tc_parser, test_largefile_build_profile_requires_every_capability);
+    tcase_add_test(tc_parser, test_largefile_fsize_limit_policy);
+    tcase_add_test(tc_parser, test_largefile_temporary_filesystem_policy);
+    tcase_add_test(tc_parser, test_largefile_worker_count_policy);
+#if defined(C_LINUX)
+    tcase_add_test(tc_parser, test_largefile_cgroup_membership_and_ancestor_headroom);
+#endif
     tcase_add_test(tc_parser, test_largefile_admission_accepts_historical_defaults);
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_limits);
     tcase_add_test(tc_parser, test_largefile_admission_does_not_bypass_large_pcre_subject);

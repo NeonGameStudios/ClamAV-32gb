@@ -733,13 +733,14 @@ Example
 #PCRERecMatchLimit 10000
 
 # This option sets the maximum filesize for which PCRE subsigs will be
-# executed. PCRE requires a contiguous subject, so this build always applies
-# its 1 GiB single-allocation ceiling as an additional upper bound.
+# executed. PCRE requires one contiguous subject. On qualifying 64-bit builds
+# with anonymous-map fmap support, the effective ceiling is 32 GiB; builds
+# without that capability retain a 1 GiB single-allocation ceiling.
+# Values of zero or above the platform ceiling select that ceiling; they do not
+# permit an unbounded whole-file mapping. A required PCRE pass above the
+# effective limit makes the scan incomplete and returns non-clean.
 # Negative values are not allowed.
-# Values of zero or above 1 GiB select the 1 GiB ceiling; they do not permit an
-# unbounded whole-file mapping. If a required PCRE pass exceeds the effective
-# limit, the scan returns a non-clean incomplete result.
-# Default: 100M
+# Default: 32G when large-file defaults are enabled; otherwise 100M.
 #PCREMaxFileSize 400M
 
 # Files exceeding a top-level MaxFileSize return a non-clean size error even
