@@ -102,6 +102,28 @@ int main(int argc, char **argv)
             return 2;
         return 2;
     }
+    if (strstr(input, "fault-duplicate-filter") != NULL ||
+        strstr(input, "fault-scalar-filter") != NULL ||
+        strstr(input, "fault-missing-filter") != NULL ||
+        strstr(input, "fault-missing-cfm") != NULL ||
+        strstr(input, "fault-duplicate-cfm") != NULL ||
+        strstr(input, "fault-scalar-cfm") != NULL) {
+        FILE *json;
+        puts("check_user_password: encrypted PDF found, user password is empty, will attempt to decrypt");
+        puts("PDF object-stream parsing did not complete");
+        json = fopen(report, "wb");
+        if (json == NULL)
+            return 2;
+        fprintf(json,
+                "{\"version\":1,\"status\":30,\"verdict\":0,"
+                "\"completion\":\"UNSUPPORTED\",\"target\":\"%s\","
+                "\"reason\":\"PDF encrypted stream uses unsupported encryption or has no usable key\","
+                "\"skipped_operations\":1}\n",
+                input);
+        if (fclose(json) != 0)
+            return 2;
+        return 2;
+    }
     if (strstr(input, "fault-truncated-ciphertext") != NULL ||
         strstr(input, "fault-bad-padding") != NULL) {
         const char *reason = strstr(input, "fault-truncated-ciphertext") != NULL
@@ -163,7 +185,7 @@ gcc -O2 -o "$stub" "$stub.c"
     > "$work/qualification.log" 2>&1
 
 [ "$(awk -F '\t' 'NR > 1 && $11 == "pass" { count++ } END { print count + 0 }' \
-    "$work/evidence/results.tsv")" -eq 20 ]
+    "$work/evidence/results.tsv")" -eq 26 ]
 awk -F '\t' 'NR > 1 && $1 == "materialized" { found = 1; if ($11 < $9) exit 1 } END { exit !found }' \
     "$work/evidence/corpus-manifest.tsv"
 grep -F 'PDF object-stream qualification passed' "$work/qualification.log" >/dev/null

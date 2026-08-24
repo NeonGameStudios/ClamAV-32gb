@@ -614,7 +614,21 @@ def build_fixture(
         raise ValueError(f"unsupported encryption: {encryption}")
     if malformed and encryption != "none":
         raise ValueError("--malformed is not supported with encryption")
-    if fault not in ("none", "bad-cfm", "truncated-ciphertext", "bad-padding"):
+    crypt_filter_faults = (
+        "bad-cfm",
+        "duplicate-filter",
+        "scalar-filter",
+        "missing-filter",
+        "missing-cfm",
+        "duplicate-cfm",
+        "scalar-cfm",
+    )
+    if fault not in (
+        "none",
+        *crypt_filter_faults,
+        "truncated-ciphertext",
+        "bad-padding",
+    ):
         raise ValueError(f"unsupported fault: {fault}")
     if fault != "none" and (encryption != "aesv2-r4" or malformed):
         raise ValueError("encryption faults require a valid AESV2-R4 fixture")
@@ -797,15 +811,43 @@ def build_fixture(
                     )
                 elif security["cipher"] == "aesv2":
                     crypt_method = b"AESV2" if fault != "bad-cfm" else b"Bogus"
+                    crypt_filter = (
+                        b"/StdCF << /Type /CryptFilter /CFM /"
+                        + crypt_method
+                        + b" /AuthEvent /DocOpen /Length 16 >>"
+                    )
+                    if fault == "duplicate-filter":
+                        crypt_filter += b" " + crypt_filter
+                    elif fault == "scalar-filter":
+                        crypt_filter = b"/StdCF /AESV2"
+                    elif fault == "missing-filter":
+                        crypt_filter = (
+                            b"/Other << /Type /CryptFilter /CFM /AESV2 "
+                            b"/AuthEvent /DocOpen /Length 16 >>"
+                        )
+                    elif fault == "missing-cfm":
+                        crypt_filter = (
+                            b"/StdCF << /Type /CryptFilter "
+                            b"/AuthEvent /DocOpen /Length 16 >>"
+                        )
+                    elif fault == "duplicate-cfm":
+                        crypt_filter = (
+                            b"/StdCF << /Type /CryptFilter /CFM /AESV2 "
+                            b"/CFM /AESV2 /AuthEvent /DocOpen /Length 16 >>"
+                        )
+                    elif fault == "scalar-cfm":
+                        crypt_filter = (
+                            b"/StdCF << /Type /CryptFilter /CFM 42 "
+                            b"/AuthEvent /DocOpen /Length 16 >>"
+                        )
                     encryption_dictionary = (
                         b"<< /Filter /Standard /V 4 /R 4 /Length 128 "
                         + f"/O <{security['owner'].hex().upper()}> ".encode("ascii")
                         + f"/U <{security['user'].hex().upper()}> ".encode("ascii")
                         + f"/P {security['permissions']} /EncryptMetadata true ".encode("ascii")
-                        + b"/CF << /StdCF << /Type /CryptFilter /CFM /"
-                        + crypt_method
-                        + b" "
-                        + b"/AuthEvent /DocOpen /Length 16 >> >> "
+                        + b"/CF << "
+                        + crypt_filter
+                        + b" >> "
                         + b"/StmF /StdCF /StrF /StdCF /EFF /StdCF >>"
                     )
                 else:
@@ -913,7 +955,18 @@ def main():
     parser.add_argument("--malformed", action="store_true")
     parser.add_argument(
         "--fault",
-        choices=("none", "bad-cfm", "truncated-ciphertext", "bad-padding"),
+        choices=(
+            "none",
+            "bad-cfm",
+            "duplicate-filter",
+            "scalar-filter",
+            "missing-filter",
+            "missing-cfm",
+            "duplicate-cfm",
+            "scalar-cfm",
+            "truncated-ciphertext",
+            "bad-padding",
+        ),
         default="none",
     )
     parser.add_argument(

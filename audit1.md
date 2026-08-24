@@ -7287,3 +7287,24 @@ parsing 3/3, and explicit Identity ordering 1/1. Complete stream/encryption-
 dictionary corpus mutations, allocation/read fault injection, production
 scanner execution, materialized multi-gigabyte encrypted streams, and Sonic1
 evidence remain release gates.
+
+## PDF Standard encryption-dictionary corpus mutations — 2026-08-24
+
+The deterministic production-scanner object-stream gate now contains six
+additional Standard R4 AESV2 fixtures that mutate the complete encryption
+dictionary: duplicate, scalar, and missing selected crypt-filter entries plus
+missing, duplicate, and scalar `/CFM` values. The prior unknown `/CFM`, invalid
+ciphertext length, and invalid-padding fixtures remain. Every structural case
+has an exact unsupported oracle that forbids crypt-method selection, decryption,
+clean output, plaintext marker exposure, parsed child objects, and temporary
+residue.
+
+Evidence schema 7 binds exactly 26 fixtures and their metadata, scanner logs,
+structured reports, resource observations, database/runtime provenance, and
+source hashes. The deterministic generator passes 37 tests, and shell syntax,
+Python syntax, whitespace, capability-manifest, and source-guard checks pass
+locally. The Linux x86-64 orchestrator and current production scanner run
+remain pending: Sonic1 accepted the configured MCP-SSH profile but its SSH
+service refused or timed out before any remote command started. Materialized
+multi-gigabyte encrypted streams and allocation/read/write/cleanup injection
+also remain release gates.

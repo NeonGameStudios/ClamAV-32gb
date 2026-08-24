@@ -251,6 +251,12 @@ generate_fixture password-rc4 --filter raw --encryption rc4-r2-password || failu
 generate_fixture password-aesv2 --filter raw --encryption aesv2-r4-password || failures=$((failures + 1))
 generate_fixture password-aesv3 --filter raw --encryption aesv3-r5-password || failures=$((failures + 1))
 generate_fixture fault-bad-cfm --filter raw --encryption aesv2-r4 --fault bad-cfm || failures=$((failures + 1))
+generate_fixture fault-duplicate-filter --filter raw --encryption aesv2-r4 --fault duplicate-filter || failures=$((failures + 1))
+generate_fixture fault-scalar-filter --filter raw --encryption aesv2-r4 --fault scalar-filter || failures=$((failures + 1))
+generate_fixture fault-missing-filter --filter raw --encryption aesv2-r4 --fault missing-filter || failures=$((failures + 1))
+generate_fixture fault-missing-cfm --filter raw --encryption aesv2-r4 --fault missing-cfm || failures=$((failures + 1))
+generate_fixture fault-duplicate-cfm --filter raw --encryption aesv2-r4 --fault duplicate-cfm || failures=$((failures + 1))
+generate_fixture fault-scalar-cfm --filter raw --encryption aesv2-r4 --fault scalar-cfm || failures=$((failures + 1))
 generate_fixture fault-truncated-ciphertext --filter raw --encryption aesv2-r4 --fault truncated-ciphertext || failures=$((failures + 1))
 generate_fixture fault-bad-padding --filter raw --encryption aesv2-r4 --fault bad-padding || failures=$((failures + 1))
 
@@ -410,6 +416,13 @@ run_fixture()
                 result=fail
             fi
             ;;
+        aesv2-unsupported-structural)
+            if ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
+                grep -F 'parse_enc_method: StdCF CFM:' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
+                result=fail
+            fi
+            ;;
         aesv2-malformed)
             if ! grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
                 ! grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
@@ -444,6 +457,12 @@ if [ "$failures" -eq 0 ]; then
     run_fixture password-aesv2 1 aesv2-r4-password password || failures=$((failures + 1))
     run_fixture password-aesv3 1 aesv3-r5-password password || failures=$((failures + 1))
     run_fixture fault-bad-cfm 1 aesv2-unsupported unsupported || failures=$((failures + 1))
+    run_fixture fault-duplicate-filter 1 aesv2-unsupported-structural unsupported || failures=$((failures + 1))
+    run_fixture fault-scalar-filter 1 aesv2-unsupported-structural unsupported || failures=$((failures + 1))
+    run_fixture fault-missing-filter 1 aesv2-unsupported-structural unsupported || failures=$((failures + 1))
+    run_fixture fault-missing-cfm 1 aesv2-unsupported-structural unsupported || failures=$((failures + 1))
+    run_fixture fault-duplicate-cfm 1 aesv2-unsupported-structural unsupported || failures=$((failures + 1))
+    run_fixture fault-scalar-cfm 1 aesv2-unsupported-structural unsupported || failures=$((failures + 1))
     run_fixture fault-truncated-ciphertext 1 aesv2-malformed malformed || failures=$((failures + 1))
     run_fixture fault-bad-padding 1 aesv2-malformed malformed || failures=$((failures + 1))
 fi
@@ -459,7 +478,7 @@ qualification_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_qualification
 evidence_checker_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_evidence_check.py" | awk '{ print $1 }')
 generator_test_sha256=$(sha256sum "$out/generator-test.log" | awk '{ print $1 }')
 cat > "$out/evidence-metadata.txt" <<EOF
-schema_version=6
+schema_version=7
 source_revision_type=$source_revision_type
 source_commit=$source_commit
 source_tree=$source_tree

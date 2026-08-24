@@ -2371,3 +2371,17 @@ and Sonic1 qualification as release gates.
 - Add complete stream-dictionary corpus mutations, allocation/read fault
   injection, production scanner execution, materialized multi-gigabyte
   encrypted streams, and Sonic1 evidence before parser-family qualification.
+
+## PDF Standard encryption-dictionary corpus mutations — 2026-08-24
+
+- The deterministic object-stream corpus now adds six complete Standard R4
+  AESV2 PDFs with duplicate, scalar, or missing `/StdCF` entries and missing,
+  duplicate, or scalar `/CFM` values. Together with the existing unknown-method
+  case, each requires explicit `UNSUPPORTED`, no decryptor selection, no clean
+  or plaintext-marker result, no parsed object child, and no temporary residue.
+- Evidence schema 7 binds exactly 26 fixture, log, report, resource, and
+  provenance records. Generator tests pass 37 cases; shell syntax, Python
+  syntax, and whitespace checks pass locally.
+- Run the exact Linux x86-64 orchestrator and current production scanner on
+  Sonic1 when SSH service is reachable. Allocation/read/write/cleanup fault
+  injection and materialized multi-gigabyte encrypted streams remain open.

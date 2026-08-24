@@ -94,6 +94,22 @@ def verify_pdf(path, metadata, expected):
                 if metadata["fault"] == "bad-cfm":
                     assert b"/CFM /Bogus" in data
                     assert b"/CFM /AESV2" not in data
+                elif metadata["fault"] == "duplicate-filter":
+                    assert data.count(b"/StdCF <<") == 2
+                    assert data.count(b"/CFM /AESV2") == 2
+                elif metadata["fault"] == "scalar-filter":
+                    assert b"/CF << /StdCF /AESV2 >>" in data
+                elif metadata["fault"] == "missing-filter":
+                    assert b"/CF << /Other <<" in data
+                    assert b"/CF << /StdCF" not in data
+                elif metadata["fault"] == "missing-cfm":
+                    assert b"/CF << /StdCF << /Type /CryptFilter /AuthEvent" in data
+                    assert b"/CFM" not in data
+                elif metadata["fault"] == "duplicate-cfm":
+                    assert data.count(b"/CFM /AESV2") == 2
+                elif metadata["fault"] == "scalar-cfm":
+                    assert b"/CFM 42" in data
+                    assert b"/CFM /AESV2" not in data
                 else:
                     assert b"/CFM /AESV2" in data
             else:
@@ -200,7 +216,17 @@ def main():
             assert fixture.MARKER not in read_stream(path, metadata)
             cases += 1
 
-        for fault in ("bad-cfm", "truncated-ciphertext", "bad-padding"):
+        for fault in (
+            "bad-cfm",
+            "duplicate-filter",
+            "scalar-filter",
+            "missing-filter",
+            "missing-cfm",
+            "duplicate-cfm",
+            "scalar-cfm",
+            "truncated-ciphertext",
+            "bad-padding",
+        ):
             path = os.path.join(directory, f"fault-{fault}.pdf")
             layout = fixture.object_stream_layout("javascript", None, False)
             expected = b"".join(fixture.decoded_chunks(layout))

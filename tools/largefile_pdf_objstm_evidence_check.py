@@ -30,11 +30,23 @@ CASES = {
     "password-aesv2": ("raw", "aesv2-r4-password", False, "password"),
     "password-aesv3": ("raw", "aesv3-r5-password", False, "password"),
     "fault-bad-cfm": ("raw", "aesv2-r4", False, "unsupported"),
+    "fault-duplicate-filter": ("raw", "aesv2-r4", False, "unsupported"),
+    "fault-scalar-filter": ("raw", "aesv2-r4", False, "unsupported"),
+    "fault-missing-filter": ("raw", "aesv2-r4", False, "unsupported"),
+    "fault-missing-cfm": ("raw", "aesv2-r4", False, "unsupported"),
+    "fault-duplicate-cfm": ("raw", "aesv2-r4", False, "unsupported"),
+    "fault-scalar-cfm": ("raw", "aesv2-r4", False, "unsupported"),
     "fault-truncated-ciphertext": ("raw", "aesv2-r4", False, "malformed"),
     "fault-bad-padding": ("raw", "aesv2-r4", False, "malformed"),
 }
 FAULTS = {
     "fault-bad-cfm": "bad-cfm",
+    "fault-duplicate-filter": "duplicate-filter",
+    "fault-scalar-filter": "scalar-filter",
+    "fault-missing-filter": "missing-filter",
+    "fault-missing-cfm": "missing-cfm",
+    "fault-duplicate-cfm": "duplicate-cfm",
+    "fault-scalar-cfm": "scalar-cfm",
     "fault-truncated-ciphertext": "truncated-ciphertext",
     "fault-bad-padding": "bad-padding",
 }
@@ -123,9 +135,9 @@ def main():
         "corpus_manifest_sha256", "results_sha256", "qualification_status",
     }
     if set(metadata) != expected_keys:
-        fail("metadata keys do not match schema version 6")
-    if metadata["schema_version"] != "6" or metadata["qualification_status"] != "pass":
-        fail("metadata does not declare a schema-6 pass")
+        fail("metadata keys do not match schema version 7")
+    if metadata["schema_version"] != "7" or metadata["qualification_status"] != "pass":
+        fail("metadata does not declare a schema-7 pass")
     if metadata["source_revision_type"] not in ("git-commit", "content-manifest"):
         fail("source revision type is invalid")
     if metadata["source_tree_status"] != "clean" and not args.allow_dirty_source:
@@ -333,9 +345,10 @@ def main():
         elif outcome == "unsupported":
             required += (
                 "encrypted PDF found, user password is empty, will attempt to decrypt",
-                "parse_enc_method: StdCF CFM: Bogus",
                 "PDF object-stream parsing did not complete",
             )
+            if row["case"] == "fault-bad-cfm":
+                required += ("parse_enc_method: StdCF CFM: Bogus",)
         elif outcome == "malformed":
             required += (
                 "encrypted PDF found, user password is empty, will attempt to decrypt",
@@ -348,6 +361,12 @@ def main():
                 required += ("PDF AES stream has invalid PKCS#7 padding",)
         if any(value not in text for value in required):
             fail(f"{row['case']} log is missing a required parser oracle")
+        if (
+            outcome == "unsupported"
+            and row["case"] != "fault-bad-cfm"
+            and "parse_enc_method: StdCF CFM:" in text
+        ):
+            fail(f"{row['case']} unexpectedly selected a malformed crypt method")
         incomplete = "PDF object-stream parsing did not complete" in text
         if incomplete != (malformed or outcome != "detection"):
             fail(f"{row['case']} malformed-status oracle is incorrect")
