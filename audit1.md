@@ -7045,10 +7045,11 @@ raw, Flate, ASCIIHex-to-Flate, malformed indexing after one valid object, and
 an exact-size opaque object stream written without sparse seeks. It now also
 emits complete empty-password Standard R2 RC4, Standard R4 AESV2, and
 compatibility-only deprecated Standard R5 AESV3 documents for raw, Flate, and
-ASCIIHex-to-Flate object streams, including deterministic
+ASCIIHex-to-Flate object streams, plus nonempty-password raw variants for all
+three handlers, including deterministic
 owner/user entries, permissions, file ID, object keys, AES IVs, encrypted
 content, an unencrypted XRef stream, and a Standard crypt-filter dictionary.
-Its twenty-five-case self-test verifies independent RC4 and NIST AES-128/256
+Its twenty-eight-case self-test verifies independent RC4 and NIST AES-128/256
 vectors,
 AES encryption/decryption and padding, deterministic hashes, filter reversal,
 xref coordinates, security metadata, compressed-object ownership, invalid-
@@ -7062,14 +7063,18 @@ database and performs no build configuration. It binds size/hash/allocation,
 requires marker detection and real object-stream parser diagnostics, requires
 file-backed attach and cleanup diagnostics, distinguishes expected malformed
 status, rejects temporary residue, and records RSS, page faults, and file I/O
-for 64 MiB–4 GiB decoded children. The twenty-five generator tests pass. Poppler
+for 64 MiB–4 GiB decoded children. The twenty-eight generator tests pass. Poppler
 independently accepts the RC4, AESV2, and AESV3 raw, Flate, and filter-chain
 forms as
 one-page encrypted PDF 1.7 documents with the compressed JavaScript page
-object. A Linux x86-64 orchestrator self-test passes fourteen cases, including
+object. Poppler also rejects each password case without credentials and parses
+it completely with the deterministic password. A Linux x86-64 orchestrator
+self-test passes seventeen cases, including
 allocation proof for a 64 MiB decoded child and exact Standard R2/RC4 and
 Standard R4/AESV2 plus Standard R5/AESV3 key-discovery and bounded-decrypt
-diagnostics; its scanner and
+diagnostics. Password cases require status 2, structured `UNSUPPORTED`, a
+non-clean status, a skipped operation, no `OK`, no bounded decrypt, and no
+plaintext marker; its scanner and
 GNU-time outputs are deliberate stubs, so this validates the gate rather than
 ClamAV. Sonic1 remains unavailable at TCP connect
 (20-second timeout), so no production or sanitizer scanner result is claimed.
@@ -7122,7 +7127,9 @@ only pre-existing isolated-build warnings remain.
 This closes the implementation gap, not release qualification. Deterministic
 empty-password Standard R2 RC4, Standard R4 AESV2, and deprecated Standard R5
 AESV3 PDF 1.7 corpus generation and evidence oracles now cover raw and supported
-filtered object streams; nonempty credentials, materialized multi-gigabyte
+filtered object streams. Deterministic nonempty credentials for all three
+handlers prove explicit unsupported/no-clean/no-plaintext behavior;
+materialized multi-gigabyte
 encrypted streams, production and sanitizer clamscan runs, Sonic1 evidence,
 per-filter DecodeParms arrays, unsupported/mixed filters, and the non-mmap
 object-stream policy remain open. Non-first explicit Crypt is intentionally

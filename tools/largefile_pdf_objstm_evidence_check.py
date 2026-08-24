@@ -4,6 +4,7 @@
 import argparse
 import csv
 import hashlib
+import json
 import os
 import pathlib
 import re
@@ -11,20 +12,23 @@ import subprocess
 
 
 CASES = {
-    "raw": ("raw", "none", False),
-    "flate": ("flate", "none", False),
-    "filter-chain": ("asciihex-flate", "none", False),
-    "malformed": ("flate", "none", True),
-    "materialized": ("raw", "none", False),
-    "rc4-raw": ("raw", "rc4-r2", False),
-    "rc4-flate": ("flate", "rc4-r2", False),
-    "rc4-filter-chain": ("asciihex-flate", "rc4-r2", False),
-    "aesv2-raw": ("raw", "aesv2-r4", False),
-    "aesv2-flate": ("flate", "aesv2-r4", False),
-    "aesv2-filter-chain": ("asciihex-flate", "aesv2-r4", False),
-    "aesv3-raw": ("raw", "aesv3-r5", False),
-    "aesv3-flate": ("flate", "aesv3-r5", False),
-    "aesv3-filter-chain": ("asciihex-flate", "aesv3-r5", False),
+    "raw": ("raw", "none", False, "detection"),
+    "flate": ("flate", "none", False, "detection"),
+    "filter-chain": ("asciihex-flate", "none", False, "detection"),
+    "malformed": ("flate", "none", True, "detection"),
+    "materialized": ("raw", "none", False, "detection"),
+    "rc4-raw": ("raw", "rc4-r2", False, "detection"),
+    "rc4-flate": ("flate", "rc4-r2", False, "detection"),
+    "rc4-filter-chain": ("asciihex-flate", "rc4-r2", False, "detection"),
+    "aesv2-raw": ("raw", "aesv2-r4", False, "detection"),
+    "aesv2-flate": ("flate", "aesv2-r4", False, "detection"),
+    "aesv2-filter-chain": ("asciihex-flate", "aesv2-r4", False, "detection"),
+    "aesv3-raw": ("raw", "aesv3-r5", False, "detection"),
+    "aesv3-flate": ("flate", "aesv3-r5", False, "detection"),
+    "aesv3-filter-chain": ("asciihex-flate", "aesv3-r5", False, "detection"),
+    "password-rc4": ("raw", "rc4-r2-password", False, "password"),
+    "password-aesv2": ("raw", "aesv2-r4-password", False, "password"),
+    "password-aesv3": ("raw", "aesv3-r5-password", False, "password"),
 }
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SOURCE_ID = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
@@ -111,9 +115,9 @@ def main():
         "corpus_manifest_sha256", "results_sha256", "qualification_status",
     }
     if set(metadata) != expected_keys:
-        fail("metadata keys do not match schema version 4")
-    if metadata["schema_version"] != "4" or metadata["qualification_status"] != "pass":
-        fail("metadata does not declare a schema-4 pass")
+        fail("metadata keys do not match schema version 5")
+    if metadata["schema_version"] != "5" or metadata["qualification_status"] != "pass":
+        fail("metadata does not declare a schema-5 pass")
     if metadata["source_revision_type"] not in ("git-commit", "content-manifest"):
         fail("source revision type is invalid")
     if metadata["source_tree_status"] != "clean" and not args.allow_dirty_source:
@@ -211,15 +215,20 @@ def main():
 
     corpus_rows = read_tsv(
         evidence / "corpus-manifest.tsv",
-        ["case", "path", "filter", "encryption", "decoded_size", "encoded_size", "file_size", "sha256",
+        ["case", "path", "filter", "encryption", "credential", "decoded_size", "encoded_size", "file_size", "sha256",
          "allocated_bytes", "metadata_sha256"],
     )
     if {row["case"] for row in corpus_rows} != set(CASES) or len(corpus_rows) != len(CASES):
         fail("corpus manifest does not contain exactly the required cases")
     for row in corpus_rows:
-        expected_filter, expected_encryption, _ = CASES[row["case"]]
-        if row["filter"] != expected_filter or row["encryption"] != expected_encryption:
-            fail(f"{row['case']} has the wrong filter or encryption oracle")
+        expected_filter, expected_encryption, _, outcome = CASES[row["case"]]
+        expected_credential = "nonempty" if outcome == "password" else "empty"
+        if (
+            row["filter"] != expected_filter
+            or row["encryption"] != expected_encryption
+            or row["credential"] != expected_credential
+        ):
+            fail(f"{row['case']} has the wrong filter, encryption, or credential oracle")
         path = safe_evidence_path(evidence, row["path"])
         size = integer(row["file_size"], f"{row['case']} file size", 1)
         allocated = integer(row["allocated_bytes"], f"{row['case']} allocation")
@@ -244,6 +253,8 @@ def main():
             metadata_values[key] = value
         if metadata_values.get("encryption") != expected_encryption:
             fail(f"{row['case']} generator metadata has the wrong encryption oracle")
+        if metadata_values.get("credential") != expected_credential:
+            fail(f"{row['case']} generator metadata has the wrong credential oracle")
         encrypted_metadata = (
             re.fullmatch(r"[0-9a-f]{32}", metadata_values.get("file_id", ""))
             is not None
@@ -253,16 +264,16 @@ def main():
         if encrypted_metadata != (expected_encryption != "none"):
             fail(f"{row['case']} generator security metadata oracle is incorrect")
         object_stream_iv = metadata_values.get("object_stream_iv")
-        if expected_encryption in ("aesv2-r4", "aesv3-r5"):
+        if expected_encryption.startswith(("aesv2-r4", "aesv3-r5")):
             if re.fullmatch(r"[0-9a-f]{32}", object_stream_iv or "") is None:
                 fail(f"{row['case']} AES IV oracle is missing")
-        elif expected_encryption == "rc4-r2":
+        elif expected_encryption.startswith("rc4-r2"):
             if object_stream_iv != "none":
                 fail(f"{row['case']} RC4 IV oracle is incorrect")
         elif object_stream_iv is not None:
             fail(f"{row['case']} unencrypted metadata unexpectedly contains an IV")
         perms_sha256 = metadata_values.get("perms_sha256")
-        if expected_encryption == "aesv3-r5":
+        if expected_encryption.startswith("aesv3-r5"):
             if not SHA256.fullmatch(perms_sha256 or ""):
                 fail(f"{row['case']} AESV3 permissions oracle is missing")
         elif perms_sha256 is not None:
@@ -273,14 +284,15 @@ def main():
     result_rows = read_tsv(
         evidence / "results.tsv",
         ["case", "status", "rss_kb", "temporary_peak_bytes", "minor_faults", "major_faults",
-         "fs_inputs", "fs_outputs", "log_sha256", "result"],
+         "fs_inputs", "fs_outputs", "log_sha256", "report_sha256", "result"],
     )
     if {row["case"] for row in result_rows} != set(CASES) or len(result_rows) != len(CASES):
         fail("results do not contain exactly the required cases")
     for row in result_rows:
-        _, encryption, malformed = CASES[row["case"]]
-        if row["status"] != "1" or row["result"] != "pass":
-            fail(f"{row['case']} does not have the exact detection/pass result")
+        _, encryption, malformed, outcome = CASES[row["case"]]
+        expected_status = "1" if outcome == "detection" else "2"
+        if row["status"] != expected_status or row["result"] != "pass":
+            fail(f"{row['case']} does not have the exact status/pass result")
         if integer(row["rss_kb"], f"{row['case']} RSS", 1) > rss_budget:
             fail(f"{row['case']} exceeds the RSS budget")
         if integer(row["temporary_peak_bytes"], f"{row['case']} temporary peak") > temp_budget:
@@ -291,16 +303,25 @@ def main():
         if not log.is_file() or not SHA256.fullmatch(row["log_sha256"]) or digest(log) != row["log_sha256"]:
             fail(f"{row['case']} log differs from its recorded digest")
         text = log.read_text(encoding="utf-8", errors="replace")
-        required = (
-            "LargeFile.PDF.ObjStm.Tail", "FOUND", "pdf_extract_obj: Found /Type/ObjStm",
-            "pdf_objstm_attach_file: retained ", "quota-accounted file-backed object stream",
-            "pdf_find_and_parse_objs_in_objstm: Found object 5 0",
-            "pdf_objstm_cleanup: releasing ",
-        )
+        required = ("pdf_extract_obj: Found /Type/ObjStm",)
+        if outcome == "detection":
+            required += (
+                "LargeFile.PDF.ObjStm.Tail", "FOUND",
+                "pdf_objstm_attach_file: retained ",
+                "quota-accounted file-backed object stream",
+                "pdf_find_and_parse_objs_in_objstm: Found object 5 0",
+                "pdf_objstm_cleanup: releasing ",
+            )
+        else:
+            required += (
+                "encrypted PDF found, user password is NOT empty, cannot decrypt!",
+                "pdf_find_and_extract_objs: encrypted pdf found, not decryptable",
+                "PDF object-stream parsing did not complete",
+            )
         if any(value not in text for value in required):
             fail(f"{row['case']} log is missing a required parser oracle")
         incomplete = "PDF object-stream parsing did not complete" in text
-        if incomplete != malformed:
+        if incomplete != (malformed or outcome == "password"):
             fail(f"{row['case']} malformed-status oracle is incorrect")
         has_bounded_rc4 = (
             "pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows" in text
@@ -319,6 +340,9 @@ def main():
             "rc4-r2": (True, False, False, True),
             "aesv2-r4": (False, True, False, True),
             "aesv3-r5": (False, False, True, True),
+            "rc4-r2-password": (False, False, False, False),
+            "aesv2-r4-password": (False, False, False, False),
+            "aesv3-r5-password": (False, False, False, False),
         }[encryption]
         if (
             has_bounded_rc4,
@@ -327,6 +351,64 @@ def main():
             has_empty_password,
         ) != expected_diagnostics:
             fail(f"{row['case']} encrypted-stream diagnostic oracle is incorrect")
+        if outcome == "password":
+            forbidden = (
+                "LargeFile.PDF.ObjStm.Tail", " FOUND", ": OK",
+                "pdf_objstm_attach_file: retained ",
+                "pdf_find_and_parse_objs_in_objstm: Found object 5 0",
+            )
+            if any(value in text for value in forbidden):
+                fail(f"{row['case']} password-protected scan exposed a clean or plaintext result")
+
+        report_path = evidence / "reports" / f"{row['case']}.jsonl"
+        if (
+            not report_path.is_file()
+            or not SHA256.fullmatch(row["report_sha256"])
+            or digest(report_path) != row["report_sha256"]
+        ):
+            fail(f"{row['case']} structured report differs from its recorded digest")
+        report_lines = report_path.read_text(encoding="utf-8").splitlines()
+        if len(report_lines) != 1:
+            fail(f"{row['case']} structured report is not exactly one JSON object")
+        duplicate = False
+
+        def reject_duplicate_pairs(pairs):
+            nonlocal duplicate
+            value = {}
+            for key, item in pairs:
+                if key in value:
+                    duplicate = True
+                value[key] = item
+            return value
+
+        try:
+            report = json.loads(report_lines[0], object_pairs_hook=reject_duplicate_pairs)
+        except (TypeError, ValueError):
+            fail(f"{row['case']} structured report is not valid JSON")
+        if duplicate or not isinstance(report, dict) or report.get("version") != 1:
+            fail(f"{row['case']} structured report has an invalid schema")
+        if report.get("target") != str(safe_evidence_path(evidence, f"corpus/{row['case']}.pdf")):
+            fail(f"{row['case']} structured report target is incorrect")
+        if outcome == "detection":
+            if (
+                report.get("status") != 0
+                or report.get("verdict") not in (2, 3)
+                or report.get("completion") != "DETECTION_TERMINATED"
+            ):
+                fail(f"{row['case']} structured detection outcome is incorrect")
+        else:
+            reason = report.get("reason")
+            if (
+                not isinstance(report.get("status"), int)
+                or report["status"] in (0, 1)
+                or report.get("verdict") != 0
+                or report.get("completion") != "UNSUPPORTED"
+                or not isinstance(reason, str)
+                or not reason
+                or not isinstance(report.get("skipped_operations"), int)
+                or report["skipped_operations"] < 1
+            ):
+                fail(f"{row['case']} structured password outcome is not fail-closed")
         tempdir = evidence / "tmp" / row["case"]
         if not tempdir.is_dir() or any(tempdir.iterdir()):
             fail(f"{row['case']} retained temporary residue")
@@ -338,6 +420,8 @@ def main():
         fail("corpus directory contains unbound artifacts")
     if {path.name for path in (evidence / "logs").iterdir()} != {f"{case}.log" for case in CASES}:
         fail("log directory contains unbound artifacts")
+    if {path.name for path in (evidence / "reports").iterdir()} != {f"{case}.jsonl" for case in CASES}:
+        fail("structured report directory contains unbound artifacts")
     if {path.name for path in (evidence / "database").iterdir()} != {"pdf-objstm.ndb"}:
         fail("custom database directory contains unbound artifacts")
     if {path.name for path in (evidence / "tmp").iterdir()} != set(CASES):

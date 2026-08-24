@@ -2251,8 +2251,9 @@ and Sonic1 qualification as release gates.
   and page-range release. Bounded Identity, RC4, AESV2, and AESV3 object streams
   are now implemented, and deterministic empty-password Standard R2 RC4,
   Standard R4 AESV2, and deprecated compatibility-only Standard R5 AESV3 cases
-  cover raw and supported filters. Extend the evidence gate to nonempty
-  passwords, materialized multi-gigabyte encrypted children,
+  cover raw and supported filters. Nonempty-password variants for every handler
+  now prove structured unsupported/no-clean/no-plaintext behavior. Extend the
+  evidence gate to materialized multi-gigabyte encrypted children,
   malformed ciphertext/padding, quota/read/cleanup faults, and
   release/sanitizer scanners on Sonic1. Define an explicit non-mmap release
   policy before removing the capability exception.
@@ -2262,8 +2263,9 @@ and Sonic1 qualification as release gates.
 - Empty-password Standard R2 RC4, Standard R4 AESV2, and deprecated Standard R5
   AESV3 now have deterministic complete raw, Flate, and ASCIIHex-to-Flate PDFs
   plus evidence-gate oracles for key discovery and their bounded decrypt paths.
-  Extend this to nonempty credentials, malformed encryption dictionaries/
-  ciphertext/padding,
+  Deterministic nonempty credentials now require explicit structured
+  unsupported status and forbid clean or plaintext-marker results. Extend this
+  to malformed encryption dictionaries/ciphertext/padding,
   quota/read/cleanup faults, and materialized multi-gigabyte release and
   sanitizer runs on Sonic1. Preserve object-key vectors, CBC IV/block shape,
   strict nonzero PKCS#7 padding, RC4 state across windows,

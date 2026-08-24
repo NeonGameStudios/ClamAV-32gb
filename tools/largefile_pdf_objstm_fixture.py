@@ -18,6 +18,7 @@ PASSWORD_PADDING = bytes.fromhex(
     "2E2E00B6D0683E802F0CA9FE6453697A"
 )
 FILE_ID = hashlib.md5(b"ClamAV deterministic encrypted object stream").digest()
+QUALIFICATION_PASSWORD = b"clamav-qualification-password"
 
 
 class RC4:
@@ -263,12 +264,18 @@ def aes_cbc_decrypt_no_padding(data, key, iv):
     return bytes(output)
 
 
-def standard_r2_security():
+def pad_pdf_password(password):
+    return (password + PASSWORD_PADDING)[:32]
+
+
+def standard_r2_security(user_password=b""):
     permissions = -4
-    owner_key = hashlib.md5(PASSWORD_PADDING).digest()[:5]
-    owner = rc4(PASSWORD_PADDING, owner_key)
+    owner_password = b"" if not user_password else b"ClamAV deterministic owner password"
+    user_padded = pad_pdf_password(user_password)
+    owner_key = hashlib.md5(pad_pdf_password(owner_password)).digest()[:5]
+    owner = rc4(user_padded, owner_key)
     key_input = (
-        PASSWORD_PADDING
+        user_padded
         + owner
         + (permissions & 0xFFFFFFFF).to_bytes(4, "little")
         + FILE_ID
@@ -285,18 +292,20 @@ def standard_r2_security():
     }
 
 
-def standard_r4_security():
+def standard_r4_security(user_password=b""):
     permissions = -4
-    digest = hashlib.md5(PASSWORD_PADDING).digest()
+    owner_password = b"" if not user_password else b"ClamAV deterministic owner password"
+    user_padded = pad_pdf_password(user_password)
+    digest = hashlib.md5(pad_pdf_password(owner_password)).digest()
     for _ in range(50):
         digest = hashlib.md5(digest).digest()
     owner_key = digest[:16]
-    owner = rc4(PASSWORD_PADDING, owner_key)
+    owner = rc4(user_padded, owner_key)
     for iteration in range(1, 20):
         owner = rc4(owner, bytes(value ^ iteration for value in owner_key))
 
     key_input = (
-        PASSWORD_PADDING
+        user_padded
         + owner
         + (permissions & 0xFFFFFFFF).to_bytes(4, "little")
         + FILE_ID
@@ -321,7 +330,7 @@ def standard_r4_security():
     }
 
 
-def standard_r5_security():
+def standard_r5_security(user_password=b""):
     permissions = -4
     file_key = hashlib.sha256(b"ClamAV deterministic AESV3 file key").digest()
     user_validation_salt = hashlib.sha256(
@@ -331,13 +340,13 @@ def standard_r5_security():
         b"ClamAV deterministic R5 user key salt"
     ).digest()[:8]
     user = (
-        hashlib.sha256(user_validation_salt).digest()
+        hashlib.sha256(user_password + user_validation_salt).digest()
         + user_validation_salt
         + user_key_salt
     )
     user_encryption = aes_cbc_encrypt_no_padding(
         file_key,
-        hashlib.sha256(user_key_salt).digest(),
+        hashlib.sha256(user_password + user_key_salt).digest(),
         bytes(16),
     )
 
@@ -578,7 +587,15 @@ def build_fixture(
     malformed=False,
     encryption="none",
 ):
-    if encryption not in ("none", "rc4-r2", "aesv2-r4", "aesv3-r5"):
+    if encryption not in (
+        "none",
+        "rc4-r2",
+        "aesv2-r4",
+        "aesv3-r5",
+        "rc4-r2-password",
+        "aesv2-r4-password",
+        "aesv3-r5-password",
+    ):
         raise ValueError(f"unsupported encryption: {encryption}")
     if malformed and encryption != "none":
         raise ValueError("--malformed is not supported with encryption")
@@ -589,12 +606,13 @@ def build_fixture(
     encoded_spool = None
     aes_plaintext_spool = None
     aes_ciphertext_spool = None
-    if encryption == "rc4-r2":
-        security = standard_r2_security()
-    elif encryption == "aesv2-r4":
-        security = standard_r4_security()
-    elif encryption == "aesv3-r5":
-        security = standard_r5_security()
+    user_password = QUALIFICATION_PASSWORD if encryption.endswith("-password") else b""
+    if encryption.startswith("rc4-r2"):
+        security = standard_r2_security(user_password)
+    elif encryption.startswith("aesv2-r4"):
+        security = standard_r4_security(user_password)
+    elif encryption.startswith("aesv3-r5"):
+        security = standard_r5_security(user_password)
     else:
         security = None
 
@@ -785,6 +803,7 @@ def build_fixture(
 
             result = {
                 "decoded_size": actual_decoded_size,
+                "credential": "nonempty" if user_password else "empty",
                 "encoded_sha256": encoded_sha256,
                 "encoded_size": encoded_size,
                 "encryption": encryption,
@@ -841,7 +860,15 @@ def main():
     parser.add_argument("--malformed", action="store_true")
     parser.add_argument(
         "--encryption",
-        choices=("none", "rc4-r2", "aesv2-r4", "aesv3-r5"),
+        choices=(
+            "none",
+            "rc4-r2",
+            "aesv2-r4",
+            "aesv3-r5",
+            "rc4-r2-password",
+            "aesv2-r4-password",
+            "aesv3-r5-password",
+        ),
         default="none",
     )
     args = parser.parse_args()

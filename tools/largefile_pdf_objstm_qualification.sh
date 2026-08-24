@@ -81,7 +81,7 @@ if [ -d "$out" ] && [ -n "$(find "$out" -mindepth 1 -print -quit)" ]; then
     echo "PDF object-stream evidence directory is not empty: $out" >&2
     exit 2
 fi
-mkdir -p "$out/corpus" "$out/logs" "$out/tmp" "$out/database" "$out/provenance"
+mkdir -p "$out/corpus" "$out/logs" "$out/reports" "$out/tmp" "$out/database" "$out/provenance"
 openssl version > "$out/provenance/openssl-version.txt" 2>&1
 openssl_version_sha256=$(sha256sum "$out/provenance/openssl-version.txt" | awk '{ print $1 }')
 python3 "$root/tools/largefile_pdf_objstm_fixture_test.py" > "$out/generator-test.log" 2>&1
@@ -194,9 +194,9 @@ printf '%s:0:*:%s\n' "$signature_name" "$marker_hex" > "$out/database/pdf-objstm
 custom_signature_sha256=$(sha256sum "$out/database/pdf-objstm.ndb" | awk '{ print $1 }')
 
 manifest=$out/corpus-manifest.tsv
-printf 'case\tpath\tfilter\tencryption\tdecoded_size\tencoded_size\tfile_size\tsha256\tallocated_bytes\tmetadata_sha256\n' > "$manifest"
+printf 'case\tpath\tfilter\tencryption\tcredential\tdecoded_size\tencoded_size\tfile_size\tsha256\tallocated_bytes\tmetadata_sha256\n' > "$manifest"
 results=$out/results.tsv
-printf 'case\tstatus\trss_kb\ttemporary_peak_bytes\tminor_faults\tmajor_faults\tfs_inputs\tfs_outputs\tlog_sha256\tresult\n' > "$results"
+printf 'case\tstatus\trss_kb\ttemporary_peak_bytes\tminor_faults\tmajor_faults\tfs_inputs\tfs_outputs\tlog_sha256\treport_sha256\tresult\n' > "$results"
 failures=0
 
 generate_fixture()
@@ -215,14 +215,15 @@ generate_fixture()
     [ -n "$recorded_sha" ] && [ "$recorded_sha" = "$actual_sha" ] || return 1
     filter=$(sed -n 's/^filter=//p' "$metadata")
     encryption=$(sed -n 's/^encryption=//p' "$metadata")
+    credential=$(sed -n 's/^credential=//p' "$metadata")
     fixture_decoded_size=$(sed -n 's/^decoded_size=//p' "$metadata")
     encoded_size=$(sed -n 's/^encoded_size=//p' "$metadata")
     file_size=$(stat -c %s "$path")
     blocks=$(stat -c %b "$path")
     block_size=$(stat -c %B "$path")
     allocated_bytes=$((blocks * block_size))
-    printf '%s\tcorpus/%s.pdf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "$case_name" "$case_name" "$filter" "$encryption" "$fixture_decoded_size" \
+    printf '%s\tcorpus/%s.pdf\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$case_name" "$case_name" "$filter" "$encryption" "$credential" "$fixture_decoded_size" \
         "$encoded_size" "$file_size" "$actual_sha" "$allocated_bytes" \
         "$metadata_sha256" >> "$manifest"
     if [ "$case_name" = materialized ] && [ "$allocated_bytes" -lt "$file_size" ]; then
@@ -245,14 +246,19 @@ generate_fixture aesv2-filter-chain --filter asciihex-flate --encryption aesv2-r
 generate_fixture aesv3-raw --filter raw --encryption aesv3-r5 || failures=$((failures + 1))
 generate_fixture aesv3-flate --filter flate --encryption aesv3-r5 || failures=$((failures + 1))
 generate_fixture aesv3-filter-chain --filter asciihex-flate --encryption aesv3-r5 || failures=$((failures + 1))
+generate_fixture password-rc4 --filter raw --encryption rc4-r2-password || failures=$((failures + 1))
+generate_fixture password-aesv2 --filter raw --encryption aesv2-r4-password || failures=$((failures + 1))
+generate_fixture password-aesv3 --filter raw --encryption aesv3-r5-password || failures=$((failures + 1))
 
 run_fixture()
 {
     case_name=$1
     expect_malformed=$2
     expect_encryption=$3
+    expect_outcome=$4
     path=$out/corpus/$case_name.pdf
     log=$out/logs/$case_name.log
+    report=$out/reports/$case_name.jsonl
     temp=$out/tmp/$case_name
     mkdir -p "$temp"
     status=0
@@ -269,6 +275,7 @@ run_fixture()
         --allmatch=yes \
         --debug \
         --no-summary \
+        --report-json="$report" \
         --tempdir="$temp" \
         "$path" > "$log" 2>&1 &
     scanner_pid=$!
@@ -295,22 +302,45 @@ run_fixture()
     fs_inputs=$(sed -n 's/^[[:space:]]*File system inputs:[[:space:]]*//p' "$log" | tail -1)
     fs_outputs=$(sed -n 's/^[[:space:]]*File system outputs:[[:space:]]*//p' "$log" | tail -1)
     log_sha256=$(sha256sum "$log" | awk '{ print $1 }')
+    report_sha256=missing
+    if [ -f "$report" ]; then
+        report_sha256=$(sha256sum "$report" | awk '{ print $1 }')
+    fi
     result=pass
     case "$rss:$minor:$major:$fs_inputs:$fs_outputs" in
         *[!0-9:]*|:*|*::*) result=fail ;;
     esac
-    if [ "$status" -ne 1 ] || [ -z "$rss" ] || [ "$rss" -gt "$rss_budget_kb" ] ||
+    if [ -z "$rss" ] || [ "$rss" -gt "$rss_budget_kb" ] ||
         [ "$temporary_peak" -gt 68719476736 ] ||
-        ! grep -E "$signature_name(\.UNOFFICIAL)? .*FOUND" "$log" >/dev/null 2>&1 ||
         ! grep -F 'pdf_extract_obj: Found /Type/ObjStm' "$log" >/dev/null 2>&1 ||
-        ! grep -F 'pdf_objstm_attach_file: retained ' "$log" >/dev/null 2>&1 ||
-        ! grep -F 'quota-accounted file-backed object stream' "$log" >/dev/null 2>&1 ||
-        ! grep -F 'pdf_find_and_parse_objs_in_objstm: Found object 5 0' "$log" >/dev/null 2>&1 ||
-        ! grep -F 'pdf_objstm_cleanup: releasing ' "$log" >/dev/null 2>&1 ||
+        [ ! -s "$report" ] ||
         [ -n "$(find "$temp" -mindepth 1 -print -quit)" ]; then
         result=fail
     fi
-    if [ "$expect_malformed" -eq 1 ]; then
+    if [ "$expect_outcome" = detection ]; then
+        if [ "$status" -ne 1 ] ||
+            ! grep -E "$signature_name(\.UNOFFICIAL)? .*FOUND" "$log" >/dev/null 2>&1 ||
+            ! grep -F 'pdf_objstm_attach_file: retained ' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'quota-accounted file-backed object stream' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'pdf_find_and_parse_objs_in_objstm: Found object 5 0' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'pdf_objstm_cleanup: releasing ' "$log" >/dev/null 2>&1; then
+            result=fail
+        fi
+    elif [ "$expect_outcome" = password ]; then
+        if [ "$status" -ne 2 ] ||
+            grep -E "$signature_name(\.UNOFFICIAL)? .*FOUND" "$log" >/dev/null 2>&1 ||
+            grep -F ': OK' "$log" >/dev/null 2>&1 ||
+            grep -F 'pdf_objstm_attach_file: retained ' "$log" >/dev/null 2>&1 ||
+            grep -F 'pdf_find_and_parse_objs_in_objstm: Found object 5 0' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'encrypted PDF found, user password is NOT empty, cannot decrypt!' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'pdf_find_and_extract_objs: encrypted pdf found, not decryptable' "$log" >/dev/null 2>&1 ||
+            ! grep -F 'PDF object-stream parsing did not complete' "$log" >/dev/null 2>&1; then
+            result=fail
+        fi
+    else
+        result=fail
+    fi
+    if [ "$expect_malformed" -eq 1 ] || [ "$expect_outcome" = password ]; then
         if ! grep -F 'PDF object-stream parsing did not complete' "$log" >/dev/null 2>&1; then
             result=fail
         fi
@@ -350,30 +380,42 @@ run_fixture()
                 result=fail
             fi
             ;;
+        rc4-r2-password|aesv2-r4-password|aesv3-r5-password)
+            if ! grep -F 'encrypted PDF found, user password is NOT empty, cannot decrypt!' "$log" >/dev/null 2>&1 ||
+                grep -F 'encrypted PDF found, user password is empty, will attempt to decrypt' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks' "$log" >/dev/null 2>&1 ||
+                grep -F 'pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks' "$log" >/dev/null 2>&1; then
+                result=fail
+            fi
+            ;;
         *) result=fail ;;
     esac
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$case_name" "$status" "${rss:-missing}" "$temporary_peak" \
         "${minor:-missing}" "${major:-missing}" "${fs_inputs:-missing}" \
-        "${fs_outputs:-missing}" "$log_sha256" "$result" >> "$results"
+        "${fs_outputs:-missing}" "$log_sha256" "$report_sha256" "$result" >> "$results"
     [ "$result" = pass ]
 }
 
 if [ "$failures" -eq 0 ]; then
-    run_fixture raw 0 none || failures=$((failures + 1))
-    run_fixture flate 0 none || failures=$((failures + 1))
-    run_fixture filter-chain 0 none || failures=$((failures + 1))
-    run_fixture malformed 1 none || failures=$((failures + 1))
-    run_fixture materialized 0 none || failures=$((failures + 1))
-    run_fixture rc4-raw 0 rc4-r2 || failures=$((failures + 1))
-    run_fixture rc4-flate 0 rc4-r2 || failures=$((failures + 1))
-    run_fixture rc4-filter-chain 0 rc4-r2 || failures=$((failures + 1))
-    run_fixture aesv2-raw 0 aesv2-r4 || failures=$((failures + 1))
-    run_fixture aesv2-flate 0 aesv2-r4 || failures=$((failures + 1))
-    run_fixture aesv2-filter-chain 0 aesv2-r4 || failures=$((failures + 1))
-    run_fixture aesv3-raw 0 aesv3-r5 || failures=$((failures + 1))
-    run_fixture aesv3-flate 0 aesv3-r5 || failures=$((failures + 1))
-    run_fixture aesv3-filter-chain 0 aesv3-r5 || failures=$((failures + 1))
+    run_fixture raw 0 none detection || failures=$((failures + 1))
+    run_fixture flate 0 none detection || failures=$((failures + 1))
+    run_fixture filter-chain 0 none detection || failures=$((failures + 1))
+    run_fixture malformed 1 none detection || failures=$((failures + 1))
+    run_fixture materialized 0 none detection || failures=$((failures + 1))
+    run_fixture rc4-raw 0 rc4-r2 detection || failures=$((failures + 1))
+    run_fixture rc4-flate 0 rc4-r2 detection || failures=$((failures + 1))
+    run_fixture rc4-filter-chain 0 rc4-r2 detection || failures=$((failures + 1))
+    run_fixture aesv2-raw 0 aesv2-r4 detection || failures=$((failures + 1))
+    run_fixture aesv2-flate 0 aesv2-r4 detection || failures=$((failures + 1))
+    run_fixture aesv2-filter-chain 0 aesv2-r4 detection || failures=$((failures + 1))
+    run_fixture aesv3-raw 0 aesv3-r5 detection || failures=$((failures + 1))
+    run_fixture aesv3-flate 0 aesv3-r5 detection || failures=$((failures + 1))
+    run_fixture aesv3-filter-chain 0 aesv3-r5 detection || failures=$((failures + 1))
+    run_fixture password-rc4 1 rc4-r2-password password || failures=$((failures + 1))
+    run_fixture password-aesv2 1 aesv2-r4-password password || failures=$((failures + 1))
+    run_fixture password-aesv3 1 aesv3-r5-password password || failures=$((failures + 1))
 fi
 
 if [ "$failures" -ne 0 ]; then
@@ -387,7 +429,7 @@ qualification_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_qualification
 evidence_checker_sha256=$(sha256sum "$root/tools/largefile_pdf_objstm_evidence_check.py" | awk '{ print $1 }')
 generator_test_sha256=$(sha256sum "$out/generator-test.log" | awk '{ print $1 }')
 cat > "$out/evidence-metadata.txt" <<EOF
-schema_version=4
+schema_version=5
 source_revision_type=$source_revision_type
 source_commit=$source_commit
 source_tree=$source_tree

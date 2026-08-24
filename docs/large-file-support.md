@@ -6637,17 +6637,20 @@ object entry. Raw, Flate, ASCIIHex-to-Flate, and malformed-after-one-valid-
 object forms are self-verified, and the raw form can stream an exact decoded
 size without sparse seeks. Complete empty-password Standard R2/RC4, Standard
 R4/AESV2, and deprecated compatibility-only Standard R5/AESV3 documents cover
-each supported filter form; AES generation
+each supported filter form. Deterministic nonempty-password variants cover the
+same security handlers as explicit unsupported/no-plaintext cases. AES generation
 uses an existing OpenSSL executable when available while a pure-Python NIST-
 vector-tested implementation remains the independent oracle and fallback.
 `largefile_pdf_objstm_qualification.sh` binds each
 fixture by size and hash, rejects holes in the materialized case, requires
 production parser plus map/cleanup diagnostics, checks exact marker detection
 and malformed-status visibility, records RSS/page-fault/I/O evidence, and
-rejects leaked temporary files. The generator self-test passes 25 cases;
+rejects leaked temporary files. Every case now binds a versioned JSON report;
+password cases require `UNSUPPORTED`, a non-clean status, a skipped operation,
+no `OK`, and no plaintext marker. The generator self-test passes 28 cases;
 Poppler independently accepts the RC4, AESV2, and AESV3 raw, Flate, and filter-chain
 documents as one-page encrypted PDF 1.7 files with JavaScript, and the Linux
-x86-64 orchestrator self-test passes all 14 scanner cases with a fully
+x86-64 orchestrator self-test passes all 17 scanner cases with a fully
 allocated 64 MiB child. That orchestrator uses a deterministic scanner/time
 stub and is not production scan evidence. Production scanner, sanitizer,
 multi-gigabyte materialized, and Sonic1 runs are still required before changing
@@ -6656,8 +6659,8 @@ the capability status.
 The gate also records a full source manifest, commit/tree state, a copied
 Linux x86-64 ELF scanner, its version and resolved runtime dependencies, the
 OpenSSL accelerator version, a per-file database manifest, the exact custom
-signature, tool hashes, fixture/
-log hashes, peak temporary usage, and normalized resource results. The
+signature, tool hashes, fixture/log/report hashes, peak temporary usage, and
+normalized resource results. The
 companion evidence checker rejects dirty release sources by default and
 revalidates every binding, exact case oracle, resource ceiling, malformed-
 status distinction, allocation proof, and empty temporary directory. Its

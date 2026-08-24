@@ -30,18 +30,23 @@ def decode_stream(encoded, filter_name):
 def decrypt_stream(encoded, metadata, object_number=3):
     if metadata["encryption"] == "none":
         return encoded
-    if metadata["encryption"] == "rc4-r2":
-        security = fixture.standard_r2_security()
-    elif metadata["encryption"] == "aesv2-r4":
-        security = fixture.standard_r4_security()
+    password = (
+        fixture.QUALIFICATION_PASSWORD
+        if metadata["encryption"].endswith("-password")
+        else b""
+    )
+    if metadata["encryption"].startswith("rc4-r2"):
+        security = fixture.standard_r2_security(password)
+    elif metadata["encryption"].startswith("aesv2-r4"):
+        security = fixture.standard_r4_security(password)
     else:
-        assert metadata["encryption"] == "aesv3-r5"
-        security = fixture.standard_r5_security()
+        assert metadata["encryption"].startswith("aesv3-r5")
+        security = fixture.standard_r5_security(password)
     assert metadata["file_id"] == security["file_id"].hex()
     assert metadata["file_key_sha256"] == hashlib.sha256(
         security["file_key"]
     ).hexdigest()
-    if metadata["encryption"] == "rc4-r2":
+    if metadata["encryption"].startswith("rc4-r2"):
         return fixture.rc4(
             encoded,
             fixture.rc4_object_key(security["file_key"], object_number),
@@ -50,7 +55,7 @@ def decrypt_stream(encoded, metadata, object_number=3):
     assert iv.hex() == metadata["object_stream_iv"]
     stream_key = (
         fixture.aesv2_object_key(security["file_key"], object_number)
-        if metadata["encryption"] == "aesv2-r4"
+        if metadata["encryption"].startswith("aesv2-r4")
         else security["file_key"]
     )
     return fixture.aes_cbc_decrypt(encoded[16:], stream_key, iv)
@@ -81,14 +86,14 @@ def verify_pdf(path, metadata, expected):
     if metadata["encryption"] != "none":
         assert encryption_entry[0] == 1
         assert b"/Encrypt 7 0 R" in data[metadata["xref_offset"] : xref_header_end]
-        if metadata["encryption"] == "rc4-r2":
+        if metadata["encryption"].startswith("rc4-r2"):
             assert b"7 0 obj\n<< /Filter /Standard /V 1 /R 2 /Length 40" in data
         else:
-            if metadata["encryption"] == "aesv2-r4":
+            if metadata["encryption"].startswith("aesv2-r4"):
                 assert b"7 0 obj\n<< /Filter /Standard /V 4 /R 4 /Length 128" in data
                 assert b"/CFM /AESV2" in data
             else:
-                assert metadata["encryption"] == "aesv3-r5"
+                assert metadata["encryption"].startswith("aesv3-r5")
                 assert b"/ExtensionLevel 3" in data
                 assert b"7 0 obj\n<< /Filter /Standard /V 5 /R 5 /Length 256" in data
                 assert b"/CFM /AESV3" in data
@@ -102,6 +107,9 @@ def verify_pdf(path, metadata, expected):
     assert decoded == expected
     assert len(decoded) == metadata["decoded_size"]
     assert hashlib.sha256(encoded).hexdigest() == metadata["encoded_sha256"]
+    assert metadata["credential"] == (
+        "nonempty" if metadata["encryption"].endswith("-password") else "empty"
+    )
 
 
 def main():
@@ -159,6 +167,24 @@ def main():
             )
             verify_pdf(path, metadata, expected)
             assert metadata["encryption"] == "rc4-r2"
+            assert fixture.MARKER not in read_stream(path, metadata)
+            cases += 1
+
+        for encryption in (
+            "rc4-r2-password",
+            "aesv2-r4-password",
+            "aesv3-r5-password",
+        ):
+            path = os.path.join(directory, f"{encryption}.pdf")
+            layout = fixture.object_stream_layout("javascript", None, False)
+            expected = b"".join(fixture.decoded_chunks(layout))
+            metadata = fixture.build_fixture(
+                path,
+                filter_name="raw",
+                encryption=encryption,
+            )
+            verify_pdf(path, metadata, expected)
+            assert metadata["credential"] == "nonempty"
             assert fixture.MARKER not in read_stream(path, metadata)
             cases += 1
 

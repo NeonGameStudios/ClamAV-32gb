@@ -32,6 +32,7 @@ int main(int argc, char **argv)
 {
     const char *input   = NULL;
     const char *tempdir = NULL;
+    const char *report  = NULL;
     const char *mode    = getenv("PDF_STUB_MODE");
     int i;
 
@@ -45,8 +46,10 @@ int main(int argc, char **argv)
             input = argv[i];
         if (strncmp(argv[i], "--tempdir=", 10) == 0)
             tempdir = argv[i] + 10;
+        if (strncmp(argv[i], "--report-json=", 14) == 0)
+            report = argv[i] + 14;
     }
-    if (input == NULL || tempdir == NULL)
+    if (input == NULL || tempdir == NULL || report == NULL)
         return 2;
 
     puts("pdf_extract_obj: Found /Type/ObjStm");
@@ -61,6 +64,25 @@ int main(int argc, char **argv)
     if (strstr(input, "aesv3-") != NULL) {
         puts("check_user_password: encrypted PDF found, user password is empty, will attempt to decrypt");
         puts("pdf_stream_decrypt_reader: decrypting AESV3 stream in bounded CBC blocks");
+    }
+    if (strstr(input, "password-") != NULL) {
+        FILE *json;
+        puts("check_owner_password: encrypted PDF found but cannot decrypt with empty owner password");
+        puts("check_user_password: encrypted PDF found, user password is NOT empty, cannot decrypt!");
+        puts("pdf_find_and_extract_objs: encrypted pdf found, not decryptable, stream will probably fail to decompress!");
+        puts("PDF object-stream parsing did not complete");
+        json = fopen(report, "wb");
+        if (json == NULL)
+            return 2;
+        fprintf(json,
+                "{\"version\":1,\"status\":30,\"verdict\":0,"
+                "\"completion\":\"UNSUPPORTED\",\"target\":\"%s\","
+                "\"reason\":\"PDF encrypted stream uses unsupported encryption or has no usable key\","
+                "\"skipped_operations\":1}\n",
+                input);
+        if (fclose(json) != 0)
+            return 2;
+        return 2;
     }
     if (mode != NULL && strcmp(mode, "reject") == 0) {
         char path[4096];
@@ -79,6 +101,18 @@ int main(int argc, char **argv)
         puts("PDF object-stream parsing did not complete");
     puts("pdf_objstm_cleanup: releasing 1-byte file-backed object stream");
     printf("%s: LargeFile.PDF.ObjStm.Tail.UNOFFICIAL FOUND\n", input);
+    {
+        FILE *json = fopen(report, "wb");
+        if (json == NULL)
+            return 2;
+        fprintf(json,
+                "{\"version\":1,\"status\":0,\"verdict\":2,"
+                "\"completion\":\"DETECTION_TERMINATED\","
+                "\"target\":\"%s\",\"skipped_operations\":0}\n",
+                input);
+        if (fclose(json) != 0)
+            return 2;
+    }
     return (mode != NULL && strcmp(mode, "reject") == 0) ? 0 : 1;
 }
 STUB
@@ -88,9 +122,9 @@ gcc -O2 -o "$stub" "$stub.c"
     "$stub" "$work/database" "$work/evidence" 67108864 41943040 \
     > "$work/qualification.log" 2>&1
 
-[ "$(awk -F '\t' 'NR > 1 && $10 == "pass" { count++ } END { print count + 0 }' \
-    "$work/evidence/results.tsv")" -eq 14 ]
-awk -F '\t' 'NR > 1 && $1 == "materialized" { found = 1; if ($9 < $7) exit 1 } END { exit !found }' \
+[ "$(awk -F '\t' 'NR > 1 && $11 == "pass" { count++ } END { print count + 0 }' \
+    "$work/evidence/results.tsv")" -eq 17 ]
+awk -F '\t' 'NR > 1 && $1 == "materialized" { found = 1; if ($10 < $8) exit 1 } END { exit !found }' \
     "$work/evidence/corpus-manifest.tsv"
 grep -F 'PDF object-stream qualification passed' "$work/qualification.log" >/dev/null
 grep -F 'qualification_status=pass' "$work/evidence/evidence-metadata.txt" >/dev/null
@@ -119,6 +153,14 @@ if python3 "$root/tools/largefile_pdf_objstm_evidence_check.py" \
     exit 1
 fi
 rm "$work/evidence/provenance/unbound.txt"
+cp "$work/evidence/reports/password-aesv3.jsonl" "$work/password-aesv3-report.clean"
+printf '{"unbound":true}\n' > "$work/evidence/reports/password-aesv3.jsonl"
+if python3 "$root/tools/largefile_pdf_objstm_evidence_check.py" \
+    --allow-dirty-source "$work/evidence" > "$work/tampered-report-check.log" 2>&1; then
+    echo 'evidence checker accepted a modified structured report' >&2
+    exit 1
+fi
+cp "$work/password-aesv3-report.clean" "$work/evidence/reports/password-aesv3.jsonl"
 printf 'tampered\n' >> "$work/evidence/logs/raw.log"
 if python3 "$root/tools/largefile_pdf_objstm_evidence_check.py" \
     --allow-dirty-source "$work/evidence" > "$work/tampered-check.log" 2>&1; then
