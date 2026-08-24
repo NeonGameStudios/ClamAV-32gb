@@ -7043,34 +7043,37 @@ A deterministic streaming generator now creates complete PDF 1.7 files with a
 cross-reference stream and a type-2 entry for the embedded object. It covers
 raw, Flate, ASCIIHex-to-Flate, malformed indexing after one valid object, and
 an exact-size opaque object stream written without sparse seeks. It now also
-emits complete empty-password Standard R2 RC4 documents for raw, Flate, and
-ASCIIHex-to-Flate object streams, including deterministic owner/user entries,
-permissions, file ID, object keys, encrypted content, an unencrypted XRef
-stream, and an encryption dictionary. Its fourteen-case self-test verifies an
-independent RC4 vector, deterministic hashes, decryption and filter reversal,
-xref coordinates, security metadata, compressed-object ownership, rejection
-of invalid requests, and allocated blocks plus continuous RC4 state for a
-multi-window materialized encrypted fixture.
+emits complete empty-password Standard R2 RC4 and Standard R4 AESV2 documents
+for raw, Flate, and ASCIIHex-to-Flate object streams, including deterministic
+owner/user entries, permissions, file ID, object keys, AES IVs, encrypted
+content, an unencrypted XRef stream, and a Standard crypt-filter dictionary.
+Its twenty-case self-test verifies independent RC4 and NIST AES-128 vectors,
+AES encryption/decryption and padding, deterministic hashes, filter reversal,
+xref coordinates, security metadata, compressed-object ownership, invalid-
+request rejection, and allocated multi-window encrypted fixtures. An existing
+OpenSSL executable accelerates large AES corpus generation; the independently
+tested pure-Python implementation remains the oracle and fallback, so no
+package installation is required.
 
 The scanner-facing qualification gate accepts an existing clamscan and
 database and performs no build configuration. It binds size/hash/allocation,
 requires marker detection and real object-stream parser diagnostics, requires
 file-backed attach and cleanup diagnostics, distinguishes expected malformed
 status, rejects temporary residue, and records RSS, page faults, and file I/O
-for 64 MiB–4 GiB decoded children. The fourteen generator tests pass. Poppler
-independently accepts all four original small forms and all three RC4 forms as
-one-page PDF 1.7 documents with the compressed JavaScript page object, and
-reports the latter as RC4-encrypted. A Linux x86-64 orchestrator self-test
-passes eight cases, including allocation proof for a 64 MiB decoded child and
-exact encrypted security-handler/bounded-RC4 diagnostics; its scanner and
+for 64 MiB–4 GiB decoded children. The twenty generator tests pass. Poppler
+independently accepts the RC4 and AESV2 raw, Flate, and filter-chain forms as
+one-page encrypted PDF 1.7 documents with the compressed JavaScript page
+object. A Linux x86-64 orchestrator self-test passes eleven cases, including
+allocation proof for a 64 MiB decoded child and exact Standard R2/RC4 and
+Standard R4/AESV2 key-discovery and bounded-decrypt diagnostics; its scanner and
 GNU-time outputs are deliberate stubs, so this validates the gate rather than
 ClamAV. Sonic1 remains unavailable at TCP connect
 (20-second timeout), so no production or sanitizer scanner result is claimed.
 
 The gate now samples peak temporary storage while the scanner runs and records
 an immutable source manifest plus commit/tree state, a copied Linux x86-64 ELF
-scanner, its version and resolved runtime dependencies, a per-file database
-manifest, the exact custom signature, tool hashes, fixture/log hashes, and
+scanner, its version and resolved runtime dependencies, the OpenSSL accelerator
+version, a per-file database manifest, the exact custom signature, tool hashes, fixture/log hashes, and
 normalized result hashes. A companion checker requires a clean source by
 default and independently verifies every binding, exact case set, parser
 oracle, malformed distinction, RSS/temporary ceiling, allocation proof, and
@@ -7112,9 +7115,9 @@ normally and under the same sanitizers. Linux GCC syntax checks pass for
 only pre-existing isolated-build warnings remain.
 
 This closes the implementation gap, not release qualification. Deterministic
-empty-password Standard R2 RC4 PDF 1.7 corpus generation and evidence oracles
-now cover raw and supported filtered object streams; AESV2/AESV3 complete-PDF
-security-handler corpora, nonempty credentials, materialized multi-gigabyte
+empty-password Standard R2 RC4 and Standard R4 AESV2 PDF 1.7 corpus generation
+and evidence oracles now cover raw and supported filtered object streams;
+AESV3 complete-PDF security-handler corpora, nonempty credentials, materialized multi-gigabyte
 encrypted streams, production and sanitizer clamscan runs, Sonic1 evidence,
 per-filter DecodeParms arrays, unsupported/mixed filters, and the non-mmap
 object-stream policy remain open. Non-first explicit Crypt is intentionally

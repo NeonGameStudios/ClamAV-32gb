@@ -30,15 +30,26 @@ def decode_stream(encoded, filter_name):
 def decrypt_stream(encoded, metadata, object_number=3):
     if metadata["encryption"] == "none":
         return encoded
-    assert metadata["encryption"] == "rc4-r2"
-    security = fixture.standard_r2_security()
+    if metadata["encryption"] == "rc4-r2":
+        security = fixture.standard_r2_security()
+    else:
+        assert metadata["encryption"] == "aesv2-r4"
+        security = fixture.standard_r4_security()
     assert metadata["file_id"] == security["file_id"].hex()
     assert metadata["file_key_sha256"] == hashlib.sha256(
         security["file_key"]
     ).hexdigest()
-    return fixture.rc4(
-        encoded,
-        fixture.rc4_object_key(security["file_key"], object_number),
+    if metadata["encryption"] == "rc4-r2":
+        return fixture.rc4(
+            encoded,
+            fixture.rc4_object_key(security["file_key"], object_number),
+        )
+    iv = encoded[:16]
+    assert iv.hex() == metadata["object_stream_iv"]
+    return fixture.aes_cbc_decrypt(
+        encoded[16:],
+        fixture.aesv2_object_key(security["file_key"], object_number),
+        iv,
     )
 
 
@@ -64,10 +75,16 @@ def verify_pdf(path, metadata, expected):
     content_stream = xref[6 * 11 : 7 * 11]
     assert content_stream[0] == 1
     encryption_entry = xref[7 * 11 : 8 * 11]
-    if metadata["encryption"] == "rc4-r2":
+    if metadata["encryption"] != "none":
         assert encryption_entry[0] == 1
         assert b"/Encrypt 7 0 R" in data[metadata["xref_offset"] : xref_header_end]
-        assert b"7 0 obj\n<< /Filter /Standard /V 1 /R 2 /Length 40" in data
+        if metadata["encryption"] == "rc4-r2":
+            assert b"7 0 obj\n<< /Filter /Standard /V 1 /R 2 /Length 40" in data
+        else:
+            assert metadata["encryption"] == "aesv2-r4"
+            assert b"7 0 obj\n<< /Filter /Standard /V 4 /R 4 /Length 128" in data
+            assert b"/CFM /AESV2" in data
+            assert b"/StmF /StdCF /StrF /StdCF /EFF /StdCF" in data
     elif not metadata["malformed"]:
         assert encryption_entry[0] == 0
 
@@ -81,6 +98,13 @@ def verify_pdf(path, metadata, expected):
 def main():
     cases = 0
     assert fixture.rc4(b"Plaintext", b"Key").hex() == "bbf316e8d940af0ad3"
+    cases += 1
+    aes_key = bytes.fromhex("000102030405060708090A0B0C0D0E0F")
+    aes_plaintext = bytes.fromhex("00112233445566778899AABBCCDDEEFF")
+    aes_ciphertext = bytes.fromhex("69C4E0D86A7B0430D8CDB78070B4C55A")
+    aes = fixture.AES128(aes_key)
+    assert aes.encrypt_block(aes_plaintext) == aes_ciphertext
+    assert aes.decrypt_block(aes_ciphertext) == aes_plaintext
     cases += 1
     with tempfile.TemporaryDirectory(prefix="clamav-pdf-objstm-") as directory:
         for filter_name in ("raw", "flate", "asciihex-flate"):
@@ -105,6 +129,22 @@ def main():
             )
             verify_pdf(path, metadata, expected)
             assert metadata["encryption"] == "rc4-r2"
+            assert fixture.MARKER not in read_stream(path, metadata)
+            cases += 1
+
+        for filter_name in ("raw", "flate", "asciihex-flate"):
+            path = os.path.join(directory, f"aesv2-{filter_name}.pdf")
+            layout = fixture.object_stream_layout("javascript", None, False)
+            expected = b"".join(fixture.decoded_chunks(layout))
+            metadata = fixture.build_fixture(
+                path,
+                filter_name=filter_name,
+                encryption="aesv2-r4",
+            )
+            verify_pdf(path, metadata, expected)
+            assert metadata["encryption"] == "aesv2-r4"
+            assert metadata["encoded_size"] % 16 == 0
+            assert metadata["object_stream_iv"] == fixture.aesv2_iv(3).hex()
             assert fixture.MARKER not in read_stream(path, metadata)
             cases += 1
 
@@ -161,6 +201,21 @@ def main():
         )
         cases += 1
 
+        aesv2_large_path = os.path.join(directory, "aesv2-materialized.pdf")
+        aesv2_large = fixture.build_fixture(
+            aesv2_large_path,
+            filter_name="raw",
+            kind="opaque",
+            decoded_size=decoded_size,
+            encryption="aesv2-r4",
+        )
+        verify_pdf(aesv2_large_path, aesv2_large, encrypted_large_expected)
+        assert fixture.MARKER not in read_stream(aesv2_large_path, aesv2_large)
+        assert os.stat(aesv2_large_path).st_blocks * 512 >= os.path.getsize(
+            aesv2_large_path
+        )
+        cases += 1
+
         duplicate_path = os.path.join(directory, "duplicate.pdf")
         duplicate = fixture.build_fixture(duplicate_path, filter_name="asciihex-flate")
         assert duplicate["sha256"] == fixture.build_fixture(
@@ -178,6 +233,19 @@ def main():
             encrypted_duplicate_path,
             filter_name="asciihex-flate",
             encryption="rc4-r2",
+        )["sha256"]
+        cases += 1
+
+        aesv2_duplicate_path = os.path.join(directory, "aesv2-duplicate.pdf")
+        aesv2_duplicate = fixture.build_fixture(
+            aesv2_duplicate_path,
+            filter_name="asciihex-flate",
+            encryption="aesv2-r4",
+        )
+        assert aesv2_duplicate["sha256"] == fixture.build_fixture(
+            aesv2_duplicate_path,
+            filter_name="asciihex-flate",
+            encryption="aesv2-r4",
         )["sha256"]
         cases += 1
 

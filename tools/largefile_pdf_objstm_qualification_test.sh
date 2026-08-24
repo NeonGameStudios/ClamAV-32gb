@@ -54,6 +54,10 @@ int main(int argc, char **argv)
         puts("check_user_password: encrypted PDF found, user password is empty, will attempt to decrypt");
         puts("pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows");
     }
+    if (strstr(input, "aesv2-") != NULL) {
+        puts("check_user_password: encrypted PDF found, user password is empty, will attempt to decrypt");
+        puts("pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks");
+    }
     if (mode != NULL && strcmp(mode, "reject") == 0) {
         char path[4096];
         FILE *leak;
@@ -81,7 +85,7 @@ gcc -O2 -o "$stub" "$stub.c"
     > "$work/qualification.log" 2>&1
 
 [ "$(awk -F '\t' 'NR > 1 && $10 == "pass" { count++ } END { print count + 0 }' \
-    "$work/evidence/results.tsv")" -eq 8 ]
+    "$work/evidence/results.tsv")" -eq 11 ]
 awk -F '\t' 'NR > 1 && $1 == "materialized" { found = 1; if ($9 < $7) exit 1 } END { exit !found }' \
     "$work/evidence/corpus-manifest.tsv"
 grep -F 'PDF object-stream qualification passed' "$work/qualification.log" >/dev/null
@@ -104,6 +108,13 @@ if python3 "$root/tools/largefile_pdf_objstm_evidence_check.py" \
     exit 1
 fi
 cp "$work/evidence-metadata.clean" "$work/evidence/evidence-metadata.txt"
+printf 'unbound\n' > "$work/evidence/provenance/unbound.txt"
+if python3 "$root/tools/largefile_pdf_objstm_evidence_check.py" \
+    --allow-dirty-source "$work/evidence" > "$work/unbound-check.log" 2>&1; then
+    echo 'evidence checker accepted an unbound provenance artifact' >&2
+    exit 1
+fi
+rm "$work/evidence/provenance/unbound.txt"
 printf 'tampered\n' >> "$work/evidence/logs/raw.log"
 if python3 "$root/tools/largefile_pdf_objstm_evidence_check.py" \
     --allow-dirty-source "$work/evidence" > "$work/tampered-check.log" 2>&1; then

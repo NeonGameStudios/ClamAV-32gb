@@ -19,6 +19,9 @@ CASES = {
     "rc4-raw": ("raw", "rc4-r2", False),
     "rc4-flate": ("flate", "rc4-r2", False),
     "rc4-filter-chain": ("asciihex-flate", "rc4-r2", False),
+    "aesv2-raw": ("raw", "aesv2-r4", False),
+    "aesv2-flate": ("flate", "aesv2-r4", False),
+    "aesv2-filter-chain": ("asciihex-flate", "aesv2-r4", False),
 }
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SOURCE_ID = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
@@ -96,6 +99,7 @@ def main():
         "schema_version", "source_revision_type", "source_commit", "source_tree",
         "source_tree_status", "source_manifest_sha256", "scanner_sha256",
         "scanner_type_sha256", "scanner_version_sha256", "ldd_sha256",
+        "openssl_version_sha256",
         "runtime_dependencies_manifest_sha256", "database_manifest_sha256",
         "custom_signature_sha256", "generator_sha256",
         "qualification_sha256", "evidence_checker_sha256", "decoded_size",
@@ -104,9 +108,9 @@ def main():
         "corpus_manifest_sha256", "results_sha256", "qualification_status",
     }
     if set(metadata) != expected_keys:
-        fail("metadata keys do not match schema version 1")
-    if metadata["schema_version"] != "2" or metadata["qualification_status"] != "pass":
-        fail("metadata does not declare a schema-1 pass")
+        fail("metadata keys do not match schema version 3")
+    if metadata["schema_version"] != "3" or metadata["qualification_status"] != "pass":
+        fail("metadata does not declare a schema-3 pass")
     if metadata["source_revision_type"] not in ("git-commit", "content-manifest"):
         fail("source revision type is invalid")
     if metadata["source_tree_status"] != "clean" and not args.allow_dirty_source:
@@ -116,7 +120,8 @@ def main():
             fail(f"{key} is not a supported source object identifier")
     for key in (
         "source_manifest_sha256", "scanner_sha256", "scanner_type_sha256",
-        "scanner_version_sha256", "ldd_sha256", "runtime_dependencies_manifest_sha256",
+        "scanner_version_sha256", "openssl_version_sha256", "ldd_sha256",
+        "runtime_dependencies_manifest_sha256",
         "database_manifest_sha256", "custom_signature_sha256", "generator_sha256",
         "qualification_sha256", "evidence_checker_sha256", "corpus_manifest_sha256",
         "results_sha256", "generator_test_sha256",
@@ -135,6 +140,7 @@ def main():
     require_hash(metadata, "scanner_sha256", evidence / "provenance/clamscan")
     require_hash(metadata, "scanner_type_sha256", evidence / "provenance/scanner-type.txt")
     require_hash(metadata, "scanner_version_sha256", evidence / "provenance/scanner-version.txt")
+    require_hash(metadata, "openssl_version_sha256", evidence / "provenance/openssl-version.txt")
     require_hash(metadata, "ldd_sha256", evidence / "provenance/ldd-clamscan.txt")
     require_hash(
         metadata, "runtime_dependencies_manifest_sha256",
@@ -241,8 +247,17 @@ def main():
             and SHA256.fullmatch(metadata_values.get("file_key_sha256", ""))
             is not None
         )
-        if encrypted_metadata != (expected_encryption == "rc4-r2"):
+        if encrypted_metadata != (expected_encryption != "none"):
             fail(f"{row['case']} generator security metadata oracle is incorrect")
+        object_stream_iv = metadata_values.get("object_stream_iv")
+        if expected_encryption == "aesv2-r4":
+            if re.fullmatch(r"[0-9a-f]{32}", object_stream_iv or "") is None:
+                fail(f"{row['case']} AESV2 IV oracle is missing")
+        elif expected_encryption == "rc4-r2":
+            if object_stream_iv != "none":
+                fail(f"{row['case']} RC4 IV oracle is incorrect")
+        elif object_stream_iv is not None:
+            fail(f"{row['case']} unencrypted metadata unexpectedly contains an IV")
         if row["case"] == "materialized" and (case_decoded != decoded_size or allocated < size):
             fail("materialized fixture size/allocation does not meet its oracle")
 
@@ -281,12 +296,18 @@ def main():
         has_bounded_rc4 = (
             "pdf_stream_decrypt_reader: decrypting RC4 stream in bounded windows" in text
         )
+        has_bounded_aesv2 = (
+            "pdf_stream_decrypt_reader: decrypting AESV2 stream in bounded CBC blocks" in text
+        )
         has_empty_password = (
             "encrypted PDF found, user password is empty, will attempt to decrypt" in text
         )
-        if (has_bounded_rc4, has_empty_password) != (
-            (True, True) if encryption == "rc4-r2" else (False, False)
-        ):
+        expected_diagnostics = {
+            "none": (False, False, False),
+            "rc4-r2": (True, False, True),
+            "aesv2-r4": (False, True, True),
+        }[encryption]
+        if (has_bounded_rc4, has_bounded_aesv2, has_empty_password) != expected_diagnostics:
             fail(f"{row['case']} encrypted-stream diagnostic oracle is incorrect")
         tempdir = evidence / "tmp" / row["case"]
         if not tempdir.is_dir() or any(tempdir.iterdir()):
@@ -303,6 +324,19 @@ def main():
         fail("custom database directory contains unbound artifacts")
     if {path.name for path in (evidence / "tmp").iterdir()} != set(CASES):
         fail("temporary root contains an unexpected case directory")
+    expected_provenance = {
+        "clamscan",
+        "database-manifest.tsv",
+        "ldd-clamscan.txt",
+        "openssl-version.txt",
+        "runtime-components",
+        "runtime-dependencies.tsv",
+        "scanner-type.txt",
+        "scanner-version.txt",
+        "source-manifest.txt",
+    }
+    if {path.name for path in (evidence / "provenance").iterdir()} != expected_provenance:
+        fail("provenance directory contains unbound artifacts")
     actual_components = {
         path.relative_to(evidence).as_posix()
         for path in (evidence / "provenance/runtime-components").iterdir()
