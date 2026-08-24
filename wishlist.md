@@ -2193,9 +2193,9 @@ and Sonic1 qualification as release gates.
 - Qualify the new 64 KiB-input/256 KiB-output single-Flate path with compiled
   malformed and valid PDF corpora, sanitizer fault injection, and a
   materialized multi-gigabyte stream on Sonic1. Preserve transactional rollback
-  and exact temporary accounting. Convert object streams, encryption, filter
-  chains separately before retiring the remaining
-  `pdf-stream-over-1g` capability exception.
+  and exact temporary accounting. Supported ordinary filter chains now use the
+  bounded spool path below; convert object streams and encryption before
+  retiring the remaining `pdf-stream-over-1g` capability exception.
 
 ## PDF single-RunLength bounded streaming — 2026-08-23
 
@@ -2225,3 +2225,14 @@ and Sonic1 qualification as release gates.
 - Keep non-identity Flate/LZW predictors explicit incomplete unless bounded
   TIFF/PNG predictor reversal is implemented. Qualify identity, malformed,
   unsupported, raw-fallback, corpus, and Sonic1 behavior before release.
+
+## PDF bounded filter-chain spools — 2026-08-23
+
+- Qualify chains composed of Flate, RunLength, ASCIIHex, ASCII85, and LZW with
+  compiled valid/malformed corpora, every supported filter ordering,
+  materialized multi-gigabyte intermediates, write/seek/map/read/cleanup fault
+  injection, and Sonic1 release/sanitizer runs. Preserve simultaneous
+  input/output temporary accounting, release consumed inputs only after the
+  next stage completes, and require exact final-output/quota rollback before
+  raw fallback. Add per-filter DecodeParms-array support separately; retain
+  object streams, encryption, and unsupported/mixed chains as explicit gaps.

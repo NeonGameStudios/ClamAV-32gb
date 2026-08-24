@@ -6874,9 +6874,10 @@ bytes reserved by that attempt before the established raw fallback is written.
 Tests cover exact multi-window output/accounting, one-byte-short quota rollback,
 truncated-output replacement by the exact raw stream, and a logical Flate input
 length above `UINT32_MAX` whose valid stream terminates in the first bounded
-window. Object streams, encryption, and filter chains remain explicit
-unsupported boundaries pending their own streaming designs; compiled corpus,
-sanitizer, materialized large-stream, and Sonic1 evidence are still required.
+window. Object streams and encryption remain explicit unsupported boundaries;
+supported ordinary filter chains now use the bounded spool design below.
+Compiled corpus, sanitizer, materialized large-stream, and Sonic1 evidence are
+still required.
 
 An isolated Linux GCC translation-unit check found that the accumulated unit
 test source had an unmatched `_WIN32` conditional and referenced several late
@@ -6928,9 +6929,8 @@ output, all PDF whitespace bytes, known vectors, partial groups, marker
 behavior, one-byte-short quota rollback, invalid or overflowing input after
 written prefixes, and early terminators under logical lengths above
 `UINT32_MAX`. The production harness passes all 20 streamed-filter cases both
-normally and under GCC AddressSanitizer/UBSan with leak detection. Filter
-chains, encryption, object streams, compiled corpus, and Sonic1 qualification
-remain open.
+normally and under GCC AddressSanitizer/UBSan with leak detection. Encryption,
+object streams, compiled corpus, and Sonic1 qualification remain open.
 
 ## PDF single-LZW bounded streaming — 2026-08-23
 
@@ -6948,9 +6948,9 @@ explicit incomplete results. The legacy token decoder also no longer calls
 exact output, one-byte-short quota rollback, missing EOI after a written
 prefix, parameter failures, and early EOI with a logical source length above
 `UINT32_MAX`. The production harness passes all 26 single-filter cases both
-normally and under GCC AddressSanitizer/UBSan with leak detection. Filter-chain
-spools, encrypted/object streams, compiled corpus, materialized large streams,
-and Sonic1 qualification remain open.
+normally and under GCC AddressSanitizer/UBSan with leak detection.
+Encrypted/object streams, compiled corpus, materialized large streams, and
+Sonic1 qualification remain open.
 
 ## PDF predictor fail-closed admission — 2026-08-23
 
@@ -6963,3 +6963,42 @@ as fully decoded while leaving predictor reversal explicitly unsupported.
 Regressions bind valid identity-Flate output and every malformed/unsupported
 parameter class. The production harness passes all 27 streamed-filter cases
 normally and under GCC AddressSanitizer/UBSan with leak detection.
+
+## PDF bounded filter-chain spools — 2026-08-23
+
+Ordinary unencrypted chains composed only of Flate, RunLength, ASCIIHex,
+ASCII85, and LZW now share a native-width bounded reader. The original stream
+is exposed in at most 64 KiB memory windows. Each non-final decoder writes to a
+quota-accounted temporary file, and the next decoder reads that completed
+stage through 64 KiB fmap windows while retaining only fixed decoder state and
+one 256 KiB output buffer.
+
+Temporary accounting deliberately overlaps the completed input stage with the
+stage being produced. The consumed input is released only after the next
+decoder succeeds. Any decode, deadline, quota, write, size-verification,
+mapping, read, close, or unlink failure destroys every intermediate, truncates
+and rewinds the final child to its pre-chain offset, and restores the exact
+reservation baseline before the existing raw-fallback policy is applied.
+
+Five committed regressions bind exact multi-window ASCIIHex-to-Flate output,
+one-byte-short overlapping quota admission with zero residue, second-stage
+truncation with exact raw replacement, three-stage spool rotation, and logical
+input above `UINT32_MAX` whose encoded stream terminates in the first bounded
+window. The linked production harness exercises every supported decoder as an
+intermediate writer and file-backed reader, validates three-stage peak
+accounting, adds an injected intermediate fmap read failure, and proves
+`CL_EREAD` propagation without raw fallback or leaked quota/files. A simulated
+post-decode unlink failure also proves that final output and quota are rolled
+back after a successful decode if stage cleanup fails, including when a
+zero-output `CL_BREAK` would otherwise permit a successful raw fallback. The
+injectable bounded fmap harness passes all 37 cases normally and under GCC
+AddressSanitizer/UBSan with leak detection. A second build links the production
+`fmap.c` implementation directly; all 36 applicable cases also pass normally
+and under the same sanitizers. `pdfdecode.c`, `lzwdec.c`, and the complete
+`check_clamav.c` translation unit pass GCC compilation; only pre-existing
+isolated-build warnings remain.
+
+Object streams, encrypted streams, unsupported or mixed filter chains,
+per-filter DecodeParms arrays, exhaustive filter-order corpus coverage,
+materialized multi-gigabyte intermediates, and Sonic1 release/sanitizer
+qualification remain open.

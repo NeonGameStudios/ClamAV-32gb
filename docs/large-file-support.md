@@ -2807,8 +2807,10 @@ Legacy extracted-object and normalized-content temporary files now charge
 incrementally against `MaxTemporarySize` and retain their reservations through
 the reservation-aware nested scans. Read, write, quota, rewind, and cleanup
 failures remain fail-visible. This closes the temporary-spool accounting gap
-without changing the deliberate legacy PDF filter boundary recorded as
-`pdf-stream-over-1g`; parser-family and large-PDF qualification remain open.
+for extracted objects. Ordinary supported filter chains now use independently
+quota-accounted intermediate spools; the residual object-stream, encryption,
+unsupported-filter, and DecodeParms-array boundary remains recorded as
+`pdf-stream-over-1g`. Parser-family and large-PDF qualification remain open.
 
 ## ALZ bounded reader and member streaming — 2026-08-19
 
@@ -2948,19 +2950,20 @@ open.
 The PDF stream decoder API now carries the source stream length as `size_t`
 through the caller instead of narrowing it to `uint32_t` at the object
 boundary. The token buffer is also subject to the shared 1 GiB individual
-allocation ceiling, so a stream larger than `CLI_MAX_ALLOCATION` is rejected
-before decoding with `CL_ERESOURCE`. The legacy filter implementations still
-use 32-bit input lengths, so a stream larger than `UINT32_MAX` is likewise
-rejected before decoding. Both paths mark the containing scan incomplete and
-cannot be treated as scanned prefixes. The focused boundary regression covers
-the status and non-cacheability state. Converting the remaining PDF filters to
-a fully streaming reader remains a release gate; this change closes the
-silent-wraparound path and makes the earlier 1 GiB boundary explicit.
+allocation ceiling, so a stream routed through a residual legacy token larger
+than `CLI_MAX_ALLOCATION` is rejected before decoding with `CL_ERESOURCE`.
+Those legacy implementations still use 32-bit input lengths and reject a
+larger stream before narrowing. Ordinary unencrypted streams and chains made
+only from the five supported filters now bypass both boundaries through the
+bounded reader/spool path. Object streams, encryption, unsupported or mixed
+chains, and per-filter DecodeParms arrays remain release gates. Every residual
+rejection marks the containing scan incomplete and cannot be treated as a
+scanned prefix.
 
 PDF object and object-stream positions are also native-width now. The
 object-stream pair cursor and parsed object start no longer narrow to
 32-bit values before containment checks, extraction, or diagnostics; a focused
-unit regression preserves an offset above 4 GiB. PDF decoder qualification
+unit regression preserves an offset above 4 GiB. Object-stream qualification
 still remains separately bounded by the explicit legacy filter-input boundary.
 Object-stream containment now uses subtraction-based checked bounds for both
 the current and next object offsets, so malformed large values cannot wrap the
@@ -2980,14 +2983,14 @@ out-of-range reference marks the scan incomplete instead of aliasing an
 unrelated object through integer wraparound; the focused regression covers the
 upper valid boundary and both overflow cases.
 
-The capability manifest records `pdf-stream-over-1g` as deliberately
-unsupported. This is a legacy contiguous-buffer boundary, not an outer-file
-limit: a PDF may still contain other inspectable objects, but a legacy filter
-stream or Flate/RunLength/LZW decoder growth above 1 GiB makes the containing
-scan incomplete rather than allowing a truncated or wrapped prefix to be
-treated as complete. The legacy 4 GiB width check remains defense-in-depth,
-and the focused decoder paths retain native-width output accounting until
-these explicit boundary checks.
+The capability manifest retains `pdf-stream-over-1g` for the deliberately
+unsupported residual paths. This is not an outer-file limit: ordinary
+unencrypted supported filters and their chains use native-width bounded
+readers, but object streams, encryption, unsupported or mixed chains, and
+per-filter DecodeParms arrays may still require the legacy contiguous token.
+Crossing that token's 1 GiB allocation or 4 GiB width boundary makes the
+containing scan incomplete rather than allowing a truncated or wrapped prefix
+to be treated as complete.
 
 ## TIFF IFD cursor width — 2026-08-20
 
@@ -6453,10 +6456,10 @@ leakage, malformed-prefix rollback, and native-width source admission above
 `UINT32_MAX`.
 
 Object streams still retain decoded bytes for object parsing, and encrypted
-streams and filter chains need intermediate representations. Those paths
-retain their explicit legacy contiguous/width boundary. Compiled PDF corpus,
-sanitizer, materialized large-stream, and supported-build Sonic1 qualification
-remain release gates.
+streams retain their explicit legacy contiguous/width boundary. Supported
+ordinary filter chains now use the file-backed path described below. Compiled
+PDF corpus, sanitizer, materialized large-stream, and supported-build Sonic1
+qualification remain release gates.
 
 The isolated Linux GCC translation-unit check also exposed an older unmatched
 `_WIN32` guard and late callback declarations in `check_clamav.c`. The guard is
@@ -6489,8 +6492,8 @@ one-byte-short quota rollback with zero leakage, malformed input after a valid
 prefix, and a native-width logical input above `UINT32_MAX` that terminates at
 an early marker. The production-code harness passes all eight Flate and
 RunLength cases under ordinary GCC and GCC AddressSanitizer/UBSan with leak
-detection. Filter chains, object streams, and encryption remain explicit PDF
-qualification gaps.
+detection. Object streams and encryption remain explicit PDF qualification
+gaps.
 
 ## PDF single-ASCII filter bounded streaming — 2026-08-23
 
@@ -6514,8 +6517,8 @@ one-byte-short quotas, invalid and overflowing groups after valid output, and
 native-width logical lengths above `UINT32_MAX` with early terminators. The
 production harness passes all 20 Flate, RunLength, ASCIIHex, and ASCII85 cases
 normally and under GCC AddressSanitizer/UBSan with leak detection. Object
-streams, encryption, and filter chains remain the explicit token-backed PDF
-gaps.
+streams, encryption, and chains containing unsupported filters remain the
+explicit token-backed PDF gaps.
 
 ## PDF single-LZW bounded streaming — 2026-08-23
 
@@ -6539,7 +6542,7 @@ prefix with exact raw replacement, `EarlyChange` zero, malformed and
 unsupported parameters, and an early EOI under a logical input length above
 `UINT32_MAX`. The real production harness passes all 26 streamed-filter cases
 normally and under GCC AddressSanitizer/UBSan with leak detection. Remaining
-PDF work includes bounded filter-chain spools, encrypted and object streams,
+PDF work includes encrypted and object streams, per-filter DecodeParms arrays,
 compiled corpus, materialized large-stream, and Sonic1 qualification.
 
 ## PDF predictor fail-closed admission — 2026-08-23
@@ -6549,10 +6552,46 @@ Missing, non-scalar, non-numeric, and non-identity values return an explicit
 incomplete parse result before decoder output starts; the ordinary
 single-filter path then writes the exact encoded stream for raw matching.
 This replaces the previous silent acceptance of predictor-transformed bytes as
-if they were fully decoded. The same check protects legacy filter-chain paths.
+if they were fully decoded. The same check protects bounded and residual legacy
+filter-chain paths.
 
 Focused tests prove identity-Flate output and exact raw fallback for TIFF/PNG
 predictors and malformed parameter forms. The real production harness passes
 all 27 streamed-filter cases normally and under GCC AddressSanitizer/UBSan with
 leak detection. Predictor reversal remains deliberately unsupported; the
 release contract is fail-closed rather than a false complete scan.
+
+## PDF bounded filter-chain spools — 2026-08-23
+
+Ordinary unencrypted chains composed entirely of `ASCIIHexDecode`,
+`ASCII85Decode`, `RunLengthDecode`, `FlateDecode`, and `LZWDecode` now bypass
+the legacy contiguous token. Every decoder consumes the same native-width
+reader: original memory is exposed in at most 64 KiB windows, while completed
+intermediate output is reopened through an fmap-backed 64 KiB file window.
+Each decoder retains only its fixed state and 256 KiB transactional output
+buffer.
+
+Intermediate files are created beneath the scan layer's temporary directory
+and charged incrementally to `MaxTemporarySize`. A completed input spool stays
+reserved for the entire next decode, so input and output overlap is counted at
+the actual peak. It is released only after that next filter completes. A
+decoder, mapping, read, size-verification, close, unlink, quota, deadline, or
+write failure destroys every stage, truncates and rewinds the final child to
+its pre-chain offset, restores the exact temporary-accounting baseline, and
+then permits raw fallback only for the established parse/break classes.
+
+Committed regressions cover exact multi-window ASCIIHex-to-Flate output,
+simultaneous input/output quota failure with no file or reservation residue,
+second-stage truncation with exact raw replacement, three-stage spool rotation,
+and native-width logical input above `UINT32_MAX`. The linked production
+harness additionally exercises every supported decoder as an intermediate
+writer and file-backed reader, validates a three-stage peak, injects an
+intermediate fmap read failure, verifies a non-fallback `CL_EREAD`, and proves
+that post-decode cleanup failures also roll back final output and cannot be
+hidden by a zero-output `CL_BREAK`. Its injectable bounded-fmap variant passes
+all 37 cases normally and under GCC AddressSanitizer/UBSan with leak detection.
+A second variant links the actual production `fmap.c`; all 36 applicable cases
+also pass normally and under the same sanitizers. Object streams, encryption,
+unsupported or mixed filter chains, per-filter DecodeParms arrays, compiled PDF
+corpus, materialized multi-gigabyte chains, and Sonic1 release/sanitizer
+qualification remain open.

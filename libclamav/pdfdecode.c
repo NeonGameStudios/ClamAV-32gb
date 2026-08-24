@@ -78,6 +78,24 @@ struct pdf_token {
     uint8_t *content; /* content stream */
 };
 
+struct pdf_stream_reader {
+    struct pdf_struct *pdf;
+    const uint8_t *memory;
+    fmap_t *map;
+    size_t length;
+    size_t source_offset;
+    const uint8_t *buffer;
+    size_t buffer_length;
+    size_t buffer_offset;
+};
+
+struct pdf_filter_stage {
+    int fd;
+    char *path;
+    size_t length;
+    uint64_t reserved;
+};
+
 static cl_error_t pdf_decoder_output_width_check(cli_ctx *ctx, size_t current, size_t additional)
 {
     if (additional > (size_t)UINT32_MAX || current > (size_t)UINT32_MAX - additional) {
@@ -107,6 +125,226 @@ static cl_error_t pdf_checktimelimit(struct pdf_struct *pdf, const char *reason)
         cli_mark_scan_incomplete(ctx, reason);
 
     return status;
+}
+
+static void pdf_stream_reader_init_memory(struct pdf_stream_reader *reader,
+                                          struct pdf_struct *pdf,
+                                          const uint8_t *memory, size_t length)
+{
+    memset(reader, 0, sizeof(*reader));
+    reader->pdf    = pdf;
+    reader->memory = memory;
+    reader->length = length;
+}
+
+static cl_error_t pdf_stream_reader_init_file(struct pdf_stream_reader *reader,
+                                              struct pdf_struct *pdf, int fd,
+                                              size_t length, const char *path)
+{
+    memset(reader, 0, sizeof(*reader));
+    reader->pdf    = pdf;
+    reader->length = length;
+    reader->map    = fmap_new(fd, 0, length, "pdf-filter-stage", path);
+    if (reader->map == NULL) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF filter-stage input could not be mapped for bounded reads");
+        return CL_ERESOURCE;
+    }
+    return CL_SUCCESS;
+}
+
+static void pdf_stream_reader_destroy(struct pdf_stream_reader *reader)
+{
+    if (reader == NULL)
+        return;
+    if (reader->map != NULL)
+        cl_fmap_close(reader->map);
+    memset(reader, 0, sizeof(*reader));
+}
+
+static size_t pdf_stream_reader_consumed(const struct pdf_stream_reader *reader)
+{
+    size_t buffered = reader->buffer_length - reader->buffer_offset;
+
+    return reader->source_offset - buffered;
+}
+
+static cl_error_t pdf_stream_reader_reset(struct pdf_stream_reader *reader,
+                                          size_t offset)
+{
+    if (reader == NULL || offset > reader->length)
+        return CL_EARG;
+    reader->source_offset = offset;
+    reader->buffer        = NULL;
+    reader->buffer_length = 0;
+    reader->buffer_offset = 0;
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_stream_reader_fill(struct pdf_stream_reader *reader)
+{
+    size_t length;
+    const uint8_t *data;
+
+    if (reader == NULL || reader->pdf == NULL)
+        return CL_ENULLARG;
+    if (reader->source_offset >= reader->length) {
+        reader->buffer        = NULL;
+        reader->buffer_length = 0;
+        reader->buffer_offset = 0;
+        return CL_SUCCESS;
+    }
+
+    length = MIN((size_t)PDF_INPUT_WINDOW_SIZE,
+                 reader->length - reader->source_offset);
+    if (reader->map != NULL) {
+        data = fmap_need_off_once(reader->map, reader->source_offset, length);
+        if (data == NULL) {
+            cli_mark_scan_incomplete(reader->pdf->ctx,
+                                     "PDF filter-stage input window could not be read");
+            return CL_EREAD;
+        }
+    } else {
+        if (reader->memory == NULL)
+            return CL_ENULLARG;
+        data = reader->memory + reader->source_offset;
+    }
+
+    reader->source_offset += length;
+    reader->buffer        = data;
+    reader->buffer_length = length;
+    reader->buffer_offset = 0;
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_stream_reader_next_chunk(struct pdf_stream_reader *reader,
+                                               const uint8_t **data,
+                                               size_t *length)
+{
+    cl_error_t status;
+
+    if (reader == NULL || data == NULL || length == NULL)
+        return CL_ENULLARG;
+    if (reader->buffer_offset == reader->buffer_length) {
+        status = pdf_stream_reader_fill(reader);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    *data   = reader->buffer == NULL ? NULL : reader->buffer + reader->buffer_offset;
+    *length = reader->buffer_length - reader->buffer_offset;
+    reader->buffer_offset = reader->buffer_length;
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_stream_reader_get_byte(struct pdf_stream_reader *reader,
+                                             uint8_t *byte, bool *at_eof)
+{
+    cl_error_t status;
+
+    if (reader == NULL || byte == NULL || at_eof == NULL)
+        return CL_ENULLARG;
+    if (reader->buffer_offset == reader->buffer_length) {
+        status = pdf_stream_reader_fill(reader);
+        if (status != CL_SUCCESS)
+            return status;
+    }
+    if (reader->buffer_length == 0) {
+        *at_eof = true;
+        return CL_SUCCESS;
+    }
+
+    *byte = reader->buffer[reader->buffer_offset++];
+    *at_eof = false;
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_stream_reader_read_exact(struct pdf_stream_reader *reader,
+                                               uint8_t *output, size_t length,
+                                               bool *complete)
+{
+    size_t offset;
+
+    if (reader == NULL || (length != 0 && output == NULL) || complete == NULL)
+        return CL_ENULLARG;
+    *complete = false;
+
+    for (offset = 0; offset < length; offset++) {
+        bool at_eof;
+        cl_error_t status = pdf_stream_reader_get_byte(reader,
+                                                       output + offset,
+                                                       &at_eof);
+
+        if (status != CL_SUCCESS)
+            return status;
+        if (at_eof)
+            return CL_SUCCESS;
+    }
+
+    *complete = true;
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_stream_reader_check_deadline(
+    struct pdf_stream_reader *reader, size_t *next_deadline_offset,
+    const char *reason)
+{
+    size_t consumed;
+    cl_error_t status;
+
+    if (reader == NULL || next_deadline_offset == NULL || reason == NULL)
+        return CL_ENULLARG;
+    consumed = pdf_stream_reader_consumed(reader);
+    if (consumed < *next_deadline_offset)
+        return CL_SUCCESS;
+
+    status = pdf_checktimelimit(reader->pdf, reason);
+    if (status != CL_SUCCESS)
+        return status;
+    if (consumed > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
+        *next_deadline_offset = SIZE_MAX;
+    } else {
+        *next_deadline_offset = consumed + PDF_INPUT_WINDOW_SIZE;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_stream_reader_find_next_line(struct pdf_stream_reader *reader,
+                                                   size_t search_start,
+                                                   size_t *line_start)
+{
+    bool saw_line_end = false;
+    cl_error_t status;
+
+    if (reader == NULL || line_start == NULL || search_start > reader->length)
+        return CL_ENULLARG;
+    status = pdf_stream_reader_reset(reader, search_start);
+    if (status != CL_SUCCESS)
+        return status;
+
+    for (;;) {
+        uint8_t byte;
+        bool at_eof;
+        size_t consumed = pdf_stream_reader_consumed(reader);
+
+        if ((consumed & 0x3fffU) == 0) {
+            status = pdf_checktimelimit(reader->pdf,
+                                        "PDF decoder resynchronization reached the configured time limit");
+            if (status != CL_SUCCESS)
+                return status;
+        }
+        status = pdf_stream_reader_get_byte(reader, &byte, &at_eof);
+        if (status != CL_SUCCESS)
+            return status;
+        if (at_eof) {
+            *line_start = reader->length;
+            return CL_SUCCESS;
+        }
+        if (byte == '\n' || byte == '\r') {
+            saw_line_end = true;
+        } else if (saw_line_end) {
+            *line_start = pdf_stream_reader_consumed(reader) - 1U;
+            return CL_SUCCESS;
+        }
+    }
 }
 
 static cl_error_t pdf_write_output(struct pdf_struct *pdf, int fout, const void *data, size_t length)
@@ -186,6 +424,9 @@ static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *strea
 }
 
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
+static cl_error_t pdf_rollback_stream_output(struct pdf_struct *pdf, int fout,
+                                             off_t output_start,
+                                             uint64_t reservation_start);
 static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
                                          const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
 static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream, size_t streamlen,
@@ -196,6 +437,239 @@ static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_ob
                                            size_t streamlen, int fout, size_t *bytes_scanned);
 static cl_error_t pdf_stream_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
                                        const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_flatedecode_reader(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                                struct pdf_dict *params, struct pdf_stream_reader *reader,
+                                                int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_rldecode_reader(struct pdf_struct *pdf, struct pdf_stream_reader *reader,
+                                             int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_asciihexdecode_reader(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                                   struct pdf_stream_reader *reader, int fout,
+                                                   size_t *bytes_scanned);
+static cl_error_t pdf_stream_ascii85decode_reader(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                                  struct pdf_stream_reader *reader, int fout,
+                                                  size_t *bytes_scanned);
+static cl_error_t pdf_stream_lzwdecode_reader(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                              struct pdf_dict *params, struct pdf_stream_reader *reader,
+                                              int fout, size_t *bytes_scanned);
+
+static void pdf_filter_stage_init(struct pdf_filter_stage *stage)
+{
+    memset(stage, 0, sizeof(*stage));
+    stage->fd = -1;
+}
+
+static cl_error_t pdf_filter_stage_cleanup(struct pdf_struct *pdf,
+                                           struct pdf_filter_stage *stage,
+                                           cl_error_t status)
+{
+    if (stage == NULL)
+        return status;
+
+    if (stage->fd >= 0 && close(stage->fd) != 0) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF filter-stage file could not be closed");
+        if (status == CL_SUCCESS || status == CL_VERIFIED ||
+            status == CL_BREAK)
+            status = CL_EWRITE;
+    }
+    stage->fd = -1;
+
+    if (stage->path != NULL &&
+        (pdf->ctx->engine == NULL || !pdf->ctx->engine->keeptmp) &&
+        cli_unlink(stage->path) != 0) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF filter-stage file could not be removed");
+        if (status == CL_SUCCESS || status == CL_VERIFIED ||
+            status == CL_BREAK)
+            status = CL_EUNLINK;
+    }
+    free(stage->path);
+    stage->path = NULL;
+
+    if (stage->reserved != 0) {
+        if (pdf->temporary_reserved == NULL ||
+            *pdf->temporary_reserved < stage->reserved) {
+            cli_mark_scan_incomplete(
+                pdf->ctx,
+                "PDF filter-stage temporary accounting underflowed during cleanup");
+            if (status == CL_SUCCESS || status == CL_VERIFIED ||
+                status == CL_BREAK)
+                status = CL_ERESOURCE;
+        } else {
+            cli_scan_release_temporary(pdf->ctx, stage->reserved);
+            *pdf->temporary_reserved -= stage->reserved;
+        }
+    }
+    stage->reserved = 0;
+    stage->length   = 0;
+    return status;
+}
+
+static bool pdf_stream_filter_is_supported(uint32_t filter)
+{
+    return filter == OBJ_FILTER_FLATE || filter == OBJ_FILTER_RL ||
+           filter == OBJ_FILTER_AH || filter == OBJ_FILTER_A85 ||
+           filter == OBJ_FILTER_LZW;
+}
+
+static bool pdf_stream_filter_chain_is_supported(const struct pdf_obj *obj)
+{
+    uint32_t i;
+
+    if (obj == NULL || obj->numfilters == 0 ||
+        obj->numfilters > PDF_FILTERLIST_MAX)
+        return false;
+    for (i = 0; i < obj->numfilters; i++) {
+        if (!pdf_stream_filter_is_supported(obj->filterlist[i]))
+            return false;
+    }
+    return true;
+}
+
+static cl_error_t pdf_stream_filter_dispatch(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    uint32_t filter, struct pdf_stream_reader *reader, int fout,
+    size_t *bytes_scanned)
+{
+    switch (filter) {
+        case OBJ_FILTER_FLATE:
+            return pdf_stream_flatedecode_reader(pdf, obj, params, reader,
+                                                  fout, bytes_scanned);
+        case OBJ_FILTER_RL:
+            return pdf_stream_rldecode_reader(pdf, reader, fout,
+                                               bytes_scanned);
+        case OBJ_FILTER_AH:
+            return pdf_stream_asciihexdecode_reader(pdf, obj, reader, fout,
+                                                     bytes_scanned);
+        case OBJ_FILTER_A85:
+            return pdf_stream_ascii85decode_reader(pdf, obj, reader, fout,
+                                                    bytes_scanned);
+        case OBJ_FILTER_LZW:
+            return pdf_stream_lzwdecode_reader(pdf, obj, params, reader,
+                                                fout, bytes_scanned);
+        default:
+            return CL_EARG;
+    }
+}
+
+static cl_error_t pdf_stream_filter_chain(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    const char *stream, size_t streamlen, int fout, size_t *bytes_scanned)
+{
+    struct pdf_filter_stage input_stage;
+    struct pdf_filter_stage output_stage;
+    struct pdf_stream_reader reader;
+    uint64_t reservation_start = 0;
+    off_t output_start;
+    cl_error_t status = CL_SUCCESS;
+    uint32_t i;
+    bool reader_initialized = false;
+
+    if (pdf == NULL || obj == NULL || stream == NULL || bytes_scanned == NULL ||
+        obj->numfilters < 2 || !pdf_stream_filter_chain_is_supported(obj))
+        return CL_EARG;
+    *bytes_scanned = 0;
+    pdf_filter_stage_init(&input_stage);
+    pdf_filter_stage_init(&output_stage);
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF filter-chain output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream, streamlen);
+    reader_initialized = true;
+
+    for (i = 0; i < obj->numfilters; i++) {
+        STATBUF output_stat;
+        size_t decoded = 0;
+        bool final_filter = i + 1U == obj->numfilters;
+        int output_fd      = fout;
+
+        status = pdf_checktimelimit(
+            pdf, "PDF streamed filter chain reached the configured time limit");
+        if (status != CL_SUCCESS)
+            goto fail;
+
+        if (!final_filter) {
+            status = cli_gentempfd(pdf->ctx->this_layer_tmpdir,
+                                   &output_stage.path, &output_stage.fd);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF filter-chain intermediate file could not be created");
+                goto fail;
+            }
+            output_fd = output_stage.fd;
+        }
+
+        status = pdf_stream_filter_dispatch(
+            pdf, obj, params, obj->filterlist[i], &reader, output_fd,
+            &decoded);
+        if (status != CL_SUCCESS)
+            goto fail;
+
+        if (final_filter) {
+            pdf_stream_reader_destroy(&reader);
+            reader_initialized = false;
+            status = pdf_filter_stage_cleanup(pdf, &input_stage, status);
+            if (status != CL_SUCCESS)
+                goto fail;
+            *bytes_scanned = decoded;
+            return CL_SUCCESS;
+        }
+
+        output_stage.length = decoded;
+        if (pdf->temporary_reserved != NULL)
+            output_stage.reserved = (uint64_t)decoded;
+        if (FSTAT(output_stage.fd, &output_stat) != 0 ||
+            output_stat.st_size < 0 || !S_ISREG(output_stat.st_mode) ||
+            (uint64_t)output_stat.st_size != (uint64_t)decoded) {
+            cli_mark_scan_incomplete(
+                pdf->ctx,
+                "PDF filter-chain intermediate size could not be verified");
+            status = CL_EWRITE;
+            goto fail;
+        }
+
+        pdf_stream_reader_destroy(&reader);
+        reader_initialized = false;
+        status = pdf_filter_stage_cleanup(pdf, &input_stage, status);
+        if (status != CL_SUCCESS)
+            goto fail;
+
+        status = pdf_stream_reader_init_file(
+            &reader, pdf, output_stage.fd, output_stage.length,
+            output_stage.path);
+        if (status != CL_SUCCESS)
+            goto fail;
+        reader_initialized = true;
+        input_stage         = output_stage;
+        pdf_filter_stage_init(&output_stage);
+    }
+
+    status = CL_EPARSE;
+
+fail:
+    if (reader_initialized)
+        pdf_stream_reader_destroy(&reader);
+    status = pdf_filter_stage_cleanup(pdf, &output_stage, status);
+    status = pdf_filter_stage_cleanup(pdf, &input_stage, status);
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(
+            pdf, fout, output_start, reservation_start);
+
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+    return status;
+}
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
 static cl_error_t filter_rldecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -249,6 +723,12 @@ size_t pdf_decodestream(
         *status = CL_ENULLARG;
         goto done;
     }
+    if (obj->numfilters > PDF_FILTERLIST_MAX) {
+        cli_mark_scan_incomplete(pdf->ctx,
+                                 "PDF stream declares too many filters");
+        *status = CL_EPARSE;
+        goto done;
+    }
 
     /* An unfiltered stream has no reason to enter the contiguous legacy
      * decoder token. Copy it to the child output in bounded chunks instead,
@@ -260,40 +740,44 @@ size_t pdf_decodestream(
         goto done;
     }
 
-    /* Ordinary single-filter Flate, RunLength, ASCIIHex, ASCII85, and LZW streams
-     * do not need the legacy whole-buffer token. Decode them through bounded
-     * state directly into the quota-accounted child file. Object streams still
-     * need retained decoded bytes for object parsing, filter chains need an
-     * intermediate representation, and encrypted streams must pass through
-     * decryption first. XRef streams deliberately skip forced decryption. */
-    if (obj->numfilters == 1 &&
-        (obj->filterlist[0] == OBJ_FILTER_FLATE || obj->filterlist[0] == OBJ_FILTER_RL ||
-         obj->filterlist[0] == OBJ_FILTER_AH || obj->filterlist[0] == OBJ_FILTER_A85 ||
-         obj->filterlist[0] == OBJ_FILTER_LZW) &&
+    /* Ordinary Flate, RunLength, ASCIIHex, ASCII85, and LZW streams do not
+     * need the legacy whole-buffer token. A single filter writes directly to
+     * the quota-accounted child file; supported chains retain at most one
+     * completed input spool while producing the next stage. Object streams
+     * still need retained decoded bytes for object parsing, and encrypted
+     * streams must pass through decryption first. XRef streams deliberately
+     * skip forced decryption. */
+    if (obj->numfilters != 0 &&
+        pdf_stream_filter_chain_is_supported(obj) &&
         objstm == NULL &&
         !(obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
         (!(pdf->flags & (1 << DECRYPTABLE_PDF)) || xref)) {
         cl_error_t decode_status;
 
-        switch (obj->filterlist[0]) {
-            case OBJ_FILTER_FLATE:
-                decode_status = pdf_stream_flatedecode(pdf, obj, params, stream, streamlen, fout, &bytes_scanned);
-                break;
-            case OBJ_FILTER_RL:
-                decode_status = pdf_stream_rldecode(pdf, stream, streamlen, fout, &bytes_scanned);
-                break;
-            case OBJ_FILTER_AH:
-                decode_status = pdf_stream_asciihexdecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
-                break;
-            case OBJ_FILTER_A85:
-                decode_status = pdf_stream_ascii85decode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
-                break;
-            case OBJ_FILTER_LZW:
-                decode_status = pdf_stream_lzwdecode(pdf, obj, params, stream, streamlen, fout, &bytes_scanned);
-                break;
-            default:
-                decode_status = CL_EARG;
-                break;
+        if (obj->numfilters > 1) {
+            decode_status = pdf_stream_filter_chain(
+                pdf, obj, params, stream, streamlen, fout, &bytes_scanned);
+        } else {
+            switch (obj->filterlist[0]) {
+                case OBJ_FILTER_FLATE:
+                    decode_status = pdf_stream_flatedecode(pdf, obj, params, stream, streamlen, fout, &bytes_scanned);
+                    break;
+                case OBJ_FILTER_RL:
+                    decode_status = pdf_stream_rldecode(pdf, stream, streamlen, fout, &bytes_scanned);
+                    break;
+                case OBJ_FILTER_AH:
+                    decode_status = pdf_stream_asciihexdecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+                    break;
+                case OBJ_FILTER_A85:
+                    decode_status = pdf_stream_ascii85decode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+                    break;
+                case OBJ_FILTER_LZW:
+                    decode_status = pdf_stream_lzwdecode(pdf, obj, params, stream, streamlen, fout, &bytes_scanned);
+                    break;
+                default:
+                    decode_status = CL_EARG;
+                    break;
+            }
         }
         if (decode_status == CL_EPARSE || decode_status == CL_BREAK) {
             size_t raw_bytes           = 0;
@@ -1062,17 +1546,18 @@ static cl_error_t pdf_require_identity_predictor(struct pdf_struct *pdf,
     return CL_SUCCESS;
 }
 
-static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8_t *content, size_t length,
-                                             int fout, size_t *decoded_length, int *inflate_status)
+static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf,
+                                             struct pdf_stream_reader *reader,
+                                             int fout, size_t *decoded_length,
+                                             int *inflate_status)
 {
     uint8_t *output = NULL;
     z_stream stream;
-    size_t supplied = 0;
     size_t decoded  = 0;
     cl_error_t status;
     int zstat = Z_OK;
 
-    if (decoded_length == NULL || inflate_status == NULL)
+    if (reader == NULL || decoded_length == NULL || inflate_status == NULL)
         return CL_ENULLARG;
 
     *decoded_length = 0;
@@ -1101,12 +1586,17 @@ static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8
         if (status != CL_SUCCESS)
             break;
 
-        if (stream.avail_in == 0 && supplied < length) {
-            size_t input_length = MIN((size_t)PDF_INPUT_WINDOW_SIZE, length - supplied);
+        if (stream.avail_in == 0) {
+            const uint8_t *input;
+            size_t input_length;
 
-            stream.next_in  = (Bytef *)(content + supplied);
-            stream.avail_in = (uInt)input_length;
-            supplied += input_length;
+            status = pdf_stream_reader_next_chunk(reader, &input, &input_length);
+            if (status != CL_SUCCESS)
+                break;
+            if (input_length != 0) {
+                stream.next_in  = (Bytef *)input;
+                stream.avail_in = (uInt)input_length;
+            }
         }
 
         stream.next_out  = (Bytef *)output;
@@ -1149,14 +1639,16 @@ static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8
             /* A full output window can leave buffered output to drain even
              * after the final input window was consumed. Otherwise, input
              * exhaustion before Z_STREAM_END is a truncated stream. */
-            if (stream.avail_in == 0 && supplied == length && produced < INFLATE_CHUNK_SIZE) {
+            if (stream.avail_in == 0 && reader->source_offset == reader->length &&
+                produced < INFLATE_CHUNK_SIZE) {
                 status = CL_EPARSE;
                 break;
             }
             continue;
         }
 
-        if (zstat == Z_BUF_ERROR && stream.avail_in == 0 && supplied < length)
+        if (zstat == Z_BUF_ERROR && stream.avail_in == 0 &&
+            reader->source_offset < reader->length)
             continue;
 
         if (zstat == Z_MEM_ERROR) {
@@ -1175,19 +1667,22 @@ static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8
     return status;
 }
 
-static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj,
-                                         struct pdf_dict *params, const char *stream_data,
-                                         size_t streamlen, int fout, size_t *bytes_scanned)
+static cl_error_t pdf_stream_flatedecode_reader(struct pdf_struct *pdf,
+                                                struct pdf_obj *obj,
+                                                struct pdf_dict *params,
+                                                struct pdf_stream_reader *reader,
+                                                int fout, size_t *bytes_scanned)
 {
-    uint8_t *content = (uint8_t *)stream_data;
-    size_t length    = streamlen;
-    size_t decoded   = 0;
+    size_t decoded       = 0;
+    size_t payload_start = 0;
     off_t output_start;
     uint64_t reservation_start = 0;
     cl_error_t status;
-    int zstat = Z_OK;
+    int zstat  = Z_OK;
+    uint8_t first;
+    bool at_eof;
 
-    if (bytes_scanned == NULL)
+    if (reader == NULL || bytes_scanned == NULL)
         return CL_ENULLARG;
     *bytes_scanned = 0;
 
@@ -1203,39 +1698,53 @@ static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj 
     if (pdf->temporary_reserved != NULL)
         reservation_start = *pdf->temporary_reserved;
 
-    if (*content == '\r') {
-        content++;
-        length--;
+    status = pdf_stream_reader_get_byte(reader, &first, &at_eof);
+    if (status != CL_SUCCESS)
+        goto rollback;
+    if (at_eof) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF Flate stream has no compressed payload");
+        status = CL_EPARSE;
+        goto rollback;
+    }
+    if (first == '\r') {
+        payload_start = 1;
         pdfobj_flag(pdf, obj, BAD_STREAMSTART);
-        if (length == 0) {
+        if (payload_start == reader->length) {
             cli_dbgmsg("cli_pdf: Flate stream has no compressed payload after its leading carriage return\n");
             cli_mark_scan_incomplete(pdf->ctx, "PDF Flate stream has no compressed payload");
             status = CL_EPARSE;
             goto rollback;
         }
+    } else {
+        status = pdf_stream_reader_reset(reader, 0);
+        if (status != CL_SUCCESS)
+            goto rollback;
     }
 
-    status = pdf_inflate_stream_attempt(pdf, content, length, fout, &decoded, &zstat);
+    status = pdf_inflate_stream_attempt(pdf, reader, fout, &decoded, &zstat);
     if (status == CL_EPARSE && decoded == 0) {
-        uint8_t *resynchronized = decode_nextlinestart(pdf, content, length);
+        size_t resynchronized;
 
-        if (pdf->ctx != NULL && pdf->ctx->scan_timed_out) {
-            status = CL_ETIMEOUT;
+        status = pdf_stream_reader_find_next_line(reader, payload_start,
+                                                  &resynchronized);
+        if (status != CL_SUCCESS)
             goto rollback;
-        }
 
-        if (resynchronized != NULL && resynchronized > content &&
-            (size_t)(resynchronized - content) < length) {
-            length -= (size_t)(resynchronized - content);
-            content = resynchronized;
+        if (resynchronized > payload_start &&
+            resynchronized < reader->length) {
+            status = pdf_stream_reader_reset(reader, resynchronized);
+            if (status != CL_SUCCESS)
+                goto rollback;
             pdfobj_flag(pdf, obj, BAD_FLATESTART);
             decoded = 0;
-            status  = pdf_inflate_stream_attempt(pdf, content, length, fout, &decoded, &zstat);
+            status  = pdf_inflate_stream_attempt(pdf, reader, fout, &decoded,
+                                                 &zstat);
         }
     }
 
     if (status == CL_SUCCESS) {
-        cli_dbgmsg("cli_pdf: streamed Flate decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        cli_dbgmsg("cli_pdf: streamed Flate decoded %zu bytes from %zu input bytes\n",
+                   decoded, reader->length);
         *bytes_scanned = decoded;
         return decoded == 0 ? CL_BREAK : CL_SUCCESS;
     }
@@ -1264,13 +1773,32 @@ rollback:
     return status;
 }
 
-static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream_data, size_t streamlen,
-                                      int fout, size_t *bytes_scanned)
+static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf,
+                                         struct pdf_obj *obj,
+                                         struct pdf_dict *params,
+                                         const char *stream_data,
+                                         size_t streamlen, int fout,
+                                         size_t *bytes_scanned)
 {
-    const uint8_t *content = (const uint8_t *)stream_data;
+    struct pdf_stream_reader reader;
+    cl_error_t status;
+
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream_data, streamlen);
+    status = pdf_stream_flatedecode_reader(pdf, obj, params, &reader, fout,
+                                           bytes_scanned);
+    pdf_stream_reader_destroy(&reader);
+    return status;
+}
+
+static cl_error_t pdf_stream_rldecode_reader(struct pdf_struct *pdf,
+                                             struct pdf_stream_reader *reader,
+                                             int fout,
+                                             size_t *bytes_scanned)
+{
     uint8_t *output_buffer = NULL;
+    uint8_t literal[128];
     uint8_t repeated[128];
-    size_t offset                = 0;
     size_t decoded               = 0;
     size_t output_buffered       = 0;
     size_t next_deadline_offset  = 0;
@@ -1278,7 +1806,7 @@ static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream
     uint64_t reservation_start = 0;
     cl_error_t status           = CL_SUCCESS;
 
-    if (bytes_scanned == NULL)
+    if (reader == NULL || bytes_scanned == NULL)
         return CL_ENULLARG;
     *bytes_scanned = 0;
 
@@ -1296,38 +1824,48 @@ static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream
         return CL_EMEM;
     }
 
-    while (offset < streamlen) {
+    for (;;) {
         const uint8_t *output;
         size_t output_length;
         uint8_t control;
+        bool at_eof;
 
-        if (offset >= next_deadline_offset) {
-            status = pdf_checktimelimit(pdf, "PDF streamed RunLength traversal reached the configured time limit");
+        status = pdf_stream_reader_check_deadline(
+            reader, &next_deadline_offset,
+            "PDF streamed RunLength traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            break;
+
+        status = pdf_stream_reader_get_byte(reader, &control, &at_eof);
+        if (status != CL_SUCCESS)
+            break;
+        if (at_eof)
+            break;
+        if (control < 128) {
+            bool complete;
+
+            output_length = (size_t)control + 1U;
+            status = pdf_stream_reader_read_exact(reader, literal,
+                                                  output_length, &complete);
             if (status != CL_SUCCESS)
                 break;
-            if (offset > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
-                next_deadline_offset = SIZE_MAX;
-            } else {
-                next_deadline_offset = offset + PDF_INPUT_WINDOW_SIZE;
-            }
-        }
-
-        control = content[offset++];
-        if (control < 128) {
-            output_length = (size_t)control + 1U;
-            if (output_length > streamlen - offset) {
+            if (!complete) {
                 status = CL_EPARSE;
                 break;
             }
-            output = content + offset;
-            offset += output_length;
+            output = literal;
         } else if (control > 128) {
+            uint8_t value;
+
             output_length = (size_t)(257U - control);
-            if (offset >= streamlen) {
+            status = pdf_stream_reader_get_byte(reader, &value, &at_eof);
+            if (status != CL_SUCCESS)
+                break;
+            if (at_eof) {
                 status = CL_EPARSE;
                 break;
             }
-            memset(repeated, content[offset++], output_length);
+            memset(repeated, value, output_length);
             output = repeated;
         } else {
             /* The legacy decoder accepts a complete packet sequence without
@@ -1348,7 +1886,8 @@ static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream
                                          "PDF streamed RunLength output exceeded configured scan limits");
 
     if (status == CL_SUCCESS) {
-        cli_dbgmsg("cli_pdf: streamed RunLength decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        cli_dbgmsg("cli_pdf: streamed RunLength decoded %zu bytes from %zu input bytes\n",
+                   decoded, reader->length);
         *bytes_scanned = decoded;
         free(output_buffer);
         return decoded == 0 ? CL_BREAK : CL_SUCCESS;
@@ -1367,13 +1906,26 @@ static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream
     return status;
 }
 
-static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *obj,
-                                            const char *stream_data, size_t streamlen,
-                                            int fout, size_t *bytes_scanned)
+static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf,
+                                      const char *stream_data,
+                                      size_t streamlen, int fout,
+                                      size_t *bytes_scanned)
 {
-    const uint8_t *content = (const uint8_t *)stream_data;
+    struct pdf_stream_reader reader;
+    cl_error_t status;
+
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream_data, streamlen);
+    status = pdf_stream_rldecode_reader(pdf, &reader, fout, bytes_scanned);
+    pdf_stream_reader_destroy(&reader);
+    return status;
+}
+
+static cl_error_t pdf_stream_asciihexdecode_reader(
+    struct pdf_struct *pdf, struct pdf_obj *obj,
+    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
+{
     uint8_t *output_buffer = NULL;
-    size_t offset               = 0;
     size_t decoded              = 0;
     size_t output_buffered      = 0;
     size_t next_deadline_offset = 0;
@@ -1382,7 +1934,7 @@ static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_o
     cl_error_t status           = CL_SUCCESS;
     int high_nibble             = -1;
 
-    if (bytes_scanned == NULL)
+    if (reader == NULL || bytes_scanned == NULL)
         return CL_ENULLARG;
     *bytes_scanned = 0;
 
@@ -1400,22 +1952,22 @@ static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_o
         return CL_EMEM;
     }
 
-    while (offset < streamlen) {
+    for (;;) {
         uint8_t byte;
         int nibble;
+        bool at_eof;
 
-        if (offset >= next_deadline_offset) {
-            status = pdf_checktimelimit(pdf, "PDF streamed ASCIIHex traversal reached the configured time limit");
-            if (status != CL_SUCCESS)
-                break;
-            if (offset > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
-                next_deadline_offset = SIZE_MAX;
-            } else {
-                next_deadline_offset = offset + PDF_INPUT_WINDOW_SIZE;
-            }
-        }
+        status = pdf_stream_reader_check_deadline(
+            reader, &next_deadline_offset,
+            "PDF streamed ASCIIHex traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            break;
 
-        byte = content[offset++];
+        status = pdf_stream_reader_get_byte(reader, &byte, &at_eof);
+        if (status != CL_SUCCESS)
+            break;
+        if (at_eof)
+            break;
         if (byte == '>')
             break;
         if (pdf_is_whitespace(byte))
@@ -1454,7 +2006,8 @@ static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_o
                                          "PDF streamed ASCIIHex output exceeded configured scan limits");
 
     if (status == CL_SUCCESS) {
-        cli_dbgmsg("cli_pdf: streamed ASCIIHex decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        cli_dbgmsg("cli_pdf: streamed ASCIIHex decoded %zu bytes from %zu input bytes\n",
+                   decoded, reader->length);
         *bytes_scanned = decoded;
         free(output_buffer);
         return decoded == 0 ? CL_BREAK : CL_SUCCESS;
@@ -1475,13 +2028,28 @@ static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_o
     return status;
 }
 
-static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj,
-                                           const char *stream_data, size_t streamlen,
-                                           int fout, size_t *bytes_scanned)
+static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf,
+                                            struct pdf_obj *obj,
+                                            const char *stream_data,
+                                            size_t streamlen, int fout,
+                                            size_t *bytes_scanned)
 {
-    const uint8_t *content = (const uint8_t *)stream_data;
+    struct pdf_stream_reader reader;
+    cl_error_t status;
+
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream_data, streamlen);
+    status = pdf_stream_asciihexdecode_reader(pdf, obj, &reader, fout,
+                                              bytes_scanned);
+    pdf_stream_reader_destroy(&reader);
+    return status;
+}
+
+static cl_error_t pdf_stream_ascii85decode_reader(
+    struct pdf_struct *pdf, struct pdf_obj *obj,
+    struct pdf_stream_reader *reader, int fout, size_t *bytes_scanned)
+{
     uint8_t *output_buffer = NULL;
-    size_t offset               = 0;
     size_t decoded              = 0;
     size_t output_buffered      = 0;
     size_t next_deadline_offset = 0;
@@ -1492,7 +2060,7 @@ static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_ob
     unsigned int quintet       = 0;
     bool found_eod             = false;
 
-    if (bytes_scanned == NULL)
+    if (reader == NULL || bytes_scanned == NULL)
         return CL_ENULLARG;
     *bytes_scanned = 0;
 
@@ -1510,25 +2078,33 @@ static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_ob
         return CL_EMEM;
     }
 
-    while (offset < streamlen) {
+    for (;;) {
         uint8_t byte;
+        bool at_eof;
 
-        if (offset >= next_deadline_offset) {
-            status = pdf_checktimelimit(pdf, "PDF streamed ASCII85 traversal reached the configured time limit");
-            if (status != CL_SUCCESS)
-                break;
-            if (offset > SIZE_MAX - PDF_INPUT_WINDOW_SIZE) {
-                next_deadline_offset = SIZE_MAX;
-            } else {
-                next_deadline_offset = offset + PDF_INPUT_WINDOW_SIZE;
-            }
-        }
+        status = pdf_stream_reader_check_deadline(
+            reader, &next_deadline_offset,
+            "PDF streamed ASCII85 traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            break;
 
-        byte = content[offset++];
-        if (byte == '~' && offset < streamlen && content[offset] == '>') {
+        status = pdf_stream_reader_get_byte(reader, &byte, &at_eof);
+        if (status != CL_SUCCESS)
+            break;
+        if (at_eof)
+            break;
+        if (byte == '~') {
             uint8_t partial[4];
+            uint8_t marker;
             unsigned int i;
 
+            status = pdf_stream_reader_get_byte(reader, &marker, &at_eof);
+            if (status != CL_SUCCESS)
+                break;
+            if (at_eof || marker != '>') {
+                status = CL_EPARSE;
+                break;
+            }
             found_eod = true;
             if (quintet == 1U) {
                 status = CL_EPARSE;
@@ -1602,7 +2178,8 @@ static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_ob
                                          "PDF streamed ASCII85 output exceeded configured scan limits");
 
     if (status == CL_SUCCESS) {
-        cli_dbgmsg("cli_pdf: streamed ASCII85 decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        cli_dbgmsg("cli_pdf: streamed ASCII85 decoded %zu bytes from %zu input bytes\n",
+                   decoded, reader->length);
         *bytes_scanned = decoded;
         free(output_buffer);
         return decoded == 0 ? CL_BREAK : CL_SUCCESS;
@@ -1620,6 +2197,23 @@ static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf, struct pdf_ob
             pdfobj_flag(pdf, obj, BAD_ASCIIDECODE);
         cli_mark_scan_incomplete(pdf->ctx, "PDF ASCII85 stream contained an invalid group");
     }
+    return status;
+}
+
+static cl_error_t pdf_stream_ascii85decode(struct pdf_struct *pdf,
+                                           struct pdf_obj *obj,
+                                           const char *stream_data,
+                                           size_t streamlen, int fout,
+                                           size_t *bytes_scanned)
+{
+    struct pdf_stream_reader reader;
+    cl_error_t status;
+
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream_data, streamlen);
+    status = pdf_stream_ascii85decode_reader(pdf, obj, &reader, fout,
+                                             bytes_scanned);
+    pdf_stream_reader_destroy(&reader);
     return status;
 }
 
@@ -1664,20 +2258,21 @@ static cl_error_t pdf_lzw_parameters(struct pdf_struct *pdf, struct pdf_dict *pa
     return CL_SUCCESS;
 }
 
-static cl_error_t pdf_lzw_stream_attempt(struct pdf_struct *pdf, const uint8_t *content,
-                                         size_t length, int early_change, int fout,
-                                         size_t *decoded_length, int *decode_status)
+static cl_error_t pdf_lzw_stream_attempt(struct pdf_struct *pdf,
+                                         struct pdf_stream_reader *reader,
+                                         int early_change, int fout,
+                                         size_t *decoded_length,
+                                         int *decode_status)
 {
     uint8_t *output_buffer = NULL;
     lzw_stream stream;
-    size_t supplied        = 0;
     size_t decoded         = 0;
     size_t output_buffered = 0;
     cl_error_t status      = CL_SUCCESS;
     int lzwstat            = LZW_OK;
     bool initialized       = false;
 
-    if (decoded_length == NULL || decode_status == NULL)
+    if (reader == NULL || decoded_length == NULL || decode_status == NULL)
         return CL_ENULLARG;
     *decoded_length = 0;
     *decode_status  = LZW_OK;
@@ -1711,12 +2306,17 @@ static cl_error_t pdf_lzw_stream_attempt(struct pdf_struct *pdf, const uint8_t *
         if (status != CL_SUCCESS)
             break;
 
-        if (stream.avail_in == 0 && supplied < length) {
-            size_t input_length = MIN((size_t)PDF_INPUT_WINDOW_SIZE, length - supplied);
+        if (stream.avail_in == 0) {
+            const uint8_t *input;
+            size_t input_length;
 
-            stream.next_in  = (uint8_t *)(content + supplied);
-            stream.avail_in = (unsigned int)input_length;
-            supplied += input_length;
+            status = pdf_stream_reader_next_chunk(reader, &input, &input_length);
+            if (status != CL_SUCCESS)
+                break;
+            if (input_length != 0) {
+                stream.next_in  = (uint8_t *)input;
+                stream.avail_in = (unsigned int)input_length;
+            }
         }
 
         if (stream.avail_out == 0) {
@@ -1754,9 +2354,12 @@ static cl_error_t pdf_lzw_stream_attempt(struct pdf_struct *pdf, const uint8_t *
                 status = CL_EPARSE;
                 break;
             }
-            if (stream.avail_out == 0 || (stream.avail_in == 0 && supplied < length))
+            if (stream.avail_out == 0 ||
+                (stream.avail_in == 0 &&
+                 reader->source_offset < reader->length))
                 continue;
-            if (stream.avail_in == 0 && supplied == length) {
+            if (stream.avail_in == 0 &&
+                reader->source_offset == reader->length) {
                 status = CL_EPARSE;
                 break;
             }
@@ -1781,20 +2384,24 @@ done:
     return status;
 }
 
-static cl_error_t pdf_stream_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *obj,
-                                       struct pdf_dict *params, const char *stream_data,
-                                       size_t streamlen, int fout, size_t *bytes_scanned)
+static cl_error_t pdf_stream_lzwdecode_reader(struct pdf_struct *pdf,
+                                              struct pdf_obj *obj,
+                                              struct pdf_dict *params,
+                                              struct pdf_stream_reader *reader,
+                                              int fout,
+                                              size_t *bytes_scanned)
 {
-    uint8_t *content = (uint8_t *)stream_data;
-    size_t length    = streamlen;
-    size_t decoded   = 0;
+    size_t decoded       = 0;
+    size_t payload_start = 0;
     off_t output_start;
     uint64_t reservation_start = 0;
     cl_error_t status;
     int early_change = 1;
     int lzwstat      = LZW_OK;
+    uint8_t first;
+    bool at_eof;
 
-    if (bytes_scanned == NULL)
+    if (reader == NULL || bytes_scanned == NULL)
         return CL_ENULLARG;
     *bytes_scanned = 0;
 
@@ -1817,40 +2424,54 @@ static cl_error_t pdf_stream_lzwdecode(struct pdf_struct *pdf, struct pdf_obj *o
     if (pdf->temporary_reserved != NULL)
         reservation_start = *pdf->temporary_reserved;
 
-    if (*content == '\r') {
-        content++;
-        length--;
+    status = pdf_stream_reader_get_byte(reader, &first, &at_eof);
+    if (status != CL_SUCCESS)
+        goto rollback;
+    if (at_eof) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF LZW stream has no compressed payload");
+        status = CL_EPARSE;
+        goto rollback;
+    }
+    if (first == '\r') {
+        payload_start = 1;
         pdfobj_flag(pdf, obj, BAD_STREAMSTART);
-        if (length == 0) {
+        if (payload_start == reader->length) {
             cli_dbgmsg("cli_pdf: LZW stream has no compressed payload after its leading carriage return\n");
             cli_mark_scan_incomplete(pdf->ctx, "PDF LZW stream has no compressed payload");
             status = CL_EPARSE;
             goto rollback;
         }
+    } else {
+        status = pdf_stream_reader_reset(reader, 0);
+        if (status != CL_SUCCESS)
+            goto rollback;
     }
 
-    status = pdf_lzw_stream_attempt(pdf, content, length, early_change, fout,
+    status = pdf_lzw_stream_attempt(pdf, reader, early_change, fout,
                                     &decoded, &lzwstat);
     if (status == CL_EPARSE && decoded == 0) {
-        uint8_t *resynchronized = decode_nextlinestart(pdf, content, length);
+        size_t resynchronized;
 
-        if (pdf->ctx != NULL && pdf->ctx->scan_timed_out) {
-            status = CL_ETIMEOUT;
+        status = pdf_stream_reader_find_next_line(reader, payload_start,
+                                                  &resynchronized);
+        if (status != CL_SUCCESS)
             goto rollback;
-        }
-        if (resynchronized != NULL && resynchronized > content &&
-            (size_t)(resynchronized - content) < length) {
-            length -= (size_t)(resynchronized - content);
-            content = resynchronized;
+
+        if (resynchronized > payload_start &&
+            resynchronized < reader->length) {
+            status = pdf_stream_reader_reset(reader, resynchronized);
+            if (status != CL_SUCCESS)
+                goto rollback;
             decoded = 0;
             pdfobj_flag(pdf, obj, BAD_FLATESTART);
-            status = pdf_lzw_stream_attempt(pdf, content, length, early_change, fout,
+            status = pdf_lzw_stream_attempt(pdf, reader, early_change, fout,
                                             &decoded, &lzwstat);
         }
     }
 
     if (status == CL_SUCCESS) {
-        cli_dbgmsg("cli_pdf: streamed LZW decoded %zu bytes from %zu input bytes\n", decoded, streamlen);
+        cli_dbgmsg("cli_pdf: streamed LZW decoded %zu bytes from %zu input bytes\n",
+                   decoded, reader->length);
         *bytes_scanned = decoded;
         return decoded == 0 ? CL_BREAK : CL_SUCCESS;
     }
@@ -1874,6 +2495,24 @@ rollback:
             cli_mark_scan_incomplete(pdf->ctx, "PDF LZW decoder failed before the stream completed");
         }
     }
+    return status;
+}
+
+static cl_error_t pdf_stream_lzwdecode(struct pdf_struct *pdf,
+                                       struct pdf_obj *obj,
+                                       struct pdf_dict *params,
+                                       const char *stream_data,
+                                       size_t streamlen, int fout,
+                                       size_t *bytes_scanned)
+{
+    struct pdf_stream_reader reader;
+    cl_error_t status;
+
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream_data, streamlen);
+    status = pdf_stream_lzwdecode_reader(pdf, obj, params, &reader, fout,
+                                         bytes_scanned);
+    pdf_stream_reader_destroy(&reader);
     return status;
 }
 
