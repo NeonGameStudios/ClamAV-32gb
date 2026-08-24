@@ -65,6 +65,8 @@
 #include "str.h"
 #include "bytecode.h"
 #include "bytecode_api.h"
+#include "arc4.h"
+#include "rijndael.h"
 #include "lzw/lzwdec.h"
 
 #define PDFTOKEN_FLAG_XREF 0x1
@@ -451,6 +453,14 @@ static cl_error_t pdf_stream_ascii85decode_reader(struct pdf_struct *pdf, struct
 static cl_error_t pdf_stream_lzwdecode_reader(struct pdf_struct *pdf, struct pdf_obj *obj,
                                               struct pdf_dict *params, struct pdf_stream_reader *reader,
                                               int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_encrypted_decode(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    const char *stream, size_t streamlen, uint32_t first_filter,
+    bool document_method, int fout, size_t *bytes_scanned,
+    bool *decryption_completed);
+static cl_error_t pdf_resolve_decryption_method(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    bool document_method, enum enc_method *enc_method);
 
 static void pdf_filter_stage_init(struct pdf_filter_stage *stage)
 {
@@ -526,6 +536,21 @@ static bool pdf_stream_filter_chain_is_supported(const struct pdf_obj *obj)
     return true;
 }
 
+static bool pdf_stream_filter_range_is_supported(const struct pdf_obj *obj,
+                                                 uint32_t first_filter)
+{
+    uint32_t i;
+
+    if (obj == NULL || first_filter > obj->numfilters ||
+        obj->numfilters > PDF_FILTERLIST_MAX)
+        return false;
+    for (i = first_filter; i < obj->numfilters; i++) {
+        if (!pdf_stream_filter_is_supported(obj->filterlist[i]))
+            return false;
+    }
+    return true;
+}
+
 static cl_error_t pdf_stream_filter_dispatch(
     struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
     uint32_t filter, struct pdf_stream_reader *reader, int fout,
@@ -552,41 +577,25 @@ static cl_error_t pdf_stream_filter_dispatch(
     }
 }
 
-static cl_error_t pdf_stream_filter_chain(
+static cl_error_t pdf_stream_filter_chain_reader(
     struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
-    const char *stream, size_t streamlen, int fout, size_t *bytes_scanned)
+    uint32_t first_filter, struct pdf_stream_reader *reader,
+    struct pdf_filter_stage *input_stage, int fout, size_t *bytes_scanned,
+    off_t output_start, uint64_t reservation_start)
 {
-    struct pdf_filter_stage input_stage;
     struct pdf_filter_stage output_stage;
-    struct pdf_stream_reader reader;
-    uint64_t reservation_start = 0;
-    off_t output_start;
     cl_error_t status = CL_SUCCESS;
     uint32_t i;
-    bool reader_initialized = false;
+    bool reader_initialized = true;
 
-    if (pdf == NULL || obj == NULL || stream == NULL || bytes_scanned == NULL ||
-        obj->numfilters < 2 || !pdf_stream_filter_chain_is_supported(obj))
+    if (pdf == NULL || obj == NULL || reader == NULL || input_stage == NULL ||
+        bytes_scanned == NULL || first_filter >= obj->numfilters ||
+        !pdf_stream_filter_range_is_supported(obj, first_filter))
         return CL_EARG;
     *bytes_scanned = 0;
-    pdf_filter_stage_init(&input_stage);
     pdf_filter_stage_init(&output_stage);
 
-    output_start = lseek(fout, 0, SEEK_CUR);
-    if (output_start < 0) {
-        cli_mark_scan_incomplete(
-            pdf->ctx,
-            "PDF filter-chain output position could not be recorded");
-        return CL_ESEEK;
-    }
-    if (pdf->temporary_reserved != NULL)
-        reservation_start = *pdf->temporary_reserved;
-
-    pdf_stream_reader_init_memory(&reader, pdf,
-                                  (const uint8_t *)stream, streamlen);
-    reader_initialized = true;
-
-    for (i = 0; i < obj->numfilters; i++) {
+    for (i = first_filter; i < obj->numfilters; i++) {
         STATBUF output_stat;
         size_t decoded = 0;
         bool final_filter = i + 1U == obj->numfilters;
@@ -610,15 +619,15 @@ static cl_error_t pdf_stream_filter_chain(
         }
 
         status = pdf_stream_filter_dispatch(
-            pdf, obj, params, obj->filterlist[i], &reader, output_fd,
+            pdf, obj, params, obj->filterlist[i], reader, output_fd,
             &decoded);
         if (status != CL_SUCCESS)
             goto fail;
 
         if (final_filter) {
-            pdf_stream_reader_destroy(&reader);
+            pdf_stream_reader_destroy(reader);
             reader_initialized = false;
-            status = pdf_filter_stage_cleanup(pdf, &input_stage, status);
+            status = pdf_filter_stage_cleanup(pdf, input_stage, status);
             if (status != CL_SUCCESS)
                 goto fail;
             *bytes_scanned = decoded;
@@ -638,19 +647,19 @@ static cl_error_t pdf_stream_filter_chain(
             goto fail;
         }
 
-        pdf_stream_reader_destroy(&reader);
+        pdf_stream_reader_destroy(reader);
         reader_initialized = false;
-        status = pdf_filter_stage_cleanup(pdf, &input_stage, status);
+        status = pdf_filter_stage_cleanup(pdf, input_stage, status);
         if (status != CL_SUCCESS)
             goto fail;
 
         status = pdf_stream_reader_init_file(
-            &reader, pdf, output_stage.fd, output_stage.length,
+            reader, pdf, output_stage.fd, output_stage.length,
             output_stage.path);
         if (status != CL_SUCCESS)
             goto fail;
         reader_initialized = true;
-        input_stage         = output_stage;
+        *input_stage        = output_stage;
         pdf_filter_stage_init(&output_stage);
     }
 
@@ -658,9 +667,9 @@ static cl_error_t pdf_stream_filter_chain(
 
 fail:
     if (reader_initialized)
-        pdf_stream_reader_destroy(&reader);
+        pdf_stream_reader_destroy(reader);
     status = pdf_filter_stage_cleanup(pdf, &output_stage, status);
-    status = pdf_filter_stage_cleanup(pdf, &input_stage, status);
+    status = pdf_filter_stage_cleanup(pdf, input_stage, status);
     {
         cl_error_t rollback_status = pdf_rollback_stream_output(
             pdf, fout, output_start, reservation_start);
@@ -669,6 +678,37 @@ fail:
             return rollback_status;
     }
     return status;
+}
+
+static cl_error_t pdf_stream_filter_chain(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    const char *stream, size_t streamlen, int fout, size_t *bytes_scanned)
+{
+    struct pdf_filter_stage input_stage;
+    struct pdf_stream_reader reader;
+    uint64_t reservation_start = 0;
+    off_t output_start;
+
+    if (pdf == NULL || obj == NULL || stream == NULL || bytes_scanned == NULL ||
+        obj->numfilters < 2 || !pdf_stream_filter_chain_is_supported(obj))
+        return CL_EARG;
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF filter-chain output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    pdf_filter_stage_init(&input_stage);
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream, streamlen);
+    return pdf_stream_filter_chain_reader(
+        pdf, obj, params, 0, &reader, &input_stage, fout, bytes_scanned,
+        output_start, reservation_start);
 }
 
 static cl_error_t filter_ascii85decode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_token *token);
@@ -727,6 +767,67 @@ size_t pdf_decodestream(
         cli_mark_scan_incomplete(pdf->ctx,
                                  "PDF stream declares too many filters");
         *status = CL_EPARSE;
+        goto done;
+    }
+
+    /* Decryptable streams use a fixed-memory reader and transactional output.
+     * Implicit document decryption precedes every declared filter. An explicit
+     * Crypt filter is admitted here only when it is first, so the remaining
+     * supported filters preserve the declared decoding order. Intermediate
+     * plaintext remains in a quota-accounted file while downstream output is
+     * produced; mmap-capable object streams retain only the final child. */
+    if ((((pdf->flags & (1 << DECRYPTABLE_PDF)) != 0 && !xref &&
+          !(obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
+          pdf_stream_filter_range_is_supported(obj, 0)) ||
+         ((obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
+          obj->numfilters != 0 &&
+          obj->filterlist[0] == OBJ_FILTER_CRYPT &&
+          pdf_stream_filter_range_is_supported(obj, 1))) &&
+        (objstm == NULL || PDF_HAVE_FILE_BACKED_OBJECT_STREAMS)) {
+        bool document_method =
+            !(obj->flags & (1 << OBJ_FILTER_CRYPT));
+        bool decryption_completed = false;
+        uint32_t first_filter = document_method ? 0U : 1U;
+        cl_error_t decode_status;
+
+        decode_status = pdf_stream_encrypted_decode(
+            pdf, obj, params, stream, streamlen, first_filter,
+            document_method, fout, &bytes_scanned,
+            &decryption_completed);
+        if ((decode_status == CL_EPARSE || decode_status == CL_BREAK) &&
+            !decryption_completed) {
+            size_t raw_bytes           = 0;
+            cl_error_t fallback_status = pdf_write_raw_stream(
+                pdf, stream, streamlen, fout, &raw_bytes);
+
+            if (fallback_status != CL_SUCCESS) {
+                *status = fallback_status;
+            } else {
+                bytes_scanned = raw_bytes;
+                *status       = decode_status == CL_BREAK ? CL_SUCCESS
+                                                          : CL_EPARSE;
+            }
+        } else if (decode_status == CL_SUCCESS && objstm != NULL) {
+            *status = pdf_objstm_attach_file(pdf, objstm, fout,
+                                             bytes_scanned);
+        } else {
+            *status = decode_status;
+        }
+        goto done;
+    }
+
+    if ((obj->flags & (1 << OBJ_FILTER_CRYPT)) &&
+        (obj->numfilters == 0 ||
+         obj->filterlist[0] != OBJ_FILTER_CRYPT)) {
+        cl_error_t fallback_status;
+
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF explicit Crypt filter is not first and cannot be bounded safely");
+        fallback_status = pdf_write_raw_stream(
+            pdf, stream, streamlen, fout, &bytes_scanned);
+        *status = fallback_status == CL_SUCCESS ? CL_EPARSE
+                                                : fallback_status;
         goto done;
     }
 
@@ -1487,6 +1588,378 @@ static cl_error_t pdf_stream_output_append(struct pdf_struct *pdf, int fout, uin
         return pdf_stream_output_flush(pdf, fout, output_buffer, output_buffered,
                                        *decoded, limit_reason);
     return CL_SUCCESS;
+}
+
+static cl_error_t pdf_stream_decrypt_reader(
+    struct pdf_struct *pdf, struct pdf_obj *obj,
+    enum enc_method enc_method, struct pdf_stream_reader *reader, int fout,
+    size_t *bytes_scanned)
+{
+    uint8_t *output_buffer = NULL;
+    uint8_t *arc4_buffer   = NULL;
+    size_t output_buffered = 0;
+    size_t decoded         = 0;
+    size_t next_deadline   = 0;
+    uint64_t reservation_start = 0;
+    off_t output_start;
+    cl_error_t status = CL_SUCCESS;
+
+    if (pdf == NULL || obj == NULL || reader == NULL || fout < 0 ||
+        bytes_scanned == NULL)
+        return CL_ENULLARG;
+    *bytes_scanned = 0;
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF decrypted output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    if (enc_method == ENC_NONE || enc_method == ENC_UNKNOWN ||
+        (enc_method != ENC_IDENTITY &&
+         (pdf->key == NULL || pdf->keylen == 0))) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF encrypted stream uses unsupported encryption or has no usable key");
+        return CL_EPARSE;
+    }
+
+    output_buffer = malloc(INFLATE_CHUNK_SIZE);
+    if (output_buffer == NULL) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF decrypted output window could not be allocated");
+        return CL_EMEM;
+    }
+
+    if (enc_method == ENC_IDENTITY || enc_method == ENC_V2) {
+        struct arc4_state arc4;
+
+        if (enc_method == ENC_V2) {
+            unsigned char key[16];
+            size_t key_length;
+
+            status = pdf_derive_object_key(pdf, obj->id, enc_method, key,
+                                           &key_length);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF encrypted stream object key could not be derived");
+                goto fail;
+            }
+            if (!arc4_init(&arc4, key, (unsigned)key_length)) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF encrypted stream ARC4 state could not be initialized");
+                status = CL_EPARSE;
+                goto fail;
+            }
+            arc4_buffer = malloc(PDF_INPUT_WINDOW_SIZE);
+            if (arc4_buffer == NULL) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF encrypted stream ARC4 window could not be allocated");
+                status = CL_EMEM;
+                goto fail;
+            }
+        }
+
+        for (;;) {
+            const uint8_t *input;
+            const uint8_t *plaintext;
+            size_t input_length;
+
+            status = pdf_stream_reader_check_deadline(
+                reader, &next_deadline,
+                "PDF encrypted stream traversal reached the configured time limit");
+            if (status != CL_SUCCESS)
+                goto fail;
+            status = pdf_stream_reader_next_chunk(reader, &input,
+                                                  &input_length);
+            if (status != CL_SUCCESS)
+                goto fail;
+            if (input_length == 0)
+                break;
+
+            plaintext = input;
+            if (enc_method == ENC_V2) {
+                memcpy(arc4_buffer, input, input_length);
+                arc4_apply(&arc4, arc4_buffer, input_length);
+                plaintext = arc4_buffer;
+            }
+            status = pdf_stream_output_append(
+                pdf, fout, output_buffer, &output_buffered, &decoded,
+                plaintext, input_length,
+                "PDF decrypted output size overflowed",
+                "PDF decrypted output exceeded configured scan limits");
+            if (status != CL_SUCCESS)
+                goto fail;
+        }
+    } else if (enc_method == ENC_AESV2 || enc_method == ENC_AESV3) {
+        unsigned char derived_key[16];
+        const unsigned char *key;
+        size_t key_length;
+        uint32_t round_keys[RKLENGTH(256)];
+        unsigned char iv[16];
+        unsigned char ciphertext[16];
+        unsigned char plaintext[16];
+        unsigned char pending[16];
+        size_t ciphertext_length;
+        size_t block_count;
+        size_t block;
+        int rounds;
+        bool complete;
+
+        if (reader->length < 32U || (reader->length - 16U) % 16U != 0) {
+            cli_mark_scan_incomplete(
+                pdf->ctx,
+                "PDF AES stream has an invalid IV or ciphertext length");
+            status = CL_EPARSE;
+            goto fail;
+        }
+
+        if (enc_method == ENC_AESV2) {
+            status = pdf_derive_object_key(pdf, obj->id, enc_method,
+                                           derived_key, &key_length);
+            if (status != CL_SUCCESS) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF encrypted stream object key could not be derived");
+                goto fail;
+            }
+            key = derived_key;
+        } else {
+            key        = (const unsigned char *)pdf->key;
+            key_length = pdf->keylen;
+        }
+        if (key_length != 16U && key_length != 24U && key_length != 32U) {
+            cli_mark_scan_incomplete(
+                pdf->ctx,
+                "PDF AES stream uses an invalid encryption-key length");
+            status = CL_EPARSE;
+            goto fail;
+        }
+        rounds = rijndaelSetupDecrypt(round_keys, key,
+                                      (int)(key_length * 8U));
+        if (rounds == 0) {
+            cli_mark_scan_incomplete(
+                pdf->ctx,
+                "PDF AES stream decryptor could not be initialized");
+            status = CL_EPARSE;
+            goto fail;
+        }
+
+        status = pdf_stream_reader_read_exact(reader, iv, sizeof(iv),
+                                              &complete);
+        if (status != CL_SUCCESS)
+            goto fail;
+        if (!complete) {
+            cli_mark_scan_incomplete(pdf->ctx,
+                                     "PDF AES stream IV was truncated");
+            status = CL_EPARSE;
+            goto fail;
+        }
+
+        ciphertext_length = reader->length - sizeof(iv);
+        block_count        = ciphertext_length / sizeof(ciphertext);
+        for (block = 0; block < block_count; block++) {
+            unsigned i;
+
+            status = pdf_stream_reader_check_deadline(
+                reader, &next_deadline,
+                "PDF AES stream traversal reached the configured time limit");
+            if (status != CL_SUCCESS)
+                goto fail;
+            status = pdf_stream_reader_read_exact(
+                reader, ciphertext, sizeof(ciphertext), &complete);
+            if (status != CL_SUCCESS)
+                goto fail;
+            if (!complete) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF AES stream ciphertext was truncated");
+                status = CL_EPARSE;
+                goto fail;
+            }
+
+            rijndaelDecrypt(round_keys, rounds, ciphertext, plaintext);
+            for (i = 0; i < sizeof(plaintext); i++)
+                plaintext[i] ^= iv[i];
+            memcpy(iv, ciphertext, sizeof(iv));
+
+            if (block != 0) {
+                status = pdf_stream_output_append(
+                    pdf, fout, output_buffer, &output_buffered, &decoded,
+                    pending, sizeof(pending),
+                    "PDF decrypted output size overflowed",
+                    "PDF decrypted output exceeded configured scan limits");
+                if (status != CL_SUCCESS)
+                    goto fail;
+            }
+            memcpy(pending, plaintext, sizeof(pending));
+        }
+
+        {
+            uint8_t padding = pending[sizeof(pending) - 1U];
+            size_t i;
+
+            if (padding == 0 || padding > sizeof(pending)) {
+                cli_mark_scan_incomplete(
+                    pdf->ctx,
+                    "PDF AES stream has invalid PKCS#7 padding");
+                status = CL_EPARSE;
+                goto fail;
+            }
+            for (i = sizeof(pending) - padding; i < sizeof(pending); i++) {
+                if (pending[i] != padding) {
+                    cli_mark_scan_incomplete(
+                        pdf->ctx,
+                        "PDF AES stream has inconsistent PKCS#7 padding");
+                    status = CL_EPARSE;
+                    goto fail;
+                }
+            }
+            status = pdf_stream_output_append(
+                pdf, fout, output_buffer, &output_buffered, &decoded,
+                pending, sizeof(pending) - padding,
+                "PDF decrypted output size overflowed",
+                "PDF decrypted output exceeded configured scan limits");
+            if (status != CL_SUCCESS)
+                goto fail;
+        }
+    } else {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF encrypted stream uses an unsupported encryption method");
+        status = CL_EPARSE;
+        goto fail;
+    }
+
+    status = pdf_stream_output_flush(
+        pdf, fout, output_buffer, &output_buffered, decoded,
+        "PDF decrypted output exceeded configured scan limits");
+    if (status != CL_SUCCESS)
+        goto fail;
+
+    *bytes_scanned = decoded;
+    free(arc4_buffer);
+    free(output_buffer);
+    return CL_SUCCESS;
+
+fail:
+    free(arc4_buffer);
+    free(output_buffer);
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(
+            pdf, fout, output_start, reservation_start);
+
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+    return status;
+}
+
+static cl_error_t pdf_stream_encrypted_decode(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    const char *stream, size_t streamlen, uint32_t first_filter,
+    bool document_method, int fout, size_t *bytes_scanned,
+    bool *decryption_completed)
+{
+    struct pdf_filter_stage input_stage;
+    struct pdf_stream_reader reader;
+    enum enc_method enc_method;
+    uint64_t reservation_start = 0;
+    off_t output_start;
+    cl_error_t status;
+
+    if (pdf == NULL || obj == NULL || stream == NULL || bytes_scanned == NULL ||
+        decryption_completed == NULL || first_filter > obj->numfilters)
+        return CL_ENULLARG;
+    *bytes_scanned        = 0;
+    *decryption_completed = false;
+
+    status = pdf_resolve_decryption_method(
+        pdf, obj, params, document_method, &enc_method);
+    if (status != CL_SUCCESS)
+        return status;
+
+    pdf_stream_reader_init_memory(&reader, pdf,
+                                  (const uint8_t *)stream, streamlen);
+    if (first_filter == obj->numfilters) {
+        status = pdf_stream_decrypt_reader(
+            pdf, obj, enc_method, &reader, fout, bytes_scanned);
+        *decryption_completed = status == CL_SUCCESS;
+        return status;
+    }
+
+    output_start = lseek(fout, 0, SEEK_CUR);
+    if (output_start < 0) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF encrypted filter output position could not be recorded");
+        return CL_ESEEK;
+    }
+    if (pdf->temporary_reserved != NULL)
+        reservation_start = *pdf->temporary_reserved;
+
+    pdf_filter_stage_init(&input_stage);
+    status = cli_gentempfd(pdf->ctx->this_layer_tmpdir,
+                           &input_stage.path, &input_stage.fd);
+    if (status != CL_SUCCESS) {
+        cli_mark_scan_incomplete(
+            pdf->ctx,
+            "PDF decrypted filter-stage file could not be created");
+        return status;
+    }
+
+    status = pdf_stream_decrypt_reader(
+        pdf, obj, enc_method, &reader, input_stage.fd,
+        &input_stage.length);
+    if (status != CL_SUCCESS)
+        goto fail;
+    *decryption_completed = true;
+    if (pdf->temporary_reserved != NULL)
+        input_stage.reserved = (uint64_t)input_stage.length;
+
+    {
+        STATBUF input_stat;
+
+        if (input_stage.length == 0 ||
+            FSTAT(input_stage.fd, &input_stat) != 0 ||
+            input_stat.st_size < 0 || !S_ISREG(input_stat.st_mode) ||
+            (uint64_t)input_stat.st_size != (uint64_t)input_stage.length) {
+            cli_mark_scan_incomplete(
+                pdf->ctx,
+                "PDF decrypted filter-stage size could not be verified");
+            status = CL_EWRITE;
+            goto fail;
+        }
+    }
+
+    status = pdf_stream_reader_init_file(
+        &reader, pdf, input_stage.fd, input_stage.length,
+        input_stage.path);
+    if (status != CL_SUCCESS)
+        goto fail;
+
+    return pdf_stream_filter_chain_reader(
+        pdf, obj, params, first_filter, &reader, &input_stage, fout,
+        bytes_scanned, output_start, reservation_start);
+
+fail:
+    status = pdf_filter_stage_cleanup(pdf, &input_stage, status);
+    {
+        cl_error_t rollback_status = pdf_rollback_stream_output(
+            pdf, fout, output_start, reservation_start);
+
+        if (rollback_status != CL_SUCCESS)
+            return rollback_status;
+    }
+    return status;
 }
 
 static int pdf_asciihex_nibble(uint8_t byte)
@@ -2792,36 +3265,58 @@ static cl_error_t filter_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *
     return rc;
 }
 
-/* modes: 0 = use default/DecodeParms, 1 = use document setting */
-static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int mode)
+static cl_error_t pdf_resolve_decryption_method(
+    struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+    bool document_method, enum enc_method *enc_method)
 {
-    char *decrypted;
-    size_t length       = (size_t)token->length;
     enum enc_method enc = ENC_IDENTITY;
 
-    if (mode)
+    if (pdf == NULL || obj == NULL || enc_method == NULL)
+        return CL_ENULLARG;
+
+    if (document_method) {
         enc = get_enc_method(pdf, obj);
-    else if (params) {
+    } else if (params != NULL) {
         struct pdf_dict_node *node = params->nodes;
 
         while (node) {
             if (pdf_checktimelimit(pdf, "PDF encryption-parameter traversal reached the configured time limit") != CL_SUCCESS)
                 return CL_ETIMEOUT;
             if (node->type == PDF_DICT_STRING) {
-                if (!strncmp(node->key, "/Type", 6)) { /* optional field - Type */
+                if (node->key != NULL &&
+                    !strncmp(node->key, "/Type", 6)) { /* optional field - Type */
                     /* MUST be "CryptFilterDecodeParms" */
                     if (node->value)
                         cli_dbgmsg("cli_pdf: Type: %s\n", (char *)(node->value));
-                } else if (!strncmp(node->key, "/Name", 6)) { /* optional field - Name */
+                } else if (node->key != NULL &&
+                           !strncmp(node->key, "/Name", 6)) { /* optional field - Name */
                     /* overrides document and default encryption method */
                     if (node->value)
                         cli_dbgmsg("cli_pdf: Name: %s\n", (char *)(node->value));
-                    enc = parse_enc_method(pdf->CF, pdf->CF_n, (char *)(node->value), enc);
+                    if (node->value != NULL)
+                        enc = parse_enc_method(pdf->CF, pdf->CF_n,
+                                               (char *)(node->value), enc);
                 }
             }
             node = node->next;
         }
     }
+
+    *enc_method = enc;
+    return CL_SUCCESS;
+}
+
+/* modes: 0 = use default/DecodeParms, 1 = use document setting */
+static cl_error_t filter_decrypt(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int mode)
+{
+    char *decrypted;
+    size_t length = (size_t)token->length;
+    enum enc_method enc;
+    cl_error_t status;
+
+    status = pdf_resolve_decryption_method(pdf, obj, params, mode != 0, &enc);
+    if (status != CL_SUCCESS)
+        return status;
 
     decrypted = decrypt_any(pdf, obj->id, (const char *)token->content, &length, enc);
     if (!decrypted) {

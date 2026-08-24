@@ -7069,3 +7069,44 @@ default and independently verifies every binding, exact case set, parser
 oracle, malformed distinction, RSS/temporary ceiling, allocation proof, and
 cleanup state. The orchestrator self-test also proves that a tampered scan log
 is rejected.
+
+## PDF bounded encrypted streams and object-stream ownership — 2026-08-23
+
+Decryptable PDF streams no longer enter the contiguous legacy token when they
+use Identity, RC4 (`V2`), AESV2, or AESV3 and are followed only by the bounded
+Flate, RunLength, ASCIIHex, ASCII85, or LZW filters. Object-key derivation is
+shared with the compatibility decryptor. RC4 carries one cipher state across
+64 KiB input windows. AES consumes a 16-byte IV and complete CBC blocks,
+retains only the final plaintext block until strict nonzero PKCS#7 padding is
+validated, and emits through the existing 256 KiB transactional output window.
+An explicit Crypt filter uses this path only when it is first; implicit
+document decryption remains before every declared filter, and XRef streams
+retain their existing decryption exception.
+
+When filters follow decryption, plaintext is written to a quota-accounted
+temporary file and read through bounded fmap windows. Its reservation overlaps
+every downstream intermediate and the final child. Failures in key setup,
+ciphertext shape, padding, deadline, scan limits, quota, write, size
+verification, mapping, read, close, or cleanup release the plaintext stage and
+restore the exact final-output and reservation baseline. A successfully
+decrypted mmap-capable object stream transfers only its final child's
+reservation and mapping to the object-stream owner. Identity Crypt filters are
+valid without a document key; genuinely encrypted streams without a usable key
+remain explicit incomplete and retain raw ciphertext fallback for matching.
+
+Committed regressions bind independent RC4/AESV2 object-key vectors, RC4 state
+across the 64 KiB boundary, AESV2 and AESV3 object-stream mappings, strict AES
+padding rollback, explicit Identity-before-ASCIIHex ordering, exact ownership,
+and one-byte-short overlapping quota cleanup. The focused Linux GCC harness
+passes 45/45 cases normally and under AddressSanitizer/UBSan with leak
+detection; the production `fmap.c` build passes its 43/43 applicable cases
+normally and under the same sanitizers. Linux GCC syntax checks pass for
+`pdf.c`, `pdfdecode.c`, and the complete `check_clamav.c` translation unit;
+only pre-existing isolated-build warnings remain.
+
+This closes the implementation gap, not release qualification. Deterministic
+encrypted PDF 1.7 corpus generation, complete password/security-handler
+integration, materialized multi-gigabyte encrypted streams, production and
+sanitizer clamscan runs, Sonic1 evidence, non-first Crypt ordering,
+per-filter DecodeParms arrays, unsupported/mixed filters, and the non-mmap
+object-stream policy remain open.

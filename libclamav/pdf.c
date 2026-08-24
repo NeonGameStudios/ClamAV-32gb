@@ -1655,30 +1655,36 @@ static void aes_128cbc_encrypt(const unsigned char *in, size_t in_length, unsign
     cli_dbgmsg("cli_pdf: aes_128cbc_encrypt: length is %zu\n", *out_length);
 }
 
-char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
+cl_error_t pdf_derive_object_key(struct pdf_struct *pdf, uint32_t id,
+                                 enum enc_method enc_method,
+                                 unsigned char result[16], size_t *key_length)
 {
-    unsigned char *key, *q, result[16];
-    unsigned n;
-    struct arc4_state arc4;
+    unsigned char *key;
+    unsigned char *q;
+    size_t hash_input_length;
 
-    if (!length || !*length || !in) {
-        noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  Invalid arguments.\n", id >> 8, id & 0xff);
-        return NULL;
-    }
+    if (pdf == NULL || result == NULL || key_length == NULL ||
+        (enc_method != ENC_V2 && enc_method != ENC_AESV2))
+        return CL_EARG;
+    *key_length = 0;
 
     if (NULL == pdf->key || 0 == pdf->keylen) {
         noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  PDF key never identified.\n", id >> 8, id & 0xff);
-        return NULL;
+        return CL_EPARSE;
+    }
+    if ((size_t)pdf->keylen > SIZE_MAX - 9U) {
+        noisy_warnmsg("decrypt_any: object-key input length overflowed\n");
+        return CL_ERESOURCE;
     }
 
-    n = pdf->keylen + 5;
+    hash_input_length = (size_t)pdf->keylen + 5U;
     if (enc_method == ENC_AESV2)
-        n += 4;
+        hash_input_length += 4U;
 
-    key = cli_max_malloc(n);
+    key = cli_max_malloc(hash_input_length);
     if (!key) {
         noisy_warnmsg("decrypt_any: malloc failed\n");
-        return NULL;
+        return CL_EMEM;
     }
 
     memcpy(key, pdf->key, pdf->keylen);
@@ -1691,12 +1697,39 @@ char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *l
     if (enc_method == ENC_AESV2)
         memcpy(q, "sAlT", 4);
 
-    cl_hash_data("md5", key, n, result, NULL);
+    if (cl_hash_data("md5", key, hash_input_length, result, NULL) == NULL) {
+        free(key);
+        noisy_warnmsg("decrypt_any: object-key hash failed\n");
+        return CL_EPARSE;
+    }
     free(key);
 
-    n = pdf->keylen + 5;
-    if (n > 16)
-        n = 16;
+    *key_length = MIN((size_t)pdf->keylen + 5U, (size_t)16U);
+    return CL_SUCCESS;
+}
+
+char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method)
+{
+    unsigned char *q;
+    unsigned char result[16];
+    size_t key_length = 0;
+    struct arc4_state arc4;
+
+    if (!length || !*length || !in) {
+        noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  Invalid arguments.\n", id >> 8, id & 0xff);
+        return NULL;
+    }
+
+    if (enc_method != ENC_IDENTITY &&
+        (NULL == pdf->key || 0 == pdf->keylen)) {
+        noisy_warnmsg("decrypt_any: decrypt failed for obj %u %u:  PDF key never identified.\n", id >> 8, id & 0xff);
+        return NULL;
+    }
+
+    if ((enc_method == ENC_V2 || enc_method == ENC_AESV2) &&
+        pdf_derive_object_key(pdf, id, enc_method, result,
+                              &key_length) != CL_SUCCESS)
+        return NULL;
 
     q = cli_max_calloc(*length, sizeof(char));
     if (!q) {
@@ -1708,7 +1741,7 @@ char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *l
         case ENC_V2:
             cli_dbgmsg("cli_pdf: enc is v2\n");
             memcpy(q, in, *length);
-            if (false == arc4_init(&arc4, result, n)) {
+            if (false == arc4_init(&arc4, result, (unsigned)key_length)) {
                 noisy_warnmsg("decrypt_any: failed to init arc4\n");
                 free(q);
                 return NULL;
@@ -1720,7 +1753,8 @@ char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *l
             break;
         case ENC_AESV2:
             cli_dbgmsg("cli_pdf: enc is aesv2\n");
-            aes_256cbc_decrypt((const unsigned char *)in, length, q, (char *)result, n, 1);
+            aes_256cbc_decrypt((const unsigned char *)in, length, q,
+                               (char *)result, (unsigned)key_length, 1);
 
             noisy_msg(pdf, "decrypt_any: decrypted AES(v2) data\n");
 

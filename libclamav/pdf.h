@@ -211,6 +211,9 @@ cl_error_t pdf_findobj(struct pdf_struct *pdf);
 struct pdf_obj *find_obj(struct pdf_struct *pdf, struct pdf_obj *obj, uint32_t objid);
 
 void pdf_handle_enc(struct pdf_struct *pdf);
+cl_error_t pdf_derive_object_key(struct pdf_struct *pdf, uint32_t id,
+                                 enum enc_method enc_method,
+                                 unsigned char key[16], size_t *key_length);
 char *decrypt_any(struct pdf_struct *pdf, uint32_t id, const char *in, size_t *length, enum enc_method enc_method);
 enum enc_method get_enc_method(struct pdf_struct *pdf, struct pdf_obj *obj);
 enum enc_method parse_enc_method(const char *dict, unsigned len, const char *key, enum enc_method def);
