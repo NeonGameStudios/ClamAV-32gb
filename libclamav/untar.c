@@ -101,9 +101,9 @@ tar_size_field(const char *field, uint64_t *value)
     if (field == NULL || value == NULL)
         return false;
 
-    /* GNU TAR uses 0x80 as the positive binary size marker. 0xff denotes a
-     * negative two's-complement value and all other high-bit prefixes are
-     * reserved; neither is a valid member size. */
+    /* GNU TAR sets the high bit for base-256 and stores a signed value in the
+     * remaining bits. Every nonnegative value representable by uint64_t has
+     * a 0x80 prefix; other marked prefixes are negative or exceed 64 bits. */
     if (bytes[0] & 0x80) {
         if (bytes[0] != 0x80)
             return false;

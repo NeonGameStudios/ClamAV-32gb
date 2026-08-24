@@ -7514,8 +7514,11 @@ invalid entry, while the former weak oracle still reported success.
 The parser now copies all 12 bytes with `memcpy()` and adds a separate
 terminator for the legacy octal path. Isolated production-linked tests require
 the exact `Tar.Member.Exact.UNOFFICIAL` alert at child offset zero for both a
-GNU base-256 member and a PAX-sized member; both pass (2 checks, 0 failures).
+GNU base-256 member and a PAX-sized member. A third public-API regression
+rejects a positive prefix above 64 bits, a `0x80` value whose remaining bytes
+overflow `uint64_t`, and a negative two's-complement field. All three tests
+pass (3 checks, 0 failures), and every rejected archive remains non-cacheable.
 The exact-offset signature cannot match the containing TAR at its root, so the
 result proves extraction and nested matcher handoff. Complete TAR corpus,
-sanitizer, malformed binary-field variants, certified Linux x86-64, and Sonic1
-qualification remain release gates.
+sanitizer, truncated binary-field variants, certified Linux x86-64, and
+Sonic1 qualification remain release gates.

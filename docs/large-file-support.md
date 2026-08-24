@@ -7074,8 +7074,10 @@ copies the complete 12-byte field before parsing instead of using a string copy
 that truncated at the first NUL and silently skipped valid members.
 
 The focused production-linked regression requires an exact signature at child
-offset zero for both GNU base-256 and PAX size encodings. Both cases pass, and
-the offset constraint prevents the signature from matching the containing TAR
-as raw data. This closes the prior weak-clean oracle; complete TAR corpus,
-sanitizer, malformed binary encodings, certified Linux x86-64, and Sonic1
+offset zero for both GNU base-256 and PAX size encodings. A third test rejects
+two unrepresentable positive encodings and a negative two's-complement value,
+with explicit incomplete/non-cacheable results. All three tests pass, and the
+offset constraint prevents the signature from matching the containing TAR as
+raw data. This closes the prior weak-clean oracle; complete TAR corpus,
+sanitizer, truncated binary encodings, certified Linux x86-64, and Sonic1
 qualification remain release gates.
