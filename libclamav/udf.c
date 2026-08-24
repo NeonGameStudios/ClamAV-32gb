@@ -79,6 +79,7 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
     uint8_t buffer[UDF_COPY_CHUNK_SIZE];
     uint64_t copied             = 0;
     uint64_t temporary_reserved = 0;
+    size_t i;
 
     cl_error_t status = CL_ETMPFILE;
 
@@ -107,7 +108,7 @@ static cl_error_t writeWholeFile(cli_ctx *ctx, const char *const fileName, fmap_
         goto done;
     }
 
-    for (size_t i = 0; i < extent_count; i++) {
+    for (i = 0; i < extent_count; i++) {
         size_t extent_copied = 0;
 
         if (extents[i].offset > map->len || extents[i].length > map->len - extents[i].offset) {
@@ -319,6 +320,7 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
     udf_extent *extents = NULL;
     size_t descriptor_size;
     size_t extent_count;
+    size_t i;
     uint64_t total_length = 0;
 
     if (isDirectory(fileIdentifierDescriptor)) {
@@ -376,7 +378,7 @@ static cl_error_t extractFile(cli_ctx *ctx, PartitionDescriptor *pPartitionDescr
         goto done;
     }
 
-    for (size_t i = 0; i < extent_count; i++) {
+    for (i = 0; i < extent_count; i++) {
         ret = udf_checktimelimit(ctx, "UDF allocation-descriptor traversal reached the configured time limit");
         if (ret != CL_SUCCESS)
             goto done;

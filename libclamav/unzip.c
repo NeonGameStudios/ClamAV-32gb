@@ -472,8 +472,10 @@ static cl_error_t unz_stream(
     temporary_reserved = temporary_size;
 
     ret = zip_check_output_deadline(ctx, "ZIP member temporary admission reached the configured time limit");
-    if (CL_SUCCESS != ret)
-        goto done;
+    if (CL_SUCCESS != ret) {
+        cli_scan_release_temporary(ctx, temporary_reserved);
+        return ret;
+    }
 
     if (tmpd) {
         if (ctx->engine->keeptmp && (NULL != original_filename)) {

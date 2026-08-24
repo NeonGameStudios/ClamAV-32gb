@@ -280,7 +280,7 @@ pub unsafe extern "C" fn html_style_block_handler(
         unsafe { CStr::from_ptr(file_bytes) }.to_string_lossy()
     };
 
-    let extractor = if let Ok(extractor) = CssImageExtractor::new(&css_input) {
+    let mut extractor = if let Ok(extractor) = CssImageExtractor::new(&css_input) {
         extractor
     } else {
         return cl_error_t_CL_ERROR;

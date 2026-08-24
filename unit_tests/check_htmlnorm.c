@@ -208,7 +208,7 @@ END_TEST
 START_TEST(test_htmlnorm_temporary_limit_is_fail_visible)
 {
     static const unsigned char input[] = "<html><body>temporary quota</body></html>";
-    cl_engine *engine;
+    struct cl_engine *engine;
     cli_ctx ctx;
     fmap_t *map;
     uint64_t temporary_reserved = 0;

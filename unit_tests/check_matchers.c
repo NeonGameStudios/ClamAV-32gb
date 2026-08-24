@@ -990,6 +990,7 @@ START_TEST(test_logical_bytecode_v1_large_file_is_fail_visible)
     struct cli_ac_lsig *lsigtable[1];
     struct cli_matcher root;
     struct cli_ac_data mdata;
+    struct cl_engine *engine;
     struct cli_bc *bc;
     cl_error_t ret;
 
@@ -1011,10 +1012,11 @@ START_TEST(test_logical_bytecode_v1_large_file_is_fail_visible)
     ctx.fmap             = &thefmap;
     ctx.recursion_stack[ctx.recursion_level].fmap = &thefmap;
 
-    ctx.engine->bcs.all_bcs = calloc(1, sizeof(*ctx.engine->bcs.all_bcs));
-    ck_assert_ptr_nonnull(ctx.engine->bcs.all_bcs);
-    ctx.engine->bcs.count = 1;
-    bc = &ctx.engine->bcs.all_bcs[0];
+    engine             = (struct cl_engine *)ctx.engine;
+    engine->bcs.all_bcs = calloc(1, sizeof(*engine->bcs.all_bcs));
+    ck_assert_ptr_nonnull(engine->bcs.all_bcs);
+    engine->bcs.count = 1;
+    bc                = &engine->bcs.all_bcs[0];
     bc->metadata.formatlevel = BC_FORMAT_LEVEL;
 
     ret = cli_exp_eval(&ctx, &root, &mdata, NULL);
@@ -1129,7 +1131,7 @@ START_TEST(test_yara_evaluation_accounts_matcher_work)
     ck_assert_uint_eq(ctx.matcher_work, sizeof(bytes));
 
     ctx.matcher_work = 0;
-    ck_assert_int_eq(cl_engine_set_num(ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num((struct cl_engine *)ctx.engine, CL_ENGINE_MAX_MATCHER_WORK, sizeof(bytes) - 1), CL_SUCCESS);
     ret = cli_exp_eval(&ctx, &root, NULL, NULL);
     ck_assert_int_eq(ret, CL_ERESOURCE);
     ck_assert(ctx.scan_incomplete);
@@ -1610,7 +1612,7 @@ START_TEST(test_pcre_matcher_limit_is_preserved_by_fmap)
     ck_assert_int_eq(cli_pcre_build(root, CLI_DEFAULT_PCRE_MATCH_LIMIT,
                                     CLI_DEFAULT_PCRE_RECMATCH_LIMIT, NULL),
                      CL_SUCCESS);
-    ck_assert_int_eq(cl_engine_set_num(ctx.engine, CL_ENGINE_PCRE_MAX_FILESIZE, 1), CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_set_num((struct cl_engine *)ctx.engine, CL_ENGINE_PCRE_MAX_FILESIZE, 1), CL_SUCCESS);
 
     map = cl_fmap_open_memory(input, sizeof(input));
     ck_assert_ptr_nonnull(map);
