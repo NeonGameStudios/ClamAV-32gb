@@ -7543,7 +7543,9 @@ Checksum status is merged after nested scanning, preserving a malware alert
 over a checksum failure while retaining the checksum error for a clean member.
 The focused production-linked public-API case proves an exact child-offset
 signature on valid and checksum-mismatched malware, plus benign mismatch,
-malformed checksum syntax, and truncated member data. Both tests pass with no
-failures. Complete old/newc/CRC corpus, large materialized CRC members,
+malformed checksum syntax, and truncated member data. A third test validates a
+member spanning more than two checksum windows and requires an `EOF-8` child
+tail signature. All three tests pass with no failures. Complete old/newc/CRC
+corpus, large materialized CRC members,
 sanitizer and checksum-read fault injection, certified Linux x86-64, and
 Sonic1 qualification remain release gates.
