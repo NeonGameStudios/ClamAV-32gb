@@ -6540,5 +6540,19 @@ unsupported parameters, and an early EOI under a logical input length above
 `UINT32_MAX`. The real production harness passes all 26 streamed-filter cases
 normally and under GCC AddressSanitizer/UBSan with leak detection. Remaining
 PDF work includes bounded filter-chain spools, encrypted and object streams,
-Flate predictor handling, compiled corpus, materialized large-stream, and
-Sonic1 qualification.
+compiled corpus, materialized large-stream, and Sonic1 qualification.
+
+## PDF predictor fail-closed admission — 2026-08-23
+
+Flate and LZW DecodeParms now accept only the identity predictor value `1`.
+Missing, non-scalar, non-numeric, and non-identity values return an explicit
+incomplete parse result before decoder output starts; the ordinary
+single-filter path then writes the exact encoded stream for raw matching.
+This replaces the previous silent acceptance of predictor-transformed bytes as
+if they were fully decoded. The same check protects legacy filter-chain paths.
+
+Focused tests prove identity-Flate output and exact raw fallback for TIFF/PNG
+predictors and malformed parameter forms. The real production harness passes
+all 27 streamed-filter cases normally and under GCC AddressSanitizer/UBSan with
+leak detection. Predictor reversal remains deliberately unsupported; the
+release contract is fail-closed rather than a false complete scan.

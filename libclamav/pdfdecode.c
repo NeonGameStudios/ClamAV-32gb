@@ -186,8 +186,8 @@ static cl_error_t pdf_write_raw_stream(struct pdf_struct *pdf, const char *strea
 }
 
 static size_t pdf_decodestream_internal(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params, struct pdf_token *token, int fout, cl_error_t *status, struct objstm_struct *objstm);
-static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream,
-                                         size_t streamlen, int fout, size_t *bytes_scanned);
+static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, struct pdf_dict *params,
+                                         const char *stream, size_t streamlen, int fout, size_t *bytes_scanned);
 static cl_error_t pdf_stream_rldecode(struct pdf_struct *pdf, const char *stream, size_t streamlen,
                                       int fout, size_t *bytes_scanned);
 static cl_error_t pdf_stream_asciihexdecode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream,
@@ -277,7 +277,7 @@ size_t pdf_decodestream(
 
         switch (obj->filterlist[0]) {
             case OBJ_FILTER_FLATE:
-                decode_status = pdf_stream_flatedecode(pdf, obj, stream, streamlen, fout, &bytes_scanned);
+                decode_status = pdf_stream_flatedecode(pdf, obj, params, stream, streamlen, fout, &bytes_scanned);
                 break;
             case OBJ_FILTER_RL:
                 decode_status = pdf_stream_rldecode(pdf, stream, streamlen, fout, &bytes_scanned);
@@ -1006,6 +1006,62 @@ static bool pdf_is_whitespace(uint8_t byte)
     return byte == 0 || byte == '\t' || byte == '\n' || byte == '\f' || byte == '\r' || byte == ' ';
 }
 
+static cl_error_t pdf_decodeparms_integer(struct pdf_struct *pdf,
+                                          const struct pdf_dict_node *node,
+                                          long *parsed)
+{
+    char *end;
+    char *value;
+
+    if (node == NULL || parsed == NULL)
+        return CL_ENULLARG;
+    value = (char *)node->value;
+    if (node->type != PDF_DICT_STRING || value == NULL) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF DecodeParms contained a missing or non-scalar numeric value");
+        return CL_EPARSE;
+    }
+
+    errno   = 0;
+    *parsed = strtol(value, &end, 10);
+    while (*end != '\0' && isspace((unsigned char)*end))
+        end++;
+    if (end == value || *end != '\0' || errno == ERANGE) {
+        cli_mark_scan_incomplete(pdf->ctx, "PDF DecodeParms contained an invalid numeric value");
+        return CL_EPARSE;
+    }
+    return CL_SUCCESS;
+}
+
+static cl_error_t pdf_require_identity_predictor(struct pdf_struct *pdf,
+                                                 struct pdf_dict *params)
+{
+    struct pdf_dict_node *node;
+
+    if (params == NULL)
+        return CL_SUCCESS;
+
+    for (node = params->nodes; node != NULL; node = node->next) {
+        long predictor;
+        cl_error_t status;
+
+        status = pdf_checktimelimit(pdf, "PDF predictor-parameter traversal reached the configured time limit");
+        if (status != CL_SUCCESS)
+            return status;
+        if (node->key == NULL || strcmp(node->key, "/Predictor") != 0)
+            continue;
+
+        status = pdf_decodeparms_integer(pdf, node, &predictor);
+        if (status != CL_SUCCESS)
+            return status;
+        cli_dbgmsg("cli_pdf: Predictor: %ld\n", predictor);
+        if (predictor != 1) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF predictor decoding is unsupported");
+            return CL_EPARSE;
+        }
+    }
+    return CL_SUCCESS;
+}
+
 static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8_t *content, size_t length,
                                              int fout, size_t *decoded_length, int *inflate_status)
 {
@@ -1119,7 +1175,8 @@ static cl_error_t pdf_inflate_stream_attempt(struct pdf_struct *pdf, const uint8
     return status;
 }
 
-static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj, const char *stream_data,
+static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj,
+                                         struct pdf_dict *params, const char *stream_data,
                                          size_t streamlen, int fout, size_t *bytes_scanned)
 {
     uint8_t *content = (uint8_t *)stream_data;
@@ -1133,6 +1190,10 @@ static cl_error_t pdf_stream_flatedecode(struct pdf_struct *pdf, struct pdf_obj 
     if (bytes_scanned == NULL)
         return CL_ENULLARG;
     *bytes_scanned = 0;
+
+    status = pdf_require_identity_predictor(pdf, params);
+    if (status != CL_SUCCESS)
+        return status;
 
     output_start = lseek(fout, 0, SEEK_CUR);
     if (output_start < 0) {
@@ -1566,66 +1627,39 @@ static cl_error_t pdf_lzw_parameters(struct pdf_struct *pdf, struct pdf_dict *pa
                                      int *early_change)
 {
     struct pdf_dict_node *node;
-    long predictor = 1;
+    cl_error_t status;
 
     if (early_change == NULL)
         return CL_ENULLARG;
     *early_change = 1;
+
+    status = pdf_require_identity_predictor(pdf, params);
+    if (status != CL_SUCCESS)
+        return status;
     if (params == NULL)
         return CL_SUCCESS;
 
     node = params->nodes;
     while (node != NULL) {
-        const char *name = NULL;
-        bool early_parameter = false;
+        long parsed;
 
         if (pdf_checktimelimit(pdf, "PDF LZW-parameter traversal reached the configured time limit") != CL_SUCCESS)
             return CL_ETIMEOUT;
-
-        if (node->key != NULL) {
-            if (strcmp(node->key, "/EarlyChange") == 0) {
-                name            = "EarlyChange";
-                early_parameter = true;
-            } else if (strcmp(node->key, "/Predictor") == 0) {
-                name = "Predictor";
-            }
+        if (node->key == NULL || strcmp(node->key, "/EarlyChange") != 0) {
+            node = node->next;
+            continue;
         }
 
-        if (name != NULL) {
-            char *end;
-            char *value = (char *)node->value;
-            long parsed;
-
-            if (node->type != PDF_DICT_STRING || value == NULL) {
-                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW DecodeParms contained a missing or non-scalar numeric value");
-                return CL_EPARSE;
-            }
-
-            errno  = 0;
-            parsed = strtol(value, &end, 10);
-            while (*end != '\0' && isspace((unsigned char)*end))
-                end++;
-            if (end == value || *end != '\0' || errno == ERANGE) {
-                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW DecodeParms contained an invalid numeric value");
-                return CL_EPARSE;
-            }
-
-            cli_dbgmsg("cli_pdf: %s: %ld\n", name, parsed);
-            if (!early_parameter) {
-                predictor = parsed;
-            } else if (parsed == 0 || parsed == 1) {
-                *early_change = (int)parsed;
-            } else {
-                cli_mark_scan_incomplete(pdf->ctx, "PDF LZW EarlyChange parameter is outside its defined range");
-                return CL_EPARSE;
-            }
+        status = pdf_decodeparms_integer(pdf, node, &parsed);
+        if (status != CL_SUCCESS)
+            return status;
+        cli_dbgmsg("cli_pdf: EarlyChange: %ld\n", parsed);
+        if (parsed != 0 && parsed != 1) {
+            cli_mark_scan_incomplete(pdf->ctx, "PDF LZW EarlyChange parameter is outside its defined range");
+            return CL_EPARSE;
         }
+        *early_change = (int)parsed;
         node = node->next;
-    }
-
-    if (predictor != 1) {
-        cli_mark_scan_incomplete(pdf->ctx, "PDF LZW predictor decoding is unsupported");
-        return CL_EPARSE;
     }
     return CL_SUCCESS;
 }
@@ -1853,7 +1887,9 @@ static cl_error_t filter_flatedecode(struct pdf_struct *pdf, struct pdf_obj *obj
     z_stream stream;
     int zstat, rc = CL_SUCCESS;
 
-    UNUSEDPARAM(params);
+    rc = pdf_require_identity_predictor(pdf, params);
+    if (rc != CL_SUCCESS)
+        return rc;
 
     if (*content == '\r') {
         content++;

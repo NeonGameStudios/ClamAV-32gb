@@ -10737,6 +10737,68 @@ static void pdf_test_decode_single_filter(const uint8_t *input, size_t input_siz
                                               filter, NULL, temporary_limit, result);
 }
 
+START_TEST(test_pdf_flate_predictor_parameters_are_fail_visible)
+{
+    static const uint8_t decoded[] = "PDF Flate identity predictor";
+    static const struct {
+        const char *value;
+        enum pdf_dict_type type;
+    } invalid_cases[] = {
+        {"12", PDF_DICT_STRING},
+        {"invalid", PDF_DICT_STRING},
+        {"1", PDF_DICT_ARRAY},
+        {NULL, PDF_DICT_STRING},
+    };
+    char key[]      = "/Predictor";
+    char identity[] = "1";
+    uint8_t compressed[128];
+    uLongf compressed_size = sizeof(compressed);
+    struct pdf_dict_node node;
+    struct pdf_dict params;
+    struct pdf_single_filter_result result;
+    size_t i;
+
+    ck_assert_int_eq(compress2(compressed, &compressed_size, decoded,
+                               sizeof(decoded) - 1U, Z_BEST_SPEED),
+                     Z_OK);
+    memset(&node, 0, sizeof(node));
+    memset(&params, 0, sizeof(params));
+    node.key     = key;
+    node.value   = identity;
+    node.valuesz = sizeof(identity) - 1U;
+    node.type    = PDF_DICT_STRING;
+    params.nodes = &node;
+    params.tail  = &node;
+
+    pdf_test_decode_single_filter_with_params(compressed, (size_t)compressed_size,
+                                              (size_t)compressed_size, OBJ_FILTER_FLATE,
+                                              &params, 0, &result);
+    ck_assert_int_eq(result.status, CL_SUCCESS);
+    ck_assert_uint_eq(result.written, sizeof(decoded) - 1U);
+    ck_assert_uint_eq(result.output_size, sizeof(decoded) - 1U);
+    ck_assert_int_eq(memcmp(result.output, decoded, sizeof(decoded) - 1U), 0);
+    ck_assert(!result.scan_incomplete);
+    free(result.output);
+
+    for (i = 0; i < sizeof(invalid_cases) / sizeof(invalid_cases[0]); i++) {
+        node.value   = (void *)invalid_cases[i].value;
+        node.valuesz = invalid_cases[i].value == NULL ? 0 : strlen(invalid_cases[i].value);
+        node.type    = invalid_cases[i].type;
+
+        pdf_test_decode_single_filter_with_params(compressed, (size_t)compressed_size,
+                                                  (size_t)compressed_size, OBJ_FILTER_FLATE,
+                                                  &params, 0, &result);
+        ck_assert_int_eq(result.status, CL_EPARSE);
+        ck_assert_uint_eq(result.written, (size_t)compressed_size);
+        ck_assert_uint_eq(result.output_size, (size_t)compressed_size);
+        ck_assert_int_eq(memcmp(result.output, compressed, (size_t)compressed_size), 0);
+        ck_assert(result.scan_incomplete);
+        ck_assert(result.dont_cache);
+        free(result.output);
+    }
+}
+END_TEST
+
 static uint8_t pdf_test_hex_digit(uint8_t value)
 {
     return value < 10U ? (uint8_t)('0' + value) : (uint8_t)('A' + value - 10U);
@@ -27976,6 +28038,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_pdf_raw_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_flate_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_flate_stream_quota_failure_rolls_back_output);
+    tcase_add_test(tc_cl, test_pdf_flate_predictor_parameters_are_fail_visible);
     tcase_add_test(tc_cl, test_pdf_runlength_stream_is_chunked_and_quota_accounted);
     tcase_add_test(tc_cl, test_pdf_runlength_stream_quota_failure_rolls_back_output);
     tcase_add_test(tc_cl, test_pdf_truncated_runlength_after_prefix_is_fail_visible);

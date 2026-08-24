@@ -2219,3 +2219,9 @@ and Sonic1 qualification as release gates.
   decoder and output fault injection, and Sonic1 release/sanitizer runs.
   Preserve EOI, resynchronization, predictor-unsupported, rollback, deadline,
   scan-limit, and temporary-quota oracles.
+
+## PDF predictor fail-closed admission — 2026-08-23
+
+- Keep non-identity Flate/LZW predictors explicit incomplete unless bounded
+  TIFF/PNG predictor reversal is implemented. Qualify identity, malformed,
+  unsupported, raw-fallback, corpus, and Sonic1 behavior before release.
