@@ -8856,6 +8856,23 @@ ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service parity, and Sonic1 qualification remain
 open, so `CL_TYPE_MSOLE2` stays pending.
 
+## MSEXPAND focused parser qualification — 2026-08-25
+
+The focused current-source production-linked GCC `msexpand` TCase passes 4/4;
+the existing `msexpand_map` TCase passes 2/2. The direct matrix covers
+truncated and in-range callback-failed headers, missing input, truncated and
+overproduced output, scan-size and temporary-size admission, and timeout
+propagation. The decoder preserves fail-visible parse/format distinctions
+(`CL_EPARSE` for a truncated stream and `CL_EFORMAT` for declared-output
+overproduction), while public in-range header faults preserve `CL_EREAD` and
+timeouts retain `Heuristics.Limits.Exceeded.MaxScanTime`.
+
+This is bounded decoder and dispatch evidence only. Compiled SZDD corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_MSSZDD` and `msexpand-map` stay
+pending.
+
 ## MSEXPAND public API read-failure audit — 2026-08-25
 
 The isolated current-source production-linked `msexpand_map` TCase passes

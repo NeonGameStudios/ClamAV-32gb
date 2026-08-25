@@ -3619,6 +3619,8 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_pe, test_pe_icon_resource_
 contains unit_tests/check_clamav.c 'tcase_create("ole2")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_mso_prefix_range_classes_are_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_ole2, test_ole2_encryption_probe_read_failure_is_fail_visible)'
+contains unit_tests/check_clamav.c 'tcase_create("msexpand")'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_msexpand, test_msexpand_truncated_output_is_fail_visible)'
 contains libclamav/pe.c 'PE unpacked content exceeded configured scan limits'
 contains libclamav/pe.c 'unpacked output exceeds temporary storage limits'
 contains libclamav/pe.c 'PE UPX/FSG unpacked output could not be written completely'

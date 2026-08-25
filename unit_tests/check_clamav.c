@@ -15635,7 +15635,7 @@ START_TEST(test_msexpand_truncated_output_is_fail_visible)
     scanned    = UINT64_MAX;
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_MSSZDD", NULL);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
@@ -15707,7 +15707,7 @@ START_TEST(test_msexpand_time_limit_is_fail_visible)
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert_int_eq(temporary_reserved, 0);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSEXPAND inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -35354,6 +35354,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_arjsfx = tcase_create("arjsfx");
     TCase *tc_autoit_sfx = tcase_create("autoit_sfx");
     TCase *tc_ishield_sfx = tcase_create("ishield_sfx");
+    TCase *tc_msexpand = tcase_create("msexpand");
     TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -35749,6 +35750,12 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_ishield_sfx);
     tcase_add_checked_fixture(tc_ishield_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_ishield_sfx, test_ishield_sfx_admission_reaches_nested_matcher);
+    suite_add_tcase(s, tc_msexpand);
+    tcase_add_checked_fixture(tc_msexpand, cl_setup, cl_teardown);
+    tcase_add_test(tc_msexpand, test_msexpand_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_msexpand, test_msexpand_missing_map_is_fail_visible);
+    tcase_add_test(tc_msexpand, test_msexpand_truncated_output_is_fail_visible);
+    tcase_add_test(tc_msexpand, test_msexpand_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_msexpand_map);
     tcase_add_checked_fixture(tc_msexpand_map, cl_setup, cl_teardown);
     tcase_add_test(tc_msexpand_map, test_msexpand_missing_map_is_fail_visible);

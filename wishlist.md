@@ -3441,6 +3441,18 @@ and Sonic1 qualification as release gates.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
 
+## MSEXPAND focused parser qualification — 2026-08-25
+
+- The focused current-source production-linked GCC `msexpand` TCase passes
+  4/4 and `msexpand_map` passes 2/2 across header truncation/read failure,
+  missing input, truncated/overproduced output, scan-size and temporary-size
+  limits, and timeout. The decoder preserves `CL_EPARSE` versus `CL_EFORMAT`,
+  public header faults preserve `CL_EREAD`, and timeout keeps the shared
+  `Heuristics.Limits.Exceeded.MaxScanTime` reason.
+- Complete the compiled SZDD corpus and full-C ABI-consistent execution, then
+  add sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
+
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
 - The current-source production-linked `hwpole2_map` TCase passes 2/2 for
