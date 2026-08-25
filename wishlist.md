@@ -1291,6 +1291,9 @@ large-file, and Sonic1 qualification open.
 - NSIS header admission and direct extraction now reject recognized layers with
   no input fmap as explicit incomplete parses; add compiled NSIS corpus and
   sanitizer qualification.
+- PE direct scanning now rejects a recognized layer with no input fmap as an
+  explicit incomplete parse; add compiled PE corpus, sanitizer, and production
+  CVD qualification.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.

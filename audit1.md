@@ -118,6 +118,15 @@ production-linked `apm_map` case passes with the sticky reason, and source and
 capability-manifest guards cover the boundary. Full APM corpus, sanitizer,
 materialized large-file, production-CVD, and Sonic1 qualification remain open.
 
+## PE direct-entry map admission — 2026-08-25
+
+The PE direct scanner checked for a null context but dereferenced the current
+layer fmap immediately afterward. It now returns `CL_EPARSE` with sticky
+incomplete state for a recognized layer with no input map while retaining
+`CL_ENULLARG` for a null context. The isolated production-linked `pe_map`
+regression covers both boundaries. Compiled PE corpus, sanitizer, production
+CVD, materialized large-file, and Sonic1 qualification remain release gates.
+
 **Logical bytecode dispatch preflight.** `cli_bytecode_runlsig()` now validates
 the scan context, bytecode table, one-based index, logical-signature match
 arrays, and fmap before forming `all_bcs[bc_idx - 1]`. The focused bytecode

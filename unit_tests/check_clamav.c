@@ -27527,6 +27527,19 @@ START_TEST(test_pe_truncated_header_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_pe_missing_map_is_fail_visible)
+{
+    cli_ctx ctx;
+
+    ck_assert_int_eq(cli_scanpe(NULL), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanpe(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "PE input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_pe_header_read_failure_is_fail_visible)
 {
     static const uint8_t data[] = {'M', 'Z'};
@@ -33754,6 +33767,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_graphics_map = tcase_create("graphics_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
+    TCase *tc_pe_map = tcase_create("pe_map");
     TCase *tc_text_encoding = tcase_create("text_encoding");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     TCase *tc_largefile;
@@ -33813,6 +33827,8 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);
+    suite_add_tcase(s, tc_pe_map);
+    tcase_add_test(tc_pe_map, test_pe_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_text_encoding);
     tcase_add_checked_fixture(tc_text_encoding, cl_setup, cl_teardown);
     tcase_add_test(tc_text_encoding, test_encoded_text_script_normalization_is_complete);

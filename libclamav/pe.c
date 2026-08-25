@@ -3161,6 +3161,10 @@ int cli_scanpe(cli_ctx *ctx)
         cli_errmsg("cli_scanpe: ctx == NULL\n");
         return CL_ENULLARG;
     }
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "PE input map is unavailable");
+        return CL_EPARSE;
+    }
 
     if (cli_json_timeout_cycle_check(ctx, &toval) != CL_SUCCESS) {
         return CL_ETIMEOUT;
