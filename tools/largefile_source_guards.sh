@@ -2714,6 +2714,8 @@ contains libclamav/swf.c 'SWF LZMA compressed input could not be read completely
 contains libclamav/swf.c 'SWF zlib compressed input could not be read completely'
 contains libclamav/swf.c 'SWF inspection reached the configured time limit'
 contains libclamav/swf.c 'SWF input map is unavailable'
+contains libclamav/swf.c 'return CL_ENULLARG;'
+contains unit_tests/check_clamav.c 'test_swf_missing_map_is_fail_visible'
 contains libclamav/swf.c 'SWF LZMA traversal reached the configured time limit'
 contains libclamav/swf.c 'SWF zlib traversal reached the configured time limit'
 contains libclamav/swf.c 'SWF tag traversal reached the configured time limit'

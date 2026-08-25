@@ -1,5 +1,13 @@
 # Wishlist
 
+## SWF direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null SWF parser context, while marking a
+  recognized layer with no input fmap incomplete and returning `CL_EPARSE`.
+- The dedicated `swf_map` regression covers both admission states. Keep full
+  SWF corpus, sanitizer, materialized large-file, production-CVD, service, and
+  Sonic1 qualification open.
+
 ## Mydoom detector direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null Mydoom detector context, while marking a

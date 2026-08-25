@@ -6,6 +6,14 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## SWF direct-entry admission — 2026-08-25
+
+The SWF parser now returns `CL_ENULLARG` for a null context while retaining
+the explicit incomplete `CL_EPARSE` result for a recognized layer without an
+input fmap. The dedicated production-linked `swf_map` case covers both
+states; full SWF corpus, sanitizer, materialized large-file, production-CVD,
+service, and Sonic1 qualification remain open.
+
 ## Mydoom detector direct-entry admission — 2026-08-25
 
 The Mydoom log detector now returns `CL_ENULLARG` for a null context while

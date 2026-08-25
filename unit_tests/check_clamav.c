@@ -7089,6 +7089,8 @@ START_TEST(test_swf_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
 
+    ck_assert_int_eq(cli_scanswf(NULL), CL_ENULLARG);
+
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scanswf(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -33888,6 +33890,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
+    TCase *tc_swf_map = tcase_create("swf_map");
     TCase *tc_arj_map = tcase_create("arj_map");
     TCase *tc_binhex_map = tcase_create("binhex_map");
     TCase *tc_mydoom_map = tcase_create("mydoom_map");
@@ -34035,6 +34038,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     suite_add_tcase(s, tc_ppt_entry);
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
+    suite_add_tcase(s, tc_swf_map);
+    tcase_add_test(tc_swf_map, test_swf_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_arj_map);
     tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
     suite_add_tcase(s, tc_binhex_map);
@@ -34632,7 +34637,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_lzma_declared_input_size_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_swf_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_required_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_compressed_input_range_failure_is_truncation);
 #ifdef CLAMAV_TEST_JS_IO_WRAP
