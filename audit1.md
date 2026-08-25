@@ -8477,14 +8477,35 @@ Complete OLE2/XAR/RTF/media corpora, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, and Sonic1 qualification
 remain open.
 
-The Rust boundary review also confirmed that the authoritative source already
-returns `CL_ENULLARG` before fmap lookup for OneNote, ALZ, and LHA/LZH. The
-linked `rust_map` failure is from the stale Rust archive (`scan_onenote(NULL)`
-returns the old generic error), not from the current source. An offline host
-Rust 1.97.1 test attempt reached `openssl-sys` and stopped because this host
-has no OpenSSL development metadata; no software was installed. Current C/Rust
-rebuild and Rust, sanitizer, Linux x86-64, materialized large-file, and
+The Rust boundary review confirmed that the authoritative source returns
+`CL_ENULLARG` before fmap lookup for OneNote, ALZ, and LHA/LZH. The first
+linked `rust_map` run used a stale Rust archive and was discarded. After
+forcing the existing CMake Rust target to rebuild from the authoritative
+sources, the current-source production-linked `rust_map` case passed 1/1.
+The cached Rust release suite also ran all 34 ALZ unit tests with temporary
+C-engine link stubs and passed 34/34; those stubs are test plumbing, not
+production evidence. Full C ABI-consistent rebuild, parser-family corpus,
+sanitizer, Linux x86-64, materialized large-file, production-CVD/service, and
 Sonic1 evidence remain release gates.
+
+## ALZ current-source qualification audit — 2026-08-25
+
+The authoritative ALZ implementation already uses the bounded Rust
+`FMapReader`, quota-accounted temporary spools, checked output-size
+finalization, deadline-aware extraction, and fail-visible status mapping. The
+forced current-source CMake Rust rebuild eliminated the stale archive from the
+earlier boundary run. Its production-linked `rust_map` TCase passes 1/1 for
+null-context and missing-map admission across the Rust parser entry points.
+
+The locked, cached Rust release unit suite passes all 34 `alz::tests`, covering
+stored, deflate, and BZip2 output validation, read failures, truncation,
+unsupported methods, output rollback, member/file/total limits, stop decisions,
+metadata positions, and end-marker completion. The unit binary required
+temporary C-engine stubs solely to satisfy the static Rust crate's normal C
+FFI symbols; no release source or dependency was changed. Full ALZ corpus,
+current full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production CVD/service parity, and Sonic1 evidence
+remain open, so `CL_TYPE_ALZ` stays pending.
 
 ## Matcher fixture and fail-visible boundary audit — 2026-08-25
 

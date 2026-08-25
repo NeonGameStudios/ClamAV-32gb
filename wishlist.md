@@ -3226,3 +3226,14 @@ and Sonic1 qualification as release gates.
 - Rebuild all C objects as one ABI-consistent production harness, then extend
   AutoIt evidence to full corpus, decoder, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, and Sonic1 qualification.
+
+## ALZ current-source qualification audit — 2026-08-25
+
+- Preserve the bounded ALZ `FMapReader`, quota-accounted spools, exact output
+  size checks, deadline propagation, and fail-visible read/limit mappings.
+  Current-source production-linked `rust_map` passes 1/1, and the locked Rust
+  release suite passes all 34 ALZ unit tests with temporary C-engine link
+  stubs.
+- Complete ALZ corpus, current full-C ABI-consistent C execution, sanitizer,
+  certified Linux x86-64, materialized large-file, production CVD/service,
+  and Sonic1 evidence before changing `CL_TYPE_ALZ` from pending.
