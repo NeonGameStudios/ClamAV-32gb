@@ -1173,6 +1173,19 @@ run passes 5/5; the manifest and source guards record the same evidence. Full
 PNG corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 evidence remain open.
 
+## TIFF focused-map audit — 2026-08-25
+
+The focused production-linked `tiff` TCase passes 8/8 across classic and
+BigTIFF truncation, initial and targeted IFD read failures, malformed
+structures, endian variants, and shared-deadline expiry; the dedicated
+`tiff_map` missing-map case passes 1/1. The three >4-GiB callback-map tests
+are isolated in `tiff_large` and remain a mixed-harness rebuild gate because
+the current production-linked object set returns a null fmap from
+`cl_fmap_open_handle()` before parser entry. The manifest and source guards
+retain that distinction. Full TIFF corpus, current full-build large-coordinate
+evidence, sanitizer, certified Linux x86-64, production-CVD/service,
+materialized large-file, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

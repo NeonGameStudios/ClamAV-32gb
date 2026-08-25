@@ -22,6 +22,16 @@
   corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, and Sonic1 qualification as release gates.
 
+## TIFF focused-boundary qualification — 2026-08-25
+
+- The production-linked `tiff` TCase passes 8/8 and `tiff_map` passes 1/1 for
+  classic/BigTIFF truncation, callback failures, malformed structures,
+  endian variants, deadline expiry, and missing-map admission.
+- Keep the three >4-GiB callback-map cases as a current-full-build gate: the
+  mixed harness returns a null fmap before parser entry. Retain full TIFF
+  corpus, sanitizer, certified Linux x86-64, production-CVD/service,
+  materialized large-file, and Sonic1 qualification as release gates.
+
 ## GIF focused-boundary qualification — 2026-08-25
 
 - The production-linked `gif` TCase passes 5/5 for truncated block forms,

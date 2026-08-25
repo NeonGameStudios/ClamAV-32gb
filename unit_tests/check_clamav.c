@@ -32843,19 +32843,22 @@ START_TEST(test_tiff_ifd_timeout_is_fail_visible)
         0x00, 0x00,
         0x00, 0x00, 0x00, 0x00,
     };
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
 
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.fmap = map;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ck_assert_int_eq(cli_parsetiff(&ctx), CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "TIFF IFD traversal reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -33892,6 +33895,9 @@ static Suite *test_cl_suite(void)
     TCase *tc_gif      = tcase_create("gif");
     TCase *tc_png      = tcase_create("png");
     TCase *tc_tiff     = tcase_create("tiff");
+#if SIZE_MAX > UINT32_MAX
+    TCase *tc_tiff_large = tcase_create("tiff_large");
+#endif
     TCase *tc_tiff_map = tcase_create("tiff_map");
     TCase *tc_jpeg_map = tcase_create("jpeg_map");
     TCase *tc_pdf      = tcase_create("pdf");
@@ -33989,6 +33995,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_png);
     tcase_add_checked_fixture(tc_png, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_tiff);
+#if SIZE_MAX > UINT32_MAX
+    suite_add_tcase(s, tc_tiff_large);
+#endif
     suite_add_tcase(s, tc_tiff_map);
     tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_jpeg_map);
@@ -34673,9 +34682,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tiff, test_tiff_bigtiff_read_failures_are_fail_visible);
     tcase_add_test(tc_tiff, test_tiff_ifd_timeout_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX
-    tcase_add_test(tc_tiff, test_tiff_ifd_cursor_does_not_wrap_above_uint32);
-    tcase_add_test(tc_tiff, test_tiff_bigtiff_ifd_cursor_reaches_above_uint32);
-    tcase_add_test(tc_tiff, test_tiff_bigtiff_external_value_above_uint32_is_not_mapped);
+    tcase_add_test(tc_tiff_large, test_tiff_ifd_cursor_does_not_wrap_above_uint32);
+    tcase_add_test(tc_tiff_large, test_tiff_bigtiff_ifd_cursor_reaches_above_uint32);
+    tcase_add_test(tc_tiff_large, test_tiff_bigtiff_external_value_above_uint32_is_not_mapped);
 #endif
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_list_respects_declared_boundary);
