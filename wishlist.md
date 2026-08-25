@@ -1,5 +1,13 @@
 # Wishlist
 
+## ISO9660 missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null ISO parser context, but mark a recognized
+  ISO parser with no input fmap incomplete and return `CL_EPARSE`.
+- The isolated production-linked `iso_map` regression passes and records the
+  sticky reason. Keep full ISO/Joliet corpus, sanitizer, materialized
+  large-file, production-CVD, and Sonic1 qualification open.
+
 ## CPIO fixed-width numeric fields — 2026-08-25
 
 - Require exact-width octal ODC and hexadecimal newc/CRC name-size and

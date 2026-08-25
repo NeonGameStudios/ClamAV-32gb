@@ -7676,3 +7676,17 @@ reset plus non-cacheability. It passes 1/1; the existing four-case `cpio_crc`
 TCase also passes against the tightened parser. Complete old/ODC/newc/CRC
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD, and Sonic1 qualification remain release gates.
+
+## ISO9660 missing-map entry classification — 2026-08-25
+
+`cli_scaniso()` previously returned `CL_ENULLARG` for both a null context and
+an otherwise valid context whose recognized ISO input fmap was unavailable.
+The latter path did not mark the scan incomplete, unlike the parser's other
+required-input failures.
+
+The entry point now preserves `CL_ENULLARG` only for a null context and
+returns `CL_EPARSE` with the sticky reason `ISO input map is unavailable` for
+a missing fmap. The isolated production-linked `iso_map` TCase passes 1/1 and
+verifies the incomplete state. Full ISO/Joliet corpus, sanitizer, materialized
+large-file, certified Linux x86-64, production-CVD, and Sonic1 qualification
+remain release gates.
