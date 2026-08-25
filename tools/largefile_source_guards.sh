@@ -3760,6 +3760,7 @@ contains libclamav/autoit.c 'AutoIt EA05 stored member temporary admission reach
 contains libclamav/autoit.c 'AutoIt EA05 stored member output reached the configured time limit'
 contains unit_tests/check_clamav.c 'test_autoit_time_limit_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_autoit_missing_map_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_autoit_public_api_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_autoit_map, test_autoit_ea06_missing_member_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_autoit_map, test_autoit_time_limit_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_autoit_map, test_autoit_version_read_failure_is_fail_visible)'

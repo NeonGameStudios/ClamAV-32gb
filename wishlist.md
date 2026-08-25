@@ -3377,3 +3377,14 @@ and Sonic1 qualification as release gates.
 - Complete NSIS corpus and full-C ABI-consistent execution, then add
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
+
+## AutoIt public API read-failure audit — 2026-08-25
+
+- The isolated current-source production-linked `autoit_map` TCase now
+  covers missing-map admission, direct version/header failures, and a public
+  `CL_TYPE_AUTOIT` fixed-header callback failure, preserving `CL_EREAD`, a
+  clean verdict, and non-cacheability; malformed EA06 admission and timeout
+  coverage remain in the direct matrix.
+- Complete AutoIt EA05/EA06 corpus and full-C ABI-consistent execution, then
+  add sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.

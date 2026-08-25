@@ -8755,3 +8755,17 @@ This is fixed-header dispatch evidence only. Complete NSIS corpus, full-C
 ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service parity, and Sonic1 qualification remain
 open, so `CL_TYPE_NULSFT` stays pending.
+
+## AutoIt public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `autoit_map` TCase now covers
+recognized missing-map admission, direct version/header read failures, and a
+public `cl_scanmap_ex(..., "CL_TYPE_AUTOIT", ...)` scan whose in-range header
+callback failure returns `CL_EREAD`, leaves the verdict clean with no alert,
+and marks the fmap non-cacheable. Existing direct coverage retains malformed
+EA06 member admission and expired-context timeout handling.
+
+This is header/dispatch evidence only. Complete AutoIt EA05/EA06 corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_AUTOIT` stays pending.
