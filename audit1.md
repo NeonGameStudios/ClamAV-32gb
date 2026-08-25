@@ -1102,6 +1102,19 @@ guards pin all three focused registrations; compiled detector corpus,
 raw-dispatch, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 evidence remain open.
 
+## BZip2 focused-stream audit — 2026-08-25
+
+The focused production-linked `bz_map` TCase now runs the deterministic shared
+compressed-stream oracles for truncated input and injected fmap read failure;
+the two-case run passes 2/2. The tests include the BZip2 path alongside its
+deliberately common GZip/XZ implementation. An attempted promotion of the
+existing concatenated-member and temporary-quota cases exposed mixed-harness
+gaps (zero loaded synthetic signatures and an adjacent XZ `CL_EFORMAT` result),
+so those cases remain broad-suite/rebuild gates rather than being claimed as
+focused evidence. Full BZip2 corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 evidence remain
+open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

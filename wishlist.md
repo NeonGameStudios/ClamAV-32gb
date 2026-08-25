@@ -2916,6 +2916,17 @@ and Sonic1 qualification as release gates.
 - Retain the sparse native-width overflow regression and extend MBR evidence
   to corpus, sanitizer, materialized large-file, production-CVD, service, and
   Sonic1 qualification.
+
+## BZip2 focused-stream audit — 2026-08-25
+
+- The focused `bz_map` TCase runs the truncated-stream and input-read-failure
+  oracles, passing 2/2. Preserve the shared GZip/XZ checks where the
+  implementation is common.
+- Re-run the concatenated-member and temporary-quota cases in a current
+  ABI-consistent harness; the mixed harness currently produces zero loaded
+  synthetic signatures and an adjacent XZ `CL_EFORMAT` result. Then complete
+  BZip2 corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 qualification.
 ## Mach-O direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for thin, universal, and metadata-wrapper Mach-O null
