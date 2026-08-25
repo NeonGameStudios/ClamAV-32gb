@@ -8590,3 +8590,17 @@ the repository-wide sticky timeout contract. A current full C build remains
 required before certifying the parser family; corpus, sanitizer, certified
 Linux x86-64, materialized large-file, production-CVD/service, and Sonic1
 evidence remain open.
+
+## GZip current-source qualification audit — 2026-08-25
+
+The current-source production-linked `bz_map` TCase now passes 3/3. In
+addition to the shared truncated-stream and compressed-input callback-failure
+oracles, the new dedicated GZip case injects an in-range fmap read failure into
+a valid GZip stream and verifies `CL_EREAD`, a clean verdict, and
+non-cacheability. This independently exercises the GZip dispatch path while
+retaining the common GZip/BZip2/XZ boundary coverage.
+
+This is parser-boundary evidence, not release certification. Full GZip and
+legacy-fallback corpus, current full-C ABI-consistent execution, sanitizer,
+certified Linux x86-64, materialized large-file, production CVD/service parity,
+and Sonic1 qualification remain open, so `CL_TYPE_GZ` stays pending.

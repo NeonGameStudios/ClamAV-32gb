@@ -3258,3 +3258,14 @@ and Sonic1 qualification as release gates.
   current full-C ABI build, sanitizer, certified Linux x86-64, materialized
   large-file, production CVD/service, and Sonic1 qualification before moving
   `CL_TYPE_ONENOTE` beyond pending.
+
+## GZip current-source qualification audit — 2026-08-25
+
+- The current-source production-linked `bz_map` TCase passes 3/3, including a
+  dedicated valid-GZip in-range callback-failure oracle that preserves
+  `CL_EREAD`, a clean verdict, and non-cacheability alongside the shared
+  truncated-stream and compressed-input boundaries.
+- Extend GZip and legacy-fallback evidence to complete corpus, full-C
+  ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+  large-file, production CVD/service parity, and Sonic1 qualification before
+  certification.

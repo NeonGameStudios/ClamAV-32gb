@@ -6792,6 +6792,48 @@ START_TEST(test_compressed_input_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gzip_input_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = "dedicated GZip callback failure";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    uint8_t *gzip;
+    size_t gzip_length;
+    fmap_t *map;
+    cl_error_t ret;
+
+    gzip = gzip_stream(input, sizeof(input) - 1U, &gzip_length);
+    ck_assert_ptr_nonnull(gzip);
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(gzip, gzip_length);
+    ck_assert_ptr_nonnull(map);
+    map->need   = compressed_input_read_failure;
+    verdict     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert  = "stale";
+    scanned     = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_GZ", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+    free(gzip);
+}
+END_TEST
+
 START_TEST(test_xz_limit_is_fail_visible)
 {
     static const uint8_t archive[] = {
@@ -34524,6 +34566,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_bz_map, cl_setup, cl_teardown);
     tcase_add_test(tc_bz_map, test_gzip_bzip_truncated_streams_are_fail_visible);
     tcase_add_test(tc_bz_map, test_compressed_input_read_failure_is_fail_visible);
+    tcase_add_test(tc_bz_map, test_gzip_input_read_failure_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

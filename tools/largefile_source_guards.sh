@@ -786,6 +786,8 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_mydoom_map, test_mydoom_de
 contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_bz_map, cl_setup, cl_teardown)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_map, test_gzip_bzip_truncated_streams_are_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_map, test_compressed_input_read_failure_is_fail_visible)'
+contains unit_tests/check_clamav.c 'test_gzip_input_read_failure_is_fail_visible'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_bz_map, test_gzip_input_read_failure_is_fail_visible)'
 contains libclamav/special.c 'RIFF header could not be read completely'
 contains unit_tests/check_clamav.c 'test_riff_header_read_failure_is_fail_visible'
 contains libclamav/special.c 'static const void *riff_need_off'
