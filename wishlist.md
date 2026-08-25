@@ -2901,3 +2901,11 @@ and Sonic1 qualification as release gates.
 - The dedicated `macho_map` regression covers both boundaries. Keep executable
   corpus, sanitizer, materialized large-file, production-CVD, service, and
   Sonic1 qualification open.
+
+## ELF direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for null ELF scan and metadata contexts while keeping
+  missing input maps fail-visible as incomplete parses.
+- The dedicated `elf_map` regression covers both direct entries. Keep
+  executable corpus, sanitizer, materialized large-file, production-CVD,
+  service, and Sonic1 qualification open.

@@ -8140,3 +8140,11 @@ sticky incomplete state. The dedicated production-linked `macho_map` case
 covers both null-context and missing-map boundaries; executable corpus,
 sanitizer, materialized large-file, production-CVD, service, and Sonic1
 qualification remain open.
+
+## ELF direct-entry admission — 2026-08-25
+
+The ELF scanner and metadata-only parser now return `CL_ENULLARG` for null
+contexts, while a recognized layer with no input fmap remains `CL_EPARSE` with
+sticky incomplete state. The dedicated `elf_map` case covers both direct
+entries; executable corpus, sanitizer, materialized large-file, production-CVD,
+service, and Sonic1 qualification remain open.

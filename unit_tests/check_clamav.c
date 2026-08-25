@@ -29991,6 +29991,8 @@ START_TEST(test_elf_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
 
+    ck_assert_int_eq(cli_scanelf(NULL), CL_ENULLARG);
+
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scanelf(&ctx), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -30002,6 +30004,8 @@ START_TEST(test_elf_metadata_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
     struct cli_exe_info exeinfo;
+
+    ck_assert_int_eq(cli_elfheader(NULL, NULL), CL_ENULLARG);
 
     memset(&ctx, 0, sizeof(ctx));
     cli_exe_info_init(&exeinfo, 0);
@@ -33908,6 +33912,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cl);
     tcase_add_checked_fixture(tc_cl, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_elf_map);
+    tcase_add_test(tc_elf_map, test_elf_missing_map_is_fail_visible);
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
@@ -34519,7 +34524,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_elf_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_truncated_program_header_is_parse_error);
     tcase_add_test(tc_cl, test_elf_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_elf_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_scan_program_header_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_elf_metadata_read_failure_is_fail_visible);
 #if SIZE_MAX > UINT32_MAX

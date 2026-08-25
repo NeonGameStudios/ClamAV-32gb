@@ -853,7 +853,7 @@ cl_error_t cli_scanelf(cli_ctx *ctx)
 
     if (ctx == NULL) {
         cli_dbgmsg("ELF: passed context was NULL\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     map = ctx->fmap;
     if (map == NULL) {
@@ -997,7 +997,7 @@ cl_error_t cli_elfheader(cli_ctx *ctx, struct cli_exe_info *elfinfo)
     cli_dbgmsg("in cli_elfheader\n");
 
     if (ctx == NULL)
-        return CL_EARG;
+        return CL_ENULLARG;
     if (elfinfo == NULL)
         return CL_ENULLARG;
     if (ctx->fmap == NULL) {

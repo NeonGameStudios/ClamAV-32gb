@@ -310,6 +310,8 @@ contains unit_tests/check_clamav.c 'test_apm_partition_read_failure_is_fail_visi
 contains unit_tests/check_clamav.c 'test_apm_truncated_driver_map_is_format_error'
 contains libclamav/elf.c 'ELF metadata parsing ended before inspection completed'
 contains libclamav/elf.c 'ELF input map is unavailable'
+contains libclamav/elf.c 'return CL_ENULLARG;'
+contains unit_tests/check_clamav.c 'test_elf_missing_map_is_fail_visible'
 contains libclamav/elf.c 'static size_t cli_elf_readn'
 contains libclamav/elf.c 'static cl_error_t cli_elf_read_status'
 contains libclamav/elf.c 'only an in-range callback failure for a fully available structure is an'
