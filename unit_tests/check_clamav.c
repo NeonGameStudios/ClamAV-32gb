@@ -23231,7 +23231,7 @@ START_TEST(test_nsis_time_limit_is_fail_visible)
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "NSIS inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -35361,6 +35361,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ole2 = tcase_create("ole2");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
     TCase *tc_ole2_map = tcase_create("ole2_map");
+    TCase *tc_nulsft = tcase_create("nulsft");
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
@@ -35794,6 +35795,12 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_ole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_ole2_map, test_ole2_missing_map_is_fail_visible);
     tcase_add_test(tc_ole2_map, test_ole2_public_api_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_nulsft);
+    tcase_add_checked_fixture(tc_nulsft, cl_setup, cl_teardown);
+    tcase_add_test(tc_nulsft, test_nsis_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_nulsft, test_nsis_missing_map_entry_points_are_fail_visible);
+    tcase_add_test(tc_nulsft, test_nsis_public_api_read_failure_is_fail_visible);
+    tcase_add_test(tc_nulsft, test_nsis_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_nulsft_map);
     tcase_add_checked_fixture(tc_nulsft_map, cl_setup, cl_teardown);
     tcase_add_test(tc_nulsft_map, test_nsis_missing_map_entry_points_are_fail_visible);

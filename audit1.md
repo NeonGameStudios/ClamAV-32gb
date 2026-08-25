@@ -8873,6 +8873,22 @@ materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MSSZDD` and `msexpand-map` stay
 pending.
 
+## NSIS/SFX focused parser qualification — 2026-08-25
+
+The focused current-source production-linked GCC `nulsft` TCase passes 4/4;
+the existing `nulsft_map` TCase passes 2/2. The direct matrix covers NSIS
+header truncation and in-range callback failure, null/missing-map entry
+points, public `CL_TYPE_NULSFT` read-failure dispatch, and timeout
+propagation. Required failures remain incomplete and non-cacheable, fully
+in-range callback faults preserve `CL_EREAD`, and timeout state retains
+`Heuristics.Limits.Exceeded.MaxScanTime`.
+
+This is header/dispatch evidence only. Complete NSIS/SFX corpus and decoder
+member-table/raw/compressed/solid-stream fault coverage, full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_NULSFT` stays pending.
+
 ## MSEXPAND public API read-failure audit — 2026-08-25
 
 The isolated current-source production-linked `msexpand_map` TCase passes

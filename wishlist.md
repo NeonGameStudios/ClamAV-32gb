@@ -3453,6 +3453,18 @@ and Sonic1 qualification as release gates.
   add sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
 
+## NSIS/SFX focused parser qualification — 2026-08-25
+
+- The focused current-source production-linked GCC `nulsft` TCase passes 4/4
+  and `nulsft_map` passes 2/2 across NSIS header truncation/read failure,
+  null/missing-map entry points, public `CL_TYPE_NULSFT` read-failure
+  dispatch, and timeout, preserving `CL_EREAD`, incomplete/non-cacheable
+  state, and the shared timeout reason.
+- Complete the NSIS/SFX corpus and decoder member-table/raw/compressed/
+  solid-stream fault matrix in full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
+
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
 - The current-source production-linked `hwpole2_map` TCase passes 2/2 for
