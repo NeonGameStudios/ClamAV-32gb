@@ -7862,6 +7862,17 @@ START_TEST(test_ole10_truncated_object_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_ole10_null_context_is_fail_visible)
+{
+    int fd;
+
+    fd = open("/dev/null", O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(/dev/null) failed: %s", strerror(errno));
+    ck_assert_int_eq(cli_scan_ole10(fd, NULL), CL_ENULLARG);
+    close(fd);
+}
+END_TEST
+
 START_TEST(test_ole10_temporary_limit_is_fail_visible)
 {
     char file_path[PATH_MAX];
@@ -33813,6 +33824,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
     TCase *tc_ole2_map = tcase_create("ole2_map");
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
+    TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
@@ -33951,6 +33963,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ole2_map, test_ole2_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_nulsft_map);
     tcase_add_test(tc_nulsft_map, test_nsis_missing_map_entry_points_are_fail_visible);
+    suite_add_tcase(s, tc_ole10_entry);
+    tcase_add_test(tc_ole10_entry, test_ole10_null_context_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

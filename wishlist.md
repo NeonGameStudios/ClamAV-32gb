@@ -1294,6 +1294,8 @@ large-file, and Sonic1 qualification open.
 - PE direct scanning now rejects a recognized layer with no input fmap as an
   explicit incomplete parse; add compiled PE corpus, sanitizer, and production
   CVD qualification.
+- OLE10 embedded-object admission now rejects a null context before temporary
+  processing; add compiled OLE/OLE10 corpus and sanitizer qualification.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.

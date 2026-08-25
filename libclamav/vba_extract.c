@@ -2381,6 +2381,9 @@ int cli_scan_ole10(int fd, cli_ctx *ctx)
     off_t payload_offset;
     uint64_t temporary_reserved = 0;
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+
     if (fd < 0) {
         cli_mark_scan_incomplete(ctx, "OLE10 embedded object descriptor was invalid");
         return CL_EARG;

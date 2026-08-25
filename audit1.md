@@ -127,6 +127,15 @@ incomplete state for a recognized layer with no input map while retaining
 regression covers both boundaries. Compiled PE corpus, sanitizer, production
 CVD, materialized large-file, and Sonic1 qualification remain release gates.
 
+## OLE10 null-context admission — 2026-08-25
+
+The OLE10 embedded-object helper could accept a null context through its
+descriptor validation and later dereference the context during temporary
+admission for a valid descriptor. It now returns `CL_ENULLARG` before any
+descriptor processing; the isolated `ole10_entry` regression exercises a valid
+descriptor with a null context. OLE corpus, sanitizer, and Sonic1 qualification
+remain release gates.
+
 **Logical bytecode dispatch preflight.** `cli_bytecode_runlsig()` now validates
 the scan context, bytecode table, one-based index, logical-signature match
 arrays, and fmap before forming `all_bcs[bc_idx - 1]`. The focused bytecode
