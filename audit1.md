@@ -8206,3 +8206,20 @@ Rust 1.97.1 test attempt reached `openssl-sys` and stopped because this host
 has no OpenSSL development metadata; no software was installed. Current C/Rust
 rebuild and Rust, sanitizer, Linux x86-64, materialized large-file, and
 Sonic1 evidence remain release gates.
+
+## Matcher fixture and fail-visible boundary audit — 2026-08-25
+
+The matcher unit fixture now provides a bounded synthetic fmap read callback
+for direct-buffer tests instead of relying on a zeroed metadata stub. The
+false-positive read-failure regression uses an explicit callback that fails an
+in-range hash window and asserts `CL_EREAD`, the sticky
+`fmap hash input could not be read completely` reason, and non-cacheability.
+The no-generic-root scan regression now asserts the observed incomplete result
+(`Executable metadata parsing ended before inspection completed`) rather than
+calling a clean-looking result safe. The updated matcher object compiles with
+GCC, and the production-linked focused run completed 34 of 35 checks with no
+assertion failures. The remaining check raises a signal in `cl_engine_free()`
+teardown after the hash case in the mixed-generation harness; this is retained
+as an ABI-consistency qualification gap and is not attributed to the current
+matcher source under the repository's mixed-ABI warning. A current full C
+build is required before matcher production certification.

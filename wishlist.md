@@ -2949,3 +2949,16 @@ and Sonic1 qualification as release gates.
   current source guards are correct; the existing linked archive is stale,
   and the host offline Rust attempt stopped at missing OpenSSL development
   metadata without installing software.
+
+## Matcher fixture and fail-visible boundary audit — 2026-08-25
+
+- Keep the matcher unit fixture's bounded synthetic fmap callback and explicit
+  failing callback aligned with the context-aware hash contract. The focused
+  production-linked run had zero assertion failures across the 34 checks that
+  completed, including the hash-read and no-generic-root incomplete-result
+  oracles.
+- Re-run the full matcher TCase after rebuilding all C objects as one
+  ABI-consistent production harness. The current mixed-generation harness
+  raises a teardown signal in `cl_engine_free()` after the hash case; do not
+  treat that signal as current matcher-source evidence, but do not certify the
+  matcher family until the clean rebuild passes.

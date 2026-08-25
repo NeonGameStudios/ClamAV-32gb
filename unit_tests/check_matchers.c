@@ -165,12 +165,44 @@ static struct cl_scan_options options;
 
 static fmap_t thefmap;
 static const char *virname = NULL;
+
+/* Matcher unit tests use a synthetic fmap as the current layer while passing
+ * the actual subject through cli_scan_buff(). The production hash path now
+ * requires every non-metadata fmap to expose a bounded read callback, so give
+ * that synthetic layer a deterministic zero-filled backing window. Returning
+ * the same zero-filled window for every offset is intentional: the tests that
+ * exercise large coordinates validate admission and status, not subject
+ * contents. */
+#define MATCHER_TEST_FMAP_READ_WINDOW (10U * 1024U * 1024U)
+static unsigned char matcher_test_fmap_read_window[MATCHER_TEST_FMAP_READ_WINDOW];
+
+static const void *matcher_test_fmap_need(fmap_t *map, size_t at, size_t len, int lock)
+{
+    UNUSEDPARAM(lock);
+
+    if (map == NULL || len == 0 || at > map->len || len > map->len - at ||
+        len > sizeof(matcher_test_fmap_read_window))
+        return NULL;
+
+    return matcher_test_fmap_read_window;
+}
+
+static const void *matcher_test_fmap_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    UNUSEDPARAM(map);
+    UNUSEDPARAM(at);
+    UNUSEDPARAM(len);
+    UNUSEDPARAM(lock);
+    return NULL;
+}
+
 static void setup(void)
 {
     struct cli_matcher *root;
     virname = NULL;
 
     memset(&thefmap, 0, sizeof(thefmap));
+    thefmap.need     = matcher_test_fmap_need;
 
     memset(&ctx, 0, sizeof(ctx));
     memset(&options, 0, sizeof(struct cl_scan_options));
@@ -1437,6 +1469,7 @@ START_TEST(test_fp_hash_read_failure_is_fail_visible)
     cl_error_t ret;
 
     thefmap.len = 1;
+    thefmap.need = matcher_test_fmap_read_failure;
     ck_assert_int_eq(hm_addhash_bin((struct cl_engine *)ctx.engine,
                                     HASH_PURPOSE_WHOLE_FILE_FP_CHECK,
                                     digest, CLI_HASH_MD5, thefmap.len,
@@ -1447,7 +1480,7 @@ START_TEST(test_fp_hash_read_failure_is_fail_visible)
     ret = cli_append_virus(&ctx, "FP.Hash.Read.Failure");
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "false-positive hash could not be read");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "fmap hash input could not be read completely");
     ck_assert(thefmap.dont_cache_flag);
 }
 END_TEST
@@ -1576,7 +1609,7 @@ START_TEST(test_pcre_full_map_read_failure_is_fail_visible)
 }
 END_TEST
 
-START_TEST(test_scan_fmap_without_generic_root_is_safe)
+START_TEST(test_scan_fmap_without_generic_root_is_fail_visible)
 {
     struct cli_matcher *generic_root = ctx.engine->root[0];
     struct cli_matcher *target_root;
@@ -1587,11 +1620,14 @@ START_TEST(test_scan_fmap_without_generic_root_is_safe)
     ctx.engine->root[0]                       = NULL;
     ctx.engine->root[1]                       = target_root;
     thefmap.len                               = 0;
+    thefmap.need                              = NULL;
     ctx.fmap                                   = &thefmap;
     ctx.recursion_stack[ctx.recursion_level].fmap = &thefmap;
 
     ck_assert_int_eq(cli_scan_fmap(&ctx, CL_TYPE_MSEXE, false, NULL, AC_SCAN_VIR, NULL), CL_SUCCESS);
-    ck_assert(!ctx.scan_incomplete);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Executable metadata parsing ended before inspection completed");
 
     ctx.engine->root[0] = generic_root;
 }
@@ -1746,7 +1782,7 @@ Suite *test_matchers_suite(void)
     tcase_add_test(tc_matchers, test_scan_fmap_pread_failure_is_incomplete);
 #endif
     tcase_add_test(tc_matchers, test_pcre_full_map_read_failure_is_fail_visible);
-    tcase_add_test(tc_matchers, test_scan_fmap_without_generic_root_is_safe);
+    tcase_add_test(tc_matchers, test_scan_fmap_without_generic_root_is_fail_visible);
     tcase_add_test(tc_matchers, test_pcre_matcher_limit_is_preserved_by_fmap);
     tcase_add_test(tc_matchers, test_pcre_subject_limit_is_fail_visible);
     return s;
