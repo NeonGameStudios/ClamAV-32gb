@@ -227,6 +227,16 @@ Sonic1 qualification open.
   sticky reason. Keep full XDP/XML corpus, sanitizer, materialized large-file,
   production-CVD, and Sonic1 qualification open.
 
+## XDP focused-boundary qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `xdp` case passes
+  3/3 for deadline propagation, cumulative retained-dump quota rejection,
+  overlapping dump/Base64 accounting, exact peak counters, rollback, and
+  cleanup; `xdp_map` passes 1/1 for missing-map admission.
+- Retain full XDP/XML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, and Sonic1 qualification as release
+  gates.
+
 ## DMG missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null DMG parser context, but mark a recognized

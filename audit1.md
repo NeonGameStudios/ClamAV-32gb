@@ -174,6 +174,16 @@ capability-manifest guards cover the boundary. Full XDP/XML corpus,
 sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
 remain open.
 
+## XDP focused-boundary qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `xdp` TCase passes 3/3
+for expired-deadline propagation, cumulative retained-dump quota rejection,
+and overlapping retained-dump/Base64 accounting, including exact peak and
+zero-byte rollback assertions. The `xdp_map` case passes 1/1 for null-map
+admission and its sticky incomplete reason. Full XDP/XML corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 qualification remain open.
+
 ## DMG missing-map entry classification — 2026-08-25
 
 The DMG direct parser now distinguishes a null parser context from a
