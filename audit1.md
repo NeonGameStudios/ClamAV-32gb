@@ -5176,6 +5176,15 @@ unavailable`, preserving `CL_ENULLARG` only for a null caller context. The
 focused direct regression passes; compiled TNEF corpus, sanitizer, and Sonic1
 qualification remain open.
 
+## BMP and JPEG 2000 missing-map admission — 2026-08-25
+
+The bounded BMP and JPEG 2000 direct entries returned `CL_ENULLARG` for both a
+null context and a non-null context whose recognized input fmap was missing.
+Both now preserve `CL_ENULLARG` only for a null context and return `CL_EPARSE`
+with parser-specific sticky incomplete reasons for unavailable recognized
+input. The focused two-oracle direct regression passes; compiled graphics
+corpus, sanitizer, and Sonic1 qualification remain open.
+
 ## MSPack temporary-output creation failure — 2026-08-22
 
 CAB and CHM member staging reserve temporary space before creating the output

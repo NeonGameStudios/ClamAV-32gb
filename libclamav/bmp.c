@@ -146,8 +146,12 @@ cl_error_t cli_scanbmp(cli_ctx *ctx)
     bool top_down = false;
     cl_error_t status;
 
-    if ((NULL == ctx) || (NULL == ctx->fmap))
+    if (NULL == ctx)
         return CL_ENULLARG;
+    if (NULL == ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "BMP input map is unavailable");
+        return CL_EPARSE;
+    }
 
     status = bmp_read_exact(ctx, signature, 0, sizeof(signature),
                             "BMP signature could not be read completely");

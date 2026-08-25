@@ -100,8 +100,12 @@ cl_error_t cli_scanjp2(cli_ctx *ctx)
     bool box_to_end;
     cl_error_t status;
 
-    if ((NULL == ctx) || (NULL == ctx->fmap))
+    if (NULL == ctx)
         return CL_ENULLARG;
+    if (NULL == ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "JPEG 2000 input map is unavailable");
+        return CL_EPARSE;
+    }
 
     status = jp2_checktimelimit(ctx, "JP2 inspection reached the configured time limit");
     if (status != CL_SUCCESS)

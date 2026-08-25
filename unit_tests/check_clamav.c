@@ -16278,6 +16278,22 @@ START_TEST(test_bmp_truncated_signature_is_parse_error)
 }
 END_TEST
 
+START_TEST(test_bmp_jp2_missing_maps_are_fail_visible)
+{
+    cli_ctx ctx;
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanbmp(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "BMP input map is unavailable");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanjp2(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "JPEG 2000 input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_jp2_truncated_box_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -33628,6 +33644,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cl       = tcase_create("cl_api");
     TCase *tc_elf_map  = tcase_create("elf_map");
     TCase *tc_tnef_map = tcase_create("tnef_map");
+    TCase *tc_graphics_map = tcase_create("graphics_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
     TCase *tc_text_encoding = tcase_create("text_encoding");
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
@@ -33677,6 +33694,8 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_elf_map, test_elf_metadata_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_tnef_map);
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_graphics_map);
+    tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);
