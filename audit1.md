@@ -6836,6 +6836,15 @@ required by the shared heuristic path and asserts the canonical sticky reason.
 Compiled XML/OOXML corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, and Sonic1 qualification remain open.
 
+## XZ focused-boundary qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `xz` case passes 2/2
+for scan-size limiting and truncated-stream format classification; the
+dedicated `xz_trailing` case passes 1/1 for rejecting a second concatenated
+stream instead of silently scanning only the first. Full XZ/compressed corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, and Sonic1 qualification remain open.
+
 ## OLE2 direct extraction map admission — 2026-08-25
 
 The OLE2 extraction entry rejected a null context but could dereference the

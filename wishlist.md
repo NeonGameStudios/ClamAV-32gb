@@ -193,6 +193,15 @@ Sonic1 qualification open.
   materialized large-file, production-CVD/service, and Sonic1 qualification as
   release gates.
 
+## XZ focused-boundary qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `xz` case passes
+  2/2 for scan-size limiting and truncated-stream format classification;
+  `xz_trailing` passes 1/1 for rejecting a second concatenated stream.
+- Retain full XZ/compressed corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
+
 ## HWPML focused-boundary qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `hwpml` case passes

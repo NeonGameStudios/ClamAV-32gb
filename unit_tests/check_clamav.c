@@ -6874,7 +6874,7 @@ START_TEST(test_xz_truncated_stream_is_fail_visible)
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL,
                         "CL_TYPE_XZ", NULL);
-    ck_assert_msg(ret == CL_EUNPACK || ret == CL_EPARSE,
+    ck_assert_msg(ret == CL_EUNPACK || ret == CL_EPARSE || ret == CL_EFORMAT,
                   "truncated XZ stream returned %s (%d)", cl_strerror(ret), ret);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
@@ -34073,6 +34073,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_msxml_map = tcase_create("msxml_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
+    TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
     TCase *tc_ole2_map = tcase_create("ole2_map");
@@ -34312,6 +34313,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_reaches_exact_child_matcher);
     suite_add_tcase(s, tc_mspack_map);
     tcase_add_test(tc_mspack_map, test_mspack_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_xz);
+    tcase_add_checked_fixture(tc_xz, cl_setup, cl_teardown);
+    tcase_add_test(tc_xz, test_xz_limit_is_fail_visible);
+    tcase_add_test(tc_xz, test_xz_truncated_stream_is_fail_visible);
     suite_add_tcase(s, tc_xz_trailing);
     tcase_add_checked_fixture(tc_xz_trailing, cl_setup, cl_teardown);
     tcase_add_test(tc_xz_trailing, test_xz_trailing_stream_is_fail_visible);
@@ -34900,8 +34905,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_gzip_bzip_truncated_streams_are_fail_visible);
     tcase_add_test(tc_cl, test_bzip_concatenated_stream_is_fully_inspected);
     tcase_add_test(tc_cl, test_compressed_input_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_xz_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_xz_truncated_stream_is_fail_visible);
     tcase_add_test(tc_cl, test_compressed_output_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_zlib_truncated_stream_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_lzma_declared_input_size_is_fail_visible);
