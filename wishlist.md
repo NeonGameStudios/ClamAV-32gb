@@ -1,5 +1,15 @@
 # Wishlist
 
+## CPIO fixed-width numeric fields — 2026-08-25
+
+- Require exact-width octal ODC and hexadecimal newc/CRC name-size and
+  file-size fields; reject malformed prefixes as incomplete `CL_EPARSE`
+  instead of moving the archive cursor using a partial value.
+- The production-linked `cpio_numeric` regression covers both fields in ODC
+  and newc and verifies non-cacheability; retain complete CPIO corpus,
+  sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
+  as release gates.
+
 ## OLE2 XLM/BIFF read-status preservation — 2026-08-24
 
 - Preserve an operational WorkBook-sector read failure through the XLM/BIFF

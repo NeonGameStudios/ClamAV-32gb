@@ -157,6 +157,29 @@ static int cpio_parse_hex_u32(const char field[8], uint32_t *value)
     return 0;
 }
 
+static int cpio_parse_octal_u32(const char *field, size_t width, uint32_t *value)
+{
+    uint32_t parsed = 0;
+    size_t i;
+
+    if (field == NULL || value == NULL || width == 0)
+        return -1;
+
+    for (i = 0; i < width; i++) {
+        uint32_t digit;
+
+        if (field[i] < '0' || field[i] > '7')
+            return -1;
+        digit = (uint32_t)(field[i] - '0');
+        if (parsed > (UINT32_MAX - digit) / 8U)
+            return -1;
+        parsed = (parsed * 8U) + digit;
+    }
+
+    *value = parsed;
+    return 0;
+}
+
 static cl_error_t cpio_validate_newc_checksum(cli_ctx *ctx, const char field[8], size_t offset, size_t length)
 {
     uint32_t expected;
@@ -358,7 +381,7 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
 {
     cl_error_t status = CL_SUCCESS;
     struct cpio_hdr_odc hdr_odc;
-    char name[513] = {0}, buff[12] = {0};
+    char name[513] = {0};
     unsigned int file = 0, trailer = 0;
     size_t filesize = 0, namesize = 0, hdr_namesize = 0;
     uint32_t parsed_filesize = 0, parsed_namesize = 0;
@@ -396,11 +419,10 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
 
         cli_dbgmsg("CPIO: -- File %u --\n", ++file);
 
-        strncpy(buff, hdr_odc.namesize, 6);
-        buff[6] = 0;
-        if (sscanf(buff, "%o", &parsed_namesize) != 1) {
+        if (cpio_parse_octal_u32(hdr_odc.namesize, sizeof(hdr_odc.namesize), &parsed_namesize) < 0) {
             cli_dbgmsg("cli_scancpio_odc: Can't convert name size\n");
-            status = CL_EFORMAT;
+            cli_mark_scan_incomplete(ctx, "CPIO ODC name-size field was malformed");
+            status = CL_EPARSE;
             goto done;
         }
         hdr_namesize = (size_t)parsed_namesize;
@@ -434,11 +456,10 @@ cl_error_t cli_scancpio_odc(cli_ctx *ctx)
             }
         }
 
-        strncpy(buff, hdr_odc.filesize, 11);
-        buff[11] = 0;
-        if (sscanf(buff, "%o", &parsed_filesize) != 1) {
+        if (cpio_parse_octal_u32(hdr_odc.filesize, sizeof(hdr_odc.filesize), &parsed_filesize) < 0) {
             cli_dbgmsg("cli_scancpio_odc: Can't convert file size\n");
-            status = CL_EFORMAT;
+            cli_mark_scan_incomplete(ctx, "CPIO ODC file-size field was malformed");
+            status = CL_EPARSE;
             goto done;
         }
         filesize = (size_t)parsed_filesize;
@@ -484,7 +505,7 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
 {
     cl_error_t status = CL_SUCCESS;
     struct cpio_hdr_newc hdr_newc;
-    char name[513], buff[9];
+    char name[513];
     unsigned int file = 0, trailer = 0;
     size_t filesize, namesize, hdr_namesize, pad;
     uint32_t parsed_filesize, parsed_namesize;
@@ -524,11 +545,10 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
 
         cli_dbgmsg("CPIO: -- File %u --\n", ++file);
 
-        strncpy(buff, hdr_newc.namesize, 8);
-        buff[8] = 0;
-        if (sscanf(buff, "%x", &parsed_namesize) != 1) {
+        if (cpio_parse_hex_u32(hdr_newc.namesize, &parsed_namesize) < 0) {
             cli_dbgmsg("cli_scancpio_newc: Can't convert name size\n");
-            status = CL_EFORMAT;
+            cli_mark_scan_incomplete(ctx, "CPIO newc name-size field was malformed");
+            status = CL_EPARSE;
             goto done;
         }
         hdr_namesize = (size_t)parsed_namesize;
@@ -579,11 +599,10 @@ cl_error_t cli_scancpio_newc(cli_ctx *ctx, int crc)
             }
         }
 
-        strncpy(buff, hdr_newc.filesize, 8);
-        buff[8] = 0;
-        if (sscanf(buff, "%x", &parsed_filesize) != 1) {
+        if (cpio_parse_hex_u32(hdr_newc.filesize, &parsed_filesize) < 0) {
             cli_dbgmsg("cli_scancpio_newc: Can't convert file size\n");
-            status = CL_EFORMAT;
+            cli_mark_scan_incomplete(ctx, "CPIO newc file-size field was malformed");
+            status = CL_EPARSE;
             goto done;
         }
         filesize = (size_t)parsed_filesize;

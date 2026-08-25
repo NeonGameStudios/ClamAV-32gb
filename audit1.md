@@ -7657,3 +7657,22 @@ still blocked before test compilation by the existing missing OpenSSL
 development metadata; parser-family corpus, production-linked Rust,
 sanitizer, certified Linux x86-64, materialized large-file, and Sonic1
 qualification remain open.
+
+## CPIO fixed-width numeric fields — 2026-08-25
+
+The ODC and newc CPIO walkers previously copied fixed-width namesize and
+filesize fields into temporary strings and used `sscanf`. That accepts a valid
+numeric prefix followed by an invalid byte, so malformed headers could be
+interpreted as a smaller member and move the archive cursor incorrectly.
+
+ODC fields now require exact-width octal digits with checked `uint32_t`
+accumulation; newc and CRC fields reuse the exact-width hexadecimal parser
+already used for CRC checksums. A malformed recognized field marks the layer
+incomplete and returns `CL_EPARSE`, rather than continuing with a prefix value.
+
+The production-linked public-API `cpio_numeric` TCase covers malformed
+name-size and file-size fields in both ODC and newc and verifies clean verdict
+reset plus non-cacheability. It passes 1/1; the existing four-case `cpio_crc`
+TCase also passes against the tightened parser. Complete old/ODC/newc/CRC
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD, and Sonic1 qualification remain release gates.
