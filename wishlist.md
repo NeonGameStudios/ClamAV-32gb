@@ -3080,6 +3080,10 @@ and Sonic1 qualification as release gates.
   certified Linux x86-64, materialized large-file, production-CVD/service, and
   Sonic1 qualification.
 
+- The isolated current-source production-linked `egg_sfx` case passes 1/1 for
+  valid, unsupported-version, malformed, and truncated header admission;
+  complete EGGSFX dispatch and nested-child coverage remain required.
+
 ## ELF focused-map audit — 2026-08-25
 
 - Promote truncated-header/program-table and program-header/metadata callback

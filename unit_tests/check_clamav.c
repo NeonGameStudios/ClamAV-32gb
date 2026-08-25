@@ -35061,6 +35061,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
     TCase *tc_egg_map = tcase_create("egg_map");
+    TCase *tc_egg_sfx = tcase_create("egg_sfx");
     TCase *tc_hfs_inline = tcase_create("hfs_inline");
     TCase *tc_hfs_map = tcase_create("hfs_map");
     TCase *tc_hfs_fork = tcase_create("hfs_fork");
@@ -35236,6 +35237,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
     tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);
     tcase_add_test(tc_egg_map, test_egg_lzma_stream_extracts_bounded_member);
+    suite_add_tcase(s, tc_egg_sfx);
+    tcase_add_checked_fixture(tc_egg_sfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_egg_sfx, test_egg_sfx_header_admission);
     suite_add_tcase(s, tc_hfs_inline);
     tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);

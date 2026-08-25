@@ -1191,6 +1191,11 @@ the shared scan-options context. The focused production-linked run passes 5/5.
 Full EGG/EGGSFX corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, and Sonic1 evidence remain open.
 
+The isolated current-source production-linked `egg_sfx` TCase passes 1/1 for
+valid, unsupported-version, malformed-header, and truncated-header admission
+through `cli_egg_header_check`. This remains header-admission evidence only;
+EGGSFX dispatch and nested-child qualification remain open.
+
 ## GIF focused-map audit — 2026-08-25
 
 The focused production-linked `gif` TCase now covers truncated block forms,
