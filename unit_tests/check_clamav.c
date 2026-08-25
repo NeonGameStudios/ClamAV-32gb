@@ -34053,6 +34053,12 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_macho_map);
     tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_map_is_fail_visible);
+    tcase_add_test(tc_dmg_map, test_dmg_strict_base64_and_terminal_end_validation);
+    tcase_add_test(tc_dmg_map, test_dmg_in_memory_stripes_keep_host_order);
+    tcase_add_test(tc_dmg_map, test_dmg_external_sort_is_bounded_and_complete);
+    tcase_add_test(tc_dmg_map, test_dmg_malformed_metadata_is_fail_visible);
+    tcase_add_test(tc_dmg_map, test_dmg_trailer_read_failure_is_fail_visible);
+    tcase_add_test(tc_dmg_map, test_dmg_invalid_trailer_is_fail_visible);
     suite_add_tcase(s, tc_xdp_map);
     tcase_add_checked_fixture(tc_xdp_map, cl_setup, cl_teardown);
     tcase_add_test(tc_xdp_map, test_xdp_missing_map_is_fail_visible);

@@ -2909,6 +2909,15 @@ and Sonic1 qualification as release gates.
   complete CPIO corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, and Sonic1 qualification.
 
+## DMG focused-map audit — 2026-08-25
+
+- Promote the existing strict Base64/end, host-order stripe, bounded external
+  sort, malformed metadata, trailer-read, and invalid-trailer regressions into
+  `dmg_map` beside missing-map admission.
+- The focused DMG map run passes 7/7. Complete DMG corpus, sanitizer, certified
+  Linux x86-64, materialized large-file, production-CVD/service, and Sonic1
+  qualification.
+
 ## DMG retained stripe endian conversion — 2026-08-25
 
 - Keep retained in-memory `blkx` stripe records in host order after one

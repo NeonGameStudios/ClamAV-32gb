@@ -1127,6 +1127,17 @@ evidence for checksum, multi-window, and strict field parsing. Full CPIO
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 evidence remain open.
 
+## DMG focused-map audit — 2026-08-25
+
+The focused production-linked `dmg_map` TCase now includes strict Base64 and
+terminal-end validation, host-order in-memory stripes, bounded external
+metadata sorting, malformed metadata, trailer callback failure, and invalid
+trailer handling alongside missing-map admission. The existing source guards
+pin the DMG bounded staging, sorting, reconstruction, and deadline contracts;
+the focused production-linked run passes 7/7. Full DMG corpus, sanitizer,
+certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,
