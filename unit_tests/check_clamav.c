@@ -26995,12 +26995,12 @@ START_TEST(test_arj_main_header_string_read_failure_is_fail_visible)
     data[1] = 0xea;
     arj_test_write_u16(data + 2, 34);
     data[4]  = 30;
-    data[32] = 'a';
-    data[33] = 0;
+    data[34] = 'a';
+    data[35] = 0;
 
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    arj_read_failure_offset = 32U;
+    arj_read_failure_offset = 34U;
     map->need              = arj_targeted_read_failure;
     ctx.engine             = &engine;
     ctx.fmap               = map;
@@ -34090,6 +34090,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_swf_map, test_swf_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_arj_map);
     tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
+    tcase_add_test(tc_arj_map, test_arj_main_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_arj_map, test_arj_main_header_string_read_failure_is_fail_visible);
+    tcase_add_test(tc_arj_map, test_arj_main_header_strings_stay_within_declared_header);
     suite_add_tcase(s, tc_binhex_map);
     tcase_add_test(tc_binhex_map, test_binhex_missing_map_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_null_context_is_fail_visible);

@@ -8087,6 +8087,19 @@ existing container archive is stale for unrelated newer test symbols. Complete
 ARJ corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 qualification remain open.
 
+## ARJ header-range audit — 2026-08-25
+
+The focused production-linked `arj_map` TCase now passes 4/4 for context/map
+admission, fixed main-header callback failure, declared filename-window
+callback failure, and the declared-header string boundary. The string-read
+fixture was corrected to inject the failure at the actual filename start
+(offset 34 after the two-byte archive signature and fixed 30-byte header), so
+the oracle exercises the intended range rather than a byte inside the fixed
+header. The parser preserves `CL_EREAD` and non-cacheability for the injected
+callback failure and `CL_EPARSE` for the out-of-declared-header case. Full ARJ
+corpus, decoder, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain open.
+
 ## BinHex header-length preflight — 2026-08-25
 
 BinHex decoded-header processing previously read the data and resource fork

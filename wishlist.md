@@ -2982,3 +2982,14 @@ and Sonic1 qualification as release gates.
 - Extend APM evidence to partition-count/table/coordinate limits, full corpus,
   sanitizer, certified Linux x86-64, materialized large-file, production-CVD,
   service, and Sonic1 qualification before certification.
+
+## ARJ header-range audit — 2026-08-25
+
+- The focused production-linked `arj_map` TCase passes 4/4 for context/map
+  admission, fixed main-header read failure, declared filename-window read
+  failure, and the declared-header string boundary. The fixture now injects
+  the callback failure at the actual filename start (offset 34) rather than
+  inside the fixed header.
+- Preserve the ARJ `CL_EREAD`/`CL_EPARSE` and non-cacheability distinctions;
+  extend evidence to full corpus, decoder, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification.
