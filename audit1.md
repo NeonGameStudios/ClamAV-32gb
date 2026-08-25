@@ -14,6 +14,15 @@ input fmap. The dedicated production-linked `swf_map` case covers both
 states; full SWF corpus, sanitizer, materialized large-file, production-CVD,
 service, and Sonic1 qualification remain open.
 
+## GIF/PNG/TIFF direct-entry admission — 2026-08-25
+
+The direct GIF, PNG, and TIFF parser entries previously returned legacy
+`CL_EARG` for a null parser context. They now return `CL_ENULLARG`, while the
+existing non-null missing-map paths remain parser-specific `CL_EPARSE`
+incomplete results. A focused direct regression covers all three entries; the
+compiled media corpus, sanitizer, production parser-family, and Sonic1 gates
+remain open.
+
 ## JPEG direct-entry admission — 2026-08-25
 
 The JPEG direct parser now returns `CL_ENULLARG` for a null context while a

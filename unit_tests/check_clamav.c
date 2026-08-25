@@ -32303,6 +32303,14 @@ START_TEST(test_gif_png_missing_maps_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_media_parsers_reject_null_contexts)
+{
+    ck_assert_int_eq(cli_parsegif(NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_parsepng(NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_parsetiff(NULL), CL_ENULLARG);
+}
+END_TEST
+
 START_TEST(test_png_truncated_chunks_are_fail_visible)
 {
     static const uint8_t missing_iend[] = {
@@ -33923,6 +33931,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_context_or_map_is_fail_visible);
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
+    tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);

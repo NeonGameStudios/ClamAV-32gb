@@ -1,5 +1,12 @@
 # Wishlist
 
+## GIF/PNG/TIFF direct-entry admission — 2026-08-25
+
+- GIF, PNG, and TIFF direct parser entries now return `CL_ENULLARG` for a null
+  context and preserve `CL_EPARSE` for recognized layers whose fmap is
+  unavailable. Add compiled media corpus, sanitizer, production parser-family,
+  and Sonic1 qualification before release.
+
 ## SWF direct-entry admission — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null SWF parser context, while marking a

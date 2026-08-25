@@ -138,7 +138,7 @@ cl_error_t cli_parsetiff(cli_ctx *ctx)
 
     if (NULL == ctx) {
         cli_dbgmsg("TIFF: passed context was NULL\n");
-        status = CL_EARG;
+        status = CL_ENULLARG;
         goto done;
     }
     map = ctx->fmap;
