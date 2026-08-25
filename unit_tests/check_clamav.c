@@ -23983,6 +23983,19 @@ START_TEST(test_ole2_header_read_failure_is_fail_visible)
 }
 END_TEST
 
+static size_t ole2_block_failure_offset = SIZE_MAX;
+static size_t ole2_block_failure_length = SIZE_MAX;
+
+static const void *ole2_block_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)lock;
+    if (at == ole2_block_failure_offset && len == ole2_block_failure_length)
+        return NULL;
+    if (len == 0 || at > map->len || len > map->len - at)
+        return NULL;
+    return (const uint8_t *)map->data + at;
+}
+
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
 struct ole2_word_encryption_failure_state {
     int fd;
@@ -24101,20 +24114,65 @@ START_TEST(test_ole2_workbook_encryption_probe_read_failure_is_fail_visible)
     ck_assert_int_eq(close(fd), 0);
 }
 END_TEST
-#endif
 
-static size_t ole2_block_failure_offset = SIZE_MAX;
-static size_t ole2_block_failure_length = SIZE_MAX;
-
-static const void *ole2_block_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+START_TEST(test_ole2_xlm_biff_read_failure_is_fail_visible)
 {
-    (void)lock;
-    if (at == ole2_block_failure_offset && len == ole2_block_failure_length)
-        return NULL;
-    if (len == 0 || at > map->len || len > map->len - at)
-        return NULL;
-    return (const uint8_t *)map->data + at;
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/has_png_and_jpeg.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0, "empty OLE2 fixture: %s", file_path);
+
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+    fd = -1;
+
+    /* The fixture is a valid CFB workbook, but its unrelated encryption
+     * probe bytes are not needed for this BIFF-sector fault test. Clear that
+     * bounded probe window so the parser reaches the WorkBook stream. */
+    ck_assert_uint_ge(data_size, 2048U + 512U);
+    memset(data + 2048U, 0, 512U);
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    map->need = ole2_block_read_failure;
+    ole2_block_failure_offset = 1536U;
+    ole2_block_failure_length = 512U;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 sector block could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+    ole2_block_failure_offset = SIZE_MAX;
+    ole2_block_failure_length = SIZE_MAX;
 }
+END_TEST
+#endif
 
 START_TEST(test_ole2_sector_range_classes_are_fail_visible)
 {
@@ -32957,6 +33015,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
+    TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -33019,6 +33078,11 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xz_trailing);
     tcase_add_checked_fixture(tc_xz_trailing, cl_setup, cl_teardown);
     tcase_add_test(tc_xz_trailing, test_xz_trailing_stream_is_fail_visible);
+    suite_add_tcase(s, tc_ole2_xlm);
+    tcase_add_checked_fixture(tc_ole2_xlm, cl_setup, cl_teardown);
+#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_ole2_xlm, test_ole2_xlm_biff_read_failure_is_fail_visible);
+#endif
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

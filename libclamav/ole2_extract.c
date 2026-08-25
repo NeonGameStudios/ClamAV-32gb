@@ -1705,22 +1705,36 @@ static cl_error_t scan_for_xlm_macros_and_images(ole2_header_t *hdr, property_t 
             /* Small block file */
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [scan_for_xlm_macros_and_images]: ole2_get_sbat_data_block failed\n");
+                status = (hdr->read_status != CL_SUCCESS) ? hdr->read_status : CL_EPARSE;
                 goto done;
             }
             /* buff now contains the block with N small blocks in it */
             offset = (1 << hdr->log2_small_block_size) * (current_block % (1 << (hdr->log2_big_block_size - hdr->log2_small_block_size)));
 
-            (void)scan_biff_for_xlm_macros_and_images(&state, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size), ctx, found_macro, found_image);
+            status = scan_biff_for_xlm_macros_and_images(&state, &buff[offset], MIN(len, 1 << hdr->log2_small_block_size), ctx, found_macro, found_image);
+            if (status != CL_SUCCESS)
+                goto done;
             len -= MIN(len, 1 << hdr->log2_small_block_size);
             current_block = ole2_get_next_sbat_block(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                status = hdr->read_status;
+                goto done;
+            }
         } else {
             /* Big block file */
             if (!ole2_read_block(hdr, buff, 1 << hdr->log2_big_block_size, current_block)) {
+                status = (hdr->read_status != CL_SUCCESS) ? hdr->read_status : CL_EPARSE;
                 goto done;
             }
 
-            (void)scan_biff_for_xlm_macros_and_images(&state, buff, MIN(len, (1 << hdr->log2_big_block_size)), ctx, found_macro, found_image);
+            status = scan_biff_for_xlm_macros_and_images(&state, buff, MIN(len, (1 << hdr->log2_big_block_size)), ctx, found_macro, found_image);
+            if (status != CL_SUCCESS)
+                goto done;
             current_block = ole2_get_next_block_number(hdr, current_block);
+            if (hdr->read_status != CL_SUCCESS) {
+                status = hdr->read_status;
+                goto done;
+            }
             len -= MIN(len, (1 << hdr->log2_big_block_size));
         }
     }

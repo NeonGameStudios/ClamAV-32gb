@@ -1,5 +1,14 @@
 # Wishlist
 
+## OLE2 XLM/BIFF read-status preservation — 2026-08-24
+
+- Preserve an operational WorkBook-sector read failure through the XLM/BIFF
+  walker and OLE2 property enumeration as `CL_EREAD`; do not collapse it to a
+  generic parse result.
+- A focused fixture-backed regression covers the injected sector fault and
+  non-cacheability. Complete OLE2 corpus, sanitizer, and parser-family
+  qualification remain open.
+
 ## XZ trailing-stream admission — 2026-08-24
 
 - Do not dispatch a clean XZ output when the first decoder stream ends while

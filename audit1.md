@@ -1093,6 +1093,22 @@ the child uses the already-held reservation rather than double-counting the
 same bytes. Compiled force-to-disk fault-injection and Linux/Sonic1 quota
 qualification remain open.
 
+## OLE2 XLM/BIFF read-status preservation — 2026-08-24
+
+The OLE2 XLM/BIFF walker recorded sector callback failures in
+hdr.read_status, but its failure exits retained generic CL_EPARSE. The
+property-enumeration path could therefore hide an operational WorkBook-sector
+read failure behind a parse result.
+
+The walker now propagates hdr.read_status after small-block and big-block
+reads, after the BIFF scan, and after the next-sector lookup. A focused
+production-linked GCC regression uses the existing workbook fixture, clears
+only its bounded encryption-probe window, injects a WorkBook sector read
+failure, and passes with exact CL_EREAD, the sector-read incomplete reason,
+and non-cacheability. Full OLE2 corpus, sanitizer, production-CVD,
+certified Linux x86-64, materialized large-file, and Sonic1 qualification
+remain open.
+
 ## XZ trailing-stream admission — 2026-08-24
 
 The XZ path stopped at the first `XZ_STREAM_END` and immediately dispatched
