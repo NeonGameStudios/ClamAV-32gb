@@ -236,6 +236,18 @@ Sonic1 qualification open.
   confirmed entries. Keep full InstallShield/CAB corpus, sanitizer,
   materialized large-file, production-CVD, and Sonic1 qualification open.
 
+## InstallShield SFX nested admission qualification — 2026-08-25
+
+- The current-source production-linked GCC `ishield_sfx` case passes 1/1 for
+  a valid PE-backed InstallShield SFX with an encrypted/compressed member and
+  exact nested child detection; adjacent `autoit_sfx` passes 1/1 and `pe_map`
+  passes 2/2. Unsigned-PE Authenticode checks now return `CL_EVERIFY` for a
+  no-trust result rather than `CL_BREAK`, so normal raw/parser scanning is not
+  suppressed before embedded SFX admission.
+- Retain full InstallShield/CAB corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
+
 ## SIS missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null SIS parser context, but mark a recognized
@@ -406,9 +418,10 @@ large-file, and Sonic1 qualification open.
   central record that references local-header offset zero. Confirmed candidates
   carry a central-directory layer attribute and use the full ZIP catalogue;
   ordinary embedded local records retain single-member dispatch.
-- The focused production-linked GCC case passes 2/2 with exact child-only
-  detection, layer-attribute observation, malformed-central rejection, and an
-  injected in-range central-record read failure classified as `CL_EREAD`.
+- The focused production-linked GCC case passes 3/3 with weak masked-header
+  rejection, exact child-only detection, layer-attribute observation,
+  malformed-central rejection, and an injected in-range central-record read
+  failure classified as `CL_EREAD`.
 - Add complete ZIP/SFX corpus, ZIP64 and multi-entry cases, sanitizer and
   materialized large-file runs, certified Linux x86-64 execution, production
   CVDs, and Sonic1 qualification before marking the ZIP/SFX family complete.

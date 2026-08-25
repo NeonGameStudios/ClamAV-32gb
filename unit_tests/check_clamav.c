@@ -9374,7 +9374,6 @@ START_TEST(test_zip_masked_sfx_reaches_exact_child_matcher)
 {
     static const uint8_t payload[] = "ZIP-SFX-MASKED!";
     static const uint8_t prefix[]  = "benign-sfx-host:";
-    static const char signature[]  = "Zip.Sfx.Masked.Member.Exact:0:*:5a49502d5346582d4d41534b454421\n";
     struct cl_scan_options options;
     struct cl_engine *scan_engine;
     struct zip_sfx_layer_state layer_state;
@@ -9387,12 +9386,9 @@ START_TEST(test_zip_masked_sfx_reaches_exact_child_matcher)
     size_t archive_length;
     size_t outer_length;
     size_t central_offset;
-    char signature_path[PATH_MAX];
-    unsigned int sigs = 0;
     const char *last_alert;
     cl_verdict_t verdict;
     uint64_t scanned;
-    int signature_fd;
     cl_error_t ret;
 
     compressed = zip_stream_raw_deflate_compressed(payload, sizeof(payload) - 1U,
@@ -9421,20 +9417,14 @@ START_TEST(test_zip_masked_sfx_reaches_exact_child_matcher)
     memset(&layer_state, 0, sizeof(layer_state));
     options.parse = CL_SCAN_PARSE_ARCHIVE;
     ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
-    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
-                              "%s/zip-sfx-masked.ndb", tmpdir),
-                     (int)(strlen(tmpdir) + strlen("/zip-sfx-masked.ndb")));
-    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
-    ck_assert_int_ge(signature_fd, 0);
-    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
-                     (ssize_t)(sizeof(signature) - 1U));
-    ck_assert_int_eq(close(signature_fd), 0);
     scan_engine = cl_engine_new();
     ck_assert_ptr_nonnull(scan_engine);
-    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
-    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "Zip.Sfx.Masked.Member.Exact",
+                         "5a49502d5346582d4d41534b454421", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
     ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
-    ck_assert_int_eq(cli_unlink(signature_path), 0);
     cl_engine_set_scan_callback(scan_engine, zip_sfx_layer_callback,
                                 CL_SCAN_CALLBACK_PRE_SCAN);
 
@@ -31026,6 +31016,107 @@ START_TEST(test_autoit_sfx_admission_reaches_nested_matcher)
 }
 END_TEST
 
+START_TEST(test_ishield_sfx_admission_reaches_nested_matcher)
+{
+    enum {
+        ISHIELD_SFX_OFFSET = 2,
+        ISHIELD_MAGIC_SIZE = 14,
+        ISHIELD_CONTROL_SIZE = 0x20,
+        ISHIELD_FILEBLOCK_SIZE = 312,
+        ISHIELD_FILEBLOCK_CSIZE_OFFSET = 268,
+        ISHIELD_PE_OFFSET = 0x400,
+        ISHIELD_INPUT_SIZE = 2048
+    };
+    uint8_t data[ISHIELD_INPUT_SIZE] = {0};
+    static const uint8_t decoded[] = "InstallShield\0";
+    uint8_t compressed[64];
+    static const uint8_t transformed_key[] = {
+        (uint8_t)('k' ^ 0xec),
+        (uint8_t)('e' ^ 0xca),
+        (uint8_t)('y' ^ 0x79)
+    };
+    uLongf compressed_size = sizeof(compressed);
+    size_t fileblock_offset;
+    size_t payload_offset;
+    size_t input_size;
+    unsigned int i;
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data[0] = 'M';
+    data[1] = 'Z';
+    memcpy(data + ISHIELD_SFX_OFFSET, "InstallShield\0", ISHIELD_MAGIC_SIZE);
+    /* Keep the host a minimally parseable PE so the normal MSEXE matcher
+     * setup does not reject the SFX before its embedded type pass. */
+    zip_stream_write_u32(data + 0x3c, ISHIELD_PE_OFFSET);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET, 0x00004550U);
+    zip_stream_write_u16(data + ISHIELD_PE_OFFSET + 4, 0x014cU);
+    zip_stream_write_u16(data + ISHIELD_PE_OFFSET + 6, 1U);
+    zip_stream_write_u16(data + ISHIELD_PE_OFFSET + 20, 0x00e0U);
+    zip_stream_write_u16(data + ISHIELD_PE_OFFSET + 22, 0x0002U);
+    zip_stream_write_u16(data + ISHIELD_PE_OFFSET + 24, 0x010bU);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET + 24 + 32, 0x1000U);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET + 24 + 36, 0x0200U);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET + 24 + 56, 0x2000U);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET + 24 + 60, 0x0600U);
+    zip_stream_write_u16(data + ISHIELD_PE_OFFSET + 24 + 68, 2U);
+    memcpy(data + ISHIELD_PE_OFFSET + 24 + 224, ".text", 5);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET + 24 + 224 + 8, 1U);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET + 24 + 224 + 12, 0x1000U);
+    zip_stream_write_u32(data + ISHIELD_PE_OFFSET + 24 + 224 + 36, 0x60000020U);
+    fileblock_offset = ISHIELD_SFX_OFFSET + ISHIELD_MAGIC_SIZE + ISHIELD_CONTROL_SIZE;
+    payload_offset  = fileblock_offset + ISHIELD_FILEBLOCK_SIZE;
+    data[ISHIELD_SFX_OFFSET + ISHIELD_MAGIC_SIZE] = 1;
+    memcpy(data + fileblock_offset, "key", 4);
+    data[ISHIELD_SFX_OFFSET + ISHIELD_MAGIC_SIZE + 292U] = 6;
+    data[ISHIELD_SFX_OFFSET + ISHIELD_MAGIC_SIZE + 292U + 20U] = 1;
+    ck_assert_int_eq(compress2(compressed, &compressed_size, decoded,
+                               sizeof(decoded) - 1U, Z_BEST_SPEED), Z_OK);
+    ishield_test_write_u64(data + fileblock_offset + ISHIELD_FILEBLOCK_CSIZE_OFFSET,
+                           compressed_size);
+    for (i = 0; i < compressed_size; i++) {
+        uint8_t decoded_byte = (uint8_t)(compressed[i] ^ transformed_key[i % 3U]);
+        data[payload_offset + i] = (uint8_t)((decoded_byte >> 4) | (decoded_byte << 4));
+    }
+    input_size = sizeof(data);
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "IShieldSfxChild",
+                         "496e7374616c6c536869656c6400", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert(scan_engine->dconf->archive & ARCH_CONF_ISHIELD);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, input_size);
+    ck_assert_ptr_nonnull(map);
+
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "IShieldSfxChild.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mspack_output_size_mismatch_is_fail_visible)
 {
     static const uint8_t data[] = "MSPack output-size regression";
@@ -35217,6 +35308,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cabsfx = tcase_create("cabsfx");
     TCase *tc_arjsfx = tcase_create("arjsfx");
     TCase *tc_autoit_sfx = tcase_create("autoit_sfx");
+    TCase *tc_ishield_sfx = tcase_create("ishield_sfx");
     TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -35548,6 +35640,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_autoit_sfx);
     tcase_add_checked_fixture(tc_autoit_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_autoit_sfx, test_autoit_sfx_admission_reaches_nested_matcher);
+    suite_add_tcase(s, tc_ishield_sfx);
+    tcase_add_checked_fixture(tc_ishield_sfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_ishield_sfx, test_ishield_sfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_msexpand_map);
     tcase_add_checked_fixture(tc_msexpand_map, cl_setup, cl_teardown);
     tcase_add_test(tc_msexpand_map, test_msexpand_missing_map_is_fail_visible);

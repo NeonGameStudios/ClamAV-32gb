@@ -6413,7 +6413,10 @@ cl_error_t cli_check_auth_header(cli_ctx *ctx, struct cli_exe_info *peinfo)
     if (sec_dir_size < 8 &&
         !cli_hm_have_size(ctx->engine->hm_fp, CLI_HASH_SHA1, 2) &&
         !cli_hm_have_size(ctx->engine->hm_fp, CLI_HASH_SHA2_256, 2)) {
-        ret = CL_BREAK;
+        /* No certificate or catalog hash is a lack of trust evidence, not an
+         * application abort. Preserve the caller's normal scan path so
+         * embedded SFX content is still admitted and inspected. */
+        ret = CL_EVERIFY;
         goto finish;
     }
     fsize = map->len;

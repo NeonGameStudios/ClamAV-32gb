@@ -140,6 +140,20 @@ capability-manifest guards cover the boundary. Full InstallShield/CAB corpus,
 sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
 remain open.
 
+## InstallShield SFX nested admission qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC harness now passes
+`ishield_sfx` 1/1 for a valid PE-backed InstallShield SFX at offset 2. The
+fixture includes the complete InstallShield control block, one encrypted and
+compressed member, and an exact nested child signature; the public scan API
+returns the child detection. `autoit_sfx` remains green at 1/1 and the
+adjacent `pe_map` case passes 2/2. Unsigned PE Authenticode checks now return
+`CL_EVERIFY` for the absence of a trust decision instead of `CL_BREAK`, so
+normal raw and parser scanning is not suppressed before embedded SFX admission.
+Source guards and the capability manifest record this evidence. Full InstallShield/
+CAB corpus, sanitizer, materialized large-file, production-CVD/service,
+certified Linux x86-64, and Sonic1 qualification remain open.
+
 ## SIS missing-map entry classification — 2026-08-25
 
 The SIS direct parser now distinguishes a null parser context from a
@@ -8252,14 +8266,14 @@ full `cli_unzip()` catalogue path, while ordinary embedded local records retain
 `cli_unzip_single()`. This prevents the previous silent skip of valid masked
 members and proves the central values reach the authoritative extractor.
 
-The focused production-linked GCC case passes 2/2 with zero failures in the
-isolated `zip_sfx` TCase when the existing certificate directory is supplied:
-the exact child-only signature is detected, the layer attribute is observed,
-malformed central magic returns `CL_EPARSE` with non-cacheable state, and an
-in-range central-record read fault returns `CL_EREAD` with the required
-incomplete reason. The touched `unzip.c`, `scanners.c`, and unit translation
-units compile with GCC; source guards and manifest evidence pass. Complete ZIP
-corpus, sanitizer, materialized large-file,
+The focused production-linked GCC case passes 3/3 with zero failures in the
+isolated `zip_sfx` TCase: weak masked-header rejection, confirmed
+central-directory extent/read classification, and exact child-only matching.
+The layer attribute is observed, malformed central magic returns `CL_EPARSE`
+with non-cacheable state, and an in-range central-record read fault returns
+`CL_EREAD` with the required incomplete reason. The touched `unzip.c`,
+`scanners.c`, and unit translation units compile with GCC; source guards and
+manifest evidence pass. Complete ZIP corpus, sanitizer, materialized large-file,
 certified Linux x86-64, production-CVD, and Sonic1 qualification remain open.
 
 ## Rust current-layer fmap boundary — 2026-08-24
