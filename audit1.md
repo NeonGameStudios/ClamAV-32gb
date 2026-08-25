@@ -1186,6 +1186,18 @@ retain that distinction. Full TIFF corpus, current full-build large-coordinate
 evidence, sanitizer, certified Linux x86-64, production-CVD/service,
 materialized large-file, and Sonic1 evidence remain open.
 
+## JPEG focused-boundary audit — 2026-08-25
+
+The dedicated production-linked `jpeg_map` TCase passes 11/11 across null
+context and missing-map admission, truncated headers/segments, shared-deadline
+expiry, required-header and segment callback failures, exploit/application
+probes, Photoshop resource-header/marker callback failures, segment-boundary
+protection, and exact Photoshop EOF. The focused case now carries the shared
+scan-options context for its timeout oracle and uses complete Photoshop
+resource fixtures. Full JPEG corpus, current full-build large-coordinate
+evidence, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

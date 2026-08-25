@@ -33049,24 +33049,27 @@ END_TEST
 START_TEST(test_jpeg_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ret = cli_parsejpeg(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "JPEG inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -33184,7 +33187,7 @@ START_TEST(test_jpeg_photoshop_header_read_failure_is_fail_visible)
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    jpeg_photoshop_targeted_failure_offset = 19U;
+    jpeg_photoshop_targeted_failure_offset = 20U;
     map->need                              = jpeg_photoshop_targeted_read_failure;
     ctx.fmap                               = map;
 
@@ -33228,11 +33231,11 @@ END_TEST
 START_TEST(test_jpeg_photoshop_resources_stay_within_segment)
 {
     static const uint8_t data[] = {
-        0xff, 0xd8, 0xff, 0xed, 0x00, 0x1d,
+        0xff, 0xd8, 0xff, 0xed, 0x00, 0x1e,
         'P',  'h',  'o',  't',  'o',  's',  'h',  'o',  'p',  ' ',
         '3',  '.',  '0',  '\0',
         '8',  'B',  'I',  'M', 0x00, 0x01, 0x00,
-        0x00, 0x00, 0x00, 0x02, 0xaa, 0xbb,
+        0x00, 0x00, 0x00, 0x00, 0x02, 0xaa, 0xbb,
         0xff, 0xda, 0x00, 0x02, 0x00, 0x00, 0x00,
     };
     cli_ctx ctx;
@@ -34002,6 +34005,16 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tiff_map, test_tiff_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_jpeg_map);
     tcase_add_test(tc_jpeg_map, test_jpeg_missing_map_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_truncated_structures_are_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_time_limit_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_required_read_failure_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_truncated_segment_size_is_parse_error);
+    tcase_add_test(tc_jpeg_map, test_jpeg_segment_probe_read_failure_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_exploit_probe_read_failure_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_marker_read_failure_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_resources_stay_within_segment);
+    tcase_add_test(tc_jpeg_map, test_jpeg_photoshop_exact_eof_is_complete);
     suite_add_tcase(s, tc_pdf);
     tcase_add_checked_fixture(tc_pdf, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_hwp3);
@@ -34688,16 +34701,6 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_riff_truncated_chunk_is_fail_visible);
     tcase_add_test(tc_cl, test_riff_list_respects_declared_boundary);
-    tcase_add_test(tc_cl, test_jpeg_truncated_structures_are_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_required_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_truncated_segment_size_is_parse_error);
-    tcase_add_test(tc_cl, test_jpeg_segment_probe_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_exploit_probe_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_photoshop_header_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_photoshop_marker_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_jpeg_photoshop_resources_stay_within_segment);
-    tcase_add_test(tc_cl, test_jpeg_photoshop_exact_eof_is_complete);
     tcase_add_test(tc_cl, test_text_normalize_map_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_parser_read_failure_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_trailer_xref_read_failure_is_fail_visible);

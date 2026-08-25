@@ -90,6 +90,15 @@ Sonic1 qualification open.
   sanitizer, materialized large-file, production-CVD, service, and Sonic1
   qualification open.
 
+## JPEG focused-boundary qualification — 2026-08-25
+
+- The production-linked `jpeg_map` case passes 11/11 for admission,
+  truncation, timeout, callback faults, application/exploit probes, Photoshop
+  resource bounds, and exact EOF. Retain full JPEG corpus, current full-build
+  large-coordinate evidence, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory
