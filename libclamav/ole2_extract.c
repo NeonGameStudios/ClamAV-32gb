@@ -161,8 +161,7 @@ typedef struct property_tag {
     uint32_t mod_lowdate __attribute__((packed));
     uint32_t mod_highdate __attribute__((packed));
     uint32_t start_block __attribute__((packed));
-    uint32_t size __attribute__((packed));
-    unsigned char reserved[4];
+    uint64_t size __attribute__((packed));
 } property_t;
 
 /*
@@ -415,7 +414,7 @@ print_ole2_property(property_t *property)
             strncat(spam, " u  ", sizeof(spam) - 1 - strlen(spam));
     }
     spam[sizeof(spam) - 1] = '\0';
-    cli_dbgmsg("%s size:0x%.8x flags:0x%.8x\n", spam, property->size, property->user_flags);
+    cli_dbgmsg("%s size:0x%.16llx flags:0x%.8x\n", spam, (unsigned long long)property->size, property->user_flags);
 }
 
 static void
@@ -1078,7 +1077,7 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
         prop_block[idx].mod_lowdate     = ole2_endian_convert_32(prop_block[idx].mod_lowdate);
         prop_block[idx].mod_highdate    = ole2_endian_convert_32(prop_block[idx].mod_highdate);
         prop_block[idx].start_block     = ole2_endian_convert_32(prop_block[idx].start_block);
-        prop_block[idx].size            = ole2_endian_convert_32(prop_block[idx].size);
+        prop_block[idx].size            = ole2_endian_convert_64(prop_block[idx].size);
 
         if ((64 < prop_block[idx].name_size) || (prop_block[idx].name_size % 2)) {
             cli_dbgmsg("ERROR: Invalid name_size %d\n", prop_block[idx].name_size);
@@ -1187,10 +1186,14 @@ static int ole2_walk_property_tree(ole2_header_t *hdr, const char *dir, int32_t 
                 bool within_limits     = true;
                 const char *limit_name = NULL;
 
-                if (ctx && ctx->engine->maxfilesize && (uint64_t)prop_block[idx].size > ctx->engine->maxfilesize) {
+                if (prop_block[idx].size > SIZE_MAX) {
+                    cli_mark_scan_incomplete(ctx, "OLE2 stream size exceeds native coordinate capacity");
+                    ole2_list_delete(&node_list);
+                    return CL_EPARSE;
+                } else if (ctx && ctx->engine->maxfilesize && prop_block[idx].size > ctx->engine->maxfilesize) {
                     within_limits = false;
                     limit_name    = "Heuristics.Limits.Exceeded.MaxFileSize";
-                } else if (ctx && ctx->engine->maxscansize && (uint64_t)prop_block[idx].size > *scansize) {
+                } else if (ctx && ctx->engine->maxscansize && prop_block[idx].size > *scansize) {
                     within_limits = false;
                     limit_name    = "Heuristics.Limits.Exceeded.MaxScanSize";
                 }
@@ -1408,7 +1411,7 @@ static cl_error_t handler_writefile(ole2_header_t *hdr, property_t *prop, const 
             break;
         }
 
-        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
             /* Small block file */
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [handler_writefile]: ole2_get_sbat_data_block failed\n");
@@ -1701,7 +1704,7 @@ static cl_error_t scan_for_xlm_macros_and_images(ole2_header_t *hdr, property_t 
         if (!cli_bitset_set(blk_bitset, (unsigned long)current_block)) {
             goto done;
         }
-        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
             /* Small block file */
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [scan_for_xlm_macros_and_images]: ole2_get_sbat_data_block failed\n");
@@ -1844,7 +1847,7 @@ static cl_error_t handler_enum(ole2_header_t *hdr, property_t *prop, const char 
 
                     /* read the header block (~256 bytes) */
                     offset = 0;
-                    if (prop->size < (int64_t)hdr->sbat_cutoff) {
+                    if (prop->size < (uint64_t)hdr->sbat_cutoff) {
                         if (!ole2_get_sbat_data_block(hdr, hwp_check, prop->start_block)) {
                             break;
                         }
@@ -2220,7 +2223,7 @@ static cl_error_t handler_otf(ole2_header_t *hdr, property_t *prop, const char *
             break;
         }
 
-        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
             /* Small block file */
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [handler_otf]: ole2_get_sbat_data_block failed\n");
@@ -2384,7 +2387,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
     uint8_t *decryptDst   = NULL;
     encryption_key_t *key = (encryption_key_t *)handler_ctx;
     uint32_t *rk          = NULL;
-    uint32_t bytesRead    = 0;
+    uint64_t bytesRead    = 0;
     uint64_t actualFileLength;
     uint64_t bytesWritten    = 0;
     size_t stream_bytes_read = 0;
@@ -2487,7 +2490,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
             break;
         }
 
-        if (prop->size < (int64_t)hdr->sbat_cutoff) {
+        if (prop->size < (uint64_t)hdr->sbat_cutoff) {
             /* Small block file */
             if (!ole2_get_sbat_data_block(hdr, buff, current_block)) {
                 cli_dbgmsg("OLE2 [handler_otf]: ole2_get_sbat_data_block failed\n");
@@ -2513,7 +2516,7 @@ static cl_error_t handler_otf_encrypted(ole2_header_t *hdr, property_t *prop, co
 
             // These small block files don't seem to be encrypted.
         } else {
-            uint32_t bytesToWrite  = MIN(len - bytesRead, blockSize);
+            uint32_t bytesToWrite  = (uint32_t)MIN((uint64_t)len - bytesRead, (uint64_t)blockSize);
             uint32_t writeIdx      = 0;
             uint32_t decryptDstIdx = 0;
 

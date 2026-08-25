@@ -24782,6 +24782,86 @@ START_TEST(test_ole2_xlm_biff_read_failure_is_fail_visible)
     ole2_block_failure_length = SIZE_MAX;
 }
 END_TEST
+
+START_TEST(test_ole2_stream_size_preserves_high_word)
+{
+    char file_path[PATH_MAX];
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    struct stat sb;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *data;
+    size_t data_size;
+    size_t sector_size;
+    size_t directory_offset;
+    size_t entry_offset;
+    uint16_t sector_shift;
+    uint32_t directory_sector;
+    size_t offset;
+    static const uint8_t workbook_name[] = {'W', 0, 'o', 0, 'r', 0, 'k', 0, 'b', 0, 'o', 0, 'o', 0, 'k', 0};
+    cl_error_t ret;
+    int fd;
+
+    snprintf(file_path, sizeof(file_path), "%s/input/other_scanfiles/has_png_and_jpeg.xls", SRCDIR);
+    fd = open(file_path, O_RDONLY | O_BINARY);
+    ck_assert_msg(fd >= 0, "open(%s) failed: %s", file_path, strerror(errno));
+    ck_assert_int_eq(FSTAT(fd, &sb), 0);
+    ck_assert_msg(sb.st_size > 0, "empty OLE2 fixture: %s", file_path);
+
+    data_size = (size_t)sb.st_size;
+    data      = malloc(data_size);
+    ck_assert_ptr_nonnull(data);
+    ck_assert_int_eq(read(fd, data, data_size), (ssize_t)data_size);
+    ck_assert_int_eq(close(fd), 0);
+
+    memcpy(&sector_shift, data + 30, sizeof(sector_shift));
+    memcpy(&directory_sector, data + 48, sizeof(directory_sector));
+    sector_shift    = le16_to_host(sector_shift);
+    directory_sector = le32_to_host(directory_sector);
+    ck_assert_msg(sector_shift < (sizeof(size_t) * CHAR_BIT), "invalid OLE2 sector shift");
+    sector_size      = (size_t)1 << sector_shift;
+    ck_assert_msg((size_t)directory_sector <= (SIZE_MAX / sector_size) - 1U,
+                  "directory sector coordinate overflow");
+    directory_offset = ((size_t)directory_sector + 1U) * sector_size;
+    entry_offset     = SIZE_MAX;
+    for (offset = directory_offset; offset + 128U <= data_size; offset += 128U) {
+        if (memcmp(data + offset, workbook_name, sizeof(workbook_name)) == 0) {
+            entry_offset = offset;
+            break;
+        }
+    }
+    ck_assert_msg(entry_offset != SIZE_MAX, "workbook directory entry not found");
+    ck_assert_msg(entry_offset <= data_size - 128U, "workbook directory entry is truncated");
+
+    /* Directory-entry stream sizes are 64-bit at offset 120. Preserve the
+     * valid low word but set bit 32 so a 32-bit-only parser would scan a
+     * silently shortened workbook. */
+    data[entry_offset + 124U] = 0x01;
+    data[entry_offset + 125U] = 0x00;
+    data[entry_offset + 126U] = 0x00;
+    data[entry_offset + 127U] = 0x00;
+
+    map = cl_fmap_open_memory(data, data_size);
+    ck_assert_ptr_nonnull(map);
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine            = &engine;
+    ctx.options           = &options;
+    ctx.fmap              = map;
+    ctx.this_layer_tmpdir = tmpdir;
+
+    ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 XLM/image stream ended before its declared length");
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    free(data);
+}
+END_TEST
 #endif
 
 START_TEST(test_ole2_sector_range_classes_are_fail_visible)
@@ -34189,6 +34269,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_ole2_xlm, cl_setup, cl_teardown);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
     tcase_add_test(tc_ole2_xlm, test_ole2_xlm_biff_read_failure_is_fail_visible);
+    tcase_add_test(tc_ole2_xlm, test_ole2_stream_size_preserves_high_word);
 #endif
     suite_add_tcase(s, tc_ole2_map);
     tcase_add_test(tc_ole2_map, test_ole2_missing_map_is_fail_visible);

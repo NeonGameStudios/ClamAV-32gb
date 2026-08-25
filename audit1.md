@@ -1235,6 +1235,18 @@ full-build gate. Full HFS+ corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, and Sonic1 evidence remain
 open.
 
+## OLE2 64-bit stream-size qualification — 2026-08-25
+
+The OLE2 directory-entry model now decodes the complete 64-bit CFB stream-size
+field without changing the 128-byte entry layout. The production-linked
+`ole2_xlm` TCase passes 2/2: the existing in-range WorkBook sector callback
+failure remains exact `CL_EREAD`, and a fixture mutation setting only the
+stream-size high word returns an incomplete parse instead of scanning a
+silently truncated low-32-bit prefix. The property walker explicitly rejects
+sizes beyond native coordinate capacity. Full OLE2/VBA corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

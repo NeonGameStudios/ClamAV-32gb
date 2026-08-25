@@ -128,6 +128,14 @@ Sonic1 qualification open.
   corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, and Sonic1 qualification as release gates.
 
+## OLE2 64-bit stream-size qualification — 2026-08-25
+
+- Decode the complete 64-bit CFB directory-entry stream size without changing
+  the 128-byte entry layout. The production-linked `ole2_xlm` case passes 2/2,
+  including the high-word mutation that prevents silent low-32-bit scanning;
+  retain full OLE2/VBA corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, and Sonic1 qualification as release gates.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory

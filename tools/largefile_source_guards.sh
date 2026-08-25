@@ -3183,6 +3183,8 @@ contains unit_tests/check_clamav.c 'test_ole2_header_read_failure_is_fail_visibl
 contains unit_tests/check_clamav.c 'test_ole2_word_encryption_probe_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_ole2_workbook_encryption_probe_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_ole2_xlm_biff_read_failure_is_fail_visible'
+contains unit_tests/check_clamav.c 'test_ole2_stream_size_preserves_high_word'
+contains libclamav/ole2_extract.c 'OLE2 stream size exceeds native coordinate capacity'
 contains unit_tests/check_clamav.c 'test_ole2_sector_range_classes_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_ole2_mso_prefix_range_classes_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_ole2_invalid_block_geometry_is_fail_visible'
