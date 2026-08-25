@@ -108,6 +108,15 @@ Sonic1 qualification open.
   large-file, production-CVD/service, and Sonic1 qualification as release
   gates.
 
+## UDF focused-boundary qualification — 2026-08-25
+
+- The production-linked `udf_map` case passes 9/9 for admission, truncation,
+  timeout, descriptor callback failure, identifier/list/set rejection,
+  information-length and partition bounds, and allocation alignment. Retain
+  full UDF corpus, native-width review, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory

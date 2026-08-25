@@ -31011,24 +31011,27 @@ END_TEST
 START_TEST(test_udf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ret = cli_scanudf(&ctx, UDF_EMPTY_LEN);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -34095,6 +34098,14 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_udf_map);
     tcase_add_checked_fixture(tc_udf_map, cl_setup, cl_teardown);
     tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_truncated_descriptor_area_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_time_limit_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_descriptor_read_failure_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_unknown_generic_descriptor_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_mismatched_file_lists_are_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_missing_file_set_descriptor_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_declared_information_length_is_fail_visible);
+    tcase_add_test(tc_udf_map, test_udf_allocation_descriptor_alignment_is_fail_visible);
     suite_add_tcase(s, tc_apm_map);
     tcase_add_checked_fixture(tc_apm_map, cl_setup, cl_teardown);
     tcase_add_test(tc_apm_map, test_apm_missing_map_is_fail_visible);
@@ -34671,14 +34682,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_32bit_section_alignment_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
-    tcase_add_test(tc_cl, test_udf_truncated_descriptor_area_is_fail_visible);
-    tcase_add_test(tc_cl, test_udf_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_udf_descriptor_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_udf_unknown_generic_descriptor_is_fail_visible);
-    tcase_add_test(tc_cl, test_udf_mismatched_file_lists_are_fail_visible);
-    tcase_add_test(tc_cl, test_udf_missing_file_set_descriptor_is_fail_visible);
-    tcase_add_test(tc_cl, test_udf_declared_information_length_is_fail_visible);
-    tcase_add_test(tc_cl, test_udf_allocation_descriptor_alignment_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_temporary_directory_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_hfsplus_tree_header_read_failure_is_fail_visible);

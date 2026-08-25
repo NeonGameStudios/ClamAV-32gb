@@ -1210,6 +1210,17 @@ file-extent oracles use the shared scan options and the public
 certified Linux x86-64, materialized large-file, production-CVD/service, and
 Sonic1 evidence remain open.
 
+## UDF focused-map audit — 2026-08-25
+
+The dedicated production-linked `udf_map` TCase passes 9/9 across missing-map
+and truncated-area admission, shared-deadline expiry, generic-descriptor
+callback failure, unsupported identifier handling, file-list/set completeness,
+declared information-length and partition-extent accounting, and allocation
+descriptor alignment. The timeout fixture supplies scan options and asserts
+the sticky `Heuristics.Limits.Exceeded.MaxScanTime` reason. Full UDF corpus,
+native-width review, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,
