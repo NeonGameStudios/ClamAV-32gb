@@ -8376,6 +8376,15 @@ callback failure and `CL_EPARSE` for the out-of-declared-header case. Full ARJ
 corpus, decoder, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 qualification remain open.
 
+## ARJ-SFX nested admission audit — 2026-08-25
+
+The current-source production-linked `arjsfx` TCase passes 1/1. A valid
+prefixed ARJ SFX is admitted through the embedded ARJSFX branch, and its
+stored child reaches an exact offset-0 matcher. This is nested-admission
+evidence only; full ARJ-SFX corpus, malformed and callback-failure coverage,
+sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain open.
+
 ## BinHex header-length preflight — 2026-08-25
 
 BinHex decoded-header processing previously read the data and resource fork

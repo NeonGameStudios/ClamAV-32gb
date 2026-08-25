@@ -30905,6 +30905,74 @@ START_TEST(test_cabsfx_admission_reaches_nested_matcher)
 }
 END_TEST
 
+START_TEST(test_arjsfx_admission_reaches_nested_matcher)
+{
+    enum {
+        ARJ_SFX_OFFSET = 1,
+        ARJ_INPUT_SIZE = 94
+    };
+    uint8_t data[ARJ_INPUT_SIZE] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* Prefix a valid stored-member ARJ archive so file typing must select
+     * ARJSFX and exercise the embedded admission branch. */
+    data[ARJ_SFX_OFFSET]     = 0x60;
+    data[ARJ_SFX_OFFSET + 1] = 0xea;
+    arj_test_write_u16(data + ARJ_SFX_OFFSET + 2, 34);
+    data[ARJ_SFX_OFFSET + 4]  = 30;
+    data[ARJ_SFX_OFFSET + 10] = 2;
+    data[ARJ_SFX_OFFSET + 34] = 'a';
+    data[ARJ_SFX_OFFSET + 43] = 0x60;
+    data[ARJ_SFX_OFFSET + 44] = 0xea;
+
+    arj_test_write_u16(data + ARJ_SFX_OFFSET + 45, 35);
+    data[ARJ_SFX_OFFSET + 47] = 30;
+    data[ARJ_SFX_OFFSET + 52] = 0;
+    arj_test_write_u32(data + ARJ_SFX_OFFSET + 59, 3);
+    arj_test_write_u32(data + ARJ_SFX_OFFSET + 63, 3);
+    data[ARJ_SFX_OFFSET + 77] = 'f';
+    data[ARJ_SFX_OFFSET + 86] = 'x';
+    data[ARJ_SFX_OFFSET + 87] = 'x';
+    data[ARJ_SFX_OFFSET + 88] = 'x';
+    data[ARJ_SFX_OFFSET + 89] = 0x60;
+    data[ARJ_SFX_OFFSET + 90] = 0xea;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(scan_engine->root[0],
+                                                   "ArjSfxChild",
+                                                   "787878", 0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "ArjSfxChild.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mspack_output_size_mismatch_is_fail_visible)
 {
     static const uint8_t data[] = "MSPack output-size regression";
@@ -35094,6 +35162,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_zip_map = tcase_create("zip_map");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_cabsfx = tcase_create("cabsfx");
+    TCase *tc_arjsfx = tcase_create("arjsfx");
     TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -35419,6 +35488,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cabsfx);
     tcase_add_checked_fixture(tc_cabsfx, cl_setup, cl_teardown);
     tcase_add_test(tc_cabsfx, test_cabsfx_admission_reaches_nested_matcher);
+    suite_add_tcase(s, tc_arjsfx);
+    tcase_add_checked_fixture(tc_arjsfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_arjsfx, test_arjsfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_msexpand_map);
     tcase_add_checked_fixture(tc_msexpand_map, cl_setup, cl_teardown);
     tcase_add_test(tc_msexpand_map, test_msexpand_missing_map_is_fail_visible);

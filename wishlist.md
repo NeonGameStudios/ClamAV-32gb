@@ -3199,6 +3199,15 @@ and Sonic1 qualification as release gates.
   extend evidence to full corpus, decoder, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, and Sonic1 qualification.
 
+## ARJ-SFX nested admission audit — 2026-08-25
+
+- The current-source production-linked `arjsfx` TCase passes 1/1: a valid
+  prefixed ARJ SFX is admitted through the embedded branch and its stored
+  child reaches an exact offset-0 matcher.
+- Add malformed and callback-failure SFX cases, then complete ARJ-SFX corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 evidence before certification.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 - Expand the focused `binhex_map` TCase with admission, header-completion,
