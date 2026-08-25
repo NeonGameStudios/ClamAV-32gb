@@ -67,6 +67,46 @@ static cl_error_t mbr_check_ebr(struct mbr_boot_record *record);
 static cl_error_t mbr_primary_partition_intersection(cli_ctx *ctx, struct mbr_boot_record mbr, size_t sectorsize);
 static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *prtncount, size_t extlba, size_t sectorsize);
 
+static bool mbr_scale_lba(uint64_t lba, size_t sectorsize, size_t *offset)
+{
+    if (!offset || sectorsize == 0 || lba > SIZE_MAX / sectorsize)
+        return false;
+
+    *offset = (size_t)lba * sectorsize;
+    return true;
+}
+
+static bool mbr_add_lba(uint64_t left, uint64_t right, uint64_t *sum)
+{
+    if (!sum || left > UINT64_MAX - right)
+        return false;
+
+    *sum = left + right;
+    return true;
+}
+
+static bool mbr_boot_record_offset(uint64_t lba, size_t sectorsize, size_t *offset)
+{
+    size_t base;
+
+    if (sectorsize < sizeof(struct mbr_boot_record) ||
+        !mbr_scale_lba(lba, sectorsize, offset))
+        return false;
+
+    base = sectorsize - sizeof(struct mbr_boot_record);
+    if (*offset > SIZE_MAX - base)
+        return false;
+    *offset += base;
+    return true;
+}
+
+static bool mbr_partition_range(uint64_t lba, uint64_t count, size_t sectorsize,
+                                size_t *offset, size_t *length)
+{
+    return mbr_scale_lba(lba, sectorsize, offset) &&
+           mbr_scale_lba(count, sectorsize, length);
+}
+
 static cl_error_t mbr_read(cli_ctx *ctx, void *dst, size_t at, size_t len, const char *reason)
 {
     size_t got;
@@ -108,7 +148,7 @@ cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
 {
     struct mbr_boot_record mbr;
     cl_error_t read_status;
-    size_t pos = 0, mbr_base = 0;
+    size_t pos = 0;
     size_t maplen;
 
     if (!ctx)
@@ -123,7 +163,10 @@ cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
     if (sectorsize == 0)
         sectorsize = MBR_SECTOR_SIZE;
 
-    mbr_base = sectorsize - sizeof(struct mbr_boot_record);
+    if (sectorsize < sizeof(struct mbr_boot_record)) {
+        cli_mark_scan_incomplete(ctx, "MBR sector size is too small for a boot record");
+        return CL_EFORMAT;
+    }
 
     /* size of total file must be a multiple of the sector size */
     maplen = ctx->fmap->len;
@@ -134,7 +177,10 @@ cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
     }
 
     /* sector 0 (first sector) is the master boot record */
-    pos = (MBR_SECTOR * sectorsize) + mbr_base;
+    if (!mbr_boot_record_offset(MBR_SECTOR, sectorsize, &pos)) {
+        cli_mark_scan_incomplete(ctx, "MBR master boot record coordinate overflowed");
+        return CL_EFORMAT;
+    }
 
     /* read the master boot record */
     read_status = mbr_read(ctx, &mbr, pos, sizeof(mbr), "MBR master boot record could not be read completely");
@@ -158,7 +204,7 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
     cl_error_t status = CL_SUCCESS;
     struct mbr_boot_record mbr;
     enum MBR_STATE state = SEEN_NOTHING;
-    size_t pos = 0, mbr_base = 0, partoff = 0;
+    size_t pos = 0, partoff = 0;
     unsigned i = 0, prtncount = 0;
     size_t maplen, partsize;
 
@@ -181,7 +227,11 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
     if (sectorsize == 0)
         sectorsize = MBR_SECTOR_SIZE;
 
-    mbr_base = sectorsize - sizeof(struct mbr_boot_record);
+    if (sectorsize < sizeof(struct mbr_boot_record)) {
+        cli_mark_scan_incomplete(ctx, "MBR sector size is too small for a boot record");
+        status = CL_EFORMAT;
+        goto done;
+    }
 
     /* size of total file must be a multiple of the sector size */
     maplen = ctx->fmap->len;
@@ -193,7 +243,11 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
     }
 
     /* sector 0 (first sector) is the master boot record */
-    pos = (MBR_SECTOR * sectorsize) + mbr_base;
+    if (!mbr_boot_record_offset(MBR_SECTOR, sectorsize, &pos)) {
+        cli_mark_scan_incomplete(ctx, "MBR master boot record coordinate overflowed");
+        status = CL_EFORMAT;
+        goto done;
+    }
 
     /* read the master boot record */
     status = mbr_read(ctx, &mbr, pos, sizeof(mbr), "MBR master boot record could not be read completely");
@@ -236,10 +290,14 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
         cli_dbgmsg("MBR Partition Entry %u:\n", i);
         cli_dbgmsg("Status: %u\n", mbr.entries[i].status);
         cli_dbgmsg("Type: %x\n", mbr.entries[i].type);
+        if (!mbr_partition_range(mbr.entries[i].firstLBA, mbr.entries[i].numLBA,
+                                 sectorsize, &partoff, &partsize)) {
+            cli_mark_scan_incomplete(ctx, "MBR partition coordinate overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
         cli_dbgmsg("Blocks: [%u, +%u), ([%zu, +%zu))\n",
-                   mbr.entries[i].firstLBA, mbr.entries[i].numLBA,
-                   mbr.entries[i].firstLBA * sectorsize,
-                   mbr.entries[i].numLBA * sectorsize);
+                   mbr.entries[i].firstLBA, mbr.entries[i].numLBA, partoff, partsize);
 
         /* Handle MBR entry based on type */
         if (mbr.entries[i].type == MBR_EMPTY) {
@@ -260,8 +318,6 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
         } else {
             prtncount++;
 
-            partoff  = mbr.entries[i].firstLBA * sectorsize;
-            partsize = mbr.entries[i].numLBA * sectorsize;
             mbr_parsemsg("cli_magic_scan_nested_fmap_type: [%u, +%u)\n", partoff, partsize);
             status = cli_magic_scan_nested_fmap_type(ctx->fmap, partoff, partsize, ctx, CL_TYPE_PART_ANY, NULL, LAYER_ATTRIBUTES_NONE);
             if (status != CL_SUCCESS) {
@@ -300,26 +356,34 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
     cl_error_t status = CL_CLEAN;
     struct mbr_boot_record ebr;
     enum MBR_STATE state = SEEN_NOTHING;
-    size_t pos = 0, mbr_base = 0, logiclba = 0, extoff = 0, partoff = 0;
+    size_t pos = 0, logiclba = 0, extoff = 0, partoff = 0;
     size_t partsize, extsize;
+    size_t extend;
+    uint64_t record_lba, part_lba;
     unsigned i = 0, j = 0;
 
     ebr_parsemsg("The start of something exhausting: EBR parsing\n");
 
-    mbr_base = sectorsize - sizeof(struct mbr_boot_record);
-
     logiclba = 0;
-    extoff   = extlba * sectorsize;
-    extsize  = extlbasize * sectorsize;
+    if (!mbr_partition_range(extlba, extlbasize, sectorsize, &extoff, &extsize) ||
+        extoff > SIZE_MAX - extsize) {
+        cli_mark_scan_incomplete(ctx, "MBR extended partition coordinate overflowed");
+        return CL_EFORMAT;
+    }
+    extend = extoff + extsize;
     do {
         status = cli_checktimelimit(ctx);
         if (status != CL_SUCCESS)
             goto done;
 
-        pos = extlba * sectorsize; /* start of extended partition */
+        if (!mbr_add_lba(extlba, logiclba, &record_lba) ||
+            !mbr_boot_record_offset(record_lba, sectorsize, &pos)) {
+            cli_mark_scan_incomplete(ctx, "MBR extended boot record coordinate overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
 
         /* read the extended boot record */
-        pos += (logiclba * sectorsize) + mbr_base;
         status = mbr_read(ctx, &ebr, pos, sizeof(ebr), "MBR extended boot record could not be read completely");
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanebr: Invalid extended boot record\n");
@@ -344,13 +408,20 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
         cli_dbgmsg("EBR Signature: %x\n", ebr.signature);
         for (j = 0; j < MBR_MAX_PARTITION_ENTRIES; ++j) {
             if (j < 2) {
+                size_t entry_offset, entry_length;
+
                 cli_dbgmsg("Logical Partition Entry %u:\n", j);
                 cli_dbgmsg("Status: %u\n", ebr.entries[j].status);
                 cli_dbgmsg("Type: %x\n", ebr.entries[j].type);
+                if (!mbr_partition_range(ebr.entries[j].firstLBA, ebr.entries[j].numLBA,
+                                         sectorsize, &entry_offset, &entry_length)) {
+                    cli_mark_scan_incomplete(ctx, "MBR logical partition coordinate overflowed");
+                    status = CL_EFORMAT;
+                    goto done;
+                }
                 cli_dbgmsg("Blocks: [%u, +%u), ([%lu, +%lu))\n",
                            ebr.entries[j].firstLBA, ebr.entries[j].numLBA,
-                           (unsigned long)(ebr.entries[j].firstLBA * sectorsize),
-                           (unsigned long)(ebr.entries[j].numLBA * sectorsize));
+                           (unsigned long)entry_offset, (unsigned long)entry_length);
 
                 if (ebr.entries[j].type == MBR_EMPTY) {
                     /* empty partition entry */
@@ -421,10 +492,14 @@ static cl_error_t mbr_scanextprtn(cli_ctx *ctx, unsigned *prtncount, size_t extl
                             goto done;
                     }
 
-                    partoff  = (extlba + logiclba + ebr.entries[j].firstLBA) * sectorsize;
-                    partsize = ebr.entries[j].numLBA * sectorsize;
-                    if (partoff + partsize > extoff + extsize) {
+                    if (!mbr_add_lba(extlba, logiclba, &part_lba) ||
+                        !mbr_add_lba(part_lba, ebr.entries[j].firstLBA, &part_lba) ||
+                        !mbr_partition_range(part_lba, ebr.entries[j].numLBA, sectorsize,
+                                             &partoff, &partsize) ||
+                        partoff < extoff || partoff > extend ||
+                        partsize > extend - partoff) {
                         cli_dbgmsg("cli_scanebr: Invalid extended partition entry\n");
+                        cli_mark_scan_incomplete(ctx, "MBR extended partition coordinate overflowed");
                         status = CL_EFORMAT;
                         goto done;
                     }
@@ -492,9 +567,9 @@ static cl_error_t mbr_check_mbr(struct mbr_boot_record *record, size_t maplen, s
             goto done;
         }
 
-        partoff  = record->entries[i].firstLBA * sectorsize;
-        partsize = record->entries[i].numLBA * sectorsize;
-        if (partoff + partsize > maplen) {
+        if (!mbr_partition_range(record->entries[i].firstLBA, record->entries[i].numLBA,
+                                 sectorsize, &partoff, &partsize) ||
+            partoff > maplen || partsize > maplen - partoff) {
             cli_dbgmsg("cli_scanmbr: Invalid partition entry\n");
             status = CL_EFORMAT;
             goto done;
@@ -612,10 +687,8 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
     struct mbr_boot_record ebr;
     partition_intersection_list_t prtncheck;
     unsigned i, pitxn;
-    int mbr_base = 0;
     size_t pos = 0, logiclba = 0;
-
-    mbr_base = sectorsize - sizeof(struct mbr_boot_record);
+    uint64_t record_lba;
 
     partition_intersection_list_init(&prtncheck);
 
@@ -626,10 +699,14 @@ static cl_error_t mbr_extended_partition_intersection(cli_ctx *ctx, unsigned *pr
         if (status != CL_SUCCESS)
             goto done;
 
-        pos = extlba * sectorsize; /* start of extended partition */
+        if (!mbr_add_lba(extlba, logiclba, &record_lba) ||
+            !mbr_boot_record_offset(record_lba, sectorsize, &pos)) {
+            cli_mark_scan_incomplete(ctx, "MBR extended intersection coordinate overflowed");
+            status = CL_EFORMAT;
+            goto done;
+        }
 
         /* read the extended boot record */
-        pos += (logiclba * sectorsize) + mbr_base;
         status = mbr_read(ctx, &ebr, pos, sizeof(ebr), "MBR extended intersection record could not be read completely");
         if (status != CL_SUCCESS) {
             cli_dbgmsg("cli_scanebr: Invalid extended boot record\n");

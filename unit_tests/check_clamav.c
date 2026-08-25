@@ -19250,6 +19250,86 @@ START_TEST(test_mbr_missing_map_entry_points_are_fail_visible)
 }
 END_TEST
 
+#if SIZE_MAX > UINT32_MAX
+struct mbr_coordinate_overflow_map {
+    uint8_t record[sizeof(struct mbr_boot_record)];
+    size_t length;
+    size_t record_offset;
+};
+
+static off_t mbr_coordinate_overflow_pread_cb(void *handle, void *buf, size_t count, off_t offset)
+{
+    struct mbr_coordinate_overflow_map *state = handle;
+    size_t at;
+    size_t end;
+    size_t record_end;
+    size_t copy_start;
+    size_t copy_end;
+
+    if (!state || offset < 0)
+        return -1;
+    at = (size_t)offset;
+    if (at > state->length || count > state->length - at)
+        return -1;
+
+    memset(buf, 0, count);
+    end        = at + count;
+    record_end = state->record_offset + sizeof(state->record);
+    if (at >= record_end || end <= state->record_offset)
+        return (off_t)count;
+
+    copy_start = MAX(at, state->record_offset);
+    copy_end   = MIN(end, record_end);
+    memcpy((uint8_t *)buf + (copy_start - at), state->record + (copy_start - state->record_offset),
+           copy_end - copy_start);
+    return (off_t)count;
+}
+
+START_TEST(test_mbr_partition_coordinate_overflow_is_fail_visible)
+{
+    struct mbr_coordinate_overflow_map state;
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    size_t sectorsize = (size_t)UINT32_MAX + 3U;
+    cl_error_t ret;
+
+    memset(&state, 0, sizeof(state));
+    state.length        = sectorsize * 3U;
+    state.record_offset = sectorsize - sizeof(state.record);
+    state.record[offsetof(struct mbr_boot_record, entries[0].type)] = 0x83;
+    cli_writeint32(state.record + offsetof(struct mbr_boot_record, entries[0].firstLBA), UINT32_MAX);
+    cli_writeint32(state.record + offsetof(struct mbr_boot_record, entries[0].numLBA), 1);
+    state.record[sizeof(state.record) - 2U] = 0x55;
+    state.record[sizeof(state.record) - 1U] = 0xaa;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_handle(&state, 0, state.length, mbr_coordinate_overflow_pread_cb, 1);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_MBR;
+    layer.size               = state.length;
+    layer.fmap               = map;
+
+    ret = cli_scanmbr(&ctx, sectorsize);
+    ck_assert_int_eq(ret, CL_EFORMAT);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+}
+END_TEST
+#endif
+
 START_TEST(test_gpt_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -33598,6 +33678,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_partition_map);
     tcase_add_checked_fixture(tc_partition_map, cl_setup, cl_teardown);
     tcase_add_test(tc_partition_map, test_mbr_missing_map_entry_points_are_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_partition_map, test_mbr_partition_coordinate_overflow_is_fail_visible);
+#endif
     tcase_add_test(tc_partition_map, test_gpt_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_dmg_map);
     tcase_add_checked_fixture(tc_dmg_map, cl_setup, cl_teardown);

@@ -2786,3 +2786,12 @@ and Sonic1 qualification as release gates.
   stored-stripe production-path regression. Full DMG corpus, sanitizer,
   materialized large-file, production-CVD, service, and Sonic1 qualification
   remain open.
+
+## MBR native-width partition coordinate admission — 2026-08-25
+
+- Keep primary, extended-chain, boot-record, and intersection coordinate
+  arithmetic checked before native-size multiplication or addition; reject
+  undersized caller sector sizes before subtracting packed record widths.
+- Retain the sparse native-width overflow regression and extend MBR evidence
+  to corpus, sanitizer, materialized large-file, production-CVD, service, and
+  Sonic1 qualification.

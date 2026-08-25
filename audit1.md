@@ -7920,3 +7920,17 @@ production-linked valid stored-stripe DMG regression is registered to prove
 that the reconstructed child reaches the nested matcher cleanly. Full DMG
 corpus, sanitizer, materialized large-file, production-CVD, service, and
 Sonic1 evidence remain required.
+
+## MBR native-width partition coordinate admission — 2026-08-25
+
+The MBR parser multiplied attacker-controlled LBA values by the caller's
+sector size in primary and extended partition paths without checking native
+width. It also subtracted the packed boot-record size before validating that a
+caller-supplied sector size was large enough. The parser now uses checked LBA
+scaling, LBA addition, boot-record offsets, and partition-range end bounds in
+both scan and intersection walks, and rejects undersized sector sizes before
+those calculations. A sparse production-linked map regression drives a valid
+MBR header through a sector-size/LBA product above `SIZE_MAX` and verifies the
+result is `CL_EFORMAT`, incomplete, and non-cacheable. Full MBR corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD,
+service, and Sonic1 evidence remain required.
