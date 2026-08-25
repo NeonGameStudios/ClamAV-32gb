@@ -16534,6 +16534,52 @@ START_TEST(test_bmp_jp2_missing_maps_are_fail_visible)
 }
 END_TEST
 
+static const void *graphics_header_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    (void)map;
+    (void)at;
+    (void)len;
+    (void)lock;
+    return NULL;
+}
+
+START_TEST(test_graphics_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t input[64] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_IMAGE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need  = graphics_header_read_failure;
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_GRAPHICS", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_jp2_truncated_box_is_fail_visible)
 {
     static const uint8_t data[] = {
@@ -34774,6 +34820,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_elf_map  = tcase_create("elf_map");
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_graphics_map = tcase_create("graphics_map");
+    TCase *tc_graphics_api = tcase_create("graphics_api");
     TCase *tc_descriptor_map = tcase_create("descriptor_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
     TCase *tc_pe_map = tcase_create("pe_map");
@@ -34875,6 +34922,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);
+    suite_add_tcase(s, tc_graphics_api);
+    tcase_add_checked_fixture(tc_graphics_api, cl_setup, cl_teardown);
+    tcase_add_test(tc_graphics_api, test_graphics_public_api_read_failure_is_fail_visible);
 #ifdef CLAMAV_TEST_FMAP_NEW_WRAP
     suite_add_tcase(s, tc_descriptor_map);
     tcase_add_test(tc_descriptor_map, test_child_descriptor_entry_rejects_null_context);

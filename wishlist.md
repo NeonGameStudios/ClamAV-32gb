@@ -3398,3 +3398,15 @@ and Sonic1 qualification as release gates.
 - Complete PDF corpus and full-C ABI-consistent execution, then add sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service
   parity, and Sonic1 evidence before certification.
+
+## Graphics fallback public API read-failure audit — 2026-08-25
+
+- The isolated current-source production-linked `graphics_map`/`graphics_api`
+  TCases now cover missing-map admission and a public `CL_TYPE_GRAPHICS`
+  callback failure, preserving `CL_EREAD`, a clean verdict, and
+  non-cacheability;
+  generic graphics without a structural parser remain explicit incomplete.
+- Complete BMP/JPEG 2000 and generic-graphics corpus and full-C
+  ABI-consistent execution, then add sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, and Sonic1 evidence
+  before certification.

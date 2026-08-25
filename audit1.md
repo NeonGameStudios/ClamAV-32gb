@@ -8783,3 +8783,17 @@ This is dispatch/version-window evidence only. Complete PDF corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_PDF` stays pending.
+
+## Graphics fallback public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `graphics_map`/`graphics_api`
+TCases now cover direct BMP/JPEG 2000 missing-map admission and a public
+`cl_scanmap_ex(..., "CL_TYPE_GRAPHICS", ...)` scan whose in-range callback
+failure returns `CL_EREAD`, leaves the verdict clean with no alert, and marks
+the fmap non-cacheable. Generic graphics without a structural parser remain
+explicitly incomplete; this test does not upgrade them to supported.
+
+Complete BMP/JPEG 2000 and generic-graphics corpus, full-C ABI-consistent
+execution, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service parity, and Sonic1 qualification remain open, so
+`CL_TYPE_GRAPHICS` stays pending.
