@@ -8696,3 +8696,16 @@ corpus, full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MSCAB` and `CL_TYPE_MSCHM` stay
 pending.
+
+## PE public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `pe_map` TCase passes 2/2.
+Alongside the existing direct missing-map boundary, a public
+`cl_scanmap_ex(..., "CL_TYPE_MSEXE", ...)` scan with an in-range DOS-header
+callback failure returns `CL_EREAD`, leaves the verdict clean with no alert,
+and marks the fmap non-cacheable.
+
+This is initial dispatch/header evidence only. PE-specific corpus, full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_MSEXE` stays pending.
