@@ -8258,3 +8258,17 @@ The two-case `apm_map` run passes 2/2; the callback failure preserves
 non-cacheability. Partition-count, table-boundary, coordinate-overflow,
 corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 qualification remain open.
+
+## AutoIt focused-entry audit — 2026-08-25
+
+The dedicated production-linked `autoit_map` TCase now covers the confirmed
+entry boundary, malformed EA06 member admission, an expired shared deadline,
+and both the version-byte and larger header-window read-failure paths. The
+existing AutoIt source guards continue to pin bounded member traversal,
+temporary/output accounting, timeout propagation, and non-cacheable incomplete
+results. The focused production-linked run passes 4/4; the expired-timeout
+oracle uses the shared `Heuristics.Limits.Exceeded.MaxScanTime` reason, matching
+the repository-wide sticky timeout contract. A current full C build remains
+required before certifying the parser family; corpus, sanitizer, certified
+Linux x86-64, materialized large-file, production-CVD/service, and Sonic1
+evidence remain open.

@@ -22356,16 +22356,19 @@ START_TEST(test_autoit_time_limit_is_fail_visible)
 {
     static const uint8_t data[1] = {0x36};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
@@ -22373,7 +22376,7 @@ START_TEST(test_autoit_time_limit_is_fail_visible)
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "AutoIt inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -34045,6 +34048,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_autoit_map);
     tcase_add_checked_fixture(tc_autoit_map, cl_setup, cl_teardown);
     tcase_add_test(tc_autoit_map, test_autoit_missing_map_is_fail_visible);
+    tcase_add_test(tc_autoit_map, test_autoit_ea06_missing_member_is_fail_visible);
+    tcase_add_test(tc_autoit_map, test_autoit_time_limit_is_fail_visible);
+    tcase_add_test(tc_autoit_map, test_autoit_version_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_7z_map);
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);
     tcase_add_test(tc_7z_map, test_7z_missing_map_is_fail_visible);

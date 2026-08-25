@@ -2993,3 +2993,14 @@ and Sonic1 qualification as release gates.
 - Preserve the ARJ `CL_EREAD`/`CL_EPARSE` and non-cacheability distinctions;
   extend evidence to full corpus, decoder, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, and Sonic1 qualification.
+
+## AutoIt focused-entry audit — 2026-08-25
+
+- The focused `autoit_map` TCase now includes the malformed-EA06,
+  expired-deadline, and version/header read-failure regressions; its current
+  production-linked run passes 4/4. Keep the source guards and
+  fail-visible/non-cacheable assertions aligned with the parser's bounded
+  traversal and temporary-accounting contract.
+- Rebuild all C objects as one ABI-consistent production harness, then extend
+  AutoIt evidence to full corpus, decoder, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification.
