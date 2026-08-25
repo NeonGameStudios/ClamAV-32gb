@@ -3301,3 +3301,14 @@ and Sonic1 qualification as release gates.
 - Complete the HWP3 corpus and full-C ABI-consistent matrix, then add
   sanitizer, certified Linux x86-64, materialized large-file, production
   CVD/service parity, and Sonic1 evidence before certification.
+
+## HWPOLE2 current-source qualification audit — 2026-08-25
+
+- The current-source production-linked `hwpole2_map` TCase passes 2/2 for
+  missing-map admission and a public-API fixed-prefix read failure, preserving
+  `CL_EREAD`, clean verdict, and non-cacheability; direct tests retain
+  truncation, declared-size, and 32-bit-width coverage.
+- Extend HWPOLE2/OLE evidence to complete corpus, full-C ABI-consistent
+  execution, sanitizer, certified Linux x86-64, materialized large-file,
+  production CVD/service parity, and Sonic1 qualification before
+  certification.

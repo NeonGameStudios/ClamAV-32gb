@@ -8650,3 +8650,17 @@ rebuild is required before promoting that matrix.
 HWP3 corpus, current full-C execution, sanitizer, certified Linux x86-64,
 materialized large-file, production CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_HWP3` stays pending.
+
+## HWPOLE2 current-source qualification audit — 2026-08-25
+
+The current-source production-linked `hwpole2_map` TCase passes 2/2 through
+the public API: recognized input with no map remains an explicit incomplete
+parse, and an in-range callback failure while reading the fixed 32-bit size
+prefix returns `CL_EREAD` with a clean verdict and non-cacheable map state.
+The direct parser tests continue to cover truncation, declared-size mismatch,
+and the representable-width boundary.
+
+This is fixed-header boundary evidence only. Full HWPOLE2/OLE corpus, current
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_HWPOLE2` stays pending.

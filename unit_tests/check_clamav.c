@@ -10463,6 +10463,43 @@ START_TEST(test_hwpole2_prefix_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_hwpole2_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t hwpole2_data[sizeof(uint32_t)] = {0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_OLE2;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(hwpole2_data, sizeof(hwpole2_data));
+    ck_assert_ptr_nonnull(map);
+    map->need   = fmap_readn_full_read_failure;
+    verdict     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert  = "stale";
+    scanned     = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_HWPOLE2", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_hwpml_truncated_document_is_fail_visible)
 {
     static const uint8_t malformed_hwpml[] =
@@ -34541,6 +34578,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwpole2_map);
     tcase_add_checked_fixture(tc_hwpole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);
+    tcase_add_test(tc_hwpole2_map, test_hwpole2_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_partition_map);
     tcase_add_checked_fixture(tc_partition_map, cl_setup, cl_teardown);
     tcase_add_test(tc_partition_map, test_mbr_missing_map_entry_points_are_fail_visible);
