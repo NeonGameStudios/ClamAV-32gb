@@ -1,5 +1,12 @@
 # Wishlist
 
+## Child-descriptor entry null-context admission — 2026-08-25
+
+- Return `CL_ENULLARG` from the descriptor-based nested-scan entry before
+  descriptor inspection when its context is null. Keep full descriptor/fd
+  ingress parity, sanitizer, production-CVD, service, and Sonic1 qualification
+  open.
+
 ## GIF/PNG/TIFF direct-entry admission — 2026-08-25
 
 - GIF, PNG, and TIFF direct parser entries now return `CL_ENULLARG` for a null

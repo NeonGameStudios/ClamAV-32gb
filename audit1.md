@@ -6,6 +6,14 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## Child-descriptor entry null-context admission — 2026-08-25
+
+The descriptor-based nested-scan entry previously returned legacy `CL_EARG`
+when its scan context was null. It now returns `CL_ENULLARG` before `fstat` or
+child-map admission. The focused direct regression is registered; descriptor
+fault injection, full ingress parity, sanitizer, production-CVD, service, and
+Sonic1 qualification remain open.
+
 ## SWF direct-entry admission — 2026-08-25
 
 The SWF parser now returns `CL_ENULLARG` for a null context while retaining

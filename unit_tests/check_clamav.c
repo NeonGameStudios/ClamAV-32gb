@@ -29682,6 +29682,14 @@ START_TEST(test_child_descriptor_inspection_failure_is_fail_visible)
     ck_assert(map.dont_cache_flag);
 }
 END_TEST
+
+START_TEST(test_child_descriptor_entry_rejects_null_context)
+{
+    ck_assert_int_eq(cli_magic_scan_desc_type(-1, NULL, NULL, CL_TYPE_ANY, NULL,
+                                              LAYER_ATTRIBUTES_NONE),
+                     CL_ENULLARG);
+}
+END_TEST
 #endif
 
 #ifdef CLAMAV_TEST_JS_IO_WRAP
@@ -33860,6 +33868,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_elf_map  = tcase_create("elf_map");
     TCase *tc_tnef_map = tcase_create("tnef_map");
     TCase *tc_graphics_map = tcase_create("graphics_map");
+    TCase *tc_descriptor_map = tcase_create("descriptor_map");
     TCase *tc_pe32plus = tcase_create("pe32plus_common");
     TCase *tc_pe_map = tcase_create("pe_map");
     TCase *tc_text_encoding = tcase_create("text_encoding");
@@ -33932,6 +33941,10 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);
+#ifdef CLAMAV_TEST_FMAP_NEW_WRAP
+    suite_add_tcase(s, tc_descriptor_map);
+    tcase_add_test(tc_descriptor_map, test_child_descriptor_entry_rejects_null_context);
+#endif
     suite_add_tcase(s, tc_pe32plus);
     tcase_add_checked_fixture(tc_pe32plus, cl_setup, cl_teardown);
     tcase_add_test(tc_pe32plus, test_pe32plus_common_inspection_and_import_failures_are_visible);

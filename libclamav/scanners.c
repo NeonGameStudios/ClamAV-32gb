@@ -8005,7 +8005,7 @@ static cl_error_t cli_magic_scan_desc_type_internal(int desc, const char *filepa
     uint64_t child_size     = 0;
 
     if (!ctx) {
-        return CL_EARG;
+        return CL_ENULLARG;
     }
 
     cli_dbgmsg("in cli_magic_scan_desc_type (recursion_level: %u/%u)\n", ctx->recursion_level, ctx->engine->max_recursion_level);

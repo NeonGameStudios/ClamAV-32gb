@@ -293,6 +293,8 @@ contains unit_tests/check_clamav.c 'test_zip_local_header_read_failure_is_fail_v
 contains unit_tests/check_clamav.c 'test_zip_data_descriptor_read_failures_are_fail_visible'
 contains unit_tests/check_clamav.c 'test_descriptor_limit_preflight_precedes_fmap_creation'
 contains unit_tests/check_clamav.c 'test_child_descriptor_inspection_failure_is_fail_visible'
+contains libclamav/scanners.c 'return CL_ENULLARG;'
+contains unit_tests/check_clamav.c 'test_child_descriptor_entry_rejects_null_context'
 contains unit_tests/check_clamav.c 'test_file_type_detection_read_failure_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_graphics_bmp_truncated_header_is_fail_visible'
 contains unit_tests/check_clamav.c 'test_bmp_missing_uncompressed_pixel_range_is_malformed'
