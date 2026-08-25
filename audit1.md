@@ -1147,9 +1147,9 @@ regression changed outcome.
 
 ## BZip2 focused-stream audit — 2026-08-25
 
-The focused production-linked `bz_map` TCase now runs the deterministic shared
-compressed-stream oracles for truncated input and injected fmap read failure;
-the two-case run passes 2/2. The tests include the BZip2 path alongside its
+The focused production-linked compressed-stream subset runs the deterministic
+oracles for truncated input and injected fmap read failure; that two-case
+subset passes 2/2. The tests include the BZip2 path alongside its
 deliberately common GZip/XZ implementation. An attempted promotion of the
 existing concatenated-member and temporary-quota cases exposed mixed-harness
 gaps (zero loaded synthetic signatures and an adjacent XZ `CL_EFORMAT` result),
@@ -8603,7 +8603,7 @@ evidence remain open.
 
 ## GZip current-source qualification audit — 2026-08-25
 
-The current-source production-linked `bz_map` TCase now passes 3/3. In
+The current-source production-linked `bz_core` TCase now passes 3/3. In
 addition to the shared truncated-stream and compressed-input callback-failure
 oracles, the new dedicated GZip case injects an in-range fmap read failure into
 a valid GZip stream and verifies `CL_EREAD`, a clean verdict, and
@@ -8622,9 +8622,11 @@ status-loss defect: `htmlnorm` detected an in-range fmap callback failure and
 marked the layer incomplete, but `cli_scanhtml` flattened the failed
 normalization to `CL_EPARSE`. The normalizer now exposes its read-error state to
 the scanner, which returns `CL_EREAD` while preserving the clean verdict,
-sticky incomplete state, and non-cacheability. The shared production-linked
-`bz_map` run passes 4/4, including the HTML oracle and the existing compressed
-stream boundaries.
+sticky incomplete state, and non-cacheability. The broader `bz_map` case is
+not counted as a clean pass: its HTML oracle returns a different public error
+code in the mixed harness. The isolated current-source `bz_core` case passes
+3/3 for the compressed boundaries, while the HTML dispatch oracle remains a
+full-C ABI rebuild gate.
 
 This fixes the boundary classification but does not certify HTML or script
 normalization. Full HTML/RFC2397/script corpus, current full-C ABI-consistent
@@ -8807,6 +8809,11 @@ execution, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service parity, and Sonic1 qualification remain open, so
 `CL_TYPE_GRAPHICS` stays pending.
 
+The isolated current-source `graphics_api` case passes 1/1. The broader
+`graphics_map` case remains a mixed-ABI rebuild gate because its direct BMP,
+JPEG 2000, and TIFF context oracles do not agree with the current linked
+public error codes; no graphics-map pass count is claimed here.
+
 ## GIF public API read-failure audit — 2026-08-25
 
 The isolated current-source production-linked `gif_api` TCase covers a
@@ -8879,3 +8886,16 @@ Malformed-header, in-range callback-failure, complete CAB/SFX corpus,
 sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service parity, and Sonic1 qualification remain open, so
 `CL_TYPE_CABSFX` stays pending.
+
+## BZip2/GZip isolated core audit — 2026-08-25
+
+The broader `bz_map` TCase still includes an HTML dispatch oracle that is not
+ABI-consistent in this mixed production harness. The isolated current-source
+production-linked `bz_core` TCase passes 3/3 for truncated compressed streams,
+shared compressed-input callback failure, and the GZip-only input callback
+failure; the BZ and GZip manifest rows record this subset explicitly.
+
+Complete BZ/GZip concatenated-member and temporary-quota corpus, full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service parity, and Sonic1 qualification remain
+open.

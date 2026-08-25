@@ -3113,8 +3113,8 @@ and Sonic1 qualification as release gates.
 
 ## BZip2 focused-stream audit — 2026-08-25
 
-- The focused `bz_map` TCase runs the truncated-stream and input-read-failure
-  oracles, passing 2/2. Preserve the shared GZip/XZ checks where the
+- The focused compressed-stream subset runs the truncated-stream and
+  input-read-failure oracles, passing 2/2. Preserve the shared GZip/XZ checks where the
   implementation is common.
 - Re-run the concatenated-member and temporary-quota cases in a current
   ABI-consistent harness; the mixed harness currently produces zero loaded
@@ -3266,7 +3266,7 @@ and Sonic1 qualification as release gates.
 
 ## GZip current-source qualification audit — 2026-08-25
 
-- The current-source production-linked `bz_map` TCase passes 3/3, including a
+- The current-source production-linked `bz_core` TCase passes 3/3, including a
   dedicated valid-GZip in-range callback-failure oracle that preserves
   `CL_EREAD`, a clean verdict, and non-cacheability alongside the shared
   truncated-stream and compressed-input boundaries.
@@ -3279,8 +3279,9 @@ and Sonic1 qualification as release gates.
 
 - Preserve the new normalizer-to-scanner read-status plumbing: an in-range
   fmap callback failure now returns `CL_EREAD`, keeps the layer incomplete and
-  non-cacheable, and is covered by the current-source production-linked
-  `bz_map` run, which passes 4/4 including the compressed boundaries.
+  non-cacheable. The broader current-source production-linked `bz_map` run is
+  a mixed-ABI gate because its HTML oracle returns a different public error
+  code; the isolated `bz_core` run passes 3/3 for the compressed boundaries.
 - Extend HTML, RFC2397, and script-normalization evidence to complete corpus,
   full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
   materialized large-file, production CVD/service parity, and Sonic1
@@ -3415,6 +3416,10 @@ and Sonic1 qualification as release gates.
   materialized large-file, production-CVD/service parity, and Sonic1 evidence
   before certification.
 
+- The isolated current-source `graphics_api` case passes 1/1; rebuild the
+  broader `graphics_map` direct BMP/JPEG 2000/TIFF error-code matrix with a
+  consistent ABI before counting it as production-linked evidence.
+
 ## GIF public API read-failure audit — 2026-08-25
 
 - The isolated current-source production-linked `gif_api` TCase covers a
@@ -3466,3 +3471,13 @@ and Sonic1 qualification as release gates.
 - Add malformed-header and in-range callback-failure cases, then complete CAB
   and SFX corpus, sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
+
+## BZip2/GZip isolated core audit — 2026-08-25
+
+- The isolated current-source production-linked `bz_core` TCase passes 3/3
+  for truncated compressed streams and BZ/GZip callback failures; retain the
+  broader HTML dispatch mismatch as a mixed-harness rebuild gate rather than
+  counting it as compressed-parser evidence.
+- Complete BZ/GZip concatenated-member and temporary-quota corpus, full-C
+  ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service parity, and Sonic1 qualification.

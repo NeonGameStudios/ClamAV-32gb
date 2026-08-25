@@ -35108,6 +35108,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_binhex_map = tcase_create("binhex_map");
     TCase *tc_mydoom_map = tcase_create("mydoom_map");
     TCase *tc_bz_map = tcase_create("bz_map");
+    TCase *tc_bz_core = tcase_create("bz_core");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
     TCase *tc_macho_map = tcase_create("macho_map");
     char *user_timeout = NULL;
@@ -35481,6 +35482,11 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_bz_map, test_compressed_input_read_failure_is_fail_visible);
     tcase_add_test(tc_bz_map, test_gzip_input_read_failure_is_fail_visible);
     tcase_add_test(tc_bz_map, test_html_input_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_bz_core);
+    tcase_add_checked_fixture(tc_bz_core, cl_setup, cl_teardown);
+    tcase_add_test(tc_bz_core, test_gzip_bzip_truncated_streams_are_fail_visible);
+    tcase_add_test(tc_bz_core, test_compressed_input_read_failure_is_fail_visible);
+    tcase_add_test(tc_bz_core, test_gzip_input_read_failure_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
