@@ -7864,3 +7864,18 @@ GCC harness passes 1/1 and reports the expected incomplete, non-cacheable
 existing container archive is stale for unrelated newer test symbols. Complete
 ARJ corpus, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 qualification remain open.
+
+## BinHex header-length preflight — 2026-08-25
+
+BinHex decoded-header processing previously read the data and resource fork
+length fields before checking that the complete fixed header was present. A
+truncated input could therefore derive limit arguments from uninitialized
+decoded-buffer bytes before eventually returning malformed. The parser now
+checks the complete header end before either length read and retains the
+incomplete, non-cacheable `CL_EPARSE` result.
+
+The main Check-suite regression is registered and the modified test object
+compiles with the production GCC flags. An isolated production-linked GCC
+harness passes 1/1 with the exact truncated-header reason. Complete BinHex
+corpus, sanitizer/fault-injection, certified Linux x86-64, materialized
+large-file, production-CVD/service, and Sonic1 qualification remain open.

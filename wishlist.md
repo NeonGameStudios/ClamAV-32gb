@@ -2750,3 +2750,12 @@ and Sonic1 qualification as release gates.
   run the complete ARJ corpus, sanitizer and fault-injection matrix, certified
   Linux x86-64 build, materialized large-file case, production-CVD/service
   smoke, and Sonic1 qualification before release certification.
+
+## BinHex header-length preflight — 2026-08-25
+
+- Keep the complete decoded BinHex header check ahead of data/resource length
+  reads so truncated streams cannot derive limits from uninitialized bytes. The
+  main Check-suite regression and source guards are registered, and the
+  production-linked GCC harness passes 1/1; run the full BinHex corpus,
+  sanitizer/fault-injection matrix, certified Linux x86-64 build, materialized
+  large-file case, production-CVD/service smoke, and Sonic1 qualification.

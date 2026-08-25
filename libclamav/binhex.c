@@ -130,26 +130,28 @@ int cli_binhex(cli_ctx *ctx)
 
         if (!enc_todo || dec_done >= BH_FLUSH_SZ) {
             if (write_phase == IN_HEADER) {
-                uint32_t namelen = (uint32_t)decoded[0], hdrlen = 1 + namelen + 1 + 4 + 4 + 2;
+                uint32_t namelen = (uint32_t)decoded[0];
+                uint32_t hdrlen  = 1 + namelen + 1 + 4 + 4 + 2;
+                uint32_t header_end = hdrlen + 4 + 4 + 2;
                 if (!dec_done) {
                     cli_dbgmsg("cli_binhex: file is empty\n");
                     cli_mark_scan_incomplete(ctx, "BinHex stream ended before its header was decoded");
                     ret = CL_EPARSE;
                     break;
                 }
-                datalen = (decoded[hdrlen] << 24) | (decoded[hdrlen + 1] << 16) | (decoded[hdrlen + 2] << 8) | decoded[hdrlen + 3];
-                hdrlen += 4;
-                reslen = (decoded[hdrlen] << 24) | (decoded[hdrlen + 1] << 16) | (decoded[hdrlen + 2] << 8) | decoded[hdrlen + 3];
-                hdrlen += 4 + 2;
-                data_size            = datalen;
-                resource_size        = reslen;
-                decoded[namelen + 1] = 0;
-                if (dec_done <= hdrlen) {
+                if (dec_done <= header_end) {
                     cli_dbgmsg("cli_binhex: file too short for header\n");
                     cli_mark_scan_incomplete(ctx, "BinHex header was truncated");
                     ret = CL_EPARSE;
                     break;
                 }
+                datalen = (decoded[hdrlen] << 24) | (decoded[hdrlen + 1] << 16) | (decoded[hdrlen + 2] << 8) | decoded[hdrlen + 3];
+                hdrlen += 4;
+                reslen = (decoded[hdrlen] << 24) | (decoded[hdrlen + 1] << 16) | (decoded[hdrlen + 2] << 8) | decoded[hdrlen + 3];
+                hdrlen = header_end;
+                data_size            = datalen;
+                resource_size        = reslen;
+                decoded[namelen + 1] = 0;
                 if ((ret = cli_checklimits("cli_binhex(data)", ctx, datalen, 0, 0)) != CL_CLEAN)
                     break;
                 if ((ret = cli_checklimits("cli_binhex(resources)", ctx, reslen, 0, 0)) != CL_CLEAN)
