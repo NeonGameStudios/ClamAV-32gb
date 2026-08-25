@@ -24405,6 +24405,47 @@ START_TEST(test_mbox_initial_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_mbox_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] =
+        "Content-Type: text/plain\n"
+        "Subject: public API read failure\n"
+        "\n"
+        "body\n";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_MAIL;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->gets     = fmap_gets_read_failure;
+    verdict       = CL_VERDICT_STRONG_INDICATOR;
+    last_alert    = "stale";
+    scanned       = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_MAIL", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mbox_missing_map_is_fail_visible)
 {
     cli_ctx ctx;
@@ -34482,6 +34523,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_riff_map = tcase_create("riff_map");
     TCase *tc_rtf_map = tcase_create("rtf_map");
     TCase *tc_uuencode_map = tcase_create("uuencode_map");
+    TCase *tc_mail_api = tcase_create("mail_api");
     TCase *tc_hwpml    = tcase_create("hwpml");
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
@@ -34547,6 +34589,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_tnef_map, test_tnef_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_uuencode_map);
     tcase_add_test(tc_uuencode_map, test_uuencode_missing_context_or_map_is_fail_visible);
+    suite_add_tcase(s, tc_mail_api);
+    tcase_add_checked_fixture(tc_mail_api, cl_setup, cl_teardown);
+    tcase_add_test(tc_mail_api, test_mbox_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_graphics_map);
     tcase_add_test(tc_graphics_map, test_bmp_jp2_missing_maps_are_fail_visible);
     tcase_add_test(tc_graphics_map, test_media_parsers_reject_null_contexts);
