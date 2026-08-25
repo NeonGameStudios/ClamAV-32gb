@@ -19701,7 +19701,7 @@ START_TEST(test_rust_parser_missing_maps_are_fail_visible)
 }
 END_TEST
 
-static const void *rust_lha_initial_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+static const void *rust_initial_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
     if (at == 0U)
@@ -19726,7 +19726,7 @@ START_TEST(test_rust_lha_initial_read_failure_is_fail_visible)
     memset(&ctx, 0, sizeof(ctx));
     map = fmap_open_memory(data, sizeof(data), NULL);
     ck_assert_ptr_nonnull(map);
-    map->need = rust_lha_initial_read_failure;
+    map->need = rust_initial_read_failure;
 
     ctx.engine                = &engine;
     ctx.options               = &options;
@@ -19741,6 +19741,77 @@ START_TEST(test_rust_lha_initial_read_failure_is_fail_visible)
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "Rust parser inspection was incomplete");
+    ck_assert(map->dont_cache_flag);
+
+    fmap_free(map);
+}
+END_TEST
+
+START_TEST(test_rust_onenote_initial_read_failure_is_fail_visible)
+{
+    static const uint8_t data[32] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = fmap_open_memory(data, sizeof(data), NULL);
+    ck_assert_ptr_nonnull(map);
+    map->need = rust_initial_read_failure;
+
+    ctx.engine                = &engine;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    layer.type                = CL_TYPE_ONENOTE;
+    layer.size                = sizeof(data);
+    layer.fmap                = map;
+
+    ck_assert_int_eq(scan_onenote(&ctx), CL_EREAD);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Rust parser inspection was incomplete");
+    ck_assert(map->dont_cache_flag);
+
+    fmap_free(map);
+}
+END_TEST
+
+START_TEST(test_rust_onenote_truncated_prefix_is_parse_error)
+{
+    static const uint8_t data[8] = {0};
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = fmap_open_memory(data, sizeof(data), NULL);
+    ck_assert_ptr_nonnull(map);
+
+    ctx.engine                = &engine;
+    ctx.options               = &options;
+    ctx.fmap                  = map;
+    ctx.recursion_stack       = &layer;
+    ctx.recursion_stack_size  = 1;
+    layer.type                = CL_TYPE_ONENOTE;
+    layer.size                = sizeof(data);
+    layer.fmap                = map;
+
+    ck_assert_int_eq(scan_onenote(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Rust parser reported malformed or incomplete input");
     ck_assert(map->dont_cache_flag);
 
     fmap_free(map);
@@ -34123,6 +34194,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
     TCase *tc_rust_map = tcase_create("rust_map");
     TCase *tc_rust_lha = tcase_create("rust_lha");
+    TCase *tc_rust_onenote = tcase_create("rust_onenote");
     TCase *tc_msxml = tcase_create("msxml");
     TCase *tc_msxml_map = tcase_create("msxml_map");
     TCase *tc_zip = tcase_create("zip");
@@ -34373,6 +34445,10 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_rust_lha);
     tcase_add_checked_fixture(tc_rust_lha, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_lha, test_rust_lha_initial_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_rust_onenote);
+    tcase_add_checked_fixture(tc_rust_onenote, cl_setup, cl_teardown);
+    tcase_add_test(tc_rust_onenote, test_rust_onenote_initial_read_failure_is_fail_visible);
+    tcase_add_test(tc_rust_onenote, test_rust_onenote_truncated_prefix_is_parse_error);
     suite_add_tcase(s, tc_msxml_map);
     tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_zip);

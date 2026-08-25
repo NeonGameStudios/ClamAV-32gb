@@ -3248,3 +3248,13 @@ and Sonic1 qualification as release gates.
   the current full-C ABI build, sanitizer, certified Linux x86-64, materialized
   large-file, production CVD/service, and Sonic1 qualification before moving
   `CL_TYPE_LHA_LZH` beyond pending.
+
+## OneNote current-source qualification audit — 2026-08-25
+
+- Preserve the OneNote fixed-prefix distinction: the current-source
+  production-linked `rust_onenote` TCase passes 2/2 for in-range read failure
+  versus genuine truncation, and the shared `rust_map` case passes 1/1.
+- Add legacy-attachment and modern-parser corpus evidence, then complete the
+  current full-C ABI build, sanitizer, certified Linux x86-64, materialized
+  large-file, production CVD/service, and Sonic1 qualification before moving
+  `CL_TYPE_ONENOTE` beyond pending.

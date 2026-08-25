@@ -8523,6 +8523,21 @@ certified Linux x86-64, materialized large-file, production CVD/service
 parity, and Sonic1 qualification remain open, so `CL_TYPE_LHA_LZH` stays
 pending.
 
+## OneNote current-source qualification audit — 2026-08-25
+
+The bounded Rust OneNote entry point now has a dedicated current-source
+production-linked TCase covering the two fixed-prefix classifications. It
+passes 2/2: a fully in-range fmap callback failure returns `CL_EREAD` with
+the sticky incomplete reason and non-cacheable map state, while an eight-byte
+input that cannot contain the 16-byte prefix returns `CL_EPARSE` with the
+malformed/incomplete reason. The shared `rust_map` case passes 1/1 as well.
+
+This boundary evidence does not certify legacy attachment traversal, modern
+OneNote parsing, or large-file staging. Full OneNote corpus, current full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_ONENOTE` stays pending.
+
 ## Matcher fixture and fail-visible boundary audit — 2026-08-25
 
 The matcher unit fixture now provides a bounded synthetic fmap read callback
