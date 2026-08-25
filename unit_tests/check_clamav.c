@@ -30233,6 +30233,21 @@ START_TEST(test_udf_truncated_descriptor_area_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_udf_missing_map_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    ck_assert_int_eq(cli_scanudf(&ctx, UDF_EMPTY_LEN), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "UDF input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_udf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
@@ -33094,6 +33109,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
     TCase *tc_cpio_numeric = tcase_create("cpio_numeric");
     TCase *tc_iso_map = tcase_create("iso_map");
+    TCase *tc_udf_map = tcase_create("udf_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -33157,6 +33173,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_iso_map);
     tcase_add_checked_fixture(tc_iso_map, cl_setup, cl_teardown);
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_udf_map);
+    tcase_add_checked_fixture(tc_udf_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_udf_map, test_udf_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);

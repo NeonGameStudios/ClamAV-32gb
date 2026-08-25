@@ -2476,6 +2476,20 @@ misreported as confirmed malformed content. A focused report regression covers
 the encrypted-header reason; compiled current-head and service qualification
 remain release gates.
 
+## UDF missing-map entry classification — 2026-08-25
+
+`cli_scanudf()` entered descriptor traversal without separating a null context
+from a missing fmap. The descriptor helper had no map to inspect in the latter
+case, leaving the direct parser boundary inconsistent with the already
+fail-visible descriptor and extraction paths.
+
+The entry point now preserves `CL_ENULLARG` for a null context and returns
+`CL_EPARSE` with `UDF input map is unavailable` for a recognized UDF parser with
+no fmap, after marking the scan incomplete. The production-linked `udf_map`
+TCase passes 1/1. Full UDF corpus, width review, sanitizer, materialized
+large-file, certified Linux x86-64, production-CVD, and Sonic1 qualification
+remain release gates.
+
 ## Script normalization deadlines — 2026-08-22
 
 Script normalization had two large-map paths that could continue through

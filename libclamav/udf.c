@@ -1092,6 +1092,13 @@ cl_error_t cli_scanudf(cli_ctx *ctx, const size_t offset)
     PointerList fileIdentifierList = {0};
     PointerList fileEntryList      = {0};
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "UDF input map is unavailable");
+        return CL_EPARSE;
+    }
+
     if (offset < 32768) {
         cli_mark_scan_incomplete(ctx, "UDF inspection started before the mandatory descriptor area");
         return CL_EPARSE; /* Need 16 sectors at least 2048 bytes long */

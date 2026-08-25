@@ -1,5 +1,13 @@
 # Wishlist
 
+## UDF missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null UDF parser context, but mark a recognized
+  UDF parser with no input fmap incomplete and return `CL_EPARSE`.
+- The isolated production-linked `udf_map` regression passes and records the
+  sticky reason. Keep full UDF corpus, width review, sanitizer, materialized
+  large-file, production-CVD, and Sonic1 qualification open.
+
 ## ISO9660 missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null ISO parser context, but mark a recognized
