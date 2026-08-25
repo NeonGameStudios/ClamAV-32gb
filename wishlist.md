@@ -56,6 +56,18 @@ Sonic1 qualification open.
   XAR corpus, sanitizer, materialized large-file, production-CVD, service, and
   Sonic1 qualification open.
 
+## XAR focused-boundary qualification — 2026-08-25
+
+- The production-linked `xar` case passes 8/8 for timeout, malformed metadata,
+  compressed-member read failure, unsupported encoding, XML-reader failure,
+  missing TOC-root closure, and TOC/subdocument temporary quotas;
+  `xar_map` and `xar_metadata` each pass 1/1.
+- Keep the compiled engine, dconf, and two-slot recursion-layer setup for the
+  nested TOC/member regressions. The previous crashes were uninitialized test
+  setup, not current parser evidence. Retain full XAR corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service,
+  and Sonic1 qualification as release gates.
+
 
 ## Mydoom detector direct-entry admission — 2026-08-25
 

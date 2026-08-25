@@ -18627,24 +18627,27 @@ END_TEST
 START_TEST(test_xar_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ret = cli_scanxar(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "XAR inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -18745,8 +18748,9 @@ START_TEST(test_xar_unsupported_encoding_is_fail_visible)
     static const uint8_t heap[] = {0xde, 0xad, 0xbe, 0xef};
     uint8_t *data;
     size_t data_length;
-    struct cl_engine engine;
+    struct cl_engine *scan_engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -18757,15 +18761,25 @@ START_TEST(test_xar_unsupported_encoding_is_fail_visible)
     ck_assert_ptr_nonnull(data);
     memcpy(data + data_length, heap, sizeof(heap));
 
-    memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
     memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
     map = cl_fmap_open_memory(data, data_length + sizeof(heap));
     ck_assert_ptr_nonnull(map);
-    ctx.engine            = &engine;
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
     ctx.options           = &options;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_XAR;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
 
     ret = cli_scanxar(&ctx);
     ck_assert_int_eq(ret, CL_EUNPACK);
@@ -18774,6 +18788,7 @@ START_TEST(test_xar_unsupported_encoding_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+    cl_engine_free(scan_engine);
     free(data);
 }
 END_TEST
@@ -18844,8 +18859,9 @@ START_TEST(test_xar_compressed_member_read_failure_is_fail_visible)
     static const uint8_t heap[] = {0x1f, 0x8b, 0x08, 0x00};
     uint8_t *data;
     size_t data_length;
-    struct cl_engine engine;
+    struct cl_engine *scan_engine;
     struct cl_scan_options options;
+    cli_scan_layer_t layers[2];
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -18856,18 +18872,28 @@ START_TEST(test_xar_compressed_member_read_failure_is_fail_visible)
     ck_assert_ptr_nonnull(data);
     memcpy(data + data_length, heap, sizeof(heap));
 
-    memset(&engine, 0, sizeof(engine));
     memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
     memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
     map = cl_fmap_open_memory(data, data_length + sizeof(heap));
     ck_assert_ptr_nonnull(map);
     map->need = xar_member_read_failure;
     xar_member_failure_offset = data_length;
     xar_member_failure_length = sizeof(heap);
-    ctx.engine            = &engine;
+    ctx.engine            = scan_engine;
+    ctx.dconf             = scan_engine->dconf;
     ctx.options           = &options;
     ctx.fmap              = map;
     ctx.this_layer_tmpdir = tmpdir;
+    ctx.recursion_stack      = layers;
+    ctx.recursion_stack_size = 2;
+    layers[0].type           = CL_TYPE_XAR;
+    layers[0].size           = map->len;
+    layers[0].fmap           = map;
 
     ret = cli_scanxar(&ctx);
     ck_assert_int_eq(ret, CL_EREAD);
@@ -18876,6 +18902,7 @@ START_TEST(test_xar_compressed_member_read_failure_is_fail_visible)
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
+    cl_engine_free(scan_engine);
     free(data);
     xar_member_failure_offset = SIZE_MAX;
     xar_member_failure_length = SIZE_MAX;
@@ -34122,6 +34149,7 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_pdf, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_hwp3);
     suite_add_tcase(s, tc_xar);
+    tcase_add_checked_fixture(tc_xar, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_xar_metadata);
     suite_add_tcase(s, tc_xar_map);
     tcase_add_test(tc_xar_map, test_xar_missing_map_is_fail_visible);

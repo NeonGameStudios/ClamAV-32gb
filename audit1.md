@@ -93,6 +93,18 @@ incomplete state. The dedicated production-linked `xar_map` case covers both
 admission states; TOC-root closure, XAR corpus, sanitizer, materialized
 large-file, production-CVD, service, and Sonic1 qualification remain open.
 
+## XAR focused-boundary qualification — 2026-08-25
+
+The isolated production-linked `xar` TCase passes 8/8 for timeout, malformed
+file metadata, compressed-member read failure, unsupported member encoding,
+XML-reader failure, missing TOC-root closure, TOC temporary quota, and
+subdocument temporary quota. The dedicated `xar_map` and `xar_metadata`
+cases each pass 1/1. The two nested-member regressions use a compiled engine,
+the engine dconf, and a two-slot recursion layer; the earlier broad-case
+crashes were uninitialized direct-test setup rather than parser evidence.
+Full XAR corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain open.
+
 
 ## HWPML missing-map entry classification — 2026-08-25
 
