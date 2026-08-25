@@ -34021,6 +34021,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_apm_map);
     tcase_add_checked_fixture(tc_apm_map, cl_setup, cl_teardown);
     tcase_add_test(tc_apm_map, test_apm_missing_map_is_fail_visible);
+    tcase_add_test(tc_apm_map, test_apm_partition_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_hwpole2_map);
     tcase_add_checked_fixture(tc_hwpole2_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpole2_map, test_hwpole2_missing_map_is_fail_visible);

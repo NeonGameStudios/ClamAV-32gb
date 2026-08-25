@@ -2973,3 +2973,12 @@ and Sonic1 qualification as release gates.
   failure oracle. Add valid nested-member, malformed, unsupported, production
   CVD, sanitizer, materialized large-file, and Sonic1 completion evidence
   before certifying the branch.
+
+## APM partition-read boundary audit — 2026-08-25
+
+- Keep the APM `apm_map` focused boundary coverage for missing maps and
+  in-range partition-entry read failures. The production-linked TCase passes
+  2/2 with `CL_EREAD`, sticky incomplete state, and non-cacheability preserved.
+- Extend APM evidence to partition-count/table/coordinate limits, full corpus,
+  sanitizer, certified Linux x86-64, materialized large-file, production-CVD,
+  service, and Sonic1 qualification before certification.

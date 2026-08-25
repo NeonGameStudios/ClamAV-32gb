@@ -280,6 +280,7 @@ contains unit_tests/check_matchers.c 'fmap hash input could not be read complete
 contains unit_tests/check_matchers.c 'test_scan_fmap_without_generic_root_is_fail_visible'
 contains unit_tests/check_clamav.c 'TCase *tc_7z_sfx = tcase_create("7z_sfx")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_apm_map, test_apm_partition_read_failure_is_fail_visible)'
 contains libclamav/unzip.c 'ZIP local filename field could not be read completely'
 contains libclamav/unzip.c 'ZIP input map is unavailable'
 contains libclamav/unzip.c 'ZIP local header could not be read completely'

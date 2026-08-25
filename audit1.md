@@ -8235,3 +8235,13 @@ reason. The existing read-failure regression is now registered in a dedicated
 corpus, successful nested-member detection, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, and Sonic1 evidence remain
 required.
+
+## APM partition-read boundary audit — 2026-08-25
+
+The APM parser's focused production-linked TCase now covers both recognized
+missing-map admission and an in-range partition-entry fmap callback failure.
+The two-case `apm_map` run passes 2/2; the callback failure preserves
+`CL_EREAD`, the explicit partition-read incomplete reason, and
+non-cacheability. Partition-count, table-boundary, coordinate-overflow,
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 qualification remain open.
