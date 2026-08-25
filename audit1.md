@@ -6826,6 +6826,16 @@ null context. The isolated production-linked `msxml_map` regression covers
 both cases. Compiled XML/OOXML corpus, sanitizer, and Sonic1 qualification
 remain release gates.
 
+## MSXML focused-boundary qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `msxml` TCase passes
+4/4 for truncated XML, in-range fmap callback failure, malformed Base64, and
+expired streaming deadlines; `msxml_map` passes 1/1 for null-context and
+missing-map admission. The timeout regression supplies the scan options
+required by the shared heuristic path and asserts the canonical sticky reason.
+Compiled XML/OOXML corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, and Sonic1 qualification remain open.
+
 ## OLE2 direct extraction map admission — 2026-08-25
 
 The OLE2 extraction entry rejected a null context but could dereference the

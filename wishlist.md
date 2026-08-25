@@ -183,6 +183,16 @@ Sonic1 qualification open.
   sticky reason. Keep full HWPML/XML corpus, sanitizer, materialized
   large-file, production-CVD, and Sonic1 qualification open.
 
+## MSXML focused-boundary qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `msxml` case passes
+  4/4 for truncated XML, callback read failure, malformed Base64, and timeout;
+  `msxml_map` passes 1/1. Keep the timeout fixture’s initialized scan options
+  and canonical sticky reason assertion.
+- Retain compiled XML/OOXML corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
+
 ## HWPML focused-boundary qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `hwpml` case passes

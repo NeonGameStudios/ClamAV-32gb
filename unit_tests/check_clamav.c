@@ -7391,17 +7391,20 @@ START_TEST(test_msxml_stream_time_limit_is_fail_visible)
 {
     static const uint8_t document[] = "<chunk>QUJD</chunk>";
     static const struct key_entry keys[] = {{"chunk", "Chunk", MSXML_SCAN_B64}};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(document, sizeof(document) - 1U);
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
@@ -7409,7 +7412,7 @@ START_TEST(test_msxml_stream_time_limit_is_fail_visible)
                                              MSXML_FLAG_FAIL_INCOMPLETE, NULL);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML streaming inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -34066,6 +34069,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ishield_map = tcase_create("ishield_map");
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
     TCase *tc_rust_map = tcase_create("rust_map");
+    TCase *tc_msxml = tcase_create("msxml");
     TCase *tc_msxml_map = tcase_create("msxml_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
@@ -34291,6 +34295,12 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_msxml);
+    tcase_add_checked_fixture(tc_msxml, cl_setup, cl_teardown);
+    tcase_add_test(tc_msxml, test_msxml_truncated_document_is_fail_visible);
+    tcase_add_test(tc_msxml, test_msxml_read_failure_is_fail_visible);
+    tcase_add_test(tc_msxml, test_msxml_base64_decode_failure_is_fail_visible);
+    tcase_add_test(tc_msxml, test_msxml_stream_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_rust_map);
     tcase_add_checked_fixture(tc_rust_map, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_map, test_rust_parser_missing_maps_are_fail_visible);
@@ -34905,10 +34915,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_swf_truncated_uncompressed_header_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_truncated_frame_metadata_is_fail_visible);
     tcase_add_test(tc_cl, test_swf_truncated_tag_payload_is_fail_visible);
-    tcase_add_test(tc_cl, test_msxml_truncated_document_is_fail_visible);
-    tcase_add_test(tc_cl, test_msxml_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_msxml_base64_decode_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_msxml_stream_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
