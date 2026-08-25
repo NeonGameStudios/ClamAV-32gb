@@ -152,6 +152,13 @@ materialized large-file, production-CVD, and Sonic1 qualification remain open.
 
 ## 7-Zip missing-map confirmed-entry classification — 2026-08-25
 
+The authoritative current-source production-linked GCC `7z` TCase now passes
+7/7 for truncated-header, in-range input-read, truncated-member,
+output-size/range, and both timeout boundaries. The current `7z_iface`,
+`7zIn`, and `7zDec` objects were linked explicitly; the earlier timeout
+segfaults came from a stale static-library interface and uninitialized direct
+test options. The dedicated `7z_map` and `7z_sfx` cases pass 1/1 each.
+
 The confirmed 7-Zip parser now distinguishes a null parser context from a
 recognized 7-Zip layer whose input fmap is unavailable. The former remains
 `CL_ENULLARG`; the latter marks the scan incomplete with the explicit `7-Zip

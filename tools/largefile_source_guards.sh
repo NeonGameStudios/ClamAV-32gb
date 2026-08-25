@@ -289,6 +289,8 @@ contains unit_tests/check_matchers.c 'fmap hash input could not be read complete
 contains unit_tests/check_matchers.c 'test_scan_fmap_without_generic_root_is_fail_visible'
 contains unit_tests/check_clamav.c 'TCase *tc_7z_sfx = tcase_create("7z_sfx")'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z_sfx, test_7z_sfx_header_read_failure_is_fail_visible)'
+contains unit_tests/check_clamav.c 'TCase *tc_7z = tcase_create("7z")'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_apm_map, test_apm_partition_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_arj_map, test_arj_main_header_read_failure_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_arj_map, test_arj_main_header_string_read_failure_is_fail_visible)'

@@ -21542,15 +21542,18 @@ START_TEST(test_7z_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
@@ -21558,7 +21561,7 @@ START_TEST(test_7z_time_limit_is_fail_visible)
     ret = cli_7unz(&ctx, 0);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "7-Zip inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -21569,6 +21572,7 @@ START_TEST(test_7z_input_time_limit_is_fail_visible)
 {
     uint8_t data[34] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
@@ -21583,10 +21587,12 @@ START_TEST(test_7z_input_time_limit_is_fail_visible)
     zip_stream_write_u32(data + 28, (uint32_t)crc32(0L, data + 32, 2U));
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
     ctx.engine = &engine;
+    ctx.options = &options;
     ctx.fmap   = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
 
@@ -21598,7 +21604,7 @@ START_TEST(test_7z_input_time_limit_is_fail_visible)
 
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "7-Zip archive input reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -34063,6 +34069,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_dmg_map = tcase_create("dmg_map");
     TCase *tc_xdp_map = tcase_create("xdp_map");
     TCase *tc_autoit_map = tcase_create("autoit_map");
+    TCase *tc_7z = tcase_create("7z");
     TCase *tc_7z_map = tcase_create("7z_map");
     TCase *tc_7z_sfx = tcase_create("7z_sfx");
     TCase *tc_sis_map = tcase_create("sis_map");
@@ -34284,6 +34291,15 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_autoit_map, test_autoit_ea06_missing_member_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_time_limit_is_fail_visible);
     tcase_add_test(tc_autoit_map, test_autoit_version_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_7z);
+    tcase_add_checked_fixture(tc_7z, cl_setup, cl_teardown);
+    tcase_add_test(tc_7z, test_7z_truncated_header_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_read_failure_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_truncated_member_is_parse_error);
+    tcase_add_test(tc_7z, test_7z_output_size_mismatch_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_output_range_is_bounded);
+    tcase_add_test(tc_7z, test_7z_time_limit_is_fail_visible);
+    tcase_add_test(tc_7z, test_7z_input_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_7z_map);
     tcase_add_checked_fixture(tc_7z_map, cl_setup, cl_teardown);
     tcase_add_test(tc_7z_map, test_7z_missing_map_is_fail_visible);
@@ -34584,14 +34600,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_7z_bcj2_four_coder_folder_preserves_jump_mapping);
     tcase_add_test(tc_cl, test_7z_bcj2_four_coder_folder_preserves_native_side_size);
     tcase_add_test(tc_cl, test_7z_bcj2_pack_position_overflow_is_rejected);
-    tcase_add_test(tc_cl, test_7z_truncated_header_is_fail_visible);
-    tcase_add_test(tc_cl, test_7z_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_7z_sfx_header_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_7z_truncated_member_is_parse_error);
-    tcase_add_test(tc_cl, test_7z_output_size_mismatch_is_fail_visible);
-    tcase_add_test(tc_cl, test_7z_output_range_is_bounded);
-    tcase_add_test(tc_cl, test_7z_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_7z_input_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_egg_sfx_header_admission);
     tcase_add_test(tc_cl, test_egg_fixed_header_range_classes_are_fail_visible);

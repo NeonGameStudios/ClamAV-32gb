@@ -246,6 +246,12 @@ Sonic1 qualification open.
 
 ## 7-Zip missing-map confirmed-entry classification — 2026-08-25
 
+- The authoritative current-source production-linked GCC `7z` TCase passes
+  7/7 for truncated-header, input-read, truncated-member, output-size/range,
+  and timeout boundaries; `7z_map` and `7z_sfx` pass 1/1 each. Keep the
+  current 7-Zip interface and decoder objects explicit in the qualification
+  link, and retain full BCJ2/archive, sanitizer, materialized large-folder,
+  production-CVD/service, and Sonic1 qualification as release gates.
 - Preserve `CL_ENULLARG` for a null confirmed 7-Zip parser context, but mark a
   recognized layer with no input fmap incomplete and return `CL_EPARSE`; keep
   the weak header-admission probe non-confirming.
