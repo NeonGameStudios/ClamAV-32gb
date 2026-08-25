@@ -30807,6 +30807,21 @@ static void test_hfsplus_invalid_leaf(uint8_t *data, size_t offset)
     test_hfsplus_put_be16(data + offset + 4096 - 2, 0);
 }
 
+START_TEST(test_hfsplus_missing_map_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    ck_assert_int_eq(cli_scanhfsplus(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_hfsplus_inline_compression_streams_large_output)
 {
     const size_t decoded_size = (2U * 64U * 1024U) + 37U;
@@ -33104,6 +33119,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
     TCase *tc_hfs_inline = tcase_create("hfs_inline");
+    TCase *tc_hfs_map = tcase_create("hfs_map");
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
@@ -33152,6 +33168,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hfs_inline);
     tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);
+    suite_add_tcase(s, tc_hfs_map);
+    tcase_add_checked_fixture(tc_hfs_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_hfs_map, test_hfsplus_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_sis_member);
     tcase_add_checked_fixture(tc_sis_member, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_member, test_sis_compressed_member_streams_to_nested_scan);

@@ -1,5 +1,13 @@
 # Wishlist
 
+## HFS+ missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null HFS+ parser context, but mark a recognized
+  HFS+ parser with no input fmap incomplete and return `CL_EPARSE`.
+- The isolated production-linked `hfs_map` regression passes and records the
+  sticky reason. Keep full HFS+ corpus, sanitizer, materialized large-file,
+  production-CVD, and Sonic1 qualification open.
+
 ## UDF missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null UDF parser context, but mark a recognized

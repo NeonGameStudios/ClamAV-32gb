@@ -2476,6 +2476,19 @@ misreported as confirmed malformed content. A focused report regression covers
 the encrypted-header reason; compiled current-head and service qualification
 remain release gates.
 
+## HFS+ missing-map entry classification — 2026-08-25
+
+`cli_scanhfsplus()` previously treated a null context and a missing fmap as
+the same `CL_ENULLARG` condition. A recognized HFS+ layer with no input map
+therefore lacked the sticky incomplete state used by its volume, tree, fork,
+and compressed-output failure paths.
+
+The entry point now preserves `CL_ENULLARG` for a null context and returns
+`CL_EPARSE` with `HFS+ input map is unavailable` for a missing fmap after
+marking the scan incomplete. The isolated production-linked `hfs_map` TCase
+passes 1/1. Full HFS+ corpus, sanitizer, materialized large-file, certified
+Linux x86-64, production-CVD, and Sonic1 qualification remain release gates.
+
 ## UDF missing-map entry classification — 2026-08-25
 
 `cli_scanudf()` entered descriptor traversal without separating a null context

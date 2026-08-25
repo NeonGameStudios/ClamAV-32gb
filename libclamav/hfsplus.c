@@ -1897,9 +1897,12 @@ cl_error_t cli_scanhfsplus(cli_ctx *ctx)
     hfsHeaderRecord attributesFileHeader;
     int hasAttributesFileHeader = 0;
 
-    if (!ctx || !ctx->fmap) {
-        cli_errmsg("cli_scanhfsplus: Invalid context\n");
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_errmsg("cli_scanhfsplus: Invalid context\n");
+        cli_mark_scan_incomplete(ctx, "HFS+ input map is unavailable");
+        return CL_EPARSE;
     }
 
     status = cli_checktimelimit(ctx);
