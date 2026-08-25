@@ -8811,3 +8811,17 @@ This is public header-dispatch evidence only. Complete GIF corpus, full-C
 ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service parity, and Sonic1 qualification remain
 open, so `CL_TYPE_GIF` stays pending.
+
+## SWF public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `swf_api` TCase covers a
+public `cl_scanmap_ex(..., "CL_TYPE_SWF", ...)` scan whose in-range fixed
+header callback failure returns `CL_EREAD`, leaves the verdict clean with no
+alert, and marks the fmap non-cacheable. Existing direct SWF tests continue
+to cover missing maps, frame metadata, compressed-input truncation, decoder
+and output limits, cleanup, and timeout behavior.
+
+This is public fixed-header dispatch evidence only. Complete SWF corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_SWF` stays pending.

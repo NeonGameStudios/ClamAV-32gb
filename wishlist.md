@@ -3420,3 +3420,13 @@ and Sonic1 qualification as release gates.
 - Complete GIF corpus and full-C ABI-consistent execution, then add sanitizer,
   certified Linux x86-64, materialized large-file, production-CVD/service
   parity, and Sonic1 evidence before certification.
+
+## SWF public API read-failure audit — 2026-08-25
+
+- The isolated current-source production-linked `swf_api` TCase covers a
+  public `CL_TYPE_SWF` fixed-header read failure, preserving `CL_EREAD`, a
+  clean verdict, and non-cacheability; direct missing-map, frame metadata,
+  compressed-input, decoder/output-limit, cleanup, and timeout cases remain.
+- Complete SWF corpus and full-C ABI-consistent execution, then add sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service
+  parity, and Sonic1 evidence before certification.

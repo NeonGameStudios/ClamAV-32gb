@@ -7243,6 +7243,45 @@ START_TEST(test_swf_required_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_swf_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t archive[] = {'F', 'W', 'S', 9U, 9U, 0U, 0U, 0U, 0U};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_SWF | CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(archive, sizeof(archive));
+    ck_assert_ptr_nonnull(map);
+    swf_read_failure_offset = 0U;
+    map->need              = swf_targeted_read_failure;
+    verdict                = CL_VERDICT_STRONG_INDICATOR;
+    last_alert             = "stale";
+    scanned                = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_SWF", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    swf_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_swf_compressed_input_range_failure_is_truncation)
 {
     static const uint8_t archive[] = {
@@ -34931,6 +34970,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ole10_entry = tcase_create("ole10_entry");
     TCase *tc_ppt_entry = tcase_create("ppt_entry");
     TCase *tc_swf_map = tcase_create("swf_map");
+    TCase *tc_swf_api = tcase_create("swf_api");
     TCase *tc_arj_map = tcase_create("arj_map");
     TCase *tc_binhex_map = tcase_create("binhex_map");
     TCase *tc_mydoom_map = tcase_create("mydoom_map");
@@ -35258,6 +35298,9 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_ppt_entry, test_ppt_vba_null_context_is_fail_visible);
     suite_add_tcase(s, tc_swf_map);
     tcase_add_test(tc_swf_map, test_swf_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_swf_api);
+    tcase_add_checked_fixture(tc_swf_api, cl_setup, cl_teardown);
+    tcase_add_test(tc_swf_api, test_swf_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_arj_map);
     tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_read_failure_is_fail_visible);
