@@ -8725,3 +8725,18 @@ full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MSSZDD` and `msexpand-map` stay
 pending.
+
+## OLE2 public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `ole2_map` TCase now covers
+recognized missing-map admission and a public
+`cl_scanmap_ex(..., "CL_TYPE_MSOLE2", ...)` scan whose in-range fixed-header
+callback failure returns `CL_EREAD`, leaves the verdict clean with no alert,
+and marks the fmap non-cacheable. The direct OLE2 matrix continues to cover
+truncated headers, CFB sector and encryption-probe failures, invalid block
+geometry, property-tree truncation, temporary limits, and timeout handling.
+
+This is fixed-header dispatch evidence only. Complete OLE/VBA/XLM corpus,
+full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_MSOLE2` stays pending.

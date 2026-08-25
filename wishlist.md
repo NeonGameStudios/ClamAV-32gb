@@ -3355,3 +3355,14 @@ and Sonic1 qualification as release gates.
 - Complete PE-specific corpus and full-C ABI-consistent execution, then add
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
+
+## OLE2 public API read-failure audit — 2026-08-25
+
+- The isolated current-source production-linked `ole2_map` TCase passes 2/2
+  for missing-map admission and a public `CL_TYPE_MSOLE2` fixed-header
+  callback failure, preserving `CL_EREAD`, a clean verdict, and
+  non-cacheability; direct tests retain CFB sector, encryption-probe,
+  property-tree, geometry, temporary-limit, and timeout coverage.
+- Complete OLE/VBA/XLM corpus and full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
