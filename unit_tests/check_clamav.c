@@ -7289,6 +7289,22 @@ START_TEST(test_msxml_truncated_document_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_msxml_missing_map_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    ck_assert_int_eq(cli_scanmsxml(NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanmsxml(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "MSXML input map is unavailable");
+}
+END_TEST
+
 struct msxml_read_failure_state {
     const uint8_t *data;
     size_t length;
@@ -33738,6 +33754,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_ishield_map = tcase_create("ishield_map");
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
     TCase *tc_rust_map = tcase_create("rust_map");
+    TCase *tc_msxml_map = tcase_create("msxml_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -33858,6 +33875,8 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_rust_map);
     tcase_add_checked_fixture(tc_rust_map, cl_setup, cl_teardown);
     tcase_add_test(tc_rust_map, test_rust_parser_missing_maps_are_fail_visible);
+    suite_add_tcase(s, tc_msxml_map);
+    tcase_add_test(tc_msxml_map, test_msxml_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);

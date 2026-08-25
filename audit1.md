@@ -6479,6 +6479,16 @@ terminated the scan. A focused callback-backed MSXML regression verifies the
 status, reason, and non-cacheable map state. Compiled MSXML/HWPML corpus,
 sanitizer, and Sonic1 qualification remain open.
 
+## MSXML direct-entry map admission — 2026-08-25
+
+The legacy MSXML direct entry checked for a null context but allowed a valid
+context with no input fmap to reach the XML reader callback, where the missing
+map could be dereferenced. It now returns `CL_EPARSE` with sticky incomplete
+state for that recognized-layer boundary while retaining `CL_ENULLARG` for a
+null context. The isolated production-linked `msxml_map` regression covers
+both cases. Compiled XML/OOXML corpus, sanitizer, and Sonic1 qualification
+remain release gates.
+
 ## Embedded EGG SFX read-result classification — 2026-08-23
 
 The embedded EGG SFX admission helper already distinguished a fully in-range

@@ -234,6 +234,10 @@ cl_error_t cli_scanmsxml(cli_ctx *ctx)
 
     if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "MSXML input map is unavailable");
+        return CL_EPARSE;
+    }
 
     memset(&cbdata, 0, sizeof(cbdata));
     cbdata.map = ctx->fmap;

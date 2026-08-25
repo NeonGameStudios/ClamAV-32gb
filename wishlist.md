@@ -1282,6 +1282,9 @@ large-file, and Sonic1 qualification open.
   incomplete parse; add compiled RTF/OLE corpus and sanitizer qualification.
 - CHM direct MSPack admission now checks the null context before initializing
   its fmap wrapper; add compiled CHM corpus and sanitizer qualification.
+- Legacy MSXML direct admission now rejects a recognized layer with no input
+  fmap as an explicit incomplete parse; add compiled XML/OOXML and sanitizer
+  qualification.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.
