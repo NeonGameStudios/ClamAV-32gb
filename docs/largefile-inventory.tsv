@@ -20222,15 +20222,15 @@ boundary-constant	unit_tests/check_clamav.c	34117	#if !defined(_WIN32) && SIZE_M
 boundary-constant	unit_tests/check_clamav.c	34131	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	34254	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	34310	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34619	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34623	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34645	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34713	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34749	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34753	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34803	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34815	#if SIZE_MAX > UINT32_MAX
-boundary-constant	unit_tests/check_clamav.c	34839	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34620	#if !defined(_WIN32) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34624	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34646	#if defined(HAVE_MMAP) && defined(HAVE_SYS_MMAN_H) && SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34714	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34750	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34754	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34804	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34816	#if SIZE_MAX > UINT32_MAX
+boundary-constant	unit_tests/check_clamav.c	34840	#if SIZE_MAX > UINT32_MAX
 boundary-constant	unit_tests/check_clamav.c	3838	    size_t large_size = (size_t)UINT32_MAX + 1;
 boundary-constant	unit_tests/check_clamav.c	3882	    size_t large_size = (size_t)UINT32_MAX + 123;
 boundary-constant	unit_tests/check_clamav.c	3892	    intel->maxsamples = UINT32_MAX;

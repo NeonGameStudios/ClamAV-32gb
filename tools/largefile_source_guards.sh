@@ -108,6 +108,7 @@ contains unit_tests/check_clamav.c 'tcase_add_checked_fixture(tc_xar, cl_setup, 
 contains unit_tests/check_clamav.c 'ctx.dconf             = scan_engine->dconf'
 contains unit_tests/check_clamav.c 'ctx.recursion_stack_size = 2'
 contains unit_tests/check_clamav.c 'Heuristics.Limits.Exceeded.MaxScanTime'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_hwpml, test_hwpml_base64_decoder_is_bounded_and_fail_visible)'
 contains libclamav/rtf.c 'description_remaining = data->desc_len - data->bread'
 contains unit_tests/check_clamav.c 'test_rtf_long_description_is_consumed'
 contains libclamav/jpeg.c 'static cl_error_t jpeg_read_status'

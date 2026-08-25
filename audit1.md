@@ -117,6 +117,16 @@ and capability-manifest guards cover the boundary. Full HWPML/XML corpus,
 sanitizer, materialized large-file, production-CVD, and Sonic1 qualification
 remain open.
 
+## HWPML focused-boundary qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `hwpml` TCase passes
+2/2 for truncated XML and bounded/malformed Base64 decoding; the Base64
+regression is isolated from the broad case and verifies decoded bytes, exact
+size, malformed-input status, rollback, and non-cacheability. The `hwpml_map`
+case passes 1/1 for missing-map admission. Full HWPML/XML corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 qualification remain open.
+
 ## InstallShield missing-map confirmed-entry classification — 2026-08-25
 
 The confirmed InstallShield MSI and legacy extraction entries now distinguish

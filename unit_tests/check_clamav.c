@@ -34438,6 +34438,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_hwpole2_truncated_prefix_is_parse_error);
     tcase_add_test(tc_cl, test_hwpole2_prefix_read_failure_is_fail_visible);
     tcase_add_test(tc_hwpml, test_hwpml_truncated_document_is_fail_visible);
+    tcase_add_test(tc_hwpml, test_hwpml_base64_decoder_is_bounded_and_fail_visible);
     tcase_add_test(tc_cl, test_legacy_parser_limit_returns_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_header_range_classes_are_fail_visible);
     tcase_add_test(tc_cl, test_msexpand_missing_map_is_fail_visible);
@@ -34857,7 +34858,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_pdf, test_pdf_explicit_identity_crypt_precedes_supported_filters);
     tcase_add_test(tc_pdf, test_pdf_truncated_flate_after_prefix_is_fail_visible);
     tcase_add_test(tc_pdf, test_pdf_truncated_lzw_after_prefix_is_fail_visible);
-    tcase_add_test(tc_cl, test_hwpml_base64_decoder_is_bounded_and_fail_visible);
     tcase_add_test(tc_cl, test_top_level_maxfilesize_descriptor_is_fail_visible);
     tcase_add_test(tc_cl, test_action_setup_quarantine_lock_uses_validated_directory_handle);
     tcase_add_test(tc_cl, test_action_source_open_relative_path_stores_absolute_action_path);

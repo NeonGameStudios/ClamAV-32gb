@@ -183,6 +183,16 @@ Sonic1 qualification open.
   sticky reason. Keep full HWPML/XML corpus, sanitizer, materialized
   large-file, production-CVD, and Sonic1 qualification open.
 
+## HWPML focused-boundary qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `hwpml` case passes
+  2/2 for truncated XML and bounded/malformed Base64; `hwpml_map` passes 1/1.
+  The Base64 regression is isolated from the broad case and checks decoded
+  bytes, exact size, malformed-input status, rollback, and non-cacheability.
+- Retain full HWPML/XML corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, and Sonic1 qualification as release
+  gates.
+
 ## InstallShield missing-map confirmed-entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for null InstallShield parser contexts, but mark
