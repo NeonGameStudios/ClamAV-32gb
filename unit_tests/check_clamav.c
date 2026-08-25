@@ -4875,6 +4875,32 @@ static uint8_t *zip_stream_raw_deflate(const uint8_t *input, size_t input_length
     return output;
 }
 
+static uint8_t *zip_stream_raw_deflate_compressed(const uint8_t *input, size_t input_length, size_t *output_length)
+{
+    z_stream stream;
+    uint8_t *output;
+    uLong bound;
+    int zret;
+
+    memset(&stream, 0, sizeof(stream));
+    bound  = compressBound((uLong)input_length);
+    output = malloc((size_t)bound);
+    ck_assert_ptr_nonnull(output);
+
+    zret = deflateInit2(&stream, Z_BEST_COMPRESSION, Z_DEFLATED,
+                        -MAX_WBITS, 8, Z_DEFAULT_STRATEGY);
+    ck_assert_int_eq(zret, Z_OK);
+    stream.next_in   = (Bytef *)input;
+    stream.avail_in  = (uInt)input_length;
+    stream.next_out  = output;
+    stream.avail_out = (uInt)bound;
+    zret             = deflate(&stream, Z_FINISH);
+    ck_assert_int_eq(zret, Z_STREAM_END);
+    *output_length = (size_t)stream.total_out;
+    ck_assert_int_eq(deflateEnd(&stream), Z_OK);
+    return output;
+}
+
 static uint8_t *zip_stream_bzip2(const uint8_t *input, size_t input_length, size_t *output_length)
 {
     unsigned int bound;
@@ -6537,6 +6563,7 @@ START_TEST(test_zip_local_header_read_failure_is_fail_visible)
     cli_scan_layer_t layer;
     fmap_t *map;
     size_t zip_size = 0;
+    bool central_directory = false;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
@@ -6552,13 +6579,14 @@ START_TEST(test_zip_local_header_read_failure_is_fail_visible)
     ctx.recursion_stack_size      = 1;
     layer.fmap                    = map;
 
-    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size);
+    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size, &central_directory);
     ck_assert_int_eq(ret, CL_EREAD);
     ck_assert(ctx.scan_incomplete);
     ck_assert_str_eq(ctx.scan_incomplete_reason,
                      "ZIP local header could not be read completely");
     ck_assert(map->dont_cache_flag);
     ck_assert_uint_eq(zip_size, 0U);
+    ck_assert(!central_directory);
 
     cl_fmap_close(map);
     zip_targeted_read_failure_offset = 0;
@@ -8883,6 +8911,7 @@ START_TEST(test_zip_masked_sfx_candidate_is_not_confirmed)
     cl_fmap_t *map;
     size_t archive_length;
     size_t zip_size = 0;
+    bool central_directory = false;
     uint8_t *archive;
     cl_error_t ret;
 
@@ -8913,14 +8942,239 @@ START_TEST(test_zip_masked_sfx_candidate_is_not_confirmed)
     layer.size               = archive_length;
     layer.fmap               = map;
 
-    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size);
+    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size, &central_directory);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert_uint_eq(zip_size, 0U);
+    ck_assert(!central_directory);
     ck_assert(!ctx.scan_incomplete);
     ck_assert(!map->dont_cache_flag);
 
     cl_fmap_close(map);
     free(archive);
+}
+END_TEST
+
+static size_t zip_sfx_read_failure_offset = SIZE_MAX;
+
+static const void *zip_sfx_targeted_read_failure(fmap_t *map, size_t at, size_t len, int lock)
+{
+    size_t real_at;
+
+    (void)lock;
+    if (at > map->len || len > map->len - at || at > SIZE_MAX - map->nested_offset)
+        return NULL;
+    real_at = map->nested_offset + at;
+    if (real_at == zip_sfx_read_failure_offset)
+        return NULL;
+    if (real_at > map->real_len || len > map->real_len - real_at)
+        return NULL;
+    return (const uint8_t *)map->data + real_at;
+}
+
+START_TEST(test_zip_masked_sfx_central_extent_and_read_failure)
+{
+    static const uint8_t input[] = "masked-sfx-central";
+    struct cl_engine engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layer;
+    cli_ctx ctx;
+    fmap_t *map;
+    uint8_t *archive;
+    size_t archive_length;
+    size_t central_offset;
+    size_t zip_size;
+    bool central_directory;
+    cl_error_t ret;
+
+    archive = zip_stream_central_masked_archive(input, sizeof(input) - 1U,
+                                                sizeof(input) - 1U,
+                                                ZIP_TEST_METHOD_STORED,
+                                                (uint32_t)crc32(0L, input, (uInt)(sizeof(input) - 1U)),
+                                                &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_uint_ge(archive_length, 22U);
+    central_offset = cli_readint32(archive + archive_length - 6U);
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine               = &engine;
+    ctx.options              = &options;
+    ctx.fmap                 = map;
+    ctx.recursion_stack      = &layer;
+    ctx.recursion_stack_size = 1;
+    layer.type               = CL_TYPE_ZIPSFX;
+    layer.size               = archive_length;
+    layer.fmap               = map;
+    zip_size                 = 0;
+    central_directory        = false;
+
+    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size, &central_directory);
+    ck_assert_int_eq(ret, CL_SUCCESS);
+    ck_assert_uint_eq(zip_size, archive_length);
+    ck_assert(central_directory);
+    ck_assert(!ctx.scan_incomplete);
+    cl_fmap_close(map);
+
+    memset(&layer, 0, sizeof(layer));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(archive, archive_length);
+    ck_assert_ptr_nonnull(map);
+    zip_sfx_read_failure_offset = central_offset;
+    map->need                    = zip_sfx_targeted_read_failure;
+    ctx.engine                   = &engine;
+    ctx.options                  = &options;
+    ctx.fmap                     = map;
+    ctx.recursion_stack          = &layer;
+    ctx.recursion_stack_size     = 1;
+    layer.type                   = CL_TYPE_ZIPSFX;
+    layer.size                   = archive_length;
+    layer.fmap                   = map;
+    zip_size                     = 0;
+    central_directory            = false;
+
+    ret = cli_unzip_single_header_check(&ctx, 0, &zip_size, &central_directory);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_uint_eq(zip_size, 0U);
+    ck_assert(!central_directory);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "ZIP SFX central-directory record could not be read completely");
+    ck_assert(map->dont_cache_flag);
+
+    zip_sfx_read_failure_offset = SIZE_MAX;
+    cl_fmap_close(map);
+    free(archive);
+}
+END_TEST
+
+struct zip_sfx_layer_state {
+    bool saw_central_directory_layer;
+};
+
+static cl_error_t zip_sfx_layer_callback(cl_scan_layer_t *layer, void *context)
+{
+    struct zip_sfx_layer_state *state = context;
+    const char *type                 = NULL;
+    uint32_t attributes             = 0;
+
+    if (cl_scan_layer_get_type(layer, &type) == CL_SUCCESS &&
+        type && !strcmp(type, "CL_TYPE_ZIP") &&
+        cl_scan_layer_get_attributes(layer, &attributes) == CL_SUCCESS &&
+        (attributes & LAYER_ATTRIBUTES_EMBEDDED) &&
+        (attributes & LAYER_ATTRIBUTES_ZIP_CENTRAL)) {
+        state->saw_central_directory_layer = true;
+    }
+    return CL_SUCCESS;
+}
+
+START_TEST(test_zip_masked_sfx_reaches_exact_child_matcher)
+{
+    static const uint8_t payload[] = "ZIP-SFX-MASKED!";
+    static const uint8_t prefix[]  = "benign-sfx-host:";
+    static const char signature[]  = "Zip.Sfx.Masked.Member.Exact:0:*:5a49502d5346582d4d41534b454421\n";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    struct zip_sfx_layer_state layer_state;
+    fmap_t *map;
+    uint8_t *compressed;
+    uint8_t *archive;
+    uint8_t *outer;
+    uint8_t *malformed;
+    size_t compressed_length;
+    size_t archive_length;
+    size_t outer_length;
+    size_t central_offset;
+    char signature_path[PATH_MAX];
+    unsigned int sigs = 0;
+    const char *last_alert;
+    cl_verdict_t verdict;
+    uint64_t scanned;
+    int signature_fd;
+    cl_error_t ret;
+
+    compressed = zip_stream_raw_deflate_compressed(payload, sizeof(payload) - 1U,
+                                                   &compressed_length);
+    archive = zip_stream_central_masked_archive(
+        compressed, compressed_length, sizeof(payload) - 1U,
+        ZIP_TEST_METHOD_DEFLATE,
+        (uint32_t)crc32(0L, payload, (uInt)(sizeof(payload) - 1U)),
+        &archive_length);
+    ck_assert_ptr_nonnull(archive);
+    ck_assert_uint_ge(archive_length, 22U);
+    central_offset = cli_readint32(archive + archive_length - 6U);
+    outer_length   = sizeof(prefix) - 1U + archive_length;
+    outer          = malloc(outer_length);
+    malformed      = malloc(outer_length);
+    ck_assert_ptr_nonnull(outer);
+    ck_assert_ptr_nonnull(malformed);
+    memcpy(outer, prefix, sizeof(prefix) - 1U);
+    memcpy(outer + sizeof(prefix) - 1U, archive, archive_length);
+    memcpy(malformed, outer, outer_length);
+    malformed[sizeof(prefix) - 1U + central_offset] ^= 0x01U;
+    ck_assert_ptr_null(cli_memstr((const char *)outer, outer_length,
+                                 (const char *)payload, sizeof(payload) - 1U));
+
+    memset(&options, 0, sizeof(options));
+    memset(&layer_state, 0, sizeof(layer_state));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    ck_assert_int_eq(snprintf(signature_path, sizeof(signature_path),
+                              "%s/zip-sfx-masked.ndb", tmpdir),
+                     (int)(strlen(tmpdir) + strlen("/zip-sfx-masked.ndb")));
+    signature_fd = open(signature_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+    ck_assert_int_ge(signature_fd, 0);
+    ck_assert_int_eq(write(signature_fd, signature, sizeof(signature) - 1U),
+                     (ssize_t)(sizeof(signature) - 1U));
+    ck_assert_int_eq(close(signature_fd), 0);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_load(signature_path, scan_engine, &sigs, CL_DB_STDOPT), CL_SUCCESS);
+    ck_assert_uint_eq(sigs, 1U);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    ck_assert_int_eq(cli_unlink(signature_path), 0);
+    cl_engine_set_scan_callback(scan_engine, zip_sfx_layer_callback,
+                                CL_SCAN_CALLBACK_PRE_SCAN);
+
+    map = cl_fmap_open_memory(outer, outer_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_NOTHING_FOUND;
+    last_alert = NULL;
+    scanned    = 0;
+    ret        = cl_scanmap_ex(map, "masked-zip-sfx-host", &verdict, &last_alert,
+                               &scanned, scan_engine, &options, &layer_state,
+                               NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "Zip.Sfx.Masked.Member.Exact.UNOFFICIAL");
+    ck_assert(layer_state.saw_central_directory_layer);
+    cl_fmap_close(map);
+
+    memset(&layer_state, 0, sizeof(layer_state));
+    map = cl_fmap_open_memory(malformed, outer_length);
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+    ret        = cl_scanmap_ex(map, "malformed-masked-zip-sfx-host", &verdict,
+                               &last_alert, &scanned, scan_engine, &options,
+                               &layer_state, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(!layer_state.saw_central_directory_layer);
+    ck_assert(map->dont_cache_flag);
+    cl_fmap_close(map);
+
+    cl_engine_free(scan_engine);
+    free(malformed);
+    free(outer);
+    free(archive);
+    free(compressed);
 }
 END_TEST
 
@@ -32615,6 +32869,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
+    TCase *tc_zip_sfx = tcase_create("zip_sfx");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -32668,6 +32923,10 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cpio_crc, test_cpio_crc_checksum_mismatch_is_fail_visible);
     tcase_add_test(tc_cpio_crc, test_cpio_crc_multiwindow_tail_reaches_nested_matcher);
     tcase_add_test(tc_cpio_crc, test_cpio_crc_checksum_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_zip_sfx);
+    tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);
+    tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_reaches_exact_child_matcher);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

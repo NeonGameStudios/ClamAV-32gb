@@ -109,6 +109,8 @@ struct zip_central_values {
     bool zip64_sizes;
 };
 
+static cl_error_t zip_masked_sfx_central_check(cli_ctx *ctx, size_t offset, size_t *size);
+
 /* fmap_need_*() uses NULL for both an out-of-range request and a failed
  * backing read.  ZIP callers need to preserve that distinction: a malformed
  * coordinate is a parse failure, while an in-range read failure is an
@@ -1941,7 +1943,8 @@ done:
 cl_error_t cli_unzip_single_header_check(
     cli_ctx *ctx,
     size_t offset,
-    size_t *size)
+    size_t *size,
+    bool *central_directory)
 {
     cl_error_t status             = CL_ERROR;
     struct zip_record file_record = {0};
@@ -1949,8 +1952,11 @@ cl_error_t cli_unzip_single_header_check(
     cl_error_t map_status;
     const uint8_t *local_header;
 
-    if (NULL == ctx || NULL == ctx->fmap)
+    if (NULL == ctx || NULL == ctx->fmap || NULL == size || NULL == central_directory)
         return CL_ENULLARG;
+
+    *size              = 0;
+    *central_directory = false;
 
     local_header = zip_need_off_status(ctx->fmap, offset, SIZEOF_LOCAL_HEADER, 1, &map_status);
     if (NULL == local_header) {
@@ -1961,13 +1967,11 @@ cl_error_t cli_unzip_single_header_check(
         return map_status;
     }
     if (LOCAL_HEADER_flags & F_MSKED) {
-        /* A SFX admission probe has no central directory to supply the
-         * masked extent.  Reject this weak candidate without marking the
-         * containing file incomplete; ordinary local-only scanning goes
-         * through parse_local_file_header() and remains fail-visible. */
         fmap_unneed_off(ctx->fmap, offset, SIZEOF_LOCAL_HEADER);
-        cli_dbgmsg("cli_unzip: single header check - masked local header is not a confirmed ZIP candidate\n");
-        return CL_EFORMAT;
+        ret = zip_masked_sfx_central_check(ctx, offset, size);
+        if (ret == CL_SUCCESS)
+            *central_directory = true;
+        return ret;
     }
     fmap_unneed_off(ctx->fmap, offset, SIZEOF_LOCAL_HEADER);
 
@@ -2972,6 +2976,8 @@ done:
  * @param map          The file map
  * @param fsize        The file size
  * @param[out] coff    The central directory offset
+ * @param[out] archive_size Exact extent through the EOCD comment, when requested.
+ * @param[out] eocd_seen Set when an EOCD signature was encountered, even if malformed.
  * @return cl_error_t CL_SUCCESS if found, CL_EPARSE if absent or malformed,
  *                    CL_ETIMEOUT on deadline expiry, or CL_BREAK when the
  *                    application requested scan cancellation.
@@ -2980,12 +2986,19 @@ static cl_error_t find_central_directory_header(
     cli_ctx *ctx,
     fmap_t *map,
     size_t fsize,
-    size_t *coff)
+    size_t *coff,
+    size_t *archive_size,
+    bool *eocd_seen)
 {
     cl_error_t status = CL_ERROR;
     size_t eocoff     = 0;
     size_t min_eocoff;
     size_t probes = 0;
+
+    if (archive_size)
+        *archive_size = 0;
+    if (eocd_seen)
+        *eocd_seen = false;
 
     cli_dbgmsg("find_central_directory_header: Searching for End Of Central Directory header...\n");
 
@@ -3009,7 +3022,7 @@ static cl_error_t find_central_directory_header(
         const char *eocptr = fmap_need_off_once(
             map,
             eocoff,
-            SIZEOF_END_OF_CENTRAL - 2 /* -2 because don't need to read the comment length */);
+            SIZEOF_END_OF_CENTRAL);
         if (!eocptr) {
             /* Every probe is in range by construction. A NULL window is
              * therefore a read failure, not an absent EOCD candidate; do not
@@ -3021,6 +3034,17 @@ static cl_error_t find_central_directory_header(
         }
 
         if (cli_readint32(eocptr) == ZIP_MAGIC_CENTRAL_DIRECTORY_RECORD_END) {
+            uint16_t comment_length;
+            size_t eocd_end;
+
+            if (eocd_seen)
+                *eocd_seen = true;
+
+            comment_length = cli_readint16(&eocptr[20]);
+            if (comment_length > fsize - eocoff - SIZEOF_END_OF_CENTRAL)
+                goto next_eocd;
+            eocd_end = eocoff + SIZEOF_END_OF_CENTRAL + comment_length;
+
             // Found the End Of Central Directory header.
             // Use it to find the central directory offset.
             cli_dbgmsg("find_central_directory_header: Found End Of Central Directory header at offset: 0x%zx. "
@@ -3076,6 +3100,8 @@ static cl_error_t find_central_directory_header(
 
             if (!CLI_ISCONTAINED_0_TO(fsize, (size_t)cd_offset, (size_t)cd_size))
                 goto next_eocd;
+            if ((size_t)cd_offset > eocoff || (size_t)cd_size > eocoff - (size_t)cd_offset)
+                goto next_eocd;
 
             {
                 size_t maybe_coff = (size_t)cd_offset;
@@ -3086,6 +3112,8 @@ static cl_error_t find_central_directory_header(
                 /* Found it. */
                 cli_dbgmsg("find_central_directory_header: Found Central Directory header at offset: 0x%zx\n", maybe_coff);
                 *coff  = maybe_coff;
+                if (archive_size)
+                    *archive_size = eocd_end;
                 status = CL_SUCCESS;
                 break;
             }
@@ -3101,6 +3129,132 @@ static cl_error_t find_central_directory_header(
         status = CL_EPARSE;
     }
 
+    return status;
+}
+
+/* A masked local header does not contain a usable CRC or member extent.  It
+ * is a weak embedded candidate until an EOCD and central record in the same
+ * bounded submap identify that local header as offset zero.  This admission
+ * pass is structural only; cli_unzip() performs the authoritative catalogue,
+ * metadata, extraction, and matcher work after the nested layer is pushed. */
+static cl_error_t zip_masked_sfx_central_check(cli_ctx *ctx, size_t offset, size_t *size)
+{
+    cl_error_t status;
+    cl_error_t map_status;
+    fmap_t *map                         = NULL;
+    const uint8_t *central_header       = NULL;
+    const uint8_t *central_extra        = NULL;
+    uint8_t central_header_copy[SIZEOF_CENTRAL_HEADER];
+    struct zip_central_values central_values;
+    size_t archive_size = 0;
+    size_t coff         = 0;
+    size_t extra_offset;
+    size_t central_extra_offset;
+    bool eocd_seen = false;
+
+    if (offset > ctx->fmap->len) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX local-header offset is outside the containing map");
+        return CL_EPARSE;
+    }
+
+    map = fmap_duplicate(ctx->fmap, offset, ctx->fmap->len - offset, NULL);
+    if (!map) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX candidate map could not be allocated");
+        return CL_EMEM;
+    }
+
+    status = find_central_directory_header(ctx, map, map->len, &coff,
+                                           &archive_size, &eocd_seen);
+    if (status != CL_SUCCESS) {
+        if (status == CL_EPARSE && !eocd_seen) {
+            /* No catalogue claims this local-only magic, so it remains an
+             * unconfirmed weak candidate and must not taint its parent. */
+            status = CL_EFORMAT;
+        } else if (status == CL_EPARSE) {
+            cli_mark_scan_incomplete(ctx, "ZIP SFX end-of-central-directory structure is malformed");
+        }
+        goto done;
+    }
+
+    central_header = zip_need_off_status(map, coff, SIZEOF_CENTRAL_HEADER, 1, &map_status);
+    if (!central_header) {
+        cli_mark_scan_incomplete(ctx, map_status == CL_EREAD
+                                          ? "ZIP SFX central-directory record could not be read completely"
+                                          : "ZIP SFX central-directory record is truncated");
+        status = map_status;
+        goto done;
+    }
+    memcpy(central_header_copy, central_header, sizeof(central_header_copy));
+    fmap_unneed_off(map, coff, SIZEOF_CENTRAL_HEADER);
+    central_header = central_header_copy;
+
+    if (cli_readint32(central_header) != ZIP_MAGIC_CENTRAL_DIRECTORY_RECORD_BEGIN) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX EOCD does not reference a central-directory record");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    if (coff > archive_size || SIZEOF_CENTRAL_HEADER > archive_size - coff) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX central-directory record exceeds the admitted archive extent");
+        status = CL_EPARSE;
+        goto done;
+    }
+    extra_offset = coff + SIZEOF_CENTRAL_HEADER;
+    if (CENTRAL_HEADER_flen > archive_size - extra_offset) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX central-directory filename is truncated");
+        status = CL_EPARSE;
+        goto done;
+    }
+    extra_offset += CENTRAL_HEADER_flen;
+    central_extra_offset = extra_offset;
+    if (CENTRAL_HEADER_extra_len > archive_size - extra_offset) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX central-directory extra field is truncated");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    extra_offset += CENTRAL_HEADER_extra_len;
+    if (CENTRAL_HEADER_comment_len > archive_size - extra_offset) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX central-directory comment is truncated");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    central_extra = fmap_need_off_once(map, central_extra_offset, CENTRAL_HEADER_extra_len);
+    if (CENTRAL_HEADER_extra_len && !central_extra) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX central-directory extra field could not be read completely");
+        status = CL_EREAD;
+        goto done;
+    }
+    if (!zip64_read_catalogue_values(ctx,
+                                     central_extra,
+                                     CENTRAL_HEADER_extra_len,
+                                     CENTRAL_HEADER_csize,
+                                     CENTRAL_HEADER_usize,
+                                     CENTRAL_HEADER_off,
+                                     &central_values)) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX central-directory ZIP64 values are malformed");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    if (central_values.local_header_offset != 0) {
+        /* The EOCD belongs to some other trailing archive.  It does not
+         * confirm the local magic at this candidate offset. */
+        status = CL_EFORMAT;
+        goto done;
+    }
+    if (!(CENTRAL_HEADER_flags & F_MSKED)) {
+        cli_mark_scan_incomplete(ctx, "ZIP SFX local and central masked-header flags disagree");
+        status = CL_EPARSE;
+        goto done;
+    }
+
+    *size  = archive_size;
+    status = CL_SUCCESS;
+
+done:
+    free_duplicate_fmap(map);
     return status;
 }
 
@@ -3151,7 +3305,9 @@ cl_error_t cli_unzip(cli_ctx *ctx)
         ctx,
         map,
         fsize,
-        &coff);
+        &coff,
+        NULL,
+        NULL);
     if (CL_SUCCESS == ret) {
         cli_dbgmsg("cli_unzip: central directory header offset: 0x%zx\n", coff);
 
@@ -3521,7 +3677,9 @@ cl_error_t unzip_search(cli_ctx *ctx, struct zip_requests *requests)
         ctx,
         ctx->fmap,
         ctx->fmap->len,
-        &coff);
+        &coff,
+        NULL,
+        NULL);
     if (CL_SUCCESS == ret) {
         size_t central_file_header_offset = coff;
         cli_dbgmsg("unzip_search: central directory header offset: 0x%zx\n", central_file_header_offset);

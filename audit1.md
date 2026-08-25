@@ -7551,3 +7551,29 @@ All four tests pass with no failures. Complete old/newc/CRC
 corpus, large materialized CRC members,
 sanitizer, certified Linux x86-64, and Sonic1 qualification remain release
 gates.
+
+## Masked ZIP-SFX central-directory admission — 2026-08-24
+
+Masked ZIP local headers no longer enter ZIP-SFX admission on local magic
+alone. The bounded probe duplicates the candidate suffix, validates a
+reachable EOCD (including ZIP64 placement when required), validates the first
+central record's fixed and variable fields through its comment, resolves ZIP64
+catalogue values, and requires that record to reference local-header offset
+zero with the masked-header flag. A local-only masked magic remains an
+unconfirmed weak candidate; a confirmed malformed central structure or
+in-range backing read failure marks the scan incomplete and non-cacheable.
+
+Confirmed embedded archives carry `LAYER_ATTRIBUTES_ZIP_CENTRAL` and use the
+full `cli_unzip()` catalogue path, while ordinary embedded local records retain
+`cli_unzip_single()`. This prevents the previous silent skip of valid masked
+members and proves the central values reach the authoritative extractor.
+
+The focused production-linked GCC case passes 2/2 with zero failures in the
+isolated `zip_sfx` TCase when the existing certificate directory is supplied:
+the exact child-only signature is detected, the layer attribute is observed,
+malformed central magic returns `CL_EPARSE` with non-cacheable state, and an
+in-range central-record read fault returns `CL_EREAD` with the required
+incomplete reason. The touched `unzip.c`, `scanners.c`, and unit translation
+units compile with GCC; source guards and manifest evidence are being updated
+with this milestone. Complete ZIP corpus, sanitizer, materialized large-file,
+certified Linux x86-64, production-CVD, and Sonic1 qualification remain open.

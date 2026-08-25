@@ -181,10 +181,12 @@ cl_error_t cli_unzip_single(cli_ctx *ctx, size_t local_header_offset);
  *
  * @param[in,out] ctx           Scan context
  * @param offset                Offset of the local file header
- * @param[out] size             Will be set to the size of the file header + file data.
+ * @param[out] size             Will be set to the admitted ZIP extent.
+ * @param[out] central_directory Set when masked local values were resolved by
+ *                              an authoritative central-directory record.
  * @return cl_error_t           CL_SUCCESS on success, or an error code on failure.
  */
-cl_error_t cli_unzip_single_header_check(cli_ctx *ctx, size_t offset, size_t *size);
+cl_error_t cli_unzip_single_header_check(cli_ctx *ctx, size_t offset, size_t *size, bool *central_directory);
 
 /**
  * @brief Unzip a single file from a zip archive.

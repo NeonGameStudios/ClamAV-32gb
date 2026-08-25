@@ -1,5 +1,18 @@
 # Wishlist
 
+## Masked ZIP-SFX central-directory admission — 2026-08-24
+
+- Require a masked ZIP-SFX local header to be confirmed by a bounded EOCD and
+  central record that references local-header offset zero. Confirmed candidates
+  carry a central-directory layer attribute and use the full ZIP catalogue;
+  ordinary embedded local records retain single-member dispatch.
+- The focused production-linked GCC case passes 2/2 with exact child-only
+  detection, layer-attribute observation, malformed-central rejection, and an
+  injected in-range central-record read failure classified as `CL_EREAD`.
+- Add complete ZIP/SFX corpus, ZIP64 and multi-entry cases, sanitizer and
+  materialized large-file runs, certified Linux x86-64 execution, production
+  CVDs, and Sonic1 qualification before marking the ZIP/SFX family complete.
+
 ## Bounded UTF-16 HTML normalization — 2026-08-24
 
 - UTF-16 HTML now uses strict bounded UTF-16-to-UTF-8 conversion with explicit

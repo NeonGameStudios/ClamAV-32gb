@@ -5718,8 +5718,11 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                 (type != CL_TYPE_OOXML_HWP)) {
                                 // Header validity check to prevent false positives from being scanned.
                                 size_t zip_size = 0;
+                                bool zip_has_central_directory = false;
+                                uint32_t zip_attributes        = LAYER_ATTRIBUTES_EMBEDDED;
 
-                                ret = cli_unzip_single_header_check(ctx, fpt->offset, &zip_size);
+                                ret = cli_unzip_single_header_check(ctx, fpt->offset, &zip_size,
+                                                                    &zip_has_central_directory);
                                 if (ret == CL_EFORMAT) {
                                     cli_dbgmsg("ZIP SFX candidate rejected before layer admission\n");
                                     break;
@@ -5731,6 +5734,9 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     break;
                                 }
 
+                                if (zip_has_central_directory)
+                                    zip_attributes |= LAYER_ATTRIBUTES_ZIP_CENTRAL;
+
                                 // Increment last_offset to ignore any file type matches that occured within this legitimate archive.
                                 last_offset += zip_size - 1; // Note: size is definitely > 0 because header_check succeeded.
 
@@ -5741,7 +5747,7 @@ static cl_error_t scanraw(cli_ctx *ctx, cli_file_t type, uint8_t typercg, cli_fi
                                     ctx,
                                     CL_TYPE_ZIP,
                                     NULL,
-                                    LAYER_ATTRIBUTES_EMBEDDED));
+                                    zip_attributes));
                             }
                             break;
 
@@ -7293,7 +7299,10 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
 
         case CL_TYPE_ZIP:
             if (SCAN_PARSE_ARCHIVE && (DCONF_ARCH & ARCH_CONF_ZIP)) {
-                if (ctx->recursion_stack[ctx->recursion_level].attributes & LAYER_ATTRIBUTES_EMBEDDED) {
+                uint32_t zip_attributes = ctx->recursion_stack[ctx->recursion_level].attributes;
+
+                if ((zip_attributes & LAYER_ATTRIBUTES_EMBEDDED) &&
+                    !(zip_attributes & LAYER_ATTRIBUTES_ZIP_CENTRAL)) {
                     /* If this is an embedded ZIP found by scanraw() with file type detection,
                      * then we only extract a single zip entry. */
                     ret = cli_unzip_single(ctx, 0);

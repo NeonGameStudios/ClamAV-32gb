@@ -931,6 +931,7 @@ extern cl_error_t cl_scan_layer_get_last_alert(
 #define LAYER_ATTRIBUTES_RETYPED 0x4    /**< This layer is a re-scan of the parent layer but as a new type (e.g. using HandlerType). */
 #define LAYER_ATTRIBUTES_EMBEDDED 0x8   /**< This layer was found within the parent layer using FTM signatures \
                                          *   (e.g. like ZIP entries found within an executable). */
+#define LAYER_ATTRIBUTES_ZIP_CENTRAL 0x10 /**< This embedded ZIP layer was structurally admitted using its central directory. */
 
 /**
  * @brief Get the attributes of a scan layer.
