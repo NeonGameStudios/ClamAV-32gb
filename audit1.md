@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## MSPack bounded-parser qualification — 2026-08-25
+
+The authoritative current-source production-linked GCC `mspack` case passes
+4/4 across scan-size and temporary admission, declared-output-size
+validation, canonical timeout propagation, and truncated CAB fixed-header
+boundaries. The existing `mspack_map` case passes 5/5 across CAB/CHM
+missing-map, decoder-read, clipped-read, constructor, and callback-timeout
+boundaries. Complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service parity, and Sonic1
+qualification remain open.
+
 ## ELF focused-coordinate qualification — 2026-08-25
 
 The authoritative current-source production-linked GCC `elf` case passes 4/4

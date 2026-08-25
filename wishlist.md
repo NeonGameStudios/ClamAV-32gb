@@ -1,5 +1,17 @@
 # Wishlist
 
+## MSPack bounded-parser qualification — 2026-08-25
+
+- The authoritative current-source production-linked GCC `mspack` case passes
+  4/4 across scan-size and temporary admission, declared-output-size
+  validation, canonical timeout propagation, and truncated CAB fixed-header
+  boundaries.
+- The existing `mspack_map` case passes 5/5 across CAB/CHM missing-map,
+  decoder-read, clipped-read, constructor, and callback-timeout boundaries.
+  Keep complete CAB/CHM corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service parity, and Sonic1
+  qualification open.
+
 ## ELF focused-coordinate qualification — 2026-08-25
 
 - The authoritative current-source production-linked GCC `elf` case passes

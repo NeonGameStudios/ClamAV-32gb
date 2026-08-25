@@ -31222,7 +31222,7 @@ START_TEST(test_mspack_time_limit_is_fail_visible)
     ret = cli_mscab_header_check(&ctx, 0, &cab_size);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "CAB header inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -35379,6 +35379,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_zip_map = tcase_create("zip_map");
     TCase *tc_mail = tcase_create("mail");
     TCase *tc_mspack_map = tcase_create("mspack_map");
+    TCase *tc_mspack = tcase_create("mspack");
     TCase *tc_cabsfx = tcase_create("cabsfx");
     TCase *tc_arjsfx = tcase_create("arjsfx");
     TCase *tc_autoit_sfx = tcase_create("autoit_sfx");
@@ -35827,6 +35828,12 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mspack_map, test_mspack_constructor_failures_are_fail_visible);
     tcase_add_test(tc_mspack_map, test_mspack_callback_time_limit_is_fail_visible);
 #endif
+    suite_add_tcase(s, tc_mspack);
+    tcase_add_checked_fixture(tc_mspack, cl_setup, cl_teardown);
+    tcase_add_test(tc_mspack, test_mspack_scan_limit_is_fail_visible);
+    tcase_add_test(tc_mspack, test_mspack_output_size_mismatch_is_fail_visible);
+    tcase_add_test(tc_mspack, test_mspack_time_limit_is_fail_visible);
+    tcase_add_test(tc_mspack, test_mscab_truncated_fixed_header_is_fail_visible);
     suite_add_tcase(s, tc_cabsfx);
     tcase_add_checked_fixture(tc_cabsfx, cl_setup, cl_teardown);
     tcase_add_test(tc_cabsfx, test_cabsfx_admission_reaches_nested_matcher);
