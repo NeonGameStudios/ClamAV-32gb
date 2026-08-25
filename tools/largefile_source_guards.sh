@@ -1534,6 +1534,8 @@ contains unit_tests/check_clamav.c 'tcase_add_test(tc_iso_map, test_iso_file_ext
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_udf_map, test_udf_allocation_descriptor_alignment_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_hfs_map, test_hfsplus_time_limit_is_fail_visible)'
 contains unit_tests/check_clamav.c 'tcase_add_test(tc_hfs_fork, test_hfsplus_fork_read_failure_is_fail_visible)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_rtf_map, test_rtf_long_description_is_consumed)'
+contains unit_tests/check_clamav.c 'tcase_add_test(tc_rtf_map, test_rtf_implicit_object_close_status_is_fail_visible)'
 contains libclamav/png.c 'PNG chunk traversal reached the configured time limit'
 contains libclamav/hfsplus.c 'blockSize is a byte count and cannot be compared to totalBlocks'
 contains libclamav/tiff.c 'TIFF magic could not be read completely'

@@ -1247,6 +1247,18 @@ sizes beyond native coordinate capacity. Full OLE2/VBA corpus, sanitizer,
 certified Linux x86-64, materialized large-file, production-CVD/service, and
 Sonic1 evidence remain open.
 
+## RTF focused-boundary audit — 2026-08-25
+
+The isolated production-linked `rtf_map` TCase passes 8/8 for truncated
+documents, shared-deadline expiry, in-range fmap callback failure, split OLE10
+header probing, complete long-description consumption, split reserved-field
+accounting, and implicitly closed-object status propagation. The timeout case
+asserts the repository-wide sticky `Heuristics.Limits.Exceeded.MaxScanTime`
+reason; malformed split-object output may return either parse-incomplete or
+explicit resource-incomplete, but never a clean/cacheable result. Full RTF/OLE
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

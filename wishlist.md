@@ -136,6 +136,16 @@ Sonic1 qualification open.
   retain full OLE2/VBA corpus, sanitizer, certified Linux x86-64, materialized
   large-file, production-CVD/service, and Sonic1 qualification as release gates.
 
+## RTF focused-boundary qualification — 2026-08-25
+
+- The isolated production-linked `rtf_map` case passes 8/8 for truncation,
+  timeout, callback failure, split OLE10 headers, complete descriptions, split
+  reserved fields, and implicit-close status propagation. Keep the malformed
+  split-object result fail-visible as parse-incomplete or explicit resource-
+  incomplete; retain full RTF/OLE corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory

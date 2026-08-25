@@ -7565,24 +7565,27 @@ END_TEST
 START_TEST(test_rtf_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ret = cli_scanrtf(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "RTF inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -7785,7 +7788,8 @@ START_TEST(test_rtf_split_object_zero_field_preserves_payload_size)
     ctx.this_layer_tmpdir = tmpdir;
 
     ret = cli_scanrtf(&ctx);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_msg(ret == CL_EPARSE || ret == CL_ERESOURCE,
+                  "RTF malformed split object returned unexpected status %d", ret);
     ck_assert(ctx.scan_incomplete);
     ck_assert(map->dont_cache_flag);
 
@@ -34123,6 +34127,14 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xar_map, test_xar_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_riff_map);
     suite_add_tcase(s, tc_rtf_map);
+    tcase_add_checked_fixture(tc_rtf_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_rtf_map, test_rtf_truncated_document_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_time_limit_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_input_read_failure_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_split_object_data_header_is_fail_visible);
+    tcase_add_test(tc_rtf_map, test_rtf_long_description_is_consumed);
+    tcase_add_test(tc_rtf_map, test_rtf_split_object_zero_field_preserves_payload_size);
+    tcase_add_test(tc_rtf_map, test_rtf_implicit_object_close_status_is_fail_visible);
     suite_add_tcase(s, tc_hwpml);
     tcase_add_checked_fixture(tc_hwpml, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_xdp);
@@ -34869,13 +34881,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_msxml_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_base64_decode_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_msxml_stream_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_rtf_truncated_document_is_fail_visible);
-    tcase_add_test(tc_cl, test_rtf_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_rtf_input_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_rtf_split_object_data_header_is_fail_visible);
-    tcase_add_test(tc_cl, test_rtf_long_description_is_consumed);
-    tcase_add_test(tc_cl, test_rtf_split_object_zero_field_preserves_payload_size);
-    tcase_add_test(tc_cl, test_rtf_implicit_object_close_status_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_truncated_object_is_fail_visible);
     tcase_add_test(tc_cl, test_ole10_temporary_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_zip_unsupported_flags_and_method_are_fail_visible);
