@@ -563,8 +563,12 @@ int cli_7unz(cli_ctx *ctx, size_t offset)
     cl_error_t found       = CL_CLEAN;
     Int64 begin_of_archive = offset;
 
-    if (!ctx || !ctx->fmap)
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "7-Zip input map is unavailable");
+        return CL_EPARSE;
+    }
 
     if (cli_7z_checktimelimit(ctx, "7-Zip inspection reached the configured time limit") != CL_SUCCESS)
         return CL_ETIMEOUT;

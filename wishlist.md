@@ -1,5 +1,14 @@
 # Wishlist
 
+## 7-Zip missing-map confirmed-entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for a null confirmed 7-Zip parser context, but mark a
+  recognized layer with no input fmap incomplete and return `CL_EPARSE`; keep
+  the weak header-admission probe non-confirming.
+- The isolated production-linked `7z_map` regression passes and records the
+  sticky reason. Keep full 7-Zip/BCJ2 corpus, sanitizer, materialized
+  large-file, production-CVD, and Sonic1 qualification open.
+
 ## AutoIt missing-map confirmed-entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null confirmed AutoIt parser context, but mark

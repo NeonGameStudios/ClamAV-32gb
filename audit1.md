@@ -6,6 +6,17 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## 7-Zip missing-map confirmed-entry classification — 2026-08-25
+
+The confirmed 7-Zip parser now distinguishes a null parser context from a
+recognized 7-Zip layer whose input fmap is unavailable. The former remains
+`CL_ENULLARG`; the latter marks the scan incomplete with the explicit `7-Zip
+input map is unavailable` reason and returns `CL_EPARSE`. The weak header
+admission probe remains non-confirming. The dedicated production-linked
+`7z_map` case passes with the sticky reason, and source and capability-manifest
+guards cover the boundary. Full 7-Zip/BCJ2 corpus, sanitizer, materialized
+large-file, production-CVD, and Sonic1 qualification remain open.
+
 ## AutoIt missing-map confirmed-entry classification — 2026-08-25
 
 The confirmed AutoIt parser entry now distinguishes a null parser context from
