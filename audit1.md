@@ -60,6 +60,7 @@ regression is compiled into the production-linked test harness; full UUEncode
 corpus, sanitizer, materialized large-file, production-CVD, and Sonic1
 qualification remain open.
 
+
 ## HWPML missing-map entry classification — 2026-08-25
 
 The HWPML direct parser now distinguishes a null parser context from a
@@ -8122,3 +8123,12 @@ MBR header through a sector-size/LBA product above `SIZE_MAX` and verifies the
 result is `CL_EFORMAT`, incomplete, and non-cacheable. Full MBR corpus,
 sanitizer, certified Linux x86-64, materialized large-file, production-CVD,
 service, and Sonic1 evidence remain required.
+## Mach-O direct-entry admission — 2026-08-25
+
+The thin and universal Mach-O parser entries now return `CL_ENULLARG` for a
+null context. The metadata wrapper also exits before attempting to mark a null
+context incomplete. Missing input maps remain explicit `CL_EPARSE` results with
+sticky incomplete state. The dedicated production-linked `macho_map` case
+covers both null-context and missing-map boundaries; executable corpus,
+sanitizer, materialized large-file, production-CVD, service, and Sonic1
+qualification remain open.

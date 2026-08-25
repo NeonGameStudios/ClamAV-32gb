@@ -1217,6 +1217,8 @@ contains unit_tests/check_clamav.c 'test_elf64_entry_offset_overflow_is_fail_vis
 contains libclamav/macho.c 'Mach-O header parsing ended before inspection completed'
 contains libclamav/macho.c 'Mach-O inspection reached the configured time limit'
 contains libclamav/macho.c 'Mach-O input map is unavailable'
+contains libclamav/macho.c 'return CL_ENULLARG;'
+contains unit_tests/check_clamav.c 'test_macho_missing_maps_are_fail_visible'
 contains libclamav/macho.c 'Thread command header exceeds its load-command boundary'
 contains libclamav/macho.c 'Mach-O load-command traversal reached the configured time limit'
 contains libclamav/macho.c 'Mach-O section traversal reached the configured time limit'

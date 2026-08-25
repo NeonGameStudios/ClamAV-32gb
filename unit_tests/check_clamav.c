@@ -30484,6 +30484,10 @@ START_TEST(test_macho_missing_maps_are_fail_visible)
 {
     cli_ctx ctx;
 
+    ck_assert_int_eq(cli_scanmacho(NULL, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_machoheader(NULL, NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanmacho_unibin(NULL), CL_ENULLARG);
+
     memset(&ctx, 0, sizeof(ctx));
     ck_assert_int_eq(cli_scanmacho(&ctx, NULL), CL_EPARSE);
     ck_assert(ctx.scan_incomplete);
@@ -33895,6 +33899,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_binhex_map = tcase_create("binhex_map");
     TCase *tc_mydoom_map = tcase_create("mydoom_map");
     TCase *tc_macho_boundary = tcase_create("macho_boundary");
+    TCase *tc_macho_map = tcase_create("macho_map");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -33992,6 +33997,8 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_dmg_map, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_macho_boundary);
     tcase_add_test(tc_macho_boundary, test_macho_load_command_boundary_is_fail_visible);
+    suite_add_tcase(s, tc_macho_map);
+    tcase_add_test(tc_macho_map, test_macho_missing_maps_are_fail_visible);
     tcase_add_test(tc_dmg_map, test_dmg_missing_map_is_fail_visible);
     suite_add_tcase(s, tc_xdp_map);
     tcase_add_checked_fixture(tc_xdp_map, cl_setup, cl_teardown);
@@ -34518,7 +34525,6 @@ static Suite *test_cl_suite(void)
 #endif
     tcase_add_test(tc_cl, test_macho_truncated_header_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_time_limit_is_fail_visible);
-    tcase_add_test(tc_cl, test_macho_missing_maps_are_fail_visible);
     tcase_add_test(tc_cl, test_macho_unibin_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_metadata_read_failure_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_scan_load_command_read_failure_is_fail_visible);

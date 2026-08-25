@@ -6,7 +6,8 @@
   recognized layer with no input fmap incomplete and returning `CL_EPARSE`.
 - The dedicated `swf_map` regression covers both admission states. Keep full
   SWF corpus, sanitizer, materialized large-file, production-CVD, service, and
-  Sonic1 qualification open.
+Sonic1 qualification open.
+
 
 ## Mydoom detector direct-entry admission — 2026-08-25
 
@@ -2885,3 +2886,10 @@ and Sonic1 qualification as release gates.
 - Retain the sparse native-width overflow regression and extend MBR evidence
   to corpus, sanitizer, materialized large-file, production-CVD, service, and
   Sonic1 qualification.
+## Mach-O direct-entry admission — 2026-08-25
+
+- Preserve `CL_ENULLARG` for thin, universal, and metadata-wrapper Mach-O null
+  contexts while keeping missing input maps fail-visible as incomplete parses.
+- The dedicated `macho_map` regression covers both boundaries. Keep executable
+  corpus, sanitizer, materialized large-file, production-CVD, service, and
+  Sonic1 qualification open.

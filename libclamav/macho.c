@@ -275,7 +275,7 @@ cl_error_t cli_scanmacho(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 
     if (ctx == NULL) {
         cli_dbgmsg("Mach-O: passed context was NULL\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     if (ctx->fmap == NULL) {
         cli_mark_scan_incomplete(ctx, "Mach-O input map is unavailable");
@@ -822,6 +822,9 @@ cl_error_t cli_machoheader(cli_ctx *ctx, struct cli_exe_info *fileinfo)
 {
     cl_error_t ret = cli_scanmacho(ctx, fileinfo);
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+
     if (ret != CL_SUCCESS && ret != CL_VIRUS && ret != CL_VERIFIED)
         cli_mark_scan_incomplete(ctx, "Mach-O metadata parsing ended before inspection completed");
     else if (ret == CL_SUCCESS && fileinfo && fileinfo->legacy_metadata_incomplete)
@@ -842,7 +845,7 @@ cl_error_t cli_scanmacho_unibin(cli_ctx *ctx)
 
     if (ctx == NULL) {
         cli_dbgmsg("Mach-O universal-binary: passed context was NULL\n");
-        return CL_EARG;
+        return CL_ENULLARG;
     }
     if (ctx->fmap == NULL) {
         cli_mark_scan_incomplete(ctx, "Mach-O universal-binary input map is unavailable");
