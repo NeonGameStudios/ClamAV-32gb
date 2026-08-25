@@ -34119,6 +34119,7 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_mydoom_map);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_null_context_is_fail_visible);
+    tcase_add_test(tc_mydoom_map, test_mydoom_detector_read_failure_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

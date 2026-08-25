@@ -1092,6 +1092,16 @@ than inheriting build defaults. The real production oracle, Linux/Sonic1
 execution, sanitizer, RSS, latency, temporary-space, and parser-family
 evidence remain open.
 
+## Mydoom detector boundary audit — 2026-08-25
+
+The focused production-linked `mydoom_map` TCase now covers null-context,
+missing-map, and in-range detector-window callback failures. The read-failure
+oracle preserves `CL_EREAD`, the detector-specific incomplete reason, and
+non-cacheability. The focused production-linked run passes 3/3. The source
+guards pin all three focused registrations; compiled detector corpus,
+raw-dispatch, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

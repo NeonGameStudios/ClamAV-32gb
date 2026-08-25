@@ -3005,6 +3005,16 @@ and Sonic1 qualification as release gates.
   certified Linux x86-64, materialized large-file, production-CVD/service, and
   Sonic1 evidence.
 
+## Mydoom detector boundary audit — 2026-08-25
+
+- The focused `mydoom_map` TCase now includes null-context, missing-map, and
+  detector-window read-failure admission; its current production-linked run
+  passes 3/3. Keep the `CL_EREAD`, sticky-reason, and non-cacheable assertions
+  source-guarded.
+- Extend Mydoom evidence to compiled detector corpus, raw dispatch, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service, and
+  Sonic1 qualification.
+
 ## AutoIt focused-entry audit — 2026-08-25
 
 - The focused `autoit_map` TCase now includes the malformed-EA06,
