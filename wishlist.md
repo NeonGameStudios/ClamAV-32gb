@@ -3410,3 +3410,13 @@ and Sonic1 qualification as release gates.
   ABI-consistent execution, then add sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service parity, and Sonic1 evidence
   before certification.
+
+## GIF public API read-failure audit — 2026-08-25
+
+- The isolated current-source production-linked `gif_api` TCase covers a
+  public `CL_TYPE_GIF` header read failure, preserving `CL_EREAD`, a clean
+  verdict, and non-cacheability; direct signature/version, truncation,
+  timeout, and missing-map cases remain covered.
+- Complete GIF corpus and full-C ABI-consistent execution, then add sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service
+  parity, and Sonic1 evidence before certification.

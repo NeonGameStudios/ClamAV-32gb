@@ -8797,3 +8797,17 @@ Complete BMP/JPEG 2000 and generic-graphics corpus, full-C ABI-consistent
 execution, sanitizer, certified Linux x86-64, materialized large-file,
 production-CVD/service parity, and Sonic1 qualification remain open, so
 `CL_TYPE_GRAPHICS` stays pending.
+
+## GIF public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `gif_api` TCase covers a
+public `cl_scanmap_ex(..., "CL_TYPE_GIF", ...)` scan whose in-range signature
+read callback failure returns `CL_EREAD`, leaves the verdict clean with no
+alert, and marks the fmap non-cacheable. Existing direct GIF tests continue
+to cover signature/version failures, truncated screen descriptors, block
+timeouts, and missing-map behavior.
+
+This is public header-dispatch evidence only. Complete GIF corpus, full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_GIF` stays pending.

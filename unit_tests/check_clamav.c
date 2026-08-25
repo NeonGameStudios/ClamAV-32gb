@@ -33151,6 +33151,43 @@ START_TEST(test_gif_header_read_failures_are_fail_visible)
 }
 END_TEST
 
+START_TEST(test_gif_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t input[] = {'G', 'I', 'F'};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    fmap_t *map;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    cl_error_t ret;
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_IMAGE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(input, sizeof(input));
+    ck_assert_ptr_nonnull(map);
+    map->need  = embedded_header_read_failure;
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, "CL_TYPE_GIF", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert(last_alert == NULL);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_gif_truncated_screen_descriptor_is_parse_error)
 {
     static const uint8_t data[] = {'G', 'I', 'F', '8', '9', 'a', 0};
@@ -34831,6 +34868,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_cl_scan  = tcase_create("cl_scan_api");
     TCase *tc_dmg      = tcase_create("dmg");
     TCase *tc_gif      = tcase_create("gif");
+    TCase *tc_gif_api  = tcase_create("gif_api");
     TCase *tc_png      = tcase_create("png");
     TCase *tc_tiff     = tcase_create("tiff");
 #if SIZE_MAX > UINT32_MAX
@@ -34952,6 +34990,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_dmg);
     tcase_add_checked_fixture(tc_dmg, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_gif);
+    suite_add_tcase(s, tc_gif_api);
+    tcase_add_checked_fixture(tc_gif_api, cl_setup, cl_teardown);
+    tcase_add_test(tc_gif_api, test_gif_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_png);
     tcase_add_checked_fixture(tc_png, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_tiff);
