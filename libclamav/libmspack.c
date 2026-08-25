@@ -514,6 +514,11 @@ cl_error_t cli_mscab_header_check(cli_ctx *ctx, size_t offset, size_t *size)
     }
 
     *size            = 0;
+    if (NULL == ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "MSPack CAB header input map is unavailable");
+        status = CL_EPARSE;
+        goto done;
+    }
     mspack_fmap.fmap = ctx->fmap;
 
     /* File-type recognition proves only the four-byte MSCF marker. Require
@@ -610,6 +615,13 @@ cl_error_t cli_scanmscab(cli_ctx *ctx, size_t sfx_offset)
     char *tmp_fname      = NULL;
     bool tempfile_exists = false;
     uint64_t temporary_reserved = 0;
+
+    if (NULL == ctx)
+        return CL_ENULLARG;
+    if (NULL == ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "MSPack CAB input map is unavailable");
+        return CL_EPARSE;
+    }
 
     mspack_fmap.fmap = ctx->fmap;
 
@@ -808,6 +820,13 @@ cl_error_t cli_scanmschm(cli_ctx *ctx)
     char *tmp_fname      = NULL;
     bool tempfile_exists = false;
     uint64_t temporary_reserved = 0;
+
+    if (NULL == ctx)
+        return CL_ENULLARG;
+    if (NULL == ctx->fmap) {
+        cli_mark_scan_incomplete(ctx, "MSPack CHM input map is unavailable");
+        return CL_EPARSE;
+    }
 
     memset(&ops_ex, 0, sizeof(struct mspack_system_ex));
     ops_ex.ops = mspack_sys_fmap_ops;

@@ -7552,6 +7552,22 @@ corpus, large materialized CRC members,
 sanitizer, certified Linux x86-64, and Sonic1 qualification remain release
 gates.
 
+## CAB/CHM missing-map entry hardening — 2026-08-24
+
+The next parser-family audit found that the public/internal CAB header check,
+CAB scan entry, and CHM scan entry assumed `ctx->fmap` was present before
+constructing their bounded MSPack adapter. Direct callers with no input map
+could therefore dereference a null map instead of returning a fail-visible
+result.
+
+All three entry points now reject an unavailable fmap with `CL_EPARSE`, mark
+the context incomplete/non-cacheable, and preserve `CL_ENULLARG` for a null
+context where applicable. The focused regression exercises CAB header
+admission, CAB extraction dispatch, and CHM dispatch independently and checks
+their specific incomplete reasons. The capability manifest and source guards
+record the boundary. Full CAB/CHM production corpus, sanitizer, materialized
+large-member, certified Linux x86-64, and Sonic1 qualification remain open.
+
 ## Masked ZIP-SFX central-directory admission — 2026-08-24
 
 Masked ZIP local headers no longer enter ZIP-SFX admission on local magic
@@ -7574,6 +7590,6 @@ the exact child-only signature is detected, the layer attribute is observed,
 malformed central magic returns `CL_EPARSE` with non-cacheable state, and an
 in-range central-record read fault returns `CL_EREAD` with the required
 incomplete reason. The touched `unzip.c`, `scanners.c`, and unit translation
-units compile with GCC; source guards and manifest evidence are being updated
-with this milestone. Complete ZIP corpus, sanitizer, materialized large-file,
+units compile with GCC; source guards and manifest evidence pass. Complete ZIP
+corpus, sanitizer, materialized large-file,
 certified Linux x86-64, production-CVD, and Sonic1 qualification remain open.

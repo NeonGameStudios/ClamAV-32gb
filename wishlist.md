@@ -1,5 +1,14 @@
 # Wishlist
 
+## CAB/CHM missing-map entry hardening — 2026-08-24
+
+- Reject missing input fmaps before CAB header admission, CAB extraction, or
+  CHM extraction reaches the MSPack adapter; return explicit incomplete
+  `CL_EPARSE` results and preserve non-cacheability.
+- Add direct entry-point regression coverage for CAB header, CAB scan, and CHM
+  scan. Keep complete CAB/CHM production corpus, sanitizer, materialized
+  large-member, certified Linux x86-64, and Sonic1 qualification open.
+
 ## Masked ZIP-SFX central-directory admission — 2026-08-24
 
 - Require a masked ZIP-SFX local header to be confirmed by a bounded EOCD and

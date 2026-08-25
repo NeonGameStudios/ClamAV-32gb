@@ -28067,6 +28067,41 @@ START_TEST(test_mspack_callback_time_limit_is_fail_visible)
 END_TEST
 #endif
 
+START_TEST(test_mspack_missing_map_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+    size_t cab_size = 0;
+    cl_error_t ret;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.engine = &engine;
+
+    ret = cli_mscab_header_check(&ctx, 0, &cab_size);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MSPack CAB header input map is unavailable");
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ret                        = cli_scanmscab(&ctx, 0);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MSPack CAB input map is unavailable");
+
+    ctx.scan_incomplete        = false;
+    ctx.scan_incomplete_reason = NULL;
+    ret                        = cli_scanmschm(&ctx);
+    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "MSPack CHM input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_mspack_decoder_read_failure_is_fail_visible)
 {
     uint8_t data[44] = {0};
@@ -32870,6 +32905,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
+    TCase *tc_mspack_map = tcase_create("mspack_map");
     char *user_timeout = NULL;
     int expect         = expected_testfiles;
     suite_add_tcase(s, tc_cl);
@@ -32927,6 +32963,8 @@ static Suite *test_cl_suite(void)
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_reaches_exact_child_matcher);
+    suite_add_tcase(s, tc_mspack_map);
+    tcase_add_test(tc_mspack_map, test_mspack_missing_map_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
