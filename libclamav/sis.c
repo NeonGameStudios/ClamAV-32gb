@@ -307,8 +307,12 @@ cl_error_t cli_scansis(cli_ctx *ctx)
     uint32_t uid[4];
     fmap_t *map;
 
-    if ((ctx == NULL) || (ctx->fmap == NULL))
+    if (ctx == NULL)
         return CL_ENULLARG;
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "SIS input map is unavailable");
+        return CL_EPARSE;
+    }
 
     status = sis_checktimelimit(ctx, "SIS inspection reached the configured time limit");
     if (status != CL_SUCCESS)
