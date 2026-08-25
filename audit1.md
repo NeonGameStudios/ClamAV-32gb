@@ -6941,6 +6941,16 @@ Focused direct-entry regressions cover all three paths; compiled executable,
 archive, and HWP3 corpora, sanitizer, and Sonic1 qualification remain release
 gates.
 
+## XAR TOC metadata-result retention — 2026-08-25
+
+The confirmed XAR data/EA walker returned `CL_EFORMAT` for incomplete numeric
+metadata and for an XML reader failure, but those exits did not consistently
+set the sticky incomplete state required to prevent caching a partially
+inspected TOC. Both paths now use the XAR incomplete-result helper, and a
+direct production-linked regression asserts the metadata reason and
+non-cacheable state. Broader compiled XAR corpus, sanitizer, and Sonic1
+qualification remain release gates.
+
 ## BinHex and XAR missing-map admission — 2026-08-23
 
 The BinHex and XAR public parser entries also initialized `ctx->fmap` before

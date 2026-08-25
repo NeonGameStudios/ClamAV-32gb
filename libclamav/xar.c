@@ -649,7 +649,7 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
 
     if (rc < 0) {
         cli_dbgmsg("cli_scanxar: XML reader failed while reading TOC data values.\n");
-        return CL_EFORMAT;
+        return xar_incomplete(ctx, "XAR TOC XML reader failed while reading data entries");
     }
 
     if (gotoffset && gotlength && gotsize) {
@@ -660,7 +660,7 @@ static int xar_get_toc_data_values(xmlTextReaderPtr reader, cli_ctx *ctx, size_t
         else
             rc = xar_incomplete(ctx, "XAR TOC XML ended before the root element closed");
     } else
-        rc = CL_EFORMAT;
+        rc = xar_incomplete(ctx, "XAR TOC data entry is incomplete");
 
     return rc;
 }

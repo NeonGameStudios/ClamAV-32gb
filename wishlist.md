@@ -1272,6 +1272,9 @@ large-file, and Sonic1 qualification open.
   and sanitizer qualification.
 - Confirmed XAR `<data>`/`<ea>` entries with invalid metadata no longer end the
   TOC walk as clean; add compiled malformed-XAR and production corpus coverage.
+- Confirmed XAR TOC metadata and XML-reader failures now retain sticky
+  incomplete state through the direct parser entry; add broader malformed-TOC
+  and XML fault-injection coverage.
 - XAR TOC XML/decoder, subdocument, gzip/LZMA member, and raw-member walks now
   honor the shared scan deadline with decoder and temporary-file cleanup; add
   compiled timeout-injection and long-member/TOC corpus qualification.
