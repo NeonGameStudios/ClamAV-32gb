@@ -2726,3 +2726,17 @@ and Sonic1 qualification as release gates.
   qualification. CRC validation, multi-window traversal, in-range read-failure
   classification, and malware precedence are implemented with bounded fmap
   windows.
+
+## Rust parser null-context admission — 2026-08-25
+
+- `scan_onenote()`, `cli_scanalz()`, and `scan_lha_lzh()` now reject a null
+  parser context as `CL_ENULLARG` before current-layer fmap lookup or C FFI
+  reporting. A recognized parser with malformed current-layer state remains
+  `CL_EPARSE` with the shared sticky incomplete/non-cacheable marker.
+- A focused `rust_map` Check TCase and source guards cover the three parser
+  entry points. The host Rust 1.97.1 offline attempt stopped at the existing
+  missing OpenSSL development metadata, without installing software. The
+  available production-linked container archive is stale relative to this
+  source and its mixed C/Rust run is not authoritative; rebuild current C and
+  Rust together, then run the TCase, Rust suite, parser corpus, sanitizer,
+  materialized large-file, certified Linux x86-64, and Sonic1 gates.

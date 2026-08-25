@@ -7829,3 +7829,21 @@ a missing fmap. The isolated production-linked `iso_map` TCase passes 1/1 and
 verifies the incomplete state. Full ISO/Joliet corpus, sanitizer, materialized
 large-file, certified Linux x86-64, production-CVD, and Sonic1 qualification
 remain release gates.
+
+## Rust parser null-context admission — 2026-08-25
+
+The Rust ALZ, LHA/LZH, and OneNote entry points now reject a null `cli_ctx`
+with `CL_ENULLARG` before current-layer fmap lookup or shared C reporting.
+Malformed current-layer state still maps to `CL_EPARSE` and calls the shared
+incomplete marker for a valid context. This makes the FFI boundary explicit and
+prevents a null parser call from depending on downstream C null handling.
+
+The `rust_map` Check TCase is registered and the source guard requires the
+entry-point checks. The host Rust 1.97.1 offline attempt stopped in
+`openssl-sys` because this macOS environment has no OpenSSL development
+metadata; no software was installed. The existing production-linked container
+archive is older than the authoritative Rust source, and its mixed C/Rust
+execution is therefore not attributed as current-source evidence. A current
+C/Rust rebuild, isolated TCase, Rust suite, parser corpus, sanitizer,
+materialized large-file, certified Linux x86-64, and Sonic1 qualification are
+still required.

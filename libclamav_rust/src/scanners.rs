@@ -677,6 +677,10 @@ fn onenote_modern_parser_admitted(input_len: usize) -> bool {
 /// Must be a valid ctx pointer.
 #[no_mangle]
 pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
+    if ctx.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
+
     let fmap = match ctx::current_fmap(ctx) {
         Ok(fmap) => fmap,
         Err(e) => {
@@ -823,6 +827,10 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
 /// Must be a valid ctx pointer.
 #[no_mangle]
 pub unsafe extern "C" fn scan_lha_lzh(ctx: *mut cli_ctx) -> cl_error_t {
+    if ctx.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
+
     let result = panic::catch_unwind(panic::AssertUnwindSafe(|| unsafe {
         scan_lha_lzh_inner(ctx)
     }));
@@ -1198,6 +1206,10 @@ fn handle_alz_metadata_directory_limit_result(
 /// Must be a valid ctx pointer.
 #[no_mangle]
 pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
+    if ctx.is_null() {
+        return cl_error_t_CL_ENULLARG;
+    }
+
     let fmap = match ctx::current_fmap(ctx) {
         Ok(fmap) => fmap,
         Err(e) => {

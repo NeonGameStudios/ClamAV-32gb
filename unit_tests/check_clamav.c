@@ -98,6 +98,7 @@
 #include "special.h"
 #include "textnorm.h"
 #include "scan_report.h"
+#include "clamav_rust.h"
 
 #include "checks.h"
 
@@ -19345,6 +19346,34 @@ START_TEST(test_apm_partition_limit_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_rust_parser_missing_maps_are_fail_visible)
+{
+    cli_ctx ctx;
+
+    ck_assert_int_eq(scan_onenote(NULL), CL_ENULLARG);
+    ck_assert_int_eq(cli_scanalz(NULL), CL_ENULLARG);
+    ck_assert_int_eq(scan_lha_lzh(NULL), CL_ENULLARG);
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(scan_onenote(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Rust parser reported malformed or incomplete input");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(cli_scanalz(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Rust parser reported malformed or incomplete input");
+
+    memset(&ctx, 0, sizeof(ctx));
+    ck_assert_int_eq(scan_lha_lzh(&ctx), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason,
+                     "Rust parser reported malformed or incomplete input");
+}
+END_TEST
+
 START_TEST(test_apm_truncated_driver_map_is_format_error)
 {
     static const uint8_t data[] = {0};
@@ -33271,6 +33300,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_sis_map = tcase_create("sis_map");
     TCase *tc_ishield_map = tcase_create("ishield_map");
     TCase *tc_hwpml_map = tcase_create("hwpml_map");
+    TCase *tc_rust_map = tcase_create("rust_map");
     TCase *tc_zip_sfx = tcase_create("zip_sfx");
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -33371,6 +33401,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hwpml_map);
     tcase_add_checked_fixture(tc_hwpml_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hwpml_map, test_hwpml_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_rust_map);
+    tcase_add_checked_fixture(tc_rust_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_rust_map, test_rust_parser_missing_maps_are_fail_visible);
     suite_add_tcase(s, tc_zip_sfx);
     tcase_add_checked_fixture(tc_zip_sfx, cl_setup, cl_teardown);
     tcase_add_test(tc_zip_sfx, test_zip_masked_sfx_central_extent_and_read_failure);
