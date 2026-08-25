@@ -28093,7 +28093,7 @@ START_TEST(test_arj_time_limit_is_fail_visible)
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_timed_out);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "ARJ inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -28183,7 +28183,7 @@ START_TEST(test_arj_truncated_member_extraction_is_fail_visible)
     ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
                         scan_engine, &options, NULL, NULL, NULL, NULL,
                         "CL_TYPE_ARJ", NULL);
-    ck_assert_int_eq(ret, CL_EPARSE);
+    ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert(map->dont_cache_flag);
@@ -35393,6 +35393,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_swf = tcase_create("swf");
     TCase *tc_swf_map = tcase_create("swf_map");
     TCase *tc_swf_api = tcase_create("swf_api");
+    TCase *tc_arj = tcase_create("arj");
     TCase *tc_arj_map = tcase_create("arj_map");
     TCase *tc_binhex_map = tcase_create("binhex_map");
     TCase *tc_mydoom_map = tcase_create("mydoom_map");
@@ -35877,6 +35878,17 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_swf_api);
     tcase_add_checked_fixture(tc_swf_api, cl_setup, cl_teardown);
     tcase_add_test(tc_swf_api, test_swf_public_api_read_failure_is_fail_visible);
+    suite_add_tcase(s, tc_arj);
+    tcase_add_checked_fixture(tc_arj, cl_setup, cl_teardown);
+    tcase_add_test(tc_arj, test_arj_truncated_main_header_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_truncated_signature_is_parse_error);
+    tcase_add_test(tc_arj, test_arj_time_limit_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_stored_member_read_failure_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_truncated_member_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_truncated_member_extraction_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_output_size_mismatch_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_member_limit_is_fail_visible);
+    tcase_add_test(tc_arj, test_arj_temporary_limit_is_fail_visible);
     suite_add_tcase(s, tc_arj_map);
     tcase_add_test(tc_arj_map, test_arj_header_missing_context_or_map_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_read_failure_is_fail_visible);

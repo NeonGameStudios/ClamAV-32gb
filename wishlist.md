@@ -101,7 +101,16 @@ Sonic1 qualification open.
   and return `CL_EPARSE`.
 - The dedicated `arj_map` regression covers the three argument states. Keep
   full ARJ/ARJ-SFX corpus, sanitizer, materialized large-file, production-CVD,
-  service, and Sonic1 qualification open.
+service, and Sonic1 qualification open.
+
+## ARJ bounded-decoder qualification — 2026-08-25
+
+- The current-source production-linked GCC `arj` case passes 9/9 across
+  header/signature truncation, callback failure, extraction failure, output
+  mismatch, member/temporary limits, and timeout; `arj_map` passes 4/4.
+  Timeout preserves the canonical MaxScanTime reason.
+- Add complete ARJ/ARJ-SFX corpus, sanitizer, production-CVD/service parity,
+  materialized large-file, and Sonic1 evidence before certification.
 
 ## JPEG direct-entry admission — 2026-08-25
 

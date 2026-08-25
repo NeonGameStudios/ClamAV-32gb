@@ -65,6 +65,18 @@ case covers all three boundaries; full ARJ/ARJ-SFX corpus, sanitizer,
 materialized large-file, production-CVD, service, and Sonic1 qualification
 remain open.
 
+## ARJ bounded-decoder qualification — 2026-08-25
+
+The current-source production-linked GCC `arj` case passes 9/9 across
+truncated main headers/signatures, timeout, stored-member read failure,
+truncated member/extraction, output-size mismatch, member limit, and
+temporary limit. Timeout retains the canonical
+`Heuristics.Limits.Exceeded.MaxScanTime` reason. The separate `arj_map` case
+passes 4/4 for context/map and declared-header string/read boundaries. This
+is bounded decoder evidence only; complete ARJ/ARJ-SFX corpus, sanitizer,
+production-CVD/service parity, materialized large-file, and Sonic1
+qualification remain open.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 The PowerPoint VBA extraction helper now rejects a null context before
