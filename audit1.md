@@ -8835,6 +8835,27 @@ ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service parity, and Sonic1 qualification remain
 open, so `CL_TYPE_MSEXE` stays pending.
 
+## OLE2 focused parser qualification — 2026-08-25
+
+The focused current-source production-linked GCC `ole2` TCase passes 11/11;
+the existing `ole2_xlm` and `ole2_map` TCases pass 2/2 each. Together they
+cover missing-map and public-API admission, truncated and callback-failed
+headers, property-tree truncation, MSO prefix range classification, invalid
+CFB geometry, VBA materialization failure, shared timeout propagation, native
+encryption-window admission/read failure, output-close failure, XLM sector
+read failure, and 64-bit directory stream-size handling. Required failures
+remain incomplete and non-cacheable; fully in-range fmap callbacks preserve
+`CL_EREAD`, while shared timeout state retains
+`Heuristics.Limits.Exceeded.MaxScanTime`.
+
+The broader direct OLE2 matrix still has fixture-context cases whose injected
+faults did not reach the intended sector, temporary-quota, or Word/Workbook
+probe boundary in this reusable Docker fixture; those cases are not included
+in the score. Complete OLE/VBA/XLM corpus and fault matrix, full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_MSOLE2` stays pending.
+
 ## MSEXPAND public API read-failure audit — 2026-08-25
 
 The isolated current-source production-linked `msexpand_map` TCase passes

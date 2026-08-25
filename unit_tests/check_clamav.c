@@ -26263,7 +26263,7 @@ START_TEST(test_ole2_time_limit_is_fail_visible)
     ret = cli_ole2_extract(tmpdir, &ctx, NULL, NULL, NULL, NULL);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "OLE2 inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -35357,6 +35357,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
+    TCase *tc_ole2 = tcase_create("ole2");
     TCase *tc_ole2_xlm = tcase_create("ole2_xlm");
     TCase *tc_ole2_map = tcase_create("ole2_map");
     TCase *tc_nulsft_map = tcase_create("nulsft_map");
@@ -35759,6 +35760,23 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_xz_trailing);
     tcase_add_checked_fixture(tc_xz_trailing, cl_setup, cl_teardown);
     tcase_add_test(tc_xz_trailing, test_xz_trailing_stream_is_fail_visible);
+    suite_add_tcase(s, tc_ole2);
+    tcase_add_checked_fixture(tc_ole2, cl_setup, cl_teardown);
+    tcase_add_test(tc_ole2, test_ole2_missing_map_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_truncated_header_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_truncated_property_tree_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_mso_prefix_range_classes_are_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_invalid_block_geometry_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_vba_materialization_failure_is_fail_visible);
+    tcase_add_test(tc_ole2, test_ole2_time_limit_is_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_ole2, test_ole2_encryption_probe_uses_native_window);
+    tcase_add_test(tc_ole2, test_ole2_encryption_probe_read_failure_is_fail_visible);
+#endif
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_ole2, test_ole2_output_close_failure_is_fail_visible);
+#endif
     suite_add_tcase(s, tc_ole2_xlm);
     tcase_add_checked_fixture(tc_ole2_xlm, cl_setup, cl_teardown);
 #if !defined(_WIN32) && SIZE_MAX > UINT32_MAX

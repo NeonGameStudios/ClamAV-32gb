@@ -3427,6 +3427,20 @@ and Sonic1 qualification as release gates.
   materialized large-file, production-CVD/service parity, and Sonic1 evidence
   before certification.
 
+## OLE2 focused parser qualification — 2026-08-25
+
+- The focused current-source production-linked GCC `ole2` TCase passes 11/11;
+  `ole2_xlm` and `ole2_map` pass 2/2 each across missing-map/API admission,
+  header/property-tree faults, MSO prefix and CFB geometry boundaries, VBA
+  materialization, timeout, native encryption-window read faults, output-close
+  propagation, XLM sector handling, and 64-bit stream sizes. Required failures
+  remain incomplete and non-cacheable, with `CL_EREAD` and the shared timeout
+  reason preserved.
+- Complete the OLE/VBA/XLM corpus and fixture-specific sector, quota, and
+  Word/Workbook probe matrix in full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
+
 ## HWPOLE2 current-source qualification audit — 2026-08-25
 
 - The current-source production-linked `hwpole2_map` TCase passes 2/2 for
