@@ -6,6 +6,18 @@
 **Method:** static, read-only source and evidence review; no build, scanner run, dependency installation, or network access  
 **Excluded by request:** the previous contents of audit1.md were not read
 
+## MBR/GPT missing-map entry classification — 2026-08-25
+
+The partition dispatch boundary now distinguishes null contexts from
+recognized MBR/GPT layers whose input fmap is unavailable. MBR's check and
+scan entry points and GPT scanning preserve `CL_ENULLARG` for a null context;
+missing fmaps mark the layer incomplete with explicit `MBR input map is
+unavailable` or `GPT input map is unavailable` reasons and return `CL_EPARSE`.
+The dedicated production-linked `partition_map` case passes both families,
+including both MBR entry points, and source and capability-manifest guards
+cover the boundary. Complete partition corpus, sanitizer, materialized
+large-file, production-CVD, and Sonic1 qualification remain open.
+
 ## HWPOLE2 missing-map entry classification — 2026-08-25
 
 The HWPOLE2 parser now distinguishes a null parser context from a recognized

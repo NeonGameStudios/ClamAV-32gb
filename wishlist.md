@@ -1,5 +1,15 @@
 # Wishlist
 
+## MBR/GPT missing-map entry classification — 2026-08-25
+
+- Preserve `CL_ENULLARG` for null partition-parser contexts, but mark
+  recognized MBR and GPT layers with no input fmap incomplete and return
+  `CL_EPARSE`; cover both MBR entry points used by dispatch preflight and
+  scanning.
+- The isolated production-linked `partition_map` regression passes for both
+  families. Keep complete partition corpus, sanitizer, materialized large-file,
+  production-CVD, and Sonic1 qualification open.
+
 ## HWPOLE2 missing-map entry classification — 2026-08-25
 
 - Preserve `CL_ENULLARG` for a null HWPOLE2 parser context, but mark a

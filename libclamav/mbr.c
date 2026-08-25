@@ -111,9 +111,12 @@ cl_error_t cli_mbr_check2(cli_ctx *ctx, size_t sectorsize)
     size_t pos = 0, mbr_base = 0;
     size_t maplen;
 
-    if (!ctx || !ctx->fmap) {
-        cli_errmsg("cli_scanmbr: Invalid context\n");
+    if (!ctx)
         return CL_ENULLARG;
+    if (!ctx->fmap) {
+        cli_errmsg("cli_scanmbr: Invalid context\n");
+        cli_mark_scan_incomplete(ctx, "MBR input map is unavailable");
+        return CL_EPARSE;
     }
 
     /* sector size calculation, actual value is OS dependent */
@@ -161,9 +164,12 @@ cl_error_t cli_scanmbr(cli_ctx *ctx, size_t sectorsize)
 
     mbr_parsemsg("The start of something magnificent: MBR parsing\n");
 
-    if (!ctx || !ctx->fmap) {
+    if (!ctx)
+        return CL_ENULLARG;
+    if (!ctx->fmap) {
         cli_errmsg("cli_scanmbr: Invalid context\n");
-        status = CL_ENULLARG;
+        cli_mark_scan_incomplete(ctx, "MBR input map is unavailable");
+        status = CL_EPARSE;
         goto done;
     }
 

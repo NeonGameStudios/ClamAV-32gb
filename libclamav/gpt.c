@@ -180,9 +180,12 @@ cl_error_t cli_scangpt(cli_ctx *ctx, size_t sectorsize)
 
     gpt_parsemsg("The beginning of something big: GPT parsing\n");
 
-    if (!ctx || !ctx->fmap) {
+    if (!ctx)
+        return CL_ENULLARG;
+    if (!ctx->fmap) {
         cli_errmsg("cli_scangpt: Invalid context\n");
-        status = CL_ENULLARG;
+        cli_mark_scan_incomplete(ctx, "GPT input map is unavailable");
+        status = CL_EPARSE;
         goto done;
     }
 
