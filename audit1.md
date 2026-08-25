@@ -1092,6 +1092,19 @@ than inheriting build defaults. The real production oracle, Linux/Sonic1
 execution, sanitizer, RSS, latency, temporary-space, and parser-family
 evidence remain open.
 
+## BinHex focused-boundary audit — 2026-08-25
+
+The focused production-linked `binhex_map` TCase now includes admission,
+header-completion, timeout, data/resource truncation, temporary-quota,
+cleanup-close, and injected encoded-input read-failure oracles. The timeout
+fixture supplies scan options and asserts the repository-wide sticky
+`Heuristics.Limits.Exceeded.MaxScanTime` reason. The existing source guards
+continue to pin bounded decoding, temporary accounting, write/handoff
+deadlines, and non-cacheable failures. The focused production-linked run passes
+10/10; a current full C build remains required before certifying BinHex. Corpus,
+sanitizer, certified Linux x86-64, materialized large-file, production-CVD/
+service, and Sonic1 evidence remain open.
+
 The service harness now also samples its temporary root while daemon and milter
 requests are active, records the observed peak, and requires
 `service_temp_budget=pass` before the workflow can attest or upload service

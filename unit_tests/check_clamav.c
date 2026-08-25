@@ -15565,23 +15565,26 @@ START_TEST(test_binhex_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
     struct cl_engine engine;
+    struct cl_scan_options options;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
     memset(&engine, 0, sizeof(engine));
+    memset(&options, 0, sizeof(options));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.engine  = &engine;
+    ctx.options = &options;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ret = cli_binhex(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "BinHex inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -34100,8 +34103,19 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_arj_map, test_arj_main_header_string_read_failure_is_fail_visible);
     tcase_add_test(tc_arj_map, test_arj_main_header_strings_stay_within_declared_header);
     suite_add_tcase(s, tc_binhex_map);
+    tcase_add_checked_fixture(tc_binhex_map, cl_setup, cl_teardown);
     tcase_add_test(tc_binhex_map, test_binhex_missing_map_is_fail_visible);
     tcase_add_test(tc_binhex_map, test_binhex_null_context_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_truncated_header_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_header_lengths_are_not_read_before_header_completion);
+    tcase_add_test(tc_binhex_map, test_binhex_time_limit_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_truncated_data_fork_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_short_resource_fork_is_fail_visible);
+    tcase_add_test(tc_binhex_map, test_binhex_output_temporary_limit_is_fail_visible);
+#ifdef CLAMAV_TEST_JS_IO_WRAP
+    tcase_add_test(tc_binhex_map, test_binhex_cleanup_close_failure_is_fail_visible);
+#endif
+    tcase_add_test(tc_binhex_map, test_binhex_encoded_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_mydoom_map);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_missing_map_is_fail_visible);
     tcase_add_test(tc_mydoom_map, test_mydoom_detector_null_context_is_fail_visible);

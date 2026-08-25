@@ -2994,6 +2994,17 @@ and Sonic1 qualification as release gates.
   extend evidence to full corpus, decoder, sanitizer, certified Linux x86-64,
   materialized large-file, production-CVD/service, and Sonic1 qualification.
 
+## BinHex focused-boundary audit — 2026-08-25
+
+- Expand the focused `binhex_map` TCase with admission, header-completion,
+  timeout, data/resource truncation, temporary-quota, cleanup-close, and
+  encoded-input read-failure oracles; the current production-linked run passes
+  10/10. A current full C rebuild remains required before certification.
+- Preserve the bounded decoding, temporary-accounting, write/handoff deadline,
+  and non-cacheable failure contracts; then complete BinHex corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service, and
+  Sonic1 evidence.
+
 ## AutoIt focused-entry audit — 2026-08-25
 
 - The focused `autoit_map` TCase now includes the malformed-EA06,
