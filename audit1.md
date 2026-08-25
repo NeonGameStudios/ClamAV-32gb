@@ -8790,6 +8790,17 @@ full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_AUTOIT` stays pending.
 
+## AutoIt SFX nested admission audit — 2026-08-25
+
+The current-source production-linked `autoit_sfx` TCase passes 1/1. A
+minimal MZ-rooted input with a complete embedded AutoIt EA05 signature is
+admitted through the AutoIt SFX branch at a nonzero offset, and an exact
+offset-0 child marker is detected only in the nested AutoIt layer. This is
+nested-admission evidence only; complete AutoIt EA05/EA06 corpus, malformed
+and callback-failure SFX coverage, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 qualification
+remain open.
+
 ## PDF public API read-failure audit — 2026-08-25
 
 The focused current-source production-linked `pdf_map` TCase now includes a

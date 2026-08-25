@@ -3403,6 +3403,17 @@ and Sonic1 qualification as release gates.
   add sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
 
+## AutoIt SFX nested admission audit — 2026-08-25
+
+- The current-source production-linked `autoit_sfx` TCase passes 1/1: a
+  minimal prefixed MZ-rooted AutoIt EA05 signature is admitted through the
+  embedded branch and its exact offset-0 child marker is detected in the
+  nested layer.
+- Add malformed and callback-failure SFX cases, then complete AutoIt
+  EA05/EA06 corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, and Sonic1 evidence before
+  certification.
+
 ## PDF public API read-failure audit — 2026-08-25
 
 - The focused current-source production-linked `pdf_map` TCase now includes a

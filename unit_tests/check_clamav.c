@@ -30973,6 +30973,59 @@ START_TEST(test_arjsfx_admission_reaches_nested_matcher)
 }
 END_TEST
 
+START_TEST(test_autoit_sfx_admission_reaches_nested_matcher)
+{
+    static const uint8_t autoit_signature[] = {
+        0xa3, 0x48, 0x4b, 0xbe, 0x98, 0x6c, 0x4a, 0xa9,
+        0x99, 0x4c, 0x53, 0x0a, 0x86, 0xd6, 0x48, 0x7d,
+        0x41, 0x55, 0x33, 0x21, 0x45, 0x41, 0x30, 0x35
+    };
+    uint8_t data[2U + sizeof(autoit_signature) + 16U] = {0};
+    struct cl_engine *scan_engine;
+    struct cl_scan_options options;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    /* A minimal MZ root followed by the complete AutoIt EA05 signature
+     * forces file typing to admit the embedded AutoIt layer at offset 2. */
+    data[0] = 'M';
+    data[1] = 'Z';
+    memcpy(data + 2, autoit_signature, sizeof(autoit_signature));
+
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cli_initroots(scan_engine, 0), CL_SUCCESS);
+    ck_assert_int_eq(cli_add_content_match_pattern(
+                         scan_engine->root[0], "AutoItSfxChild",
+                         "a3484bbe986c4aa9994c530a86d6487d4155332145413035",
+                         0, 0, 0, "0", NULL, 0),
+                     CL_SUCCESS);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL, NULL, NULL);
+    ck_assert_int_eq(ret, CL_VIRUS);
+    ck_assert_int_eq(verdict, CL_VERDICT_STRONG_INDICATOR);
+    ck_assert_ptr_nonnull(last_alert);
+    ck_assert_str_eq(last_alert, "AutoItSfxChild.UNOFFICIAL");
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_mspack_output_size_mismatch_is_fail_visible)
 {
     static const uint8_t data[] = "MSPack output-size regression";
@@ -35163,6 +35216,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_mspack_map = tcase_create("mspack_map");
     TCase *tc_cabsfx = tcase_create("cabsfx");
     TCase *tc_arjsfx = tcase_create("arjsfx");
+    TCase *tc_autoit_sfx = tcase_create("autoit_sfx");
     TCase *tc_msexpand_map = tcase_create("msexpand_map");
     TCase *tc_xz = tcase_create("xz");
     TCase *tc_xz_trailing = tcase_create("xz_trailing");
@@ -35491,6 +35545,9 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_arjsfx);
     tcase_add_checked_fixture(tc_arjsfx, cl_setup, cl_teardown);
     tcase_add_test(tc_arjsfx, test_arjsfx_admission_reaches_nested_matcher);
+    suite_add_tcase(s, tc_autoit_sfx);
+    tcase_add_checked_fixture(tc_autoit_sfx, cl_setup, cl_teardown);
+    tcase_add_test(tc_autoit_sfx, test_autoit_sfx_admission_reaches_nested_matcher);
     suite_add_tcase(s, tc_msexpand_map);
     tcase_add_checked_fixture(tc_msexpand_map, cl_setup, cl_teardown);
     tcase_add_test(tc_msexpand_map, test_msexpand_missing_map_is_fail_visible);
