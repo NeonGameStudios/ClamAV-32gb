@@ -7879,3 +7879,19 @@ compiles with the production GCC flags. An isolated production-linked GCC
 harness passes 1/1 with the exact truncated-header reason. Complete BinHex
 corpus, sanitizer/fault-injection, certified Linux x86-64, materialized
 large-file, production-CVD/service, and Sonic1 qualification remain open.
+
+## Explicit magic-scan ingress map admission — 2026-08-25
+
+`cli_magic_scan()` previously dereferenced `ctx->engine`, `ctx->fmap`, and
+layer cleanup state before it could classify an invalid direct parser call.
+The ingress now returns `CL_ENULLARG` for a null context and marks a valid
+context with no input fmap incomplete before returning `CL_EPARSE`. This
+protects every explicitly dispatched parser, including legacy CryptFF, from
+turning missing-layer state into a crash or an unreported clean result.
+
+The main Check-suite regression is registered and the modified test object
+compiles with production GCC flags. The source guards and capability manifest
+pass, and the current-source production-linked ingress harness passes 1/1 with
+the exact incomplete reason. Parser-family corpus, sanitizer,
+certified Linux x86-64, materialized large-file, production-CVD/service, and
+Sonic1 qualification remain open.

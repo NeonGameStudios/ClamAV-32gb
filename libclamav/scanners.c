@@ -6952,9 +6952,18 @@ cl_error_t cli_magic_scan(cli_ctx *ctx, cli_file_t type)
     bitset_t *old_hook_lsig_matches = NULL;
     const char *filetype;
 
+    if (ctx == NULL)
+        return CL_ENULLARG;
+
     if (!ctx->engine) {
         cli_errmsg("CRITICAL: engine == NULL\n");
         status = CL_ENULLARG;
+        goto early_ret;
+    }
+
+    if (ctx->fmap == NULL) {
+        cli_mark_scan_incomplete(ctx, "Scan input map is unavailable");
+        status = CL_EPARSE;
         goto early_ret;
     }
 

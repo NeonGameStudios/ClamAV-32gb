@@ -2759,3 +2759,12 @@ and Sonic1 qualification as release gates.
   production-linked GCC harness passes 1/1; run the full BinHex corpus,
   sanitizer/fault-injection matrix, certified Linux x86-64 build, materialized
   large-file case, production-CVD/service smoke, and Sonic1 qualification.
+
+## Explicit magic-scan ingress map admission — 2026-08-25
+
+- Preserve the top-level `cli_magic_scan()` null-context and missing-fmap
+  boundary before any parser dispatch; retain the registered regression and
+  source guards, and extend the passing current-source production-linked
+  ingress harness to the full scanner/archive build with the parser corpus,
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 gates.

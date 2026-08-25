@@ -15534,6 +15534,23 @@ START_TEST(test_binhex_missing_map_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_cli_magic_scan_missing_map_is_fail_visible)
+{
+    struct cl_engine engine;
+    cli_ctx ctx;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&ctx, 0, sizeof(ctx));
+    engine.dboptions = CL_DB_COMPILED;
+    ctx.engine       = &engine;
+
+    ck_assert_int_eq(cli_magic_scan(NULL, CL_TYPE_CRYPTFF), CL_ENULLARG);
+    ck_assert_int_eq(cli_magic_scan(&ctx, CL_TYPE_CRYPTFF), CL_EPARSE);
+    ck_assert(ctx.scan_incomplete);
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Scan input map is unavailable");
+}
+END_TEST
+
 START_TEST(test_binhex_truncated_data_fork_is_fail_visible)
 {
     static const uint8_t data[] =
@@ -33591,6 +33608,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_binhex_header_lengths_are_not_read_before_header_completion);
     tcase_add_test(tc_cl, test_binhex_time_limit_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_missing_map_is_fail_visible);
+    tcase_add_test(tc_cl, test_cli_magic_scan_missing_map_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_truncated_data_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_short_resource_fork_is_fail_visible);
     tcase_add_test(tc_cl, test_binhex_output_temporary_limit_is_fail_visible);
