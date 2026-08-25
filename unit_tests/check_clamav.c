@@ -33905,6 +33905,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
     TCase *tc_cpio_numeric = tcase_create("cpio_numeric");
+    TCase *tc_cpio_map = tcase_create("cpio_map");
     TCase *tc_iso_map = tcase_create("iso_map");
     TCase *tc_udf_map = tcase_create("udf_map");
     TCase *tc_apm_map = tcase_create("apm_map");
@@ -34019,6 +34020,12 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_cpio_numeric);
     tcase_add_checked_fixture(tc_cpio_numeric, cl_setup, cl_teardown);
     tcase_add_test(tc_cpio_numeric, test_cpio_fixed_numeric_fields_reject_prefixes);
+    suite_add_tcase(s, tc_cpio_map);
+    tcase_add_checked_fixture(tc_cpio_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_cpio_map, test_cpio_truncated_header_is_fail_visible);
+    tcase_add_test(tc_cpio_map, test_cpio_member_name_read_failure_is_fail_visible);
+    tcase_add_test(tc_cpio_map, test_cpio_impossible_next_header_is_parse_error);
+    tcase_add_test(tc_cpio_map, test_cpio_initial_read_failure_is_read_error);
     suite_add_tcase(s, tc_iso_map);
     tcase_add_checked_fixture(tc_iso_map, cl_setup, cl_teardown);
     tcase_add_test(tc_iso_map, test_iso_missing_map_is_fail_visible);

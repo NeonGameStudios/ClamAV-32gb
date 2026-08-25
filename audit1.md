@@ -1115,6 +1115,18 @@ focused evidence. Full BZip2 corpus, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service, and Sonic1 evidence remain
 open.
 
+## CPIO focused-map audit — 2026-08-25
+
+The focused production-linked `cpio_map` TCase now covers truncated headers
+across all four CPIO forms, NEWC member-name callback failure, an impossible
+next-header coordinate, and the initial NEWC read
+callback failure. The direct `cli_scancpio_*` missing-map oracle remains a
+current ABI-consistent rebuild gate after the mixed harness signaled in that
+test. The existing `cpio_crc` and numeric cases remain separate focused
+evidence for checksum, multi-window, and strict field parsing. Full CPIO
+corpus, sanitizer, certified Linux x86-64, materialized large-file,
+production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

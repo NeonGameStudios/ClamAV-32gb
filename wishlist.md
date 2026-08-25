@@ -2898,6 +2898,17 @@ and Sonic1 qualification as release gates.
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, and Sonic1 qualification.
 
+## CPIO focused-map audit — 2026-08-25
+
+- The focused `cpio_map` TCase covers truncated headers, NEWC member-name and
+  initial-read callback failures, and impossible next headers; retain the
+  existing CRC and numeric focused cases. Direct `cli_scancpio_*` missing-map
+  admission needs a current ABI-consistent rebuild because the mixed harness
+  signaled in that oracle.
+- Run the focused CPIO map case with the rebuilt production-linked build, then
+  complete CPIO corpus, sanitizer, certified Linux x86-64, materialized
+  large-file, production-CVD/service, and Sonic1 qualification.
+
 ## DMG retained stripe endian conversion — 2026-08-25
 
 - Keep retained in-memory `blkx` stripe records in host order after one
