@@ -3381,6 +3381,17 @@ and Sonic1 qualification as release gates.
   materialized large-file, production CVD/service parity, and Sonic1 evidence
   before certification.
 
+## MHTML focused parser qualification — 2026-08-25
+
+- The current-source production-linked GCC harness passes the dedicated
+  `mhtml` TCase 4/4 for unterminated and oversized comment XML, a 65 MiB
+  streamed multipart/related HTML root, and public `CL_TYPE_MHTML` initial
+  input failure. Header/boundary admission remains bounded while long HTML
+  body chunks stream through the disk-backed spool.
+- Complete MHTML/HTML corpus, full-C ABI-consistent execution, sanitizer,
+  certified Linux x86-64, production-CVD/service parity, materialized
+  large-file, and Sonic1 evidence before certification.
+
 ## MSEXPAND public API read-failure audit — 2026-08-25
 
 - The isolated current-source production-linked `msexpand_map` TCase passes

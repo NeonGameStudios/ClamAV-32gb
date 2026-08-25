@@ -205,7 +205,7 @@ static char *rfc822comments(const char *in, char *out);
 static int rfc1341(mbox_ctx *mctx, message *m);
 static bool usefulHeader(int commandNumber, const char *cmd);
 static char *getline_from_mbox(char *buffer, size_t len, fmap_t *map, size_t *at, cli_ctx *ctx,
-                               cl_error_t *failure_status);
+                               cl_error_t *failure_status, bool reject_unterminated_line);
 static bool isBounceStart(mbox_ctx *mctx, const char *line);
 static mbox_status exportBinhexMessage(mbox_ctx *mctx, message *m);
 static int exportBounceMessage(mbox_ctx *ctx, text *start);
@@ -657,7 +657,8 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
                     break;
                 }
             }
-        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx, &line_failure) != NULL);
+        } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
+                                    &line_failure, !headersParsed) != NULL);
 
         if (retcode == CL_SUCCESS && line_failure != CL_SUCCESS)
             retcode = line_failure;
@@ -710,7 +711,8 @@ cli_parse_mbox(const char *dir, cli_ctx *ctx)
          * Ignore any blank lines at the top of the message
          */
         while (strchr("\r\n", buffer[0]) &&
-               (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx, &line_failure) != NULL)) {
+               (getline_from_mbox(buffer, sizeof(buffer) - 1, map, &at, ctx,
+                                  &line_failure, true) != NULL)) {
             ;
         }
 
@@ -1328,7 +1330,8 @@ parseEmailFile(fmap_t *map, size_t *at, const table_t *rfc821, const char *first
                 break;
             }
         }
-    } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, at, ctx, failure_status) != NULL);
+    } while (getline_from_mbox(buffer, sizeof(buffer) - 1, map, at, ctx,
+                               failure_status, inHeader) != NULL);
 
     err = 0;
 done:
@@ -5054,7 +5057,7 @@ usefulHeader(int commandNumber, const char *cmd)
  */
 static char *
 getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_ctx *ctx,
-                  cl_error_t *failure_status)
+                  cl_error_t *failure_status, bool reject_unterminated_line)
 {
     const char *src, *cursrc;
     char *curbuf;
@@ -5139,7 +5142,7 @@ getline_from_mbox(char *buffer, size_t buffer_len, fmap_t *map, size_t *at, cli_
                 *failure_status = CL_EREAD;
             return NULL;
         }
-        if (*next != '\n' && *next != '\r') {
+        if (reject_unterminated_line && *next != '\n' && *next != '\r') {
             cli_mark_scan_incomplete(ctx, "MIME message line exceeds bounded parser representation");
             return NULL;
         }

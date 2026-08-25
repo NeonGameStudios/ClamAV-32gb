@@ -1322,24 +1322,31 @@ START_TEST(test_mhtml_large_body_uses_streaming_spool)
     struct cl_scan_options options;
     cl_verdict_t verdict = CL_VERDICT_NOTHING_FOUND;
     const char *last_alert = NULL;
+    const char *reason = NULL;
     uint64_t scanned = 0;
     char *path;
     cl_error_t ret;
+    cl_scan_report_t *report = NULL;
 
     memset(&options, 0, sizeof(options));
     options.parse   = ~0U;
     options.general = CL_SCAN_GENERAL_COLLECT_METADATA;
     path            = create_large_mhtml_fixture();
 
-    ret = cl_scanfile_ex(path, &verdict, &last_alert, &scanned,
-                         g_engine, &options, NULL, NULL, NULL, NULL, NULL,
-                         NULL);
-    ck_assert_int_eq(ret, CL_SUCCESS);
+    ret = cl_scanfile_ex2(path, &verdict, &last_alert, &scanned,
+                          g_engine, &options, NULL, NULL, NULL, NULL, NULL,
+                          NULL, &report);
+    if (report)
+        ck_assert_int_eq(cl_scan_report_get_reason(report, &reason), CL_SUCCESS);
+    ck_assert_msg(ret == CL_SUCCESS, "large MHTML scan returned %d (%s)", ret,
+                  reason ? reason : "no report reason");
+    ck_assert_ptr_nonnull(report);
     ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
     ck_assert(last_alert == NULL);
     ck_assert_msg(scanned > 65U * 1024U * 1024U,
                   "large MHTML root was not fully scanned");
 
+    cl_scan_report_free(report);
     free(path);
 }
 END_TEST
@@ -3857,6 +3864,37 @@ static void engine_setup(void)
     g_engine->maxziptypercg      = CLI_MAX_LARGE_FILESIZE;
     g_engine->pcre_max_filesize  = CLI_MAX_LARGE_FILESIZE;
     ck_assert_msg(cl_engine_compile(g_engine) == 0, "cl_engine_compile");
+}
+
+/* Keep the focused MHTML parser checks independent of the legacy CVD fixture
+ * used by the broad scan-API matrix. An empty compiled engine is sufficient
+ * for clean streaming and preclassification assertions. */
+static void mhtml_engine_setup(void)
+{
+    if (!inited)
+        ck_assert_msg(cl_init(CL_INIT_DEFAULT) == 0, "cl_init");
+    inited   = 1;
+    g_engine = cl_engine_new();
+    ck_assert_msg(!!g_engine, "engine");
+    tmpdir = cli_gentemp(NULL);
+    ck_assert_msg(!!tmpdir, "cli_gentemp failed");
+    ck_assert_int_eq(mkdir(tmpdir, 0700), 0);
+    g_engine->dconf->mail |= MAIL_CONF_MBOX;
+    g_engine->maxembeddedpe      = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxhtmlnormalize   = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxhtmlnotags      = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxscriptnormalize = CLI_MAX_LARGE_FILESIZE;
+    g_engine->maxziptypercg      = CLI_MAX_LARGE_FILESIZE;
+    g_engine->pcre_max_filesize  = CLI_MAX_LARGE_FILESIZE;
+    ck_assert_msg(cl_engine_compile(g_engine) == 0, "cl_engine_compile");
+}
+
+static void mhtml_engine_teardown(void)
+{
+    cl_engine_free(g_engine);
+    cli_rmdirs(tmpdir);
+    free(tmpdir);
+    tmpdir = NULL;
 }
 
 static void engine_teardown(void)
@@ -35291,6 +35329,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwpole2_map = tcase_create("hwpole2_map");
     TCase *tc_partition_map = tcase_create("partition_map");
     TCase *tc_mbr = tcase_create("mbr");
+    TCase *tc_mhtml = tcase_create("mhtml");
     TCase *tc_dmg_map = tcase_create("dmg_map");
     TCase *tc_xdp_map = tcase_create("xdp_map");
     TCase *tc_autoit_map = tcase_create("autoit_map");
@@ -35563,6 +35602,12 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_mbr, test_mbr_partition_coordinate_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_mbr, test_partition_time_limit_is_fail_visible);
+    suite_add_tcase(s, tc_mhtml);
+    tcase_add_checked_fixture(tc_mhtml, mhtml_engine_setup, mhtml_engine_teardown);
+    tcase_add_test(tc_mhtml, test_mhtml_unterminated_comment_is_fail_visible);
+    tcase_add_test(tc_mhtml, test_mhtml_oversized_comment_is_fail_visible);
+    tcase_add_test(tc_mhtml, test_mhtml_large_body_uses_streaming_spool);
+    tcase_add_test(tc_mhtml, test_mhtml_public_api_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_dmg_map);
     tcase_add_checked_fixture(tc_dmg_map, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_macho_boundary);

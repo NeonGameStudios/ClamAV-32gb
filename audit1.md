@@ -8771,6 +8771,21 @@ ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service parity, and Sonic1 qualification remain
 open, so `CL_TYPE_MAIL`, `mbox-map`, and `CL_TYPE_MHTML` stay pending.
 
+## MHTML focused parser qualification — 2026-08-25
+
+The current-source production-linked GCC harness passes the dedicated
+`mhtml` TCase 4/4. It covers unterminated and oversized MHTML comment XML,
+a 65 MiB multipart/related HTML root that reaches the end of the streamed
+body, and the public `CL_TYPE_MHTML` initial-read callback failure. The
+long-body case now proves that header/boundary line admission remains
+bounded without misclassifying a long HTML body chunk as an oversized MIME
+header; the report path remains clean and complete for that valid fixture.
+
+This is focused MHTML boundary evidence, not family certification. Complete
+MHTML/HTML corpus, full-C ABI-consistent execution, sanitizer, certified
+Linux x86-64, production-CVD/service parity, materialized large-file, and
+Sonic1 qualification remain open, so `CL_TYPE_MHTML` stays pending.
+
 ## MSPack current-source boundary qualification — 2026-08-25
 
 The focused current-source production-linked `mspack_map` TCase now passes
