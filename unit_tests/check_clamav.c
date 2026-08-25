@@ -22789,7 +22789,7 @@ static const void *hfsplus_second_fork_read_failure(fmap_t *map, size_t at, size
 static const void *hfsplus_catalog_node_read_failure(fmap_t *map, size_t at, size_t len, int lock)
 {
     (void)lock;
-    if (at == (9U * 512U))
+    if (at == (16U * 512U))
         return NULL;
     if (len == 0 || at > map->len || len > map->len - at)
         return NULL;
@@ -32064,7 +32064,7 @@ START_TEST(test_hfsplus_attribute_tree_failure_is_fail_visible)
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_EFORMAT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ compressed-file attributes could not be inspected");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ attributes tree record is malformed");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -32149,24 +32149,27 @@ END_TEST
 START_TEST(test_hfsplus_time_limit_is_fail_visible)
 {
     static const uint8_t data[] = {0};
+    struct cl_scan_options options;
     struct cl_engine engine;
     cli_ctx ctx;
     fmap_t *map;
     cl_error_t ret;
 
+    memset(&options, 0, sizeof(options));
     memset(&engine, 0, sizeof(engine));
     memset(&ctx, 0, sizeof(ctx));
     map = cl_fmap_open_memory(data, sizeof(data));
     ck_assert_ptr_nonnull(map);
-    ctx.engine = &engine;
-    ctx.fmap   = map;
+    ctx.options = &options;
+    ctx.engine  = &engine;
+    ctx.fmap    = map;
     ck_assert_int_eq(gettimeofday(&ctx.time_limit, NULL), 0);
     ctx.time_limit.tv_sec--;
 
     ret = cli_scanhfsplus(&ctx);
     ck_assert_int_eq(ret, CL_ETIMEOUT);
     ck_assert(ctx.scan_incomplete);
-    ck_assert_str_eq(ctx.scan_incomplete_reason, "HFS+ inspection reached the configured time limit");
+    ck_assert_str_eq(ctx.scan_incomplete_reason, "Heuristics.Limits.Exceeded.MaxScanTime");
     ck_assert(map->dont_cache_flag);
 
     cl_fmap_close(map);
@@ -33932,6 +33935,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_egg_map = tcase_create("egg_map");
     TCase *tc_hfs_inline = tcase_create("hfs_inline");
     TCase *tc_hfs_map = tcase_create("hfs_map");
+    TCase *tc_hfs_fork = tcase_create("hfs_fork");
     TCase *tc_sis_member = tcase_create("sis_member");
     TCase *tc_tar_member = tcase_create("tar_member");
     TCase *tc_cpio_crc = tcase_create("cpio_crc");
@@ -34059,6 +34063,17 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_hfs_map);
     tcase_add_checked_fixture(tc_hfs_map, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_map, test_hfsplus_missing_map_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_declared_attributes_failure_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_temporary_directory_failure_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_tree_header_read_failure_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_catalog_node_read_failure_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_attribute_tree_failure_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_catalog_size_accounting_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_truncated_header_is_fail_visible);
+    tcase_add_test(tc_hfs_map, test_hfsplus_time_limit_is_fail_visible);
+    suite_add_tcase(s, tc_hfs_fork);
+    tcase_add_checked_fixture(tc_hfs_fork, cl_setup, cl_teardown);
+    tcase_add_test(tc_hfs_fork, test_hfsplus_fork_read_failure_is_fail_visible);
     suite_add_tcase(s, tc_sis_member);
     tcase_add_checked_fixture(tc_sis_member, cl_setup, cl_teardown);
     tcase_add_test(tc_sis_member, test_sis_compressed_member_streams_to_nested_scan);
@@ -34682,15 +34697,6 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_cl, test_macho_section_alignment_exponent_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_32bit_section_alignment_overflow_is_fail_visible);
     tcase_add_test(tc_cl, test_macho_32bit_entrypoint_coordinate_overflow_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_declared_attributes_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_temporary_directory_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_tree_header_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_catalog_node_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_fork_read_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_attribute_tree_failure_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_catalog_size_accounting_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_truncated_header_is_fail_visible);
-    tcase_add_test(tc_cl, test_hfsplus_time_limit_is_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_blocks_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_header_read_failures_are_fail_visible);
     tcase_add_test(tc_gif, test_gif_truncated_screen_descriptor_is_parse_error);

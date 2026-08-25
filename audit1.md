@@ -1221,6 +1221,20 @@ the sticky `Heuristics.Limits.Exceeded.MaxScanTime` reason. Full UDF corpus,
 native-width review, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, and Sonic1 evidence remain open.
 
+## HFS+ focused-boundary audit — 2026-08-25
+
+The production-linked `hfs_map` TCase passes 9/9 across declared-attribute
+volume bounds, temporary-directory setup, tree-header and catalog-node read
+failures, fork/attribute/catalog accounting, truncation, and shared-deadline
+expiry; the separate `hfs_inline` case passes 1/1 for multi-window bounded
+decompression and output failure rollback. The production fix corrects the
+tree-header admission unit mismatch by comparing one allocation block against
+the declared block count. The isolated `hfs_fork` materialization callback case
+still crashes before its oracle in the mixed harness and remains a current
+full-build gate. Full HFS+ corpus, sanitizer, certified Linux x86-64,
+materialized large-file, production-CVD/service, and Sonic1 evidence remain
+open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,

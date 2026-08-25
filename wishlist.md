@@ -117,6 +117,17 @@ Sonic1 qualification open.
   materialized large-file, production-CVD/service, and Sonic1 qualification as
   release gates.
 
+## HFS+ focused-boundary qualification — 2026-08-25
+
+- `hfs_map` passes 9/9 and `hfs_inline` passes 1/1 for tree/catalog/fork/
+  attribute bounds, callback failures, temporary setup, truncation, deadline,
+  bounded inline decompression, and write rollback. The tree-header admission
+  unit mismatch is corrected in `hfsplus.c`.
+- Keep the `hfs_fork` materialization callback case as a current-full-build
+  gate because the mixed harness crashes before its oracle. Retain full HFS+
+  corpus, sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service, and Sonic1 qualification as release gates.
+
 ## PowerPoint VBA helper context admission — 2026-08-25
 
 - Reject a null context in `cli_ppt_vba_read_ex()` before temporary-directory

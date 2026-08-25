@@ -340,8 +340,10 @@ static cl_error_t hfsplus_readheader(cli_ctx *ctx, hfsPlusVolumeHeader *volHeade
             cli_errmsg("hfsplus_readheader: %s: invalid headerType %d\n", name, headerType);
             return CL_EARG;
     }
+    /* A tree header occupies one allocation block. Compare block counts here;
+     * blockSize is a byte count and cannot be compared to totalBlocks. */
     if (headerStartBlock >= volHeader->totalBlocks ||
-        volHeader->blockSize > volHeader->totalBlocks - headerStartBlock) {
+        1U > volHeader->totalBlocks - headerStartBlock) {
         cli_dbgmsg("hfsplus_readheader: %s: headerNode is outside the declared volume\n", name);
         cli_mark_scan_incomplete(ctx, "HFS+ file-tree header is outside the declared volume");
         return CL_EFORMAT;
