@@ -104,21 +104,21 @@ Sonic1 qualification open.
 
 ## JPEG focused-boundary qualification — 2026-08-25
 
-- The production-linked `jpeg_map` case passes 11/11 for admission,
-  truncation, timeout, callback faults, application/exploit probes, Photoshop
-  resource bounds, and exact EOF. Retain full JPEG corpus, current full-build
-  large-coordinate evidence, sanitizer, certified Linux x86-64,
-  materialized large-file, production-CVD/service, and Sonic1 qualification as
-  release gates.
+- The production-linked `jpeg_map` case passes 12/12 for admission,
+  truncation, timeout, direct and public-API callback faults,
+  application/exploit probes, Photoshop resource bounds, and exact EOF. Retain
+  full JPEG corpus, current full-build large-coordinate evidence, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service, and
+  Sonic1 qualification as release gates.
 
 ## ISO9660 focused-boundary qualification — 2026-08-25
 
-- The production-linked `iso_map` case passes 10/10 for admission,
-  truncation/terminator/read faults, timeout, extent and name bounds,
-  coordinate overflow, Joliet expansion, and declared-volume accounting.
-  Retain full ISO9660 corpus, sanitizer, certified Linux x86-64, materialized
-  large-file, production-CVD/service, and Sonic1 qualification as release
-  gates.
+- The production-linked `iso_map` case passes 11/11 for admission,
+  truncation/terminator, direct and public-API read faults, timeout, extent and
+  name bounds, coordinate overflow, Joliet expansion, and declared-volume
+  accounting. Retain full ISO9660 corpus, sanitizer, certified Linux x86-64,
+  materialized large-file, production-CVD/service, and Sonic1 qualification as
+  release gates.
 
 ## UDF focused-boundary qualification — 2026-08-25
 

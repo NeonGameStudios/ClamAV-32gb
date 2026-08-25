@@ -18280,6 +18280,53 @@ START_TEST(test_iso_volume_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_iso_public_api_read_failure_is_fail_visible)
+{
+    enum { ISO_OFFSET = 32768, ISO_DESCRIPTOR_BYTES = 2454 };
+    uint8_t data[ISO_OFFSET + ISO_DESCRIPTOR_BYTES] = {0};
+    struct iso_volume_read_failure_state state;
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    data[ISO_OFFSET] = 1;
+    memcpy(data + ISO_OFFSET + 1, "CD001", 5);
+    data[ISO_OFFSET + 128] = 0x00;
+    data[ISO_OFFSET + 129] = 0x08;
+
+    state.data        = data;
+    state.length      = sizeof(data);
+    state.fail_offset = ISO_OFFSET;
+    map = cl_fmap_open_handle(&state, 0, state.length, iso_volume_read_failure_cb, 0);
+    ck_assert_ptr_nonnull(map);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_ARCHIVE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    verdict    = CL_VERDICT_STRONG_INDICATOR;
+    last_alert = "stale";
+    scanned    = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_ISO9660", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_iso_unsupported_extent_layouts_are_fail_visible)
 {
     enum {
@@ -33544,6 +33591,45 @@ START_TEST(test_jpeg_required_read_failure_is_fail_visible)
 }
 END_TEST
 
+START_TEST(test_jpeg_public_api_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = {0xff, 0xd8, 0xff, 0xe0};
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.general  = CL_SCAN_GENERAL_HEURISTICS;
+    options.heuristic = CL_SCAN_HEURISTIC_BROKEN_MEDIA;
+    options.parse    = CL_SCAN_PARSE_IMAGE;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data));
+    ck_assert_ptr_nonnull(map);
+    map->need   = jpeg_required_read_failure;
+    verdict     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert  = "stale";
+    scanned     = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_JPEG", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
+
 START_TEST(test_jpeg_truncated_segment_size_is_parse_error)
 {
     static const uint8_t data[] = {
@@ -34465,6 +34551,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_jpeg_map, test_jpeg_truncated_structures_are_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_time_limit_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_required_read_failure_is_fail_visible);
+    tcase_add_test(tc_jpeg_map, test_jpeg_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_truncated_segment_size_is_parse_error);
     tcase_add_test(tc_jpeg_map, test_jpeg_segment_probe_read_failure_is_fail_visible);
     tcase_add_test(tc_jpeg_map, test_jpeg_exploit_probe_read_failure_is_fail_visible);
@@ -34555,6 +34642,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_iso_map, test_iso_missing_volume_descriptor_terminator_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_time_limit_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_volume_read_failure_is_fail_visible);
+    tcase_add_test(tc_iso_map, test_iso_public_api_read_failure_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_unsupported_extent_layouts_are_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_long_directory_name_is_fail_visible);
     tcase_add_test(tc_iso_map, test_iso_joliet_name_conversion_truncation_is_fail_visible);
