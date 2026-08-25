@@ -33899,6 +33899,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_hwpml    = tcase_create("hwpml");
     TCase *tc_xdp      = tcase_create("xdp");
     TCase *tc_egg_metadata = tcase_create("egg_metadata");
+    TCase *tc_egg_map = tcase_create("egg_map");
     TCase *tc_hfs_inline = tcase_create("hfs_inline");
     TCase *tc_hfs_map = tcase_create("hfs_map");
     TCase *tc_sis_member = tcase_create("sis_member");
@@ -33996,6 +33997,13 @@ static Suite *test_cl_suite(void)
     suite_add_tcase(s, tc_egg_metadata);
     tcase_add_checked_fixture(tc_egg_metadata, cl_setup, cl_teardown);
     tcase_add_test(tc_egg_metadata, test_egg_codepage_filename_is_streamed_and_scanned);
+    suite_add_tcase(s, tc_egg_map);
+    tcase_add_checked_fixture(tc_egg_map, cl_setup, cl_teardown);
+    tcase_add_test(tc_egg_map, test_egg_fixed_header_range_classes_are_fail_visible);
+    tcase_add_test(tc_egg_map, test_egg_extra_field_range_classes_are_fail_visible);
+    tcase_add_test(tc_egg_map, test_egg_extra_field_admission_is_fail_visible);
+    tcase_add_test(tc_egg_map, test_egg_oversized_skippable_extra_fields_are_bounded);
+    tcase_add_test(tc_egg_map, test_egg_lzma_stream_extracts_bounded_member);
     suite_add_tcase(s, tc_hfs_inline);
     tcase_add_checked_fixture(tc_hfs_inline, cl_setup, cl_teardown);
     tcase_add_test(tc_hfs_inline, test_hfsplus_inline_compression_streams_large_output);

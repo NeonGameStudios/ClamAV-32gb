@@ -2918,6 +2918,15 @@ and Sonic1 qualification as release gates.
   Linux x86-64, materialized large-file, production-CVD/service, and Sonic1
   qualification.
 
+## EGG focused-map audit — 2026-08-25
+
+- Promote fixed-header/extra-field range and admission, oversized skippable
+  field, and bounded LZMA extraction regressions into `egg_map`; retain the
+  broad timeout oracle until its fixture supplies scan options.
+- The focused EGG map run passes 5/5. Complete EGG/EGGSFX corpus, sanitizer,
+  certified Linux x86-64, materialized large-file, production-CVD/service, and
+  Sonic1 qualification.
+
 ## DMG retained stripe endian conversion — 2026-08-25
 
 - Keep retained in-memory `blkx` stripe records in host order after one

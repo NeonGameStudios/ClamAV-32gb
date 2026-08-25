@@ -1138,6 +1138,16 @@ the focused production-linked run passes 7/7. Full DMG corpus, sanitizer,
 certified Linux x86-64, materialized large-file,
 production-CVD/service, and Sonic1 evidence remain open.
 
+## EGG focused-map audit — 2026-08-25
+
+The focused production-linked `egg_map` TCase now covers fixed-header and
+extra-field read/truncation classification, extra-field admission, bounded
+oversized skippable fields, and bounded LZMA member extraction. The expired
+timeout oracle remains broad-suite evidence until its direct fixture supplies
+the shared scan-options context. The focused production-linked run passes 5/5.
+Full EGG/EGGSFX corpus, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service, and Sonic1 evidence remain open.
+
 ## BinHex focused-boundary audit — 2026-08-25
 
 The focused production-linked `binhex_map` TCase now includes admission,
