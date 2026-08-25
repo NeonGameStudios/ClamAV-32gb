@@ -7,7 +7,16 @@
 - Focused Rust unit regressions and source guards cover the two malformed
   context states. Keep ALZ, LHA/LZH, and OneNote parser-family corpus,
   production-linked, sanitizer, certified Linux x86-64, materialized
-  large-file, and Sonic1 qualification open.
+large-file, and Sonic1 qualification open.
+
+## Rust parser current-fmap status mapping — 2026-08-24
+
+- Preserve `CL_ENULLARG` for a null Rust parser context, `CL_EPARSE` for a
+  malformed current layer, and `CL_EREAD` for an in-range fmap callback fault
+  instead of collapsing all three into generic `CL_ERROR`.
+- Add focused Rust status-class regressions and keep ALZ, LHA/LZH, and OneNote
+  parser-family corpus, production-linked, sanitizer, certified Linux x86-64,
+  materialized large-file, and Sonic1 qualification open.
 
 ## CAB/CHM missing-map entry hardening — 2026-08-24
 

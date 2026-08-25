@@ -40,11 +40,12 @@ use crate::{
     onenote::{self, LegacyAttachmentSink, OneNote},
     sys::{
         cl_error_t, cl_error_t_CL_EFORMAT, cl_error_t_CL_EMAXFILES, cl_error_t_CL_EMAXSIZE,
-        cl_error_t_CL_EMEM, cl_error_t_CL_EREAD, cl_error_t_CL_EPARSE, cl_error_t_CL_ERROR,
+        cl_error_t_CL_EMEM, cl_error_t_CL_EREAD, cl_error_t_CL_EPARSE,
         cl_error_t_CL_ETIMEOUT, cl_error_t_CL_ERESOURCE,
         cl_error_t_CL_ESEEK, cl_error_t_CL_ETMPFILE, cl_error_t_CL_EUNPACK, cl_error_t_CL_EUNLINK,
         cl_error_t_CL_EWRITE,
-        cl_error_t_CL_BREAK, cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS, cli_ctx, cli_magic_scan_buff,
+        cl_error_t_CL_BREAK, cl_error_t_CL_ENULLARG, cl_error_t_CL_SUCCESS, cl_error_t_CL_VIRUS,
+        cli_ctx, cli_magic_scan_buff,
     },
     util::{
         append_potentially_unwanted_if_heur_exceedsmax, check_scan_limits, check_scan_time_limit,
@@ -96,6 +97,14 @@ fn onenote_error_status(err: &onenote::Error) -> cl_error_t {
         cl_error_t_CL_ETIMEOUT
     } else {
         cl_error_t_CL_EPARSE
+    }
+}
+
+fn rust_context_error_status(err: &ctx::Error) -> cl_error_t {
+    match err {
+        ctx::Error::NullPointer(_) => cl_error_t_CL_ENULLARG,
+        ctx::Error::BadMap(crate::fmap::Error::ReadFailure(_, _, _)) => cl_error_t_CL_EREAD,
+        _ => cl_error_t_CL_EPARSE,
     }
 }
 
@@ -671,7 +680,7 @@ pub unsafe extern "C" fn scan_onenote(ctx: *mut cli_ctx) -> cl_error_t {
     let fmap = match ctx::current_fmap(ctx) {
         Ok(fmap) => fmap,
         Err(e) => {
-            return parser_failure(ctx, "OneNote", cl_error_t_CL_ERROR, e);
+            return parser_failure(ctx, "OneNote", rust_context_error_status(&e), e);
         }
     };
 
@@ -833,7 +842,7 @@ unsafe fn scan_lha_lzh_inner(ctx: *mut cli_ctx) -> cl_error_t {
     let fmap = match ctx::current_fmap(ctx) {
         Ok(fmap) => fmap,
         Err(e) => {
-            return parser_failure(ctx, "LHA/LZH", cl_error_t_CL_ERROR, e);
+            return parser_failure(ctx, "LHA/LZH", rust_context_error_status(&e), e);
         }
     };
 
@@ -1192,7 +1201,7 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
     let fmap = match ctx::current_fmap(ctx) {
         Ok(fmap) => fmap,
         Err(e) => {
-            return parser_failure(ctx, "ALZ", cl_error_t_CL_ERROR, e);
+            return parser_failure(ctx, "ALZ", rust_context_error_status(&e), e);
         }
     };
 
@@ -1359,7 +1368,10 @@ pub unsafe extern "C" fn cli_scanalz(ctx: *mut cli_ctx) -> cl_error_t {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sys::cl_error_t_CL_ETIMEOUT;
+    use crate::sys::{
+        cl_error_t_CL_EPARSE, cl_error_t_CL_EREAD, cl_error_t_CL_ETIMEOUT,
+        cl_error_t_CL_ENULLARG,
+    };
 
     #[test]
     fn alz_metadata_scan_success_continues() {
@@ -1497,6 +1509,28 @@ mod tests {
         assert_eq!(
             rust_reader_status(&read_error, cl_error_t_CL_EREAD),
             cl_error_t_CL_EREAD
+        );
+    }
+
+    #[test]
+    fn rust_context_error_status_preserves_failure_class() {
+        assert_eq!(
+            rust_context_error_status(&ctx::Error::NullPointer("ctx")),
+            cl_error_t_CL_ENULLARG
+        );
+        assert_eq!(
+            rust_context_error_status(&ctx::Error::NullParam("recursion_stack")),
+            cl_error_t_CL_EPARSE
+        );
+        assert_eq!(
+            rust_context_error_status(&ctx::Error::BadMap(
+                crate::fmap::Error::ReadFailure(128, 64, 4096),
+            )),
+            cl_error_t_CL_EREAD
+        );
+        assert_eq!(
+            rust_context_error_status(&ctx::Error::Format),
+            cl_error_t_CL_EPARSE
         );
     }
 

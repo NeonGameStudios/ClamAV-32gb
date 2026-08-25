@@ -7612,3 +7612,17 @@ development metadata (`pkg-config`/headers), so the crate did not reach test
 execution; no package was installed. Parser-family corpus, production-linked
 Rust qualification, sanitizer, certified Linux x86-64, materialized
 large-file, and Sonic1 evidence remain open.
+
+## Rust parser current-fmap status mapping — 2026-08-24
+
+The shared boundary audit also found that ALZ, LHA/LZH, and OneNote converted
+every `current_fmap()` failure to generic `CL_ERROR`, losing the distinction
+between a null C context, malformed layer state, and an in-range backing-read
+failure. Their entry points now map those failures to `CL_ENULLARG`,
+`CL_EPARSE`, and `CL_EREAD` respectively, while retaining the sticky
+incomplete/non-cacheable report state. A focused Rust regression covers each
+class and source guards bind the three parser call sites. Cargo execution is
+still blocked before test compilation by the existing missing OpenSSL
+development metadata; parser-family corpus, production-linked Rust,
+sanitizer, certified Linux x86-64, materialized large-file, and Sonic1
+qualification remain open.
