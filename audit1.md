@@ -8740,3 +8740,18 @@ This is fixed-header dispatch evidence only. Complete OLE/VBA/XLM corpus,
 full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
 materialized large-file, production-CVD/service parity, and Sonic1
 qualification remain open, so `CL_TYPE_MSOLE2` stays pending.
+
+## NSIS public API read-failure audit — 2026-08-25
+
+The isolated current-source production-linked `nulsft_map` TCase now covers
+the direct missing-map entry points and a public
+`cl_scanmap_ex(..., "CL_TYPE_NULSFT", ...)` scan whose in-range fixed-header
+callback failure returns `CL_EREAD`, leaves the verdict clean with no alert,
+and marks the fmap non-cacheable. The direct NSIS matrix continues to cover
+header truncation, decoder/output boundaries, temporary limits, and timeout
+handling.
+
+This is fixed-header dispatch evidence only. Complete NSIS corpus, full-C
+ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
+large-file, production-CVD/service parity, and Sonic1 qualification remain
+open, so `CL_TYPE_NULSFT` stays pending.

@@ -3366,3 +3366,14 @@ and Sonic1 qualification as release gates.
 - Complete OLE/VBA/XLM corpus and full-C ABI-consistent execution, then add
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service parity, and Sonic1 evidence before certification.
+
+## NSIS public API read-failure audit — 2026-08-25
+
+- The isolated current-source production-linked `nulsft_map` TCase passes 2/2
+  for direct missing-map entry points and a public `CL_TYPE_NULSFT`
+  fixed-header callback failure, preserving `CL_EREAD`, a clean verdict, and
+  non-cacheability; direct tests retain truncation, decoder/output,
+  temporary-limit, and timeout coverage.
+- Complete NSIS corpus and full-C ABI-consistent execution, then add
+  sanitizer, certified Linux x86-64, materialized large-file,
+  production-CVD/service parity, and Sonic1 evidence before certification.
