@@ -25523,6 +25523,31 @@ static uint8_t *dmg_test_image(const char *xml, size_t *image_length)
     return image;
 }
 
+static uint8_t *dmg_test_image_with_data(const uint8_t *data, size_t data_length,
+                                         const char *xml, size_t *image_length)
+{
+    uint8_t *image;
+    size_t xml_length = strlen(xml);
+    size_t total;
+    size_t koly;
+
+    ck_assert_msg(data_length <= SIZE_MAX - xml_length - sizeof(struct dmg_koly_block),
+                  "DMG test image with data overflow");
+    total = data_length + xml_length + sizeof(struct dmg_koly_block);
+    image = calloc(1, total);
+    ck_assert_ptr_nonnull(image);
+    memcpy(image, data, data_length);
+    memcpy(image + data_length, xml, xml_length);
+    koly = total - sizeof(struct dmg_koly_block);
+    dmg_test_write_be32(image + koly + offsetof(struct dmg_koly_block, magic), 0x6b6f6c79U);
+    dmg_test_write_be64(image + koly + offsetof(struct dmg_koly_block, dataForkOffset), 0);
+    dmg_test_write_be64(image + koly + offsetof(struct dmg_koly_block, dataForkLength), data_length);
+    dmg_test_write_be64(image + koly + offsetof(struct dmg_koly_block, xmlOffset), data_length);
+    dmg_test_write_be64(image + koly + offsetof(struct dmg_koly_block, xmlLength), xml_length);
+    *image_length = total;
+    return image;
+}
+
 static char *dmg_test_base64_encode(const uint8_t *input, size_t input_length)
 {
     static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -25578,6 +25603,29 @@ static char *dmg_test_mish_base64(const uint32_t *stripe_types, size_t stripe_co
     base64 = dmg_test_base64_encode(mish, mish_length);
     free(mish);
     return base64;
+}
+
+static char *dmg_test_stored_mish_base64(void)
+{
+    uint8_t mish[sizeof(struct dmg_mish_block) + 2U * sizeof(struct dmg_block_data)] = {0};
+    size_t stripe_offset = sizeof(struct dmg_mish_block);
+
+    memcpy(mish, "mish", 4);
+    dmg_test_write_be32(mish + offsetof(struct dmg_mish_block, version), 1);
+    dmg_test_write_be64(mish + offsetof(struct dmg_mish_block, sectorCount), 1);
+    dmg_test_write_be32(mish + offsetof(struct dmg_mish_block, blockDataCount), 2);
+
+    dmg_test_write_be32(mish + stripe_offset + offsetof(struct dmg_block_data, type), DMG_STRIPE_STORED);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, startSector), 0);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, sectorCount), 1);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, dataOffset), 0);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, dataLength), 512);
+
+    stripe_offset += sizeof(struct dmg_block_data);
+    dmg_test_write_be32(mish + stripe_offset + offsetof(struct dmg_block_data, type), DMG_STRIPE_END);
+    dmg_test_write_be64(mish + stripe_offset + offsetof(struct dmg_block_data, startSector), 1);
+
+    return dmg_test_base64_encode(mish, sizeof(mish));
 }
 
 static cl_error_t dmg_test_scan_data_body(const char *data_body, struct cl_engine *engine, int *scan_incomplete)
@@ -25824,6 +25872,71 @@ START_TEST(test_dmg_strict_base64_and_terminal_end_validation)
     free(bad);
     free(valid);
     cl_engine_free(engine);
+}
+END_TEST
+
+START_TEST(test_dmg_in_memory_stripes_keep_host_order)
+{
+    static const char prefix[] =
+        "<?xml version=\"1.0\"?><plist><dict><key>resource-fork</key><dict>"
+        "<key>blkx</key><array><dict><key>Data</key><data>";
+    static const char suffix[] = "</data></dict></array></dict></dict></plist>";
+    uint8_t data[512] = {0};
+    char *base64;
+    char *xml;
+    uint8_t *image;
+    size_t base64_length;
+    size_t xml_length;
+    size_t image_length;
+    struct cl_engine *engine;
+    struct cl_scan_options options;
+    cli_scan_layer_t layers[4];
+    cli_ctx ctx;
+    cl_fmap_t *map;
+    cl_error_t ret;
+
+    base64 = dmg_test_stored_mish_base64();
+    ck_assert_ptr_nonnull(base64);
+    base64_length = strlen(base64);
+    ck_assert_msg(base64_length <= SIZE_MAX - sizeof(prefix) - sizeof(suffix),
+                  "DMG stored-stripe XML overflow");
+    xml_length = sizeof(prefix) - 1U + base64_length + sizeof(suffix) - 1U;
+    xml        = malloc(xml_length + 1U);
+    ck_assert_ptr_nonnull(xml);
+    ck_assert_int_eq(snprintf(xml, xml_length + 1U, "%s%s%s", prefix, base64, suffix),
+                     (int)xml_length);
+
+    image = dmg_test_image_with_data(data, sizeof(data), xml, &image_length);
+    free(xml);
+    free(base64);
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    engine = cl_engine_new();
+    ck_assert_ptr_nonnull(engine);
+    ck_assert_int_eq(cl_engine_compile(engine), CL_SUCCESS);
+
+    memset(&options, 0, sizeof(options));
+    memset(layers, 0, sizeof(layers));
+    memset(&ctx, 0, sizeof(ctx));
+    map = cl_fmap_open_memory(image, image_length);
+    ck_assert_ptr_nonnull(map);
+    ctx.engine                 = engine;
+    ctx.options                = &options;
+    ctx.fmap                   = map;
+    ctx.this_layer_tmpdir      = tmpdir;
+    ctx.recursion_stack        = layers;
+    ctx.recursion_stack_size   = 4;
+    layers[0].type             = CL_TYPE_DMG;
+    layers[0].size             = image_length;
+    layers[0].fmap             = map;
+
+    ret = cli_scandmg(&ctx);
+    ck_assert_msg(ret == CL_CLEAN, "valid stored-stripe DMG returned %d", ret);
+    ck_assert(!ctx.scan_incomplete);
+
+    cl_fmap_close(map);
+    cl_engine_free(engine);
+    free(image);
 }
 END_TEST
 
@@ -33528,6 +33641,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);
     tcase_add_test(tc_dmg, test_dmg_strict_base64_and_terminal_end_validation);
+    tcase_add_test(tc_dmg, test_dmg_in_memory_stripes_keep_host_order);
     tcase_add_test(tc_dmg, test_dmg_external_sort_is_bounded_and_complete);
     tcase_add_test(tc_dmg, test_dmg_malformed_metadata_is_fail_visible);
     tcase_add_test(tc_dmg, test_dmg_trailer_read_failure_is_fail_visible);

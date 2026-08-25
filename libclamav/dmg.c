@@ -438,6 +438,21 @@ static int dmg_parse_mish_bytes(cli_ctx *ctx, unsigned int *mishblocknum, uint8_
         return CL_EFORMAT;
     }
 
+    /* Keep the retained legacy array in host order.  dmg_handle_mish()
+     * traverses it more than once (ordering, geometry, and reconstruction),
+     * so converting in the traversal helper would byte-swap valid values on
+     * every pass after the first.  Streamed metadata is converted by
+     * dmg_read_stream_stripe() as each record is read instead. */
+    for (i = 0; i < mish_set->mish->blockDataCount; i++) {
+        struct dmg_block_data *stripe = &mish_set->stripes[i];
+
+        stripe->type        = be32_to_host(stripe->type);
+        stripe->startSector = be64_to_host(stripe->startSector);
+        stripe->sectorCount = be64_to_host(stripe->sectorCount);
+        stripe->dataOffset  = be64_to_host(stripe->dataOffset);
+        stripe->dataLength  = be64_to_host(stripe->dataLength);
+    }
+
     return CL_CLEAN;
 }
 
@@ -1525,13 +1540,7 @@ static int dmg_prepare_stripe(cli_ctx *ctx, struct dmg_mish_with_stripes *mish_s
     if (!ctx || !mish_set || !mish_set->mish || !stripe)
         return CL_ENULLARG;
 
-    if (mish_set->stripes) {
-        stripe->type        = be32_to_host(stripe->type);
-        stripe->startSector = be64_to_host(stripe->startSector);
-        stripe->sectorCount = be64_to_host(stripe->sectorCount);
-        stripe->dataOffset  = be64_to_host(stripe->dataOffset);
-        stripe->dataLength  = be64_to_host(stripe->dataLength);
-    } else {
+    if (!mish_set->stripes) {
         ret = dmg_read_stream_stripe(ctx, mish_set, index, stripe);
         if (ret != CL_CLEAN)
             return ret;

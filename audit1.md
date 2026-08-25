@@ -7906,3 +7906,17 @@ CPIO object/test compilation and a production-linked focused execution remain
 to be run; the existing CPIO numeric/CRC focused evidence remains separate.
 Complete CPIO corpus, sanitizer, certified Linux x86-64, materialized
 large-file, production-CVD/service, and Sonic1 qualification remain open.
+
+## DMG retained stripe endian conversion — 2026-08-25
+
+The bounded DMG path retains small decoded `blkx` metadata in an in-memory
+stripe array and walks that array multiple times for ordering, geometry, and
+reconstruction. The traversal helper was endian-converting the array on every
+pass, so a valid stored or compressed stripe became an unrelated type and
+coordinate after the first pass. The decoded-byte path now validates the
+big-endian records and converts the retained array to host order exactly once;
+streamed metadata continues to convert each record when it is read. A
+production-linked valid stored-stripe DMG regression is registered to prove
+that the reconstructed child reaches the nested matcher cleanly. Full DMG
+corpus, sanitizer, materialized large-file, production-CVD, service, and
+Sonic1 evidence remain required.

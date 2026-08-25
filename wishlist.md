@@ -2776,3 +2776,13 @@ and Sonic1 qualification as release gates.
   production objects, then extend the numeric/CRC evidence to full corpus,
   sanitizer, certified Linux x86-64, materialized large-file,
   production-CVD/service, and Sonic1 qualification.
+
+## DMG retained stripe endian conversion — 2026-08-25
+
+- Keep retained in-memory `blkx` stripe records in host order after one
+  conversion; repeated ordering, geometry, and reconstruction passes must not
+  byte-swap them again.
+- Preserve the streamed metadata path's per-record conversion and retain the
+  stored-stripe production-path regression. Full DMG corpus, sanitizer,
+  materialized large-file, production-CVD, service, and Sonic1 qualification
+  remain open.
