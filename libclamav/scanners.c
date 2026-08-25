@@ -3729,6 +3729,7 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
     fmap_t *map       = ctx->fmap;
     uint64_t curr_len = map->len;
     uint64_t temporary_reserved = 0;
+    bool normalization_read_error = false;
 
     cli_dbgmsg("in cli_scanhtml()\n");
 
@@ -3767,20 +3768,23 @@ static cl_error_t cli_scanhtml(cli_ctx *ctx)
         tag_arguments_t hrefs = {0};
         hrefs.scanContents    = 1;
         form_data_t form_data = {0};
-        normalization_ok = html_normalise_map_form_data_with_quota(ctx, map, tempname, &hrefs, ctx->dconf,
-                                                                    &form_data, &temporary_reserved);
+        normalization_ok = html_normalise_map_form_data_with_quota_status(ctx, map, tempname, &hrefs, ctx->dconf,
+                                                                          &form_data, &temporary_reserved,
+                                                                          &normalization_read_error);
         save_urls(ctx, &hrefs, &form_data);
         html_tag_arg_free(&hrefs);
         html_form_data_tag_free(&form_data);
     } else {
-        normalization_ok = html_normalise_map_with_quota(ctx, map, tempname, NULL, ctx->dconf,
-                                                         &temporary_reserved);
+        normalization_ok = html_normalise_map_form_data_with_quota_status(ctx, map, tempname, NULL, ctx->dconf,
+                                                                          NULL, &temporary_reserved,
+                                                                          &normalization_read_error);
     }
 
     if (!normalization_ok) {
         if (!ctx->scan_timed_out)
             cli_mark_scan_incomplete(ctx, "HTML normalization did not complete");
-        status = ctx->scan_timed_out ? CL_ETIMEOUT
+        status = normalization_read_error ? CL_EREAD
+                                     : ctx->scan_timed_out ? CL_ETIMEOUT
                                      : ((ctx->limit_exceeded && ctx->limit_exceeded_result == CL_ERESOURCE)
                                             ? CL_ERESOURCE
                                             : CL_EPARSE);

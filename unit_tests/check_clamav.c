@@ -151,6 +151,7 @@ static const void *pe_native_offset_map_need(fmap_t *map, size_t at, size_t len,
 static const void *apm_truncated_driver_read_failure(fmap_t *map, size_t at, size_t len, int lock);
 static const void *bmp_truncated_signature_read_failure(fmap_t *map, size_t at, size_t len, int lock);
 static const void *jp2_truncated_signature_read_failure(fmap_t *map, size_t at, size_t len, int lock);
+static const void *compressed_input_read_failure(fmap_t *map, size_t at, size_t len, int lock);
 
 static void cl_setup(void)
 {
@@ -3000,6 +3001,43 @@ START_TEST(test_html_normalize_cleanup_close_failure_is_fail_visible)
 }
 END_TEST
 #endif
+
+START_TEST(test_html_input_read_failure_is_fail_visible)
+{
+    static const uint8_t data[] = "<html><body>dedicated HTML callback failure</body></html>";
+    struct cl_scan_options options;
+    struct cl_engine *scan_engine;
+    cl_verdict_t verdict;
+    const char *last_alert;
+    uint64_t scanned;
+    fmap_t *map;
+    cl_error_t ret;
+
+    ck_assert_int_eq(cl_init(CL_INIT_DEFAULT), CL_SUCCESS);
+    memset(&options, 0, sizeof(options));
+    options.parse = CL_SCAN_PARSE_HTML;
+    scan_engine = cl_engine_new();
+    ck_assert_ptr_nonnull(scan_engine);
+    ck_assert_int_eq(cl_engine_compile(scan_engine), CL_SUCCESS);
+    map = cl_fmap_open_memory(data, sizeof(data) - 1U);
+    ck_assert_ptr_nonnull(map);
+    map->need   = compressed_input_read_failure;
+    verdict     = CL_VERDICT_STRONG_INDICATOR;
+    last_alert  = "stale";
+    scanned     = UINT64_MAX;
+
+    ret = cl_scanmap_ex(map, NULL, &verdict, &last_alert, &scanned,
+                        scan_engine, &options, NULL, NULL, NULL, NULL,
+                        "CL_TYPE_HTML", NULL);
+    ck_assert_int_eq(ret, CL_EREAD);
+    ck_assert_int_eq(verdict, CL_VERDICT_NOTHING_FOUND);
+    ck_assert_ptr_null(last_alert);
+    ck_assert(map->dont_cache_flag);
+
+    cl_fmap_close(map);
+    cl_engine_free(scan_engine);
+}
+END_TEST
 
 START_TEST(test_html_utf16_time_limit_is_fail_visible)
 {
@@ -34567,6 +34605,7 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_bz_map, test_gzip_bzip_truncated_streams_are_fail_visible);
     tcase_add_test(tc_bz_map, test_compressed_input_read_failure_is_fail_visible);
     tcase_add_test(tc_bz_map, test_gzip_input_read_failure_is_fail_visible);
+    tcase_add_test(tc_bz_map, test_html_input_read_failure_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_time_limit_is_fail_visible);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_uses_cumulative_temporary_accounting);
     tcase_add_test(tc_xdp, test_xdp_retained_dump_overlaps_decoded_output_accounting);

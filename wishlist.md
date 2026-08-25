@@ -3269,3 +3269,14 @@ and Sonic1 qualification as release gates.
   ABI-consistent execution, sanitizer, certified Linux x86-64, materialized
   large-file, production CVD/service parity, and Sonic1 qualification before
   certification.
+
+## HTML normalization read-status audit — 2026-08-25
+
+- Preserve the new normalizer-to-scanner read-status plumbing: an in-range
+  fmap callback failure now returns `CL_EREAD`, keeps the layer incomplete and
+  non-cacheable, and is covered by the current-source production-linked
+  `bz_map` run, which passes 4/4 including the compressed boundaries.
+- Extend HTML, RFC2397, and script-normalization evidence to complete corpus,
+  full-C ABI-consistent execution, sanitizer, certified Linux x86-64,
+  materialized large-file, production CVD/service parity, and Sonic1
+  qualification before certification.

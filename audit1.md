@@ -8604,3 +8604,20 @@ This is parser-boundary evidence, not release certification. Full GZip and
 legacy-fallback corpus, current full-C ABI-consistent execution, sanitizer,
 certified Linux x86-64, materialized large-file, production CVD/service parity,
 and Sonic1 qualification remain open, so `CL_TYPE_GZ` stays pending.
+
+## HTML normalization read-status audit — 2026-08-25
+
+The first current-source production-linked HTML dispatch oracle exposed a
+status-loss defect: `htmlnorm` detected an in-range fmap callback failure and
+marked the layer incomplete, but `cli_scanhtml` flattened the failed
+normalization to `CL_EPARSE`. The normalizer now exposes its read-error state to
+the scanner, which returns `CL_EREAD` while preserving the clean verdict,
+sticky incomplete state, and non-cacheability. The shared production-linked
+`bz_map` run passes 4/4, including the HTML oracle and the existing compressed
+stream boundaries.
+
+This fixes the boundary classification but does not certify HTML or script
+normalization. Full HTML/RFC2397/script corpus, current full-C ABI-consistent
+execution, sanitizer, certified Linux x86-64, materialized large-file,
+production CVD/service parity, and Sonic1 qualification remain open, so
+`CL_TYPE_HTML` stays pending.

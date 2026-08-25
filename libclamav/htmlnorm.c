@@ -2419,6 +2419,15 @@ bool html_normalise_map_form_data_with_quota(cli_ctx *ctx, fmap_t *map, const ch
                                              tag_arguments_t *hrefs, const struct cli_dconf *dconf,
                                              form_data_t *form_data, uint64_t *temporary_reserved)
 {
+    return html_normalise_map_form_data_with_quota_status(ctx, map, dirname, hrefs, dconf,
+                                                          form_data, temporary_reserved, NULL);
+}
+
+bool html_normalise_map_form_data_with_quota_status(cli_ctx *ctx, fmap_t *map, const char *dirname,
+                                                    tag_arguments_t *hrefs, const struct cli_dconf *dconf,
+                                                    form_data_t *form_data, uint64_t *temporary_reserved,
+                                                    bool *read_error)
+{
     bool retval = false;
     m_area_t m_area;
 
@@ -2427,7 +2436,11 @@ bool html_normalise_map_form_data_with_quota(cli_ctx *ctx, fmap_t *map, const ch
     m_area.offset     = 0;
     m_area.map        = map;
     m_area.read_error = false;
+    if (read_error)
+        *read_error = false;
     retval = cli_html_normalise(ctx, -1, &m_area, dirname, hrefs, dconf, form_data, temporary_reserved);
+    if (read_error)
+        *read_error = m_area.read_error;
     return retval;
 }
 
