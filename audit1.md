@@ -8468,6 +8468,23 @@ MBR header through a sector-size/LBA product above `SIZE_MAX` and verifies the
 result is `CL_EFORMAT`, incomplete, and non-cacheable. Full MBR corpus,
 sanitizer, certified Linux x86-64, materialized large-file, production-CVD,
 service, and Sonic1 evidence remain required.
+
+## MBR focused parser qualification — 2026-08-25
+
+The current-source production-linked GCC harness passes the dedicated `mbr`
+TCase 5/5. It covers master-boot-record in-range callback failure with
+`CL_EREAD`, a non-empty partition left behind the `MaxPartitions` ceiling,
+both null-map entry points, sparse native-width partition-coordinate
+overflow, and the shared partition traversal timeout. The existing
+`partition_map` case passes 3/3 for the MBR and GPT dispatch boundaries.
+Every failure remains incomplete and non-cacheable; the valid overflow
+fixture returns `CL_EFORMAT` rather than being accepted as clean.
+
+This is focused boundary evidence, not MBR family certification. Complete
+materialized partition-image corpus, full-C ABI-consistent execution,
+sanitizer, certified Linux x86-64, production-CVD/service parity, and Sonic1
+qualification remain open, so `CL_TYPE_MBR` stays pending.
+
 ## Mach-O direct-entry admission — 2026-08-25
 
 The thin and universal Mach-O parser entries now return `CL_ENULLARG` for a

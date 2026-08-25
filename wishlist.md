@@ -3124,6 +3124,17 @@ and Sonic1 qualification as release gates.
   to corpus, sanitizer, materialized large-file, production-CVD, service, and
   Sonic1 qualification.
 
+## MBR focused parser qualification — 2026-08-25
+
+- The current-source production-linked GCC harness passes the dedicated `mbr`
+  TCase 5/5 for master-record callback failure, MaxPartitions, missing-map
+  entry points, native-width coordinate overflow, and timeout; the existing
+  `partition_map` case passes 3/3 for MBR/GPT dispatch boundaries. The
+  overflow fixture returns `CL_EFORMAT` with incomplete/non-cacheable state.
+- Complete materialized partition-image corpus, full-C ABI-consistent
+  execution, sanitizer, certified Linux x86-64, production-CVD/service
+  parity, and Sonic1 evidence before certification.
+
 ## BZip2 focused-stream audit — 2026-08-25
 
 - The focused compressed-stream subset runs the truncated-stream and

@@ -35290,6 +35290,7 @@ static Suite *test_cl_suite(void)
     TCase *tc_apm_map = tcase_create("apm_map");
     TCase *tc_hwpole2_map = tcase_create("hwpole2_map");
     TCase *tc_partition_map = tcase_create("partition_map");
+    TCase *tc_mbr = tcase_create("mbr");
     TCase *tc_dmg_map = tcase_create("dmg_map");
     TCase *tc_xdp_map = tcase_create("xdp_map");
     TCase *tc_autoit_map = tcase_create("autoit_map");
@@ -35553,6 +35554,15 @@ static Suite *test_cl_suite(void)
     tcase_add_test(tc_partition_map, test_mbr_partition_coordinate_overflow_is_fail_visible);
 #endif
     tcase_add_test(tc_partition_map, test_gpt_missing_map_is_fail_visible);
+    suite_add_tcase(s, tc_mbr);
+    tcase_add_checked_fixture(tc_mbr, cl_setup, cl_teardown);
+    tcase_add_test(tc_mbr, test_mbr_partition_read_failure_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_partition_limit_is_fail_visible);
+    tcase_add_test(tc_mbr, test_mbr_missing_map_entry_points_are_fail_visible);
+#if SIZE_MAX > UINT32_MAX
+    tcase_add_test(tc_mbr, test_mbr_partition_coordinate_overflow_is_fail_visible);
+#endif
+    tcase_add_test(tc_mbr, test_partition_time_limit_is_fail_visible);
     suite_add_tcase(s, tc_dmg_map);
     tcase_add_checked_fixture(tc_dmg_map, cl_setup, cl_teardown);
     suite_add_tcase(s, tc_macho_boundary);
